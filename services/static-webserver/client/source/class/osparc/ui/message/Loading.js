@@ -83,8 +83,8 @@ qx.Class.define("osparc.ui.message.Loading", {
   },
 
   statics: {
-    LOGO_WIDTH: 208,
-    LOGO_HEIGHT: 88,
+    LOGO_WIDTH: 240,
+    LOGO_HEIGHT: 100,
     STATUS_ICON_SIZE: 32,
 
     GRID_POS: {
@@ -115,6 +115,7 @@ qx.Class.define("osparc.ui.message.Loading", {
         alignX: "center",
         alignY: "middle"
       })).set({
+        width: this.self().LOGO_WIDTH*2,
         maxWidth: this.self().LOGO_WIDTH*2,
         padding: 20
       });
@@ -127,8 +128,9 @@ qx.Class.define("osparc.ui.message.Loading", {
       });
 
       const disclaimer = new qx.ui.basic.Atom().set({
+        padding: 15,
+        gap: 20,
         icon: "@FontAwesome5Solid/exclamation-triangle/20",
-        padding: 10,
         backgroundColor: "warning-yellow-s4l",
         textColor: "black",
         alignX: "center"
@@ -145,7 +147,7 @@ qx.Class.define("osparc.ui.message.Loading", {
       this.bind("disclaimer", disclaimer, "visibility", {
         converter: d => d ? "visible" : "excluded"
       });
-      this.bind("disclaimer", disclaimer.getChildControl("label"), "value");
+      this.bind("disclaimer", disclaimer, "label");
       mainLayout.addAt(disclaimer, {
         column: 0,
         row: this.self().GRID_POS.DISCLAIMER
