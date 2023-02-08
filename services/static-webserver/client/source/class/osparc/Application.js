@@ -266,9 +266,9 @@ qx.Class.define("osparc.Application", {
       if (!osparc.CookiePolicy.areCookiesAccepted()) {
         const cookiePolicy = new osparc.CookiePolicy();
         let title = this.tr("Privacy Policy");
-        // "tis" and "s4llite" include the license agreement
         let height = 145;
         if (osparc.utils.Utils.isProduct("tis") || osparc.utils.Utils.isProduct("s4llite")) {
+          // "tis" and "s4llite" include the license terms
           title = this.tr("Privacy Policy and License Terms");
           height = 200;
         }
