@@ -695,14 +695,23 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const menu = card.getMenu();
       const studyData = card.getResourceData();
 
-      const renameStudyButton = this.__getRenameStudyMenuButton(studyData);
-      menu.add(renameStudyButton);
+      const writeAccess = osparc.data.model.Study.canIWrite(studyData["accessRights"]);
+      const deleteAccess = osparc.data.model.Study.canIDelete(studyData["accessRights"]);
+
+      if (writeAccess) {
+        const renameStudyButton = this.__getRenameStudyMenuButton(studyData);
+        menu.add(renameStudyButton);
+      }
 
       const studyDataButton = this.__getStudyDataMenuButton(studyData);
       menu.add(studyDataButton);
 
-      const shareButton = this._getShareMenuButton(card);
-      menu.add(shareButton);
+      if (writeAccess) {
+        const shareButton = this._getShareMenuButton(card);
+        if (shareButton) {
+          menu.add(shareButton);
+        }
+      }
 
       const duplicateStudyButton = this.__getDuplicateMenuButton(studyData);
       menu.add(duplicateStudyButton);
@@ -713,10 +722,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const moreOptionsButton = this._getMoreOptionsMenuButton(studyData);
       menu.add(moreOptionsButton);
 
-      const deleteButton = this.__getDeleteStudyMenuButton(studyData, false);
-      if (deleteButton) {
-        menu.addSeparator();
-        menu.add(deleteButton);
+      if (deleteAccess) {
+        const deleteButton = this.__getDeleteStudyMenuButton(studyData, false);
+        if (deleteButton) {
+          menu.addSeparator();
+          menu.add(deleteButton);
+        }
       }
     },
 
