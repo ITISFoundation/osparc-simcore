@@ -895,7 +895,7 @@ async def test_nodeports_integration(
         str, str
     ] = await _start_and_wait_for_dynamic_services_ready(
         director_v2_client=async_client,
-        product=osparc_product_name,
+        product_name=osparc_product_name,
         user_id=current_user["id"],
         workbench_dynamic_services=workbench_dynamic_services,
         current_study=current_study,
@@ -1102,7 +1102,7 @@ async def test_nodeports_integration(
 
     await _start_and_wait_for_dynamic_services_ready(
         director_v2_client=async_client,
-        product=osparc_product_name,
+        product_name=osparc_product_name,
         user_id=current_user["id"],
         workbench_dynamic_services=workbench_dynamic_services,
         current_study=current_study,
