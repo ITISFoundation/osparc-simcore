@@ -83,11 +83,21 @@ async def check_registration_invitation(request: web.Request):
 
     raises HTTPForbidden, HTTPServiceUnavailable
     """
-    check = await parse_request_body_as(InvitationCheck, request)
+    product: Product = get_current_product(request)
+    settings: LoginSettingsForProduct = get_plugin_settings(
+        request.app, product_name=product.name
+    )
 
+    # disabled -> None
+    if settings.LOGIN_REGISTRATION_INVITATION_REQUIRED:
+        return envelope_json_response(InvitationInfo(email=None))
+
+    # non-encrypted -> None
+    check = await parse_request_body_as(InvitationCheck, request)
     if not is_service_invitation_code(code=check.invitation):
         return envelope_json_response(InvitationInfo(email=None))
 
+    # extracted -> email
     email = await extract_email_from_invitation(
         request.app, invitation_code=check.invitation
     )
