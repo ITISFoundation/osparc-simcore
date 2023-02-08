@@ -4,7 +4,7 @@ from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from email.utils import formatdate
+from email.utils import formatdate, make_msgid
 from pathlib import Path
 from pprint import pformat
 from typing import Any, Mapping, NamedTuple, Optional, TypedDict, Union
@@ -35,7 +35,8 @@ async def _do_send_mail(
 ) -> None:
     # WARNING: _do_send_mail is mocked so be careful when changing the signature or name !!
 
-    logger.debug("Email configuration %s", settings)
+    logger.debug("Email configuration %s", settings.json(indent=1))
+    logger.debug("%s", f"{message=}")
 
     if settings.SMTP_PORT == 587:
         # NOTE: aiosmtplib does not handle port 587 correctly this is a workaround
@@ -85,7 +86,8 @@ def _compose_mime(
     message["From"] = sender
     message["To"] = recipient
     message["Subject"] = subject
-    message["Date"] = formatdate(localtime=True)
+    message["Date"] = formatdate()
+    message["Message-ID"] = make_msgid()
 
 
 class SMTPServerInfo(TypedDict):
