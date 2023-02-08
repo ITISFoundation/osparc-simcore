@@ -9,6 +9,7 @@ from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.error_codes import create_error_code
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
+from .._meta import API_VTAG
 from ..groups_api import auto_add_user_to_groups, auto_add_user_to_product_group
 from ..invitations import is_service_invitation_code
 from ..products import Product, get_current_product
@@ -71,8 +72,11 @@ class InvitationInfo(InputSchema):
     )
 
 
-@routes.post("/v0/invitations:check", name="auth_register")
-async def check_invitation(request: web.Request):
+@routes.post(
+    f"/{API_VTAG}/auth/register/invitations:check",
+    name="auth_check_registration_invitation",
+)
+async def check_registration_invitation(request: web.Request):
     """
     Decrypts invitation and extracts associated email or
     returns None if is not an encrypted invitation (might be a database invitation).
@@ -113,7 +117,7 @@ class RegisterBody(InputSchema):
         }
 
 
-@routes.post("/v0/auth/register", name="auth_register")
+@routes.post(f"/{API_VTAG}/auth/register", name="auth_register")
 async def register(request: web.Request):
     """
     Starts user's registration by providing an email, password and
@@ -259,7 +263,7 @@ class RegisterPhoneNextPage(NextPage[_PageParams]):
     name="auth_resend_2fa_code",
     max_access_count=MAX_2FA_CODE_RESEND,
 )
-@routes.post("/v0/auth/verify-phone-number", name="auth_register_phone")
+@routes.post(f"/{API_VTAG}/auth/verify-phone-number", name="auth_register_phone")
 async def register_phone(request: web.Request):
     """
     Submits phone registration
