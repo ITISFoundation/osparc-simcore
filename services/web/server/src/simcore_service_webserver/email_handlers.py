@@ -91,7 +91,7 @@ async def test_email(request: web.Request):
     try:
         info = await check_email_server_responsiveness(settings)
 
-        await send_email_from_template(
+        message = await send_email_from_template(
             request,
             from_=body.from_ or product.support_email,
             to=body.to,
@@ -102,7 +102,10 @@ async def test_email(request: web.Request):
         return envelope_json_response(
             TestPassed(
                 fixtures=body.dict(),
-                info={"email-server": info},
+                info={
+                    "email-server": info,
+                    "message": message.items(),
+                },
             )
         )
 

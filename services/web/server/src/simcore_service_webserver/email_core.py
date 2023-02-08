@@ -36,7 +36,6 @@ async def _do_send_mail(
     # WARNING: _do_send_mail is mocked so be careful when changing the signature or name !!
 
     logger.debug("Email configuration %s", settings.json(indent=1))
-    logger.debug("message=%s", f"{message._headers}")
 
     if settings.SMTP_PORT == 587:
         # NOTE: aiosmtplib does not handle port 587 correctly this is a workaround
@@ -75,8 +74,11 @@ async def _do_send_mail(
             await smtp.send_message(message)
 
 
+MIMEMessage = Union[MIMEText, MIMEMultipart]
+
+
 def _compose_mime(
-    message: Union[MIMEText, MIMEMultipart],
+    message: MIMEMessage,
     settings: SMTPSettings,
     *,
     sender: str,
@@ -116,7 +118,7 @@ async def send_email(
     recipient: str,
     subject: str,
     body: str,
-) -> None:
+) -> MIMEMessage:
     """
     Sends an email with a body/subject marked as html
     """
@@ -129,6 +131,7 @@ async def send_email(
         subject=subject,
     )
     await _do_send_mail(settings=settings, message=message)
+    return message
 
 
 class AttachmentTuple(NamedTuple):
@@ -144,7 +147,7 @@ async def send_email_with_attachements(
     subject: str,
     body: str,
     attachments: list[AttachmentTuple],
-) -> None:
+) -> MIMEMessage:
     """
     Sends an email with a body/subject marked as html with file attachement/s
     """
@@ -177,6 +180,7 @@ async def send_email_with_attachements(
         message.attach(part)
 
     await _do_send_mail(settings=settings, message=message)
+    return message
 
 
 def _render_template(
@@ -207,7 +211,7 @@ async def send_email_from_template(
     subject, body = _render_template(request, template, context)
 
     if attachments:
-        await send_email_with_attachements(
+        return await send_email_with_attachements(
             settings=settings,
             sender=from_,
             recipient=to,
@@ -215,11 +219,11 @@ async def send_email_from_template(
             body=body,
             attachments=attachments,
         )
-    else:
-        await send_email(
-            settings=settings,
-            sender=from_,
-            recipient=to,
-            subject=subject,
-            body=body,
-        )
+
+    return await send_email(
+        settings=settings,
+        sender=from_,
+        recipient=to,
+        subject=subject,
+        body=body,
+    )
