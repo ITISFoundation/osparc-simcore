@@ -36,7 +36,7 @@ async def _do_send_mail(
     # WARNING: _do_send_mail is mocked so be careful when changing the signature or name !!
 
     logger.debug("Email configuration %s", settings.json(indent=1))
-    logger.debug("%s", f"{message=}")
+    logger.debug("message=%s", f"{message._headers}")
 
     if settings.SMTP_PORT == 587:
         # NOTE: aiosmtplib does not handle port 587 correctly this is a workaround
@@ -77,6 +77,7 @@ async def _do_send_mail(
 
 def _compose_mime(
     message: Union[MIMEText, MIMEMultipart],
+    settings: SMTPSettings,
     *,
     sender: str,
     recipient: str,
@@ -86,8 +87,8 @@ def _compose_mime(
     message["From"] = sender
     message["To"] = recipient
     message["Subject"] = subject
-    message["Date"] = formatdate()
-    message["Message-ID"] = make_msgid()
+    message["Date"] = formatdate(localtime=True)
+    message["Message-ID"] = make_msgid(domain=settings.SMTP_HOST)
 
 
 class SMTPServerInfo(TypedDict):
@@ -122,6 +123,7 @@ async def send_email(
     message = MIMEText(body, "html")
     _compose_mime(
         message,
+        settings=settings,
         sender=sender,
         recipient=recipient,
         subject=subject,
@@ -151,6 +153,7 @@ async def send_email_with_attachements(
     message = MIMEMultipart()
     _compose_mime(
         message,
+        settings=settings,
         sender=sender,
         recipient=recipient,
         subject=subject,
