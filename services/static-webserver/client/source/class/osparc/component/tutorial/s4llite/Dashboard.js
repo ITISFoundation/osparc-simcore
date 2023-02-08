@@ -45,7 +45,7 @@ qx.Class.define("osparc.component.tutorial.s4llite.Dashboard", {
 
       const newProject = new qx.ui.basic.Label().set({
         value: this.tr("\
-        1) Start Sim4Life:web lite: Click the <b>+ Start Sim4Life:web <i>lite</i></b> button to create a new project. This will start the user interface of Sim4Life:web <i>lite</i>.\
+        1) Start S4L lite: Click the <b>+ Start S4L lite</b> button to create a new project. This will start the user interface of S4L lite.\
         "),
         rich: true,
         wrap: true,
@@ -66,7 +66,7 @@ qx.Class.define("osparc.component.tutorial.s4llite.Dashboard", {
 
       const otherProjects2 = new qx.ui.basic.Label().set({
         value: this.tr("\
-        3) TUTORIALS: A set of pre-built read-only tutorial projects with results is available to all Sim4Life:web <i>lite</i> users. When a tutorial is selected, a \
+        3) TUTORIALS: A set of pre-built read-only tutorial projects with results is available to all S4L lite users. When a tutorial is selected, a \
         copy is automatically created and added to the user’s Projects tab. This new copy is editable and shareable.\
         "),
         rich: true,
@@ -85,7 +85,7 @@ qx.Class.define("osparc.component.tutorial.s4llite.Dashboard", {
 
       const importProjects = new qx.ui.basic.Label().set({
         value: this.tr("\
-        4) To open an existing desktop project in Sim4Life:web <i>lite</i>: \
+        4) To open an existing desktop project in S4L lite: \
         - Click the + Start Sim4Life Lite button to create a new project.<br>\
         - Click the menu and select “File Browser…”.<br>\
         - Click “Upload File” for the .smash project and select the file from your desktop. Repeat the same step but this \

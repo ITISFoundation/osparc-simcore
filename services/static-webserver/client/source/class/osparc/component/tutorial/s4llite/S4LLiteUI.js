@@ -19,14 +19,14 @@ qx.Class.define("osparc.component.tutorial.s4llite.S4LLiteUI", {
   extend: osparc.component.tutorial.SlideBase,
 
   construct: function() {
-    const title = this.tr("Sim4Life:web <i>lite</i>");
+    const title = this.tr("S4L lite");
     this.base(arguments, title);
   },
 
   members: {
     _populateCard: function() {
       const introText = this.tr("\
-      To check the Sim4Life:web <i>lite</i> manual, please open a project and access the documentation via Help in the menu as shown below. Enjoy!\
+      To check the S4L lite manual, please open a project and access the documentation via Help in the menu as shown below. Enjoy!\
       ");
       const intro = osparc.component.tutorial.Utils.createLabel(introText);
       this._add(intro);
