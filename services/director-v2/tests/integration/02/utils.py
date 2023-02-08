@@ -256,6 +256,7 @@ async def _get_service_resources(
 
 async def assert_start_service(
     director_v2_client: httpx.AsyncClient,
+    product_name: str,
     user_id: UserID,
     project_id: str,
     service_key: str,
@@ -280,6 +281,7 @@ async def assert_start_service(
         service_resources=ServiceResourcesDictHelpers.create_jsonable(
             service_resources
         ),
+        product_name=product_name,
     )
     headers = {
         "x-dynamic-sidecar-request-dns": director_v2_client.base_url.host,
