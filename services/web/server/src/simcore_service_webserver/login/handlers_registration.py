@@ -15,7 +15,9 @@ from ..invitations import is_service_invitation_code
 from ..products import Product, get_current_product
 from ..security_api import encrypt_password
 from ..session_access import on_success_grant_session_access_to, session_access_required
+from ..utils import MINUTE
 from ..utils_aiohttp import NextPage, envelope_json_response
+from ..utils_rate_limiting import global_rate_limit_route
 from ._2fa import create_2fa_code, mask_phone_number, send_sms_code
 from ._confirmation import make_confirmation_link
 from ._constants import (
@@ -72,6 +74,7 @@ class InvitationInfo(InputSchema):
     )
 
 
+@global_rate_limit_route(number_of_requests=30, interval_seconds=MINUTE)
 @routes.post(
     f"/{API_VTAG}/auth/register/invitations:check",
     name="auth_check_registration_invitation",
