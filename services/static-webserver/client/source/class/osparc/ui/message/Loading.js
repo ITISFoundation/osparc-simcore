@@ -137,8 +137,8 @@ qx.Class.define("osparc.ui.message.Loading", {
         "border-radius": "8px"
       });
       disclaimer.getChildControl("label").set({
-        value: "asdfas dfa sdf asdf asd fa sdf asd f<br>asfdasdfa sdf asdf asdf",
         font: "text-16",
+        textColor: "black",
         rich: true,
         wrap: true
       });
@@ -178,7 +178,6 @@ qx.Class.define("osparc.ui.message.Loading", {
       });
 
       const messages = this.__messages = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
-        visibility: "exlcuded",
         alignX: "center"
       }));
       mainLayout.addAt(messages, {
