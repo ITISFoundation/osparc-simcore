@@ -27,7 +27,7 @@ qx.Class.define("osparc.component.notification.NotificationsRibbon", {
     this.__notifications = new qx.data.Array();
 
     this.set({
-      backgroundColor: "warning-yellow",
+      backgroundColor: "warning-yellow-s4l",
       alignX: "center",
       alignY: "middle",
       visibility: "excluded"
