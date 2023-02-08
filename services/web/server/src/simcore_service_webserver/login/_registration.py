@@ -7,7 +7,7 @@
 import logging
 from contextlib import contextmanager
 from datetime import datetime
-from typing import Literal, Optional
+from typing import Iterator, Literal, Optional
 
 from aiohttp import web
 from models_library.basic_types import IdInt
@@ -160,7 +160,7 @@ async def create_invitation_token(
 
 
 @contextmanager
-def _invitations_request_context(invitation_code: str) -> URL:
+def _invitations_request_context(invitation_code: str) -> Iterator[URL]:
     """
     - composes url from code
     - handles invitations errors as HTTPForbidden, HTTPServiceUnavailable
