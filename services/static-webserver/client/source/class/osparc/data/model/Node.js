@@ -955,18 +955,23 @@ qx.Class.define("osparc.data.model.Node", {
       return this.tr("Starting ") + label;
     },
 
-    __getExtraMessages: function() {
+    __getDisclaimer: function() {
       if (this.getKey() && this.getKey().includes("pub-nat-med")) {
-        return [
-          this.tr("This might take a couple of minutes")
-        ];
+        return this.tr("This might take a couple of minutes");
       }
-      return [];
+      if (this.getKey() && this.getKey().includes("sim4life-lite")) {
+        return this.tr("We're running many simulations.<br>Please let us make room for you.");
+      }
+      return null;
     },
 
     __initLoadingPage: function() {
       const showZoomMaximizeButton = !osparc.utils.Utils.isProduct("s4llite");
-      const loadingPage = new osparc.ui.message.Loading(this.__getLoadingPageHeader(), this.__getExtraMessages(), showZoomMaximizeButton);
+      const loadingPage = new osparc.ui.message.Loading(showZoomMaximizeButton);
+      loadingPage.set({
+        header: this.__getLoadingPageHeader(),
+        disclaimer: this.__getDisclaimer()
+      });
 
       const thumbnail = this.getMetaData()["thumbnail"];
       if (thumbnail) {
