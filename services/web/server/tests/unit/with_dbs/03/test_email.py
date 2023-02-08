@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 
 
+import json
 from unittest.mock import MagicMock
 
 import pytest
@@ -15,7 +16,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from pytest_simcore.helpers.utils_login import LoggedUser, UserRole
+from pytest_simcore.helpers.utils_login import UserInfoDict, UserRole
 from settings_library.email import EmailProtocol, SMTPSettings
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.email_handlers import TestFailed, TestPassed
@@ -64,39 +65,60 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
 
 
 @pytest.fixture
-def mock_smtp(mocker: MockerFixture, app_environment: EnvVarsDict) -> MagicMock:
-
+def mocked_send_email(mocker: MockerFixture, app_environment: EnvVarsDict) -> MagicMock:
+    # Overrides services/web/server/tests/unit/with_dbs/conftest.py::mocked_send_email
     settings = SMTPSettings.create_from_envs()
 
     mock = mocker.patch("aiosmtplib.SMTP")
-    instance = mock.return_value.__aenter__.return_value
-    instance.hostname = settings.SMTP_HOST
-    instance.port = settings.SMTP_PORT
-    instance.timeout = 100
-    instance.use_tls = settings.SMTP_PROTOCOL == EmailProtocol.TLS
+    smtp_instance = mock.return_value.__aenter__.return_value
+    smtp_instance.hostname = settings.SMTP_HOST
+    smtp_instance.port = settings.SMTP_PORT
+    smtp_instance.timeout = 100
+    smtp_instance.use_tls = settings.SMTP_PROTOCOL == EmailProtocol.TLS
 
-    return mock
+    return smtp_instance
 
 
-async def test_email_handlers(client: TestClient, faker: Faker, mock_smtp: MagicMock):
+@pytest.mark.parametrize(
+    "user_role,expected_response_cls",
+    [
+        (UserRole.ADMIN, web.HTTPOk),
+        (UserRole.USER, web.HTTPForbidden),
+        (UserRole.GUEST, web.HTTPForbidden),
+        (UserRole.TESTER, web.HTTPForbidden),
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+    ],
+)
+async def test_email_handlers(
+    client: TestClient,
+    faker: Faker,
+    logged_user: UserInfoDict,
+    user_role: UserRole,
+    expected_response_cls: type[web.Response],
+    mocked_send_email: MagicMock,
+):
+    assert logged_user["role"] == user_role.name
+    destination_email = faker.email()
 
-    async with LoggedUser(client, params={"role": UserRole.ADMIN.value}) as user:
+    response = await client.post(
+        f"/{API_VTAG}/email:test", json={"to": destination_email}
+    )
 
-        assert user
-        destination_email = faker.email()
+    data, error = await assert_status(response, expected_cls=expected_response_cls)
 
-        response = await client.post(
-            f"/{API_VTAG}/email:test", json={"to": destination_email}
-        )
+    if error:
+        assert not mocked_send_email.called
 
-        data, error = await assert_status(response, expected_cls=web.HTTPOk)
-        print(data)
+    if data:
+        print(mocked_send_email.mock_calls)
+        assert mocked_send_email.send_message.called
 
+        print(json.dumps(data, indent=1))
         assert data
         assert error is None
 
         with pytest.raises(ValidationError):
-            failed = TestFailed.parse_obj(data)
+            TestFailed.parse_obj(data)
 
         passed = TestPassed.parse_obj(data)
         print(passed.json(indent=1))

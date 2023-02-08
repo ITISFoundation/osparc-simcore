@@ -5,10 +5,10 @@
 
     IMPORTANT: remember that these are still unit-tests!
 """
+# nopycln: file
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-
 
 import asyncio
 import sys
@@ -22,7 +22,6 @@ from uuid import uuid4
 import pytest
 import redis
 import redis.asyncio as aioredis
-from settings_library.email import SMTPSettings
 import simcore_postgres_database.cli as pg_cli
 import simcore_service_webserver.db_models as orm
 import simcore_service_webserver.utils
@@ -41,6 +40,7 @@ from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.aiohttp.long_running_tasks.client import LRTask
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.common_aiopg_utils import DSN
+from settings_library.email import SMTPSettings
 from settings_library.redis import RedisSettings
 from simcore_service_webserver import catalog
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
@@ -51,7 +51,6 @@ from simcore_service_webserver.groups_api import (
     delete_user_group,
     list_user_groups,
 )
-
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -110,6 +109,7 @@ def app_environment(
     app_cfg: ConfigDict,
     monkeypatch_setenv_from_app_config: Callable[[ConfigDict], dict[str, str]],
 ) -> EnvVarsDict:
+    # WARNING: this fixture is commonly overriden. Check before renaming.
     """overridable fixture that defines the ENV for the webserver application
     based on legacy application config files.
 
@@ -124,8 +124,10 @@ def app_environment(
     return monkeypatch_setenv_from_app_config(cfg)
 
 
-def _patch_send_email(monkeypatch):
-    async def print_mail_to_stdout(
+@pytest.fixture
+def mocked_send_email(monkeypatch: MonkeyPatch) -> None:
+    # WARNING: this fixture is commonly overriden. Check before renaming.
+    async def _print_mail_to_stdout(
         settings: SMTPSettings, *, sender: str, recipient: str, subject: str, body: str
     ):
         print(
@@ -135,7 +137,7 @@ def _patch_send_email(monkeypatch):
     monkeypatch.setattr(
         simcore_service_webserver.email_core,
         "send_email",
-        print_mail_to_stdout,
+        _print_mail_to_stdout,
     )
 
 
@@ -147,14 +149,11 @@ def web_server(
     postgres_db: sa.engine.Engine,
     # tools
     aiohttp_server: Callable,
-    monkeypatch: MonkeyPatch,
+    mocked_send_email: None,
     disable_static_webserver: Callable,
 ) -> TestServer:
     # original APP
     app = create_application()
-
-    # with patched email
-    _patch_send_email(monkeypatch)
 
     disable_static_webserver(app)
 
@@ -163,6 +162,7 @@ def web_server(
     )
 
     assert isinstance(postgres_db, sa.engine.Engine)
+
     pg_settings = dict(e.split("=") for e in app[APP_DB_ENGINE_KEY].dsn.split())
     assert pg_settings["host"] == postgres_db.url.host
     assert int(pg_settings["port"]) == postgres_db.url.port
@@ -179,6 +179,7 @@ def client(
     mock_orphaned_services,
     redis_client: Redis,
 ) -> TestClient:
+    # WARNING: this fixture is commonly overriden. Check before renaming.
     cli = event_loop.run_until_complete(aiohttp_client(web_server))
     return cli
 
@@ -349,7 +350,7 @@ def create_dynamic_service_mock(
 ) -> Callable:
     services = []
 
-    async def create(user_id, project_id) -> dict:
+    async def _create(user_id, project_id) -> dict:
         SERVICE_UUID = str(uuid4())
         SERVICE_KEY = "simcore/services/dynamic/3d-viewer"
         SERVICE_VERSION = "1.4.2"
@@ -381,7 +382,7 @@ def create_dynamic_service_mock(
         ].return_value = services
         return running_service_dict
 
-    return create
+    return _create
 
 
 # POSTGRES CORE SERVICE ---------------------------------------------------
