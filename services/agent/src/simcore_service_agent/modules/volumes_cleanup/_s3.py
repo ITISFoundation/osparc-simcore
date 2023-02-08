@@ -135,6 +135,14 @@ async def store_to_s3(  # pylint:disable=too-many-locals,too-many-arguments
     )
 
     source_dir = dyv_volume["Mountpoint"]
+    if not Path(source_dir).exists():
+        logger.info(
+            "Volume mountpoint %s does not exist. Skipping backup, volume %s will be removed.",
+            source_dir,
+            volume_name,
+        )
+        return
+
     s3_path = _get_s3_path(s3_bucket, dyv_volume["Labels"], volume_name)
 
     # listing files rclone will sync
