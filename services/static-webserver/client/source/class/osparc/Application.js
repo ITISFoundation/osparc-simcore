@@ -221,8 +221,12 @@ qx.Class.define("osparc.Application", {
           });
       }
       const ogDesc = document.querySelector("#openGraphDesc");
-      if (ogDesc && !osparc.utils.Utils.isProduct("osparc")) {
-        ogDesc.content = "Powered by oSPARC: " + ogDesc.content;
+      if (ogDesc) {
+        if (osparc.utils.Utils.isProduct("s4llite")) {
+          ogDesc.content = "The power of the Sim4Life simulation platform, boosted by its revolutionary web interface!";
+        } else if (!osparc.utils.Utils.isProduct("osparc")) {
+          ogDesc.content = "Powered by oSPARC: " + ogDesc.content;
+        }
       }
       const ogImage = document.querySelector("#openGraphImage");
       if (ogImage) {
@@ -265,9 +269,13 @@ qx.Class.define("osparc.Application", {
     __checkCookiesAccepted: function() {
       if (!osparc.CookiePolicy.areCookiesAccepted()) {
         const cookiePolicy = new osparc.CookiePolicy();
-        const title = this.tr("Cookie Policy");
-        // "tis" and "s4llite" include the license agreement
-        const height = (osparc.utils.Utils.isProduct("tis") || osparc.utils.Utils.isProduct("s4llite")) ? 180 : 145;
+        let title = this.tr("Privacy Policy");
+        let height = 145;
+        if (osparc.utils.Utils.isProduct("tis") || osparc.utils.Utils.isProduct("s4llite")) {
+          // "tis" and "s4llite" include the license terms
+          title = this.tr("Privacy Policy and License Terms");
+          height = 200;
+        }
         const win = osparc.ui.window.Window.popUpInWindow(cookiePolicy, title, 400, height).set({
           clickAwayClose: false,
           resizable: false,

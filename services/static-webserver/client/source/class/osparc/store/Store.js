@@ -510,15 +510,17 @@ qx.Class.define("osparc.store.Store", {
             const members = values[1]; // object
             const potentialCollaborators = {};
             orgs.forEach(org => {
-              org["collabType"] = 1;
-              potentialCollaborators[org["gid"]] = org;
+              if (org["accessRights"]["read"]) {
+                org["collabType"] = 1;
+                potentialCollaborators[org["gid"]] = org;
+              }
             });
             for (const gid of Object.keys(members)) {
               members[gid]["collabType"] = 2;
               potentialCollaborators[gid] = members[gid];
             }
             const productEveryone = values[2]; // entry
-            if (productEveryone) {
+            if (productEveryone && productEveryone["accessRights"]["read"]) {
               productEveryone["collabType"] = 0;
               potentialCollaborators[productEveryone["gid"]] = productEveryone;
             }

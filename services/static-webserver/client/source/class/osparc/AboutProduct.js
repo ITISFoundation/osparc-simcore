@@ -28,7 +28,7 @@ qx.Class.define("osparc.AboutProduct", {
       });
 
     this.set({
-      layout: new qx.ui.layout.VBox(5),
+      layout: new qx.ui.layout.VBox(10),
       minWidth: this.self().MIN_WIDTH,
       maxWidth: this.self().MAX_WIDTH,
       contentPadding: this.self().PADDING,
@@ -51,17 +51,62 @@ qx.Class.define("osparc.AboutProduct", {
 
   members: {
     __buildLayout: function() {
-      const introText = new qx.ui.basic.Label().set({
-        font: "text-14",
-        maxWidth: this.self().MAX_WIDTH - 2*this.self().PADDING,
-        rich: true,
-        wrap: true
-      });
-      this.add(introText);
-      osparc.store.StaticInfo.getInstance().getDisplayName()
-        .then(displayName => {
-          introText.setValue(displayName);
+      switch (osparc.utils.Utils.getProductName()) {
+        case "s4llite":
+          this.__buildS4LLiteLayout();
+          break;
+        default: {
+          const noInfoText = this.tr("Information not available");
+          const noInfoLabel = new qx.ui.basic.Label(noInfoText).set({
+            font: "text-14",
+            maxWidth: this.self().MAX_WIDTH - 2*this.self().PADDING,
+            rich: true,
+            wrap: true
+          });
+          this.add(noInfoLabel);
+          break;
+        }
+      }
+    },
+
+    __buildS4LLiteLayout: function() {
+      const color = qx.theme.manager.Color.getInstance().resolve("text");
+
+      // https://zurichmedtech.github.io/s4l-lite-manual/#/docs/what_is_s4l_lite
+      const introText = "<b>S4L lite</b> is a powerful web-based simulation platform that allows you to model and analyze real-world phenomena and to design complex technical devices in a validated environment. With its intuitive interface and advanced tools, <b>S4L lite</b> makes it easy to develop your simulation project, wherever you are.";
+
+      const licenseUrl = "https://zurichmedtech.github.io/s4l-lite-manual/#/docs/licensing/copyright_Sim4Life";
+      const licenseText = `Click <a href=${licenseUrl} style='color: ${color}' target='_blank'>here</a> to read the license agreements.`;
+
+      // more info ZMT website
+      const moreInfoUrl = "https://zmt.swiss/";
+      const moreInfoText = `For more information about <b>S4L lite</b>, visit <a href=${moreInfoUrl} style='color: ${color}' target='_blank'>our website</a>.`;
+
+      [
+        introText,
+        licenseText,
+        moreInfoText
+      ].forEach(text => {
+        const label = new qx.ui.basic.Label(text).set({
+          font: "text-14",
+          maxWidth: this.self().MAX_WIDTH - 2*this.self().PADDING,
+          rich: true,
+          wrap: true
         });
+        this.add(label);
+      });
+
+      const copyrightLink = new osparc.ui.basic.LinkLabel();
+      osparc.store.VendorInfo.getInstance().getVendor()
+        .then(vendor => {
+          if (vendor) {
+            copyrightLink.set({
+              value: vendor.copyright + " " + new Date().getFullYear(),
+              url: vendor.url
+            });
+          }
+        });
+      this.add(copyrightLink);
     }
   }
 });
