@@ -91,6 +91,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
         case "description":
           control = new qx.ui.basic.Label().set({
             rich: true,
+            maxHeight: 15,
             minWidth: 100,
             font: "text-14",
             alignY: "middle",
@@ -132,7 +133,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
     },
 
     _applyDescription: function(value, old) {
-      const label = this.getChildControl("description");
+      const label = this.getChildControl("description-md");
       label.setValue(value);
     }
   },
