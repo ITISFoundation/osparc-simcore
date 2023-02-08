@@ -104,7 +104,7 @@ async def test_email(request: web.Request):
                 fixtures=body.dict(),
                 info={
                     "email-server": info,
-                    "message": message.items(),
+                    "email-headers": message.items(),
                 },
             )
         )
