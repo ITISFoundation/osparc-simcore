@@ -137,6 +137,7 @@ qx.Class.define("osparc.ui.message.Loading", {
         "border-radius": "8px"
       });
       disclaimer.getChildControl("label").set({
+        value: "asdfas dfa sdf asdf asd fa sdf asd f<br>asfdasdfa sdf asdf asdf",
         font: "text-16",
         rich: true,
         wrap: true
@@ -177,6 +178,7 @@ qx.Class.define("osparc.ui.message.Loading", {
       });
 
       const messages = this.__messages = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
+        visibility: "exlcuded",
         alignX: "center"
       }));
       mainLayout.addAt(messages, {
@@ -228,18 +230,28 @@ qx.Class.define("osparc.ui.message.Loading", {
 
     __applyMessages: function(msgs, old) {
       this.__messages.removeAll();
-      msgs.forEach(msg => {
-        const text = new qx.ui.basic.Label(msg.toString()).set({
-          font: "text-18",
-          rich: true,
-          wrap: true
+      if (msgs) {
+        msgs.forEach(msg => {
+          const text = new qx.ui.basic.Label(msg.toString()).set({
+            font: "text-18",
+            rich: true,
+            wrap: true
+          });
+          this.__messages.add(text);
         });
-        this.__messages.add(text);
-      });
+        this.__messages.show();
+      } else {
+        this.__messages.exclude();
+      }
     },
 
     addWidgetToMessages: function(widget) {
-      this.__messages.add(widget);
+      if (widget) {
+        this.__messages.add(widget);
+        this.__messages.show();
+      } else {
+        this.__messages.exclude();
+      }
     },
 
     addExtraWidget: function(widget) {
