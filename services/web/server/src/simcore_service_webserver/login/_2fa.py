@@ -20,7 +20,7 @@ from simcore_postgres_database.models.users import UserNameConverter
 from twilio.rest import Client
 
 from ..redis import get_redis_validation_code_client
-from .utils_email import get_template_path, render_and_send_mail
+from .utils_email import get_template_path, send_email_from_template
 
 log = logging.getLogger(__name__)
 
@@ -149,7 +149,7 @@ async def send_email_code(
 ):
     email_template_path = await get_template_path(request, "new_2fa_code.jinja2")
     first_name = _get_human_readable_first_name(user_name)
-    await render_and_send_mail(
+    await send_email_from_template(
         request,
         from_=support_email,
         to=user_email,

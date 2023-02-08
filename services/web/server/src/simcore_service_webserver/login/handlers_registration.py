@@ -43,7 +43,7 @@ from .utils import (
     flash_response,
     get_client_ip,
 )
-from .utils_email import get_template_path, render_and_send_mail
+from .utils_email import get_template_path, send_email_from_template
 
 log = logging.getLogger(__name__)
 
@@ -153,7 +153,7 @@ async def register(request: web.Request):
             email_template_path = await get_template_path(
                 request, "registration_email.jinja2"
             )
-            await render_and_send_mail(
+            await send_email_from_template(
                 request,
                 from_=product.support_email,
                 to=registration.email,

@@ -22,7 +22,7 @@ from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.login.utils_email import (
     AttachmentTuple,
     get_template_path,
-    render_and_send_mail,
+    send_email_from_template,
     themed,
 )
 from simcore_service_webserver.statics_constants import FRONTEND_APPS_AVAILABLE
@@ -82,7 +82,7 @@ async def test_render_and_send_mail_for_registration(
 ):
     link = faker.url()  # some url link
 
-    await render_and_send_mail(
+    await send_email_from_template(
         http_request,
         from_=f"no-reply@{product_name}.test",
         to=destination_email,
@@ -110,7 +110,7 @@ async def test_render_and_send_mail_for_password(
 ):
     link = faker.url()  # some url link
 
-    await render_and_send_mail(
+    await send_email_from_template(
         http_request,
         from_=f"no-reply@{product_name}.test",
         to=destination_email,
@@ -123,7 +123,7 @@ async def test_render_and_send_mail_for_password(
         },
     )
 
-    await render_and_send_mail(
+    await send_email_from_template(
         http_request,
         from_=f"no-reply@{product_name}.test",
         to=destination_email,
@@ -145,7 +145,7 @@ async def test_render_and_send_mail_to_change_email(
 ):
     link = faker.url()  # some url link
 
-    await render_and_send_mail(
+    await send_email_from_template(
         http_request,
         from_=f"no-reply@{product_name}.test",
         to=destination_email,
@@ -167,7 +167,7 @@ async def test_render_and_send_mail_for_submission(
 ):
     data = {"name": faker.first_name(), "surname": faker.last_name()}  # some form
 
-    await render_and_send_mail(
+    await send_email_from_template(
         http_request,
         from_=f"no-reply@{product_name}.test",
         to=destination_email,
