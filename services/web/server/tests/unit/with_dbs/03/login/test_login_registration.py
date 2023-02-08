@@ -439,3 +439,24 @@ async def test_registraton_with_invitation_for_trial_account(
         expected = invitation.user["created_at"] + timedelta(days=TRIAL_DAYS)
         assert profile.expiration_date
         assert profile.expiration_date == expected.date()
+
+
+async def test_check_registration_invitation(
+    client: TestClient,
+    mocker: MockerFixture,
+):
+    assert client.app
+    mocker.patch(
+        "simcore_service_webserver.login.handlers_registration.get_plugin_settings",
+        autospec=True,
+        return_value=LoginSettingsForProduct(
+            LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=False,
+            LOGIN_REGISTRATION_INVITATION_REQUIRED=False,
+            LOGIN_TWILIO=None,
+        ),
+    )
+
+    url = client.app.router["auth_check_registration_invitation"].url_for()
+    response = await client.get(f"{url}", invitation="123")
+    data, _ = await assert_status(response, web.HTTPOk)
+    assert data["email"] is None
