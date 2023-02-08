@@ -34,7 +34,7 @@ qx.Class.define("osparc.ui.message.Loading", {
   /**
    * Constructor for the Loading widget.
    *
-   * @param {Boolean} showMaximize
+   * @param {Boolean} showMaximizeButton
    */
   construct: function(showMaximizeButton = false) {
     this.base(arguments);
@@ -49,14 +49,16 @@ qx.Class.define("osparc.ui.message.Loading", {
   properties: {
     disclaimer: {
       check: "String",
+      init: null,
       nullable: true,
-      apply: "__applyDisclaimer"
+      event: "changeDisclaimer"
     },
 
     logo: {
       check: "String",
+      init: null,
       nullable: true,
-      apply: "__applyLogo"
+      event: "changeLogo"
     },
 
     header: {
@@ -83,19 +85,32 @@ qx.Class.define("osparc.ui.message.Loading", {
   statics: {
     LOGO_WIDTH: 208,
     LOGO_HEIGHT: 88,
-    STATUS_ICON_SIZE: 32
+    STATUS_ICON_SIZE: 32,
+
+    GRID_POS: {
+      DISCLAIMER: 0,
+      LOGO: 1,
+      WAITING: 2,
+      MESSAGES: 3,
+      EXTRA_WIDGETS: 4
+    }
   },
 
   members: {
-    __maxButton: null,
     __mainLayout: null,
-    __disclaimer: null,
-    __logo: null,
     __header: null,
     __messages: null,
     __extraWidgets: null,
+    __maxButton: null,
 
-    __buildLayout: function(showMaximize) {
+    __buildLayout: function(showMaximizeButton) {
+      this.__createMainLayout();
+      this.__createMaximizeButton(showMaximizeButton);
+    },
+
+    __createMainLayout: function() {
+      const layout = new qx.ui.layout.Grid(20, 20);
+      layout.setColumnFlex(0, 1);
       const mainLayout = this.__mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
         alignX: "center",
         alignY: "middle"
@@ -111,48 +126,78 @@ qx.Class.define("osparc.ui.message.Loading", {
         flex: 1
       });
 
-      const disclaimer = this.__disclaimer = new qx.ui.basic.Atom().set({
+      const disclaimer = new qx.ui.basic.Atom().set({
         icon: "@FontAwesome5Solid/exclamation-triangle/20",
+        padding: 10,
+        backgroundColor: "warning-yellow-s4l",
+        textColor: "black",
         alignX: "center"
       });
-
-      const image = this.__logo = new osparc.ui.basic.Logo().set({
-        width: this.self().LOGO_WIDTH,
-        height: this.self().LOGO_HEIGHT
+      disclaimer.getContentElement().setStyles({
+        "border-radius": "8px"
+      });
+      disclaimer.getChildControl("label").set({
+        font: "text-16",
+        rich: true,
+        wrap: true
+      });
+      this.bind("disclaimer", disclaimer, "visibility", {
+        converter: d => d ? "visible" : "excluded"
+      });
+      this.bind("disclaimer", disclaimer.getChildControl("label"), "value");
+      mainLayout.addAt(disclaimer, {
+        column: 0,
+        row: this.self().GRID_POS.DISCLAIMER
       });
 
-      const atom = this.__header = new qx.ui.basic.Atom().set({
+      const logo = new osparc.ui.basic.Thumbnail(null, this.self().LOGO_WIDTH, this.self().LOGO_HEIGHT);
+      this.bind("logo", logo, "source");
+      mainLayout.addAt(logo, {
+        column: 0,
+        row: this.self().GRID_POS.LOGO
+      });
+
+      const waitingHeader = this.__header = new qx.ui.basic.Atom().set({
         icon: "@FontAwesome5Solid/circle-notch/"+this.self().STATUS_ICON_SIZE,
         font: "nav-bar-label",
         alignX: "center",
         gap: 15,
         allowGrowX: false
       });
-      const label = atom.getChildControl("label");
+      const label = waitingHeader.getChildControl("label");
       label.set({
         rich: true,
         wrap: true
       });
-      const icon = atom.getChildControl("icon");
+      const icon = waitingHeader.getChildControl("icon");
       osparc.utils.StatusUI.updateCircleAnimation(icon);
+      mainLayout.addAt(waitingHeader, {
+        column: 0,
+        row: this.self().GRID_POS.WAITING
+      });
 
       const messages = this.__messages = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
         alignX: "center"
       }));
+      mainLayout.addAt(messages, {
+        column: 0,
+        row: this.self().GRID_POS.MESSAGES
+      });
 
       const extraWidgets = this.__extraWidgets = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
         alignX: "center"
       }));
-      mainLayout.add(disclaimer);
-      mainLayout.add(image);
-      mainLayout.add(atom);
-      mainLayout.add(messages);
-      mainLayout.add(extraWidgets);
+      mainLayout.addAt(extraWidgets, {
+        column: 0,
+        row: this.self().GRID_POS.EXTRA_WIDGETS
+      });
+    },
 
+    __createMaximizeButton: function(showMaximizeButton) {
       const maximize = false;
       const maxButton = this.__maxButton = new qx.ui.form.Button(null).set({
         icon: osparc.component.widget.PersistentIframe.getZoomIcon(maximize),
-        visibility: showMaximize ? "visible" : "excluded",
+        visibility: showMaximizeButton ? "visible" : "excluded",
         decorator: null
       });
       osparc.utils.Utils.setIdToWidget(maxButton, osparc.component.widget.PersistentIframe.getMaximizeWidgetId(maximize));
@@ -166,17 +211,6 @@ qx.Class.define("osparc.ui.message.Loading", {
         flex: 1
       });
       this._add(maximizeLayout);
-    },
-
-    __applyLogo: function(value) {
-      this.__mainLayout.remove(this.__logo);
-
-      this.__logo = new osparc.ui.basic.Thumbnail(null, this.self().LOGO_WIDTH, this.self().LOGO_HEIGHT);
-      const image = this.__logo.getChildControl("image");
-      image.set({
-        source: value
-      });
-      this.__mainLayout.addAt(this.__logo, 0);
     },
 
     __applyHeader: function(value) {
@@ -202,19 +236,6 @@ qx.Class.define("osparc.ui.message.Loading", {
         });
         this.__messages.add(text);
       });
-    },
-
-    __applyDisclaimer: function(disclaimerText) {
-      if (this.__disclaimer) {
-        this._remove(this.__disclaimer);
-        this.__disclaimer.removeAll();
-      }
-      const disclaimer = this.__disclaimer = new qx.ui.basic.Label(disclaimerText).set({
-        font: "text-16",
-        rich: true,
-        wrap: true
-      });
-      this._add(disclaimer);
     },
 
     addWidgetToMessages: function(widget) {
