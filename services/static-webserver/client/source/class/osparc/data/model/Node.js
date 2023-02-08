@@ -960,7 +960,7 @@ qx.Class.define("osparc.data.model.Node", {
         return this.tr("This might take a couple of minutes");
       }
       if (this.getKey() && this.getKey().includes("sim4life-lite")) {
-        return this.tr("We're running many simulations.<br>Please let us make room for you.");
+        return this.tr("Platform demand is currently exceptional and efforts are underway to increase system capacity.<br>There may be a delay of a few minutes in accessing projects.");
       }
       return null;
     },
