@@ -38,6 +38,41 @@ qx.Class.define("osparc.component.permissions.Permissions", {
     this.__getCollaborators();
   },
 
+  statics: {
+    sortByAccessRights: function(a, b) {
+      const aAccessRights = a["accessRights"];
+      const bAccessRights = b["accessRights"];
+      if (aAccessRights["delete"] !== bAccessRights["delete"]) {
+        return bAccessRights["delete"] - aAccessRights["delete"];
+      }
+      if (aAccessRights["write"] !== bAccessRights["write"]) {
+        return bAccessRights["write"] - aAccessRights["write"];
+      }
+      if (aAccessRights["read"] !== bAccessRights["read"]) {
+        return bAccessRights["read"] - aAccessRights["read"];
+      }
+      return 0;
+    },
+
+    sortStudyOrServiceCollabs: function(a, b) {
+      const aAccessRights = a["accessRights"];
+      const bAccessRights = b["accessRights"];
+      let sorted = null;
+      if ("delete" in aAccessRights) {
+        // studies
+        sorted = this.self().sortByAccessRights(a, b);
+      } else if ("write_access" in aAccessRights) {
+        // services
+        if (aAccessRights["write_access"] !== bAccessRights["write_access"]) {
+          sorted = bAccessRights["write_access"] - aAccessRights["write_access"];
+        } else if (aAccessRights["read_access"] !== bAccessRights["read_access"]) {
+          sorted = bAccessRights["read_access"] - aAccessRights["read_access"];
+        }
+      }
+      return sorted;
+    }
+  },
+
   members: {
     _serializedData: null,
     __organizationsAndMembers: null,
@@ -276,38 +311,24 @@ qx.Class.define("osparc.component.permissions.Permissions", {
     __reloadCollaboratorsList: function() {
       this.__collaboratorsModel.removeAll();
 
-      const sortCollaborators = (a, b) => {
-        const aAccessRights = a.getAccessRights();
-        const bAccessRights = b.getAccessRights();
-        if (osparc.ui.list.CollaboratorListItem.canDelete(aAccessRights) !== osparc.ui.list.CollaboratorListItem.canDelete(bAccessRights)) {
-          return osparc.ui.list.CollaboratorListItem.canDelete(bAccessRights) - osparc.ui.list.CollaboratorListItem.canDelete(aAccessRights);
-        }
-        if (osparc.ui.list.CollaboratorListItem.canWrite(aAccessRights) !== osparc.ui.list.CollaboratorListItem.canWrite(bAccessRights)) {
-          return osparc.ui.list.CollaboratorListItem.canWrite(bAccessRights) - osparc.ui.list.CollaboratorListItem.canWrite(aAccessRights);
-        }
-        if (osparc.ui.list.CollaboratorListItem.canRead(aAccessRights) !== osparc.ui.list.CollaboratorListItem.canRead(bAccessRights)) {
-          return osparc.ui.list.CollaboratorListItem.canRead(bAccessRights) - osparc.ui.list.CollaboratorListItem.canRead(aAccessRights);
-        }
-        if (a.getLogin && b.getLogin) {
-          return a.getLogin().localeCompare(b.getLogin());
-        }
-        return 0;
-      };
       const aceessRights = this._serializedData["accessRights"];
+      const collaboratorsList = [];
       Object.keys(aceessRights).forEach(gid => {
         if (Object.prototype.hasOwnProperty.call(this.__collaborators, gid)) {
-          const collaborator = this.__collaborators[gid];
+          const collab = this.__collaborators[gid];
+          // Do not override collaborator object
+          const collaborator = osparc.utils.Utils.deepCloneObject(collab);
           if ("first_name" in collaborator) {
             collaborator["thumbnail"] = osparc.utils.Avatar.getUrl(collaborator["login"], 32);
             collaborator["name"] = osparc.utils.Utils.firstsUp(collaborator["first_name"], collaborator["last_name"]);
           }
           collaborator["accessRights"] = aceessRights[gid];
           collaborator["showOptions"] = this._canIWrite();
-          const collaboratorModel = qx.data.marshal.Json.createModel(collaborator);
-          this.__collaboratorsModel.append(collaboratorModel);
+          collaboratorsList.push(collaborator);
         }
       });
-      this.__collaboratorsModel.sort(sortCollaborators);
+      collaboratorsList.sort(this.self().sortStudyOrServiceCollabs);
+      collaboratorsList.forEach(c => this.__collaboratorsModel.append(qx.data.marshal.Json.createModel(c)));
     },
 
     _canIWrite: function() {
