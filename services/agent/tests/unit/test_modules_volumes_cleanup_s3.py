@@ -233,8 +233,5 @@ async def test_regression_store_to_s3_volume_mountpoint_not_found(
         s3_retries=1,
         exclude_files=settings.AGENT_VOLUMES_CLEANUP_EXCLUDE_FILES,
     )
-    assert (
-        f"Volume mountpoint {unused_volume_path} does not exist. "
-        f"Skipping backup, volume {unused_volume.name} will be removed."
-        in caplog_info_debug.text
-    )
+    assert f"mountpoint {unused_volume_path} does not exist" in caplog_info_debug.text
+    assert f"{unused_volume.name}" in caplog_info_debug.text

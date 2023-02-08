@@ -43,7 +43,7 @@ async def backup_and_remove_volumes(settings: ApplicationSettings) -> None:
                 logger.error("%s", e)
                 continue
 
-            logger.info(("Successfully cleaned up docker volume: '%s'"), volume_name)
+            logger.info("Successfully cleaned up docker volume: '%s'", volume_name)
 
             await delete_volume(client, volume_name)
             logger.info("Removed docker volume: '%s'", volume_name)
