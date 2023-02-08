@@ -221,8 +221,12 @@ qx.Class.define("osparc.Application", {
           });
       }
       const ogDesc = document.querySelector("#openGraphDesc");
-      if (ogDesc && !osparc.utils.Utils.isProduct("osparc")) {
-        ogDesc.content = "Powered by oSPARC: " + ogDesc.content;
+      if (ogDesc) {
+        if (osparc.utils.Utils.isProduct("s4llite")) {
+          ogDesc.content = "The power of the Sim4Life simulation platform, boosted by its revolutionary web interface!";
+        } else if (!osparc.utils.Utils.isProduct("osparc")) {
+          ogDesc.content = "Powered by oSPARC: " + ogDesc.content;
+        }
       }
       const ogImage = document.querySelector("#openGraphImage");
       if (ogImage) {
