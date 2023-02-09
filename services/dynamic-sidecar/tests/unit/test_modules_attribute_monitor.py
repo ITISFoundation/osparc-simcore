@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 
 
+import asyncio
 import logging
 import os
 import pickle
@@ -9,18 +10,27 @@ import socket
 import threading
 from collections import deque
 from pathlib import Path
+from typing import Final
 from unittest.mock import AsyncMock
 
 import pytest
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI
+from models_library.basic_types import PortInt
 from pytest_mock import MockerFixture
 from simcore_service_dynamic_sidecar.core.utils import async_command
 from simcore_service_dynamic_sidecar.modules.attribute_monitor import (
     _logging_event_handler,
     setup_attribute_monitor,
 )
+
+# NOTE: multiprocessing logs do not work with logcap,
+# redirecting via UDP, below is a slight change from
+# https://github.com/pytest-dev/pytest/issues/3037#issuecomment-745050393
+
+DATAGRAM_PORT: Final[PortInt] = 5410
+ENSURE_LOGS_DELIVERED: Final[float] = 0.1
 
 
 @pytest.fixture
@@ -31,7 +41,7 @@ def fake_dy_volumes_mount_dir(tmp_path: Path) -> Path:
 
 @pytest.fixture
 def patch_logging() -> None:
-    tap_handler = logging.handlers.DatagramHandler("127.0.0.1", 5140)
+    tap_handler = logging.handlers.DatagramHandler("127.0.0.1", DATAGRAM_PORT)
     tap_handler.setLevel(logging.DEBUG)
     _logging_event_handler.logger.addHandler(tap_handler)
 
@@ -55,26 +65,26 @@ class LogRecordKeeper:
 
 @pytest.fixture
 def log_receiver() -> LogRecordKeeper:
-    log_keeper = LogRecordKeeper()
+    log_record_keeper = LogRecordKeeper()
 
     def listener():
         receive_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        receive_socket.bind(("127.0.0.1", 5140))
+        receive_socket.bind(("127.0.0.1", DATAGRAM_PORT))
         while True:
             data = receive_socket.recv(4096)
             if data == b"die":
                 break
             # Dont forget to skip over the 32-bit length prepended
             logrec = pickle.loads(data[4:])
-            log_keeper.appendleft(logrec)
+            log_record_keeper.appendleft(logrec)
 
     receiver_thread = threading.Thread(target=listener)
     receiver_thread.start()
 
-    yield log_keeper
+    yield log_record_keeper
 
     close_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    close_socket.sendto(b"die", ("127.0.0.1", 5140))
+    close_socket.sendto(b"die", ("127.0.0.1", DATAGRAM_PORT))
     receiver_thread.join()
 
 
@@ -130,6 +140,9 @@ async def test_chown_triggers_event(
         command_result = await async_command(command)
         assert command_result.success is True
         print(f"$ {command_result.command}\n{command_result.message}")
+
+    # normally logs get deliverd by this point, sleep to make sure they are here
+    await asyncio.sleep(ENSURE_LOGS_DELIVERED)
     assert log_receiver.has_log_within(
         msg=f"Attribute change '{file_path}'", levelname="INFO"
     )
