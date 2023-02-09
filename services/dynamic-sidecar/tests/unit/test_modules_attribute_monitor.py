@@ -40,10 +40,13 @@ def fake_dy_volumes_mount_dir(tmp_path: Path) -> Path:
 
 
 @pytest.fixture
-def patch_logging() -> None:
+def patch_logging(mocker: MockerFixture) -> None:
+    logger = logging.getLogger(_logging_event_handler.__name__)
     tap_handler = logging.handlers.DatagramHandler("127.0.0.1", DATAGRAM_PORT)
     tap_handler.setLevel(logging.DEBUG)
-    _logging_event_handler.logger.addHandler(tap_handler)
+    logger.addHandler(tap_handler)
+
+    mocker.patch.object(_logging_event_handler, "logger", logger)
 
 
 class LogRecordKeeper:
