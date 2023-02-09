@@ -104,7 +104,7 @@ qx.Class.define("osparc.ui.form.PasswordField", {
     },
 
     // overridden
-    _createChildControlImpl : function(id, hash) {
+    _createChildControlImpl : function(id) {
       let control;
       switch (id) {
         case "passwordField":
@@ -117,6 +117,7 @@ qx.Class.define("osparc.ui.form.PasswordField", {
         case "eyeButton":
           control = new qx.ui.form.ToggleButton().set({
             maxHeight: 18,
+            width: 22,
             padding: 0,
             paddingRight: 4,
             icon: "@FontAwesome5Solid/eye/10",
@@ -147,19 +148,19 @@ qx.Class.define("osparc.ui.form.PasswordField", {
     },
 
     isEmpty: function() {
-      const value = this.getChildControl("textfield").getValue();
+      const value = this.getChildControl("passwordField").getValue();
       return value == null || value == "";
     },
 
     // overridden
     focus: function() {
       this.base(arguments);
-      this.getChildControl("textfield").getFocusElement().focus();
+      this.getChildControl("passwordField").getFocusElement().focus();
     },
 
     // overridden
     tabFocus : function() {
-      const field = this.getChildControl("textfield");
+      const field = this.getChildControl("passwordField");
       field.getFocusElement().focus();
       field.selectAllText();
     }

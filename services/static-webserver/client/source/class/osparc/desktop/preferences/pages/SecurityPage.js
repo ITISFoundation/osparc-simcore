@@ -38,19 +38,19 @@ qx.Class.define("osparc.desktop.preferences.pages.SecurityPage", {
       // layout
       const box = this._createSectionBox(this.tr("Password"));
 
-      const currentPassword = new qx.ui.form.PasswordField().set({
+      const currentPassword = new osparc.ui.form.PasswordField().set({
         required: true,
         placeholder: this.tr("Your current password")
       });
       box.add(currentPassword);
 
-      const newPassword = new qx.ui.form.PasswordField().set({
+      const newPassword = new osparc.ui.form.PasswordField().set({
         required: true,
         placeholder: this.tr("Your new password")
       });
       box.add(newPassword);
 
-      const confirm = new qx.ui.form.PasswordField().set({
+      const confirm = new osparc.ui.form.PasswordField().set({
         required: true,
         placeholder: this.tr("Retype your new password")
       });

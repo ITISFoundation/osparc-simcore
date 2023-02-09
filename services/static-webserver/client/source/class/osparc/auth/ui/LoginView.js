@@ -69,7 +69,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
         email.focus();
         email.activate();
       });
-      const pass = new qx.ui.form.PasswordField().set({
+      const pass = new osparc.ui.form.PasswordField().set({
         placeholder: this.tr(" Your password"),
         required: true
       });

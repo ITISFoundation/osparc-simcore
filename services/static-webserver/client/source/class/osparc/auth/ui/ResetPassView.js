@@ -36,13 +36,13 @@ qx.Class.define("osparc.auth.ui.ResetPassView", {
 
       this._addTitleHeader(this.tr("Reset Password"));
 
-      let password = new qx.ui.form.PasswordField().set({
+      let password = new osparc.ui.form.PasswordField().set({
         required: true,
         placeholder: this.tr("Your new password")
       });
       this.add(password);
 
-      let confirm = new qx.ui.form.PasswordField().set({
+      let confirm = new osparc.ui.form.PasswordField().set({
         required: true,
         placeholder: this.tr("Retype your new password")
       });

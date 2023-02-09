@@ -504,7 +504,7 @@ qx.Class.define("osparc.component.form.Auto", {
           setup = this.__setupSpinner;
           break;
         case "Password":
-          control = new qx.ui.form.PasswordField();
+          control = new osparc.ui.form.PasswordField();
           setup = this.__setupTextField;
           break;
         case "TextArea":

@@ -52,14 +52,14 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
         email.activate();
       });
 
-      const pass1 = new qx.ui.form.PasswordField().set({
+      const pass1 = new osparc.ui.form.PasswordField().set({
         required: true,
         placeholder: this.tr("Type a password")
       });
       osparc.utils.Utils.setIdToWidget(pass1, "registrationPass1Fld");
       this.add(pass1);
 
-      const pass2 = new qx.ui.form.PasswordField().set({
+      const pass2 = new osparc.ui.form.PasswordField().set({
         required: true,
         placeholder: this.tr("Retype the password")
       });
