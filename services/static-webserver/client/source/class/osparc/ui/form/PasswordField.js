@@ -114,6 +114,7 @@ qx.Class.define("osparc.ui.form.PasswordField", {
       switch (id) {
         case "passwordField":
           control = new qx.ui.form.PasswordField();
+          // remove border, it'0's handled by this widget
           control.getContentElement().setStyles({
             "border-bottom-width": "0px"
           });
