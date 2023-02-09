@@ -101,7 +101,7 @@ qx.Class.define("osparc.AboutProduct", {
         .then(vendor => {
           if (vendor) {
             copyrightLink.set({
-              value: vendor.copyright + " " + new Date().getFullYear(),
+              value: vendor.copyright,
               url: vendor.url
             });
           }
