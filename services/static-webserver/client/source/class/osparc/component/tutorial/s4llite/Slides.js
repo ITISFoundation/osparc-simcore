@@ -35,6 +35,13 @@ qx.Class.define("osparc.component.tutorial.s4llite.Slides", {
     _getFooterItems: function() {
       const footerItems = [];
 
+      const videoText = "<a href=https://www.youtube.com/@zurichmedtechag2809 style='color: white' target='_blank'>S4L lite video</a>";
+      const videoLabel = new qx.ui.basic.Label(videoText).set({
+        textAlign: "center",
+        rich : true
+      });
+      footerItems.push(videoLabel);
+
       const docLink = new qx.ui.basic.Label().set({
         visibility: "excluded",
         textAlign: "center",
