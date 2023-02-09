@@ -243,3 +243,4 @@ def test_avoid_sensitive_info_in_public(app_settings: ApplicationSettings):
     assert not any("pass" in key for key in app_settings.public_dict().keys())
     assert not any("token" in key for key in app_settings.public_dict().keys())
     assert not any("secret" in key for key in app_settings.public_dict().keys())
+    assert not any("private" in key for key in app_settings.public_dict().keys())
