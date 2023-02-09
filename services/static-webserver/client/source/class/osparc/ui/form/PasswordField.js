@@ -41,10 +41,15 @@ qx.Class.define("osparc.ui.form.PasswordField", {
     const passwordField = this._createChildControl("passwordField");
     this._createChildControl("eyeButton");
 
+    this.__focusedBorder(false);
+
     // forward the focusin and focusout events to the passwordField. The passwordField
     // is not focusable so the events need to be forwarded manually.
     this.addListener("focusin", () => passwordField.fireNonBubblingEvent("focusin", qx.event.type.Focus), this);
-    this.addListener("focusout", () => passwordField.fireNonBubblingEvent("focusout", qx.event.type.Focus), this);
+    this.addListener("focusout", () => {
+      this.__focusedBorder(false);
+      passwordField.fireNonBubblingEvent("focusout", qx.event.type.Focus);
+    }, this);
   },
 
   events: {
@@ -109,6 +114,9 @@ qx.Class.define("osparc.ui.form.PasswordField", {
       switch (id) {
         case "passwordField":
           control = new qx.ui.form.PasswordField();
+          control.getContentElement().setStyles({
+            "border-bottom-width": "0px"
+          });
           control.addListener("changeValue", () => this.fireDataEvent("changeValue", control.getValue()), this);
           this._add(control, {
             flex: 1
@@ -156,13 +164,22 @@ qx.Class.define("osparc.ui.form.PasswordField", {
     focus: function() {
       this.base(arguments);
       this.getChildControl("passwordField").getFocusElement().focus();
+      this.__focusedBorder(true);
     },
 
     // overridden
-    tabFocus : function() {
+    tabFocus: function() {
       const field = this.getChildControl("passwordField");
       field.getFocusElement().focus();
       field.selectAllText();
+      this.__focusedBorder(true);
+    },
+
+    __focusedBorder: function(focused = false) {
+      this.getContentElement().setStyles({
+        "border-bottom-width": focused ? "2px" : "1px",
+        "border-color": "text"
+      });
     }
   }
 });
