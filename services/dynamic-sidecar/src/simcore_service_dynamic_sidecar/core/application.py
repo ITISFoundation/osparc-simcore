@@ -17,6 +17,7 @@ from .._meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY, __version__
 from ..api import main_router
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore, setup_shared_store
+from ..modules.attribute_monitor import setup_attribute_monitor
 from ..modules.mounted_fs import MountedVolumes, setup_mounted_fs
 from ..modules.outputs import setup_outputs
 from .docker_compose_utils import docker_compose_down
@@ -153,6 +154,8 @@ def create_app():
     # also sets up mounted_volumes
     setup_mounted_fs(app)
     setup_outputs(app)
+
+    setup_attribute_monitor(app)
 
     # ERROR HANDLERS  ------------
     app.add_exception_handler(NodeNotFound, node_not_found_error_handler)
