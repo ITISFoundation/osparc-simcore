@@ -20,7 +20,7 @@ test() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd services/dynamic-sidecar
-  make test-ci-unit
+  make test-ci-unit pytest-parameters="--log-cli-level=INFO"
   popd
 }
 
