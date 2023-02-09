@@ -32,7 +32,7 @@ class _LoggingEventHandler(SafeFileSystemEventHandler):
         file_path = Path(event.src_path)
         file_stat = file_path.stat()
         logger.info(
-            "Attribute change '%s': permissions=%s uid=%s gid=%s size=%s\n%s",
+            "Attribute change to: '%s': permissions=%s uid=%s gid=%s size=%s\nFile stat: %s",
             file_path,
             stat.filemode(file_stat.st_mode),
             file_stat.st_uid,

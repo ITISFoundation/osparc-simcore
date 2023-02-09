@@ -144,5 +144,5 @@ async def test_chown_triggers_event(
     # normally logs get deliverd by this point, sleep to make sure they are here
     await asyncio.sleep(ENSURE_LOGS_DELIVERED)
     assert log_receiver.has_log_within(
-        msg=f"Attribute change '{file_path}'", levelname="INFO"
+        msg=f"Attribute change to: '{file_path}'", levelname="INFO"
     )
