@@ -111,13 +111,6 @@ async def logging_event_handler_observer(
         yield None
 
 
-@pytest.fixture
-async def mocked_logger(mocker: MockerFixture) -> AsyncMock:
-    mock_object = AsyncMock()
-    mocker.patch.object(_logging_event_handler, "logger", new=mock_object)
-    return mock_object
-
-
 @pytest.mark.parametrize(
     "command_template",
     [
