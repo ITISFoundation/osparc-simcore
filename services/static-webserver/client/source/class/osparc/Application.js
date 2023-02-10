@@ -93,7 +93,6 @@ qx.Class.define("osparc.Application", {
 
       this.__updateTabName();
       this.__updateFavicon();
-      this.__updateSocial();
 
       this.__startupChecks();
     },
@@ -210,28 +209,6 @@ qx.Class.define("osparc.Application", {
         document.getElementsByTagName("head")[0].appendChild(link);
       }
       link.href = "/resource/osparc/favicon-"+qx.core.Environment.get("product.name")+".png";
-    },
-
-    __updateSocial: function() {
-      const ogTitle = document.querySelector("#openGraphTitle");
-      if (ogTitle) {
-        osparc.store.StaticInfo.getInstance().getDisplayName()
-          .then(displayName => {
-            ogTitle.content = displayName;
-          });
-      }
-      const ogDesc = document.querySelector("#openGraphDesc");
-      if (ogDesc) {
-        if (osparc.utils.Utils.isProduct("s4llite")) {
-          ogDesc.content = "The power of the Sim4Life simulation platform, boosted by its revolutionary web interface!";
-        } else if (!osparc.utils.Utils.isProduct("osparc")) {
-          ogDesc.content = "Powered by oSPARC: " + ogDesc.content;
-        }
-      }
-      const ogImage = document.querySelector("#openGraphImage");
-      if (ogImage) {
-        ogImage.content = "/resource/osparc/favicon-"+qx.core.Environment.get("product.name")+".png";
-      }
     },
 
     __startupChecks: function() {
