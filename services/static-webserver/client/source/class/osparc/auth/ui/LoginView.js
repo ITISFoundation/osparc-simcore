@@ -69,12 +69,12 @@ qx.Class.define("osparc.auth.ui.LoginView", {
         email.focus();
         email.activate();
       });
-      const pass = new qx.ui.form.PasswordField().set({
+      const pass = new osparc.ui.form.PasswordField().set({
         placeholder: this.tr(" Your password"),
         required: true
       });
-      pass.getContentElement().setAttribute("autocomplete", "current-password");
-      osparc.utils.Utils.setIdToWidget(pass, "loginPasswordFld");
+      pass.getChildControl("passwordField").getContentElement().setAttribute("autocomplete", "current-password");
+      osparc.utils.Utils.setIdToWidget(pass.getChildControl("passwordField"), "loginPasswordFld");
       this.add(pass);
       this.__form.add(pass, "", null, "password", null);
 
