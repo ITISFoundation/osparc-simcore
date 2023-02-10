@@ -36,7 +36,11 @@ qx.Class.define("osparc.NewRelease", {
       this._add(introLabel);
 
       const detailsText = this.tr("What's new");
-      const link = osparc.utils.LibVersions.getVcsRefUrl();
+      let link = osparc.utils.LibVersions.getVcsReleaseUrl();
+      if (!link) {
+        // fallback to old link
+        link = osparc.utils.LibVersions.getVcsRefUrl();
+      }
       const linkLabel = new osparc.ui.basic.LinkLabel(detailsText, link);
       this._add(linkLabel);
 
