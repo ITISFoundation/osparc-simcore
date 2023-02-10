@@ -153,8 +153,11 @@ qx.Class.define("osparc.ui.message.Loading", {
         row: this.self().GRID_POS.DISCLAIMER
       });
 
-      const logo = new osparc.ui.basic.Thumbnail(null, this.self().LOGO_WIDTH, this.self().LOGO_HEIGHT);
-      this.bind("logo", logo, "source");
+      const defaultLogoPath = osparc.utils.Utils.getLogoPath();
+      const logo = new osparc.ui.basic.Thumbnail(defaultLogoPath, this.self().LOGO_WIDTH, this.self().LOGO_HEIGHT);
+      this.bind("logo", logo, "source", {
+        converter: newPath => newPath ? newPath : defaultLogoPath
+      });
       mainLayout.addAt(logo, {
         column: 0,
         row: this.self().GRID_POS.LOGO
