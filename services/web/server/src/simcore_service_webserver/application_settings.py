@@ -12,7 +12,7 @@ from models_library.basic_types import (
     VersionTag,
 )
 from models_library.utils.change_case import snake_to_camel
-from pydantic import AnyHttpUrl, validator
+from pydantic import AnyHttpUrl, root_validator, validator
 from pydantic.fields import Field, ModelField
 from pydantic.types import PositiveInt
 from settings_library.base import BaseCustomSettings
@@ -216,6 +216,19 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="This is a place-holder for future settings."
         "Currently this is a system plugin and cannot be disabled",
     )
+
+    @root_validator()
+    @classmethod
+    def build_vcs_release_url_if_unset(cls, values):
+        vcs_release_url = values.get("SIMCORE_VCS_RELEASE_URL")
+
+        if vcs_release_url is None and (
+            vsc_release_tag := values.get("SIMCORE_VCS_RELEASE_TAG")
+        ):
+            vcs_release_url = f"https://github.com/ITISFoundation/osparc-simcore/releases/tag/{vsc_release_tag}"
+            values["SIMCORE_VCS_RELEASE_URL"] = vcs_release_url
+
+        return values
 
     @validator(
         # List of plugins under-development (keep up-to-date)
