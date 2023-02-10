@@ -4,12 +4,17 @@
 
 import json
 import os
-import re
 
 import pytest
 from aiohttp import web
 from pytest import MonkeyPatch
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_dict import ConfigDict
+from pytest_simcore.helpers.utils_envs import (
+    EnvVarsDict,
+    setenvs_from_dict,
+    setenvs_from_envfile,
+)
 from simcore_service_webserver.application_settings import (
     APP_SETTINGS_KEY,
     ApplicationSettings,
@@ -20,49 +25,70 @@ from simcore_service_webserver.application_settings_utils import convert_to_app_
 
 @pytest.fixture
 def mock_env_devel_environment(
-    mock_env_devel_environment: dict[str, str], monkeypatch
-) -> dict[str, str]:
+    mock_env_devel_environment: EnvVarsDict, monkeypatch: MonkeyPatch
+) -> EnvVarsDict:
     # Overrides to ensure dev-features are enabled testings
-    # TODO: move this to the base conftest!
-    monkeypatch.setenv("WEBSERVER_DEV_FEATURES_ENABLED", "1")
-    mock_env_devel_environment["WEBSERVER_DEV_FEATURES_ENABLED"] = "1"
-    return mock_env_devel_environment
-
-
-@pytest.fixture
-def mock_env_makefile(monkeypatch):
-    """envvars produced @Makefile (export)"""
-
-    # TODO: add Makefile recipe 'make dump-envs' to produce the file we load here
-    monkeypatch.setenv("API_SERVER_API_VERSION", "0.3.0")
-    monkeypatch.setenv("BUILD_DATE", "2022-01-14T21:28:15Z")
-    monkeypatch.setenv("CATALOG_API_VERSION", "0.3.2")
-    monkeypatch.setenv(
-        "CLIENT_WEB_OUTPUT",
-        "/home/crespo/devp/osparc-simcore/services/static-webserver/client/source-output",
+    return mock_env_devel_environment | setenvs_from_dict(
+        monkeypatch,
+        envs={
+            "WEBSERVER_DEV_FEATURES_ENABLED": "1",
+        },
     )
-    monkeypatch.setenv("DATCORE_ADAPTER_API_VERSION", "0.1.0-alpha")
-    monkeypatch.setenv("DIRECTOR_API_VERSION", "0.1.0")
-    monkeypatch.setenv("DIRECTOR_V2_API_VERSION", "2.0.0")
-    monkeypatch.setenv("DOCKER_IMAGE_TAG", "production")
-    monkeypatch.setenv("DOCKER_REGISTRY", "local")
-    monkeypatch.setenv("S3_ENDPOINT", "127.0.0.1:9001")
-    monkeypatch.setenv("STORAGE_API_VERSION", "0.2.1")
-    monkeypatch.setenv("SWARM_HOSTS", "")
-    monkeypatch.setenv("SWARM_STACK_NAME", "master-simcore")
-    monkeypatch.setenv("SWARM_STACK_NAME_NO_HYPHEN", "master_simcore")
-    monkeypatch.setenv("VCS_REF_CLIENT", "99b8022d2")
-    monkeypatch.setenv("VCS_STATUS_CLIENT", "'modified/untracked'")
-    monkeypatch.setenv("VCS_URL", "git@github.com:pcrespov/osparc-simcore.git")
-    monkeypatch.setenv("WEBSERVER_API_VERSION", "0.7.0")
 
 
 @pytest.fixture
-def mock_env_Dockerfile_build(monkeypatch):
-    # NOTE: obtained using
-    #    docker run -it --hostname "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}" local/webserver:production printenv
+def mock_env_auto_deployer_agent(monkeypatch: MonkeyPatch) -> EnvVarsDict:
+    # git log --tags --simplify-by-decoration --pretty="format:%ci %d"
+    #  2023-02-08 18:34:56 +0000  (tag: v1.47.0, tag: staging_ResistanceIsFutile12)
+    #  2023-02-06 18:40:07 +0100  (tag: v1.46.0, tag: staging_ResistanceIsFutile11)
+    #  2023-02-03 17:27:24 +0100  (tag: staging_ResistanceIsFutile10)
+    # WARNING: this format works 2023-02-10T18:03:35.957601
+    return setenvs_from_dict(
+        monkeypatch,
+        envs={
+            "SIMCORE_VCS_RELEASE_TAG": "staging_ResistanceIsFutile12",
+            "SIMCORE_VCS_RELEASE_DATE": "2023-02-10T18:03:35.957601",
+        },
+    )
+
+
+@pytest.fixture
+def mock_env_makefile(monkeypatch: MonkeyPatch) -> EnvVarsDict:
+    """envvars produced @Makefile (export)"""
+    # TODO: add Makefile recipe 'make dump-envs' to produce the file we load here
+    return setenvs_from_dict(
+        monkeypatch,
+        {
+            "API_SERVER_API_VERSION": "0.3.0",
+            "BUILD_DATE": "2022-01-14T21:28:15Z",
+            "CATALOG_API_VERSION": "0.3.2",
+            "CLIENT_WEB_OUTPUT": "/home/crespo/devp/osparc-simcore/services/static-webserver/client/source-output",
+            "DATCORE_ADAPTER_API_VERSION": "0.1.0-alpha",
+            "DIRECTOR_API_VERSION": "0.1.0",
+            "DIRECTOR_V2_API_VERSION": "2.0.0",
+            "DOCKER_IMAGE_TAG": "production",
+            "DOCKER_REGISTRY": "local",
+            "S3_ENDPOINT": "127.0.0.1:9001",
+            "STORAGE_API_VERSION": "0.2.1",
+            "SWARM_HOSTS": "",
+            "SWARM_STACK_NAME": "master-simcore",
+            "SWARM_STACK_NAME_NO_HYPHEN": "master_simcore",
+            "VCS_REF_CLIENT": "99b8022d2",
+            "VCS_STATUS_CLIENT": "'modified/untracked'",
+            "VCS_URL": "git@github.com:pcrespov/osparc-simcore.git",
+            "WEBSERVER_API_VERSION": "0.7.0",
+        },
+    )
+
+
+@pytest.fixture
+def mock_env_Dockerfile_build(monkeypatch: MonkeyPatch) -> EnvVarsDict:
     #
-    PRINTENV_OUTPUT = """
+    # docker run -it --hostname "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}" local/webserver:production printenv
+    #
+    return setenvs_from_envfile(
+        monkeypatch,
+        """\
         GPG_KEY=123456789123456789
         HOME=/home/scu
         HOSTNAME=osparc-master-55-master-simcore_master_webserver-1
@@ -87,24 +113,23 @@ def mock_env_Dockerfile_build(monkeypatch):
         SC_VCS_URL=git@github.com:ITISFoundation/osparc-simcore.git
         TERM=xterm
         VIRTUAL_ENV=/home/scu/.venv
-    """
-
-    for key, value in re.findall(r"(\w+)=(.+)", PRINTENV_OUTPUT):
-        monkeypatch.setenv(key, value)
+    """,
+    )
 
 
 @pytest.fixture
 def mock_webserver_service_environment(
-    mock_env_makefile,
-    mock_env_devel_environment,
-    mock_env_Dockerfile_build,
-    monkeypatch,
+    monkeypatch: MonkeyPatch,
+    mock_env_makefile: EnvVarsDict,
+    mock_env_devel_environment: EnvVarsDict,
+    mock_env_Dockerfile_build: EnvVarsDict,
+    mock_env_auto_deployer_agent: EnvVarsDict,
 ) -> None:
     """
     Mocks environment produce in the docker-compose config with a .env (.env-devel) and launched with a makefile
     """
 
-    def monkeypatch_setenv_default(name, default):
+    def monkeypatch_setdefault_env(name: str, default):
         """Assumes MYVAR=${MYVAR:-default}"""
         if name not in os.environ:
             monkeypatch.setenv(name, default)
@@ -133,17 +158,24 @@ def mock_webserver_service_environment(
     #     env_file:
     #         - ../.env
 
-    monkeypatch_setenv_default("CATALOG_HOST", "catalog")
-    monkeypatch_setenv_default("CATALOG_PORT", "8000")
+    monkeypatch_setdefault_env("CATALOG_HOST", "catalog")
+    monkeypatch_setdefault_env("CATALOG_PORT", "8000")
     monkeypatch.setenv("DIAGNOSTICS_MAX_AVG_LATENCY", "30")
-    monkeypatch_setenv_default("DIRECTOR_HOST", "director")
-    monkeypatch_setenv_default("DIRECTOR_PORT", "8080")
-    monkeypatch_setenv_default("DIRECTOR_V2_HOST", "director-v2")
-    monkeypatch_setenv_default("DIRECTOR_V2_PORT", "8000")
-    monkeypatch_setenv_default("STORAGE_HOST", "storage")
-    monkeypatch_setenv_default("STORAGE_PORT", "8080")
-    monkeypatch_setenv_default("SWARM_STACK_NAME", "simcore")
+    monkeypatch_setdefault_env("DIRECTOR_HOST", "director")
+    monkeypatch_setdefault_env("DIRECTOR_PORT", "8080")
+    monkeypatch_setdefault_env("DIRECTOR_V2_HOST", "director-v2")
+    monkeypatch_setdefault_env("DIRECTOR_V2_PORT", "8000")
+    monkeypatch_setdefault_env("STORAGE_HOST", "storage")
+    monkeypatch_setdefault_env("STORAGE_PORT", "8080")
+    monkeypatch_setdefault_env("SWARM_STACK_NAME", "simcore")
     monkeypatch.setenv("WEBSERVER_LOGLEVEL", os.environ.get("LOG_LEVEL", "WARNING"))
+
+    return (
+        mock_env_makefile
+        | mock_env_devel_environment
+        | mock_env_Dockerfile_build
+        | mock_env_auto_deployer_agent
+    )
 
 
 @pytest.fixture
@@ -203,6 +235,7 @@ def test_settings_constructs(app_settings: ApplicationSettings):
     assert "api_version" in app_settings.public_dict()
 
 
+@pytest.mark.testit
 def test_settings_to_client_statics(app_settings: ApplicationSettings):
 
     statics = app_settings.to_client_statics()
