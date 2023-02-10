@@ -955,12 +955,21 @@ qx.Class.define("osparc.data.model.Node", {
       return this.tr("Starting ") + label;
     },
 
-    __getDisclaimer: function() {
+    __addDisclaimer: function(loadingPage) {
       if (this.getKey() && this.getKey().includes("pub-nat-med")) {
-        return this.tr("This might take a couple of minutes");
+        loadingPage.set({
+          disclaimer: this.tr("This might take a couple of minutes")
+        });
       }
       if (this.getKey() && this.getKey().includes("sim4life-lite")) {
-        return this.tr("Platform demand is currently exceptional and efforts are underway to increase system capacity.<br>There may be a delay of a few minutes in accessing projects.");
+        // show disclaimer after 1'
+        setTimeout(() => {
+          if (loadingPage) {
+            loadingPage.set({
+              disclaimer: this.tr("Platform demand is currently exceptional and efforts are underway to increase system capacity.<br>There may be a delay of a few minutes in accessing projects.")
+            });
+          }
+        }, 60*1000);
       }
       return null;
     },
@@ -969,9 +978,9 @@ qx.Class.define("osparc.data.model.Node", {
       const showZoomMaximizeButton = !osparc.utils.Utils.isProduct("s4llite");
       const loadingPage = new osparc.ui.message.Loading(showZoomMaximizeButton);
       loadingPage.set({
-        header: this.__getLoadingPageHeader(),
-        disclaimer: this.__getDisclaimer()
+        header: this.__getLoadingPageHeader()
       });
+      this.__addDisclaimer(loadingPage);
 
       const thumbnail = this.getMetaData()["thumbnail"];
       if (thumbnail) {
