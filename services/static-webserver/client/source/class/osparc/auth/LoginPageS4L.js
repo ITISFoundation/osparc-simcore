@@ -97,9 +97,9 @@ qx.Class.define("osparc.auth.LoginPageS4L", {
       });
       // the two texts
       versionLink.getChildren().forEach(page => {
-        page.set({
-          textColor: "#bbb"
-        });
+        if (page.setTextColor) {
+          page.setTextColor("#bbb");
+        }
       });
     }
   }

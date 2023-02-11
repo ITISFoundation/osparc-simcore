@@ -28,6 +28,16 @@ qx.Class.define("osparc.store.Support", {
     },
 
     addManualButtonsToMenu: function(menu, menuButton) {
+      const control = new qx.ui.menu.Button(qx.locale.Manager.tr("Quick Start"));
+      const tutorial = osparc.component.tutorial.Utils.getTutorial();
+      if (tutorial) {
+        control.addListener("execute", () => {
+          const tutorialWindow = tutorial.tutorial();
+          tutorialWindow.center();
+          tutorialWindow.open();
+        });
+        menu.add(control);
+      }
       osparc.store.Support.getManuals()
         .then(manuals => {
           if (menuButton) {
