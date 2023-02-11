@@ -4,16 +4,14 @@
 
 import asyncio
 import json
-from pathlib import Path
-from typing import Any
 
 import jsonschema
 import jsonschema.validators
 import pytest
-import yaml
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver._resources import resources
@@ -23,20 +21,15 @@ from simcore_service_webserver.security import setup_security
 
 
 @pytest.fixture
-def spec_dict(openapi_path: Path) -> dict[str, Any]:
-    with openapi_path.open() as f:
-        spec_dict = yaml.safe_load(f)
-    return spec_dict
-
-
-@pytest.fixture
 def client(
     event_loop: asyncio.AbstractEventLoop,
     unused_tcp_port_factory,
     aiohttp_client,
     api_version_prefix: str,
-    mock_env_devel_environment,
+    mock_env_devel_environment: EnvVarsDict,
+    mock_env_auto_deployer_agent: EnvVarsDict,
 ) -> TestClient:
+
     app = create_safe_application()
 
     MAX_DELAY_SECS_ALLOWED = 1  # secs
@@ -62,6 +55,7 @@ def client(
     return cli
 
 
+@pytest.mark.testit
 async def test_frontend_config(
     client: TestClient, api_version_prefix: str, mocker: MockerFixture
 ):

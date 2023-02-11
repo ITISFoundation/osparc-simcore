@@ -32,22 +32,6 @@ def mock_env_devel_environment(
 
 
 @pytest.fixture
-def mock_env_auto_deployer_agent(monkeypatch: MonkeyPatch) -> EnvVarsDict:
-    # git log --tags --simplify-by-decoration --pretty="format:%ci %d"
-    #  2023-02-08 18:34:56 +0000  (tag: v1.47.0, tag: staging_ResistanceIsFutile12)
-    #  2023-02-06 18:40:07 +0100  (tag: v1.46.0, tag: staging_ResistanceIsFutile11)
-    #  2023-02-03 17:27:24 +0100  (tag: staging_ResistanceIsFutile10)
-    # WARNING: this format works 2023-02-10T18:03:35.957601
-    return setenvs_from_dict(
-        monkeypatch,
-        envs={
-            "SIMCORE_VCS_RELEASE_TAG": "staging_ResistanceIsFutile12",
-            "SIMCORE_VCS_RELEASE_DATE": "2023-02-10T18:03:35.957601",
-        },
-    )
-
-
-@pytest.fixture
 def mock_env_makefile(monkeypatch: MonkeyPatch) -> EnvVarsDict:
     """envvars produced @Makefile (export)"""
     # TODO: add Makefile recipe 'make dump-envs' to produce the file we load here
