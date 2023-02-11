@@ -55,7 +55,6 @@ def client(
     return cli
 
 
-@pytest.mark.testit
 async def test_frontend_config(
     client: TestClient, api_version_prefix: str, mocker: MockerFixture
 ):
