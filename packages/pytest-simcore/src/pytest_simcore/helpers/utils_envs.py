@@ -13,10 +13,11 @@ from pytest import MonkeyPatch
 
 from .typing_env import EnvVarsDict
 
-
 #
 # monkeypatch using dict
 #
+
+
 def setenvs_from_dict(monkeypatch: MonkeyPatch, envs: EnvVarsDict) -> EnvVarsDict:
     for key, value in envs.items():
         assert isinstance(key, str)
