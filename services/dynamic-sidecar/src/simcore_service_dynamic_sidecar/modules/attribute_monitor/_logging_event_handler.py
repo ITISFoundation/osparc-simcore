@@ -26,9 +26,9 @@ logger = logging.getLogger(__name__)
 
 
 class _LoggingEventHandler(SafeFileSystemEventHandler):
-    # NOTE: runs in the created process
-
     def event_handler(self, event: FileSystemEvent) -> None:
+        # NOTE: runs in the created process
+
         file_path = Path(event.src_path)
         file_stat = file_path.stat()
         logger.info(
@@ -49,7 +49,6 @@ class _LoggingEventHandlerProcess:
         health_check_queue: AioQueue,
         heart_beat_interval_s: PositiveFloat,
     ) -> None:
-        # NOTE: runs in asyncio thread
 
         self.path_to_observe: Path = path_to_observe
         self.health_check_queue: AioQueue = health_check_queue
@@ -63,8 +62,6 @@ class _LoggingEventHandlerProcess:
         self._process: Optional[AioProcess] = None
 
     def start_process(self) -> None:
-        # NOTE: runs in asyncio thread
-
         with log_context(
             logger,
             logging.DEBUG,
@@ -76,8 +73,6 @@ class _LoggingEventHandlerProcess:
             self._process.start()
 
     def _stop_process(self) -> None:
-        # NOTE: runs in asyncio thread
-
         with log_context(
             logger,
             logging.DEBUG,
@@ -95,8 +90,6 @@ class _LoggingEventHandlerProcess:
             self._file_system_event_handler = None
 
     def shutdown(self) -> None:
-        # NOTE: runs in asyncio thread
-
         with log_context(
             logger, logging.DEBUG, f"{_LoggingEventHandlerProcess.__name__} shutdown"
         ):
@@ -106,8 +99,6 @@ class _LoggingEventHandlerProcess:
             self.health_check_queue.put(None)
 
     def _process_worker(self) -> None:
-        # NOTE: runs in the created process
-
         observer = ExtendedInotifyObserver()
         self._file_system_event_handler = _LoggingEventHandler()
         watch = None
@@ -121,14 +112,9 @@ class _LoggingEventHandlerProcess:
             observer.start()
 
             while self._stop_queue.qsize() == 0:
-                # watchdog internally uses 1 sec interval to detect events
-                # sleeping for less is useless.
-                # If this value is bigger then the DEFAULT_OBSERVER_TIMEOUT
-                # the result will not be as expected. Keep sleep to 1 second
-
-                # NOTE: watchdog will block this thread for some period of
-                # time while handling inotify events
-                # the health_check sending could be delayed
+                # NOTE: watchdog handles events internally every 1 second.
+                # While doing so it will block this thread briefly.
+                # Health check delivery may be delayed.
 
                 self.health_check_queue.put(_HEART_BEAT_MARK)
                 blocking_sleep(self.heart_beat_interval_s)
@@ -147,8 +133,8 @@ class _LoggingEventHandlerProcess:
 
 class LoggingEventHandlerObserver:
     """
-    Ensures watchdog is not blocking.
-    When blocking, it will restart the process handling the watchdog.
+    Ensures watchdog is not blocked.
+    When blocked, it will restart the process handling the watchdog.
     """
 
     def __init__(
