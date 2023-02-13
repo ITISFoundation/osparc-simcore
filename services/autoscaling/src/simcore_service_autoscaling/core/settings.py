@@ -12,6 +12,7 @@ from models_library.basic_types import (
 from models_library.docker import DockerGenericTag, DockerLabelKey
 from pydantic import Field, NonNegativeInt, PositiveInt, parse_obj_as, validator
 from settings_library.base import BaseCustomSettings
+from settings_library.docker_registry import RegistrySettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from settings_library.utils_logging import MixinLoggingSettings
@@ -175,6 +176,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     AUTOSCALING_RABBITMQ: Optional[RabbitSettings] = Field(auto_default_from_env=True)
 
     AUTOSCALING_REDIS: RedisSettings = Field(auto_default_from_env=True)
+
+    AUTOSCALING_REGISTRY: RegistrySettings = Field(auto_default_from_env=True)
 
     @cached_property
     def LOG_LEVEL(self):
