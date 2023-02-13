@@ -4,11 +4,14 @@
 
 
 import json
+from collections import Counter
+from html.parser import HTMLParser
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
 from aiohttp import web
-from aiohttp.test_utils import TestClient
+from aiohttp.test_utils import TestClient, make_mocked_request
 from faker import Faker
 from pydantic import ValidationError
 from pytest import MonkeyPatch
@@ -19,6 +22,9 @@ from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict, UserRole
 from settings_library.email import EmailProtocol, SMTPSettings
 from simcore_service_webserver._meta import API_VTAG
+from simcore_service_webserver._resources import resources
+from simcore_service_webserver.email import setup_email
+from simcore_service_webserver.email_core import _remove_comments, _render_template
 from simcore_service_webserver.email_handlers import TestFailed, TestPassed
 
 
@@ -122,3 +128,83 @@ async def test_email_handlers(
 
         passed = TestPassed.parse_obj(data)
         print(passed.json(indent=1))
+
+
+class IndexParser(HTMLParser):
+    def __init__(self):
+        self.tags = []
+        self.has_comments = False
+        super().__init__()
+
+    def handle_starttag(self, tag, attrs):
+        self.tags.append(tag)
+
+    def handle_endtag(self, tag):
+        self.tags.append(tag)
+
+    def handle_comment(self, data):
+        self.has_comments = True
+
+
+@pytest.mark.parametrize(
+    "template_path",
+    list(resources.get_path("templates").rglob("*.jinja2")),
+    ids=lambda p: p.name,
+)
+def test_render_templates(template_path: Path):
+
+    app = web.Application()
+    setup_email(app)
+
+    request = make_mocked_request("GET", "/fake", app=app)
+
+    subject, html_body = _render_template(
+        request,
+        template_path,
+        context={
+            "host": request.host,
+            "support_email": "support@company.com",
+            "name": "foo",
+            "code": "123",
+            "reason": "no reason",
+            "link": "https://link.com",
+        },
+    )
+
+    assert subject
+    assert html_body
+
+    parser = IndexParser()
+    parser.feed(html_body)
+
+    assert not parser.has_comments
+
+    counter = Counter(parser.tags)
+
+    if template_path.parent.name != "osparc":
+        assert counter["body"] == 2
+        assert counter["html"] == 2
+        assert counter["head"] == 2
+    else:
+        # NOTE: Needs extra review for this template since in principle these are illegal!
+        # services/web/server/src/simcore_service_webserver/templates/osparc/registration_email.jinja2
+        assert counter["body"] == 4
+        assert counter["html"] == 4
+        assert counter["head"] == 4
+
+
+def test_remove_comments():
+    uncommented_html = _remove_comments(
+        """
+    <!--
+          hi this is
+           a
+           multiline comment
+
+           ^&#@!%***
+    -->
+    <b>and this is not</b>     <!-- inline comment -->
+    """
+    ).strip()
+
+    assert uncommented_html == "<b>and this is not</b>"

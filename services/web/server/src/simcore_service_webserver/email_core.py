@@ -184,8 +184,9 @@ async def send_email_with_attachements(
     return message
 
 
-def _remove_comments(html_string: str):
-    # WARNING: this function is mocked in the tests. Be careful when signature is changed.
+def _remove_comments(html_string: str) -> str:
+    # WARNING: this function is patched somewhere in the tests. Be aware that if you change
+    # the signature the mock.patch will fail!
     return re.sub(r"<!--.*?-->", "", html_string, flags=re.DOTALL)
 
 
@@ -193,7 +194,7 @@ def _render_template(
     request: web.Request,
     template: Path,
     context: Mapping[str, Any],
-):
+) -> tuple[str, str]:
     page = render_string(template_name=f"{template}", request=request, context=context)
     #
     # NOTE: By CONVENTION, it expects first line of the template
@@ -201,11 +202,14 @@ def _render_template(
     #
     subject, body = page.split("\n", 1)
 
-    subject = subject.strip()
-
     # formats body (avoids spam)
+    subject = subject.strip()
     body = _remove_comments(body).strip()
-    html_body = f"<!DOCTYPE html><html><head></head><body>\n{body}\n</body></html>"
+
+    if "<html>" not in body:
+        html_body = f"<!DOCTYPE html><html><head></head><body>\n{body}\n</body></html>"
+    else:
+        html_body = body
 
     return subject, html_body
 
