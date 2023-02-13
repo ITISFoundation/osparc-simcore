@@ -132,17 +132,31 @@ qx.Class.define("osparc.data.Permissions", {
         ],
         "admin": []
       };
-      if (osparc.utils.Utils.isProduct("tis")) {
+      if (osparc.product.Utils.isProduct("tis")) {
+        initPermissions.user.push(...[
+          "dashboard.data.read"
+        ]);
         initPermissions.tester.push(...[
           "dashboard.templates.read",
           "dashboard.services.read",
           "study.slides.edit",
           "study.slides.stop"
         ]);
+      } else if (osparc.product.Utils.isProduct("s4llite")) {
+        initPermissions.user.push(...[
+          "dashboard.templates.read",
+          "study.slides.edit",
+          "study.slides.stop"
+        ]);
+        initPermissions.tester.push(...[
+          "dashboard.services.read",
+          "dashboard.data.read"
+        ]);
       } else {
         initPermissions.user.push(...[
           "dashboard.templates.read",
           "dashboard.services.read",
+          "dashboard.data.read",
           "study.slides.edit",
           "study.slides.stop"
         ]);

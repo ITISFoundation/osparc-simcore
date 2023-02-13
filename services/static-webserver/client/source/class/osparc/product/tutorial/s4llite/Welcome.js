@@ -15,8 +15,8 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.tutorial.ti.Welcome", {
-  extend: osparc.component.tutorial.SlideBase,
+qx.Class.define("osparc.product.tutorial.s4llite.Welcome", {
+  extend: osparc.product.tutorial.SlideBase,
 
   construct: function() {
     const title = this.tr("Quick Start Guide");
@@ -35,10 +35,13 @@ qx.Class.define("osparc.component.tutorial.ti.Welcome", {
 
       const intro = new qx.ui.basic.Label().set({
         value: this.tr("\
-          This quick tutorial gives a basic overview of how the TI Planning Tool works and how to navigate through the interface.<br>\
-          We will focus on two main aspects, how to:<br>\
-          - Use the platform<br>\
-          - Get started with a New Plan<br>\
+        This quick user’s guide gives a short introduction to S4L lite. We will show:<br>\
+          - how to get started with a new project,<br>\
+          - how to get started from an existing tutorial project<br>\
+          - how to open Sim4Life lite desktop simulation projects in S4L lite,<br>\
+          - S4L lite features, limitations and user interface<br>\
+          <br>\
+          For more specific technical information, please refer to the Dashboard Manual and the S4L lite Manual.\
         "),
         rich: true,
         wrap: true,

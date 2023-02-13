@@ -23,7 +23,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsList", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    const studiesLabel = osparc.utils.Utils.getStudyLabel(true);
+    const studiesLabel = osparc.product.Utils.getStudyAlias(true);
     const msg = this.tr("\
     An organization is a group of users who can share ") + studiesLabel + this.tr(".<br>\
     Here you can see the list of organizations you belong to, create new organizations, \

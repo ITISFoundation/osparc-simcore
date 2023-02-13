@@ -88,7 +88,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
         case "clusters":
           control = new qx.ui.menu.Button(this.tr("Clusters"));
           control.exclude();
-          if (!osparc.utils.Utils.isProduct("s4llite")) {
+          if (!osparc.product.Utils.isProduct("s4llite")) {
             osparc.utils.DisabledPlugins.isClustersDisabled()
               .then(isDisabled => {
                 if (isDisabled === false) {
@@ -101,7 +101,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           break;
         case "quick-start": {
           control = new qx.ui.menu.Button(this.tr("Quick Start"));
-          const tutorial = osparc.component.tutorial.Utils.getTutorial();
+          const tutorial = osparc.product.tutorial.Utils.getTutorial();
           if (tutorial) {
             control.addListener("execute", () => {
               const tutorialWindow = tutorial.tutorial();
@@ -131,7 +131,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
               control.getChildControl("label").setRich(true);
               control.setLabel(this.tr("About ") + displayName);
             });
-          control.addListener("execute", () => osparc.AboutProduct.getInstance().open());
+          control.addListener("execute", () => osparc.product.AboutProduct.getInstance().open());
           this.getMenu().add(control);
           break;
         case "logout":
@@ -148,13 +148,13 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       this.getChildControl("preferences");
       this.getChildControl("organizations");
       this.getChildControl("clusters");
-      if (osparc.component.tutorial.Utils.getTutorial()) {
+      if (osparc.product.tutorial.Utils.getTutorial()) {
         this.getMenu().addSeparator();
         this.getChildControl("quick-start");
       }
       this.getMenu().addSeparator();
       this.getChildControl("about");
-      if (osparc.utils.Utils.isProduct("s4llite")) {
+      if (osparc.product.Utils.isProduct("s4llite")) {
         this.getChildControl("about-product");
       }
       this.getChildControl("license");
@@ -173,12 +173,12 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           this.getMenu().addSeparator();
           this.__addManualsToMenu();
           this.__addFeedbacksToMenu();
-          if (osparc.component.tutorial.Utils.getTutorial()) {
+          if (osparc.product.tutorial.Utils.getTutorial()) {
             this.getChildControl("quick-start");
           }
           this.getMenu().addSeparator();
           this.getChildControl("about");
-          if (!osparc.utils.Utils.isProduct("osparc")) {
+          if (!osparc.product.Utils.isProduct("osparc")) {
             this.getChildControl("about-product");
           }
           this.getChildControl("license");
