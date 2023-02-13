@@ -103,10 +103,12 @@ def start_request_data(
     dy_static_file_server_dynamic_sidecar_service: dict,
     service_resources: ServiceResourcesDict,
     ensure_swarm_and_networks: None,
+    osparc_product_name: str,
 ) -> dict[str, Any]:
     return dict(
         user_id=user_id,
         project_id=project_id,
+        product_name=osparc_product_name,
         service_uuid=node_uuid,
         service_key=dy_static_file_server_dynamic_sidecar_service["image"]["name"],
         service_version=dy_static_file_server_dynamic_sidecar_service["image"]["tag"],
