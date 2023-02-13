@@ -945,14 +945,12 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     __getLoadingPageHeader: function() {
+      let statusText = this.tr("Starting");
       const status = this.getStatus().getInteractive();
-      const label = this.getLabel();
       if (status) {
-        const sta = status.charAt(0).toUpperCase() + status.slice(1);
-        const header = sta + " " + label;
-        return header;
+        statusText = status.charAt(0).toUpperCase() + status.slice(1);
       }
-      return this.tr("Starting ") + label;
+      return statusText + " " + this.getLabel() + " <span style='font-size: 16px;font-weight: normal;'><sub>v" + this.getVersion() + "</sub></span>";
     },
 
     __addDisclaimer: function(loadingPage) {
@@ -975,7 +973,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     __initLoadingPage: function() {
-      const showZoomMaximizeButton = !osparc.utils.Utils.isProduct("s4llite");
+      const showZoomMaximizeButton = !osparc.product.Utils.isProduct("s4llite");
       const loadingPage = new osparc.ui.message.Loading(showZoomMaximizeButton);
       loadingPage.set({
         header: this.__getLoadingPageHeader()
@@ -1019,7 +1017,7 @@ qx.Class.define("osparc.data.model.Node", {
       this.__initLoadingPage();
 
       const iframe = new osparc.component.widget.PersistentIframe();
-      if (osparc.utils.Utils.isProduct("s4llite")) {
+      if (osparc.product.Utils.isProduct("s4llite")) {
         iframe.setShowZoomButton(false);
       }
       iframe.addListener("restart", () => this.__restartIFrame(), this);

@@ -92,7 +92,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
         if (preferencesSettings.getConfirmBackToDashboard()) {
           const win = new osparc.ui.window.Confirmation();
-          if (osparc.utils.Utils.isProduct("s4llite")) {
+          if (osparc.product.Utils.isProduct("s4llite")) {
             let msg = this.tr("Do you want to close ") + "<b>" + studyName + "</b>?";
             msg += "<br><br>";
             msg += this.tr("Make sure you saved your changes to:");
@@ -287,7 +287,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     },
 
     __startStudy: function(studyId) {
-      this.__showLoadingPage(this.tr("Loading Study"));
+      this.__showLoadingPage(this.tr("Loading ") + osparc.product.Utils.getStudyAlias());
 
       const params = {
         url: {

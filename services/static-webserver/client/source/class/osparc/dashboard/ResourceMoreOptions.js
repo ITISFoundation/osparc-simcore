@@ -262,9 +262,9 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       if (osparc.utils.Resources.isService(resourceData)) {
         resourceLabel = this.tr("service");
       } else if (osparc.utils.Resources.isTemplate(resourceData)) {
-        resourceLabel = osparc.utils.Utils.getTemplateLabel();
+        resourceLabel = osparc.product.Utils.getTemplateAlias();
       } else if (osparc.utils.Resources.isStudy(resourceData)) {
-        resourceLabel = osparc.utils.Utils.getStudyLabel();
+        resourceLabel = osparc.product.Utils.getStudyAlias();
       }
       const title = this.tr("Share ") + resourceLabel;
       const icon = "@FontAwesome5Solid/share-alt";
@@ -297,7 +297,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __getClassifiersPage: function() {
-      if (osparc.utils.Utils.isProduct("s4llite")) {
+      if (osparc.product.Utils.isProduct("s4llite")) {
         return null;
       }
       const id = "Classifiers";
@@ -331,7 +331,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __getQualityPage: function() {
-      if (osparc.utils.Utils.isProduct("s4llite")) {
+      if (osparc.product.Utils.isProduct("s4llite")) {
         return null;
       }
       const id = "Quality";
@@ -405,7 +405,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const canIWrite = osparc.data.model.Study.canIWrite(this.__resourceData["accessRights"]);
       const canCreateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.create");
       if (canIWrite && canCreateTemplate) {
-        const title = this.tr("Save as ") + osparc.utils.Utils.capitalize(osparc.utils.Utils.getTemplateLabel());
+        const title = this.tr("Save as ") + osparc.utils.Utils.capitalize(osparc.product.Utils.getTemplateAlias());
         const icon = "@FontAwesome5Solid/copy";
         const saveAsTemplate = new osparc.component.study.SaveAsTemplate(this.__resourceData);
         saveAsTemplate.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));

@@ -176,7 +176,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
           study.initStudy();
 
-          if (osparc.utils.Utils.isProduct("s4llite")) {
+          if (osparc.product.Utils.isProduct("s4llite")) {
             this.__startIdlingTracker();
           }
 

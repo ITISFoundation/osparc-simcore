@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.AboutProduct", {
+qx.Class.define("osparc.product.AboutProduct", {
   extend: osparc.ui.window.Window,
   type: "singleton",
 
@@ -51,7 +51,7 @@ qx.Class.define("osparc.AboutProduct", {
 
   members: {
     __buildLayout: function() {
-      switch (osparc.utils.Utils.getProductName()) {
+      switch (osparc.product.Utils.getProductName()) {
         case "s4llite":
           this.__buildS4LLiteLayout();
           break;

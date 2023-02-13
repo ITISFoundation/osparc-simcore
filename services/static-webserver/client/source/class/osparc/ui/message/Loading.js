@@ -153,7 +153,7 @@ qx.Class.define("osparc.ui.message.Loading", {
         row: this.self().GRID_POS.DISCLAIMER
       });
 
-      const defaultLogoPath = osparc.utils.Utils.getLogoPath();
+      const defaultLogoPath = osparc.product.Utils.getLogoPath();
       const logo = new osparc.ui.basic.Thumbnail(defaultLogoPath, this.self().LOGO_WIDTH, this.self().LOGO_HEIGHT).set({
         alignX: "center"
       });
@@ -167,8 +167,9 @@ qx.Class.define("osparc.ui.message.Loading", {
 
       const waitingHeader = this.__header = new qx.ui.basic.Atom().set({
         icon: "@FontAwesome5Solid/circle-notch/"+this.self().STATUS_ICON_SIZE,
-        font: "nav-bar-label",
+        font: "title-20",
         alignX: "center",
+        rich: true,
         gap: 15,
         allowGrowX: false
       });

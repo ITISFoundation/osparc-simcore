@@ -15,8 +15,8 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.tutorial.s4llite.Slides", {
-  extend: osparc.component.tutorial.SlidesBase,
+qx.Class.define("osparc.product.tutorial.s4llite.Slides", {
+  extend: osparc.product.tutorial.SlidesBase,
 
   construct: function() {
     this.base(arguments, "s4llite-slides", this.tr("Quick Start"));
@@ -25,10 +25,10 @@ qx.Class.define("osparc.component.tutorial.s4llite.Slides", {
   members: {
     _getSlides: function() {
       return [
-        new osparc.component.tutorial.s4llite.Welcome(),
-        new osparc.component.tutorial.s4llite.Dashboard(),
-        new osparc.component.tutorial.s4llite.S4LLiteSpecs(),
-        new osparc.component.tutorial.s4llite.S4LLiteUI()
+        new osparc.product.tutorial.s4llite.Welcome(),
+        new osparc.product.tutorial.s4llite.Dashboard(),
+        new osparc.product.tutorial.s4llite.S4LLiteSpecs(),
+        new osparc.product.tutorial.s4llite.S4LLiteUI()
       ];
     },
     // overriden
@@ -64,7 +64,7 @@ qx.Class.define("osparc.component.tutorial.s4llite.Slides", {
         });
       footerItems.push(licenseLink);
 
-      const dontShowCB = osparc.component.tutorial.Utils.createDontShowAgain("s4lliteDontShowQuickStart");
+      const dontShowCB = osparc.product.tutorial.Utils.createDontShowAgain("s4lliteDontShowQuickStart");
       footerItems.push(dontShowCB);
 
       return footerItems;

@@ -15,8 +15,8 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.tutorial.ti.Dashboard", {
-  extend: osparc.component.tutorial.SlideBase,
+qx.Class.define("osparc.product.tutorial.ti.Dashboard", {
+  extend: osparc.product.tutorial.SlideBase,
 
   construct: function() {
     const title = this.tr("Dashboard");
