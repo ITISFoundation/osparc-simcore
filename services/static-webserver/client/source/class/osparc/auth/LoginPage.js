@@ -196,32 +196,38 @@ qx.Class.define("osparc.auth.LoginPage", {
       const versionLink = new osparc.ui.basic.LinkLabel().set({
         textColor: "text-darker"
       });
-      const releaseDate = osparc.utils.LibVersions.getVcsReleaseDate();
-      const releaseTag = osparc.utils.LibVersions.getVcsReleaseTag();
-      const releaseUrl = osparc.utils.LibVersions.getVcsReleaseUrl();
-      if (releaseDate && releaseTag && releaseUrl) {
-        const date = osparc.utils.Utils.formatDate(new Date(releaseDate));
-        const dateLabel = new qx.ui.basic.Label(date).set({
-          textColor: "text-darker"
+      const staticInfo = osparc.store.StaticInfo.getInstance();
+      staticInfo.getReleaseData()
+        .then(rData => {
+          if (rData) {
+            const releaseDate = rData["date"];
+            const releaseTag = rData["tag"];
+            const releaseUrl = rData["url"];
+            if (releaseDate && releaseTag && releaseUrl) {
+              const date = osparc.utils.Utils.formatDate(new Date(releaseDate));
+              const dateLabel = new qx.ui.basic.Label(date).set({
+                textColor: "text-darker"
+              });
+              versionLinkLayout.add(dateLabel);
+              versionLink.set({
+                value: "(" + releaseTag + ")&nbsp",
+                url: releaseUrl
+              });
+            }
+          } else {
+            // fallback to old style
+            const platformVersion = osparc.utils.LibVersions.getPlatformVersion();
+            versionLink.setUrl(platformVersion.url);
+            let text = platformVersion.name + " " + platformVersion.version;
+            staticInfo.getPlatformName()
+              .then(platformName => {
+                text += platformName.length ? ` (${platformName})` : " (production)";
+              })
+              .finally(() => {
+                versionLink.setValue(text);
+              });
+          }
         });
-        versionLinkLayout.add(dateLabel);
-        versionLink.set({
-          value: "(" + releaseTag + ")&nbsp",
-          url: releaseUrl
-        });
-      } else {
-        // fallback to old style
-        const platformVersion = osparc.utils.LibVersions.getPlatformVersion();
-        versionLink.setUrl(platformVersion.url);
-        let text = platformVersion.name + " " + platformVersion.version;
-        osparc.store.StaticInfo.getInstance().getPlatformName()
-          .then(platformName => {
-            text += platformName.length ? ` (${platformName})` : " (production)";
-          })
-          .finally(() => {
-            versionLink.setValue(text);
-          });
-      }
       versionLinkLayout.add(versionLink);
 
       const organizationLink = new osparc.ui.basic.LinkLabel().set({
