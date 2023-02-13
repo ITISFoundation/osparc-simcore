@@ -950,7 +950,7 @@ qx.Class.define("osparc.data.model.Node", {
       if (status) {
         statusText = status.charAt(0).toUpperCase() + status.slice(1);
       }
-      return statusText + " " + this.getLabel() + " <sub>v" + this.getVersion() + "</sub>";
+      return statusText + " " + this.getLabel() + " <span style='font-size: 16px;font-weight: normal;'><sub>v" + this.getVersion() + "</sub></span>";
     },
 
     __addDisclaimer: function(loadingPage) {
