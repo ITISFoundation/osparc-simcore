@@ -83,8 +83,8 @@ class EC2InstancesSettings(BaseCustomSettings):
         description="Usual time taken an EC2 instance with the given AMI takes to be in 'running' mode",
     )
 
-    EC2_INSTANCES_PRE_PULL_IMAGES: set[DockerGenericTag] = Field(
-        default_factory=set,
+    EC2_INSTANCES_PRE_PULL_IMAGES: list[DockerGenericTag] = Field(
+        default_factory=list,
         description="a list of docker image/tags to pull on instance cold start",
     )
 
