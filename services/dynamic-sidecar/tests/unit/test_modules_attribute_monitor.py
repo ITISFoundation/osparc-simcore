@@ -42,9 +42,10 @@ def fake_dy_volumes_mount_dir(tmp_path: Path) -> Path:
 @pytest.fixture
 def patch_logging(mocker: MockerFixture) -> None:
     logger = logging.getLogger(_logging_event_handler.__name__)
-    tap_handler = logging.handlers.DatagramHandler("127.0.0.1", DATAGRAM_PORT)
-    tap_handler.setLevel(logging.DEBUG)
-    logger.addHandler(tap_handler)
+    datagram_handler = logging.handlers.DatagramHandler("127.0.0.1", DATAGRAM_PORT)
+    datagram_handler.setLevel(logging.NOTSET)
+    logger.addHandler(datagram_handler)
+    logger.isEnabledFor = lambda _: True
 
     mocker.patch.object(_logging_event_handler, "logger", logger)
 
@@ -64,6 +65,9 @@ class LogRecordKeeper:
 
     def __len__(self) -> int:
         return len(self._records)
+
+    def __repr__(self) -> str:
+        return f"<{LogRecordKeeper.__name__} {self._records}>"
 
 
 @pytest.fixture
