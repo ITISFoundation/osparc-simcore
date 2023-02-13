@@ -100,14 +100,14 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         };
         tabs.push(templatesTab);
       }
-      if (!osparc.product.Utils.isProduct("s4llite") && permissions.canDo("dashboard.services.read")) {
+      if (permissions.canDo("dashboard.services.read")) {
         tabs.push({
           id: "servicesTabBtn",
           label: this.tr("SERVICES"),
           buildLayout: this.__createServiceBrowser
         });
       }
-      if (!osparc.product.Utils.isProduct("s4llite")) {
+      if (permissions.canDo("dashboard.data.read")) {
         tabs.push({
           id: "dataTabBtn",
           label: this.tr("DATA"),
