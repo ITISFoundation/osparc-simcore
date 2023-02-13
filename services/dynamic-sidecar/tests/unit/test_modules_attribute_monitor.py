@@ -2,7 +2,6 @@
 # pylint: disable=unused-argument
 
 
-import asyncio
 import logging
 import os
 import pickle
@@ -29,7 +28,7 @@ from simcore_service_dynamic_sidecar.modules.attribute_monitor import (
 # redirecting via UDP, below is a slight change from
 # https://github.com/pytest-dev/pytest/issues/3037#issuecomment-745050393
 
-DATAGRAM_PORT: Final[PortInt] = 5410
+DATAGRAM_PORT: Final[PortInt] = logging.handlers.DEFAULT_UDP_LOGGING_PORT
 ENSURE_LOGS_DELIVERED: Final[float] = 0.1
 
 
@@ -142,7 +141,7 @@ async def test_chown_triggers_event(
         print(f"$ {command_result.command}\n{command_result.message}")
 
     # normally logs get deliverd by this point, sleep to make sure they are here
-    await asyncio.sleep(ENSURE_LOGS_DELIVERED)
+    # await asyncio.sleep(ENSURE_LOGS_DELIVERED)
     assert log_receiver.has_log_within(
         msg=f"Attribute change to: '{file_path}'", levelname="INFO"
     )
