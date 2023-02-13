@@ -123,7 +123,7 @@ qx.Class.define("osparc.utils.Study", {
       return msg;
     },
 
-    createStudyFromService: function(key, version, existingStudies) {
+    createStudyFromService: function(key, version, existingStudies, newStudyLabel) {
       return new Promise((resolve, reject) => {
         const store = osparc.store.Store.getInstance();
         store.getAllServices()
@@ -132,11 +132,14 @@ qx.Class.define("osparc.utils.Study", {
               const service = version ? osparc.utils.Services.getFromObject(services, key, version) : osparc.utils.Services.getLatest(services, key);
               const newUuid = osparc.utils.Utils.uuidv4();
               const minStudyData = osparc.data.model.Study.createMyNewStudyObject();
+              if (newStudyLabel === undefined) {
+                newStudyLabel = service["name"];
+              }
               if (existingStudies) {
-                const title = osparc.utils.Utils.getUniqueStudyName(service["name"], existingStudies);
+                const title = osparc.utils.Utils.getUniqueStudyName(newStudyLabel, existingStudies);
                 minStudyData["name"] = title;
               } else {
-                minStudyData["name"] = service["name"];
+                minStudyData["name"] = newStudyLabel;
               }
               if (service["thumbnail"]) {
                 minStudyData["thumbnail"] = service["thumbnail"];

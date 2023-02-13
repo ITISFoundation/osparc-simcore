@@ -41,11 +41,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       "simcore/services/dynamic/jupyter-smash": {
         title: "Start Sim4Life lab",
         description: "Jupyter powered by Sim4Life",
+        newStudyLabel: "New Sim4Life lab project",
         idToWidget: "startJSmashButton"
       },
       "simcore/services/dynamic/sim4life-dy": {
         title: "Start Sim4Life",
         description: "New Sim4Life project",
+        newStudyLabel: "New Sim4Life project",
         idToWidget: "startS4LButton"
       }
     },
@@ -53,6 +55,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       "simcore/services/dynamic/sim4life-lite": {
         title: "Start S4L lite",
         description: "New project",
+        newStudyLabel: "New project",
         idToWidget: "startS4LButton"
       }
     }
@@ -420,7 +423,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
         newStudyFromServiceButton.setCardKey("new-"+serviceKey);
         osparc.utils.Utils.setIdToWidget(newStudyFromServiceButton, newButtonInfo.idToWidget);
-        newStudyFromServiceButton.addListener("execute", () => this.__newStudyFromServiceBtnClicked(newStudyFromServiceButton, serviceKey, versions[versions.length-1]));
+        newStudyFromServiceButton.addListener("execute", () => this.__newStudyFromServiceBtnClicked(newStudyFromServiceButton, serviceKey, versions[versions.length-1], newButtonInfo.newStudyLabel));
         if (this._resourcesContainer.getMode() === "list") {
           const width = this._resourcesContainer.getBounds().width - 15;
           newStudyFromServiceButton.setWidth(width);
@@ -638,10 +641,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __newStudyFromServiceBtnClicked: function(button, key, version) {
+    __newStudyFromServiceBtnClicked: function(button, key, version, newStudyLabel) {
       button.setValue(false);
       this._showLoadingPage(this.tr("Creating ") + osparc.product.Utils.getStudyAlias());
-      osparc.utils.Study.createStudyFromService(key, version, this._resourcesList)
+      osparc.utils.Study.createStudyFromService(key, version, this._resourcesList, newStudyLabel)
         .then(studyId => {
           this._hideLoadingPage();
           this.__startStudyById(studyId);
