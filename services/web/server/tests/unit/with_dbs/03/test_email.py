@@ -145,6 +145,9 @@ class IndexParser(HTMLParser):
     def handle_comment(self, data):
         self.has_comments = True
 
+    def error(self, message):
+        assert not message
+
 
 @pytest.mark.parametrize(
     "template_path",
