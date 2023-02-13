@@ -183,7 +183,7 @@ qx.Class.define("osparc.info.StudyMedium", {
       }];
 
       if (
-        !osparc.utils.Utils.isProduct("s4llite") &&
+        !osparc.product.Utils.isProduct("s4llite") &&
         osparc.component.metadata.Quality.isEnabled(this.getStudy().getQuality())
       ) {
         extraInfo.push({

@@ -89,25 +89,25 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       const permissions = osparc.data.Permissions.getInstance();
       const tabs = [{
         id: "studiesTabBtn",
-        label: osparc.utils.Utils.getStudyLabel(true).toUpperCase(),
+        label: osparc.product.Utils.getStudyAlias(true).toUpperCase(),
         buildLayout: this.__createStudyBrowser
       }];
       if (permissions.canDo("dashboard.templates.read")) {
         const templatesTab = {
           id: "templatesTabBtn",
-          label: osparc.utils.Utils.getTemplateLabel(true).toUpperCase(),
+          label: osparc.product.Utils.getTemplateAlias(true).toUpperCase(),
           buildLayout: this.__createTemplateBrowser
         };
         tabs.push(templatesTab);
       }
-      if (!osparc.utils.Utils.isProduct("s4llite") && permissions.canDo("dashboard.services.read")) {
+      if (permissions.canDo("dashboard.services.read")) {
         tabs.push({
           id: "servicesTabBtn",
           label: this.tr("SERVICES"),
           buildLayout: this.__createServiceBrowser
         });
       }
-      if (!osparc.utils.Utils.isProduct("s4llite")) {
+      if (permissions.canDo("dashboard.data.read")) {
         tabs.push({
           id: "dataTabBtn",
           label: this.tr("DATA"),

@@ -105,7 +105,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       this.getChildControl("right-items");
 
       this.getChildControl("logo");
-      if (!osparc.utils.Utils.isProduct("osparc")) {
+      if (!osparc.product.Utils.isProduct("osparc")) {
         this.getChildControl("logo-powered");
       }
 
@@ -305,7 +305,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "dashboard":
           this.getChildControl("dashboard-label").show();
           this.getChildControl("dashboard-button").exclude();
-          if (osparc.utils.Utils.isProduct("s4llite")) {
+          if (osparc.product.Utils.isProduct("s4llite")) {
             this.getChildControl("study-menu-button").exclude();
             this.getChildControl("edit-title-label").exclude();
           }
@@ -319,7 +319,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "app":
           this.getChildControl("dashboard-label").exclude();
           this.getChildControl("dashboard-button").show();
-          if (osparc.utils.Utils.isProduct("s4llite")) {
+          if (osparc.product.Utils.isProduct("s4llite")) {
             this.getChildControl("study-menu-button").show();
             this.getStudy().bind("name", this.getChildControl("edit-title-label"), "value");
             this.getChildControl("edit-title-label").show();

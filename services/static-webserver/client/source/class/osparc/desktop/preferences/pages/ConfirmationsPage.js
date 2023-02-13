@@ -50,7 +50,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
       cbConfirmBackToDashboard.bind("value", preferencesSettings, "confirmBackToDashboard");
       box.add(cbConfirmBackToDashboard);
 
-      const studyLabel = osparc.utils.Utils.getStudyLabel();
+      const studyLabel = osparc.product.Utils.getStudyAlias();
       const cbConfirmDeleteStudy = new qx.ui.form.CheckBox(this.tr("Delete a ") + studyLabel);
       preferencesSettings.bind("confirmDeleteStudy", cbConfirmDeleteStudy, "value");
       cbConfirmDeleteStudy.bind("value", preferencesSettings, "confirmDeleteStudy");
@@ -72,7 +72,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
       }, this);
       box.add(cbConfirmDeleteStudy);
 
-      if (!(osparc.utils.Utils.isProduct("tis") || osparc.utils.Utils.isProduct("s4llite"))) {
+      if (!(osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("s4llite"))) {
         const cbConfirmDeleteNode = new qx.ui.form.CheckBox(this.tr("Delete a Node"));
         preferencesSettings.bind("confirmDeleteNode", cbConfirmDeleteNode, "value");
         cbConfirmDeleteNode.bind("value", preferencesSettings, "confirmDeleteNode");

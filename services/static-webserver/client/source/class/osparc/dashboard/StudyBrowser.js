@@ -41,18 +41,21 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       "simcore/services/dynamic/jupyter-smash": {
         title: "Start Sim4Life lab",
         description: "Jupyter powered by Sim4Life",
+        newStudyLabel: "New Sim4Life lab project",
         idToWidget: "startJSmashButton"
       },
       "simcore/services/dynamic/sim4life-dy": {
         title: "Start Sim4Life",
         description: "New Sim4Life project",
+        newStudyLabel: "New Sim4Life project",
         idToWidget: "startS4LButton"
       }
     },
-    EXPECTED_S4L_LIGHT_SERVICE_KEYS: {
+    EXPECTED_S4L_LITE_SERVICE_KEYS: {
       "simcore/services/dynamic/sim4life-lite": {
         title: "Start S4L lite",
         description: "New project",
+        newStudyLabel: "New project",
         idToWidget: "startS4LButton"
       }
     }
@@ -180,7 +183,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           }
 
           // Show Quick Start if studies.length === 0
-          const tutorial = osparc.component.tutorial.Utils.getTutorial();
+          const tutorial = osparc.product.tutorial.Utils.getTutorial();
           if (tutorial) {
             const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem(tutorial.localStorageStr);
             if (dontShow === "true") {
@@ -358,7 +361,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __addNewStudyButtons: function() {
-      switch (osparc.utils.Utils.getProductName()) {
+      switch (osparc.product.Utils.getProductName()) {
         case "osparc":
           this.__addNewStudyButton();
           break;
@@ -420,7 +423,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
         newStudyFromServiceButton.setCardKey("new-"+serviceKey);
         osparc.utils.Utils.setIdToWidget(newStudyFromServiceButton, newButtonInfo.idToWidget);
-        newStudyFromServiceButton.addListener("execute", () => this.__newStudyFromServiceBtnClicked(newStudyFromServiceButton, serviceKey, versions[versions.length-1]));
+        newStudyFromServiceButton.addListener("execute", () => this.__newStudyFromServiceBtnClicked(newStudyFromServiceButton, serviceKey, versions[versions.length-1], newButtonInfo.newStudyLabel));
         if (this._resourcesContainer.getMode() === "list") {
           const width = this._resourcesContainer.getBounds().width - 15;
           newStudyFromServiceButton.setWidth(width);
@@ -446,7 +449,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       store.getAllServices()
         .then(services => {
           // add new plus buttons if key services exists
-          const newButtonsInfo = this.self().EXPECTED_S4L_LIGHT_SERVICE_KEYS;
+          const newButtonsInfo = this.self().EXPECTED_S4L_LITE_SERVICE_KEYS;
           Object.keys(newButtonsInfo).forEach(serviceKey => {
             this.__addNewStudyFromServiceButtons(services, serviceKey, newButtonsInfo[serviceKey]);
           });
@@ -579,7 +582,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
       selectButton.bind("value", this, "multiSelection");
       selectButton.bind("value", selectButton, "label", {
-        converter: val => val ? this.tr("Cancel Selection") : (this.tr("Select ") + osparc.utils.Utils.capitalize(osparc.utils.Utils.getStudyLabel(true)))
+        converter: val => val ? this.tr("Cancel Selection") : (this.tr("Select ") + osparc.utils.Utils.capitalize(osparc.product.Utils.getStudyAlias(true)))
       });
       this.bind("multiSelection", selectButton, "value");
       return selectButton;
@@ -625,7 +628,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       button.setValue(false);
       const title = osparc.utils.Utils.getUniqueStudyName(templateData.name, this._resourcesList);
       templateData.name = title;
-      this._showLoadingPage(this.tr("Creating ") + (templateData.name || this.tr("Study")));
+      this._showLoadingPage(this.tr("Creating ") + (templateData.name || osparc.product.Utils.getStudyAlias()));
       osparc.utils.Study.createStudyFromTemplate(templateData, this._loadingPage)
         .then(studyId => {
           this._hideLoadingPage();
@@ -638,10 +641,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __newStudyFromServiceBtnClicked: function(button, key, version) {
+    __newStudyFromServiceBtnClicked: function(button, key, version, newStudyLabel) {
       button.setValue(false);
-      this._showLoadingPage(this.tr("Creating Study"));
-      osparc.utils.Study.createStudyFromService(key, version, this._resourcesList)
+      this._showLoadingPage(this.tr("Creating ") + osparc.product.Utils.getStudyAlias());
+      osparc.utils.Study.createStudyFromService(key, version, this._resourcesList, newStudyLabel)
         .then(studyId => {
           this._hideLoadingPage();
           this.__startStudyById(studyId);
@@ -654,7 +657,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createStudy: function(minStudyData) {
-      this._showLoadingPage(this.tr("Creating ") + (minStudyData.name || this.tr("Study")));
+      this._showLoadingPage(this.tr("Creating ") + (minStudyData.name || osparc.product.Utils.getStudyAlias()));
 
       const params = {
         data: minStudyData
@@ -765,7 +768,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getStudyDataMenuButton: function(studyData) {
-      const text = osparc.utils.Utils.capitalize(osparc.utils.Utils.getStudyLabel()) + this.tr(" data...");
+      const text = osparc.utils.Utils.capitalize(osparc.product.Utils.getStudyAlias()) + this.tr(" data...");
       const studyDataButton = new qx.ui.menu.Button(text);
       studyDataButton.addListener("execute", () => {
         const studyDataManager = new osparc.component.widget.NodeDataManager(studyData["uuid"]);

@@ -29,7 +29,7 @@ qx.Class.define("osparc.store.Support", {
 
     addManualButtonsToMenu: function(menu, menuButton) {
       const control = new qx.ui.menu.Button(qx.locale.Manager.tr("Quick Start"));
-      const tutorial = osparc.component.tutorial.Utils.getTutorial();
+      const tutorial = osparc.product.tutorial.Utils.getTutorial();
       if (tutorial) {
         control.addListener("execute", () => {
           const tutorialWindow = tutorial.tutorial();
@@ -126,7 +126,7 @@ qx.Class.define("osparc.store.Support", {
     },
 
     __openSendEmailFeedbackDialog: function(email) {
-      const productName = osparc.utils.Utils.getProductName();
+      const productName = osparc.product.Utils.getProductName();
       const giveEmailFeedbackWindow = new osparc.ui.window.Dialog("Feedback", null, qx.locale.Manager.tr("Please send us an email to:"));
       const mailto = this.getMailToLabel(email, productName + " feedback");
       giveEmailFeedbackWindow.addWidget(mailto);
