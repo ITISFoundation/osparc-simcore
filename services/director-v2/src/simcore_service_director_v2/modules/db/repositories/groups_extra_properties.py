@@ -10,11 +10,11 @@ class GroupsExtraPropertiesRepository(BaseRepository):
     async def has_internet_access(
         self, user_id: UserID, product_name: ProductName
     ) -> bool:
-        # NOTE: all other products expect the one below will always have internet access
+        # NOTE: except the product below all others
+        # always HAVE internet access
         if product_name != "s4llite":
             return True
 
-        # check to see if the product internet access was granted via a group
         async with self.db_engine.acquire() as conn:
             # checks if one of the groups which the user is part of has internet access
             select_stmt = sa.select(
