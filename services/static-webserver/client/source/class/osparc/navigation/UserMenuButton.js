@@ -131,7 +131,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
               control.getChildControl("label").setRich(true);
               control.setLabel(this.tr("About ") + displayName);
             });
-          control.addListener("execute", () => osparc.AboutProduct.getInstance().open());
+          control.addListener("execute", () => osparc.product.AboutProduct.getInstance().open());
           this.getMenu().add(control);
           break;
         case "logout":

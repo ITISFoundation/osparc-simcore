@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.AboutProduct", {
+qx.Class.define("osparc.product.AboutProduct", {
   extend: osparc.ui.window.Window,
   type: "singleton",
 
