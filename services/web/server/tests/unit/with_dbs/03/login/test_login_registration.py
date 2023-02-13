@@ -235,6 +235,7 @@ async def test_registration_with_confirmation(
     mocker: MockerFixture,
     fake_user_email: str,
     fake_user_password: str,
+    mocked_email_core_remove_comments: None,
 ):
     assert client.app
     mocker.patch(
