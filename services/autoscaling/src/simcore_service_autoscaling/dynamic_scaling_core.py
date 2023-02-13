@@ -308,7 +308,21 @@ async def _start_instances(
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
 
-    startup_script = await utils_docker.get_docker_swarm_join_bash_command()
+    startup_script = "; ".join(
+        [
+            await utils_docker.get_docker_swarm_join_bash_command(),
+            " && ".join(
+                [
+                    utils_docker.get_docker_login_on_start_bash_command(
+                        app_settings.AUTOSCALING_REGISTRY
+                    ),
+                    utils_docker.get_docker_pull_images_on_start_bash_command(
+                        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_PRE_PULL_IMAGES
+                    ),
+                ],
+            ),
+        ]
+    )
 
     results = await asyncio.gather(
         *(
