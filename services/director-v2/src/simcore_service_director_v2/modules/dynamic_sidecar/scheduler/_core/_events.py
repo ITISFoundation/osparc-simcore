@@ -159,7 +159,7 @@ class CreateSidecars(DynamicSchedulerEvent):
             get_repository(app, GroupsExtraPropertiesRepository),
         )
         allow_internet_access: bool = await groups_extra_properties.has_internet_access(
-            user_id=scheduler_data.user_id
+            user_id=scheduler_data.user_id, product_name=scheduler_data.product_name
         )
 
         network_config = {
