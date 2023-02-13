@@ -110,8 +110,10 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       if (card instanceof qx.ui.form.ToggleButton) {
         if (this.getGroupBy()) {
           const noGroupContainer = this.__getGroupContainer("no-group");
-          noGroupContainer.getContentContainer().remove(card);
-        } else {
+          if (noGroupContainer.getContentContainer().getChildren().indexOf(card) > -1) {
+            noGroupContainer.getContentContainer().remove(card);
+          }
+        } else if (this.__flatList.getChildren().indexOf(card) > -1) {
           this.__flatList.remove(card);
         }
       } else {

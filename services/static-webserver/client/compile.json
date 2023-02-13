@@ -33,6 +33,7 @@
       "environment": {
         "product.name": "osparc"
       },
+      "addTimestampsToUrls": true,
       "bootPath": "source/boot"
     },
     {
@@ -48,6 +49,7 @@
       "environment": {
         "product.name": "s4l"
       },
+      "addTimestampsToUrls": true,
       "bootPath": "source/boot"
     },
     {
@@ -63,6 +65,7 @@
       "environment": {
         "product.name": "s4llite"
       },
+      "addTimestampsToUrls": true,
       "bootPath": "source/boot"
     },
     {
@@ -78,6 +81,7 @@
       "environment": {
         "product.name": "tis"
       },
+      "addTimestampsToUrls": true,
       "bootPath": "source/boot"
     }
   ],

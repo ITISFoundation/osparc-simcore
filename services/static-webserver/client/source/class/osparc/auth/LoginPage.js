@@ -189,23 +189,40 @@ qx.Class.define("osparc.auth.LoginPage", {
         margin: [10, 0]
       });
 
-      const platformVersion = osparc.utils.LibVersions.getPlatformVersion();
-      let text = platformVersion.name + " " + platformVersion.version;
-      const versionLink = new osparc.ui.basic.LinkLabel(null, platformVersion.url).set({
+      versionLinkLayout.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+
+      const versionLink = new osparc.ui.basic.LinkLabel().set({
         textColor: "text-darker"
       });
-      versionLinkLayout.add(versionLink);
-
-      const separator = new qx.ui.basic.Label("::");
-      versionLinkLayout.add(separator);
-
-      osparc.store.StaticInfo.getInstance().getPlatformName()
-        .then(platformName => {
-          text += platformName.length ? ` (${platformName})` : " (production)";
-        })
-        .finally(() => {
-          versionLink.setValue(text);
+      const releaseDate = osparc.utils.LibVersions.getVcsReleaseDate();
+      const releaseTag = osparc.utils.LibVersions.getVcsReleaseTag();
+      const releaseUrl = osparc.utils.LibVersions.getVcsReleaseUrl();
+      if (releaseDate && releaseTag && releaseUrl) {
+        const date = osparc.utils.Utils.formatDate(new Date(releaseDate));
+        const dateLabel = new qx.ui.basic.Label(date).set({
+          textColor: "text-darker"
         });
+        versionLinkLayout.add(dateLabel);
+        versionLink.set({
+          value: "(" + releaseTag + ")&nbsp",
+          url: releaseUrl
+        });
+      } else {
+        // fallback to old style
+        const platformVersion = osparc.utils.LibVersions.getPlatformVersion();
+        versionLink.setUrl(platformVersion.url);
+        let text = platformVersion.name + " " + platformVersion.version;
+        osparc.store.StaticInfo.getInstance().getPlatformName()
+          .then(platformName => {
+            text += platformName.length ? ` (${platformName})` : " (production)";
+          })
+          .finally(() => {
+            versionLink.setValue(text);
+          });
+      }
+      versionLinkLayout.add(versionLink);
 
       const organizationLink = new osparc.ui.basic.LinkLabel().set({
         textColor: "text-darker"
@@ -221,13 +238,9 @@ qx.Class.define("osparc.auth.LoginPage", {
         });
       versionLinkLayout.add(organizationLink);
 
-      if (osparc.utils.Utils.isProduct("tis")) {
-        versionLink.exclude();
-        separator.exclude();
-        organizationLink.set({
-          textAlign: "center"
-        });
-      }
+      versionLinkLayout.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
 
       return versionLinkLayout;
     }

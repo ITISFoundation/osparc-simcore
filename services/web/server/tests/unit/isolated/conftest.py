@@ -5,7 +5,10 @@ from pathlib import Path
 
 import pytest
 from faker import Faker
+from pytest import MonkeyPatch
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_dict import ConfigDict
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 
 
 @pytest.fixture
@@ -69,3 +72,19 @@ def app_config_for_production_legacy(test_data_dir: Path) -> ConfigDict:
 
     print("app config (legacy) used in production:\n", json.dumps(app_config, indent=1))
     return app_config
+
+
+@pytest.fixture
+def mock_env_auto_deployer_agent(monkeypatch: MonkeyPatch) -> EnvVarsDict:
+    # git log --tags --simplify-by-decoration --pretty="format:%ci %d"
+    #  2023-02-08 18:34:56 +0000  (tag: v1.47.0, tag: staging_ResistanceIsFutile12)
+    #  2023-02-06 18:40:07 +0100  (tag: v1.46.0, tag: staging_ResistanceIsFutile11)
+    #  2023-02-03 17:27:24 +0100  (tag: staging_ResistanceIsFutile10)
+    # WARNING: this format works 2023-02-10T18:03:35.957601
+    return setenvs_from_dict(
+        monkeypatch,
+        envs={
+            "SIMCORE_VCS_RELEASE_TAG": "staging_ResistanceIsFutile12",
+            "SIMCORE_VCS_RELEASE_DATE": "2023-02-10T18:03:35.957601",
+        },
+    )

@@ -95,7 +95,7 @@ qx.Class.define("osparc.desktop.MainPage", {
           if (osparc.utils.Utils.isProduct("s4llite")) {
             let msg = this.tr("Do you want to close ") + "<b>" + studyName + "</b>?";
             msg += "<br><br>";
-            msg += this.tr("Save your changes to:");
+            msg += this.tr("Make sure you saved your changes to:");
             msg += "<br>";
             msg += this.tr("- current <b>smash file</b> (running <b>simulations</b>, if any, will be terminated)");
             msg += "<br>";
