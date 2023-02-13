@@ -54,14 +54,14 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
     osparc.utils.Utils.setIdToWidget(secBtn, "preferencesSecurityTabBtn");
     tabView.add(secPage);
 
-    if (!osparc.product.Utils.isProduct("s4llite")) {
+    if (osparc.product.Utils.showPreferencesTokens()) {
       const tokensPage = new osparc.desktop.preferences.pages.TokensPage();
       const tokensBtn = tokensPage.getChildControl("button");
       osparc.utils.Utils.setIdToWidget(tokensBtn, "preferencesTokensTabBtn");
       tabView.add(tokensPage);
     }
 
-    if (!osparc.product.Utils.isProduct("s4llite")) {
+    if (osparc.product.Utils.showPreferencesExperimental()) {
       const expPage = new osparc.desktop.preferences.pages.ExperimentalPage();
       const expBtn = expPage.getChildControl("button");
       osparc.utils.Utils.setIdToWidget(expBtn, "preferencesExperimentalTabBtn");
@@ -83,7 +83,7 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
     tabView.add(orgsPage);
     this.self().evaluateOrganizationsButton(orgsBtn);
 
-    if (!osparc.product.Utils.isProduct("s4llite")) {
+    if (osparc.product.Utils.showClusters()) {
       const clustersPage = new osparc.desktop.preferences.pages.ClustersPage();
       const clustersBtn = clustersPage.getChildControl("button");
       osparc.utils.Utils.setIdToWidget(clustersBtn, "preferencesClustersTabBtn");
