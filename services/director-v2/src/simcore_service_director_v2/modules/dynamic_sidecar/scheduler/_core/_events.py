@@ -476,6 +476,8 @@ class CreateUserServices(DynamicSchedulerEvent):
             service_resources=scheduler_data.service_resources,
             simcore_service_labels=simcore_service_labels,
             allow_internet_access=allow_internet_access,
+            product_name=scheduler_data.product_name,
+            user_id=scheduler_data.user_id,
         )
         logger.debug(
             "Starting containers %s with compose-specs:\n%s",

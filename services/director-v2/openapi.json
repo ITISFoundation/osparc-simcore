@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-director-v2",
     "description": " Orchestrates the pipeline of services defined by the user",
-    "version": "2.1.0"
+    "version": "2.2.0"
   },
   "servers": [
     {
@@ -2393,7 +2393,8 @@
           "user_id",
           "project_id",
           "service_uuid",
-          "service_resources"
+          "service_resources",
+          "product_name"
         ],
         "type": "object",
         "properties": {
@@ -2434,6 +2435,11 @@
           "service_resources": {
             "title": "Service Resources",
             "type": "object"
+          },
+          "product_name": {
+            "title": "Product Name",
+            "type": "string",
+            "description": "Current product name"
           }
         },
         "example": {
@@ -2443,6 +2449,7 @@
           "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
           "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
           "basepath": "/x/75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+          "product_name": "osparc",
           "service_resources": {
             "container": {
               "image": "simcore/services/dynamic/jupyter-math:2.0.5",

@@ -110,6 +110,12 @@ async def pg_engine(make_engine: Callable, db_metadata) -> AsyncIterator[Engine]
     sync_engine.dispose()
 
 
+@pytest.fixture
+async def connection(pg_engine: Engine) -> AsyncIterator[SAConnection]:
+    async with pg_engine.acquire() as _conn:
+        yield _conn
+
+
 #
 # FACTORY FIXTURES
 #
