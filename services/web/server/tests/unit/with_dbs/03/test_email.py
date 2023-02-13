@@ -146,6 +146,8 @@ class IndexParser(HTMLParser):
         self.has_comments = True
 
     def error(self, message):
+        # this is an override for py3.9
+        assert self
         assert not message
 
 
