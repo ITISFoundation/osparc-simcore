@@ -14,7 +14,6 @@ from simcore_postgres_database.models.groups_extra_properties import (
     groups_extra_properties,
 )
 from simcore_service_director_v2.modules.db.repositories.groups_extra_properties import (
-    PRODUCTS_WITH_INTERNET,
     GroupsExtraPropertiesRepository,
 )
 from simcore_service_director_v2.utils.db import get_repository
@@ -118,7 +117,7 @@ async def user(
     return user
 
 
-@pytest.fixture(params=[PRODUCTS_WITH_INTERNET, "other_product"])
+@pytest.fixture(params=["s4llite", "other_product"])
 def product_name(request: FixtureRequest) -> ProductName:
     return request.param
 
