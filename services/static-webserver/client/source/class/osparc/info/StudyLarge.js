@@ -198,7 +198,7 @@ qx.Class.define("osparc.info.StudyLarge", {
         });
       }
 
-      if (osparc.product.Utils.showQuality()) {
+      if (osparc.product.Utils.showClassifiers()) {
         extraInfo.push({
           label: this.tr("Classifiers"),
           view: this.__createClassifiers(),
