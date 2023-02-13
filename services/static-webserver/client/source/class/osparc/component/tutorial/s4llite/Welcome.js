@@ -41,7 +41,7 @@ qx.Class.define("osparc.component.tutorial.s4llite.Welcome", {
           - how to open Sim4Life lite desktop simulation projects in S4L lite,<br>\
           - S4L lite features, limitations and user interface<br>\
           <br>\
-          For more specific technical information, please refer to Dashboard Manual and S4L lite Manual.\
+          For more specific technical information, please refer to the Dashboard Manual and the S4L lite Manual.\
         "),
         rich: true,
         wrap: true,

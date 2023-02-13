@@ -55,8 +55,8 @@ qx.Class.define("osparc.component.tutorial.s4llite.Dashboard", {
 
       const otherProjects = new qx.ui.basic.Label().set({
         value: this.tr("\
-        2) Other cards: Each card represents an existing project (own projects, or projects that have been shared by other users) can be accessed and managed. \
-        Click on the card to open the project. Click “Three dots” on the top corner of the card to do operations such as rename, share, delete.\
+        2) Other cards: Each card represents an existing project (own projects, or projects shared by other users) that can be accessed and managed. \
+        Click on the card to open the project. Click the “three dots” in the upper right corner of the card to perform operations such as rename, share, delete.\
         "),
         rich: true,
         wrap: true,
@@ -67,7 +67,7 @@ qx.Class.define("osparc.component.tutorial.s4llite.Dashboard", {
       const otherProjects2 = new qx.ui.basic.Label().set({
         value: this.tr("\
         3) TUTORIALS: A set of pre-built read-only tutorial projects with results is available to all S4L lite users. When a tutorial is selected, a \
-        copy is automatically created and added to the user’s Projects tab. This new copy is editable and shareable.\
+        copy is automatically created and added to the user’s Projects tab. This new copy is editable and can be shared.\
         "),
         rich: true,
         wrap: true,
@@ -86,11 +86,11 @@ qx.Class.define("osparc.component.tutorial.s4llite.Dashboard", {
       const importProjects = new qx.ui.basic.Label().set({
         value: this.tr("\
         4) To open an existing desktop project in S4L lite: \
-        - Click the + Start Sim4Life Lite button to create a new project.<br>\
+        - Click the + Start S4L lite button to create a new project.<br>\
         - Click the menu and select “File Browser…”.<br>\
-        - Click “Upload File” for the .smash project and select the file from your desktop. Repeat the same step but this \
-        time selecting “Upload Folder” and then selecting the result folder from your desktop. Close the window<br>\
-        - Click the Menu again and click Open to select the file you just uploaded.<br>\
+        - Click “Upload File” for the .smash project and select the file from your desktop. Repeat the same step, but this \
+        time select “Upload Folder” and then select the result folder from your desktop. Close the window<br>\
+        - Click the Menu again and click “Open” to select the file you just uploaded.<br>\
         "),
         rich: true,
         wrap: true,
