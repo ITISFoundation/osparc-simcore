@@ -2,8 +2,8 @@
 # pylint: disable=unused-argument
 
 
+import asyncio
 import logging
-import os
 import pickle
 import socket
 import threading
@@ -117,7 +117,7 @@ async def logging_event_handler_observer(
 @pytest.mark.parametrize(
     "command_template",
     [
-        pytest.param("chown {uid}:{uid} {path}", id="chown"),
+        pytest.param("chown {uid}:{gid} {path}", id="chown"),
         pytest.param("chmod +x {path}", id="chmod"),
     ],
 )
@@ -130,10 +130,13 @@ async def test_chown_triggers_event(
 ):
     file_path = fake_dy_volumes_mount_dir / f"test_file_{faker.uuid4()}"
     file_path.write_text(faker.text())
+    file_stat = file_path.stat()
 
     for command in (
         f"ls -lah {file_path}",
-        command_template.format(uid=os.getuid(), path=file_path),
+        command_template.format(
+            uid=file_stat.st_uid, gid=file_stat.st_gid, path=file_path
+        ),
         f"ls -lah {file_path}",
     ):
         command_result = await async_command(command)
@@ -141,7 +144,7 @@ async def test_chown_triggers_event(
         print(f"$ {command_result.command}\n{command_result.message}")
 
     # normally logs get deliverd by this point, sleep to make sure they are here
-    # await asyncio.sleep(ENSURE_LOGS_DELIVERED)
+    await asyncio.sleep(ENSURE_LOGS_DELIVERED)
     assert log_receiver.has_log_within(
         msg=f"Attribute change to: '{file_path}'", levelname="INFO"
     )
