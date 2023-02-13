@@ -174,23 +174,17 @@ def test_render_templates(template_path: Path):
     assert subject
     assert html_body
 
+    # parses html (will fail if detects some )
     parser = IndexParser()
     parser.feed(html_body)
 
     assert not parser.has_comments
 
+    # '==2' means it was started and closed
     counter = Counter(parser.tags)
-
-    if template_path.parent.name != "osparc":
-        assert counter["body"] == 2
-        assert counter["html"] == 2
-        assert counter["head"] == 2
-    else:
-        # NOTE: Needs extra review for this template since in principle these are illegal!
-        # services/web/server/src/simcore_service_webserver/templates/osparc/registration_email.jinja2
-        assert counter["body"] == 4
-        assert counter["html"] == 4
-        assert counter["head"] == 4
+    assert counter["body"] == 2
+    assert counter["html"] == 2
+    assert counter["head"] == 2
 
 
 def test_remove_comments():
