@@ -1,5 +1,6 @@
 import logging
 import mimetypes
+import re
 from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
@@ -183,6 +184,11 @@ async def send_email_with_attachements(
     return message
 
 
+def _remove_comments(html_string: str):
+    # WARNING: this function is mocked in the tests. Be careful when signature is changed.
+    return re.sub(r"<!--.*?-->", "", html_string, flags=re.DOTALL)
+
+
 def _render_template(
     request: web.Request,
     template: Path,
@@ -194,7 +200,14 @@ def _render_template(
     # to be the Subject of the email.
     #
     subject, body = page.split("\n", 1)
-    return subject.strip(), body
+
+    subject = subject.strip()
+
+    # formats body (avoids spam)
+    body = _remove_comments(body).strip()
+    html_body = f"<!DOCTYPE html><html><head></head><body>\n{body}\n</body></html>"
+
+    return subject, html_body
 
 
 async def send_email_from_template(
