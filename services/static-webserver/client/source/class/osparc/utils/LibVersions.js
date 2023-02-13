@@ -60,18 +60,6 @@ qx.Class.define("osparc.utils.LibVersions", {
       return url;
     },
 
-    getVcsReleaseDate: function() {
-      return qx.core.Environment.get("osparc.vcsReleaseDate");
-    },
-
-    getVcsReleaseTag: function() {
-      return qx.core.Environment.get("osparc.vcsReleaseTag");
-    },
-
-    getVcsReleaseUrl: function() {
-      return qx.core.Environment.get("osparc.vcsReleaseUrl");
-    },
-
     getPlatformVersion: function() {
       const name = "osparc-simcore";
       const commitId = this.getVcsRef();
