@@ -9,7 +9,7 @@ import logging
 import re
 from typing import Final, Optional, cast
 
-from models_library.docker import DockerLabelKey
+from models_library.docker import DockerGenericTag, DockerLabelKey
 from models_library.generated_models.docker_rest_api import (
     Node,
     NodeState,
@@ -21,6 +21,7 @@ from pydantic import ByteSize, parse_obj_as
 from servicelib.docker_utils import to_datetime
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
+from settings_library.docker_registry import RegistrySettings
 
 from ..core.settings import ApplicationSettings
 from ..models import Resources
@@ -321,6 +322,28 @@ async def get_docker_swarm_join_bash_command() -> str:
         return f"{capture['command']} --availability=drain {capture['token']} {capture['address']}"
     raise RuntimeError(
         f"expected docker '{_DOCKER_SWARM_JOIN_RE}' command not found: received {decoded_stdout}!"
+    )
+
+
+def get_docker_login_on_start_bash_command(registry_settings: RegistrySettings) -> str:
+    return " ".join(
+        [
+            "docker",
+            "login",
+            "--username",
+            registry_settings.REGISTRY_USER,
+            "--password",
+            registry_settings.REGISTRY_PW.get_secret_value(),
+            registry_settings.resolved_registry_url,
+        ]
+    )
+
+
+def get_docker_pull_images_on_start_bash_command(
+    docker_tags: list[DockerGenericTag],
+) -> str:
+    return " && ".join(
+        " ".join(["docker", "pull", f"{docker_tag}"]) for docker_tag in docker_tags
     )
 
 
