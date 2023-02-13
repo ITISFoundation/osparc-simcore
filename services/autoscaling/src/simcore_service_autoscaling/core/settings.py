@@ -9,7 +9,7 @@ from models_library.basic_types import (
     LogLevel,
     VersionTag,
 )
-from models_library.docker import DockerLabelKey
+from models_library.docker import DockerGenericTag, DockerLabelKey
 from pydantic import Field, NonNegativeInt, PositiveInt, parse_obj_as, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.rabbit import RabbitSettings
@@ -81,6 +81,11 @@ class EC2InstancesSettings(BaseCustomSettings):
     EC2_INSTANCES_MAX_START_TIME: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=3),
         description="Usual time taken an EC2 instance with the given AMI takes to be in 'running' mode",
+    )
+
+    EC2_INSTANCES_PRE_PULL_IMAGES: set[DockerGenericTag] = Field(
+        default_factory=set,
+        description="a list of docker image/tags to pull on instance cold start",
     )
 
     @validator("EC2_INSTANCES_TIME_BEFORE_TERMINATION")
