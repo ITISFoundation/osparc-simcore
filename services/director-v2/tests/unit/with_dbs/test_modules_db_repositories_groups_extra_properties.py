@@ -135,7 +135,7 @@ async def test_has_internet_access(
     allow_internet_access: bool = await groups_extra_properties.has_internet_access(
         user_id=user["id"], product_name=product_name
     )
-    if product_name not in PRODUCTS_WITH_INTERNET:
+    if product_name != "s4llite":
         assert allow_internet_access is True
     else:
         assert allow_internet_access is with_internet_access
