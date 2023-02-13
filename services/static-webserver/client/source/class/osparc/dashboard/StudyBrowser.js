@@ -49,7 +49,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         idToWidget: "startS4LButton"
       }
     },
-    EXPECTED_S4L_LIGHT_SERVICE_KEYS: {
+    EXPECTED_S4L_LITE_SERVICE_KEYS: {
       "simcore/services/dynamic/sim4life-lite": {
         title: "Start S4L lite",
         description: "New project",
@@ -446,7 +446,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       store.getAllServices()
         .then(services => {
           // add new plus buttons if key services exists
-          const newButtonsInfo = this.self().EXPECTED_S4L_LIGHT_SERVICE_KEYS;
+          const newButtonsInfo = this.self().EXPECTED_S4L_LITE_SERVICE_KEYS;
           Object.keys(newButtonsInfo).forEach(serviceKey => {
             this.__addNewStudyFromServiceButtons(services, serviceKey, newButtonsInfo[serviceKey]);
           });
@@ -625,7 +625,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       button.setValue(false);
       const title = osparc.utils.Utils.getUniqueStudyName(templateData.name, this._resourcesList);
       templateData.name = title;
-      this._showLoadingPage(this.tr("Creating ") + (templateData.name || this.tr("Study")));
+      this._showLoadingPage(this.tr("Creating ") + (templateData.name || osparc.product.Utils.getStudyAlias()));
       osparc.utils.Study.createStudyFromTemplate(templateData, this._loadingPage)
         .then(studyId => {
           this._hideLoadingPage();
@@ -640,7 +640,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __newStudyFromServiceBtnClicked: function(button, key, version) {
       button.setValue(false);
-      this._showLoadingPage(this.tr("Creating Study"));
+      this._showLoadingPage(this.tr("Creating ") + osparc.product.Utils.getStudyAlias());
       osparc.utils.Study.createStudyFromService(key, version, this._resourcesList)
         .then(studyId => {
           this._hideLoadingPage();
@@ -654,7 +654,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createStudy: function(minStudyData) {
-      this._showLoadingPage(this.tr("Creating ") + (minStudyData.name || this.tr("Study")));
+      this._showLoadingPage(this.tr("Creating ") + (minStudyData.name || osparc.product.Utils.getStudyAlias()));
 
       const params = {
         data: minStudyData

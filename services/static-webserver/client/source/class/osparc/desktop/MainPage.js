@@ -287,7 +287,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     },
 
     __startStudy: function(studyId) {
-      this.__showLoadingPage(this.tr("Loading Study"));
+      this.__showLoadingPage(this.tr("Loading ") + osparc.product.Utils.getStudyAlias());
 
       const params = {
         url: {
