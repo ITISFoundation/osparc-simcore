@@ -12,6 +12,8 @@ class GroupsExtraPropertiesRepository(BaseRepository):
     ) -> bool:
         # NOTE: except the product below all others
         # always HAVE internet access
+        # NOTE: this issue needs be addressed ASAP
+        # https://github.com/ITISFoundation/osparc-simcore/issues/3875
         if product_name != "s4llite":
             return True
 
