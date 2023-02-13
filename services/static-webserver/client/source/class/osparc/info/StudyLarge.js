@@ -183,7 +183,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       }];
 
       if (
-        !osparc.product.Utils.isProduct("s4llite") &&
+        osparc.product.Utils.showQuality() &&
         this.getStudy().getQuality() &&
         osparc.component.metadata.Quality.isEnabled(this.getStudy().getQuality())
       ) {
@@ -198,7 +198,7 @@ qx.Class.define("osparc.info.StudyLarge", {
         });
       }
 
-      if (!osparc.product.Utils.isProduct("s4llite")) {
+      if (osparc.product.Utils.showQuality()) {
         extraInfo.push({
           label: this.tr("Classifiers"),
           view: this.__createClassifiers(),

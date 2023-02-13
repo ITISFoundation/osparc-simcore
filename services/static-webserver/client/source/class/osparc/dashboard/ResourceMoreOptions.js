@@ -297,7 +297,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __getClassifiersPage: function() {
-      if (osparc.product.Utils.isProduct("s4llite")) {
+      if (!osparc.product.Utils.showClassifiers()) {
         return null;
       }
       const id = "Classifiers";
@@ -331,7 +331,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __getQualityPage: function() {
-      if (osparc.product.Utils.isProduct("s4llite")) {
+      if (!osparc.product.Utils.showQuality()) {
         return null;
       }
       const id = "Quality";

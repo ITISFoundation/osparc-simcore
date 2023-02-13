@@ -237,7 +237,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
       }
 
       if (
-        !osparc.product.Utils.isProduct("s4llite") &&
+        osparc.product.Utils.showQuality() &&
         this.getService()["quality"] &&
         osparc.component.metadata.Quality.isEnabled(this.getService()["quality"])
       ) {
