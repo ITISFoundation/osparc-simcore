@@ -58,6 +58,7 @@ async def test_change_and_confirm(
     login_options: LoginOptions,
     capsys: CaptureFixture,
     new_email: str,
+    mocked_email_core_remove_comments: None,
 ):
     assert client.app
 

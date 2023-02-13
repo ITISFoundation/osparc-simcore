@@ -9,6 +9,7 @@ import pytest
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from pytest import MonkeyPatch
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict
 from simcore_service_webserver.login.settings import LoginOptions, get_plugin_options
@@ -127,3 +128,15 @@ async def registered_user(
         app=client.app,
     ) as user:
         yield user
+
+
+@pytest.fixture
+def mocked_email_core_remove_comments(mocker: MockerFixture):
+    def _do_not_remove_comments(html_string):
+        return html_string
+
+    mocker.patch(
+        "simcore_service_webserver.email_core._remove_comments",
+        autospec=True,
+        side_effect=_do_not_remove_comments,
+    )
