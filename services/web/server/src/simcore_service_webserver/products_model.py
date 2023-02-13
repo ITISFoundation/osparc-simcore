@@ -6,6 +6,7 @@ from models_library.basic_regex import (
     PUBLIC_VARIABLE_NAME_RE,
     TWILIO_ALPHANUMERIC_SENDER_ID_RE,
 )
+from models_library.products import ProductName
 from models_library.utils.change_case import snake_to_camel
 from pydantic import BaseModel, EmailStr, Extra, Field, PositiveInt, validator
 from simcore_postgres_database.models.products import (
@@ -27,8 +28,6 @@ log = logging.getLogger(__name__)
 #
 # MODEL
 #
-
-ProductName = str
 
 
 class Product(BaseModel):
