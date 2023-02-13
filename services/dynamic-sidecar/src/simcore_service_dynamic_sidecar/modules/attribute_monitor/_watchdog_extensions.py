@@ -40,10 +40,8 @@ class ExtendedInotifyObserver(BaseObserver):
     """
 
     def __init__(self):
-        BaseObserver.__init__(
-            self,
-            emitter_class=_ExtendedInotifyEmitter,
-            timeout=DEFAULT_OBSERVER_TIMEOUT,
+        super().__init__(
+            emitter_class=_ExtendedInotifyEmitter, timeout=DEFAULT_OBSERVER_TIMEOUT
         )
 
 

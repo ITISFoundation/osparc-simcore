@@ -75,7 +75,7 @@ class _LoggingEventHandlerProcess:
             )
             self._process.start()
 
-    def stop_process(self) -> None:
+    def _stop_process(self) -> None:
         # NOTE: runs in asyncio thread
 
         with log_context(
@@ -100,7 +100,7 @@ class _LoggingEventHandlerProcess:
         with log_context(
             logger, logging.DEBUG, f"{_LoggingEventHandlerProcess.__name__} shutdown"
         ):
-            self.stop_process()
+            self._stop_process()
 
             # signal queue observers to finish
             self.health_check_queue.put(None)
@@ -159,30 +159,28 @@ class LoggingEventHandlerObserver:
         max_heart_beat_wait_interval_s: PositiveFloat = 10,
     ) -> None:
         self.path_to_observe: Path = path_to_observe
-        self.heart_beat_interval_s: PositiveFloat = heart_beat_interval_s
+        self._heart_beat_interval_s: PositiveFloat = heart_beat_interval_s
         self.max_heart_beat_wait_interval_s: PositiveFloat = (
             max_heart_beat_wait_interval_s
         )
 
-        self._health_check_queue: AioQueue = aioprocessing.AioQueue()
-        self._logging_event_handler_process: _LoggingEventHandlerProcess = (
-            _LoggingEventHandlerProcess(
-                path_to_observe=self.path_to_observe,
-                health_check_queue=self._health_check_queue,
-                heart_beat_interval_s=heart_beat_interval_s,
-            )
+        self._health_check_queue = aioprocessing.AioQueue()
+        self._logging_event_handler_process = _LoggingEventHandlerProcess(
+            path_to_observe=self.path_to_observe,
+            health_check_queue=self._health_check_queue,
+            heart_beat_interval_s=heart_beat_interval_s,
         )
         self._keep_running: bool = False
         self._task_health_worker: Optional[Task] = None
 
     @property
-    def wait_for_heart_beat_interval_s(self) -> PositiveFloat:
+    def heart_beat_interval_s(self) -> PositiveFloat:
         return min(
-            self.heart_beat_interval_s * 100, self.max_heart_beat_wait_interval_s
+            self._heart_beat_interval_s * 100, self.max_heart_beat_wait_interval_s
         )
 
     async def _health_worker(self) -> None:
-        wait_for = self.wait_for_heart_beat_interval_s
+        wait_for = self.heart_beat_interval_s
         while self._keep_running:
             await async_sleep(wait_for)
 
