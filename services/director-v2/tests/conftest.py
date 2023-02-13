@@ -124,6 +124,11 @@ def fake_workbench_complete_adjacency_file(mocks_dir: Path) -> Path:
 # APP/CLIENTS INITS --------------------------------------
 
 
+@pytest.fixture(scope="session")
+def osparc_product_name() -> str:
+    return "osparc"
+
+
 @pytest.fixture
 def dynamic_sidecar_docker_image_name() -> str:
     """composes dynamic-sidecar names using env vars"""

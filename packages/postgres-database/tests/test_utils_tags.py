@@ -3,12 +3,11 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-from typing import Any, AsyncIterator, Awaitable, Callable
+from typing import Any, Awaitable, Callable
 
 import pytest
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
-from aiopg.sa.engine import Engine
 from aiopg.sa.result import RowProxy
 from pytest_simcore.helpers.utils_tags import create_tag, create_tag_access
 from simcore_postgres_database.models.tags import tags_to_groups
@@ -18,12 +17,6 @@ from simcore_postgres_database.utils_tags import (
     TagOperationNotAllowed,
     TagsRepo,
 )
-
-
-@pytest.fixture
-async def connection(pg_engine: Engine) -> AsyncIterator[SAConnection]:
-    async with pg_engine.acquire() as _conn:
-        yield _conn
 
 
 @pytest.fixture

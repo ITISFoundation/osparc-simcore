@@ -399,6 +399,12 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     )
     proxy_service_name: str = Field(None, description="service name given to the proxy")
 
+    product_name: Optional[str] = Field(
+        None,
+        description="Current product upon which this service is scheduled. "
+        "If set to None, the current product is undefined. Mostly for backwards compatibility",
+    )
+
     @classmethod
     def from_http_request(
         # pylint: disable=too-many-arguments
@@ -410,6 +416,8 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         request_scheme: str,
         run_id: Optional[UUID] = None,
     ) -> "SchedulerData":
+        # This constructor method sets current product
+        assert service.product_name is not None  # nosec
         names_helper = DynamicSidecarNamesHelper.make(service.node_uuid)
 
         obj_dict = dict(
@@ -422,6 +430,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             key=service.key,
             version=service.version,
             service_resources=service.service_resources,
+            product_name=service.product_name,
             paths_mapping=simcore_service_labels.paths_mapping,
             compose_spec=json.dumps(simcore_service_labels.compose_spec),
             container_http_entry=simcore_service_labels.container_http_entry,
