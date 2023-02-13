@@ -15,23 +15,23 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.tutorial.Utils", {
+qx.Class.define("osparc.product.tutorial.Utils", {
   type: "static",
 
   statics: {
     TUTORIALS: {
       "tis": {
         localStorageStr: "tiDontShowQuickStart",
-        tutorial: () => new osparc.component.tutorial.ti.Slides()
+        tutorial: () => new osparc.product.tutorial.ti.Slides()
       },
       "s4llite": {
         localStorageStr: "s4lliteDontShowQuickStart",
-        tutorial: () => new osparc.component.tutorial.s4llite.Slides()
+        tutorial: () => new osparc.product.tutorial.s4llite.Slides()
       }
     },
 
     getTutorial: function() {
-      const tutorials = osparc.component.tutorial.Utils.TUTORIALS;
+      const tutorials = this.TUTORIALS;
       const pName = osparc.product.Utils.getProductName();
       if (Object.keys(tutorials).includes(pName)) {
         return tutorials[pName];

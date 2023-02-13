@@ -15,8 +15,8 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.tutorial.s4llite.Dashboard", {
-  extend: osparc.component.tutorial.SlideBase,
+qx.Class.define("osparc.product.tutorial.s4llite.Dashboard", {
+  extend: osparc.product.tutorial.SlideBase,
 
   construct: function() {
     const title = this.tr("Dashboard - Projects & Tutorials");

@@ -15,8 +15,8 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.tutorial.ti.Welcome", {
-  extend: osparc.component.tutorial.SlideBase,
+qx.Class.define("osparc.product.tutorial.ti.Welcome", {
+  extend: osparc.product.tutorial.SlideBase,
 
   construct: function() {
     const title = this.tr("Quick Start Guide");

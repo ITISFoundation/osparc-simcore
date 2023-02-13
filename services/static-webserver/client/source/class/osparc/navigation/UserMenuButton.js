@@ -101,7 +101,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           break;
         case "quick-start": {
           control = new qx.ui.menu.Button(this.tr("Quick Start"));
-          const tutorial = osparc.component.tutorial.Utils.getTutorial();
+          const tutorial = osparc.product.tutorial.Utils.getTutorial();
           if (tutorial) {
             control.addListener("execute", () => {
               const tutorialWindow = tutorial.tutorial();
@@ -148,7 +148,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       this.getChildControl("preferences");
       this.getChildControl("organizations");
       this.getChildControl("clusters");
-      if (osparc.component.tutorial.Utils.getTutorial()) {
+      if (osparc.product.tutorial.Utils.getTutorial()) {
         this.getMenu().addSeparator();
         this.getChildControl("quick-start");
       }
@@ -173,7 +173,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           this.getMenu().addSeparator();
           this.__addManualsToMenu();
           this.__addFeedbacksToMenu();
-          if (osparc.component.tutorial.Utils.getTutorial()) {
+          if (osparc.product.tutorial.Utils.getTutorial()) {
             this.getChildControl("quick-start");
           }
           this.getMenu().addSeparator();
