@@ -158,6 +158,7 @@ class CreateSidecars(DynamicSchedulerEvent):
             GroupsExtraPropertiesRepository,
             get_repository(app, GroupsExtraPropertiesRepository),
         )
+        assert scheduler_data.product_name is not None  # nosec
         allow_internet_access: bool = await groups_extra_properties.has_internet_access(
             user_id=scheduler_data.user_id, product_name=scheduler_data.product_name
         )
@@ -460,6 +461,7 @@ class CreateUserServices(DynamicSchedulerEvent):
             GroupsExtraPropertiesRepository,
             get_repository(app, GroupsExtraPropertiesRepository),
         )
+        assert scheduler_data.product_name is not None  # nosec
         allow_internet_access: bool = await groups_extra_properties.has_internet_access(
             user_id=scheduler_data.user_id, product_name=scheduler_data.product_name
         )

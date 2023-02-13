@@ -5,18 +5,13 @@ from models_library.users import UserID
 from ..tables import groups_extra_properties, user_to_groups
 from ._base import BaseRepository
 
-PRODUCTS_WITH_INTERNET: set[ProductName] = {"s4llite"}
-
 
 class GroupsExtraPropertiesRepository(BaseRepository):
     async def has_internet_access(
         self, user_id: UserID, product_name: ProductName
     ) -> bool:
-        # NOTE: PRODUCTS_WITH_INTERNET should be pulled from some
-        # different source in the database
-        if product_name not in PRODUCTS_WITH_INTERNET:
-            # by default all products have access to the internet
-            # unless the product has internet limitations
+        # NOTE: all other products expect the one below will always have internet access
+        if product_name != "s4llite":
             return True
 
         # check to see if the product internet access was granted via a group
