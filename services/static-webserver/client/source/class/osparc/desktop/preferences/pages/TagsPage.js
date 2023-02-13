@@ -16,7 +16,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
     const title = this.tr("Tags");
     this.base(arguments, title, iconSrc);
 
-    const studiesLabel = osparc.product.Utils.getStudyAlias(true);
+    const studiesLabel = osparc.product.Utils.getStudyAlias({plural: true});
     const studyLabel = osparc.product.Utils.getStudyAlias();
     const msg = this.tr("\
     Tags are annotations to help users with grouping ") + studiesLabel + this.tr(" in the Dashboard. \
