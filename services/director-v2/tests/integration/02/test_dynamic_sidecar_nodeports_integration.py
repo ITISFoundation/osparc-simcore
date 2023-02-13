@@ -841,7 +841,6 @@ async def _assert_retrieve_completed(
                 ), "TIP: Message missing suggests that the data was never uploaded: look in services/dynamic-sidecar/src/simcore_service_dynamic_sidecar/modules/nodeports.py"
 
 
-@pytest.mark.testit
 async def test_nodeports_integration(
     # pylint: disable=too-many-arguments
     minimal_configuration: None,
