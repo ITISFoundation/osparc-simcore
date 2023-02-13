@@ -15,6 +15,7 @@ from models_library.services_resources import (
     ResourceValue,
     ServiceResourcesDict,
 )
+from models_library.users import UserID
 from models_library.utils.docker_compose import replace_env_vars_in_compose_spec
 from servicelib.json_serialization import json_dumps
 from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
@@ -194,6 +195,8 @@ def assemble_spec(
     service_resources: ServiceResourcesDict,
     simcore_service_labels: SimcoreServiceLabels,
     allow_internet_access: bool,
+    product_name: str,
+    user_id: UserID,
 ) -> str:
     """
     returns a docker-compose spec used by
@@ -251,6 +254,10 @@ def assemble_spec(
             simcore_service_labels=simcore_service_labels,
             egress_proxy_settings=egress_proxy_settings,
         )
+
+    # TODO: will be used in next PR
+    assert user_id  # nosec
+    assert product_name  # nosec
 
     stringified_service_spec = replace_env_vars_in_compose_spec(
         service_spec=service_spec,

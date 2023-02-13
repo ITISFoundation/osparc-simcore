@@ -313,7 +313,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
             groupContainer = this.__createGroupContainer(orgId, "loading-label");
             osparc.store.Store.getInstance().getOrganizationOrUser(orgId)
               .then(org => {
-                if (org) {
+                if (org && org["collabType"] !== 2) {
                   let icon = "";
                   if (org.thumbnail) {
                     icon = org.thumbnail;
@@ -321,19 +321,13 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
                     icon = "@FontAwesome5Solid/globe/24";
                   } else if (org["collabType"] === 1) {
                     icon = "@FontAwesome5Solid/users/24";
-                  } else if (org["collabType"] === 2) {
-                    icon = "@FontAwesome5Solid/user/24";
                   }
                   groupContainer.set({
                     headerIcon: icon,
                     headerLabel: org.label
                   });
                 } else {
-                  // unknown org/user: show email address instead
-                  groupContainer.set({
-                    headerIcon: "@FontAwesome5Solid/user/24",
-                    headerLabel: resourceData["prjOwner"]
-                  });
+                  groupContainer.exclude();
                 }
               })
               .finally(() => {

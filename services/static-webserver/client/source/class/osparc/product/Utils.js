@@ -32,30 +32,46 @@ qx.Class.define("osparc.product.Utils", {
       return (productName === product);
     },
 
-    getStudyAlias: function(plural = false) {
+    getStudyAlias: function(options = {}) {
+      let alias = qx.locale.Manager.tr("study");
       if (this.isProduct("s4llite")) {
-        if (plural) {
-          return qx.locale.Manager.tr("projects");
+        if (options.plural) {
+          alias = qx.locale.Manager.tr("projects");
+        } else {
+          alias = qx.locale.Manager.tr("project");
         }
-        return qx.locale.Manager.tr("project");
+      } else if (options.plural) {
+        alias = qx.locale.Manager.tr("studies");
       }
-      if (plural) {
-        return qx.locale.Manager.tr("studies");
+
+      if (options.firstUpperCase) {
+        alias = osparc.utils.Utils.capitalize(alias);
+      } else if (options.allUpperCase) {
+        alias = alias.toUpperCase();
       }
-      return qx.locale.Manager.tr("study");
+
+      return alias;
     },
 
-    getTemplateAlias: function(plural = false) {
+    getTemplateAlias: function(options = {}) {
+      let alias = qx.locale.Manager.tr("template");
       if (this.isProduct("s4llite")) {
-        if (plural) {
-          return qx.locale.Manager.tr("tutorials");
+        if (options.plural) {
+          alias = qx.locale.Manager.tr("tutorials");
+        } else {
+          alias = qx.locale.Manager.tr("tutorial");
         }
-        return qx.locale.Manager.tr("tutorial");
+      } else if (options.plural) {
+        alias = qx.locale.Manager.tr("templates");
       }
-      if (plural) {
-        return qx.locale.Manager.tr("templates");
+
+      if (options.firstUpperCase) {
+        alias = osparc.utils.Utils.capitalize(alias);
+      } else if (options.allUpperCase) {
+        alias = alias.toUpperCase();
       }
-      return qx.locale.Manager.tr("template");
+
+      return alias;
     },
 
     getLogoPath: function() {
@@ -79,6 +95,55 @@ qx.Class.define("osparc.product.Utils", {
           break;
       }
       return logosPath;
+    },
+
+    showLicenseExtra: function() {
+      if (this.isProduct("s4llite") || this.isProduct("tis")) {
+        return true;
+      }
+      return false;
+    },
+
+    showAboutProduct: function() {
+      if (this.isProduct("s4llite")) {
+        return true;
+      }
+      return false;
+    },
+
+    showPreferencesTokens: function() {
+      if (this.isProduct("s4llite") || this.isProduct("tis")) {
+        return false;
+      }
+      return true;
+    },
+
+    showPreferencesExperimental: function() {
+      if (this.isProduct("s4llite") || this.isProduct("tis")) {
+        return false;
+      }
+      return true;
+    },
+
+    showClusters: function() {
+      if (this.isProduct("s4llite")) {
+        return false;
+      }
+      return true;
+    },
+
+    showQuality: function() {
+      if (this.isProduct("s4llite")) {
+        return false;
+      }
+      return true;
+    },
+
+    showClassifiers: function() {
+      if (this.isProduct("s4llite")) {
+        return false;
+      }
+      return true;
     }
   }
 });
