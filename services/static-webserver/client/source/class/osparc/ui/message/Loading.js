@@ -153,7 +153,7 @@ qx.Class.define("osparc.ui.message.Loading", {
         row: this.self().GRID_POS.DISCLAIMER
       });
 
-      const defaultLogoPath = osparc.utils.Utils.getLogoPath();
+      const defaultLogoPath = osparc.product.Utils.getLogoPath();
       const logo = new osparc.ui.basic.Thumbnail(defaultLogoPath, this.self().LOGO_WIDTH, this.self().LOGO_HEIGHT).set({
         alignX: "center"
       });

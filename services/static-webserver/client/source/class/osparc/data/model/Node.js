@@ -975,7 +975,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     __initLoadingPage: function() {
-      const showZoomMaximizeButton = !osparc.utils.Utils.isProduct("s4llite");
+      const showZoomMaximizeButton = !osparc.product.Utils.isProduct("s4llite");
       const loadingPage = new osparc.ui.message.Loading(showZoomMaximizeButton);
       loadingPage.set({
         header: this.__getLoadingPageHeader()
@@ -1019,7 +1019,7 @@ qx.Class.define("osparc.data.model.Node", {
       this.__initLoadingPage();
 
       const iframe = new osparc.component.widget.PersistentIframe();
-      if (osparc.utils.Utils.isProduct("s4llite")) {
+      if (osparc.product.Utils.isProduct("s4llite")) {
         iframe.setShowZoomButton(false);
       }
       iframe.addListener("restart", () => this.__restartIFrame(), this);

@@ -191,7 +191,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         groupOptions.add(btn);
       });
 
-      if (osparc.utils.Utils.isProduct("s4llite")) {
+      if (osparc.product.Utils.isProduct("s4llite")) {
         tagByGroup.execute();
       }
 

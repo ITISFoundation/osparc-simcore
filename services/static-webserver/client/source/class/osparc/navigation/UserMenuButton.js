@@ -88,7 +88,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
         case "clusters":
           control = new qx.ui.menu.Button(this.tr("Clusters"));
           control.exclude();
-          if (!osparc.utils.Utils.isProduct("s4llite")) {
+          if (!osparc.product.Utils.isProduct("s4llite")) {
             osparc.utils.DisabledPlugins.isClustersDisabled()
               .then(isDisabled => {
                 if (isDisabled === false) {
@@ -154,7 +154,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       }
       this.getMenu().addSeparator();
       this.getChildControl("about");
-      if (osparc.utils.Utils.isProduct("s4llite")) {
+      if (osparc.product.Utils.isProduct("s4llite")) {
         this.getChildControl("about-product");
       }
       this.getChildControl("license");
@@ -178,7 +178,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           }
           this.getMenu().addSeparator();
           this.getChildControl("about");
-          if (!osparc.utils.Utils.isProduct("osparc")) {
+          if (!osparc.product.Utils.isProduct("osparc")) {
             this.getChildControl("about-product");
           }
           this.getChildControl("license");

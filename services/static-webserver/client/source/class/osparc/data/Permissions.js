@@ -132,7 +132,7 @@ qx.Class.define("osparc.data.Permissions", {
         ],
         "admin": []
       };
-      if (osparc.utils.Utils.isProduct("tis")) {
+      if (osparc.product.Utils.isProduct("tis")) {
         initPermissions.tester.push(...[
           "dashboard.templates.read",
           "dashboard.services.read",

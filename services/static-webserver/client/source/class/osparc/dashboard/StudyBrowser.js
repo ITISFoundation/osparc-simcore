@@ -358,7 +358,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __addNewStudyButtons: function() {
-      switch (osparc.utils.Utils.getProductName()) {
+      switch (osparc.product.Utils.getProductName()) {
         case "osparc":
           this.__addNewStudyButton();
           break;
@@ -579,7 +579,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
       selectButton.bind("value", this, "multiSelection");
       selectButton.bind("value", selectButton, "label", {
-        converter: val => val ? this.tr("Cancel Selection") : (this.tr("Select ") + osparc.utils.Utils.capitalize(osparc.utils.Utils.getStudyLabel(true)))
+        converter: val => val ? this.tr("Cancel Selection") : (this.tr("Select ") + osparc.utils.Utils.capitalize(osparc.product.Utils.getStudyAlias(true)))
       });
       this.bind("multiSelection", selectButton, "value");
       return selectButton;
@@ -765,7 +765,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getStudyDataMenuButton: function(studyData) {
-      const text = osparc.utils.Utils.capitalize(osparc.utils.Utils.getStudyLabel()) + this.tr(" data...");
+      const text = osparc.utils.Utils.capitalize(osparc.product.Utils.getStudyAlias()) + this.tr(" data...");
       const studyDataButton = new qx.ui.menu.Button(text);
       studyDataButton.addListener("execute", () => {
         const studyDataManager = new osparc.component.widget.NodeDataManager(studyData["uuid"]);

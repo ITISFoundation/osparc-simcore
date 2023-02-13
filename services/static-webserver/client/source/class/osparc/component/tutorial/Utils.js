@@ -32,7 +32,7 @@ qx.Class.define("osparc.component.tutorial.Utils", {
 
     getTutorial: function() {
       const tutorials = osparc.component.tutorial.Utils.TUTORIALS;
-      const pName = osparc.utils.Utils.getProductName();
+      const pName = osparc.product.Utils.getProductName();
       if (Object.keys(tutorials).includes(pName)) {
         return tutorials[pName];
       }

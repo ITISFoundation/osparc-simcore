@@ -183,7 +183,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       }];
 
       if (
-        !osparc.utils.Utils.isProduct("s4llite") &&
+        !osparc.product.Utils.isProduct("s4llite") &&
         this.getStudy().getQuality() &&
         osparc.component.metadata.Quality.isEnabled(this.getStudy().getQuality())
       ) {
@@ -198,7 +198,7 @@ qx.Class.define("osparc.info.StudyLarge", {
         });
       }
 
-      if (!osparc.utils.Utils.isProduct("s4llite")) {
+      if (!osparc.product.Utils.isProduct("s4llite")) {
         extraInfo.push({
           label: this.tr("Classifiers"),
           view: this.__createClassifiers(),
@@ -211,7 +211,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       }
 
       extraInfo.splice(0, 0, {
-        label: osparc.utils.Utils.capitalize(osparc.utils.Utils.getStudyLabel()) + " ID",
+        label: osparc.utils.Utils.capitalize(osparc.product.Utils.getStudyAlias()) + " ID",
         view: this.__createStudyId(),
         action: {
           button: osparc.utils.Utils.getCopyButton(),
