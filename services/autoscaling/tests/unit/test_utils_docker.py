@@ -797,7 +797,7 @@ async def test_tag_node(
     [
         (
             ["nginx", "itisfoundation/simcore/services/dynamic/service:23.5.5"],
-            "docker pull nginx && docker pull itisfoundation/simcore/services/dynamic/service:23.5.5",
+            "echo 'services:\n  pre-pull-image-0:\n    image: nginx\n  pre-pull-image-1:\n    image: itisfoundation/simcore/services/dynamic/service:23.5.5\nversion: '3.8'\n' > pre-pull.compose.yml && docker-compose --file=pre-pull.compose.yml pull",
         ),
         (
             [],

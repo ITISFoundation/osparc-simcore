@@ -9,6 +9,7 @@ import logging
 import re
 from typing import Final, Optional, cast
 
+import yaml
 from models_library.docker import DockerGenericTag, DockerLabelKey
 from models_library.generated_models.docker_rest_api import (
     Node,
@@ -342,9 +343,25 @@ def get_docker_login_on_start_bash_command(registry_settings: RegistrySettings) 
 def get_docker_pull_images_on_start_bash_command(
     docker_tags: list[DockerGenericTag],
 ) -> str:
-    return " && ".join(
-        " ".join(["docker", "pull", f"{docker_tag}"]) for docker_tag in docker_tags
+    if not docker_tags:
+        return ""
+
+    compose = {
+        "version": "3.8",
+        "services": {
+            f"pre-pull-image-{n}": {"image": image_tag}
+            for n, image_tag in enumerate(docker_tags)
+        },
+    }
+    compose_yaml = yaml.safe_dump(compose)
+    compose_file_name = "pre-pull.compose.yml"
+    write_compose_file_cmd = " ".join(
+        ["echo", f"'{compose_yaml}'", ">", compose_file_name]
     )
+    docker_compose_pull_cmd = " ".join(
+        ["docker-compose", f"--file={compose_file_name}", "pull"]
+    )
+    return " && ".join([write_compose_file_cmd, docker_compose_pull_cmd])
 
 
 async def find_node_with_name(
