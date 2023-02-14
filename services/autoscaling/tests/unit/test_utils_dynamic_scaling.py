@@ -239,9 +239,9 @@ async def test_ec2_startup_script_with_pre_pulling(
     app_settings: ApplicationSettings,
 ):
     startup_script = await ec2_startup_script(app_settings)
-    assert len(startup_script.split("&&")) == 8
+    assert len(startup_script.split("&&")) == 4
     assert re.fullmatch(
-        r"^docker swarm join [^&&]+ && (docker login --username [^\s]+ --password [^\s]+ [^\s]+)( && docker pull [^\s]+){6}$",
+        r"^docker swarm join [^&&]+ && (docker login --username [^\s]+ --password [^\s]+ [^\s]+)( && echo [^&&]+ && docker-compose --file=[^\s]+ pull)$",
         startup_script,
     )
 
