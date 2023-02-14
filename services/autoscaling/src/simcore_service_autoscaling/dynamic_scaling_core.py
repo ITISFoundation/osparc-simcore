@@ -307,7 +307,6 @@ async def _start_instances(
     ec2_client = get_ec2_client(app)
     app_settings: ApplicationSettings = app.state.settings
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-    assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
 
     results = await asyncio.gather(
         *(

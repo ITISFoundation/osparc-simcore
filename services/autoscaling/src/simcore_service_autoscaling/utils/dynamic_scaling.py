@@ -130,18 +130,19 @@ async def try_assigning_task_to_pending_instances(
 
 async def ec2_startup_script(app_settings: ApplicationSettings) -> str:
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-    return "; ".join(
-        [
-            await utils_docker.get_docker_swarm_join_bash_command(),
+    startup_commands = [await utils_docker.get_docker_swarm_join_bash_command()]
+    if pull_image_cmd := utils_docker.get_docker_pull_images_on_start_bash_command(
+        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_PRE_PULL_IMAGES
+    ):
+        startup_commands.append(
             " && ".join(
                 [
                     utils_docker.get_docker_login_on_start_bash_command(
                         app_settings.AUTOSCALING_REGISTRY
                     ),
-                    utils_docker.get_docker_pull_images_on_start_bash_command(
-                        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_PRE_PULL_IMAGES
-                    ),
-                ],
-            ),
-        ]
-    )
+                    pull_image_cmd,
+                ]
+            )
+        )
+
+    return " && ".join(startup_commands)
