@@ -25,7 +25,7 @@ def _log_pool_status(client: AsyncClient, event_name: str) -> None:
         event_name.upper(),
         len(client._transport._pool._requests),
         [
-            (r.request.method, r.request.url, r.request.headers)
+            (id(r), r.request.method, r.request.url, r.request.headers)
             for r in client._transport._pool._requests
         ],
         len(client._transport._pool.connections),
