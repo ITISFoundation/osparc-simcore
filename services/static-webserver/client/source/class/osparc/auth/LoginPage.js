@@ -205,12 +205,8 @@ qx.Class.define("osparc.auth.LoginPage", {
             const releaseUrl = rData["url"];
             if (releaseDate && releaseTag && releaseUrl) {
               const date = osparc.utils.Utils.formatDate(new Date(releaseDate));
-              const dateLabel = new qx.ui.basic.Label(date).set({
-                textColor: "text-darker"
-              });
-              versionLinkLayout.add(dateLabel);
               versionLink.set({
-                value: "(" + releaseTag + ")&nbsp",
+                value: date + " (" + releaseTag + ")&nbsp",
                 url: releaseUrl
               });
             }
