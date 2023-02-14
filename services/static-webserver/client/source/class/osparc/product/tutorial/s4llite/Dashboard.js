@@ -45,7 +45,7 @@ qx.Class.define("osparc.product.tutorial.s4llite.Dashboard", {
 
       const newProject = new qx.ui.basic.Label().set({
         value: this.tr("\
-        1) Start S4L lite: Click the <b>+ Start S4L lite</b> button to create a new project. This will start the user interface of S4L lite.\
+        1) Start <i>S4L<sup>lite</sup></i>: Click the <b>+ Start <i>S4L<sup>lite</sup></i></b> button to create a new project. This will start the user interface of <i>S4L<sup>lite</sup></i>.\
         "),
         rich: true,
         wrap: true,
@@ -66,7 +66,7 @@ qx.Class.define("osparc.product.tutorial.s4llite.Dashboard", {
 
       const otherProjects2 = new qx.ui.basic.Label().set({
         value: this.tr("\
-        3) TUTORIALS: A set of pre-built read-only tutorial projects with results is available to all S4L lite users. When a tutorial is selected, a \
+        3) TUTORIALS: A set of pre-built read-only tutorial projects with results is available to all <i>S4L<sup>lite</sup></i> users. When a tutorial is selected, a \
         copy is automatically created and added to the user’s Projects tab. This new copy is editable and can be shared.\
         "),
         rich: true,
@@ -85,8 +85,8 @@ qx.Class.define("osparc.product.tutorial.s4llite.Dashboard", {
 
       const importProjects = new qx.ui.basic.Label().set({
         value: this.tr("\
-        4) To open an existing desktop project in S4L lite: \
-        - Click the + Start S4L lite button to create a new project.<br>\
+        4) To open an existing desktop project in <i>S4L<sup>lite</sup></i>: \
+        - Click the + Start <i>S4L<sup>lite</sup></i> button to create a new project.<br>\
         - Click the menu and select “File Browser…”.<br>\
         - Click “Upload File” for the .smash project and select the file from your desktop. Repeat the same step, but this \
         time select “Upload Folder” and then select the result folder from your desktop. Close the window<br>\

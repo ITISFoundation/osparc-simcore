@@ -19,14 +19,14 @@ qx.Class.define("osparc.product.tutorial.s4llite.S4LLiteUI", {
   extend: osparc.product.tutorial.SlideBase,
 
   construct: function() {
-    const title = this.tr("S4L lite");
+    const title = this.tr("<i>S4L<sup>lite</sup></i>");
     this.base(arguments, title);
   },
 
   members: {
     _populateCard: function() {
       const introText = this.tr("\
-      To check the S4L lite manual, please open a project and access the documentation via Help in the menu as shown below. Enjoy!\
+      To check the <i>S4L<sup>lite</sup></i> manual, please open a project and access the documentation via Help in the menu as shown below. Enjoy!\
       ");
       const intro = osparc.product.tutorial.Utils.createLabel(introText);
       this._add(intro);
