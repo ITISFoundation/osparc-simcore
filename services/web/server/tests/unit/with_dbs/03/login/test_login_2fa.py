@@ -109,6 +109,7 @@ async def test_workflow_register_and_login_with_2fa(
     fake_user_password: str,
     fake_user_phone_number: str,
     mocked_twilio_service: dict[str, Mock],
+    mocked_email_core_remove_comments: None,
 ):
     assert client.app
 
@@ -280,7 +281,10 @@ async def test_register_phone_fails_with_used_number(
 
 
 async def test_send_email_code(
-    client: TestClient, faker: Faker, capsys: CaptureFixture
+    client: TestClient,
+    faker: Faker,
+    capsys: CaptureFixture,
+    mocked_email_core_remove_comments: None,
 ):
     request = make_mocked_request("GET", "/dummy", app=client.app)
 
