@@ -12,8 +12,9 @@ from typing import Callable, Iterator
 
 import pytest
 from faker import Faker
+from models_library.docker import DockerGenericTag
 from models_library.generated_models.docker_rest_api import Node, Task
-from pydantic import ByteSize
+from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
 from simcore_service_autoscaling.core.errors import Ec2InvalidDnsNameError
 from simcore_service_autoscaling.core.settings import ApplicationSettings
@@ -206,30 +207,53 @@ async def test_ec2_startup_script_no_pre_pulling(
 
 
 @pytest.fixture
-def configuration_with_pre_pull_images(
+def enabled_pre_pull_images(
     minimal_configuration: None, monkeypatch: pytest.MonkeyPatch
-):
+) -> list[DockerGenericTag]:
+    images = parse_obj_as(
+        list[DockerGenericTag],
+        [
+            "io.simcore.some234.cool.label",
+            "com.example.some-label",
+            "nginx:latest",
+            "itisfoundation/my-very-nice-service:latest",
+            "simcore/services/dynamic/another-nice-one:2.4.5",
+            "asd",
+        ],
+    )
     monkeypatch.setenv(
         "EC2_INSTANCES_PRE_PULL_IMAGES",
-        json.dumps(
-            [
-                "io.simcore.some234.cool.label",
-                "com.example.some-label",
-                "nginx:latest",
-                "itisfoundation/my-very-nice-service:latest",
-                "simcore/services/dynamic/another-nice-one:2.4.5",
-                "asd",
-            ]
-        ),
+        json.dumps(images),
     )
+    return images
+
+
+@pytest.fixture
+def disabled_registry(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("REGISTRY_AUTH")
 
 
 async def test_ec2_startup_script_with_pre_pulling(
-    configuration_with_pre_pull_images: None, app_settings: ApplicationSettings
+    minimal_configuration: None,
+    enabled_pre_pull_images: None,
+    app_settings: ApplicationSettings,
 ):
     startup_script = await ec2_startup_script(app_settings)
     assert len(startup_script.split("&&")) == 8
     assert re.fullmatch(
         r"^docker swarm join [^&&]+ && (docker login --username [^\s]+ --password [^\s]+ [^\s]+)( && docker pull [^\s]+){6}$",
         startup_script,
+    )
+
+
+async def test_ec2_startup_script_with_pre_pulling_but_no_registry(
+    minimal_configuration: None,
+    enabled_pre_pull_images: None,
+    disabled_registry: None,
+    app_settings: ApplicationSettings,
+):
+    startup_script = await ec2_startup_script(app_settings)
+    assert len(startup_script.split("&&")) == 1
+    assert re.fullmatch(
+        r"^docker swarm join --availability=drain --token .*$", startup_script
     )
