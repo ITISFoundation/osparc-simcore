@@ -309,7 +309,7 @@ async def _start_instances(
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
 
     results = await asyncio.gather(
-        *(
+        *[
             ec2_client.start_aws_instance(
                 app_settings.AUTOSCALING_EC2_INSTANCES,
                 instance_type=parse_obj_as(InstanceTypeType, instance.name),
@@ -318,7 +318,7 @@ async def _start_instances(
                 number_of_instances=instance_num,
             )
             for instance, instance_num in needed_instances.items()
-        ),
+        ],
         return_exceptions=True,
     )
     # parse results
