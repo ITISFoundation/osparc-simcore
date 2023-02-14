@@ -177,7 +177,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     AUTOSCALING_REDIS: RedisSettings = Field(auto_default_from_env=True)
 
-    AUTOSCALING_REGISTRY: RegistrySettings = Field(auto_default_from_env=True)
+    AUTOSCALING_REGISTRY: Optional[RegistrySettings] = Field(auto_default_from_env=True)
 
     @cached_property
     def LOG_LEVEL(self):
