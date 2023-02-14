@@ -98,7 +98,10 @@ class SchedulerPublicInterface(ABC):
 
     @abstractmethod
     async def mark_service_for_removal(
-        self, node_uuid: NodeID, can_save: Optional[bool]
+        self,
+        node_uuid: NodeID,
+        can_save: Optional[bool],
+        skip_observation_recreation: bool = False,
     ) -> None:
         """The service will be removed as soon as possible"""
 
