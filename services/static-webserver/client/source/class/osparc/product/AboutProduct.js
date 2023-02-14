@@ -73,14 +73,14 @@ qx.Class.define("osparc.product.AboutProduct", {
       const color = qx.theme.manager.Color.getInstance().resolve("text");
 
       // https://zurichmedtech.github.io/s4l-lite-manual/#/docs/what_is_s4l_lite
-      const introText = "<b>S4L lite</b> is a powerful web-based simulation platform that allows you to model and analyze real-world phenomena and to design complex technical devices in a validated environment. With its intuitive interface and advanced tools, <b>S4L lite</b> makes it easy to develop your simulation project, wherever you are.";
+      const introText = "<b><i>S4L<sup>lite</sup></i></b> is a powerful web-based simulation platform that allows you to model and analyze real-world phenomena and to design complex technical devices in a validated environment. With its intuitive interface and advanced tools, <b><i>S4L<sup>lite</sup></i></b> makes it easy to develop your simulation project, wherever you are.";
 
       const licenseUrl = "https://zurichmedtech.github.io/s4l-lite-manual/#/docs/licensing/copyright_Sim4Life";
       const licenseText = `Click <a href=${licenseUrl} style='color: ${color}' target='_blank'>here</a> to read the license agreements.`;
 
       // more info ZMT website
       const moreInfoUrl = "https://zmt.swiss/";
-      const moreInfoText = `For more information about <b>S4L lite</b>, visit <a href=${moreInfoUrl} style='color: ${color}' target='_blank'>our website</a>.`;
+      const moreInfoText = `For more information about <b><i>S4L<sup>lite</sup></i></b>, visit <a href=${moreInfoUrl} style='color: ${color}' target='_blank'>our website</a>.`;
 
       [
         introText,

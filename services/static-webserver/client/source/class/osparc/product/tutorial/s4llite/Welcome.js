@@ -35,13 +35,13 @@ qx.Class.define("osparc.product.tutorial.s4llite.Welcome", {
 
       const intro = new qx.ui.basic.Label().set({
         value: this.tr("\
-        This quick user’s guide gives a short introduction to S4L lite. We will show:<br>\
+        This quick user’s guide gives a short introduction to <i>S4L<sup>lite</sup></i>. We will show:<br>\
           - how to get started with a new project,<br>\
           - how to get started from an existing tutorial project<br>\
-          - how to open Sim4Life lite desktop simulation projects in S4L lite,<br>\
-          - S4L lite features, limitations and user interface<br>\
+          - how to open Sim4Life lite desktop simulation projects in <i>S4L<sup>lite</sup></i>,<br>\
+          - <i>S4L<sup>lite</sup></i> features, limitations and user interface<br>\
           <br>\
-          For more specific technical information, please refer to the Dashboard Manual and the S4L lite Manual.\
+          For more specific technical information, please refer to the Dashboard Manual and the <i>S4L<sup>lite</sup></i> Manual.\
         "),
         rich: true,
         wrap: true,
