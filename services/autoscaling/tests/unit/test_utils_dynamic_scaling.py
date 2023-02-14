@@ -228,7 +228,8 @@ async def test_ec2_startup_script_with_pre_pulling(
     configuration_with_pre_pull_images: None, app_settings: ApplicationSettings
 ):
     startup_script = await ec2_startup_script(app_settings)
-    assert len(startup_script.split("&&")) == 1
+    assert len(startup_script.split("&&")) == 8
     assert re.fullmatch(
-        r"^docker swarm join --availability=drain --token .*$", startup_script
+        r"^docker swarm join [^&&]+ && (docker login --username [^\s]+ --password [^\s]+ [^\s]+)( && docker pull [^\s]+){6}$",
+        startup_script,
     )
