@@ -174,6 +174,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
           break;
         }
         const nameLabel = new qx.ui.basic.Label(nodeMetaData["name"]).set({
+          rich: true,
           toolTipText: node["key"],
           font: "text-14"
         });
