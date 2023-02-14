@@ -35,6 +35,7 @@ from .modules.ec2 import get_ec2_client
 from .utils import ec2, utils_docker
 from .utils.dynamic_scaling import (
     associate_ec2_instances_with_nodes,
+    ec2_startup_script,
     node_host_name_from_ec2_private_dns,
     try_assigning_task_to_instances,
     try_assigning_task_to_node,
@@ -308,29 +309,13 @@ async def _start_instances(
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
 
-    startup_script = "; ".join(
-        [
-            await utils_docker.get_docker_swarm_join_bash_command(),
-            " && ".join(
-                [
-                    utils_docker.get_docker_login_on_start_bash_command(
-                        app_settings.AUTOSCALING_REGISTRY
-                    ),
-                    utils_docker.get_docker_pull_images_on_start_bash_command(
-                        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_PRE_PULL_IMAGES
-                    ),
-                ],
-            ),
-        ]
-    )
-
     results = await asyncio.gather(
         *(
             ec2_client.start_aws_instance(
                 app_settings.AUTOSCALING_EC2_INSTANCES,
                 instance_type=parse_obj_as(InstanceTypeType, instance.name),
                 tags=ec2.get_ec2_tags(app_settings),
-                startup_script=startup_script,
+                startup_script=await ec2_startup_script(app_settings),
                 number_of_instances=instance_num,
             )
             for instance, instance_num in needed_instances.items()
