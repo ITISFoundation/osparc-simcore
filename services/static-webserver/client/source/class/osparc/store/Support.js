@@ -28,17 +28,18 @@ qx.Class.define("osparc.store.Support", {
     },
 
     addManualButtonsToMenu: function(menu, menuButton) {
-      const control = new qx.ui.menu.Button(qx.locale.Manager.tr("Quick Start")).set({
+      const qsButton = new qx.ui.menu.Button(qx.locale.Manager.tr("Quick Start"));
+      qsButton.getChildControl("label").set({
         rich: true
       });
       const tutorial = osparc.product.tutorial.Utils.getTutorial();
       if (tutorial) {
-        control.addListener("execute", () => {
+        qsButton.addListener("execute", () => {
           const tutorialWindow = tutorial.tutorial();
           tutorialWindow.center();
           tutorialWindow.open();
         });
-        menu.add(control);
+        menu.add(qsButton);
       }
       osparc.store.Support.getManuals()
         .then(manuals => {
@@ -46,7 +47,8 @@ qx.Class.define("osparc.store.Support", {
             menuButton.setVisibility(manuals.length ? "visible" : "excluded");
           }
           manuals.forEach(manual => {
-            const manualBtn = new qx.ui.menu.Button(manual.label).set({
+            const manualBtn = new qx.ui.menu.Button(manual.label);
+            manualBtn.getChildControl("label").set({
               rich: true
             });
             manualBtn.addListener("execute", () => window.open(manual.url), this);
@@ -68,7 +70,8 @@ qx.Class.define("osparc.store.Support", {
           }
           issues.forEach(issueInfo => {
             const label = issueInfo["label"];
-            const issueButton = new qx.ui.menu.Button(label).set({
+            const issueButton = new qx.ui.menu.Button(label);
+            issueButton.getChildControl("label").set({
               rich: true
             });
             issueButton.addListener("execute", () => {
@@ -95,7 +98,8 @@ qx.Class.define("osparc.store.Support", {
           }
 
           supports.forEach(suportInfo => {
-            const supportBtn = new qx.ui.menu.Button(suportInfo["label"]).set({
+            const supportBtn = new qx.ui.menu.Button(suportInfo["label"]);
+            supportBtn.getChildControl("label").set({
               rich: true
             });
             let icon = null;
