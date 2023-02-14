@@ -28,7 +28,9 @@ qx.Class.define("osparc.store.Support", {
     },
 
     addManualButtonsToMenu: function(menu, menuButton) {
-      const control = new qx.ui.menu.Button(qx.locale.Manager.tr("Quick Start"));
+      const control = new qx.ui.menu.Button(qx.locale.Manager.tr("Quick Start")).set({
+        rich: true
+      });
       const tutorial = osparc.product.tutorial.Utils.getTutorial();
       if (tutorial) {
         control.addListener("execute", () => {
@@ -44,7 +46,9 @@ qx.Class.define("osparc.store.Support", {
             menuButton.setVisibility(manuals.length ? "visible" : "excluded");
           }
           manuals.forEach(manual => {
-            const manualBtn = new qx.ui.menu.Button(manual.label);
+            const manualBtn = new qx.ui.menu.Button(manual.label).set({
+              rich: true
+            });
             manualBtn.addListener("execute", () => window.open(manual.url), this);
             menu.add(manualBtn);
           });
@@ -64,7 +68,9 @@ qx.Class.define("osparc.store.Support", {
           }
           issues.forEach(issueInfo => {
             const label = issueInfo["label"];
-            const issueButton = new qx.ui.menu.Button(label);
+            const issueButton = new qx.ui.menu.Button(label).set({
+              rich: true
+            });
             issueButton.addListener("execute", () => {
               const issueConfirmationWindow = new osparc.ui.window.Dialog(label + " " + qx.locale.Manager.tr("Information"), null,
                 qx.locale.Manager.tr("To create an issue, you must have an account and be already logged-in.")
@@ -89,7 +95,9 @@ qx.Class.define("osparc.store.Support", {
           }
 
           supports.forEach(suportInfo => {
-            const supportBtn = new qx.ui.menu.Button(suportInfo["label"]);
+            const supportBtn = new qx.ui.menu.Button(suportInfo["label"]).set({
+              rich: true
+            });
             let icon = null;
             let cb = null;
             switch (suportInfo["kind"]) {
