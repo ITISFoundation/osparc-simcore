@@ -121,7 +121,7 @@ async def test_retry_on_errors_by_error_type(
         connections_message = caplog_info_level.messages[-1]
         assert (
             connections_message
-            == "Pool status @ 'POOL TIMEOUT': requests=[], connections=[]"
+            == "Pool status @ 'POOL TIMEOUT': requests(0)=[], connections(0)=[]"
         )
     else:
         _assert_messages(caplog_info_level.messages)

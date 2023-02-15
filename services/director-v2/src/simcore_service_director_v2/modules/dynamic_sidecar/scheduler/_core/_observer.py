@@ -59,6 +59,7 @@ async def _apply_observation_cycle(
         await scheduler.mark_service_for_removal(
             node_uuid=scheduler_data.node_uuid,
             can_save=scheduler_data.dynamic_sidecar.were_containers_created,
+            skip_observation_recreation=True,
         )
 
     for dynamic_scheduler_event in REGISTERED_EVENTS:
