@@ -81,6 +81,19 @@ async def _retry_docker_compose_start(
 @retry(
     wait=wait_random_exponential(max=30),
     stop=stop_after_delay(5 * _MINUTE),
+    retry=retry_if_result(lambda result: result.success is False),
+    reraise=False,
+    before_sleep=before_sleep_log(logger, logging.WARNING, exc_info=True),
+)
+async def _retry_docker_compose_down(
+    compose_spec: str, settings: ApplicationSettings
+) -> CommandResult:
+    return await docker_compose_down(compose_spec, settings)
+
+
+@retry(
+    wait=wait_random_exponential(max=30),
+    stop=stop_after_delay(5 * _MINUTE),
     retry=retry_if_result(lambda result: result is False),
     reraise=True,
     before_sleep=before_sleep_log(logger, logging.WARNING, exc_info=True),
@@ -172,7 +185,7 @@ async def task_runs_docker_compose_down(
         return
 
     progress.update(message="running docker-compose-down", percent=0.1)
-    result = await docker_compose_down(shared_store.compose_spec, settings)
+    result = await _retry_docker_compose_down(shared_store.compose_spec, settings)
     _raise_for_errors(result, "down")
 
     progress.update(message="stopping logs", percent=0.9)
@@ -361,7 +374,6 @@ async def task_containers_restart(
     # or some other state, the service will get shutdown, to prevent this
     # blocking status while containers are being restarted.
     async with app.state.container_restart_lock:
-
         progress.update(message="starting containers restart", percent=0.0)
         if shared_store.compose_spec is None:
             raise RuntimeError("No spec for docker-compose command was found")
