@@ -1,5 +1,5 @@
 import re
-from typing import Optional
+from typing import Any, Final, Optional
 
 from pydantic import ConstrainedStr, constr
 
@@ -23,3 +23,10 @@ class DockerLabelKey(ConstrainedStr):
 class DockerGenericTag(ConstrainedStr):
     # NOTE: https://docs.docker.com/engine/reference/commandline/tag/#description
     regex: Optional[re.Pattern[str]] = DOCKER_GENERIC_TAG_KEY_RE
+
+
+LABEL_PREFIX_CONTAINER: Final[str] = "io.simcore.container"
+
+
+def get_prefixed_container_label(label: str, value: Any) -> str:
+    return f"{LABEL_PREFIX_CONTAINER}.{label}={value}"

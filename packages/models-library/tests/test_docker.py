@@ -2,8 +2,15 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+from typing import Any
+
 import pytest
-from models_library.docker import DockerGenericTag, DockerLabelKey
+from models_library.docker import (
+    LABEL_PREFIX_CONTAINER,
+    DockerGenericTag,
+    DockerLabelKey,
+    get_prefixed_container_label,
+)
 from pydantic import ValidationError, parse_obj_as
 
 
@@ -93,3 +100,16 @@ def test_docker_generic_tag(image_name: str, valid: bool):
     else:
         with pytest.raises(ValidationError):
             parse_obj_as(DockerGenericTag, image_name)
+
+
+@pytest.mark.parametrize(
+    "label, value, expected",
+    [
+        ("string", "1", f"{LABEL_PREFIX_CONTAINER}.string=1"),
+        ("none-value", None, f"{LABEL_PREFIX_CONTAINER}.none-value=None"),
+        ("dict", {"ciao": 1}, f"{LABEL_PREFIX_CONTAINER}.dict={{'ciao': 1}}"),
+        ("float", 34.56, f"{LABEL_PREFIX_CONTAINER}.float=34.56"),
+    ],
+)
+def test_get_prefixed_container_label(label: str, value: Any, expected: str):
+    assert get_prefixed_container_label(label, value) == expected
