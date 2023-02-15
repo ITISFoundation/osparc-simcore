@@ -163,8 +163,8 @@ qx.Class.define("osparc.info.ServiceUtils", {
     createThumbnail: function(serviceData, maxWidth, maxHeight = 160) {
       const image = new osparc.ui.basic.Thumbnail().set({
         source: "thumbnail" in serviceData && serviceData["thumbnail"] !== "" ? serviceData["thumbnail"] : osparc.dashboard.CardBase.SERVICE_ICON,
-        maxWidth,
-        maxHeight
+        maxImageWidth: maxWidth,
+        maxImageHeight: maxHeight
       });
       return image;
     },

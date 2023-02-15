@@ -77,32 +77,32 @@ qx.Class.define("osparc.ui.basic.Thumbnail", {
       apply : "__applySource"
     },
 
-    minWidth: {
+    minImageWidth: {
       check : "Integer",
       nullable : true,
       init : null,
-      apply : "__applyMinWidth"
+      apply : "__applyMinImageWidth"
     },
 
-    maxWidth: {
+    maxImageWidth: {
       check : "Integer",
       nullable : true,
       init : null,
-      apply : "__applyMaxWidth"
+      apply : "__applyMaxImageWidth"
     },
 
-    minHeight: {
+    minImageHeight: {
       check : "Integer",
       nullable : true,
       init : null,
-      apply : "__applyMinHeight"
+      apply : "__applyMinImageHeight"
     },
 
-    maxHeight: {
+    maxImageHeight: {
       check : "Integer",
       nullable : true,
       init : null,
-      apply : "__applyMaxHeight"
+      apply : "__applyMaxImageHeight"
     }
   },
 
@@ -134,32 +134,36 @@ qx.Class.define("osparc.ui.basic.Thumbnail", {
       }
     },
 
-    __applyMinWidth: function(val) {
+    __applyMinImageWidth: function(val) {
       const image = this.getChildControl("image");
       if (val) {
         image.setMinWidth(val);
       }
+      this.setMinWidth(val);
     },
 
-    __applyMaxWidth: function(val) {
+    __applyMaxImageWidth: function(val) {
       const image = this.getChildControl("image");
       if (val) {
         image.setMaxWidth(val);
       }
+      this.setMaxWidth(val);
     },
 
-    __applyMinHeight: function(val) {
+    __applyMinImageHeight: function(val) {
       const image = this.getChildControl("image");
       if (val) {
         image.setMinHeight(val);
       }
+      this.setMinHeight(val);
     },
 
-    __applyMaxHeight: function(val) {
+    __applyMaxImageHeight: function(val) {
       const image = this.getChildControl("image");
       if (val) {
         image.setMaxHeight(val);
       }
+      this.setMaxHeight(val);
     },
 
     recheckSize: function() {
