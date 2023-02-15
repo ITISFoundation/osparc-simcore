@@ -154,7 +154,9 @@ qx.Class.define("osparc.ui.message.Loading", {
       });
 
       const defaultLogoPath = osparc.product.Utils.getLogoPath();
-      const logo = new osparc.ui.basic.Thumbnail(defaultLogoPath, this.self().LOGO_WIDTH, this.self().LOGO_HEIGHT).set({
+      const logo = new osparc.ui.basic.Thumbnail(defaultLogoPath).set({
+        maxWidth: this.self().LOGO_WIDTH,
+        maxHeight: this.self().LOGO_HEIGHT,
         alignX: "center"
       });
       // this is needed for svg images

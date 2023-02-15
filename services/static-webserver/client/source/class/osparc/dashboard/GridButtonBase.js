@@ -154,7 +154,10 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         }
         case "icon": {
           const maxWidth = this.self().ITEM_WIDTH - 2*this.self().PADDING;
-          control = new osparc.ui.basic.Thumbnail(null, maxWidth, 124);
+          control = new osparc.ui.basic.Thumbnail().set({
+            maxWidth,
+            maxHeight: 124
+          });
           control.getChildControl("image").set({
             anonymous: true
           });
