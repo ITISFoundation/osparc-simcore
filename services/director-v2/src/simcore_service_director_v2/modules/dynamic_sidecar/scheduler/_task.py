@@ -87,9 +87,14 @@ class DynamicSidecarsScheduler(SchedulerInternalsInterface, SchedulerPublicInter
         return self._scheduler.list_services(user_id=user_id, project_id=project_id)
 
     async def mark_service_for_removal(
-        self, node_uuid: NodeID, can_save: Optional[bool]
+        self,
+        node_uuid: NodeID,
+        can_save: Optional[bool],
+        skip_observation_recreation: bool = False,
     ) -> None:
-        return await self._scheduler.mark_service_for_removal(node_uuid, can_save)
+        return await self._scheduler.mark_service_for_removal(
+            node_uuid, can_save, skip_observation_recreation
+        )
 
     async def get_stack_status(self, node_uuid: NodeID) -> RunningDynamicServiceDetails:
         return await self._scheduler.get_stack_status(node_uuid)
