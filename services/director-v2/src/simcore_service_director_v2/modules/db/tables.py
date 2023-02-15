@@ -5,7 +5,6 @@ from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.groups_extra_properties import (
     groups_extra_properties,
 )
-from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_postgres_database.models.projects_networks import projects_networks
 
@@ -15,7 +14,6 @@ __all__ = [
     "comp_tasks",
     "groups_extra_properties",
     "NodeClass",
-    "products",
     "projects_networks",
     "projects",
     "ProjectType",
