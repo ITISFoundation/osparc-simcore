@@ -1,6 +1,6 @@
 import logging
 from copy import deepcopy
-from typing import Optional, Union
+from typing import Final, Optional, Union
 
 from fastapi.applications import FastAPI
 from models_library.service_settings_labels import (
@@ -182,12 +182,16 @@ def _update_resource_limits_and_reservations(
         spec["environment"] = environment
 
 
-def _update_with_metrics_labels(
-    service_spec: ComposeSpecLabel, user_id: UserID
-) -> None:
+_METRICS_PREFIX: Final[str] = "io.simcore.container"
+
+
+def _update_container_labels(service_spec: ComposeSpecLabel, user_id: UserID) -> None:
     for spec in service_spec["services"].values():
         labels = spec.get("labels", [])
-        labels.append(f"io.simcore.user.id={user_id}")
+
+        # this labels is primarily used for metrics scraping
+        labels.append(f"{_METRICS_PREFIX}.user.id={user_id}")
+
         spec["labels"] = labels
 
 
@@ -264,7 +268,7 @@ def assemble_spec(
             egress_proxy_settings=egress_proxy_settings,
         )
 
-    _update_with_metrics_labels(service_spec=service_spec, user_id=user_id)
+    _update_container_labels(service_spec=service_spec, user_id=user_id)
 
     # TODO: will be used in next PR
     assert product_name  # nosec
