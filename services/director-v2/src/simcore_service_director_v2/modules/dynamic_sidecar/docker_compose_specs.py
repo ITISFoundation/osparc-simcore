@@ -185,13 +185,14 @@ def _update_resource_limits_and_reservations(
 
 def _update_container_labels(service_spec: ComposeSpecLabel, user_id: UserID) -> None:
     for spec in service_spec["services"].values():
-        labels: set[str] = set(spec.get("labels", []))
+        labels: set[str] = spec.get("labels", [])
 
         # this labels is primarily used for metrics scraping
+        use_id_label = get_prefixed_container_label("user.id", user_id)
+        if use_id_label not in labels:
+            labels.add(use_id_label)
 
-        labels.add(get_prefixed_container_label("user.id", user_id))
-
-        spec["labels"] = list(labels)
+        spec["labels"] = labels
 
 
 def assemble_spec(
