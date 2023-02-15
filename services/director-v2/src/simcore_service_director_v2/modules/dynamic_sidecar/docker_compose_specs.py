@@ -187,12 +187,12 @@ _METRICS_PREFIX: Final[str] = "io.simcore.container"
 
 def _update_container_labels(service_spec: ComposeSpecLabel, user_id: UserID) -> None:
     for spec in service_spec["services"].values():
-        labels = spec.get("labels", [])
+        labels: set[str] = set(spec.get("labels", []))
 
         # this labels is primarily used for metrics scraping
-        labels.append(f"{_METRICS_PREFIX}.user.id={user_id}")
+        labels.add(f"{_METRICS_PREFIX}.user.id={user_id}")
 
-        spec["labels"] = labels
+        spec["labels"] = list(labels)
 
 
 def assemble_spec(
