@@ -829,6 +829,8 @@ jobs:
         run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/dask-sidecar.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/dask-sidecar.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/dask-sidecar.bash test
       - uses: codecov/codecov-action@v3.1.1
