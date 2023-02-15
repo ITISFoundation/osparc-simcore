@@ -21,13 +21,15 @@ logger = logging.getLogger(__name__)
 def _log_pool_status(client: AsyncClient, event_name: str) -> None:
     # pylint: disable=protected-access
     logger.warning(
-        "Pool status @ '%s': requests=%s, connections=%s",
+        "Pool status @ '%s': requests(%s)=%s, connections(%s)=%s",
         event_name.upper(),
+        len(client._transport._pool._requests),
         [
-            (r.request.method, r.request.url, r.request.headers)
+            (id(r), r.request.method, r.request.url, r.request.headers)
             for r in client._transport._pool._requests
         ],
-        client._transport._pool.connections,
+        len(client._transport._pool.connections),
+        [(id(c), c.__dict__) for c in client._transport._pool.connections],
     )
 
 
