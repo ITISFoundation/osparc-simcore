@@ -6,6 +6,7 @@ from typing import Any
 
 import pytest
 import yaml
+from models_library.docker import LABEL_PREFIX_CONTAINER
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     ResourcesDict,
@@ -139,3 +140,34 @@ async def test_inject_resource_limits_and_reservations(
                 in spec["environment"]
             )
             assert f"{MEM_RESOURCE_LIMIT_KEY}={memory.limit}" in spec["environment"]
+
+
+@pytest.mark.parametrize(
+    "service_spec, expected_result",
+    [
+        pytest.param(
+            {"services": {"service-1": {}}},
+            {
+                "services": {
+                    "service-1": {"labels": [f"{LABEL_PREFIX_CONTAINER}.user.id=1"]}
+                }
+            },
+            id="single_service",
+        ),
+        pytest.param(
+            {"services": {"service-1": {}, "service-2": {}}},
+            {
+                "services": {
+                    "service-1": {"labels": [f"{LABEL_PREFIX_CONTAINER}.user.id=1"]},
+                    "service-2": {"labels": [f"{LABEL_PREFIX_CONTAINER}.user.id=1"]},
+                }
+            },
+            id="multiple_services",
+        ),
+    ],
+)
+async def test_update_container_labels(
+    service_spec: dict[str, Any], expected_result: dict[str, Any]
+):
+    docker_compose_specs._update_container_labels(service_spec, 1)
+    assert service_spec == expected_result

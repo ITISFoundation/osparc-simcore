@@ -1,8 +1,9 @@
 import logging
 from copy import deepcopy
-from typing import Final, Optional, Union
+from typing import Optional, Union
 
 from fastapi.applications import FastAPI
+from models_library.docker import get_prefixed_container_label
 from models_library.service_settings_labels import (
     ComposeSpecLabel,
     PathMappingsLabel,
@@ -182,15 +183,13 @@ def _update_resource_limits_and_reservations(
         spec["environment"] = environment
 
 
-_METRICS_PREFIX: Final[str] = "io.simcore.container"
-
-
 def _update_container_labels(service_spec: ComposeSpecLabel, user_id: UserID) -> None:
     for spec in service_spec["services"].values():
         labels: set[str] = set(spec.get("labels", []))
 
         # this labels is primarily used for metrics scraping
-        labels.add(f"{_METRICS_PREFIX}.user.id={user_id}")
+
+        labels.add(get_prefixed_container_label("user.id", user_id))
 
         spec["labels"] = list(labels)
 
