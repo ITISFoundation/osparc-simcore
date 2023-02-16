@@ -145,5 +145,10 @@ async def ec2_startup_script(app_settings: ApplicationSettings) -> str:
                     ]
                 )
             )
+            startup_commands.append(
+                utils_docker.get_docker_pull_images_crontab(
+                    app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_PRE_PULL_IMAGES_CRON_INTERVAL
+                ),
+            )
 
     return " && ".join(startup_commands)
