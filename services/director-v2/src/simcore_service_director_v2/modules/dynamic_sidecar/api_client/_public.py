@@ -183,8 +183,8 @@ class DynamicSidecarClient:
                 dynamic_sidecar_network_name=dynamic_sidecar_network_name,
             )
         except EntrypointContainerNotFoundError:
-            # sometimes arrives before the sidecar started the user services
-            # operation can be skipped
+            # project_network changes are propagated form the workbench before
+            # the user services are started. It is safe to skip
             return
 
         network_names_to_ids: dict[str, str] = await get_or_create_networks_ids(
