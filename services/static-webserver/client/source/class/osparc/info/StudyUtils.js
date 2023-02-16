@@ -187,7 +187,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       */
     createThumbnail: function(study, maxWidth, maxHeight = 160) {
       const noThumbnail = "osparc/no_photography_black_24dp.svg";
-      const image = new osparc.ui.basic.Thumbnail(noThumbnail, maxWidth, maxHeight);
+      const image = new osparc.ui.basic.Thumbnail(null, maxWidth, maxHeight);
       if (study instanceof osparc.data.model.Study) {
         study.bind("thumbnail", image, "source", {
           converter: thumbnail => thumbnail ? thumbnail : noThumbnail,
