@@ -32,7 +32,7 @@ qx.Theme.define("osparc.theme.zmt.ColorDark", {
     "background-main-5": "c06",
 
     // text
-    "text": "c11",
+    "text": "c12",
     "text-disabled": "c07",
     "text-selected": "c12",
     "text-placeholder": "c07",
