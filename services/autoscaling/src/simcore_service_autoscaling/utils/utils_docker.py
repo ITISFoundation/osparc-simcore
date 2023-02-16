@@ -340,6 +340,10 @@ def get_docker_login_on_start_bash_command(registry_settings: RegistrySettings) 
     )
 
 
+_DOCKER_COMPOSE_CMD: Final[str] = "docker-compose"
+_PRE_PULL_COMPOSE_FILE_NAME: Final[str] = "pre-pull.compose.yml"
+
+
 def get_docker_pull_images_on_start_bash_command(
     docker_tags: list[DockerGenericTag],
 ) -> str:
@@ -354,14 +358,29 @@ def get_docker_pull_images_on_start_bash_command(
         },
     }
     compose_yaml = yaml.safe_dump(compose)
-    compose_file_name = "pre-pull.compose.yml"
     write_compose_file_cmd = " ".join(
-        ["echo", f'"{compose_yaml}"', ">", compose_file_name]
+        ["echo", f'"{compose_yaml}"', ">", _PRE_PULL_COMPOSE_FILE_NAME]
     )
     docker_compose_pull_cmd = " ".join(
-        ["docker-compose", f"--file={compose_file_name}", "pull"]
+        [_DOCKER_COMPOSE_CMD, f"--file={_PRE_PULL_COMPOSE_FILE_NAME}", "pull"]
     )
     return " && ".join([write_compose_file_cmd, docker_compose_pull_cmd])
+
+
+def get_docker_pull_images_crontab(interval: datetime.timedelta) -> str:
+    # check the interval is within 1 < 60 minutes
+    checked_interval = round(interval.total_seconds() / 60)
+    return " ".join(
+        [
+            "echo",
+            f"*/{checked_interval or 1} * * * *",
+            _DOCKER_COMPOSE_CMD,
+            f"--file={_PRE_PULL_COMPOSE_FILE_NAME}",
+            "pull",
+            ">>",
+            "/etc/crontab",
+        ]
+    )
 
 
 async def find_node_with_name(

@@ -32,6 +32,7 @@ from simcore_service_autoscaling.utils.utils_docker import (
     compute_node_used_resources,
     compute_tasks_needed_resources,
     find_node_with_name,
+    get_docker_pull_images_crontab,
     get_docker_pull_images_on_start_bash_command,
     get_docker_swarm_join_bash_command,
     get_max_resources_from_docker_task,
@@ -809,3 +810,31 @@ def test_get_docker_pull_images_on_start_bash_command(
     images: list[DockerGenericTag], expected_cmd: str
 ):
     assert get_docker_pull_images_on_start_bash_command(images) == expected_cmd
+
+
+@pytest.mark.parametrize(
+    "interval, expected_cmd",
+    [
+        (
+            datetime.timedelta(minutes=20),
+            "echo */20 * * * * docker-compose --file=pre-pull.compose.yml pull >> /etc/crontab",
+        ),
+        (
+            datetime.timedelta(seconds=20),
+            "echo */1 * * * * docker-compose --file=pre-pull.compose.yml pull >> /etc/crontab",
+        ),
+        (
+            datetime.timedelta(seconds=200),
+            "echo */3 * * * * docker-compose --file=pre-pull.compose.yml pull >> /etc/crontab",
+        ),
+        (
+            datetime.timedelta(days=3),
+            "echo */4320 * * * * docker-compose --file=pre-pull.compose.yml pull >> /etc/crontab",
+        ),
+    ],
+    ids=str,
+)
+def test_get_docker_pull_images_crontab(
+    interval: datetime.timedelta, expected_cmd: str
+):
+    assert get_docker_pull_images_crontab(interval) == expected_cmd
