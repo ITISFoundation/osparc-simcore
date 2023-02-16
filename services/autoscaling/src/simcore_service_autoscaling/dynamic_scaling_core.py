@@ -393,7 +393,8 @@ async def _scale_up_cluster(
             app, needed_ec2_instances, pending_tasks
         )
         cluster.pending_ec2s.extend(new_pending_instances)
-        await progress_tasks_message(app, pending_tasks, 0)
+        # NOTE: notify the up-scaling progress started...
+        await progress_tasks_message(app, pending_tasks, 0.001)
     return cluster
 
 
