@@ -3,15 +3,18 @@
 
 
 from typing import Any
+from uuid import uuid4
 
 import pytest
 import yaml
-from models_library.docker import LABEL_PREFIX_CONTAINER
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     ResourcesDict,
     ServiceResourcesDict,
 )
+from models_library.users import UserID
 from pydantic import parse_obj_as
 from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 from simcore_service_director_v2.modules.dynamic_sidecar import docker_compose_specs
@@ -142,6 +145,11 @@ async def test_inject_resource_limits_and_reservations(
             assert f"{MEM_RESOURCE_LIMIT_KEY}={memory.limit}" in spec["environment"]
 
 
+USER_ID: UserID = 1
+PROJECT_ID: ProjectID = uuid4()
+NODE_ID: NodeID = uuid4()
+
+
 @pytest.mark.parametrize(
     "service_spec, expected_result",
     [
@@ -149,7 +157,13 @@ async def test_inject_resource_limits_and_reservations(
             {"services": {"service-1": {}}},
             {
                 "services": {
-                    "service-1": {"labels": [f"{LABEL_PREFIX_CONTAINER}.user.id=1"]}
+                    "service-1": {
+                        "labels": [
+                            f"user_id={USER_ID}",
+                            f"study_id={PROJECT_ID}",
+                            f"uuid={NODE_ID}",
+                        ]
+                    }
                 }
             },
             id="single_service",
@@ -158,8 +172,20 @@ async def test_inject_resource_limits_and_reservations(
             {"services": {"service-1": {}, "service-2": {}}},
             {
                 "services": {
-                    "service-1": {"labels": [f"{LABEL_PREFIX_CONTAINER}.user.id=1"]},
-                    "service-2": {"labels": [f"{LABEL_PREFIX_CONTAINER}.user.id=1"]},
+                    "service-1": {
+                        "labels": [
+                            f"user_id={USER_ID}",
+                            f"study_id={PROJECT_ID}",
+                            f"uuid={NODE_ID}",
+                        ]
+                    },
+                    "service-2": {
+                        "labels": [
+                            f"user_id={USER_ID}",
+                            f"study_id={PROJECT_ID}",
+                            f"uuid={NODE_ID}",
+                        ]
+                    },
                 }
             },
             id="multiple_services",
@@ -169,5 +195,7 @@ async def test_inject_resource_limits_and_reservations(
 async def test_update_container_labels(
     service_spec: dict[str, Any], expected_result: dict[str, Any]
 ):
-    docker_compose_specs._update_container_labels(service_spec, 1)
+    docker_compose_specs._update_container_labels(
+        service_spec, USER_ID, PROJECT_ID, NODE_ID
+    )
     assert service_spec == expected_result
