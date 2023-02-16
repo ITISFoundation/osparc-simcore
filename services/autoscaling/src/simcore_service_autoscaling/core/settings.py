@@ -89,6 +89,11 @@ class EC2InstancesSettings(BaseCustomSettings):
         description="a list of docker image/tags to pull on instance cold start",
     )
 
+    EC2_INSTANCES_PRE_PULL_IMAGES_CRON_INTERVAL: datetime.timedelta = Field(
+        default=datetime.timedelta(minutes=30),
+        description="time interval between pulls of images (minimum is 1 minute)",
+    )
+
     @validator("EC2_INSTANCES_TIME_BEFORE_TERMINATION")
     @classmethod
     def ensure_time_is_in_range(cls, value):
