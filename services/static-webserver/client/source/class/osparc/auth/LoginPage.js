@@ -233,7 +233,7 @@ qx.Class.define("osparc.auth.LoginPage", {
         .then(vendor => {
           if (vendor) {
             organizationLink.set({
-              value: vendor.copyright + " " + new Date().getFullYear(),
+              value: vendor.copyright,
               url: vendor.url
             });
           }

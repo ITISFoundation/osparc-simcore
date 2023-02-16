@@ -27,10 +27,8 @@ qx.Class.define("osparc.ui.basic.Thumbnail", {
 
   /**
    * @param {String} source Source of the Image
-   * @param {Number} maxWidth Maximum Width
-   * @param {Number} maxHeight Maximum Height
    */
-  construct: function(source, maxWidth, maxHeight) {
+  construct: function(source) {
     this.base(arguments);
 
     const layout = new qx.ui.layout.Grid();
@@ -57,24 +55,16 @@ qx.Class.define("osparc.ui.basic.Thumbnail", {
       });
     });
 
-    const image = this.getChildControl("image");
     if (source) {
       this.setSource(source);
     }
-    if (maxWidth) {
-      image.setMaxWidth(maxWidth);
-    }
-    if (maxHeight) {
-      image.setMaxHeight(maxHeight);
-    }
 
+    const image = this.getChildControl("image");
     [
       "appear",
       "loaded"
     ].forEach(eventName => {
-      image.addListener(eventName, e => {
-        this.recheckSize();
-      }, this);
+      image.addListener(eventName, () => this.recheckSize(), this);
     });
   },
 
@@ -85,6 +75,34 @@ qx.Class.define("osparc.ui.basic.Thumbnail", {
       nullable : true,
       event : "changeSource",
       apply : "__applySource"
+    },
+
+    minImageWidth: {
+      check : "Integer",
+      nullable : true,
+      init : null,
+      apply : "__applyMinImageWidth"
+    },
+
+    maxImageWidth: {
+      check : "Integer",
+      nullable : true,
+      init : null,
+      apply : "__applyMaxImageWidth"
+    },
+
+    minImageHeight: {
+      check : "Integer",
+      nullable : true,
+      init : null,
+      apply : "__applyMinImageHeight"
+    },
+
+    maxImageHeight: {
+      check : "Integer",
+      nullable : true,
+      init : null,
+      apply : "__applyMaxImageHeight"
     }
   },
 
@@ -110,7 +128,42 @@ qx.Class.define("osparc.ui.basic.Thumbnail", {
     },
 
     __applySource: function(val) {
-      this.getChildControl("image").setSource(val);
+      const image = this.getChildControl("image");
+      if (val) {
+        image.setSource(val);
+      }
+    },
+
+    __applyMinImageWidth: function(val) {
+      const image = this.getChildControl("image");
+      if (val) {
+        image.setMinWidth(val);
+      }
+      this.setMinWidth(val);
+    },
+
+    __applyMaxImageWidth: function(val) {
+      const image = this.getChildControl("image");
+      if (val) {
+        image.setMaxWidth(val);
+      }
+      this.setMaxWidth(val);
+    },
+
+    __applyMinImageHeight: function(val) {
+      const image = this.getChildControl("image");
+      if (val) {
+        image.setMinHeight(val);
+      }
+      this.setMinHeight(val);
+    },
+
+    __applyMaxImageHeight: function(val) {
+      const image = this.getChildControl("image");
+      if (val) {
+        image.setMaxHeight(val);
+      }
+      this.setMaxHeight(val);
     },
 
     recheckSize: function() {

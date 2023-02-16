@@ -310,6 +310,10 @@ qx.Class.define("osparc.component.form.Auto", {
           key
         },
         converter: function(data) {
+          if (!data) {
+            // this avoids the moustached template issue
+            return parseFloat(s.defaultValue);
+          }
           const tmp = data.split(" ");
           if (tmp.length > 1 && "x_unit" in this.myContext.s) {
             // extract unit with prefix from text
