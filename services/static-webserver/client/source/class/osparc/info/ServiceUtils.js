@@ -161,8 +161,10 @@ qx.Class.define("osparc.info.ServiceUtils", {
       * @param maxHeight {Number} thumbnail's maxHeight
       */
     createThumbnail: function(serviceData, maxWidth, maxHeight = 160) {
-      const source = "thumbnail" in serviceData && serviceData["thumbnail"] !== "" ? serviceData["thumbnail"] : osparc.dashboard.CardBase.SERVICE_ICON;
-      const image = new osparc.ui.basic.Thumbnail(source, maxWidth, maxHeight);
+      const image = new osparc.ui.basic.Thumbnail(null, maxWidth, maxHeight);
+      image.set({
+        source: "thumbnail" in serviceData && serviceData["thumbnail"] !== "" ? serviceData["thumbnail"] : osparc.dashboard.CardBase.SERVICE_ICON
+      });
       return image;
     },
 

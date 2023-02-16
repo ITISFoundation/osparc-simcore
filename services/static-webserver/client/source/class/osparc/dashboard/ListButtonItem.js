@@ -41,7 +41,9 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
       let control;
       switch (id) {
         case "lock-status":
-          control = new osparc.ui.basic.Thumbnail();
+          control = new osparc.ui.basic.Thumbnail().set({
+            minWidth: 40
+          });
           this._add(control, {
             row: 0,
             column: osparc.dashboard.ListButtonBase.POS.LOCK_STATUS
