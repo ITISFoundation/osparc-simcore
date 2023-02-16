@@ -347,7 +347,7 @@ def get_docker_pull_images_on_start_bash_command(
         return ""
 
     compose = {
-        "version": "3.8",
+        "version": '"3.8"',
         "services": {
             f"pre-pull-image-{n}": {"image": image_tag}
             for n, image_tag in enumerate(docker_tags)
@@ -356,7 +356,7 @@ def get_docker_pull_images_on_start_bash_command(
     compose_yaml = yaml.safe_dump(compose)
     compose_file_name = "pre-pull.compose.yml"
     write_compose_file_cmd = " ".join(
-        ["echo", f"'{compose_yaml}'", ">", compose_file_name]
+        ["echo", f'"{compose_yaml}"', ">", compose_file_name]
     )
     docker_compose_pull_cmd = " ".join(
         ["docker-compose", f"--file={compose_file_name}", "pull"]
