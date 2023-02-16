@@ -376,10 +376,10 @@ def get_docker_pull_images_crontab(interval: datetime.timedelta) -> str:
     return " ".join(
         [
             "echo",
-            f"*/{checked_interval or 1} * * * * root",
+            f'"*/{checked_interval or 1} * * * * root',
             _DOCKER_COMPOSE_CMD,
-            f"--file={_PRE_PULL_COMPOSE_FILE_NAME}",
-            "pull",
+            f"--file=/{_PRE_PULL_COMPOSE_FILE_NAME}",
+            'pull >> /var/log/docker-pull-cronjob.log 2>&1"',
             ">>",
             "/etc/crontab",
         ]
