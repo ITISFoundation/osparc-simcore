@@ -11,6 +11,7 @@ qx.Class.define("osparc.ui.window.Window", {
     this.base(arguments, caption, icon);
 
     this.getChildControl("title").set({
+      font: "text-15",
       rich: true
     });
 

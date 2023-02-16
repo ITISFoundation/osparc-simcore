@@ -31,9 +31,6 @@ qx.Class.define("osparc.ui.window.Dialog", {
       modal: true
     });
 
-    this.getChildControl("title").set({
-      font: "title-14"
-    });
     this.__buildLayout();
     if (message) {
       this.setMessage(message);
