@@ -135,35 +135,35 @@ qx.Class.define("osparc.ui.basic.Thumbnail", {
     },
 
     __applyMinImageWidth: function(val) {
-      const image = this.getChildControl("image");
+      this.setMinWidth(val);
       if (val) {
+        const image = this.getChildControl("image");
         image.setMinWidth(val);
       }
-      this.setMinWidth(val);
     },
 
     __applyMaxImageWidth: function(val) {
+      this.setMaxWidth(val);
       const image = this.getChildControl("image");
       if (val) {
         image.setMaxWidth(val);
       }
-      this.setMaxWidth(val);
     },
 
     __applyMinImageHeight: function(val) {
+      this.setMinHeight(val);
       const image = this.getChildControl("image");
       if (val) {
         image.setMinHeight(val);
       }
-      this.setMinHeight(val);
     },
 
     __applyMaxImageHeight: function(val) {
+      this.setMaxHeight(val);
       const image = this.getChildControl("image");
       if (val) {
         image.setMaxHeight(val);
       }
-      this.setMaxHeight(val);
     },
 
     recheckSize: function() {
