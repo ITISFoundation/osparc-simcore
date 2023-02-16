@@ -329,7 +329,10 @@ async def get_docker_swarm_join_bash_command() -> str:
 def get_docker_login_on_start_bash_command(registry_settings: RegistrySettings) -> str:
     return " ".join(
         [
+            # NOTE: this is to ensure the image does not have some crap login credentials
             "docker",
+            "logout",
+            "&&" "docker",
             "login",
             "--username",
             registry_settings.REGISTRY_USER,
