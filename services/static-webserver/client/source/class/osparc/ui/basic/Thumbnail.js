@@ -27,8 +27,10 @@ qx.Class.define("osparc.ui.basic.Thumbnail", {
 
   /**
    * @param {String} source Source of the Image
+   * @param {Number} maxWidth Maximum Width
+   * @param {Number} maxHeight Maximum Height
    */
-  construct: function(source) {
+  construct: function(source, maxWidth, maxHeight) {
     this.base(arguments);
 
     const layout = new qx.ui.layout.Grid();
@@ -58,8 +60,14 @@ qx.Class.define("osparc.ui.basic.Thumbnail", {
     if (source) {
       this.setSource(source);
     }
-
     const image = this.getChildControl("image");
+    if (maxWidth) {
+      image.setMaxWidth(maxWidth);
+    }
+    if (maxHeight) {
+      image.setMaxHeight(maxHeight);
+    }
+
     [
       "appear",
       "loaded"
@@ -75,34 +83,6 @@ qx.Class.define("osparc.ui.basic.Thumbnail", {
       nullable : true,
       event : "changeSource",
       apply : "__applySource"
-    },
-
-    minImageWidth: {
-      check : "Integer",
-      nullable : true,
-      init : null,
-      apply : "__applyMinImageWidth"
-    },
-
-    maxImageWidth: {
-      check : "Integer",
-      nullable : true,
-      init : null,
-      apply : "__applyMaxImageWidth"
-    },
-
-    minImageHeight: {
-      check : "Integer",
-      nullable : true,
-      init : null,
-      apply : "__applyMinImageHeight"
-    },
-
-    maxImageHeight: {
-      check : "Integer",
-      nullable : true,
-      init : null,
-      apply : "__applyMaxImageHeight"
     }
   },
 
@@ -131,38 +111,6 @@ qx.Class.define("osparc.ui.basic.Thumbnail", {
       const image = this.getChildControl("image");
       if (val) {
         image.setSource(val);
-      }
-    },
-
-    __applyMinImageWidth: function(val) {
-      this.setMinWidth(val);
-      if (val) {
-        const image = this.getChildControl("image");
-        image.setMinWidth(val);
-      }
-    },
-
-    __applyMaxImageWidth: function(val) {
-      this.setMaxWidth(val);
-      const image = this.getChildControl("image");
-      if (val) {
-        image.setMaxWidth(val);
-      }
-    },
-
-    __applyMinImageHeight: function(val) {
-      this.setMinHeight(val);
-      const image = this.getChildControl("image");
-      if (val) {
-        image.setMinHeight(val);
-      }
-    },
-
-    __applyMaxImageHeight: function(val) {
-      this.setMaxHeight(val);
-      const image = this.getChildControl("image");
-      if (val) {
-        image.setMaxHeight(val);
       }
     },
 
