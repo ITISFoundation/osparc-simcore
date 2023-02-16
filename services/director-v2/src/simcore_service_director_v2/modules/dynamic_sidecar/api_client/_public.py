@@ -177,10 +177,15 @@ class DynamicSidecarClient:
 
         sorted_container_names = sorted(containers_status.keys())
 
-        entrypoint_container_name = await self.get_entrypoint_container_name(
-            dynamic_sidecar_endpoint=dynamic_sidecar_endpoint,
-            dynamic_sidecar_network_name=dynamic_sidecar_network_name,
-        )
+        try:
+            entrypoint_container_name = await self.get_entrypoint_container_name(
+                dynamic_sidecar_endpoint=dynamic_sidecar_endpoint,
+                dynamic_sidecar_network_name=dynamic_sidecar_network_name,
+            )
+        except EntrypointContainerNotFoundError:
+            # sometimes arrives before the sidecar started the user services
+            # operation can be skipped
+            return
 
         network_names_to_ids: dict[str, str] = await get_or_create_networks_ids(
             [project_network], project_id
