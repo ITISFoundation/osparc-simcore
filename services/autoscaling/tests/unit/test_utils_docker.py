@@ -817,19 +817,19 @@ def test_get_docker_pull_images_on_start_bash_command(
     [
         (
             datetime.timedelta(minutes=20),
-            "echo */20 * * * * docker-compose --file=pre-pull.compose.yml pull >> /etc/crontab",
+            "echo */20 * * * * root docker-compose --file=pre-pull.compose.yml pull >> /etc/crontab",
         ),
         (
             datetime.timedelta(seconds=20),
-            "echo */1 * * * * docker-compose --file=pre-pull.compose.yml pull >> /etc/crontab",
+            "echo */1 * * * * root docker-compose --file=pre-pull.compose.yml pull >> /etc/crontab",
         ),
         (
             datetime.timedelta(seconds=200),
-            "echo */3 * * * * docker-compose --file=pre-pull.compose.yml pull >> /etc/crontab",
+            "echo */3 * * * * root docker-compose --file=pre-pull.compose.yml pull >> /etc/crontab",
         ),
         (
             datetime.timedelta(days=3),
-            "echo */4320 * * * * docker-compose --file=pre-pull.compose.yml pull >> /etc/crontab",
+            "echo */4320 * * * * root docker-compose --file=pre-pull.compose.yml pull >> /etc/crontab",
         ),
     ],
     ids=str,
