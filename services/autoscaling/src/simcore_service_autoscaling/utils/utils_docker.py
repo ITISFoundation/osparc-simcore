@@ -7,6 +7,7 @@ import collections
 import datetime
 import logging
 import re
+from pathlib import Path
 from typing import Final, Optional, cast
 
 import yaml
@@ -345,6 +346,7 @@ def get_docker_login_on_start_bash_command(registry_settings: RegistrySettings) 
 
 _DOCKER_COMPOSE_CMD: Final[str] = "docker-compose"
 _PRE_PULL_COMPOSE_FILE_NAME: Final[str] = "pre-pull.compose.yml"
+_CRONJOB_FILEPATH: Final[Path] = Path("/var/log/docker-pull-cronjob.log")
 
 
 def get_docker_pull_images_on_start_bash_command(
@@ -377,9 +379,10 @@ def get_docker_pull_images_crontab(interval: datetime.timedelta) -> str:
         [
             "echo",
             f'"*/{checked_interval or 1} * * * * root',
+            f'echo "Cronjob ran at $(date)" >> {_CRONJOB_FILEPATH} && ',
             _DOCKER_COMPOSE_CMD,
             f"--file=/{_PRE_PULL_COMPOSE_FILE_NAME}",
-            'pull >> /var/log/docker-pull-cronjob.log 2>&1"',
+            f'pull >> {_CRONJOB_FILEPATH} 2>&1"',
             ">>",
             "/etc/crontab",
         ]
