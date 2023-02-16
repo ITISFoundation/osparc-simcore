@@ -157,11 +157,13 @@ qx.Class.define("osparc.ui.message.Loading", {
       const logo = new osparc.ui.basic.Thumbnail(defaultLogoPath, this.self().LOGO_WIDTH, this.self().LOGO_HEIGHT).set({
         alignX: "center"
       });
-      // this is needed for svg images
+      /*
+      // this is needed for svg images, but it breaks the GUI if the image source changes
       logo.getChildControl("image").set({
         minWidth: parseInt(this.self().LOGO_WIDTH/1.5),
         minHeight: parseInt(this.self().LOGO_HEIGHT/1.5)
       });
+      */
       this.bind("logo", logo, "source", {
         converter: newPath => newPath ? newPath : defaultLogoPath
       });
