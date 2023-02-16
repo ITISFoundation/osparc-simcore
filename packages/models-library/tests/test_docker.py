@@ -2,14 +2,13 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import Any
 
 import pytest
+from faker import Faker
 from models_library.docker import (
-    LABEL_PREFIX_CONTAINER,
     DockerGenericTag,
     DockerLabelKey,
-    get_prefixed_container_label,
+    SimcoreServiceDockerLabelKeys,
 )
 from pydantic import ValidationError, parse_obj_as
 
@@ -102,14 +101,18 @@ def test_docker_generic_tag(image_name: str, valid: bool):
             parse_obj_as(DockerGenericTag, image_name)
 
 
-@pytest.mark.parametrize(
-    "label, value, expected",
-    [
-        ("string", "1", f"{LABEL_PREFIX_CONTAINER}.string=1"),
-        ("none-value", None, f"{LABEL_PREFIX_CONTAINER}.none-value=None"),
-        ("dict", {"ciao": 1}, f"{LABEL_PREFIX_CONTAINER}.dict={{'ciao': 1}}"),
-        ("float", 34.56, f"{LABEL_PREFIX_CONTAINER}.float=34.56"),
-    ],
-)
-def test_get_prefixed_container_label(label: str, value: Any, expected: str):
-    assert get_prefixed_container_label(label, value) == expected
+@pytest.fixture
+def osparc_docker_label_keys(
+    faker: Faker,
+) -> SimcoreServiceDockerLabelKeys:
+    return SimcoreServiceDockerLabelKeys.parse_obj(
+        dict(user_id=faker.pyint(), project_id=faker.uuid4(), node_id=faker.uuid4())
+    )
+
+
+def test_osparc_docker_label_keys_to_docker_labels(
+    osparc_docker_label_keys: SimcoreServiceDockerLabelKeys,
+):
+    exported_dict = osparc_docker_label_keys.to_docker_labels()
+    assert all(isinstance(v, str) for v in exported_dict.values())
+    assert parse_obj_as(SimcoreServiceDockerLabelKeys, exported_dict)
