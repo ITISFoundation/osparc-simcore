@@ -1063,52 +1063,61 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (model) {
         // create nodes
         const nodes = model.getNodes();
-        const nodeUIs = [];
-        for (const nodeId in nodes) {
-          const node = nodes[nodeId];
-          const nodeUI = this._createNodeUI(nodeId);
-          this._addNodeUIToWorkbench(nodeUI, node.getPosition());
-          nodeUIs.push(nodeUI);
-        }
+        const nodeUIs = this.__renderNodes(nodes);
         qx.ui.core.queue.Layout.flush();
+        this.__renderEdges(nodes, nodeUIs);
+        this.__renderAnnotations(model.getStudy().getUi());
+      }
+    },
 
-        let tries = 0;
-        const maxTries = 40;
-        const sleepFor = 100;
-        const allNodesVisible = nodeUIss => nodeUIss.every(nodeUI => nodeUI.getCurrentBounds() !== null);
-        while (!allNodesVisible(nodeUIs) && tries < maxTries) {
-          await osparc.utils.Utils.sleep(sleepFor);
-          tries++;
-        }
-        console.log("nodes visible", nodeUIs.length, tries*sleepFor);
+    __renderNodes: function(nodes) {
+      const nodeUIs = [];
+      for (const nodeId in nodes) {
+        const node = nodes[nodeId];
+        const nodeUI = this._createNodeUI(nodeId);
+        this._addNodeUIToWorkbench(nodeUI, node.getPosition());
+        nodeUIs.push(nodeUI);
+      }
+      return nodeUIs;
+    },
 
-        nodeUIs.forEach(nodeUI => this.__createDragDropMechanism(nodeUI));
+    __renderEdges: async function(nodes, nodeUIs) {
+      let tries = 0;
+      const maxTries = 40;
+      const sleepFor = 100;
+      const allNodesVisible = nodeUIss => nodeUIss.every(nodeUI => nodeUI.getCurrentBounds() !== null);
+      while (!allNodesVisible(nodeUIs) && tries < maxTries) {
+        await osparc.utils.Utils.sleep(sleepFor);
+        tries++;
+      }
+      console.log("nodes visible", nodeUIs.length, tries*sleepFor);
 
-        // create edges
-        for (const nodeId in nodes) {
-          const node = nodes[nodeId];
-          const inputNodeIDs = node.getInputNodes();
-          inputNodeIDs.forEach(inputNodeId => {
-            if (inputNodeId in nodes) {
-              this._createEdgeBetweenNodes(inputNodeId, nodeId, false);
-            }
-          });
-        }
+      nodeUIs.forEach(nodeUI => this.__createDragDropMechanism(nodeUI));
 
-        // create annotations
-        const studyUI = model.getStudy().getUi();
-        const initData = studyUI.getAnnotationsInitData();
-        const annotations = initData ? initData : studyUI.getAnnotations();
-        Object.entries(annotations).forEach(([annotationId, annotation]) => {
-          if (annotation instanceof osparc.component.workbench.Annotation) {
-            this.__addAnnotation(annotation.serialize(), annotationId);
-          } else {
-            this.__addAnnotation(annotation, annotationId);
+      // create edges
+      for (const nodeId in nodes) {
+        const node = nodes[nodeId];
+        const inputNodeIDs = node.getInputNodes();
+        inputNodeIDs.forEach(inputNodeId => {
+          if (inputNodeId in nodes) {
+            this._createEdgeBetweenNodes(inputNodeId, nodeId, false);
           }
         });
-        if (initData) {
-          studyUI.nullAnnotationsInitData();
+      }
+    },
+
+    __renderAnnotations: function(studyUI) {
+      const initData = studyUI.getAnnotationsInitData();
+      const annotations = initData ? initData : studyUI.getAnnotations();
+      Object.entries(annotations).forEach(([annotationId, annotation]) => {
+        if (annotation instanceof osparc.component.workbench.Annotation) {
+          this.__addAnnotation(annotation.serialize(), annotationId);
+        } else {
+          this.__addAnnotation(annotation, annotationId);
         }
+      });
+      if (initData) {
+        studyUI.nullAnnotationsInitData();
       }
     },
 
