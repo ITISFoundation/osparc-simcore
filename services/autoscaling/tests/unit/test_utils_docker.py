@@ -817,19 +817,19 @@ def test_get_docker_pull_images_on_start_bash_command(
     [
         (
             datetime.timedelta(minutes=20),
-            'echo "*/20 * * * * root echo "Cronjob ran at $(date)" >> /var/log/docker-pull-cronjob.log && docker-compose --file=pre-pull.compose.yml pull >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
+            'echo "*/20 * * * * root echo "Cronjob ran at $(date)" >> /var/log/docker-pull-cronjob.log && docker-compose --file=/pre-pull.compose.yml pull >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
         ),
         (
             datetime.timedelta(seconds=20),
-            'echo "*/1 * * * * root echo "Cronjob ran at $(date)" >> /var/log/docker-pull-cronjob.log && docker-compose --file=pre-pull.compose.yml pull >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
+            'echo "*/1 * * * * root echo "Cronjob ran at $(date)" >> /var/log/docker-pull-cronjob.log && docker-compose --file=/pre-pull.compose.yml pull >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
         ),
         (
             datetime.timedelta(seconds=200),
-            'echo "*/3 * * * * root echo "Cronjob ran at $(date)" >> /var/log/docker-pull-cronjob.log && docker-compose --file=pre-pull.compose.yml pull >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
+            'echo "*/3 * * * * root echo "Cronjob ran at $(date)" >> /var/log/docker-pull-cronjob.log && docker-compose --file=/pre-pull.compose.yml pull >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
         ),
         (
             datetime.timedelta(days=3),
-            'echo "*/4320 * * * * root echo "Cronjob ran at $(date)" >> /var/log/docker-pull-cronjob.log && docker-compose --file=pre-pull.compose.yml pull >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
+            'echo "*/4320 * * * * root echo "Cronjob ran at $(date)" >> /var/log/docker-pull-cronjob.log && docker-compose --file=/pre-pull.compose.yml pull >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
         ),
     ],
     ids=str,

@@ -333,7 +333,8 @@ def get_docker_login_on_start_bash_command(registry_settings: RegistrySettings) 
             # NOTE: this is to ensure the image does not have some crap login credentials
             "docker",
             "logout",
-            "&&" "docker",
+            "&&",
+            "docker",
             "login",
             "--username",
             registry_settings.REGISTRY_USER,
@@ -379,7 +380,7 @@ def get_docker_pull_images_crontab(interval: datetime.timedelta) -> str:
         [
             "echo",
             f'"*/{checked_interval or 1} * * * * root',
-            f'echo "Cronjob ran at $(date)" >> {_CRONJOB_FILEPATH} && ',
+            f'echo "Cronjob ran at $(date)" >> {_CRONJOB_FILEPATH} &&',
             _DOCKER_COMPOSE_CMD,
             f"--file=/{_PRE_PULL_COMPOSE_FILE_NAME}",
             f'pull >> {_CRONJOB_FILEPATH} 2>&1"',
