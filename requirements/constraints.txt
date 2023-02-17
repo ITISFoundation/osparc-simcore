@@ -37,6 +37,9 @@ urllib3>=1.26.5                               # https://github.com/advisories/GH
 # TODO: includes async features https://docs.sqlalchemy.org/en/14/changelog/migration_20.html
 sqlalchemy<2.0
 
+# changed behaviour in using middlewares (https://fastapi.tiangolo.com/release-notes/#0910)
+# TODO: look into failling unit tests and upgrade code
+fastapi<0.91.0
 
 #
 # Bugs

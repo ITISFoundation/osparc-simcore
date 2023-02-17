@@ -78,7 +78,7 @@ greenlet==1.1.2
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
-hypothesis==6.68.1
+hypothesis==6.68.2
     # via -r requirements/_test.in
 icdiff==2.0.6
     # via pytest-icdiff
