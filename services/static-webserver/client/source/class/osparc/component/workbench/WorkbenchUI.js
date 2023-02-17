@@ -1063,37 +1063,31 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (model) {
         // create nodes
         const nodes = model.getNodes();
-        const nodeUIs = this.__renderNodes(nodes);
+        this.__renderNodes(nodes);
         qx.ui.core.queue.Layout.flush();
-        this.__renderEdges(nodes, nodeUIs);
         this.__renderAnnotations(model.getStudy().getUi());
       }
     },
 
     __renderNodes: function(nodes) {
+      let nNodesToRender = Object.keys(nodes).length;
       const nodeUIs = [];
       for (const nodeId in nodes) {
         const node = nodes[nodeId];
         const nodeUI = this._createNodeUI(nodeId);
+        nodeUI.addListenerOnce("appear", () => {
+          nNodesToRender--;
+          if (nNodesToRender === 0) {
+            this.__renderEdges(nodes);
+          }
+        }, this);
         this._addNodeUIToWorkbench(nodeUI, node.getPosition());
         nodeUIs.push(nodeUI);
       }
-      return nodeUIs;
+      nodeUIs.forEach(nodeUI => this.__createDragDropMechanism(nodeUI));
     },
 
-    __renderEdges: async function(nodes, nodeUIs) {
-      let tries = 0;
-      const maxTries = 40;
-      const sleepFor = 100;
-      const allNodesVisible = nodeUIss => nodeUIss.every(nodeUI => nodeUI.getCurrentBounds() !== null);
-      while (!allNodesVisible(nodeUIs) && tries < maxTries) {
-        await osparc.utils.Utils.sleep(sleepFor);
-        tries++;
-      }
-      console.log("nodes visible", nodeUIs.length, tries*sleepFor);
-
-      nodeUIs.forEach(nodeUI => this.__createDragDropMechanism(nodeUI));
-
+    __renderEdges: async function(nodes) {
       // create edges
       for (const nodeId in nodes) {
         const node = nodes[nodeId];
