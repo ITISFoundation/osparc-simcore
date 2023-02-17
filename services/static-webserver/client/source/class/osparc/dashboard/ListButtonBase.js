@@ -81,6 +81,8 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
           control = new qx.ui.basic.Label().set({
             font: "text-15",
             alignY: "middle",
+            maxWidth: 500,
+            maxHeight: 20,
             rich: true
           });
           this._add(control, {
@@ -119,7 +121,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
 
     _applyIcon: function(value, old) {
       if (value.includes("@FontAwesome5Solid/")) {
-        value += "24";
+        value += "22";
       }
       const image = this.getChildControl("icon").getChildControl("image");
       image.set({

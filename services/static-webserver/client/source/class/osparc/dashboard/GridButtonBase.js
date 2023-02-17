@@ -135,13 +135,16 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           this._mainLayout.add(control, this.self().POS.SUBTITLE);
           break;
         case "subtitle-icon": {
-          control = new qx.ui.basic.Image();
+          control = new qx.ui.basic.Image().set({
+            alignY: "middle"
+          });
           const subtitleLayout = this.getChildControl("subtitle");
           subtitleLayout.addAt(control, 0);
           break;
         }
         case "subtitle-text": {
           control = new qx.ui.basic.Label().set({
+            alignY: "middle",
             rich: true,
             anonymous: true,
             font: "text-13",
