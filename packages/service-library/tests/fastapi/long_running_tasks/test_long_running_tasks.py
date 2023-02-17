@@ -134,7 +134,6 @@ def wait_for_task() -> Callable[
 
     return _waiter
 
-@pytest.mark.testit
 async def test_workflow(
     app: FastAPI,
     client: AsyncClient,
@@ -234,7 +233,6 @@ async def test_failing_task_returns_error(
     # assert task_result.error["errors"][0]["code"] == "RuntimeError"
     # assert task_result.error["errors"][0]["message"] == "We were asked to fail!!"
 
-# @pytest.mark.testit
 async def test_get_results_before_tasks_finishes_returns_404(
     app: FastAPI,
     client: AsyncClient,
