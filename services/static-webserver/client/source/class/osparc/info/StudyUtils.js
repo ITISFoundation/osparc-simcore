@@ -218,7 +218,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       }));
 
       const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Description")).set({
-        font: "title-12"
+        font: "text-13"
       });
       descriptionLayout.add(label);
 
@@ -245,7 +245,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       }));
 
       const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Tags")).set({
-        font: "title-12"
+        font: "text-13"
       });
       tagsLayout.add(label);
 
@@ -281,7 +281,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       for (let i=0; i<extraInfos.length; i++) {
         const extraInfo = extraInfos[i];
         moreInfo.add(new qx.ui.basic.Label(extraInfo.label).set({
-          font: "title-12"
+          font: "text-13"
         }), {
           row: i,
           column: 0

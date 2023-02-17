@@ -171,7 +171,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       }));
 
       const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Description")).set({
-        font: "title-12"
+        font: "text-13"
       });
       descriptionLayout.add(label);
 
@@ -191,7 +191,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       }));
 
       const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Resources")).set({
-        font: "title-12"
+        font: "text-13"
       });
       resourcesLayout.add(label);
 
@@ -208,7 +208,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
 
       const reservationLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       reservationLayout.add(new qx.ui.basic.Label(this.RESOURCES_INFO["reservation"].label).set({
-        font: "title-12"
+        font: "text-13"
       }));
       reservationLayout.add(new osparc.ui.hint.InfoHint(this.RESOURCES_INFO["reservation"].tooltip));
       resourcesInfo.add(reservationLayout, {
@@ -217,7 +217,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       });
       const limitLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       limitLayout.add(new qx.ui.basic.Label(this.RESOURCES_INFO["limit"].label).set({
-        font: "title-12"
+        font: "text-13"
       }));
       limitLayout.add(new osparc.ui.hint.InfoHint(this.RESOURCES_INFO["limit"].tooltip));
       resourcesInfo.add(limitLayout, {
@@ -244,7 +244,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       let row = 1;
       Object.entries(imagesResourcesInfo).forEach(([imageName, imageInfo]) => {
         layout.add(new qx.ui.basic.Label(imageName).set({
-          font: "title-12"
+          font: "text-13"
         }), {
           row,
           column: 0
@@ -259,7 +259,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
               label += " (GB)";
             }
             layout.add(new qx.ui.basic.Label(label).set({
-              font: "title-12"
+              font: "text-13"
             }), {
               row,
               column
@@ -299,7 +299,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       for (let i=0; i<extraInfos.length; i++) {
         const extraInfo = extraInfos[i];
         moreInfo.add(new qx.ui.basic.Label(extraInfo.label).set({
-          font: "title-12"
+          font: "text-13"
         }), {
           row: i,
           column: 0

@@ -76,7 +76,7 @@ qx.Class.define("osparc.info.StudyMedium", {
     __rebuildLayout: function(width) {
       this._removeAll();
 
-      const nameAndMenuButton = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+      const nameAndMenuButton = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignY: "middle"
       }));
       nameAndMenuButton.add(this.__createTitle(), {

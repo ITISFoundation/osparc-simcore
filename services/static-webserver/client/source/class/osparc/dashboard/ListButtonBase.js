@@ -79,7 +79,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
         }
         case "title":
           control = new qx.ui.basic.Label().set({
-            font: "text-15",
+            font: "text-14",
             alignY: "middle",
             maxWidth: 500,
             maxHeight: 20,

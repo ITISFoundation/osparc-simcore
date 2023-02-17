@@ -22,7 +22,7 @@ qx.Class.define("osparc.ui.window.Dialog", {
     this.getChildControl("captionbar").setPadding(10);
     this.set({
       autoDestroy: true,
-      layout: new qx.ui.layout.VBox(),
+      layout: new qx.ui.layout.VBox(15),
       showMinimize: false,
       showMaximize: false,
       contentPadding: 15,
@@ -55,11 +55,8 @@ qx.Class.define("osparc.ui.window.Dialog", {
         case "buttons-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
             alignX: "right"
-          })).set({
-            padding: 5,
-            appearance: "margined-layout"
-          });
-          this._add(control);
+          }));
+          this.add(control);
           break;
         case "cancel-button": {
           const btnsLayout = this.getChildControl("buttons-layout");

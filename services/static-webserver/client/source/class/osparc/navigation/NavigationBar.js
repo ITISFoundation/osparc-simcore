@@ -175,7 +175,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "dashboard-button":
           control = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesome5Solid/home/16").set({
             ...this.self().BUTTON_OPTIONS,
-            font: "title-14"
+            font: "text-14"
           });
           osparc.utils.Utils.setIdToWidget(control, "dashboardBtn");
           control.addListener("execute", () => this.fireEvent("backToDashboardPressed"), this);

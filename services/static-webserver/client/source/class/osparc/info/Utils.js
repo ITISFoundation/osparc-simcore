@@ -22,7 +22,7 @@ qx.Class.define("osparc.info.Utils", {
   statics: {
     createTitle: function() {
       const label = new qx.ui.basic.Label().set({
-        font: "text-15",
+        font: "text-14",
         maxWidth: 600,
         rich: true,
         wrap: true
