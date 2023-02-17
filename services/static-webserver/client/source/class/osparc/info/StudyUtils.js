@@ -24,11 +24,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
       */
     createTitle: function(study) {
-      const title = new qx.ui.basic.Label().set({
-        font: "title-14",
-        allowStretchX: true,
-        rich: true
-      });
+      const title = osparc.info.Utils.createTitle();
       if (study instanceof osparc.data.model.Study) {
         study.bind("name", title, "value");
       } else {
@@ -41,9 +37,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
       */
     createUuid: function(study) {
-      const uuid = new qx.ui.basic.Label().set({
-        maxWidth: 150
-      });
+      const uuid = osparc.info.Utils.createId();
       if (study instanceof osparc.data.model.Study) {
         study.bind("uuid", uuid, "value");
         study.bind("uuid", uuid, "toolTipText");
@@ -185,12 +179,12 @@ qx.Class.define("osparc.info.StudyUtils", {
       * @param maxWidth {Number} thumbnail's maxWidth
       * @param maxHeight {Number} thumbnail's maxHeight
       */
-    createThumbnail: function(study, maxWidth, maxHeight = 160) {
+    createThumbnail: function(study, maxWidth, maxHeight) {
+      const thumbnail = osparc.info.Utils.createThumbnail(maxWidth, maxHeight);
       const noThumbnail = "osparc/no_photography_black_24dp.svg";
-      const image = new osparc.ui.basic.Thumbnail(null, maxWidth, maxHeight);
       if (study instanceof osparc.data.model.Study) {
-        study.bind("thumbnail", image, "source", {
-          converter: thumbnail => thumbnail ? thumbnail : noThumbnail,
+        study.bind("thumbnail", thumbnail, "source", {
+          converter: thumb => thumb ? thumb : noThumbnail,
           onUpdate: (source, target) => {
             if (source.getThumbnail() === "") {
               target.getChildControl("image").set({
@@ -201,17 +195,17 @@ qx.Class.define("osparc.info.StudyUtils", {
           }
         });
       } else if (study["thumbnail"]) {
-        image.set({
+        thumbnail.set({
           source: study["thumbnail"]
         });
       } else {
-        image.set({
+        thumbnail.set({
           source: noThumbnail,
           minWidth: 100,
           minHeight: 100
         });
       }
-      return image;
+      return thumbnail;
     },
 
     /**

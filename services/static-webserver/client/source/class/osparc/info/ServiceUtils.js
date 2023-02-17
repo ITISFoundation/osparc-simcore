@@ -24,11 +24,8 @@ qx.Class.define("osparc.info.ServiceUtils", {
       * @param label {String} label
       */
     createTitle: function(label) {
-      const title = new qx.ui.basic.Label(label).set({
-        font: "title-14",
-        allowStretchX: true,
-        rich: true
-      });
+      const title = osparc.info.Utils.createTitle();
+      title.setValue(label);
       return title;
     },
 
@@ -36,9 +33,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       * @param serviceData {Object} Serialized Service Object
       */
     createNodeId: function(instaceUuid) {
-      const label = new qx.ui.basic.Label().set({
-        maxWidth: 220
-      });
+      const label = osparc.info.Utils.createId();
       label.set({
         value: instaceUuid
       });
@@ -49,9 +44,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       * @param serviceKey {String} Service key
       */
     createKey: function(serviceKey) {
-      const key = new qx.ui.basic.Label().set({
-        maxWidth: 220
-      });
+      const key = osparc.info.Utils.createId();
       key.set({
         value: serviceKey,
         toolTipText: serviceKey
@@ -63,11 +56,11 @@ qx.Class.define("osparc.info.ServiceUtils", {
       * @param serviceVersion {String} Service version
       */
     createVersion: function(serviceVersion) {
-      const key = new qx.ui.basic.Label().set({
-        value: serviceVersion,
-        maxWidth: 150
+      const version = osparc.info.Utils.createId();
+      version.set({
+        value: serviceVersion
       });
-      return key;
+      return version;
     },
 
     /**
@@ -160,12 +153,12 @@ qx.Class.define("osparc.info.ServiceUtils", {
       * @param maxWidth {Number} thumbnail's maxWidth
       * @param maxHeight {Number} thumbnail's maxHeight
       */
-    createThumbnail: function(serviceData, maxWidth, maxHeight = 160) {
-      const image = new osparc.ui.basic.Thumbnail(null, maxWidth, maxHeight);
-      image.set({
+    createThumbnail: function(serviceData, maxWidth, maxHeight) {
+      const thumbnail = osparc.info.Utils.createThumbnail(maxWidth, maxHeight);
+      thumbnail.set({
         source: "thumbnail" in serviceData && serviceData["thumbnail"] !== "" ? serviceData["thumbnail"] : osparc.dashboard.CardBase.SERVICE_ICON
       });
-      return image;
+      return thumbnail;
     },
 
     /**
