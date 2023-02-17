@@ -115,8 +115,8 @@ qx.Class.define("osparc.ui.message.Loading", {
         alignX: "center",
         alignY: "middle"
       })).set({
-        width: this.self().LOGO_WIDTH*2,
-        maxWidth: this.self().LOGO_WIDTH*2,
+        width: this.self().LOGO_WIDTH*3,
+        maxWidth: this.self().LOGO_WIDTH*3,
         padding: 20
       });
       this._add(new qx.ui.core.Widget(), {
