@@ -120,7 +120,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         case "title":
           control = new qx.ui.basic.Label().set({
             marginTop: 3,
-            font: "text-15",
+            font: "text-14",
             maxWidth: this.self().ITEM_WIDTH - 2*this.self().PADDING,
             maxHeight: this.self().TITLE_MAX_HEIGHT,
             rich: true,
