@@ -345,7 +345,7 @@ def get_docker_login_on_start_bash_command(registry_settings: RegistrySettings) 
     )
 
 
-_DOCKER_COMPOSE_CMD: Final[str] = "docker-compose"
+_DOCKER_COMPOSE_CMD: Final[str] = "docker compose"
 _PRE_PULL_COMPOSE_PATH: Final[Path] = Path("/pre-pull.compose.yml")
 _CRONJOB_SCRIPT_PATH: Final[Path] = Path("/docker-pull-script.sh")
 _CRONJOB_LOGS_PATH: Final[Path] = Path("/var/log/docker-pull-cronjob.log")
