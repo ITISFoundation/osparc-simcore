@@ -85,24 +85,10 @@ qx.Theme.define("osparc.theme.Font", {
       decoration: "underline"
     },
 
-    "title-13": {
-      size: 13,
-      family: ["Roboto", "sanf-serif"],
-      color: "text",
-      bold: true
-    },
-
     "text-13": {
       size: 13,
       family: ["Roboto", "sanf-serif"],
       color: "text"
-    },
-
-    "title-12": {
-      size: 12,
-      family: ["Roboto", "sanf-serif"],
-      color: "text",
-      bold: true
     },
 
     "text-12": {
