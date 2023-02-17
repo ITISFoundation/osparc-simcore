@@ -43,10 +43,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
   },
 
   statics: {
-    SHARE_ICON: "@FontAwesome5Solid/share-alt/14",
-    SHARED_USER: "@FontAwesome5Solid/user/14",
-    SHARED_ORGS: "@FontAwesome5Solid/users/14",
-    SHARED_ALL: "@FontAwesome5Solid/globe/14",
+    SHARE_ICON: "@FontAwesome5Solid/share-alt/13",
+    SHARED_USER: "@FontAwesome5Solid/user/13",
+    SHARED_ORGS: "@FontAwesome5Solid/users/13",
+    SHARED_ALL: "@FontAwesome5Solid/globe/13",
+    PERM_READ: "@FontAwesome5Solid/eye/13",
+    MODE_WORKBENCH: "@FontAwesome5Solid/cubes/13",
+    MODE_GUIDED: "@FontAwesome5Solid/play/13",
+    MODE_APP: "@FontAwesome5Solid/desktop/13",
     NEW_ICON: "@FontAwesome5Solid/plus/",
     LOADING_ICON: "@FontAwesome5Solid/circle-notch/",
     STUDY_ICON: "@FontAwesome5Solid/file-alt/",
@@ -54,10 +58,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
     SERVICE_ICON: "@FontAwesome5Solid/paw/",
     COMP_SERVICE_ICON: "@FontAwesome5Solid/cogs/",
     DYNAMIC_SERVICE_ICON: "@FontAwesome5Solid/mouse-pointer/",
-    PERM_READ: "@FontAwesome5Solid/eye/14",
-    MODE_WORKBENCH: "@FontAwesome5Solid/cubes/14",
-    MODE_GUIDED: "@FontAwesome5Solid/play/14",
-    MODE_APP: "@FontAwesome5Solid/desktop/14",
 
     CARD_PRIORITY: {
       NEW: 0,
