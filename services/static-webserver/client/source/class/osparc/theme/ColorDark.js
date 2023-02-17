@@ -39,7 +39,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "text-darker": "c07",
     "contrasted-text-dark": "c01",
     "contrasted-text-light": "c12",
-    "link": "c08",
+    "link": "c11",
 
     // shadows
     "bg-shadow": "c06",
