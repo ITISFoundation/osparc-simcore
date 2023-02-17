@@ -42,7 +42,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
       switch (id) {
         case "lock-status":
           control = new osparc.ui.basic.Thumbnail().set({
-            minImageWidth: 40
+            minWidth: 40
           });
           this._add(control, {
             row: 0,
