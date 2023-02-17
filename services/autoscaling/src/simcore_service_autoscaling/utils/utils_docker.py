@@ -380,10 +380,13 @@ def get_docker_pull_images_crontab(interval: datetime.timedelta) -> str:
     write_crontab_script_cmd = " ".join(
         [
             "echo",
-            f'"#!/bin/sh\nCronjob ran at \\$(date)\ndocker-compose --file={_PRE_PULL_COMPOSE_PATH} pull"',
+            f'"#!/bin/sh\n"Cronjob ran at \\$(date)"\ndocker-compose --file={_PRE_PULL_COMPOSE_PATH} pull"',
             ">>",
             f"{_CRONJOB_SCRIPT_PATH}",
         ]
+    )
+    make_crontab_script_executable = " ".join(
+        ["chmod", "+x", f"{_CRONJOB_SCRIPT_PATH}"]
     )
     crontab_entry = " ".join(
         [
@@ -395,7 +398,9 @@ def get_docker_pull_images_crontab(interval: datetime.timedelta) -> str:
             "/etc/crontab",
         ]
     )
-    return " && ".join([write_crontab_script_cmd, crontab_entry])
+    return " && ".join(
+        [write_crontab_script_cmd, make_crontab_script_executable, crontab_entry]
+    )
 
 
 async def find_node_with_name(
