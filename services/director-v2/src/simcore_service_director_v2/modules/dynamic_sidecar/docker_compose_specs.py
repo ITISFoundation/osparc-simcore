@@ -192,7 +192,7 @@ def _update_container_labels(
     node_id: NodeID,
 ) -> None:
     for spec in service_spec["services"].values():
-        labels: set[str] = spec.setdefault("labels", [])
+        labels: list[str] = spec.setdefault("labels", [])
 
         label_keys = SimcoreServiceDockerLabelKeys(
             user_id=user_id, study_id=project_id, uuid=node_id
