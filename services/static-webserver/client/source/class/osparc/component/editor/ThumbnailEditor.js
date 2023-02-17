@@ -139,10 +139,7 @@ qx.Class.define("osparc.component.editor.ThumbnailEditor", {
       const thumbnailsLayout = this.getChildControl("scroll-thumbnails");
       thumbnailsLayout.removeAll();
       suggestions.forEach(suggestion => {
-        const thumbnail = new osparc.ui.basic.Thumbnail(suggestion).set({
-          maxImageWidth: 170,
-          maxImageHeight: 124
-        });
+        const thumbnail = new osparc.ui.basic.Thumbnail(suggestion, 170, 124);
         thumbnail.addListener("tap", () => {
           this.setUrl(thumbnail.getChildControl("image").getSource());
           thumbnailsLayout.getChildren().forEach(thumbnailImg => osparc.utils.Utils.removeBorder(thumbnailImg));
