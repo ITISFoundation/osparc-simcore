@@ -287,7 +287,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
     },
 
     createExtraInfo: function(extraInfos) {
-      const grid = new qx.ui.layout.Grid(5, 3);
+      const grid = new qx.ui.layout.Grid(8, 5);
       grid.setColumnAlign(0, "right", "middle");
       grid.setColumnAlign(1, "left", "middle");
       const moreInfo = new qx.ui.container.Composite(grid).set({
