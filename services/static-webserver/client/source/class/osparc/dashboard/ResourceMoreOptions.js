@@ -177,7 +177,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
       // Page title
       tabPage.add(new qx.ui.basic.Label(title).set({
-        font: "title-16"
+        font: "text-15"
       }));
 
       // Page content
