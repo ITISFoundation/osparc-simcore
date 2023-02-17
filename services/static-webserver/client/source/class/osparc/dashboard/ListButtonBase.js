@@ -93,7 +93,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
         case "description":
           control = new qx.ui.basic.Label().set({
             rich: true,
-            maxHeight: 15,
+            maxHeight: 16,
             minWidth: 100,
             font: "text-14",
             alignY: "middle",
@@ -106,7 +106,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
           break;
         case "description-md":
           control = new osparc.ui.markdown.Markdown().set({
-            maxHeight: 15,
+            maxHeight: 16,
             alignY: "middle",
             allowGrowX: true
           });
