@@ -346,8 +346,9 @@ def get_docker_login_on_start_bash_command(registry_settings: RegistrySettings) 
 
 
 _DOCKER_COMPOSE_CMD: Final[str] = "docker-compose"
-_PRE_PULL_COMPOSE_FILE_NAME: Final[str] = "pre-pull.compose.yml"
-_CRONJOB_FILEPATH: Final[Path] = Path("/var/log/docker-pull-cronjob.log")
+_PRE_PULL_COMPOSE_PATH: Final[Path] = Path("/pre-pull.compose.yml")
+_CRONJOB_SCRIPT_PATH: Final[Path] = Path("/docker-pull-script.sh")
+_CRONJOB_LOGS_PATH: Final[Path] = Path("/var/log/docker-pull-cronjob.log")
 
 
 def get_docker_pull_images_on_start_bash_command(
@@ -365,10 +366,10 @@ def get_docker_pull_images_on_start_bash_command(
     }
     compose_yaml = yaml.safe_dump(compose)
     write_compose_file_cmd = " ".join(
-        ["echo", f'"{compose_yaml}"', ">", _PRE_PULL_COMPOSE_FILE_NAME]
+        ["echo", f'"{compose_yaml}"', ">", f"{_PRE_PULL_COMPOSE_PATH}"]
     )
     docker_compose_pull_cmd = " ".join(
-        [_DOCKER_COMPOSE_CMD, f"--file={_PRE_PULL_COMPOSE_FILE_NAME}", "pull"]
+        [_DOCKER_COMPOSE_CMD, f"--file={_PRE_PULL_COMPOSE_PATH}", "pull"]
     )
     return " && ".join([write_compose_file_cmd, docker_compose_pull_cmd])
 
@@ -376,18 +377,25 @@ def get_docker_pull_images_on_start_bash_command(
 def get_docker_pull_images_crontab(interval: datetime.timedelta) -> str:
     # check the interval is within 1 < 60 minutes
     checked_interval = round(interval.total_seconds() / 60)
-    return " ".join(
+    write_crontab_script_cmd = " ".join(
+        [
+            "echo",
+            f'"#!/bin/sh\nCronjob ran at \\$(date)\ndocker-compose --file={_PRE_PULL_COMPOSE_PATH} pull"',
+            ">>",
+            f"{_CRONJOB_SCRIPT_PATH}",
+        ]
+    )
+    crontab_entry = " ".join(
         [
             "echo",
             f'"*/{checked_interval or 1} * * * * root',
-            f'echo "Cronjob ran at $(date)" >> {_CRONJOB_FILEPATH} &&',
-            _DOCKER_COMPOSE_CMD,
-            f"--file=/{_PRE_PULL_COMPOSE_FILE_NAME}",
-            f'pull >> {_CRONJOB_FILEPATH} 2>&1"',
+            f"{_CRONJOB_SCRIPT_PATH}",
+            f'>> {_CRONJOB_LOGS_PATH} 2>&1"',
             ">>",
             "/etc/crontab",
         ]
     )
+    return " && ".join([write_crontab_script_cmd, crontab_entry])
 
 
 async def find_node_with_name(
