@@ -66,6 +66,24 @@ qx.Class.define("osparc.dashboard.CardBase", {
       LOADER: 3
     },
 
+    createTSRLayout: function() {
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2).set({
+        alignY: "middle"
+      })).set({
+        toolTipText: qx.locale.Manager.tr("Ten Simple Rules"),
+        minWidth: 85
+      });
+      const tsrLabel = new qx.ui.basic.Label(qx.locale.Manager.tr("TSR:")).set({
+        alignY: "middle"
+      });
+      layout.add(tsrLabel);
+      const tsrRating = new osparc.ui.basic.StarsRating().set({
+        alignY: "middle"
+      });
+      layout.add(tsrRating);
+      return layout;
+    },
+
     filterText: function(checks, text) {
       if (text) {
         const includesSome = checks.some(check => check.toLowerCase().trim().includes(text.toLowerCase()));
