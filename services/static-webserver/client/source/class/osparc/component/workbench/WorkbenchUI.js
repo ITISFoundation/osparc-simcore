@@ -275,7 +275,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const title = new qx.ui.basic.Label(label).set({
         alignX: "center",
         margin: [15, 0],
-        font: "workbench-io-label",
+        font: "workbench-start-hint",
         textColor: "workbench-start-hint"
       });
       inputOutputNodesLayout.add(title);
