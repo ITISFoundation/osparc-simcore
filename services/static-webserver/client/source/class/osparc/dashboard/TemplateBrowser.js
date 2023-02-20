@@ -118,6 +118,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
 
     __itemClicked: function(card) {
       if (!card.isLocked()) {
+        card.setValue(false);
         const matchesId = study => study.uuid === card.getUuid();
         const templateData = this._resourcesList.find(matchesId);
         this.__createStudyFromTemplate(templateData);
