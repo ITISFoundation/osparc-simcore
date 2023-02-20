@@ -28,13 +28,14 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
     this.base(arguments);
 
     const grid = new qx.ui.layout.Grid(20, 5);
-    grid.setColumnMinWidth(this.self().GRID_POS.LABEL, 80);
-    grid.setColumnMaxWidth(this.self().GRID_POS.LABEL, 180);
-    grid.setColumnFlex(this.self().GRID_POS.LABEL, 1);
     grid.setColumnAlign(this.self().GRID_POS.LABEL, "left", "middle");
+    grid.setColumnMinWidth(this.self().GRID_POS.LABEL, 80);
+    grid.setColumnMaxWidth(this.self().GRID_POS.LABEL, 160);
+    grid.setColumnFlex(this.self().GRID_POS.LABEL, 1);
     grid.setColumnAlign(this.self().GRID_POS.NAME, "left", "middle");
     grid.setColumnMinWidth(this.self().GRID_POS.NAME, 80);
-    grid.setColumnMaxWidth(this.self().GRID_POS.NAME, 180);
+    grid.setColumnMaxWidth(this.self().GRID_POS.NAME, 160);
+    grid.setColumnFlex(this.self().GRID_POS.NAME, 1);
     this._setLayout(grid);
 
     this._studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
@@ -174,7 +175,6 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
           break;
         }
         const nameLabel = new qx.ui.basic.Label(nodeMetaData["name"]).set({
-          rich: true,
           toolTipText: node["key"],
           font: "text-14"
         });

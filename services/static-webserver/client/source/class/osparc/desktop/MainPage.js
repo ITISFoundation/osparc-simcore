@@ -68,6 +68,10 @@ qx.Class.define("osparc.desktop.MainPage", {
     });
   },
 
+  statics: {
+    MIN_STUDIES_PER_ROW: 4
+  },
+
   members: {
     __navBar: null,
     __mainStack: null,
@@ -182,12 +186,11 @@ qx.Class.define("osparc.desktop.MainPage", {
         paddingBottom: 8
       });
       this.__navBar.addDashboardTabButtons(tabsBar);
-      const minNStudyItemsPerRow = 5;
       const itemWidth = osparc.dashboard.GridButtonBase.ITEM_WIDTH + osparc.dashboard.GridButtonBase.SPACING;
-      dashboard.setMinWidth(minNStudyItemsPerRow * itemWidth + 8);
+      dashboard.setMinWidth(this.self().MIN_STUDIES_PER_ROW * itemWidth + 8);
       const fitResourceCards = () => {
         const w = document.documentElement.clientWidth;
-        const nStudies = Math.floor((w - 2*260 - 8) / itemWidth);
+        const nStudies = Math.floor((w - 2*220 - 8) / itemWidth);
         const newWidth = nStudies * itemWidth + 8;
         if (newWidth > dashboard.getMinWidth()) {
           dashboard.setWidth(newWidth);

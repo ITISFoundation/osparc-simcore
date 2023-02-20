@@ -25,25 +25,17 @@ qx.Class.define("osparc.product.tutorial.ti.Welcome", {
 
   members: {
     _populateCard: function() {
-      const welcome = new qx.ui.basic.Label().set({
-        value: this.tr("Welcome onboard ") + osparc.utils.Utils.capitalize(osparc.auth.Data.getInstance().getUserName()) + ",",
-        rich: true,
-        wrap: true,
-        font: "text-14"
-      });
+      const welcomeText = this.tr("Welcome onboard ") + osparc.utils.Utils.capitalize(osparc.auth.Data.getInstance().getUserName()) + ",";
+      const welcome = osparc.product.tutorial.Utils.createLabel(welcomeText);
       this._add(welcome);
 
-      const intro = new qx.ui.basic.Label().set({
-        value: this.tr("\
-          This quick tutorial gives a basic overview of how the TI Planning Tool works and how to navigate through the interface.<br>\
-          We will focus on two main aspects, how to:<br>\
-          - Use the platform<br>\
-          - Get started with a New Plan<br>\
-        "),
-        rich: true,
-        wrap: true,
-        font: "text-14"
-      });
+      const introText = this.tr("\
+        This quick tutorial gives a basic overview of how the TI Planning Tool works and how to navigate through the interface.<br>\
+        We will focus on two main aspects, how to:<br>\
+        - Use the platform<br>\
+        - Get started with a New Plan<br>\
+      ");
+      const intro = osparc.product.tutorial.Utils.createLabel(introText);
       this._add(intro);
 
       this._add(new qx.ui.core.Spacer(null, 50));

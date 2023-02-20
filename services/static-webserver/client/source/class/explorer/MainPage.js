@@ -43,10 +43,9 @@ qx.Class.define("explorer.MainPage", {
     },
 
     __createMainView: function() {
-      const nStudyItemsPerRow = 5;
       const exploreBrowser = new osparc.dashboard.ExploreBrowser().set({
         alignX: "center",
-        maxWidth: nStudyItemsPerRow * (osparc.dashboard.GridButtonBase.ITEM_WIDTH + osparc.dashboard.GridButtonBase.SPACING) + 8 // padding + scrollbar
+        maxWidth: osparc.desktop.MainPage.MIN_STUDIES_PER_ROW * (osparc.dashboard.GridButtonBase.ITEM_WIDTH + osparc.dashboard.GridButtonBase.SPACING) + 8 // padding + scrollbar
       });
       return exploreBrowser;
     }
