@@ -74,7 +74,7 @@ qx.Class.define("osparc.component.editor.OrganizationEditor", {
       switch (id) {
         case "title": {
           control = new qx.ui.form.TextField().set({
-            font: "title-14",
+            font: "text-14",
             backgroundColor: "background-main",
             placeholder: this.tr("Title"),
             height: 35

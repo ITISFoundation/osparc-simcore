@@ -42,7 +42,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
       switch (id) {
         case "lock-status":
           control = new osparc.ui.basic.Thumbnail().set({
-            minImageWidth: 40
+            minWidth: 40
           });
           this._add(control, {
             row: 0,
@@ -98,16 +98,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           break;
         }
         case "tsr-rating": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(2).set({
-            alignY: "middle"
-          })).set({
-            toolTipText: this.tr("Ten Simple Rules"),
-            minWidth: 85
-          });
-          const tsrLabel = new qx.ui.basic.Label(this.tr("TSR:"));
-          control.add(tsrLabel);
-          const tsrRating = new osparc.ui.basic.StarsRating();
-          control.add(tsrRating);
+          control = osparc.dashboard.CardBase.createTSRLayout();
           this._add(control, {
             row: 0,
             column: osparc.dashboard.ListButtonBase.POS.TSR

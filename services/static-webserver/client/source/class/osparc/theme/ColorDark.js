@@ -32,14 +32,14 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "background-main-5": "c06",
 
     // text
-    "text": "c11",
+    "text": "c12",
     "text-disabled": "c07",
     "text-selected": "c12",
     "text-placeholder": "c07",
     "text-darker": "c07",
     "contrasted-text-dark": "c01",
     "contrasted-text-light": "c12",
-    "link": "c08",
+    "link": "c11",
 
     // shadows
     "bg-shadow": "c06",
@@ -48,7 +48,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
     // window
     "window-caption-background": "c01",
     "window-caption-background-active": "c04",
-    "window-caption-text": "c11",
+    "window-caption-text": "text",
     "window-caption-text-active": "c12",
 
     // material-button
@@ -57,11 +57,11 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "material-button-background-hovered": "c05",
     "material-button-background-pressed": "c05",
     "material-button-text-disabled": "c07",
-    "material-button-text": "c11",
+    "material-button-text": "text",
 
     // material-textfield
     "material-textfield": "c07",
-    "material-textfield-focused": "c11",
+    "material-textfield-focused": "text",
     "material-textfield-disabled": "c05",
     "material-textfield-invalid": "failed-red",
     "invalid": "failed-red",

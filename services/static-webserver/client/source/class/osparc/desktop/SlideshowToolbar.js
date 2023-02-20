@@ -43,7 +43,7 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
           control = new qx.ui.basic.Label().set({
             marginLeft: 10,
             maxWidth: 200,
-            font: "title-16"
+            font: "text-16"
           });
           this._add(control);
           break;

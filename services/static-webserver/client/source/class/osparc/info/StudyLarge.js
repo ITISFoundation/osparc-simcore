@@ -233,7 +233,7 @@ qx.Class.define("osparc.info.StudyLarge", {
 
     __createTitle: function() {
       const title = osparc.info.StudyUtils.createTitle(this.getStudy()).set({
-        font: "title-16"
+        font: "text-14"
       });
       return title;
     },
