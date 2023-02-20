@@ -124,7 +124,7 @@ qx.Class.define("osparc.info.MergedLarge", {
         caretSize: 14
       });
       more.setCollapsed(true);
-      more.getChildControl("title").setFont("title-12");
+      more.getChildControl("title").setFont("text-12");
       this._add(more, {
         flex: 1
       });
@@ -240,7 +240,7 @@ qx.Class.define("osparc.info.MergedLarge", {
 
     __createTitle: function() {
       const title = osparc.info.StudyUtils.createTitle(this.getStudy()).set({
-        font: "title-16"
+        font: "text-16"
       });
       return title;
     },

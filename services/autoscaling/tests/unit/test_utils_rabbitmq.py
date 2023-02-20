@@ -9,7 +9,7 @@ from typing import Any, Awaitable, Callable
 import aiodocker
 from faker import Faker
 from fastapi import FastAPI
-from models_library.docker import DockerLabelKey
+from models_library.docker import DockerLabelKey, SimcoreServiceDockerLabelKeys
 from models_library.generated_models.docker_rest_api import Service, Task
 from models_library.rabbitmq_messages import (
     LoggerRabbitMessage,
@@ -20,7 +20,6 @@ from pydantic import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from servicelib.rabbitmq import RabbitMQClient
 from settings_library.rabbit import RabbitSettings
-from simcore_service_autoscaling.models import SimcoreServiceDockerLabelKeys
 from simcore_service_autoscaling.utils.rabbitmq import (
     post_task_log_message,
     post_task_progress_message,
