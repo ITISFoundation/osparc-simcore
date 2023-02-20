@@ -67,7 +67,7 @@ qx.Class.define("osparc.WindowSizeTracker", {
 
       this.set({
         windowWidth: width,
-        windowHieght: height
+        windowHeight: height
       });
     },
 
