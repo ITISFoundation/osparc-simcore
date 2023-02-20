@@ -96,7 +96,9 @@ qx.Class.define("osparc.product.AboutProduct", {
         this.add(label);
       });
 
-      const copyrightLink = new osparc.ui.basic.LinkLabel();
+      const copyrightLink = new osparc.ui.basic.LinkLabel().set({
+        font: "link-label-14"
+      });
       osparc.store.VendorInfo.getInstance().getVendor()
         .then(vendor => {
           if (vendor) {
