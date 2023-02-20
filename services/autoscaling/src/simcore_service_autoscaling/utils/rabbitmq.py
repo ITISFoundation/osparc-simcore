@@ -3,6 +3,7 @@ import itertools
 import logging
 
 from fastapi import FastAPI
+from models_library.docker import SimcoreServiceDockerLabelKeys
 from models_library.generated_models.docker_rest_api import Task
 from models_library.rabbitmq_messages import (
     LoggerRabbitMessage,
@@ -13,7 +14,7 @@ from models_library.rabbitmq_messages import (
 from servicelib.logging_utils import log_catch
 
 from ..core.settings import ApplicationSettings
-from ..models import Cluster, SimcoreServiceDockerLabelKeys
+from ..models import Cluster
 from ..modules.docker import AutoscalingDocker, get_docker_client
 from ..modules.rabbitmq import post_message
 from . import utils_docker
