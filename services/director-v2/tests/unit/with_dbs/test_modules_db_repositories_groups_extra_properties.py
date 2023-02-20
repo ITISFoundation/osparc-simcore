@@ -6,7 +6,6 @@ from typing import Any, Callable, Iterator, cast
 import pytest
 import sqlalchemy as sa
 from fastapi import FastAPI
-from models_library.products import ProductName
 from pytest import FixtureRequest, MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
@@ -111,31 +110,23 @@ async def user(
     with_internet_access: bool,
 ) -> dict[str, Any]:
     user = registered_user()
-    give_internet_to_group(
+    group_info = give_internet_to_group(
         group_id=user["primary_gid"], has_internet_access=with_internet_access
     )
+    user["product_name"] = group_info["product_name"]
     return user
-
-
-@pytest.fixture(params=["s4llite", "other_product"])
-def product_name(request: FixtureRequest) -> ProductName:
-    return request.param
 
 
 async def test_has_internet_access(
     initialized_app: FastAPI,
     user: dict[str, Any],
     with_internet_access: bool,
-    product_name: ProductName,
 ):
     groups_extra_properties = cast(
         GroupsExtraPropertiesRepository,
         get_repository(initialized_app, GroupsExtraPropertiesRepository),
     )
     allow_internet_access: bool = await groups_extra_properties.has_internet_access(
-        user_id=user["id"], product_name=product_name
+        user_id=user["id"], product_name=user["product_name"]
     )
-    if product_name != "s4llite":
-        assert allow_internet_access is True
-    else:
-        assert allow_internet_access is with_internet_access
+    assert allow_internet_access is with_internet_access
