@@ -2,8 +2,14 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+
 import pytest
-from models_library.docker import DockerGenericTag, DockerLabelKey
+from faker import Faker
+from models_library.docker import (
+    DockerGenericTag,
+    DockerLabelKey,
+    SimcoreServiceDockerLabelKeys,
+)
 from pydantic import ValidationError, parse_obj_as
 
 
@@ -93,3 +99,20 @@ def test_docker_generic_tag(image_name: str, valid: bool):
     else:
         with pytest.raises(ValidationError):
             parse_obj_as(DockerGenericTag, image_name)
+
+
+@pytest.fixture
+def osparc_docker_label_keys(
+    faker: Faker,
+) -> SimcoreServiceDockerLabelKeys:
+    return SimcoreServiceDockerLabelKeys.parse_obj(
+        dict(user_id=faker.pyint(), project_id=faker.uuid4(), node_id=faker.uuid4())
+    )
+
+
+def test_osparc_docker_label_keys_to_docker_labels(
+    osparc_docker_label_keys: SimcoreServiceDockerLabelKeys,
+):
+    exported_dict = osparc_docker_label_keys.to_docker_labels()
+    assert all(isinstance(v, str) for v in exported_dict.values())
+    assert parse_obj_as(SimcoreServiceDockerLabelKeys, exported_dict)
