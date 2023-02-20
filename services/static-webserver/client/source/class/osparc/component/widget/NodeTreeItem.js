@@ -292,6 +292,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
       this.getChildControl("icon").set({
         alignX: "center",
         alignY: "middle",
+        paddingTop: 1, // alignY: "middle" is not very effective
         width: 22
       });
 
