@@ -342,8 +342,8 @@ def get_docker_login_on_start_bash_command(registry_settings: RegistrySettings) 
 
 
 _DOCKER_COMPOSE_CMD: Final[str] = "docker compose"
-_PRE_PULL_COMPOSE_PATH: Final[Path] = Path("/pre-pull.compose.yml")
-_CRONJOB_SCRIPT_PATH: Final[Path] = Path("/docker-pull-script.sh")
+_PRE_PULL_COMPOSE_PATH: Final[Path] = Path("/docker-pull.compose.yml")
+_DOCKER_COMPOSE_PULL_SCRIPT_PATH: Final[Path] = Path("/docker-pull-script.sh")
 _CRONJOB_LOGS_PATH: Final[Path] = Path("/var/log/docker-pull-cronjob.log")
 
 
@@ -364,40 +364,43 @@ def get_docker_pull_images_on_start_bash_command(
     write_compose_file_cmd = " ".join(
         ["echo", f'"{compose_yaml}"', ">", f"{_PRE_PULL_COMPOSE_PATH}"]
     )
-    docker_compose_pull_cmd = " ".join(
-        [_DOCKER_COMPOSE_CMD, f"--file={_PRE_PULL_COMPOSE_PATH}", "pull"]
+    write_docker_compose_pull_script_cmd = " ".join(
+        [
+            "echo",
+            f'"#!/bin/sh\necho Pulling started at \\$(date)\n{_DOCKER_COMPOSE_CMD} --file={_PRE_PULL_COMPOSE_PATH} pull"',
+            ">>",
+            f"{_DOCKER_COMPOSE_PULL_SCRIPT_PATH}",
+        ]
     )
-    return " && ".join([write_compose_file_cmd, docker_compose_pull_cmd])
+    make_docker_compose_script_executable = " ".join(
+        ["chmod", "+x", f"{_DOCKER_COMPOSE_PULL_SCRIPT_PATH}"]
+    )
+    docker_compose_pull_cmd = " ".join([f".{_DOCKER_COMPOSE_PULL_SCRIPT_PATH}"])
+    return " && ".join(
+        [
+            write_compose_file_cmd,
+            write_docker_compose_pull_script_cmd,
+            make_docker_compose_script_executable,
+            docker_compose_pull_cmd,
+        ]
+    )
 
 
 def get_docker_pull_images_crontab(interval: datetime.timedelta) -> str:
     # check the interval is within 1 < 60 minutes
     checked_interval = round(interval.total_seconds() / 60)
-    write_crontab_script_cmd = " ".join(
-        [
-            "echo",
-            '"#!/bin/sh\n\\$(date)\ndocker compose'
-            f' --file={_PRE_PULL_COMPOSE_PATH} pull"',
-            ">>",
-            f"{_CRONJOB_SCRIPT_PATH}",
-        ]
-    )
-    make_crontab_script_executable = " ".join(
-        ["chmod", "+x", f"{_CRONJOB_SCRIPT_PATH}"]
-    )
+
     crontab_entry = " ".join(
         [
             "echo",
             f'"*/{checked_interval or 1} * * * * root',
-            f"{_CRONJOB_SCRIPT_PATH}",
+            f"{_DOCKER_COMPOSE_PULL_SCRIPT_PATH}",
             f'>> {_CRONJOB_LOGS_PATH} 2>&1"',
             ">>",
             "/etc/crontab",
         ]
     )
-    return " && ".join(
-        [write_crontab_script_cmd, make_crontab_script_executable, crontab_entry]
-    )
+    return " && ".join([crontab_entry])
 
 
 async def find_node_with_name(
