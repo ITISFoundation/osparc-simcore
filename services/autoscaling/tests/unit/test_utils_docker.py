@@ -798,7 +798,9 @@ async def test_tag_node(
     [
         (
             ["nginx", "itisfoundation/simcore/services/dynamic/service:23.5.5"],
-            'echo "services:\n  pre-pull-image-0:\n    image: nginx\n  pre-pull-image-1:\n    image: itisfoundation/simcore/services/dynamic/service:23.5.5\nversion: \'"3.8"\'\n" > /pre-pull.compose.yml && docker compose --file=/pre-pull.compose.yml pull',
+            'echo "services:\n  pre-pull-image-0:\n    image: nginx\n  pre-pull-image-1:\n    '
+            'image: itisfoundation/simcore/services/dynamic/service:23.5.5\nversion: \'"3.8"\'\n"'
+            " > /pre-pull.compose.yml && docker compose --file=/pre-pull.compose.yml pull",
         ),
         (
             [],
@@ -817,19 +819,23 @@ def test_get_docker_pull_images_on_start_bash_command(
     [
         (
             datetime.timedelta(minutes=20),
-            'echo "*/20 * * * * root echo "Cronjob ran at $(date)" >> /var/log/docker-pull-cronjob.log && docker compose --file=/pre-pull.compose.yml pull >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
+            'echo "*/20 * * * * root echo "Cronjob ran at $(date)" >> /var/log/docker-pull-cronjob.log '
+            '&& docker compose --file=/pre-pull.compose.yml pull >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
         ),
         (
             datetime.timedelta(seconds=20),
-            'echo "*/1 * * * * root echo "Cronjob ran at $(date)" >> /var/log/docker-pull-cronjob.log && docker compose --file=/pre-pull.compose.yml pull >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
+            'echo "*/1 * * * * root echo "Cronjob ran at $(date)" >> /var/log/docker-pull-cronjob.log '
+            '&& docker compose --file=/pre-pull.compose.yml pull >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
         ),
         (
             datetime.timedelta(seconds=200),
-            'echo "*/3 * * * * root echo "Cronjob ran at $(date)" >> /var/log/docker-pull-cronjob.log && docker compose --file=/pre-pull.compose.yml pull >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
+            'echo "*/3 * * * * root echo "Cronjob ran at $(date)" >> /var/log/docker-pull-cronjob.log '
+            '&& docker compose --file=/pre-pull.compose.yml pull >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
         ),
         (
             datetime.timedelta(days=3),
-            'echo "*/4320 * * * * root echo "Cronjob ran at $(date)" >> /var/log/docker-pull-cronjob.log && docker compose --file=/pre-pull.compose.yml pull >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
+            'echo "*/4320 * * * * root echo "Cronjob ran at $(date)" >> /var/log/docker-pull-cronjob.log '
+            '&& docker compose --file=/pre-pull.compose.yml pull >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
         ),
     ],
     ids=str,
