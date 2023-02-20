@@ -62,7 +62,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
 
       btn.addListener("changeValue", e => {
         if (e.getData()) {
-          btn.setFont("title-14");
+          btn.setFont("text-14");
           btn.setAppearance("strong-button");
         } else {
           btn.resetFont();

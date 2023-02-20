@@ -150,7 +150,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
           break;
         case "title":
           control = new qx.ui.basic.Label().set({
-            font: "title-14"
+            font: "text-14"
           });
           this._add(control, {
             row: 0,

@@ -152,7 +152,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
         caretSize: 14
       });
       more.setCollapsed(true);
-      more.getChildControl("title").setFont("title-12");
+      more.getChildControl("title").setFont("text-12");
       this._add(more, {
         flex: 1
       });
@@ -196,7 +196,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
         text = serviceName;
       }
       const title = osparc.info.ServiceUtils.createTitle(text).set({
-        font: "title-16"
+        font: "text-14"
       });
       return title;
     },
