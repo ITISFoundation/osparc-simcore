@@ -26,11 +26,10 @@ qx.Class.define("osparc.product.tutorial.SlidesBase", {
       layout: new qx.ui.layout.VBox(20),
       contentPadding: 15,
       modal: true,
-      width: 800,
-      height: 800,
+      width: 700,
+      height: 700,
       showMaximize: false,
-      showMinimize: false,
-      resizable: false
+      showMinimize: false
     });
 
     const closeBtn = this.getChildControl("close-button");
