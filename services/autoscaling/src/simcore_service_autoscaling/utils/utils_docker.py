@@ -376,7 +376,8 @@ def get_docker_pull_images_crontab(interval: datetime.timedelta) -> str:
     write_crontab_script_cmd = " ".join(
         [
             "echo",
-            f'"#!/bin/sh\n"Cronjob ran at" \\$(date)\ndocker compose --file={_PRE_PULL_COMPOSE_PATH} pull"',
+            '"#!/bin/sh\n\\$(date)\ndocker compose'
+            f' --file={_PRE_PULL_COMPOSE_PATH} pull"',
             ">>",
             f"{_CRONJOB_SCRIPT_PATH}",
         ]

@@ -819,7 +819,7 @@ def test_get_docker_pull_images_on_start_bash_command(
     [
         (
             datetime.timedelta(minutes=20),
-            'echo "#!/bin/sh\n"Cronjob ran at" \\$(date)\ndocker compose --file=/pre-pull.compose.yml pull" >> /docker-pull-script.sh'
+            'echo "#!/bin/sh\n\\$(date)\ndocker compose --file=/pre-pull.compose.yml pull" >> /docker-pull-script.sh'
             " && "
             "chmod +x /docker-pull-script.sh"
             " && "
@@ -827,7 +827,7 @@ def test_get_docker_pull_images_on_start_bash_command(
         ),
         (
             datetime.timedelta(seconds=20),
-            'echo "#!/bin/sh\n"Cronjob ran at" \\$(date)\ndocker compose --file=/pre-pull.compose.yml pull" >> /docker-pull-script.sh'
+            'echo "#!/bin/sh\n\\$(date)\ndocker compose --file=/pre-pull.compose.yml pull" >> /docker-pull-script.sh'
             " && "
             "chmod +x /docker-pull-script.sh"
             " && "
@@ -835,7 +835,7 @@ def test_get_docker_pull_images_on_start_bash_command(
         ),
         (
             datetime.timedelta(seconds=200),
-            'echo "#!/bin/sh\n"Cronjob ran at" \\$(date)\ndocker compose --file=/pre-pull.compose.yml pull" >> /docker-pull-script.sh'
+            'echo "#!/bin/sh\n\\$(date)\ndocker compose --file=/pre-pull.compose.yml pull" >> /docker-pull-script.sh'
             " && "
             "chmod +x /docker-pull-script.sh"
             " && "
@@ -843,7 +843,7 @@ def test_get_docker_pull_images_on_start_bash_command(
         ),
         (
             datetime.timedelta(days=3),
-            'echo "#!/bin/sh\n"Cronjob ran at" \\$(date)\ndocker compose --file=/pre-pull.compose.yml pull" >> /docker-pull-script.sh'
+            'echo "#!/bin/sh\n\\$(date)\ndocker compose --file=/pre-pull.compose.yml pull" >> /docker-pull-script.sh'
             " && "
             "chmod +x /docker-pull-script.sh"
             " && "
