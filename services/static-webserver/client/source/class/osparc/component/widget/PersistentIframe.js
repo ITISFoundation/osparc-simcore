@@ -48,7 +48,7 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
     },
 
     /**
-     * Show a Restart-Maximize Toolbar
+     * Show Restart-Maximize Toolbar
      */
     showToolbar: {
       check: "Boolean",
