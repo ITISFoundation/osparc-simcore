@@ -38,7 +38,7 @@ urllib3>=1.26.5                               # https://github.com/advisories/GH
 sqlalchemy<2.0
 
 # changed behaviour in using middlewares (https://fastapi.tiangolo.com/release-notes/#0910)
-# TODO: look into failling unit tests and upgrade code
+# NOTE: https://github.com/ITISFoundation/osparc-simcore/issues/3896
 fastapi<0.91.0
 
 #

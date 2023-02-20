@@ -209,7 +209,10 @@ disable=raw-checker-failed,
         single-string-used-for-slots,
         fixme,
         import-error,
-        unspecified-encoding
+        unspecified-encoding,
+        use-dict-literal,
+        no-else-raise,
+        no-else-return
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
