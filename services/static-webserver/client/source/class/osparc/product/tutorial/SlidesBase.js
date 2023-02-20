@@ -60,7 +60,6 @@ qx.Class.define("osparc.product.tutorial.SlidesBase", {
       const arrowsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox());
 
       const prevBtn = this.__prevBtn = new qx.ui.form.Button().set({
-        label: this.tr("Previous"),
         icon: "@FontAwesome5Solid/arrow-left/20",
         allowGrowX: true,
         backgroundColor: "transparent",
@@ -86,7 +85,6 @@ qx.Class.define("osparc.product.tutorial.SlidesBase", {
       });
 
       const nextBtn = this.__nextBtn = new qx.ui.form.Button().set({
-        label: this.tr("Next"),
         icon: "@FontAwesome5Solid/arrow-right/20",
         allowGrowX: true,
         backgroundColor: "transparent",
