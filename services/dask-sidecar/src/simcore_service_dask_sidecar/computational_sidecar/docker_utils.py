@@ -548,4 +548,4 @@ async def get_computational_shared_data_mount_point(docker_client: Docker) -> Pa
             app_settings.SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME,
             app_settings.SIDECAR_COMP_SERVICES_SHARED_FOLDER,
         )
-        return app_settings.SIDECAR_COMP_SERVICES_SHARED_FOLDER
+        return cast(Path, app_settings.SIDECAR_COMP_SERVICES_SHARED_FOLDER)
