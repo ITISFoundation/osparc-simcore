@@ -20,6 +20,18 @@ qx.Class.define("osparc.WindowSizeTracker", {
   type: "singleton",
 
   properties: {
+    windowWidth: {
+      check: "Integer",
+      init: null,
+      nullable: false
+    },
+
+    windowHeight: {
+      check: "Integer",
+      init: null,
+      nullable: false
+    },
+
     tooSmall: {
       check: [null, "shortText", "longText"], // display short message, long one or none
       init: null,
@@ -29,8 +41,8 @@ qx.Class.define("osparc.WindowSizeTracker", {
   },
 
   statics: {
-    MIN_WIDTH: 1240,
-    MIN_HEIGHT: 700
+    WIDTH_BREAKPOINT: 1240,
+    HEIGHT_BREAKPOINT: 700
   },
 
   members: {
@@ -39,18 +51,24 @@ qx.Class.define("osparc.WindowSizeTracker", {
     startTracker: function() {
       // onload, load, DOMContentLoaded, appear... didn't work
       // bit of a hack
-      setTimeout(() => this.__checkScreenSize(), 100);
-      window.addEventListener("resize", () => this.__checkScreenSize());
+      setTimeout(() => this.__resized(), 100);
+      window.addEventListener("resize", () => this.__resized());
     },
 
-    __checkScreenSize: function() {
+    __resized: function() {
       const width = document.documentElement.clientWidth;
       const height = document.documentElement.clientHeight;
-      if (width < this.self().MIN_WIDTH || height < this.self().MIN_HEIGHT) {
+
+      if (width < this.self().WIDTH_BREAKPOINT || height < this.self().HEIGHT_BREAKPOINT) {
         this.setTooSmall(width < 1000 ? "shortText" : "longText");
       } else {
         this.setTooSmall(null);
       }
+
+      this.set({
+        windowWidth: width,
+        windowHieght: height
+      });
     },
 
     __applyTooSmall: function(tooSmall) {
@@ -73,7 +91,7 @@ qx.Class.define("osparc.WindowSizeTracker", {
 
     __getLongText: function() {
       let text = qx.locale.Manager.tr("This app performs better for larger window size, min ");
-      text += " " + this.self().MIN_WIDTH + "x" + this.self().MIN_HEIGHT + (".");
+      text += " " + this.self().WIDTH_BREAKPOINT + "x" + this.self().HEIGHT_BREAKPOINT + (".");
       text += " " + qx.locale.Manager.tr("Touchscreen devices are not supported yet.");
       return text;
     },
