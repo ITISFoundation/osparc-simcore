@@ -408,6 +408,12 @@ def caplog_info_level(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
         yield caplog
 
 
+@pytest.fixture()
+def caplog_debug_level(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
+    with caplog.at_level(logging.DEBUG):
+        yield caplog
+
+
 @pytest.fixture
 def mock_docker_api(mocker: MockerFixture) -> None:
     module_base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler"
