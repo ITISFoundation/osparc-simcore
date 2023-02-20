@@ -964,7 +964,7 @@ qx.Class.define("osparc.data.model.Node", {
         setTimeout(() => {
           if (loadingPage) {
             loadingPage.set({
-              disclaimer: this.tr("Platform demand is currently exceptional and efforts are underway to increase system capacity.<br>There may be a delay of a few minutes in accessing projects.")
+              disclaimer: this.tr("Platform demand is currently exceptional and efforts are underway to increase system capacity.<br>There may be a delay of a few minutes in starting services.")
             });
           }
         }, 60*1000);
@@ -1018,7 +1018,7 @@ qx.Class.define("osparc.data.model.Node", {
 
       const iframe = new osparc.component.widget.PersistentIframe();
       if (osparc.product.Utils.isProduct("s4llite")) {
-        iframe.setShowZoomButton(false);
+        iframe.setShowToolbar(false);
       }
       iframe.addListener("restart", () => this.__restartIFrame(), this);
       this.setIFrame(iframe);
