@@ -42,31 +42,18 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
   },
 
   properties: {
+    toolbarHeight: {
+      check: "Integer",
+      init: 25
+    },
+
     /**
-     * Show a Maximize Button
+     * Show Restart-Maximize Toolbar
      */
-    showMaximize: {
+    showToolbar: {
       check: "Boolean",
       init: false,
-      apply: "_applyShowMaximize"
-    },
-
-    /**
-     * Show Restore/Maximize
-     */
-    showZoomButton: {
-      check: "Boolean",
-      init: true,
-      event: "changeShowZoomButton"
-    },
-
-    /**
-     * Show Restart
-     */
-    showRestartButton: {
-      check: "Boolean",
-      init: true,
-      event: "changeShowRestartButton"
+      apply: "__applyShowToolbar"
     }
   },
 
@@ -111,9 +98,6 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
         this.fireEvent("restart");
       }, this);
       osparc.utils.Utils.setIdToWidget(restartButton, "iFrameRestartBtn");
-      this.bind("showRestartButton", restartButton, "visibility", {
-        converter: show => show ? "visible" : "excluded"
-      });
       appRoot.add(restartButton, {
         top: this.self().HIDDEN_TOP
       });
@@ -124,9 +108,6 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
         decorator: null
       });
       osparc.utils.Utils.setIdToWidget(zoomButton, this.self().getMaximizeWidgetId(false));
-      this.bind("showZoomButton", zoomButton, "visibility", {
-        converter: show => show ? "visible" : "excluded"
-      });
       appRoot.add(zoomButton, {
         top: this.self().HIDDEN_TOP
       });
@@ -198,13 +179,14 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
         let divPos = qx.bom.element.Location.get(domElement, "scroll");
         let divSize = qx.bom.element.Dimension.getSize(domElement);
         this.__iframe.setLayoutProperties({
-          top: divPos.top - iframeParentPos.top + 25,
+          top: divPos.top - iframeParentPos.top + this.getToolbarHeight(),
           left: divPos.left - iframeParentPos.left
         });
         this.__iframe.set({
           width: divSize.width,
-          height: divSize.height - 25
+          height: divSize.height - this.getToolbarHeight()
         });
+
         this.__restartButton.setLayoutProperties({
           top: (divPos.top - iframeParentPos.top),
           right: (iframeParentPos.right - iframeParentPos.left - divPos.right) + 35
@@ -213,18 +195,26 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
           top: (divPos.top - iframeParentPos.top),
           right: (iframeParentPos.right - iframeParentPos.left - divPos.right)
         });
+
+        this.__restartButton.setVisibility(this.isShowToolbar() ? "visible" : "excluded");
+        this.__zoomButton.setVisibility(this.isShowToolbar() ? "visible" : "excluded");
       }, 0);
     },
-    _applyShowMaximize: function(newValue, oldValue) {
-      this._maximizeBtn.show();
+
+    __applyShowToolbar: function(show) {
+      this.setToolbarHeight(show ? 25 : 0);
+      this.__syncIframePos();
     },
+
     _applySource: function(newValue) {
       this.__iframe.setSource(newValue);
     },
+
     // override
     _getIframeElement: function() {
       return this.__iframe._getIframeElement(); // eslint-disable-line no-underscore-dangle
     },
+
     /**
      * Cover the iframe with a transparent blocker div element. This prevents
      * pointer or key events to be handled by the iframe. To release the blocker

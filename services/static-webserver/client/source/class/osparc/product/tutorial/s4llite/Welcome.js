@@ -25,16 +25,11 @@ qx.Class.define("osparc.product.tutorial.s4llite.Welcome", {
 
   members: {
     _populateCard: function() {
-      const welcome = new qx.ui.basic.Label().set({
-        value: this.tr("Welcome onboard ") + osparc.utils.Utils.capitalize(osparc.auth.Data.getInstance().getUserName()) + ",",
-        rich: true,
-        wrap: true,
-        font: "text-14"
-      });
+      const welcomeText = this.tr("Welcome onboard ") + osparc.utils.Utils.capitalize(osparc.auth.Data.getInstance().getUserName()) + ",";
+      const welcome = osparc.product.tutorial.Utils.createLabel(welcomeText);
       this._add(welcome);
 
-      const intro = new qx.ui.basic.Label().set({
-        value: this.tr("\
+      const introText = this.tr("\
         This quick user’s guide gives a short introduction to <i>S4L<sup>lite</sup></i>. We will show:<br>\
           - how to get started with a new project,<br>\
           - how to get started from an existing tutorial project<br>\
@@ -42,11 +37,8 @@ qx.Class.define("osparc.product.tutorial.s4llite.Welcome", {
           - <i>S4L<sup>lite</sup></i> features, limitations and user interface<br>\
           <br>\
           For more specific technical information, please refer to the Dashboard Manual and the <i>S4L<sup>lite</sup></i> Manual.\
-        "),
-        rich: true,
-        wrap: true,
-        font: "text-14"
-      });
+      ");
+      const intro = osparc.product.tutorial.Utils.createLabel(introText);
       this._add(intro);
 
       this._add(new qx.ui.core.Spacer(null, 50));

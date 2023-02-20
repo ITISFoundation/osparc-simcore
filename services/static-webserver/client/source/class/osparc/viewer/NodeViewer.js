@@ -15,6 +15,8 @@
 
 ************************************************************************ */
 
+// Used for "anonymous" or "guest" users
+
 qx.Class.define("osparc.viewer.NodeViewer", {
   extend: qx.ui.core.Widget,
 
@@ -98,9 +100,8 @@ qx.Class.define("osparc.viewer.NodeViewer", {
     __initIFrame: function() {
       this.__initLoadingPage();
 
-      const iframe = new osparc.component.widget.PersistentIframe().set({
-        showRestartButton: false
-      });
+      const iframe = new osparc.component.widget.PersistentIframe();
+      iframe.setShowToolbar(false);
       this.setIFrame(iframe);
     },
 

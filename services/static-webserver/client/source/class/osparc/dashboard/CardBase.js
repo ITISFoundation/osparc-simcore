@@ -566,7 +566,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       const resourceData = this.getResourceData();
       const moreOpts = new osparc.dashboard.ResourceMoreOptions(resourceData);
       const title = this.tr("Options");
-      const win = osparc.ui.window.Window.popUpInWindow(moreOpts, title, 750, 725);
+      const win = osparc.ui.window.Window.popUpInWindow(moreOpts, title, 660, 660);
       [
         "updateStudy",
         "updateTemplate",

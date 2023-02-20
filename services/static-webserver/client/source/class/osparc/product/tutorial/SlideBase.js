@@ -29,10 +29,8 @@ qx.Class.define("osparc.product.tutorial.SlideBase", {
     });
 
     if (title) {
-      this._add(new qx.ui.basic.Label(title).set({
-        rich: true,
-        font: "text-15"
-      }));
+      const label = osparc.product.tutorial.Utils.createTitle(title);
+      this._add(label);
     }
 
     this._populateCard();

@@ -116,7 +116,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
 
     // table
     "table-header": "c01",
-    "table-header-foreground": "c09",
+    "table-header-foreground": "c11",
     "table-header-border": "c07",
     "table-focus-indicator": "c06",
 
@@ -130,7 +130,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
 
     // foreground
     "table-row-selected": "c12",
-    "table-row": "c09",
+    "table-row": "text",
 
     // table grid color
     "table-row-line": "c01",
