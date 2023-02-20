@@ -819,23 +819,35 @@ def test_get_docker_pull_images_on_start_bash_command(
     [
         (
             datetime.timedelta(minutes=20),
-            'echo "*/20 * * * * root echo "Cronjob ran at $(date)" >> /var/log/docker-pull-cronjob.log '
-            '&& docker compose --file=/pre-pull.compose.yml pull >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
+            'echo "#!/bin/sh\n"Cronjob ran at" \\$(date)\ndocker compose --file=/pre-pull.compose.yml pull" >> /docker-pull-script.sh'
+            " && "
+            "chmod +x /docker-pull-script.sh"
+            " && "
+            'echo "*/20 * * * * root /docker-pull-script.sh >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
         ),
         (
             datetime.timedelta(seconds=20),
-            'echo "*/1 * * * * root echo "Cronjob ran at $(date)" >> /var/log/docker-pull-cronjob.log '
-            '&& docker compose --file=/pre-pull.compose.yml pull >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
+            'echo "#!/bin/sh\n"Cronjob ran at" \\$(date)\ndocker compose --file=/pre-pull.compose.yml pull" >> /docker-pull-script.sh'
+            " && "
+            "chmod +x /docker-pull-script.sh"
+            " && "
+            'echo "*/1 * * * * root /docker-pull-script.sh >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
         ),
         (
             datetime.timedelta(seconds=200),
-            'echo "*/3 * * * * root echo "Cronjob ran at $(date)" >> /var/log/docker-pull-cronjob.log '
-            '&& docker compose --file=/pre-pull.compose.yml pull >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
+            'echo "#!/bin/sh\n"Cronjob ran at" \\$(date)\ndocker compose --file=/pre-pull.compose.yml pull" >> /docker-pull-script.sh'
+            " && "
+            "chmod +x /docker-pull-script.sh"
+            " && "
+            'echo "*/3 * * * * root /docker-pull-script.sh >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
         ),
         (
             datetime.timedelta(days=3),
-            'echo "*/4320 * * * * root echo "Cronjob ran at $(date)" >> /var/log/docker-pull-cronjob.log '
-            '&& docker compose --file=/pre-pull.compose.yml pull >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
+            'echo "#!/bin/sh\n"Cronjob ran at" \\$(date)\ndocker compose --file=/pre-pull.compose.yml pull" >> /docker-pull-script.sh'
+            " && "
+            "chmod +x /docker-pull-script.sh"
+            " && "
+            'echo "*/4320 * * * * root /docker-pull-script.sh >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
         ),
     ],
     ids=str,
