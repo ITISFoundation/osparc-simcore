@@ -26,7 +26,7 @@
  *
  * <pre class='javascript'>
  *   let tableModel = this.__logModel = new osparc.component.widget.logger.LoggerTable();
- *   tableModel.setColumns(["Timestamp", "Origin", "Message"], ["timeRich", "whoRich", "whatRich"]);
+ *   tableModel.setColumns(["Timestamp", "Origin", "Message"], ["time", "who", "whatRich"]);
  *   let custom = {
  *     tableColumnModel : function(obj) {
  *       return new qx.ui.table.columnmodel.Resize(obj);
@@ -53,8 +53,8 @@ qx.Class.define("osparc.component.widget.logger.LoggerTable", {
       "Origin",
       "Message"
     ], [
-      "timeRich",
-      "whoRich",
+      "time",
+      "who",
       "msgRich"
     ]);
 
@@ -85,18 +85,6 @@ qx.Class.define("osparc.component.widget.logger.LoggerTable", {
       return ("<font color=" + color +">" + msg + "</font>");
     },
 
-    getNewColor: function() {
-      const colorManager = qx.theme.manager.Color.getInstance();
-      const luminanceBG = osparc.utils.Utils.getColorLuminance(colorManager.resolve("table-row-background-selected"));
-      let luminanceText = null;
-      let color = null;
-      do {
-        color = osparc.utils.Utils.getRandomColor();
-        luminanceText = osparc.utils.Utils.getColorLuminance(color);
-      } while (Math.abs(luminanceBG-luminanceText) < 0.4);
-      return color;
-    },
-
     getLevelColor: function(logLevel) {
       const colorManager = qx.theme.manager.Color.getInstance();
       let logColor = null;
@@ -121,26 +109,12 @@ qx.Class.define("osparc.component.widget.logger.LoggerTable", {
       return this.__rawData;
     },
 
-    __getNodesColor: function(nodeId) {
-      for (const item of this.__messengerColors) {
-        if (item[0] === nodeId) {
-          return item[1];
-        }
-      }
-      const color = this.self().getNewColor();
-      this.__messengerColors.add([nodeId, color]);
-      return color;
-    },
-
     addRows: function(newRows) {
       newRows.forEach(newRow => {
-        newRow["nodeColor"] = this.__getNodesColor(newRow.nodeId);
-        newRow["msgColor"] = this.self().getLevelColor(newRow.logLevel);
-
-        newRow["timeRich"] = this.self().addColorTag(osparc.utils.Utils.formatTime(newRow.timeStamp, true), newRow.msgColor);
-        newRow["whoRich"] = this.self().addColorTag(newRow.label, newRow.nodeColor);
-        newRow["msgRich"] = this.self().addColorTag(newRow.msg, newRow.msgColor);
-
+        const levelColor = this.self().getLevelColor(newRow.logLevel);
+        newRow["time"] = osparc.utils.Utils.formatTime(newRow.timeStamp, true);
+        newRow["who"] = newRow.label;
+        newRow["msgRich"] = this.self().addColorTag(newRow.msg, levelColor);
         this.__rawData.push(newRow);
       });
     },
@@ -149,7 +123,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerTable", {
       this.__rawData.forEach(row => {
         if (row.nodeId === nodeId) {
           row.label = newLabel;
-          row["whoRich"] = this.self().addColorTag(row.label, row.nodeColor);
+          row["who"] = row.label;
         }
       });
     },
@@ -158,12 +132,10 @@ qx.Class.define("osparc.component.widget.logger.LoggerTable", {
       this.__messengerColors.clear();
 
       this.__rawData.forEach(row => {
-        row["nodeColor"] = this.__getNodesColor(row.nodeId);
-        row["msgColor"] = this.self().getLevelColor(row.logLevel);
-
-        row["timeRich"] = this.self().addColorTag(osparc.utils.Utils.formatTime(row.timeStamp, true), row.msgColor);
-        row["whoRich"] = this.self().addColorTag(row.label, row.nodeColor);
-        row["msgRich"] = this.self().addColorTag(row.msg, row.msgColor);
+        const levelColor = this.self().getLevelColor(row.logLevel);
+        row["time"] = osparc.utils.Utils.formatTime(row.timeStamp, true);
+        row["who"] = row.label;
+        row["msgRich"] = this.self().addColorTag(row.msg, levelColor);
       });
     },
 
