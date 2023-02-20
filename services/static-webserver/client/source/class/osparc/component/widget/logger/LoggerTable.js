@@ -60,8 +60,6 @@ qx.Class.define("osparc.component.widget.logger.LoggerTable", {
 
     this.__rawData = [];
 
-    this.__messengerColors = new Set();
-
     const themeManager = qx.theme.manager.Meta.getInstance();
     themeManager.addListener("changeTheme", () => this.__themeChanged());
   },
@@ -103,7 +101,6 @@ qx.Class.define("osparc.component.widget.logger.LoggerTable", {
   members : {
     __rawData: null,
     __filteredData: null,
-    __messengerColors: null,
 
     getRows: function() {
       return this.__rawData;
@@ -129,8 +126,6 @@ qx.Class.define("osparc.component.widget.logger.LoggerTable", {
     },
 
     __themeChanged: function() {
-      this.__messengerColors.clear();
-
       this.__rawData.forEach(row => {
         const levelColor = this.self().getLevelColor(row.logLevel);
         row["time"] = osparc.utils.Utils.formatTime(row.timeStamp, true);
