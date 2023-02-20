@@ -368,7 +368,7 @@ def get_docker_pull_images_on_start_bash_command(
         [
             "echo",
             f'"#!/bin/sh\necho Pulling started at \\$(date)\n{_DOCKER_COMPOSE_CMD} --file={_PRE_PULL_COMPOSE_PATH} pull"',
-            ">>",
+            ">",
             f"{_DOCKER_COMPOSE_PULL_SCRIPT_PATH}",
         ]
     )

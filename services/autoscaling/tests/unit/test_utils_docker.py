@@ -800,7 +800,13 @@ async def test_tag_node(
             ["nginx", "itisfoundation/simcore/services/dynamic/service:23.5.5"],
             'echo "services:\n  pre-pull-image-0:\n    image: nginx\n  pre-pull-image-1:\n    '
             'image: itisfoundation/simcore/services/dynamic/service:23.5.5\nversion: \'"3.8"\'\n"'
-            " > /pre-pull.compose.yml && docker compose --file=/pre-pull.compose.yml pull",
+            " > /docker-pull.compose.yml"
+            " && "
+            'echo "#!/bin/sh\necho Pulling started at \\$(date)\ndocker compose --file=/docker-pull.compose.yml pull" > /docker-pull-script.sh'
+            " && "
+            "chmod +x /docker-pull-script.sh"
+            " && "
+            "./docker-pull-script.sh",
         ),
         (
             [],
@@ -819,34 +825,18 @@ def test_get_docker_pull_images_on_start_bash_command(
     [
         (
             datetime.timedelta(minutes=20),
-            'echo "#!/bin/sh\n\\$(date)\ndocker compose --file=/pre-pull.compose.yml pull" >> /docker-pull-script.sh'
-            " && "
-            "chmod +x /docker-pull-script.sh"
-            " && "
             'echo "*/20 * * * * root /docker-pull-script.sh >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
         ),
         (
             datetime.timedelta(seconds=20),
-            'echo "#!/bin/sh\n\\$(date)\ndocker compose --file=/pre-pull.compose.yml pull" >> /docker-pull-script.sh'
-            " && "
-            "chmod +x /docker-pull-script.sh"
-            " && "
             'echo "*/1 * * * * root /docker-pull-script.sh >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
         ),
         (
             datetime.timedelta(seconds=200),
-            'echo "#!/bin/sh\n\\$(date)\ndocker compose --file=/pre-pull.compose.yml pull" >> /docker-pull-script.sh'
-            " && "
-            "chmod +x /docker-pull-script.sh"
-            " && "
             'echo "*/3 * * * * root /docker-pull-script.sh >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
         ),
         (
             datetime.timedelta(days=3),
-            'echo "#!/bin/sh\n\\$(date)\ndocker compose --file=/pre-pull.compose.yml pull" >> /docker-pull-script.sh'
-            " && "
-            "chmod +x /docker-pull-script.sh"
-            " && "
             'echo "*/4320 * * * * root /docker-pull-script.sh >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
         ),
     ],
