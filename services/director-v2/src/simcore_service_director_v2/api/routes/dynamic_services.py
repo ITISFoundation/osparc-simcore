@@ -3,13 +3,14 @@ import logging
 from typing import Coroutine, Optional, Union, cast
 
 import httpx
-from fastapi import APIRouter, Depends, Header
+from fastapi import APIRouter, Depends, Header, Request
 from fastapi.responses import RedirectResponse
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
+from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.json_serialization import json_dumps
 from starlette import status
 from starlette.datastructures import URL
@@ -173,7 +174,9 @@ async def get_dynamic_sidecar_status(
     responses={204: {"model": None}},
     summary="stops previously spawned dynamic-sidecar",
 )
+@cancel_on_disconnect
 async def stop_dynamic_service(
+    request: Request,
     node_uuid: NodeID,
     can_save: Optional[bool] = True,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
@@ -182,6 +185,8 @@ async def stop_dynamic_service(
         get_dynamic_services_settings
     ),
 ) -> Union[NoContentResponse, RedirectResponse]:
+    assert request  # nosec
+
     try:
         await scheduler.mark_service_for_removal(node_uuid, can_save)
     except DynamicSidecarNotFoundError:
