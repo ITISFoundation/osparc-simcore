@@ -101,7 +101,7 @@ qx.Class.define("osparc.component.editor.ClusterEditor", {
       switch (id) {
         case "title":
           control = new qx.ui.form.TextField().set({
-            font: "title-14",
+            font: "text-14",
             backgroundColor: "background-main",
             placeholder: this.tr("Title")
           });

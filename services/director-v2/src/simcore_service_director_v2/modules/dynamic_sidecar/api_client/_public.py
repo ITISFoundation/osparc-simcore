@@ -177,10 +177,15 @@ class DynamicSidecarClient:
 
         sorted_container_names = sorted(containers_status.keys())
 
-        entrypoint_container_name = await self.get_entrypoint_container_name(
-            dynamic_sidecar_endpoint=dynamic_sidecar_endpoint,
-            dynamic_sidecar_network_name=dynamic_sidecar_network_name,
-        )
+        try:
+            entrypoint_container_name = await self.get_entrypoint_container_name(
+                dynamic_sidecar_endpoint=dynamic_sidecar_endpoint,
+                dynamic_sidecar_network_name=dynamic_sidecar_network_name,
+            )
+        except EntrypointContainerNotFoundError:
+            # project_network changes are propagated form the workbench before
+            # the user services are started. It is safe to skip
+            return
 
         network_names_to_ids: dict[str, str] = await get_or_create_networks_ids(
             [project_network], project_id
