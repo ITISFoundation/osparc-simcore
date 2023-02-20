@@ -41,8 +41,8 @@ qx.Class.define("osparc.WindowSizeTracker", {
   },
 
   statics: {
-    WIDTH_BREAKPOINT: 1240,
-    HEIGHT_BREAKPOINT: 700
+    WIDTH_BREAKPOINT: 1280, // HD
+    HEIGHT_BREAKPOINT: 720 // HD
   },
 
   members: {
