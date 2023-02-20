@@ -1,6 +1,0 @@
-services:
-  pre-pull-image-0:
-    image: nginx
-  pre-pull-image-1:
-    image: itisfoundation/simcore/services/dynamic/service:23.5.5
-version: "3.8"
