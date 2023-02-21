@@ -50,6 +50,7 @@ class ProjectStatus(str, Enum):
     EXPORTING = "EXPORTING"
     OPENING = "OPENING"
     OPENED = "OPENED"
+    CHECK_IF_LOCKED = "CHECK_IF_LOCKED"
 
 
 class ProjectLocked(BaseModel):

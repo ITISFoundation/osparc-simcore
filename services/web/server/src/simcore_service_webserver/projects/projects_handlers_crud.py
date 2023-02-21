@@ -51,6 +51,7 @@ from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .projects_exceptions import (
     ProjectDeleteError,
     ProjectInvalidRightsError,
+    ProjectLockError,
     ProjectNotFoundError,
 )
 from .projects_nodes_utils import update_frontend_outputs
@@ -706,6 +707,17 @@ async def delete_project(request: web.Request):
                 "It cannot be deleted until the project is closed."
             )
 
+        # if the project is locked, this raises an error
+        async with projects_api.lock_with_notification(
+            app=request.app,
+            project_uuid=f"{path_params.project_id}",
+            status=ProjectStatus.CHECK_IF_LOCKED,
+            user_id=req_ctx.user_id,
+            user_name=await get_user_name(request.app, req_ctx.user_id),
+            notify_users=False,
+        ):
+            pass
+
         await projects_api.submit_delete_project_task(
             request.app, path_params.project_id, req_ctx.user_id
         )
@@ -720,5 +732,9 @@ async def delete_project(request: web.Request):
         ) from err
     except ProjectDeleteError as err:
         raise web.HTTPConflict(reason=f"{err}") from err
+    except ProjectLockError as err:
+        raise web.HTTPConflict(
+            reason=f"Project {path_params.project_id} is locked"
+        ) from err
 
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)

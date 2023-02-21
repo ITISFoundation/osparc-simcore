@@ -962,6 +962,7 @@ async def remove_project_dynamic_services(
     app: web.Application,
     notify_users: bool = True,
     user_name: Optional[UserNameDict] = None,
+    suppress_project_locked_error: bool = False,
 ) -> None:
     """
 
@@ -1009,7 +1010,9 @@ async def remove_project_dynamic_services(
                     save_state=save_state,
                 )
     except ProjectLockError:
-        pass
+        if suppress_project_locked_error:
+            return
+        raise
 
 
 #

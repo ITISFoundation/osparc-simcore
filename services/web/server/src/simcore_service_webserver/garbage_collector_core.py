@@ -194,6 +194,7 @@ async def remove_disconnected_user_resources(
                                 "first_name": "garbage",
                                 "last_name": "collector",
                             },
+                            suppress_project_locked_error=True,
                         )
 
                     except ProjectNotFoundError as err:
