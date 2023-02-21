@@ -405,46 +405,6 @@ def get_docker_pull_images_crontab(interval: datetime.timedelta) -> str:
     return " && ".join([crontab_entry])
 
 
-_DOCKER_DAEMON_PATH: Final[Path] = Path("/etc/docker/daemon.json")
-_MOUNTED_DOCKER_PATH: Final[Path] = Path("/mnt/docker")
-_TMP_DAEMON_PATH: Final[Path] = Path("/tmp/daemon.json")
-
-
-def mount_docker_drive_on_ephemeral(device_name: str = "/dev/nvme2n1") -> str:
-    format_drive_cmd = " ".join(
-        ["mkfs", "--type xfs", "-f", "-n ftype=1", f"{device_name}"]
-    )
-    create_drive_mount_path = " ".join(
-        ["mkdir", "--parents", f"{_MOUNTED_DOCKER_PATH}"]
-    )
-    mount_drive_cmd = " ".join(["mount", f"{device_name}", f"{_MOUNTED_DOCKER_PATH}"])
-
-    set_docker_root_path_cmd = " ".join(
-        [
-            "jq",
-            f'\'."data-root"="{_MOUNTED_DOCKER_PATH}/data", ."exec-root"="{_MOUNTED_DOCKER_PATH}/exec"\'',
-            f"{_DOCKER_DAEMON_PATH}",
-            ">",
-            f"{_TMP_DAEMON_PATH}",
-            "&&",
-            "mv",
-            f"{_TMP_DAEMON_PATH}",
-            f"{_DOCKER_DAEMON_PATH}",
-        ]
-    )
-
-    restart_docker_daemon = " ".join(["systemctl", "restart", "docker"])
-    return " && ".join(
-        [
-            format_drive_cmd,
-            create_drive_mount_path,
-            mount_drive_cmd,
-            set_docker_root_path_cmd,
-            restart_docker_daemon,
-        ]
-    )
-
-
 async def find_node_with_name(
     docker_client: AutoscalingDocker, name: str
 ) -> Optional[Node]:
