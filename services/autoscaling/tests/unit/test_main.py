@@ -4,8 +4,9 @@
 
 
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
-from simcore_service_autoscaling.main import the_app, the_settings
 
 
 def test_main_app(app_environment: EnvVarsDict):
+    from simcore_service_autoscaling.main import the_app, the_settings
+
     assert the_app.state.settings == the_settings
