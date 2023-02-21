@@ -568,6 +568,12 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       this.base(arguments, e);
     },
 
+    setPosition: function(pos) {
+      const node = this.getNode();
+      node.setPosition(pos);
+      this.moveTo(node.getPosition().x, node.getPosition().y);
+    },
+
     snapToGrid: function() {
       const node = this.getNode();
       const {
