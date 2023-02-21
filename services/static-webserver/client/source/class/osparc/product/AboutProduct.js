@@ -57,11 +57,8 @@ qx.Class.define("osparc.product.AboutProduct", {
           break;
         default: {
           const noInfoText = this.tr("Information not available");
-          const noInfoLabel = new qx.ui.basic.Label(noInfoText).set({
-            font: "text-14",
-            maxWidth: this.self().MAX_WIDTH - 2*this.self().PADDING,
-            rich: true,
-            wrap: true
+          const noInfoLabel = osparc.product.tutorial.Utils.createLabel(noInfoText).set({
+            maxWidth: this.self().MAX_WIDTH - 2*this.self().PADDING
           });
           this.add(noInfoLabel);
           break;
@@ -73,30 +70,29 @@ qx.Class.define("osparc.product.AboutProduct", {
       const color = qx.theme.manager.Color.getInstance().resolve("text");
 
       // https://zurichmedtech.github.io/s4l-lite-manual/#/docs/what_is_s4l_lite
-      const introText = "<b><i>S4L<sup>lite</sup></i></b> is a powerful web-based simulation platform that allows you to model and analyze real-world phenomena and to design complex technical devices in a validated environment. With its intuitive interface and advanced tools, <b><i>S4L<sup>lite</sup></i></b> makes it easy to develop your simulation project, wherever you are.";
+      const introText = "<i>S4L<sup>lite</sup></i> is a powerful web-based simulation platform that allows you to model and analyze real-world phenomena and to design complex technical devices in a validated environment. With its intuitive interface and advanced tools, <i>S4L<sup>lite</sup></i> makes it easy to develop your simulation project, wherever you are.";
 
       const licenseUrl = "https://zurichmedtech.github.io/s4l-lite-manual/#/docs/licensing/copyright_Sim4Life";
       const licenseText = `Click <a href=${licenseUrl} style='color: ${color}' target='_blank'>here</a> to read the license agreements.`;
 
       // more info ZMT website
       const moreInfoUrl = "https://zmt.swiss/";
-      const moreInfoText = `For more information about <b><i>S4L<sup>lite</sup></i></b>, visit <a href=${moreInfoUrl} style='color: ${color}' target='_blank'>our website</a>.`;
+      const moreInfoText = `For more information about <i>S4L<sup>lite</sup></i>, visit <a href=${moreInfoUrl} style='color: ${color}' target='_blank'>our website</a>.`;
 
       [
         introText,
         licenseText,
         moreInfoText
       ].forEach(text => {
-        const label = new qx.ui.basic.Label(text).set({
-          font: "text-14",
-          maxWidth: this.self().MAX_WIDTH - 2*this.self().PADDING,
-          rich: true,
-          wrap: true
+        const label = osparc.product.tutorial.Utils.createLabel(text).set({
+          maxWidth: this.self().MAX_WIDTH - 2*this.self().PADDING
         });
         this.add(label);
       });
 
-      const copyrightLink = new osparc.ui.basic.LinkLabel();
+      const copyrightLink = new osparc.ui.basic.LinkLabel().set({
+        font: "link-label-14"
+      });
       osparc.store.VendorInfo.getInstance().getVendor()
         .then(vendor => {
           if (vendor) {

@@ -39,6 +39,17 @@ qx.Class.define("osparc.product.tutorial.Utils", {
       return null;
     },
 
+    createTitle: function(title) {
+      const label = new qx.ui.basic.Label(title).set({
+        rich: true,
+        font: "text-15"
+      });
+      if (title) {
+        label.setValue(title);
+      }
+      return label;
+    },
+
     createLabel: function(text) {
       const label = new qx.ui.basic.Label().set({
         rich: true,

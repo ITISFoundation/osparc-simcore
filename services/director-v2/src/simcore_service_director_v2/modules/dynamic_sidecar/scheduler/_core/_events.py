@@ -480,7 +480,10 @@ class CreateUserServices(DynamicSchedulerEvent):
             allow_internet_access=allow_internet_access,
             product_name=scheduler_data.product_name,
             user_id=scheduler_data.user_id,
+            project_id=scheduler_data.project_id,
+            node_id=scheduler_data.node_uuid,
         )
+
         logger.debug(
             "Starting containers %s with compose-specs:\n%s",
             scheduler_data.service_name,

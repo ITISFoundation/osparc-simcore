@@ -878,7 +878,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __getSlideshowSection: function() {
       const slideshowSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       slideshowSection.add(new qx.ui.basic.Label(this.tr("App Mode")).set({
-        font: "title-14"
+        font: "text-14"
       }));
 
       const slideshowButtons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
@@ -921,7 +921,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __getAnnotationsSection: function() {
       const annotationsSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       annotationsSection.add(new qx.ui.basic.Label(this.tr("Annotations")).set({
-        font: "title-14"
+        font: "text-14"
       }));
 
       const annotationsButtons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
@@ -950,7 +950,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __getSnapshotsSection: function() {
       const snapshotSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       snapshotSection.add(new qx.ui.basic.Label(this.tr("Checkpoints")).set({
-        font: "title-14"
+        font: "text-14"
       }));
 
       const snapshotButtons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
@@ -982,7 +982,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __getIterationsSection: function() {
       const iterationsSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       iterationsSection.add(new qx.ui.basic.Label(this.tr("Iterations")).set({
-        font: "title-14"
+        font: "text-14"
       }));
 
       const iterationButtons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));

@@ -45,13 +45,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
       let control;
       switch (id) {
         case "tsr-rating": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(2)).set({
-            toolTipText: this.tr("Ten Simple Rules")
-          });
-          const tsrLabel = new qx.ui.basic.Label(this.tr("TSR:"));
-          control.add(tsrLabel);
-          const tsrRating = new osparc.ui.basic.StarsRating();
-          control.add(tsrRating);
+          control = osparc.dashboard.CardBase.createTSRLayout();
           this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.TSR);
           break;
         }

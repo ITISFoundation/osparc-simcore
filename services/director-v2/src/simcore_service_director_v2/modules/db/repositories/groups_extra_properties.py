@@ -10,13 +10,6 @@ class GroupsExtraPropertiesRepository(BaseRepository):
     async def has_internet_access(
         self, user_id: UserID, product_name: ProductName
     ) -> bool:
-        # NOTE: except the product below all others
-        # always HAVE internet access
-        # NOTE: this issue needs be addressed ASAP
-        # https://github.com/ITISFoundation/osparc-simcore/issues/3875
-        if product_name != "s4llite":
-            return True
-
         async with self.db_engine.acquire() as conn:
             # checks if one of the groups which the user is part of has internet access
             select_stmt = sa.select(
@@ -26,7 +19,8 @@ class GroupsExtraPropertiesRepository(BaseRepository):
                     groups_extra_properties,
                     (groups_extra_properties.c.group_id == user_to_groups.c.gid)
                     & (user_to_groups.c.uid == user_id)
-                    & (groups_extra_properties.c.internet_access == True),
+                    & (groups_extra_properties.c.internet_access == True)
+                    & (groups_extra_properties.c.product_name == product_name),
                 )
             )
 

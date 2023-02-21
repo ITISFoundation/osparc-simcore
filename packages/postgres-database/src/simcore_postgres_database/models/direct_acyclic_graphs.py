@@ -5,9 +5,9 @@ from .base import Base
 
 
 class DAG(Base):
-    """ Table with Directed Acyclic Graphs
+    """Table with Directed Acyclic Graphs
 
-        Managed  by the catalog's service
+    Managed  by the catalog's service
     """
 
     __tablename__ = "dags"

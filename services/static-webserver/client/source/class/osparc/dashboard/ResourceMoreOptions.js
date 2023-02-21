@@ -108,7 +108,6 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
             store.getAllServices()
               .then(services => {
                 const serviceData = osparc.utils.Services.getFromObject(services, this.__resourceData["key"], serviceVersion);
-                console.log(serviceData);
                 serviceData["resourceType"] = "service";
                 this.__resourceData = serviceData;
                 this.__addPages();
@@ -177,7 +176,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
       // Page title
       tabPage.add(new qx.ui.basic.Label(title).set({
-        font: "title-16"
+        font: "text-15"
       }));
 
       // Page content

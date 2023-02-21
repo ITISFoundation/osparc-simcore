@@ -7,9 +7,10 @@ from typing import Any, Awaitable, Callable
 
 import aiodocker
 import pytest
+from models_library.docker import SimcoreServiceDockerLabelKeys
 from models_library.generated_models.docker_rest_api import Service, Task
 from pydantic import ByteSize, ValidationError, parse_obj_as
-from simcore_service_autoscaling.models import Resources, SimcoreServiceDockerLabelKeys
+from simcore_service_autoscaling.models import Resources
 
 
 @pytest.mark.parametrize(
@@ -107,14 +108,6 @@ async def test_get_simcore_service_docker_labels_from_task_with_missing_labels_r
     assert len(service_tasks) == 1
     with pytest.raises(ValidationError):
         SimcoreServiceDockerLabelKeys.from_docker_task(service_tasks[0])
-
-
-def test_osparc_docker_label_keys_to_docker_labels(
-    osparc_docker_label_keys: SimcoreServiceDockerLabelKeys,
-):
-    exported_dict = osparc_docker_label_keys.to_docker_labels()
-    assert all(isinstance(v, str) for v in exported_dict.values())
-    assert parse_obj_as(SimcoreServiceDockerLabelKeys, exported_dict)
 
 
 async def test_get_simcore_service_docker_labels(
