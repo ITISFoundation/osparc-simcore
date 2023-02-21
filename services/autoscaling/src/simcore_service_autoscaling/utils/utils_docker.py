@@ -330,12 +330,14 @@ async def get_docker_swarm_join_bash_command() -> str:
 def get_docker_login_on_start_bash_command(registry_settings: RegistrySettings) -> str:
     return " ".join(
         [
+            "echo",
+            f'"{registry_settings.REGISTRY_PW.get_secret_value()}"',
+            "|",
             "docker",
             "login",
             "--username",
             registry_settings.REGISTRY_USER,
-            "--password",
-            registry_settings.REGISTRY_PW.get_secret_value(),
+            "--password-stdin",
             registry_settings.resolved_registry_url,
         ]
     )
@@ -420,21 +422,7 @@ def mount_docker_drive_on_ephemeral(device_name: str = "/dev/nvme2n1") -> str:
     set_docker_root_path_cmd = " ".join(
         [
             "jq",
-            f'\'."data-root"="{_MOUNTED_DOCKER_PATH}/data"\'',
-            f"{_DOCKER_DAEMON_PATH}",
-            ">",
-            f"{_TMP_DAEMON_PATH}",
-            "&&",
-            "mv",
-            f"{_TMP_DAEMON_PATH}",
-            f"{_DOCKER_DAEMON_PATH}",
-        ]
-    )
-
-    set_docker_exec_path_cmd = " ".join(
-        [
-            "jq",
-            f'\'."exec-root"="{_MOUNTED_DOCKER_PATH}/exec"\'',
+            f'\'."data-root"="{_MOUNTED_DOCKER_PATH}/data", ."exec-root"="{_MOUNTED_DOCKER_PATH}/exec"\'',
             f"{_DOCKER_DAEMON_PATH}",
             ">",
             f"{_TMP_DAEMON_PATH}",
@@ -452,7 +440,6 @@ def mount_docker_drive_on_ephemeral(device_name: str = "/dev/nvme2n1") -> str:
             create_drive_mount_path,
             mount_drive_cmd,
             set_docker_root_path_cmd,
-            set_docker_exec_path_cmd,
             restart_docker_daemon,
         ]
     )
