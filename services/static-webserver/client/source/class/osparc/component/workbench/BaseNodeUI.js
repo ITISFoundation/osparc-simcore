@@ -120,9 +120,9 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
     "edgeDragOver": "qx.event.type.Data",
     "edgeDrop": "qx.event.type.Data",
     "edgeDragEnd": "qx.event.type.Data",
-    "nodeStartedMoving": "qx.event.type.Event",
+    "nodeMovingStart": "qx.event.type.Event",
     "nodeMoving": "qx.event.type.Event",
-    "nodeStoppedMoving": "qx.event.type.Event"
+    "nodeMovingStop": "qx.event.type.Event"
   },
 
   members: {
@@ -275,7 +275,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
       e.stopPropagation();
       if (this.__nodeMoving === false) {
         this.__nodeMoving = true;
-        this.fireEvent("nodeStartedMoving");
+        this.fireEvent("nodeMovingStart");
       }
       this.fireEvent("nodeMoving");
     },
@@ -294,7 +294,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
       this._onMovePointerMove(e);
 
       this.__nodeMoving = false;
-      this.fireEvent("nodeStoppedMoving");
+      this.fireEvent("nodeMovingStop");
 
       // Remove drag state
       this.removeState("move");

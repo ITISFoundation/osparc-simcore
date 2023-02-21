@@ -71,6 +71,10 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     NODE_HEIGHT: 80
   },
 
+  events: {
+    "updateNodeDecorator": "qx.event.type.Event"
+  },
+
   members: {
     __thumbnail: null,
     __svgWorkbenchCanvas: null,
@@ -190,7 +194,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       const node = this.getNode();
       node.bind("label", this, "caption", {
         onUpdate: () => {
-          setTimeout(() => this.fireEvent("nodeMoving"), 50);
+          setTimeout(() => this.fireEvent("updateNodeDecorator"), 50);
         }
       });
       const metaData = node.getMetaData();
@@ -380,7 +384,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       if (imageSrc) {
         this.setThumbnail(imageSrc);
       }
-      this.fireEvent("nodeMoving");
+      this.fireEvent("updateNodeDecorator");
     },
 
     __turnIntoParameterUI: function() {
@@ -405,7 +409,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           return "";
         }
       });
-      this.fireEvent("nodeMoving");
+      this.fireEvent("updateNodeDecorator");
     },
 
     __turnIntoIteratorUI: function() {
