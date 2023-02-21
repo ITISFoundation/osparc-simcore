@@ -9,9 +9,11 @@ from fastapi import FastAPI
 from pytest import FixtureRequest, MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
+from simcore_postgres_database.models.groups import groups
 from simcore_postgres_database.models.groups_extra_properties import (
     groups_extra_properties,
 )
+from simcore_postgres_database.models.products import products
 from simcore_service_director_v2.modules.db.repositories.groups_extra_properties import (
     GroupsExtraPropertiesRepository,
 )
@@ -61,12 +63,16 @@ def give_internet_to_group(
 ) -> Iterator[Callable[..., dict]]:
     to_remove = []
 
-    def creator(group_id: int, has_internet_access: bool) -> dict[str, Any]:
+    def creator(
+        group_id: int, has_internet_access: bool, product_name: str = None
+    ) -> dict[str, Any]:
         with postgres_db.connect() as con:
             groups_extra_properties_config = {
                 "group_id": group_id,
                 "internet_access": has_internet_access,
             }
+            if product_name:
+                groups_extra_properties_config["product_name"] = product_name
 
             con.execute(
                 groups_extra_properties.insert()
@@ -130,3 +136,49 @@ async def test_has_internet_access(
         user_id=user["id"], product_name=user["product_name"]
     )
     assert allow_internet_access is with_internet_access
+
+
+async def test_regression_group_id_is_not_unique(
+    mock_env: EnvVarsDict, postgres_db: sa.engine.Engine
+):
+    def _get_group_id(con: sa.engine.Connection) -> int:
+        groups_config = {"name": "", "description": ""}
+        result = con.execute(
+            groups.insert().values(groups_config).returning(sa.literal_column("*"))
+        )
+        return result.first()[0]
+
+    def _insert_product(con: sa.engine.Connection, group_id: int, name: str) -> int:
+        product_config = {"name": name, "group_id": group_id, "host_regex": ""}
+        con.execute(products.insert().values(product_config))
+
+    def _insert_groups_extra_properties(
+        con: sa.engine.Connection, group_id: int, product_name: str
+    ) -> int:
+        groups_extra_properties_config = {
+            "product_name": product_name,
+            "group_id": group_id,
+        }
+        con.execute(
+            groups_extra_properties.insert().values(groups_extra_properties_config)
+        )
+
+    with postgres_db.connect() as con:
+        group_id_1 = _get_group_id(con)
+        group_id_2 = _get_group_id(con)
+
+        # create product 1 and product 2
+        _insert_product(con, group_id_1, "p1")
+        _insert_product(con, group_id_2, "p2")
+
+        # these worked before
+        _insert_groups_extra_properties(con, group_id_1, "p1")
+        _insert_groups_extra_properties(con, group_id_2, "p2")
+
+        # these were broken before
+        _insert_groups_extra_properties(con, group_id_1, "p2")
+        _insert_groups_extra_properties(con, group_id_2, "p1")
+
+        # downgrade will fail since we have duplicates,
+        # duplicate group_id were always supposed to be supported
+        con.execute(groups_extra_properties.delete())
