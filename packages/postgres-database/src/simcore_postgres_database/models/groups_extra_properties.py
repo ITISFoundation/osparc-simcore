@@ -45,5 +45,4 @@ groups_extra_properties = sa.Table(
     # TIME STAMPS ----
     column_created_datetime(),
     column_modified_datetime(),
-    sa.UniqueConstraint("group_id"),
 )
