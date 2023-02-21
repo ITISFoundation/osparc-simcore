@@ -734,7 +734,7 @@ async def delete_project(request: web.Request):
         raise web.HTTPConflict(reason=f"{err}") from err
     except ProjectLockError as err:
         raise web.HTTPConflict(
-            reason=f"Project {path_params.project_id} is locked"
+            reason=f"Project {path_params.project_id} is locked: {err}"
         ) from err
 
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
