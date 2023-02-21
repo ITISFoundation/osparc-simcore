@@ -460,6 +460,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       nodeUI.addListener("nodeMoving", () => {
         this.__updateNodeUIPos(nodeUI);
         if ("initPos" in nodeUI) {
+          // multi node move
           const xDiff = nodeUI.getNode().getPosition().x - nodeUI.initPos.x;
           const yDiff = nodeUI.getNode().getPosition().y - nodeUI.initPos.y;
           this.__itemMoving(nodeUI.getNodeId(), xDiff, yDiff);
