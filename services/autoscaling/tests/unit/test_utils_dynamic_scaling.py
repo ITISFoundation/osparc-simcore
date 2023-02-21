@@ -264,12 +264,13 @@ async def test_ec2_startup_script_with_custom_scripts(
     enabled_custom_boot_scripts: list[str],
     app_settings: ApplicationSettings,
 ):
-    startup_script = await ec2_startup_script(app_settings)
-    assert len(startup_script.split("&&")) == 7 + len(enabled_custom_boot_scripts)
-    assert re.fullmatch(
-        rf"^([^&&]+ &&){{{len(enabled_custom_boot_scripts)}}} (docker swarm join [^&&]+) && (echo [^\s]+ \| docker login [^&&]+) && (echo [^&&]+) && (echo [^&&]+) && (chmod \+x [^&&]+) && (./docker-pull-script.sh) && (echo .+)$",
-        startup_script,
-    ), f"{startup_script=}"
+    for _ in range(3):
+        startup_script = await ec2_startup_script(app_settings)
+        assert len(startup_script.split("&&")) == 7 + len(enabled_custom_boot_scripts)
+        assert re.fullmatch(
+            rf"^([^&&]+ &&){{{len(enabled_custom_boot_scripts)}}} (docker swarm join [^&&]+) && (echo [^\s]+ \| docker login [^&&]+) && (echo [^&&]+) && (echo [^&&]+) && (chmod \+x [^&&]+) && (./docker-pull-script.sh) && (echo .+)$",
+            startup_script,
+        ), f"{startup_script=}"
 
 
 async def test_ec2_startup_script_with_pre_pulling_but_no_registry(

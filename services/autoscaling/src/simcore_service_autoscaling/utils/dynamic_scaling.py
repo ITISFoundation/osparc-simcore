@@ -1,7 +1,6 @@
 import datetime
 import logging
 import re
-from copy import deepcopy
 from typing import Final
 
 from fastapi import FastAPI
@@ -131,8 +130,8 @@ async def try_assigning_task_to_pending_instances(
 
 async def ec2_startup_script(app_settings: ApplicationSettings) -> str:
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-    startup_commands = deepcopy(
-        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_CUSTOM_BOOT_SCRIPTS
+    startup_commands = (
+        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_CUSTOM_BOOT_SCRIPTS.copy()
     )
     startup_commands.append(await utils_docker.get_docker_swarm_join_bash_command())
     if app_settings.AUTOSCALING_REGISTRY:
