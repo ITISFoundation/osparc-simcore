@@ -232,7 +232,7 @@ def enabled_pre_pull_images(
 def enabled_custom_boot_scripts(
     minimal_configuration: None, monkeypatch: pytest.MonkeyPatch, faker: Faker
 ) -> list[str]:
-    custom_scripts = faker.pylist(allowed_types=(str))
+    custom_scripts = faker.pylist(allowed_types=(str,))
     monkeypatch.setenv(
         "EC2_INSTANCES_CUSTOM_BOOT_SCRIPTS",
         json.dumps(custom_scripts),
