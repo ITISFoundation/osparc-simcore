@@ -9,9 +9,10 @@ from models_library.basic_types import (
     LogLevel,
     VersionTag,
 )
-from models_library.docker import DockerLabelKey
+from models_library.docker import DockerGenericTag, DockerLabelKey
 from pydantic import Field, NonNegativeInt, PositiveInt, parse_obj_as, validator
 from settings_library.base import BaseCustomSettings
+from settings_library.docker_registry import RegistrySettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from settings_library.utils_logging import MixinLoggingSettings
@@ -81,6 +82,16 @@ class EC2InstancesSettings(BaseCustomSettings):
     EC2_INSTANCES_MAX_START_TIME: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=3),
         description="Usual time taken an EC2 instance with the given AMI takes to be in 'running' mode",
+    )
+
+    EC2_INSTANCES_PRE_PULL_IMAGES: list[DockerGenericTag] = Field(
+        default_factory=list,
+        description="a list of docker image/tags to pull on instance cold start",
+    )
+
+    EC2_INSTANCES_PRE_PULL_IMAGES_CRON_INTERVAL: datetime.timedelta = Field(
+        default=datetime.timedelta(minutes=30),
+        description="time interval between pulls of images (minimum is 1 minute)",
     )
 
     @validator("EC2_INSTANCES_TIME_BEFORE_TERMINATION")
@@ -170,6 +181,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     AUTOSCALING_RABBITMQ: Optional[RabbitSettings] = Field(auto_default_from_env=True)
 
     AUTOSCALING_REDIS: RedisSettings = Field(auto_default_from_env=True)
+
+    AUTOSCALING_REGISTRY: Optional[RegistrySettings] = Field(auto_default_from_env=True)
 
     @cached_property
     def LOG_LEVEL(self):
