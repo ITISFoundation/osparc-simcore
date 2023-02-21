@@ -437,12 +437,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       });
 
       if (nodeUI) {
-        const snapToGrid = () => {
-          nodeUI.snapToGrid();
-          // make sure nodeUI is moved, then update edges
-          setTimeout(() => this.__updateNodeUIPos(nodeUI), 10);
-        };
-        setTimeout(() => snapToGrid(), 50);
+        nodeUI.snapToGrid();
+        // make sure nodeUI is moved, then update edges
+        setTimeout(() => this.__updateNodeUIPos(nodeUI), 10);
       }
 
       this.__updateWorkbenchBounds();
