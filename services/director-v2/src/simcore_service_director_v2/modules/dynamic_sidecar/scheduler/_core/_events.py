@@ -358,8 +358,8 @@ class GetStatus(DynamicSchedulerEvent):
                 scheduler_data.service_name,
             )
             return
-        else:
-            scheduler_data.dynamic_sidecar.inspect_error_handler.else_reset()
+
+        scheduler_data.dynamic_sidecar.inspect_error_handler.else_reset()
 
         # parse and store data from container
         scheduler_data.dynamic_sidecar.containers_inspect = parse_containers_inspect(
