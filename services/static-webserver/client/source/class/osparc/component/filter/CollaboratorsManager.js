@@ -7,7 +7,7 @@
 
 qx.Class.define("osparc.component.filter.CollaboratorsManager", {
   extend: osparc.ui.window.SingletonWindow,
-  construct: function(studyData, attachment, resourceId) {
+  construct: function(resourceData) {
     this.base(arguments, "collaboratorsManager", this.tr("Share with"));
     this.set({
       layout: new qx.ui.layout.VBox(),
@@ -21,13 +21,10 @@ qx.Class.define("osparc.component.filter.CollaboratorsManager", {
       maxHeight: 500,
       clickAwayClose: true
     });
-    this.__attachment = attachment;
-    this.__resourceId = resourceId;
-    this.__studyData = studyData;
+
+    this.__resourceData = resourceData;
     this.__selectedCollaborators = new qx.data.Array();
     this.__renderLayout();
-    this.addListener("appear", () => this.__updatePosition());
-
     this.__visibleCollaborators = {};
     this.__reloadCollaborators();
 
@@ -40,10 +37,10 @@ qx.Class.define("osparc.component.filter.CollaboratorsManager", {
   },
 
   members: {
+    __resourceData: null,
     __saveButton: null,
     __selectedCollaborators: null,
     __visibleCollaborators: null,
-    __collaboratorsToBeRemoved: null,
 
     __renderLayout: function() {
       const filter = new osparc.component.filter.TextFilter("name", "collaboratorsManager").set({
@@ -70,11 +67,7 @@ qx.Class.define("osparc.component.filter.CollaboratorsManager", {
       this.add(buttons);
     },
 
-    __reloadCollaborators: function(collaboratorsToBeRemoved = null) {
-      if (collaboratorsToBeRemoved) {
-        this.__collaboratorsToBeRemoved = collaboratorsToBeRemoved.map(collaboratorToBeRemoved => parseInt(collaboratorToBeRemoved));
-      }
-
+    __reloadCollaborators: function() {
       osparc.store.Store.getInstance().getPotentialCollaborators()
         .then(potentialCollaborators => {
           this.__visibleCollaborators = potentialCollaborators;
@@ -114,58 +107,14 @@ qx.Class.define("osparc.component.filter.CollaboratorsManager", {
       });
 
       visibleCollaborators.forEach(visibleCollaborator => {
-        if (this.__collaboratorsToBeRemoved && this.__collaboratorsToBeRemoved.includes(visibleCollaborator["gid"])) {
+        if (this.__resourceData["accessRights"] && this.__resourceData["accessRights"].includes(visibleCollaborator["gid"])) {
+          return;
+        }
+        if (this.__resourceData["access_rights"] && this.__resourceData["access_rights"].includes(visibleCollaborator["gid"])) {
           return;
         }
         this.__collabButtonsContainer.add(this.__collaboratorButton(visibleCollaborator));
       });
-    },
-
-
-    /**
-     * If the attachment (element close to which the TagManager is being rendered) is already on the DOM,
-     * this function calculates where the TagManager should render, taking into account the window edges.
-     */
-    __updatePosition: function() {
-      if (this.__attachment && this.__attachment.getContentElement().getDomElement()) {
-        const location = qx.bom.element.Location.get(this.__attachment.getContentElement().getDomElement());
-        const freeDistances = osparc.utils.Utils.getFreeDistanceToWindowEdges(this.__attachment);
-        let position = {
-          top: location.bottom,
-          left: location.right
-        };
-        if (this.getWidth() > freeDistances.right) {
-          position.left = location.left - this.getWidth();
-          if (this.getHeight() > freeDistances.bottom) {
-            position.top = location.top - (this.getHeight() || this.getSizeHint().height);
-          }
-        } else if (this.getHeight() > freeDistances.bottom) {
-          position.top = location.top - this.getHeight();
-        }
-        this.moveTo(position.left, position.top);
-      } else {
-        this.center();
-      }
-    },
-
-    __getAddTagPromise: function(tagId) {
-      const params = {
-        url: {
-          tagId,
-          studyId: this.__resourceId
-        }
-      };
-      return osparc.data.Resources.fetch("studies", "addTag", params);
-    },
-
-    __getRemoveTagPromise: function(tagId) {
-      const params = {
-        url: {
-          tagId,
-          studyId: this.__resourceId
-        }
-      };
-      return osparc.data.Resources.fetch("studies", "removeTag", params);
     },
 
     __saveClicked: function() {
