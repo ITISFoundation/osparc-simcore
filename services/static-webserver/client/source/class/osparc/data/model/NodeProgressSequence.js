@@ -250,19 +250,19 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     },
 
     __applyInputsPulling: function(value) {
-      this.setSidecarPulling(1);
+      this.setClusterUpScaling(1);
 
       this.self().progressReceived(this.__pullingInputsTitle, this.__pullingInputsPBar, value);
     },
 
     __applyOutputsPulling: function(value) {
-      this.setSidecarPulling(1);
+      this.setClusterUpScaling(1);
 
       this.self().progressReceived(this.__pullingOutputsTitle, this.__pullingOutputsPBar, value);
     },
 
     __applyStatePulling: function(value) {
-      this.setSidecarPulling(1);
+      this.setClusterUpScaling(1);
 
       this.self().progressReceived(this.__pullingStateTitle, this.__pullingStatePBar, value);
     },
