@@ -30,8 +30,7 @@ qx.Class.define("osparc.ui.basic.PoweredByOsparc", {
       toolTipText: this.tr("powered by ") + osparc.About.OSPARC_OFFICIAL,
       alignX: "center",
       alignY: "middle",
-      cursor: "pointer",
-      padding: 3
+      cursor: "pointer"
     });
 
     this.addListener("tap", () => osparc.About.getInstance().open());
@@ -51,6 +50,7 @@ qx.Class.define("osparc.ui.basic.PoweredByOsparc", {
       switch (id) {
         case "powered-by": {
           control = new qx.ui.basic.Label(this.tr("powered by")).set({
+            minWidth: 47,
             alignX: "center",
             font: "text-9"
           });
@@ -59,8 +59,8 @@ qx.Class.define("osparc.ui.basic.PoweredByOsparc", {
         }
         case "logo": {
           control = new qx.ui.basic.Image().set({
-            width: 47,
-            height: 35,
+            width: 42,
+            height: 33,
             scale: true,
             alignX: "center"
           });
