@@ -5,7 +5,7 @@
  * Authors: Odei Maiz (odeimaiz)
  */
 
-qx.Class.define("osparc.component.filter.CollaboratorsManager", {
+qx.Class.define("osparc.component.filter.NewCollaboratorsManager", {
   extend: osparc.ui.window.SingletonWindow,
   construct: function(resourceData) {
     this.base(arguments, "collaboratorsManager", this.tr("Share with"));
@@ -106,12 +106,17 @@ qx.Class.define("osparc.component.filter.CollaboratorsManager", {
         return -1;
       });
 
+      let existingCollabs = [];
+      if (this.__resourceData["accessRights"]) {
+        // study/template
+        existingCollabs = Object.keys(this.__resourceData["accessRights"]);
+      } else if (this.__resourceData["access_rights"]) {
+        // service
+        existingCollabs = Object.keys(this.__resourceData["access_rights"]);
+      }
       visibleCollaborators.forEach(visibleCollaborator => {
         // do not list the visibleCollaborators that already collaborators
-        if (this.__resourceData["accessRights"] && Object.keys(this.__resourceData["accessRights"]).includes(visibleCollaborator["gid"])) {
-          return;
-        }
-        if (this.__resourceData["access_rights"] && Object.keys(this.__resourceData["access_rights"]).includes(visibleCollaborator["gid"])) {
+        if (existingCollabs.includes(visibleCollaborator["gid"])) {
           return;
         }
         this.__collabButtonsContainer.add(this.__collaboratorButton(visibleCollaborator));

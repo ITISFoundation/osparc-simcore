@@ -135,7 +135,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
         allowGrowX: false
       });
       addCollaboratorBtn.addListener("execute", () => {
-        const collaboratorsManager = new osparc.component.filter.CollaboratorsManager(this._serializedData);
+        const collaboratorsManager = new osparc.component.filter.NewCollaboratorsManager(this._serializedData);
         collaboratorsManager.addListener("addCollaborators", e => {
           this._addCollaborators(e.getData());
           collaboratorsManager.close();
