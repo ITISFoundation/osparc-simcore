@@ -250,50 +250,8 @@ qx.Class.define("osparc.component.permissions.Permissions", {
       osparc.store.Store.getInstance().getPotentialCollaborators()
         .then(potentialCollaborators => {
           this.__collaborators = Object.assign(this.__collaborators, potentialCollaborators);
-          // this.__reloadOrganizationsAndMembers();
           this.__reloadCollaboratorsList();
         });
-    },
-
-    __reloadOrganizationsAndMembers: function() {
-      this.__organizationsAndMembers.reset();
-
-      const aceessRights = this._serializedData["accessRights"];
-      const myFriends = Object.values(this.__collaborators);
-
-      // sort them first
-      myFriends.sort((a, b) => {
-        if (a["collabType"] > b["collabType"]) {
-          return 1;
-        }
-        if (a["collabType"] < b["collabType"]) {
-          return -1;
-        }
-        if (a["label"] > b["label"]) {
-          return 1;
-        }
-        return -1;
-      });
-
-      myFriends.forEach(myFriend => {
-        const gid = myFriend["gid"];
-        if (parseInt(gid) !== osparc.auth.Data.getInstance().getGroupId() && !(parseInt(gid) in aceessRights)) {
-          const btn = this.__organizationsAndMembers.addOption(myFriend);
-          let iconPath = null;
-          switch (myFriend["collabType"]) {
-            case 0:
-              iconPath = "@FontAwesome5Solid/globe/14";
-              break;
-            case 1:
-              iconPath = "@FontAwesome5Solid/users/14";
-              break;
-            case 2:
-              iconPath = "@FontAwesome5Solid/user/14";
-              break;
-          }
-          btn.setIcon(iconPath);
-        }
-      });
     },
 
     __reloadCollaboratorsList: function() {
@@ -324,10 +282,6 @@ qx.Class.define("osparc.component.permissions.Permissions", {
     },
 
     _addCollaborators: function(collaborators) {
-      throw new Error("Abstract method called!");
-    },
-
-    _addCollaborator: function() {
       throw new Error("Abstract method called!");
     },
 

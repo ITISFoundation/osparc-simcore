@@ -113,7 +113,7 @@ qx.Class.define("osparc.component.permissions.Study", {
       return osparc.data.model.Study.canIWrite(this.__studyData["accessRights"]);
     },
 
-    __addCollaborators: function(gids) {
+    _addCollaborators: function(gids) {
       if (gids.length === 0) {
         return;
       }
@@ -131,18 +131,12 @@ qx.Class.define("osparc.component.permissions.Study", {
         .then(updatedData => {
           this.fireDataEvent("updateAccessRights", updatedData);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator(s) successfully added"));
-          this.__reloadOrganizationsAndMembers();
           this.__reloadCollaboratorsList();
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went adding collaborator(s)"), "ERROR");
           console.error(err);
         });
-    },
-
-    _addCollaborator: function() {
-      const gids = this.__organizationsAndMembers.getSelectedGIDs();
-      this.__addCollaborators(gids);
     },
 
     _deleteMember: function(collaborator) {
@@ -161,7 +155,6 @@ qx.Class.define("osparc.component.permissions.Study", {
         .then(updatedData => {
           this.fireDataEvent("updateAccessRights", updatedData);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Member successfully removed"));
-          this.__reloadOrganizationsAndMembers();
           this.__reloadCollaboratorsList();
         })
         .catch(err => {
@@ -182,7 +175,6 @@ qx.Class.define("osparc.component.permissions.Study", {
         .then(updatedData => {
           this.fireDataEvent("updateAccessRights", updatedData);
           osparc.component.message.FlashMessenger.getInstance().logAs(successMsg);
-          this.__reloadOrganizationsAndMembers();
           this.__reloadCollaboratorsList();
         })
         .catch(err => {
