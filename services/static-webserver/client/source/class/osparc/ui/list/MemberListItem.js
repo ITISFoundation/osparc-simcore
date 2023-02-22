@@ -208,11 +208,12 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
 
     _shouldApplyFilter: function(data) {
       if (data.name) {
+        const checks = [
+          this.getTitle(),
+          this.getSubtitleMD()
+        ];
         // data.name comes lowercased
-        if (!this.getTitle().toLowerCase().includes(data.name)) {
-          return true;
-        }
-        if (!this.getSubtitleMD().toLowerCase().includes(data.name)) {
+        if (checks.filter(check => check.toLowerCase().includes(data.name)).length == 0) {
           return true;
         }
       }
