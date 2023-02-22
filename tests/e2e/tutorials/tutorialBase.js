@@ -579,7 +579,7 @@ class TutorialBase {
   }
 
   async removeStudy(studyId, waitFor = 5000) {
-    await auto.dashboardStudiesBrowser();
+    await auto.dashboardStudiesBrowser(this.__page);
     await this.waitFor(waitFor, 'Wait to be unlocked');
     await this.takeScreenshot("deleteFirstStudy_before");
     const intervalWait = 3000;
