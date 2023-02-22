@@ -176,6 +176,10 @@ async def store_to_s3(  # pylint:disable=too-many-locals,too-many-arguments
         f"{s3_retries}",
         "--transfers",
         f"{s3_parallelism}",
+        # limiting memory usage https://forum.rclone.org/t/how-to-set-a-memory-limit/10230/4
+        "--use-mmap",
+        "--buffer-size",
+        "0M",
         "--stats",
         "5s",
         "--stats-one-line",
