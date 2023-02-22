@@ -22,6 +22,18 @@ groups_extra_properties = sa.Table(
         doc="Group unique ID",
     ),
     sa.Column(
+        "product_name",
+        sa.VARCHAR,
+        sa.ForeignKey(
+            "products.name",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
+            name="fk_groups_extra_properties_to_products_name",
+        ),
+        nullable=False,
+        doc="Product unique identifier",
+    ),
+    sa.Column(
         "internet_access",
         sa.Boolean(),
         nullable=False,
@@ -33,5 +45,4 @@ groups_extra_properties = sa.Table(
     # TIME STAMPS ----
     column_created_datetime(),
     column_modified_datetime(),
-    sa.UniqueConstraint("group_id"),
 )

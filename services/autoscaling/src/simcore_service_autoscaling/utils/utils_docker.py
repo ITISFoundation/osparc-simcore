@@ -7,9 +7,11 @@ import collections
 import datetime
 import logging
 import re
+from pathlib import Path
 from typing import Final, Optional, cast
 
-from models_library.docker import DockerLabelKey
+import yaml
+from models_library.docker import DockerGenericTag, DockerLabelKey
 from models_library.generated_models.docker_rest_api import (
     Node,
     NodeState,
@@ -21,6 +23,7 @@ from pydantic import ByteSize, parse_obj_as
 from servicelib.docker_utils import to_datetime
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
+from settings_library.docker_registry import RegistrySettings
 
 from ..core.settings import ApplicationSettings
 from ..models import Resources
@@ -322,6 +325,82 @@ async def get_docker_swarm_join_bash_command() -> str:
     raise RuntimeError(
         f"expected docker '{_DOCKER_SWARM_JOIN_RE}' command not found: received {decoded_stdout}!"
     )
+
+
+def get_docker_login_on_start_bash_command(registry_settings: RegistrySettings) -> str:
+    return " ".join(
+        [
+            "docker",
+            "login",
+            "--username",
+            registry_settings.REGISTRY_USER,
+            "--password",
+            registry_settings.REGISTRY_PW.get_secret_value(),
+            registry_settings.resolved_registry_url,
+        ]
+    )
+
+
+_DOCKER_COMPOSE_CMD: Final[str] = "docker compose"
+_PRE_PULL_COMPOSE_PATH: Final[Path] = Path("/docker-pull.compose.yml")
+_DOCKER_COMPOSE_PULL_SCRIPT_PATH: Final[Path] = Path("/docker-pull-script.sh")
+_CRONJOB_LOGS_PATH: Final[Path] = Path("/var/log/docker-pull-cronjob.log")
+
+
+def get_docker_pull_images_on_start_bash_command(
+    docker_tags: list[DockerGenericTag],
+) -> str:
+    if not docker_tags:
+        return ""
+
+    compose = {
+        "version": '"3.8"',
+        "services": {
+            f"pre-pull-image-{n}": {"image": image_tag}
+            for n, image_tag in enumerate(docker_tags)
+        },
+    }
+    compose_yaml = yaml.safe_dump(compose)
+    write_compose_file_cmd = " ".join(
+        ["echo", f'"{compose_yaml}"', ">", f"{_PRE_PULL_COMPOSE_PATH}"]
+    )
+    write_docker_compose_pull_script_cmd = " ".join(
+        [
+            "echo",
+            f'"#!/bin/sh\necho Pulling started at \\$(date)\n{_DOCKER_COMPOSE_CMD} --file={_PRE_PULL_COMPOSE_PATH} pull"',
+            ">",
+            f"{_DOCKER_COMPOSE_PULL_SCRIPT_PATH}",
+        ]
+    )
+    make_docker_compose_script_executable = " ".join(
+        ["chmod", "+x", f"{_DOCKER_COMPOSE_PULL_SCRIPT_PATH}"]
+    )
+    docker_compose_pull_cmd = " ".join([f".{_DOCKER_COMPOSE_PULL_SCRIPT_PATH}"])
+    return " && ".join(
+        [
+            write_compose_file_cmd,
+            write_docker_compose_pull_script_cmd,
+            make_docker_compose_script_executable,
+            docker_compose_pull_cmd,
+        ]
+    )
+
+
+def get_docker_pull_images_crontab(interval: datetime.timedelta) -> str:
+    # check the interval is within 1 < 60 minutes
+    checked_interval = round(interval.total_seconds() / 60)
+
+    crontab_entry = " ".join(
+        [
+            "echo",
+            f'"*/{checked_interval or 1} * * * * root',
+            f"{_DOCKER_COMPOSE_PULL_SCRIPT_PATH}",
+            f'>> {_CRONJOB_LOGS_PATH} 2>&1"',
+            ">>",
+            "/etc/crontab",
+        ]
+    )
+    return " && ".join([crontab_entry])
 
 
 async def find_node_with_name(

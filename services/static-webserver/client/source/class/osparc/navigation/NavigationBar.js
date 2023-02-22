@@ -174,8 +174,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         case "dashboard-button":
           control = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesome5Solid/home/16").set({
-            ...this.self().BUTTON_OPTIONS,
-            font: "title-14"
+            ...this.self().BUTTON_OPTIONS
           });
           osparc.utils.Utils.setIdToWidget(control, "dashboardBtn");
           control.addListener("execute", () => this.fireEvent("backToDashboardPressed"), this);
@@ -183,7 +182,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         case "dashboard-label":
           control = new qx.ui.basic.Label(this.tr("Dashboard")).set({
-            paddingLeft: 20, // to align it with the button
             font: "text-14"
           });
           this.getChildControl("left-items").add(control);

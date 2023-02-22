@@ -60,7 +60,7 @@ qx.Class.define("osparc.ui.basic.PoweredByOsparc", {
         case "logo": {
           control = new qx.ui.basic.Image().set({
             width: 47,
-            height: 38,
+            height: 35,
             scale: true,
             alignX: "center"
           });

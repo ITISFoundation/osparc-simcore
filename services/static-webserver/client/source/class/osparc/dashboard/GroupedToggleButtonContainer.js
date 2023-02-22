@@ -82,7 +82,7 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
           break;
         case "header": {
           control = new qx.ui.basic.Atom().set({
-            font: "title-14",
+            font: "text-15",
             gap: 10,
             padding: 10,
             paddingBottom: 5,
