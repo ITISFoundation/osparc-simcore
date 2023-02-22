@@ -5,19 +5,24 @@
 # pylint: disable=too-many-arguments
 
 
+import json
+import re
 from datetime import timedelta
-from typing import Callable
+from typing import Callable, Iterator
 
 import pytest
 from faker import Faker
+from models_library.docker import DockerGenericTag
 from models_library.generated_models.docker_rest_api import Node, Task
-from pydantic import ByteSize
+from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
 from simcore_service_autoscaling.core.errors import Ec2InvalidDnsNameError
+from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.models import EC2InstanceType
 from simcore_service_autoscaling.modules.ec2 import EC2InstanceData
 from simcore_service_autoscaling.utils.dynamic_scaling import (
     associate_ec2_instances_with_nodes,
+    ec2_startup_script,
     node_host_name_from_ec2_private_dns,
     try_assigning_task_to_pending_instances,
 )
@@ -177,4 +182,78 @@ async def test_try_assigning_task_to_pending_instances(
             fake_app, pending_task, pending_instance_to_tasks, type_to_instance_map
         )
         is False
+    )
+
+
+@pytest.fixture
+def minimal_configuration(
+    docker_swarm: None,
+    disabled_rabbitmq: None,
+    disabled_ec2: None,
+    disable_dynamic_service_background_task: None,
+    mocked_redis_server: None,
+) -> Iterator[None]:
+    yield
+
+
+async def test_ec2_startup_script_no_pre_pulling(
+    minimal_configuration: None, app_settings: ApplicationSettings
+):
+    startup_script = await ec2_startup_script(app_settings)
+    assert len(startup_script.split("&&")) == 1
+    assert re.fullmatch(
+        r"^docker swarm join --availability=drain --token .*$", startup_script
+    )
+
+
+@pytest.fixture
+def enabled_pre_pull_images(
+    minimal_configuration: None, monkeypatch: pytest.MonkeyPatch
+) -> list[DockerGenericTag]:
+    images = parse_obj_as(
+        list[DockerGenericTag],
+        [
+            "io.simcore.some234.cool.label",
+            "com.example.some-label",
+            "nginx:latest",
+            "itisfoundation/my-very-nice-service:latest",
+            "simcore/services/dynamic/another-nice-one:2.4.5",
+            "asd",
+        ],
+    )
+    monkeypatch.setenv(
+        "EC2_INSTANCES_PRE_PULL_IMAGES",
+        json.dumps(images),
+    )
+    return images
+
+
+@pytest.fixture
+def disabled_registry(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("REGISTRY_AUTH")
+
+
+async def test_ec2_startup_script_with_pre_pulling(
+    minimal_configuration: None,
+    enabled_pre_pull_images: None,
+    app_settings: ApplicationSettings,
+):
+    startup_script = await ec2_startup_script(app_settings)
+    assert len(startup_script.split("&&")) == 7
+    assert re.fullmatch(
+        r"^(docker swarm join [^&&]+) && (docker login [^&&]+) && (echo [^&&]+) && (echo [^&&]+) && (chmod \+x [^&&]+) && (./docker-pull-script.sh) && (echo .+)$",
+        startup_script,
+    ), f"{startup_script=}"
+
+
+async def test_ec2_startup_script_with_pre_pulling_but_no_registry(
+    minimal_configuration: None,
+    enabled_pre_pull_images: None,
+    disabled_registry: None,
+    app_settings: ApplicationSettings,
+):
+    startup_script = await ec2_startup_script(app_settings)
+    assert len(startup_script.split("&&")) == 1
+    assert re.fullmatch(
+        r"^docker swarm join --availability=drain --token .*$", startup_script
     )
