@@ -20,7 +20,7 @@ multidict==6.0.4
     # via yarl
 pamqp==3.2.1
     # via aiormq
-pydantic==1.10.5
+pydantic==1.10.2
     # via -r requirements/_base.in
 pyinstrument==4.4.0
     # via -r requirements/_base.in

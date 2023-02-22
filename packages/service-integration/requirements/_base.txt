@@ -44,7 +44,7 @@ packaging==23.0
     #   pytest
 pluggy==1.0.0
     # via pytest
-pydantic==1.10.5
+pydantic==1.10.2
     # via -r requirements/../../../packages/models-library/requirements/_base.in
 pygments==2.14.0
     # via rich
