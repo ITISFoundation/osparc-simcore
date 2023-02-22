@@ -86,8 +86,7 @@ qx.Class.define("osparc.component.permissions.Service", {
       return osparc.utils.Services.canIWrite(this._serializedData["accessRights"]);
     },
 
-    _addCollaborator: function() {
-      const gids = this.__organizationsAndMembers.getSelectedGIDs();
+    __addCollaborators: function(gids) {
       if (gids.length === 0) {
         return;
       }
@@ -112,6 +111,15 @@ qx.Class.define("osparc.component.permissions.Service", {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went adding collaborator(s)"), "ERROR");
           console.error(err);
         });
+    },
+
+    _addCollaborators: function(gids) {
+      this.__addCollaborators(gids);
+    },
+
+    _addCollaborator: function() {
+      const gids = this.__organizationsAndMembers.getSelectedGIDs();
+      this.__addCollaborators(gids);
     },
 
     _deleteMember: function(collaborator) {

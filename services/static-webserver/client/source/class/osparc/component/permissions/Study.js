@@ -113,8 +113,7 @@ qx.Class.define("osparc.component.permissions.Study", {
       return osparc.data.model.Study.canIWrite(this.__studyData["accessRights"]);
     },
 
-    _addCollaborator: function() {
-      const gids = this.__organizationsAndMembers.getSelectedGIDs();
+    __addCollaborators: function(gids) {
       if (gids.length === 0) {
         return;
       }
@@ -139,6 +138,11 @@ qx.Class.define("osparc.component.permissions.Study", {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went adding collaborator(s)"), "ERROR");
           console.error(err);
         });
+    },
+
+    _addCollaborator: function() {
+      const gids = this.__organizationsAndMembers.getSelectedGIDs();
+      this.__addCollaborators(gids);
     },
 
     _deleteMember: function(collaborator) {

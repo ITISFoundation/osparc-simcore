@@ -127,33 +127,21 @@ qx.Class.define("osparc.component.permissions.Permissions", {
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
       vBox.setVisibility(this._canIWrite() ? "visible" : "excluded");
 
-      const label = new qx.ui.basic.Label(this.tr("Select from the dropdown list below and click Add to share"));
+      const label = new qx.ui.basic.Label(this.tr("Select from the list below and click Share"));
       vBox.add(label);
 
-      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
-        alignY: "middle"
-      }));
-      vBox.add(hBox, {
-        flex: 1
-      });
-
-      const organizationsAndMembers = this.__organizationsAndMembers = new osparc.component.filter.OrganizationsAndMembers("orgAndMembPerms");
-      hBox.add(organizationsAndMembers, {
-        flex: 1
-      });
-
-      const addCollaboratorBtn = new qx.ui.form.Button(this.tr("Add")).set({
+      const addCollaboratorBtn = new qx.ui.form.Button(this.tr("Add Collaborators...")).set({
         appearance: "strong-button",
-        allowGrowY: false,
-        enabled: false
+        allowGrowX: false
       });
-      addCollaboratorBtn.addListener("execute", () => this._addCollaborator(), this);
-      qx.event.message.Bus.getInstance().subscribe("OrgAndMembPermsFilter", () => {
-        const anySelected = Boolean(this.__organizationsAndMembers.getSelectedGIDs().length);
-        addCollaboratorBtn.setEnabled(anySelected);
+      addCollaboratorBtn.addListener("execute", () => {
+        const collaboratorsManager = new osparc.component.filter.CollaboratorsManager();
+        collaboratorsManager.addListener("addCollaborators", e => {
+          this._addCollaborators(e.getData());
+          collaboratorsManager.close();
+        }, this);
       }, this);
-
-      hBox.add(addCollaboratorBtn);
+      vBox.add(addCollaboratorBtn);
 
       return vBox;
     },
@@ -262,7 +250,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
       osparc.store.Store.getInstance().getPotentialCollaborators()
         .then(potentialCollaborators => {
           this.__collaborators = Object.assign(this.__collaborators, potentialCollaborators);
-          this.__reloadOrganizationsAndMembers();
+          // this.__reloadOrganizationsAndMembers();
           this.__reloadCollaboratorsList();
         });
     },
@@ -332,6 +320,10 @@ qx.Class.define("osparc.component.permissions.Permissions", {
     },
 
     _canIWrite: function() {
+      throw new Error("Abstract method called!");
+    },
+
+    _addCollaborators: function(collaborators) {
       throw new Error("Abstract method called!");
     },
 
