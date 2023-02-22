@@ -118,11 +118,11 @@ class RabbitMQClient:
             # consumer/publisher must set the same configuration for same queue
             # exclusive means that the queue is only available for THIS very client
             # and will be deleted when the client disconnects
-            queue_parameters = dict(
-                durable=True,
-                exclusive=exclusive_queue,
-                arguments={"x-message-ttl": _RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_S},
-            )
+            queue_parameters = {
+                "durable": True,
+                "exclusive": exclusive_queue,
+                "arguments": {"x-message-ttl": _RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_S},
+            }
             if not exclusive_queue:
                 # NOTE: setting a name will ensure multiple instance will take their data here
                 queue_parameters |= {"name": exchange_name}

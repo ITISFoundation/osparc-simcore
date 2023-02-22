@@ -23,12 +23,12 @@ class RabbitMQRetryPolicyUponInitialization:
     def __init__(self, logger: Optional[logging.Logger] = None):
         logger = logger or log
 
-        self.kwargs = dict(
-            wait=wait_fixed(2),
-            stop=stop_after_delay(3 * _MINUTE),
-            before_sleep=before_sleep_log(logger, logging.WARNING),
-            reraise=True,
-        )
+        self.kwargs = {
+            "wait": wait_fixed(2),
+            "stop": stop_after_delay(3 * _MINUTE),
+            "before_sleep": before_sleep_log(logger, logging.WARNING),
+            "reraise": True,
+        }
 
 
 @retry(**RabbitMQRetryPolicyUponInitialization().kwargs)
