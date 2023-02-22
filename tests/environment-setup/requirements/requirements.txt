@@ -39,7 +39,7 @@ packaging==23.0
     #   pytest-sugar
 pluggy==1.0.0
     # via pytest
-pydantic==1.10.5
+pydantic==1.10.2
     # via -r requirements/requirements.in
 pytest==7.2.1
     # via
