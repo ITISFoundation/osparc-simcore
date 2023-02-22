@@ -190,7 +190,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       dashboard.setMinWidth(this.self().MIN_STUDIES_PER_ROW * itemWidth + 8);
       const fitResourceCards = () => {
         const w = document.documentElement.clientWidth;
-        const nStudies = Math.floor((w - 2*220 - 8) / itemWidth);
+        const nStudies = Math.floor((w - 2*150 - 8) / itemWidth);
         const newWidth = nStudies * itemWidth + 8;
         if (newWidth > dashboard.getMinWidth()) {
           dashboard.setWidth(newWidth);

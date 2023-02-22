@@ -101,7 +101,6 @@ qx.Class.define("osparc.viewer.NodeViewer", {
       this.__initLoadingPage();
 
       const iframe = new osparc.component.widget.PersistentIframe();
-      iframe.setShowToolbar(false);
       this.setIFrame(iframe);
     },
 
