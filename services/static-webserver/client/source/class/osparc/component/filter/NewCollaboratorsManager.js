@@ -115,7 +115,7 @@ qx.Class.define("osparc.component.filter.NewCollaboratorsManager", {
         existingCollabs = Object.keys(this.__resourceData["access_rights"]);
       }
       visibleCollaborators.forEach(visibleCollaborator => {
-        // do not list the visibleCollaborators that already collaborators
+        // do not list the visibleCollaborators that are already collaborators
         if (existingCollabs.includes(visibleCollaborator["gid"])) {
           return;
         }
