@@ -66,6 +66,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
       switch (id) {
         case "icon": {
           control = new osparc.ui.basic.Thumbnail(null, 40, this.self().ITEM_HEIGHT-2*5).set({
+            minHeight: 22,
             minWidth: 40
           });
           control.getChildControl("image").set({
@@ -81,8 +82,8 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
           control = new qx.ui.basic.Label().set({
             font: "text-14",
             alignY: "middle",
-            maxWidth: 500,
-            maxHeight: 20,
+            maxWidth: 400,
+            maxHeight: 19,
             rich: true
           });
           this._add(control, {
