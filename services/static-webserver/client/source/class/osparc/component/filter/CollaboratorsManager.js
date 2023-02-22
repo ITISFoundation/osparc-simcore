@@ -107,10 +107,11 @@ qx.Class.define("osparc.component.filter.CollaboratorsManager", {
       });
 
       visibleCollaborators.forEach(visibleCollaborator => {
-        if (this.__resourceData["accessRights"] && this.__resourceData["accessRights"].includes(visibleCollaborator["gid"])) {
+        // do not list the visibleCollaborators that already collaborators
+        if (this.__resourceData["accessRights"] && Object.keys(this.__resourceData["accessRights"]).includes(visibleCollaborator["gid"])) {
           return;
         }
-        if (this.__resourceData["access_rights"] && this.__resourceData["access_rights"].includes(visibleCollaborator["gid"])) {
+        if (this.__resourceData["access_rights"] && Object.keys(this.__resourceData["access_rights"]).includes(visibleCollaborator["gid"])) {
           return;
         }
         this.__collabButtonsContainer.add(this.__collaboratorButton(visibleCollaborator));
