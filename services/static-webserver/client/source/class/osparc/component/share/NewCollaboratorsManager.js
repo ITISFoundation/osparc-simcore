@@ -114,9 +114,10 @@ qx.Class.define("osparc.component.share.NewCollaboratorsManager", {
         // service
         existingCollabs = Object.keys(this.__resourceData["access_rights"]);
       }
+      const existingCollaborators = existingCollabs.map(c => parseInt(c));
       visibleCollaborators.forEach(visibleCollaborator => {
         // do not list the visibleCollaborators that are already collaborators
-        if (existingCollabs.includes(visibleCollaborator["gid"])) {
+        if (existingCollaborators.includes(visibleCollaborator["gid"])) {
           return;
         }
         this.__collabButtonsContainer.add(this.__collaboratorButton(visibleCollaborator));
