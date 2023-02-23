@@ -37,6 +37,13 @@ urllib3>=1.26.5                               # https://github.com/advisories/GH
 # TODO: includes async features https://docs.sqlalchemy.org/en/14/changelog/migration_20.html
 sqlalchemy<2.0
 
+# changed behaviour in using middlewares (https://fastapi.tiangolo.com/release-notes/#0910)
+# NOTE: https://github.com/ITISFoundation/osparc-simcore/issues/3896
+fastapi<0.91.0
+# with the new release >=1.10.3 dict schemas changed output structure (https://docs.pydantic.dev/changelog/)
+# NOTE: https://github.com/ITISFoundation/osparc-simcore/issues/3905
+pydantic<1.10.3
+
 
 #
 # Bugs

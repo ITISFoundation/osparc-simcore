@@ -96,9 +96,9 @@ def _is_addon_enabled_from_config(
         raise ApplicationSetupError(
             f"Cannot find required option '{dotted_section}' in app config's section '{ee}'"
         ) from ee
-    else:
-        assert isinstance(searched_config, bool)  # nosec
-        return searched_config
+
+    assert isinstance(searched_config, bool)  # nosec
+    return searched_config
 
 
 def _get_app_settings_and_field_name(
