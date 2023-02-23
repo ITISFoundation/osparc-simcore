@@ -113,7 +113,7 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
       return osparc.data.model.Study.canIWrite(this._serializedData["accessRights"]);
     },
 
-    _addCollaborators: function(gids) {
+    _addCollaborators: function(gids, cb) {
       if (gids.length === 0) {
         return;
       }
@@ -131,12 +131,13 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
         .then(updatedData => {
           this.fireDataEvent("updateAccessRights", updatedData);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator(s) successfully added"));
-          this.__reloadCollaboratorsList();
+          this._reloadCollaboratorsList();
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went adding collaborator(s)"), "ERROR");
           console.error(err);
-        });
+        })
+        .finally(() => cb());
     },
 
     _deleteMember: function(collaborator) {
@@ -155,7 +156,7 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
         .then(updatedData => {
           this.fireDataEvent("updateAccessRights", updatedData);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Member successfully removed"));
-          this.__reloadCollaboratorsList();
+          this._reloadCollaboratorsList();
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
@@ -175,7 +176,7 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
         .then(updatedData => {
           this.fireDataEvent("updateAccessRights", updatedData);
           osparc.component.message.FlashMessenger.getInstance().logAs(successMsg);
-          this.__reloadCollaboratorsList();
+          this._reloadCollaboratorsList();
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(failureMsg, "ERROR");

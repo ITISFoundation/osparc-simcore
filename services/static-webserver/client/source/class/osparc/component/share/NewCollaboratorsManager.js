@@ -38,7 +38,7 @@ qx.Class.define("osparc.component.share.NewCollaboratorsManager", {
 
   members: {
     __resourceData: null,
-    __saveButton: null,
+    __shareButton: null,
     __selectedCollaborators: null,
     __visibleCollaborators: null,
 
@@ -59,11 +59,11 @@ qx.Class.define("osparc.component.share.NewCollaboratorsManager", {
       const buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
         alignX: "right"
       }));
-      const saveButton = this.__saveButton = new osparc.ui.form.FetchButton(this.tr("Share")).set({
+      const shareButton = this.__shareButton = new osparc.ui.form.FetchButton(this.tr("Share")).set({
         appearance: "strong-button"
       });
-      saveButton.addListener("execute", () => this.__saveClicked(), this);
-      buttons.add(saveButton);
+      shareButton.addListener("execute", () => this.__shareClicked(), this);
+      buttons.add(shareButton);
       this.add(buttons);
     },
 
@@ -124,9 +124,9 @@ qx.Class.define("osparc.component.share.NewCollaboratorsManager", {
       });
     },
 
-    __saveClicked: function() {
+    __shareClicked: function() {
       this.__collabButtonsContainer.setEnabled(false);
-      this.__saveButton.setFetching(true);
+      this.__shareButton.setFetching(true);
 
       const addCollabs = [];
       for (let i=0; i<this.__selectedCollaborators.length; i++) {
@@ -138,7 +138,7 @@ qx.Class.define("osparc.component.share.NewCollaboratorsManager", {
       }
 
       this.__collabButtonsContainer.setEnabled(true);
-      this.__saveButton.setFetching(false);
+      this.__shareButton.setFetching(false);
     }
   }
 });

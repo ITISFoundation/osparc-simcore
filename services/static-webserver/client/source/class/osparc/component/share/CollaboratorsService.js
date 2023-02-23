@@ -87,7 +87,7 @@ qx.Class.define("osparc.component.share.CollaboratorsService", {
       return osparc.utils.Services.canIWrite(this._serializedData["accessRights"]);
     },
 
-    _addCollaborators: function(gids) {
+    _addCollaborators: function(gids, cb) {
       if (gids.length === 0) {
         return;
       }
@@ -105,12 +105,13 @@ qx.Class.define("osparc.component.share.CollaboratorsService", {
         .then(serviceData => {
           this.fireDataEvent("updateService", serviceData);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator(s) successfully added"));
-          this.__reloadCollaboratorsList();
+          this._reloadCollaboratorsList();
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went adding collaborator(s)"), "ERROR");
           console.error(err);
-        });
+        })
+        .finally(() => cb());
     },
 
     _deleteMember: function(collaborator) {
@@ -130,7 +131,7 @@ qx.Class.define("osparc.component.share.CollaboratorsService", {
         .then(serviceData => {
           this.fireDataEvent("updateService", serviceData);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Member successfully removed"));
-          this.__reloadCollaboratorsList();
+          this._reloadCollaboratorsList();
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
@@ -151,7 +152,7 @@ qx.Class.define("osparc.component.share.CollaboratorsService", {
         .then(serviceData => {
           this.fireDataEvent("updateService", serviceData);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Viewer successfully made Collaborator"));
-          this.__reloadCollaboratorsList();
+          this._reloadCollaboratorsList();
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong making Viewer Collaborator"), "ERROR");
@@ -176,7 +177,7 @@ qx.Class.define("osparc.component.share.CollaboratorsService", {
         .then(serviceData => {
           this.fireDataEvent("updateService", serviceData);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator successfully made Viewer"));
-          this.__reloadCollaboratorsList();
+          this._reloadCollaboratorsList();
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong making Collaborator Viewer"), "ERROR");

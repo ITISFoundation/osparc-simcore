@@ -137,8 +137,8 @@ qx.Class.define("osparc.component.share.Collaborators", {
       addCollaboratorBtn.addListener("execute", () => {
         const collaboratorsManager = new osparc.component.share.NewCollaboratorsManager(this._serializedData);
         collaboratorsManager.addListener("addCollaborators", e => {
-          this._addCollaborators(e.getData());
-          collaboratorsManager.close();
+          const cb = () => collaboratorsManager.close();
+          this._addCollaborators(e.getData(), cb);
         }, this);
       }, this);
       vBox.add(addCollaboratorBtn);
@@ -250,11 +250,11 @@ qx.Class.define("osparc.component.share.Collaborators", {
       osparc.store.Store.getInstance().getPotentialCollaborators()
         .then(potentialCollaborators => {
           this.__collaborators = Object.assign(this.__collaborators, potentialCollaborators);
-          this.__reloadCollaboratorsList();
+          this._reloadCollaboratorsList();
         });
     },
 
-    __reloadCollaboratorsList: function() {
+    _reloadCollaboratorsList: function() {
       this.__collaboratorsModel.removeAll();
 
       const aceessRights = this._serializedData["accessRights"];
@@ -281,7 +281,7 @@ qx.Class.define("osparc.component.share.Collaborators", {
       throw new Error("Abstract method called!");
     },
 
-    _addCollaborators: function(collaborators) {
+    _addCollaborators: function(gids) {
       throw new Error("Abstract method called!");
     },
 
