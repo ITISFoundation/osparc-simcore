@@ -38,7 +38,7 @@ def setup_remote_debugging(app: web.Application):
                 address=("0.0.0.0", _REMOTE_DEBUGGING_PORT),  # nosec
             )
         except ImportError as err:
-            raise ValueError(
+            raise RuntimeError(
                 "Cannot enable remote debugging. Please install ptvsd first"
             ) from err
 
