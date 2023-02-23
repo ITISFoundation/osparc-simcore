@@ -1,42 +1,46 @@
 /*
  * oSPARC - The SIMCORE frontend - https://osparc.io
- * Copyright: 2020 IT'IS Foundation - https://itis.swiss
+ * Copyright: 2023 IT'IS Foundation - https://itis.swiss
  * License: MIT - https://opensource.org/licenses/MIT
- * Authors: Ignacio Pascual (ignapas)
+ * Authors: Odei Maiz (odeimaiz)
  */
 
 /**
- * Button to toggle the selection of one tag
+ * Button to toggle the selection of one collaborator
  */
-qx.Class.define("osparc.component.form.tag.TagToggleButton", {
+qx.Class.define("osparc.component.filter.CollaboratorToggleButton", {
   extend: qx.ui.form.ToggleButton,
   include: osparc.component.filter.MFilterable,
   implement: osparc.component.filter.IFilterable,
-  construct: function(tag, value) {
+
+  construct: function(collaborator) {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.HBox(8).set({
       alignY: "middle"
     }));
     this.set({
-      minHeight: 35,
+      minHeight: 30,
       appearance: "tagbutton"
     });
-    this.setIcon("@FontAwesome5Solid/square/14");
-    this.getChildControl("icon").setTextColor(tag.color);
-    this.setLabel(tag.name);
-    this.getChildControl("check");
 
-    this.setValue(value ? true : false); // eslint-disable-line no-unneeded-ternary
-  },
-  properties: {
-    fetching: {
-      check: "Boolean",
-      init: false,
-      nullable: false,
-      event: "changeFetching",
-      apply: "_applyFetching"
+    this.setLabel(collaborator["label"]);
+    let iconPath = null;
+    switch (collaborator["collabType"]) {
+      case 0:
+        iconPath = "@FontAwesome5Solid/globe/14";
+        break;
+      case 1:
+        iconPath = "@FontAwesome5Solid/users/14";
+        break;
+      case 2:
+        iconPath = "@FontAwesome5Solid/user/14";
+        break;
     }
+    this.setIcon(iconPath);
+
+    this.getChildControl("check");
   },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
@@ -55,31 +59,15 @@ qx.Class.define("osparc.component.form.tag.TagToggleButton", {
           }
           break;
         case "check":
-          control = new qx.ui.basic.Image();
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/check/14");
           control.setAnonymous(true);
           this._add(control);
           this.bind("value", control, "visibility", {
             converter: value => value ? "visible" : "hidden"
           });
-          this.bind("fetching", control, "source", {
-            converter: isFetching =>
-              isFetching ?
-                "@FontAwesome5Solid/circle-notch/14" :
-                "@FontAwesome5Solid/check/14"
-          });
           break;
       }
       return control || this.base(arguments, id);
-    },
-    _applyFetching: function(isFetching) {
-      const check = this.getChildControl("check");
-      if (isFetching) {
-        check.show();
-        check.getContentElement().addClass("rotate");
-      } else {
-        check.setVisibility(this.getValue() ? "visible" : "hidden");
-        check.getContentElement().removeClass("rotate");
-      }
     },
 
     _filter: function() {
