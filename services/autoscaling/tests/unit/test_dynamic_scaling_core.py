@@ -6,6 +6,7 @@
 
 
 import asyncio
+import base64
 import dataclasses
 import datetime
 from dataclasses import dataclass
@@ -408,6 +409,15 @@ async def _assert_ec2_instances(
             assert "Name" in state
             assert state["Name"] == instance_state
 
+            assert "InstanceId" in instance
+            user_data = await ec2_client.describe_instance_attribute(
+                Attribute="userData", InstanceId=instance["InstanceId"]
+            )
+            assert "UserData" in user_data
+            assert "Value" in user_data["UserData"]
+            user_data = base64.b64decode(user_data["UserData"]["Value"]).decode()
+            assert user_data.count("docker swarm join") == 1
+
 
 async def test_cluster_scaling_up(
     minimal_configuration: None,
@@ -591,34 +601,13 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     await cluster_scaling_from_labelled_services(initialized_app)
 
     # check the instances were started
-    all_instances = await ec2_client.describe_instances()
-    assert len(all_instances["Reservations"]) == 1
-    running_instances = all_instances["Reservations"][0]
-    assert "Instances" in running_instances
-    assert len(running_instances["Instances"]) == scale_up_params.expected_num_instances
-
-    # check the instances
-    all_private_dns_names = []
-    for instance in running_instances["Instances"]:
-        assert "InstanceType" in instance
-        assert instance["InstanceType"] == scale_up_params.expected_instance_type
-        assert "Tags" in instance
-        assert instance["Tags"]
-        expected_tag_keys = [
-            "io.simcore.autoscaling.version",
-            "io.simcore.autoscaling.monitored_nodes_labels",
-            "io.simcore.autoscaling.monitored_services_labels",
-            "Name",
-        ]
-        for tag_dict in instance["Tags"]:
-            assert "Key" in tag_dict
-            assert "Value" in tag_dict
-
-            assert tag_dict["Key"] in expected_tag_keys
-        assert "PrivateDnsName" in instance
-        instance_private_dns_name = instance["PrivateDnsName"]
-        assert instance_private_dns_name.endswith(".ec2.internal")
-        all_private_dns_names.append(instance_private_dns_name)
+    await _assert_ec2_instances(
+        ec2_client,
+        num_reservations=1,
+        num_instances=scale_up_params.expected_num_instances,
+        instance_type="g3.4xlarge",
+        instance_state="running",
+    )
 
     # as the new node is already running, but is not yet connected, hence not tagged and drained
     mock_find_node_with_name.assert_not_called()
