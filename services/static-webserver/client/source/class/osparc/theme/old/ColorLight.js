@@ -1,26 +1,26 @@
-qx.Theme.define("osparc.theme.zmt.ColorDark", {
+qx.Theme.define("osparc.theme.old.ColorLight", {
+  // extend: osparc.theme.osparclight.Color,
   include: osparc.theme.mixin.Color,
 
   colors: {
-    "c00": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105),
-    "c01": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 100),
-    "c02": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 95),
-    "c03": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 85),
-    "c04": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 80),
-    "c05": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 70),
-    "c06": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 55),
-    "c07": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 45),
-    "c08": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 35),
-    "c09": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 30),
-    "c10": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 25),
-    "c11": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 20),
-    "c12": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 15),
-    "c13": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 8),
-    "c14": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 0),
+    "c00": "#FFFFFF", // L=100
+    "c01": "#EFEFEF", // L=94
+    "c02": "#C0C0C0", // L=75
+    "c03": "#B0B0B0", // L=69
+    "c04": "#A0A0A0", // L=63
+    "c05": "#909090", // L=56
+    "c06": "#808080", // L=50
+    "c07": "#707070", // L=44
+    "c08": "#606060", // L=38
+    "c09": "#505050", // L=31
+    "c10": "#404040", // L=25
+    "c11": "#303030", // L=19
+    "c12": "#202020", // L=13
+    "c13": "#101010", // L=06
+    "c14": "#000000", // L=00
 
-    // "strong-main": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.zmt", 40),
-    "strong-main": "rgba(0, 144, 208, 1)",
-    "a-bit-transparent": "rgba(0, 0, 0, 0.4)",
+    "strong-main": "c06",
+    "a-bit-transparent": "rgba(255, 255, 255, 0.4)",
 
 
     // main
@@ -52,8 +52,8 @@ qx.Theme.define("osparc.theme.zmt.ColorDark", {
     "window-caption-text-active": "c12",
 
     // material-button
-    "material-button-background": "c04",
-    "material-button-background-disabled": "c03",
+    "material-button-background": "c03",
+    "material-button-background-disabled": "c02",
     "material-button-background-hovered": "c05",
     "material-button-background-pressed": "c05",
     "material-button-text-disabled": "c07",
@@ -94,8 +94,8 @@ qx.Theme.define("osparc.theme.zmt.ColorDark", {
     "border-lead": "c07",
 
     // window
-    "window-border": "c03",
-    "window-border-inner": "c02",
+    "window-border": "c04",
+    "window-border-inner": "c01",
 
     // group box
     "white-box-border": "c03",
@@ -116,7 +116,7 @@ qx.Theme.define("osparc.theme.zmt.ColorDark", {
 
     // table
     "table-header": "c01",
-    "table-header-foreground": "c09",
+    "table-header-foreground": "c11",
     "table-header-border": "c07",
     "table-focus-indicator": "c06",
 
@@ -130,7 +130,7 @@ qx.Theme.define("osparc.theme.zmt.ColorDark", {
 
     // foreground
     "table-row-selected": "c12",
-    "table-row": "c09",
+    "table-row": "text",
 
     // table grid color
     "table-row-line": "c01",
@@ -149,23 +149,23 @@ qx.Theme.define("osparc.theme.zmt.ColorDark", {
 
 
     // OSPARC
-    "workbench-edge-comp-active": "#777777",
-    "workbench-edge-api-active": "#BBBBBB",
-    "workbench-start-hint": "#505050",
+    "workbench-edge-comp-active": "#888888",
+    "workbench-edge-api-active": "#444444",
+    "workbench-start-hint": "#AFAFAF",
 
     "node-selected-background": "background-main-4",
-    "node-title-text": "#DCDCDC",
-    "node-port-text": "#BABABA",
+    "node-title-text": "#232323",
+    "node-port-text": "#454545",
 
-    "logger-debug-message": "#FFFFFF",
-    "logger-info-message": "#FFFFFF",
+    "logger-debug-message": "#000000",
+    "logger-info-message": "#000000",
 
-    "service-window-hint": "#808080",
+    "service-window-hint": "#7F7F7F",
 
-    "progressbar": "#60909e",
+    "progressbar": "#9F6F61",
 
-    "loading-page-background-color": "#202020",
-    "loading-page-text": "#FFFFFF",
-    "loading-page-spinner": "#DDDDDD"
+    "loading-page-background-color": "background-main",
+    "loading-page-text": "#000000",
+    "loading-page-spinner": "#222222"
   }
 });

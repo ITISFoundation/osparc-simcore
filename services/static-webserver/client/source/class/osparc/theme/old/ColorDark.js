@@ -1,26 +1,26 @@
-qx.Theme.define("osparc.theme.zmt.ColorLight", {
+qx.Theme.define("osparc.theme.ColorDark", {
+  // extend: osparc.theme.osparclight.Color,
   include: osparc.theme.mixin.Color,
 
   colors: {
-    "c00": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 0),
-    "c01": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 8),
-    "c02": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 15),
-    "c03": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 25),
-    "c04": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 35),
-    "c05": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 45),
-    "c06": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 55),
-    "c07": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 60),
-    "c08": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 65),
-    "c09": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 70),
-    "c10": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 80),
-    "c11": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 85),
-    "c12": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 95),
-    "c13": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 100),
-    "c14": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105),
+    "c00": "#000000", // L=00
+    "c01": "#202020", // L=13
+    "c02": "#303030", // L=19
+    "c03": "#404040", // L=25
+    "c04": "#505050", // L=31
+    "c05": "#606060", // L=38
+    "c06": "#707070", // L=44
+    "c07": "#808080", // L=50
+    "c08": "#909090", // L=56
+    "c09": "#A0A0A0", // L=63
+    "c10": "#B0B0B0", // L=69
+    "c11": "#C0C0C0", // L=75
+    "c12": "#D0D0D0", // L=82
+    "c13": "#EFEFEF", // L=88
+    "c14": "#FFFFFF", // L=100
 
-    // "strong-main": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.zmt", 65),
-    "strong-main": "rgba(0, 144, 208, 1)",
-    "a-bit-transparent": "rgba(255, 255, 255, 0.4)",
+    "strong-main": "c06",
+    "a-bit-transparent": "rgba(0, 0, 0, 0.4)",
 
 
     // main
@@ -116,7 +116,7 @@ qx.Theme.define("osparc.theme.zmt.ColorLight", {
 
     // table
     "table-header": "c01",
-    "table-header-foreground": "c09",
+    "table-header-foreground": "c11",
     "table-header-border": "c07",
     "table-focus-indicator": "c06",
 
@@ -130,7 +130,7 @@ qx.Theme.define("osparc.theme.zmt.ColorLight", {
 
     // foreground
     "table-row-selected": "c12",
-    "table-row": "c09",
+    "table-row": "text",
 
     // table grid color
     "table-row-line": "c01",
@@ -146,26 +146,24 @@ qx.Theme.define("osparc.theme.zmt.ColorLight", {
     "progressive-progressbar-percent-background": "c00",
     "progressive-progressbar-percent-text": "c02",
 
-
-
     // OSPARC
-    "workbench-edge-comp-active": "#888888",
-    "workbench-edge-api-active": "#444444",
-    "workbench-start-hint": "#AFAFAF",
+    "workbench-edge-comp-active": "#777777",
+    "workbench-edge-api-active": "#BBBBBB",
+    "workbench-start-hint": "#505050",
 
     "node-selected-background": "background-main-4",
-    "node-title-text": "#232323",
-    "node-port-text": "#454545",
+    "node-title-text": "#DCDCDC",
+    "node-port-text": "#BABABA",
 
-    "logger-debug-message": "#000000",
-    "logger-info-message": "#000000",
+    "logger-debug-message": "#FFFFFF",
+    "logger-info-message": "#FFFFFF",
 
-    "service-window-hint": "#7F7F7F",
+    "service-window-hint": "#808080",
 
-    "progressbar": "#9F6F61",
+    "progressbar": "#60909e",
 
-    "loading-page-background-color": "background-main",
-    "loading-page-text": "#000000",
-    "loading-page-spinner": "#222222"
+    "loading-page-background-color": "#202020",
+    "loading-page-text": "#FFFFFF",
+    "loading-page-spinner": "#DDDDDD"
   }
 });
