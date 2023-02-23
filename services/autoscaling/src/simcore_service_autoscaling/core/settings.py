@@ -96,7 +96,7 @@ class EC2InstancesSettings(BaseCustomSettings):
 
     EC2_INSTANCES_CUSTOM_BOOT_SCRIPTS: list[str] = Field(
         default_factory=list,
-        description="script(s) to run on EC2 instance startup (be careful!)",
+        description="script(s) to run on EC2 instance startup (be careful!), each entry is run one after the other using '&&' operator",
     )
 
     @validator("EC2_INSTANCES_TIME_BEFORE_TERMINATION")
