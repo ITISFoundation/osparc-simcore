@@ -8,7 +8,7 @@ import asyncio
 import json
 import time
 from copy import deepcopy
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Awaitable, Callable, Iterator, Optional, Union
 from unittest import mock
 from unittest.mock import call
@@ -564,7 +564,7 @@ async def test_open_project_with_deprecated_services_ok_but_does_not_start_dynam
     mock_catalog_api: dict[str, mock.Mock],
 ):
     mock_catalog_api["get_service"].return_value["deprecated"] = (
-        datetime.utcnow() - timedelta(days=1)
+        datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=1)
     ).isoformat()
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_session_id_factory())

@@ -5,10 +5,10 @@
 # pylint: disable=unused-variable
 
 import asyncio
-import datetime
 import json
 import re
 from copy import deepcopy
+from datetime import datetime, timezone
 from itertools import combinations
 from random import randint
 from secrets import choice
@@ -90,7 +90,7 @@ def test_convert_to_schema_names(fake_project: dict[str, Any]):
         assert col is not None
 
     # test date time conversion
-    date = datetime.datetime.utcnow()
+    date = datetime.now(timezone.utc)
     db_entries["creation_date"] = date
     schema_entries = convert_to_schema_names(db_entries, fake_project["prjOwner"])
     assert "creationDate" in schema_entries

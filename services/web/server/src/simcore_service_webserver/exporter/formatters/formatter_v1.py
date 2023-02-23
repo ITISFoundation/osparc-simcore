@@ -1,8 +1,8 @@
-import datetime
 import json
 import logging
 import traceback
 from collections import deque
+from datetime import datetime, timezone
 from itertools import chain
 from pathlib import Path
 from typing import Deque, Optional
@@ -363,7 +363,7 @@ async def import_files_and_validate_project(
     # between the original and new study
     shuffled_project_file.name = "{} {}".format(
         shuffled_project_file.name,
-        datetime.datetime.utcnow().strftime("%Y:%m:%d:%H:%M:%S"),
+        datetime.now(timezone.utc).replace(tzinfo=None).strftime("%Y:%m:%d:%H:%M:%S"),
     )
 
     log.debug("Shuffled project data: %s", shuffled_project_file)

@@ -5,7 +5,7 @@
 import asyncio
 import logging
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, AsyncIterable, AsyncIterator, Optional
 from uuid import UUID, uuid4
 
@@ -335,7 +335,7 @@ def labels_example(request: FixtureRequest) -> SimcoreServiceLabels:
     return request.param
 
 
-@pytest.fixture(params=[None, datetime.utcnow()])
+@pytest.fixture(params=[None, datetime.now(timezone.utc)])
 def time_dy_sidecar_became_unreachable(request: FixtureRequest) -> Optional[datetime]:
     return request.param
 

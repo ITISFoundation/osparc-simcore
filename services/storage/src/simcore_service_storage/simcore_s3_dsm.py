@@ -1,4 +1,3 @@
-import datetime
 import functools
 import logging
 import tempfile
@@ -6,6 +5,7 @@ import urllib.parse
 from collections import deque
 from contextlib import suppress
 from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Awaitable, Callable, Optional, Union
 
@@ -586,7 +586,7 @@ class SimcoreS3DataManager(BaseDataManager):
         1. will try to update the entry from S3 backend if exists
         2. will delete the entry if nothing exists in S3 backend.
         """
-        now = datetime.datetime.utcnow()
+        now = datetime.now(timezone.utc)
         async with self.engine.acquire() as conn:
             list_of_expired_uploads = await db_file_meta_data.list_fmds(
                 conn, expired_after=now
@@ -821,8 +821,8 @@ class SimcoreS3DataManager(BaseDataManager):
         file_id: StorageFileID,
         upload_id: Optional[UploadID],
     ) -> FileMetaDataAtDB:
-        now = datetime.datetime.utcnow()
-        upload_expiration_date = now + datetime.timedelta(
+        now = datetime.now(timezone.utc)
+        upload_expiration_date = now + timedelta(
             seconds=self.settings.STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS
         )
         fmd = FileMetaData.from_simcore_node(

@@ -1,5 +1,5 @@
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 import typer
@@ -47,7 +47,7 @@ def invitations(
         fg=typer.colors.BLUE,
     )
 
-    utcnow = datetime.utcnow()
+    utcnow = datetime.now(timezone.utc).replace(tzinfo=None)
     today: datetime = utcnow.today()
     print("code,user_id,action,data,created_at", file=sys.stdout)
     for n, code in enumerate(codes, start=1):

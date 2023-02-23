@@ -7,7 +7,7 @@
 
 import json
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable
 
@@ -160,7 +160,10 @@ def mocked_catalog_service_fcts_deprecated(
         ).respond(
             json=fake_service_details.copy(
                 update={
-                    "deprecated": (datetime.utcnow() - timedelta(days=1)).isoformat()
+                    "deprecated": (
+                        datetime.now(timezone.utc).replace(tzinfo=None)
+                        - timedelta(days=1)
+                    ).isoformat()
                 }
             ).dict(by_alias=True)
         )
@@ -249,6 +252,7 @@ async def test_start_computation(
     assert response.status_code == status.HTTP_201_CREATED, response.text
 
 
+@pytest.mark.testit
 async def test_start_computation_with_deprecated_services_raises_406(
     minimal_configuration: None,
     mocked_director_service_fcts,

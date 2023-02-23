@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Optional
 
 import sqlalchemy as sa
@@ -94,7 +94,7 @@ async def _generate_tasks_list_from_project(
             inputs=node.inputs,
             outputs=node.outputs,
             image=image,
-            submit=datetime.utcnow(),
+            submit=datetime.now(timezone.utc),
             state=task_state,
             internal_id=internal_id,
             node_class=node_class,

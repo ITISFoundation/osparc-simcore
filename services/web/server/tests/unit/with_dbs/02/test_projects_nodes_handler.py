@@ -5,7 +5,7 @@
 
 import asyncio
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from random import choice
 from typing import Any, Awaitable, Callable
 from unittest import mock
@@ -436,7 +436,7 @@ async def test_creating_deprecated_node_returns_406_not_acceptable(
     node_class: str,
 ):
     mock_catalog_api["get_service"].return_value["deprecated"] = (
-        datetime.utcnow() - timedelta(days=1)
+        datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=1)
     ).isoformat()
     assert client.app
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])

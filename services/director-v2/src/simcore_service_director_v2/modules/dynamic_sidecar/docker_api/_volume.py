@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi.encoders import jsonable_encoder
 from models_library.projects import ProjectID
@@ -152,7 +152,7 @@ async def remove_pending_volume_removal_services(
                 volume_removal_service["Spec"]["Labels"]["service_timeout_s"]
             )
             created_at = to_datetime(volume_removal_services[0]["CreatedAt"])
-            time_diff = datetime.utcnow() - created_at
+            time_diff = datetime.now(timezone.utc) - created_at
             service_timed_out = time_diff.seconds > (service_timeout_s * 10)
             if service_timed_out:
                 service_id = volume_removal_service["ID"]

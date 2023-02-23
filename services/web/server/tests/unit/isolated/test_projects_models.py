@@ -2,7 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import datetime
+from datetime import datetime, timezone
 
 import pytest
 from simcore_service_webserver.projects.projects_db_utils import (
@@ -39,7 +39,7 @@ def test_convert_to_schema_names(fake_db_dict):
     assert "anEntryThatUsesSnakeCase" in db_entries
     assert "anotherEntryThatUsesSnakeCase" in db_entries
     # test date time conversion
-    date = datetime.datetime.utcnow()
+    date = datetime.now(timezone.utc).replace(tzinfo=None)
     fake_db_dict["time_entry"] = date
     db_entries = convert_to_schema_names(fake_db_dict, fake_email)
     assert "timeEntry" in db_entries

@@ -1,6 +1,6 @@
 import json
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from math import ceil
 from typing import NamedTuple
@@ -41,7 +41,7 @@ def global_rate_limit_route(number_of_requests: int, interval_seconds: float):
 
         @wraps(decorated_function)
         async def wrapper(*args, **kwargs):
-            utc_now = datetime.utcnow()
+            utc_now = datetime.now(timezone.utc).replace(tzinfo=None)
             utc_now_timestamp = datetime.timestamp(utc_now)
 
             # reset counter & first time initialization

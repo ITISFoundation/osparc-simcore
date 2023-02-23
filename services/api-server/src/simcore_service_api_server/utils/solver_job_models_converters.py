@@ -28,7 +28,7 @@ from .typing_extra import get_types
 _BASE_UUID = uuid.UUID("231e13db-6bc6-4f64-ba56-2ee2c73b9f09")
 
 
-@lru_cache()
+@lru_cache
 def compose_uuid_from(*values) -> str:
     composition = "/".join(map(str, values))
     new_uuid = uuid.uuid5(_BASE_UUID, composition)
@@ -41,7 +41,7 @@ def format_datetime(snapshot: datetime) -> str:
 
 def now_str() -> str:
     # NOTE: backend MUST use UTC
-    return format_datetime(datetime.utcnow())
+    return format_datetime(datetimedatetime.now(datetime.timezone.utc))
 
 
 # CONVERTERS --------------
@@ -248,7 +248,7 @@ def create_jobstatus_from_task(task: ComputationTaskGet) -> JobStatus:
         job_id=task.id,
         state=task.state,
         progress=task.guess_progress(),
-        submitted_at=datetime.utcnow(),
+        submitted_at=datetimedatetime.now(datetime.timezone.utc),
     )
 
     # FIXME: timestamp is wrong but at least it will stop run

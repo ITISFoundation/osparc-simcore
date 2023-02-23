@@ -6,7 +6,7 @@
 # pylint: disable=unused-variable
 
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Callable
 
 import pytest
@@ -233,6 +233,7 @@ async def test_list_services_without_details_with_wrong_product_returns_0_servic
     assert len(data) == 0
 
 
+@pytest.mark.testit
 async def test_list_services_that_are_deprecated(
     disable_service_caching,
     mock_catalog_background_task,
@@ -248,7 +249,9 @@ async def test_list_services_that_are_deprecated(
         len(products_names) > 1
     ), "please adjust the fixture to have the right number of products"
     # injects fake data in db
-    deprecation_date = datetime.utcnow() + timedelta(days=1)
+    deprecation_date = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(
+        days=1
+    )
     deprecated_service = service_catalog_faker(
         "simcore/services/dynamic/jupyterlab",
         "1.0.1",

@@ -6,7 +6,7 @@
     Codes have expiration date (duration time is configurable)
 """
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from aiohttp import web
@@ -77,6 +77,6 @@ async def is_confirmation_allowed(
 
 
 def is_confirmation_expired(cfg: LoginOptions, confirmation: ConfirmationTokenDict):
-    age = datetime.utcnow() - confirmation["created_at"]
+    age = datetime.now(timezone.utc).replace(tzinfo=None) - confirmation["created_at"]
     lifetime = cfg.get_confirmation_lifetime(confirmation["action"])
     return age > lifetime

@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Literal, Optional
 
 from aiohttp import web
@@ -117,7 +117,9 @@ async def register(request: web.Request):
             app=request.app,
         )
         if invitation.trial_account_days:
-            expires_at = datetime.utcnow() + timedelta(invitation.trial_account_days)
+            expires_at = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(
+                invitation.trial_account_days
+            )
 
     username = _get_user_name(registration.email)
     user: dict = await db.create_user(

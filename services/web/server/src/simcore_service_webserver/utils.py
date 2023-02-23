@@ -9,7 +9,7 @@ import sys
 import traceback
 import tracemalloc
 from collections import OrderedDict
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -63,7 +63,7 @@ DAY: int = 24 * HOUR  # sec
 
 
 def now() -> datetime:
-    return datetime.utcnow()
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 def format_datetime(snapshot: datetime) -> str:

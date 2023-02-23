@@ -1,6 +1,6 @@
 import asyncio
 from datetime import datetime
-from typing import Callable, Tuple
+from typing import Callable
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import PlainTextResponse
@@ -19,7 +19,7 @@ router = APIRouter()
 
 @router.get("/", include_in_schema=False, response_class=PlainTextResponse)
 async def check_service_health():
-    return f"{__name__}@{datetime.utcnow().isoformat()}"
+    return f"{__name__}@{datetimedatetime.now(datetime.timezone.utc).isoformat()}"
 
 
 @router.get("/state", include_in_schema=False)
@@ -31,7 +31,7 @@ async def get_service_state(
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
     apis = (catalog_client, director2_api, storage_client, webserver_client)
-    heaths: Tuple[bool] = await asyncio.gather(*[api.is_responsive() for api in apis])
+    heaths: tuple[bool] = await asyncio.gather(*[api.is_responsive() for api in apis])
 
     current_status = AppStatusCheck(
         app_name=PROJECT_NAME,

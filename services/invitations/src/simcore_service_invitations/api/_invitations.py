@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -90,7 +90,7 @@ async def create_invitation(
     )
     invitation = _InvitationContentAndLink(
         invitation_url=invitation_link,
-        created=datetime.utcnow(),
+        created=datetime.now(timezone.utc),
         **invitation_inputs.dict(),
     )
 

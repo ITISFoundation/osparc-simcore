@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from logging import getLogger
 from typing import Literal, Optional, TypedDict
 
@@ -51,7 +51,7 @@ class AsyncpgStorage:
             return data
 
     async def create_user(self, data: dict) -> asyncpg.Record:
-        data.setdefault("created_at", datetime.utcnow())
+        data.setdefault("created_at", datetime.now(timezone.utc).replace(tzinfo=None))
         async with self.pool.acquire() as conn:
             data["id"] = await _sql.insert(conn, self.user_tbl, data)
             new_user = await _sql.find_one(conn, self.user_tbl, {"id": data["id"]})
@@ -82,7 +82,7 @@ class AsyncpgStorage:
                 "user_id": user_id,
                 "action": action,
                 "data": data,
-                "created_at": datetime.utcnow(),
+                "created_at": datetime.now(timezone.utc).replace(tzinfo=None),
             }
             c = await _sql.insert(
                 conn, self.confirm_tbl, confirmation, returning="code"

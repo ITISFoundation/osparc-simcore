@@ -1,6 +1,6 @@
-import datetime
 import urllib.parse
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
 
@@ -54,14 +54,14 @@ class FileMetaDataAtDB(BaseModel):
     project_id: Optional[ProjectID] = None
     node_id: Optional[NodeID] = None
     user_id: UserID
-    created_at: datetime.datetime
+    created_at: datetime
     file_id: SimcoreS3FileID
     file_size: ByteSize
-    last_modified: datetime.datetime
+    last_modified: datetime
     entity_tag: Optional[ETag] = None
     is_soft_link: bool
     upload_id: Optional[UploadID] = None
-    upload_expires_at: Optional[datetime.datetime] = None
+    upload_expires_at: Optional[datetime] = None
 
     class Config:
         orm_mode = True
@@ -70,7 +70,7 @@ class FileMetaDataAtDB(BaseModel):
 
 class FileMetaData(FileMetaDataGet):
     upload_id: Optional[UploadID] = None
-    upload_expires_at: Optional[datetime.datetime] = None
+    upload_expires_at: Optional[datetime] = None
 
     location: LocationName
     bucket_name: str
@@ -92,7 +92,7 @@ class FileMetaData(FileMetaDataGet):
     ):
 
         parts = file_id.split("/")
-        now = datetime.datetime.utcnow()
+        now = datetime.now(timezone.utc)
         fmd_kwargs = {
             "file_uuid": file_id,
             "location_id": location_id,

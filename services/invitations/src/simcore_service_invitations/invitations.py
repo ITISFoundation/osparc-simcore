@@ -1,7 +1,7 @@
 import base64
 import binascii
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, cast
 from urllib import parse
 
@@ -146,7 +146,7 @@ def _create_invitation_code(
     # builds content
     content = InvitationContent(
         **invitation_data.dict(),
-        created=datetime.utcnow(),
+        created=datetime.now(timezone.utc),
     )
 
     content_jsonstr: str = _ContentWithShortNames.serialize(content)

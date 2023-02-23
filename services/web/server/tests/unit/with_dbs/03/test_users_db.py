@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import pytest
@@ -17,7 +17,7 @@ from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.models.users import UserStatus
 from simcore_service_webserver.users_db import update_expired_users
 
-_NOW = datetime.utcnow()
+_NOW = datetime.now(timezone.utc).replace(tzinfo=None)
 YESTERDAY = _NOW - timedelta(days=1)
 TOMORROW = _NOW + timedelta(days=1)
 

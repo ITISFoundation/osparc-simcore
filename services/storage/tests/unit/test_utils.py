@@ -1,5 +1,5 @@
-import datetime
 import random
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Optional
 from uuid import uuid4
@@ -54,7 +54,7 @@ async def test_download_files(tmpdir):
             random.randint(1, 1000000),
             "some_valid_entity_tag",
             None,
-            datetime.datetime.utcnow(),
+            datetime.now(timezone.utc),
             False,
         ),
         (random.randint(1, 1000000), "some_valid_entity_tag", None, None, True),
@@ -64,7 +64,7 @@ def test_file_entry_valid(
     file_size: ByteSize,
     entity_tag: Optional[ETag],
     upload_id: Optional[UploadID],
-    upload_expires_at: Optional[datetime.datetime],
+    upload_expires_at: Optional[datetime],
     expected_validity: bool,
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
     faker: Faker,

@@ -4,8 +4,7 @@ import time
 import timeit
 import urllib.parse
 from contextlib import contextmanager
-from datetime import datetime
-from typing import Dict
+from datetime import datetime, timezone
 from urllib.parse import unquote_plus
 
 import pytest
@@ -30,7 +29,7 @@ def test_time_utils():
     assert now0 < now1
 
     # tests biyective
-    now_time = datetime.utcnow()
+    now_time = datetime.now(timezone.utc).replace(tzinfo=None)
     snapshot = now_time.strftime(DATETIME_FORMAT)
     assert now_time == datetime.strptime(snapshot, DATETIME_FORMAT)
 
@@ -75,7 +74,7 @@ def test_yarl_url_compose_changed_with_latest_release():
 
 
 @pytest.mark.skip(reason="DEV-demo")
-async def test_compute_sha1_on_small_dataset(fake_project: Dict):
+async def test_compute_sha1_on_small_dataset(fake_project: dict):
     # Based on GitHK review https://github.com/ITISFoundation/osparc-simcore/pull/2556:
     #   From what I know, these having function tend to be a bit CPU intensive, based on the size of the dataset.
     #   Could we maybe have an async version of this function here, run it on an executor?

@@ -103,7 +103,9 @@ async def upload_file(
     )
     # assign file_id.
     file_meta: File = await File.create_from_uploaded(
-        file, file_size=file_size, created_at=datetime.utcnow().isoformat()
+        file,
+        file_size=file_size,
+        created_at=datetimedatetime.now(datetime.timezone.utc).isoformat(),
     )
     logger.debug(
         "Assigned id: %s of %s bytes (content-length), real size %s bytes",

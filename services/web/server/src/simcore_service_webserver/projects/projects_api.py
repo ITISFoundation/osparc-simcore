@@ -13,7 +13,7 @@ import json
 import logging
 from collections import defaultdict
 from contextlib import suppress
-from datetime import datetime
+from datetime import datetime, timezone
 from pprint import pformat
 from typing import Any, Optional
 from uuid import UUID, uuid4
@@ -849,7 +849,7 @@ async def is_service_deprecated(
     )
     if deprecation_date := service.get("deprecated"):
         deprecation_date = parse_obj_as(datetime, deprecation_date)
-        return datetime.utcnow() > deprecation_date
+        return datetime.now(timezone.utc).replace(tzinfo=None) > deprecation_date
     return False
 
 

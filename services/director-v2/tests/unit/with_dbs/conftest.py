@@ -6,8 +6,8 @@
 
 
 import json
-from datetime import datetime
-from typing import Any, Callable, Dict, Iterator, List
+from datetime import datetime, timezone
+from typing import Any, Callable, Iterator
 from uuid import uuid4
 
 import pytest
@@ -35,7 +35,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 def pipeline(
     postgres_db: sa.engine.Engine,
 ) -> Iterator[Callable[..., CompPipelineAtDB]]:
-    created_pipeline_ids: List[str] = []
+    created_pipeline_ids: list[str] = []
 
     def creator(**pipeline_kwargs) -> CompPipelineAtDB:
         pipeline_config = {
@@ -66,13 +66,13 @@ def pipeline(
 
 
 @pytest.fixture
-def tasks(postgres_db: sa.engine.Engine) -> Iterator[Callable[..., List[CompTaskAtDB]]]:
-    created_task_ids: List[int] = []
+def tasks(postgres_db: sa.engine.Engine) -> Iterator[Callable[..., list[CompTaskAtDB]]]:
+    created_task_ids: list[int] = []
 
     def creator(
-        user: Dict[str, Any], project: ProjectAtDB, **overrides_kwargs
-    ) -> List[CompTaskAtDB]:
-        created_tasks: List[CompTaskAtDB] = []
+        user: dict[str, Any], project: ProjectAtDB, **overrides_kwargs
+    ) -> list[CompTaskAtDB]:
+        created_tasks: list[CompTaskAtDB] = []
         for internal_id, (node_id, node_data) in enumerate(project.workbench.items()):
             task_config = {
                 "project_id": f"{project.uuid}",
@@ -99,7 +99,7 @@ def tasks(postgres_db: sa.engine.Engine) -> Iterator[Callable[..., List[CompTask
                 ),  # type: ignore
                 "node_class": to_node_class(node_data.key),
                 "internal_id": internal_id + 1,
-                "submit": datetime.utcnow(),
+                "submit": datetime.now(timezone.utc),
                 "job_id": generate_dask_job_id(
                     service_key=node_data.key,
                     service_version=node_data.version,
@@ -131,10 +131,10 @@ def tasks(postgres_db: sa.engine.Engine) -> Iterator[Callable[..., List[CompTask
 
 @pytest.fixture
 def runs(postgres_db: sa.engine.Engine) -> Iterator[Callable[..., CompRunsAtDB]]:
-    created_run_ids: List[int] = []
+    created_run_ids: list[int] = []
 
     def creator(
-        user: Dict[str, Any], project: ProjectAtDB, **run_kwargs
+        user: dict[str, Any], project: ProjectAtDB, **run_kwargs
     ) -> CompRunsAtDB:
         run_config = {
             "project_uuid": f"{project.uuid}",
@@ -164,9 +164,9 @@ def runs(postgres_db: sa.engine.Engine) -> Iterator[Callable[..., CompRunsAtDB]]
 def cluster(
     postgres_db: sa.engine.Engine,
 ) -> Iterator[Callable[..., Cluster]]:
-    created_cluster_ids: List[str] = []
+    created_cluster_ids: list[str] = []
 
-    def creator(user: Dict[str, Any], **cluster_kwargs) -> Cluster:
+    def creator(user: dict[str, Any], **cluster_kwargs) -> Cluster:
         cluster_config = Cluster.Config.schema_extra["examples"][1]
         cluster_config["owner"] = user["primary_gid"]
         cluster_config.update(**cluster_kwargs)
@@ -233,12 +233,12 @@ def cluster(
 
 @pytest.fixture
 def published_project(
-    registered_user: Callable[..., Dict[str, Any]],
+    registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., ProjectAtDB],
     pipeline: Callable[..., CompPipelineAtDB],
-    tasks: Callable[..., List[CompTaskAtDB]],
-    fake_workbench_without_outputs: Dict[str, Any],
-    fake_workbench_adjacency: Dict[str, Any],
+    tasks: Callable[..., list[CompTaskAtDB]],
+    fake_workbench_without_outputs: dict[str, Any],
+    fake_workbench_adjacency: dict[str, Any],
 ) -> PublishedProject:
     user = registered_user()
     created_project = project(user, workbench=fake_workbench_without_outputs)
@@ -254,13 +254,13 @@ def published_project(
 
 @pytest.fixture
 def running_project(
-    registered_user: Callable[..., Dict[str, Any]],
+    registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., ProjectAtDB],
     pipeline: Callable[..., CompPipelineAtDB],
-    tasks: Callable[..., List[CompTaskAtDB]],
+    tasks: Callable[..., list[CompTaskAtDB]],
     runs: Callable[..., CompRunsAtDB],
-    fake_workbench_without_outputs: Dict[str, Any],
-    fake_workbench_adjacency: Dict[str, Any],
+    fake_workbench_without_outputs: dict[str, Any],
+    fake_workbench_adjacency: dict[str, Any],
 ) -> RunningProject:
     user = registered_user()
     created_project = project(user, workbench=fake_workbench_without_outputs)

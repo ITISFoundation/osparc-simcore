@@ -1,7 +1,7 @@
 import logging
 from collections import deque
-from datetime import datetime
-from typing import List, Optional, Set
+from datetime import datetime, timezone
+from typing import Optional
 
 import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
@@ -52,8 +52,8 @@ class CompRunsRepository(BaseRepository):
             return CompRunsAtDB.from_orm(row)
 
     async def list(
-        self, filter_by_state: Optional[Set[RunningState]] = None
-    ) -> List[CompRunsAtDB]:
+        self, filter_by_state: Optional[set[RunningState]] = None
+    ) -> list[CompRunsAtDB]:
         if not filter_by_state:
             filter_by_state = set()
         runs_in_db = deque()
@@ -99,7 +99,7 @@ class CompRunsRepository(BaseRepository):
                     cluster_id=cluster_id if cluster_id != DEFAULT_CLUSTER_ID else None,
                     iteration=iteration,
                     result=RUNNING_STATE_TO_DB[RunningState.PUBLISHED],
-                    started=datetime.utcnow(),
+                    started=datetime.now(timezone.utc),
                 )
                 .returning(literal_column("*"))
             )
@@ -133,7 +133,7 @@ class CompRunsRepository(BaseRepository):
     ) -> Optional[CompRunsAtDB]:
         values = {"result": RUNNING_STATE_TO_DB[result_state]}
         if final_state:
-            values.update({"ended": datetime.utcnow()})
+            values.update({"ended": datetime.now(timezone.utc)})
         return await self.update(
             user_id,
             project_id,

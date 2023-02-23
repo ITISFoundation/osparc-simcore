@@ -1,7 +1,7 @@
 import hashlib
 from datetime import datetime
 from enum import Enum
-from typing import Optional, Type, Union
+from typing import Optional, Union
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, HttpUrl, conint, validator
@@ -174,7 +174,7 @@ class Job(BaseModel):
             id=global_uuid,
             runner_name=parent_name,
             inputs_checksum=inputs_checksum,
-            created_at=datetime.utcnow(),
+            created_at=datetimedatetime.now(datetime.timezone.utc),
             url=None,
             runner_url=None,
             outputs_url=None,
@@ -215,7 +215,7 @@ class TaskStates(str, Enum):
     ABORTED = "ABORTED"
 
 
-PercentageInt: Type[int] = conint(ge=0, le=100)
+PercentageInt: type[int] = conint(ge=0, le=100)
 
 
 class JobStatus(BaseModel):
@@ -254,5 +254,5 @@ class JobStatus(BaseModel):
         }
 
     def take_snapshot(self, event: str = "submitted"):
-        setattr(self, f"{event}_at", datetime.utcnow())
+        setattr(self, f"{event}_at", datetimedatetime.now(datetime.timezone.utc))
         return getattr(self, f"{event}_at")
