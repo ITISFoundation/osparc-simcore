@@ -53,7 +53,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsList", {
 
   statics: {
     sortOrganizations: function(a, b) {
-      const sorted = osparc.component.permissions.Permissions.sortByAccessRights(a, b);
+      const sorted = osparc.component.share.Collaborators.sortByAccessRights(a, b);
       if (sorted !== 0) {
         return sorted;
       }

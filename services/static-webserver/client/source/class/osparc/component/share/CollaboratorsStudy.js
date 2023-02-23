@@ -24,8 +24,8 @@
  *   - Remove collaborators
  */
 
-qx.Class.define("osparc.component.permissions.Study", {
-  extend: osparc.component.permissions.Permissions,
+qx.Class.define("osparc.component.share.CollaboratorsStudy", {
+  extend: osparc.component.share.Collaborators,
 
   /**
     * @param studyData {Object} Object containing the serialized Study Data

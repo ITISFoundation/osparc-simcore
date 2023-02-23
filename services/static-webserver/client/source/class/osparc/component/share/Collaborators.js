@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.permissions.Permissions", {
+qx.Class.define("osparc.component.share.Collaborators", {
   extend: qx.ui.core.Widget,
   type: "abstract",
 
