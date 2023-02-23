@@ -67,23 +67,21 @@ def handle_errors(service_name: str, logger: logging.Logger):
                     detail=f"{service_name} is not responsive",
                 ) from err
 
-            else:
-                # status response errors
-                if httpx.codes.is_client_error(resp.status_code):
-                    raise HTTPException(resp.status_code, detail=resp.reason_phrase)
-
-                if httpx.codes.is_server_error(resp.status_code):  # i.e. 5XX error
-                    logger.error(
-                        "%s service error:\n|Request|\n%s\n%s\n%s\n|Response|\n%s\n%s\n%s",
-                        service_name,
-                        resp.request,
-                        _format_headers(resp.request.headers),
-                        resp.request.content.decode(),
-                        resp,
-                        _format_headers(resp.headers),
-                        resp.text,
-                    )
-                    raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
+            # status response errors
+            if httpx.codes.is_client_error(resp.status_code):
+                raise HTTPException(resp.status_code, detail=resp.reason_phrase)
+            if httpx.codes.is_server_error(resp.status_code):  # i.e. 5XX error
+                logger.error(
+                    "%s service error:\n|Request|\n%s\n%s\n%s\n|Response|\n%s\n%s\n%s",
+                    service_name,
+                    resp.request,
+                    _format_headers(resp.request.headers),
+                    resp.request.content.decode(),
+                    resp,
+                    _format_headers(resp.headers),
+                    resp.text,
+                )
+                raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
 
             return resp
 

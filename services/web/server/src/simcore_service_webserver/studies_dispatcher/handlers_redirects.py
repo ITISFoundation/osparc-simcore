@@ -65,8 +65,7 @@ class RedirectionQueryParams(ViewerQueryParams):
                 body=err.json(),
                 reason=f"{len(err.errors())} invalid parameters in query",
             )
-        else:
-            return obj
+        return obj
 
     async def check_download_link(self):
         """Explicit validation of download link that performs a light fetch of url's head"""

@@ -412,7 +412,7 @@ async def test_dask_does_not_report_asyncio_cancelled_error_in_task(
 async def test_dask_does_not_report_base_exception_in_task(dask_client: DaskClient):
     def fct_that_raise_base_exception():
 
-        raise BaseException("task triggers a base exception, but dask does not care...")
+        raise BaseException("task triggers a base exception, but dask does not care...")  # pylint: disable=broad-exception-raised
 
     future = dask_client.backend.client.submit(fct_that_raise_base_exception)
     # NOTE: Since asyncio.CancelledError is derived from BaseException and the worker code checks Exception only
