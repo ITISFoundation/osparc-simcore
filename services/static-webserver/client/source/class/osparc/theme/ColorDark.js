@@ -19,8 +19,8 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "c14": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 0),
 
     "strong-main": "rgba(0, 144, 208, 1)", // override in product
+    "strong-text": "c12",
     "a-bit-transparent": "rgba(0, 0, 0, 0.4)",
-
 
     // main
     "background-main": "c01",

@@ -19,6 +19,6 @@ qx.Theme.define("osparc.theme.products.osparc.ColorLight", {
   include: osparc.theme.ColorLight,
 
   colors: {
-    "strong-main": "rgba(0, 144, 208, 1)"
+    "strong-main": "#8329bf"
   }
 });

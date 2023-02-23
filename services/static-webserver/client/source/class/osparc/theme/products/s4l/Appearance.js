@@ -24,7 +24,7 @@ qx.Theme.define("osparc.theme.products.s4l.Appearance", {
       style: state => ({
         decorator: state.hovered ? "strong-bordered-button" : "no-border",
         backgroundColor: "strong-main",
-        textColor: "#d2d8dc" // dark theme's text color
+        textColor: "strong-text"
       })
     }
   }
