@@ -21,11 +21,11 @@
  * - It allows changing study's access right, so that the study owners can:
  *   - Share it with Organizations and/or Organization Members (Collaborators)
  *   - Make other Collaborators Owner
- *   - Remove collaborators
+ *   - Remove Collaborators
  */
 
-qx.Class.define("osparc.component.permissions.Service", {
-  extend: osparc.component.permissions.Permissions,
+qx.Class.define("osparc.component.share.CollaboratorsService", {
+  extend: osparc.component.share.Collaborators,
 
   /**
     * @param serviceData {Object} Object containing the Service Data
@@ -34,6 +34,7 @@ qx.Class.define("osparc.component.permissions.Service", {
     const serializedData = osparc.utils.Utils.deepCloneObject(serviceData);
 
     const initCollabs = this.self().getEveryoneObj();
+
     this.base(arguments, serializedData, [initCollabs]);
   },
 
@@ -86,8 +87,7 @@ qx.Class.define("osparc.component.permissions.Service", {
       return osparc.utils.Services.canIWrite(this._serializedData["accessRights"]);
     },
 
-    _addCollaborator: function() {
-      const gids = this.__organizationsAndMembers.getSelectedGIDs();
+    _addCollaborators: function(gids, cb) {
       if (gids.length === 0) {
         return;
       }
@@ -105,16 +105,16 @@ qx.Class.define("osparc.component.permissions.Service", {
         .then(serviceData => {
           this.fireDataEvent("updateService", serviceData);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator(s) successfully added"));
-          this.__reloadOrganizationsAndMembers();
-          this.__reloadCollaboratorsList();
+          this._reloadCollaboratorsList();
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went adding collaborator(s)"), "ERROR");
           console.error(err);
-        });
+        })
+        .finally(() => cb());
     },
 
-    _deleteMember: function(collaborator) {
+    _deleteMember: function(collaborator, item) {
       const success = this.self().removeCollaborator(this._serializedData, collaborator["gid"]);
       if (!success) {
         osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
@@ -131,8 +131,7 @@ qx.Class.define("osparc.component.permissions.Service", {
         .then(serviceData => {
           this.fireDataEvent("updateService", serviceData);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Member successfully removed"));
-          this.__reloadOrganizationsAndMembers();
-          this.__reloadCollaboratorsList();
+          this._reloadCollaboratorsList();
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
@@ -140,8 +139,9 @@ qx.Class.define("osparc.component.permissions.Service", {
         });
     },
 
-    _promoteToCollaborator: function(collaborator) {
-      this._serializedData["accessRights"][collaborator["gid"]] = this.self().getOwnerAccessRight();
+    __make: function(collboratorGId, newAccessRights, successMsg, failureMsg, item) {
+      item.setEnabled(false);
+      this._serializedData["accessRights"][collboratorGId] = newAccessRights;
       const params = {
         url: osparc.data.Resources.getServiceUrl(
           this._serializedData["key"],
@@ -152,43 +152,41 @@ qx.Class.define("osparc.component.permissions.Service", {
       osparc.data.Resources.fetch("services", "patch", params)
         .then(serviceData => {
           this.fireDataEvent("updateService", serviceData);
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Viewer successfully made Collaborator"));
-          this.__reloadOrganizationsAndMembers();
-          this.__reloadCollaboratorsList();
+          osparc.component.message.FlashMessenger.getInstance().logAs(successMsg);
+          this._reloadCollaboratorsList();
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong making Viewer Collaborator"), "ERROR");
+          osparc.component.message.FlashMessenger.getInstance().logAs(failureMsg, "ERROR");
           console.error(err);
-        });
+        })
+        .finally(() => item.setEnabled(true));
     },
 
-    _promoteToOwner: function(collaborator) {
+    _promoteToCollaborator: function(collaborator, item) {
+      this.__make(
+        collaborator["gid"],
+        this.self().getOwnerAccessRight(),
+        this.tr("Viewer successfully made Collaborator"),
+        this.tr("Something went wrong making Viewer Collaborator"),
+        item
+      );
+    },
+
+    _promoteToOwner: function(collaborator, item) {
       osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Operation not available"), "WARNING");
     },
 
-    _demoteToViewer: function(collaborator) {
-      this._serializedData["accessRights"][collaborator["gid"]] = this.self().getCollaboratorAccessRight();
-      const params = {
-        url: osparc.data.Resources.getServiceUrl(
-          this._serializedData["key"],
-          this._serializedData["version"]
-        ),
-        data: this._serializedData
-      };
-      osparc.data.Resources.fetch("services", "patch", params)
-        .then(serviceData => {
-          this.fireDataEvent("updateService", serviceData);
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator successfully made Viewer"));
-          this.__reloadOrganizationsAndMembers();
-          this.__reloadCollaboratorsList();
-        })
-        .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong making Collaborator Viewer"), "ERROR");
-          console.error(err);
-        });
+    _demoteToViewer: function(collaborator, item) {
+      this.__make(
+        collaborator["gid"],
+        this.self().getCollaboratorAccessRight(),
+        this.tr("Collaborator successfully made Viewer"),
+        this.tr("Something went wrong making Collaborator Viewer"),
+        item
+      );
     },
 
-    _demoteToCollaborator: function(collaborator) {
+    _demoteToCollaborator: function(collaborator, item) {
       osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Operation not available"), "WARNING");
     }
   }

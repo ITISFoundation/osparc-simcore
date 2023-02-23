@@ -23,7 +23,7 @@
  * - Everyone
  */
 
-qx.Class.define("osparc.component.permissions.PublishTemplateWith", {
+qx.Class.define("osparc.component.share.PublishTemplate", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
