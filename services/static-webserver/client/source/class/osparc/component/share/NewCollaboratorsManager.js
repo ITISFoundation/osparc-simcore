@@ -38,6 +38,7 @@ qx.Class.define("osparc.component.share.NewCollaboratorsManager", {
 
   members: {
     __resourceData: null,
+    __collabButtonsContainer: null,
     __shareButton: null,
     __selectedCollaborators: null,
     __visibleCollaborators: null,
@@ -136,9 +137,7 @@ qx.Class.define("osparc.component.share.NewCollaboratorsManager", {
       if (addCollabs.length) {
         this.fireDataEvent("addCollaborators", addCollabs);
       }
-
-      this.__collabButtonsContainer.setEnabled(true);
-      this.__shareButton.setFetching(false);
+      // The parent class will close the window
     }
   }
 });
