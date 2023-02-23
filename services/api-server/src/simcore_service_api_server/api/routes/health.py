@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Callable
 
 from fastapi import APIRouter, Depends
@@ -19,7 +19,7 @@ router = APIRouter()
 
 @router.get("/", include_in_schema=False, response_class=PlainTextResponse)
 async def check_service_health():
-    return f"{__name__}@{datetimedatetime.now(datetime.timezone.utc).isoformat()}"
+    return f"{__name__}@{datetime.now(timezone.utc).replace(tzinfo=None).isoformat()}"
 
 
 @router.get("/state", include_in_schema=False)

@@ -2,7 +2,7 @@ import asyncio
 import io
 import logging
 from collections import deque
-from datetime import datetime
+from datetime import datetime, timezone
 from textwrap import dedent
 from typing import IO, Optional
 from uuid import UUID
@@ -105,7 +105,7 @@ async def upload_file(
     file_meta: File = await File.create_from_uploaded(
         file,
         file_size=file_size,
-        created_at=datetimedatetime.now(datetime.timezone.utc).isoformat(),
+        created_at=datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
     )
     logger.debug(
         "Assigned id: %s of %s bytes (content-length), real size %s bytes",

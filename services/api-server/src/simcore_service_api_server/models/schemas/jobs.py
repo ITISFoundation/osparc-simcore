@@ -1,5 +1,5 @@
 import hashlib
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional, Union
 from uuid import UUID, uuid4
@@ -174,7 +174,7 @@ class Job(BaseModel):
             id=global_uuid,
             runner_name=parent_name,
             inputs_checksum=inputs_checksum,
-            created_at=datetimedatetime.now(datetime.timezone.utc),
+            created_at=datetime.now(timezone.utc).replace(tzinfo=None),
             url=None,
             runner_url=None,
             outputs_url=None,
@@ -254,5 +254,5 @@ class JobStatus(BaseModel):
         }
 
     def take_snapshot(self, event: str = "submitted"):
-        setattr(self, f"{event}_at", datetimedatetime.now(datetime.timezone.utc))
+        setattr(self, f"{event}_at", datetime.now(timezone.utc).replace(tzinfo=None))
         return getattr(self, f"{event}_at")
