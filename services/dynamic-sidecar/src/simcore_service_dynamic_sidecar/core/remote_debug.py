@@ -30,7 +30,7 @@ def setup(app: FastAPI) -> None:
             )
 
         except ImportError as err:
-            raise Exception(
+            raise ValueError(
                 "Cannot enable remote debugging. Please install ptvsd first"
             ) from err
 

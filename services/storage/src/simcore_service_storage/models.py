@@ -42,8 +42,7 @@ def is_uuid(value: str) -> bool:
         UUID(str(value))
     except ValueError:
         return False
-    else:
-        return True
+    return True
 
 
 class FileMetaDataAtDB(BaseModel):
