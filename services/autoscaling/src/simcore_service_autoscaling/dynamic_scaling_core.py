@@ -3,7 +3,6 @@ import collections
 import dataclasses
 import itertools
 import logging
-from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from typing import cast
 
@@ -272,7 +271,7 @@ async def _find_needed_instances(
                 f"{task.Name or 'unknown task name'}:{task.ServiceID or 'unknown service ID'}",
             )
 
-    num_instances_per_type = defaultdict(
+    num_instances_per_type = collections.defaultdict(
         int, collections.Counter(t for t, _ in needed_new_instance_to_tasks)
     )
 

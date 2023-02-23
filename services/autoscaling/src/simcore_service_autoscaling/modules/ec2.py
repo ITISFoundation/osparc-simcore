@@ -15,6 +15,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random_exponential
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
+from types_aiobotocore_ec2.type_defs import FilterTypeDef
 
 from ..core.errors import (
     ConfigurationError,
@@ -169,7 +170,7 @@ class AutoscalingEC2:
         if state_names is None:
             state_names = ["pending", "running"]
 
-        filters = [
+        filters: list[FilterTypeDef] = [
             {
                 "Name": "key-name",
                 "Values": [instance_settings.EC2_INSTANCES_KEY_NAME],
