@@ -390,7 +390,7 @@ qx.Class.define("osparc.info.MergedLarge", {
       });
       suggestions = Array.from(suggestions);
       const thumbnailEditor = new osparc.component.editor.ThumbnailEditor(oldThumbnail, suggestions);
-      const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, suggestions.length > 2 ? 500 : 350, suggestions.length ? 280 : 110);
+      const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, suggestions.length > 2 ? 500 : 350, suggestions.length ? 280 : 115);
       thumbnailEditor.addListener("updateThumbnail", e => {
         win.close();
         const validUrl = e.getData();
