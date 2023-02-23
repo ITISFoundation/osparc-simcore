@@ -152,7 +152,7 @@ async def remove_pending_volume_removal_services(
                 volume_removal_service["Spec"]["Labels"]["service_timeout_s"]
             )
             created_at = to_datetime(volume_removal_services[0]["CreatedAt"])
-            time_diff = datetime.now(timezone.utc) - created_at
+            time_diff = datetime.now(timezone.utc).replace(tzinfo=None) - created_at
             service_timed_out = time_diff.seconds > (service_timeout_s * 10)
             if service_timed_out:
                 service_id = volume_removal_service["ID"]
