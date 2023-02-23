@@ -37,6 +37,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsList", {
     });
     this._add(intro);
 
+    this._add(this.__getOrganizationsFilter());
     this._add(this.__getOrganizationsList(), {
       flex: 1
     });
@@ -52,7 +53,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsList", {
 
   statics: {
     sortOrganizations: function(a, b) {
-      const sorted = osparc.component.permissions.Permissions.sortByAccessRights(a, b);
+      const sorted = osparc.component.share.Collaborators.sortByAccessRights(a, b);
       if (sorted !== 0) {
         return sorted;
       }
@@ -88,6 +89,14 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsList", {
       return createOrgBtn;
     },
 
+    __getOrganizationsFilter: function() {
+      const filter = new osparc.component.filter.TextFilter("name", "organizationsList").set({
+        allowStretchX: true,
+        margin: [0, 10, 5, 10]
+      });
+      return filter;
+    },
+
     __getOrganizationsList: function() {
       const orgsUIList = this.__orgsUIList = new qx.ui.form.List().set({
         decorator: "no-border",
@@ -112,6 +121,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsList", {
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
         },
         configureItem: item => {
+          item.subscribeToFilterGroup("organizationsList");
           const thumbanil = item.getChildControl("thumbnail");
           thumbanil.getContentElement()
             .setStyles({

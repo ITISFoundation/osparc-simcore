@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.permissions.Permissions", {
+qx.Class.define("osparc.component.share.Collaborators", {
   extend: qx.ui.core.Widget,
   type: "abstract",
 
@@ -127,33 +127,21 @@ qx.Class.define("osparc.component.permissions.Permissions", {
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
       vBox.setVisibility(this._canIWrite() ? "visible" : "excluded");
 
-      const label = new qx.ui.basic.Label(this.tr("Select from the dropdown list below and click Add to share"));
+      const label = new qx.ui.basic.Label(this.tr("Select from the list below and click Share"));
       vBox.add(label);
 
-      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
-        alignY: "middle"
-      }));
-      vBox.add(hBox, {
-        flex: 1
-      });
-
-      const organizationsAndMembers = this.__organizationsAndMembers = new osparc.component.filter.OrganizationsAndMembers("orgAndMembPerms");
-      hBox.add(organizationsAndMembers, {
-        flex: 1
-      });
-
-      const addCollaboratorBtn = new qx.ui.form.Button(this.tr("Add")).set({
+      const addCollaboratorBtn = new qx.ui.form.Button(this.tr("Add Collaborators...")).set({
         appearance: "strong-button",
-        allowGrowY: false,
-        enabled: false
+        allowGrowX: false
       });
-      addCollaboratorBtn.addListener("execute", () => this._addCollaborator(), this);
-      qx.event.message.Bus.getInstance().subscribe("OrgAndMembPermsFilter", () => {
-        const anySelected = Boolean(this.__organizationsAndMembers.getSelectedGIDs().length);
-        addCollaboratorBtn.setEnabled(anySelected);
+      addCollaboratorBtn.addListener("execute", () => {
+        const collaboratorsManager = new osparc.component.share.NewCollaboratorsManager(this._serializedData);
+        collaboratorsManager.addListener("addCollaborators", e => {
+          const cb = () => collaboratorsManager.close();
+          this._addCollaborators(e.getData(), cb);
+        }, this);
       }, this);
-
-      hBox.add(addCollaboratorBtn);
+      vBox.add(addCollaboratorBtn);
 
       return vBox;
     },
@@ -198,15 +186,15 @@ qx.Class.define("osparc.component.permissions.Permissions", {
             });
           item.addListener("promoteToCollaborator", e => {
             const orgMember = e.getData();
-            this._promoteToCollaborator(orgMember);
+            this._promoteToCollaborator(orgMember, item);
           });
           item.addListener("promoteToOwner", e => {
             const orgMember = e.getData();
-            this._promoteToOwner(orgMember);
+            this._promoteToOwner(orgMember, item);
           });
           item.addListener("demoteToViewer", e => {
             const orgMember = e.getData();
-            this._demoteToViewer(orgMember);
+            this._demoteToViewer(orgMember, item);
           });
           item.addListener("demoteToCollaborator", e => {
             const orgMember = e.getData();
@@ -214,7 +202,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
           });
           item.addListener("removeMember", e => {
             const orgMember = e.getData();
-            this._deleteMember(orgMember);
+            this._deleteMember(orgMember, item);
           });
         }
       });
@@ -262,53 +250,11 @@ qx.Class.define("osparc.component.permissions.Permissions", {
       osparc.store.Store.getInstance().getPotentialCollaborators()
         .then(potentialCollaborators => {
           this.__collaborators = Object.assign(this.__collaborators, potentialCollaborators);
-          this.__reloadOrganizationsAndMembers();
-          this.__reloadCollaboratorsList();
+          this._reloadCollaboratorsList();
         });
     },
 
-    __reloadOrganizationsAndMembers: function() {
-      this.__organizationsAndMembers.reset();
-
-      const aceessRights = this._serializedData["accessRights"];
-      const myFriends = Object.values(this.__collaborators);
-
-      // sort them first
-      myFriends.sort((a, b) => {
-        if (a["collabType"] > b["collabType"]) {
-          return 1;
-        }
-        if (a["collabType"] < b["collabType"]) {
-          return -1;
-        }
-        if (a["label"] > b["label"]) {
-          return 1;
-        }
-        return -1;
-      });
-
-      myFriends.forEach(myFriend => {
-        const gid = myFriend["gid"];
-        if (parseInt(gid) !== osparc.auth.Data.getInstance().getGroupId() && !(parseInt(gid) in aceessRights)) {
-          const btn = this.__organizationsAndMembers.addOption(myFriend);
-          let iconPath = null;
-          switch (myFriend["collabType"]) {
-            case 0:
-              iconPath = "@FontAwesome5Solid/globe/14";
-              break;
-            case 1:
-              iconPath = "@FontAwesome5Solid/users/14";
-              break;
-            case 2:
-              iconPath = "@FontAwesome5Solid/user/14";
-              break;
-          }
-          btn.setIcon(iconPath);
-        }
-      });
-    },
-
-    __reloadCollaboratorsList: function() {
+    _reloadCollaboratorsList: function() {
       this.__collaboratorsModel.removeAll();
 
       const aceessRights = this._serializedData["accessRights"];
@@ -335,27 +281,27 @@ qx.Class.define("osparc.component.permissions.Permissions", {
       throw new Error("Abstract method called!");
     },
 
-    _addCollaborator: function() {
+    _addCollaborators: function(gids) {
       throw new Error("Abstract method called!");
     },
 
-    _deleteMember: function(collaborator) {
+    _deleteMember: function(collaborator, item) {
       throw new Error("Abstract method called!");
     },
 
-    _promoteToOwner: function(collaborator) {
+    _promoteToOwner: function(collaborator, item) {
       throw new Error("Abstract method called!");
     },
 
-    _promoteToCollaborator: function(collaborator) {
+    _promoteToCollaborator: function(collaborator, item) {
       throw new Error("Abstract method called!");
     },
 
-    _demoteToViewer: function(collaborator) {
+    _demoteToViewer: function(collaborator, item) {
       throw new Error("Abstract method called!");
     },
 
-    _demoteToCollaborator: function(collaborator) {
+    _demoteToCollaborator: function(collaborator, item) {
       throw new Error("Abstract method called!");
     }
   }
