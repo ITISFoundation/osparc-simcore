@@ -3,7 +3,7 @@
 # pylint: disable=unused-variable
 
 import socket
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import AsyncIterable, Callable, cast
 
 import pytest
@@ -23,7 +23,10 @@ def app() -> FastAPI:
 
     @api_router.get("/")
     def _get_root():
-        return {"name": __name__, "timestamp": datetime.utcnow().isoformat()}
+        return {
+            "name": __name__,
+            "timestamp": datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
+        }
 
     @api_router.get("/data")
     def _get_data(x: PositiveFloat, y: int = Query(..., gt=3, lt=4)):

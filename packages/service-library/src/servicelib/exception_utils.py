@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from pydantic import BaseModel, Field, NonNegativeFloat, PrivateAttr
@@ -49,11 +49,11 @@ class DelayedExceptionHandler(BaseModel):
 
         # first time the exception was detected
         if self._first_exception_skip is None:
-            self._first_exception_skip = datetime.utcnow()
+            self._first_exception_skip = datetime.now(timezone.utc).replace(tzinfo=None)
 
         # raise if subsequent exception is outside of delay window
         elif (
-            datetime.utcnow() - self._first_exception_skip
+            datetime.now(timezone.utc).replace(tzinfo=None) - self._first_exception_skip
         ).total_seconds() > self.delay_for:
             raise exception
 

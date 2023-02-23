@@ -23,7 +23,7 @@ Usage of these tools are demonstrated in packages/models-library/tests/test_util
 """
 import json
 import warnings
-from typing import Dict, Iterable, Optional, Set, Tuple, Type
+from typing import Iterable, Optional
 
 from pydantic import BaseModel, create_model, validator
 from pydantic.fields import ModelField, Undefined
@@ -38,7 +38,7 @@ warnings.warn(
 )
 
 
-def collect_fields_attrs(model_cls: Type[BaseModel]) -> Dict[str, Dict[str, str]]:
+def collect_fields_attrs(model_cls: type[BaseModel]) -> dict[str, dict[str, str]]:
     """
 
     >>> class MyModel(BaseModel):
@@ -100,33 +100,31 @@ def collect_fields_attrs(model_cls: Type[BaseModel]) -> Dict[str, Dict[str, str]
 
 def _eval_selection(
     model_fields: Iterable[ModelField],
-    include: Optional[Set[str]],
-    exclude: Optional[Set[str]],
+    include: Optional[set[str]],
+    exclude: Optional[set[str]],
     exclude_optionals: bool,
-) -> Set[str]:
+) -> set[str]:
     # TODO: use dict for deep include/exclude! SEE https://pydantic-docs.helpmanual.io/usage/exporting_models/
 
     if include is None:
-        include = set(f.name for f in model_fields)
+        include = {f.name for f in model_fields}
     if exclude is None:
         exclude = set()
     if exclude_optionals:
-        exclude = exclude.union(
-            set(f.name for f in model_fields if f.required == False)
-        )
+        exclude = exclude.union({f.name for f in model_fields if f.required == False})
 
     selection = include - exclude
     return selection
 
 
 def _extract_field_definitions(
-    model_cls: Type[BaseModel],
+    model_cls: type[BaseModel],
     *,
-    include: Optional[Set[str]],
-    exclude: Optional[Set[str]],
+    include: Optional[set[str]],
+    exclude: Optional[set[str]],
     exclude_optionals: bool,
     set_all_optional: bool,
-) -> Dict[str, Tuple]:
+) -> dict[str, tuple]:
     """
     Returns field_definitions: fields of the model in the format
         `<name>=(<type>, <default default>)` or `<name>=<default value>`,
@@ -136,7 +134,7 @@ def _extract_field_definitions(
         or, for complex use-cases, in the format
         `<name>=<FieldInfo>`,
         e.g.
-        `foo=Field(default_factory=datetime.utcnow, alias='bar')`
+        `foo=Field(default_factory=datetime.now(timezone.utc).replace(tzinfo=None), alias='bar')`
 
     """
     field_names = _eval_selection(
@@ -160,16 +158,16 @@ def _extract_field_definitions(
 
 
 def copy_model(
-    reference_cls: Type[BaseModel],
+    reference_cls: type[BaseModel],
     *,
     name: str = None,
-    include: Optional[Set[str]] = None,
-    exclude: Optional[Set[str]] = None,
+    include: Optional[set[str]] = None,
+    exclude: Optional[set[str]] = None,
     exclude_optionals: bool = False,
     as_update_model: bool = False,
     skip_validators: bool = False,
-    __config__: Type[BaseConfig] = None,
-) -> Type[BaseModel]:
+    __config__: type[BaseConfig] = None,
+) -> type[BaseModel]:
     """
     Creates a clone of `reference_cls` with a different name and a subset of fields
 
@@ -190,7 +188,7 @@ def copy_model(
 
     # VALIDATORS
 
-    validators_funs: Dict[str, classmethod] = {}
+    validators_funs: dict[str, classmethod] = {}
     # A dict of method names and @validator class methods
     # SEE example in https://pydantic-docs.helpmanual.io/usage/models/#dynamic-model-creation
     if not skip_validators and reference_cls != BaseModel:

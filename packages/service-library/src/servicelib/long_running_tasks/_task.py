@@ -5,7 +5,7 @@ import traceback
 import urllib.parse
 from collections import deque
 from contextlib import suppress
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Optional, Protocol
 from uuid import uuid4
 
@@ -96,7 +96,7 @@ class TasksManager:
         # will not be the case.
 
         while await asyncio.sleep(self.stale_task_check_interval_s, result=True):
-            utc_now = datetime.utcnow()
+            utc_now = datetime.now(timezone.utc).replace(tzinfo=None)
 
             tasks_to_remove: list[TaskId] = []
             for tasks in self._tasks_groups.values():
@@ -200,7 +200,7 @@ class TasksManager:
         raises TaskNotFoundError if the task cannot be found
         """
         tracked_task: TrackedTask = self._get_tracked_task(task_id, with_task_context)
-        tracked_task.last_status_check = datetime.utcnow()
+        tracked_task.last_status_check = datetime.now(timezone.utc).replace(tzinfo=None)
 
         task = tracked_task.task
         done = task.done()

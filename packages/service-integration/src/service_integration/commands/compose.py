@@ -1,5 +1,5 @@
 import subprocess
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -107,8 +107,8 @@ def create_docker_compose_image_spec(
                 "No explicit config for OCI/label-schema found (optional), skipping OCI annotations."
             )
     # add required labels
-    extra_labels[f"{LS_LABEL_PREFIX}.build-date"] = datetime.utcnow().strftime(
-        "%Y-%m-%dT%H:%M:%SZ"
+    extra_labels[f"{LS_LABEL_PREFIX}.build-date"] = (
+        datetime.now(timezone.utc).replace(tzinfo=None).strftime("%Y-%m-%dT%H:%M:%SZ")
     )
     extra_labels[f"{LS_LABEL_PREFIX}.schema-version"] = "1.0"
 

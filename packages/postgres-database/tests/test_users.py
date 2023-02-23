@@ -3,7 +3,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import pytest
@@ -77,7 +77,7 @@ async def test_trial_accounts(pg_engine: Engine):
     async with pg_engine.acquire() as conn:
 
         # creates trial user
-        client_now = datetime.utcnow()
+        client_now = datetime.now(timezone.utc).replace(tzinfo=None)
         user_id: Optional[int] = await conn.scalar(
             users.insert()
             .values(

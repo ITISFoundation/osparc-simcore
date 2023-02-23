@@ -1,7 +1,7 @@
 import logging
 import urllib.parse
 from asyncio import Task
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Awaitable, Callable, Coroutine, Optional
 
 from pydantic import (
@@ -76,7 +76,9 @@ class TrackedTask(BaseModel):
         description="if True then the task will not be auto-cancelled if no one enquires of its status",
     )
 
-    started: datetime = Field(default_factory=datetime.utcnow)
+    started: datetime = Field(
+        default_factory=datetime.now(timezone.utc).replace(tzinfo=None)
+    )
     last_status_check: Optional[datetime] = Field(
         default=None,
         description=(

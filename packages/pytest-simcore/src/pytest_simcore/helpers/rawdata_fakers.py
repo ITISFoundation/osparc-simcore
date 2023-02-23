@@ -14,7 +14,7 @@
 import itertools
 import json
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Final
 from uuid import uuid4
 
@@ -118,7 +118,7 @@ def fake_task_factory(first_internal_id=1) -> Callable:
 
     def fake_task(**overrides) -> dict[str, Any]:
 
-        t0 = datetime.utcnow()
+        t0 = datetime.now(timezone.utc).replace(tzinfo=None)
         data = dict(
             project_id=uuid4(),
             node_id=uuid4(),

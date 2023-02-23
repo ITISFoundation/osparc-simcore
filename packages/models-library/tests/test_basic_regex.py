@@ -6,7 +6,7 @@
 
 import keyword
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Optional, Pattern, Sequence, Union
 
 import pytest
@@ -172,7 +172,7 @@ class webserver_timedate_utils:
 
     @classmethod
     def now(cls) -> datetime:
-        return datetime.utcnow()
+        return datetime.now(timezone.utc).replace(tzinfo=None)
 
     @classmethod
     def format_datetime(cls, snapshot: datetime) -> str:
@@ -195,7 +195,10 @@ class webserver_timedate_utils:
         ("2020-12-30T23:15:00.345Z", ("12", "30", "23", ":00", "00", ".345")),
         ("2020-12-30 23:15:00", INVALID),
         (datetime.now().isoformat(), INVALID),  # as '2020-11-29T23:09:21.859469'
-        (datetime.utcnow().isoformat(), INVALID),  # as '2020-11-29T22:09:21.859469'
+        (
+            datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
+            INVALID,
+        ),  # as '2020-11-29T22:09:21.859469'
         (webserver_timedate_utils.now_str(), VALID),
         (
             webserver_timedate_utils.format_datetime(

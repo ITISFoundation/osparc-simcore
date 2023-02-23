@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Optional, Union
 
@@ -90,7 +90,7 @@ class ManifestFile(BaseLoadingModel):
 
     creation_date_utc: datetime = Field(
         description="UTC date and time from when the project was exported",
-        default_factory=datetime.utcnow,
+        default_factory=datetime.now(timezone.utc).replace(tzinfo=None),
     )
 
     attachments: list[str] = Field(
