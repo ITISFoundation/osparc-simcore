@@ -574,10 +574,12 @@ class TutorialBase {
       console.error("Failed going to dashboard study", err);
       throw (err);
     }
+    await this.waitFor(5000, 'Going back to Dashboard');
     await this.takeScreenshot("toDashboard_after");
   }
 
   async removeStudy(studyId, waitFor = 5000) {
+    await auto.dashboardStudiesBrowser(this.__page);
     await this.waitFor(waitFor, 'Wait to be unlocked');
     await this.takeScreenshot("deleteFirstStudy_before");
     const intervalWait = 3000;

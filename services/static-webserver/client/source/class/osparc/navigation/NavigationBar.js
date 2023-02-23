@@ -42,7 +42,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.HBox(10).set({
+    this._setLayout(new qx.ui.layout.HBox(20).set({
       alignY: "middle"
     }));
 
@@ -139,7 +139,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       let control;
       switch (id) {
         case "left-items":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(30).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(20).set({
             alignY: "middle",
             alignX: "left"
           }));
@@ -182,6 +182,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         case "dashboard-label":
           control = new qx.ui.basic.Label(this.tr("Dashboard")).set({
+            paddingLeft: 10,
             font: "text-14"
           });
           this.getChildControl("left-items").add(control);
