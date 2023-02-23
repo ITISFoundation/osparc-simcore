@@ -30,7 +30,11 @@ from .projects.projects_api import (
     submit_delete_project_task,
 )
 from .projects.projects_db import ProjectDBAPI
-from .projects.projects_exceptions import ProjectDeleteError, ProjectNotFoundError
+from .projects.projects_exceptions import (
+    ProjectDeleteError,
+    ProjectLockError,
+    ProjectNotFoundError,
+)
 from .redis import get_redis_lock_manager_client
 from .resource_manager.registry import RedisResourceRegistry, get_registry
 from .users_api import (
@@ -194,10 +198,9 @@ async def remove_disconnected_user_resources(
                                 "first_name": "garbage",
                                 "last_name": "collector",
                             },
-                            suppress_project_locked_error=True,
                         )
 
-                    except ProjectNotFoundError as err:
+                    except (ProjectNotFoundError, ProjectLockError) as err:
                         logger.warning(
                             (
                                 "Could not remove project interactive services user_id=%s "

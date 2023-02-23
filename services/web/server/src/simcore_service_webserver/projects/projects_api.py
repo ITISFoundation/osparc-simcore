@@ -962,11 +962,11 @@ async def remove_project_dynamic_services(
     app: web.Application,
     notify_users: bool = True,
     user_name: Optional[UserNameDict] = None,
-    suppress_project_locked_error: bool = False,
 ) -> None:
     """
 
     :raises UserNotFoundError:
+    :raises ProjectLockError
     """
 
     # NOTE: during the closing process, which might take awhile,
@@ -976,43 +976,39 @@ async def remove_project_dynamic_services(
         project_uuid,
         user_id,
     )
+
+    user_name_data: UserNameDict = user_name or await get_user_name(app, user_id)
+
+    user_role: Optional[UserRole] = None
     try:
-        user_name_data: UserNameDict = user_name or await get_user_name(app, user_id)
+        user_role = await get_user_role(app, user_id)
+    except UserNotFoundError:
+        user_role = None
 
-        user_role: Optional[UserRole] = None
-        try:
-            user_role = await get_user_role(app, user_id)
-        except UserNotFoundError:
-            user_role = None
+    save_state = await ProjectDBAPI.get_from_app_context(app).has_permission(
+        user_id=user_id, project_uuid=project_uuid, permission="write"
+    )
+    if user_role is None or user_role <= UserRole.GUEST:
+        save_state = False
+    # -------------------
 
-        save_state = await ProjectDBAPI.get_from_app_context(app).has_permission(
-            user_id=user_id, project_uuid=project_uuid, permission="write"
-        )
-        if user_role is None or user_role <= UserRole.GUEST:
-            save_state = False
-        # -------------------
-
-        async with lock_with_notification(
-            app,
-            project_uuid,
-            ProjectStatus.CLOSING,
-            user_id,
-            user_name_data,
-            notify_users=notify_users,
-        ):
-            # save the state if the user is not a guest. if we do not know we save in any case.
-            with suppress(director_v2_api.DirectorServiceError):
-                # here director exceptions are suppressed. in case the service is not found to preserve old behavior
-                await director_v2_api.stop_dynamic_services_in_project(
-                    app=app,
-                    user_id=user_id,
-                    project_id=project_uuid,
-                    save_state=save_state,
-                )
-    except ProjectLockError:
-        if suppress_project_locked_error:
-            return
-        raise
+    async with lock_with_notification(
+        app,
+        project_uuid,
+        ProjectStatus.CLOSING,
+        user_id,
+        user_name_data,
+        notify_users=notify_users,
+    ):
+        # save the state if the user is not a guest. if we do not know we save in any case.
+        with suppress(director_v2_api.DirectorServiceError):
+            # here director exceptions are suppressed. in case the service is not found to preserve old behavior
+            await director_v2_api.stop_dynamic_services_in_project(
+                app=app,
+                user_id=user_id,
+                project_id=project_uuid,
+                save_state=save_state,
+            )
 
 
 #
