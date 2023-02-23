@@ -16,6 +16,13 @@ from settings_library.rabbit import RabbitSettings
 _ERROR_PREFIX: Final[str] = "rabbitmq.robust_rpc."
 
 
+PlatformNamespace = str
+
+
+def _get_handler_name(namespace: PlatformNamespace, handler_name: str) -> str:
+    return f"{namespace}.{handler_name}"
+
+
 class BaseRPCError(PydanticErrorMixin, RuntimeError):
     ...
 
@@ -64,35 +71,46 @@ class RPCBase:
 
 class RobustRPCClient(RPCBase):
     def __init__(self, rabbit_settings: RabbitSettings) -> None:
-        channel_name = f"{RobustRPCClient.__name__}{uuid4()}"
-        super().__init__(rabbit_settings, channel_name)
+        super().__init__(rabbit_settings, f"{RobustRPCClient.__name__}{uuid4()}")
 
     async def request(
-        self, method_name, *, timeout: Optional[PositiveFloat] = 5, **kwargs
+        self,
+        namespace: PlatformNamespace,
+        method_name: str,
+        *,
+        timeout: Optional[PositiveFloat] = 5,
+        **kwargs,
     ) -> Any:
         """
-        Calls into an already existing handler which was defined refined remotely
+        Calls an already existing handler in a target namespace inside the platform.
         """
 
         if not self._rpc:
             raise NotStartedError(class_name=self.__class__.__name__)
 
+        handler_name = _get_handler_name(namespace, method_name)
         try:
             return await asyncio.wait_for(
-                self._rpc.call(method_name, kwargs=kwargs), timeout=timeout
+                self._rpc.call(handler_name, kwargs=kwargs), timeout=timeout
             )
         except MessageProcessError as e:
             if e.args[0] == "Message has been returned":
                 raise RemoteMethodNotRegisteredError(
-                    method_name=method_name, incoming_message=e.args[1]
+                    method_name=handler_name, incoming_message=e.args[1]
                 ) from e
             raise e
 
 
 class RobustRPCServer(RPCBase):
-    def __init__(self, rabbit_settings: RabbitSettings) -> None:
-        channel_name = f"{RobustRPCServer.__name__}{uuid4()}"
-        super().__init__(rabbit_settings, channel_name)
+    def __init__(
+        self, rabbit_settings: RabbitSettings, namespace: PlatformNamespace
+    ) -> None:
+        """
+        namespace: is required ans is used to uniquely target this process's
+        handlers in the entire oSPARC platform.
+        """
+        self.namespace = namespace
+        super().__init__(rabbit_settings, f"{RobustRPCServer.__name__}{uuid4()}")
 
     async def register(self, handler: Awaitable) -> None:
         """register an awaitable handler that can be invoked remotely"""
@@ -100,4 +118,8 @@ class RobustRPCServer(RPCBase):
         if self._rpc is None:
             raise NotStartedError(class_name=self.__class__.__name__)
 
-        await self._rpc.register(handler.__name__, handler, auto_delete=True)
+        await self._rpc.register(
+            _get_handler_name(self.namespace, handler.__name__),
+            handler,
+            auto_delete=True,
+        )

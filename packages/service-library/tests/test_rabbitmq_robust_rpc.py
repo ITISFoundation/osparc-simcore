@@ -8,6 +8,7 @@ import pytest
 from pydantic import NonNegativeInt
 from servicelib.rabbitmq_robust_rpc import (
     NotStartedError,
+    PlatformNamespace,
     RemoteMethodNotRegisteredError,
     RobustRPCClient,
     RobustRPCServer,
@@ -22,6 +23,11 @@ MULTIPLE_REQUESTS_COUNT: Final[NonNegativeInt] = 100
 
 
 @pytest.fixture
+def server_namespace() -> PlatformNamespace:
+    return "namespace"
+
+
+@pytest.fixture
 async def rpc_client(rabbit_service: RabbitSettings) -> RobustRPCClient:
     client = RobustRPCClient(rabbit_settings=rabbit_service)
     await client.start()
@@ -30,8 +36,10 @@ async def rpc_client(rabbit_service: RabbitSettings) -> RobustRPCClient:
 
 
 @pytest.fixture
-async def rpc_server(rabbit_service: RabbitSettings) -> RobustRPCServer:
-    server = RobustRPCServer(rabbit_settings=rabbit_service)
+async def rpc_server(
+    rabbit_service: RabbitSettings, server_namespace: PlatformNamespace
+) -> RobustRPCServer:
+    server = RobustRPCServer(rabbit_settings=rabbit_service, namespace=server_namespace)
     await server.start()
     yield server
     await server.stop()
@@ -89,39 +97,55 @@ async def test_base_rpc_pattern(
     y: Any,
     expected_result: Any,
     expected_type: type,
+    server_namespace: PlatformNamespace,
 ):
     await rpc_server.register(add_me)
 
-    request_result = await rpc_client.request(add_me.__name__, x=x, y=y)
+    request_result = await rpc_client.request(
+        server_namespace, add_me.__name__, x=x, y=y
+    )
     assert request_result == expected_result
     assert type(request_result) == expected_type
 
 
 async def test_multiple_requests_sequence_same_server_and_client(
-    rpc_client: RobustRPCClient, rpc_server: RobustRPCServer
+    rpc_client: RobustRPCClient,
+    rpc_server: RobustRPCServer,
+    server_namespace: PlatformNamespace,
 ):
     await rpc_server.register(add_me)
 
     for i in range(MULTIPLE_REQUESTS_COUNT):
-        assert await rpc_client.request(add_me.__name__, x=1 + i, y=2 + i) == 3 + i * 2
+        assert (
+            await rpc_client.request(
+                server_namespace, add_me.__name__, x=1 + i, y=2 + i
+            )
+            == 3 + i * 2
+        )
 
 
 async def test_multiple_requests_parallel_same_server_and_client(
-    rpc_client: RobustRPCClient, rpc_server: RobustRPCServer
+    rpc_client: RobustRPCClient,
+    rpc_server: RobustRPCServer,
+    server_namespace: PlatformNamespace,
 ):
     await rpc_server.register(add_me)
 
     expected_result: list[int] = []
     requests: list[Awaitable] = []
     for i in range(MULTIPLE_REQUESTS_COUNT):
-        requests.append(rpc_client.request(add_me.__name__, x=1 + i, y=2 + i))
+        requests.append(
+            rpc_client.request(server_namespace, add_me.__name__, x=1 + i, y=2 + i)
+        )
         expected_result.append(3 + i * 2)
 
     assert await asyncio.gather(*requests) == expected_result
 
 
 async def test_multiple_requests_parallel_same_server_different_clients(
-    rabbit_service: RabbitSettings, rpc_server: RobustRPCServer
+    rabbit_service: RabbitSettings,
+    rpc_server: RobustRPCServer,
+    server_namespace: PlatformNamespace,
 ):
     await rpc_server.register(add_me)
 
@@ -137,7 +161,9 @@ async def test_multiple_requests_parallel_same_server_different_clients(
     expected_result: list[int] = []
     for i in range(MULTIPLE_REQUESTS_COUNT):
         client = clients[i]
-        requests.append(client.request(add_me.__name__, x=1 + i, y=2 + i))
+        requests.append(
+            client.request(server_namespace, add_me.__name__, x=1 + i, y=2 + i)
+        )
         expected_result.append(3 + i * 2)
 
     assert await asyncio.gather(*requests) == expected_result
@@ -146,15 +172,17 @@ async def test_multiple_requests_parallel_same_server_different_clients(
     await asyncio.gather(*[c.stop() for c in clients])
 
 
-async def test_raise_error_if_not_started(rabbit_service: RabbitSettings):
+async def test_raise_error_if_not_started(
+    rabbit_service: RabbitSettings, server_namespace: PlatformNamespace
+):
     client = RobustRPCClient(rabbit_settings=rabbit_service)
     with pytest.raises(NotStartedError):
-        await client.request(add_me, x=1, y=2)
+        await client.request(server_namespace, add_me.__name__, x=1, y=2)
 
     # expect not to raise error
     await client.stop()
 
-    server = RobustRPCServer(rabbit_settings=rabbit_service)
+    server = RobustRPCServer(rabbit_settings=rabbit_service, namespace=server_namespace)
     with pytest.raises(NotStartedError):
         await server.register(add_me)
 
@@ -162,33 +190,43 @@ async def test_raise_error_if_not_started(rabbit_service: RabbitSettings):
     await server.stop()
 
 
-async def _assert_event_not_registered(rpc_client: RobustRPCClient):
+async def _assert_event_not_registered(
+    rpc_client: RobustRPCClient, server_namespace: PlatformNamespace
+):
     with pytest.raises(RemoteMethodNotRegisteredError) as exec_info:
-        assert await rpc_client.request(add_me.__name__, x=1, y=3) == 3
+        assert (
+            await rpc_client.request(server_namespace, add_me.__name__, x=1, y=3) == 3
+        )
     assert (
-        f"Could not find a remote method named: '{add_me.__name__}'"
+        f"Could not find a remote method named: '{server_namespace}.{add_me.__name__}'"
         in f"{exec_info.value}"
     )
 
 
-async def test_server_not_started(rpc_client: RobustRPCClient):
-    await _assert_event_not_registered(rpc_client)
+async def test_server_not_started(
+    rpc_client: RobustRPCClient, server_namespace: PlatformNamespace
+):
+    await _assert_event_not_registered(rpc_client, server_namespace)
 
 
 async def test_server_handler_not_registered(
-    rpc_client: RobustRPCClient, rpc_server: RobustRPCServer
+    rpc_client: RobustRPCClient,
+    rpc_server: RobustRPCServer,
+    server_namespace: PlatformNamespace,
 ):
-    await _assert_event_not_registered(rpc_client)
+    await _assert_event_not_registered(rpc_client, server_namespace)
 
 
 async def test_request_is_missing_arguments(
-    rpc_client: RobustRPCClient, rpc_server: RobustRPCServer
+    rpc_client: RobustRPCClient,
+    rpc_server: RobustRPCServer,
+    server_namespace: PlatformNamespace,
 ):
     await rpc_server.register(add_me)
 
     # missing 1 argument
     with pytest.raises(TypeError) as exec_info:
-        await rpc_client.request(add_me.__name__, x=1)
+        await rpc_client.request(server_namespace, add_me.__name__, x=1)
     assert (
         f"{add_me.__name__}() missing 1 required keyword-only argument: 'y'"
         in f"{exec_info.value}"
@@ -196,7 +234,7 @@ async def test_request_is_missing_arguments(
 
     # missing all arguments
     with pytest.raises(TypeError) as exec_info:
-        await rpc_client.request(add_me.__name__)
+        await rpc_client.request(server_namespace, add_me.__name__)
     assert (
         f"{add_me.__name__}() missing 2 required keyword-only arguments: 'x' and 'y'"
         in f"{exec_info.value}"
@@ -204,7 +242,9 @@ async def test_request_is_missing_arguments(
 
 
 async def test_client_cancels_long_running_request_or_client_takes_too_much_to_respond(
-    rpc_client: RobustRPCClient, rpc_server: RobustRPCServer
+    rpc_client: RobustRPCClient,
+    rpc_server: RobustRPCServer,
+    server_namespace: PlatformNamespace,
 ):
     async def _long_running(*, time_to_sleep: float) -> None:
         await asyncio.sleep(time_to_sleep)
@@ -213,11 +253,15 @@ async def test_client_cancels_long_running_request_or_client_takes_too_much_to_r
 
     # this task will be cancelled
     with pytest.raises(asyncio.TimeoutError):
-        await rpc_client.request(_long_running.__name__, time_to_sleep=10, timeout=0.5)
+        await rpc_client.request(
+            server_namespace, _long_running.__name__, time_to_sleep=10, timeout=0.5
+        )
 
 
 async def test_server_handler_raises_error(
-    rpc_client: RobustRPCClient, rpc_server: RobustRPCServer
+    rpc_client: RobustRPCClient,
+    rpc_server: RobustRPCServer,
+    server_namespace: PlatformNamespace,
 ):
     async def _raising_error() -> None:
         raise RuntimeError("failed as requested")
@@ -225,5 +269,5 @@ async def test_server_handler_raises_error(
     await rpc_server.register(_raising_error)
 
     with pytest.raises(RuntimeError) as exec_info:
-        await rpc_client.request(_raising_error.__name__)
+        await rpc_client.request(server_namespace, _raising_error.__name__)
     assert "failed as requested" == f"{exec_info.value}"
