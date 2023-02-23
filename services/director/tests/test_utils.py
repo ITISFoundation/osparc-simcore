@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
 import pytest
 from simcore_service_director.utils import parse_as_datetime
@@ -26,7 +26,7 @@ def test_parse_valid_time_strings(timestr):
 
 
 def test_parse_invalid_timestr():
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    now = datetime.utcnow()
     invalid_timestr = "2020-10-09T12:28"
 
     # w/ default, it should NOT raise
