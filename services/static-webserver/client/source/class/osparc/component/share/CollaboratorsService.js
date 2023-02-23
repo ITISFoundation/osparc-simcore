@@ -114,7 +114,7 @@ qx.Class.define("osparc.component.share.CollaboratorsService", {
         .finally(() => cb());
     },
 
-    _deleteMember: function(collaborator) {
+    _deleteMember: function(collaborator, item) {
       const success = this.self().removeCollaborator(this._serializedData, collaborator["gid"]);
       if (!success) {
         osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
@@ -139,8 +139,9 @@ qx.Class.define("osparc.component.share.CollaboratorsService", {
         });
     },
 
-    _promoteToCollaborator: function(collaborator) {
-      this._serializedData["accessRights"][collaborator["gid"]] = this.self().getOwnerAccessRight();
+    __make: function(collboratorGId, newAccessRights, successMsg, failureMsg, item) {
+      item.setEnabled(false);
+      this._serializedData["accessRights"][collboratorGId] = newAccessRights;
       const params = {
         url: osparc.data.Resources.getServiceUrl(
           this._serializedData["key"],
@@ -151,41 +152,41 @@ qx.Class.define("osparc.component.share.CollaboratorsService", {
       osparc.data.Resources.fetch("services", "patch", params)
         .then(serviceData => {
           this.fireDataEvent("updateService", serviceData);
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Viewer successfully made Collaborator"));
+          osparc.component.message.FlashMessenger.getInstance().logAs(successMsg);
           this._reloadCollaboratorsList();
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong making Viewer Collaborator"), "ERROR");
+          osparc.component.message.FlashMessenger.getInstance().logAs(failureMsg, "ERROR");
           console.error(err);
-        });
+        })
+        .finally(() => item.setEnabled(true));
     },
 
-    _promoteToOwner: function(collaborator) {
+    _promoteToCollaborator: function(collaborator, item) {
+      this.__make(
+        collaborator["gid"],
+        this.self().getOwnerAccessRight(),
+        this.tr("Viewer successfully made Collaborator"),
+        this.tr("Something went wrong making Viewer Collaborator"),
+        item
+      );
+    },
+
+    _promoteToOwner: function(collaborator, item) {
       osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Operation not available"), "WARNING");
     },
 
-    _demoteToViewer: function(collaborator) {
-      this._serializedData["accessRights"][collaborator["gid"]] = this.self().getCollaboratorAccessRight();
-      const params = {
-        url: osparc.data.Resources.getServiceUrl(
-          this._serializedData["key"],
-          this._serializedData["version"]
-        ),
-        data: this._serializedData
-      };
-      osparc.data.Resources.fetch("services", "patch", params)
-        .then(serviceData => {
-          this.fireDataEvent("updateService", serviceData);
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator successfully made Viewer"));
-          this._reloadCollaboratorsList();
-        })
-        .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong making Collaborator Viewer"), "ERROR");
-          console.error(err);
-        });
+    _demoteToViewer: function(collaborator, item) {
+      this.__make(
+        collaborator["gid"],
+        this.self().getCollaboratorAccessRight(),
+        this.tr("Collaborator successfully made Viewer"),
+        this.tr("Something went wrong making Collaborator Viewer"),
+        item
+      );
     },
 
-    _demoteToCollaborator: function(collaborator) {
+    _demoteToCollaborator: function(collaborator, item) {
       osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Operation not available"), "WARNING");
     }
   }

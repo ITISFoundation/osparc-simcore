@@ -140,10 +140,12 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
         .finally(() => cb());
     },
 
-    _deleteMember: function(collaborator) {
+    _deleteMember: function(collaborator, item) {
+      item.setEnabled(false);
       const success = this.self().removeCollaborator(this._serializedData, collaborator["gid"]);
       if (!success) {
         osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
+        item.setEnabled(true);
       }
 
       const params = {
@@ -161,10 +163,12 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
           console.error(err);
-        });
+        })
+        .finally(() => item.setEnabled(true));
     },
 
-    __make: function(collboratorGId, newAccessRights, successMsg, failureMsg) {
+    __make: function(collboratorGId, newAccessRights, successMsg, failureMsg, item) {
+      item.setEnabled(false);
       this._serializedData["accessRights"][collboratorGId] = newAccessRights;
       const params = {
         url: {
@@ -181,42 +185,47 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(failureMsg, "ERROR");
           console.error(err);
-        });
+        })
+        .finally(() => item.setEnabled(true));
     },
 
-    _promoteToCollaborator: function(collaborator) {
+    _promoteToCollaborator: function(collaborator, item) {
       this.__make(
         collaborator["gid"],
         this.self().getCollaboratorAccessRight(),
         this.tr("Viewer successfully made Collaborator"),
-        this.tr("Something went wrong making Viewer Collaborator")
+        this.tr("Something went wrong making Viewer Collaborator"),
+        item
       );
     },
 
-    _promoteToOwner: function(collaborator) {
+    _promoteToOwner: function(collaborator, item) {
       this.__make(
         collaborator["gid"],
         this.self().getOwnerAccessRight(),
         this.tr("Collaborator successfully made Owner"),
-        this.tr("Something went wrong making Collaborator Owner")
+        this.tr("Something went wrong making Collaborator Owner"),
+        item
       );
     },
 
-    _demoteToViewer: function(collaborator) {
+    _demoteToViewer: function(collaborator, item) {
       this.__make(
         collaborator["gid"],
         this.self().getViewerAccessRight(),
         this.tr("Collaborator successfully made Viewer"),
-        this.tr("Something went wrong making Collaborator Viewer")
+        this.tr("Something went wrong making Collaborator Viewer"),
+        item
       );
     },
 
-    _demoteToCollaborator: function(collaborator) {
+    _demoteToCollaborator: function(collaborator, item) {
       this.__make(
         collaborator["gid"],
         this.self().getCollaboratorAccessRight(),
         this.tr("Owner successfully made Collaborator"),
-        this.tr("Something went wrong making Owner Collaborator")
+        this.tr("Something went wrong making Owner Collaborator"),
+        item
       );
     }
   }

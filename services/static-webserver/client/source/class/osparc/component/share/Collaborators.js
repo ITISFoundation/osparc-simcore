@@ -186,15 +186,15 @@ qx.Class.define("osparc.component.share.Collaborators", {
             });
           item.addListener("promoteToCollaborator", e => {
             const orgMember = e.getData();
-            this._promoteToCollaborator(orgMember);
+            this._promoteToCollaborator(orgMember, item);
           });
           item.addListener("promoteToOwner", e => {
             const orgMember = e.getData();
-            this._promoteToOwner(orgMember);
+            this._promoteToOwner(orgMember, item);
           });
           item.addListener("demoteToViewer", e => {
             const orgMember = e.getData();
-            this._demoteToViewer(orgMember);
+            this._demoteToViewer(orgMember, item);
           });
           item.addListener("demoteToCollaborator", e => {
             const orgMember = e.getData();
@@ -202,7 +202,7 @@ qx.Class.define("osparc.component.share.Collaborators", {
           });
           item.addListener("removeMember", e => {
             const orgMember = e.getData();
-            this._deleteMember(orgMember);
+            this._deleteMember(orgMember, item);
           });
         }
       });
@@ -285,23 +285,23 @@ qx.Class.define("osparc.component.share.Collaborators", {
       throw new Error("Abstract method called!");
     },
 
-    _deleteMember: function(collaborator) {
+    _deleteMember: function(collaborator, item) {
       throw new Error("Abstract method called!");
     },
 
-    _promoteToOwner: function(collaborator) {
+    _promoteToOwner: function(collaborator, item) {
       throw new Error("Abstract method called!");
     },
 
-    _promoteToCollaborator: function(collaborator) {
+    _promoteToCollaborator: function(collaborator, item) {
       throw new Error("Abstract method called!");
     },
 
-    _demoteToViewer: function(collaborator) {
+    _demoteToViewer: function(collaborator, item) {
       throw new Error("Abstract method called!");
     },
 
-    _demoteToCollaborator: function(collaborator) {
+    _demoteToCollaborator: function(collaborator, item) {
       throw new Error("Abstract method called!");
     }
   }
