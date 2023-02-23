@@ -333,7 +333,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       * @param serviceData {Object} Serialized Service Object
       */
     openAccessRights: function(serviceData) {
-      const permissionsView = new osparc.component.permissions.Service(serviceData);
+      const permissionsView = new osparc.component.share.CollaboratorsService(serviceData);
       const title = qx.locale.Manager.tr("Share with Collaborators and Organizations");
       osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
       return permissionsView;

@@ -194,7 +194,7 @@ qx.Class.define("osparc.utils.Services", {
     canIWrite: function(serviceAccessRights) {
       const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
       orgIDs.push(osparc.auth.Data.getInstance().getGroupId());
-      return osparc.component.permissions.Service.canGroupsWrite(serviceAccessRights, orgIDs);
+      return osparc.component.share.CollaboratorsService.canGroupsWrite(serviceAccessRights, orgIDs);
     },
 
     /**

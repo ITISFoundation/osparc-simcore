@@ -334,7 +334,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       let operationPromise = null;
       if (collabGids.length > 1 && amICollaborator) {
         // remove collaborator
-        osparc.component.permissions.Study.removeCollaborator(studyData, myGid);
+        osparc.component.share.CollaboratorsStudy.removeCollaborator(studyData, myGid);
         params["data"] = studyData;
         operationPromise = osparc.data.Resources.fetch("templates", "put", params);
       } else {
