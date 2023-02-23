@@ -98,9 +98,7 @@ class AutoscalingEC2:
             msg=f"launching {number_of_instances} AWS instance(s) {instance_type} with {tags=}",
         ):
             # first check the max amount is not already reached
-            current_instances = await self.get_instances(
-                instance_settings, list(tags.keys())
-            )
+            current_instances = await self.get_instances(instance_settings, tags)
             if (
                 len(current_instances) + number_of_instances
                 > instance_settings.EC2_INSTANCES_MAX_INSTANCES
@@ -162,7 +160,7 @@ class AutoscalingEC2:
     async def get_instances(
         self,
         instance_settings: EC2InstancesSettings,
-        tag_keys: list[str],
+        tags: dict[str, str],
         *,
         state_names: Optional[list[InstanceStateNameType]] = None,
     ) -> list[EC2InstanceData]:
@@ -178,7 +176,9 @@ class AutoscalingEC2:
             },
             {"Name": "instance-state-name", "Values": state_names},
         ]
-        filters.extend([{"Name": "tag-key", "Values": [t]} for t in tag_keys])
+        filters.extend(
+            [{"Name": f"tag:{key}", "Values": [value]} for key, value in tags.items()]
+        )
 
         instances = await self.client.describe_instances(Filters=filters)
         all_instances = []

@@ -457,12 +457,12 @@ async def _analyze_current_cluster(app: FastAPI) -> Cluster:
     # get the EC2 instances we have
     existing_ec2_instances = await get_ec2_client(app).get_instances(
         app_settings.AUTOSCALING_EC2_INSTANCES,
-        list(ec2.get_ec2_tags(app_settings).keys()),
+        ec2.get_ec2_tags(app_settings),
     )
 
     terminated_ec2_instances = await get_ec2_client(app).get_instances(
         app_settings.AUTOSCALING_EC2_INSTANCES,
-        list(ec2.get_ec2_tags(app_settings).keys()),
+        ec2.get_ec2_tags(app_settings),
         state_names=["terminated"],
     )
 

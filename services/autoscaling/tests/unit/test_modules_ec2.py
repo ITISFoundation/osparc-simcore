@@ -239,7 +239,7 @@ async def test_get_instances(
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
     assert (
-        await autoscaling_ec2.get_instances(app_settings.AUTOSCALING_EC2_INSTANCES, [])
+        await autoscaling_ec2.get_instances(app_settings.AUTOSCALING_EC2_INSTANCES, {})
         == []
     )
 
@@ -258,7 +258,7 @@ async def test_get_instances(
 
     instance_received = await autoscaling_ec2.get_instances(
         app_settings.AUTOSCALING_EC2_INSTANCES,
-        tag_keys=list(tags.keys()),
+        tags=tags,
     )
     assert created_instances == instance_received
 
