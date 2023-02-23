@@ -209,7 +209,8 @@ disable=raw-checker-failed,
         single-string-used-for-slots,
         fixme,
         import-error,
-        unspecified-encoding
+        unspecified-encoding,
+        use-dict-literal
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
@@ -466,7 +467,7 @@ min-public-methods=2
 [EXCEPTIONS]
 
 # Exceptions that will emit a warning when caught.
-overgeneral-exceptions=Exception
+overgeneral-exceptions=builtins.BaseException,builtins.Exception
 
 
 [IMPORTS]

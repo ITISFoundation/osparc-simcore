@@ -156,7 +156,7 @@ def upgrade_and_close():
     for attempt in Retrying(wait=wait_fixed(5), after=after_log(log, logging.ERROR)):
         with attempt:
             if not discover.callback():
-                raise Exception("Postgres db was not discover")
+                raise Exception("Postgres db was not discover")  # pylint: disable=broad-exception-raised
 
     # FIXME: if database is not stampped!?
     try:

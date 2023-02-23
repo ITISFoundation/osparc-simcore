@@ -97,18 +97,18 @@ class DaskClientsPool:
             dask_client = await _concurently_safe_acquire_client()
         except Exception as exc:
             raise DaskClientAcquisisitonError(cluster=cluster, error=exc) from exc
-        else:
-            try:
-                yield dask_client
-            except (
-                asyncio.CancelledError,
-                ComputationalBackendNotConnectedError,
-                ComputationalSchedulerChangedError,
-            ):
-                # cleanup and re-raise
-                if dask_client := self._cluster_to_client_map.pop(cluster.id, None):
-                    await dask_client.delete()
-                raise
+
+        try:
+            yield dask_client
+        except (
+            asyncio.CancelledError,
+            ComputationalBackendNotConnectedError,
+            ComputationalSchedulerChangedError,
+        ):
+            # cleanup and re-raise
+            if dask_client := self._cluster_to_client_map.pop(cluster.id, None):
+                await dask_client.delete()
+            raise
 
 
 def setup(app: FastAPI, settings: ComputationalBackendSettings) -> None:
