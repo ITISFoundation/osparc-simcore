@@ -44,8 +44,8 @@ async def connect_to_db(app: FastAPI, settings: PostgresSettings) -> None:
         # NOTE: engine must be closed because retry will create a new engine
         await close_engine(engine)
         raise
-    else:
-        logger.debug("Migration up-to-date")
+
+    logger.debug("Migration up-to-date")
 
     app.state.engine = engine
     logger.debug("Setup engine: %s", get_pg_engine_info(engine))
