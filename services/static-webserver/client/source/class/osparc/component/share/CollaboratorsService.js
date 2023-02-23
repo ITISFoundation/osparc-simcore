@@ -21,7 +21,7 @@
  * - It allows changing study's access right, so that the study owners can:
  *   - Share it with Organizations and/or Organization Members (Collaborators)
  *   - Make other Collaborators Owner
- *   - Remove collaborators
+ *   - Remove Collaborators
  */
 
 qx.Class.define("osparc.component.share.CollaboratorsService", {
@@ -34,6 +34,7 @@ qx.Class.define("osparc.component.share.CollaboratorsService", {
     const serializedData = osparc.utils.Utils.deepCloneObject(serviceData);
 
     const initCollabs = this.self().getEveryoneObj();
+
     this.base(arguments, serializedData, [initCollabs]);
   },
 

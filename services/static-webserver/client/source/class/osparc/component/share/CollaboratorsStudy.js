@@ -32,14 +32,15 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
     */
   construct: function(studyData) {
     // this info is lost when we deepCloneStudyObject
-    this.__resourceType = studyData["resourceType"];
-    this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
+    this.__resourceType = studyData["resourceType"]; // study or template
+    const serializedData = osparc.data.model.Study.deepCloneStudyObject(studyData);
 
     const initCollabs = [];
     if (osparc.data.Permissions.getInstance().canDo("study.everyone.share")) {
       initCollabs.push(this.self().getEveryoneObj(this.__resourceType === "study"));
     }
-    this.base(arguments, this.__studyData, initCollabs);
+
+    this.base(arguments, serializedData, initCollabs);
   },
 
   events: {
@@ -106,11 +107,10 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
   },
 
   members: {
-    __studyData: null,
     __resourceType: null,
 
     _canIWrite: function() {
-      return osparc.data.model.Study.canIWrite(this.__studyData["accessRights"]);
+      return osparc.data.model.Study.canIWrite(this._serializedData["accessRights"]);
     },
 
     _addCollaborators: function(gids) {
@@ -119,13 +119,13 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
       }
 
       gids.forEach(gid => {
-        this.__studyData["accessRights"][gid] = this.__resourceType === "study" ? this.self().getCollaboratorAccessRight() : this.self().getViewerAccessRight();
+        this._serializedData["accessRights"][gid] = this.__resourceType === "study" ? this.self().getCollaboratorAccessRight() : this.self().getViewerAccessRight();
       });
       const params = {
         url: {
-          "studyId": this.__studyData["uuid"]
+          "studyId": this._serializedData["uuid"]
         },
-        data: this.__studyData
+        data: this._serializedData
       };
       osparc.data.Resources.fetch("studies", "put", params)
         .then(updatedData => {
@@ -140,16 +140,16 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
     },
 
     _deleteMember: function(collaborator) {
-      const success = this.self().removeCollaborator(this.__studyData, collaborator["gid"]);
+      const success = this.self().removeCollaborator(this._serializedData, collaborator["gid"]);
       if (!success) {
         osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
       }
 
       const params = {
         url: {
-          "studyId": this.__studyData["uuid"]
+          "studyId": this._serializedData["uuid"]
         },
-        data: this.__studyData
+        data: this._serializedData
       };
       osparc.data.Resources.fetch("studies", "put", params)
         .then(updatedData => {
@@ -164,12 +164,12 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
     },
 
     __make: function(collboratorGId, newAccessRights, successMsg, failureMsg) {
-      this.__studyData["accessRights"][collboratorGId] = newAccessRights;
+      this._serializedData["accessRights"][collboratorGId] = newAccessRights;
       const params = {
         url: {
-          "studyId": this.__studyData["uuid"]
+          "studyId": this._serializedData["uuid"]
         },
-        data: this.__studyData
+        data: this._serializedData
       };
       osparc.data.Resources.fetch("studies", "put", params)
         .then(updatedData => {

@@ -5,7 +5,7 @@
  * Authors: Odei Maiz (odeimaiz)
  */
 
-qx.Class.define("osparc.component.filter.NewCollaboratorsManager", {
+qx.Class.define("osparc.component.share.NewCollaboratorsManager", {
   extend: osparc.ui.window.SingletonWindow,
   construct: function(resourceData) {
     this.base(arguments, "collaboratorsManager", this.tr("Share with"));
