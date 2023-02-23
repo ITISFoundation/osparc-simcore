@@ -335,7 +335,7 @@ def labels_example(request: FixtureRequest) -> SimcoreServiceLabels:
     return request.param
 
 
-@pytest.fixture(params=[None, datetime.now(timezone.utc)])
+@pytest.fixture(params=[None, datetime.now(timezone.utc).replace(tzinfo=None)])
 def time_dy_sidecar_became_unreachable(request: FixtureRequest) -> Optional[datetime]:
     return request.param
 

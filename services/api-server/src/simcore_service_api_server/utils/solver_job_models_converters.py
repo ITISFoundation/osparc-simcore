@@ -248,7 +248,7 @@ def create_jobstatus_from_task(task: ComputationTaskGet) -> JobStatus:
         job_id=task.id,
         state=task.state,
         progress=task.guess_progress(),
-        submitted_at=datetimedatetime.now(datetime.timezone.utc),
+        submitted_at=datetime.now(timezone.utc).replace(tzinfo=None),
     )
 
     # FIXME: timestamp is wrong but at least it will stop run
