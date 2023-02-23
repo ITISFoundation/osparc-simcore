@@ -15,17 +15,12 @@
 
 ************************************************************************ */
 
-qx.Theme.define("osparc.theme.products.tip.Appearance", {
-  extend: osparc.theme.Appearance,
-
-  appearances: {
-    "strong-button": {
-      include: "material-button",
-      style: state => ({
-        decorator: state.hovered ? "strong-bordered-button" : "no-border",
-        backgroundColor: "strong-main",
-        textColor: "#d2d8dc" // dark theme's text color
-      })
-    }
+qx.Theme.define("osparc.theme.products.tis.ThemeLight", {
+  meta: {
+    color: osparc.theme.products.tis.ColorLight,
+    decoration: osparc.theme.Decoration,
+    font: osparc.theme.Font,
+    icon: qx.theme.icon.Oxygen,
+    appearance: osparc.theme.products.tis.Appearance
   }
 });

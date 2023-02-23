@@ -15,10 +15,12 @@
 
 ************************************************************************ */
 
-qx.Theme.define("osparc.theme.products.tip.ColorLight", {
-  include: osparc.theme.ColorLight,
-
-  colors: {
-    "strong-main": "rgba(0, 144, 208, 1)"
+qx.Theme.define("osparc.theme.products.tis.ThemeDark", {
+  meta: {
+    color: osparc.theme.products.tis.ColorDark,
+    decoration: osparc.theme.Decoration,
+    font: osparc.theme.Font,
+    icon: qx.theme.icon.Oxygen,
+    appearance: osparc.theme.products.tis.Appearance
   }
 });
