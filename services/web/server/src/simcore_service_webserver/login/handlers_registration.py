@@ -181,20 +181,19 @@ async def register(request: web.Request):
                 reason=f"{MSG_CANT_SEND_MAIL} [{error_code}]"
             ) from err
 
-        else:
-            response = flash_response(
-                "You are registered successfully! To activate your account, please, "
-                f"click on the verification link in the email we sent you to {registration.email}.",
-                "INFO",
-            )
-            return response
-    else:
-        # No confirmation required: authorize login
-        assert not settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED  # nosec
-        assert not settings.LOGIN_2FA_REQUIRED  # nosec
-
-        response = await login_granted_response(request=request, user=user)
+        response = flash_response(
+            "You are registered successfully! To activate your account, please, "
+            f"click on the verification link in the email we sent you to {registration.email}.",
+            "INFO",
+        )
         return response
+
+    # No confirmation required: authorize login
+    assert not settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED  # nosec
+    assert not settings.LOGIN_2FA_REQUIRED  # nosec
+
+    response = await login_granted_response(request=request, user=user)
+    return response
 
 
 class RegisterPhoneBody(InputSchema):

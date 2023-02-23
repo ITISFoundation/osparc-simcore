@@ -250,14 +250,13 @@ async def unarchive_dir(
                 f"Details: {err}"
             ) from err
 
-        else:
 
-            # NOTE: extracted_paths includes all tree leafs, which might include files and empty folders
-            return {
-                p
-                for p in extracted_paths
-                if p.is_file() or (p.is_dir() and not any(p.glob("*")))
-            }
+        # NOTE: extracted_paths includes all tree leafs, which might include files and empty folders
+        return {
+            p
+            for p in extracted_paths
+            if p.is_file() or (p.is_dir() and not any(p.glob("*")))
+        }
 
 
 @contextmanager
