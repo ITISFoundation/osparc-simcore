@@ -229,6 +229,18 @@ def enabled_pre_pull_images(
 
 
 @pytest.fixture
+def enabled_custom_boot_scripts(
+    minimal_configuration: None, monkeypatch: pytest.MonkeyPatch, faker: Faker
+) -> list[str]:
+    custom_scripts = faker.pylist(allowed_types=(str,))
+    monkeypatch.setenv(
+        "EC2_INSTANCES_CUSTOM_BOOT_SCRIPTS",
+        json.dumps(custom_scripts),
+    )
+    return custom_scripts
+
+
+@pytest.fixture
 def disabled_registry(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("REGISTRY_AUTH")
 
@@ -241,9 +253,24 @@ async def test_ec2_startup_script_with_pre_pulling(
     startup_script = await ec2_startup_script(app_settings)
     assert len(startup_script.split("&&")) == 7
     assert re.fullmatch(
-        r"^(docker swarm join [^&&]+) && (docker login [^&&]+) && (echo [^&&]+) && (echo [^&&]+) && (chmod \+x [^&&]+) && (./docker-pull-script.sh) && (echo .+)$",
+        r"^(docker swarm join [^&&]+) && (echo [^\s]+ \| docker login [^&&]+) && (echo [^&&]+) && (echo [^&&]+) && (chmod \+x [^&&]+) && (./docker-pull-script.sh) && (echo .+)$",
         startup_script,
     ), f"{startup_script=}"
+
+
+async def test_ec2_startup_script_with_custom_scripts(
+    minimal_configuration: None,
+    enabled_pre_pull_images: None,
+    enabled_custom_boot_scripts: list[str],
+    app_settings: ApplicationSettings,
+):
+    for _ in range(3):
+        startup_script = await ec2_startup_script(app_settings)
+        assert len(startup_script.split("&&")) == 7 + len(enabled_custom_boot_scripts)
+        assert re.fullmatch(
+            rf"^([^&&]+ &&){{{len(enabled_custom_boot_scripts)}}} (docker swarm join [^&&]+) && (echo [^\s]+ \| docker login [^&&]+) && (echo [^&&]+) && (echo [^&&]+) && (chmod \+x [^&&]+) && (./docker-pull-script.sh) && (echo .+)$",
+            startup_script,
+        ), f"{startup_script=}"
 
 
 async def test_ec2_startup_script_with_pre_pulling_but_no_registry(

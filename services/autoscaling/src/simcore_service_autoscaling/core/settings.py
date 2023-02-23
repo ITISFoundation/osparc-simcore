@@ -94,6 +94,11 @@ class EC2InstancesSettings(BaseCustomSettings):
         description="time interval between pulls of images (minimum is 1 minute)",
     )
 
+    EC2_INSTANCES_CUSTOM_BOOT_SCRIPTS: list[str] = Field(
+        default_factory=list,
+        description="script(s) to run on EC2 instance startup (be careful!), each entry is run one after the other using '&&' operator",
+    )
+
     @validator("EC2_INSTANCES_TIME_BEFORE_TERMINATION")
     @classmethod
     def ensure_time_is_in_range(cls, value):
