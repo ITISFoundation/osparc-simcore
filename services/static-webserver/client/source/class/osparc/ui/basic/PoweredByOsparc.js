@@ -48,7 +48,7 @@ qx.Class.define("osparc.ui.basic.PoweredByOsparc", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "powered-by": {
+        case "powered-by":
           control = new qx.ui.basic.Label(this.tr("powered by")).set({
             minWidth: 47,
             alignX: "center",
@@ -56,7 +56,6 @@ qx.Class.define("osparc.ui.basic.PoweredByOsparc", {
           });
           this._add(control);
           break;
-        }
         case "logo": {
           control = new qx.ui.basic.Image().set({
             width: 42,
