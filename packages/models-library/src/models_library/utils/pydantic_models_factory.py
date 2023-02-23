@@ -134,7 +134,7 @@ def _extract_field_definitions(
         or, for complex use-cases, in the format
         `<name>=<FieldInfo>`,
         e.g.
-        `foo=Field(default_factory=datetime.now(timezone.utc).replace(tzinfo=None), alias='bar')`
+        `foo=Field(default_factory=datetime.utcnow, alias='bar')`
 
     """
     field_names = _eval_selection(

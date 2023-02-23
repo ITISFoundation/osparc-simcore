@@ -77,7 +77,7 @@ class TrackedTask(BaseModel):
     )
 
     started: datetime = Field(
-        default_factory=datetime.now(timezone.utc).replace(tzinfo=None)
+        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
     )
     last_status_check: Optional[datetime] = Field(
         default=None,

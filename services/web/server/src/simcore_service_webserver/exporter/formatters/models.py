@@ -90,7 +90,7 @@ class ManifestFile(BaseLoadingModel):
 
     creation_date_utc: datetime = Field(
         description="UTC date and time from when the project was exported",
-        default_factory=datetime.now(timezone.utc).replace(tzinfo=None),
+        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
     )
 
     attachments: list[str] = Field(
