@@ -99,10 +99,10 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
         cbConfirmStopNode.bind("value", preferencesSettings, "confirmStopNode");
         box.add(cbConfirmStopNode);
 
-        const cbSnapNode = new qx.ui.form.CheckBox(this.tr("Snap Node to grid"));
-        preferencesSettings.bind("snapNode", cbSnapNode, "value");
-        cbSnapNode.bind("value", preferencesSettings, "snapNode");
-        box.add(cbSnapNode);
+        const cbSnapNodeToGrid = new qx.ui.form.CheckBox(this.tr("Snap Node to grid"));
+        preferencesSettings.bind("snapNodeToGrid", cbSnapNodeToGrid, "value");
+        cbSnapNodeToGrid.bind("value", preferencesSettings, "snapNodeToGrid");
+        box.add(cbSnapNodeToGrid);
       }
 
       return box;
