@@ -27,6 +27,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
     this._add(this.__getTitleLayout());
     this._add(this.__getMemberInvitation());
     this._add(osparc.data.Roles.createRolesOrgInfo());
+    this._add(this.__getMembersFilter());
     this._add(this.__getMembersList(), {
       flex: 1
     });
@@ -70,7 +71,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
     },
 
     sortOrgMembers: function(a, b) {
-      const sorted = osparc.component.permissions.Permissions.sortByAccessRights(a, b);
+      const sorted = osparc.component.share.Collaborators.sortByAccessRights(a, b);
       if (sorted !== 0) {
         return sorted;
       }
@@ -172,6 +173,14 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
       return hBox;
     },
 
+    __getMembersFilter: function() {
+      const filter = new osparc.component.filter.TextFilter("name", "organizationMembersList").set({
+        allowStretchX: true,
+        margin: [0, 10, 5, 10]
+      });
+      return filter;
+    },
+
     __getMembersList: function() {
       const memebersUIList = new qx.ui.form.List().set({
         decorator: "no-border",
@@ -194,6 +203,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
           ctrl.bindProperty("showOptions", "showOptions", null, item, id);
         },
         configureItem: item => {
+          item.subscribeToFilterGroup("organizationMembersList");
           item.getChildControl("thumbnail").getContentElement()
             .setStyles({
               "border-radius": "16px"

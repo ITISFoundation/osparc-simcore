@@ -269,7 +269,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const icon = "@FontAwesome5Solid/share-alt";
       let permissionsView = null;
       if (osparc.utils.Resources.isService(resourceData)) {
-        permissionsView = new osparc.component.permissions.Service(resourceData);
+        permissionsView = new osparc.component.share.CollaboratorsService(resourceData);
         permissionsView.addListener("updateAccessRights", e => {
           const updatedData = e.getData();
           if (osparc.utils.Resources.isService(resourceData)) {
@@ -277,7 +277,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
           }
         }, this);
       } else {
-        permissionsView = new osparc.component.permissions.Study(resourceData);
+        permissionsView = new osparc.component.share.CollaboratorsStudy(resourceData);
         if (osparc.utils.Resources.isStudy(resourceData)) {
           permissionsView.getChildControl("study-link").show();
         }

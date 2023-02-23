@@ -52,7 +52,7 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
      */
     showToolbar: {
       check: "Boolean",
-      init: false,
+      init: true,
       apply: "__applyShowToolbar"
     }
   },

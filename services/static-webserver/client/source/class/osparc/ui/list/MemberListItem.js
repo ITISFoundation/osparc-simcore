@@ -196,6 +196,35 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
     __applyShowOptions: function(value) {
       const optionsMenu = this.getChildControl("options");
       optionsMenu.setVisibility(value ? "visible" : "excluded");
+    },
+
+    _filter: function() {
+      this.exclude();
+    },
+
+    _unfilter: function() {
+      this.show();
+    },
+
+    _shouldApplyFilter: function(data) {
+      if (data.name) {
+        const checks = [
+          this.getTitle(),
+          this.getSubtitleMD()
+        ];
+        // data.name comes lowercased
+        if (checks.filter(check => check.toLowerCase().includes(data.name)).length == 0) {
+          return true;
+        }
+      }
+      return false;
+    },
+
+    _shouldReactToFilter: function(data) {
+      if (data.name && data.name.length > 1) {
+        return true;
+      }
+      return false;
     }
   }
 });
