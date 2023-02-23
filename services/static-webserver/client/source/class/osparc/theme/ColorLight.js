@@ -18,8 +18,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "c13": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 100),
     "c14": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105),
 
-    // "strong-main": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.zmt", 65),
-    "strong-main": "rgba(0, 144, 208, 1)",
+    "strong-main": "rgba(0, 144, 208, 1)", // override in product
     "a-bit-transparent": "rgba(255, 255, 255, 0.4)",
 
 

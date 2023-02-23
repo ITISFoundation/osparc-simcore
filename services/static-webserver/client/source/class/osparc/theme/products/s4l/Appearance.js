@@ -5,20 +5,21 @@
    https://osparc.io
 
    Copyright:
-     2018 IT'IS Foundation, https://itis.swiss
+     2023 IT'IS Foundation, https://itis.swiss
 
    License:
      MIT: https://opensource.org/licenses/MIT
 
    Authors:
-     * Tobias Oetiker (oetiker)
+     * Odei Maiz (odeimaiz)
 
 ************************************************************************ */
 
-qx.Theme.define("osparc.theme.Appearance", {
-  extend: osparc.theme.common.Appearance,
+qx.Theme.define("osparc.theme.products.s4l.Appearance", {
+  extend: osparc.theme.Appearance,
 
   appearances: {
+
     "pb-list": {
       include: "list",
       alias:   "list",
@@ -448,7 +449,6 @@ qx.Theme.define("osparc.theme.Appearance", {
       }
     },
 
-    // override in product
     "strong-button": {
       include: "material-button",
       style: state => ({
