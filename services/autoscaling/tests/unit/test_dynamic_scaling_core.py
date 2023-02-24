@@ -8,10 +8,10 @@
 import asyncio
 import base64
 import dataclasses
-import datetime
 import pickle
 import warnings
 from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 from typing import Any, AsyncIterator, Awaitable, Callable, Iterator
 from unittest import mock
 
@@ -768,7 +768,7 @@ async def test__find_terminateable_nodes_with_drained_host(
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     assert (
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
-        > datetime.timedelta(seconds=10)
+        > timedelta(seconds=10)
     ), "this tests relies on the fact that the time before termination is above 10 seconds"
 
     # if the instance started just about now, then it should not be terminateable
@@ -777,7 +777,7 @@ async def test__find_terminateable_nodes_with_drained_host(
             AssociatedInstance(
                 drained_host_node,
                 fake_ec2_instance_data(
-                    launch_time=datetime.datetime.now(datetime.timezone.utc)
+                    launch_time=datetime.now(timezone.utc).replace(tzinfo=None)
                 ),
             )
         ],
@@ -785,7 +785,7 @@ async def test__find_terminateable_nodes_with_drained_host(
             AssociatedInstance(
                 drained_host_node,
                 fake_ec2_instance_data(
-                    launch_time=datetime.datetime.now(datetime.timezone.utc)
+                    launch_time=datetime.now(timezone.utc).replace(tzinfo=None)
                 ),
             )
         ],
@@ -803,10 +803,10 @@ async def test__find_terminateable_nodes_with_drained_host(
             AssociatedInstance(
                 drained_host_node,
                 fake_ec2_instance_data(
-                    launch_time=datetime.datetime.now(datetime.timezone.utc)
+                    launch_time=datetime.now(timezone.utc).replace(tzinfo=None)
                     - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
-                    - datetime.timedelta(days=21)
-                    + datetime.timedelta(seconds=10)
+                    - timedelta(days=21)
+                    + timedelta(seconds=10)
                 ),
             )
         ],
@@ -814,10 +814,10 @@ async def test__find_terminateable_nodes_with_drained_host(
             AssociatedInstance(
                 drained_host_node,
                 fake_ec2_instance_data(
-                    launch_time=datetime.datetime.now(datetime.timezone.utc)
+                    launch_time=datetime.now(timezone.utc).replace(tzinfo=None)
                     - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
-                    - datetime.timedelta(days=21)
-                    + datetime.timedelta(seconds=10)
+                    - timedelta(days=21)
+                    + timedelta(seconds=10)
                 ),
             )
         ],
@@ -835,10 +835,10 @@ async def test__find_terminateable_nodes_with_drained_host(
             AssociatedInstance(
                 drained_host_node,
                 fake_ec2_instance_data(
-                    launch_time=datetime.datetime.now(datetime.timezone.utc)
+                    launch_time=datetime.now(timezone.utc).replace(tzinfo=None)
                     - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
-                    - datetime.timedelta(days=21)
-                    - datetime.timedelta(seconds=10),
+                    - timedelta(days=21)
+                    - timedelta(seconds=10),
                 ),
             )
         ],
@@ -846,10 +846,10 @@ async def test__find_terminateable_nodes_with_drained_host(
             AssociatedInstance(
                 drained_host_node,
                 fake_ec2_instance_data(
-                    launch_time=datetime.datetime.now(datetime.timezone.utc)
+                    launch_time=datetime.now(timezone.utc).replace(tzinfo=None)
                     - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
-                    - datetime.timedelta(days=21)
-                    - datetime.timedelta(seconds=10),
+                    - timedelta(days=21)
+                    - timedelta(seconds=10),
                 ),
             )
         ],
@@ -873,22 +873,20 @@ def create_associated_instance(
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     assert (
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
-        > datetime.timedelta(seconds=10)
+        > timedelta(seconds=10)
     ), "this tests relies on the fact that the time before termination is above 10 seconds"
 
     def _creator(node: Node, terminateable_time: bool) -> AssociatedInstance:
         assert app_settings.AUTOSCALING_EC2_INSTANCES
         seconds_delta = (
-            -datetime.timedelta(seconds=10)
-            if terminateable_time
-            else datetime.timedelta(seconds=10)
+            -timedelta(seconds=10) if terminateable_time else timedelta(seconds=10)
         )
         return AssociatedInstance(
             node,
             fake_ec2_instance_data(
-                launch_time=datetime.datetime.now(datetime.timezone.utc)
+                launch_time=datetime.now(timezone.utc).replace(tzinfo=None)
                 - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
-                - datetime.timedelta(
+                - timedelta(
                     days=faker.pyint(min_value=0, max_value=100),
                     hours=faker.pyint(min_value=0, max_value=100),
                 )
@@ -932,7 +930,7 @@ async def test__try_scale_down_cluster(
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     assert (
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
-        > datetime.timedelta(seconds=10)
+        > timedelta(seconds=10)
     ), "this tests relies on the fact that the time before termination is above 10 seconds"
 
     active_cluster = cluster(
