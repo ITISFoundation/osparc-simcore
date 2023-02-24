@@ -56,9 +56,9 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           break;
         case "empty-workbench":
           control = new qx.ui.basic.Image().set({
-            source: "@FontAwesome5Solid/empty-set/16",
-            visibility: "excluded",
-            alignY: "middle"
+            source: "@FontAwesome5Solid/times-circle/14",
+            alignY: "middle",
+            toolTipText: this.tr("Empty")
           });
           this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.UPDATES);
           break;

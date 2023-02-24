@@ -103,7 +103,6 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           break;
         case "workbench-mode":
           control = new qx.ui.basic.Image().set({
-            minWidth: 20,
             alignY: "middle"
           });
           this._add(control, {
@@ -123,9 +122,9 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           break;
         case "empty-workbench":
           control = new qx.ui.basic.Image().set({
-            minWidth: 20,
             alignY: "middle",
-            source: "@FontAwesome5Solid/empty-set/18"
+            source: "@FontAwesome5Solid/times-circle/14",
+            toolTipText: this.tr("Empty")
           });
           this._add(control, {
             row: 0,
@@ -134,7 +133,6 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           break;
         case "update-study":
           control = new qx.ui.basic.Image().set({
-            minWidth: 20,
             alignY: "middle",
             source: "@MaterialIcons/update/18",
             visibility: "excluded"
