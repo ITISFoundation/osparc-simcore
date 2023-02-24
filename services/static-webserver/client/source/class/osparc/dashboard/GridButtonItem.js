@@ -44,19 +44,25 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "tsr-rating": {
+        case "tsr-rating":
           control = osparc.dashboard.CardBase.createTSRLayout();
           this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.TSR);
           break;
-        }
-        case "workbench-mode": {
+        case "workbench-mode":
           control = new qx.ui.basic.Image().set({
             alignY: "middle"
           });
           this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.VIEWER_MODE);
           break;
-        }
-        case "update-study": {
+        case "empty-workbench":
+          control = new qx.ui.basic.Image().set({
+            source: "@FontAwesome5Solid/times-circle/14",
+            alignY: "middle",
+            toolTipText: this.tr("Empty")
+          });
+          this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.UPDATES);
+          break;
+        case "update-study":
           control = new qx.ui.basic.Image().set({
             source: "@MaterialIcons/update/16",
             visibility: "excluded",
@@ -64,22 +70,20 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           });
           this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.UPDATES);
           break;
-        }
-        case "hits-service": {
+        case "hits-service":
           control = new qx.ui.basic.Label().set({
             toolTipText: this.tr("Number of times you instantiated it"),
             alignY: "middle"
           });
           this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.UPDATES);
           break;
-        }
         case "tags":
           control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3)).set({
             anonymous: true
           });
           this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.TAGS);
           break;
-        case "menu-button": {
+        case "menu-button":
           this.getChildControl("title").set({
             maxWidth: osparc.dashboard.GridButtonBase.ITEM_WIDTH - 2*osparc.dashboard.GridButtonBase.PADDING - this.self().MENU_BTN_WIDTH
           });
@@ -95,7 +99,6 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
             right: -2
           });
           break;
-        }
         case "tick-unselected":
           control = new qx.ui.basic.Image("@FontAwesome5Solid/circle/16");
           this._add(control, {
@@ -119,7 +122,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
             left: 0
           });
           break;
-        case "permission-icon": {
+        case "permission-icon":
           control = new qx.ui.basic.Image();
           control.exclude();
           this._add(control, {
@@ -127,7 +130,6 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
             right: 12
           });
           break;
-        }
       }
 
       return control || this.base(arguments, id);
@@ -206,6 +208,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
         tagsContainer.removeAll();
         tags.forEach(tag => {
           const tagUI = new osparc.ui.basic.Tag(tag.name, tag.color, "searchBarFilter");
+          tagUI.addListener("tap", () => this.fireDataEvent("tagClicked", tag));
           tagUI.setFont("text-12");
           tagsContainer.add(tagUI);
         });

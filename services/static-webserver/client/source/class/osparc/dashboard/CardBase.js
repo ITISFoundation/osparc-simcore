@@ -39,7 +39,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
     "updateStudy": "qx.event.type.Data",
     "updateTemplate": "qx.event.type.Data",
     "updateService": "qx.event.type.Data",
-    "publishTemplate": "qx.event.type.Data"
+    "publishTemplate": "qx.event.type.Data",
+    "tagClicked": "qx.event.type.Data"
   },
 
   statics: {
@@ -193,6 +194,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
       check: ["workbench", "guided", "app"],
       nullable: true,
       apply: "__applyUiMode"
+    },
+
+    emptyWorkbench: {
+      check: "Boolean",
+      nullable: false,
+      init: null,
+      event: "changeEmptyWorkbench",
+      apply: "__applyEmptyWorkbench"
     },
 
     updatable: {
@@ -393,7 +402,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyWorkbench: function(workbench) {
+      if (this.isResourceType("study") || this.isResourceType("template")) {
+        this.setEmptyWorkbench(Object.keys(workbench).length === 0);
+      }
       if (workbench === null) {
+        // it is a service
         return;
       }
 
@@ -424,6 +437,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
             this.__blockCard(image, toolTipText);
           }
         });
+    },
+
+    __applyEmptyWorkbench: function(isEmpty) {
+      const emptyWorkbench = this.getChildControl("empty-workbench");
+      emptyWorkbench.setVisibility(isEmpty ? "visible" : "excluded");
     },
 
     __applyUpdatable: function(updatable) {
