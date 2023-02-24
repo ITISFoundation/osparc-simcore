@@ -1,6 +1,7 @@
 import logging
 from enum import Enum, auto
-from typing import Any, Literal, Optional
+from typing import Any, Final, Literal, Optional
+from uuid import UUID
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
@@ -54,6 +55,11 @@ class ProgressType(StrAutoEnum):
     SERVICE_STATE_PUSHING = auto()
     SERVICE_OUTPUTS_PUSHING = auto()
 
+    PROJECT_CLOSING = auto()
+
+
+_UNUSED_NODE_ID: Final[UUID] = UUID(int=0)
+
 
 class ProgressRabbitMessage(RabbitMessageBase, NodeMessageBase):
     channel_name: Literal["simcore.services.progress"] = "simcore.services.progress"
@@ -61,6 +67,23 @@ class ProgressRabbitMessage(RabbitMessageBase, NodeMessageBase):
         ProgressType.COMPUTATION_RUNNING
     )  # NOTE: backwards compatible
     progress: NonNegativeFloat
+
+    @classmethod
+    def create_for_project(
+        cls,
+        user_id: UserID,
+        project_id: ProjectID,
+        progress_type: ProgressType,
+        progress: NonNegativeFloat,
+    ) -> "ProgressRabbitMessage":
+        return cls(
+            # NOTE: node_id cannot be None, make no sense to have one here
+            node_id=_UNUSED_NODE_ID,
+            user_id=user_id,
+            project_id=project_id,
+            progress_type=progress_type,
+            progress=progress,
+        )
 
 
 class InstrumentationRabbitMessage(RabbitMessageBase, NodeMessageBase):

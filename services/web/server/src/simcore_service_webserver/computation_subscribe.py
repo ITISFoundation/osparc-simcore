@@ -19,11 +19,10 @@ from servicelib.aiohttp.monitor_services import (
 from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQClient
-from servicelib.rabbitmq_utils import wait_till_rabbitmq_responsive
 
-from .computation_settings import RabbitSettings, get_plugin_settings
 from .projects import projects_api
 from .projects.projects_exceptions import NodeNotFoundError, ProjectNotFoundError
+from .rabbitmq import get_rabbitmq_client
 from .socketio.events import (
     SOCKET_IO_EVENT,
     SOCKET_IO_LOG_EVENT,
@@ -170,16 +169,8 @@ EXCHANGE_TO_PARSER_CONFIG = (
 
 
 async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
-    settings: RabbitSettings = get_plugin_settings(app)
-    with log_context(
-        log, logging.INFO, msg=f"Check RabbitMQ backend is ready on {settings.dsn}"
-    ):
-        await wait_till_rabbitmq_responsive(f"{settings.dsn}")
-
-    with log_context(
-        log, logging.INFO, msg=f"Connect RabbitMQ client to {settings.dsn}"
-    ):
-        rabbit_client = RabbitMQClient("webserver", settings)
+    with log_context(log, logging.INFO, msg="Subscribing to rabbitmq channels"):
+        rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
 
         for exchange_name, parser_fct, queue_kwargs in EXCHANGE_TO_PARSER_CONFIG:
             await rabbit_client.subscribe(
@@ -188,6 +179,4 @@ async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
 
     yield
 
-    # cleanup
-    with log_context(log, logging.INFO, msg="Closing RabbitMQ client"):
-        await rabbit_client.close()
+    # no actions required
