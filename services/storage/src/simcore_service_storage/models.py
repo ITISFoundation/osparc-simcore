@@ -91,7 +91,7 @@ class FileMetaData(FileMetaDataGet):
     ):
 
         parts = file_id.split("/")
-        now = datetime.now(timezone.utc)
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         fmd_kwargs = {
             "file_uuid": file_id,
             "location_id": location_id,

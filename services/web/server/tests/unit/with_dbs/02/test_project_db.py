@@ -90,7 +90,7 @@ def test_convert_to_schema_names(fake_project: dict[str, Any]):
         assert col is not None
 
     # test date time conversion
-    date = datetime.now(timezone.utc)
+    date = datetime.now(timezone.utc).replace(tzinfo=None)
     db_entries["creation_date"] = date
     schema_entries = convert_to_schema_names(db_entries, fake_project["prjOwner"])
     assert "creationDate" in schema_entries

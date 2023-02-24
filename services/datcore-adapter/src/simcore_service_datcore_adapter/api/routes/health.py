@@ -23,7 +23,7 @@ log = logging.getLogger(__file__)
     status_code=status.HTTP_200_OK,
 )
 async def get_service_alive():
-    return f"{__name__}@{datetime.now(timezone.utc).isoformat()}"
+    return f"{__name__}@{datetime.now(timezone.utc).replace(tzinfo=None).isoformat()}"
 
 
 @router.get("/ready", status_code=status.HTTP_200_OK, response_model=AppStatusCheck)

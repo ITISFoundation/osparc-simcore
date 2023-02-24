@@ -39,7 +39,7 @@ def test_import_and_export_invitation_alias_by_alias(
 ):
     expected_content = InvitationContent(
         **invitation_data.dict(),
-        created=datetime.now(timezone.utc),
+        created=datetime.now(timezone.utc).replace(tzinfo=None),
     )
     raw_data = _ContentWithShortNames.serialize(expected_content)
 
@@ -52,7 +52,7 @@ def test_export_by_alias_produces_smaller_strings(
 ):
     content = InvitationContent(
         **invitation_data.dict(),
-        created=datetime.now(timezone.utc),
+        created=datetime.now(timezone.utc).replace(tzinfo=None),
     )
     raw_data = _ContentWithShortNames.serialize(content)
 

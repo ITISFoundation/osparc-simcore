@@ -586,7 +586,7 @@ class SimcoreS3DataManager(BaseDataManager):
         1. will try to update the entry from S3 backend if exists
         2. will delete the entry if nothing exists in S3 backend.
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         async with self.engine.acquire() as conn:
             list_of_expired_uploads = await db_file_meta_data.list_fmds(
                 conn, expired_after=now
@@ -821,7 +821,7 @@ class SimcoreS3DataManager(BaseDataManager):
         file_id: StorageFileID,
         upload_id: Optional[UploadID],
     ) -> FileMetaDataAtDB:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         upload_expiration_date = now + timedelta(
             seconds=self.settings.STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS
         )
