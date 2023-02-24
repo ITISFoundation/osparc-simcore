@@ -113,6 +113,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     }
   },
 
+  statics: {
+    READ_ONLY_TEXT: qx.locale.Manager.tr("You do not have writing permissions.<br>Changes will not be saved.")
+  },
+
   members: {
     __study: null,
     __settingStudy: null,
@@ -202,7 +206,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               if (osparc.data.model.Study.canIWrite(study.getAccessRights())) {
                 this.__startAutoSaveTimer();
               } else {
-                const msg = this.tr("You do not have writing permissions.<br>Changes will not be saved");
+                const msg = this.self().READ_ONLY_TEXT;
                 osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO");
               }
             });
