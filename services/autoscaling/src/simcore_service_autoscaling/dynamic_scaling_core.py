@@ -3,6 +3,7 @@ import collections
 import dataclasses
 import itertools
 import logging
+from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from typing import cast
 
@@ -272,7 +273,7 @@ async def _find_needed_instances(
                 f"{task.Name or 'unknown task name'}:{task.ServiceID or 'unknown service ID'}",
             )
 
-    num_instances_per_type = collections.defaultdict(
+    num_instances_per_type = defaultdict(
         int, collections.Counter(t for t, _ in needed_new_instance_to_tasks)
     )
 
@@ -454,15 +455,15 @@ async def _analyze_current_cluster(app: FastAPI) -> Cluster:
         node_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS,
     )
 
-    # get the EC2 instances we have
+    # get the whatever EC2 instances we have
     existing_ec2_instances = await get_ec2_client(app).get_instances(
         app_settings.AUTOSCALING_EC2_INSTANCES,
-        ec2.get_ec2_tags(app_settings),
+        list(ec2.get_ec2_tags(app_settings).keys()),
     )
 
     terminated_ec2_instances = await get_ec2_client(app).get_instances(
         app_settings.AUTOSCALING_EC2_INSTANCES,
-        ec2.get_ec2_tags(app_settings),
+        list(ec2.get_ec2_tags(app_settings).keys()),
         state_names=["terminated"],
     )
 

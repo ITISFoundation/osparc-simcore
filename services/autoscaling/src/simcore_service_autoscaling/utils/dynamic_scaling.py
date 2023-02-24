@@ -85,13 +85,6 @@ def try_assigning_task_to_instances(
     return False
 
 
-_TIME_FORMAT = "{:02d}:{:02d}"  # format for minutes:seconds
-
-
-def _format_delta(delta: datetime.timedelta) -> str:
-    return _TIME_FORMAT.format(delta.seconds // 60, delta.seconds % 60)
-
-
 async def try_assigning_task_to_pending_instances(
     app: FastAPI,
     pending_task: Task,
@@ -120,11 +113,10 @@ async def try_assigning_task_to_pending_instances(
             estimated_time_to_completion = (
                 instance.launch_time + instance_max_time_to_start - now
             )
-
             await log_tasks_message(
                 app,
                 [pending_task],
-                f"adding machines to the cluster (time waiting: {_format_delta(time_since_launch)}, est. remaining time: {_format_delta(estimated_time_to_completion)})...please wait...",
+                f"adding machines to the cluster (time waiting: {time_since_launch}, est. remaining time: {estimated_time_to_completion})...please wait...",
             )
             await progress_tasks_message(
                 app,
