@@ -9,6 +9,8 @@ import asyncio
 import base64
 import dataclasses
 import datetime
+import pickle
+import warnings
 from dataclasses import dataclass
 from typing import Any, AsyncIterator, Awaitable, Callable, Iterator
 from unittest import mock
@@ -261,8 +263,35 @@ async def test_cluster_scaling_from_labelled_services_with_no_services_does_noth
     )
 
 
+@pytest.fixture
+def patch_get_ec2_tags(mocker: MockerFixture, faker: Faker) -> Iterator[mock.Mock]:
+    # NOTE: this is needed because of a bug in Moto
+    # https://github.com/getmoto/moto/issues/5966
+    warnings.warn(
+        "patching get_ec2_tags due to issue https://github.com/getmoto/moto/issues/5966 in moto library...",
+        UserWarning,
+    )
+
+    def _json_without_square_brackets(obj) -> str:
+        return str(pickle.dumps(obj))
+
+    mocked_terminate_instance = mocker.patch(
+        "simcore_service_autoscaling.utils.ec2.get_ec2_tags",
+        autospec=True,
+        return_value={
+            "io.simcore.autoscaling.version": faker.pystr(),
+            "io.simcore.autoscaling.monitored_nodes_labels": faker.pystr(),
+            "io.simcore.autoscaling.monitored_services_labels": faker.pystr(),
+            # NOTE: this one gets special treatment in AWS GUI and is applied to the name of the instance
+            "Name": faker.pystr(),
+        },
+    )
+    yield mocked_terminate_instance
+
+
 async def test_cluster_scaling_from_labelled_services_with_no_services_and_machine_buffer_starts_expected_machines(
     minimal_configuration: None,
+    patch_get_ec2_tags: mock.MagicMock,
     mock_machines_buffer: int,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
@@ -421,6 +450,7 @@ async def _assert_ec2_instances(
 
 async def test_cluster_scaling_up(
     minimal_configuration: None,
+    patch_get_ec2_tags: mock.MagicMock,
     service_monitored_labels: dict[DockerLabelKey, str],
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
@@ -437,7 +467,6 @@ async def test_cluster_scaling_up(
     mock_set_node_availability: mock.Mock,
     # mock_cluster_used_resources: mock.Mock,
     mock_compute_node_used_resources: mock.Mock,
-    faker: Faker,
 ):
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
@@ -575,7 +604,6 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     mock_rabbitmq_post_message: mock.Mock,
     mock_find_node_with_name: mock.Mock,
     mock_set_node_availability: mock.Mock,
-    mocker: MockerFixture,
 ):
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
