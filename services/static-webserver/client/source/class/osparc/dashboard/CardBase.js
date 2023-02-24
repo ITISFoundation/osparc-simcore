@@ -596,6 +596,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
       moreOpts.openUpdateServices();
     },
 
+    _tagClicked: function(tag) {
+      console.log("_tagClicked", tag);
+    },
+
     // groups -> [orgMembs, orgs, [productEveryone], [everyone]];
     _evaluateShareIcon: function(shareIcon, accessRights) {
       shareIcon.addListener("tap", e => {
