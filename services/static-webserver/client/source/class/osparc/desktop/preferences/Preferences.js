@@ -61,6 +61,13 @@ qx.Class.define("osparc.desktop.preferences.Preferences", {
       init: true,
       check: "Boolean",
       event: "changeConfirmStopNode"
+    },
+
+    snapNodeToGrid: {
+      nullable: false,
+      init: true,
+      check: "Boolean",
+      event: "changeSnapNodeToGrid"
     }
   }
 });

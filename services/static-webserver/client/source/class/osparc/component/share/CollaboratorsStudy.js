@@ -130,7 +130,10 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
       osparc.data.Resources.fetch("studies", "put", params)
         .then(updatedData => {
           this.fireDataEvent("updateAccessRights", updatedData);
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator(s) successfully added"));
+          let text = this.tr("Collaborator(s) successfully added.");
+          text += "<br>";
+          text += this.tr("The user will not get notified.");
+          osparc.component.message.FlashMessenger.getInstance().logAs(text);
           this._reloadCollaboratorsList();
         })
         .catch(err => {

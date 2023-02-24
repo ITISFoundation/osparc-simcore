@@ -195,6 +195,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
       apply: "__applyUiMode"
     },
 
+    emptyWorkbench: {
+      check: "Boolean",
+      nullable: false,
+      init: null,
+      event: "changeEmptyWorkbench",
+      apply: "__applyEmptyWorkbench"
+    },
+
     updatable: {
       check: [null, "retired", "deprecated", "updatable"],
       nullable: false,
@@ -393,7 +401,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyWorkbench: function(workbench) {
+      if (this.isResourceType("study") || this.isResourceType("template")) {
+        this.setEmptyWorkbench(Object.keys(workbench).length === 0);
+      }
       if (workbench === null) {
+        // it is a service
         return;
       }
 
@@ -424,6 +436,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
             this.__blockCard(image, toolTipText);
           }
         });
+    },
+
+    __applyEmptyWorkbench: function(isEmpty) {
+      const emptyWorkbench = this.getChildControl("empty-workbench");
+      emptyWorkbench.setVisibility(isEmpty ? "visible" : "excluded");
     },
 
     __applyUpdatable: function(updatable) {
