@@ -48,7 +48,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
       LOCK_STATUS: 1,
       TITLE: 2,
       DESCRIPTION: 3,
-      UPDATE_STUDY: 4,
+      UPDATES: 4,
       TAGS: 5,
       UI_MODE: 6,
       PERMISSION: 7,

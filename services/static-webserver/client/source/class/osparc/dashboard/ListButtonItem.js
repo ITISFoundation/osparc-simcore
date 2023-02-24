@@ -49,7 +49,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             column: osparc.dashboard.ListButtonBase.POS.LOCK_STATUS
           });
           break;
-        case "permission-icon": {
+        case "permission-icon":
           control = new qx.ui.basic.Image().set({
             minWidth: 50
           });
@@ -59,7 +59,6 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             column: osparc.dashboard.ListButtonBase.POS.PERMISSION
           });
           break;
-        }
         case "tags":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
             alignY: "middle"
@@ -72,7 +71,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             column: osparc.dashboard.ListButtonBase.POS.TAGS
           });
           break;
-        case "shared-icon": {
+        case "shared-icon":
           control = new qx.ui.basic.Image().set({
             minWidth: 50,
             alignY: "middle"
@@ -82,8 +81,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             column: osparc.dashboard.ListButtonBase.POS.SHARED
           });
           break;
-        }
-        case "last-change": {
+        case "last-change":
           control = new qx.ui.basic.Label().set({
             anonymous: true,
             font: "text-13",
@@ -96,15 +94,13 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             column: osparc.dashboard.ListButtonBase.POS.LAST_CHANGE
           });
           break;
-        }
-        case "tsr-rating": {
+        case "tsr-rating":
           control = osparc.dashboard.CardBase.createTSRLayout();
           this._add(control, {
             row: 0,
             column: osparc.dashboard.ListButtonBase.POS.TSR
           });
           break;
-        }
         case "workbench-mode":
           control = new qx.ui.basic.Image().set({
             minWidth: 20,
@@ -115,7 +111,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             column: osparc.dashboard.ListButtonBase.POS.UI_MODE
           });
           break;
-        case "hits-service": {
+        case "hits-service":
           control = new qx.ui.basic.Label().set({
             alignY: "middle",
             toolTipText: this.tr("Number of times you instantiated it")
@@ -125,7 +121,17 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             column: osparc.dashboard.ListButtonBase.POS.HITS
           });
           break;
-        }
+        case "empty-workbench":
+          control = new qx.ui.basic.Image().set({
+            minWidth: 20,
+            alignY: "middle",
+            source: "@FontAwesome5Solid/empty-set/18"
+          });
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.UPDATES
+          });
+          break;
         case "update-study":
           control = new qx.ui.basic.Image().set({
             minWidth: 20,
@@ -135,7 +141,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           });
           this._add(control, {
             row: 0,
-            column: osparc.dashboard.ListButtonBase.POS.UPDATE_STUDY
+            column: osparc.dashboard.ListButtonBase.POS.UPDATES
           });
           break;
         case "menu-selection-stack":
