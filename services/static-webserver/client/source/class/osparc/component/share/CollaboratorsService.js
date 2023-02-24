@@ -104,7 +104,10 @@ qx.Class.define("osparc.component.share.CollaboratorsService", {
       osparc.data.Resources.fetch("services", "patch", params)
         .then(serviceData => {
           this.fireDataEvent("updateService", serviceData);
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator(s) successfully added"));
+          let text = this.tr("Collaborator(s) successfully added.");
+          text += "<br>";
+          text += this.tr("The user will not get notified.");
+          osparc.component.message.FlashMessenger.getInstance().logAs(text);
           this._reloadCollaboratorsList();
         })
         .catch(err => {
