@@ -99,7 +99,7 @@ class CompRunsRepository(BaseRepository):
                     cluster_id=cluster_id if cluster_id != DEFAULT_CLUSTER_ID else None,
                     iteration=iteration,
                     result=RUNNING_STATE_TO_DB[RunningState.PUBLISHED],
-                    started=datetime.now(timezone.utc).replace(tzinfo=None),
+                    started=datetime.now(timezone.utc),
                 )
                 .returning(literal_column("*"))
             )
@@ -133,7 +133,7 @@ class CompRunsRepository(BaseRepository):
     ) -> Optional[CompRunsAtDB]:
         values = {"result": RUNNING_STATE_TO_DB[result_state]}
         if final_state:
-            values.update({"ended": datetime.now(timezone.utc).replace(tzinfo=None)})
+            values.update({"ended": datetime.now(timezone.utc)})
         return await self.update(
             user_id,
             project_id,

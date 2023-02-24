@@ -146,7 +146,7 @@ def _create_invitation_code(
     # builds content
     content = InvitationContent(
         **invitation_data.dict(),
-        created=datetime.now(timezone.utc).replace(tzinfo=None),
+        created=datetime.now(timezone.utc),
     )
 
     content_jsonstr: str = _ContentWithShortNames.serialize(content)

@@ -90,7 +90,7 @@ async def create_invitation(
     )
     invitation = _InvitationContentAndLink(
         invitation_url=invitation_link,
-        created=datetime.now(timezone.utc).replace(tzinfo=None),
+        created=datetime.now(timezone.utc),
         **invitation_inputs.dict(),
     )
 

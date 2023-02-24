@@ -94,7 +94,7 @@ async def _generate_tasks_list_from_project(
             inputs=node.inputs,
             outputs=node.outputs,
             image=image,
-            submit=datetime.now(timezone.utc).replace(tzinfo=None),
+            submit=datetime.now(timezone.utc),
             state=task_state,
             internal_id=internal_id,
             node_class=node_class,

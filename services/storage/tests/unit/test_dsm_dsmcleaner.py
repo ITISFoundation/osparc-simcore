@@ -120,7 +120,7 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
         await conn.execute(
             file_meta_data.update()
             .where(file_meta_data.c.file_id == simcore_file_id)
-            .values(upload_expires_at=datetime.now(timezone.utc).replace(tzinfo=None))
+            .values(upload_expires_at=datetime.now(timezone.utc))
         )
     await asyncio.sleep(1)
     await simcore_s3_dsm.clean_expired_uploads()
@@ -195,7 +195,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
         await conn.execute(
             file_meta_data.update()
             .where(file_meta_data.c.file_id == file_id)
-            .values(upload_expires_at=datetime.now(timezone.utc).replace(tzinfo=None))
+            .values(upload_expires_at=datetime.now(timezone.utc))
         )
     await asyncio.sleep(1)
     await simcore_s3_dsm.clean_expired_uploads()
@@ -230,9 +230,7 @@ async def test_clean_expired_uploads_does_not_clean_multipart_upload_on_creation
 ):
     """This test reproduces what create_file_upload_links in dsm does, but running
     the cleaner in between to ensure the cleaner does not break the mechanism"""
-    later_than_now = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(
-        minutes=5
-    )
+    later_than_now = datetime.now(timezone.utc) + timedelta(minutes=5)
     fmd = FileMetaData.from_simcore_node(
         user_id,
         simcore_file_id,
@@ -291,9 +289,7 @@ async def test_clean_expired_uploads_cleans_dangling_multipart_uploads_if_no_cor
 ):
     """This test reproduces what create_file_upload_links in dsm does, but running
     the cleaner in between to ensure the cleaner does not break the mechanism"""
-    later_than_now = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(
-        minutes=5
-    )
+    later_than_now = datetime.now(timezone.utc) + timedelta(minutes=5)
     fmd = FileMetaData.from_simcore_node(
         user_id,
         simcore_file_id,

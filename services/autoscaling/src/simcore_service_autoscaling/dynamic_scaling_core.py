@@ -109,8 +109,7 @@ async def _find_terminateable_instances(
     for instance in cluster.drained_nodes:
         # NOTE: AWS price is hourly based (e.g. same price for a machine used 2 minutes or 1 hour, so we wait until 55 minutes)
         elapsed_time_since_launched = (
-            datetime.now(timezone.utc).replace(tzinfo=None)
-            - instance.ec2_instance.launch_time
+            datetime.now(timezone.utc) - instance.ec2_instance.launch_time
         )
         elapsed_time_since_full_hour = elapsed_time_since_launched % timedelta(hours=1)
         if (

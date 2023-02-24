@@ -54,7 +54,7 @@ async def test_download_files(tmpdir):
             random.randint(1, 1000000),
             "some_valid_entity_tag",
             None,
-            datetime.now(timezone.utc).replace(tzinfo=None),
+            datetime.now(timezone.utc),
             False,
         ),
         (random.randint(1, 1000000), "some_valid_entity_tag", None, None, True),

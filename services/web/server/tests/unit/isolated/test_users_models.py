@@ -50,7 +50,7 @@ def test_user_models_examples(
 
 def test_profile_get_expiration_date(faker: Faker):
 
-    fake_expiration = datetime.now(timezone.utc).replace(tzinfo=None)
+    fake_expiration = datetime.now(timezone.utc)
 
     profile = ProfileGet(
         id=1, login=faker.email(), role=UserRole.ADMIN, expiration_date=fake_expiration
