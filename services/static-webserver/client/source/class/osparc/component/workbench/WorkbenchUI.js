@@ -291,7 +291,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     openServiceCatalog: function(winPos, nodePos) {
       if (this.getStudy().isReadOnly()) {
-        return;
+        return null;
       }
       const srvCat = new osparc.component.workbench.ServiceCatalog();
       const maxLeft = this.getBounds().width - osparc.component.workbench.ServiceCatalog.Width;
