@@ -206,7 +206,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
         tagsContainer.removeAll();
         tags.forEach(tag => {
           const tagUI = new osparc.ui.basic.Tag(tag.name, tag.color, "searchBarFilter");
-          tagUI.addListener("tap", () => this._tagClicked(tag));
+          tagUI.addListener("tap", () => this.fireDataEvent("tagClicked", tag));
           tagUI.setFont("text-12");
           tagsContainer.add(tagUI);
         });

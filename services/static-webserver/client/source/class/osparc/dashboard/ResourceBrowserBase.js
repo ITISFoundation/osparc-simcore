@@ -79,6 +79,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     _resourcesList: null,
     _topBar: null,
     _secondaryBar: null,
+    __searchBarFilter: null,
     __viewMenuButton: null,
     _resourcesContainer: null,
     _loadingResourcesBtn: null,
@@ -133,6 +134,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       resourcesContainer.addListener("updateTemplate", e => this._updateTemplateData(e.getData()));
       resourcesContainer.addListener("updateService", e => this._updateServiceData(e.getData()));
       resourcesContainer.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));
+      resourcesContainer.addListener("tagClicked", e => this.__searchBarFilter.addTagActiveFilter(e.getData()));
 
       this._add(resourcesContainer);
     },
@@ -143,7 +145,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         alignY: "middle"
       });
 
-      const searchBarFilter = new osparc.dashboard.SearchBarFilter(resourceType);
+      const searchBarFilter = this.__searchBarFilter = new osparc.dashboard.SearchBarFilter(resourceType);
       const textField = searchBarFilter.getChildControl("text-field");
       osparc.utils.Utils.setIdToWidget(textField, resourceType ? "searchBarFilter-textField-"+resourceType : "searchBarFilter-textField");
       topBar.add(searchBarFilter, {
