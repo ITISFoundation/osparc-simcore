@@ -239,18 +239,17 @@ qx.Class.define("osparc.navigation.NavigationBar", {
             label: this.tr("Read only"),
             icon: "@FontAwesome5Solid/eye/22",
             gap: 10,
+            font: "text-14",
             visibility: "excluded"
           });
           const hint = new osparc.ui.hint.Hint(control, osparc.desktop.StudyEditor.READ_ONLY_TEXT).set({
             active: false
           });
-          const showHint = () => hint.show();
-          const hideHint = () => hint.exclude();
-          control.addListener("mouseover", showHint);
-          [
-            "mouseout",
-            "tap"
-          ].forEach(e => control.addListener(e, hideHint));
+          hint.getLabel().set({
+            maxWidth: 300,
+            font: "text-14"
+          });
+          control.addListenerOnce("appear", () => hint.attachShowHideHandlers());
           this.getChildControl("center-items").add(control);
           break;
         }
