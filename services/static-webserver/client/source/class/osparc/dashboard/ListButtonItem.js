@@ -209,6 +209,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             alignY: "middle",
             font: "text-12"
           });
+          tagUI.addListener("tap", () => this.fireDataEvent("tagClicked", tag));
           tagsContainer.add(tagUI);
         });
       }
