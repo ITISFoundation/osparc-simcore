@@ -19,7 +19,6 @@ qx.Theme.define("osparc.theme.Appearance", {
   extend: osparc.theme.common.Appearance,
 
   appearances: {
-
     "pb-list": {
       include: "list",
       alias:   "list",
@@ -449,6 +448,7 @@ qx.Theme.define("osparc.theme.Appearance", {
       }
     },
 
+    // override in product
     "strong-button": {
       include: "material-button",
       style: state => ({
