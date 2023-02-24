@@ -88,6 +88,9 @@ qx.Class.define("osparc.data.Permissions", {
         ],
         "user": [
           "dashboard.read",
+          "dashboard.templates.read",
+          "dashboard.services.read",
+          "dashboard.data.read",
           "studies.user.read",
           "studies.user.create",
           "studies.template.create",
@@ -113,7 +116,9 @@ qx.Class.define("osparc.data.Permissions", {
           "study.edge.delete",
           "study.service.update",
           "study.classifier",
-          "study.tag"
+          "study.tag",
+          "study.slides.edit",
+          "study.slides.stop"
         ],
         "tester": [
           "studies.template.create.all",
@@ -132,35 +137,24 @@ qx.Class.define("osparc.data.Permissions", {
         ],
         "admin": []
       };
+      let productOnlyTesters = [];
       if (osparc.product.Utils.isProduct("tis")) {
-        initPermissions.user.push(...[
-          "dashboard.data.read"
-        ]);
-        initPermissions.tester.push(...[
+        productOnlyTesters = [
           "dashboard.templates.read",
           "dashboard.services.read",
           "study.slides.edit",
           "study.slides.stop"
-        ]);
+        ];
       } else if (osparc.product.Utils.isProduct("s4llite")) {
-        initPermissions.user.push(...[
-          "dashboard.templates.read",
-          "study.slides.edit",
-          "study.slides.stop"
-        ]);
-        initPermissions.tester.push(...[
+        productOnlyTesters = [
           "dashboard.services.read",
           "dashboard.data.read"
-        ]);
-      } else {
-        initPermissions.user.push(...[
-          "dashboard.templates.read",
-          "dashboard.services.read",
-          "dashboard.data.read",
-          "study.slides.edit",
-          "study.slides.stop"
-        ]);
+        ];
       }
+      productOnlyTesters.forEach(onlyTester => {
+        initPermissions.user.remove(onlyTester);
+        initPermissions.tester.push(onlyTester);
+      });
       return initPermissions;
     }
   },
