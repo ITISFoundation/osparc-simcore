@@ -16,6 +16,8 @@ log = logging.getLogger(__file__)
 
 _MINUTE: Final[int] = 60
 
+RPCNamespace = str
+
 
 class RabbitMQRetryPolicyUponInitialization:
     """Retry policy upon service initialization"""

@@ -14,6 +14,7 @@ from servicelib.logging_utils import log_context
 from settings_library.rabbit import RabbitSettings
 
 from .rabbitmq_errors import RemoteMethodNotRegisteredError, RPCNotInitializedError
+from .rabbitmq_utils import RPCNamespace
 
 log = logging.getLogger(__name__)
 
@@ -62,10 +63,8 @@ Message = str
 _MINUTE: Final[int] = 60
 _RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_S: Final[int] = 15 * _MINUTE
 
-PlatformNamespace = str
 
-
-def _get_handler_name(namespace: PlatformNamespace, handler_name: str) -> str:
+def _get_namespaced_method_name(namespace: RPCNamespace, handler_name: str) -> str:
     return f"{namespace}.{handler_name}"
 
 
@@ -187,43 +186,60 @@ class RabbitMQClient:
 
     async def rpc_request(
         self,
-        namespace: PlatformNamespace,
+        namespace: RPCNamespace,
         method_name: str,
         *,
         timeout: Optional[PositiveInt] = 5,
         **kwargs: dict[str, Any],
     ) -> Any:
         """
-        Calls an already existing handler in a target namespace inside the platform.
+        Call a remote registered `handler` by providing it's `namespace`, `method_name`
+        and list of expected arguments.
         """
 
         if not self._rpc:
             raise RPCNotInitializedError()
 
-        handler_name = _get_handler_name(namespace, method_name)
+        namespaced_method_name = _get_namespaced_method_name(namespace, method_name)
         try:
             queue_expiration_timeout = timeout
             awaitable = self._rpc.call(
-                handler_name, expiration=queue_expiration_timeout, kwargs=kwargs
+                namespaced_method_name,
+                expiration=queue_expiration_timeout,
+                kwargs=kwargs,
             )
             return await asyncio.wait_for(awaitable, timeout=timeout)
         except MessageProcessError as e:
             if e.args[0] == "Message has been returned":
                 raise RemoteMethodNotRegisteredError(
-                    method_name=handler_name, incoming_message=e.args[1]
+                    method_name=namespaced_method_name, incoming_message=e.args[1]
                 ) from e
             raise e
 
     async def rpc_register(
-        self, namespace: PlatformNamespace, handler: Awaitable
+        self, namespace: RPCNamespace, method_name: str, handler: Awaitable
     ) -> None:
-        """register an awaitable handler that can be invoked remotely"""
+        """
+        Bind a local `handler` to a `namespace` and `method_name`.
+        The handler can be remotely called by providing the `namespace` and `method_name`
+
+        NOTE: method_name could be computed from the handler, but by design, it is
+        left to the caller to do so.
+        """
 
         if self._rpc is None:
             raise RPCNotInitializedError()
 
         await self._rpc.register(
-            _get_handler_name(namespace, handler.__name__),
+            _get_namespaced_method_name(namespace, method_name),
             handler,
             auto_delete=True,
         )
+
+    async def rpc_unregister(self, handler: Awaitable) -> None:
+        """Unbind a locally added `handler`"""
+
+        if self._rpc is None:
+            raise RPCNotInitializedError()
+
+        await self._rpc.unregister(handler)

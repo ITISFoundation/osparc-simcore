@@ -6,7 +6,8 @@ from typing import Any, Awaitable, Final
 
 import pytest
 from pydantic import NonNegativeInt
-from servicelib.rabbitmq import PlatformNamespace, RabbitMQClient
+from pytest import LogCaptureFixture
+from servicelib.rabbitmq import RabbitMQClient, RPCNamespace
 from servicelib.rabbitmq_errors import (
     RemoteMethodNotRegisteredError,
     RPCNotInitializedError,
@@ -21,7 +22,7 @@ MULTIPLE_REQUESTS_COUNT: Final[NonNegativeInt] = 100
 
 
 @pytest.fixture
-def platform_namespace() -> PlatformNamespace:
+def namespace() -> RPCNamespace:
     return "namespace"
 
 
@@ -93,28 +94,30 @@ async def test_base_rpc_pattern(
     y: Any,
     expected_result: Any,
     expected_type: type,
-    platform_namespace: PlatformNamespace,
+    namespace: RPCNamespace,
 ):
-    await rabbit_replier.rpc_register(platform_namespace, add_me)
+    await rabbit_replier.rpc_register(namespace, add_me.__name__, add_me)
 
     request_result = await rabbit_requester.rpc_request(
-        platform_namespace, add_me.__name__, x=x, y=y
+        namespace, add_me.__name__, x=x, y=y
     )
     assert request_result == expected_result
     assert type(request_result) == expected_type
+
+    await rabbit_replier.rpc_unregister(add_me)
 
 
 async def test_multiple_requests_sequence_same_replier_and_requester(
     rabbit_requester: RabbitMQClient,
     rabbit_replier: RabbitMQClient,
-    platform_namespace: PlatformNamespace,
+    namespace: RPCNamespace,
 ):
-    await rabbit_replier.rpc_register(platform_namespace, add_me)
+    await rabbit_replier.rpc_register(namespace, add_me.__name__, add_me)
 
     for i in range(MULTIPLE_REQUESTS_COUNT):
         assert (
             await rabbit_requester.rpc_request(
-                platform_namespace, add_me.__name__, x=1 + i, y=2 + i
+                namespace, add_me.__name__, x=1 + i, y=2 + i
             )
             == 3 + i * 2
         )
@@ -123,17 +126,15 @@ async def test_multiple_requests_sequence_same_replier_and_requester(
 async def test_multiple_requests_parallel_same_replier_and_requester(
     rabbit_requester: RabbitMQClient,
     rabbit_replier: RabbitMQClient,
-    platform_namespace: PlatformNamespace,
+    namespace: RPCNamespace,
 ):
-    await rabbit_replier.rpc_register(platform_namespace, add_me)
+    await rabbit_replier.rpc_register(namespace, add_me.__name__, add_me)
 
     expected_result: list[int] = []
     requests: list[Awaitable] = []
     for i in range(MULTIPLE_REQUESTS_COUNT):
         requests.append(
-            rabbit_requester.rpc_request(
-                platform_namespace, add_me.__name__, x=1 + i, y=2 + i
-            )
+            rabbit_requester.rpc_request(namespace, add_me.__name__, x=1 + i, y=2 + i)
         )
         expected_result.append(3 + i * 2)
 
@@ -143,9 +144,9 @@ async def test_multiple_requests_parallel_same_replier_and_requester(
 async def test_multiple_requests_parallel_same_replier_different_requesters(
     rabbit_service: RabbitSettings,
     rabbit_replier: RabbitMQClient,
-    platform_namespace: PlatformNamespace,
+    namespace: RPCNamespace,
 ):
-    await rabbit_replier.rpc_register(platform_namespace, add_me)
+    await rabbit_replier.rpc_register(namespace, add_me.__name__, add_me)
 
     clients: list[RabbitMQClient] = []
     for _ in range(MULTIPLE_REQUESTS_COUNT):
@@ -160,7 +161,7 @@ async def test_multiple_requests_parallel_same_replier_different_requesters(
     for i in range(MULTIPLE_REQUESTS_COUNT):
         client = clients[i]
         requests.append(
-            client.rpc_request(platform_namespace, add_me.__name__, x=1 + i, y=2 + i)
+            client.rpc_request(namespace, add_me.__name__, x=1 + i, y=2 + i)
         )
         expected_result.append(3 + i * 2)
 
@@ -171,63 +172,64 @@ async def test_multiple_requests_parallel_same_replier_different_requesters(
 
 
 async def test_raise_error_if_not_started(
-    rabbit_service: RabbitSettings, platform_namespace: PlatformNamespace
+    rabbit_service: RabbitSettings, namespace: RPCNamespace
 ):
     requester = RabbitMQClient("", settings=rabbit_service)
     with pytest.raises(RPCNotInitializedError):
-        await requester.rpc_request(platform_namespace, add_me.__name__, x=1, y=2)
+        await requester.rpc_request(namespace, add_me.__name__, x=1, y=2)
 
     # expect not to raise error
     await requester.close()
 
     replier = RabbitMQClient("", settings=rabbit_service)
     with pytest.raises(RPCNotInitializedError):
-        await replier.rpc_register(platform_namespace, add_me)
+        await replier.rpc_register(namespace, add_me.__name__, add_me)
+
+    with pytest.raises(RPCNotInitializedError):
+        await replier.rpc_unregister(add_me)
 
     # expect not to raise error
     await replier.close()
 
 
 async def _assert_event_not_registered(
-    rabbit_requester: RabbitMQClient, platform_namespace: PlatformNamespace
+    rabbit_requester: RabbitMQClient, namespace: RPCNamespace
 ):
     with pytest.raises(RemoteMethodNotRegisteredError) as exec_info:
         assert (
-            await rabbit_requester.rpc_request(
-                platform_namespace, add_me.__name__, x=1, y=3
-            )
+            await rabbit_requester.rpc_request(namespace, add_me.__name__, x=1, y=3)
             == 3
         )
     assert (
-        f"Could not find a remote method named: '{platform_namespace}.{add_me.__name__}'"
+        f"Could not find a remote method named: '{namespace}.{add_me.__name__}'"
         in f"{exec_info.value}"
     )
 
 
 async def test_replier_not_started(
-    rabbit_requester: RabbitMQClient, platform_namespace: PlatformNamespace
+    rabbit_requester: RabbitMQClient, namespace: RPCNamespace
 ):
-    await _assert_event_not_registered(rabbit_requester, platform_namespace)
+    await _assert_event_not_registered(rabbit_requester, namespace)
 
 
 async def test_replier_handler_not_registered(
     rabbit_requester: RabbitMQClient,
     rabbit_replier: RabbitMQClient,
-    platform_namespace: PlatformNamespace,
+    namespace: RPCNamespace,
 ):
-    await _assert_event_not_registered(rabbit_requester, platform_namespace)
+    await _assert_event_not_registered(rabbit_requester, namespace)
 
 
 async def test_request_is_missing_arguments(
     rabbit_requester: RabbitMQClient,
     rabbit_replier: RabbitMQClient,
-    platform_namespace: PlatformNamespace,
+    namespace: RPCNamespace,
 ):
-    await rabbit_replier.rpc_register(platform_namespace, add_me)
+    await rabbit_replier.rpc_register(namespace, add_me.__name__, add_me)
 
     # missing 1 argument
     with pytest.raises(TypeError) as exec_info:
-        await rabbit_requester.rpc_request(platform_namespace, add_me.__name__, x=1)
+        await rabbit_requester.rpc_request(namespace, add_me.__name__, x=1)
     assert (
         f"{add_me.__name__}() missing 1 required keyword-only argument: 'y'"
         in f"{exec_info.value}"
@@ -235,7 +237,7 @@ async def test_request_is_missing_arguments(
 
     # missing all arguments
     with pytest.raises(TypeError) as exec_info:
-        await rabbit_requester.rpc_request(platform_namespace, add_me.__name__)
+        await rabbit_requester.rpc_request(namespace, add_me.__name__)
     assert (
         f"{add_me.__name__}() missing 2 required keyword-only arguments: 'x' and 'y'"
         in f"{exec_info.value}"
@@ -245,29 +247,62 @@ async def test_request_is_missing_arguments(
 async def test_requester_cancels_long_running_request_or_requester_takes_too_much_to_respond(
     rabbit_requester: RabbitMQClient,
     rabbit_replier: RabbitMQClient,
-    platform_namespace: PlatformNamespace,
+    namespace: RPCNamespace,
 ):
     async def _long_running(*, time_to_sleep: float) -> None:
         await asyncio.sleep(time_to_sleep)
 
-    await rabbit_replier.rpc_register(platform_namespace, _long_running)
+    await rabbit_replier.rpc_register(namespace, _long_running.__name__, _long_running)
 
     with pytest.raises(asyncio.TimeoutError):
         await rabbit_requester.rpc_request(
-            platform_namespace, _long_running.__name__, time_to_sleep=3, timeout=1
+            namespace, _long_running.__name__, time_to_sleep=3, timeout=1
         )
 
 
 async def test_replier_handler_raises_error(
     rabbit_requester: RabbitMQClient,
     rabbit_replier: RabbitMQClient,
-    platform_namespace: PlatformNamespace,
+    namespace: RPCNamespace,
 ):
     async def _raising_error() -> None:
         raise RuntimeError("failed as requested")
 
-    await rabbit_replier.rpc_register(platform_namespace, _raising_error)
+    await rabbit_replier.rpc_register(
+        namespace, _raising_error.__name__, _raising_error
+    )
 
     with pytest.raises(RuntimeError) as exec_info:
-        await rabbit_requester.rpc_request(platform_namespace, _raising_error.__name__)
+        await rabbit_requester.rpc_request(namespace, _raising_error.__name__)
     assert "failed as requested" == f"{exec_info.value}"
+
+
+async def test_replier_responds_with_not_locally_defined_object_instance(
+    rabbit_requester: RabbitMQClient,
+    rabbit_replier: RabbitMQClient,
+    namespace: RPCNamespace,
+    caplog: LogCaptureFixture,
+):
+    async def _replier_scope() -> None:
+        class Custom:
+            def __init__(self, x: Any) -> None:
+                self.x = x
+
+        async def _get_custom(x: Any) -> Custom:
+            return Custom(x)
+
+        await rabbit_replier.rpc_register(namespace, "a_name", _get_custom)
+
+    async def _requester_scope() -> None:
+        # NOTE: what is happening here?
+        # the replier will say that it cannot pickle a local object and send it over
+        # the server's request will just time out. I would prefer a cleaner interface.
+        # There is no change of intercepting this message.
+        with pytest.raises(asyncio.TimeoutError):
+            await rabbit_requester.rpc_request(namespace, "a_name", x=10, timeout=1)
+
+        assert "Can't pickle local object" in caplog.text
+        assert ".<locals>.Custom" in caplog.text
+
+    await _replier_scope()
+    await _requester_scope()
