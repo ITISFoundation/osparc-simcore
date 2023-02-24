@@ -305,10 +305,12 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
         });
     },
 
-    __addMember: function(orgMemberEmail) {
+    __addMember: async function(orgMemberEmail) {
       if (this.__currentOrg === null) {
         return;
       }
+
+      const productEveryone = await osparc.store.Store.getInstance().getProductEveryone();
 
       const orgId = this.__currentOrg.getKey();
       const params = {
@@ -321,30 +323,28 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
       };
       osparc.data.Resources.fetch("organizationMembers", "post", params)
         .then(() => {
-          const store = osparc.store.Store.getInstance();
-          store.getProductEveryone()
-            .then(productEveryone => {
-              if (productEveryone && productEveryone["gid"] === parseInt(orgId)) {
-                // demote the new member to user
-                const params2 = {
-                  url: {
-                    "gid": orgId
-                  }
-                };
-                osparc.data.Resources.get("organizationMembers", params2)
-                  .then(respOrgMembers => {
-                    const newMember = respOrgMembers.find(m => m["login"] === orgMemberEmail);
-                    if (newMember) {
-                      const msg = orgMemberEmail + this.tr(" added");
-                      this.__demoteToUser(newMember, msg);
-                    }
-                  });
-              } else {
-                osparc.component.message.FlashMessenger.getInstance().logAs(orgMemberEmail + this.tr(" added"));
-                osparc.store.Store.getInstance().reset("organizationMembers");
-                this.__reloadOrgMembers();
+          let text = orgMemberEmail + this.tr(" successfully added.");
+          text += "<br>";
+          text += this.tr("The user will not get notified.");
+          if (productEveryone && productEveryone["gid"] === parseInt(orgId)) {
+            // demote the new member to user
+            const params2 = {
+              url: {
+                "gid": orgId
               }
-            });
+            };
+            osparc.data.Resources.get("organizationMembers", params2)
+              .then(respOrgMembers => {
+                const newMember = respOrgMembers.find(m => m["login"] === orgMemberEmail);
+                if (newMember) {
+                  this.__demoteToUser(newMember, text);
+                }
+              });
+          } else {
+            osparc.component.message.FlashMessenger.getInstance().logAs(text);
+            osparc.store.Store.getInstance().reset("organizationMembers");
+            this.__reloadOrgMembers();
+          }
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong adding the user"), "ERROR");
