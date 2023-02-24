@@ -27,7 +27,7 @@ qx.Class.define("osparc.Panddy", {
 
     setTimeout(() => {
       this.getChildControl("bubble-text").setValue(osparc.Panddy.INTRO_TEXT);
-    }, 1000);
+    }, 2000);
   },
 
   statics: {
