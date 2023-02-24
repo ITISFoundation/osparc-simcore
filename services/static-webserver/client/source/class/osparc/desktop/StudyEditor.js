@@ -114,7 +114,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
   },
 
   statics: {
-    READ_ONLY_TEXT: qx.locale.Manager.tr("You do not have writing permissions.<br>Changes will not be saved.")
+    READ_ONLY_TEXT: qx.locale.Manager.tr("You do not have writing permissions.<br>Your changes will not be saved.")
   },
 
   members: {
@@ -207,7 +207,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
                 this.__startAutoSaveTimer();
               } else {
                 const msg = this.self().READ_ONLY_TEXT;
-                osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO");
+                osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING");
               }
             });
 
