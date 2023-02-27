@@ -54,11 +54,17 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           });
           this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.VIEWER_MODE);
           break;
-        case "empty-workbench":
+        case "empty-workbench": {
+          let toolTipText = this.tr("Empty") + " ";
+          if (this.isResourceType("study")) {
+            toolTipText += osparc.product.Utils.getStudyAlias();
+          } else if (this.isResourceType("template")) {
+            toolTipText += osparc.product.Utils.getTemplateAlias();
+          }
           control = new qx.ui.basic.Image().set({
             source: "@FontAwesome5Solid/times-circle/14",
             alignY: "bottom",
-            toolTipText: this.tr("Empty")
+            toolTipText
           });
           control.addListener("tap", e => {
             e.stopPropagation();
@@ -67,6 +73,8 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           }, this);
           this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.UPDATES);
           break;
+
+        }
         case "update-study":
           control = new qx.ui.basic.Image().set({
             source: "@MaterialIcons/update/16",
