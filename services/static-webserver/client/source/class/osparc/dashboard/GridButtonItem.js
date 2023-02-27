@@ -50,14 +50,14 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           break;
         case "workbench-mode":
           control = new qx.ui.basic.Image().set({
-            alignY: "middle"
+            alignY: "bottom"
           });
           this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.VIEWER_MODE);
           break;
         case "empty-workbench":
           control = new qx.ui.basic.Image().set({
             source: "@FontAwesome5Solid/times-circle/14",
-            alignY: "middle",
+            alignY: "bottom",
             toolTipText: this.tr("Empty")
           });
           control.addListener("tap", e => {
@@ -71,14 +71,14 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           control = new qx.ui.basic.Image().set({
             source: "@MaterialIcons/update/16",
             visibility: "excluded",
-            alignY: "middle"
+            alignY: "bottom"
           });
           this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.UPDATES);
           break;
         case "hits-service":
           control = new qx.ui.basic.Label().set({
             toolTipText: this.tr("Number of times you instantiated it"),
-            alignY: "middle"
+            alignY: "bottom"
           });
           this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.UPDATES);
           break;
