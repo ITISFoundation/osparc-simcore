@@ -515,9 +515,6 @@ settings-schema.json: ## [container] dumps json-shema of this service settings
 	@$(MAKE_C) services/agent $@
 	@$(MAKE_C) services/api-server $@
 	@$(MAKE_C) services/autoscaling $@
-	## TODO: @$(MAKE_C) services/catalog $@
-	## TODO: @$(MAKE_C) services/dask-sidecar $@
-	## TODO: @$(MAKE_C) services/datcore-adapter $@
 	@$(MAKE_C) services/director-v2 $@
 	@$(MAKE_C) services/invitations $@
 	@$(MAKE_C) services/storage $@

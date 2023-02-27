@@ -1738,7 +1738,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ${{ github.job }}_services_settings_schemas
-          path: ./services/**/settings-schema.artifact.json
+          path: ./services/**/settings-schema.json
       - name: upload failed tests logs
         if: failure()
         uses: actions/upload-artifact@v3
