@@ -112,7 +112,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         tabs.push({
           id: "servicesTabBtn",
           label: this.tr("SERVICES"),
-          icon: "@FontAwesome5Solid/paw/24",
+          icon: "@FontAwesome5Solid/cogs/24",
           buildLayout: this.__createServiceBrowser
         });
       }
@@ -139,7 +139,8 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           alignX: "center"
         });
         tabButton.getChildControl("icon").set({
-          alignX: "center"
+          alignX: "center",
+          visibility: "excluded"
         });
         osparc.utils.Utils.setIdToWidget(tabButton, id);
         tabPage.setLayout(new qx.ui.layout.Grow());
