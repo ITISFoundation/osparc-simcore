@@ -10,6 +10,7 @@
 
 import functools
 import logging
+import re
 from typing import Callable, Coroutine
 
 import httpx
@@ -21,6 +22,11 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
+
+LEGACY_SERVICE_PATH_PATTERN = re.compile(
+    r"/x/[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}/retrieve",
+    re.IGNORECASE,
+)
 
 
 def handle_retry(logger: logging.Logger):
@@ -71,17 +77,25 @@ def handle_errors(service_name: str, logger: logging.Logger):
             if httpx.codes.is_client_error(resp.status_code):
                 raise HTTPException(resp.status_code, detail=resp.reason_phrase)
             if httpx.codes.is_server_error(resp.status_code):  # i.e. 5XX error
-                logger.error(
-                    "%s service error:\n|Request|\n%s\n%s\n%s\n|Response|\n%s\n%s\n%s",
-                    service_name,
-                    resp.request,
-                    _format_headers(resp.request.headers),
-                    resp.request.content.decode(),
-                    resp,
-                    _format_headers(resp.headers),
-                    resp.text,
-                )
-                raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
+                # If server error comes from legacy service path (/x/UUID_4/retrieve) we log as warning
+                if LEGACY_SERVICE_PATH_PATTERN.match(resp.url.path):
+                    logger.warning(
+                        "%s service warning: legacy service path %s not implemented",
+                        service_name,
+                        resp.url.path,
+                    )
+                else:
+                    logger.error(
+                        "%s service error:\n|Request|\n%s\n%s\n%s\n|Response|\n%s\n%s\n%s",
+                        service_name,
+                        resp.request,
+                        _format_headers(resp.request.headers),
+                        resp.request.content.decode(),
+                        resp,
+                        _format_headers(resp.headers),
+                        resp.text,
+                    )
+                    raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
 
             return resp
 

@@ -57,3 +57,23 @@ async def test_handle_errors(httpx_async_client: AsyncClient):
         # content-type: text/plain; charset=utf-8
         # this kettle is currently
         # serving the empire
+
+
+async def test_handle_legacy_errors(httpx_async_client: AsyncClient):
+    @handle_errors("DynamicService", logger)
+    async def a_request(method: str, **kwargs) -> Response:
+        return await httpx_async_client.request(method, **kwargs)
+
+    url = "http://raw-graphs_0a4ab690-f0c8-4104-b270-9e67239eca0d:4000/x/0a4ab690-f0c8-4104-b270-9e67239eca0d/retrieve"
+    with respx.mock:
+        respx.post(url).mock(
+            return_value=Response(status.HTTP_500_INTERNAL_SERVER_ERROR)
+        )
+
+        try:
+            await a_request(
+                "POST",
+                url=url,
+            )
+        except Exception as exc:  # pylint: disable=broad-except
+            assert False, f"Unexpected exception occured: {exc}"
