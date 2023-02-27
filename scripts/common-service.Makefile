@@ -100,8 +100,14 @@ settings-schema.json: ## [container] dumps json-shema of this service settings
 	@docker run \
 		${DOCKER_REGISTRY}/${APP_NAME}:${DOCKER_IMAGE_TAG} \
 		${APP_CLI_NAME} settings --as-json-schema \
-		| sed -e '1,/{/d' \
+		| sed --expression='1,/{/ {/{/!d}' \
 		> $@
+
+# NOTE: settings CLI prints some logs in the header from the boot and entrypoint scripts. We
+# use strema editor expression (sed --expression) to trim them:
+# - 1,/{/: This specifies the range of lines to operate on, in this case, from the first line to (but not including) the line that contains the string "{".
+# - {/{/!d}: This specifies that all lines between the first line and the line that contains "{" should be printed ({) except for the line that contains "{" (/{/!d).
+#
 
 
 
