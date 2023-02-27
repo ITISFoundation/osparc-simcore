@@ -137,21 +137,21 @@ qx.Class.define("osparc.data.Permissions", {
         ],
         "admin": []
       };
-      let productOnlyTesters = [];
+      let fromUserToTester = [];
       if (osparc.product.Utils.isProduct("tis")) {
-        productOnlyTesters = [
+        fromUserToTester = [
           "dashboard.templates.read",
           "dashboard.services.read",
           "study.slides.edit",
           "study.slides.stop"
         ];
       } else if (osparc.product.Utils.isProduct("s4llite")) {
-        productOnlyTesters = [
+        fromUserToTester = [
           "dashboard.services.read",
           "dashboard.data.read"
         ];
       }
-      productOnlyTesters.forEach(onlyTester => {
+      fromUserToTester.forEach(onlyTester => {
         initPermissions.user.remove(onlyTester);
         initPermissions.tester.push(onlyTester);
       });
