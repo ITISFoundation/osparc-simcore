@@ -170,7 +170,7 @@ def _invitations_request_context(invitation_code: str) -> Iterator[URL]:
             confirmation=ConfirmationTokenDict(
                 code=invitation_code, action=ConfirmationAction.INVITATION.name
             ),
-            origin=URL("https://fakehost.io:8000"),
+            origin=URL("https://dummyhost.com:8000"),
         )
 
         yield url
