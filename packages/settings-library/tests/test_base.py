@@ -12,6 +12,7 @@ from pydantic import BaseModel, ValidationError
 from pydantic.fields import Field
 from pytest import MonkeyPatch
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.utils_envs import setenvs_from_envfile
 from settings_library.base import (
     _DEFAULTS_TO_NONE_MSG,
     BaseCustomSettings,
@@ -227,3 +228,64 @@ def test_auto_default_to_not_none(
         instance = SettingsClass.create_from_envs()
         assert instance.VALUE_NULLABLE_DEFAULT_NULL == None
         assert instance.VALUE_NULLABLE_DEFAULT_ENV == S(S_VALUE=123)
+
+
+def test_how_settings_parse_null_environs(monkeypatch: MonkeyPatch):
+    #
+    # We were wondering how nullable fields (i.e. those marked as Optional[.]) can
+    # be defined in the envfile. Here we test different options
+    #
+
+    envs = setenvs_from_envfile(
+        monkeypatch,
+        """
+    VALUE_TO_NOTHING=
+    INT_VALUE_TO_NOTHING=
+    VALUE_TO_WORD_NULL=null
+    VALUE_TO_WORD_NONE=None
+    VALUE_TO_ZERO=0
+    INT_VALUE_TO_ZERO=0
+    """,
+    )
+
+    print(json.dumps(envs, indent=1))
+
+    assert envs == {
+        "VALUE_TO_NOTHING": "",
+        "INT_VALUE_TO_NOTHING": "",
+        "VALUE_TO_WORD_NULL": "null",
+        "VALUE_TO_WORD_NONE": "None",
+        "VALUE_TO_ZERO": "0",
+        "INT_VALUE_TO_ZERO": "0",
+    }
+
+    class SettingsClass(BaseCustomSettings):
+        VALUE_TO_NOTHING: Optional[str]
+        VALUE_TO_WORD_NULL: Optional[str]
+        VALUE_TO_WORD_NONE: Optional[str]
+        VALUE_TO_ZERO: Optional[str]
+
+        INT_VALUE_TO_ZERO: Optional[int]
+
+    instance = SettingsClass.create_from_envs()
+
+    assert instance == SettingsClass(
+        VALUE_TO_NOTHING="",  # NO
+        VALUE_TO_WORD_NULL=None,  # OK!
+        VALUE_TO_WORD_NONE=None,  # OK!
+        VALUE_TO_ZERO="0",  # NO
+        INT_VALUE_TO_ZERO=0,  # NO
+    )
+
+    class SettingsClassExt(SettingsClass):
+        INT_VALUE_TO_NOTHING: Optional[int]
+
+    with pytest.raises(ValidationError) as err_info:
+        SettingsClassExt.create_from_envs()
+
+    error = err_info.value.errors()[0]
+    assert error == {
+        "loc": ("INT_VALUE_TO_NOTHING",),
+        "msg": "value is not a valid integer",
+        "type": "type_error.integer",
+    }
