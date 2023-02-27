@@ -10,7 +10,6 @@ from aiohttp import web
 from ._constants import APP_PUBLIC_CONFIG_PER_PRODUCT
 from ._meta import API_VTAG
 from .application_settings import APP_SETTINGS_KEY
-from .login.decorators import login_required
 from .products import get_product_name
 from .redis import get_redis_scheduled_maintenance_client
 from .rest_healthcheck import HealthCheck, HealthCheckFailed
@@ -83,16 +82,12 @@ async def get_config(request: web.Request):
 
 
 @routes.get(f"/{API_VTAG}/scheduled_maintenance", name="get_scheduled_maintenance")
-@login_required
 async def get_scheduled_maintenance(request: web.Request):
     """Check scheduled_maintenance table in redis"""
 
     redis_client = get_redis_scheduled_maintenance_client(request.app)
     hash_key = "maintenance"
-    # Examples.
-    #  {"start": "2023-01-17T14:45:00.000Z", "end": "2023-01-17T23:00:00.000Z", "reason": "Release 1.0.4"}
-    #  {"start": "2023-01-20T09:00:00.000Z", "end": "2023-01-20T10:30:00.000Z", "reason": "Release ResistanceIsFutile2"}
-    # NOTE: datetime is UTC (Canary islands / UK)
+    # {"start": "2023-01-17T14:45:00.000Z", "end": "2023-01-17T23:00:00.000Z", "reason": "Release 1.0.4"}
     if maintenance_str := await redis_client.get(hash_key):
         return web.json_response(data={"data": maintenance_str})
 
