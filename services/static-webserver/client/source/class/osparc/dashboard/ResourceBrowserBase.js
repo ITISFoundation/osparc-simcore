@@ -135,6 +135,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       resourcesContainer.addListener("updateService", e => this._updateServiceData(e.getData()));
       resourcesContainer.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));
       resourcesContainer.addListener("tagClicked", e => this.__searchBarFilter.addTagActiveFilter(e.getData()));
+      resourcesContainer.addListener("emptyStudyClicked", e => console.log("delete", e.getData()));
 
       this._add(resourcesContainer);
     },

@@ -40,7 +40,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
     "updateTemplate": "qx.event.type.Data",
     "updateService": "qx.event.type.Data",
     "publishTemplate": "qx.event.type.Data",
-    "tagClicked": "qx.event.type.Data"
+    "tagClicked": "qx.event.type.Data",
+    "emptyStudyClicked": "qx.event.type.Data"
   },
 
   statics: {
