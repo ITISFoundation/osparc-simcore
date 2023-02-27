@@ -96,7 +96,8 @@ DOCKER_REGISTRY ?=local
 DOCKER_IMAGE_TAG?=production
 
 .PHONY: settings-schema.json
-settings-schema.json: ## [container] dumps json-shema of this service settings
+settings-schema.json: ## [container] dumps json-shcema of this service settings
+	# Dumping settings schema of ${DOCKER_REGISTRY}/${APP_NAME}:${DOCKER_IMAGE_TAG}
 	@docker run \
 		${DOCKER_REGISTRY}/${APP_NAME}:${DOCKER_IMAGE_TAG} \
 		${APP_CLI_NAME} settings --as-json-schema \

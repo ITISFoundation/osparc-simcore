@@ -511,8 +511,7 @@ openapi-specs: ## bundles and validates openapi specifications and schemas of AL
 	@$(MAKE_C) services/director $@
 
 .PHONY: settings-schema.json
-settings-schema.json: ## [container] dumps json-shema of this service settings
-	@$(MAKE_C) services/agent $@
+settings-schema.json: ## [container] dumps json-schema settings of all services
 	@$(MAKE_C) services/api-server $@
 	@$(MAKE_C) services/autoscaling $@
 	@$(MAKE_C) services/director-v2 $@
