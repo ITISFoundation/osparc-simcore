@@ -145,6 +145,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
     },
 
     populateSimpleMenu: function() {
+      this.getMenu().removeAll();
       this.getChildControl("preferences");
       this.getChildControl("organizations");
       this.getChildControl("clusters");
@@ -163,28 +164,28 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
     },
 
     populateExtendedMenu: function() {
-      osparc.data.Resources.get("statics")
-        .then(statics => {
-          this.__serverStatics = statics;
-          this.getChildControl("preferences");
-          this.getChildControl("organizations");
-          this.getChildControl("clusters");
-          this.getMenu().addSeparator();
-          if (osparc.product.tutorial.Utils.getTutorial()) {
-            this.getChildControl("quick-start");
-          }
-          this.__addManualsToMenu();
-          this.__addFeedbacksToMenu();
-          this.getChildControl("theme-switcher");
-          this.getMenu().addSeparator();
-          this.getChildControl("about");
-          if (!osparc.product.Utils.isProduct("osparc")) {
-            this.getChildControl("about-product");
-          }
-          this.getChildControl("license");
-          this.getMenu().addSeparator();
-          this.getChildControl("logout");
-        });
+      this.getMenu().removeAll();
+      this.getChildControl("preferences");
+      this.getChildControl("organizations");
+      this.getChildControl("clusters");
+      this.getMenu().addSeparator();
+      if (osparc.product.tutorial.Utils.getTutorial()) {
+        this.getChildControl("quick-start");
+      }
+
+      // this part gets injected
+      this.__addManualsToMenu();
+      this.__addFeedbacksToMenu();
+      this.getChildControl("theme-switcher");
+
+      this.getMenu().addSeparator();
+      this.getChildControl("about");
+      if (!osparc.product.Utils.isProduct("osparc")) {
+        this.getChildControl("about-product");
+      }
+      this.getChildControl("license");
+      this.getMenu().addSeparator();
+      this.getChildControl("logout");
     },
 
     __addManualsToMenu: function() {
