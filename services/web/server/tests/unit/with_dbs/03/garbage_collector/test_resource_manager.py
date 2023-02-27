@@ -460,6 +460,8 @@ async def test_interactive_services_removed_after_logout(
     director_v2_service_mock: aioresponses,
     expected_save_state: bool,
     open_project: Callable,
+    mock_rabbitmq: None,
+    mock_progress_bar,
 ):
     assert client.app
 
@@ -498,6 +500,7 @@ async def test_interactive_services_removed_after_logout(
                 app=client.app,
                 service_uuid=service["service_uuid"],
                 save_state=expected_save_state,
+                progress=mock_progress_bar.sub_progress(1),
             )
 
 
@@ -815,6 +818,8 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
     expect_call: bool,
     expected_save_state: bool,
     open_project: Callable,
+    mock_rabbitmq: None,
+    mock_progress_bar,
 ):
     # login - logged_user fixture
     # create empty study - empty_user_project fixture
@@ -843,6 +848,7 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
             app=client.server.app,
             save_state=expected_save_state,
             service_uuid=service["service_uuid"],
+            progress=mock_progress_bar.sub_progress(1),
         )
     ]
     mocked_director_v2_api[
