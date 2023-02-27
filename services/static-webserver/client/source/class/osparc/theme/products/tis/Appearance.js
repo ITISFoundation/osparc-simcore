@@ -22,7 +22,7 @@ qx.Theme.define("osparc.theme.products.tis.Appearance", {
     "strong-button": {
       include: "material-button",
       style: state => ({
-        decorator: state.hovered ? "strong-bordered-button" : "no-border",
+        decorator: state.hovered || state.focused ? "strong-bordered-button" : "no-border",
         backgroundColor: "strong-main",
         textColor: "strong-text"
       })
