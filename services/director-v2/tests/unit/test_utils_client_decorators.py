@@ -79,9 +79,6 @@ async def test_handle_legacy_errors(
             return_value=Response(status.HTTP_500_INTERNAL_SERVER_ERROR)
         )
 
-        await a_request(
-            "POST",
-            url=url,
-        )
+        await a_request("POST", url=url)
 
         assert "legacy service does not implement" in caplog_debug_level.text
