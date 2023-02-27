@@ -1732,6 +1732,11 @@ jobs:
         run: ./ci/github/system-testing/swarm-deploy.bash install
       - name: test
         run: ./ci/github/system-testing/swarm-deploy.bash test
+      - name: upload settings schemas artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ github.job }}_settings_schemas
+          path: ./services/**/settings-schema.artifact.json
       - name: upload failed tests logs
         if: failure()
         uses: actions/upload-artifact@v3

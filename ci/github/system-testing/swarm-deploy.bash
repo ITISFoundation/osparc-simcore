@@ -31,6 +31,11 @@ test() {
     --durations=5 \
     --log-level=INFO \
     tests/swarm-deploy
+
+  # TODO: testing dump artifacts
+  pushd services/web/server
+  make settings-schema >settings-schema.artifact.json
+  popd
 }
 
 clean_up() {
