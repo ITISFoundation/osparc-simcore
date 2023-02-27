@@ -10,6 +10,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, AsyncIterator, Awaitable, Callable
 from unittest import mock
+from unittest.mock import Mock
 
 import pytest
 from aiohttp import web
@@ -22,6 +23,7 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from pydantic import parse_obj_as
+from pytest_mock import MockerFixture
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
@@ -348,3 +350,36 @@ def mock_catalog_service_api_responses(client, aioresponses_mocker):
         url_pattern,
         repeat=True,
     )
+
+
+@pytest.fixture
+def mock_rabbitmq(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_webserver.director_v2_core_dynamic_services.get_rabbitmq_client",
+        autospec=True,
+    )
+
+
+@pytest.fixture
+def mock_progress_bar(mocker: MockerFixture) -> None:
+
+    sub_progress = Mock()
+
+    class MockedProgress:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            pass
+
+        def sub_progress(self, *kwargs):  # pylint:disable=no-self-use
+            return sub_progress
+
+    mock_bar = MockedProgress()
+
+    mocker.patch(
+        "simcore_service_webserver.director_v2_core_dynamic_services.ProgressBarData",
+        autospec=True,
+        return_value=mock_bar,
+    )
+    return mock_bar
