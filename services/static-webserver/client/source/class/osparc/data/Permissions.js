@@ -36,11 +36,10 @@
 
 qx.Class.define("osparc.data.Permissions", {
   extend: qx.core.Object,
-
-  type : "singleton",
+  type: "singleton",
 
   construct() {
-    const initPermissions = osparc.data.Permissions.getInitPermissions();
+    const initPermissions = this.self().getInitPermissions();
     for (const role in initPermissions) {
       if (Object.prototype.hasOwnProperty.call(initPermissions, role)) {
         initPermissions[role].forEach(action => {
@@ -152,7 +151,10 @@ qx.Class.define("osparc.data.Permissions", {
         ];
       }
       fromUserToTester.forEach(onlyTester => {
-        initPermissions.user.remove(onlyTester);
+        const idx = initPermissions.user.indexOf(onlyTester);
+        if (idx > -1) {
+          initPermissions.user.splice(idx, 1);
+        }
         initPermissions.tester.push(onlyTester);
       });
       return initPermissions;
