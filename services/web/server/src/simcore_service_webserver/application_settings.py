@@ -130,9 +130,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_CATALOG: Optional[CatalogSettings] = Field(
         auto_default_from_env=True, description="catalog service client's plugin"
     )
-    WEBSERVER_COMPUTATION: Optional[RabbitSettings] = Field(
-        auto_default_from_env=True, description="computation plugin"
-    )
     # TODO: Shall be required
     WEBSERVER_DB: Optional[PostgresSettings] = Field(
         auto_default_from_env=True, description="database plugin"
@@ -197,9 +194,13 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_PROJECTS: Optional[ProjectsSettings] = Field(
         auto_default_from_env=True, description="projects plugin"
     )
+    WEBSERVER_RABBITMQ: Optional[RabbitSettings] = Field(
+        auto_default_from_env=True, description="rabbitmq plugin"
+    )
 
     # These plugins only require (for the moment) an entry to toggle between enabled/disabled
     WEBSERVER_CLUSTERS: bool = True
+    WEBSERVER_COMPUTATION: bool = True
     WEBSERVER_GROUPS: bool = True
     WEBSERVER_META_MODELING: bool = True
     WEBSERVER_PRODUCTS: bool = True
