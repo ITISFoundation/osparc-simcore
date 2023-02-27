@@ -104,6 +104,8 @@ def client(
     mock_orphaned_services,
     redis_client: Redis,
     monkeypatch_setenv_from_app_config: Callable,
+    mock_rabbitmq: None,
+    mock_progress_bar,
 ) -> TestClient:
 
     cfg = deepcopy(app_cfg)
@@ -460,7 +462,6 @@ async def test_interactive_services_removed_after_logout(
     director_v2_service_mock: aioresponses,
     expected_save_state: bool,
     open_project: Callable,
-    mock_rabbitmq: None,
     mock_progress_bar,
 ):
     assert client.app
@@ -524,6 +525,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     expected_save_state: bool,
     mocker: MockerFixture,
     open_project: Callable,
+    mock_progress_bar,
 ):
 
     # login - logged_user fixture
@@ -611,6 +613,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
             app=client.server.app,
             save_state=expected_save_state,
             service_uuid=service["service_uuid"],
+            progress=mock_progress_bar.sub_progress(1),
         )
     ]
     mocked_director_v2_api[
@@ -662,6 +665,7 @@ async def test_interactive_services_removed_per_project(
     storage_subsystem_mock,  # when guest user logs out garbage is collected
     expected_save_state: bool,
     open_project: Callable,
+    mock_progress_bar,
 ):
     # create server with delay set to DELAY
     # login - logged_user fixture
@@ -701,6 +705,7 @@ async def test_interactive_services_removed_per_project(
             app=client.server.app,
             service_uuid=service1["service_uuid"],
             save_state=expected_save_state,
+            progress=mock_progress_bar.sub_progress(1),
         )
     ]
     mocked_director_v2_api[
@@ -726,11 +731,13 @@ async def test_interactive_services_removed_per_project(
             app=client.server.app,
             service_uuid=service2["service_uuid"],
             save_state=expected_save_state,
+            progress=mock_progress_bar.sub_progress(1),
         ),
         call(
             app=client.server.app,
             service_uuid=service3["service_uuid"],
             save_state=expected_save_state,
+            progress=mock_progress_bar.sub_progress(1),
         ),
     ]
     mocked_director_v2_api[
@@ -818,7 +825,6 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
     expect_call: bool,
     expected_save_state: bool,
     open_project: Callable,
-    mock_rabbitmq: None,
     mock_progress_bar,
 ):
     # login - logged_user fixture
