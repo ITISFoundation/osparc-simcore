@@ -184,7 +184,10 @@ qx.Class.define("osparc.desktop.MainPage", {
       const dashboard = this.__dashboard = new osparc.dashboard.Dashboard();
       const tabsBar = dashboard.getChildControl("bar");
       tabsBar.set({
-        paddingBottom: 8
+        paddingBottom: 6
+      });
+      this.__navBar.getChildControl("center-items").addListener("resize", e => {
+        dashboard.topBarResized(e.getData());
       });
       this.__navBar.addDashboardTabButtons(tabsBar);
       const itemWidth = osparc.dashboard.GridButtonBase.ITEM_WIDTH + osparc.dashboard.GridButtonBase.SPACING;

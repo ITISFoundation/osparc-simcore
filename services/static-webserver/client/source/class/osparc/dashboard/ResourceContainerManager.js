@@ -59,6 +59,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     "updateService": "qx.event.type.Data",
     "publishTemplate": "qx.event.type.Data",
     "tagClicked": "qx.event.type.Data",
+    "emptyStudyClicked": "qx.event.type.Data",
     "changeSelection": "qx.event.type.Data",
     "changeVisibility": "qx.event.type.Data"
   },
@@ -206,8 +207,9 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         "updateTemplate",
         "updateService",
         "publishTemplate",
-        "tagClicked"
-      ].forEach(ev => card.addListener(ev, e => this.fireDataEvent(ev, e.getData())));
+        "tagClicked",
+        "emptyStudyClicked"
+      ].forEach(eName => card.addListener(eName, e => this.fireDataEvent(eName, e.getData())));
 
       return card;
     },
