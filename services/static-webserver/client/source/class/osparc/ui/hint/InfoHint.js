@@ -58,29 +58,7 @@ qx.Class.define("osparc.ui.hint.InfoHint", {
       const hint = this._hint = new osparc.ui.hint.Hint(this).set({
         active: false
       });
-
-      const showHint = () => hint.show();
-      const hideHint = () => hint.exclude();
-
-      // Make hint "modal" when info button is clicked
-      const tapListener = event => {
-        if (osparc.utils.Utils.isMouseOnElement(hint, event)) {
-          return;
-        }
-        hideHint();
-        document.removeEventListener("mousedown", tapListener);
-        this.addListener("mouseover", showHint);
-        this.addListener("mouseout", hideHint);
-      };
-
-      this.addListener("mouseover", showHint);
-      this.addListener("mouseout", hideHint);
-      this.addListener("tap", () => {
-        showHint();
-        document.addEventListener("mousedown", tapListener);
-        this.removeListener("mouseover", showHint);
-        this.removeListener("mouseout", hideHint);
-      }, this);
+      this.addListenerOnce("appear", () => hint.attachShowHideHandlers());
     },
 
     __applyHintText: function(hintText) {
