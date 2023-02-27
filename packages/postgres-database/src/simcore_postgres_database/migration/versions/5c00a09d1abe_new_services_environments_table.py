@@ -1,8 +1,8 @@
-"""adds services_environments table
+"""new services environments table
 
-Revision ID: 799a81a85dd1
-Revises: e84904303e2b
-Create Date: 2023-02-06 18:03:13.950937+00:00
+Revision ID: 5c00a09d1abe
+Revises: 07dad1f604a4
+Create Date: 2023-02-27 09:43:49.109014+00:00
 
 """
 import sqlalchemy as sa
@@ -10,8 +10,8 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = "799a81a85dd1"
-down_revision = "e84904303e2b"
+revision = "5c00a09d1abe"
+down_revision = "07dad1f604a4"
 branch_labels = None
 depends_on = None
 
