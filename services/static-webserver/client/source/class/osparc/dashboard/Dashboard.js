@@ -93,7 +93,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           plural: true,
           allUpperCase: true
         }),
-        icon: "@FontAwesome5Solid/paw/24",
+        icon: "@FontAwesome5Solid/file/24",
         buildLayout: this.__createStudyBrowser
       }];
       if (permissions.canDo("dashboard.templates.read")) {
@@ -103,7 +103,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
             plural: true,
             allUpperCase: true
           }),
-          icon: "@FontAwesome5Solid/paw/24",
+          icon: "@FontAwesome5Solid/copy/24",
           buildLayout: this.__createTemplateBrowser
         };
         tabs.push(templatesTab);
@@ -120,7 +120,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         tabs.push({
           id: "dataTabBtn",
           label: this.tr("DATA"),
-          icon: "@FontAwesome5Solid/paw/24",
+          icon: "@FontAwesome5Solid/folder/24",
           buildLayout: this.__createDataBrowser}
         );
       }
@@ -130,11 +130,16 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         });
         const tabButton = tabPage.getChildControl("button");
         tabButton.set({
+          alignX: "center",
+          toolTipText: label,
+          minWidth: 50
+        });
+        tabButton.getChildControl("label").set({
           font: "text-16",
-          minWidth: 70
+          alignX: "center"
         });
         tabButton.getChildControl("icon").set({
-          toolTipText: label
+          alignX: "center"
         });
         osparc.utils.Utils.setIdToWidget(tabButton, id);
         tabPage.setLayout(new qx.ui.layout.Grow());
