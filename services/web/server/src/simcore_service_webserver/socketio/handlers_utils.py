@@ -1,35 +1,13 @@
 import inspect
 from functools import wraps
 from types import ModuleType
-from typing import Any, Awaitable, Callable, TypedDict, Union
+from typing import Callable
 
 from aiohttp import web
 
 from .server import APP_CLIENT_SOCKET_DECORATED_HANDLERS_KEY, get_socket_server
 
-# The socket ID that was assigned to the client
-SocketID = str
-# The environ argument is a dictionary in standard WSGI format containing the request information, including HTTP headers
-EnvironDict = TypedDict("EnvironDict", {"aiohttp.request": web.Request})
-# Connect event
-SocketioConnectEventHandler = Callable[
-    [SocketID, EnvironDict, web.Application], Awaitable[None]
-]
-
-# Disconnect event
-SocketioDisconnectEventHandler = Callable[[SocketID, web.Application], Awaitable[None]]
-
-# Event
-AnyData = Any
-SocketioEventHandler = Callable[[SocketID, AnyData, web.Application], Awaitable[None]]
-
-_socketio_handlers_registry: list[
-    Union[
-        SocketioEventHandler,
-        SocketioConnectEventHandler,
-        SocketioDisconnectEventHandler,
-    ]
-] = []
+socketio_handlers_registry = []
 
 
 def socket_io_handler(app: web.Application):
@@ -59,7 +37,7 @@ def has_socket_io_handler_signature(fun) -> bool:
 def register_handlers(app: web.Application, module: ModuleType):
     sio = get_socket_server(app)
     member_fcts = [
-        fct for fct in _socketio_handlers_registry if inspect.getmodule(fct) == module
+        fct for fct in socketio_handlers_registry if inspect.getmodule(fct) == module
     ]
     # convert handler
     partial_fcts = [
@@ -86,7 +64,7 @@ def register_socketio_handler(func: Callable) -> Callable:
         and inspect.iscoroutinefunction(func)
     )
     if is_handler:
-        _socketio_handlers_registry.append(func)
+        socketio_handlers_registry.append(func)
     else:
         raise SyntaxError(
             "the function shall be of type fct(*args, app: web.Application"
