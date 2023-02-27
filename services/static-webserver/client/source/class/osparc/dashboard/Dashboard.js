@@ -93,6 +93,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           plural: true,
           allUpperCase: true
         }),
+        icon: "@FontAwesome5Solid/paw/24",
         buildLayout: this.__createStudyBrowser
       }];
       if (permissions.canDo("dashboard.templates.read")) {
@@ -102,6 +103,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
             plural: true,
             allUpperCase: true
           }),
+          icon: "@FontAwesome5Solid/paw/24",
           buildLayout: this.__createTemplateBrowser
         };
         tabs.push(templatesTab);
@@ -110,6 +112,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         tabs.push({
           id: "servicesTabBtn",
           label: this.tr("SERVICES"),
+          icon: "@FontAwesome5Solid/paw/24",
           buildLayout: this.__createServiceBrowser
         });
       }
@@ -117,17 +120,21 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         tabs.push({
           id: "dataTabBtn",
           label: this.tr("DATA"),
+          icon: "@FontAwesome5Solid/paw/24",
           buildLayout: this.__createDataBrowser}
         );
       }
-      tabs.forEach(({id, label, buildLayout}) => {
-        const tabPage = new qx.ui.tabview.Page(label).set({
+      tabs.forEach(({id, label, icon, buildLayout}) => {
+        const tabPage = new qx.ui.tabview.Page(label, icon).set({
           appearance: "dashboard-page"
         });
         const tabButton = tabPage.getChildControl("button");
         tabButton.set({
           font: "text-16",
           minWidth: 70
+        });
+        tabButton.getChildControl("icon").set({
+          toolTipText: label
         });
         osparc.utils.Utils.setIdToWidget(tabButton, id);
         tabPage.setLayout(new qx.ui.layout.Grow());
@@ -166,6 +173,22 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           });
         })
         .catch(err => console.error(err));
+    },
+
+    topBarResized: function(newSize) {
+      const tabs = this.getChildren();
+      const nTabs = tabs.length;
+      const smallBrakpoint = nTabs*110;
+      tabs.forEach(tab => {
+        const tabButton = tab.getChildControl("button");
+        if (newSize.width < smallBrakpoint) {
+          tabButton.getChildControl("label").exclude();
+          tabButton.getChildControl("icon").show();
+        } else {
+          tabButton.getChildControl("label").show();
+          tabButton.getChildControl("icon").exclude();
+        }
+      });
     },
 
     __createStudyBrowser: function() {

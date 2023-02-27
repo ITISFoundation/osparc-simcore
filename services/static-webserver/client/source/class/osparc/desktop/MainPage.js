@@ -186,6 +186,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       tabsBar.set({
         paddingBottom: 8
       });
+      this.__navBar.getChildControl("center-items").addListener("resize", e => dashboard.topBarResized(e.getData()));
       this.__navBar.addDashboardTabButtons(tabsBar);
       const itemWidth = osparc.dashboard.GridButtonBase.ITEM_WIDTH + osparc.dashboard.GridButtonBase.SPACING;
       dashboard.setMinWidth(this.self().MIN_STUDIES_PER_ROW * itemWidth + 8);
