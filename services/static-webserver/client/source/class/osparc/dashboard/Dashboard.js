@@ -87,13 +87,14 @@ qx.Class.define("osparc.dashboard.Dashboard", {
 
     __createMainViewLayout: function() {
       const permissions = osparc.data.Permissions.getInstance();
+      const tabIconSize = 20;
       const tabs = [{
         id: "studiesTabBtn",
         label: osparc.product.Utils.getStudyAlias({
           plural: true,
           allUpperCase: true
         }),
-        icon: "@FontAwesome5Solid/file/24",
+        icon: "@FontAwesome5Solid/file/"+tabIconSize,
         buildLayout: this.__createStudyBrowser
       }];
       if (permissions.canDo("dashboard.templates.read")) {
@@ -103,7 +104,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
             plural: true,
             allUpperCase: true
           }),
-          icon: "@FontAwesome5Solid/copy/24",
+          icon: "@FontAwesome5Solid/copy/"+tabIconSize,
           buildLayout: this.__createTemplateBrowser
         };
         tabs.push(templatesTab);
@@ -112,7 +113,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         tabs.push({
           id: "servicesTabBtn",
           label: this.tr("SERVICES"),
-          icon: "@FontAwesome5Solid/cogs/24",
+          icon: "@FontAwesome5Solid/cogs/"+tabIconSize,
           buildLayout: this.__createServiceBrowser
         });
       }
@@ -120,7 +121,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         tabs.push({
           id: "dataTabBtn",
           label: this.tr("DATA"),
-          icon: "@FontAwesome5Solid/folder/24",
+          icon: "@FontAwesome5Solid/folder/"+tabIconSize,
           buildLayout: this.__createDataBrowser}
         );
       }
@@ -188,8 +189,8 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       tabs.forEach(tab => {
         const tabButton = tab.getChildControl("button");
         if (newSize.width < smallBrakpoint) {
-          tabButton.getChildControl("label").exclude();
           tabButton.getChildControl("icon").show();
+          tabButton.getChildControl("label").exclude();
         } else {
           tabButton.getChildControl("label").show();
           tabButton.getChildControl("icon").exclude();
