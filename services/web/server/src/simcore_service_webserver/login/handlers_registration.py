@@ -92,7 +92,7 @@ async def check_registration_invitation(request: web.Request):
     )
 
     # disabled -> None
-    if settings.LOGIN_REGISTRATION_INVITATION_REQUIRED:
+    if not settings.LOGIN_REGISTRATION_INVITATION_REQUIRED:
         return envelope_json_response(InvitationInfo(email=None))
 
     # non-encrypted -> None
