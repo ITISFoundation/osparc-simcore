@@ -716,6 +716,26 @@ qx.Class.define("osparc.dashboard.CardBase", {
       shareIcon.addListener("mouseout", () => hint.exclude(), this);
     },
 
+    _getEmptyWorkbenchIcon: function() {
+      let toolTipText = this.tr("Empty") + " ";
+      if (this.isResourceType("study")) {
+        toolTipText += osparc.product.Utils.getStudyAlias();
+      } else if (this.isResourceType("template")) {
+        toolTipText += osparc.product.Utils.getTemplateAlias();
+      }
+      const control = new qx.ui.basic.Image().set({
+        source: "@FontAwesome5Solid/times-circle/14",
+        alignY: "bottom",
+        toolTipText
+      });
+      control.addListener("tap", e => {
+        e.stopPropagation();
+        this.setValue(false);
+        this.fireDataEvent("emptyStudyClicked", this.getUuid());
+      }, this);
+      return control;
+    },
+
     /**
      * Event handler for the pointer over event.
      */
