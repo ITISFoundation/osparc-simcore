@@ -6,7 +6,7 @@
 
 from typing import Any, Callable, Iterator
 from unittest import mock
-from unittest.mock import MagicMock, call
+from unittest.mock import AsyncMock, MagicMock, Mock, call
 
 import pytest
 import sqlalchemy as sa
@@ -14,6 +14,7 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.projects_state import ProjectStatus
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     ExpectedResponse,
@@ -39,6 +40,39 @@ async def _request_delete_project(
     await assert_status(resp, expected)
 
 
+@pytest.fixture
+def mock_rabbitmq(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_webserver.director_v2_core_dynamic_services.get_rabbitmq_client",
+        autospec=True,
+    )
+
+
+@pytest.fixture
+def mock_progress_bar(mocker: MockerFixture) -> None:
+
+    sub_progress = Mock()
+
+    class MockedProgress:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            pass
+
+        def sub_progress(self, *kwargs):  # pylint:disable=no-self-use
+            return sub_progress
+
+    mock_bar = MockedProgress()
+
+    mocker.patch(
+        "simcore_service_webserver.director_v2_core_dynamic_services.ProgressBarData",
+        autospec=True,
+        return_value=mock_bar,
+    )
+    return mock_bar
+
+
 @pytest.mark.parametrize(*standard_role_response())
 async def test_delete_project(
     client: TestClient,
@@ -50,6 +84,8 @@ async def test_delete_project(
     catalog_subsystem_mock: Callable,
     fake_services: Callable,
     assert_get_same_project_caller: Callable,
+    mock_rabbitmq: None,
+    mock_progress_bar: AsyncMock,
 ):
     assert client.app
 
@@ -82,6 +118,7 @@ async def test_delete_project(
                 app=client.app,
                 service_uuid=service["service_uuid"],
                 save_state=True,
+                progress=mock_progress_bar.sub_progress(1),
             )
             for service in fakes
         ]
