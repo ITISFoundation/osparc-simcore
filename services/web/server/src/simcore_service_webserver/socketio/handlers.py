@@ -22,38 +22,67 @@ from ..groups_api import list_user_groups
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
 from .events import SOCKET_IO_HEARTBEAT_EVENT, SocketMessageDict, send_messages
-from .handlers_utils import EnvironDict, SocketID, register_socketio_handler
+from .handlers_utils import register_socketio_handler
 from .server import get_socket_server
+
+ANONYMOUS_USER_ID = -1
+_SOCKET_IO_AIOHTTP_REQUEST_KEY = "aiohttp.request"
 
 log = logging.getLogger(__name__)
 
-ANONYMOUS_USER_ID = -1
 
+@register_socketio_handler
+async def connect(sid: str, environ: dict, app: web.Application) -> bool:
+    """socketio reserved handler for when the fontend connects through socket.io
 
-def _get_user_id(request: web.Request) -> int:
+    Arguments:
+        sid {str} -- the socket ID
+        environ {Dict} -- the WSGI environ, among other contains the original request
+        app {web.Application} -- the aiohttp app
+
+    Returns:
+        [type] -- True if socket.io connection accepted
+    """
+    log.debug("client connecting in room %s", sid)
+    request = environ[_SOCKET_IO_AIOHTTP_REQUEST_KEY]
+    try:
+        await authenticate_user(sid, app, request)
+        await set_user_in_rooms(sid, app, request)
+    except web.HTTPUnauthorized as exc:
+        raise SocketIOConnectionError("authentification failed") from exc
+    except Exception as exc:  # pylint: disable=broad-except
+        raise SocketIOConnectionError(f"Unexpected error: {exc}") from exc
+
+    # Send service_deletion_timeout to client
+    # 2 seconds avoids GC from removing the services to early
+    # this has been tested and is working with good results
+    # the previous implementation was not working as expected
+    emit_interval: int = 2
+    log.info("Sending set_heartbeat_emit_interval with %s", emit_interval)
+
     user_id = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
-    return int(user_id)
+    heart_beat_messages: list[SocketMessageDict] = [
+        {
+            "event_type": SOCKET_IO_HEARTBEAT_EVENT,
+            "data": {"interval": emit_interval},
+        }
+    ]
+    await send_messages(
+        app,
+        user_id,
+        heart_beat_messages,
+    )
 
-
-async def _set_user_in_rooms(
-    sid: SocketID, app: web.Application, request: web.Request
-) -> None:
-    user_id = _get_user_id(request)
-    primary_group, user_groups, all_group = await list_user_groups(app, user_id)
-    groups = [primary_group] + user_groups + ([all_group] if bool(all_group) else [])
-    sio = get_socket_server(app)
-    # TODO: check if it is necessary to leave_room when socket disconnects
-    for group in groups:
-        sio.enter_room(sid, f"{group['gid']}")
+    return True
 
 
 @login_required
-async def _authenticate_user(
-    sid: SocketID, app: web.Application, request: web.Request
+async def authenticate_user(
+    sid: str, app: web.Application, request: web.Request
 ) -> None:
     """throws web.HTTPUnauthorized when the user is not recognized. Keeps the original request."""
-    user_id = _get_user_id(request)
-    log.debug("client %s authenticated", f"{user_id=}")
+    user_id = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
+    log.debug("client %s authenticated", user_id)
     client_session_id = request.query.get("client_session_id", None)
     if not client_session_id:
         log.error("Tab ID is not available!")
@@ -70,123 +99,19 @@ async def _authenticate_user(
         await rt.set_socket_id(sid)
 
 
-#
-# socketio event handlers
-#
-
-
-@register_socketio_handler
-async def connect(sid: SocketID, environ: EnvironDict, app: web.Application) -> bool:
-    """socketio reserved handler for when the fontend connects through socket.io
-
-    Arguments:
-        sid {str} -- the socket ID
-        environ {Dict} -- the WSGI environ, among other contains the original request
-        app {web.Application} -- the aiohttp app
-
-    Returns:
-        [type] -- True if socket.io connection accepted
-    """
-    log.debug("client connecting in room %s", f"{sid=}")
-    request: web.Request = environ["aiohttp.request"]
-    try:
-        await _authenticate_user(sid, app, request)
-        await _set_user_in_rooms(sid, app, request)
-    except web.HTTPUnauthorized as exc:
-        raise SocketIOConnectionError("authentification failed") from exc
-    except Exception as exc:  # pylint: disable=broad-except
-        raise SocketIOConnectionError(f"Unexpected error: {exc}") from exc
-
-    # Send service_deletion_timeout to client
-    # 2 seconds avoids GC from removing the services to early
-    # this has been tested and is working with good results
-    # the previous implementation was not working as expected
-    emit_interval: int = 2
-    log.info("Sending set_heartbeat_emit_interval with %s", emit_interval)
-
-    user_id = _get_user_id(request)
-    heart_beat_messages: list[SocketMessageDict] = [
-        {
-            "event_type": SOCKET_IO_HEARTBEAT_EVENT,
-            "data": {"interval": emit_interval},
-        }
-    ]
-    await send_messages(
-        app,
-        user_id,
-        heart_beat_messages,
-    )
-
-    return True
-
-
-@register_socketio_handler
-async def disconnect(sid: SocketID, app: web.Application) -> None:
-    """socketio reserved handler for when the socket.io connection is disconnected.
-
-    Arguments:
-        sid {str} -- the socket ID
-        app {web.Application} -- the aiohttp app
-    """
-    log.debug("client in room %s disconnecting", sid)
+async def set_user_in_rooms(
+    sid: str, app: web.Application, request: web.Request
+) -> None:
+    user_id = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
+    primary_group, user_groups, all_group = await list_user_groups(app, user_id)
+    groups = [primary_group] + user_groups + ([all_group] if bool(all_group) else [])
     sio = get_socket_server(app)
-    async with sio.session(sid) as socketio_session:
-        if "user_id" in socketio_session:
-
-            user_id = socketio_session["user_id"]
-            client_session_id = socketio_session["client_session_id"]
-
-            with log_context(
-                log,
-                logging.INFO,
-                "disconnection of %s for %s",
-                f"{user_id=}",
-                f"{client_session_id=}",
-            ):
-                with managed_resource(user_id, client_session_id, app) as rt:
-                    log.debug("client %s disconnected from room %s", user_id, sid)
-                    await rt.remove_socket_id()
-                # signal same user other clients if available
-                await emit("SIGNAL_USER_DISCONNECTED", user_id, client_session_id, app)
-
-        else:
-            # this should not happen!!
-            log.error(
-                "Unknown client diconnected sid: %s, session %s",
-                sid,
-                str(socketio_session),
-            )
+    # TODO: check if it is necessary to leave_room when socket disconnects
+    for group in groups:
+        sio.enter_room(sid, f"{group['gid']}")
 
 
-@register_socketio_handler
-async def client_heartbeat(sid: SocketID, _: Any, app: web.Application) -> None:
-    """JS client invokes this handler to signal its presence.
-
-    Each time this event is received the alive key's TTL is updated in
-    Redis. Once the key expires, resources will be garbage collected.
-
-    Arguments:
-        sid {str} -- the socket ID
-        _ {Any} -- the data is ignored for this handler
-        app {web.Application} -- the aiohttp app
-    """
-    sio = get_socket_server(app)
-    async with sio.session(sid) as socketio_session:
-        if "user_id" not in socketio_session:
-            return
-
-        user_id = socketio_session["user_id"]
-        client_session_id = socketio_session["client_session_id"]
-        with managed_resource(user_id, client_session_id, app) as rt:
-            await rt.set_heartbeat()
-
-
-#
-# Observer events handlers
-#
-
-
-async def _disconnect_other_sockets(sio, sockets: list[str]) -> None:
+async def disconnect_other_sockets(sio, sockets: list[str]) -> None:
     log.debug("disconnecting sockets %s", sockets)
     logout_tasks = [
         sio.emit("logout", to=sid, data={"reason": "user logged out"})
@@ -228,7 +153,68 @@ async def on_user_logout(
         if sockets:
             # let's do it as a task so it does not block us here
             fire_and_forget_task(
-                _disconnect_other_sockets(sio, sockets),
+                disconnect_other_sockets(sio, sockets),
                 task_suffix_name=f"disconnect_other_sockets_{user_id=}",
                 fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
             )
+
+
+@register_socketio_handler
+async def disconnect(sid: str, app: web.Application) -> None:
+    """socketio reserved handler for when the socket.io connection is disconnected.
+
+    Arguments:
+        sid {str} -- the socket ID
+        app {web.Application} -- the aiohttp app
+    """
+    log.debug("client in room %s disconnecting", sid)
+    sio = get_socket_server(app)
+    async with sio.session(sid) as socketio_session:
+        if "user_id" in socketio_session:
+
+            user_id = socketio_session["user_id"]
+            client_session_id = socketio_session["client_session_id"]
+
+            with log_context(
+                log,
+                logging.INFO,
+                "disconnection of %s for %s",
+                f"{user_id=}",
+                f"{client_session_id=}",
+            ):
+                with managed_resource(user_id, client_session_id, app) as rt:
+                    log.debug("client %s disconnected from room %s", user_id, sid)
+                    await rt.remove_socket_id()
+                # signal same user other clients if available
+                await emit("SIGNAL_USER_DISCONNECTED", user_id, client_session_id, app)
+
+        else:
+            # this should not happen!!
+            log.error(
+                "Unknown client diconnected sid: %s, session %s",
+                sid,
+                str(socketio_session),
+            )
+
+
+@register_socketio_handler
+async def client_heartbeat(sid: str, _: Any, app: web.Application) -> None:
+    """JS client invokes this handler to signal its presence.
+
+    Each time this event is received the alive key's TTL is updated in
+    Redis. Once the key expires, resources will be garbage collected.
+
+    Arguments:
+        sid {str} -- the socket ID
+        _ {Any} -- the data is ignored for this handler
+        app {web.Application} -- the aiohttp app
+    """
+    sio = get_socket_server(app)
+    async with sio.session(sid) as socketio_session:
+        if "user_id" not in socketio_session:
+            return
+
+        user_id = socketio_session["user_id"]
+        client_session_id = socketio_session["client_session_id"]
+        with managed_resource(user_id, client_session_id, app) as rt:
+            await rt.set_heartbeat()
