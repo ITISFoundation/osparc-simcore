@@ -92,9 +92,10 @@ qx.Class.define("osparc.desktop.MainPage", {
         return;
       }
       if (this.__studyEditor) {
-        const studyName = this.__studyEditor.getStudy().getName();
+        const isReadOnly = this.__studyEditor.getStudy().isReadOnly();
         const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
-        if (preferencesSettings.getConfirmBackToDashboard()) {
+        if (!isReadOnly && preferencesSettings.getConfirmBackToDashboard()) {
+          const studyName = this.__studyEditor.getStudy().getName();
           const win = new osparc.ui.window.Confirmation();
           if (osparc.product.Utils.isProduct("s4llite")) {
             let msg = this.tr("Do you want to close ") + "<b>" + studyName + "</b>?";

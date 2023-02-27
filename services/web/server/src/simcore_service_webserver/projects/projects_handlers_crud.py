@@ -46,11 +46,13 @@ from ..storage_api import (
 )
 from ..users_api import get_user_name
 from . import projects_api
+from .project_lock import get_project_locked_state
 from .project_models import ProjectDict, ProjectTypeAPI
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .projects_exceptions import (
     ProjectDeleteError,
     ProjectInvalidRightsError,
+    ProjectLockError,
     ProjectNotFoundError,
 )
 from .projects_nodes_utils import update_frontend_outputs
@@ -704,6 +706,14 @@ async def delete_project(request: web.Request):
             raise web.HTTPForbidden(
                 reason=f"Project is open by {other_user_names}. "
                 "It cannot be deleted until the project is closed."
+            )
+
+        project_locked_state: Optional[ProjectLockError]
+        if project_locked_state := await get_project_locked_state(
+            app=request.app, project_uuid=path_params.project_id
+        ):
+            raise web.HTTPConflict(
+                reason=f"Project {path_params.project_id} is locked: {project_locked_state=}"
             )
 
         await projects_api.submit_delete_project_task(

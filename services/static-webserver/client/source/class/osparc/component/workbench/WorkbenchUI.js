@@ -284,15 +284,15 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __openServiceCatalog: function(e) {
-      if (this.getStudy().isReadOnly()) {
-        return;
-      }
       const winPos = this.__pointerEventToScreenPos(e);
       const nodePos = this.__pointerEventToWorkbenchPos(e);
       this.openServiceCatalog(winPos, nodePos);
     },
 
     openServiceCatalog: function(winPos, nodePos) {
+      if (this.getStudy().isReadOnly()) {
+        return null;
+      }
       const srvCat = new osparc.component.workbench.ServiceCatalog();
       const maxLeft = this.getBounds().width - osparc.component.workbench.ServiceCatalog.Width;
       const maxHeight = this.getBounds().height - osparc.component.workbench.ServiceCatalog.Height;
@@ -436,7 +436,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         delete selectedAnnotation["initPos"];
       });
 
-      if (nodeUI) {
+      if (nodeUI && osparc.desktop.preferences.Preferences.getInstance().isSnapNodeToGrid()) {
         nodeUI.snapToGrid();
         // make sure nodeUI is moved, then update edges
         setTimeout(() => this.__updateNodeUIPos(nodeUI), 10);

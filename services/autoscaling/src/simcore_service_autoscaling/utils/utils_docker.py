@@ -330,12 +330,14 @@ async def get_docker_swarm_join_bash_command() -> str:
 def get_docker_login_on_start_bash_command(registry_settings: RegistrySettings) -> str:
     return " ".join(
         [
+            "echo",
+            f'"{registry_settings.REGISTRY_PW.get_secret_value()}"',
+            "|",
             "docker",
             "login",
             "--username",
             registry_settings.REGISTRY_USER,
-            "--password",
-            registry_settings.REGISTRY_PW.get_secret_value(),
+            "--password-stdin",
             registry_settings.resolved_registry_url,
         ]
     )
