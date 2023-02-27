@@ -13,6 +13,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from models_library.projects_state import ProjectStatus
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     ExpectedResponse,
@@ -24,6 +25,7 @@ from simcore_postgres_database.models.projects_to_products import projects_to_pr
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects import _delete
+from simcore_service_webserver.projects.projects_api import lock_with_notification
 from socketio.exceptions import ConnectionError as SocketConnectionError
 
 
@@ -172,3 +174,25 @@ async def test_delete_project_in_multiple_products_forbidden(
 ):
     assert client.app
     await _request_delete_project(client, user_project_in_2_products, expected.conflict)
+
+
+@pytest.mark.parametrize(*standard_role_response())
+async def test_delete_project_while_it_is_locked_raises_error(
+    client: TestClient,
+    logged_user: dict[str, Any],
+    user_project: dict[str, Any],
+    expected: ExpectedResponse,
+):
+    assert client.app
+
+    project_uuid = user_project["uuid"]
+    user_id = logged_user["id"]
+    async with lock_with_notification(
+        app=client.app,
+        project_uuid=project_uuid,
+        status=ProjectStatus.CLOSING,
+        user_id=user_id,
+        user_name={"first_name": "test", "last_name": "test"},
+        notify_users=False,
+    ):
+        await _request_delete_project(client, user_project, expected.conflict)
