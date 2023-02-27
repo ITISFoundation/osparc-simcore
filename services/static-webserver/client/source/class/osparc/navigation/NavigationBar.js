@@ -112,7 +112,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       this.getChildControl("dashboard-button");
       this.getChildControl("dashboard-label");
 
-      this.getChildControl("read-only-icon");
+      this.getChildControl("read-only-info");
 
       this.getChildControl("tasks-button");
       this.getChildControl("notifications-button");
@@ -234,14 +234,25 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           });
           this.getChildControl("left-items").add(control);
           break;
-        case "read-only-icon":
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/eye/22").set({
-            visibility: "excluded",
-            paddingRight: 10,
-            toolTipText: "Read Only"
+        case "read-only-info": {
+          control = new qx.ui.basic.Atom().set({
+            label: this.tr("Read only"),
+            icon: "@FontAwesome5Solid/eye/22",
+            gap: 10,
+            font: "text-14",
+            visibility: "excluded"
           });
+          const hint = new osparc.ui.hint.Hint(control, osparc.desktop.StudyEditor.READ_ONLY_TEXT).set({
+            active: false
+          });
+          hint.getLabel().set({
+            maxWidth: 300,
+            font: "text-14"
+          });
+          control.addListenerOnce("appear", () => hint.attachShowHideHandlers());
           this.getChildControl("center-items").add(control);
           break;
+        }
         case "tasks-button":
           control = new osparc.component.task.TasksButton();
           this.getChildControl("right-items").add(control);
@@ -310,7 +321,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
             this.getChildControl("study-menu-button").exclude();
             this.getChildControl("edit-title-label").exclude();
           }
-          this.getChildControl("read-only-icon").exclude();
+          this.getChildControl("read-only-info").exclude();
           if (this.__tabButtons) {
             this.__tabButtons.show();
           }
@@ -361,7 +372,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
     _applyStudy: function(study) {
       if (study) {
-        study.bind("readOnly", this.getChildControl("read-only-icon"), "visibility", {
+        study.bind("readOnly", this.getChildControl("read-only-info"), "visibility", {
           converter: value => value ? "visible" : "excluded"
         });
       }
