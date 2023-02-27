@@ -16,7 +16,7 @@ import textwrap
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, AsyncIterator, Callable, Iterator, Optional, Union
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock, Mock
 from uuid import uuid4
 
 import pytest
@@ -582,3 +582,37 @@ async def all_group(
 ) -> dict[str, str]:
     _, _, all_group = await list_user_groups(client.app, logged_user["id"])
     return all_group
+
+
+@pytest.fixture
+def mock_rabbitmq(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_webserver.director_v2_core_dynamic_services.get_rabbitmq_client",
+        autospec=True,
+        return_value=AsyncMock(),
+    )
+
+
+@pytest.fixture
+def mock_progress_bar(mocker: MockerFixture) -> None:
+
+    sub_progress = Mock()
+
+    class MockedProgress:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            pass
+
+        def sub_progress(self, *kwargs):  # pylint:disable=no-self-use
+            return sub_progress
+
+    mock_bar = MockedProgress()
+
+    mocker.patch(
+        "simcore_service_webserver.director_v2_core_dynamic_services.ProgressBarData",
+        autospec=True,
+        return_value=mock_bar,
+    )
+    return mock_bar
