@@ -60,7 +60,11 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
             alignY: "middle",
             toolTipText: this.tr("Empty")
           });
-          control.addListener("tap", () => this.fireDataEvent("emptyStudyClicked", this.getUuid()));
+          control.addListener("tap", e => {
+            e.stopPropagation();
+            this.setValue(false);
+            this.fireDataEvent("emptyStudyClicked", this.getUuid());
+          }, this);
           this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.UPDATES);
           break;
         case "update-study":
