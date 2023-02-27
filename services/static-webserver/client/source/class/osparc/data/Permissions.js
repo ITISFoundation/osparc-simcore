@@ -36,11 +36,10 @@
 
 qx.Class.define("osparc.data.Permissions", {
   extend: qx.core.Object,
-
-  type : "singleton",
+  type: "singleton",
 
   construct() {
-    const initPermissions = osparc.data.Permissions.getInitPermissions();
+    const initPermissions = this.self().getInitPermissions();
     for (const role in initPermissions) {
       if (Object.prototype.hasOwnProperty.call(initPermissions, role)) {
         initPermissions[role].forEach(action => {
@@ -137,22 +136,25 @@ qx.Class.define("osparc.data.Permissions", {
         ],
         "admin": []
       };
-      let productOnlyTesters = [];
+      let fromUserToTester = [];
       if (osparc.product.Utils.isProduct("tis")) {
-        productOnlyTesters = [
+        fromUserToTester = [
           "dashboard.templates.read",
           "dashboard.services.read",
           "study.slides.edit",
           "study.slides.stop"
         ];
       } else if (osparc.product.Utils.isProduct("s4llite")) {
-        productOnlyTesters = [
+        fromUserToTester = [
           "dashboard.services.read",
           "dashboard.data.read"
         ];
       }
-      productOnlyTesters.forEach(onlyTester => {
-        initPermissions.user.remove(onlyTester);
+      fromUserToTester.forEach(onlyTester => {
+        const idx = initPermissions.user.indexOf(onlyTester);
+        if (idx > -1) {
+          initPermissions.user.splice(idx, 1);
+        }
         initPermissions.tester.push(onlyTester);
       });
       return initPermissions;

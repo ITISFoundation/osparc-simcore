@@ -10,6 +10,10 @@ qx.Class.define("osparc.ui.window.Window", {
   construct: function(caption, icon) {
     this.base(arguments, caption, icon);
 
+    this.getChildControl("captionbar").set({
+      padding: 8
+    });
+
     this.getChildControl("title").set({
       font: "text-14",
       rich: true
