@@ -96,4 +96,5 @@ async def get_scheduled_maintenance(request: web.Request):
     if maintenance_str := await redis_client.get(hash_key):
         return web.json_response(data={"data": maintenance_str})
 
-    return web.json_response(status=204)
+    assert web.HTTPNoContent.status_code == 204  # nosec
+    return web.json_response(status=web.HTTPNoContent.status_code)
