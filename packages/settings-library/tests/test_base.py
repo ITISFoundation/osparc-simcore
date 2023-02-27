@@ -4,31 +4,32 @@
 
 import json
 from pathlib import Path
-from typing import Optional
+from typing import Any, Callable, Optional
 
 import pytest
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 from pydantic.fields import Field
+from pytest import MonkeyPatch
 from settings_library.base import BaseCustomSettings, DefaultFromEnvFactoryError
 
 S2 = json.dumps({"S_VALUE": 2})
 S3 = json.dumps({"S_VALUE": 3})
 
 
-def get_attrs_tree(obj):
+def _get_attrs_tree(obj: Any) -> dict[str, Any]:
     # long version of json.dumps({ k:str(getattr(field,k)) for k in ModelField.__slots__ } )
     tree = {}
     for name in obj.__class__.__slots__:
         value = getattr(obj, name)
         if hasattr(value.__class__, "__slots__"):
-            tree[name] = get_attrs_tree(value)
+            tree[name] = _get_attrs_tree(value)
         else:
             tree[name] = f"{value}"
 
     return tree
 
 
-def print_defaults(model_cls):
+def _print_defaults(model_cls: type[BaseModel]):
     for field in model_cls.__fields__.values():
         print(field.name, ":", end="")
         try:
@@ -38,14 +39,14 @@ def print_defaults(model_cls):
             print(err)
 
 
-def dumps_model_class(model_cls):
-    d = {field.name: get_attrs_tree(field) for field in model_cls.__fields__.values()}
-    return json.dumps(d, indent=2)
+def _dumps_model_class(model_cls: type[BaseModel]):
+    d = {field.name: _get_attrs_tree(field) for field in model_cls.__fields__.values()}
+    return json.dumps(d, indent=1)
 
 
 @pytest.fixture
-def model_class_factory():
-    def _create_model(class_name):
+def create_settings_class() -> Callable[[str], type[BaseCustomSettings]]:
+    def _create_cls(class_name: str) -> type[BaseCustomSettings]:
         class S(BaseCustomSettings):
             S_VALUE: int
 
@@ -82,12 +83,13 @@ def model_class_factory():
         _classes = {"M1": M1, "M2": M2}
         return _classes.get(class_name) or list(_classes.values())
 
-    return _create_model
+    return _create_cls
 
 
-def test_without_envs(model_class_factory):
-
-    M = model_class_factory("M1")
+def test_create_class_without_envs(
+    create_settings_class: Callable[[str], type[BaseCustomSettings]]
+):
+    M = create_settings_class("M1")
 
     # DEV: Path("M1.ignore.json").write_text(dumps_model_class(M))
 
@@ -101,14 +103,14 @@ def test_without_envs(model_class_factory):
         M.__fields__["VALUE_DEFAULT_ENV"].get_default()
 
 
-def test_with_envs(monkeypatch, model_class_factory):
-
-    M = model_class_factory("M1")
+def test_create_class_with_envs(
+    monkeypatch: MonkeyPatch,
+    create_settings_class: Callable[[str], type[BaseCustomSettings]],
+):
+    # create class within one context
+    SettingsClass = create_settings_class("M1")
 
     with monkeypatch.context() as patch:
-
-        # Environment
-
         # allows DEFAULT_ENV to be implemented
         patch.setenv("S_VALUE", "1")
 
@@ -122,20 +124,19 @@ def test_with_envs(monkeypatch, model_class_factory):
         # FIXME: if set to {} -> it returns S1 ???
         patch.setenv("VALUE_NULLABLE_REQUIRED", S3)
 
-        #
-        print_defaults(M)
+        _print_defaults(SettingsClass)
 
-        obj = M()
+        instance = SettingsClass()
 
-        print(obj.json(indent=2))
+        print(instance.json(indent=2))
 
         # checks
-        assert obj.dict(exclude_unset=True) == {
+        assert instance.dict(exclude_unset=True) == {
             "VALUE": {"S_VALUE": 2},
             "VALUE_NULLABLE_REQUIRED": {"S_VALUE": 3},
         }
 
-        assert obj.dict() == {
+        assert instance.dict() == {
             "VALUE": {"S_VALUE": 2},
             "VALUE_DEFAULT": {"S_VALUE": 42},
             "VALUE_CONFUSING": None,
@@ -148,7 +149,10 @@ def test_with_envs(monkeypatch, model_class_factory):
         }
 
 
-def test_2(monkeypatch, model_class_factory):
-
-    M = model_class_factory("M2")
-    Path("M2.ignore.json").write_text(dumps_model_class(M))
+@pytest.mark.skip(reason="DEV")
+def test_2(
+    monkeypatch: MonkeyPatch,
+    create_settings_class: Callable[[str], type[BaseCustomSettings]],
+):
+    M = create_settings_class("M2")
+    Path("M2.ignore.json").write_text(_dumps_model_class(M))
