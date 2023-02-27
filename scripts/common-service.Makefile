@@ -95,14 +95,14 @@ stats: ## [swarm] display live stream of $(APP_NAME) container resource usage st
 DOCKER_REGISTRY ?=local
 DOCKER_IMAGE_TAG?=production
 
-.PHONY: settings-schema
-settings-schema: ## [container] json-shema of this service settings
+.PHONY: settings-schema.json
+settings-schema.json: ## [container] dumps json-shema of this service settings
 	@docker run \
-		--interactive \
-		--tty \
 		${DOCKER_REGISTRY}/${APP_NAME}:${DOCKER_IMAGE_TAG} \
 		${APP_CLI_NAME} settings --as-json-schema \
-		| sed -e '1,/{/d'
+		| sed -e '1,/{/d' \
+		> $@
+
 
 
 #
