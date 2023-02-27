@@ -65,7 +65,6 @@ async def test_handle_errors(
         # serving the empire
 
 
-@pytest.mark.testit
 async def test_handle_legacy_errors(
     httpx_async_client: AsyncClient, caplog_debug_level: LogCaptureFixture
 ):
