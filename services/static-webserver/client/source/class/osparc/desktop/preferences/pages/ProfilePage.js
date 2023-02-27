@@ -47,14 +47,17 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
       const box = this._createSectionBox(this.tr("User"));
 
       const email = new qx.ui.form.TextField().set({
+        tabIndex: 1,
         placeholder: this.tr("Email")
       });
 
       const firstName = new qx.ui.form.TextField().set({
+        tabIndex: 2,
         placeholder: this.tr("First Name")
       });
 
       const lastName = new qx.ui.form.TextField().set({
+        tabIndex: 3,
         placeholder: this.tr("Last Name")
       });
 
@@ -78,13 +81,15 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
           readOnly: true
         });
       }
+      role.set({
+        tabIndex: 4
+      });
 
       const form = new qx.ui.form.Form();
       form.add(email, "Email", null, "email");
       form.add(firstName, "First Name", null, "firstName");
       form.add(lastName, "Last Name", null, "lastName");
       form.add(role, "Role", null, "role");
-
       box.add(new qx.ui.form.renderer.Single(form));
 
       const expirationLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
