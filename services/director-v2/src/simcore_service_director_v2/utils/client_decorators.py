@@ -79,7 +79,7 @@ def handle_errors(service_name: str, logger: logging.Logger):
             if httpx.codes.is_server_error(resp.status_code):  # i.e. 5XX error
                 # If server error comes from legacy service path (/x/UUID_4/retrieve) we log as warning
                 if LEGACY_SERVICE_PATH_PATTERN.match(resp.url.path):
-                    logger.warning(
+                    logger.info(
                         "%s service warning: legacy service path %s not implemented",
                         service_name,
                         resp.url.path,

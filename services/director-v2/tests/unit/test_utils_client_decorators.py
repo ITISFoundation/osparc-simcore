@@ -6,6 +6,7 @@ import pytest
 import respx
 from fastapi import HTTPException, status
 from httpx import AsyncClient, Response
+from pytest import LogCaptureFixture
 from simcore_service_director_v2.utils.client_decorators import handle_errors
 
 logger = logging.getLogger(__name__)
@@ -17,7 +18,9 @@ async def httpx_async_client() -> AsyncClient:
         yield client
 
 
-async def test_handle_errors(httpx_async_client: AsyncClient):
+async def test_handle_errors(
+    httpx_async_client: AsyncClient, caplog_debug_level: LogCaptureFixture
+):
     @handle_errors("AService", logger)
     async def a_request(method: str, **kwargs) -> Response:
         return await httpx_async_client.request(method, **kwargs)
@@ -40,6 +43,9 @@ async def test_handle_errors(httpx_async_client: AsyncClient):
             )
         assert status.HTTP_503_SERVICE_UNAVAILABLE == exec_info.value.status_code
 
+        assert "ERROR" in caplog_debug_level.text
+        assert "this kettle is currently\nserving the empire" in caplog_debug_level.text
+
         # ERROR    test_utils_client_decorators:client_decorators.py:76 AService service error:
         # |Request|
         # <Request('POST', 'https://tea.org/?kettle=boiling')>
@@ -59,7 +65,10 @@ async def test_handle_errors(httpx_async_client: AsyncClient):
         # serving the empire
 
 
-async def test_handle_legacy_errors(httpx_async_client: AsyncClient):
+@pytest.mark.testit
+async def test_handle_legacy_errors(
+    httpx_async_client: AsyncClient, caplog_debug_level: LogCaptureFixture
+):
     @handle_errors("DynamicService", logger)
     async def a_request(method: str, **kwargs) -> Response:
         return await httpx_async_client.request(method, **kwargs)
@@ -77,3 +86,9 @@ async def test_handle_legacy_errors(httpx_async_client: AsyncClient):
             )
         except Exception as exc:  # pylint: disable=broad-except
             assert False, f"Unexpected exception occured: {exc}"
+
+        assert "INFO" in caplog_debug_level.text
+        assert (
+            "DynamicService service warning: legacy service path /x/0a4ab690-f0c8-4104-b270-9e67239eca0d/retrieve not implemented"
+            in caplog_debug_level.text
+        )
