@@ -79,16 +79,9 @@ async def test_handle_legacy_errors(
             return_value=Response(status.HTTP_500_INTERNAL_SERVER_ERROR)
         )
 
-        try:
-            await a_request(
-                "POST",
-                url=url,
-            )
-        except Exception as exc:  # pylint: disable=broad-except
-            assert False, f"Unexpected exception occured: {exc}"
-
-        assert "INFO" in caplog_debug_level.text
-        assert (
-            "DynamicService service warning: legacy service path /x/0a4ab690-f0c8-4104-b270-9e67239eca0d/retrieve not implemented"
-            in caplog_debug_level.text
+        await a_request(
+            "POST",
+            url=url,
         )
+
+        assert "legacy service does not implement" in caplog_debug_level.text

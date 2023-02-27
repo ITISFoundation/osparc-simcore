@@ -23,7 +23,7 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
-LEGACY_SERVICE_PATH_PATTERN = re.compile(
+LEGACY_SERVICE_RETRIEVE_PATH_PATTERN = re.compile(
     r"/x/[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}/retrieve",
     re.IGNORECASE,
 )
@@ -77,10 +77,10 @@ def handle_errors(service_name: str, logger: logging.Logger):
             if httpx.codes.is_client_error(resp.status_code):
                 raise HTTPException(resp.status_code, detail=resp.reason_phrase)
             if httpx.codes.is_server_error(resp.status_code):  # i.e. 5XX error
-                # If server error comes from legacy service path (/x/UUID_4/retrieve) we log as warning
-                if LEGACY_SERVICE_PATH_PATTERN.match(resp.url.path):
+                # If server error comes from legacy service retrieve path (/x/UUID_4/retrieve) we log as info
+                if LEGACY_SERVICE_RETRIEVE_PATH_PATTERN.match(resp.url.path):
                     logger.info(
-                        "%s service warning: legacy service path %s not implemented",
+                        "%s legacy service does not implement %s",
                         service_name,
                         resp.url.path,
                     )
