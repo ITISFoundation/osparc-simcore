@@ -51,7 +51,7 @@ async def test_delete_project(
     fake_services: Callable,
     assert_get_same_project_caller: Callable,
     mock_rabbitmq: None,
-    mock_progress_bar,
+    mock_progress_bar: Any,
 ):
     assert client.app
 

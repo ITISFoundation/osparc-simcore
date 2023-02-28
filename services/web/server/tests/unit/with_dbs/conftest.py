@@ -594,7 +594,7 @@ def mock_rabbitmq(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-def mock_progress_bar(mocker: MockerFixture) -> None:
+def mock_progress_bar(mocker: MockerFixture) -> Any:
 
     sub_progress = Mock()
 

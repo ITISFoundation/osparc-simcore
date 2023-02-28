@@ -637,7 +637,7 @@ async def test_close_project(
     mocked_director_v2_api: dict[str, mock.Mock],
     fake_services,
     mock_rabbitmq: None,
-    mock_progress_bar,
+    mock_progress_bar: Any,
 ):
     # POST /v0/projects/{project_id}:close
     fake_dynamic_services = fake_services(number_services=5)
