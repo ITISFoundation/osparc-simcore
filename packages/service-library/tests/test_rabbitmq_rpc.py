@@ -306,3 +306,18 @@ async def test_replier_responds_with_not_locally_defined_object_instance(
 
     await _replier_scope()
     await _requester_scope()
+
+
+async def test_register_handler_under_same_name_raises_error(
+    rabbit_replier: RabbitMQClient, namespace: RPCNamespace
+):
+    async def _a_handler() -> None:
+        pass
+
+    async def _another_handler() -> None:
+        pass
+
+    await rabbit_replier.rpc_register(namespace, "same_name", _a_handler)
+    with pytest.raises(RuntimeError) as exec_info:
+        await rabbit_replier.rpc_register(namespace, "same_name", _another_handler)
+    assert "Method name already used for" in f"{exec_info.value}"
