@@ -3,7 +3,6 @@
 
 """
 import logging
-from typing import Tuple
 
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
@@ -28,4 +27,7 @@ def setup_socketio(app: web.Application):
     handlers_utils.register_handlers(app, handlers)
 
 
-__all__: Tuple[str, ...] = ("setup_socketio", "setup_socketio_server")
+__all__: tuple[str, ...] = (
+    "setup_socketio",
+    "setup_socketio_server",
+)
