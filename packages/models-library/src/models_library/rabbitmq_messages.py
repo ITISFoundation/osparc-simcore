@@ -60,7 +60,7 @@ class ProgressType(StrAutoEnum):
     PROJECT_CLOSING = auto()
 
 
-class ProgressMessageMixin(BaseModel):
+class ProgressMessageMixin(RabbitMessageBase):
     channel_name: Literal["simcore.services.progress"] = "simcore.services.progress"
     progress_type: ProgressType = (
         ProgressType.COMPUTATION_RUNNING
@@ -68,11 +68,11 @@ class ProgressMessageMixin(BaseModel):
     progress: NonNegativeFloat
 
 
-class ProgressRabbitMessageNode(RabbitMessageBase, NodeMessageBase):
+class ProgressRabbitMessageNode(ProgressMessageMixin, NodeMessageBase):
     ...
 
 
-class ProgressRabbitMessageProject(RabbitMessageBase, ProjectMessageBase):
+class ProgressRabbitMessageProject(ProgressMessageMixin, ProjectMessageBase):
     ...
 
 
