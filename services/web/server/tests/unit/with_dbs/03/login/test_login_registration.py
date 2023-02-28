@@ -26,6 +26,10 @@ from simcore_service_webserver.login._registration import (
     InvitationData,
     get_confirmation_info,
 )
+from simcore_service_webserver.login.handlers_registration import (
+    InvitationCheck,
+    InvitationInfo,
+)
 from simcore_service_webserver.login.settings import (
     LoginOptions,
     LoginSettingsForProduct,
@@ -35,8 +39,10 @@ from simcore_service_webserver.users_models import ProfileGet
 
 
 @pytest.fixture
-def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
-    setenvs_from_dict(
+def app_environment(
+    app_environment: EnvVarsDict, monkeypatch: MonkeyPatch
+) -> EnvVarsDict:
+    login_envs = setenvs_from_dict(
         monkeypatch,
         {
             "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "1",
@@ -44,6 +50,8 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
             "LOGIN_2FA_CODE_EXPIRATION_SEC": "60",
         },
     )
+
+    return app_environment | login_envs
 
 
 async def test_register_entrypoint(
@@ -457,10 +465,36 @@ async def test_check_registration_invitation(
     )
 
     url = client.app.router["auth_check_registration_invitation"].url_for()
-    response = await client.get(f"{url}", invitation="123")
+    response = await client.post(
+        f"{url}", json=InvitationCheck(invitation="*" * 100).dict()
+    )
     data, _ = await assert_status(response, web.HTTPOk)
-    assert data["email"] is None
 
+    invitation = InvitationInfo.parse_obj(data)
+    assert invitation.email == None
+
+
+async def test_check_registration_invitation_2(
+    client: TestClient,
+    mocker: MockerFixture,
+):
+    assert client.app
+    mocker.patch(
+        "simcore_service_webserver.login.handlers_registration.get_plugin_settings",
+        autospec=True,
+        return_value=LoginSettingsForProduct(
+            LOGIN_REGISTRATION_INVITATION_REQUIRED=True,  # <--
+        ),
+    )
+
+    url = client.app.router["auth_check_registration_invitation"].url_for()
+    response = await client.post(
+        f"{url}", json=InvitationCheck(invitation="short-code").dict()
+    )
+    data, _ = await assert_status(response, web.HTTPOk)
+
+    invitation = InvitationInfo.parse_obj(data)
+    assert invitation.email == None
     # TODO: LOGIN_REGISTRATION_INVITATION_REQUIRED = True
 
     # TODO: use `mock_invitations_service_http_api` already in test_invitations.py!
