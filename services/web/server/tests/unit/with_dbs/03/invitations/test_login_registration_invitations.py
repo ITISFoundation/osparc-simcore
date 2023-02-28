@@ -94,6 +94,7 @@ async def test_check_registration_invitations_with_old_code(
     assert invitation.email == None
 
 
+@pytest.mark.acceptance_test
 async def test_check_registration_invitation_and_get_email(
     client: TestClient,
     mocker: MockerFixture,
