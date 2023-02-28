@@ -11,6 +11,7 @@ from typing import Optional
 
 from aiohttp import web
 from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeIDStr
 from models_library.rabbitmq_messages import ProgressRabbitMessageProject, ProgressType
 from models_library.services_resources import (
     ServiceResourcesDict,
@@ -124,7 +125,7 @@ async def run_dynamic_service(
 @log_decorator(logger=log)
 async def stop_dynamic_service(
     app: web.Application,
-    service_uuid: str,
+    service_uuid: NodeIDStr,
     save_state: bool = True,
     progress: Optional[ProgressBarData] = None,
 ) -> None:
@@ -150,17 +151,16 @@ async def stop_dynamic_service(
         )
 
 
-async def post_progress_message(
+async def _post_progress_message(
     rabbitmq_client: RabbitMQClient,
     user_id: PositiveInt,
     project_id: str,
-    progress_type: ProgressType,
     progress_value: NonNegativeFloat,
 ) -> None:
     progress_message = ProgressRabbitMessageProject(
         user_id=user_id,
         project_id=project_id,
-        progress_type=progress_type,
+        progress_type=ProgressType.PROJECT_CLOSING,
         progress=progress_value,
     )
 
@@ -186,11 +186,10 @@ async def stop_dynamic_services_in_project(
             ProgressBarData(
                 steps=len(running_dynamic_services),
                 progress_report_cb=partial(
-                    post_progress_message,
+                    _post_progress_message,
                     get_rabbitmq_client(app),
                     user_id,
                     project_id,
-                    ProgressType.PROJECT_CLOSING,
                 ),
             )
         )

@@ -27,7 +27,7 @@ def setup_computation(app: web.Application):
     setup_rabbitmq(app)
     # Subscribe to rabbit upon startup for logs, progress and other
     # metrics on the execution reported by sidecars
-    app.cleanup_ctx.append(setup_rabbitmq_consumers)
+    app.on_startup.append(setup_rabbitmq_consumers)
 
     # Creates a task to listen to comp_task pg-db's table events
     app.cleanup_ctx.append(create_comp_tasks_listening_task)
