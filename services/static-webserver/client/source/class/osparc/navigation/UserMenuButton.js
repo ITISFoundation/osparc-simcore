@@ -164,7 +164,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
     populateMenuCompact: function() {
       this.getMenu().removeAll();
       osparc.data.Resources.get("statics")
-        .then(() => {
+        .then(async () => {
           this.getChildControl("preferences");
           this.getChildControl("organizations");
           this.getChildControl("clusters");
@@ -172,9 +172,9 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
 
           // this part gets injected
           this.__addQuickStartToMenu();
-          this.__addManualsToMenu();
+          await this.__addManualsToMenu();
           this.getMenu().addSeparator();
-          this.__addFeedbacksToMenu();
+          await this.__addFeedbacksToMenu();
           this.getMenu().addSeparator();
           this.getChildControl("theme-switcher");
 
@@ -194,14 +194,14 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       osparc.store.Support.addQuickStartToMenu(menu);
     },
 
-    __addManualsToMenu: function() {
+    __addManualsToMenu: async function() {
       const menu = this.getMenu();
-      osparc.store.Support.addManualButtonsToMenu(menu);
+      await osparc.store.Support.addManualButtonsToMenu(menu);
     },
 
-    __addFeedbacksToMenu: function() {
+    __addFeedbacksToMenu: async function() {
       const menu = this.getMenu();
-      osparc.store.Support.addSupportButtonsToMenu(menu);
+      await osparc.store.Support.addSupportButtonsToMenu(menu);
     }
   }
 });
