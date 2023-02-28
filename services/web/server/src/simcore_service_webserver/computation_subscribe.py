@@ -168,7 +168,7 @@ EXCHANGE_TO_PARSER_CONFIG = (
 )
 
 
-async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
+async def setup_rabbitmq_consumers(app: web.Application) -> AsyncIterator[None]:
     with log_context(log, logging.INFO, msg="Subscribing to rabbitmq channels"):
         rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
 
