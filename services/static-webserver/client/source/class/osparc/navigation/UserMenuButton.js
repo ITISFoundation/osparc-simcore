@@ -169,12 +169,9 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           this.getChildControl("organizations");
           this.getChildControl("clusters");
           this.getMenu().addSeparator();
-          if (osparc.product.tutorial.Utils.getTutorial()) {
-            this.getChildControl("quick-start");
-          }
 
           // this part gets injected
-          this.__addManualsToMenu();
+          this.__addManualsToMenu(); // already contains the Quick Start
           this.__addFeedbacksToMenu();
           this.getChildControl("theme-switcher");
 

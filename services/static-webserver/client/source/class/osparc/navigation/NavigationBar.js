@@ -46,11 +46,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       alignY: "middle"
     }));
 
-    this.__tabButtons = [];
-
-    osparc.data.Resources.get("statics")
-      .then(() => this.buildLayout());
-
     this.set({
       paddingLeft: 10,
       paddingRight: 10,
@@ -58,7 +53,12 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       backgroundColor: "background-main-1"
     });
 
-    this.addListener("resize", () => this.__navBarResized(), this);
+    osparc.data.Resources.get("statics")
+      .then(() => {
+        this.buildLayout();
+        this.setPageContext("dashboard");
+        osparc.WindowSizeTracker.getInstance().addListener("changeCompactVersion", () => this.__navBarResized(), this);
+      });
   },
 
   events: {
@@ -133,9 +133,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       this.getChildControl("manual");
       this.getChildControl("feedback");
       this.getChildControl("theme-switch");
-      this.getChildControl("user-menu");
-
-      this.setPageContext("dashboard");
+      this.getChildControl("user-menu").populateMenu();
     },
 
     _createChildControlImpl: function(id) {
@@ -307,7 +305,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         case "user-menu":
           control = new osparc.navigation.UserMenuButton();
-          control.populateMenu();
           control.set(this.self().BUTTON_OPTIONS);
           this.getChildControl("right-items").add(control);
           break;
@@ -382,31 +379,39 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     },
 
     __navBarResized: function() {
-      if (this.getBounds().width < this.self().SMALL_SCREEN_BREAKPOINT) {
-        // Compact layout
+      let tabButtons = [];
+      if (this.__tabButtons) {
+        tabButtons = this.__tabButtons.getChildControl("content").getChildren();
+      }
+      if (osparc.WindowSizeTracker.getInstance().isCompactVersion()) {
         // left-items
         if (!osparc.product.Utils.isProduct("osparc")) {
           this.getChildControl("logo-powered").exclude();
         }
         // center-items
-        this.__tabButtons.forEach(tabButton => {
+        tabButtons.forEach(tabButton => {
           tabButton.getChildControl("icon").show();
           tabButton.getChildControl("label").exclude();
         });
         // right-items
+        this.getChildControl("manual").exclude();
+        this.getChildControl("feedback").exclude();
+        this.getChildControl("theme-switch").exclude();
         this.getChildControl("user-menu").populateMenuCompact();
       } else {
-        // Relaxed layout
         // left-items
         if (!osparc.product.Utils.isProduct("osparc")) {
           this.getChildControl("logo-powered").show();
         }
         // center-items
-        this.__tabButtons.forEach(tabButton => {
+        tabButtons.forEach(tabButton => {
           tabButton.getChildControl("label").show();
           tabButton.getChildControl("icon").exclude();
         });
         // right-items
+        this.getChildControl("manual").show();
+        this.getChildControl("feedback").show();
+        this.getChildControl("theme-switch").show();
         this.getChildControl("user-menu").populateMenu();
       }
     }
