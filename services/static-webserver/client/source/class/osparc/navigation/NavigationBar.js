@@ -133,7 +133,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       this.getChildControl("manual");
       this.getChildControl("feedback");
       this.getChildControl("theme-switch");
-      this.getChildControl("user-menu").populateMenu();
+      this.getChildControl("user-menu");
     },
 
     _createChildControlImpl: function(id) {
@@ -305,6 +305,13 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         case "user-menu":
           control = new osparc.navigation.UserMenuButton();
+          control.populateMenu();
+          control.set(this.self().BUTTON_OPTIONS);
+          this.getChildControl("right-items").add(control);
+          break;
+        case "user-menu-compact":
+          control = new osparc.navigation.UserMenuButton();
+          control.populateMenuCompact();
           control.set(this.self().BUTTON_OPTIONS);
           this.getChildControl("right-items").add(control);
           break;
@@ -394,10 +401,11 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           tabButton.getChildControl("label").exclude();
         });
         // right-items
+        this.getChildControl("user-menu").exclude();
         this.getChildControl("manual").exclude();
         this.getChildControl("feedback").exclude();
         this.getChildControl("theme-switch").exclude();
-        this.getChildControl("user-menu").populateMenuCompact();
+        this.getChildControl("user-menu-compact").show();
       } else {
         // left-items
         if (!osparc.product.Utils.isProduct("osparc")) {
@@ -409,10 +417,11 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           tabButton.getChildControl("icon").exclude();
         });
         // right-items
+        this.getChildControl("user-menu-compact").exclude();
         this.getChildControl("manual").show();
         this.getChildControl("feedback").show();
         this.getChildControl("theme-switch").show();
-        this.getChildControl("user-menu").populateMenu();
+        this.getChildControl("user-menu").show();
       }
     }
   }
