@@ -27,7 +27,7 @@ qx.Class.define("osparc.store.Support", {
       });
     },
 
-    addManualButtonsToMenu: function(menu, menuButton) {
+    addQuickStartToMenu: function(menu) {
       const tutorial = osparc.product.tutorial.Utils.getTutorial();
       if (tutorial) {
         const qsButton = new qx.ui.menu.Button(qx.locale.Manager.tr("Quick Start"));
@@ -41,6 +41,9 @@ qx.Class.define("osparc.store.Support", {
         });
         menu.add(qsButton);
       }
+    },
+
+    addManualButtonsToMenu: function(menu, menuButton) {
       osparc.store.Support.getManuals()
         .then(manuals => {
           if (menuButton) {

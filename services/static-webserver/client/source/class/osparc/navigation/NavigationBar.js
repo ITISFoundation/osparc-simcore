@@ -357,6 +357,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       const menuButton = new qx.ui.form.MenuButton(null, "@FontAwesome5Solid/book/22", menu).set({
         toolTipText: this.tr("Manuals")
       });
+      osparc.store.Support.addQuickStartToMenu(menu);
       osparc.store.Support.addManualButtonsToMenu(menu, menuButton);
       return menuButton;
     },
@@ -375,6 +376,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     addDashboardTabButtons: function(tabButtons) {
       this.__tabButtons = tabButtons;
       this.getChildControl("center-items").add(tabButtons);
+      this.__navBarResized();
     },
 
     _applyStudy: function(study) {

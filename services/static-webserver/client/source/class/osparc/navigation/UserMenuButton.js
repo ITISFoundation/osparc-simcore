@@ -171,8 +171,11 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           this.getMenu().addSeparator();
 
           // this part gets injected
-          this.__addManualsToMenu(); // already contains the Quick Start
+          this.__addQuickStartToMenu();
+          this.__addManualsToMenu();
+          this.getMenu().addSeparator();
           this.__addFeedbacksToMenu();
+          this.getMenu().addSeparator();
           this.getChildControl("theme-switcher");
 
           this.getMenu().addSeparator();
@@ -184,6 +187,11 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           this.getMenu().addSeparator();
           this.getChildControl("logout");
         });
+    },
+
+    __addQuickStartToMenu: function() {
+      const menu = this.getMenu();
+      osparc.store.Support.addQuickStartToMenu(menu);
     },
 
     __addManualsToMenu: function() {
