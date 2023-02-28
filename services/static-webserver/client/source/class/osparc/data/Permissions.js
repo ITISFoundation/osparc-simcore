@@ -36,11 +36,10 @@
 
 qx.Class.define("osparc.data.Permissions", {
   extend: qx.core.Object,
-
-  type : "singleton",
+  type: "singleton",
 
   construct() {
-    const initPermissions = osparc.data.Permissions.getInitPermissions();
+    const initPermissions = this.self().getInitPermissions();
     for (const role in initPermissions) {
       if (Object.prototype.hasOwnProperty.call(initPermissions, role)) {
         initPermissions[role].forEach(action => {
@@ -88,6 +87,9 @@ qx.Class.define("osparc.data.Permissions", {
         ],
         "user": [
           "dashboard.read",
+          "dashboard.templates.read",
+          "dashboard.services.read",
+          "dashboard.data.read",
           "studies.user.read",
           "studies.user.create",
           "studies.template.create",
@@ -113,7 +115,9 @@ qx.Class.define("osparc.data.Permissions", {
           "study.edge.delete",
           "study.service.update",
           "study.classifier",
-          "study.tag"
+          "study.tag",
+          "study.slides.edit",
+          "study.slides.stop"
         ],
         "tester": [
           "studies.template.create.all",
@@ -132,35 +136,27 @@ qx.Class.define("osparc.data.Permissions", {
         ],
         "admin": []
       };
+      let fromUserToTester = [];
       if (osparc.product.Utils.isProduct("tis")) {
-        initPermissions.user.push(...[
-          "dashboard.data.read"
-        ]);
-        initPermissions.tester.push(...[
+        fromUserToTester = [
           "dashboard.templates.read",
           "dashboard.services.read",
           "study.slides.edit",
           "study.slides.stop"
-        ]);
+        ];
       } else if (osparc.product.Utils.isProduct("s4llite")) {
-        initPermissions.user.push(...[
-          "dashboard.templates.read",
-          "study.slides.edit",
-          "study.slides.stop"
-        ]);
-        initPermissions.tester.push(...[
+        fromUserToTester = [
           "dashboard.services.read",
           "dashboard.data.read"
-        ]);
-      } else {
-        initPermissions.user.push(...[
-          "dashboard.templates.read",
-          "dashboard.services.read",
-          "dashboard.data.read",
-          "study.slides.edit",
-          "study.slides.stop"
-        ]);
+        ];
       }
+      fromUserToTester.forEach(onlyTester => {
+        const idx = initPermissions.user.indexOf(onlyTester);
+        if (idx > -1) {
+          initPermissions.user.splice(idx, 1);
+        }
+        initPermissions.tester.push(onlyTester);
+      });
       return initPermissions;
     }
   },

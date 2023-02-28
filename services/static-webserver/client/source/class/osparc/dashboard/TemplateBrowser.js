@@ -119,8 +119,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     __itemClicked: function(card) {
       if (!card.isLocked()) {
         card.setValue(false);
-        const matchesId = study => study.uuid === card.getUuid();
-        const templateData = this._resourcesList.find(matchesId);
+        const templateData = this.__getTemplateData(card.getUuid());
         this.__createStudyFromTemplate(templateData);
       }
       this.resetSelection();
@@ -291,6 +290,30 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       return editButton;
     },
 
+    __getTemplateData: function(id) {
+      return this._resourcesList.find(template => template.uuid === id);
+    },
+
+    _deleteResourceRequested: function(templateId) {
+      this.__deleteTemplateRequested(this.__getTemplateData(templateId));
+    },
+
+    __deleteTemplateRequested: function(templateData) {
+      const rUSure = this.tr("Are you sure you want to delete ");
+      const msg = rUSure + "<b>" + templateData.name + "</b>?";
+      const win = new osparc.ui.window.Confirmation(msg).set({
+        confirmText: this.tr("Delete"),
+        confirmAction: "delete"
+      });
+      win.center();
+      win.open();
+      win.addListener("close", () => {
+        if (win.getConfirmed()) {
+          this.__doDeleteTemplate(templateData);
+        }
+      }, this);
+    },
+
     __getDeleteTemplateMenuButton: function(templateData) {
       const isCurrentUserOwner = osparc.data.model.Study.canIDelete(templateData["accessRights"]);
       if (!isCurrentUserOwner) {
@@ -299,21 +322,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
 
       const deleteButton = new qx.ui.menu.Button(this.tr("Delete"));
       osparc.utils.Utils.setIdToWidget(deleteButton, "studyItemMenuDelete");
-      deleteButton.addListener("execute", () => {
-        const rUSure = this.tr("Are you sure you want to delete ");
-        const msg = rUSure + "<b>" + templateData.name + "</b>?";
-        const win = new osparc.ui.window.Confirmation(msg).set({
-          confirmText: this.tr("Delete"),
-          confirmAction: "delete"
-        });
-        win.center();
-        win.open();
-        win.addListener("close", () => {
-          if (win.getConfirmed()) {
-            this.__deleteTemplate(templateData);
-          }
-        }, this);
-      }, this);
+      deleteButton.addListener("execute", () => this.__deleteTemplateRequested(templateData), this);
       return deleteButton;
     },
 
@@ -321,7 +330,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       this.__startStudyById(studyData.uuid);
     },
 
-    __deleteTemplate: function(studyData) {
+    __doDeleteTemplate: function(studyData) {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       const collabGids = Object.keys(studyData["accessRights"]);
       const amICollaborator = collabGids.indexOf(myGid) > -1;

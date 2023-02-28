@@ -92,9 +92,10 @@ qx.Class.define("osparc.desktop.MainPage", {
         return;
       }
       if (this.__studyEditor) {
-        const studyName = this.__studyEditor.getStudy().getName();
+        const isReadOnly = this.__studyEditor.getStudy().isReadOnly();
         const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
-        if (preferencesSettings.getConfirmBackToDashboard()) {
+        if (!isReadOnly && preferencesSettings.getConfirmBackToDashboard()) {
+          const studyName = this.__studyEditor.getStudy().getName();
           const win = new osparc.ui.window.Confirmation();
           if (osparc.product.Utils.isProduct("s4llite")) {
             let msg = this.tr("Do you want to close ") + "<b>" + studyName + "</b>?";
@@ -183,7 +184,10 @@ qx.Class.define("osparc.desktop.MainPage", {
       const dashboard = this.__dashboard = new osparc.dashboard.Dashboard();
       const tabsBar = dashboard.getChildControl("bar");
       tabsBar.set({
-        paddingBottom: 8
+        paddingBottom: 6
+      });
+      this.__navBar.getChildControl("center-items").addListener("resize", e => {
+        dashboard.topBarResized(e.getData());
       });
       this.__navBar.addDashboardTabButtons(tabsBar);
       const itemWidth = osparc.dashboard.GridButtonBase.ITEM_WIDTH + osparc.dashboard.GridButtonBase.SPACING;
