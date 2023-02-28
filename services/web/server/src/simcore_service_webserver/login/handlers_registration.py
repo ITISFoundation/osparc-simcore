@@ -96,6 +96,7 @@ async def check_registration_invitation(request: web.Request):
         return envelope_json_response(InvitationInfo(email=None))
 
     # non-encrypted -> None
+    # NOTE: that None is given if the code is the old type (and does not fail)
     check = await parse_request_body_as(InvitationCheck, request)
     if not is_service_invitation_code(code=check.invitation):
         return envelope_json_response(InvitationInfo(email=None))
