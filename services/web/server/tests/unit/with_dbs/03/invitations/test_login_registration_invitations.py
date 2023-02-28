@@ -4,10 +4,15 @@
 # pylint: disable=unused-variable
 
 
+import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from pytest import MonkeyPatch
 from pytest_mock import MockerFixture
+from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from simcore_service_webserver.invitations_client import InvitationContent
 from simcore_service_webserver.login.handlers_registration import (
     InvitationCheck,
     InvitationInfo,
@@ -15,7 +20,33 @@ from simcore_service_webserver.login.handlers_registration import (
 from simcore_service_webserver.login.settings import LoginSettingsForProduct
 
 
-async def test_check_registration_invitation(
+@pytest.fixture
+def app_environment(
+    app_environment: EnvVarsDict, env_devel_dict: EnvVarsDict, monkeypatch: MonkeyPatch
+) -> EnvVarsDict:
+    login_envs = setenvs_from_dict(
+        monkeypatch,
+        {
+            "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "1",
+            "LOGIN_REGISTRATION_INVITATION_REQUIRED": "0",
+            "LOGIN_2FA_CODE_EXPIRATION_SEC": "60",
+        },
+    )
+
+    # set INVITATIONS_* variables using those in .devel-env
+    invitation_envs = setenvs_from_dict(
+        monkeypatch,
+        envs={
+            name: value
+            for name, value in env_devel_dict.items()
+            if name.startswith("INVITATIONS_")
+        },
+    )
+
+    return app_environment | login_envs | invitation_envs
+
+
+async def test_check_registration_invitation_when_not_required(
     client: TestClient,
     mocker: MockerFixture,
 ):
@@ -40,7 +71,7 @@ async def test_check_registration_invitation(
     assert invitation.email == None
 
 
-async def test_check_registration_invitation_2(
+async def test_check_registration_invitations_with_old_code(
     client: TestClient,
     mocker: MockerFixture,
 ):
@@ -61,6 +92,28 @@ async def test_check_registration_invitation_2(
 
     invitation = InvitationInfo.parse_obj(data)
     assert invitation.email == None
-    # TODO: LOGIN_REGISTRATION_INVITATION_REQUIRED = True
 
-    # TODO: use `mock_invitations_service_http_api` already in test_invitations.py!
+
+async def test_check_registration_invitation_and_get_email(
+    client: TestClient,
+    mocker: MockerFixture,
+    mock_invitations_service_http_api: AioResponsesMock,
+    expected_invitation: InvitationContent,
+):
+    assert client.app
+    mocker.patch(
+        "simcore_service_webserver.login.handlers_registration.get_plugin_settings",
+        autospec=True,
+        return_value=LoginSettingsForProduct(
+            LOGIN_REGISTRATION_INVITATION_REQUIRED=True,  # <--
+        ),
+    )
+
+    url = client.app.router["auth_check_registration_invitation"].url_for()
+    response = await client.post(
+        f"{url}", json=InvitationCheck(invitation="*" * 105).dict()
+    )
+    data, _ = await assert_status(response, web.HTTPOk)
+
+    invitation = InvitationInfo.parse_obj(data)
+    assert invitation.email == expected_invitation.guest
