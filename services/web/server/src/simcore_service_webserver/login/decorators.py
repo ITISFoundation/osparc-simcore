@@ -16,7 +16,7 @@ def login_required(handler):
     @wraps(handler)
     async def wrapped(*args, **kwargs):
         request = get_request(*args, **kwargs)
-        # WARNING: not that check_authorized is patched in some tests.
+        # WARNING: note that check_authorized is patched in some tests.
         # Careful when changing the function signature
         request[RQT_USERID_KEY] = await check_authorized(request)
         ret = await handler(*args, **kwargs)
