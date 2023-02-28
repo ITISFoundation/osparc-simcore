@@ -26,10 +26,6 @@ from simcore_service_webserver.login._registration import (
     InvitationData,
     get_confirmation_info,
 )
-from simcore_service_webserver.login.handlers_registration import (
-    InvitationCheck,
-    InvitationInfo,
-)
 from simcore_service_webserver.login.settings import (
     LoginOptions,
     LoginSettingsForProduct,
@@ -447,54 +443,3 @@ async def test_registraton_with_invitation_for_trial_account(
         expected = invitation.user["created_at"] + timedelta(days=TRIAL_DAYS)
         assert profile.expiration_date
         assert profile.expiration_date == expected.date()
-
-
-async def test_check_registration_invitation(
-    client: TestClient,
-    mocker: MockerFixture,
-):
-    assert client.app
-    mocker.patch(
-        "simcore_service_webserver.login.handlers_registration.get_plugin_settings",
-        autospec=True,
-        return_value=LoginSettingsForProduct(
-            LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=False,
-            LOGIN_REGISTRATION_INVITATION_REQUIRED=False,
-            LOGIN_TWILIO=None,
-        ),
-    )
-
-    url = client.app.router["auth_check_registration_invitation"].url_for()
-    response = await client.post(
-        f"{url}", json=InvitationCheck(invitation="*" * 100).dict()
-    )
-    data, _ = await assert_status(response, web.HTTPOk)
-
-    invitation = InvitationInfo.parse_obj(data)
-    assert invitation.email == None
-
-
-async def test_check_registration_invitation_2(
-    client: TestClient,
-    mocker: MockerFixture,
-):
-    assert client.app
-    mocker.patch(
-        "simcore_service_webserver.login.handlers_registration.get_plugin_settings",
-        autospec=True,
-        return_value=LoginSettingsForProduct(
-            LOGIN_REGISTRATION_INVITATION_REQUIRED=True,  # <--
-        ),
-    )
-
-    url = client.app.router["auth_check_registration_invitation"].url_for()
-    response = await client.post(
-        f"{url}", json=InvitationCheck(invitation="short-code").dict()
-    )
-    data, _ = await assert_status(response, web.HTTPOk)
-
-    invitation = InvitationInfo.parse_obj(data)
-    assert invitation.email == None
-    # TODO: LOGIN_REGISTRATION_INVITATION_REQUIRED = True
-
-    # TODO: use `mock_invitations_service_http_api` already in test_invitations.py!
