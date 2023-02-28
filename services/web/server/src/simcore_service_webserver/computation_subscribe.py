@@ -1,5 +1,6 @@
 import functools
 import logging
+from typing import Union
 
 from aiohttp import web
 from models_library.rabbitmq_messages import (
@@ -10,7 +11,7 @@ from models_library.rabbitmq_messages import (
     ProgressRabbitMessageProject,
     ProgressType,
 )
-from pydantic import ValidationError
+from pydantic import parse_raw_as
 from servicelib.aiohttp.monitor_services import (
     SERVICE_STARTED_LABELS,
     SERVICE_STOPPED_LABELS,
@@ -77,10 +78,9 @@ async def _handle_computation_running_progress(
 
 async def progress_message_parser(app: web.Application, data: bytes) -> bool:
     # update corresponding project, node, progress value
-    try:
-        rabbit_message = ProgressRabbitMessageNode.parse_raw(data)
-    except ValidationError:
-        rabbit_message = ProgressRabbitMessageProject.parse_raw(data)
+    rabbit_message = parse_raw_as(
+        Union[ProgressRabbitMessageNode, ProgressRabbitMessageProject], data
+    )
 
     if rabbit_message.progress_type is ProgressType.COMPUTATION_RUNNING:
         # NOTE: backward compatibility, this progress is kept in the project
