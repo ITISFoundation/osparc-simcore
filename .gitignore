@@ -174,3 +174,6 @@ Untitled*
 
 # snyk extension cache
 .dccache
+
+# service settings.schemas.json
+services/**/settings-schema.json

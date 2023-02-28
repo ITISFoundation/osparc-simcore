@@ -125,6 +125,7 @@ qx.Class.define("osparc.ui.form.PasswordField", {
           break;
         case "eyeButton":
           control = new qx.ui.form.ToggleButton().set({
+            focusable: false,
             maxHeight: 18,
             width: 22,
             padding: 0,

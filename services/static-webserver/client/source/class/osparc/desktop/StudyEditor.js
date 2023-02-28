@@ -188,7 +188,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           // If it is larger than PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES, dynamics won't start -> Flash Message
           osparc.store.StaticInfo.getInstance().getMaxNumberDyNodes()
             .then(maxNumber => {
-              console.log(maxNumber);
               if (maxNumber) {
                 const nodes = study.getWorkbench().getNodes();
                 const nDynamics = Object.values(nodes).filter(node => node.isDynamic()).length;
