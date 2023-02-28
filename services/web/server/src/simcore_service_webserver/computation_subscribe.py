@@ -7,8 +7,10 @@ from models_library.rabbitmq_messages import (
     InstrumentationRabbitMessage,
     LoggerRabbitMessage,
     ProgressRabbitMessageNode,
+    ProgressRabbitMessageProject,
     ProgressType,
 )
+from pydantic import ValidationError
 from servicelib.aiohttp.monitor_services import (
     SERVICE_STARTED_LABELS,
     SERVICE_STOPPED_LABELS,
@@ -75,29 +77,28 @@ async def _handle_computation_running_progress(
 
 async def progress_message_parser(app: web.Application, data: bytes) -> bool:
     # update corresponding project, node, progress value
-    rabbit_message = ProgressRabbitMessageNode.parse_raw(data)
+    try:
+        rabbit_message = ProgressRabbitMessageNode.parse_raw(data)
+    except ValidationError:
+        rabbit_message = ProgressRabbitMessageProject.parse_raw(data)
 
     if rabbit_message.progress_type is ProgressType.COMPUTATION_RUNNING:
         # NOTE: backward compatibility, this progress is kept in the project
         return await _handle_computation_running_progress(app, rabbit_message)
 
     # NOTE: other types of progress are transient
-    await send_messages(
-        app,
-        f"{rabbit_message.user_id}",
-        [
-            {
-                "event_type": SOCKET_IO_NODE_PROGRESS_EVENT,
-                "data": {
-                    "project_id": rabbit_message.project_id,
-                    "node_id": rabbit_message.node_id,
-                    "user_id": rabbit_message.user_id,
-                    "progress_type": rabbit_message.progress_type,
-                    "progress": rabbit_message.progress,
-                },
-            }
-        ],
-    )
+    message = {
+        "event_type": SOCKET_IO_NODE_PROGRESS_EVENT,
+        "data": {
+            "project_id": rabbit_message.project_id,
+            "user_id": rabbit_message.user_id,
+            "progress_type": rabbit_message.progress_type,
+            "progress": rabbit_message.progress,
+        },
+    }
+    if type(rabbit_message) == ProgressRabbitMessageNode:
+        message["node_id"] = rabbit_message.node_id
+    await send_messages(app, f"{rabbit_message.user_id}", [message])
     return True
 
 
