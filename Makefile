@@ -510,6 +510,15 @@ openapi-specs: ## bundles and validates openapi specifications and schemas of AL
 	@$(MAKE_C) services/storage $@
 	@$(MAKE_C) services/director $@
 
+.PHONY: settings-schema.json
+settings-schema.json: ## [container] dumps json-schema settings of all services
+	@$(MAKE_C) services/api-server $@
+	@$(MAKE_C) services/autoscaling $@
+	@$(MAKE_C) services/director-v2 $@
+	@$(MAKE_C) services/invitations $@
+	@$(MAKE_C) services/storage $@
+	@$(MAKE_C) services/web/server $@
+
 
 .PHONY: code-analysis
 code-analysis: .codeclimate.yml ## runs code-climate analysis
