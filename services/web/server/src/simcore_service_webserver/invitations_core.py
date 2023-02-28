@@ -96,7 +96,7 @@ def is_service_invitation_code(code: str):
 async def validate_invitation_url(
     app: web.Application, guest_email: str, invitation_url: str
 ) -> InvitationContent:
-    """Validates invitation and returns content
+    """Validates invitation and associated email/user and returns content upon success
 
     raises InvitationsError
     """
@@ -119,3 +119,21 @@ async def validate_invitation_url(
             raise InvalidInvitation(reason="This invitation was already used")
 
     return invitation
+
+
+async def extract_invitation(
+    app: web.Application, invitation_url: str
+) -> InvitationContent:
+    """Validates invitation and returns content without checking associated user
+
+    raises InvitationsError
+    """
+    invitations_service: InvitationsServiceApi = get_invitations_service_api(app=app)
+
+    with _handle_exceptions_as_invitations_errors():
+
+        # check with service
+        invitation = await invitations_service.extract_invitation(
+            invitation_url=invitation_url
+        )
+        return invitation
