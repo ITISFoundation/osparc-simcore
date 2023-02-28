@@ -177,11 +177,10 @@ qx.Class.define("osparc.info.ServiceLarge", {
 
     __createDeprecated: function() {
       const isDeprecated = osparc.utils.Services.isDeprecated(this.getService());
+      const isRetired = osparc.utils.Services.isRetired(this.getService());
       if (isDeprecated) {
         return osparc.utils.StatusUI.createServiceDeprecatedChip();
-      }
-      const isRetired = osparc.utils.Services.isRetired(this.getService());
-      if (isRetired) {
+      } else if (isRetired) {
         return osparc.utils.StatusUI.createServiceRetiredChip();
       }
       return null;

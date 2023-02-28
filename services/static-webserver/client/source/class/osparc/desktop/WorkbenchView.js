@@ -1089,16 +1089,17 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__outputsPage.add(chip);
 
         if (node.isDeprecated()) {
-          const deprecateDateText = new qx.ui.basic.Label(osparc.utils.Services.getDeprecationDateText(node.getMetaData())).set({
+          const deprecateDateLabel = new qx.ui.basic.Label(osparc.utils.Services.getDeprecationDateText(node.getMetaData())).set({
             rich: true
           });
-          this.__outputsPage.add(deprecateDateText);
+          this.__outputsPage.add(deprecateDateLabel);
         }
 
-        const deprecatedMsg = new qx.ui.basic.Label(osparc.utils.Services.DEPRECATED_DYNAMIC_INSTRUCTIONS).set({
+        const instructionsMsg = node.isDeprecated() ? osparc.utils.Services.DEPRECATED_DYNAMIC_INSTRUCTIONS : osparc.utils.Services.RETIRED_DYNAMIC_INSTRUCTIONS;
+        const instructionsLabel = new qx.ui.basic.Label(instructionsMsg).set({
           rich: true
         });
-        this.__outputsPage.add(deprecatedMsg);
+        this.__outputsPage.add(instructionsLabel);
 
         this.getChildControl("side-panel-right-tabs").setSelection([this.__outputsPage]);
       }
