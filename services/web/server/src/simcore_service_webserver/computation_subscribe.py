@@ -7,7 +7,7 @@ from models_library.rabbitmq_messages import (
     EventRabbitMessage,
     InstrumentationRabbitMessage,
     LoggerRabbitMessage,
-    ProgressRabbitMessage,
+    ProgressRabbitMessageNode,
     ProgressType,
 )
 from servicelib.aiohttp.monitor_services import (
@@ -36,7 +36,7 @@ log = logging.getLogger(__name__)
 
 
 async def _handle_computation_running_progress(
-    app: web.Application, message: ProgressRabbitMessage
+    app: web.Application, message: ProgressRabbitMessageNode
 ) -> bool:
     try:
         project = await projects_api.update_project_node_progress(
@@ -76,7 +76,7 @@ async def _handle_computation_running_progress(
 
 async def progress_message_parser(app: web.Application, data: bytes) -> bool:
     # update corresponding project, node, progress value
-    rabbit_message = ProgressRabbitMessage.parse_raw(data)
+    rabbit_message = ProgressRabbitMessageNode.parse_raw(data)
 
     if rabbit_message.progress_type is ProgressType.COMPUTATION_RUNNING:
         # NOTE: backward compatibility, this progress is kept in the project
@@ -151,7 +151,7 @@ EXCHANGE_TO_PARSER_CONFIG = (
         {},
     ),
     (
-        ProgressRabbitMessage.get_channel_name(),
+        ProgressRabbitMessageNode.get_channel_name(),
         progress_message_parser,
         {},
     ),

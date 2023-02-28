@@ -11,7 +11,7 @@ from typing import Optional
 
 from aiohttp import web
 from models_library.projects import ProjectID
-from models_library.rabbitmq_messages import ProgressRabbitMessage, ProgressType
+from models_library.rabbitmq_messages import ProgressRabbitMessageProject, ProgressType
 from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
@@ -157,7 +157,7 @@ async def post_progress_message(
     progress_type: ProgressType,
     progress_value: NonNegativeFloat,
 ) -> None:
-    progress_message = ProgressRabbitMessage.create_for_project(
+    progress_message = ProgressRabbitMessageProject(
         user_id=user_id,
         project_id=project_id,
         progress_type=progress_type,
@@ -165,7 +165,7 @@ async def post_progress_message(
     )
 
     await rabbitmq_client.publish(
-        ProgressRabbitMessage.get_channel_name(), progress_message.json()
+        ProgressRabbitMessageProject.get_channel_name(), progress_message.json()
     )
 
 
