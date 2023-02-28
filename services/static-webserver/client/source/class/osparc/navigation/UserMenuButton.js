@@ -142,7 +142,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       return control || this.base(arguments, id);
     },
 
-    populateSimpleMenu: function() {
+    populateMenu: function() {
       this.getMenu().removeAll();
       this.getChildControl("preferences");
       this.getChildControl("organizations");
@@ -161,7 +161,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       this.getChildControl("logout");
     },
 
-    populateExtendedMenu: function() {
+    populateMenuCompact: function() {
       this.getMenu().removeAll();
       osparc.data.Resources.get("statics")
         .then(() => {

@@ -304,7 +304,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         case "user-menu":
           control = new osparc.navigation.UserMenuButton();
-          control.populateSimpleMenu();
+          control.populateMenu();
           control.set(this.self().BUTTON_OPTIONS);
           this.getChildControl("right-items").add(control);
           break;
