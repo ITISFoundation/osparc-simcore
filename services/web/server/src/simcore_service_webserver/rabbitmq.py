@@ -20,7 +20,7 @@ log = logging.getLogger(__name__)
     logger=log,
     depends=[],
 )
-def setup_rabbitmq_client(app: web.Application) -> AsyncIterator[None]:
+def setup_rabbitmq(app: web.Application) -> AsyncIterator[None]:
     async def setup_rabbitmq(app: web.Application):
         settings: RabbitSettings = get_plugin_settings(app)
         with log_context(

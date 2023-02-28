@@ -9,7 +9,7 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 
 from .computation_comp_tasks_listening_task import create_comp_tasks_listening_task
 from .computation_subscribe import setup_rabbitmq_consumer
-from .rabbitmq import setup_rabbitmq_client
+from .rabbitmq import setup_rabbitmq
 
 log = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ log = logging.getLogger(__name__)
     ],  # depends on diagnostics for setting the instrumentation
 )
 def setup_computation(app: web.Application):
-    setup_rabbitmq_client(app)
+    setup_rabbitmq(app)
     # Subscribe to rabbit upon startup for logs, progress and other
     # metrics on the execution reported by sidecars
     app.cleanup_ctx.append(setup_rabbitmq_consumer)
