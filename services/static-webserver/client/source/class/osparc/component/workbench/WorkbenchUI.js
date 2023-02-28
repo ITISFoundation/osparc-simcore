@@ -275,7 +275,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const title = new qx.ui.basic.Label(label).set({
         alignX: "center",
         margin: [15, 0],
-        font: "workbench-io-label",
+        font: "workbench-start-hint",
         textColor: "workbench-start-hint"
       });
       inputOutputNodesLayout.add(title);
@@ -284,15 +284,15 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __openServiceCatalog: function(e) {
-      if (this.getStudy().isReadOnly()) {
-        return;
-      }
       const winPos = this.__pointerEventToScreenPos(e);
       const nodePos = this.__pointerEventToWorkbenchPos(e);
       this.openServiceCatalog(winPos, nodePos);
     },
 
     openServiceCatalog: function(winPos, nodePos) {
+      if (this.getStudy().isReadOnly()) {
+        return null;
+      }
       const srvCat = new osparc.component.workbench.ServiceCatalog();
       const maxLeft = this.getBounds().width - osparc.component.workbench.ServiceCatalog.Width;
       const maxHeight = this.getBounds().height - osparc.component.workbench.ServiceCatalog.Height;
@@ -375,9 +375,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         };
       }
 
-      const node = nodeUI.getNode();
-      node.setPosition(position);
-      nodeUI.moveTo(node.getPosition().x, node.getPosition().y);
+      nodeUI.setPosition(position);
       this.__desktop.add(nodeUI);
       nodeUI.open();
       this.__nodesUI.push(nodeUI);
@@ -413,12 +411,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __itemMoving: function(itemId, xDiff, yDiff) {
       this.__selectedNodeUIs.forEach(selectedNodeUI => {
         if (itemId !== selectedNodeUI.getNodeId()) {
-          const selectedNode = selectedNodeUI.getNode();
-          selectedNode.setPosition({
+          selectedNodeUI.setPosition({
             x: selectedNodeUI.initPos.x + xDiff,
             y: selectedNodeUI.initPos.y + yDiff
           });
-          selectedNodeUI.moveTo(selectedNode.getPosition().x, selectedNode.getPosition().y);
           this.__updateNodeUIPos(selectedNodeUI);
         }
       });
@@ -432,13 +428,20 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       });
     },
 
-    __itemStoppedMoving: function() {
+    __itemStoppedMoving: function(nodeUI) {
       this.__selectedNodeUIs.forEach(selectedNodeUI => {
         delete selectedNodeUI["initPos"];
       });
       this.getSelectedAnnotations().forEach(selectedAnnotation => {
         delete selectedAnnotation["initPos"];
       });
+
+      if (nodeUI && osparc.desktop.preferences.Preferences.getInstance().isSnapNodeToGrid()) {
+        nodeUI.snapToGrid();
+        // make sure nodeUI is moved, then update edges
+        setTimeout(() => this.__updateNodeUIPos(nodeUI), 10);
+      }
+
       this.__updateWorkbenchBounds();
 
       // After moving a nodeUI, a new element with z-index 100000+ appears on the DOM tree and prevents from clicking
@@ -454,16 +457,19 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __addNodeListeners: function(nodeUI) {
-      nodeUI.addListener("nodeStartedMoving", () => this.__itemStartedMoving(), this);
+      nodeUI.addListener("updateNodeDecorator", () => this.__updateNodeUIPos(nodeUI), this);
+
+      nodeUI.addListener("nodeMovingStart", () => this.__itemStartedMoving(), this);
       nodeUI.addListener("nodeMoving", () => {
         this.__updateNodeUIPos(nodeUI);
         if ("initPos" in nodeUI) {
+          // multi node move
           const xDiff = nodeUI.getNode().getPosition().x - nodeUI.initPos.x;
           const yDiff = nodeUI.getNode().getPosition().y - nodeUI.initPos.y;
           this.__itemMoving(nodeUI.getNodeId(), xDiff, yDiff);
         }
       }, this);
-      nodeUI.addListener("nodeStoppedMoving", () => this.__itemStoppedMoving(), this);
+      nodeUI.addListener("nodeMovingStop", () => this.__itemStoppedMoving(nodeUI), this);
 
       nodeUI.addListener("tap", e => {
         this.__activeNodeChanged(nodeUI, e.isCtrlPressed());
@@ -780,7 +786,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
 
       edgesInvolved.forEach(edgeId => {
-        let edgeUI = this.__getEdgeUI(edgeId);
+        const edgeUI = this.__getEdgeUI(edgeId);
         if (edgeUI) {
           let node1 = null;
           if (edgeUI.getEdge().getInputNodeId()) {
@@ -1063,52 +1069,55 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (model) {
         // create nodes
         const nodes = model.getNodes();
-        const nodeUIs = [];
-        for (const nodeId in nodes) {
-          const node = nodes[nodeId];
-          const nodeUI = this._createNodeUI(nodeId);
-          this._addNodeUIToWorkbench(nodeUI, node.getPosition());
-          nodeUIs.push(nodeUI);
-        }
+        this.__renderNodes(nodes);
         qx.ui.core.queue.Layout.flush();
+        this.__renderAnnotations(model.getStudy().getUi());
+      }
+    },
 
-        let tries = 0;
-        const maxTries = 40;
-        const sleepFor = 100;
-        const allNodesVisible = nodeUIss => nodeUIss.every(nodeUI => nodeUI.getCurrentBounds() !== null);
-        while (!allNodesVisible(nodeUIs) && tries < maxTries) {
-          await osparc.utils.Utils.sleep(sleepFor);
-          tries++;
-        }
-        console.log("nodes visible", nodeUIs.length, tries*sleepFor);
+    __renderNodes: function(nodes) {
+      let nNodesToRender = Object.keys(nodes).length;
+      const nodeUIs = [];
+      for (const nodeId in nodes) {
+        const node = nodes[nodeId];
+        const nodeUI = this._createNodeUI(nodeId);
+        nodeUI.addListenerOnce("appear", () => {
+          nNodesToRender--;
+          if (nNodesToRender === 0) {
+            this.__renderEdges(nodes);
+          }
+        }, this);
+        this._addNodeUIToWorkbench(nodeUI, node.getPosition());
+        nodeUIs.push(nodeUI);
+      }
+      nodeUIs.forEach(nodeUI => this.__createDragDropMechanism(nodeUI));
+    },
 
-        nodeUIs.forEach(nodeUI => this.__createDragDropMechanism(nodeUI));
-
-        // create edges
-        for (const nodeId in nodes) {
-          const node = nodes[nodeId];
-          const inputNodeIDs = node.getInputNodes();
-          inputNodeIDs.forEach(inputNodeId => {
-            if (inputNodeId in nodes) {
-              this._createEdgeBetweenNodes(inputNodeId, nodeId, false);
-            }
-          });
-        }
-
-        // create annotations
-        const studyUI = model.getStudy().getUi();
-        const initData = studyUI.getAnnotationsInitData();
-        const annotations = initData ? initData : studyUI.getAnnotations();
-        Object.entries(annotations).forEach(([annotationId, annotation]) => {
-          if (annotation instanceof osparc.component.workbench.Annotation) {
-            this.__addAnnotation(annotation.serialize(), annotationId);
-          } else {
-            this.__addAnnotation(annotation, annotationId);
+    __renderEdges: async function(nodes) {
+      // create edges
+      for (const nodeId in nodes) {
+        const node = nodes[nodeId];
+        const inputNodeIDs = node.getInputNodes();
+        inputNodeIDs.forEach(inputNodeId => {
+          if (inputNodeId in nodes) {
+            this._createEdgeBetweenNodes(inputNodeId, nodeId, false);
           }
         });
-        if (initData) {
-          studyUI.nullAnnotationsInitData();
+      }
+    },
+
+    __renderAnnotations: function(studyUI) {
+      const initData = studyUI.getAnnotationsInitData();
+      const annotations = initData ? initData : studyUI.getAnnotations();
+      Object.entries(annotations).forEach(([annotationId, annotation]) => {
+        if (annotation instanceof osparc.component.workbench.Annotation) {
+          this.__addAnnotation(annotation.serialize(), annotationId);
+        } else {
+          this.__addAnnotation(annotation, annotationId);
         }
+      });
+      if (initData) {
+        studyUI.nullAnnotationsInitData();
       }
     },
 
@@ -1540,7 +1549,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const serviceDetails = new osparc.info.ServiceLarge(node.getMetaData(), {
           nodeId,
           label: node.getLabel(),
-          study: this.getStudy().getUuid()
+          studyId: this.getStudy().getUuid()
         });
         const title = this.tr("Service information");
         const width = 600;

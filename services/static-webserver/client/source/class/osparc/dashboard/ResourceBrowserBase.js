@@ -79,6 +79,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     _resourcesList: null,
     _topBar: null,
     _secondaryBar: null,
+    __searchBarFilter: null,
     __viewMenuButton: null,
     _resourcesContainer: null,
     _loadingResourcesBtn: null,
@@ -128,12 +129,12 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       this.__viewMenuButton = new qx.ui.form.MenuButton(this.tr("View"), "@FontAwesome5Solid/chevron-down/10", viewByMenu);
 
       const resourcesContainer = this._resourcesContainer = new osparc.dashboard.ResourceContainerManager();
-
       resourcesContainer.addListener("updateStudy", e => this._updateStudyData(e.getData()));
       resourcesContainer.addListener("updateTemplate", e => this._updateTemplateData(e.getData()));
       resourcesContainer.addListener("updateService", e => this._updateServiceData(e.getData()));
       resourcesContainer.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));
-
+      resourcesContainer.addListener("tagClicked", e => this.__searchBarFilter.addTagActiveFilter(e.getData()));
+      resourcesContainer.addListener("emptyStudyClicked", e => this._deleteResourceRequested(e.getData()));
       this._add(resourcesContainer);
     },
 
@@ -143,7 +144,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         alignY: "middle"
       });
 
-      const searchBarFilter = new osparc.dashboard.SearchBarFilter(resourceType);
+      const searchBarFilter = this.__searchBarFilter = new osparc.dashboard.SearchBarFilter(resourceType);
       const textField = searchBarFilter.getChildControl("text-field");
       osparc.utils.Utils.setIdToWidget(textField, resourceType ? "searchBarFilter-textField-"+resourceType : "searchBarFilter-textField");
       topBar.add(searchBarFilter, {
@@ -191,7 +192,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         groupOptions.add(btn);
       });
 
-      if (osparc.utils.Utils.isProduct("s4llite")) {
+      if (osparc.product.Utils.isProduct("s4llite")) {
         tagByGroup.execute();
       }
 
@@ -282,13 +283,17 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
+    _deleteResourceRequested: function(resourceId) {
+      throw new Error("Abstract method called!");
+    },
+
     _getMoreOptionsMenuButton: function(resourceData) {
       const moreOptsButton = new qx.ui.menu.Button(this.tr("More options..."));
       osparc.utils.Utils.setIdToWidget(moreOptsButton, "moreInfoBtn");
       moreOptsButton.addListener("execute", () => {
         const moreOpts = new osparc.dashboard.ResourceMoreOptions(resourceData);
-        const title = this.tr("More options");
-        const win = osparc.ui.window.Window.popUpInWindow(moreOpts, title, 750, 725);
+        const title = this.tr("Options");
+        const win = osparc.ui.window.Window.popUpInWindow(moreOpts, title, 700, 660);
         moreOpts.addListener("updateStudy", e => this._updateStudyData(e.getData()));
         moreOpts.addListener("updateTemplate", e => this._updateTemplateData(e.getData()));
         moreOpts.addListener("updateService", e => this._updateServiceData(e.getData()));

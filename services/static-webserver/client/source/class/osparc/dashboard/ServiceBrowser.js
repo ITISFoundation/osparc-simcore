@@ -70,7 +70,10 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
             const latestService = osparc.utils.Services.getLatest(services, key);
             const found = Object.keys(favServices).find(favSrv => favSrv === key);
             latestService.hits = found ? favServices[found]["hits"] : 0;
-            servicesList.push(latestService);
+            // do not list frontend services
+            if (!latestService["key"].includes("simcore/services/frontend/")) {
+              servicesList.push(latestService);
+            }
           }
           this.__setResourcesToList(servicesList);
         })
@@ -159,7 +162,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     },
 
     __addNewServiceButtons: function() {
-      osparc.utils.LibVersions.getPlatformName()
+      osparc.store.StaticInfo.getInstance().getPlatformName()
         .then(platformName => {
           if (platformName === "dev") {
             const testDataButton = new qx.ui.form.Button(this.tr("Test with data"), "@FontAwesome5Solid/plus-circle/14");

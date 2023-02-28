@@ -62,7 +62,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
 
       btn.addListener("changeValue", e => {
         if (e.getData()) {
-          btn.setFont("title-14");
+          btn.setFont("text-14");
           btn.setAppearance("strong-button");
         } else {
           btn.resetFont();
@@ -94,7 +94,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
           const check = node.isDynamic() ? "interactive" : "output";
           node.getStatus().bind(check, statusIcon, "source", {
             converter: output => osparc.utils.StatusUI.getIconSource(output),
-            onUpdate: (_, target) => osparc.utils.StatusUI.updateIconAnimation(target)
+            onUpdate: (_, target) => osparc.utils.StatusUI.updateCircleAnimation(target)
           });
           node.getStatus().bind(check, statusIcon, "textColor", {
             converter: output => osparc.utils.StatusUI.getColor(output)

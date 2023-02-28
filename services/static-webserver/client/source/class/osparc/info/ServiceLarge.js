@@ -152,7 +152,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
         caretSize: 14
       });
       more.setCollapsed(true);
-      more.getChildControl("title").setFont("title-12");
+      more.getChildControl("title").setFont("text-12");
       this._add(more, {
         flex: 1
       });
@@ -196,7 +196,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
         text = serviceName;
       }
       const title = osparc.info.ServiceUtils.createTitle(text).set({
-        font: "title-16"
+        font: "text-14"
       });
       return title;
     },
@@ -237,7 +237,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
       }
 
       if (
-        !osparc.utils.Utils.isProduct("s4llite") &&
+        osparc.product.Utils.showQuality() &&
         this.getService()["quality"] &&
         osparc.component.metadata.Quality.isEnabled(this.getService()["quality"])
       ) {
@@ -252,29 +252,27 @@ qx.Class.define("osparc.info.ServiceLarge", {
         });
       }
 
-      if (osparc.data.Permissions.getInstance().isTester()) {
-        if (this.getNodeId()) {
-          extraInfo.splice(0, 0, {
-            label: this.tr("Service ID"),
-            view: this.__createNodeId(),
-            action: {
-              button: osparc.utils.Utils.getCopyButton(),
-              callback: this.__copyNodeIdToClipboard,
-              ctx: this
-            }
-          });
-        }
-
-        extraInfo.splice(1, 0, {
-          label: this.tr("Key"),
-          view: this.__createKey(),
+      if (this.getNodeId()) {
+        extraInfo.splice(0, 0, {
+          label: this.tr("Service ID"),
+          view: this.__createNodeId(),
           action: {
             button: osparc.utils.Utils.getCopyButton(),
-            callback: this.__copyKeyToClipboard,
+            callback: this.__copyNodeIdToClipboard,
             ctx: this
           }
         });
       }
+
+      extraInfo.splice(1, 0, {
+        label: this.tr("Key"),
+        view: this.__createKey(),
+        action: {
+          button: osparc.utils.Utils.getCopyButton(),
+          callback: this.__copyKeyToClipboard,
+          ctx: this
+        }
+      });
 
       return extraInfo;
     },
@@ -425,7 +423,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
     __openThumbnailEditor: function() {
       const title = this.tr("Edit Thumbnail");
       const thumbnailEditor = new osparc.component.editor.ThumbnailEditor(this.getService()["thumbnail"]);
-      const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, 300, 120);
+      const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, 300, 115);
       thumbnailEditor.addListener("updateThumbnail", e => {
         win.close();
         const validUrl = e.getData();

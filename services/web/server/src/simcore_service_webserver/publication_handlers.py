@@ -58,7 +58,7 @@ async def service_submission(request: web.Request):
     try:
         # NOTE: temporarily internal import to avoid render_and_send_mail to be interpreted as handler
         # TODO: Move outside when get_handlers_from_namespace is fixed
-        from .login.utils_email import AttachmentTuple, render_and_send_mail
+        from .login.utils_email import AttachmentTuple, send_email_from_template
 
         attachments = [
             AttachmentTuple(
@@ -74,7 +74,7 @@ async def service_submission(request: web.Request):
                 )
             )
         # send email
-        await render_and_send_mail(
+        await send_email_from_template(
             request,
             from_=user_email,
             to=support_email_address,

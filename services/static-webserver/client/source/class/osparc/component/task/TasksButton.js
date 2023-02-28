@@ -41,6 +41,7 @@ qx.Class.define("osparc.component.task.TasksButton", {
       switch (id) {
         case "icon": {
           control = new qx.ui.basic.Image("@FontAwesome5Solid/cog/24");
+          osparc.utils.Utils.addClass(control.getContentElement(), "rotate");
 
           const logoContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
             alignY: "middle"
@@ -66,6 +67,7 @@ qx.Class.define("osparc.component.task.TasksButton", {
     },
 
     __updateTasksButton: function() {
+      this._createChildControlImpl("icon");
       const number = this.getChildControl("number");
 
       const tasks = osparc.component.task.Tasks.getInstance();

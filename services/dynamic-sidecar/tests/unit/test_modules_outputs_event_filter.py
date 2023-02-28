@@ -59,7 +59,7 @@ async def outputs_manager(
     outputs_context: OutputsContext,
 ) -> AsyncIterator[OutputsManager]:
     outputs_manager = OutputsManager(
-        outputs_context=outputs_context, io_log_redirect_cb=None
+        outputs_context=outputs_context, io_log_redirect_cb=None, progress_cb=None
     )
     await outputs_manager.start()
     yield outputs_manager
@@ -118,7 +118,7 @@ async def event_filter(
 
 
 async def _wait_for_event_to_trigger(event_filter: EventFilter) -> None:
-    await asyncio.sleep(event_filter.delay_policy.get_min_interval() * 2)
+    await asyncio.sleep(event_filter.delay_policy.get_min_interval() * 5)
 
 
 async def _wait_for_event_to_trigger_big_directory(event_filter: EventFilter) -> None:

@@ -24,11 +24,8 @@ qx.Class.define("osparc.info.ServiceUtils", {
       * @param label {String} label
       */
     createTitle: function(label) {
-      const title = new qx.ui.basic.Label(label).set({
-        font: "title-14",
-        allowStretchX: true,
-        rich: true
-      });
+      const title = osparc.info.Utils.createTitle();
+      title.setValue(label);
       return title;
     },
 
@@ -36,9 +33,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       * @param serviceData {Object} Serialized Service Object
       */
     createNodeId: function(instaceUuid) {
-      const label = new qx.ui.basic.Label().set({
-        maxWidth: 220
-      });
+      const label = osparc.info.Utils.createId();
       label.set({
         value: instaceUuid
       });
@@ -49,9 +44,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       * @param serviceKey {String} Service key
       */
     createKey: function(serviceKey) {
-      const key = new qx.ui.basic.Label().set({
-        maxWidth: 220
-      });
+      const key = osparc.info.Utils.createId();
       key.set({
         value: serviceKey,
         toolTipText: serviceKey
@@ -63,11 +56,11 @@ qx.Class.define("osparc.info.ServiceUtils", {
       * @param serviceVersion {String} Service version
       */
     createVersion: function(serviceVersion) {
-      const key = new qx.ui.basic.Label().set({
-        value: serviceVersion,
-        maxWidth: 150
+      const version = osparc.info.Utils.createId();
+      version.set({
+        value: serviceVersion
       });
-      return key;
+      return version;
     },
 
     /**
@@ -160,12 +153,12 @@ qx.Class.define("osparc.info.ServiceUtils", {
       * @param maxWidth {Number} thumbnail's maxWidth
       * @param maxHeight {Number} thumbnail's maxHeight
       */
-    createThumbnail: function(serviceData, maxWidth, maxHeight = 160) {
-      const image = new osparc.ui.basic.Thumbnail(null, maxWidth, maxHeight);
-      image.set({
+    createThumbnail: function(serviceData, maxWidth, maxHeight) {
+      const thumbnail = osparc.info.Utils.createThumbnail(maxWidth, maxHeight);
+      thumbnail.set({
         source: "thumbnail" in serviceData && serviceData["thumbnail"] !== "" ? serviceData["thumbnail"] : osparc.dashboard.CardBase.SERVICE_ICON
       });
-      return image;
+      return thumbnail;
     },
 
     /**
@@ -178,7 +171,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       }));
 
       const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Description")).set({
-        font: "title-12"
+        font: "text-13"
       });
       descriptionLayout.add(label);
 
@@ -198,7 +191,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       }));
 
       const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Resources")).set({
-        font: "title-12"
+        font: "text-13"
       });
       resourcesLayout.add(label);
 
@@ -215,7 +208,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
 
       const reservationLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       reservationLayout.add(new qx.ui.basic.Label(this.RESOURCES_INFO["reservation"].label).set({
-        font: "title-12"
+        font: "text-13"
       }));
       reservationLayout.add(new osparc.ui.hint.InfoHint(this.RESOURCES_INFO["reservation"].tooltip));
       resourcesInfo.add(reservationLayout, {
@@ -224,7 +217,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       });
       const limitLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       limitLayout.add(new qx.ui.basic.Label(this.RESOURCES_INFO["limit"].label).set({
-        font: "title-12"
+        font: "text-13"
       }));
       limitLayout.add(new osparc.ui.hint.InfoHint(this.RESOURCES_INFO["limit"].tooltip));
       resourcesInfo.add(limitLayout, {
@@ -251,7 +244,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       let row = 1;
       Object.entries(imagesResourcesInfo).forEach(([imageName, imageInfo]) => {
         layout.add(new qx.ui.basic.Label(imageName).set({
-          font: "title-12"
+          font: "text-13"
         }), {
           row,
           column: 0
@@ -266,7 +259,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
               label += " (GB)";
             }
             layout.add(new qx.ui.basic.Label(label).set({
-              font: "title-12"
+              font: "text-13"
             }), {
               row,
               column
@@ -294,7 +287,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
     },
 
     createExtraInfo: function(extraInfos) {
-      const grid = new qx.ui.layout.Grid(5, 3);
+      const grid = new qx.ui.layout.Grid(8, 5);
       grid.setColumnAlign(0, "right", "middle");
       grid.setColumnAlign(1, "left", "middle");
       const moreInfo = new qx.ui.container.Composite(grid).set({
@@ -306,7 +299,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       for (let i=0; i<extraInfos.length; i++) {
         const extraInfo = extraInfos[i];
         moreInfo.add(new qx.ui.basic.Label(extraInfo.label).set({
-          font: "title-12"
+          font: "text-13"
         }), {
           row: i,
           column: 0
@@ -340,7 +333,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       * @param serviceData {Object} Serialized Service Object
       */
     openAccessRights: function(serviceData) {
-      const permissionsView = new osparc.component.permissions.Service(serviceData);
+      const permissionsView = new osparc.component.share.CollaboratorsService(serviceData);
       const title = qx.locale.Manager.tr("Share with Collaborators and Organizations");
       osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
       return permissionsView;

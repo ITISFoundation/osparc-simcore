@@ -49,7 +49,7 @@ qx.Class.define("osparc.data.model.Node", {
   construct: function(study, key, version, uuid) {
     this.base(arguments);
 
-    this.__metaData = {};
+    this.__metaData = osparc.utils.Services.getMetaData(key, version);
     this.__innerNodes = {};
     this.setOutputs({});
 
@@ -397,7 +397,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     populateWithMetadata: function() {
-      const metaData = this.__metaData = osparc.utils.Services.getMetaData(this.getKey(), this.getVersion());
+      const metaData = this.__metaData;
       if (metaData) {
         if (metaData.name) {
           this.setLabel(metaData.name);
@@ -945,33 +945,54 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     __getLoadingPageHeader: function() {
+      let statusText = this.tr("Starting");
       const status = this.getStatus().getInteractive();
-      const label = this.getLabel();
       if (status) {
-        const sta = status.charAt(0).toUpperCase() + status.slice(1);
-        const header = sta + " " + label;
-        return header;
+        statusText = status.charAt(0).toUpperCase() + status.slice(1);
       }
-      return this.tr("Starting ") + label;
+      return statusText + " " + this.getLabel() + " <span style='font-size: 16px;font-weight: normal;'><sub>v" + this.getVersion() + "</sub></span>";
     },
 
-    __getExtraMessages: function() {
+    __addDisclaimer: function(loadingPage) {
       if (this.getKey() && this.getKey().includes("pub-nat-med")) {
-        return [
-          this.tr("This might take a couple of minutes")
-        ];
+        loadingPage.set({
+          disclaimer: this.tr("This might take a couple of minutes")
+        });
       }
-      return [];
+      if (this.getKey() && this.getKey().includes("sim4life-lite")) {
+        // show disclaimer after 1'
+        setTimeout(() => {
+          if (loadingPage) {
+            loadingPage.set({
+              disclaimer: this.tr("Platform demand is currently exceptional and efforts are underway to increase system capacity.<br>There may be a delay of a few minutes in starting services.")
+            });
+          }
+        }, 60*1000);
+      }
+      return null;
     },
 
     __initLoadingPage: function() {
-      const showZoomMaximizeButton = !osparc.utils.Utils.isProduct("s4llite");
-      const loadingPage = new osparc.ui.message.Loading(this.__getLoadingPageHeader(), this.__getExtraMessages(), showZoomMaximizeButton);
+      const showZoomMaximizeButton = !osparc.product.Utils.isProduct("s4llite");
+      const loadingPage = new osparc.ui.message.Loading(showZoomMaximizeButton);
+      loadingPage.set({
+        header: this.__getLoadingPageHeader()
+      });
+      this.__addDisclaimer(loadingPage);
+
       const thumbnail = this.getMetaData()["thumbnail"];
       if (thumbnail) {
         loadingPage.setLogo(thumbnail);
       }
       this.addListener("changeLabel", () => loadingPage.setHeader(this.__getLoadingPageHeader()), this);
+
+      const nodeStatus = this.getStatus();
+      const sequenceWidget = nodeStatus.getProgressSequence().getWidgetForLoadingPage();
+      nodeStatus.bind("interactive", sequenceWidget, "visibility", {
+        converter: state => ["starting", "pulling", "pending", "connecting"].includes(state) ? "visible" : "excluded"
+      });
+      loadingPage.addExtraWidget(sequenceWidget);
+
       this.getStatus().addListener("changeInteractive", () => {
         loadingPage.setHeader(this.__getLoadingPageHeader());
         const status = this.getStatus().getInteractive();
@@ -996,8 +1017,8 @@ qx.Class.define("osparc.data.model.Node", {
       this.__initLoadingPage();
 
       const iframe = new osparc.component.widget.PersistentIframe();
-      if (osparc.utils.Utils.isProduct("s4llite")) {
-        iframe.setShowZoomButton(false);
+      if (osparc.product.Utils.isProduct("s4llite")) {
+        iframe.setShowToolbar(false);
       }
       iframe.addListener("restart", () => this.__restartIFrame(), this);
       this.setIFrame(iframe);
@@ -1125,8 +1146,9 @@ qx.Class.define("osparc.data.model.Node", {
 
     startDynamicService: function() {
       if (this.isDynamic()) {
-        const metaData = this.getMetaData();
+        this.getStatus().getProgressSequence().resetSequence();
 
+        const metaData = this.getMetaData();
         const msg = "Starting " + metaData.key + ":" + metaData.version + "...";
         const msgData = {
           nodeId: this.getNodeId(),
@@ -1141,8 +1163,9 @@ qx.Class.define("osparc.data.model.Node", {
 
     stopDynamicService: function() {
       if (this.isDynamic()) {
-        const metaData = this.getMetaData();
+        this.getStatus().getProgressSequence().resetSequence();
 
+        const metaData = this.getMetaData();
         const msg = "Stopping " + metaData.key + ":" + metaData.version + "...";
         const msgData = {
           nodeId: this.getNodeId(),
@@ -1290,24 +1313,11 @@ qx.Class.define("osparc.data.model.Node", {
         });
     },
 
-    __onInteractiveNodeStarted: function(e) {
-      let req = e.getTarget();
-      const {
-        error
-      } = req.getResponse();
-
-      if (error) {
-        const msg = "Error received: " + error;
-        const errorMsgData = {
-          nodeId: this.getNodeId(),
-          msg,
-          level: "ERROR"
-        };
-        this.fireDataEvent("showInLogger", errorMsgData);
-        return;
+    setNodeProgressSequence: function(progressType, progress) {
+      const nodeStatus = this.getStatus();
+      if (nodeStatus.getProgressSequence()) {
+        nodeStatus.getProgressSequence().addProgressMessage(progressType, progress);
       }
-
-      this.__nodeState();
     },
 
     __waitForServiceReady: function(srvUrl) {

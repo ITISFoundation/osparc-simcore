@@ -28,6 +28,19 @@ qx.Class.define("osparc.store.Support", {
     },
 
     addManualButtonsToMenu: function(menu, menuButton) {
+      const qsButton = new qx.ui.menu.Button(qx.locale.Manager.tr("Quick Start"));
+      qsButton.getChildControl("label").set({
+        rich: true
+      });
+      const tutorial = osparc.product.tutorial.Utils.getTutorial();
+      if (tutorial) {
+        qsButton.addListener("execute", () => {
+          const tutorialWindow = tutorial.tutorial();
+          tutorialWindow.center();
+          tutorialWindow.open();
+        });
+        menu.add(qsButton);
+      }
       osparc.store.Support.getManuals()
         .then(manuals => {
           if (menuButton) {
@@ -35,6 +48,9 @@ qx.Class.define("osparc.store.Support", {
           }
           manuals.forEach(manual => {
             const manualBtn = new qx.ui.menu.Button(manual.label);
+            manualBtn.getChildControl("label").set({
+              rich: true
+            });
             manualBtn.addListener("execute", () => window.open(manual.url), this);
             menu.add(manualBtn);
           });
@@ -55,6 +71,9 @@ qx.Class.define("osparc.store.Support", {
           issues.forEach(issueInfo => {
             const label = issueInfo["label"];
             const issueButton = new qx.ui.menu.Button(label);
+            issueButton.getChildControl("label").set({
+              rich: true
+            });
             issueButton.addListener("execute", () => {
               const issueConfirmationWindow = new osparc.ui.window.Dialog(label + " " + qx.locale.Manager.tr("Information"), null,
                 qx.locale.Manager.tr("To create an issue, you must have an account and be already logged-in.")
@@ -80,6 +99,9 @@ qx.Class.define("osparc.store.Support", {
 
           supports.forEach(suportInfo => {
             const supportBtn = new qx.ui.menu.Button(suportInfo["label"]);
+            supportBtn.getChildControl("label").set({
+              rich: true
+            });
             let icon = null;
             let cb = null;
             switch (suportInfo["kind"]) {
@@ -116,9 +138,9 @@ qx.Class.define("osparc.store.Support", {
     },
 
     __openSendEmailFeedbackDialog: function(email) {
-      const productName = osparc.utils.Utils.getProductName();
-      const giveEmailFeedbackWindow = new osparc.ui.window.Dialog("Feedback", null, qx.locale.Manager.tr("Please, send us an email to:"));
-      const mailto = this.getMailToLabel(email, productName + "feedback");
+      const productName = osparc.product.Utils.getProductName();
+      const giveEmailFeedbackWindow = new osparc.ui.window.Dialog("Feedback", null, qx.locale.Manager.tr("Please send us an email to:"));
+      const mailto = this.getMailToLabel(email, productName + " feedback");
       giveEmailFeedbackWindow.addWidget(mailto);
       giveEmailFeedbackWindow.open();
     },
@@ -129,10 +151,15 @@ qx.Class.define("osparc.store.Support", {
       });
       let message = qx.locale.Manager.tr("Registration is currently only available with an invitation.");
       message += "<br>";
-      osparc.store.VendorInfo.getInstance().getVendor()
-        .then(vendor => {
+      Promise.all([
+        osparc.store.VendorInfo.getInstance().getVendor(),
+        osparc.store.StaticInfo.getInstance().getDisplayName()
+      ])
+        .then(values => {
+          const vendor = values[0];
+          const displayName = values[1];
           if ("invitation_url" in vendor) {
-            message += qx.locale.Manager.tr("Please request:");
+            message += qx.locale.Manager.tr("Please request access to ") + displayName + ":";
             message += "<br>";
             createAccountWindow.setMessage(message);
             const linkLabel = new osparc.ui.basic.LinkLabel(vendor["invitation_url"], vendor["invitation_url"]);
@@ -142,8 +169,7 @@ qx.Class.define("osparc.store.Support", {
             createAccountWindow.setMessage(message);
             osparc.store.VendorInfo.getInstance().getSupportEmail()
               .then(supportEmail => {
-                const productName = osparc.utils.Utils.getProductName();
-                const mailto = this.getMailToLabel(supportEmail, "Request Account " + productName);
+                const mailto = this.getMailToLabel(supportEmail, "Request Account " + displayName);
                 createAccountWindow.addWidget(mailto);
               });
           }

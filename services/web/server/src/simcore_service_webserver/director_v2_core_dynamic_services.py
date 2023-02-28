@@ -68,6 +68,7 @@ async def get_dynamic_service(app: web.Application, node_uuid: str) -> DataType:
 @log_decorator(logger=log)
 async def run_dynamic_service(
     app: web.Application,
+    product_name: str,
     user_id: PositiveInt,
     project_id: str,
     service_key: str,
@@ -83,6 +84,7 @@ async def run_dynamic_service(
     - dynamic-sidecar `director-v2` will handle the request
     """
     data = {
+        "product_name": product_name,
         "user_id": user_id,
         "project_id": project_id,
         "key": service_key,

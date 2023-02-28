@@ -10,7 +10,7 @@ from servicelib.error_codes import create_error_code
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 from ..products import Product, get_current_product
-from ..session_access import session_access_constraint
+from ..session_access import session_access_required
 from ._2fa import (
     create_2fa_code,
     get_2fa_code,
@@ -18,12 +18,7 @@ from ._2fa import (
     send_email_code,
     send_sms_code,
 )
-from ._constants import (
-    MSG_2FA_CODE_SENT,
-    MSG_EMAIL_SENT,
-    MSG_UNAUTHORIZED_CODE_RESEND_2FA,
-    MSG_UNKNOWN_EMAIL,
-)
+from ._constants import MSG_2FA_CODE_SENT, MSG_EMAIL_SENT, MSG_UNKNOWN_EMAIL
 from ._models import InputSchema
 from .settings import LoginSettingsForProduct, get_plugin_settings
 from .storage import AsyncpgStorage, get_plugin_storage
@@ -65,18 +60,13 @@ class Resend2faBody(InputSchema):
     via: Literal["SMS", "Email"] = "SMS"
 
 
-@session_access_constraint(
-    allow_access_after=["auth_login", "auth_register_phone"],
-    max_number_of_access=5,
-    unauthorized_reason=MSG_UNAUTHORIZED_CODE_RESEND_2FA,
+@session_access_required(
+    name="auth_resend_2fa_code",
+    one_time_access=False,
 )
 @routes.post("/v0/auth/two_factor:resend", name="auth_resend_2fa_code")
 async def resend_2fa_code(request: web.Request):
-    """Resends 2FA code via SMS/Email
-
-    - Protected by on-time access [ONE_TIME_ACCESS_TO_RESEND_2FA_KEY]
-    -
-    """
+    """Resends 2FA code via SMS/Email"""
     product: Product = get_current_product(request)
     settings: LoginSettingsForProduct = get_plugin_settings(
         request.app, product_name=product.name

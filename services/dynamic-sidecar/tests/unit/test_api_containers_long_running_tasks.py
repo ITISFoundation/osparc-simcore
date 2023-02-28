@@ -125,13 +125,13 @@ def dynamic_sidecar_network_name() -> str:
             "services": {
                 "first-box": {
                     "image": "busybox:latest",
-                    "networks": [
-                        _get_dynamic_sidecar_network_name(),
-                    ],
+                    "networks": {
+                        _get_dynamic_sidecar_network_name(): None,
+                    },
                 },
                 "second-box": {"image": "busybox:latest"},
             },
-            "networks": {_get_dynamic_sidecar_network_name(): {}},
+            "networks": {_get_dynamic_sidecar_network_name(): None},
         },
         {
             "version": "3",

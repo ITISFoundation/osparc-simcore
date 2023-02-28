@@ -98,7 +98,6 @@ def create_viewer_project_model(
     download_link: str,
     viewer_info: ViewerInfo,
 ) -> Project:
-
     file_picker_output_id = "outFile"
     file_picker = Node(
         key="simcore/services/frontend/file-picker",
@@ -171,7 +170,7 @@ async def add_new_project(
     project_in: dict = json.loads(project.json(exclude_none=True, by_alias=True))
 
     # update metadata (uuid, timestamps, ownership) and save
-    _project_db: dict = await db.add_project(
+    _project_db: dict = await db.insert_project(
         project_in, user.id, product_name=product_name, force_as_template=False
     )
     assert _project_db["uuid"] == str(project.uuid)  # nosec

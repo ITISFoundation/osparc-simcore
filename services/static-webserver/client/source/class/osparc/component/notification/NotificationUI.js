@@ -23,7 +23,7 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
 
     this.set({
       maxWidth: this.self().MAX_WIDTH,
-      padding: 10
+      padding: this.self().PADDING
     });
 
     const layout = new qx.ui.layout.HBox().set({
@@ -58,7 +58,8 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
   },
 
   statics: {
-    MAX_WIDTH: 300
+    MAX_WIDTH: 300,
+    PADDING: 10
   },
 
   members: {
@@ -67,12 +68,15 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
       switch (id) {
         case "text":
           control = new qx.ui.basic.Label().set({
+            maxWidth: this.self().MAX_WIDTH - 2*this.self().PADDING,
             font: "text-14",
             rich: true,
             wrap: true
           });
           this.bind("text", control, "value");
-          this._add(control);
+          this._add(control, {
+            flex: 1
+          });
           break;
       }
       return control || this.base(arguments, id);

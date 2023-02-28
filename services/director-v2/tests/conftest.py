@@ -87,6 +87,13 @@ def tests_dir(project_slug_dir: Path) -> Path:
 
 
 @pytest.fixture(scope="session")
+def tests_data_dir(project_slug_dir: Path) -> Path:
+    testsdir = project_slug_dir / "tests" / "data"
+    assert testsdir.exists()
+    return testsdir
+
+
+@pytest.fixture(scope="session")
 def mocks_dir(tests_dir: Path) -> Path:
     mocksdir = tests_dir / "mocks"
     assert mocksdir.exists()
@@ -115,6 +122,11 @@ def fake_workbench_complete_adjacency_file(mocks_dir: Path) -> Path:
 
 
 # APP/CLIENTS INITS --------------------------------------
+
+
+@pytest.fixture(scope="session")
+def osparc_product_name() -> str:
+    return "osparc"
 
 
 @pytest.fixture

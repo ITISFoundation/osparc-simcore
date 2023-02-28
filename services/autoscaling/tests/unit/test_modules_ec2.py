@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import cast
+from typing import Callable, cast
 
 import botocore.exceptions
 import pytest
@@ -222,31 +222,7 @@ async def test_start_aws_instance_is_limited_in_number_of_instances(
         )
 
 
-async def test_get_running_instance_raises_if_not_found(
-    mocked_aws_server_envs: None,
-    aws_vpc_id: str,
-    aws_subnet_id: str,
-    aws_security_group_id: str,
-    aws_ami_id: str,
-    ec2_client: EC2Client,
-    autoscaling_ec2: AutoscalingEC2,
-    app_settings: ApplicationSettings,
-    faker: Faker,
-):
-    assert app_settings.AUTOSCALING_EC2_INSTANCES
-    # we have nothing running now in ec2
-    all_instances = await ec2_client.describe_instances()
-    assert not all_instances["Reservations"]
-
-    with pytest.raises(Ec2InstanceNotFoundError):
-        await autoscaling_ec2.get_running_instance(
-            app_settings.AUTOSCALING_EC2_INSTANCES,
-            tag_keys=[],
-            instance_host_name=faker.pystr(),
-        )
-
-
-async def test_get_running_instance(
+async def test_get_instances(
     mocked_aws_server_envs: None,
     aws_vpc_id: str,
     aws_subnet_id: str,
@@ -262,6 +238,10 @@ async def test_get_running_instance(
     # we have nothing running now in ec2
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
+    assert (
+        await autoscaling_ec2.get_instances(app_settings.AUTOSCALING_EC2_INSTANCES, {})
+        == []
+    )
 
     # create some instance
     instance_type = faker.pystr()
@@ -276,14 +256,11 @@ async def test_get_running_instance(
     )
     assert len(created_instances) == 1
 
-    instance_received = await autoscaling_ec2.get_running_instance(
+    instance_received = await autoscaling_ec2.get_instances(
         app_settings.AUTOSCALING_EC2_INSTANCES,
-        tag_keys=list(tags.keys()),
-        instance_host_name=created_instances[0].aws_private_dns.split(".ec2.internal")[
-            0
-        ],
+        tags=tags,
     )
-    assert created_instances[0] == instance_received
+    assert created_instances == instance_received
 
 
 async def test_terminate_instance(
@@ -316,9 +293,9 @@ async def test_terminate_instance(
     assert len(created_instances) == 1
 
     # terminate the instance
-    await autoscaling_ec2.terminate_instance(created_instances[0])
+    await autoscaling_ec2.terminate_instances(created_instances)
     # calling it several times is ok, the instance stays a while
-    await autoscaling_ec2.terminate_instance(created_instances[0])
+    await autoscaling_ec2.terminate_instances(created_instances)
 
 
 async def test_terminate_instance_not_existing_raises(
@@ -330,11 +307,11 @@ async def test_terminate_instance_not_existing_raises(
     ec2_client: EC2Client,
     autoscaling_ec2: AutoscalingEC2,
     app_settings: ApplicationSettings,
-    ec2_instance_data: EC2InstanceData,
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ):
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     # we have nothing running now in ec2
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
     with pytest.raises(Ec2InstanceNotFoundError):
-        await autoscaling_ec2.terminate_instance(ec2_instance_data)
+        await autoscaling_ec2.terminate_instances([fake_ec2_instance_data()])

@@ -96,6 +96,8 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       });
 
       const verifyPhoneNumberBtn = this.__verifyPhoneNumberBtn = new osparc.ui.form.FetchButton(this.tr("Send SMS")).set({
+        appearance: "strong-button",
+        center: true,
         maxHeight: 23,
         minWidth: 80
       });
@@ -105,17 +107,20 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
 
     __createValidationLayout: function() {
       const smsValidationLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      const validationCode = this.__validateCodeTF = new qx.ui.form.TextField().set({
+      const validateCodeTF = this.__validateCodeTF = new qx.ui.form.TextField().set({
         placeholder: this.tr("Type the SMS code"),
         enabled: false
       });
-      smsValidationLayout.add(validationCode, {
+      smsValidationLayout.add(validateCodeTF, {
         flex: 1
       });
       const validateCodeBtn = this.__validateCodeBtn = new osparc.ui.form.FetchButton(this.tr("Validate")).set({
-        minWidth: 80,
-        enabled: false
+        appearance: "strong-button",
+        center: true,
+        minWidth: 80
       });
+      validateCodeBtn.setEnabled(false);
+      validateCodeTF.addListener("input", e => validateCodeBtn.setEnabled(Boolean(e.getData())));
       smsValidationLayout.add(validateCodeBtn);
       return smsValidationLayout;
     },
@@ -123,6 +128,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
     __createSendViaEmailButton: function() {
       const txt = this.tr("Skip phone registration and send code via email");
       const sendViaEmail = this.__sendViaEmail = new osparc.ui.form.LinkButton(txt).set({
+        iconPosition: "left",
         zIndex: 1, // the contries list that goes on top has a z-index of 2
         appearance: "link-button"
       });
@@ -147,7 +153,6 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
             this.__verifyPhoneNumberBtn.setFetching(false);
             osparc.auth.core.Utils.restartResendTimer(this.__verifyPhoneNumberBtn, this.tr("Send SMS"));
             this.__validateCodeTF.setEnabled(true);
-            this.__validateCodeBtn.setEnabled(true);
           })
           .catch(err => {
             osparc.component.message.FlashMessenger.logAs(err.message, "ERROR");

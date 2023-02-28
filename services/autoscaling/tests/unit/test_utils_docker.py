@@ -3,17 +3,17 @@
 # pylint: disable=unused-variable
 
 import asyncio
+import datetime
 import itertools
 import random
 from copy import deepcopy
-from datetime import datetime, timedelta
 from typing import Any, AsyncIterator, Awaitable, Callable
 
 import aiodocker
 import pytest
 from deepdiff import DeepDiff
 from faker import Faker
-from models_library.docker import DockerLabelKey
+from models_library.docker import DockerGenericTag, DockerLabelKey
 from models_library.generated_models.docker_rest_api import (
     Availability,
     NodeState,
@@ -31,6 +31,9 @@ from simcore_service_autoscaling.utils.utils_docker import (
     compute_cluster_used_resources,
     compute_node_used_resources,
     compute_tasks_needed_resources,
+    find_node_with_name,
+    get_docker_pull_images_crontab,
+    get_docker_pull_images_on_start_bash_command,
     get_docker_swarm_join_bash_command,
     get_max_resources_from_docker_task,
     get_monitored_nodes,
@@ -38,7 +41,6 @@ from simcore_service_autoscaling.utils.utils_docker import (
     pending_service_tasks_with_insufficient_resources,
     remove_nodes,
     tag_node,
-    try_get_node_with_name,
 )
 
 
@@ -391,11 +393,16 @@ async def test_pending_service_task_with_insufficient_resources_properly_sorts_t
 
     assert len(pending_tasks) == len(services)
     # check sorting is done by creation date
-    last_date = datetime.utcnow() - timedelta(days=1)
+    last_date = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(
+        days=1
+    )
     for task in pending_tasks:
         assert task.CreatedAt
-        assert to_datetime(task.CreatedAt) > last_date
-        last_date = to_datetime(task.CreatedAt)
+        assert (
+            to_datetime(task.CreatedAt).replace(tzinfo=datetime.timezone.utc)
+            > last_date
+        )
+        last_date = to_datetime(task.CreatedAt).replace(tzinfo=datetime.timezone.utc)
 
 
 def test_get_node_total_resources(host_node: Node):
@@ -743,7 +750,7 @@ async def test_try_get_node_with_name(
     assert host_node.Description
     assert host_node.Description.Hostname
 
-    received_node = await try_get_node_with_name(
+    received_node = await find_node_with_name(
         autoscaling_docker, host_node.Description.Hostname
     )
     assert received_node == host_node
@@ -755,7 +762,7 @@ async def test_try_get_node_with_name_fake(
     assert fake_node.Description
     assert fake_node.Description.Hostname
 
-    received_node = await try_get_node_with_name(
+    received_node = await find_node_with_name(
         autoscaling_docker, fake_node.Description.Hostname
     )
     assert received_node is None
@@ -768,7 +775,7 @@ async def test_tag_node(
     assert host_node.Description.Hostname
     tags = faker.pydict(allowed_types=(str,))
     await tag_node(autoscaling_docker, host_node, tags=tags, available=False)
-    updated_node = await try_get_node_with_name(
+    updated_node = await find_node_with_name(
         autoscaling_docker, host_node.Description.Hostname
     )
     assert updated_node
@@ -777,10 +784,65 @@ async def test_tag_node(
     assert updated_node.Spec.Labels == tags
 
     await tag_node(autoscaling_docker, updated_node, tags={}, available=True)
-    updated_node = await try_get_node_with_name(
+    updated_node = await find_node_with_name(
         autoscaling_docker, host_node.Description.Hostname
     )
     assert updated_node
     assert updated_node.Spec
     assert updated_node.Spec.Availability == Availability.active
     assert updated_node.Spec.Labels == {}
+
+
+@pytest.mark.parametrize(
+    "images, expected_cmd",
+    [
+        (
+            ["nginx", "itisfoundation/simcore/services/dynamic/service:23.5.5"],
+            'echo "services:\n  pre-pull-image-0:\n    image: nginx\n  pre-pull-image-1:\n    '
+            'image: itisfoundation/simcore/services/dynamic/service:23.5.5\nversion: \'"3.8"\'\n"'
+            " > /docker-pull.compose.yml"
+            " && "
+            'echo "#!/bin/sh\necho Pulling started at \\$(date)\ndocker compose --file=/docker-pull.compose.yml pull" > /docker-pull-script.sh'
+            " && "
+            "chmod +x /docker-pull-script.sh"
+            " && "
+            "./docker-pull-script.sh",
+        ),
+        (
+            [],
+            "",
+        ),
+    ],
+)
+def test_get_docker_pull_images_on_start_bash_command(
+    images: list[DockerGenericTag], expected_cmd: str
+):
+    assert get_docker_pull_images_on_start_bash_command(images) == expected_cmd
+
+
+@pytest.mark.parametrize(
+    "interval, expected_cmd",
+    [
+        (
+            datetime.timedelta(minutes=20),
+            'echo "*/20 * * * * root /docker-pull-script.sh >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
+        ),
+        (
+            datetime.timedelta(seconds=20),
+            'echo "*/1 * * * * root /docker-pull-script.sh >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
+        ),
+        (
+            datetime.timedelta(seconds=200),
+            'echo "*/3 * * * * root /docker-pull-script.sh >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
+        ),
+        (
+            datetime.timedelta(days=3),
+            'echo "*/4320 * * * * root /docker-pull-script.sh >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
+        ),
+    ],
+    ids=str,
+)
+def test_get_docker_pull_images_crontab(
+    interval: datetime.timedelta, expected_cmd: str
+):
+    assert get_docker_pull_images_crontab(interval) == expected_cmd

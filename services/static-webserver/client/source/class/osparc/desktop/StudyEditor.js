@@ -88,6 +88,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
   events: {
     "forceBackToDashboard": "qx.event.type.Event",
     "backToDashboardPressed": "qx.event.type.Event",
+    "userIdled": "qx.event.type.Event",
     "collapseNavBar": "qx.event.type.Event",
     "expandNavBar": "qx.event.type.Event",
     "slidesEdit": "qx.event.type.Event",
@@ -112,6 +113,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     }
   },
 
+  statics: {
+    READ_ONLY_TEXT: qx.locale.Manager.tr("You do not have writing permissions.<br>Your changes will not be saved.")
+  },
+
   members: {
     __study: null,
     __settingStudy: null,
@@ -119,6 +124,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __workbenchView: null,
     __slideshowView: null,
     __autoSaveTimer: null,
+    __studyEditorIdlingTracker: null,
     __lastSavedStudy: null,
     __updatingStudy: null,
     __updateThrottled: null,
@@ -174,18 +180,21 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
           study.initStudy();
 
+          if (osparc.product.Utils.isProduct("s4llite")) {
+            this.__startIdlingTracker();
+          }
+
           // Count dynamic services.
           // If it is larger than PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES, dynamics won't start -> Flash Message
           osparc.store.StaticInfo.getInstance().getMaxNumberDyNodes()
             .then(maxNumber => {
-              console.log(maxNumber);
               if (maxNumber) {
                 const nodes = study.getWorkbench().getNodes();
                 const nDynamics = Object.values(nodes).filter(node => node.isDynamic()).length;
                 if (nDynamics > maxNumber) {
                   let msg = this.tr("The Study contains more than ") + maxNumber + this.tr(" Interactive services.");
                   msg += "<br>";
-                  msg += this.tr("Please, start them manually.");
+                  msg += this.tr("Please start them manually.");
                   osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING");
                 }
               }
@@ -196,8 +205,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               if (osparc.data.model.Study.canIWrite(study.getAccessRights())) {
                 this.__startAutoSaveTimer();
               } else {
-                const msg = this.tr("You do not have writing permissions.<br>Changes will not be saved");
-                osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO");
+                const msg = this.self().READ_ONLY_TEXT;
+                osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING");
               }
             });
 
@@ -225,22 +234,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             const nodeId = e.getData();
             this.nodeSelected(nodeId);
           }, this);
-
-          const socket = osparc.wrapper.WebSocket.getInstance();
-          socket.addListener("connect", () => {
-            const params = {
-              url: {
-                tabId: osparc.utils.Utils.getClientSessionID()
-              }
-            };
-            osparc.data.Resources.fetch("studies", "getActive", params)
-              .then(studyData => {
-                if (studyData === null) {
-                  this.__noLongerActive();
-                }
-              })
-              .catch(() => this.__noLongerActive());
-          });
         })
         .catch(err => {
           let msg = "";
@@ -289,13 +282,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               });
           }
         });
-    },
-
-    __noLongerActive: function() {
-      // This might happen when the socket connection is lost and the study gets closed
-      const msg = this.tr("Study was closed while you were offline");
-      osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-      this.fireEvent("forceBackToDashboard");
     },
 
     editSlides: function() {
@@ -548,6 +534,23 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }, this);
     },
 
+    __startIdlingTracker: function() {
+      if (this.__studyEditorIdlingTracker) {
+        this.__studyEditorIdlingTracker.stop();
+        this.__studyEditorIdlingTracker = null;
+      }
+      const studyEditorIdlingTracker = this.__studyEditorIdlingTracker = new osparc.desktop.StudyEditorIdlingTracker();
+      studyEditorIdlingTracker.addListener("userIdled", () => this.fireEvent("userIdled"));
+      studyEditorIdlingTracker.start();
+    },
+
+    __stopIdlingTracker: function() {
+      if (this.__studyEditorIdlingTracker) {
+        this.__studyEditorIdlingTracker.stop();
+        this.__studyEditorIdlingTracker = null;
+      }
+    },
+
     __startAutoSaveTimer: function() {
       // Save every 3 seconds
       const interval = 3000;
@@ -559,6 +562,18 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.__checkStudyChanges();
       }, this);
       timer.start();
+    },
+
+    __stopAutoSaveTimer: function() {
+      if (this.__autoSaveTimer && this.__autoSaveTimer.isEnabled()) {
+        this.__autoSaveTimer.stop();
+        this.__autoSaveTimer.setEnabled(false);
+      }
+    },
+
+    __stopTimers: function() {
+      this.__stopIdlingTracker();
+      this.__stopAutoSaveTimer();
     },
 
     didStudyChange: function() {
@@ -591,13 +606,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         } else {
           this.updateStudyDocument(false);
         }
-      }
-    },
-
-    __stopAutoSaveTimer: function() {
-      if (this.__autoSaveTimer && this.__autoSaveTimer.isEnabled()) {
-        this.__autoSaveTimer.stop();
-        this.__autoSaveTimer.setEnabled(false);
       }
     },
 
@@ -634,10 +642,21 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         });
     },
 
+    __closeStudy: function() {
+      const params = {
+        url: {
+          "studyId": this.getStudy().getUuid()
+        },
+        data: osparc.utils.Utils.getClientSessionID()
+      };
+      osparc.data.Resources.fetch("studies", "close", params);
+    },
+
     closeEditor: function() {
-      this.__stopAutoSaveTimer();
+      this.__stopTimers();
       if (this.getStudy()) {
         this.getStudy().stopStudy();
+        this.__closeStudy();
       }
       const clusterMiniView = this.__workbenchView.getStartStopButtons().getClusterMiniView();
       if (clusterMiniView) {
@@ -651,7 +670,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
      */
     destruct: function() {
       osparc.store.Store.getInstance().setCurrentStudy(null);
-      this.__stopAutoSaveTimer();
+      this.__stopTimers();
     }
   }
 });

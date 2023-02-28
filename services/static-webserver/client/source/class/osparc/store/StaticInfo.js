@@ -42,9 +42,46 @@ qx.Class.define("osparc.store.StaticInfo", {
       });
     },
 
+    getPlatformName: function() {
+      return new Promise(resolve => {
+        const staticKey = "stackName";
+        this.getValue(staticKey)
+          .then(stackName => {
+            let platformName = "dev";
+            if (stackName.includes("master")) {
+              platformName = "master";
+            } else if (stackName.includes("staging")) {
+              platformName = "staging";
+            } else if (stackName.includes("production")) {
+              platformName = "";
+            }
+            resolve(platformName);
+          });
+      });
+    },
+
     getDisplayName: function() {
       const staticKey = "displayName";
       return this.getValue(staticKey);
+    },
+
+    getReleaseData: function() {
+      return new Promise(resolve => {
+        Promise.all([
+          this.getValue("vcsReleaseTag"),
+          this.getValue("vcsReleaseDate"),
+          this.getValue("vcsReleaseUrl")
+        ]).then(values => {
+          const rTag = values[0];
+          const rDate = values[1];
+          const rUrl = values[2];
+          resolve({
+            "tag": rTag,
+            "date": rDate,
+            "url": rUrl
+          });
+        }).catch(() => resolve(null));
+      });
     },
 
     getMaxNumberDyNodes: function() {

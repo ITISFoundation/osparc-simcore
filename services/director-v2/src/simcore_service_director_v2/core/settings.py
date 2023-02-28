@@ -3,7 +3,7 @@
 
 
 import logging
-from enum import Enum
+from enum import Enum, auto
 from functools import cached_property
 from pathlib import Path
 from typing import Optional
@@ -21,7 +21,9 @@ from models_library.clusters import (
     ClusterAuthentication,
     NoAuthentication,
 )
+from models_library.docker import DockerGenericTag
 from models_library.projects_networks import SERVICE_NETWORK_RE
+from models_library.utils.enums import StrAutoEnum
 from pydantic import (
     AnyHttpUrl,
     AnyUrl,
@@ -77,6 +79,18 @@ class VFSCacheMode(str, Enum):
     MINIMAL = "minimal"
     WRITES = "writes"
     FULL = "full"
+
+
+class EnvoyLogLevel(StrAutoEnum):
+    TRACE = auto()
+    DEBUG = auto()
+    INFO = auto()
+    WARNING = auto()
+    ERROR = auto()
+    CRITICAL = auto()
+
+    def to_log_level(self) -> str:
+        return self.value.lower()
 
 
 class RCloneSettings(RCloneSettings):  # pylint: disable=function-redefined
@@ -146,6 +160,16 @@ class DynamicSidecarProxySettings(BaseCustomSettings):
     )
 
 
+class DynamicSidecarEgressSettings(BaseCustomSettings):
+    DYNAMIC_SIDECAR_ENVOY_IMAGE: DockerGenericTag = Field(
+        "envoyproxy/envoy:v1.25-latest",
+        description="envoy image to use",
+    )
+    DYNAMIC_SIDECAR_ENVOY_LOG_LEVEL: EnvoyLogLevel = Field(
+        EnvoyLogLevel.ERROR, description="log level for envoy proxy service"
+    )
+
+
 class DynamicSidecarSettings(BaseCustomSettings):
     DYNAMIC_SIDECAR_SC_BOOT_MODE: BootModeEnum = Field(
         ...,
@@ -188,6 +212,10 @@ class DynamicSidecarSettings(BaseCustomSettings):
     )
 
     DYNAMIC_SIDECAR_PROXY_SETTINGS: DynamicSidecarProxySettings = Field(
+        auto_default_from_env=True
+    )
+
+    DYNAMIC_SIDECAR_EGRESS_PROXY_SETTINGS: DynamicSidecarEgressSettings = Field(
         auto_default_from_env=True
     )
 
@@ -451,7 +479,6 @@ class ComputationalBackendSettings(BaseCustomSettings):
 
 
 class AppSettings(BaseCustomSettings, MixinLoggingSettings):
-
     # docker environs
     SC_BOOT_MODE: BootModeEnum
     SC_BOOT_TARGET: Optional[BuildTargetEnum]

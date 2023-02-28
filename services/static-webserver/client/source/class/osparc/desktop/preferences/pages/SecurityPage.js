@@ -27,7 +27,7 @@ qx.Class.define("osparc.desktop.preferences.pages.SecurityPage", {
 
   construct: function() {
     const iconSrc = "@FontAwesome5Solid/shield-alt/24";
-    const title = this.tr("Security");
+    const title = this.tr("Security Settings");
     this.base(arguments, title, iconSrc);
 
     this.add(this.__createPasswordSection());
@@ -38,23 +38,29 @@ qx.Class.define("osparc.desktop.preferences.pages.SecurityPage", {
       // layout
       const box = this._createSectionBox(this.tr("Password"));
 
-      const currentPassword = new qx.ui.form.PasswordField().set({
+      const currentPassword = new osparc.ui.form.PasswordField().set({
+        tabIndex: 1,
         required: true,
         placeholder: this.tr("Your current password")
       });
-      box.add(currentPassword);
 
-      const newPassword = new qx.ui.form.PasswordField().set({
+      const newPassword = new osparc.ui.form.PasswordField().set({
+        tabIndex: 2,
         required: true,
         placeholder: this.tr("Your new password")
       });
-      box.add(newPassword);
 
-      const confirm = new qx.ui.form.PasswordField().set({
+      const confirm = new osparc.ui.form.PasswordField().set({
+        tabIndex: 3,
         required: true,
         placeholder: this.tr("Retype your new password")
       });
-      box.add(confirm);
+
+      const form = new qx.ui.form.Form();
+      form.add(currentPassword, "Current Password", null, "curPassword");
+      form.add(newPassword, "New Password", null, "newPassword");
+      form.add(confirm, "Confirm New Password", null, "newPassword2");
+      box.add(new qx.ui.form.renderer.Single(form));
 
       const manager = new qx.ui.form.validation.Manager();
       manager.add(newPassword, osparc.auth.core.Utils.passwordLengthValidator);

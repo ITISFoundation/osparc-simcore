@@ -29,7 +29,7 @@ qx.Class.define("osparc.info.StudyMedium", {
       padding: this.self().PADDING,
       backgroundColor: "background-main"
     });
-    this._setLayout(new qx.ui.layout.VBox(6));
+    this._setLayout(new qx.ui.layout.VBox(8));
 
     if (study instanceof osparc.data.model.Study) {
       this.setStudy(study);
@@ -76,7 +76,7 @@ qx.Class.define("osparc.info.StudyMedium", {
     __rebuildLayout: function(width) {
       this._removeAll();
 
-      const nameAndMenuButton = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+      const nameAndMenuButton = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignY: "middle"
       }));
       nameAndMenuButton.add(this.__createTitle(), {
@@ -183,7 +183,7 @@ qx.Class.define("osparc.info.StudyMedium", {
       }];
 
       if (
-        !osparc.utils.Utils.isProduct("s4llite") &&
+        osparc.product.Utils.showQuality() &&
         osparc.component.metadata.Quality.isEnabled(this.getStudy().getQuality())
       ) {
         extraInfo.push({

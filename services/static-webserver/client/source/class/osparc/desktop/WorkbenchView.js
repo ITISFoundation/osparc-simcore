@@ -342,13 +342,15 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         alignX: "center",
         marginLeft: 14
       });
-      addNewNodeBtn.addListener("execute", () => this.__workbenchUI.openServiceCatalog({
-        x: 50,
-        y: 50
-      }, {
-        x: 50,
-        y: 50
-      }));
+      addNewNodeBtn.addListener("execute", () => {
+        this.__workbenchUI.openServiceCatalog({
+          x: 50,
+          y: 50
+        }, {
+          x: 50,
+          y: 50
+        });
+      });
       homeAndNodesTree.add(addNewNodeBtn);
 
       const nodesPage = this.__nodesPage = this.__createTabPage("@FontAwesome5Solid/list", this.tr("Nodes"), homeAndNodesTree, primaryColumnBGColor);
@@ -653,6 +655,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       this.listenToNodeUpdated();
 
+      this.listenToNodeProgress();
+
       // callback for events
       const slotName3 = "event";
       if (!socket.slotExists(slotName3)) {
@@ -686,6 +690,18 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         socket.on(slotName, jsonString => {
           const data = JSON.parse(jsonString);
           this.getStudy().nodeUpdated(data);
+        }, this);
+      }
+    },
+
+    listenToNodeProgress: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+
+      const slotName = "nodeProgress";
+      if (!socket.slotExists(slotName)) {
+        socket.on(slotName, jsonString => {
+          const data = JSON.parse(jsonString);
+          this.getStudy().nodeNodeProgressSequence(data);
         }, this);
       }
     },
@@ -838,9 +854,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       this.__studyOptionsPage.add(this.__getSlideshowSection());
 
-      if (osparc.data.Permissions.getInstance().isTester()) {
-        this.__studyOptionsPage.add(this.__getAnnotationsSection());
-      }
+      this.__studyOptionsPage.add(this.__getAnnotationsSection());
 
       const snaps = this.__getSnapshotsSection();
       snaps.exclude();
@@ -866,7 +880,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __getSlideshowSection: function() {
       const slideshowSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       slideshowSection.add(new qx.ui.basic.Label(this.tr("App Mode")).set({
-        font: "title-14"
+        font: "text-14"
       }));
 
       const slideshowButtons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
@@ -909,7 +923,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __getAnnotationsSection: function() {
       const annotationsSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       annotationsSection.add(new qx.ui.basic.Label(this.tr("Annotations")).set({
-        font: "title-14"
+        font: "text-14"
       }));
 
       const annotationsButtons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
@@ -938,7 +952,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __getSnapshotsSection: function() {
       const snapshotSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       snapshotSection.add(new qx.ui.basic.Label(this.tr("Checkpoints")).set({
-        font: "title-14"
+        font: "text-14"
       }));
 
       const snapshotButtons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
@@ -970,7 +984,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __getIterationsSection: function() {
       const iterationsSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       iterationsSection.add(new qx.ui.basic.Label(this.tr("Iterations")).set({
-        font: "title-14"
+        font: "text-14"
       }));
 
       const iterationButtons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));

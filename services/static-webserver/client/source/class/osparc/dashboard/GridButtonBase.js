@@ -40,7 +40,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
     grid.setSpacing(this.self().SPACING_IN);
     grid.setRowFlex(2, 1);
     grid.setColumnFlex(0, 1);
-    grid.setRowMaxHeight(0, 34);
+    grid.setRowMaxHeight(0, this.self().TITLE_MAX_HEIGHT);
 
     const mainLayout = this._mainLayout = new qx.ui.container.Composite().set({
       maxWidth: this.self().ITEM_WIDTH - 2*this.self().PADDING,
@@ -60,8 +60,9 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
     ITEM_WIDTH: 190,
     ITEM_HEIGHT: 220,
     PADDING: 10,
-    SPACING_IN: 4,
+    SPACING_IN: 5,
     SPACING: 15,
+    TITLE_MAX_HEIGHT: 36, // two lines
     POS: {
       TITLE: {
         row: 0,
@@ -81,11 +82,11 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         rowSpan: 1,
         colSpan: 3
       },
-      TSR: {
+      TAGS: {
         row: 3,
         column: 0
       },
-      TAGS: {
+      TSR: {
         row: 4,
         column: 0
       },
@@ -119,9 +120,9 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         case "title":
           control = new qx.ui.basic.Label().set({
             marginTop: 3,
-            font: "title-14",
+            font: "text-14",
             maxWidth: this.self().ITEM_WIDTH - 2*this.self().PADDING,
-            maxHeight: 34, // two lines
+            maxHeight: this.self().TITLE_MAX_HEIGHT,
             rich: true,
             wrap: true
           });
@@ -134,13 +135,17 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           this._mainLayout.add(control, this.self().POS.SUBTITLE);
           break;
         case "subtitle-icon": {
-          control = new qx.ui.basic.Image();
+          control = new qx.ui.basic.Image().set({
+            alignY: "middle"
+          });
           const subtitleLayout = this.getChildControl("subtitle");
           subtitleLayout.addAt(control, 0);
           break;
         }
         case "subtitle-text": {
           control = new qx.ui.basic.Label().set({
+            alignY: "middle",
+            rich: true,
             anonymous: true,
             font: "text-13",
             allowGrowY: false
@@ -215,10 +220,11 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         if (checkThis.includes(child.getSubcontrolId()) && child.getBounds()) {
           maxHeight -= (child.getBounds().height + this.self().SPACING_IN);
           if (child.getSubcontrolId() === "tags") {
-            maxHeight -= 7;
+            maxHeight -= 8;
           }
         }
       });
+      maxHeight -= 4;
       iconLayout.getChildControl("image").setMaxHeight(maxHeight);
       iconLayout.setMaxHeight(maxHeight);
       iconLayout.recheckSize();

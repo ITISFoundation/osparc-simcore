@@ -2,15 +2,17 @@ import datetime
 from functools import cached_property
 from typing import Optional, cast
 
+from fastapi import FastAPI
 from models_library.basic_types import (
     BootModeEnum,
     BuildTargetEnum,
     LogLevel,
     VersionTag,
 )
-from models_library.docker import DockerLabelKey
-from pydantic import Field, PositiveInt, parse_obj_as, validator
+from models_library.docker import DockerGenericTag, DockerLabelKey
+from pydantic import Field, NonNegativeInt, PositiveInt, parse_obj_as, validator
 from settings_library.base import BaseCustomSettings
+from settings_library.docker_registry import RegistrySettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from settings_library.utils_logging import MixinLoggingSettings
@@ -69,6 +71,32 @@ class EC2InstancesSettings(BaseCustomSettings):
     EC2_INSTANCES_TIME_BEFORE_TERMINATION: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=55),
         description="Time after which an EC2 instance may be terminated (repeat every hour, min 0, max 59 minutes)",
+    )
+
+    EC2_INSTANCES_MACHINES_BUFFER: NonNegativeInt = Field(
+        default=0,
+        description="Constant reserve of drained ready machines for fast(er) usage,"
+        "disabled when set to 0. Uses 1st machine defined in EC2_INSTANCES_ALLOWED_TYPES",
+    )
+
+    EC2_INSTANCES_MAX_START_TIME: datetime.timedelta = Field(
+        default=datetime.timedelta(minutes=3),
+        description="Usual time taken an EC2 instance with the given AMI takes to be in 'running' mode",
+    )
+
+    EC2_INSTANCES_PRE_PULL_IMAGES: list[DockerGenericTag] = Field(
+        default_factory=list,
+        description="a list of docker image/tags to pull on instance cold start",
+    )
+
+    EC2_INSTANCES_PRE_PULL_IMAGES_CRON_INTERVAL: datetime.timedelta = Field(
+        default=datetime.timedelta(minutes=30),
+        description="time interval between pulls of images (minimum is 1 minute)",
+    )
+
+    EC2_INSTANCES_CUSTOM_BOOT_SCRIPTS: list[str] = Field(
+        default_factory=list,
+        description="script(s) to run on EC2 instance startup (be careful!), each entry is run one after the other using '&&' operator",
     )
 
     @validator("EC2_INSTANCES_TIME_BEFORE_TERMINATION")
@@ -159,6 +187,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     AUTOSCALING_REDIS: RedisSettings = Field(auto_default_from_env=True)
 
+    AUTOSCALING_REGISTRY: Optional[RegistrySettings] = Field(auto_default_from_env=True)
+
     @cached_property
     def LOG_LEVEL(self):
         return self.AUTOSCALING_LOGLEVEL
@@ -168,3 +198,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     def valid_log_level(cls, value: str) -> str:
         # NOTE: mypy is not happy without the cast
         return cast(str, cls.validate_log_level(value))
+
+
+def get_application_settings(app: FastAPI) -> ApplicationSettings:
+    return cast(ApplicationSettings, app.state.settings)

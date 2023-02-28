@@ -31,7 +31,7 @@ from .utils import (
     flash_response,
     validate_user_status,
 )
-from .utils_email import get_template_path, render_and_send_mail
+from .utils_email import get_template_path, send_email_from_template
 
 log = logging.getLogger(__name__)
 
@@ -85,7 +85,7 @@ async def submit_request_to_reset_password(request: web.Request):
 
     except web.HTTPError as err:
         try:
-            await render_and_send_mail(
+            await send_email_from_template(
                 request,
                 from_=product.support_email,
                 to=request_body.email,
@@ -105,7 +105,7 @@ async def submit_request_to_reset_password(request: web.Request):
         link = make_confirmation_link(request, confirmation)
         try:
             # primary reset email with a URL and the normal instructions.
-            await render_and_send_mail(
+            await send_email_from_template(
                 request,
                 from_=product.support_email,
                 to=request_body.email,
@@ -159,7 +159,7 @@ async def submit_request_to_change_email(request: web.Request):
     )
     link = make_confirmation_link(request, confirmation)
     try:
-        await render_and_send_mail(
+        await send_email_from_template(
             request,
             from_=product.support_email,
             to=request_body.email,

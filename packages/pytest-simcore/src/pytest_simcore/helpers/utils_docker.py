@@ -164,6 +164,20 @@ def run_docker_compose_config(
     compose_file_str = process.stdout.decode("utf-8")
     compose_file: dict[str, Any] = yaml.safe_load(compose_file_str)
 
+    def _remove_top_level_name_attribute_generated_by_compose_v2(
+        compose: dict[str, Any]
+    ) -> dict[str, Any]:
+        """docker compose V2 CLI config adds a top level name attribute
+        https://docs.docker.com/compose/compose-file/#name-top-level-element
+        but it is incompatible with docker stack deploy...
+        """
+        compose.pop("name", None)
+        return compose
+
+    compose_file = _remove_top_level_name_attribute_generated_by_compose_v2(
+        compose_file
+    )
+
     if destination_path:
         #
         # NOTE: This step could be avoided and reading instead from stdout

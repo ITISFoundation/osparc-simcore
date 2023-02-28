@@ -45,6 +45,13 @@ qx.Class.define("osparc.utils.Utils", {
         return this.getLocalStorageItem("themeName");
       },
 
+      getLastCommitVcsRefUI: function() {
+        return this.getLocalStorageItem("lastVcsRefUI");
+      },
+      setLastCommitVcsRefUI: function(vcsRef) {
+        this.setLocalStorageItem("lastVcsRefUI", vcsRef);
+      },
+
       serviceToFavs: function(serviceKey) {
         let serviceFavs = this.getLocalStorageItem("services");
         if (serviceFavs) {
@@ -75,6 +82,15 @@ qx.Class.define("osparc.utils.Utils", {
         const favServices = Object.keys().sort((a, b) => serviceFavs[b]["hits"] - serviceFavs[a]["hits"]);
         return favServices;
       }
+    },
+
+    hardRefresh: function() {
+      // https://stackoverflow.com/questions/5721704/window-location-reload-with-clear-cache
+      // No cigar. Tried:
+      // eslint-disable-next-line no-self-assign
+      // window.location.href = window.location.href;
+      // window.location.href = window.location.origin + window.location.pathname + window.location.search + (window.location.search ? "&" : "?") + "reloadTime=" + Date.now().toString() + window.location.hash;
+      // window.location.href = window.location.href.replace(/#.*$/, "");
     },
 
     getUniqueStudyName: function(preferredName, list) {
@@ -192,44 +208,9 @@ qx.Class.define("osparc.utils.Utils", {
 
     isDevelopmentPlatform: function() {
       return new Promise(resolve => {
-        osparc.utils.LibVersions.getPlatformName()
+        osparc.store.StaticInfo.getInstance().getPlatformName()
           .then(platformName => resolve(["dev", "master"].includes(platformName)));
       });
-    },
-
-    getProductName: function() {
-      return qx.core.Environment.get("product.name");
-    },
-
-    isProduct: function(productName) {
-      const product = qx.core.Environment.get("product.name");
-      return (productName === product);
-    },
-
-    getStudyLabel(plural = false) {
-      if (osparc.utils.Utils.isProduct("s4llite")) {
-        if (plural) {
-          return qx.locale.Manager.tr("projects");
-        }
-        return qx.locale.Manager.tr("project");
-      }
-      if (plural) {
-        return qx.locale.Manager.tr("studies");
-      }
-      return qx.locale.Manager.tr("study");
-    },
-
-    getTemplateLabel(plural = false) {
-      if (osparc.utils.Utils.isProduct("s4llite")) {
-        if (plural) {
-          return qx.locale.Manager.tr("tutorials");
-        }
-        return qx.locale.Manager.tr("tutorial");
-      }
-      if (plural) {
-        return qx.locale.Manager.tr("templates");
-      }
-      return qx.locale.Manager.tr("template");
     },
 
     getEditButton: function() {
@@ -304,6 +285,14 @@ qx.Class.define("osparc.utils.Utils", {
       return osparc.utils.Utils.formatDate(value) + " " + osparc.utils.Utils.formatTime(value);
     },
 
+    formatSeconds: function(seconds) {
+      const min = Math.floor(seconds / 60);
+      const sec = seconds - min * 60;
+      const minutesStr = ("0" + min).slice(-2);
+      const secondsStr = ("0" + sec).slice(-2);
+      return `${minutesStr}:${secondsStr}`;
+    },
+
     daysBetween: function(day1, day2) {
       // The number of milliseconds in one day
       const ONE_DAY = 1000 * 60 * 60 * 24;
@@ -324,7 +313,7 @@ qx.Class.define("osparc.utils.Utils", {
         msg = qx.locale.Manager.tr("This account will expire in ") + daysToExpiration + qx.locale.Manager.tr(" days.");
       }
       msg += "</br>";
-      msg += qx.locale.Manager.tr("Please, contact us by email:");
+      msg += qx.locale.Manager.tr("Please contact us by email:");
       msg += "</br>";
       return new Promise(resolve => {
         osparc.store.VendorInfo.getInstance().getSupportEmail()
@@ -343,31 +332,6 @@ qx.Class.define("osparc.utils.Utils", {
 
     isInZ43: function() {
       return window.location.hostname.includes("speag");
-    },
-
-    getLogoPath: function() {
-      let logosPath = null;
-      const colorManager = qx.theme.manager.Color.getInstance();
-      const textColor = colorManager.resolve("text");
-      const lightLogo = this.getColorLuminance(textColor) > 0.4;
-      const product = qx.core.Environment.get("product.name");
-      switch (product) {
-        case "s4l":
-          logosPath = lightLogo ? "osparc/s4l_zmt-white.svg" : "osparc/s4l_zmt-black.svg";
-          break;
-        case "s4llite":
-          logosPath = lightLogo ? "osparc/s4llite_zmt-white.svg" : "osparc/s4llite_zmt-black.svg";
-          break;
-        case "tis": {
-          logosPath = lightLogo ? "osparc/tip_itis-white.svg" : "osparc/tip_itis-black.svg";
-          break;
-        }
-        default: {
-          logosPath = lightLogo ? "osparc/osparc-white.svg" : "osparc/osparc-black.svg";
-          break;
-        }
-      }
-      return logosPath;
     },
 
     addBorder: function(widget, width = 1, color = "transparent") {
@@ -441,6 +405,11 @@ qx.Class.define("osparc.utils.Utils", {
     getContrastedTextColor: function(color) {
       const L = this.getColorLuminance(color);
       return L > 0.35 ? "contrasted-text-dark" : "contrasted-text-light";
+    },
+
+    getContrastedBinaryColor: function(color) {
+      const L = this.getColorLuminance(color);
+      return L > 0.35 ? "#202020" : "#D0D0D0";
     },
 
     getRoundedBinaryColor: function(color) {

@@ -7,6 +7,11 @@
   <!-- Setup the viewport for mobile and desktop environments -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimum-scale=1.0, maximum-scale=1.0" />
 
+  <!-- Disable browser caching with meta HTML tags -->
+  <!-- <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" /> -->
+  <!-- <meta http-equiv="Pragma" content="no-cache" /> -->
+  <!-- <meta http-equiv="Expires" content="0" /> -->
+
   <!-- Configure linking of this application to the home screen of mobile devices -->
   <meta name="apple-mobile-web-app-title" content="${name}"/>
   <meta name="mobile-web-app-capable" content="yes"/>
@@ -22,6 +27,12 @@
   <link rel="shortcut icon" type="image/png" href="${resourcePath}osparc/favicon-osparc.png"/>
   <link rel="mask-icon" href="${resourcePath}osparc/favicon-osparc.png"/>
 
+  <!-- Open Graph metadata -->
+  <meta property="og:title" id="openGraphTitle" content="${appTitle}" />
+  <!-- They need to be written by the compiler, modifying the page after BootJs doesn't make the trick -->
+  <!-- <meta property="og:description" id="openGraphDescription" content="open online simulations for Stimulating Peripheral Activity to Relieve Conditions" /> -->
+  <!-- <meta property="og:image" id="openGraphImage" content="../resource/osparc/favicon-osparc.png" /> -->
+
   <style>
     body {
       padding: 0px;
@@ -35,7 +46,7 @@
   </style>
 
   <title>${appTitle}</title>
-  <meta name="description" content="Open Online Simulations for Stimulating Peripheral Activity to Relieve Conditions (<i>o<sup>2</sup>S<sup>2</sup>PARC</i>)" />
+  <meta name="description" content="open online simulations for Stimulating Peripheral Activity to Relieve Conditions" />
 
   <noscript>
     <meta http-equiv="refresh" content="0; url=nojs.html"/>

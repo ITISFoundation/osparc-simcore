@@ -10,21 +10,25 @@ from typing import Callable
 
 from .._meta import VERSION
 from ..core.errors import ConfigurationError, Ec2InstanceNotFoundError
-from ..core.settings import NodesMonitoringSettings
-from ..models import EC2Instance, Resources
+from ..core.settings import ApplicationSettings
+from ..models import EC2InstanceType, Resources
 
 logger = logging.getLogger(__name__)
 
 
-def get_ec2_tags(nodes_monitoring_settings: NodesMonitoringSettings) -> dict[str, str]:
+def get_ec2_tags(app_settings: ApplicationSettings) -> dict[str, str]:
+    assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     return {
         "io.simcore.autoscaling.version": f"{VERSION}",
         "io.simcore.autoscaling.monitored_nodes_labels": json.dumps(
-            nodes_monitoring_settings.NODES_MONITORING_NODE_LABELS
+            app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
         ),
         "io.simcore.autoscaling.monitored_services_labels": json.dumps(
-            nodes_monitoring_settings.NODES_MONITORING_SERVICE_LABELS
+            app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS
         ),
+        # NOTE: this one gets special treatment in AWS GUI and is applied to the name of the instance
+        "Name": f"autoscaling-{app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME}",
     }
 
 
@@ -38,7 +42,7 @@ def compose_user_data(docker_join_bash_command: str) -> str:
 
 
 def closest_instance_policy(
-    ec2_instance: EC2Instance,
+    ec2_instance: EC2InstanceType,
     resources: Resources,
 ) -> float:
     if ec2_instance.cpus < resources.cpus or ec2_instance.ram < resources.ram:
@@ -51,13 +55,13 @@ def closest_instance_policy(
 
 
 def find_best_fitting_ec2_instance(
-    allowed_ec2_instances: list[EC2Instance],
+    allowed_ec2_instances: list[EC2InstanceType],
     resources: Resources,
-    score_type: Callable[[EC2Instance, Resources], float] = closest_instance_policy,
-) -> EC2Instance:
+    score_type: Callable[[EC2InstanceType, Resources], float] = closest_instance_policy,
+) -> EC2InstanceType:
     if not allowed_ec2_instances:
         raise ConfigurationError(msg="allowed ec2 instances is missing!")
-    score_to_ec2_candidate: dict[float, EC2Instance] = OrderedDict(
+    score_to_ec2_candidate: dict[float, EC2InstanceType] = OrderedDict(
         sorted(
             {
                 score_type(instance, resources): instance

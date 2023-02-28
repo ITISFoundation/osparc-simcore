@@ -18,13 +18,14 @@
 /**
  * The loading page
  *
- * --------------------
- * |   oSparc logo    |
- * | spinner + header |
- * |  - msg_1         |
- * |  - msg_2         |
- * |  - msg_n         |
- * --------------------
+ * -----------------------
+ * |     disclaimer      |
+ * | oSparc/service logo |
+ * |   spinner + header  |
+ * |     - msg_1         |
+ * |     - msg_2         |
+ * |     - msg_n         |
+ * -----------------------
  *
  */
 qx.Class.define("osparc.ui.message.Loading", {
@@ -33,31 +34,31 @@ qx.Class.define("osparc.ui.message.Loading", {
   /**
    * Constructor for the Loading widget.
    *
-   * @param {String} header Header that goes next to the spinning wheel.
-   * @param {Array} messages Texts that will displayed as bullet points under the header.
+   * @param {Boolean} showMaximizeButton
    */
-  construct: function(header = "", messages = [], showMaximize = false) {
+  construct: function(showMaximizeButton = false) {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.HBox());
 
     this.set({
       alignX: "center"
     });
-    this.__buildLayout(showMaximize);
-
-    if (header) {
-      this.setHeader(header);
-    }
-    if (messages.length) {
-      this.setMessages(messages);
-    }
+    this.__buildLayout(showMaximizeButton);
   },
 
   properties: {
+    disclaimer: {
+      check: "String",
+      init: null,
+      nullable: true,
+      event: "changeDisclaimer"
+    },
+
     logo: {
       check: "String",
+      init: null,
       nullable: true,
-      apply: "__applyLogo"
+      event: "changeLogo"
     },
 
     header: {
@@ -82,62 +83,137 @@ qx.Class.define("osparc.ui.message.Loading", {
   },
 
   statics: {
-    LOGO_WIDTH: 260,
-    LOGO_HEIGHT: 110,
-    STATUS_ICON_SIZE: 32
+    LOGO_WIDTH: 240,
+    LOGO_HEIGHT: 100,
+    STATUS_ICON_SIZE: 32,
+
+    GRID_POS: {
+      DISCLAIMER: 0,
+      LOGO: 1,
+      WAITING: 2,
+      MESSAGES: 3,
+      EXTRA_WIDGETS: 4
+    }
   },
 
   members: {
-    __logo: null,
+    __mainLayout: null,
     __header: null,
     __messages: null,
-    __loadingWidget: null,
-
+    __extraWidgets: null,
     __maxButton: null,
 
-    __buildLayout: function(showMaximize) {
-      const image = this.__logo = new osparc.ui.basic.Logo().set({
-        width: this.self().LOGO_WIDTH,
-        height: this.self().LOGO_HEIGHT
-      });
+    __buildLayout: function(showMaximizeButton) {
+      this.__createMainLayout();
+      this.__createMaximizeButton(showMaximizeButton);
+    },
 
-      const atom = this.__header = new qx.ui.basic.Atom().set({
-        icon: "@FontAwesome5Solid/circle-notch/"+this.self().STATUS_ICON_SIZE,
-        font: "nav-bar-label",
-        alignX: "center",
-        gap: 15,
-        allowGrowX: false
-      });
-      const icon = atom.getChildControl("icon");
-      osparc.utils.StatusUI.updateIconAnimation(icon);
-
-      const messages = this.__messages = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
-        alignX: "center"
-      })).set({
-        padding: 20
-      });
-
-      const loadingWidget = this.__loadingWidget = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
+    __createMainLayout: function() {
+      const layout = new qx.ui.layout.Grid(20, 20);
+      layout.setColumnFlex(0, 1);
+      const mainLayout = this.__mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
         alignX: "center",
         alignY: "middle"
       })).set({
-        maxWidth: this.self().LOGO_WIDTH*2
+        width: this.self().LOGO_WIDTH*3,
+        maxWidth: this.self().LOGO_WIDTH*3,
+        padding: 20
       });
-      loadingWidget.add(image);
-      loadingWidget.add(atom);
-      loadingWidget.add(messages);
+      this._add(new qx.ui.core.Widget(), {
+        flex: 1
+      });
+      this._add(mainLayout);
+      this._add(new qx.ui.core.Widget(), {
+        flex: 1
+      });
 
-      this._add(new qx.ui.core.Widget(), {
-        flex: 1
+      const disclaimer = new qx.ui.basic.Atom().set({
+        padding: 15,
+        gap: 20,
+        icon: "@FontAwesome5Solid/exclamation-triangle/20",
+        backgroundColor: "warning-yellow-s4l",
+        textColor: "black",
+        alignX: "center"
       });
-      this._add(loadingWidget);
-      this._add(new qx.ui.core.Widget(), {
-        flex: 1
+      disclaimer.getContentElement().setStyles({
+        "border-radius": "8px"
       });
+      disclaimer.getChildControl("label").set({
+        font: "text-16",
+        textColor: "black",
+        rich: true,
+        wrap: true
+      });
+      this.bind("disclaimer", disclaimer, "visibility", {
+        converter: d => d ? "visible" : "excluded"
+      });
+      this.bind("disclaimer", disclaimer, "label");
+      mainLayout.addAt(disclaimer, {
+        column: 0,
+        row: this.self().GRID_POS.DISCLAIMER
+      });
+
+      const defaultLogoPath = osparc.product.Utils.getLogoPath();
+      const logo = new osparc.ui.basic.Thumbnail(defaultLogoPath, this.self().LOGO_WIDTH, this.self().LOGO_HEIGHT).set({
+        alignX: "center"
+      });
+      /*
+      // this is needed for svg images, but it breaks the GUI if the image source changes
+      logo.getChildControl("image").set({
+        minWidth: parseInt(this.self().LOGO_WIDTH/1.5),
+        minHeight: parseInt(this.self().LOGO_HEIGHT/1.5)
+      });
+      */
+      this.bind("logo", logo, "source", {
+        converter: newPath => newPath ? newPath : defaultLogoPath
+      });
+      mainLayout.addAt(logo, {
+        column: 0,
+        row: this.self().GRID_POS.LOGO
+      });
+
+      const waitingHeader = this.__header = new qx.ui.basic.Atom().set({
+        icon: "@FontAwesome5Solid/circle-notch/"+this.self().STATUS_ICON_SIZE,
+        font: "title-20",
+        alignX: "center",
+        rich: true,
+        gap: 15,
+        allowGrowX: false
+      });
+      const label = waitingHeader.getChildControl("label");
+      label.set({
+        rich: true,
+        wrap: true
+      });
+      const icon = waitingHeader.getChildControl("icon");
+      osparc.utils.StatusUI.updateCircleAnimation(icon);
+      mainLayout.addAt(waitingHeader, {
+        column: 0,
+        row: this.self().GRID_POS.WAITING
+      });
+
+      const messages = this.__messages = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
+        alignX: "center"
+      }));
+      mainLayout.addAt(messages, {
+        column: 0,
+        row: this.self().GRID_POS.MESSAGES
+      });
+
+      const extraWidgets = this.__extraWidgets = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
+        alignX: "center"
+      }));
+      mainLayout.addAt(extraWidgets, {
+        column: 0,
+        row: this.self().GRID_POS.EXTRA_WIDGETS
+      });
+    },
+
+    __createMaximizeButton: function(showMaximizeButton) {
       const maximize = false;
       const maxButton = this.__maxButton = new qx.ui.form.Button(null).set({
         icon: osparc.component.widget.PersistentIframe.getZoomIcon(maximize),
-        visibility: showMaximize ? "visible" : "excluded",
+        visibility: showMaximizeButton ? "visible" : "excluded",
         decorator: null
       });
       osparc.utils.Utils.setIdToWidget(maxButton, osparc.component.widget.PersistentIframe.getMaximizeWidgetId(maximize));
@@ -153,17 +229,6 @@ qx.Class.define("osparc.ui.message.Loading", {
       this._add(maximizeLayout);
     },
 
-    __applyLogo: function(value) {
-      this.__loadingWidget.remove(this.__logo);
-
-      this.__logo = new osparc.ui.basic.Thumbnail(null, this.self().LOGO_WIDTH, this.self().LOGO_HEIGHT);
-      const image = this.__logo.getChildControl("image");
-      image.set({
-        source: value
-      });
-      this.__loadingWidget.addAt(this.__logo, 0);
-    },
-
     __applyHeader: function(value) {
       this.__header.setLabel(value);
       const words = value.split(" ");
@@ -172,23 +237,39 @@ qx.Class.define("osparc.ui.message.Loading", {
         const iconSource = osparc.utils.StatusUI.getIconSource(state.toLowerCase(), this.self().STATUS_ICON_SIZE);
         if (iconSource) {
           this.__header.setIcon(iconSource);
-          osparc.utils.StatusUI.updateIconAnimation(this.__header.getChildControl("icon"));
+          osparc.utils.StatusUI.updateCircleAnimation(this.__header.getChildControl("icon"));
         }
       }
     },
 
     __applyMessages: function(msgs, old) {
       this.__messages.removeAll();
-      msgs.forEach(msg => {
-        const text = new qx.ui.basic.Label(msg.toString()).set({
-          font: "text-18"
+      if (msgs) {
+        msgs.forEach(msg => {
+          const text = new qx.ui.basic.Label(msg.toString()).set({
+            font: "text-18",
+            rich: true,
+            wrap: true
+          });
+          this.__messages.add(text);
         });
-        this.__messages.add(text);
-      });
+        this.__messages.show();
+      } else {
+        this.__messages.exclude();
+      }
     },
 
     addWidgetToMessages: function(widget) {
-      this.__messages.add(widget);
+      if (widget) {
+        this.__messages.add(widget);
+        this.__messages.show();
+      } else {
+        this.__messages.exclude();
+      }
+    },
+
+    addExtraWidget: function(widget) {
+      this.__extraWidgets.add(widget);
     },
 
     // from osparc.component.widget.PersistentIframe

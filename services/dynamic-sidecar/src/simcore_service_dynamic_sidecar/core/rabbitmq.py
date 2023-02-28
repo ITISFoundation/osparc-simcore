@@ -1,15 +1,18 @@
 import logging
 from functools import lru_cache
-from typing import Union, cast
+from typing import cast
 
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import (
     EventRabbitMessage,
     LoggerRabbitMessage,
+    ProgressRabbitMessage,
+    ProgressType,
     RabbitEventMessageType,
     RabbitMessageBase,
 )
-from servicelib.logging_utils import log_context
+from pydantic import NonNegativeFloat
+from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq_utils import wait_till_rabbitmq_responsive
 
@@ -19,25 +22,34 @@ log = logging.getLogger(__file__)
 
 
 async def _post_rabbit_message(app: FastAPI, message: RabbitMessageBase) -> None:
-    # NOTE: this check is necessary when the dy-sidecar is used on the CLI
-    # where the rabbit is not initialized, it's not optimal but it allows
-    # to run the CLI without rabbit...
-    if _is_rabbitmq_initialized(app):
+    with log_catch(log, reraise=False):
         await get_rabbitmq_client(app).publish(message.channel_name, message.json())
 
 
-async def post_log_message(app: FastAPI, logs: Union[str, list[str]]) -> None:
-    if isinstance(logs, str):
-        logs = [logs]
-
+async def post_log_message(app: FastAPI, logs: str) -> None:
     app_settings: ApplicationSettings = app.state.settings
     message = LoggerRabbitMessage(
         node_id=app_settings.DY_SIDECAR_NODE_ID,
         user_id=app_settings.DY_SIDECAR_USER_ID,
         project_id=app_settings.DY_SIDECAR_PROJECT_ID,
-        messages=logs,
+        messages=[logs],
+        log_level=logging.INFO,
     )
 
+    await _post_rabbit_message(app, message)
+
+
+async def post_progress_message(
+    app: FastAPI, progress_type: ProgressType, progress_value: NonNegativeFloat
+) -> None:
+    app_settings: ApplicationSettings = app.state.settings
+    message = ProgressRabbitMessage(
+        node_id=app_settings.DY_SIDECAR_NODE_ID,
+        user_id=app_settings.DY_SIDECAR_USER_ID,
+        project_id=app_settings.DY_SIDECAR_PROJECT_ID,
+        progress_type=progress_type,
+        progress=progress_value,
+    )
     await _post_rabbit_message(app, message)
 
 

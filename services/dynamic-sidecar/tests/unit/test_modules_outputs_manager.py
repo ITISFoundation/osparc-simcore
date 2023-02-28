@@ -3,21 +3,34 @@
 # pylint: disable=unused-argument
 
 import asyncio
+import inspect
 from dataclasses import dataclass
+from inspect import FullArgSpec
 from pathlib import Path
 from typing import AsyncIterator, Iterator
 from unittest.mock import AsyncMock
 
 import pytest
+from async_asgi_testclient import TestClient
+from faker import Faker
+from fastapi import FastAPI
 from pydantic import PositiveFloat
-from pytest import FixtureRequest
+from pytest import FixtureRequest, MonkeyPatch
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_sdk.node_ports_common.exceptions import S3TransferError
-from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
+from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
+from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
+from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
+from simcore_service_dynamic_sidecar.modules.outputs._context import (
+    OutputsContext,
+    setup_outputs_context,
+)
 from simcore_service_dynamic_sidecar.modules.outputs._manager import (
     OutputsManager,
     UploadPortsFailed,
     _PortKeyTracker,
+    setup_outputs_manager,
 )
 
 # UTILS
@@ -158,6 +171,7 @@ async def outputs_manager(
         outputs_context=outputs_context,
         io_log_redirect_cb=None,
         task_monitor_interval_s=0.01,
+        progress_cb=None,
     )
     await outputs_manager.start()
     yield outputs_manager
@@ -336,3 +350,76 @@ async def test_port_key_tracker_workflow(
     assert await port_key_tracker.can_schedule_ports_to_upload() is False
 
     assert set(await port_key_tracker.get_uploading()) == expected_uploading
+
+
+async def test_regression_io_log_redirect_cb(
+    mock_environment: EnvVarsDict, monkeypatch: MonkeyPatch, faker: Faker
+):
+    for mock_empty_str in {
+        "RABBIT_HOST",
+        "RABBIT_USER",
+        "RABBIT_PASSWORD",
+        "POSTGRES_HOST",
+        "POSTGRES_USER",
+        "POSTGRES_PASSWORD",
+        "POSTGRES_DB",
+    }:
+        monkeypatch.setenv(mock_empty_str, "")
+
+    mounted_volumes = MountedVolumes(
+        run_id=faker.uuid4(cast_to=None),
+        node_id=faker.uuid4(cast_to=None),
+        inputs_path=Path("/"),
+        outputs_path=Path("/"),
+        state_paths=[],
+        state_exclude=set(),
+        compose_namespace="",
+        dy_volumes=Path("/"),
+    )
+
+    app = FastAPI()
+
+    # setup settings
+    app.state.settings = ApplicationSettings.create_from_envs()
+
+    # mocked_volumes
+    app.state.mounted_volumes = mounted_volumes
+
+    setup_outputs_context(app)
+    setup_outputs_manager(app)
+
+    async with TestClient(app):  # runs setup handlers
+
+        outputs_manager: OutputsManager = app.state.outputs_manager
+        assert outputs_manager.io_log_redirect_cb is not None
+
+        # ensure callback signature passed to nodeports does not change
+        assert inspect.getfullargspec(
+            outputs_manager.io_log_redirect_cb.func
+        ) == FullArgSpec(
+            args=["app", "logs"],
+            varargs=None,
+            varkw=None,
+            defaults=None,
+            kwonlyargs=[],
+            kwonlydefaults=None,
+            annotations={
+                "return": None,
+                "app": FastAPI,
+                "logs": str,
+            },
+        )
+
+        # ensure logger used in nodeports deos not change
+        assert inspect.getfullargspec(LogRedirectCB.__call__) == FullArgSpec(
+            args=["self", "logs"],
+            varargs=None,
+            varkw=None,
+            defaults=None,
+            kwonlyargs=[],
+            kwonlydefaults=None,
+            annotations={
+                "return": None,
+                "logs": str,
+            },
+        )

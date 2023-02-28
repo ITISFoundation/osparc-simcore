@@ -84,27 +84,26 @@ def generate_dotenv(ctx: typer.Context, auto_password: bool = False):
     """
     assert ctx  # nosec
 
+    username = getpass.getuser()
     password: str = (
         getpass.getpass(prompt="Password [Press Enter to auto-generate]: ")
         if not auto_password
         else None
     ) or generate_password(length=32)
 
-    settings = ApplicationSettings(
-        INVITATIONS_OSPARC_URL="https://osparc.io",
+    settings = ApplicationSettings.create_from_envs(
+        INVITATIONS_OSPARC_URL="http://127.0.0.1:8000",
         INVITATIONS_SECRET_KEY=Fernet.generate_key().decode(),
-        INVITATIONS_USERNAME=getpass.getuser(),
+        INVITATIONS_USERNAME=username,
         INVITATIONS_PASSWORD=password,
     )
 
     for name, value in settings.dict().items():
         if name.startswith("INVITATIONS_"):
             value = (
-                f"{value.get_secret_value()}"
-                if isinstance(value, SecretStr)
-                else f"{value}"
+                f"{value.get_secret_value()}" if isinstance(value, SecretStr) else value
             )
-            print(f"{name}={value}")
+            print(f"{name}={'null' if value is None else value}")
 
 
 @app.command()
@@ -125,7 +124,7 @@ def invite(
 ):
     """Creates an invitation link for user with 'email' and issued by 'issuer'"""
     assert ctx  # nosec
-    settings = MinimalApplicationSettings()
+    settings = MinimalApplicationSettings.create_from_envs()
 
     invitation_data = InvitationInputs(
         issuer=issuer,
@@ -146,7 +145,7 @@ def extract(ctx: typer.Context, invitation_url: str):
     """Validates code and extracts invitation's content"""
 
     assert ctx  # nosec
-    settings = MinimalApplicationSettings()
+    settings = MinimalApplicationSettings.create_from_envs()
 
     try:
         invitation: InvitationContent = extract_invitation_content(

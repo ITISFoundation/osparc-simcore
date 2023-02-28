@@ -87,6 +87,7 @@ class TutorialBase {
     await this.takeScreenshot("landingPage_" + domain);
 
     await auto.acceptCookies(this.__page);
+    await auto.ignoreNewRelease(this.__page);
     await this.takeScreenshot("postCookies_" + domain);
 
     // eslint-disable-next-line no-undef
@@ -573,10 +574,12 @@ class TutorialBase {
       console.error("Failed going to dashboard study", err);
       throw (err);
     }
+    await this.waitFor(5000, 'Going back to Dashboard');
     await this.takeScreenshot("toDashboard_after");
   }
 
   async removeStudy(studyId, waitFor = 5000) {
+    await auto.dashboardStudiesBrowser(this.__page);
     await this.waitFor(waitFor, 'Wait to be unlocked');
     await this.takeScreenshot("deleteFirstStudy_before");
     const intervalWait = 3000;

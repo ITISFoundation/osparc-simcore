@@ -172,10 +172,11 @@ popd;
 endef
 
 rebuild: build-nc # alias
-build build-nc: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'
+build build-nc: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'. To export to a folder: `make local-dest=/tmp/build`
 	# Building service$(if $(target),,s) $(target)
 	@$(_docker_compose_build)
-
+	# List production images
+	@docker images --filter="reference=local/*:production"
 
 load-images: guard-local-src ## loads images from local-src
 	# loading from images from $(local-src)...
@@ -188,7 +189,7 @@ load-images: guard-local-src ## loads images from local-src
 build-devel build-devel-nc: .env ## Builds development images and tags them as 'local/{service-name}:development'. For single target e.g. 'make target=webserver build-devel'
 ifeq ($(target),)
 	# Building services
-	$(_docker_compose_build)
+	@$(_docker_compose_build)
 else
 ifeq ($(findstring static-webserver,$(target)),static-webserver)
 	# Compiling front-end
@@ -197,6 +198,8 @@ endif
 	# Building service $(target)
 	@$(_docker_compose_build)
 endif
+	# List development images
+	@docker images --filter="reference=local/*:development"
 
 
 $(CLIENT_WEB_OUTPUT):
@@ -306,6 +309,7 @@ printf "$$rows" "Portainer" "http://$(get_my_ip).nip.io:9000" admin adminadmin;\
 printf "$$rows" "Redis" "http://$(get_my_ip).nip.io:18081";\
 printf "$$rows" "Dask Dashboard" "http://$(get_my_ip).nip.io:8787";\
 printf "$$rows" "Docker Registry" "$${REGISTRY_URL}" $${REGISTRY_USER} $${REGISTRY_PW};\
+printf "$$rows" "Invitations" "http://$(get_my_ip).nip.io:8008/dev/doc" $${INVITATIONS_USERNAME} $${INVITATIONS_PASSWORD};\
 printf "$$rows" "Rabbit Dashboard" "http://$(get_my_ip).nip.io:15672" admin adminadmin;\
 printf "$$rows" "Traefik Dashboard" "http://$(get_my_ip).nip.io:8080/dashboard/";\
 printf "$$rows" "Storage S3 Filestash" "http://$(get_my_ip).nip.io:9002" 12345678 12345678;\
@@ -505,6 +509,15 @@ openapi-specs: ## bundles and validates openapi specifications and schemas of AL
 	@$(MAKE_C) services/web/server $@
 	@$(MAKE_C) services/storage $@
 	@$(MAKE_C) services/director $@
+
+.PHONY: settings-schema.json
+settings-schema.json: ## [container] dumps json-schema settings of all services
+	@$(MAKE_C) services/api-server $@
+	@$(MAKE_C) services/autoscaling $@
+	@$(MAKE_C) services/director-v2 $@
+	@$(MAKE_C) services/invitations $@
+	@$(MAKE_C) services/storage $@
+	@$(MAKE_C) services/web/server $@
 
 
 .PHONY: code-analysis

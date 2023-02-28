@@ -87,41 +87,61 @@ qx.Class.define("osparc.dashboard.Dashboard", {
 
     __createMainViewLayout: function() {
       const permissions = osparc.data.Permissions.getInstance();
+      const tabIconSize = 20;
       const tabs = [{
         id: "studiesTabBtn",
-        label: osparc.utils.Utils.getStudyLabel(true).toUpperCase(),
+        label: osparc.product.Utils.getStudyAlias({
+          plural: true,
+          allUpperCase: true
+        }),
+        icon: "@FontAwesome5Solid/file/"+tabIconSize,
         buildLayout: this.__createStudyBrowser
       }];
       if (permissions.canDo("dashboard.templates.read")) {
         const templatesTab = {
           id: "templatesTabBtn",
-          label: osparc.utils.Utils.getTemplateLabel(true).toUpperCase(),
+          label: osparc.product.Utils.getTemplateAlias({
+            plural: true,
+            allUpperCase: true
+          }),
+          icon: "@FontAwesome5Solid/copy/"+tabIconSize,
           buildLayout: this.__createTemplateBrowser
         };
         tabs.push(templatesTab);
       }
-      if (!osparc.utils.Utils.isProduct("s4llite") && permissions.canDo("dashboard.services.read")) {
+      if (permissions.canDo("dashboard.services.read")) {
         tabs.push({
           id: "servicesTabBtn",
           label: this.tr("SERVICES"),
+          icon: "@FontAwesome5Solid/cogs/"+tabIconSize,
           buildLayout: this.__createServiceBrowser
         });
       }
-      if (!osparc.utils.Utils.isProduct("s4llite")) {
+      if (permissions.canDo("dashboard.data.read")) {
         tabs.push({
           id: "dataTabBtn",
           label: this.tr("DATA"),
+          icon: "@FontAwesome5Solid/folder/"+tabIconSize,
           buildLayout: this.__createDataBrowser}
         );
       }
-      tabs.forEach(({id, label, buildLayout}) => {
-        const tabPage = new qx.ui.tabview.Page(label).set({
+      tabs.forEach(({id, label, icon, buildLayout}) => {
+        const tabPage = new qx.ui.tabview.Page(label, icon).set({
           appearance: "dashboard-page"
         });
         const tabButton = tabPage.getChildControl("button");
         tabButton.set({
+          alignX: "center",
+          toolTipText: label,
+          minWidth: 50
+        });
+        tabButton.getChildControl("label").set({
           font: "text-16",
-          minWidth: 70
+          alignX: "center"
+        });
+        tabButton.getChildControl("icon").set({
+          alignX: "center",
+          visibility: "excluded"
         });
         osparc.utils.Utils.setIdToWidget(tabButton, id);
         tabPage.setLayout(new qx.ui.layout.Grow());
@@ -160,6 +180,22 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           });
         })
         .catch(err => console.error(err));
+    },
+
+    topBarResized: function(newSize) {
+      const tabs = this.getChildren();
+      const nTabs = tabs.length;
+      const smallBrakpoint = nTabs*110;
+      tabs.forEach(tab => {
+        const tabButton = tab.getChildControl("button");
+        if (newSize.width < smallBrakpoint) {
+          tabButton.getChildControl("icon").show();
+          tabButton.getChildControl("label").exclude();
+        } else {
+          tabButton.getChildControl("label").show();
+          tabButton.getChildControl("icon").exclude();
+        }
+      });
     },
 
     __createStudyBrowser: function() {

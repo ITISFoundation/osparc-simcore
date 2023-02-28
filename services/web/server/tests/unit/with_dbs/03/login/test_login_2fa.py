@@ -109,6 +109,7 @@ async def test_workflow_register_and_login_with_2fa(
     fake_user_password: str,
     fake_user_phone_number: str,
     mocked_twilio_service: dict[str, Mock],
+    mocked_email_core_remove_comments: None,
 ):
     assert client.app
 
@@ -144,8 +145,18 @@ async def test_workflow_register_and_login_with_2fa(
     assert user["status"] == UserStatus.ACTIVE.name
     assert user["phone"] is None
 
-    # register phone --------------------------------------------------
+    # 0. login first (since there is no phone -> register)
+    url = client.app.router["auth_login"].url_for()
+    response = await client.post(
+        f"{url}",
+        json={
+            "email": fake_user_email,
+            "password": fake_user_password,
+        },
+    )
+    data, _ = await assert_status(response, web.HTTPAccepted)
 
+    # register phone --------------------------------------------------
     # 1. submit
     url = client.app.router["auth_register_phone"].url_for()
     response = await client.post(
@@ -269,9 +280,11 @@ async def test_register_phone_fails_with_used_number(
     assert "phone" in error["message"]
 
 
-@pytest.mark.testit
 async def test_send_email_code(
-    client: TestClient, faker: Faker, capsys: CaptureFixture
+    client: TestClient,
+    faker: Faker,
+    capsys: CaptureFixture,
+    mocked_email_core_remove_comments: None,
 ):
     request = make_mocked_request("GET", "/dummy", app=client.app)
 

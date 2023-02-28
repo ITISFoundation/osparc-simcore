@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import traceback
 from asyncio import CancelledError, Future, Lock, Task, create_task, wait
 from contextlib import suppress
 from datetime import timedelta
@@ -7,13 +8,15 @@ from functools import partial
 from typing import Optional
 
 from fastapi import FastAPI
+from models_library.rabbitmq_messages import ProgressType
 from pydantic import PositiveFloat
 from pydantic.errors import PydanticErrorMixin
+from servicelib import progress_bar
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.logging_utils import log_catch, log_context
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 
-from ...core.rabbitmq import post_log_message
+from ...core.rabbitmq import post_log_message, post_progress_message
 from ...core.settings import ApplicationSettings
 from ..nodeports import upload_outputs
 from ._context import OutputsContext
@@ -98,6 +101,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         self,
         outputs_context: OutputsContext,
         io_log_redirect_cb: Optional[LogRedirectCB],
+        progress_cb: Optional[progress_bar.AsyncReportCB],
         *,
         upload_upon_api_request: bool = True,
         task_cancellation_timeout_s: PositiveFloat = 5,
@@ -108,6 +112,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         self.upload_upon_api_request = upload_upon_api_request
         self.task_cancellation_timeout_s = task_cancellation_timeout_s
         self.task_monitor_interval_s = task_monitor_interval_s
+        self.task_progress_cb = progress_cb
 
         self._port_key_tracker = _PortKeyTracker()
         self._task_uploading: Optional[Task] = None
@@ -123,11 +128,15 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
 
         async def _upload_ports() -> None:
             with log_context(logger, logging.INFO, f"Uploading port keys: {port_keys}"):
-                await upload_outputs(
-                    outputs_path=self.outputs_context.outputs_path,
-                    port_keys=port_keys,
-                    io_log_redirect_cb=self.io_log_redirect_cb,
-                )
+                async with progress_bar.ProgressBarData(
+                    steps=1, progress_report_cb=self.task_progress_cb
+                ) as root_progress:
+                    await upload_outputs(
+                        outputs_path=self.outputs_context.outputs_path,
+                        port_keys=port_keys,
+                        io_log_redirect_cb=self.io_log_redirect_cb,
+                        progress_bar=root_progress,
+                    )
 
         task_name = f"outputs_manager_port_keys-{'_'.join(port_keys)}"
         self._task_uploading = create_task(_upload_ports(), name=task_name)
@@ -135,11 +144,24 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         def _remove_downloads(future: Future) -> None:
             # pylint: disable=protected-access
             if future._exception is not None:
+                formatted_traceback = (
+                    "\n"
+                    + "".join(
+                        # pylint:disable = unexpected-keyword-arg, no-value-for-parameter
+                        traceback.format_exception(
+                            etype=type(future._exception),
+                            value=future._exception,
+                            tb=future._exception.__traceback__,
+                        )
+                    )
+                    if future._exception.__traceback__
+                    else ""
+                )
                 logger.warning(
-                    "%s ended with exception: %s",
+                    "%s ended with exception: %s%s",
                     task_name,
-                    future._exception
-                    # traceback.format_tb(future._exception),
+                    future._exception,
+                    formatted_traceback,
                 )
 
             # keep track of the last result for each port
@@ -252,6 +274,9 @@ def setup_outputs_manager(app: FastAPI) -> None:
         outputs_manager = app.state.outputs_manager = OutputsManager(
             outputs_context=outputs_context,
             io_log_redirect_cb=io_log_redirect_cb,
+            progress_cb=partial(
+                post_progress_message, app, ProgressType.SERVICE_OUTPUTS_PUSHING
+            ),
         )
         await outputs_manager.start()
 

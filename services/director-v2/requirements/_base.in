@@ -26,6 +26,7 @@ dask-gateway
 fastapi[all]
 httpx
 networkx
+orderedset
 orjson
 pydantic[dotenv]
 redis

@@ -22,62 +22,66 @@
     {
       "default": true,
       "class": "osparc.Application",
-      "theme": "osparc.theme.ThemeDark",
+      "theme": "osparc.theme.products.osparc.ThemeDark",
       "name": "osparc",
       "title": "oSPARC",
       "include": [
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load",
-        "osparc.theme.ThemeLight"
+        "osparc.theme.products.osparc.ThemeLight"
       ],
       "environment": {
         "product.name": "osparc"
       },
+      "addTimestampsToUrls": true,
       "bootPath": "source/boot"
     },
     {
       "class": "osparc.Application",
-      "theme": "osparc.theme.zmt.ThemeDark",
+      "theme": "osparc.theme.products.s4l.ThemeDark",
       "name": "s4l",
       "title": "Sim4Life - ZMT",
       "include": [
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load",
-        "osparc.theme.zmt.ThemeLight"
+        "osparc.theme.products.s4l.ThemeLight"
       ],
       "environment": {
         "product.name": "s4l"
       },
+      "addTimestampsToUrls": true,
       "bootPath": "source/boot"
     },
     {
       "class": "osparc.Application",
-      "theme": "osparc.theme.zmt.ThemeDark",
+      "theme": "osparc.theme.products.s4l.ThemeDark",
       "name": "s4llite",
-      "title": "Sim4Life Lite - ZMT",
+      "title": "S4L lite",
       "include": [
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load",
-        "osparc.theme.zmt.ThemeLight"
+        "osparc.theme.products.s4l.ThemeLight"
       ],
       "environment": {
         "product.name": "s4llite"
       },
+      "addTimestampsToUrls": true,
       "bootPath": "source/boot"
     },
     {
       "class": "osparc.Application",
-      "theme": "osparc.theme.zmt.ThemeDark",
+      "theme": "osparc.theme.products.tis.ThemeDark",
       "name": "tis",
       "title": "TI Plan - IT'IS",
       "include": [
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load",
-        "osparc.theme.zmt.ThemeLight"
+        "osparc.theme.products.tis.ThemeLight"
       ],
       "environment": {
         "product.name": "tis"
       },
+      "addTimestampsToUrls": true,
       "bootPath": "source/boot"
     }
   ],

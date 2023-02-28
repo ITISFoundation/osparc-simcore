@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=too-many-function-args
 
 import asyncio
 from typing import Any
@@ -8,6 +9,7 @@ from typing import Any
 import pytest
 import yaml
 from faker import Faker
+from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_dynamic_sidecar.core.docker_compose_utils import (
     docker_compose_config,
@@ -50,6 +52,7 @@ async def test_docker_compose_workflow(
     mock_environment: EnvVarsDict,
     with_restart: bool,
     ensure_run_in_sequence_context_is_empty: None,
+    mocker: MockerFixture,
 ):
     settings = ApplicationSettings.create_from_envs()
 
@@ -71,9 +74,9 @@ async def test_docker_compose_workflow(
     assert r.success, r.message
 
     # pulls containers before starting them
-    r = await docker_compose_pull(compose_spec_yaml, settings)
-    _print_result(r)
-    assert r.success, r.message
+    fake_app = mocker.AsyncMock()
+    fake_app.state.settings = settings
+    await docker_compose_pull(fake_app, compose_spec_yaml)
 
     # creates containers
     r = await docker_compose_create(compose_spec_yaml, settings)

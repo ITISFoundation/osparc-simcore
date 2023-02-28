@@ -9,7 +9,7 @@ MSG_AUTH_FAILED: Final[str] = "Authorization failed"
 MSG_CANT_SEND_MAIL: Final[str] = "Can't send email, try a little later"
 MSG_CHANGE_EMAIL_REQUESTED: Final[
     str
-] = "Please, click on the verification link we sent to your new email address"
+] = "Please click on the verification link we sent to your new email address"
 MSG_EMAIL_CHANGED: Final[str] = "Your email is changed"
 MSG_EMAIL_EXISTS: Final[str] = "This email is already registered"
 MSG_EMAIL_SENT: Final[
@@ -18,7 +18,7 @@ MSG_EMAIL_SENT: Final[
 MSG_LOGGED_IN: Final[str] = "You are logged in"
 MSG_LOGGED_OUT: Final[str] = "You are logged out"
 MSG_OFTEN_RESET_PASSWORD: Final[str] = (
-    "You can not request of restoring your password so often. Please, use"
+    "You can not request of restoring your password so often. Please use"
     " the link we sent you recently"
 )
 MSG_PASSWORD_CHANGE_NOT_ALLOWED: Final[str] = (
@@ -37,6 +37,9 @@ MSG_UNAUTHORIZED_LOGIN_2FA: Final[
 MSG_UNAUTHORIZED_REGISTER_PHONE: Final[
     str
 ] = "Unauthorized: you cannot register the phone anymore, please restart."
+MSG_UNAUTHORIZED_PHONE_CONFIRMATION: Final[
+    str
+] = "Unauthorized: you cannot submit the code anymore, please restart."
 MSG_UNKNOWN_EMAIL: Final[str] = "This email is not registered"
 MSG_USER_BANNED: Final[
     str
@@ -58,3 +61,10 @@ CODE_2FA_CODE_REQUIRED = "SMS_CODE_REQUIRED"
 # App keys for login plugin
 # Naming convention: APP_LOGIN_...KEY
 APP_LOGIN_SETTINGS_PER_PRODUCT_KEY = f"{__name__}.LOGIN_SETTINGS_PER_PRODUCT"
+
+
+# maximum amount the user can resend the code via email or phone
+MAX_2FA_CODE_RESEND = 5
+
+# maximum number of trials to validate the passcode
+MAX_2FA_CODE_TRIALS = 5

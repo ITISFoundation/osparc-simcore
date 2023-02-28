@@ -5,23 +5,24 @@
 </p>
 
 
-<!-- NOTE: when branched replace `master` in urls -->
-[![Code style: black]](https://github.com/psf/black)
-[![CI](https://github.com/ITISFoundation/osparc-simcore/actions/workflows/ci-testing-deploy.yml/badge.svg)](https://github.com/ITISFoundation/osparc-simcore/actions/workflows/ci-testing-deploy.yml)
-[![codecov](https://codecov.io/gh/ITISFoundation/osparc-simcore/branch/master/graph/badge.svg?token=h1rOE8q7ic)](https://codecov.io/gh/ITISFoundation/osparc-simcore)
-[![github.io]](https://itisfoundation.github.io/)
-[![itis.dockerhub]](https://hub.docker.com/u/itisfoundation)
-[![license]](./LICENSE)
+<!-- BADGES: LINKS ON CLICK --------------------------------------------------------------->
+[![black_badge]](https://github.com/psf/black)
+[![ci_badge]](https://github.com/ITISFoundation/osparc-simcore/actions/workflows/ci-testing-deploy.yml)
+[![codecov_badge]](https://codecov.io/gh/ITISFoundation/osparc-simcore)
+[![doc_badge]](https://itisfoundation.github.io/)
+[![dockerhub_badge]](https://hub.docker.com/u/itisfoundation)
+[![license_badge]](./LICENSE)
+[![sonarcloud_badge]](https://sonarcloud.io/summary/new_code?id=ITISFoundation_osparc-simcore)
 
-
-<!-- ADD HERE ALL BADGE URLS. Use https://shields.io/ -->
-[Code style: black]:https://img.shields.io/badge/code%20style-black-000000.svg
-[github.io]:https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation
-[itis.dockerhub]:https://img.shields.io/website/https/hub.docker.com/u/itisfoundation.svg?down_color=red&label=dockerhub%20repos&up_color=green
-[license]:https://img.shields.io/github/license/ITISFoundation/osparc-simcore
-[Github-CI Push/PR]:https://github.com/ITISFoundation/osparc-simcore/workflows/Github-CI%20Push/PR/badge.svg
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=ITISFoundation_osparc-simcore&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=ITISFoundation_osparc-simcore)
-<!------------------------------------------------------>
+<!-- BADGES: LINKS TO IMAGES. Default to https://shields.io/ ------------------------------>
+[black_badge]:https://img.shields.io/badge/code%20style-black-000000.svg
+[ci_badge]:https://github.com/ITISFoundation/osparc-simcore/actions/workflows/ci-testing-deploy.yml/badge.svg
+[codecov_badge]:https://codecov.io/gh/ITISFoundation/osparc-simcore/branch/master/graph/badge.svg?token=h1rOE8q7ic
+[doc_badge]:https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation
+[dockerhub_badge]:https://img.shields.io/website/https/hub.docker.com/u/itisfoundation.svg?down_color=red&label=docker%20images&up_color=blue
+[license_badge]:https://img.shields.io/github/license/ITISFoundation/osparc-simcore
+[sonarcloud_badge]:https://sonarcloud.io/api/project_badges/measure?project=ITISFoundation_osparc-simcore&metric=alert_status
+<!------------------------------------------------------------------------------------------>
 
 
 

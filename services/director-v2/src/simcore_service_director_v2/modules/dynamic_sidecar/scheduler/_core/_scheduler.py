@@ -234,7 +234,10 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
         )
 
     async def mark_service_for_removal(
-        self, node_uuid: NodeID, can_save: Optional[bool]
+        self,
+        node_uuid: NodeID,
+        can_save: Optional[bool],
+        skip_observation_recreation: bool = False,
     ) -> None:
         """Marks service for removal, causing RemoveMarkedService to trigger"""
         async with self._lock:
@@ -268,6 +271,9 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
                         except asyncio.TimeoutError:
                             pass
 
+            if skip_observation_recreation:
+                return
+
             # recreate new observation
             dynamic_sidecar_settings: DynamicSidecarSettings = (
                 self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
@@ -275,7 +281,9 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
             dynamic_scheduler: DynamicServicesSchedulerSettings = (
                 self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
             )
-            self._service_observation_task[service_name] = self.__get_observation_task(
+            self._service_observation_task[
+                service_name
+            ] = self.__create_observation_task(
                 dynamic_sidecar_settings, dynamic_scheduler, service_name
             )
 
@@ -293,10 +301,15 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
 
             service_name = self._inverse_search_mapping[node_uuid]
             if service_name not in self._to_observe:
-                return
+                logger.warning(
+                    "Unexpected: '%s' not found in %s, but found in %s",
+                    f"{service_name}",
+                    f"{self._to_observe=}",
+                    f"{self._inverse_search_mapping=}",
+                )
 
-            del self._to_observe[service_name]
             del self._inverse_search_mapping[node_uuid]
+            self._to_observe.pop(service_name, None)
 
         logger.debug("Removed service '%s' from scheduler", service_name)
 
@@ -461,7 +474,7 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
     def _enqueue_observation_from_service_name(self, service_name: str) -> None:
         self._trigger_observation_queue.put_nowait(service_name)
 
-    def __get_observation_task(
+    def __create_observation_task(
         self,
         dynamic_sidecar_settings: DynamicSidecarSettings,
         dynamic_scheduler: DynamicServicesSchedulerSettings,
@@ -509,7 +522,7 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
             if self._service_observation_task.get(service_name) is None:
                 self._service_observation_task[
                     service_name
-                ] = self.__get_observation_task(
+                ] = self.__create_observation_task(
                     dynamic_sidecar_settings, dynamic_scheduler, service_name
                 )
 

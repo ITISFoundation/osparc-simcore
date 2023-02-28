@@ -30,11 +30,6 @@ qx.Class.define("osparc.Application", {
     qx.locale.MTranslation
   ],
 
-  statics: {
-    MIN_WIDTH: 1240,
-    MIN_HEIGHT: 700
-  },
-
   members: {
     __current: null,
     __themeSwitcher: null,
@@ -98,67 +93,8 @@ qx.Class.define("osparc.Application", {
 
       this.__updateTabName();
       this.__updateFavicon();
-      this.__checkCookiesAccepted();
 
-      // onload, load, DOMContentLoaded, appear... didn't work
-      // bit of a hack
-      setTimeout(() => this.__checkScreenSize(), 100);
-      window.addEventListener("resize", () => this.__checkScreenSize());
-    },
-
-    __checkScreenSize: function() {
-      osparc.utils.LibVersions.getPlatformName()
-        .then(platformName => {
-          const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
-          if (platformName !== "master" && preferencesSettings.getConfirmWindowSize()) {
-            const title = this.tr("Oops, the window is a bit too small!");
-            const tooSmallWindow = new osparc.ui.window.SingletonWindow("tooSmallScreen", title).set({
-              height: 100,
-              width: 400,
-              layout: new qx.ui.layout.VBox(),
-              appearance: "service-window",
-              showMinimize: false,
-              showMaximize: false,
-              showClose: false,
-              resizable: false,
-              modal: true,
-              contentPadding: 10
-            });
-            const w = document.documentElement.clientWidth;
-            const h = document.documentElement.clientHeight;
-            if (this.self().MIN_WIDTH > w || this.self().MIN_HEIGHT > h) {
-              const product = this.tr("This app");
-              const baseTextMsg = this.tr(`
-                 is designed for slightly bigger window size.<br>\
-                A mininum window size of ${this.self().MIN_WIDTH}x${this.self().MIN_HEIGHT} is recommended<br>\
-                Touch devices are not fully supported.
-              `);
-              const label = new qx.ui.basic.Label().set({
-                value: product+ baseTextMsg,
-                rich: true
-              });
-              osparc.store.StaticInfo.getInstance().getDisplayName()
-                .then(displayName => {
-                  label.setValue(displayName + baseTextMsg);
-                });
-              tooSmallWindow.add(label, {
-                flex: 1
-              });
-              const okBtn = new qx.ui.form.Button(this.tr("Got it")).set({
-                allowGrowX: false,
-                allowGrowY: false,
-                alignX: "right"
-              });
-              okBtn.addListener("execute", () => tooSmallWindow.close());
-              tooSmallWindow.add(okBtn);
-              setTimeout(() => tooSmallWindow.center(), 100);
-              tooSmallWindow.center();
-              tooSmallWindow.open();
-            } else {
-              tooSmallWindow.close();
-            }
-          }
-        });
+      this.__startupChecks();
     },
 
     __initRouting: function() {
@@ -254,7 +190,7 @@ qx.Class.define("osparc.Application", {
     },
 
     __updateTabName: function() {
-      osparc.utils.LibVersions.getPlatformName()
+      osparc.store.StaticInfo.getInstance().getPlatformName()
         .then(platformName => {
           if (osparc.utils.Utils.isInZ43()) {
             document.title += " Z43";
@@ -275,31 +211,62 @@ qx.Class.define("osparc.Application", {
       link.href = "/resource/osparc/favicon-"+qx.core.Environment.get("product.name")+".png";
     },
 
-    __checkCookiesAccepted: function() {
-      osparc.utils.LibVersions.getPlatformName()
+    __startupChecks: function() {
+      osparc.store.StaticInfo.getInstance().getPlatformName()
         .then(platformName => {
           if (platformName !== "master") {
-            if (!osparc.CookiePolicy.areCookiesAccepted()) {
-              const cookiePolicy = new osparc.CookiePolicy();
-              const title = this.tr("Cookie Policy");
-              // "tis" and "s4llite" include the license agreement
-              const height = (osparc.utils.Utils.isProduct("tis") || osparc.utils.Utils.isProduct("s4llite")) ? 180 : 145;
-              const win = osparc.ui.window.Window.popUpInWindow(cookiePolicy, title, 400, height).set({
-                clickAwayClose: false,
-                resizable: false,
-                showClose: false
-              });
-              cookiePolicy.addListener("cookiesAccepted", () => {
-                osparc.CookiePolicy.acceptCookies();
-                win.close();
-              }, this);
-              cookiePolicy.addListener("cookiesDeclined", () => {
-                osparc.CookiePolicy.declineCookies();
-                win.close();
-              }, this);
-            }
+            // first, pop up new relaese window
+            this.__checkNewRelease();
+            // then, pop up cookies accepted window. It will go on top.
+            this.__checkCookiesAccepted();
           }
         });
+    },
+
+    __checkNewRelease: function() {
+      const lastCommit = osparc.utils.Utils.localCache.getLastCommitVcsRefUI();
+      const thisCommit = osparc.utils.LibVersions.getVcsRef();
+      if (lastCommit) {
+        if (lastCommit !== thisCommit) {
+          const newRelease = new osparc.NewRelease();
+          const title = this.tr("New Release");
+          const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 350, 170).set({
+            clickAwayClose: false,
+            resizable: false,
+            showClose: true
+          });
+          const closeBtn = win.getChildControl("close-button");
+          osparc.utils.Utils.setIdToWidget(closeBtn, "newReleaseCloseBtn");
+        }
+      } else {
+        osparc.utils.Utils.localCache.setLastCommitVcsRefUI(thisCommit);
+      }
+    },
+
+    __checkCookiesAccepted: function() {
+      if (!osparc.CookiePolicy.areCookiesAccepted()) {
+        const cookiePolicy = new osparc.CookiePolicy();
+        let title = this.tr("Privacy Policy");
+        let height = 155;
+        if (osparc.product.Utils.showLicenseExtra()) {
+          // "tis" and "s4llite" include the license terms
+          title = this.tr("Privacy Policy and License Terms");
+          height = 200;
+        }
+        const win = osparc.ui.window.Window.popUpInWindow(cookiePolicy, title, 400, height).set({
+          clickAwayClose: false,
+          resizable: false,
+          showClose: false
+        });
+        cookiePolicy.addListener("cookiesAccepted", () => {
+          osparc.CookiePolicy.acceptCookies();
+          win.close();
+        }, this);
+        cookiePolicy.addListener("cookiesDeclined", () => {
+          osparc.CookiePolicy.declineCookies();
+          win.close();
+        }, this);
+      }
     },
 
     __restart: function() {
@@ -433,11 +400,10 @@ qx.Class.define("osparc.Application", {
       osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("You are logged out"));
 
       osparc.data.PollTasks.getInstance().removeTasks();
-      osparc.data.MaintenanceTracker.getInstance().stopTracker();
+      osparc.MaintenanceTracker.getInstance().stopTracker();
       osparc.auth.Manager.getInstance().logout();
       if (this.__mainPage) {
         this.__mainPage.closeEditor();
-        this.__mainPage.closeStudy();
       }
       osparc.utils.Utils.closeHangingWindows();
       osparc.store.Store.getInstance().dispose();

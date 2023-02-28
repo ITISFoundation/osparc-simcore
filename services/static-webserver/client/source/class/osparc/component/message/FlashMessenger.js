@@ -74,7 +74,7 @@ qx.Class.define("osparc.component.message.FlashMessenger", {
      * @param {Number} duration
      */
     logAs: function(message, level="INFO", logger=null, duration=null) {
-      this.log({
+      return this.log({
         message,
         level: level.toUpperCase(),
         logger,
@@ -93,46 +93,48 @@ qx.Class.define("osparc.component.message.FlashMessenger", {
       }
       const level = logMessage.level.toUpperCase(); // "DEBUG", "INFO", "WARNING", "ERROR"
 
-      const flash = new osparc.ui.message.FlashMessage(message, level, logMessage.duration);
-      flash.addListener("closeMessage", () => this.__removeMessage(flash), this);
-      this.__messages.push(flash);
+      const flashMessage = new osparc.ui.message.FlashMessage(message, level, logMessage.duration);
+      flashMessage.addListener("closeMessage", () => this.removeMessage(flashMessage), this);
+      this.__messages.push(flashMessage);
+
+      return flashMessage;
     },
 
     /**
      * Private method to show a message to the user. It will stack it on the previous ones.
      *
-     * @param {osparc.ui.message.FlashMessage} message FlassMessage element to show.
+     * @param {osparc.ui.message.FlashMessage} flashMessage FlassMessage element to show.
      */
-    __showMessage: function(message) {
-      this.__messages.remove(message);
+    __showMessage: function(flashMessage) {
+      this.__messages.remove(flashMessage);
       this.__messageContainer.resetDecorator();
-      this.__messageContainer.add(message);
+      this.__messageContainer.add(flashMessage);
       const {
         width
-      } = message.getSizeHint();
+      } = flashMessage.getSizeHint();
       if (this.__displayedMessagesCount === 0 || width > this.__messageContainer.getWidth()) {
         this.__updateContainerPosition(width);
       }
       this.__displayedMessagesCount++;
 
-      let duration = message.getDuration();
+      let duration = flashMessage.getDuration();
       if (duration === null) {
-        const wordCount = message.getMessage().split(" ").length;
-        duration = Math.max(5500, wordCount*400); // An average reader takes 300ms to read a word
+        const wordCount = flashMessage.getMessage().split(" ").length;
+        duration = Math.max(5500, wordCount*500); // An average reader takes 300ms to read a word
       }
-      qx.event.Timer.once(() => this.__removeMessage(message), this, duration);
+      qx.event.Timer.once(() => this.removeMessage(flashMessage), this, duration);
     },
 
     /**
      * Private method to remove a message. If there are still messages in the queue, it will show the next available one.
      *
-     * @param {osparc.ui.message.FlashMessage} message FlassMessage element to remove.
+     * @param {osparc.ui.message.FlashMessage} flashMessage FlassMessage element to remove.
      */
-    __removeMessage: function(message) {
-      if (this.__messageContainer.indexOf(message) > -1) {
+    removeMessage: function(flashMessage) {
+      if (this.__messageContainer.indexOf(flashMessage) > -1) {
         this.__displayedMessagesCount--;
         this.__messageContainer.setDecorator("flash-container-transitioned");
-        this.__messageContainer.remove(message);
+        this.__messageContainer.remove(flashMessage);
         qx.event.Timer.once(() => {
           if (this.__messages.length) {
             // There are still messages to show

@@ -1,27 +1,26 @@
 qx.Theme.define("osparc.theme.ColorLight", {
-  // extend: osparc.theme.osparclight.Color,
   include: osparc.theme.mixin.Color,
 
   colors: {
-    "c00": "#FFFFFF", // L=100
-    "c01": "#EFEFEF", // L=94
-    "c02": "#C0C0C0", // L=75
-    "c03": "#B0B0B0", // L=69
-    "c04": "#A0A0A0", // L=63
-    "c05": "#909090", // L=56
-    "c06": "#808080", // L=50
-    "c07": "#707070", // L=44
-    "c08": "#606060", // L=38
-    "c09": "#505050", // L=31
-    "c10": "#404040", // L=25
-    "c11": "#303030", // L=19
-    "c12": "#202020", // L=13
-    "c13": "#101010", // L=06
-    "c14": "#000000", // L=00
+    "c00": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 0),
+    "c01": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 8),
+    "c02": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 15),
+    "c03": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 25),
+    "c04": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 35),
+    "c05": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 45),
+    "c06": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 55),
+    "c07": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 60),
+    "c08": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 65),
+    "c09": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 70),
+    "c10": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 80),
+    "c11": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 85),
+    "c12": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 95),
+    "c13": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 100),
+    "c14": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105),
 
-    "strong-main": "c06",
+    "strong-main": "rgba(0, 144, 208, 1)", // override in product
+    "strong-text": "c02",
     "a-bit-transparent": "rgba(255, 255, 255, 0.4)",
-
 
     // main
     "background-main": "c01",
@@ -32,14 +31,14 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "background-main-5": "c06",
 
     // text
-    "text": "c11",
+    "text": "c12",
     "text-disabled": "c07",
     "text-selected": "c12",
     "text-placeholder": "c07",
     "text-darker": "c07",
     "contrasted-text-dark": "c01",
     "contrasted-text-light": "c12",
-    "link": "c08",
+    "link": "c11",
 
     // shadows
     "bg-shadow": "c06",
@@ -48,20 +47,20 @@ qx.Theme.define("osparc.theme.ColorLight", {
     // window
     "window-caption-background": "c01",
     "window-caption-background-active": "c04",
-    "window-caption-text": "c11",
+    "window-caption-text": "text",
     "window-caption-text-active": "c12",
 
     // material-button
-    "material-button-background": "c03",
-    "material-button-background-disabled": "c02",
+    "material-button-background": "c04",
+    "material-button-background-disabled": "c03",
     "material-button-background-hovered": "c05",
     "material-button-background-pressed": "c05",
     "material-button-text-disabled": "c07",
-    "material-button-text": "c11",
+    "material-button-text": "text",
 
     // material-textfield
     "material-textfield": "c07",
-    "material-textfield-focused": "c11",
+    "material-textfield-focused": "text",
     "material-textfield-disabled": "c05",
     "material-textfield-invalid": "failed-red",
     "invalid": "failed-red",
@@ -94,8 +93,8 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "border-lead": "c07",
 
     // window
-    "window-border": "c04",
-    "window-border-inner": "c01",
+    "window-border": "c03",
+    "window-border-inner": "c02",
 
     // group box
     "white-box-border": "c03",

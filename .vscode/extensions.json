@@ -1,9 +1,9 @@
 {
   "recommendations": [
     "eamodio.gitlens",
+    "exiasr.hadolint",
     "ms-python.python",
     "samuelcolvin.jinjahtml",
-    "timonwong.shellcheck",
-    "exiasr.hadolint"
+    "timonwong.shellcheck"
   ]
 }

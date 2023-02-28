@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from functools import cached_property
 from typing import Any, Optional
 
@@ -11,7 +12,7 @@ from models_library.basic_types import (
     VersionTag,
 )
 from models_library.utils.change_case import snake_to_camel
-from pydantic import validator
+from pydantic import AnyHttpUrl, root_validator, validator
 from pydantic.fields import Field, ModelField
 from pydantic.types import PositiveInt
 from settings_library.base import BaseCustomSettings
@@ -32,6 +33,7 @@ from .director.settings import DirectorSettings
 from .director_v2_settings import DirectorV2Settings
 from .exporter.settings import ExporterSettings
 from .garbage_collector_settings import GarbageCollectorSettings
+from .invitations_settings import InvitationsSettings
 from .login.settings import LoginSettings
 from .projects.projects_settings import ProjectsSettings
 from .resource_manager.settings import ResourceManagerSettings
@@ -71,8 +73,25 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # RUNTIME  -----------------------------------------------------------
     # settings defined from environs defined when container runs
-    # NOTE: keep alphabetically if possible
+    #
+    # NOTE: Please keep fields alphabetically if possible
     AIODEBUG_SLOW_DURATION_SECS: float = 0
+
+    # Release information: Passed by the osparc-ops-autodeployer
+    SIMCORE_VCS_RELEASE_TAG: Optional[str] = Field(
+        default=None,
+        description="Name of the tag that makrs this release or None if undefined",
+        example="ResistanceIsFutile10",
+    )
+    SIMCORE_VCS_RELEASE_DATE: Optional[datetime] = Field(
+        default=None,
+        description="Release date or None if undefined. It corresponds to the tag's creation date",
+    )
+    SIMCORE_VCS_RELEASE_URL: Optional[AnyHttpUrl] = Field(
+        default=None,
+        description="URL to release notes",
+        example="https://github.com/ITISFoundation/osparc-simcore/releases/tag/staging_ResistanceIsFutile10",
+    )
 
     SWARM_STACK_NAME: Optional[str] = Field(
         None, description="Stack name defined upon deploy (see main Makefile)"
@@ -138,6 +157,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         auto_default_from_env=True, description="garbage collector plugin"
     )
 
+    WEBSERVER_INVITATIONS: Optional[InvitationsSettings] = Field(
+        auto_default_from_env=True, description="invitations plugin"
+    )
+
     WEBSERVER_LOGIN: Optional[LoginSettings] = Field(
         auto_default_from_env=True, description="login plugin"
     )
@@ -193,6 +216,19 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="This is a place-holder for future settings."
         "Currently this is a system plugin and cannot be disabled",
     )
+
+    @root_validator()
+    @classmethod
+    def build_vcs_release_url_if_unset(cls, values):
+        vcs_release_url = values.get("SIMCORE_VCS_RELEASE_URL")
+
+        if vcs_release_url is None and (
+            vsc_release_tag := values.get("SIMCORE_VCS_RELEASE_TAG")
+        ):
+            vcs_release_url = f"https://github.com/ITISFoundation/osparc-simcore/releases/tag/{vsc_release_tag}"
+            values["SIMCORE_VCS_RELEASE_URL"] = vcs_release_url
+
+        return values
 
     @validator(
         # List of plugins under-development (keep up-to-date)
@@ -274,6 +310,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
             "SC_BUILD_DATE": "build_date",
             "SC_VCS_REF": "vcs_ref",
             "SC_VCS_URL": "vcs_url",
+            "SIMCORE_VCS_RELEASE_TAG": "vcs_release_tag",
+            "SIMCORE_VCS_RELEASE_DATE": "vcs_release_date",
+            "SIMCORE_VCS_RELEASE_URL": "vcs_release_url",
             "SWARM_STACK_NAME": "stack_name",
         }
         config_alias_generator = lambda s: s.lower()
@@ -298,6 +337,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
                     "SC_BUILD_DATE",
                     "SC_VCS_REF",
                     "SC_VCS_URL",
+                    "SIMCORE_VCS_RELEASE_TAG",
+                    "SIMCORE_VCS_RELEASE_DATE",
+                    "SIMCORE_VCS_RELEASE_URL",
                 },
                 exclude_none=True,
             )
@@ -312,6 +354,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
                 "SC_BUILD_DATE": True,
                 "SC_VCS_REF": True,
                 "SC_VCS_URL": True,
+                "SIMCORE_VCS_RELEASE_TAG": True,
+                "SIMCORE_VCS_RELEASE_DATE": True,
+                "SIMCORE_VCS_RELEASE_URL": True,
                 "SWARM_STACK_NAME": True,
                 "WEBSERVER_PROJECTS": {"PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES"},
             },

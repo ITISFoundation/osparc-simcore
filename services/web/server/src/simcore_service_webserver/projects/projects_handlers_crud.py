@@ -46,11 +46,13 @@ from ..storage_api import (
 )
 from ..users_api import get_user_name
 from . import projects_api
+from .project_lock import get_project_locked_state
 from .project_models import ProjectDict, ProjectTypeAPI
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .projects_exceptions import (
     ProjectDeleteError,
     ProjectInvalidRightsError,
+    ProjectLockError,
     ProjectNotFoundError,
 )
 from .projects_nodes_utils import update_frontend_outputs
@@ -182,6 +184,7 @@ async def _prepare_project_copy(
         forced_copy_project_id=None,
         clean_output_data=(deep_copy is False),
     )
+
     # remove template/study access rights
     new_project["accessRights"] = {}
     if not as_template:
@@ -284,7 +287,7 @@ async def _create_projects(
             await projects_api.validate_project(app, new_project)
 
         # 3. save new project in DB
-        new_project = await db.add_project(
+        new_project = await db.insert_project(
             new_project,
             request_context.user_id,
             product_name=request_context.product_name,
@@ -405,7 +408,7 @@ async def list_projects(request: web.Request):
         request.app, req_ctx.user_id, req_ctx.product_name, only_key_versions=True
     )
 
-    projects, project_types, total_number_projects = await db.load_projects(
+    projects, project_types, total_number_projects = await db.list_projects(
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
         filter_by_project_type=ProjectTypeAPI.to_project_type_db(
@@ -458,7 +461,6 @@ async def get_active_project(request: web.Request) -> web.Response:
             # get user's projects
             user_active_projects = await rt.find(PROJECT_ID_KEY)
         if user_active_projects:
-
             project = await projects_api.get_project_for_user(
                 request.app,
                 project_uuid=user_active_projects[0],
@@ -592,7 +594,6 @@ async def replace_project(request: web.Request):
         if await director_v2_api.is_pipeline_running(
             request.app, req_ctx.user_id, path_params.project_id
         ):
-
             if any_node_inputs_changed(new_project, current_project):
                 # NOTE:  This is a conservative measure that we take
                 #  until nodeports logic is re-designed to tackle with this
@@ -616,7 +617,7 @@ async def replace_project(request: web.Request):
                     reason=f"Project {path_params.project_id} cannot be modified while pipeline is still running."
                 )
 
-        new_project = await db.replace_user_project(
+        new_project = await db.replace_project(
             new_project,
             req_ctx.user_id,
             project_uuid=f"{path_params.project_id}",
@@ -705,6 +706,14 @@ async def delete_project(request: web.Request):
             raise web.HTTPForbidden(
                 reason=f"Project is open by {other_user_names}. "
                 "It cannot be deleted until the project is closed."
+            )
+
+        project_locked_state: Optional[ProjectLockError]
+        if project_locked_state := await get_project_locked_state(
+            app=request.app, project_uuid=path_params.project_id
+        ):
+            raise web.HTTPConflict(
+                reason=f"Project {path_params.project_id} is locked: {project_locked_state=}"
             )
 
         await projects_api.submit_delete_project_task(

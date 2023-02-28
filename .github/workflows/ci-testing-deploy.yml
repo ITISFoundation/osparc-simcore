@@ -829,6 +829,8 @@ jobs:
         run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/dask-sidecar.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/dask-sidecar.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/dask-sidecar.bash test
       - uses: codecov/codecov-action@v3.1.1
@@ -1730,6 +1732,13 @@ jobs:
         run: ./ci/github/system-testing/swarm-deploy.bash install
       - name: test
         run: ./ci/github/system-testing/swarm-deploy.bash test
+      - name: dump services setting schemas
+        run: export DOCKER_REGISTRY=local; export DOCKER_IMAGE_TAG=production; make settings-schema.json
+      - name: upload services settings schemas
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ github.job }}_services_settings_schemas
+          path: ./services/**/settings-schema.json
       - name: upload failed tests logs
         if: failure()
         uses: actions/upload-artifact@v3

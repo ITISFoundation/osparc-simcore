@@ -5,10 +5,10 @@
 
     IMPORTANT: remember that these are still unit-tests!
 """
+# nopycln: file
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-
 
 import asyncio
 import sys
@@ -40,6 +40,7 @@ from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.aiohttp.long_running_tasks.client import LRTask
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.common_aiopg_utils import DSN
+from settings_library.email import SMTPSettings
 from settings_library.redis import RedisSettings
 from simcore_service_webserver import catalog
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
@@ -50,7 +51,6 @@ from simcore_service_webserver.groups_api import (
     delete_user_group,
     list_user_groups,
 )
-from simcore_service_webserver.login.settings import LoginOptions
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -109,6 +109,7 @@ def app_environment(
     app_cfg: ConfigDict,
     monkeypatch_setenv_from_app_config: Callable[[ConfigDict], dict[str, str]],
 ) -> EnvVarsDict:
+    # WARNING: this fixture is commonly overriden. Check before renaming.
     """overridable fixture that defines the ENV for the webserver application
     based on legacy application config files.
 
@@ -124,6 +125,23 @@ def app_environment(
 
 
 @pytest.fixture
+def mocked_send_email(monkeypatch: MonkeyPatch) -> None:
+    # WARNING: this fixture is commonly overriden. Check before renaming.
+    async def _print_mail_to_stdout(
+        settings: SMTPSettings, *, sender: str, recipient: str, subject: str, body: str
+    ):
+        print(
+            f"=== EMAIL FROM: {sender}\n=== EMAIL TO: {recipient}\n=== SUBJECT: {subject}\n=== BODY:\n{body}"
+        )
+
+    monkeypatch.setattr(
+        simcore_service_webserver.email_core,
+        "send_email",
+        _print_mail_to_stdout,
+    )
+
+
+@pytest.fixture
 def web_server(
     event_loop: asyncio.AbstractEventLoop,
     app_cfg: ConfigDict,
@@ -131,14 +149,11 @@ def web_server(
     postgres_db: sa.engine.Engine,
     # tools
     aiohttp_server: Callable,
-    monkeypatch: MonkeyPatch,
+    mocked_send_email: None,
     disable_static_webserver: Callable,
 ) -> TestServer:
     # original APP
     app = create_application()
-
-    # with patched email
-    _patch_compose_mail(monkeypatch)
 
     disable_static_webserver(app)
 
@@ -147,6 +162,7 @@ def web_server(
     )
 
     assert isinstance(postgres_db, sa.engine.Engine)
+
     pg_settings = dict(e.split("=") for e in app[APP_DB_ENGINE_KEY].dsn.split())
     assert pg_settings["host"] == postgres_db.url.host
     assert int(pg_settings["port"]) == postgres_db.url.port
@@ -163,6 +179,7 @@ def client(
     mock_orphaned_services,
     redis_client: Redis,
 ) -> TestClient:
+    # WARNING: this fixture is commonly overriden. Check before renaming.
     cli = event_loop.run_until_complete(aiohttp_client(web_server))
     return cli
 
@@ -333,7 +350,7 @@ def create_dynamic_service_mock(
 ) -> Callable:
     services = []
 
-    async def create(user_id, project_id) -> dict:
+    async def _create(user_id, project_id) -> dict:
         SERVICE_UUID = str(uuid4())
         SERVICE_KEY = "simcore/services/dynamic/3d-viewer"
         SERVICE_VERSION = "1.4.2"
@@ -365,10 +382,21 @@ def create_dynamic_service_mock(
         ].return_value = services
         return running_service_dict
 
-    return create
+    return _create
 
 
 # POSTGRES CORE SERVICE ---------------------------------------------------
+
+
+def _is_postgres_responsive(url):
+    """Check if something responds to url"""
+    try:
+        engine = sa.create_engine(url)
+        conn = engine.connect()
+        conn.close()
+    except sa.exc.OperationalError:
+        return False
+    return True
 
 
 @pytest.fixture(scope="session")
@@ -423,6 +451,11 @@ def postgres_db(
 # REDIS CORE SERVICE ------------------------------------------------------
 
 
+def _is_redis_responsive(host: str, port: int) -> bool:
+    r = redis.Redis(host=host, port=port)
+    return r.ping() == True
+
+
 @pytest.fixture(scope="session")
 def redis_service(docker_services, docker_ip) -> RedisSettings:
     # WARNING: overrides pytest_simcore.redis_service.redis_server function-scoped fixture!
@@ -465,13 +498,7 @@ async def redis_locks_client(
     await client.close(close_connection_pool=True)
 
 
-def _is_redis_responsive(host: str, port: int) -> bool:
-    r = redis.Redis(host=host, port=port)
-    return r.ping() == True
-
-
 # SOCKETS FIXTURES  --------------------------------------------------------
-
 # Moved to packages/pytest-simcore/src/pytest_simcore/websocket_client.py
 
 
@@ -555,32 +582,3 @@ async def all_group(
 ) -> dict[str, str]:
     _, _, all_group = await list_user_groups(client.app, logged_user["id"])
     return all_group
-
-
-# GENERIC HELPER FUNCTIONS ----------------------------------------------------
-
-
-def _patch_compose_mail(monkeypatch):
-    async def print_mail_to_stdout(
-        cfg: LoginOptions, *, sender: str, recipient: str, subject: str, body: str
-    ):
-        print(
-            f"=== EMAIL FROM: {sender}\n=== EMAIL TO: {recipient}\n=== SUBJECT: {subject}\n=== BODY:\n{body}"
-        )
-
-    monkeypatch.setattr(
-        simcore_service_webserver.login.utils_email,
-        "_compose_mail",
-        print_mail_to_stdout,
-    )
-
-
-def _is_postgres_responsive(url):
-    """Check if something responds to ``url``"""
-    try:
-        engine = sa.create_engine(url)
-        conn = engine.connect()
-        conn.close()
-    except sa.exc.OperationalError:
-        return False
-    return True

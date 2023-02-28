@@ -11,6 +11,7 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.error_codes import create_error_code
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.errors import UniqueViolation
+from simcore_service_webserver.session_access import session_access_required
 from yarl import URL
 
 from ..products import Product, get_current_product
@@ -20,7 +21,11 @@ from ..utils_aiohttp import create_redirect_response
 from ..utils_rate_limiting import global_rate_limit_route
 from ._2fa import delete_2fa_code, get_2fa_code
 from ._confirmation import validate_confirmation_code
-from ._constants import MSG_PASSWORD_CHANGE_NOT_ALLOWED, MSG_PASSWORD_CHANGED
+from ._constants import (
+    MSG_PASSWORD_CHANGE_NOT_ALLOWED,
+    MSG_PASSWORD_CHANGED,
+    MSG_UNAUTHORIZED_PHONE_CONFIRMATION,
+)
 from ._models import InputSchema, check_confirm_password_match
 from ._security import login_granted_response
 from .settings import (
@@ -136,6 +141,10 @@ class PhoneConfirmationBody(InputSchema):
 
 
 @global_rate_limit_route(number_of_requests=5, interval_seconds=MINUTE)
+@session_access_required(
+    name="auth_phone_confirmation",
+    unauthorized_reason=MSG_UNAUTHORIZED_PHONE_CONFIRMATION,
+)
 @routes.post("/auth/validate-code-register", name="auth_phone_confirmation")
 async def phone_confirmation(request: web.Request):
     product: Product = get_current_product(request)

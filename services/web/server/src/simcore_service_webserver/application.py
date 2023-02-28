@@ -7,8 +7,9 @@ from typing import Any
 
 from aiohttp import web
 from servicelib.aiohttp.application import create_safe_application
+from simcore_service_webserver.invitations import setup_invitations
 
-from ._meta import WELCOME_GC_MSG, WELCOME_MSG
+from ._meta import WELCOME_GC_MSG, WELCOME_MSG, info
 from .activity.plugin import setup_activity
 from .application_settings import setup_settings
 from .catalog import setup_catalog
@@ -81,6 +82,7 @@ def create_application() -> web.Application:
 
     # login
     setup_email(app)
+    setup_invitations(app)
     setup_login(app)
 
     # interaction with other backend services
@@ -117,7 +119,12 @@ def create_application() -> web.Application:
         if settings.WEBSERVER_GARBAGE_COLLECTOR:
             print("with", WELCOME_GC_MSG, flush=True)
 
+    async def finished_banner(_app: web.Application):
+        print(info.get_finished_banner(), flush=True)
+
+    # NOTE: *last* events
     app.on_startup.append(welcome_banner)
+    app.on_shutdown.append(finished_banner)
 
     log.debug("Routes in app: \n %s", pformat(app.router.named_resources()))
 

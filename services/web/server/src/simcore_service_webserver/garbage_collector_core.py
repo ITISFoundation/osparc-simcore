@@ -30,7 +30,11 @@ from .projects.projects_api import (
     submit_delete_project_task,
 )
 from .projects.projects_db import ProjectDBAPI
-from .projects.projects_exceptions import ProjectDeleteError, ProjectNotFoundError
+from .projects.projects_exceptions import (
+    ProjectDeleteError,
+    ProjectLockError,
+    ProjectNotFoundError,
+)
 from .redis import get_redis_lock_manager_client
 from .resource_manager.registry import RedisResourceRegistry, get_registry
 from .users_api import (
@@ -122,7 +126,6 @@ async def remove_disconnected_user_resources(
 
     # clean up all resources of expired keys
     for dead_key in dead_keys:
-
         # Skip locked keys for the moment
         user_id = int(dead_key["user_id"])
         if await lock_manager.lock(
@@ -172,7 +175,6 @@ async def remove_disconnected_user_resources(
             )
 
             if not is_resource_still_in_use:
-
                 # adds the remaining resource entries for (2)
                 keys_to_update.extend(other_keys_with_this_resource)
 
@@ -198,7 +200,7 @@ async def remove_disconnected_user_resources(
                             },
                         )
 
-                    except ProjectNotFoundError as err:
+                    except (ProjectNotFoundError, ProjectLockError) as err:
                         logger.warning(
                             (
                                 "Could not remove project interactive services user_id=%s "
@@ -395,8 +397,11 @@ async def remove_orphaned_services(
             continue
 
         project_uuid = resources["project_id"]
-        node_ids = await get_workbench_node_ids_from_project_uuid(app, project_uuid)
-        currently_opened_projects_node_ids[node_ids] = project_uuid
+        node_ids: set[str] = await get_workbench_node_ids_from_project_uuid(
+            app, project_uuid
+        )
+        for node_id in node_ids:
+            currently_opened_projects_node_ids[node_id] = project_uuid
 
     running_interactive_services: list[dict[str, Any]] = []
     try:
@@ -456,7 +461,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
     # fetch all projects for the user
     user_project_uuids = await ProjectDBAPI.get_from_app_context(
         app
-    ).list_all_projects_by_uuid_for_user(user_id=user_id)
+    ).list_projects_uuids(user_id=user_id)
 
     logger.info(
         "Removing or transferring projects of user with %s, %s: %s",
@@ -512,7 +517,6 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
                 )
 
         else:
-
             # Try to change the project owner and remove access rights from the current owner
             logger.debug(
                 "Transferring ownership of project %s from user %s to %s.",

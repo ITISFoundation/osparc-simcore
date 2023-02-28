@@ -36,11 +36,10 @@
 
 qx.Class.define("osparc.data.Permissions", {
   extend: qx.core.Object,
-
-  type : "singleton",
+  type: "singleton",
 
   construct() {
-    const initPermissions = osparc.data.Permissions.getInitPermissions();
+    const initPermissions = this.self().getInitPermissions();
     for (const role in initPermissions) {
       if (Object.prototype.hasOwnProperty.call(initPermissions, role)) {
         initPermissions[role].forEach(action => {
@@ -53,7 +52,7 @@ qx.Class.define("osparc.data.Permissions", {
   statics: {
     ACTIONS: {},
 
-    ROLES: {
+    ROLES_APP: {
       anonymous: {
         can: [],
         inherits: []
@@ -88,6 +87,9 @@ qx.Class.define("osparc.data.Permissions", {
         ],
         "user": [
           "dashboard.read",
+          "dashboard.templates.read",
+          "dashboard.services.read",
+          "dashboard.data.read",
           "studies.user.read",
           "studies.user.create",
           "studies.template.create",
@@ -113,11 +115,15 @@ qx.Class.define("osparc.data.Permissions", {
           "study.edge.delete",
           "study.service.update",
           "study.classifier",
-          "study.tag"
+          "study.tag",
+          "study.slides.edit",
+          "study.slides.stop"
         ],
         "tester": [
           "studies.template.create.all",
           "services.all.read",
+          "services.all.reupdate",
+          "services.filePicker.read.all",
           "user.role.update",
           "user.clusters.create",
           "study.everyone.share",
@@ -130,21 +136,27 @@ qx.Class.define("osparc.data.Permissions", {
         ],
         "admin": []
       };
-      if (osparc.utils.Utils.isProduct("tis")) {
-        initPermissions.tester.push(...[
+      let fromUserToTester = [];
+      if (osparc.product.Utils.isProduct("tis")) {
+        fromUserToTester = [
           "dashboard.templates.read",
           "dashboard.services.read",
           "study.slides.edit",
           "study.slides.stop"
-        ]);
-      } else {
-        initPermissions.user.push(...[
-          "dashboard.templates.read",
+        ];
+      } else if (osparc.product.Utils.isProduct("s4llite")) {
+        fromUserToTester = [
           "dashboard.services.read",
-          "study.slides.edit",
-          "study.slides.stop"
-        ]);
+          "dashboard.data.read"
+        ];
       }
+      fromUserToTester.forEach(onlyTester => {
+        const idx = initPermissions.user.indexOf(onlyTester);
+        if (idx > -1) {
+          initPermissions.user.splice(idx, 1);
+        }
+        initPermissions.tester.push(onlyTester);
+      });
       return initPermissions;
     }
   },
@@ -166,13 +178,13 @@ qx.Class.define("osparc.data.Permissions", {
     getChildrenRoles(role) {
       role = role.toLowerCase();
       const childrenRoles = [];
-      if (!this.self().ROLES[role]) {
+      if (!this.self().ROLES_APP[role]) {
         return childrenRoles;
       }
       if (!childrenRoles.includes(role)) {
         childrenRoles.unshift(role);
       }
-      const children = this.self().ROLES[role].inherits;
+      const children = this.self().ROLES_APP[role].inherits;
       for (let i=0; i<children.length; i++) {
         const child = children[i];
         if (!childrenRoles.includes(child)) {
@@ -199,19 +211,19 @@ qx.Class.define("osparc.data.Permissions", {
     },
 
     addAction: function(role, action) {
-      if (!this.self().ROLES[role]) {
+      if (!this.self().ROLES_APP[role]) {
         return;
       }
 
       this.self().ACTIONS[action] = this.__nextAction();
-      this.self().ROLES[role].can.push(action);
+      this.self().ROLES_APP[role].can.push(action);
     },
 
     // https://blog.nodeswat.com/implement-access-control-in-node-js-8567e7b484d1#2405
     __canRoleDo: function(role, action) {
       role = role.toLowerCase();
       // Check if role exists
-      const roles = this.self().ROLES;
+      const roles = this.self().ROLES_APP;
       if (!roles[role]) {
         return false;
       }

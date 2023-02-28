@@ -179,7 +179,7 @@ async def update_project_inputs(request: web.Request) -> web.Response:
 
     # patch workbench
     assert db  # nosec
-    updated_project, _ = await db.patch_user_project_workbench(
+    updated_project, _ = await db.update_project_workbench(
         jsonable_encoder(partial_workbench_data),
         req_ctx.user_id,
         f"{path_params.project_id}",

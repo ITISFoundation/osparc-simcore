@@ -57,10 +57,10 @@ qx.Class.define("osparc.ui.basic.Thumbnail", {
       });
     });
 
-    const image = this.getChildControl("image");
     if (source) {
       this.setSource(source);
     }
+    const image = this.getChildControl("image");
     if (maxWidth) {
       image.setMaxWidth(maxWidth);
     }
@@ -72,9 +72,7 @@ qx.Class.define("osparc.ui.basic.Thumbnail", {
       "appear",
       "loaded"
     ].forEach(eventName => {
-      image.addListener(eventName, e => {
-        this.recheckSize();
-      }, this);
+      image.addListener(eventName, () => this.recheckSize(), this);
     });
   },
 
@@ -110,7 +108,10 @@ qx.Class.define("osparc.ui.basic.Thumbnail", {
     },
 
     __applySource: function(val) {
-      this.getChildControl("image").setSource(val);
+      const image = this.getChildControl("image");
+      if (val) {
+        image.setSource(val);
+      }
     },
 
     recheckSize: function() {

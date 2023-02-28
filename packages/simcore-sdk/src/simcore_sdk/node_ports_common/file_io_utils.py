@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from pathlib import Path
 from typing import (
@@ -27,6 +28,8 @@ from aiohttp import (
 from aiohttp.typedefs import LooseHeaders
 from models_library.api_schemas_storage import ETag, FileUploadSchema, UploadedPart
 from pydantic import AnyUrl
+from servicelib.logging_utils import log_catch
+from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from tenacity._asyncio import AsyncRetrying
 from tenacity.after import after_log
@@ -128,9 +131,15 @@ async def _file_chunk_reader(
             yield chunk
 
 
+@dataclass(frozen=True)
+class ProgressData:
+    current: int
+    total: int
+
+
 @runtime_checkable
 class LogRedirectCB(Protocol):
-    async def __call__(self, msg: str) -> None:
+    async def __call__(self, logs: str) -> None:
         ...
 
 
@@ -139,12 +148,15 @@ async def _file_chunk_writer(
     response: ClientResponse,
     pbar: tqdm,
     io_log_redirect_cb: Optional[LogRedirectCB],
+    progress_bar: ProgressBarData,
 ):
     async with aiofiles.open(file, "wb") as file_pointer:
         while chunk := await response.content.read(CHUNK_SIZE):
             await file_pointer.write(chunk)
-            if pbar.update(len(chunk)) and io_log_redirect_cb:
-                await io_log_redirect_cb(f"{pbar}")
+            if io_log_redirect_cb and pbar.update(len(chunk)):
+                with log_catch(log, reraise=False):
+                    await io_log_redirect_cb(f"{pbar}")
+            await progress_bar.update(len(chunk))
 
 
 log = logging.getLogger(__name__)
@@ -164,6 +176,7 @@ async def download_link_to_file(
     *,
     num_retries: int,
     io_log_redirect_cb: Optional[LogRedirectCB],
+    progress_bar: ProgressBarData,
 ):
     log.debug("Downloading from %s to %s", url, file_path)
     async for attempt in AsyncRetrying(
@@ -175,7 +188,8 @@ async def download_link_to_file(
         after=after_log(log, log_level=logging.ERROR),
     ):
         with attempt:
-            async with session.get(url) as response:
+            async with AsyncExitStack() as stack:
+                response = await stack.enter_async_context(session.get(url))
                 if response.status == 404:
                     raise exceptions.InvalidDownloadLinkError(url)
                 if response.status > 299:
@@ -184,22 +198,32 @@ async def download_link_to_file(
                 # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Length
                 file_size = int(response.headers.get("Content-Length", 0)) or None
                 try:
-                    with tqdm_logging_redirect(
-                        desc=f"downloading {url.path} --> {file_path.name}\n",
-                        total=file_size,
-                        **(
-                            _TQDM_FILE_OPTIONS
-                            | dict(
-                                miniters=_compute_tqdm_miniters(file_size)
-                                if file_size
-                                else 1
-                            )
-                        ),
-                    ) as pbar:
-                        await _file_chunk_writer(
-                            file_path, response, pbar, io_log_redirect_cb
+                    tqdm_progress = stack.enter_context(
+                        tqdm_logging_redirect(
+                            desc=f"downloading {url.path} --> {file_path.name}\n",
+                            total=file_size,
+                            **(
+                                _TQDM_FILE_OPTIONS
+                                | dict(
+                                    miniters=_compute_tqdm_miniters(file_size)
+                                    if file_size
+                                    else 1
+                                )
+                            ),
                         )
-                        log.debug("Download complete")
+                    )
+                    sub_progress = await stack.enter_async_context(
+                        progress_bar.sub_progress(steps=file_size or 1)
+                    )
+
+                    await _file_chunk_writer(
+                        file_path,
+                        response,
+                        tqdm_progress,
+                        io_log_redirect_cb,
+                        sub_progress,
+                    )
+                    log.debug("Download complete")
                 except ClientPayloadError as exc:
                     raise exceptions.TransferError(url) from exc
 
@@ -245,6 +269,7 @@ async def _upload_file_part(
     num_retries: int,
     *,
     io_log_redirect_cb: Optional[LogRedirectCB],
+    progress_bar: ProgressBarData,
 ) -> tuple[int, ETag]:
     file_uploader = _file_chunk_reader(
         file_to_upload,  # type: ignore
@@ -276,8 +301,11 @@ async def _upload_file_part(
                 },
             ) as response:
                 await _raise_for_status(response)
-                if pbar.update(file_part_size) and io_log_redirect_cb:
-                    await io_log_redirect_cb(f"{pbar}")
+                if io_log_redirect_cb and pbar.update(file_part_size):
+                    with log_catch(log, reraise=False):
+                        await io_log_redirect_cb(f"{pbar}")
+                await progress_bar.update(file_part_size)
+
                 # NOTE: the response from minio does not contain a json body
                 assert response.status == web.HTTPOk.status_code  # nosec
                 assert response.headers  # nosec
@@ -296,6 +324,7 @@ async def upload_file_to_presigned_links(
     *,
     num_retries: int,
     io_log_redirect_cb: Optional[LogRedirectCB],
+    progress_bar: ProgressBarData,
 ) -> list[UploadedPart]:
     file_size = 0
     file_name = ""
@@ -310,11 +339,21 @@ async def upload_file_to_presigned_links(
     num_urls = len(file_upload_links.urls)
     last_chunk_size = file_size - file_chunk_size * (num_urls - 1)
     upload_tasks = []
-    with tqdm_logging_redirect(
-        desc=f"uploading {file_name}\n",
-        total=file_size,
-        **(_TQDM_FILE_OPTIONS | dict(miniters=_compute_tqdm_miniters(file_size))),
-    ) as pbar:
+    async with AsyncExitStack() as stack:
+        tqdm_progress = stack.enter_context(
+            tqdm_logging_redirect(
+                desc=f"uploading {file_name}\n",
+                total=file_size,
+                **(
+                    _TQDM_FILE_OPTIONS
+                    | dict(miniters=_compute_tqdm_miniters(file_size))
+                ),
+            )
+        )
+        sub_progress = await stack.enter_async_context(
+            progress_bar.sub_progress(steps=file_size)
+        )
+
         for index, upload_url in enumerate(file_upload_links.urls):
             this_file_chunk_size = (
                 file_chunk_size if (index + 1) < num_urls else last_chunk_size
@@ -327,9 +366,10 @@ async def upload_file_to_presigned_links(
                     index * file_chunk_size,
                     this_file_chunk_size,
                     upload_url,
-                    pbar,
+                    tqdm_progress,
                     num_retries,
                     io_log_redirect_cb=io_log_redirect_cb,
+                    progress_bar=sub_progress,
                 )
             )
         try:

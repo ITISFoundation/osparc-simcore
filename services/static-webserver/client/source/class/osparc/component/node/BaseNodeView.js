@@ -228,7 +228,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       const serviceDetails = new osparc.info.ServiceLarge(node.getMetaData(), {
         nodeId: node.getNodeId(),
         label: node.getLabel(),
-        study: node.getStudy().getUuid()
+        studyId: node.getStudy().getUuid()
       });
       const title = this.tr("Service information");
       const width = 600;
@@ -369,7 +369,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       } else {
         this.__inputsButton.setIcon("@FontAwesome5Solid/sign-in-alt/14");
       }
-      osparc.utils.StatusUI.updateIconAnimation(buttonsIcon);
+      osparc.utils.StatusUI.updateCircleAnimation(buttonsIcon);
       this.__enableIframeContent(!waiting);
     },
 

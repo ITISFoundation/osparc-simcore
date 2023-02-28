@@ -438,11 +438,15 @@ qx.Class.define("osparc.store.Store", {
               groups.push(org);
             });
             const groupProductEveryone = values[3];
-            groupProductEveryone["collabType"] = 0;
-            groups.push(groupProductEveryone);
+            if (groupProductEveryone) {
+              groupProductEveryone["collabType"] = 0;
+              groups.push(groupProductEveryone);
+            }
             const groupEveryone = values[4];
-            groupEveryone["collabType"] = 0;
-            groups.push(groupEveryone);
+            if (groupEveryone) {
+              groupEveryone["collabType"] = 0;
+              groups.push(groupEveryone);
+            }
             resolve(groups);
           });
       });
@@ -506,15 +510,17 @@ qx.Class.define("osparc.store.Store", {
             const members = values[1]; // object
             const potentialCollaborators = {};
             orgs.forEach(org => {
-              org["collabType"] = 1;
-              potentialCollaborators[org["gid"]] = org;
+              if (org["accessRights"]["read"]) {
+                org["collabType"] = 1;
+                potentialCollaborators[org["gid"]] = org;
+              }
             });
             for (const gid of Object.keys(members)) {
               members[gid]["collabType"] = 2;
               potentialCollaborators[gid] = members[gid];
             }
             const productEveryone = values[2]; // entry
-            if (productEveryone) {
+            if (productEveryone && productEveryone["accessRights"]["read"]) {
               productEveryone["collabType"] = 0;
               potentialCollaborators[productEveryone["gid"]] = productEveryone;
             }

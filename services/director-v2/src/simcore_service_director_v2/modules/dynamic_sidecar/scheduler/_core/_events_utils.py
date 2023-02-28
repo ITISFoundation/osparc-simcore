@@ -1,5 +1,6 @@
 # pylint: disable=relative-beyond-top-level
 
+import json
 import logging
 from collections import deque
 from typing import Any, Deque, Final, Optional, cast
@@ -9,6 +10,8 @@ from models_library.projects_networks import ProjectsNetworks
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.rabbitmq_messages import InstrumentationRabbitMessage
+from models_library.service_settings_labels import SimcoreServiceLabels
+from models_library.services import ServiceKeyVersion
 from servicelib.fastapi.long_running_tasks.client import (
     ProgressCallback,
     TaskClientResultError,
@@ -30,6 +33,7 @@ from .....models.schemas.dynamic_services.scheduler import (
     SchedulerData,
 )
 from .....utils.db import get_repository
+from ....db.repositories.projects import ProjectsRepository
 from ....db.repositories.projects_networks import ProjectsNetworksRepository
 from ....director_v0 import DirectorV0Client
 from ....node_rights import NodeRightsManager, ResourceName
@@ -239,10 +243,21 @@ async def attempt_pod_removal_and_data_saving(
         # only try to save the status if :
         # - it is requested to save the state
         # - the dynamic-sidecar has finished booting correctly
-        if (
-            scheduler_data.dynamic_sidecar.service_removal_state.can_save
-            and scheduler_data.dynamic_sidecar.were_containers_created
-        ):
+
+        can_really_save: bool = False
+        if scheduler_data.dynamic_sidecar.service_removal_state.can_save:
+            # if node is not present in the workbench it makes no sense
+            # to try and save the data, nodeports will raise errors
+            # and sidecar will hang
+
+            projects_repository = cast(
+                ProjectsRepository, get_repository(app, ProjectsRepository)
+            )
+            can_really_save = await projects_repository.is_node_present_in_workbench(
+                project_id=scheduler_data.project_id, node_uuid=scheduler_data.node_uuid
+            )
+
+        if can_really_save and scheduler_data.dynamic_sidecar.were_containers_created:
             dynamic_sidecar_client = get_dynamic_sidecar_client(app)
 
             logger.info("Calling into dynamic-sidecar to save: state and output ports")
@@ -367,7 +382,7 @@ async def wait_for_sidecar_api(app: FastAPI, scheduler_data: SchedulerData) -> N
         ),
         wait=wait_fixed(1),
         retry_error_cls=EntrypointContainerNotFoundError,
-        before_sleep=before_sleep_log(logger, logging.WARNING),
+        before_sleep=before_sleep_log(logger, logging.DEBUG),
     ):
         with attempt:
             if not await get_dynamic_sidecar_service_health(
@@ -375,3 +390,69 @@ async def wait_for_sidecar_api(app: FastAPI, scheduler_data: SchedulerData) -> N
             ):
                 raise TryAgain()
             scheduler_data.dynamic_sidecar.is_healthy = True
+
+
+async def prepare_services_environment(
+    app: FastAPI, scheduler_data: SchedulerData
+) -> None:
+    app_settings: AppSettings = app.state.settings
+    dynamic_sidecar_client = get_dynamic_sidecar_client(app)
+    dynamic_sidecar_endpoint = scheduler_data.endpoint
+    dynamic_sidecar_settings: DynamicSidecarSettings = (
+        app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+    )
+
+    async def _pull_outputs_and_state():
+        tasks = [
+            dynamic_sidecar_client.pull_service_output_ports(dynamic_sidecar_endpoint)
+        ]
+        # When enabled no longer downloads state via nodeports
+        # S3 is used to store state paths
+        if not app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
+            tasks.append(
+                dynamic_sidecar_client.restore_service_state(dynamic_sidecar_endpoint)
+            )
+
+        await logged_gather(*tasks, max_concurrency=2)
+
+        # inside this directory create the missing dirs, fetch those form the labels
+        director_v0_client: DirectorV0Client = get_director_v0_client(app)
+        simcore_service_labels: SimcoreServiceLabels = (
+            await director_v0_client.get_service_labels(
+                service=ServiceKeyVersion(
+                    key=scheduler_data.key, version=scheduler_data.version
+                )
+            )
+        )
+        service_outputs_labels = json.loads(
+            simcore_service_labels.dict().get("io.simcore.outputs", "{}")
+        ).get("outputs", {})
+        logger.debug(
+            "Creating dirs from service outputs labels: %s",
+            service_outputs_labels,
+        )
+        await dynamic_sidecar_client.service_outputs_create_dirs(
+            dynamic_sidecar_endpoint, service_outputs_labels
+        )
+
+        scheduler_data.dynamic_sidecar.is_service_environment_ready = True
+
+    if dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED:
+        node_rights_manager = NodeRightsManager.instance(app)
+        assert scheduler_data.dynamic_sidecar.docker_node_id  # nosec
+        try:
+            async with node_rights_manager.acquire(
+                scheduler_data.dynamic_sidecar.docker_node_id,
+                resource_name=RESOURCE_STATE_AND_INPUTS,
+            ):
+                await _pull_outputs_and_state()
+        except NodeRightsAcquireError:
+            # Next observation cycle, the service will try again
+            logger.debug(
+                "Skip saving service state for %s. Docker node %s is busy. Will try later.",
+                scheduler_data.node_uuid,
+                scheduler_data.dynamic_sidecar.docker_node_id,
+            )
+            return
+    else:
+        await _pull_outputs_and_state()

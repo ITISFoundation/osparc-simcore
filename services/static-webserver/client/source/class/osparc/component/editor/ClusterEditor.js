@@ -101,7 +101,7 @@ qx.Class.define("osparc.component.editor.ClusterEditor", {
       switch (id) {
         case "title":
           control = new qx.ui.form.TextField().set({
-            font: "title-14",
+            font: "text-14",
             backgroundColor: "background-main",
             placeholder: this.tr("Title")
           });
@@ -144,7 +144,7 @@ qx.Class.define("osparc.component.editor.ClusterEditor", {
         }
         case "simpleAuthenticationPassword": {
           const endpointLayout = this.getChildControl("endpointLayout");
-          control = new qx.ui.form.PasswordField().set({
+          control = new osparc.ui.form.PasswordField().set({
             font: "text-14",
             backgroundColor: "background-main",
             placeholder: this.tr("Password")

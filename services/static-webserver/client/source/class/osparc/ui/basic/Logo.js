@@ -26,7 +26,8 @@ qx.Class.define("osparc.ui.basic.Logo", {
 
     this.set({
       scale: true,
-      alignX: "center"
+      alignX: "center",
+      padding: 3
     });
 
     this.__resetSourcePath();
@@ -37,7 +38,7 @@ qx.Class.define("osparc.ui.basic.Logo", {
 
   members: {
     __resetSourcePath: function() {
-      const sourcePath = osparc.utils.Utils.getLogoPath();
+      const sourcePath = osparc.product.Utils.getLogoPath();
       this.set({
         source: sourcePath
       });

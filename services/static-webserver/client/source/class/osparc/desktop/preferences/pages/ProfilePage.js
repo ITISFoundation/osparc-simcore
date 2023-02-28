@@ -27,7 +27,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
 
   construct: function() {
     const iconSrc = "@FontAwesome5Solid/user/24";
-    const title = this.tr("Profile");
+    const title = this.tr("Profile Settings");
     this.base(arguments, title, iconSrc);
 
     this.__userProfileData = null;
@@ -47,14 +47,17 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
       const box = this._createSectionBox(this.tr("User"));
 
       const email = new qx.ui.form.TextField().set({
+        tabIndex: 1,
         placeholder: this.tr("Email")
       });
 
       const firstName = new qx.ui.form.TextField().set({
+        tabIndex: 2,
         placeholder: this.tr("First Name")
       });
 
       const lastName = new qx.ui.form.TextField().set({
+        tabIndex: 3,
         placeholder: this.tr("Last Name")
       });
 
@@ -78,13 +81,15 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
           readOnly: true
         });
       }
+      role.set({
+        tabIndex: 4
+      });
 
       const form = new qx.ui.form.Form();
-      form.add(email, "", null, "email");
-      form.add(firstName, "", null, "firstName");
-      form.add(lastName, "", null, "lastName");
-      form.add(role, "", null, "role");
-
+      form.add(email, "Email", null, "email");
+      form.add(firstName, "First Name", null, "firstName");
+      form.add(lastName, "Last Name", null, "lastName");
+      form.add(role, "Role", null, "role");
       box.add(new qx.ui.form.renderer.Single(form));
 
       const expirationLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
@@ -94,7 +99,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
       expirationLayout.add(new qx.ui.basic.Label(this.tr("Expiration date:")));
       const expirationDate = new qx.ui.basic.Label();
       expirationLayout.add(expirationDate);
-      const infoLabel = this.tr("Please, contact us by email:<br>");
+      const infoLabel = this.tr("Please contact us by email:<br>");
       const infoExtension = new osparc.ui.hint.InfoHint(infoLabel);
       osparc.store.VendorInfo.getInstance().getSupportEmail()
         .then(supportEmail => infoExtension.setHintText(infoLabel + supportEmail));
@@ -102,8 +107,11 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
       box.add(expirationLayout);
 
       const img = new qx.ui.basic.Image().set({
+        maxWidth: 100,
+        maxHeight: 100,
+        scale: true,
         decorator: new qx.ui.decoration.Decorator().set({
-          radius: 50
+          radius: 30
         }),
         alignX: "center"
       });

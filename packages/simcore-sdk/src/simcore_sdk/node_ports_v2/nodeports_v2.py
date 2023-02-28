@@ -8,6 +8,7 @@ from models_library.projects_nodes_io import NodeIDStr
 from models_library.users import UserID
 from pydantic import BaseModel, Field, ValidationError
 from pydantic.error_wrappers import flatten_errors
+from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from settings_library.r_clone import RCloneSettings
 
@@ -85,14 +86,16 @@ class Nodeports(BaseModel):
             file_link_type=file_link_type
         )
 
-    async def get(self, item_key: str) -> Optional[ItemConcreteValue]:
+    async def get(
+        self, item_key: str, progress_bar: Optional[ProgressBarData] = None
+    ) -> Optional[ItemConcreteValue]:
         try:
-            return await (await self.inputs)[item_key].get()
+            return await (await self.inputs)[item_key].get(progress_bar)
         except UnboundPortError:
             # not available try outputs
             pass
         # if this fails it will raise an exception
-        return await (await self.outputs)[item_key].get()
+        return await (await self.outputs)[item_key].get(progress_bar)
 
     async def set(self, item_key: str, item_value: ItemConcreteValue) -> None:
         # first try to set the inputs.
@@ -135,6 +138,8 @@ class Nodeports(BaseModel):
     async def set_multiple(
         self,
         port_values: dict[str, tuple[Optional[ItemConcreteValue], Optional[SetKWargs]]],
+        *,
+        progress_bar: ProgressBarData,
     ) -> None:
         """
         Sets the provided values to the respective input or output ports
@@ -144,17 +149,28 @@ class Nodeports(BaseModel):
         raises ValidationError
         """
         tasks = deque()
-        for port_key, (value, set_kwargs) in port_values.items():
-            # pylint: disable=protected-access
-            try:
-                tasks.append(self.internal_outputs[port_key]._set(value, set_kwargs))
-            except UnboundPortError:
-                # not available try inputs
-                # if this fails it will raise another exception
-                tasks.append(self.internal_inputs[port_key]._set(value, set_kwargs))
+        async with progress_bar.sub_progress(
+            steps=len(port_values.items())
+        ) as sub_progress:
+            for port_key, (value, set_kwargs) in port_values.items():
+                # pylint: disable=protected-access
+                try:
+                    tasks.append(
+                        self.internal_outputs[port_key]._set(
+                            value, set_kwargs=set_kwargs, progress_bar=sub_progress
+                        )
+                    )
+                except UnboundPortError:
+                    # not available try inputs
+                    # if this fails it will raise another exception
+                    tasks.append(
+                        self.internal_inputs[port_key]._set(
+                            value, set_kwargs=set_kwargs, progress_bar=sub_progress
+                        )
+                    )
 
-        results = await logged_gather(*tasks)
-        await self.save_to_db_cb(self)
+            results = await logged_gather(*tasks)
+            await self.save_to_db_cb(self)
 
         # groups all ValidationErrors pre-pending 'port_key' to loc and raises ValidationError
         if errors := [

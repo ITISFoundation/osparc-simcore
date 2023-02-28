@@ -52,18 +52,18 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
         email.activate();
       });
 
-      const pass1 = new qx.ui.form.PasswordField().set({
+      const pass1 = new osparc.ui.form.PasswordField().set({
         required: true,
         placeholder: this.tr("Type a password")
       });
-      osparc.utils.Utils.setIdToWidget(pass1, "registrationPass1Fld");
+      osparc.utils.Utils.setIdToWidget(pass1.getChildControl("passwordField"), "registrationPass1Fld");
       this.add(pass1);
 
-      const pass2 = new qx.ui.form.PasswordField().set({
+      const pass2 = new osparc.ui.form.PasswordField().set({
         required: true,
         placeholder: this.tr("Retype the password")
       });
-      osparc.utils.Utils.setIdToWidget(pass2, "registrationPass2Fld");
+      osparc.utils.Utils.setIdToWidget(pass2.getChildControl("passwordField"), "registrationPass2Fld");
       this.add(pass2);
 
       const urlFragment = osparc.utils.Utils.parseURLFragment();

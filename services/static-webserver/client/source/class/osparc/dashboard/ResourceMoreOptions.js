@@ -108,7 +108,6 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
             store.getAllServices()
               .then(services => {
                 const serviceData = osparc.utils.Services.getFromObject(services, this.__resourceData["key"], serviceVersion);
-                console.log(serviceData);
                 serviceData["resourceType"] = "service";
                 this.__resourceData = serviceData;
                 this.__addPages();
@@ -177,7 +176,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
       // Page title
       tabPage.add(new qx.ui.basic.Label(title).set({
-        font: "title-16"
+        font: "text-15"
       }));
 
       // Page content
@@ -258,11 +257,19 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         return null;
       }
 
-      const title = this.tr("Sharing");
+      let resourceLabel = "";
+      if (osparc.utils.Resources.isService(resourceData)) {
+        resourceLabel = this.tr("service");
+      } else if (osparc.utils.Resources.isTemplate(resourceData)) {
+        resourceLabel = osparc.product.Utils.getTemplateAlias();
+      } else if (osparc.utils.Resources.isStudy(resourceData)) {
+        resourceLabel = osparc.product.Utils.getStudyAlias();
+      }
+      const title = this.tr("Share ") + resourceLabel;
       const icon = "@FontAwesome5Solid/share-alt";
       let permissionsView = null;
       if (osparc.utils.Resources.isService(resourceData)) {
-        permissionsView = new osparc.component.permissions.Service(resourceData);
+        permissionsView = new osparc.component.share.CollaboratorsService(resourceData);
         permissionsView.addListener("updateAccessRights", e => {
           const updatedData = e.getData();
           if (osparc.utils.Resources.isService(resourceData)) {
@@ -270,7 +277,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
           }
         }, this);
       } else {
-        permissionsView = new osparc.component.permissions.Study(resourceData);
+        permissionsView = new osparc.component.share.CollaboratorsStudy(resourceData);
         if (osparc.utils.Resources.isStudy(resourceData)) {
           permissionsView.getChildControl("study-link").show();
         }
@@ -289,7 +296,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __getClassifiersPage: function() {
-      if (osparc.utils.Utils.isProduct("s4llite")) {
+      if (!osparc.product.Utils.showClassifiers()) {
         return null;
       }
       const id = "Classifiers";
@@ -323,7 +330,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __getQualityPage: function() {
-      if (osparc.utils.Utils.isProduct("s4llite")) {
+      if (!osparc.product.Utils.showQuality()) {
         return null;
       }
       const id = "Quality";
@@ -397,7 +404,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const canIWrite = osparc.data.model.Study.canIWrite(this.__resourceData["accessRights"]);
       const canCreateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.create");
       if (canIWrite && canCreateTemplate) {
-        const title = this.tr("Save as ") + osparc.utils.Utils.capitalize(osparc.utils.Utils.getTemplateLabel());
+        const title = this.tr("Save as ") + osparc.utils.Utils.capitalize(osparc.product.Utils.getTemplateAlias());
         const icon = "@FontAwesome5Solid/copy";
         const saveAsTemplate = new osparc.component.study.SaveAsTemplate(this.__resourceData);
         saveAsTemplate.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));

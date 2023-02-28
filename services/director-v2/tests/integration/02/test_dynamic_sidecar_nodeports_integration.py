@@ -53,6 +53,7 @@ from servicelib.fastapi.long_running_tasks.client import (
     TaskId,
     periodic_task_result,
 )
+from servicelib.progress_bar import ProgressBarData
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from shared_comp_utils import (
@@ -623,14 +624,16 @@ async def _fetch_data_via_data_manager(
         is True
     )
 
-    await data_manager.pull(
-        user_id=user_id,
-        project_id=project_id,
-        node_uuid=service_uuid,
-        file_or_folder=DY_SERVICES_STATE_PATH,
-        save_to=save_to,
-        io_log_redirect_cb=None,
-    )
+    async with ProgressBarData(steps=1) as progress_bar:
+        await data_manager.pull(
+            user_id=user_id,
+            project_id=project_id,
+            node_uuid=service_uuid,
+            file_or_folder=DY_SERVICES_STATE_PATH,
+            save_to=save_to,
+            io_log_redirect_cb=None,
+            progress_bar=progress_bar,
+        )
 
     return save_to
 
@@ -667,6 +670,7 @@ async def _fetch_data_via_aioboto(
 
 async def _start_and_wait_for_dynamic_services_ready(
     director_v2_client: httpx.AsyncClient,
+    product_name: str,
     user_id: UserID,
     workbench_dynamic_services: dict[str, Node],
     current_study: ProjectAtDB,
@@ -677,6 +681,7 @@ async def _start_and_wait_for_dynamic_services_ready(
         *(
             assert_start_service(
                 director_v2_client=director_v2_client,
+                product_name=product_name,
                 user_id=user_id,
                 project_id=str(current_study.uuid),
                 service_key=node.key,
@@ -869,7 +874,7 @@ async def test_nodeports_integration(
     between runs.
 
     Execution steps:
-    1. start all the dynamic services and make sure they are running
+    1. start all the dynamic services and make sure they are runningv2/dynamic_services'
     2. run the computational pipeline & trigger port retrievals
     3. check that the outputs of the `sleeper` are the same as the
         outputs of the `dy-static-file-server-dynamic-sidecar-compose-spec``
@@ -889,6 +894,7 @@ async def test_nodeports_integration(
         str, str
     ] = await _start_and_wait_for_dynamic_services_ready(
         director_v2_client=async_client,
+        product_name=osparc_product_name,
         user_id=current_user["id"],
         workbench_dynamic_services=workbench_dynamic_services,
         current_study=current_study,
@@ -1095,6 +1101,7 @@ async def test_nodeports_integration(
 
     await _start_and_wait_for_dynamic_services_ready(
         director_v2_client=async_client,
+        product_name=osparc_product_name,
         user_id=current_user["id"],
         workbench_dynamic_services=workbench_dynamic_services,
         current_study=current_study,

@@ -18,10 +18,6 @@
 qx.Class.define("osparc.ui.list.OrganizationListItem", {
   extend: osparc.ui.list.ListItem,
 
-  construct: function() {
-    this.base(arguments);
-  },
-
   properties: {
     accessRights: {
       check: "Object",
@@ -54,7 +50,6 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
             icon: "@FontAwesome5Solid/ellipsis-v/"+(iconSize-11),
             focusable: false
           });
-          osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
           this._add(control, {
             row: 0,
             column: 3,
@@ -68,11 +63,13 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
     },
 
     __applyAccessRights: function(accessRights) {
+      const optionsMenu = this.getChildControl("options");
+      optionsMenu.exclude();
       if (accessRights === null) {
         return;
       }
       if (accessRights.getWrite()) {
-        const optionsMenu = this.getChildControl("options");
+        optionsMenu.show();
         const menu = this.__getOptionsMenu(accessRights);
         optionsMenu.setMenu(menu);
       }
@@ -110,13 +107,44 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
       } else {
         thumbnail.setSource(osparc.utils.Icons.organization(this.self().ICON_SIZE));
       }
-      const store = osparc.store.Store.getInstance();
-      store.getProductEveryone()
-        .then(groupProductEveryone => {
-          if (groupProductEveryone && parseInt(this.getKey()) === groupProductEveryone["gid"]) {
-            thumbnail.setSource(osparc.utils.Icons.everyone(this.self().ICON_SIZE));
-          }
-        });
+      if (this.isPropertyInitialized("key")) {
+        const store = osparc.store.Store.getInstance();
+        store.getProductEveryone()
+          .then(groupProductEveryone => {
+            if (groupProductEveryone && parseInt(this.getKey()) === groupProductEveryone["gid"]) {
+              thumbnail.setSource(osparc.utils.Icons.everyone(this.self().ICON_SIZE));
+            }
+          });
+      }
+    },
+
+    _filter: function() {
+      this.exclude();
+    },
+
+    _unfilter: function() {
+      this.show();
+    },
+
+    _shouldApplyFilter: function(data) {
+      if (data.name) {
+        const checks = [
+          this.getTitle(),
+          this.getSubtitle()
+        ];
+        // data.name comes lowercased
+        if (checks.filter(check => check.toLowerCase().includes(data.name)).length == 0) {
+          return true;
+        }
+      }
+      return false;
+    },
+
+    _shouldReactToFilter: function(data) {
+      if (data.name && data.name.length > 1) {
+        return true;
+      }
+      return false;
     }
   }
 });

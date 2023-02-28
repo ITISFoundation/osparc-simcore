@@ -133,6 +133,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
       switch (id) {
         case "thumbnail":
           control = new qx.ui.basic.Image().set({
+            alignY: "middle",
             scale: true,
             allowGrowX: true,
             allowGrowY: true,
@@ -149,7 +150,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
           break;
         case "title":
           control = new qx.ui.basic.Label().set({
-            font: "title-14"
+            font: "text-14"
           });
           this._add(control, {
             row: 0,
@@ -222,7 +223,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
     },
 
     __applySubtitle: function(value) {
-      if (value === null) {
+      if ([null, undefined, ""].includes(value)) {
         return;
       }
       const label = this.getChildControl("subtitle");
@@ -230,7 +231,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
     },
 
     __applySubtitleMD: function(value) {
-      if (value === null) {
+      if ([null, undefined, ""].includes(value)) {
         return;
       }
       const label = this.getChildControl("subtitle-md");

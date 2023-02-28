@@ -135,6 +135,14 @@ async def store_to_s3(  # pylint:disable=too-many-locals,too-many-arguments
     )
 
     source_dir = dyv_volume["Mountpoint"]
+    if not Path(source_dir).exists():
+        logger.info(
+            "Volume mountpoint %s does not exist. Skipping backup, volume %s will be removed.",
+            source_dir,
+            volume_name,
+        )
+        return
+
     s3_path = _get_s3_path(s3_bucket, dyv_volume["Labels"], volume_name)
 
     # listing files rclone will sync
@@ -168,6 +176,11 @@ async def store_to_s3(  # pylint:disable=too-many-locals,too-many-arguments
         f"{s3_retries}",
         "--transfers",
         f"{s3_parallelism}",
+        # below two options reduce to a minimum the memory footprint
+        # https://forum.rclone.org/t/how-to-set-a-memory-limit/10230/4
+        "--use-mmap",  # docs https://rclone.org/docs/#use-mmap
+        "--buffer-size",  # docs https://rclone.org/docs/#buffer-size-size
+        "0M",
         "--stats",
         "5s",
         "--stats-one-line",

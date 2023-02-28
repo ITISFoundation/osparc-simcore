@@ -234,7 +234,7 @@ qx.Class.define("osparc.data.model.Study", {
       const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
       orgIDs.push(myGroupId);
       if (orgIDs.length) {
-        return osparc.component.permissions.Study.canGroupsWrite(studyAccessRights, (orgIDs));
+        return osparc.component.share.CollaboratorsStudy.canGroupsWrite(studyAccessRights, (orgIDs));
       }
       return false;
     },
@@ -244,7 +244,7 @@ qx.Class.define("osparc.data.model.Study", {
       const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
       orgIDs.push(myGroupId);
       if (orgIDs.length) {
-        return osparc.component.permissions.Study.canGroupsDelete(studyAccessRights, (orgIDs));
+        return osparc.component.share.CollaboratorsStudy.canGroupsDelete(studyAccessRights, (orgIDs));
       }
       return false;
     },
@@ -407,6 +407,21 @@ qx.Class.define("osparc.data.model.Study", {
         node.setErrors(errors);
       } else {
         node.setErrors([]);
+      }
+    },
+
+    nodeNodeProgressSequence: function(nodeProgressData) {
+      const studyId = nodeProgressData["project_id"];
+      if (studyId !== this.getUuid()) {
+        return;
+      }
+      const nodeId = nodeProgressData["node_id"];
+      const workbench = this.getWorkbench();
+      const node = workbench.getNode(nodeId);
+      if (node) {
+        const progressType = nodeProgressData["progress_type"];
+        const progress = nodeProgressData["progress"];
+        node.setNodeProgressSequence(progressType, progress);
       }
     },
 

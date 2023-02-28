@@ -22,7 +22,7 @@ def env_devel_dict(env_devel_file: Path) -> EnvVarsDict:
 
 @pytest.fixture(scope="function")
 def mock_env_devel_environment(
-    env_devel_dict: dict[str, str], monkeypatch: MonkeyPatch
+    env_devel_dict: EnvVarsDict, monkeypatch: MonkeyPatch
 ) -> EnvVarsDict:
     envs = setenvs_from_dict(monkeypatch, env_devel_dict)
     return envs

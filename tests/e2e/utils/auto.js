@@ -11,6 +11,15 @@ async function acceptCookies(page) {
     .catch(() => console.log("Accept Cookies button not found"));
 }
 
+async function ignoreNewRelease(page) {
+  const id = '[osparc-test-id=newReleaseCloseBtn]';
+  await page.waitForSelector(id, {
+    timeout: 5000
+  })
+    .then(() => page.click(id))
+    .catch(() => console.log("newReleaseClose button not found"));
+}
+
 async function closeQuickStart(page) {
   const id = '[osparc-test-id=quickStartWindowCloseBtn]';
   await page.waitForSelector(id, {
@@ -78,7 +87,7 @@ async function dashboardPreferences(page) {
   await utils.waitAndClick(page, '[osparc-test-id="preferencesWindowCloseBtn"]');
 }
 
-async function __dashboardStudiesBrowser(page) {
+async function dashboardStudiesBrowser(page) {
   console.log("Navigating through Studies");
   await utils.waitAndClick(page, '[osparc-test-id="studiesTabBtn"]')
 }
@@ -96,14 +105,14 @@ async function __dashboardServicesBrowser(page) {
 async function dashboardNewPlan(page) {
   console.log("Creating New Plan");
 
-  await __dashboardStudiesBrowser(page);
+  await dashboardStudiesBrowser(page);
   await utils.waitAndClick(page, '[osparc-test-id="newPlanButton"]');
 }
 
 async function dashboardStartSim4LifeLite(page) {
   console.log("Start Sim4Lite from + button");
 
-  await __dashboardStudiesBrowser(page);
+  await dashboardStudiesBrowser(page);
   await utils.waitAndClick(page, '[osparc-test-id="startS4LButton"]');
 }
 
@@ -182,7 +191,7 @@ async function dashboardOpenService(page, serviceName) {
 }
 
 async function __filterStudiesByText(page, studyName) {
-  await __dashboardStudiesBrowser(page);
+  await dashboardStudiesBrowser(page);
   await __typeInSearchBarFilter(page, "study", studyName);
 }
 
@@ -263,7 +272,7 @@ async function runStudy(page) {
 async function deleteFirstStudy(page, studyName) {
   console.log("Deleting first study")
 
-  await __dashboardStudiesBrowser(page);
+  await dashboardStudiesBrowser(page);
 
   if (studyName) {
     await __filterStudiesByText(page, studyName);
@@ -282,6 +291,7 @@ async function deleteFirstStudy(page, studyName) {
   const firstChildId = '[osparc-test-id="' + studyCardId + '"]';
   const studyCardStyle = await utils.getStyle(page, firstChildId);
   if (studyCardStyle.cursor === "not-allowed") {
+    console.log("Andrei you were wrong");
     return false;
   }
   await utils.waitAndClick(page, firstChildId + ' > [osparc-test-id="studyItemMenuButton"]');
@@ -366,11 +376,13 @@ async function downloadSelectedFile(page) {
 
 module.exports = {
   acceptCookies,
+  ignoreNewRelease,
   closeQuickStart,
   register,
   logIn,
   logOut,
   dashboardAbout,
+  dashboardStudiesBrowser,
   dashboardPreferences,
   dashboardNewPlan,
   dashboardStartSim4LifeLite,

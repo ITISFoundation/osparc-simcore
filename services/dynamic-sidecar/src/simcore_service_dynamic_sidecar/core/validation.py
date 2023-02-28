@@ -5,6 +5,10 @@ import re
 from typing import Any, Generator
 
 import yaml
+from servicelib.docker_constants import (
+    DEFAULT_USER_SERVICES_NETWORK_NAME,
+    SUFFIX_EGRESS_PROXY_NAME,
+)
 
 from ..modules.mounted_fs import MountedVolumes
 from .docker_compose_utils import docker_compose_config
@@ -125,31 +129,41 @@ def _merge_env_vars(
     return [f"{k}={v}" for k, v in dict_spec_env_vars.items()]
 
 
-_DEFAULT_BACKEND_NETWORK_NAME = "__backend__"
-
-
-def _inject_backend_networking(parsed_compose_spec: dict[str, Any]) -> None:
+def _connect_user_services(
+    parsed_compose_spec: dict[str, Any], allow_internet_access: bool
+) -> None:
     """
     Put all containers in the compose spec in the same network.
-    The `network_name` must only be unique inside the user defined spec;
-    docker-compose will add some prefix to it.
+    The network name must only be unique inside the user defined spec.
+    `docker-compose` will add some prefix to it.
     """
-    networks = parsed_compose_spec.setdefault("networks", {})
+    networks = parsed_compose_spec.get("networks", None)
     if networks is None:
-        parsed_compose_spec["networks"] = {_DEFAULT_BACKEND_NETWORK_NAME: None}
-    else:
-        networks[_DEFAULT_BACKEND_NETWORK_NAME] = None
+        parsed_compose_spec["networks"] = {}
+    networks = parsed_compose_spec["networks"]
 
-    for service_content in parsed_compose_spec["services"].values():
+    networks[DEFAULT_USER_SERVICES_NETWORK_NAME] = {
+        "internal": not allow_internet_access,
+    }
+
+    for service_name, service_content in parsed_compose_spec["services"].items():
+        # do not add egress proxies to the backend network
+        if SUFFIX_EGRESS_PROXY_NAME in service_name:
+            continue
+
         service_networks = service_content.setdefault("networks", [])
         if service_networks is None:
             # if network is set without entries
-            service_content["networks"] = [_DEFAULT_BACKEND_NETWORK_NAME]
+            service_content["networks"] = {DEFAULT_USER_SERVICES_NETWORK_NAME: None}
         elif isinstance(service_networks, list):
-            service_networks.append(_DEFAULT_BACKEND_NETWORK_NAME)
+            service_networks.append(DEFAULT_USER_SERVICES_NETWORK_NAME)
         else:
             # if the network is set as a dictionary (rather non official but works)
-            service_networks[_DEFAULT_BACKEND_NETWORK_NAME] = None
+
+            # if the network already exists do not add (this is the case of the egress proxies)
+            if DEFAULT_USER_SERVICES_NETWORK_NAME in service_networks:
+                continue
+            service_networks[DEFAULT_USER_SERVICES_NETWORK_NAME] = None
 
 
 def parse_compose_spec(compose_file_content: str) -> Any:
@@ -234,9 +248,10 @@ async def validate_compose_spec(
 
         service_content["volumes"] = service_volumes
 
-    # if more then one container is defined, add an "backend" network
-    if len(spec_services) > 1:
-        _inject_backend_networking(parsed_compose_spec)
+    _connect_user_services(
+        parsed_compose_spec,
+        allow_internet_access=settings.DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS,
+    )
 
     # replace service_key with the container_name int the dict
     for service_key in list(spec_services.keys()):

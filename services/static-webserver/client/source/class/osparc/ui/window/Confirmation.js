@@ -17,7 +17,11 @@ qx.Class.define("osparc.ui.window.Confirmation", {
    * @param {String} message Message that will be displayed to the user.
    */
   construct: function(message) {
-    this.base(arguments, this.tr("Confirmation"), null, message);
+    this.base(arguments, this.tr("Confirmation"));
+
+    if (message) {
+      this.setMessage(message);
+    }
 
     this.addCancelButton();
 
@@ -56,6 +60,10 @@ qx.Class.define("osparc.ui.window.Confirmation", {
 
     getConfirmButton: function() {
       return this.__confirmButton;
+    },
+
+    getCancelButton: function() {
+      return this.getChildControl("cancel-button");
     },
 
     __applyConfirmText: function(confirmText) {

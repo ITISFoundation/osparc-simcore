@@ -10,13 +10,24 @@ qx.Class.define("osparc.ui.window.Window", {
   construct: function(caption, icon) {
     this.base(arguments, caption, icon);
 
+    this.getChildControl("captionbar").set({
+      padding: 8
+    });
+
+    this.getChildControl("title").set({
+      font: "text-14",
+      rich: true
+    });
+
+    this._getLayout().setSeparator("separator-vertical");
+
     this.set({
       appearance: "service-window",
       backgroundColor: "background-main-2"
     });
 
+    // Enable closing when clicking outside the modal
     this.addListener("appear", () => {
-      // Enable closing when clicking outside the modal
       const thisDom = this.getContentElement().getDomElement();
       const thisZIndex = parseInt(thisDom.style.zIndex);
       const modalFrame = qx.dom.Hierarchy.getSiblings(thisDom).find(el =>
@@ -36,9 +47,7 @@ qx.Class.define("osparc.ui.window.Window", {
     });
 
     const commandEsc = new qx.ui.command.Command("Esc");
-    commandEsc.addListener("execute", () => {
-      this.close();
-    });
+    commandEsc.addListener("execute", () => this.close());
   },
 
   properties: {
@@ -74,6 +83,32 @@ qx.Class.define("osparc.ui.window.Window", {
       win.addListener("close", () => scroll.remove(widget));
 
       return win;
+    }
+  },
+
+  members: {
+    __recenter: null,
+
+    // overridden
+    center: function() {
+      this.base(arguments);
+
+      this.__recenter = true;
+    },
+
+    // overridden
+    open: function() {
+      if (this.__recenter) {
+        // avoid flickering
+        this.setOpacity(0);
+        this.base(arguments);
+        setTimeout(() => {
+          this.center();
+          this.setOpacity(1);
+        }, 1);
+      } else {
+        this.base(arguments);
+      }
     }
   }
 });
