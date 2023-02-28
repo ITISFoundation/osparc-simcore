@@ -29,7 +29,7 @@ export APP_VERSION
 
 
 #
-# COMMON TASKS
+# VENV (virtual environment) TASKS
 #
 
 
@@ -59,6 +59,10 @@ test-dev: test-dev-unit test-dev-integration ## runs unit and integration tests 
 test-ci: test-ci-unit test-ci-integration ## runs unit and integration tests for CI
 
 
+#
+# DOCKER CONTAINERS TASKS
+#
+
 .PHONY: build build-nc build-devel build-devel-nc
 build build-nc build-devel build-devel-nc: ## [docker] builds docker image in many flavours
 	# Building docker image for ${APP_NAME} ...
@@ -67,18 +71,50 @@ build build-nc build-devel build-devel-nc: ## [docker] builds docker image in ma
 
 .PHONY: shell
 shell: ## [swarm] runs shell inside $(APP_NAME) container
-	docker exec -it $(shell docker ps -f "name=simcore_$(APP_NAME)*" --format {{.ID}}) /bin/bash
+	docker exec \
+		--interactive \
+		--tty \
+		$(shell docker ps -f "name=simcore_$(APP_NAME)*" --format {{.ID}}) \
+		/bin/bash
 
 
 .PHONY: tail logs
 tail logs: ## [swarm] tails log of $(APP_NAME) container
-	docker logs --follow $(shell docker ps --filter "name=simcore_$(APP_NAME)*" --format {{.ID}}) 2>&1
+	docker logs \
+		--follow \
+		$(shell docker ps --filter "name=simcore_$(APP_NAME)*" --format {{.ID}}) \
+		2>&1
 
 
 .PHONY: stats
 stats: ## [swarm] display live stream of $(APP_NAME) container resource usage statistics
 	docker stats $(shell docker ps -f "name=simcore_$(APP_NAME)*" --format {{.ID}})
 
+
+
+DOCKER_REGISTRY ?=local
+DOCKER_IMAGE_TAG?=production
+
+.PHONY: settings-schema.json
+settings-schema.json: ## [container] dumps json-shcema of this service settings
+	# Dumping settings schema of ${DOCKER_REGISTRY}/${APP_NAME}:${DOCKER_IMAGE_TAG}
+	@docker run \
+		${DOCKER_REGISTRY}/${APP_NAME}:${DOCKER_IMAGE_TAG} \
+		${APP_CLI_NAME} settings --as-json-schema \
+		| sed --expression='1,/{/ {/{/!d}' \
+		> $@
+
+# NOTE: settings CLI prints some logs in the header from the boot and entrypoint scripts. We
+# use strema editor expression (sed --expression) to trim them:
+# - 1,/{/: This specifies the range of lines to operate on, in this case, from the first line to (but not including) the line that contains the string "{".
+# - {/{/!d}: This specifies that all lines between the first line and the line that contains "{" should be printed ({) except for the line that contains "{" (/{/!d).
+#
+
+
+
+#
+# MISC
+#
 
 .PHONY: info
 info: ## displays service info
