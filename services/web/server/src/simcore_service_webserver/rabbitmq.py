@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
     depends=[],
 )
 def setup_rabbitmq(app: web.Application) -> AsyncIterator[None]:
-    async def setup_rabbitmq(app: web.Application):
+    async def rabbitmq_client_cleanup_ctx(app: web.Application):
         settings: RabbitSettings = get_plugin_settings(app)
         with log_context(
             log, logging.INFO, msg=f"Check RabbitMQ backend is ready on {settings.dsn}"
@@ -39,7 +39,7 @@ def setup_rabbitmq(app: web.Application) -> AsyncIterator[None]:
         with log_context(log, logging.INFO, msg="Closing RabbitMQ client"):
             await app[APP_RABBITMQ_CLIENT_KEY].close()
 
-    app.cleanup_ctx.append(setup_rabbitmq)
+    app.cleanup_ctx.append(rabbitmq_client_cleanup_ctx)
 
 
 def get_rabbitmq_client(app: web.Application) -> RabbitMQClient:
