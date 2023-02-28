@@ -182,22 +182,6 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         .catch(err => console.error(err));
     },
 
-    topBarResized: function(newSize) {
-      const tabs = this.getChildren();
-      const nTabs = tabs.length;
-      const smallBrakpoint = nTabs*110;
-      tabs.forEach(tab => {
-        const tabButton = tab.getChildControl("button");
-        if (newSize.width < smallBrakpoint) {
-          tabButton.getChildControl("icon").show();
-          tabButton.getChildControl("label").exclude();
-        } else {
-          tabButton.getChildControl("label").show();
-          tabButton.getChildControl("icon").exclude();
-        }
-      });
-    },
-
     __createStudyBrowser: function() {
       const studiesView = this.__studyBrowser = new osparc.dashboard.StudyBrowser();
       return studiesView;
