@@ -61,8 +61,6 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
   },
 
   members: {
-    __serverStatics: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
