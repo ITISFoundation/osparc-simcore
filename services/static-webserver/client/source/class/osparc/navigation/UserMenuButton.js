@@ -61,8 +61,6 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
   },
 
   members: {
-    __serverStatics: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -144,7 +142,8 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       return control || this.base(arguments, id);
     },
 
-    populateSimpleMenu: function() {
+    populateMenu: function() {
+      this.getMenu().removeAll();
       this.getChildControl("preferences");
       this.getChildControl("organizations");
       this.getChildControl("clusters");
@@ -162,20 +161,23 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       this.getChildControl("logout");
     },
 
-    populateExtendedMenu: function() {
+    populateMenuCompact: function() {
+      this.getMenu().removeAll();
       osparc.data.Resources.get("statics")
-        .then(statics => {
-          this.__serverStatics = statics;
-          this.getChildControl("theme-switcher");
+        .then(async () => {
           this.getChildControl("preferences");
           this.getChildControl("organizations");
           this.getChildControl("clusters");
           this.getMenu().addSeparator();
-          this.__addManualsToMenu();
-          this.__addFeedbacksToMenu();
-          if (osparc.product.tutorial.Utils.getTutorial()) {
-            this.getChildControl("quick-start");
-          }
+
+          // this part gets injected
+          this.__addQuickStartToMenu();
+          await this.__addManualsToMenu();
+          this.getMenu().addSeparator();
+          await this.__addFeedbacksToMenu();
+          this.getMenu().addSeparator();
+          this.getChildControl("theme-switcher");
+
           this.getMenu().addSeparator();
           this.getChildControl("about");
           if (!osparc.product.Utils.isProduct("osparc")) {
@@ -187,14 +189,19 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
         });
     },
 
-    __addManualsToMenu: function() {
+    __addQuickStartToMenu: function() {
       const menu = this.getMenu();
-      osparc.store.Support.addManualButtonsToMenu(menu);
+      osparc.store.Support.addQuickStartToMenu(menu);
     },
 
-    __addFeedbacksToMenu: function() {
+    __addManualsToMenu: async function() {
       const menu = this.getMenu();
-      osparc.store.Support.addSupportButtonsToMenu(menu);
+      await osparc.store.Support.addManualButtonsToMenu(menu);
+    },
+
+    __addFeedbacksToMenu: async function() {
+      const menu = this.getMenu();
+      await osparc.store.Support.addSupportButtonsToMenu(menu);
     }
   }
 });

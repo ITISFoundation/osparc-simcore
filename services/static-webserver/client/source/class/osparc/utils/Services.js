@@ -274,6 +274,13 @@ qx.Class.define("osparc.utils.Services", {
       return null;
     },
 
+    DEPRECATED_SERVICE_TEXT: qx.locale.Manager.tr("Service deprecated"),
+    DEPRECATED_DYNAMIC_INSTRUCTIONS: qx.locale.Manager.tr("Please go back to the dashboard and Update the Service or download its data and upload it to an updated version"),
+    DEPRECATED_COMPUTATIONAL_INSTRUCTIONS: qx.locale.Manager.tr("Please instantiate an updated version"),
+    RETIRED_SERVICE_TEXT: qx.locale.Manager.tr("Service retired"),
+    RETIRED_DYNAMIC_INSTRUCTIONS: qx.locale.Manager.tr("Please download the Service data and upload it to an updated version"),
+    RETIRED_COMPUTATIONAL_INSTRUCTIONS: qx.locale.Manager.tr("Please instantiate an updated version"),
+
     isDeprecated: function(metadata) {
       if (metadata && "deprecated" in metadata && ![null, undefined].includes(metadata["deprecated"])) {
         const deprecationTime = new Date(metadata["deprecated"]);
@@ -292,14 +299,10 @@ qx.Class.define("osparc.utils.Services", {
       return false;
     },
 
-    DEPRECATED_SERVICE_TEXT: qx.locale.Manager.tr("Service deprecated"),
-    RETIRED_SERVICE_TEXT: qx.locale.Manager.tr("Service retired"),
     getDeprecationDateText: function(metadata) {
       const deprecationTime = new Date(metadata["deprecated"]);
       return qx.locale.Manager.tr("It will be Retired: ") + osparc.utils.Utils.formatDate(deprecationTime);
     },
-    DEPRECATED_DYNAMIC_INSTRUCTIONS: qx.locale.Manager.tr("Please download the Service data and upload them to an updated version"),
-    DEPRECATED_COMPUTATIONAL_INSTRUCTIONS: qx.locale.Manager.tr("Please instantiate an updated version"),
 
     getFilePicker: function() {
       return this.self().getLatest(this.servicesCached, "simcore/services/frontend/file-picker");

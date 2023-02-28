@@ -12,7 +12,7 @@ from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.rabbitmq_messages import (
     InstrumentationRabbitMessage,
-    ProgressRabbitMessage,
+    ProgressRabbitMessageNode,
     ProgressType,
 )
 from models_library.service_settings_labels import (
@@ -221,8 +221,8 @@ class CreateSidecars(DynamicSchedulerEvent):
             )
         )
         await rabbitmq_client.publish(
-            ProgressRabbitMessage.get_channel_name(),
-            ProgressRabbitMessage(
+            ProgressRabbitMessageNode.get_channel_name(),
+            ProgressRabbitMessageNode(
                 user_id=scheduler_data.user_id,
                 project_id=scheduler_data.project_id,
                 node_id=scheduler_data.node_uuid,
@@ -240,8 +240,8 @@ class CreateSidecars(DynamicSchedulerEvent):
             )
         )
         await rabbitmq_client.publish(
-            ProgressRabbitMessage.get_channel_name(),
-            ProgressRabbitMessage(
+            ProgressRabbitMessageNode.get_channel_name(),
+            ProgressRabbitMessageNode(
                 user_id=scheduler_data.user_id,
                 project_id=scheduler_data.project_id,
                 node_id=scheduler_data.node_uuid,
