@@ -295,16 +295,14 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           maxWidth: 250
         });
         deprecatedIcon.setToolTip(toolTip);
-      }
-
-      if (node.isRetired()) {
+      } else if (node.isRetired()) {
         const retiredIcon = this.getChildControl("deprecated-icon");
         retiredIcon.set({
           textColor: osparc.utils.StatusUI.getColor("retired")
         });
 
         let ttMsg = osparc.utils.Services.RETIRED_SERVICE_TEXT;
-        const deprecatedTTMsg = node.isDynamic() ? osparc.utils.Services.DEPRECATED_DYNAMIC_INSTRUCTIONS : osparc.utils.Services.DEPRECATED_COMPUTATIONAL_INSTRUCTIONS;
+        const deprecatedTTMsg = node.isDynamic() ? osparc.utils.Services.RETIRED_DYNAMIC_INSTRUCTIONS : osparc.utils.Services.RETIRED_COMPUTATIONAL_INSTRUCTIONS;
         if (deprecatedTTMsg) {
           ttMsg = ttMsg + "<br>" + deprecatedTTMsg;
         }

@@ -23,10 +23,10 @@ from servicelib.aiohttp.long_running_tasks.client import (
     long_running_task_request,
 )
 from servicelib.logging_utils import log_context
-from simcore_service_webserver.projects.project_models import ProjectDict
-from simcore_service_webserver.projects.projects_utils import NodesMap
 from yarl import URL
 
+from .projects.project_models import ProjectDict
+from .projects.projects_utils import NodesMap
 from .storage_settings import StorageSettings, get_plugin_settings
 
 log = logging.getLogger(__name__)

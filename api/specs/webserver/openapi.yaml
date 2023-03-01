@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: "osparc-simcore web API"
-  version: 0.15.0
+  version: 0.16.0
   description: "API designed for the front-end app"
   contact:
     name: IT'IS Foundation
@@ -75,6 +75,9 @@ paths:
     $ref: "./openapi-diagnostics.yaml#/paths/~1config"
 
   # AUTHENTICATION & AUTHORIZATION --------------------------------------
+
+  /auth/register/invitations:check:
+    $ref: "./openapi-auth.yaml#/paths/~1auth~1register~1invitations:check"
 
   /auth/register:
     $ref: "./openapi-auth.yaml#/paths/~1auth~1register"

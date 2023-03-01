@@ -13,6 +13,7 @@ from .invitations_client import invitations_service_api_cleanup_ctx
 from .invitations_core import (
     InvalidInvitation,
     InvitationsServiceUnavailable,
+    extract_invitation,
     is_service_invitation_code,
     validate_invitation_url,
 )
@@ -39,9 +40,10 @@ def setup_invitations(app: web.Application):
 #
 
 __all__: tuple[str, ...] = (
-    "is_service_invitation_code",
+    "extract_invitation",
     "InvalidInvitation",
     "InvitationsServiceUnavailable",
+    "is_service_invitation_code",
     "setup_invitations",
     "validate_invitation_url",
 )

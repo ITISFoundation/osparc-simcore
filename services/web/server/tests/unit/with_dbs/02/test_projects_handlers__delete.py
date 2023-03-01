@@ -50,6 +50,8 @@ async def test_delete_project(
     catalog_subsystem_mock: Callable,
     fake_services: Callable,
     assert_get_same_project_caller: Callable,
+    mock_rabbitmq: None,
+    mock_progress_bar: Any,
 ):
     assert client.app
 
@@ -82,6 +84,7 @@ async def test_delete_project(
                 app=client.app,
                 service_uuid=service["service_uuid"],
                 save_state=True,
+                progress=mock_progress_bar.sub_progress(1),
             )
             for service in fakes
         ]

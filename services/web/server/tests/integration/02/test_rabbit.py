@@ -22,7 +22,7 @@ from models_library.rabbitmq_messages import (
     EventRabbitMessage,
     InstrumentationRabbitMessage,
     LoggerRabbitMessage,
-    ProgressRabbitMessage,
+    ProgressRabbitMessageNode,
     RabbitEventMessageType,
 )
 from models_library.users import UserID
@@ -70,7 +70,7 @@ logger = logging.getLogger(__name__)
 
 LogMessages = list[LoggerRabbitMessage]
 InstrumMessages = list[InstrumentationRabbitMessage]
-ProgressMessages = list[ProgressRabbitMessage]
+ProgressMessages = list[ProgressRabbitMessageNode]
 EventMessages = list[EventRabbitMessage]
 
 
@@ -107,7 +107,7 @@ async def _publish_in_rabbit(
         for n in range(num_messages)
     ]
     progress_messages = [
-        ProgressRabbitMessage(
+        ProgressRabbitMessageNode(
             user_id=user_id,
             project_id=project_id,
             node_id=node_uuid,
@@ -330,7 +330,7 @@ async def rabbit_exchanges(
     assert logs_exchange
 
     progress_exchange = await rabbit_channel.declare_exchange(
-        ProgressRabbitMessage.get_channel_name(),
+        ProgressRabbitMessageNode.get_channel_name(),
         aio_pika.ExchangeType.FANOUT,
         durable=True,
     )
@@ -357,7 +357,7 @@ async def rabbit_exchanges(
 
     for exchange in [
         LoggerRabbitMessage,
-        ProgressRabbitMessage,
+        ProgressRabbitMessageNode,
         InstrumentationRabbitMessage,
         EventRabbitMessage,
     ]:
