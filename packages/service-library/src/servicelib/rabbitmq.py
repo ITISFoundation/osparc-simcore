@@ -8,6 +8,7 @@ from uuid import uuid4
 
 import aio_pika
 from aio_pika import MessageProcessError, RobustChannel, RobustConnection
+from aio_pika.exceptions import ChannelClosed
 from aio_pika.patterns import RPC
 from pydantic import PositiveInt
 from servicelib.logging_utils import log_context
