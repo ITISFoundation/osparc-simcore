@@ -12,8 +12,9 @@ Have a look at `ESLint`'s configuration files [.eslintrc.json](.eslintrc.json) a
 
 In short we use the following naming convention ( roughly  [PEP8](https://peps.python.org/pep-0008/) ):
 
-| Function | function, my_fun­ction                        |
+|          | example                                       |
 | -------- | --------------------------------------------- |
+| Function | `function`, `my_fun­ction`                    |
 | Variable | `x`, `var`, `my_variable`                     |
 | Class    | `Model`, `MyClass`                            |
 | Method   | `class_`­`method`, `method`                   |
@@ -38,7 +39,7 @@ For the rest basically:
 
 ### Foreign keys
 
-- name pattern: ```fk_$(this_table)_$(this_column)```, for example ```fk_projects_to_product_product_name```
+- Name pattern: ```fk_$(this_table)_$(this_column)```, for example ```fk_projects_to_product_product_name```
 
 
 ## Shell Scripts
