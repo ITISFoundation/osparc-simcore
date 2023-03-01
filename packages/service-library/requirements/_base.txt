@@ -4,13 +4,13 @@
 #
 #    pip-compile --output-file=requirements/_base.txt --resolver=backtracking --strip-extras requirements/_base.in
 #
-aio-pika==9.0.2
+aio-pika==9.0.4
     # via -r requirements/_base.in
 aiodebug==2.3.0
     # via -r requirements/_base.in
 aiofiles==23.1.0
     # via -r requirements/_base.in
-aiormq==6.7.1
+aiormq==6.7.2
     # via aio-pika
 async-timeout==4.0.2
     # via redis
@@ -28,7 +28,7 @@ pyyaml==5.4.1
     # via -r requirements/_base.in
 redis==4.5.1
     # via -r requirements/_base.in
-tenacity==8.2.1
+tenacity==8.2.2
     # via -r requirements/_base.in
 tqdm==4.64.1
     # via -r requirements/_base.in
