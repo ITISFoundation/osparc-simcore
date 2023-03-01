@@ -35,6 +35,8 @@ def _channel_close_callback(sender: Any, exc: Optional[BaseException]) -> None:
     if exc:
         if isinstance(exc, asyncio.CancelledError):
             log.info("Rabbit channel was cancelled")
+        elif isinstance(exc, ChannelClosed):
+            log.info("%s", exc)
         else:
             log.error(
                 "Rabbit channel closed with exception from %s:%s",
