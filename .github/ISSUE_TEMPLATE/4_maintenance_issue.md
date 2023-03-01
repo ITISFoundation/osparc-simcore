@@ -7,5 +7,5 @@ assignees: ['pcrespov', 'sanderegg', 'GitHK']
 ---
 
 
-<!-- Please connect this case to the Epic: 
+<!-- Please connect this case to the Epic:
 https://github.com/ITISFoundation/osparc-issues/issues/675 -->
