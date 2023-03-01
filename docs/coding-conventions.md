@@ -21,13 +21,13 @@ In short we use the following naming convention ( roughly  [PEP8](https://peps.p
 | Module   | `module.py`, `my_module.py`                   |
 | Package  | `package`, `my_package`                       |
 
-We encourage marking protected/private entities. We do it adding the prefix ``_``/``__``
-We encourage **meaningful** type annotations ([mypy] will check for issues)
+- We encourage marking protected/private entities. We do it adding the prefix `_`/`__`: e.g. `_PROTECTED_CONSTANT`, `A.__private_func`
+- We encourage **meaningful** type annotations
 
 For the rest basically:
-- [black] will enforce the style: Just use it
-- [pylint] will check the  some extra conventions: see [.pylintrc](.pylintrc)
-
+- [black] will enforce the style: Just use it.
+- [pylint] will check the some extra conventions: see [.pylintrc](../.pylintrc).
+- [mypy] will check syntax : see [mypy.ini](../mypy.ini)
 
 [mypy]:https://www.mypy-lang.org/
 [black]:https://black.readthedocs.io/en/stable/index.html
