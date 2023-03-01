@@ -10,9 +10,28 @@ Have a look at `ESLint`'s configuration files [.eslintrc.json](.eslintrc.json) a
 
 ## Python
 
-`Black` will enforce the style. Just use it.
+In short we use the following naming convention ( roughly  [PEP8](https://peps.python.org/pep-0008/) ):
 
-Have a look at `Pylint`'s configuration file [.pylintrc](.pylintrc).
+| Function | function, my_fun­ction                        |
+| -------- | --------------------------------------------- |
+| Variable | `x`, `var`, `my_variable`                     |
+| Class    | `Model`, `MyClass`                            |
+| Method   | `class_`­`method`, `method`                   |
+| Constant | `CONSTANT`, `MY_CONSTANT`, `MY_LONG_CONSTANT` |
+| Module   | `module.py`, `my_module.py`                   |
+| Package  | `package`, `my_package`                       |
+
+We encourage marking protected/private entities. We do it adding the prefix ``_``/``__``
+We encourage **meaningful** type annotations ([mypy] will check for issues)
+
+For the rest basically:
+- [black] will enforce the style: Just use it
+- [pylint] will check the  some extra conventions: see [.pylintrc](.pylintrc)
+
+
+[mypy]:https://www.mypy-lang.org/
+[black]:https://black.readthedocs.io/en/stable/index.html
+[pylint]:https://pylint.readthedocs.io/en/latest/
 
 
 ## Postgres
