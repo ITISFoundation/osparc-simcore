@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: osparc-simcore web API
-  version: 0.15.0
+  version: 0.16.0
   description: API designed for the front-end app
   contact:
     name: IT'IS Foundation
@@ -255,6 +255,49 @@ paths:
                     default: null
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
+  '/auth/register/invitations:check':
+    post:
+      tags:
+        - authentication
+      summary: Check Registration Invitation
+      description: Check invitation and returns associated email or None
+      operationId: auth_check_registration_invitation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: InvitationCheck
+              required:
+                - invitation
+              type: object
+              properties:
+                invitation:
+                  title: Invitation
+                  type: string
+                  description: Invitation code
+              additionalProperties: false
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: 'Envelope[InvitationInfo]'
+                type: object
+                properties:
+                  data:
+                    title: InvitationInfo
+                    type: object
+                    properties:
+                      email:
+                        title: Email
+                        type: string
+                        description: Email associated to invitation or None
+                        format: email
+                    additionalProperties: false
+                  error:
+                    title: Error
   /auth/register:
     post:
       tags:

@@ -35,8 +35,10 @@ from simcore_service_webserver.users_models import ProfileGet
 
 
 @pytest.fixture
-def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
-    setenvs_from_dict(
+def app_environment(
+    app_environment: EnvVarsDict, monkeypatch: MonkeyPatch
+) -> EnvVarsDict:
+    login_envs = setenvs_from_dict(
         monkeypatch,
         {
             "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "1",
@@ -44,6 +46,8 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
             "LOGIN_2FA_CODE_EXPIRATION_SEC": "60",
         },
     )
+
+    return app_environment | login_envs
 
 
 async def test_register_entrypoint(

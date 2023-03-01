@@ -1,8 +1,28 @@
 paths:
+  /auth/register/invitations:check:
+    post:
+      tags:
+      - authentication
+      summary: Check Registration Invitation
+      description: Check invitation and returns associated email or None
+      operationId: auth_check_registration_invitation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvitationCheck'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_InvitationInfo_'
   /auth/register:
     post:
       tags:
-        - authentication
+      - authentication
       summary: Register
       description: User registration
       operationId: auth_register
@@ -10,41 +30,40 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/RegisterBody"
+              $ref: '#/components/schemas/RegisterBody'
         required: true
       responses:
-        "200":
+        '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Envelope_Log_"
+                $ref: '#/components/schemas/Envelope_Log_'
   /auth/verify-phone-number:
     post:
       tags:
-        - authentication
+      - authentication
       summary: Register Phone
-      description:
-        user tries to verify phone number for 2 Factor Authentication when
+      description: user tries to verify phone number for 2 Factor Authentication when
         registering
       operationId: auth_register_phone
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/RegisterPhoneBody"
+              $ref: '#/components/schemas/RegisterPhoneBody'
         required: true
       responses:
-        "200":
+        '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Envelope_RegisterPhoneNextPage_"
+                $ref: '#/components/schemas/Envelope_RegisterPhoneNextPage_'
   /auth/validate-code-register:
     post:
       tags:
-        - authentication
+      - authentication
       summary: Phone Confirmation
       description: user enters 2 Factor Authentication code when registering
       operationId: auth_phone_confirmation
@@ -52,19 +71,19 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PhoneConfirmationBody"
+              $ref: '#/components/schemas/PhoneConfirmationBody'
         required: true
       responses:
-        "200":
+        '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Envelope_Log_"
+                $ref: '#/components/schemas/Envelope_Log_'
   /auth/login:
     post:
       tags:
-        - authentication
+      - authentication
       summary: Login
       description: user logs in
       operationId: auth_login
@@ -72,25 +91,25 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/LoginBody"
+              $ref: '#/components/schemas/LoginBody'
         required: true
       responses:
-        "201":
+        '201':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Envelope_LoginNextPage_"
-        "401":
+                $ref: '#/components/schemas/Envelope_LoginNextPage_'
+        '401':
           description: unauthorized reset due to invalid token code
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Envelope_Error_"
+                $ref: '#/components/schemas/Envelope_Error_'
   /auth/validate-code-login:
     post:
       tags:
-        - authentication
+      - authentication
       summary: Login 2Fa
       description: user enters 2 Factor Authentication code when login in
       operationId: auth_login_2fa
@@ -98,25 +117,25 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/LoginTwoFactorAuthBody"
+              $ref: '#/components/schemas/LoginTwoFactorAuthBody'
         required: true
       responses:
-        "200":
+        '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Envelope_Log_"
-        "401":
+                $ref: '#/components/schemas/Envelope_Log_'
+        '401':
           description: unauthorized reset due to invalid token code
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Envelope_Error_"
+                $ref: '#/components/schemas/Envelope_Error_'
   /auth/two_factor:resend:
     post:
       tags:
-        - authentication
+      - authentication
       summary: Resend 2Fa Code
       description: Resends 2FA either via email or sms
       operationId: auth_resend_2fa_code
@@ -124,25 +143,25 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Resend2faBody"
+              $ref: '#/components/schemas/Resend2faBody'
         required: true
       responses:
-        "200":
+        '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Envelope_Log_"
-        "401":
+                $ref: '#/components/schemas/Envelope_Log_'
+        '401':
           description: unauthorized reset due to invalid token code
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Envelope_Error_"
+                $ref: '#/components/schemas/Envelope_Error_'
   /auth/logout:
     post:
       tags:
-        - authentication
+      - authentication
       summary: Logout
       description: user logout
       operationId: auth_logout
@@ -150,19 +169,19 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/LogoutBody"
+              $ref: '#/components/schemas/LogoutBody'
         required: true
       responses:
-        "200":
+        '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Envelope_Log_"
+                $ref: '#/components/schemas/Envelope_Log_'
   /auth/reset-password:
     post:
       tags:
-        - authentication
+      - authentication
       summary: Reset Password
       description: a non logged-in user requests a password reset
       operationId: auth_reset_password
@@ -170,58 +189,58 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ResetPasswordBody"
+              $ref: '#/components/schemas/ResetPasswordBody'
         required: true
       responses:
-        "200":
+        '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Envelope_Log_"
-        "503":
+                $ref: '#/components/schemas/Envelope_Log_'
+        '503':
           description: Service Unavailable
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Envelope_Error_"
+                $ref: '#/components/schemas/Envelope_Error_'
   /auth/reset-password/{code}:
     post:
       tags:
-        - authentication
+      - authentication
       summary: Reset Password Allowed
       description: changes password using a token code without being logged in
       operationId: auth_reset_password_allowed
       parameters:
-        - required: true
-          schema:
-            title: Code
-            type: string
-          name: code
-          in: path
+      - required: true
+        schema:
+          title: Code
+          type: string
+        name: code
+        in: path
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ResetPasswordConfirmation"
+              $ref: '#/components/schemas/ResetPasswordConfirmation'
         required: true
       responses:
-        "200":
+        '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Envelope_Log_"
-        "401":
+                $ref: '#/components/schemas/Envelope_Log_'
+        '401':
           description: unauthorized reset due to invalid token code
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Envelope_Error_"
+                $ref: '#/components/schemas/Envelope_Error_'
   /auth/change-email:
     post:
       tags:
-        - authentication
+      - authentication
       summary: Change Email
       description: logged in user changes email
       operationId: auth_change_email
@@ -229,31 +248,31 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ChangeEmailBody"
+              $ref: '#/components/schemas/ChangeEmailBody'
         required: true
       responses:
-        "200":
+        '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Envelope_Log_"
-        "401":
+                $ref: '#/components/schemas/Envelope_Log_'
+        '401':
           description: unauthorized user. Login required
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Envelope_Error_"
-        "503":
+                $ref: '#/components/schemas/Envelope_Error_'
+        '503':
           description: unable to send confirmation email
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Envelope_Error_"
+                $ref: '#/components/schemas/Envelope_Error_'
   /auth/change-password:
     post:
       tags:
-        - authentication
+      - authentication
       summary: Change Password
       description: logged in user changes password
       operationId: auth_change_password
@@ -261,72 +280,72 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ChangePasswordBody"
+              $ref: '#/components/schemas/ChangePasswordBody'
         required: true
       responses:
-        "200":
+        '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Envelope_Log_"
-        "401":
+                $ref: '#/components/schemas/Envelope_Log_'
+        '401':
           description: unauthorized user. Login required
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Envelope_Error_"
-        "409":
+                $ref: '#/components/schemas/Envelope_Error_'
+        '409':
           description: mismatch between new and confirmation passwords
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Envelope_Error_"
-        "422":
+                $ref: '#/components/schemas/Envelope_Error_'
+        '422':
           description: current password is invalid
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Envelope_Error_"
+                $ref: '#/components/schemas/Envelope_Error_'
   /auth/confirmation/{code}:
     get:
       tags:
-        - authentication
+      - authentication
       summary: Email Confirmation
       description: email link sent to user to confirm an action
       operationId: auth_confirmation
       parameters:
-        - required: true
-          schema:
-            title: Code
-            type: string
-          name: code
-          in: path
+      - required: true
+        schema:
+          title: Code
+          type: string
+        name: code
+        in: path
       responses:
-        "200":
+        '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Envelope_Log_"
+                $ref: '#/components/schemas/Envelope_Log_'
         3XX:
           description: redirection to specific ui application page
   /auth/api-keys:
     get:
       tags:
-        - authentication
+      - authentication
       summary: List Api Keys
       description: lists display names of API keys by this user
       operationId: list_api_keys
       parameters:
-        - required: true
-          schema:
-            title: Code
-            type: string
-          name: code
-          in: query
+      - required: true
+        schema:
+          title: Code
+          type: string
+        name: code
+        in: query
       responses:
-        "200":
+        '200':
           description: returns the display names of API keys
           content:
             application/json:
@@ -335,15 +354,15 @@ paths:
                 type: array
                 items:
                   type: string
-        "400":
+        '400':
           description: key name requested is invalid
-        "401":
+        '401':
           description: requires login to  list keys
-        "403":
+        '403':
           description: not enough permissions to list keys
     post:
       tags:
-        - authentication
+      - authentication
       summary: Create Api Key
       description: creates API keys to access public API
       operationId: create_api_key
@@ -351,24 +370,24 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ApiKeyCreate"
+              $ref: '#/components/schemas/ApiKeyCreate'
         required: true
       responses:
-        "200":
+        '200':
           description: Authorization granted returning API key
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ApiKeyGet"
-        "400":
+                $ref: '#/components/schemas/ApiKeyGet'
+        '400':
           description: key name requested is invalid
-        "401":
+        '401':
           description: requires login to  list keys
-        "403":
+        '403':
           description: not enough permissions to list keys
     delete:
       tags:
-        - authentication
+      - authentication
       summary: Delete Api Key
       description: deletes API key by name
       operationId: delete_api_key
@@ -376,21 +395,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ApiKeyCreate"
+              $ref: '#/components/schemas/ApiKeyCreate'
         required: true
       responses:
-        "204":
+        '204':
           description: api key successfully deleted
-        "401":
+        '401':
           description: requires login to  delete a key
-        "403":
+        '403':
           description: not enough permissions to delete a key
 components:
   schemas:
     ApiKeyCreate:
       title: ApiKeyCreate
       required:
-        - display_name
+      - display_name
       type: object
       properties:
         display_name:
@@ -400,16 +419,15 @@ components:
         expiration:
           title: Expiration
           type: number
-          description:
-            Time delta from creation time to expiration. If None, then
+          description: Time delta from creation time to expiration. If None, then
             it does not expire.
           format: time-delta
     ApiKeyGet:
       title: ApiKeyGet
       required:
-        - display_name
-        - api_key
-        - api_secret
+      - display_name
+      - api_key
+      - api_secret
       type: object
       properties:
         display_name:
@@ -425,7 +443,7 @@ components:
     ChangeEmailBody:
       title: ChangeEmailBody
       required:
-        - email
+      - email
       type: object
       properties:
         email:
@@ -436,9 +454,9 @@ components:
     ChangePasswordBody:
       title: ChangePasswordBody
       required:
-        - current
-        - new
-        - confirm
+      - current
+      - new
+      - confirm
       type: object
       properties:
         current:
@@ -460,7 +478,7 @@ components:
     CodePageParams:
       title: CodePageParams
       required:
-        - message
+      - message
       type: object
       properties:
         message:
@@ -479,7 +497,15 @@ components:
       type: object
       properties:
         data:
-          $ref: "#/components/schemas/Error"
+          $ref: '#/components/schemas/Error'
+        error:
+          title: Error
+    Envelope_InvitationInfo_:
+      title: Envelope[InvitationInfo]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/InvitationInfo'
         error:
           title: Error
     Envelope_Log_:
@@ -487,7 +513,7 @@ components:
       type: object
       properties:
         data:
-          $ref: "#/components/schemas/Log"
+          $ref: '#/components/schemas/Log'
         error:
           title: Error
     Envelope_LoginNextPage_:
@@ -495,7 +521,7 @@ components:
       type: object
       properties:
         data:
-          $ref: "#/components/schemas/LoginNextPage"
+          $ref: '#/components/schemas/LoginNextPage'
         error:
           title: Error
     Envelope_RegisterPhoneNextPage_:
@@ -503,7 +529,7 @@ components:
       type: object
       properties:
         data:
-          $ref: "#/components/schemas/RegisterPhoneNextPage"
+          $ref: '#/components/schemas/RegisterPhoneNextPage'
         error:
           title: Error
     Error:
@@ -514,13 +540,13 @@ components:
           title: Logs
           type: array
           items:
-            $ref: "#/components/schemas/Log"
+            $ref: '#/components/schemas/Log'
           description: log messages
         errors:
           title: Errors
           type: array
           items:
-            $ref: "#/components/schemas/ErrorItem"
+            $ref: '#/components/schemas/ErrorItem'
           description: errors metadata
         status:
           title: Status
@@ -529,15 +555,14 @@ components:
     ErrorItem:
       title: ErrorItem
       required:
-        - code
-        - message
+      - code
+      - message
       type: object
       properties:
         code:
           title: Code
           type: string
-          description:
-            Typically the name of the exception that produced it otherwise
+          description: Typically the name of the exception that produced it otherwise
             some known error code
         message:
           title: Message
@@ -559,16 +584,37 @@ components:
           title: Detail
           type: array
           items:
-            $ref: "#/components/schemas/ValidationError"
+            $ref: '#/components/schemas/ValidationError'
+    InvitationCheck:
+      title: InvitationCheck
+      required:
+      - invitation
+      type: object
+      properties:
+        invitation:
+          title: Invitation
+          type: string
+          description: Invitation code
+      additionalProperties: false
+    InvitationInfo:
+      title: InvitationInfo
+      type: object
+      properties:
+        email:
+          title: Email
+          type: string
+          description: Email associated to invitation or None
+          format: email
+      additionalProperties: false
     Log:
       title: Log
       required:
-        - message
+      - message
       type: object
       properties:
         level:
           allOf:
-            - $ref: "#/components/schemas/LogLevel"
+          - $ref: '#/components/schemas/LogLevel'
           description: log level
           default: INFO
         message:
@@ -586,17 +632,17 @@ components:
     LogLevel:
       title: LogLevel
       enum:
-        - DEBUG
-        - INFO
-        - WARNING
-        - ERROR
+      - DEBUG
+      - INFO
+      - WARNING
+      - ERROR
       type: string
       description: An enumeration.
     LoginBody:
       title: LoginBody
       required:
-        - email
-        - password
+      - email
+      - password
       type: object
       properties:
         email:
@@ -612,9 +658,9 @@ components:
     LoginNextPage:
       title: LoginNextPage
       required:
-        - name
-        - code
-        - reason
+      - name
+      - code
+      - reason
       type: object
       properties:
         name:
@@ -622,7 +668,7 @@ components:
           type: string
           description: Code name to the front-end page
         parameters:
-          $ref: "#/components/schemas/CodePageParams"
+          $ref: '#/components/schemas/CodePageParams'
         code:
           title: Code
           type: string
@@ -631,7 +677,7 @@ components:
           title: Reason
           type: string
           deprecated: true
-      description: "This is the body of a 2XX response to pass the front-end
+      description: 'This is the body of a 2XX response to pass the front-end
 
         what kind of page shall be display next and some information about it
 
@@ -639,12 +685,12 @@ components:
         An analogous structure is used in the redirects (see create_redirect_response)
         but
 
-        using a path+query in the fragment of the URL"
+        using a path+query in the fragment of the URL'
     LoginTwoFactorAuthBody:
       title: LoginTwoFactorAuthBody
       required:
-        - email
-        - code
+      - email
+      - code
       type: object
       properties:
         email:
@@ -669,9 +715,9 @@ components:
     PhoneConfirmationBody:
       title: PhoneConfirmationBody
       required:
-        - email
-        - phone
-        - code
+      - email
+      - phone
+      - code
       type: object
       properties:
         email:
@@ -691,8 +737,8 @@ components:
     RegisterBody:
       title: RegisterBody
       required:
-        - email
-        - password
+      - email
+      - password
       type: object
       properties:
         email:
@@ -718,8 +764,8 @@ components:
     RegisterPhoneBody:
       title: RegisterPhoneBody
       required:
-        - email
-        - phone
+      - email
+      - phone
       type: object
       properties:
         email:
@@ -734,8 +780,8 @@ components:
     RegisterPhoneNextPage:
       title: RegisterPhoneNextPage
       required:
-        - name
-        - message
+      - name
+      - message
       type: object
       properties:
         name:
@@ -743,7 +789,7 @@ components:
           type: string
           description: Code name to the front-end page
         parameters:
-          $ref: "#/components/schemas/_PageParams"
+          $ref: '#/components/schemas/_PageParams'
         logger:
           title: Logger
           type: string
@@ -752,15 +798,15 @@ components:
         level:
           title: Level
           enum:
-            - INFO
-            - WARNING
-            - ERROR
+          - INFO
+          - WARNING
+          - ERROR
           type: string
           default: INFO
         message:
           title: Message
           type: string
-      description: "This is the body of a 2XX response to pass the front-end
+      description: 'This is the body of a 2XX response to pass the front-end
 
         what kind of page shall be display next and some information about it
 
@@ -768,11 +814,11 @@ components:
         An analogous structure is used in the redirects (see create_redirect_response)
         but
 
-        using a path+query in the fragment of the URL"
+        using a path+query in the fragment of the URL'
     Resend2faBody:
       title: Resend2faBody
       required:
-        - email
+      - email
       type: object
       properties:
         email:
@@ -783,15 +829,15 @@ components:
         via:
           title: Via
           enum:
-            - SMS
-            - Email
+          - SMS
+          - Email
           type: string
           default: SMS
       additionalProperties: false
     ResetPasswordBody:
       title: ResetPasswordBody
       required:
-        - email
+      - email
       type: object
       properties:
         email:
@@ -801,8 +847,8 @@ components:
     ResetPasswordConfirmation:
       title: ResetPasswordConfirmation
       required:
-        - password
-        - confirm
+      - password
+      - confirm
       type: object
       properties:
         password:
@@ -819,9 +865,9 @@ components:
     ValidationError:
       title: ValidationError
       required:
-        - loc
-        - msg
-        - type
+      - loc
+      - msg
+      - type
       type: object
       properties:
         loc:
@@ -829,8 +875,8 @@ components:
           type: array
           items:
             anyOf:
-              - type: string
-              - type: integer
+            - type: string
+            - type: integer
         msg:
           title: Message
           type: string

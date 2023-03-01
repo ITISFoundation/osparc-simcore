@@ -5,8 +5,9 @@
 """
 
 import logging
+from contextlib import contextmanager
 from datetime import datetime
-from typing import Literal, Optional
+from typing import Iterator, Literal, Optional
 
 from aiohttp import web
 from models_library.basic_types import IdInt
@@ -21,20 +22,22 @@ from pydantic import (
     validator,
 )
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
-from simcore_service_webserver.invitations_core import (
-    InvalidInvitation,
-    InvitationsServiceUnavailable,
-)
 from yarl import URL
 
-from ..invitations import is_service_invitation_code, validate_invitation_url
+from ..invitations import (
+    InvalidInvitation,
+    InvitationsServiceUnavailable,
+    extract_invitation,
+    is_service_invitation_code,
+    validate_invitation_url,
+)
 from ._confirmation import (
     ConfirmationAction,
     get_expiration_date,
     is_confirmation_expired,
     validate_confirmation_code,
 )
-from ._constants import MSG_EMAIL_EXISTS
+from ._constants import MSG_EMAIL_EXISTS, MSG_INVITATIONS_CONTACT_SUFFIX
 from .settings import LoginOptions
 from .storage import AsyncpgStorage, ConfirmationTokenDict
 from .utils import CONFIRMATION_PENDING
@@ -156,6 +159,45 @@ async def create_invitation_token(
     return confirmation
 
 
+@contextmanager
+def _invitations_request_context(invitation_code: str) -> Iterator[URL]:
+    """
+    - composes url from code
+    - handles invitations errors as HTTPForbidden, HTTPServiceUnavailable
+    """
+    try:
+        url = get_invitation_url(
+            confirmation=ConfirmationTokenDict(
+                code=invitation_code, action=ConfirmationAction.INVITATION.name
+            ),
+            origin=URL("https://dummyhost.com:8000"),
+        )
+
+        yield url
+
+    except (ValidationError, InvalidInvitation) as err:
+        raise web.HTTPForbidden(
+            reason=f"{err}. {MSG_INVITATIONS_CONTACT_SUFFIX}",
+            content_type=MIMETYPE_APPLICATION_JSON,
+        )
+
+    except InvitationsServiceUnavailable as err:
+        raise web.HTTPServiceUnavailable(
+            reason=f"{err}",
+            content_type=MIMETYPE_APPLICATION_JSON,
+        )
+
+
+async def extract_email_from_invitation(
+    app: web.Application,
+    invitation_code: str,
+) -> EmailStr:
+    """Returns associated email"""
+    with _invitations_request_context(invitation_code=invitation_code) as url:
+        content = await extract_invitation(app, invitation_url=f"{url}")
+        return content.guest
+
+
 async def check_and_consume_invitation(
     invitation_code: str,
     guest_email: str,
@@ -170,20 +212,10 @@ async def check_and_consume_invitation(
 
     :raises web.HTTPForbidden
     """
-    MSG_CONTACT_SUPPORT_SUFFIX = (
-        "Please contact our support team to get a new invitation."
-    )
 
     # service-type invitations
-
     if is_service_invitation_code(code=invitation_code):
-        try:
-            url = get_invitation_url(
-                confirmation=ConfirmationTokenDict(
-                    code=invitation_code, action=ConfirmationAction.INVITATION.name
-                ),
-                origin=URL("https://fakehost.io:8000"),
-            )
+        with _invitations_request_context(invitation_code=invitation_code) as url:
             content = await validate_invitation_url(
                 app,
                 guest_email=guest_email,
@@ -195,18 +227,6 @@ async def check_and_consume_invitation(
                 issuer=content.issuer,
                 guest=content.guest,
                 trial_account_days=content.trial_account_days,
-            )
-
-        except (ValidationError, InvalidInvitation) as err:
-            raise web.HTTPForbidden(
-                reason=f"{err}. {MSG_CONTACT_SUPPORT_SUFFIX}",
-                content_type=MIMETYPE_APPLICATION_JSON,
-            )
-
-        except InvitationsServiceUnavailable as err:
-            raise web.HTTPServiceUnavailable(
-                reason=f"{err}",
-                content_type=MIMETYPE_APPLICATION_JSON,
             )
 
     # database-type invitations
@@ -232,7 +252,7 @@ async def check_and_consume_invitation(
         reason=(
             "Invalid invitation code."
             "Your invitation was already used or might have expired."
-            + MSG_CONTACT_SUPPORT_SUFFIX
+            + MSG_INVITATIONS_CONTACT_SUFFIX
         ),
         content_type=MIMETYPE_APPLICATION_JSON,
     )
