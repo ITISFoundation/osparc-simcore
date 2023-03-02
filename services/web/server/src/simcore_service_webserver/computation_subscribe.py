@@ -30,6 +30,7 @@ from .socketio.events import (
     SOCKET_IO_LOG_EVENT,
     SOCKET_IO_NODE_PROGRESS_EVENT,
     SOCKET_IO_NODE_UPDATED_EVENT,
+    SOCKET_IO_PROJECT_PROGRESS_EVENT,
     SocketMessageDict,
     send_messages,
 )
@@ -87,8 +88,13 @@ async def progress_message_parser(app: web.Application, data: bytes) -> bool:
         return await _handle_computation_running_progress(app, rabbit_message)
 
     # NOTE: other types of progress are transient
+    is_node_progress_message = type(rabbit_message) == ProgressRabbitMessageNode
     message = {
-        "event_type": SOCKET_IO_NODE_PROGRESS_EVENT,
+        "event_type": (
+            SOCKET_IO_NODE_PROGRESS_EVENT
+            if is_node_progress_message
+            else SOCKET_IO_PROJECT_PROGRESS_EVENT
+        ),
         "data": {
             "project_id": rabbit_message.project_id,
             "user_id": rabbit_message.user_id,
@@ -96,7 +102,7 @@ async def progress_message_parser(app: web.Application, data: bytes) -> bool:
             "progress": rabbit_message.progress,
         },
     }
-    if type(rabbit_message) == ProgressRabbitMessageNode:
+    if is_node_progress_message:
         message["node_id"] = rabbit_message.node_id
     await send_messages(app, f"{rabbit_message.user_id}", [message])
     return True
