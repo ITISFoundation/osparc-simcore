@@ -442,6 +442,22 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
+       * NOTIFICATIONS
+       */
+      "notifications": {
+        useCache: false,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/me/notifications"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/me/notifications"
+          }
+        }
+      },
+      /*
        * ORGANIZATIONS
        */
       "organizations": {

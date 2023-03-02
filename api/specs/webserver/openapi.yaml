@@ -129,6 +129,9 @@ paths:
   /me/tokens/{service}:
     $ref: "./openapi-user.yaml#/paths/~1me~1tokens~1{service}"
 
+  /me/notifications:
+    $ref: "./openapi-user.yaml#/paths/~1me~1notifications"
+
   # GROUP SETTINGS ------------------------------------------------------------------
 
   /groups:
@@ -306,10 +309,6 @@ paths:
 
   /tags/{tag_id}:
     $ref: "./openapi-tags.yaml#/paths/~1tags~1{tag_id}"
-
-  # NOTIFICATIONS -------------------------------------------------------------------------
-  /notifications:
-    $ref: "./openapi-notifications.yaml#/paths/~notifications"
 
   # PUBLICATIONS -------------------------------------------------------------------------
   /publications/service-submission:

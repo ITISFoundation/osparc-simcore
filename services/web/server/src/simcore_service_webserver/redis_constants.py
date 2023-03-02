@@ -9,5 +9,5 @@ APP_CLIENT_REDIS_SCHEDULED_MAINTENANCE_CLIENT_KEY = (
     f"{__name__}.resource_manager.redis_scheduled_maintenance_client"
 )
 APP_CLIENT_REDIS_USER_NOTIFICATIONS_CLIENT_KEY = (
-    f"{__name__}.resource_manager.redis_user_notifications_client"
+    f"{__name__}.resource_manager.redis_notifications_client"
 )
