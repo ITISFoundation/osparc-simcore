@@ -39,7 +39,7 @@ colorama==0.4.6
     # via typer
 commonmark==0.9.1
     # via rich
-cryptography==39.0.0
+cryptography==39.0.1
     # via -r requirements/_base.in
 dnspython==2.2.1
     # via email-validator

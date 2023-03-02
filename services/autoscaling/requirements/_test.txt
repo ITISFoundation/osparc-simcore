@@ -86,7 +86,7 @@ ecdsa==0.18.0
     #   sshpubkeys
 exceptiongroup==1.1.0
     # via pytest
-faker==17.0.0
+faker==17.4.0
     # via -r requirements/_test.in
 fakeredis==2.9.2
     # via -r requirements/_test.in
@@ -167,7 +167,7 @@ openapi-spec-validator==0.4.0
     # via moto
 ordered-set==4.1.0
     # via deepdiff
-orjson==3.8.6
+orjson==3.8.7
     # via deepdiff
 packaging==23.0
     # via
@@ -299,7 +299,7 @@ wrapt==1.14.1
     #   aws-xray-sdk
 xmltodict==0.13.0
     # via moto
-zipp==3.14.0
+zipp==3.15.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:

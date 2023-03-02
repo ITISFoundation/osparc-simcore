@@ -40,7 +40,7 @@ sqlalchemy==1.4.46
     # via
     #   -c requirements/_base.txt
     #   alembic
-tenacity==8.2.1
+tenacity==8.2.2
     # via -r requirements/_migration.in
 urllib3==1.26.14
     # via
