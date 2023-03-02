@@ -43,6 +43,7 @@ tags:
       defines the protocol for the frontend to interact with the node.
   - name: configuration
   - name: maintenance
+  - name: notification
   - name: publication
     description: |
       oSPARC users can make publications. Starting from submission of new service candidates, but this could
@@ -305,6 +306,10 @@ paths:
 
   /tags/{tag_id}:
     $ref: "./openapi-tags.yaml#/paths/~1tags~1{tag_id}"
+
+  # NOTIFICATIONS -------------------------------------------------------------------------
+  /notifications:
+    $ref: "./openapi-notifications.yaml#/paths/~notifications"
 
   # PUBLICATIONS -------------------------------------------------------------------------
   /publications/service-submission:
