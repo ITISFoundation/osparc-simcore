@@ -88,11 +88,11 @@ async def progress_message_parser(app: web.Application, data: bytes) -> bool:
         return await _handle_computation_running_progress(app, rabbit_message)
 
     # NOTE: other types of progress are transient
-    is_node_progress_message = type(rabbit_message) == ProgressRabbitMessageNode
+    is_type_message_node = type(rabbit_message) == ProgressRabbitMessageNode
     message = {
         "event_type": (
             SOCKET_IO_NODE_PROGRESS_EVENT
-            if is_node_progress_message
+            if is_type_message_node
             else SOCKET_IO_PROJECT_PROGRESS_EVENT
         ),
         "data": {
@@ -102,7 +102,7 @@ async def progress_message_parser(app: web.Application, data: bytes) -> bool:
             "progress": rabbit_message.progress,
         },
     }
-    if is_node_progress_message:
+    if is_type_message_node:
         message["node_id"] = rabbit_message.node_id
     await send_messages(app, f"{rabbit_message.user_id}", [message])
     return True
