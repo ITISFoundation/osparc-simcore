@@ -104,7 +104,7 @@ paths:
   /me/notifications:
     get:
       tags:
-      - notification
+        - user
       summary: List of Notifications for the specific user
       operationId: get_notifications
       responses:
@@ -118,7 +118,7 @@ paths:
           $ref: "#/components/responses/DefaultErrorResponse"
     post:
       tags:
-      - notification
+        - user
       summary: Submit a new Notification
       operationId: post_user_notification
       requestBody:

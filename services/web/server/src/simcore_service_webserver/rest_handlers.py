@@ -12,7 +12,7 @@ from ._meta import API_VTAG
 from .application_settings import APP_SETTINGS_KEY
 from .login.decorators import login_required
 from .products import get_product_name
-from .redis import get_redis_scheduled_maintenance_client, get_redis_notifications_client
+from .redis import get_redis_scheduled_maintenance_client, get_redis_user_notifications_client
 from .rest_healthcheck import HealthCheck, HealthCheckFailed
 from .utils_aiohttp import envelope_json_response
 
@@ -104,7 +104,7 @@ async def get_scheduled_maintenance(request: web.Request):
 @routes.get(f"/{API_VTAG}/notifications", name="get_notifications")
 @login_required
 async def get_notifications(request: web.Request):
-    redis_client = get_redis_notifications_client(request.app)
+    redis_client = get_redis_user_notifications_client(request.app)
     hash_key = "notifications"
     if notification_str := await redis_client.get(hash_key):
         return web.json_response(data={"data": notification_str})
