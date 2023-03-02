@@ -101,9 +101,9 @@ async def get_scheduled_maintenance(request: web.Request):
     return response
 
 
-@routes.get(f"/{API_VTAG}/notifications", name="get_notifications")
+@routes.get(f"/{API_VTAG}/notifications", name="get_user_notifications")
 @login_required
-async def get_notifications(request: web.Request):
+async def get_user_notifications(request: web.Request):
     redis_client = get_redis_user_notifications_client(request.app)
     hash_key = "notifications"
     if notification_str := await redis_client.get(hash_key):

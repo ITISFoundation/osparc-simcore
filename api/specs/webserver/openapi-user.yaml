@@ -106,7 +106,7 @@ paths:
       tags:
         - user
       summary: List of Notifications for the specific user
-      operationId: get_notifications
+      operationId: get_user_notifications
       responses:
         "200":
           description: List of Notifications
