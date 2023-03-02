@@ -1,0 +1,85 @@
+paths:
+  /notifications:
+    get:
+      tags:
+        - notifications
+      summary: List of Notifications for the specific user
+      operationId: get_push_notifications
+      responses:
+        "200":
+          description: List of Notifications
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationsListEnveloped"
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+    post:
+      tags:
+        - notifications
+      summary: Submit a new Notification
+      operationId: post_push_notification
+      requestBody:
+        required: true
+        description: the group to create
+        content:
+          application/json:
+            schema:
+              $ref: "./components/schemas/Notification"
+      responses:
+        '204':
+          description: Notification registered
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
+components:
+  schemas:
+    Notification:
+      type: object
+      required:
+        - id
+        - category
+        - resource_id
+        - title
+        - text
+        - date
+        - read
+      properties:
+        user_id:
+          type: string
+          description: >-
+            the user that will receive the notification
+          example: "123"
+        type:
+          type: string
+          enum:
+            - new_organization
+            - project_shared
+            - template_shared
+          description: >-
+            notification type, the frontend will use this to trigger an action when the user click on the notification
+          example: new_organization
+        extra_data:
+          type: object
+          description: >-
+            extra data that can help the action to trigger
+          example:
+            group_id: 5
+        message:
+          type: string
+          description: >-
+            the notification message to show in the frontend
+          example: You were added to the Dummy organization
+
+    NotificationsListEnveloped:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Notification"
+        error:
+          nullable: true
+          default: null
