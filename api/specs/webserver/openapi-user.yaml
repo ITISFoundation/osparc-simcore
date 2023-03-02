@@ -127,7 +127,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "./components/schemas/NotificationIn"
+              $ref: "#/components/schemas/NotificationIn"
       responses:
         "204":
           description: Notification registered
