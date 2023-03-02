@@ -639,8 +639,8 @@ class TutorialBase {
   }
 
   async testS4L(s4lNodeId) {
-    const slpashScreenGone = await this.__s4lSplashScreenOff(s4lNodeId);
-    if (!slpashScreenGone) {
+    const splashScreenGone = await this.__s4lSplashScreenOff(s4lNodeId);
+    if (!splashScreenGone) {
       throw("S4L Splash Screen Timeout");
     }
 
@@ -665,8 +665,8 @@ class TutorialBase {
   }
 
   async testS4LTIPostPro(s4lNodeId) {
-    const slpashScreenGone = await this.__s4lSplashScreenOff(s4lNodeId);
-    if (!slpashScreenGone) {
+    const splashScreenGone = await this.__s4lSplashScreenOff(s4lNodeId);
+    if (!splashScreenGone) {
       throw("S4L Splash screen Timeout");
     }
 
@@ -694,8 +694,8 @@ class TutorialBase {
   }
 
   async testS4LDipole(s4lNodeId) {
-    const slpashScreenGone = await this.__s4lSplashScreenOff(s4lNodeId);
-    if (!slpashScreenGone) {
+    const splashScreenGone = await this.__s4lSplashScreenOff(s4lNodeId);
+    if (!splashScreenGone) {
       throw("S4L Splash screen Timeout");
     }
 
