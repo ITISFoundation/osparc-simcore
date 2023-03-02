@@ -10,6 +10,7 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from . import users_api
 from .login.decorators import RQT_USERID_KEY, login_required
+from .redis import get_redis_user_notifications_client
 from .security_decorators import permission_required
 from .users_exceptions import TokenNotFoundError, UserNotFoundError
 from .users_models import ProfileGet, ProfileUpdate
@@ -109,3 +110,22 @@ async def delete_token(request: web.Request):
         raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
     except TokenNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Token for {service_id} not found") from exc
+
+
+@login_required
+async def get_user_notifications(request: web.Request):
+    redis_client = get_redis_user_notifications_client(request.app)
+    hash_key = "notifications"
+    if notification_str := await redis_client.get(hash_key):
+        return web.json_response(data={"data": notification_str})
+
+    response = web.json_response(status=web.HTTPNoContent.status_code)
+    assert response.status == 204  # nosec
+    return response
+
+
+@login_required
+async def post_user_notification(request: web.Request):
+    response = web.json_response(status=web.HTTPNoContent.status_code)
+    assert response.status == 204  # nosec
+    return response
