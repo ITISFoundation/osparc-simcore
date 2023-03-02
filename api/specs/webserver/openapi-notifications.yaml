@@ -4,7 +4,7 @@ paths:
       tags:
       - notification
       summary: List of Notifications for the specific user
-      operationId: get_push_notifications
+      operationId: get_user_notifications
       responses:
         "200":
           description: List of Notifications
@@ -18,7 +18,7 @@ paths:
       tags:
       - notification
       summary: Submit a new Notification
-      operationId: post_push_notification
+      operationId: post_user_notification
       requestBody:
         required: true
         description: the group to create

@@ -12,7 +12,7 @@ from ._meta import API_VTAG
 from .application_settings import APP_SETTINGS_KEY
 from .login.decorators import login_required
 from .products import get_product_name
-from .redis import get_redis_scheduled_maintenance_client
+from .redis import get_redis_scheduled_maintenance_client, get_redis_user_notifications_client
 from .rest_healthcheck import HealthCheck, HealthCheckFailed
 from .utils_aiohttp import envelope_json_response
 
@@ -96,6 +96,27 @@ async def get_scheduled_maintenance(request: web.Request):
     if maintenance_str := await redis_client.get(hash_key):
         return web.json_response(data={"data": maintenance_str})
 
+    response = web.json_response(status=web.HTTPNoContent.status_code)
+    assert response.status == 204  # nosec
+    return response
+
+
+@routes.get(f"/{API_VTAG}/notifications", name="get_user_notifications")
+@login_required
+async def get_user_notifications(request: web.Request):
+    redis_client = get_redis_user_notifications_client(request.app)
+    hash_key = "user_notifications"
+    if notification_str := await redis_client.get(hash_key):
+        return web.json_response(data={"data": notification_str})
+
+    response = web.json_response(status=web.HTTPNoContent.status_code)
+    assert response.status == 204  # nosec
+    return response
+
+
+@routes.post(f"/{API_VTAG}/notifications", name="post_user_notification")
+@login_required
+async def post_user_notification(request: web.Request):
     response = web.json_response(status=web.HTTPNoContent.status_code)
     assert response.status == 204  # nosec
     return response
