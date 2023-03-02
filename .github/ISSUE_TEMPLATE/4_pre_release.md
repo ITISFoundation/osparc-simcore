@@ -6,6 +6,8 @@ labels: 'release'
 assignees: 'pcrespov'
 ---
 
+TODO: create release label
+
 In preparation for [pre-release](https://github.com/ITISFoundation/osparc-simcore/releases). Here an initial (incomplete) list of tasks to prepare before pre-releasing:
 
 

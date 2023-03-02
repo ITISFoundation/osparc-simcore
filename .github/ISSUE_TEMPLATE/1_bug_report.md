@@ -1,9 +1,10 @@
 ---
 name: 🐛 Bug
 about: File a bug/issue
-labels: bug
-
+labels: bug, 't:bug'
 ---
+
+TODO: convert to form
 
 ## Long story short
 

@@ -1,8 +1,12 @@
 ---
-name: ✨  Feature request
+name: ✨ Feature request
 about: Suggest an idea to implement in the simcore plaform
+labels: 't:enhancement'
 
 ---
+
+TODO: convert to form
+
 
 **USER STORY:**
 

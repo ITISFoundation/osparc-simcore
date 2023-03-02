@@ -12,8 +12,11 @@ PREFIX:
   🔨    Add or update development scripts.
   🔒️    Fix security issues.
 
-
 or from https://gitmoji.dev/
+
+
+# TODO: add here notes devops (by DK)
+# e.g. for your services, provide us with: Info, Alerts, SOPs
 
 SUFFIX:
  (⚠️ devops)  changes in devops configuration required before deploying
