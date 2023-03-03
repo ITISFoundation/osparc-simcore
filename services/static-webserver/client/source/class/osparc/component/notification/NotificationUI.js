@@ -26,7 +26,7 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
       padding: this.self().PADDING
     });
 
-    const layout = new qx.ui.layout.HBox().set({
+    const layout = new qx.ui.layout.VBox(2).set({
       alignY: "middle"
     });
     this._setLayout(layout);
@@ -67,16 +67,14 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
       check: "String",
       init: null,
       nullable: false,
-      event: "changeTitle",
-      apply: "__applyTitle"
+      event: "changeTitle"
     },
 
     text: {
       check: "String",
       init: null,
       nullable: false,
-      event: "changeText",
-      apply: "__applyText"
+      event: "changeText"
     },
 
     date: {
@@ -103,10 +101,22 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "text":
+        case "title":
           control = new qx.ui.basic.Label().set({
             maxWidth: this.self().MAX_WIDTH - 2*this.self().PADDING,
             font: "text-14",
+            rich: true,
+            wrap: true
+          });
+          this.bind("title", control, "value");
+          this._add(control, {
+            flex: 1
+          });
+          break;
+        case "text":
+          control = new qx.ui.basic.Label().set({
+            maxWidth: this.self().MAX_WIDTH - 2*this.self().PADDING,
+            font: "text-13",
             rich: true,
             wrap: true
           });
@@ -119,8 +129,8 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
       return control || this.base(arguments, id);
     },
 
-    __applyText: function() {
-      this.getChildControl("text");
+    __applyActionablePath: function(value) {
+      console.log("actionablePath", value);
     }
   }
 });

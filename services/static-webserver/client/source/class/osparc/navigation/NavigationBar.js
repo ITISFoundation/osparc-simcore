@@ -60,6 +60,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       .then(values => {
         const notifications = values[1];
         console.log("notifications", notifications);
+        osparc.component.notification.Notifications.getInstance().addNotifications(notifications);
         this.buildLayout();
         this.setPageContext("dashboard");
         osparc.WindowSizeTracker.getInstance().addListener("changeCompactVersion", () => this.__navBarResized(), this);
