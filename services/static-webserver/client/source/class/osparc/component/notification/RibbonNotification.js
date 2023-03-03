@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.notification.Notification", {
+qx.Class.define("osparc.component.notification.RibbonNotification", {
   extend: qx.core.Object,
 
   construct: function(text, type = "maintenance", closable = false) {
