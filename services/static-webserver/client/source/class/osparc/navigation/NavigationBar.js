@@ -58,10 +58,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       osparc.data.Resources.get("notifications")
     ])
       .then(values => {
-        let notifications = values[1];
+        const notifications = values[1];
         console.log("notifications", notifications);
-        notifications = this.self().DUMMY_NOTIFICATIONS;
-        console.log("dummy notifications", notifications);
         this.buildLayout();
         this.setPageContext("dashboard");
         osparc.WindowSizeTracker.getInstance().addListener("changeCompactVersion", () => this.__navBarResized(), this);
@@ -90,26 +88,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
   statics: {
     HEIGHT: 50,
     SMALL_SCREEN_BREAKPOINT: 800,
-
-    DUMMY_NOTIFICATIONS: [{
-      "id": "1234",
-      "user_id": "1",
-      "category": "new_organization",
-      "actionable_path": "organization/40",
-      "title": "New organization",
-      "text": "You're now member of a new Organization",
-      "date": "2023-02-23T16:23:13.122Z",
-      "read": false
-    }, {
-      "id": "5678",
-      "user_id": "1",
-      "category": "study_shared",
-      "actionable_path": "study/27edd65c-b360-11ed-93d7-02420a000014",
-      "title": "Study shared",
-      "text": "A study was shared with you",
-      "date": "2023-02-23T15:23:13.122Z",
-      "read": true
-    }],
 
     BUTTON_OPTIONS: {
       font: "text-14",

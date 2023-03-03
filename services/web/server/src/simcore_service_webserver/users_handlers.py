@@ -119,9 +119,26 @@ async def get_user_notifications(request: web.Request):
     if notification_str := await redis_client.get(hash_key):
         return web.json_response(data={"data": notification_str})
 
-    response = web.json_response(status=web.HTTPNoContent.status_code)
-    assert response.status == 204  # nosec
-    return response
+    notifications = [{
+      "id": "1234",
+      "user_id": "1",
+      "category": "new_organization",
+      "actionable_path": "organization/40",
+      "title": "New organization",
+      "text": "You're now member of a new Organization",
+      "date": "2023-02-23T16:23:13.122Z",
+      "read": False
+    }, {
+      "id": "5678",
+      "user_id": "1",
+      "category": "study_shared",
+      "actionable_path": "study/27edd65c-b360-11ed-93d7-02420a000014",
+      "title": "Study shared",
+      "text": "A study was shared with you",
+      "date": "2023-02-23T15:23:13.122Z",
+      "read": True
+    }]
+    return web.json_response(data={"data": notifications})
 
 
 @login_required
