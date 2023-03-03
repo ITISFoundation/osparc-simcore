@@ -4,10 +4,18 @@ import os
 import socket
 from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable, Final, Optional
+from uuid import uuid4
 
 import aio_pika
+from aio_pika import MessageProcessError, RobustChannel, RobustConnection
+from aio_pika.exceptions import ChannelClosed
+from aio_pika.patterns import RPC
+from pydantic import PositiveInt
 from servicelib.logging_utils import log_context
 from settings_library.rabbit import RabbitSettings
+
+from .rabbitmq_errors import RemoteMethodNotRegisteredError, RPCNotInitializedError
+from .rabbitmq_utils import RPCNamespace
 
 log = logging.getLogger(__name__)
 
@@ -28,6 +36,8 @@ def _channel_close_callback(sender: Any, exc: Optional[BaseException]) -> None:
     if exc:
         if isinstance(exc, asyncio.CancelledError):
             log.info("Rabbit channel was cancelled")
+        elif isinstance(exc, ChannelClosed):
+            log.info("%s", exc)
         else:
             log.error(
                 "Rabbit channel closed with exception from %s:%s",
@@ -57,12 +67,20 @@ _MINUTE: Final[int] = 60
 _RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_S: Final[int] = 15 * _MINUTE
 
 
+def _get_namespaced_method_name(namespace: RPCNamespace, handler_name: str) -> str:
+    return f"{namespace}.{handler_name}"
+
+
 @dataclass
 class RabbitMQClient:
     client_name: str
     settings: RabbitSettings
     _connection_pool: Optional[aio_pika.pool.Pool] = field(init=False, default=None)
     _channel_pool: Optional[aio_pika.pool.Pool] = field(init=False, default=None)
+
+    _rpc_connection: Optional[RobustConnection] = None
+    _rpc_channel: Optional[RobustChannel] = None
+    _rpc: Optional[RPC] = None
 
     def __post_init__(self):
         # recommendations are 1 connection per process
@@ -72,12 +90,28 @@ class RabbitMQClient:
         # channels are not thread safe, what about python?
         self._channel_pool = aio_pika.pool.Pool(self._get_channel, max_size=10)
 
+    async def rpc_initialize(self) -> None:
+        # TODO: to SAN: not sure that we always want to setup RPC connection
+        self._rpc_connection = await aio_pika.connect_robust(
+            self.settings.dsn, client_properties={"connection_name": f"rpc.{uuid4()}"}
+        )
+        self._rpc_channel = await self._rpc_connection.channel()
+        self._rpc = await RPC.create(self._rpc_channel)
+
     async def close(self) -> None:
         with log_context(log, logging.INFO, msg="Closing connection to RabbitMQ"):
             assert self._channel_pool  # nosec
             await self._channel_pool.close()
             assert self._connection_pool  # nosec
             await self._connection_pool.close()
+
+            # rpc is not always initialized
+            if self._rpc is not None:
+                await self._rpc.close()
+            if self._rpc_channel is not None:
+                await self._rpc_channel.close()
+            if self._rpc_connection is not None:
+                await self._rpc_connection.close()
 
     async def _get_channel(self) -> aio_pika.abc.AbstractChannel:
         assert self._connection_pool  # nosec
@@ -118,11 +152,11 @@ class RabbitMQClient:
             # consumer/publisher must set the same configuration for same queue
             # exclusive means that the queue is only available for THIS very client
             # and will be deleted when the client disconnects
-            queue_parameters = dict(
-                durable=True,
-                exclusive=exclusive_queue,
-                arguments={"x-message-ttl": _RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_S},
-            )
+            queue_parameters = {
+                "durable": True,
+                "exclusive": exclusive_queue,
+                "arguments": {"x-message-ttl": _RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_S},
+            }
             if not exclusive_queue:
                 # NOTE: setting a name will ensure multiple instance will take their data here
                 queue_parameters |= {"name": exchange_name}
@@ -152,3 +186,66 @@ class RabbitMQClient:
                 aio_pika.Message(message.encode()),
                 routing_key="",
             )
+
+    async def rpc_request(
+        self,
+        namespace: RPCNamespace,
+        method_name: str,
+        *,
+        timeout: Optional[PositiveInt] = 5,
+        **kwargs: dict[str, Any],
+    ) -> Any:
+        """
+        Call a remote registered `handler` by providing it's `namespace`, `method_name`
+        and list of expected arguments.
+
+        NOTE: `namespace` should always be composed via `get_namespace`
+        """
+
+        if not self._rpc:
+            raise RPCNotInitializedError()
+
+        namespaced_method_name = _get_namespaced_method_name(namespace, method_name)
+        try:
+            queue_expiration_timeout = timeout
+            awaitable = self._rpc.call(
+                namespaced_method_name,
+                expiration=queue_expiration_timeout,
+                kwargs=kwargs,
+            )
+            return await asyncio.wait_for(awaitable, timeout=timeout)
+        except MessageProcessError as e:
+            if e.args[0] == "Message has been returned":
+                raise RemoteMethodNotRegisteredError(
+                    method_name=namespaced_method_name, incoming_message=e.args[1]
+                ) from e
+            raise e
+
+    async def rpc_register(
+        self, namespace: RPCNamespace, method_name: str, handler: Awaitable
+    ) -> None:
+        """
+        Bind a local `handler` to a `namespace` and `method_name`.
+        The handler can be remotely called by providing the `namespace` and `method_name`
+
+        NOTE: method_name could be computed from the handler, but by design, it is
+        left to the caller to do so.
+        NOTE: `namespace` should always be composed via `get_namespace`
+        """
+
+        if self._rpc is None:
+            raise RPCNotInitializedError()
+
+        await self._rpc.register(
+            _get_namespaced_method_name(namespace, method_name),
+            handler,
+            auto_delete=True,
+        )
+
+    async def rpc_unregister(self, handler: Awaitable) -> None:
+        """Unbind a locally added `handler`"""
+
+        if self._rpc is None:
+            raise RPCNotInitializedError()
+
+        await self._rpc.unregister(handler)
