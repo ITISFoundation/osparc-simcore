@@ -30,7 +30,7 @@ attrs==21.4.0
     #   jsonschema
     #   pytest
     #   sarif-om
-aws-sam-translator==1.59.0
+aws-sam-translator==1.60.1
     # via cfn-lint
 aws-xray-sdk==2.11.0
     # via moto
@@ -51,7 +51,7 @@ certifi==2022.12.7
     # via requests
 cffi==1.15.1
     # via cryptography
-cfn-lint==0.73.1
+cfn-lint==0.74.0
     # via moto
 charset-normalizer==2.1.1
     # via
@@ -89,7 +89,7 @@ ecdsa==0.18.0
     #   sshpubkeys
 exceptiongroup==1.1.0
     # via pytest
-faker==17.0.0
+faker==17.4.0
     # via -r requirements/_test.in
 flask==2.2.3
     # via
@@ -147,14 +147,14 @@ markupsafe==2.1.2
     # via
     #   jinja2
     #   werkzeug
-moto==4.1.2
+moto==4.1.3
     # via -r requirements/_test.in
 multidict==6.0.2
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-networkx==2.8.8
+networkx==3.0
     # via cfn-lint
 openapi-schema-validator==0.2.3
     # via openapi-spec-validator
@@ -179,8 +179,6 @@ pyasn1==0.4.8
     #   rsa
 pycparser==2.21
     # via cffi
-pydantic==1.10.2
-    # via aws-sam-translator
 pyparsing==3.0.9
     # via
     #   -c requirements/_base.txt
@@ -250,14 +248,13 @@ tomli==2.0.1
     # via
     #   coverage
     #   pytest
-types-toml==0.10.8.4
+types-toml==0.10.8.5
     # via responses
 typing-extensions==4.4.0
     # via
     #   -c requirements/_base.txt
     #   aioitertools
     #   aws-sam-translator
-    #   pydantic
 urllib3==1.26.14
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -271,7 +268,7 @@ werkzeug==2.2.3
     # via
     #   flask
     #   moto
-wrapt==1.14.1
+wrapt==1.15.0
     # via
     #   aiobotocore
     #   aws-xray-sdk
@@ -281,7 +278,7 @@ yarl==1.8.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-zipp==3.13.0
+zipp==3.15.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:

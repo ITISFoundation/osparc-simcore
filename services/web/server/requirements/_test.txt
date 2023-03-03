@@ -65,7 +65,7 @@ exceptiongroup==1.1.0
     #   pytest
 execnet==1.9.0
     # via pytest-xdist
-faker==17.0.0
+faker==17.4.0
     # via -r requirements/_test.in
 flaky==3.7.0
     # via -r requirements/_test.in
@@ -179,7 +179,7 @@ pytest-xdist==3.2.0
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via faker
-python-dotenv==0.21.1
+python-dotenv==1.0.0
     # via -r requirements/_test.in
 pyyaml==5.4.1
     # via
@@ -229,7 +229,7 @@ websocket-client==1.5.1
     # via docker
 websockets==10.4
     # via -r requirements/_test.in
-wrapt==1.14.1
+wrapt==1.15.0
     # via astroid
 yarl==1.5.1
     # via
