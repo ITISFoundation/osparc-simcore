@@ -53,7 +53,7 @@ platformdirs==3.0.0
     #   black
     #   pylint
     #   virtualenv
-pre-commit==3.1.0
+pre-commit==3.1.1
     # via -r requirements/../../../requirements/devenv.txt
 pylint==2.16.2
     # via -r requirements/../../../requirements/devenv.txt
@@ -79,9 +79,9 @@ typing-extensions==4.5.0
     #   astroid
     #   black
     #   pylint
-virtualenv==20.19.0
+virtualenv==20.20.0
     # via pre-commit
-watchdog==2.3.0
+watchdog==2.3.1
     # via -r requirements/_tools.in
 wheel==0.38.4
     # via pip-tools
