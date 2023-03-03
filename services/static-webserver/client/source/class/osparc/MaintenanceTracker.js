@@ -47,7 +47,6 @@ qx.Class.define("osparc.MaintenanceTracker", {
 
   members: {
     __checkInternval: null,
-    __lastNotification: null,
     __lastRibbonMessage: null,
     __logoutTimer: null,
 
@@ -119,29 +118,11 @@ qx.Class.define("osparc.MaintenanceTracker", {
 
     __scheduleStart: function() {
       if (this.getStart() === null) {
-        this.__removeNotification();
         this.__removeRibbonMessage();
         this.__removeScheduledLogout();
       } else {
-        this.__addNotification();
         this.__scheduleRibbonMessage();
         this.__scheduleLogout();
-      }
-    },
-
-    __addNotification: function() {
-      this.__removeNotification();
-
-      const text = this.__getText();
-      const notification = new osparc.component.notification.Notification(text);
-      const notificationUI = this.__lastNotification = new osparc.component.notification.NotificationUI(notification.getFullText(true));
-      osparc.component.notification.Notifications.getInstance().addNotification(notificationUI);
-    },
-
-    __removeNotification: function() {
-      if (this.__lastNotification) {
-        osparc.component.notification.Notifications.getInstance().removeNotification(this.__lastNotification);
-        this.__lastNotification = null;
       }
     },
 
