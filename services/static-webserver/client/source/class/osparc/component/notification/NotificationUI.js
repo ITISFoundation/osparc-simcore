@@ -41,12 +41,49 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
   },
 
   properties: {
+    id: {
+      check: "String",
+      init: null,
+      nullable: false,
+      event: "changeId"
+    },
+
+    category: {
+      check: ["new_organization", "study_shared", "template_shared"],
+      init: null,
+      nullable: false,
+      event: "changeCategory"
+    },
+
+    actionablePath: {
+      check: "String",
+      init: null,
+      nullable: false,
+      event: "changeActionablePath",
+      apply: "__applyActionablePath"
+    },
+
+    title: {
+      check: "String",
+      init: null,
+      nullable: false,
+      event: "changeTitle",
+      apply: "__applyTitle"
+    },
+
     text: {
       check: "String",
-      init: "",
+      init: null,
       nullable: false,
       event: "changeText",
       apply: "__applyText"
+    },
+
+    date: {
+      check: "Date",
+      init: null,
+      nullable: false,
+      event: "changeDate"
     },
 
     read: {
