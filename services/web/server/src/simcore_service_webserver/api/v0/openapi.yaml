@@ -1282,7 +1282,7 @@ paths:
                   type: string
                   enum:
                     - new_organization
-                    - project_shared
+                    - study_shared
                     - template_shared
                   description: 'notification type, the frontend will use this to decorate the notification'
                   example: new_organization
