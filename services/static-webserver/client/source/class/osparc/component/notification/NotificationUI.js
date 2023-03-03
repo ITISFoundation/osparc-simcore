@@ -184,7 +184,20 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
 
     __notificationTapped: function() {
       this.setRead(true);
-      console.log("actionablePath", this.getActionablePath());
+      const actionablePath = this.getActionablePath();
+      switch (actionablePath) {
+        case "new_organization": {
+          const preferencesWindow = osparc.desktop.preferences.PreferencesWindow.openWindow();
+          preferencesWindow.openOrganizations();
+          break;
+        }
+        case "study_shared":
+          console.log(actionablePath);
+          break;
+        case "template_shared":
+          console.log(actionablePath);
+          break;
+      }
     }
   }
 });
