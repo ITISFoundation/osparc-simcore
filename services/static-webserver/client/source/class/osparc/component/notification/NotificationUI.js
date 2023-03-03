@@ -23,14 +23,17 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
 
     this.set({
       maxWidth: this.self().MAX_WIDTH,
-      padding: this.self().PADDING
+      padding: this.self().PADDING,
+      cursor: "pointer"
     });
 
-    const layout = new qx.ui.layout.VBox(2).set({
-      alignY: "middle"
-    });
+    const layout = new qx.ui.layout.Grid(10, 2);
+    layout.setColumnAlign(0, "center", "middle");
+    layout.setColumnAlign(1, "left", "middle");
+    layout.setColumnFlex(1, 1);
     this._setLayout(layout);
 
+    this.getChildControl("icon");
     this.getChildControl("title");
     this.getChildControl("text");
     this.getChildControl("date");
@@ -101,31 +104,58 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "title":
-          control = new qx.ui.basic.Label().set({
-            font: "text-14",
-            rich: true,
-            wrap: true
+        case "icon":
+          control = new qx.ui.basic.Image().set({
+            source: "@FontAwesome5Solid/paw/14",
+            alignX: "center",
+            alignY: "middle",
+            minWidth: 18
           });
-          this.bind("title", control, "value");
+          this.bind("category", control, "source", {
+            converter: value => {
+              if (value === "new_organization") {
+                return "@FontAwesome5Solid/users/14";
+              } else if (value === "study_shared") {
+                return "@FontAwesome5Solid/file/14";
+              } else if (value === "new_organization") {
+                return "@FontAwesome5Solid/copy/14";
+              }
+              return "";
+            }
+          });
           this._add(control, {
-            flex: 1
+            row: 0,
+            column: 0,
+            rowSpan: 3
           });
           break;
-        case "text":
+        case "title":
           control = new qx.ui.basic.Label().set({
             font: "text-13",
             rich: true,
             wrap: true
           });
+          this.bind("title", control, "value");
+          this._add(control, {
+            row: 0,
+            column: 1
+          });
+          break;
+        case "text":
+          control = new qx.ui.basic.Label().set({
+            font: "text-12",
+            rich: true,
+            wrap: true
+          });
           this.bind("text", control, "value");
           this._add(control, {
-            flex: 1
+            row: 1,
+            column: 1
           });
           break;
         case "date":
           control = new qx.ui.basic.Label().set({
-            font: "text-12",
+            font: "text-11",
             rich: true,
             wrap: true
           });
@@ -138,7 +168,8 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
             }
           });
           this._add(control, {
-            flex: 1
+            row: 2,
+            column: 1
           });
           break;
       }

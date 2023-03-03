@@ -106,7 +106,7 @@ qx.Class.define("osparc.component.notification.NotificationsButton", {
           bounds.top = parseInt(rect.y);
         }
       }
-      this.__notificationsContainer.setPosition(bounds.left+bounds.width, osparc.navigation.NavigationBar.HEIGHT+3);
+      this.__notificationsContainer.setPosition(bounds.left+bounds.width, bounds.top+bounds.height+3);
       this.__notificationsContainer.show();
 
       document.addEventListener("mousedown", tapListener);
