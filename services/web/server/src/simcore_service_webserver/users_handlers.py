@@ -120,7 +120,7 @@ async def get_user_notifications(request: web.Request):
         return web.json_response(data={"data": notification_str})
 
     notifications = [{
-      "id": "1234",
+      "id": "123",
       "user_id": "1",
       "category": "new_organization",
       "actionable_path": "organization/40",
@@ -129,13 +129,22 @@ async def get_user_notifications(request: web.Request):
       "date": "2023-02-23T16:23:13.122Z",
       "read": False
     }, {
-      "id": "5678",
+      "id": "456",
       "user_id": "1",
       "category": "study_shared",
       "actionable_path": "study/27edd65c-b360-11ed-93d7-02420a000014",
       "title": "Study shared",
       "text": "A study was shared with you",
-      "date": "2023-02-23T15:23:13.122Z",
+      "date": "2023-02-23T16:25:13.122Z",
+      "read": True
+    }, {
+      "id": "789",
+      "user_id": "1",
+      "category": "template_shared",
+      "actionable_path": "template/f60477b6-a07e-11ed-8d29-02420a00002d",
+      "title": "Template shared",
+      "text": "A template was shared with you",
+      "date": "2023-02-23T16:28:13.122Z",
       "read": True
     }]
     return web.json_response(data={"data": notifications})
