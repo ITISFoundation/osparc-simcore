@@ -48,7 +48,7 @@ pytest-runner==6.0.0
     # via -r requirements/_test.in
 pytest-sugar==0.9.6
     # via -r requirements/_test.in
-python-dotenv==0.21.1
+python-dotenv==1.0.0
     # via -r requirements/_test.in
 requests==2.28.2
     # via coveralls
