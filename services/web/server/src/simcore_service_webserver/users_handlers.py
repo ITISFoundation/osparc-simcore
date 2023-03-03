@@ -127,7 +127,7 @@ async def get_user_notifications(request: web.Request):
       "title": "New organization",
       "text": "You're now member of a new Organization",
       "date": "2023-02-23T16:23:13.122Z",
-      "read": False
+      "read": True
     }, {
       "id": "456",
       "user_id": "1",
@@ -136,7 +136,7 @@ async def get_user_notifications(request: web.Request):
       "title": "Study shared",
       "text": "A study was shared with you",
       "date": "2023-02-23T16:25:13.122Z",
-      "read": True
+      "read": False
     }, {
       "id": "789",
       "user_id": "1",
@@ -145,7 +145,7 @@ async def get_user_notifications(request: web.Request):
       "title": "Template shared",
       "text": "A template was shared with you",
       "date": "2023-02-23T16:28:13.122Z",
-      "read": True
+      "read": False
     }]
     return web.json_response(data={"data": notifications})
 

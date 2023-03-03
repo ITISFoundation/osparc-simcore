@@ -114,14 +114,19 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
           });
           this.bind("category", control, "source", {
             converter: value => {
-              if (value === "new_organization") {
-                return "@FontAwesome5Solid/users/14";
-              } else if (value === "study_shared") {
-                return "@FontAwesome5Solid/file/14";
-              } else if (value === "new_organization") {
-                return "@FontAwesome5Solid/copy/14";
+              let source = "";
+              switch (value) {
+                case "new_organization":
+                  source = "@FontAwesome5Solid/users/14";
+                  break;
+                case "study_shared":
+                  source = "@FontAwesome5Solid/file/14";
+                  break;
+                case "template_shared":
+                  source = "@FontAwesome5Solid/copy/14";
+                  break;
               }
-              return "";
+              return source;
             }
           });
           this._add(control, {
