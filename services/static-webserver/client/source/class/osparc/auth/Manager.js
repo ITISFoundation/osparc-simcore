@@ -51,6 +51,15 @@ qx.Class.define("osparc.auth.Manager", {
       return osparc.data.Resources.fetch("auth", "postRegister", params);
     },
 
+    checkInvitation: function(invitation) {
+      const params = {
+        data: {
+          invitation
+        }
+      };
+      return osparc.data.Resources.fetch("auth", "checkInvitation", params);
+    },
+
     verifyPhoneNumber: function(email, phoneNumber) {
       const params = {
         data: {

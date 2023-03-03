@@ -100,7 +100,7 @@ exceptiongroup==1.1.0
     # via pytest
 execnet==1.9.0
     # via pytest-xdist
-faker==17.0.0
+faker==17.4.0
     # via -r requirements/_test.in
 flaky==3.7.0
     # via -r requirements/_test.in
@@ -296,11 +296,11 @@ urllib3==1.26.9
     #   requests
 websocket-client==1.5.1
     # via docker
-wrapt==1.14.1
+wrapt==1.15.0
     # via
     #   aiobotocore
     #   astroid
-xyzservices==2022.9.0
+xyzservices==2023.2.0
     # via bokeh
 yarl==1.7.2
     # via

@@ -9,7 +9,7 @@
 # Vulnerabilities
 #
 aiohttp>=3.7.4                                # https://github.com/advisories/GHSA-v6wp-4m6f-gcjg
-cryptography>=3.3.2                           # https://github.com/advisories/GHSA-rhm9-p9w5-fwm7  Feb.2021
+cryptography>=39.0.1                          # https://github.com/advisories/GHSA-x4qr-2fvf-3mr5  Mar.2023
 httpx>=0.23.0                                 # https://github.com/advisories/GHSA-h8pj-cxx2-jfg2 / CVE-2021-41945
 jinja2>=2.11.3                                # https://github.com/advisories/GHSA-g3rq-g295-4j3m
 mako>=1.2.2                                   # https://github.com/advisories/GHSA-v973-fxgf-6xhp
@@ -39,6 +39,7 @@ sqlalchemy<2.0
 
 # changed behaviour in using middlewares (https://fastapi.tiangolo.com/release-notes/#0910)
 # NOTE: https://github.com/ITISFoundation/osparc-simcore/issues/3896
+# NOTE: by updating FastAPI to 0.92.0 we fix VULNERABILITY https://github.com/advisories/GHSA-74m5-2c7w-9w3x
 fastapi<0.91.0
 # with the new release >=1.10.3 dict schemas changed output structure (https://docs.pydantic.dev/changelog/)
 # NOTE: https://github.com/ITISFoundation/osparc-simcore/issues/3905

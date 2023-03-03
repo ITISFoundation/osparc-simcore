@@ -599,6 +599,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/auth/register"
           },
+          checkInvitation: {
+            method: "POST",
+            url: statics.API + "/auth/register/invitations:check"
+          },
           verifyPhoneNumber: {
             method: "POST",
             url: statics.API + "/auth/verify-phone-number"
