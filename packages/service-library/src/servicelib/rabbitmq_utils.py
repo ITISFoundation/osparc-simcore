@@ -1,6 +1,7 @@
 # FIXME: move to settings-library or refactor
 
 import logging
+import re
 from typing import Final, Optional
 
 import aio_pika
@@ -10,13 +11,38 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 from .logging_utils import log_context
+from .rabbitmq_errors import RPCNamespaceInvalidCharsError, RPCNamespaceTooLongError
 
 log = logging.getLogger(__file__)
 
 
 _MINUTE: Final[int] = 60
+_NAMESPACE_CHAR_LIMIT: Final[int] = 100
+
+REGEX_VALIDATE_RABBIT_QUEUE_NAME: Final[str] = r"^[\w\-\.]{1,255}$"
 
 RPCNamespace = str
+
+
+def get_namespace(entries: dict[str, str]) -> RPCNamespace:
+    """
+    Given a list of entries creates a namespace to be used in declaring the rabbitmq queue.
+    Keeping this to a predefined length
+    """
+
+    namespace = "-".join(f"{k}_{v}" for k, v in sorted(entries.items()))
+    if len(namespace) > _NAMESPACE_CHAR_LIMIT:
+        raise RPCNamespaceTooLongError(
+            namespace=namespace,
+            namespace_length=len(namespace),
+            char_limit=_NAMESPACE_CHAR_LIMIT,
+        )
+
+    if not re.compile(REGEX_VALIDATE_RABBIT_QUEUE_NAME).match(namespace):
+        raise RPCNamespaceInvalidCharsError(
+            namespace=namespace, match_regex=REGEX_VALIDATE_RABBIT_QUEUE_NAME
+        )
+    return namespace
 
 
 class RabbitMQRetryPolicyUponInitialization:

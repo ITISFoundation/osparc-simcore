@@ -198,6 +198,8 @@ class RabbitMQClient:
         """
         Call a remote registered `handler` by providing it's `namespace`, `method_name`
         and list of expected arguments.
+
+        NOTE: `namespace` should always be composed via `get_namespace`
         """
 
         if not self._rpc:
@@ -228,6 +230,7 @@ class RabbitMQClient:
 
         NOTE: method_name could be computed from the handler, but by design, it is
         left to the caller to do so.
+        NOTE: `namespace` should always be composed via `get_namespace`
         """
 
         if self._rpc is None:

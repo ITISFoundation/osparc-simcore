@@ -12,6 +12,7 @@ from servicelib.rabbitmq_errors import (
     RemoteMethodNotRegisteredError,
     RPCNotInitializedError,
 )
+from servicelib.rabbitmq_utils import get_namespace
 from settings_library.rabbit import RabbitSettings
 
 pytest_simcore_core_services_selection = [
@@ -23,7 +24,7 @@ MULTIPLE_REQUESTS_COUNT: Final[NonNegativeInt] = 100
 
 @pytest.fixture
 def namespace() -> RPCNamespace:
-    return "namespace"
+    return get_namespace({f"test{i}": f"test{i}" for i in range(8)})
 
 
 @pytest.fixture
