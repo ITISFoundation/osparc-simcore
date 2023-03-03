@@ -39,6 +39,7 @@ qx.Class.define("osparc.component.notification.NotificationsButton", {
     this.__updateNotificationsButton();
 
     this.__notificationsContainer = new osparc.component.notification.NotificationsContainer();
+    this.__notificationsContainer.exclude();
   },
 
   members: {

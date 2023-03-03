@@ -18,7 +18,7 @@
 qx.Class.define("osparc.component.notification.NotificationUI", {
   extend: qx.ui.core.Widget,
 
-  construct: function(text) {
+  construct: function() {
     this.base(arguments);
 
     this.set({
@@ -31,9 +31,9 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
     });
     this._setLayout(layout);
 
-    if (text) {
-      this.setText(text);
-    }
+    this.getChildControl("title");
+    this.getChildControl("text");
+    this.getChildControl("date");
 
     this.bind("read", this, "backgroundColor", {
       converter: read => read ? "background-main-3" : "background-main-4"
@@ -103,7 +103,6 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
       switch (id) {
         case "title":
           control = new qx.ui.basic.Label().set({
-            maxWidth: this.self().MAX_WIDTH - 2*this.self().PADDING,
             font: "text-14",
             rich: true,
             wrap: true
@@ -115,12 +114,29 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
           break;
         case "text":
           control = new qx.ui.basic.Label().set({
-            maxWidth: this.self().MAX_WIDTH - 2*this.self().PADDING,
             font: "text-13",
             rich: true,
             wrap: true
           });
           this.bind("text", control, "value");
+          this._add(control, {
+            flex: 1
+          });
+          break;
+        case "date":
+          control = new qx.ui.basic.Label().set({
+            font: "text-12",
+            rich: true,
+            wrap: true
+          });
+          this.bind("date", control, "value", {
+            converter: value => {
+              if (value) {
+                return osparc.utils.Utils.formatDateAndTime(new Date(value));
+              }
+              return "";
+            }
+          });
           this._add(control, {
             flex: 1
           });
