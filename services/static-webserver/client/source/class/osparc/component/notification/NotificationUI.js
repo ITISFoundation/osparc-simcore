@@ -27,7 +27,7 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
       cursor: "pointer"
     });
 
-    const layout = new qx.ui.layout.Grid(10, 2);
+    const layout = new qx.ui.layout.Grid(10, 3);
     layout.setColumnAlign(0, "center", "middle");
     layout.setColumnAlign(1, "left", "middle");
     layout.setColumnFlex(1, 1);
@@ -41,6 +41,8 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
     this.bind("read", this, "backgroundColor", {
       converter: read => read ? "background-main-3" : "background-main-4"
     });
+
+    this.addListener("tap", () => this.__notificationTapped());
   },
 
   properties: {
@@ -62,8 +64,7 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
       check: "String",
       init: null,
       nullable: false,
-      event: "changeActionablePath",
-      apply: "__applyActionablePath"
+      event: "changeActionablePath"
     },
 
     title: {
@@ -176,8 +177,9 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
       return control || this.base(arguments, id);
     },
 
-    __applyActionablePath: function(value) {
-      console.log("actionablePath", value);
+    __notificationTapped: function() {
+      this.setRead(true);
+      console.log("actionablePath", this.getActionablePath());
     }
   }
 });
