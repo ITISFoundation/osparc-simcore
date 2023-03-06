@@ -24,6 +24,19 @@ qx.Class.define("osparc.component.notification.Notifications", {
     this.__notifications = new qx.data.Array();
   },
 
+  statics: {
+    createNewOrganizationObj: function(userId, orgId) {
+      return {
+        "user_id": userId.toString(),
+        "category": "new_organization",
+        "actionable_path": "organization/"+orgId,
+        "title": "New organization",
+        "text": "You're now member of a new Organization",
+        "date": new Date().toISOString()
+      };
+    }
+  },
+
   members: {
     __notifications: null,
 
@@ -42,6 +55,13 @@ qx.Class.define("osparc.component.notification.Notifications", {
 
     getNotifications: function() {
       return this.__notifications;
+    },
+
+    postNewOrganization: function(userId, orgId) {
+      const params = {
+        data: osparc.component.notification.Notifications.createNewOrganizationObj(userId, orgId)
+      };
+      osparc.data.Resources.fetch("notifications", "post", params);
     }
   }
 });

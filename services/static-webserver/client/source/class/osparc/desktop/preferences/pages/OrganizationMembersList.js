@@ -355,17 +355,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
               .then(respOrgMembers => {
                 const newMember = respOrgMembers.find(m => m["login"] === orgMemberEmail);
                 if (newMember) {
-                  const params3 = {
-                    data: {
-                      "user_id": "1",
-                      "category": "new_organization",
-                      "actionable_path": "organization/"+orgId,
-                      "title": "New organization",
-                      "text": "You're now member of a new Organization",
-                      "date": new Date().toISOString()
-                    }
-                  };
-                  osparc.data.Resources.fetch("notifications", "post", params3);
+                  osparc.component.notification.Notifications.getInstance().postNewOrganization(newMember["id"], orgId);
                 }
               });
           }
