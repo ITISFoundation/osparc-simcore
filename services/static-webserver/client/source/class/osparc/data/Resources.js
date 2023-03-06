@@ -454,6 +454,10 @@ qx.Class.define("osparc.data.Resources", {
           post: {
             method: "POST",
             url: statics.API + "/me/notifications"
+          },
+          patch: {
+            method: "PATCH",
+            url: statics.API + "/me/notifications/{notificationId}"
           }
         }
       },

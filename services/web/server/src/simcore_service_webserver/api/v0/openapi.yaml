@@ -1312,12 +1312,23 @@ paths:
         - user
       summary: Update a Notification
       operationId: update_user_notification
+      parameters:
+        - required: true
+          schema:
+            title: Notification Id
+            type: integer
+          name: notification_id
+          in: path
       requestBody:
         content:
           application/json:
             schema:
               type: object
-              additionalProperties: true
+              properties:
+                read:
+                  type: boolean
+                  description: wether the notification has been read
+              additionalProperties: false
       responses:
         '200':
           description: Returns modified service
