@@ -189,7 +189,7 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
     __notificationTapped: function() {
       this.fireEvent("notificationTapped");
 
-      if (this.isRead() == false) {
+      if (this.isRead() === false) {
         // set as read
         const params = {
           url: {
