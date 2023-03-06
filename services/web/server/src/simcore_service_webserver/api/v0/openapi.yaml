@@ -1307,6 +1307,22 @@ paths:
           description: Notification registered
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
+    patch:
+      tags:
+        - user
+      summary: Update a Notification
+      operationId: update_user_notification
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Returns modified service
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
   /groups:
     get:
       summary: List my groups

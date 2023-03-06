@@ -155,3 +155,10 @@ async def post_user_notification(request: web.Request):
     response = web.json_response(status=web.HTTPNoContent.status_code)
     assert response.status == 204  # nosec
     return response
+
+
+@login_required
+async def update_user_notification(request: web.Request):
+    response = web.json_response(status=web.HTTPNoContent.status_code)
+    assert response.status == 204  # nosec
+    return response
