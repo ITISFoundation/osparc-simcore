@@ -2,6 +2,7 @@
 
 import json
 import logging
+import random
 
 from aiohttp import web
 from models_library.generics import Envelope
@@ -127,6 +128,16 @@ async def get_user_notifications(request: web.Request):
 
 @login_required
 async def post_user_notification(request: web.Request):
+    print("post_user_notification", request)
+    redis_client = get_redis_user_notifications_client(request.app)
+    user_id = 1
+    nid = random.randint(100, 1000)
+    user_hash_key = f'user_id={user_id}:notification_id={nid}'
+    notification = {
+        "user_id": user_id,
+        "read": "False"
+    }
+    await redis_client.set(user_hash_key, value=notification)
     response = web.json_response(status=web.HTTPNoContent.status_code)
     assert response.status == 204  # nosec
     return response
@@ -134,6 +145,7 @@ async def post_user_notification(request: web.Request):
 
 @login_required
 async def update_user_notification(request: web.Request):
+    print(request)
     response = web.json_response(status=web.HTTPNoContent.status_code)
     assert response.status == 204  # nosec
     return response
