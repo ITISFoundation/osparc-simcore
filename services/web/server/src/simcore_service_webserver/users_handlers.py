@@ -130,10 +130,8 @@ async def get_user_notifications(request: web.Request):
 async def post_user_notification(request: web.Request):
     redis_client = get_redis_user_notifications_client(request.app)
     notification = await request.json()
-    print("post_user_notification", notification)
-    user_id = 1
     nid = random.randint(100, 1000)
-    notification["id"] = nid
+    notification["id"] = str(nid)
     notification["read"] = "False"
     user_hash_key = f'user_id={notification["user_id"]}:notification_id={nid}'
     await redis_client.set(user_hash_key, value=json.dumps(notification))

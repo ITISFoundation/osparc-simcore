@@ -362,7 +362,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
                       "actionable_path": "organization/"+orgId,
                       "title": "New organization",
                       "text": "You're now member of a new Organization",
-                      "date": "2023-02-23T16:23:13.122Z"
+                      "date": new Date().toString()
                     }
                   };
                   osparc.data.Resources.fetch("notifications", "post", params3);
