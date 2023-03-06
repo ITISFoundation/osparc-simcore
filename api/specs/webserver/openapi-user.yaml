@@ -133,18 +133,19 @@ paths:
           description: Notification registered
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
+
+  /me/notifications/{nid}:
+    parameters:
+      - name: nid
+        in: path
+        required: true
+        schema:
+          type: integer
     patch:
       tags:
         - user
       summary: Update a Notification
       operationId: update_user_notification
-      parameters:
-      - required: true
-        schema:
-          title: Notification Id
-          type: integer
-        name: notification_id
-        in: path
       requestBody:
         content:
           application/json:
@@ -240,12 +241,13 @@ components:
 
     NotificationUpdate:
       type: object
+      required:
+        - read
       properties:
         read:
           type: boolean
           description: >-
-            wether the notification has been read
-      additionalProperties: false
+            notification has been read
 
   responses:
     DefaultErrorResponse:
