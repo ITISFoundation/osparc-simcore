@@ -45,6 +45,10 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
     this.addListener("tap", () => this.__notificationTapped());
   },
 
+  events: {
+    "notificationTapped": "qx.event.type.Event"
+  },
+
   properties: {
     id: {
       check: "String",
@@ -184,9 +188,30 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
 
     __notificationTapped: function() {
       this.fireEvent("notificationTapped");
+
+      if (this.isRead() == false) {
+        // set as read
+        const params = {
+          url: {
+            notificationId: this.getId()
+          },
+          data: {
+            "read": true
+          }
+        };
+        osparc.data.Resources.fetch("notifications", "patch", params)
+          .then(() => this.setRead(true))
+          .catch(() => this.setRead(false));
+      }
+
+      // open actionable path
       const actionablePath = this.getActionablePath();
-      switch (actionablePath) {
+      const category = this.getCategory();
+      switch (category) {
         case "new_organization": {
+          const items = actionablePath.split("/");
+          const orgId = items.pop();
+          console.log("open details", orgId);
           const preferencesWindow = osparc.desktop.preferences.PreferencesWindow.openWindow();
           preferencesWindow.openOrganizations();
           break;
