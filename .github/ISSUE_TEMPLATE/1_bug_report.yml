@@ -1,6 +1,7 @@
 name: 🐛 Bug
 description: File a bug/issue
 labels: [bug, "t:bug"]
+assignees: ["pcrespov"]
 body:
   - type: checkboxes
     attributes:
