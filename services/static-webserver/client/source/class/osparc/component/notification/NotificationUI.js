@@ -183,7 +183,7 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
     },
 
     __notificationTapped: function() {
-      this.setRead(true);
+      this.fireEvent("notificationTapped");
       const actionablePath = this.getActionablePath();
       switch (actionablePath) {
         case "new_organization": {
