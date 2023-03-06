@@ -115,38 +115,13 @@ async def delete_token(request: web.Request):
 @login_required
 async def get_user_notifications(request: web.Request):
     redis_client = get_redis_user_notifications_client(request.app)
-    hash_key = "notifications"
-    if notification_str := await redis_client.get(hash_key):
-        return web.json_response(data={"data": notification_str})
-
-    notifications = [{
-      "id": "123",
-      "user_id": "1",
-      "category": "new_organization",
-      "actionable_path": "organization/40",
-      "title": "New organization",
-      "text": "You're now member of a new Organization",
-      "date": "2023-02-23T16:23:13.122Z",
-      "read": True
-    }, {
-      "id": "456",
-      "user_id": "1",
-      "category": "study_shared",
-      "actionable_path": "study/27edd65c-b360-11ed-93d7-02420a000014",
-      "title": "Study shared",
-      "text": "A study was shared with you",
-      "date": "2023-02-23T16:25:13.122Z",
-      "read": False
-    }, {
-      "id": "789",
-      "user_id": "1",
-      "category": "template_shared",
-      "actionable_path": "template/f60477b6-a07e-11ed-8d29-02420a00002d",
-      "title": "Template shared",
-      "text": "A template was shared with you",
-      "date": "2023-02-23T16:28:13.122Z",
-      "read": False
-    }]
+    user_id = request[RQT_USERID_KEY]
+    notifications = []
+    user_hash_key = f'user_id={user_id}:notification_id=*'
+    async for scanned_notification_key in redis_client.scan_iter(match=user_hash_key):
+        if notification_str := await redis_client.get(scanned_notification_key):
+            print("notification_str", notification_str)
+            notifications.append(notification_str)
     return web.json_response(data={"data": notifications})
 
 
