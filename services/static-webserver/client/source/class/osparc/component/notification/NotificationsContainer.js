@@ -51,7 +51,7 @@ qx.Class.define("osparc.component.notification.NotificationsContainer", {
           title: notification.title,
           text: notification.text,
           date: new Date(notification.date),
-          read: notification.read
+          read: ["true", "True"].includes(notification.read)
         });
         notificationUI.addListener("notificationTapped", () => this.exclude());
         this._add(notificationUI);
