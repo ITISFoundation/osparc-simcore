@@ -61,7 +61,11 @@ qx.Class.define("osparc.component.notification.NotificationsButton", {
         }
         case "number":
           control = new qx.ui.basic.Label().set({
+            backgroundColor: "background-main-1",
             font: "text-12"
+          });
+          control.getContentElement().setStyles({
+            "border-radius": "4px"
           });
           control.bind("value", control, "visibility", {
             converter: value => value === "0" ? "excluded" : "visible"
