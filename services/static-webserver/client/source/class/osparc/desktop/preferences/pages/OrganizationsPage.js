@@ -32,26 +32,28 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
   },
 
   members: {
+    __stack: null,
+    __orgsList: null,
+    __orgDetails: null,
+
     __createPages: function() {
-      const pages = new qx.ui.container.Stack();
-      const orgsPage = new osparc.desktop.preferences.pages.OrganizationsList();
-      const membersPage = new osparc.desktop.preferences.pages.OrganizationMembersList();
-      pages.add(orgsPage);
-      pages.add(membersPage);
-      this.add(pages, {
+      const stack = this.__stack = new qx.ui.container.Stack();
+      const orgsPage = this.__orgsList = new osparc.desktop.preferences.pages.OrganizationsList();
+      const orgDetails = this.__orgDetails = new osparc.desktop.preferences.pages.OrganizationMembersList();
+      stack.add(orgsPage);
+      stack.add(orgDetails);
+      this.add(stack, {
         flex: 1
       });
 
       orgsPage.addListener("organizationSelected", e => {
-        const currentOrg = e.getData();
-        if (currentOrg) {
-          membersPage.setCurrentOrg(currentOrg);
-          pages.setSelection([membersPage]);
-        }
+        const orgModel = e.getData();
+        this.__orgDetails.setCurrentOrg(orgModel);
+        this.__stack.setSelection([this.__orgDetails]);
       });
 
-      membersPage.addListener("backToOrganizations", () => {
-        pages.setSelection([orgsPage]);
+      orgDetails.addListener("backToOrganizations", () => {
+        stack.setSelection([orgsPage]);
         orgsPage.reloadOrganizations();
       });
 
