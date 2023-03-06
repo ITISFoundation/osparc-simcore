@@ -1,0 +1,41 @@
+name: ✨ Feature request
+description: Suggest an idea to implement in the simcore plaform
+labels: ["t:enhancement"]
+assignees: ["pcrespov"]
+body:
+  - type: checkboxes
+    attributes:
+      label: Is there an existing issue for this?
+      description: Please search to see if an issue already exists for the bug you encountered.
+      options:
+        - label: I have searched the existing issues
+          required: true
+  - type: textarea
+    attributes:
+      label: User Story
+      description: |
+        A clear and concise description of how the feature works and looks like from the user's perspective
+      placeholder: |
+        Example:
+        I want to be able the stop the running pipeline by pressing a stop button.
+        If the pipeline is stopped, I see a info-level message confirming it in the logger,
+        if it fails the message should be displayed in red (error).
+        Also, all the progress bars in the nodes must be set to 0.
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: Definition of Done
+      description: |
+        A concise description of a minimum viable product (MVP)
+        Tip: You can attach images or log files by clicking this area to highlight it and then dragging files in.
+      placeholder: |
+        Example:
+        0. Play button turns into stop button when pipeline is running
+        1. Stop button turns into play button when pipeline is finished
+        2. Stop button turns into play button when pipeline is successfully stopped
+        3. Logger displays messages everytime the play/stop button is pressed
+        4. Progress bars are set to 0 when stopping pipeline
+        5. Stop button has a Python interface
+    validations:
+      required: false
