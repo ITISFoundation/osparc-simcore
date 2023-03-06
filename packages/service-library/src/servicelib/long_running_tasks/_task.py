@@ -12,7 +12,6 @@ from uuid import uuid4
 from pydantic import PositiveFloat
 
 from ._errors import (
-    TaskAlreadyRunningError,
     TaskCancelledError,
     TaskExceptionError,
     TaskNotCompletedError,
@@ -300,7 +299,6 @@ class TasksManager:
                 task, task_id, reraise_errors=reraise_errors
             )
         except Exception as e:  # pylint:disable=broad-except
-
             formatted_traceback = "".join(
                 # pylint: disable=protected-access,no-value-for-parameter,unexpected-keyword-arg
                 traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__)
@@ -388,8 +386,7 @@ def start_task(
         task_name (Optional[str], optional): optional task name. Defaults to None.
         fire_and_forget: if True, then the task will not be cancelled if the status is never called
 
-    Raises:
-        TaskAlreadyRunningError: if unique is True, will raise if more than 1 such named task is started
+    NOTE: if `unique` is `True` and a task is already running, returns the task_id of that task
 
     Returns:
         TaskId: the task unique identifier
@@ -405,9 +402,13 @@ def start_task(
     # only one unique task can be running
     if unique and tasks_manager.is_task_running(task_name):
         managed_tasks_ids = list(tasks_manager.get_task_group(task_name).keys())
-        assert len(managed_tasks_ids) == 1  # nosec
-        managed_task = tasks_manager.get_task_group(task_name)[managed_tasks_ids[0]]
-        raise TaskAlreadyRunningError(task_name=task_name, managed_task=managed_task)
+        if len(managed_tasks_ids) != 1:
+            raise RuntimeError(f"Unexpected amount of entries in {managed_tasks_ids=}")
+        task_id = managed_tasks_ids[0]
+        logger.info(
+            "A unique task '%s' already running. Returning it's task_id.", task_id
+        )
+        return task_id
 
     task_progress = TaskProgress.create()
 

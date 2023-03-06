@@ -7,11 +7,6 @@ class BaseLongRunningError(PydanticErrorMixin, Exception):
     code: str = "long_running_task.base_long_running_error"
 
 
-class TaskAlreadyRunningError(BaseLongRunningError):
-    code: str = "long_running_task.task_already_running"
-    msg_template: str = "{task_name} must be unique, found: '{managed_task}"
-
-
 class TaskNotFoundError(BaseLongRunningError):
     code: str = "long_running_task.task_not_found"
     msg_template: str = "No task with {task_id} found"

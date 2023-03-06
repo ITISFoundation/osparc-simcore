@@ -12,7 +12,6 @@ from typing import AsyncIterator, Final
 import pytest
 from faker import Faker
 from servicelib.long_running_tasks._errors import (
-    TaskAlreadyRunningError,
     TaskCancelledError,
     TaskNotCompletedError,
     TaskNotFoundError,
@@ -156,12 +155,14 @@ async def test_unique_task_already_running(tasks_manager: TasksManager):
     async def unique_task(task_progress: TaskProgress):
         await asyncio.sleep(1)
 
-    start_task(tasks_manager=tasks_manager, task=unique_task, unique=True)
+    task_id = start_task(tasks_manager=tasks_manager, task=unique_task, unique=True)
 
     # ensure unique running task regardless of how many times it gets started
     for _ in range(5):
-        with pytest.raises(TaskAlreadyRunningError) as exec_info:
-            start_task(tasks_manager=tasks_manager, task=unique_task, unique=True)
+        restarted_task_id = start_task(
+            tasks_manager=tasks_manager, task=unique_task, unique=True
+        )
+        assert restarted_task_id == task_id
 
 
 async def test_start_multiple_not_unique_tasks(tasks_manager: TasksManager):
