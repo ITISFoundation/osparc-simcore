@@ -128,16 +128,15 @@ async def get_user_notifications(request: web.Request):
 
 @login_required
 async def post_user_notification(request: web.Request):
-    print("post_user_notification", request)
     redis_client = get_redis_user_notifications_client(request.app)
+    notification = await request.json()
+    print("post_user_notification", notification)
     user_id = 1
     nid = random.randint(100, 1000)
-    user_hash_key = f'user_id={user_id}:notification_id={nid}'
-    notification = {
-        "user_id": user_id,
-        "read": "False"
-    }
-    await redis_client.set(user_hash_key, value=notification)
+    notification["id"] = nid
+    notification["read"] = "False"
+    user_hash_key = f'user_id={notification["user_id"]}:notification_id={nid}'
+    await redis_client.set(user_hash_key, value=json.dumps(notification))
     response = web.json_response(status=web.HTTPNoContent.status_code)
     assert response.status == 204  # nosec
     return response
