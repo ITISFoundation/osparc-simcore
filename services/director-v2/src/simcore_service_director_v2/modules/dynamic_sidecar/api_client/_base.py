@@ -127,7 +127,11 @@ class BaseThinClient:
     ) -> None:
         self.request_timeout: int = request_timeout
 
-        client_args: dict[str, Any] = {}
+        client_args: dict[str, Any] = {
+            "headers": {
+                "Connection": "Close",
+            }
+        }
         if base_url:
             client_args["base_url"] = base_url
         if timeout:
