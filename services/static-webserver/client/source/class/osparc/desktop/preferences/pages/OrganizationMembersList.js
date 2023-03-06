@@ -344,6 +344,30 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
             osparc.component.message.FlashMessenger.getInstance().logAs(text);
             osparc.store.Store.getInstance().reset("organizationMembers");
             this.__reloadOrgMembers();
+
+            // push 'new_organization' notification
+            const params2 = {
+              url: {
+                "gid": orgId
+              }
+            };
+            osparc.data.Resources.get("organizationMembers", params2)
+              .then(respOrgMembers => {
+                const newMember = respOrgMembers.find(m => m["login"] === orgMemberEmail);
+                if (newMember) {
+                  const params3 = {
+                    data: {
+                      "user_id": "1",
+                      "category": "new_organization",
+                      "actionable_path": "organization/"+orgId,
+                      "title": "New organization",
+                      "text": "You're now member of a new Organization",
+                      "date": "2023-02-23T16:23:13.122Z"
+                    }
+                  };
+                  osparc.data.Resources.fetch("notifications", "post", params3);
+                }
+              });
           }
         })
         .catch(err => {
