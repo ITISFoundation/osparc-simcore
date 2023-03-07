@@ -253,7 +253,7 @@ def assemble_spec(
         }
         container_name = DEFAULT_SINGLE_SERVICE_NAME
     else:
-        service_spec = compose_spec
+        service_spec = deepcopy(compose_spec)
         container_name = container_http_entry
 
     assert service_spec is not None  # nosec
