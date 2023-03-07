@@ -600,7 +600,7 @@ async def test_it(
     user_role: UserRole,
     faker: Faker,
 ):
-    # Tests 🐛 https://github.com/ITISFoundation/osparc-issues/issues/812
+    # Tests  🐛 https://github.com/ITISFoundation/osparc-issues/issues/812
 
     standard_group = standard_groups[0]
     email = faker.email()
