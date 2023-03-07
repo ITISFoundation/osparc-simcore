@@ -42,17 +42,9 @@ qx.Class.define("osparc.component.notification.NotificationsContainer", {
     __updateNotificationsContainer: function() {
       this._removeAll();
       const notifications = osparc.component.notification.Notifications.getInstance().getNotifications();
-      notifications.forEach(notification => {
-        const notificationUI = new osparc.component.notification.NotificationUI();
-        notificationUI.set({
-          id: notification.id,
-          category: notification.category,
-          actionablePath: notification.actionable_path,
-          title: notification.title,
-          text: notification.text,
-          date: new Date(notification.date),
-          read: ["true", "True", true].includes(notification.read)
-        });
+      notifications.forEach(notificationObj => {
+        const notification = new osparc.component.notification.Notification(notificationObj);
+        const notificationUI = new osparc.component.notification.NotificationUI(notification);
         notificationUI.addListener("notificationTapped", () => this.exclude());
         this._add(notificationUI);
       });

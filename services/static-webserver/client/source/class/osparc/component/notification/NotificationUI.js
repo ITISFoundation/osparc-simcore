@@ -18,7 +18,7 @@
 qx.Class.define("osparc.component.notification.NotificationUI", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
+  construct: function(notification) {
     this.base(arguments);
 
     this.set({
@@ -33,14 +33,13 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
     layout.setColumnFlex(1, 1);
     this._setLayout(layout);
 
-    this.getChildControl("icon");
-    this.getChildControl("title");
-    this.getChildControl("text");
-    this.getChildControl("date");
-
     this.bind("read", this, "backgroundColor", {
       converter: read => read ? "background-main-3" : "background-main-4"
     });
+
+    if (notification) {
+      this.setNotification(notification);
+    }
 
     this.addListener("tap", () => this.__notificationTapped());
   },
@@ -50,53 +49,11 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
   },
 
   properties: {
-    id: {
-      check: "String",
+    notification: {
+      check: "osparc.component.notification.Notification",
       init: null,
       nullable: false,
-      event: "changeId"
-    },
-
-    category: {
-      check: ["new_organization", "study_shared", "template_shared"],
-      init: null,
-      nullable: false,
-      event: "changeCategory"
-    },
-
-    actionablePath: {
-      check: "String",
-      init: null,
-      nullable: false,
-      event: "changeActionablePath"
-    },
-
-    title: {
-      check: "String",
-      init: null,
-      nullable: false,
-      event: "changeTitle"
-    },
-
-    text: {
-      check: "String",
-      init: null,
-      nullable: false,
-      event: "changeText"
-    },
-
-    date: {
-      check: "Date",
-      init: null,
-      nullable: false,
-      event: "changeDate"
-    },
-
-    read: {
-      check: "Boolean",
-      init: false,
-      nullable: false,
-      event: "changeRead"
+      apply: "__applyNotification"
     }
   },
 
@@ -116,23 +73,6 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
             alignY: "middle",
             minWidth: 18
           });
-          this.bind("category", control, "source", {
-            converter: value => {
-              let source = "";
-              switch (value) {
-                case "new_organization":
-                  source = "@FontAwesome5Solid/users/14";
-                  break;
-                case "study_shared":
-                  source = "@FontAwesome5Solid/file/14";
-                  break;
-                case "template_shared":
-                  source = "@FontAwesome5Solid/copy/14";
-                  break;
-              }
-              return source;
-            }
-          });
           this._add(control, {
             row: 0,
             column: 0,
@@ -145,7 +85,6 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
             rich: true,
             wrap: true
           });
-          this.bind("title", control, "value");
           this._add(control, {
             row: 0,
             column: 1
@@ -157,7 +96,6 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
             rich: true,
             wrap: true
           });
-          this.bind("text", control, "value");
           this._add(control, {
             row: 1,
             column: 1
@@ -169,14 +107,6 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
             rich: true,
             wrap: true
           });
-          this.bind("date", control, "value", {
-            converter: value => {
-              if (value) {
-                return osparc.utils.Utils.formatDateAndTime(new Date(value));
-              }
-              return "";
-            }
-          });
           this._add(control, {
             row: 2,
             column: 1
@@ -186,27 +116,69 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
       return control || this.base(arguments, id);
     },
 
+    __applyNotification: function(notification) {
+      const icon = this.getChildControl("icon");
+      notification.bind("category", icon, "source", {
+        converter: value => {
+          let source = "";
+          switch (value) {
+            case "new_organization":
+              source = "@FontAwesome5Solid/users/14";
+              break;
+            case "study_shared":
+              source = "@FontAwesome5Solid/file/14";
+              break;
+            case "template_shared":
+              source = "@FontAwesome5Solid/copy/14";
+              break;
+          }
+          return source;
+        }
+      });
+
+      const title = this.getChildControl("title");
+      notification.bind("title", title, "value");
+
+      const text = this.getChildControl("text");
+      notification.bind("text", text, "value");
+
+      const date = this.getChildControl("date");
+      notification.bind("date", date, "value", {
+        converter: value => {
+          if (value) {
+            return osparc.utils.Utils.formatDateAndTime(new Date(value));
+          }
+          return "";
+        }
+      });
+    },
+
     __notificationTapped: function() {
+      const notification = this.getNotification();
+      if (!notification) {
+        return;
+      }
+
       this.fireEvent("notificationTapped");
 
-      if (this.isRead() === false) {
+      if (notification.isRead() === false) {
         // set as read
         const params = {
           url: {
-            notificationId: this.getId()
+            notificationId: notification.getId()
           },
           data: {
             "read": true
           }
         };
         osparc.data.Resources.fetch("notifications", "patch", params)
-          .then(() => this.setRead(true))
-          .catch(() => this.setRead(false));
+          .then(() => notification.setRead(true))
+          .catch(() => notification.setRead(false));
       }
 
       // open actionable path
-      const actionablePath = this.getActionablePath();
-      const category = this.getCategory();
+      const actionablePath = notification.getActionablePath();
+      const category = notification.getCategory();
       switch (category) {
         case "new_organization": {
           const items = actionablePath.split("/");
