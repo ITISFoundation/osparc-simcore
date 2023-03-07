@@ -754,9 +754,10 @@ async def test_failed_task_returns_exceptions(
         match="sadly we are failing to execute anything cause we are dumb...",
     ):
         await dask_client.get_task_result(job_id)
-    assert len(await dask_client.backend.client.list_datasets()) > 0
+    assert isinstance(dask_client.backend.client.list_datasets(), Coroutine)
+    assert len(await dask_client.backend.client.list_datasets()) > 0  # type: ignore
     await dask_client.release_task_result(job_id)
-    assert len(await dask_client.backend.client.list_datasets()) == 0
+    assert len(await dask_client.backend.client.list_datasets()) == 0  # type: ignore
 
 
 # currently in the case of a dask-gateway we do not check for missing resources
