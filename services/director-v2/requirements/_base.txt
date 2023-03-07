@@ -90,7 +90,7 @@ dask==2022.9.2
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask-gateway
     #   distributed
-dask-gateway==2022.10.0
+dask-gateway==2023.1.1
     # via -r requirements/_base.in
 decorator==4.4.2
     # via networkx
