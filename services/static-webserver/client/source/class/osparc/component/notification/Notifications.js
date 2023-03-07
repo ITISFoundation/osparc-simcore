@@ -84,9 +84,10 @@ qx.Class.define("osparc.component.notification.Notifications", {
     },
 
 
-    addNotification: function(notification) {
+    addNotification: function(notificationObj) {
+      const notification = new osparc.component.notification.Notification(notificationObj);
       this.__notifications.push(notification);
-      this.__notifications.sort((a, b) => new Date(b.date) - new Date(a.date));
+      this.__notifications.sort((a, b) => new Date(b.getDate()) - new Date(a.getDate()));
     },
 
     addNotifications: function(notifications) {

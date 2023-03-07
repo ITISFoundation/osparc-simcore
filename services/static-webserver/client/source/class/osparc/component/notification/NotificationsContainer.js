@@ -34,16 +34,15 @@ qx.Class.define("osparc.component.notification.NotificationsContainer", {
     });
 
     const notifications = osparc.component.notification.Notifications.getInstance();
-    notifications.getNotifications().addListener("change", () => this.__updateNotificationsContainer(), this);
-    this.__updateNotificationsContainer();
+    notifications.getNotifications().addListener("change", () => this.__updateContainer(), this);
+    this.__updateContainer();
   },
 
   members: {
-    __updateNotificationsContainer: function() {
+    __updateContainer: function() {
       this._removeAll();
       const notifications = osparc.component.notification.Notifications.getInstance().getNotifications();
-      notifications.forEach(notificationObj => {
-        const notification = new osparc.component.notification.Notification(notificationObj);
+      notifications.forEach(notification => {
         const notificationUI = new osparc.component.notification.NotificationUI(notification);
         notificationUI.addListener("notificationTapped", () => this.exclude());
         this._add(notificationUI);
