@@ -6,8 +6,9 @@ The server only has to return a `TaskId` in the handler creating the long
 running task. The client will take care of recovering the result from it.
 """
 
-from ...long_running_tasks._errors import TaskAlreadyRunningError, TaskCancelledError
 from ...long_running_tasks._task import (
+    TaskAlreadyRunningError,
+    TaskCancelledError,
     TaskId,
     TaskProgress,
     TaskResult,
