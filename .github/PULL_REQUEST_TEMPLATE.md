@@ -1,5 +1,4 @@
-<!-- Common title prefixes/annotations:
-PREFIX:
+<!-- Title Annotations:
 
   WIP: work in progress
   🐛    Fix a bug.
@@ -11,13 +10,10 @@ PREFIX:
   📝    Add or update documentation.
   🔨    Add or update development scripts.
   🔒️    Fix security issues.
-
+  ⚠️     Changes in devops configuration
+  🗃️    Migration of database
 
 or from https://gitmoji.dev/
-
-SUFFIX:
- (⚠️ devops)  changes in devops configuration required before deploying
- (🗃️ DB change)  changes in the DB tables
 -->
 
 ## What do these changes do?
@@ -30,7 +26,7 @@ SUFFIX:
 <!-- Enumerate REVIEWERS other issues
 
 - ITISFoundation/osparc-issues#428
-- #26 : node_ports should have retry policies when upload/download fails  (FIXED)
+- #26
 
 -->
 
