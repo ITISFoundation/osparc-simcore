@@ -24,7 +24,10 @@ qx.Class.define("osparc.component.notification.NotificationsContainer", {
     this._setLayout(new qx.ui.layout.VBox(1));
 
     this.set({
-      zIndex: 110000
+      zIndex: 110000,
+      backgroundColor: "background-main-2",
+      maxWidth: osparc.component.notification.NotificationUI.MAX_WIDTH,
+      maxHeight: 250
     });
 
     const root = qx.core.Init.getApplication().getRoot();
@@ -41,11 +44,15 @@ qx.Class.define("osparc.component.notification.NotificationsContainer", {
   members: {
     __updateContainer: function() {
       this._removeAll();
+      const scrollContainer = new qx.ui.container.Scroll();
+      this._add(scrollContainer, {
+        flex: 1
+      });
       const notifications = osparc.component.notification.Notifications.getInstance().getNotifications();
       notifications.forEach(notification => {
         const notificationUI = new osparc.component.notification.NotificationUI(notification);
         notificationUI.addListener("notificationTapped", () => this.exclude());
-        this._add(notificationUI);
+        scrollContainer.add(notificationUI);
       });
     },
 

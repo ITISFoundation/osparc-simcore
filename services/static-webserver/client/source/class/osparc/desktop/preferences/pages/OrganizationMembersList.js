@@ -323,9 +323,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
       };
       osparc.data.Resources.fetch("organizationMembers", "post", params)
         .then(() => {
-          let text = orgMemberEmail + this.tr(" successfully added.");
-          text += "<br>";
-          text += this.tr("The user will not get notified.");
+          const text = orgMemberEmail + this.tr(" successfully added.");
           if (productEveryone && productEveryone["gid"] === parseInt(orgId)) {
             // demote the new member to user
             const params2 = {
