@@ -14,7 +14,7 @@ certifi==2022.12.7
     #   httpx
 click==8.1.3
     # via uvicorn
-fastapi==0.90.1
+fastapi==0.92.0
     # via
     #   -r requirements/_fastapi.in
     #   fastapi-contrib
@@ -51,7 +51,7 @@ sniffio==1.3.0
     #   anyio
     #   httpcore
     #   httpx
-starlette==0.23.1
+starlette==0.25.0
     # via fastapi
 threadloop==1.0.2
     # via jaeger-client

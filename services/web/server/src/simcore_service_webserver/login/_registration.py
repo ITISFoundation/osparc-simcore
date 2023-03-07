@@ -176,16 +176,19 @@ def _invitations_request_context(invitation_code: str) -> Iterator[URL]:
         yield url
 
     except (ValidationError, InvalidInvitation) as err:
+        msg = f"{err}"
+        if isinstance(ValidationError, err):
+            msg = f"{InvalidInvitation(reason='')}"
         raise web.HTTPForbidden(
-            reason=f"{err}. {MSG_INVITATIONS_CONTACT_SUFFIX}",
+            reason=f"{msg}. {MSG_INVITATIONS_CONTACT_SUFFIX}",
             content_type=MIMETYPE_APPLICATION_JSON,
-        )
+        ) from err
 
     except InvitationsServiceUnavailable as err:
         raise web.HTTPServiceUnavailable(
             reason=f"{err}",
             content_type=MIMETYPE_APPLICATION_JSON,
-        )
+        ) from err
 
 
 async def extract_email_from_invitation(
