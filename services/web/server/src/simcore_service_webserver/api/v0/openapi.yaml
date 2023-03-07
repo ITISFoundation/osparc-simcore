@@ -1245,7 +1245,7 @@ paths:
                             id:
                               type: string
                               description: notification id
-                              example: '123456789'
+                              example: '123'
                             read:
                               type: boolean
                               description: wether the notification has been read
@@ -1261,7 +1261,7 @@ paths:
       operationId: post_user_notification
       requestBody:
         required: true
-        description: the group to create
+        description: the new notification
         content:
           application/json:
             schema:
@@ -1331,8 +1331,8 @@ paths:
                   type: boolean
                   description: notification has been read
       responses:
-        '200':
-          description: Returns modified service
+        '204':
+          description: All good
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /groups:

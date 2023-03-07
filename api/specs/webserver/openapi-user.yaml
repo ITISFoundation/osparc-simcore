@@ -123,7 +123,7 @@ paths:
       operationId: post_user_notification
       requestBody:
         required: true
-        description: the group to create
+        description: the new notification
         content:
           application/json:
             schema:
@@ -152,8 +152,8 @@ paths:
             schema:
               $ref: '#/components/schemas/NotificationUpdate'
       responses:
-        "200":
-          description: Returns modified service
+        "204":
+          description: All good
         default:
           $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
 
@@ -220,7 +220,7 @@ components:
               type: string
               description: >-
                 notification id
-              example: "123456789"
+              example: "123"
             read:
               type: boolean
               description: >-
