@@ -8,7 +8,7 @@ import asyncio
 import functools
 import traceback
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Awaitable, Callable, Optional
+from typing import Any, AsyncIterator, Awaitable, Callable, Coroutine, Optional
 from unittest import mock
 from uuid import uuid4
 
