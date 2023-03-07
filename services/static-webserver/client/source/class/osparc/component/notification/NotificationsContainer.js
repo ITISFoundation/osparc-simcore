@@ -21,7 +21,7 @@ qx.Class.define("osparc.component.notification.NotificationsContainer", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(1));
+    this._setLayout(new qx.ui.layout.Canvas());
 
     this.set({
       zIndex: 110000,
@@ -36,23 +36,31 @@ qx.Class.define("osparc.component.notification.NotificationsContainer", {
       right: 0
     });
 
+    const notificationsContainer = this.__container = new qx.ui.container.Composite(new qx.ui.layout.VBox(1));
+    const scrollContainer = new qx.ui.container.Scroll();
+    scrollContainer.add(notificationsContainer);
+    this._add(scrollContainer, {
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0
+    });
+
     const notifications = osparc.component.notification.Notifications.getInstance();
     notifications.getNotifications().addListener("change", () => this.__updateContainer(), this);
     this.__updateContainer();
   },
 
   members: {
+    __container: null,
+
     __updateContainer: function() {
-      this._removeAll();
-      const scrollContainer = new qx.ui.container.Scroll();
-      this._add(scrollContainer, {
-        flex: 1
-      });
+      this.__container.removeAll();
       const notifications = osparc.component.notification.Notifications.getInstance().getNotifications();
       notifications.forEach(notification => {
         const notificationUI = new osparc.component.notification.NotificationUI(notification);
         notificationUI.addListener("notificationTapped", () => this.exclude());
-        scrollContainer.add(notificationUI);
+        this.__container.add(notificationUI);
       });
     },
 
