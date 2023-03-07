@@ -25,7 +25,7 @@ qx.Class.define("osparc.component.notification.Notifications", {
   },
 
   statics: {
-    newOrganizationObj: function(userId, orgId) {
+    __newOrganizationObj: function(userId, orgId) {
       return {
         "user_id": userId.toString(),
         "category": "new_organization",
@@ -36,7 +36,7 @@ qx.Class.define("osparc.component.notification.Notifications", {
       };
     },
 
-    newStudyObj: function(userId, orgId) {
+    __newStudyObj: function(userId, orgId) {
       return {
         "user_id": userId.toString(),
         "category": "study_shared",
@@ -47,7 +47,7 @@ qx.Class.define("osparc.component.notification.Notifications", {
       };
     },
 
-    newTemplateObj: function(userId, orgId) {
+    __newTemplateObj: function(userId, orgId) {
       return {
         "user_id": userId.toString(),
         "category": "template_shared",
@@ -56,33 +56,32 @@ qx.Class.define("osparc.component.notification.Notifications", {
         "text": qx.locale.Manager.tr("A template was shared with you"),
         "date": new Date().toISOString()
       };
+    },
+
+    postNewOrganization: function(userId, orgId) {
+      const params = {
+        data: this.__newOrganizationObj(userId, orgId)
+      };
+      return osparc.data.Resources.fetch("notifications", "post", params);
+    },
+
+    postNewStudy: function(userId, orgId) {
+      const params = {
+        data: this.__newStudyObj(userId, orgId)
+      };
+      return osparc.data.Resources.fetch("notifications", "post", params);
+    },
+
+    postNewTemplate: function(userId, orgId) {
+      const params = {
+        data: this.__newTemplateObj(userId, orgId)
+      };
+      return osparc.data.Resources.fetch("notifications", "post", params);
     }
   },
 
   members: {
     __notifications: null,
-
-    postNewOrganization: function(userId, orgId) {
-      const params = {
-        data: osparc.component.notification.Notifications.newOrganizationObj(userId, orgId)
-      };
-      osparc.data.Resources.fetch("notifications", "post", params);
-    },
-
-    postNewStudy: function(userId, orgId) {
-      const params = {
-        data: osparc.component.notification.Notifications.newStudyObj(userId, orgId)
-      };
-      osparc.data.Resources.fetch("notifications", "post", params);
-    },
-
-    postNewTemplate: function(userId, orgId) {
-      const params = {
-        data: osparc.component.notification.Notifications.newTemplateObj(userId, orgId)
-      };
-      osparc.data.Resources.fetch("notifications", "post", params);
-    },
-
 
     addNotification: function(notificationObj) {
       const notification = new osparc.component.notification.Notification(notificationObj);

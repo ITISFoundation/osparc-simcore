@@ -353,7 +353,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
               .then(respOrgMembers => {
                 const newMember = respOrgMembers.find(m => m["login"] === orgMemberEmail);
                 if (newMember) {
-                  osparc.component.notification.Notifications.getInstance().postNewOrganization(newMember["id"], orgId);
+                  osparc.component.notification.Notifications.postNewOrganization(newMember["id"], orgId);
                 }
               });
           }
