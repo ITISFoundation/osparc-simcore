@@ -7,7 +7,4 @@
 # Ensures compatibility with dask scheduler/worker
 --constraint ./_base.txt
 
-# SEE https://github.com/dask/dask/blob/main/setup.py#L12 for extra reqs
-dask[distributed]
-blosc # for compression
-lz4 # for compression
+dask-gateway
