@@ -19,6 +19,7 @@ from pydantic import (
     Field,
     HttpUrl,
     NonNegativeFloat,
+    NonNegativeInt,
     root_validator,
     validator,
 )
@@ -30,10 +31,18 @@ class WorkerMetrics(BaseModel):
     cpu: float = Field(..., description="consumed % of cpus")
     memory: ByteSize = Field(..., description="consumed memory")
     num_fds: int = Field(..., description="consumed file descriptors")
-    # ready: NonNegativeInt = Field(..., description="# tasks ready to run")
-    # executing: NonNegativeInt = Field(..., description="# tasks currently executing")
-    # in_flight: NonNegativeInt = Field(..., description="# tasks waiting for data")
-    # in_memory: NonNegativeInt = Field(..., description="# tasks in worker memory")
+    ready: Optional[NonNegativeInt] = Field(
+        default=None, description="# tasks ready to run"
+    )
+    executing: Optional[NonNegativeInt] = Field(
+        default=None, description="# tasks currently executing"
+    )
+    in_flight: Optional[NonNegativeInt] = Field(
+        default=None, description="# tasks waiting for data"
+    )
+    in_memory: Optional[NonNegativeInt] = Field(
+        default=None, description="# tasks in worker memory"
+    )
 
 
 AvailableResources = DictModel[str, PositiveFloat]
