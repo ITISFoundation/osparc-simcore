@@ -139,6 +139,7 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
 
     openOrganizations: function() {
       this.__openPage(this.__organizationsPage);
+      return this.__organizationsPage;
     },
 
     __openPage: function(page) {
