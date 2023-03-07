@@ -11,6 +11,7 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from . import users_api
+from ._meta import API_VTAG
 from .login.decorators import RQT_USERID_KEY, login_required
 from .redis import get_redis_user_notifications_client
 from .security_decorators import permission_required
@@ -152,11 +153,15 @@ async def post_user_notification(request: web.Request):
     return response
 
 
+routes = web.RouteTableDef()
+
+
+@routes.patch(f"/{API_VTAG}/notifications/{{nid}}", name="update_user_notification")
 @login_required
 async def update_user_notification(request: web.Request):
     redis_client = get_redis_user_notifications_client(request.app)
     user_id = request[RQT_USERID_KEY]
-    nid = request.params["nid"]
+    nid = request.match_info["nid"]
     notif_hash_key = f'user_id={user_id}:notification_id={nid}'
     print("notif_hash_key", notif_hash_key)
     if notif_str := await redis_client.get(notif_hash_key):
@@ -165,7 +170,7 @@ async def update_user_notification(request: web.Request):
         body = await request.json()
         print("old notif", notif)
         for k, v in body.items():
-            notif[k] = v
+            notif[k] = str(v)
         print("new notif", notif)
         await redis_client.set(notif_hash_key, value=json.dumps(notif))
         response = web.json_response(status=web.HTTPNoContent.status_code)
