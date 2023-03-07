@@ -8,7 +8,7 @@
 --constraint ./_base.txt
 
 # SEE https://github.com/dask/dask/blob/main/setup.py#L12 for extra reqs
-blosc # for compression
 dask[distributed]
 dask-gateway # needed for the osparc-dask-gateway to preload the module
+blosc # for compression
 lz4 # for compression
