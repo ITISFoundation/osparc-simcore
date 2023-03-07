@@ -446,6 +446,7 @@ qx.Class.define("osparc.data.Resources", {
        */
       "notifications": {
         useCache: false,
+        idField: "notification",
         endpoints: {
           get: {
             method: "GET",
