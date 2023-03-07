@@ -14,7 +14,8 @@ from dask_task_models_library.container_tasks.events import (
     TaskStateEvent,
 )
 from dask_task_models_library.container_tasks.io import TaskCancelEventName
-from distributed.worker import TaskState, get_worker
+from distributed.worker import get_worker
+from distributed.worker_state_machine import TaskState
 
 from .boot_mode import BootMode
 
