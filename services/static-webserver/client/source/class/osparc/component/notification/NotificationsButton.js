@@ -84,7 +84,7 @@ qx.Class.define("osparc.component.notification.NotificationsButton", {
       notifications.length ? this.show() : this.exclude();
 
       const number = this.getChildControl("number");
-      const unreadNotifications = notifications.filter(notification => notification["read"] === false).length;
+      const unreadNotifications = notifications.filter(notification => ["false", "False", false].includes(notification["read"])).length;
       number.setValue(unreadNotifications.toString());
     },
 
