@@ -33,10 +33,6 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
     layout.setColumnFlex(1, 1);
     this._setLayout(layout);
 
-    this.bind("read", this, "backgroundColor", {
-      converter: read => read ? "background-main-3" : "background-main-4"
-    });
-
     if (notification) {
       this.setNotification(notification);
     }
@@ -150,6 +146,10 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
           }
           return "";
         }
+      });
+
+      notification.bind("read", this, "backgroundColor", {
+        converter: read => read ? "background-main-3" : "background-main-4"
       });
     },
 
