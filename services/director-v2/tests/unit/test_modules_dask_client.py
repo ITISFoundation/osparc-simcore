@@ -683,7 +683,12 @@ async def test_abort_computation_tasks(
     await start_event.wait(timeout=10)  # type: ignore
 
     # now let's abort the computation
+    cancel_event = await distributed.Event(name=TaskCancelEventName.format(job_id))
     await dask_client.abort_computation_task(job_id)
+    assert cancel_event.is_set() is not None
+    assert isinstance(cancel_event.is_set(), Coroutine)
+    assert await cancel_event.is_set()  # type: ignore
+
     await _assert_wait_for_cb_call(mocked_user_completed_cb)
     await _assert_wait_for_task_status(job_id, dask_client, RunningState.ABORTED)
 
