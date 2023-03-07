@@ -17,7 +17,8 @@ services_specifications = sa.Table(
         "service_key",
         sa.String,
         nullable=False,
-        doc="Service Key Identifier",
+        unique=True,
+        doc="Service Key Identifier (independenty from the version)",
     ),
     sa.Column("service_version", sa.String, nullable=False, doc="Service version"),
     sa.Column(
