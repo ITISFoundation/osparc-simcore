@@ -141,15 +141,21 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
         .finally(() => cb());
 
       // push 'study_shared'/'template_shared' notification
-      gids.forEach(gid => {
-        // OM: get uid
-        const uid = gid;
-        if (this.__resourceType === "study") {
-          osparc.component.notification.Notifications.postNewStudy(uid, this._serializedData["uuid"]);
-        } else {
-          osparc.component.notification.Notifications.postNewTemplate(uid, this._serializedData["uuid"]);
-        }
-      });
+      osparc.store.Store.getInstance().getPotentialCollaborators()
+        .then(potentialCollaborators => {
+          gids.forEach(gid => {
+            console.log(potentialCollaborators);
+            const collabFound = potentialCollaborators.find(potentialCollaborator => potentialCollaborator === gid);
+            if ("id" in collabFound) {
+              // it's a user
+              const uid = collabFound["id"];
+              if (this.__resourceType === "study") {
+                osparc.component.notification.Notifications.postNewStudy(uid, this._serializedData["uuid"]);
+              } else {
+                osparc.component.notification.Notifications.postNewTemplate(uid, this._serializedData["uuid"]);
+              }
+            }
+        });
     },
 
     _deleteMember: function(collaborator, item) {
