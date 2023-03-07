@@ -247,6 +247,7 @@ async def test_get_cluster_details(
             cluster_out = await _get_cluster_details(
                 async_client, user_1["id"], some_cluster.id
             )
+            assert cluster_out.scheduler.workers
             assert (
                 next(iter(cluster_out.scheduler.workers.values())).metrics.executing
                 == 1
@@ -266,6 +267,7 @@ async def test_get_cluster_details(
             cluster_out = await _get_cluster_details(
                 async_client, user_1["id"], some_cluster.id
             )
+            assert cluster_out.scheduler.workers
             print(
                 f"!!> cluster metrics: {next(iter(cluster_out.scheduler.workers.values())).metrics=}"
             )
