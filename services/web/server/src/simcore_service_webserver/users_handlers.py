@@ -113,17 +113,26 @@ async def delete_token(request: web.Request):
         raise web.HTTPNotFound(reason=f"Token for {service_id} not found") from exc
 
 
-@login_required
-async def get_user_notifications(request: web.Request):
-    redis_client = get_redis_user_notifications_client(request.app)
-    user_id = request[RQT_USERID_KEY]
+async def _get_user_notifications(redis_client, user_id):
     notifications = []
     user_hash_key = f'user_id={user_id}:notification_id=*'
     async for scanned_notification_key in redis_client.scan_iter(match=user_hash_key):
         if notification_str := await redis_client.get(scanned_notification_key):
-            print("notification_str", notification_str)
-            notifications.append(notification_str)
-    return web.json_response(data={"data": notifications})
+            notification = json.loads(notification_str)
+            notifications.append(notification)
+    notifications.sort(key=lambda n: n["date"])
+    notifications.reverse()
+    return notifications
+
+
+@login_required
+async def get_user_notifications(request: web.Request):
+    redis_client = get_redis_user_notifications_client(request.app)
+    user_id = request[RQT_USERID_KEY]
+    notifications = await _get_user_notifications(redis_client, user_id)
+    print("notifications", notifications)
+    # last 10 items only
+    return web.json_response(data={"data": notifications[-10:]})
 
 
 @login_required
