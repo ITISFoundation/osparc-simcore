@@ -7,7 +7,7 @@ import pytest
 from aiodocker.volumes import DockerVolume
 from pytest_mock import MockerFixture
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
-from simcore_service_agent.modules.volumes_cleanup._docker import (
+from simcore_service_agent.modules.docker import (
     docker_client,
     get_dyv_volumes,
     is_volume_used,
