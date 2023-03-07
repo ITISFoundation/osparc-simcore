@@ -681,7 +681,7 @@ async def test_abort_computation_tasks(
     await _assert_wait_for_task_status(job_id, dask_client, RunningState.STARTED)
 
     # we wait to be sure the remote fct is started
-    start_event = Event(_DASK_EVENT_NAME)
+    start_event = Event(_DASK_EVENT_NAME, client=dask_client.backend.client)
     await start_event.wait(timeout=10)  # type: ignore
 
     # now let's abort the computation
