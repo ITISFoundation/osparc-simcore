@@ -188,12 +188,32 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
           organizationsPage.openOrganizationDetails(parseInt(orgId));
           break;
         }
-        case "study_shared":
-          console.log(actionablePath);
-          break;
         case "template_shared":
-          console.log(actionablePath);
+        case "study_shared": {
+          const items = actionablePath.split("/");
+          const studyId = items.pop();
+          const params = {
+            url: {
+              "studyId": studyId
+            }
+          };
+          osparc.data.Resources.getOne("studies", params)
+            .then(studyData => {
+              if (studyData) {
+                const studyDataCopy = osparc.data.model.Study.deepCloneStudyObject(studyData);
+                studyDataCopy["resourceType"] = notification.getCategory() === "study_shared" ? "study" : "template";
+                const moreOpts = new osparc.dashboard.ResourceMoreOptions(studyData);
+                const title = this.tr("Options");
+                osparc.ui.window.Window.popUpInWindow(
+                  moreOpts,
+                  title,
+                  osparc.dashboard.ResourceMoreOptions.WIDTH,
+                  osparc.dashboard.ResourceMoreOptions.HEIGHT
+                );
+              }
+            });
           break;
+        }
       }
     }
   }

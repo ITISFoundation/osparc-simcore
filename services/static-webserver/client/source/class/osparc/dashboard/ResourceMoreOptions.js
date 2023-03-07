@@ -43,6 +43,11 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     "openService": "qx.event.type.Data"
   },
 
+  statics: {
+    WIDTH: 700,
+    HEIGHT: 660
+  },
+
   members: {
     __resourceData: null,
     __serviceVersionLayout: null,
