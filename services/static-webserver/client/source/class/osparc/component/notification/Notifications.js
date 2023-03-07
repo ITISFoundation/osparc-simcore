@@ -30,8 +30,8 @@ qx.Class.define("osparc.component.notification.Notifications", {
         "user_id": userId.toString(),
         "category": "new_organization",
         "actionable_path": "organization/"+orgId,
-        "title": qx.locale.Manager.tr("New organization"),
-        "text": qx.locale.Manager.tr("You're now member of a new Organization"),
+        "title": "New organization",
+        "text": "You're now member of a new Organization",
         "date": new Date().toISOString()
       };
     },
@@ -41,8 +41,8 @@ qx.Class.define("osparc.component.notification.Notifications", {
         "user_id": userId.toString(),
         "category": "study_shared",
         "actionable_path": "study/"+studyId,
-        "title": qx.locale.Manager.tr("Study shared"),
-        "text": qx.locale.Manager.tr("A study was shared with you"),
+        "title": "Study shared",
+        "text": "A study was shared with you",
         "date": new Date().toISOString()
       };
     },
@@ -52,8 +52,8 @@ qx.Class.define("osparc.component.notification.Notifications", {
         "user_id": userId.toString(),
         "category": "template_shared",
         "actionable_path": "template/"+templateId,
-        "title": qx.locale.Manager.tr("Template shared"),
-        "text": qx.locale.Manager.tr("A template was shared with you"),
+        "title": "Template shared",
+        "text": "A template was shared with you",
         "date": new Date().toISOString()
       };
     },
