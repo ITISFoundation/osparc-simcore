@@ -9,11 +9,12 @@ from copy import deepcopy
 from typing import Callable
 
 import pytest
-from aiohttp import web
+from aiohttp import ClientResponse, web
 from aiohttp.test_utils import TestClient
+from faker import Faker
 from pytest_simcore.helpers import utils_login
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
+from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict, log_client_in
 from pytest_simcore.helpers.utils_webserver_unit_with_db import standard_role_response
 from servicelib.aiohttp.application import create_safe_application
 from simcore_postgres_database.models.users import UserRole
@@ -589,3 +590,55 @@ async def test_add_user_gets_added_to_group(
         )
         if not error:
             assert len(data["organizations"]) == (0 if "bad" in email else 1)
+
+
+@pytest.mark.testit
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_it(
+    client: TestClient,
+    standard_groups: list[dict[str, str]],
+    user_role: UserRole,
+    faker: Faker,
+):
+    # Tests 🐛 https://github.com/ITISFoundation/osparc-issues/issues/812
+
+    standard_group = standard_groups[0]
+    email = faker.email()
+    url = client.app.router["add_group_user"].url_for(gid=f"{standard_group['gid']}")
+
+    # adding a user that is NOT registered
+    response: ClientResponse = await client.post(url, json={"email": email})
+    assert response.status == 404
+
+    # Register the user
+    async with NewUser(
+        params={
+            "name": "foo",
+            "email": email,
+        },
+        app=client.app,
+    ) as registered_user:
+
+        assert registered_user["email"] == email
+
+        # adding a user to group
+        response = await client.post(
+            url,
+            json={"email": email},
+        )
+
+        data, error = await assert_status(response, web.HTTPOk)
+
+        assert not data
+        assert not error
+
+        #
+        # adding a user to group with the email in capital letters
+        # SEE https://github.com/ITISFoundation/osparc-issues/issues/812
+        response = await client.post(
+            url,
+            json={"email": email.upper()},
+        )
+        assert response.status == 404
+
+    print(response)
