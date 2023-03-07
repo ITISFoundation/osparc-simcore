@@ -168,10 +168,8 @@ async def update_user_notification(request: web.Request):
         notif = json.loads(notif_str)
         # body includes a dict with the changes to make
         body = await request.json()
-        print("old notif", notif)
         for k, v in body.items():
             notif[k] = str(v)
-        print("new notif", notif)
         await redis_client.set(notif_hash_key, value=json.dumps(notif))
         response = web.json_response(status=web.HTTPNoContent.status_code)
         return response
