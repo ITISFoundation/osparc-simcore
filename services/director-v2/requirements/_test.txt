@@ -48,8 +48,6 @@ attrs==21.4.0
     #   aiohttp
     #   pytest
     #   pytest-docker
-bokeh==3.0.3
-    # via -r requirements/_test.in
 boto3==1.24.59
     # via aiobotocore
 botocore==1.27.59
@@ -75,8 +73,6 @@ codecov==2.1.12
     # via -r requirements/_test.in
 colorlog==6.7.0
     # via dask-gateway-server
-contourpy==1.0.7
-    # via bokeh
 coverage==6.5.0
     # via
     #   codecov
@@ -138,10 +134,6 @@ iniconfig==2.0.0
     # via pytest
 isort==5.12.0
     # via pylint
-jinja2==3.1.2
-    # via
-    #   -c requirements/_base.txt
-    #   bokeh
 jmespath==1.0.1
     # via
     #   boto3
@@ -155,7 +147,6 @@ mako==1.2.2
 markupsafe==2.1.2
     # via
     #   -c requirements/_base.txt
-    #   jinja2
     #   mako
 mccabe==0.7.0
     # via pylint
@@ -167,25 +158,15 @@ multidict==6.0.2
     #   aiohttp
     #   async-asgi-testclient
     #   yarl
-numpy==1.24.2
-    # via
-    #   bokeh
-    #   contourpy
-    #   pandas
 packaging==23.0
     # via
     #   -c requirements/_base.txt
-    #   bokeh
     #   docker
     #   pytest
 pamqp==3.2.1
     # via
     #   -c requirements/_base.txt
     #   aiormq
-pandas==1.5.3
-    # via bokeh
-pillow==9.4.0
-    # via bokeh
 platformdirs==3.0.0
     # via pylint
 pluggy==1.0.0
@@ -226,13 +207,6 @@ python-dateutil==2.8.2
     # via
     #   botocore
     #   faker
-    #   pandas
-pytz==2022.7.1
-    # via pandas
-pyyaml==5.4.1
-    # via
-    #   -c requirements/_base.txt
-    #   bokeh
 requests==2.27.1
     # via
     #   -c requirements/_base.txt
@@ -271,10 +245,6 @@ tomli==2.0.1
     #   pytest
 tomlkit==0.11.6
     # via pylint
-tornado==6.2
-    # via
-    #   -c requirements/_base.txt
-    #   bokeh
 traitlets==5.9.0
     # via dask-gateway-server
 typing-extensions==4.3.0
@@ -296,8 +266,6 @@ wrapt==1.15.0
     # via
     #   aiobotocore
     #   astroid
-xyzservices==2023.2.0
-    # via bokeh
 yarl==1.7.2
     # via
     #   -c requirements/_base.txt

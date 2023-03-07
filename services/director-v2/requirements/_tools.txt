@@ -69,7 +69,7 @@ pyproject-hooks==1.0.0
     # via build
 pyyaml==5.4.1
     # via
-    #   -c requirements/_test.txt
+    #   -c requirements/_base.txt
     #   pre-commit
     #   watchdog
 tomli==2.0.1
