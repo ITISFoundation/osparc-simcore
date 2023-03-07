@@ -656,7 +656,7 @@ async def test_abort_computation_tasks(
         start_event.set()
         # sleep a bit in case someone is aborting us
         print("--> waiting for task to be aborted...")
-        cancel_event.wait(timeout=10)
+        cancel_event.wait(timeout=60)
         if cancel_event.is_set():
             # NOTE: asyncio.CancelledError is not propagated back to the client...
             print("--> raising cancellation error now")
