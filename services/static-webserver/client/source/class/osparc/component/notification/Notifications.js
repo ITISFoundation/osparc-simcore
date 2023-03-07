@@ -36,22 +36,22 @@ qx.Class.define("osparc.component.notification.Notifications", {
       };
     },
 
-    __newStudyObj: function(userId, orgId) {
+    __newStudyObj: function(userId, studyId) {
       return {
         "user_id": userId.toString(),
         "category": "study_shared",
-        "actionable_path": "study/"+orgId,
+        "actionable_path": "study/"+studyId,
         "title": qx.locale.Manager.tr("Study shared"),
         "text": qx.locale.Manager.tr("A study was shared with you"),
         "date": new Date().toISOString()
       };
     },
 
-    __newTemplateObj: function(userId, orgId) {
+    __newTemplateObj: function(userId, templateId) {
       return {
         "user_id": userId.toString(),
         "category": "template_shared",
-        "actionable_path": "template/"+orgId,
+        "actionable_path": "template/"+templateId,
         "title": qx.locale.Manager.tr("Template shared"),
         "text": qx.locale.Manager.tr("A template was shared with you"),
         "date": new Date().toISOString()
@@ -65,16 +65,16 @@ qx.Class.define("osparc.component.notification.Notifications", {
       return osparc.data.Resources.fetch("notifications", "post", params);
     },
 
-    postNewStudy: function(userId, orgId) {
+    postNewStudy: function(userId, studyId) {
       const params = {
-        data: this.__newStudyObj(userId, orgId)
+        data: this.__newStudyObj(userId, studyId)
       };
       return osparc.data.Resources.fetch("notifications", "post", params);
     },
 
-    postNewTemplate: function(userId, orgId) {
+    postNewTemplate: function(userId, templateId) {
       const params = {
-        data: this.__newTemplateObj(userId, orgId)
+        data: this.__newTemplateObj(userId, templateId)
       };
       return osparc.data.Resources.fetch("notifications", "post", params);
     }
