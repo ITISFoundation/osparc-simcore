@@ -144,7 +144,6 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
       osparc.store.Store.getInstance().getPotentialCollaborators()
         .then(potentialCollaborators => {
           gids.forEach(gid => {
-            console.log(potentialCollaborators);
             const collabFound = potentialCollaborators.find(potentialCollaborator => potentialCollaborator === gid);
             if ("id" in collabFound) {
               // it's a user
@@ -155,6 +154,7 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
                 osparc.component.notification.Notifications.postNewTemplate(uid, this._serializedData["uuid"]);
               }
             }
+          });
         });
     },
 
