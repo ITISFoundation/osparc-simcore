@@ -75,7 +75,7 @@ cloudpickle==2.2.1
     #   distributed
 cytoolz==0.12.1
     # via -r requirements/_base.in
-dask==2023.3.0
+dask==2023.2.0
     # via
     #   -r requirements/../../../packages/dask-task-models-library/requirements/_base.in
     #   -r requirements/_base.in
@@ -85,7 +85,7 @@ dask-gateway==2023.1.1
     # via -r requirements/_base.in
 defusedxml==0.7.1
     # via nbconvert
-distributed==2023.3.0
+distributed==2023.2.0
     # via
     #   dask
     #   dask-gateway
@@ -101,7 +101,6 @@ frozenlist==1.3.3
     #   aiosignal
 fsspec==2023.3.0
     # via
-    #   -c requirements/constraints.txt
     #   dask
     #   s3fs
 heapdict==1.0.1

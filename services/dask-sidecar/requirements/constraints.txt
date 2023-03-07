@@ -13,7 +13,10 @@
 #
 # Compatibility/coordination
 #
-
-
-# allows to put files in the HTTP file system
-fsspec>=2021.10.1
+# the dask-gateway local backend is currently using dask 2022.12.1
+# distributed 2023.2.1 introduces breaking changes that break tests
+# in director-v2. If this becomes an issue these tests will have to be refactored
+# to use a real osparc-gateway that relies on the dask-sidecar instead
+# of the integrated dask-scheduler built in the dask-gateway
+# https://github.com/dask/dask-gateway/blob/fce408779420b6ad7ab1c086af0ce3ebe3eeb6f6/dask-gateway/Dockerfile.requirements.txt
+dask<2023.2.1

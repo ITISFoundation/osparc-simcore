@@ -16,11 +16,11 @@ cloudpickle==2.2.1
     #   -c requirements/./_base.txt
     #   dask
     #   distributed
-dask==2023.3.0
+dask==2023.2.0
     # via
     #   -r requirements/_dask-distributed.in
     #   distributed
-distributed==2023.3.0
+distributed==2023.2.0
     # via
     #   -c requirements/./_base.txt
     #   dask
