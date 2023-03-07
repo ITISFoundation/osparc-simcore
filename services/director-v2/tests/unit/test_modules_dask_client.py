@@ -8,7 +8,7 @@ import asyncio
 import functools
 import traceback
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Awaitable, Callable, Coroutine, Optional
+from typing import Any, AsyncIterator, Awaitable, Callable, Optional
 from unittest import mock
 from uuid import uuid4
 
@@ -685,8 +685,6 @@ async def test_abort_computation_tasks(
     # now let's abort the computation
     cancel_event = await distributed.Event(name=TaskCancelEventName.format(job_id))
     await dask_client.abort_computation_task(job_id)
-    assert cancel_event.is_set() is not None
-    assert isinstance(cancel_event.is_set(), Coroutine)
     assert await cancel_event.is_set()  # type: ignore
 
     await _assert_wait_for_cb_call(mocked_user_completed_cb)
@@ -759,7 +757,6 @@ async def test_failed_task_returns_exceptions(
         match="sadly we are failing to execute anything cause we are dumb...",
     ):
         await dask_client.get_task_result(job_id)
-    assert isinstance(dask_client.backend.client.list_datasets(), Coroutine)
     assert len(await dask_client.backend.client.list_datasets()) > 0  # type: ignore
     await dask_client.release_task_result(job_id)
     assert len(await dask_client.backend.client.list_datasets()) == 0  # type: ignore
