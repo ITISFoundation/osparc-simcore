@@ -1,7 +1,7 @@
 import logging
 
 from ...core.settings import ApplicationSettings
-from ._docker import delete_volume, docker_client, get_dyv_volumes, is_volume_used
+from ..docker import delete_volume, docker_client, get_dyv_volumes, is_volume_used
 from ._s3 import store_to_s3
 
 logger = logging.getLogger(__name__)
