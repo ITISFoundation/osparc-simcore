@@ -6,6 +6,7 @@ import random
 
 from aiohttp import web
 from models_library.generics import Envelope
+import redis.asyncio as aioredis
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
@@ -113,37 +114,36 @@ async def delete_token(request: web.Request):
         raise web.HTTPNotFound(reason=f"Token for {service_id} not found") from exc
 
 
-async def _get_user_notifications(redis_client, user_id):
-    notifications = []
+async def _get_user_notifications(redis_client: aioredis.Redis, user_id: int):
+    notifs = []
     user_hash_key = f'user_id={user_id}:notification_id=*'
     async for scanned_notification_key in redis_client.scan_iter(match=user_hash_key):
-        if notification_str := await redis_client.get(scanned_notification_key):
-            notification = json.loads(notification_str)
-            notifications.append(notification)
-    notifications.sort(key=lambda n: n["date"])
-    notifications.reverse()
-    return notifications
+        if notif_str := await redis_client.get(scanned_notification_key):
+            notif = json.loads(notif_str)
+            notifs.append(notif)
+    notifs.sort(key=lambda n: n["date"])
+    notifs.reverse()
+    return notifs
 
 
 @login_required
 async def get_user_notifications(request: web.Request):
     redis_client = get_redis_user_notifications_client(request.app)
     user_id = request[RQT_USERID_KEY]
-    notifications = await _get_user_notifications(redis_client, user_id)
-    print("notifications", notifications)
+    notifs = await _get_user_notifications(redis_client, user_id)
     # last 10 items only
-    return web.json_response(data={"data": notifications[-10:]})
+    return web.json_response(data={"data": notifs[-10:]})
 
 
 @login_required
 async def post_user_notification(request: web.Request):
     redis_client = get_redis_user_notifications_client(request.app)
-    notification = await request.json()
+    notif = await request.json()
     nid = random.randint(100, 1000)
-    notification["id"] = str(nid)
-    notification["read"] = "False"
-    user_hash_key = f'user_id={notification["user_id"]}:notification_id={nid}'
-    await redis_client.set(user_hash_key, value=json.dumps(notification))
+    notif["id"] = str(nid)
+    notif["read"] = "False"
+    user_hash_key = f'user_id={notif["user_id"]}:notification_id={nid}'
+    await redis_client.set(user_hash_key, value=json.dumps(notif))
     response = web.json_response(status=web.HTTPNoContent.status_code)
     assert response.status == 204  # nosec
     return response
@@ -155,9 +155,9 @@ async def update_user_notification(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     nid = request.params["nid"]
     user_hash_key = f'user_id={user_id}:notification_id={nid}'
-    if notification_str := await redis_client.get(user_hash_key):
-        print(notification_str)
-        user_hash_key = f'user_id={notification["user_id"]}:notification_id={nid}'
-        await redis_client.set(user_hash_key, value=json.dumps(notification))
+    if notif_str := await redis_client.get(user_hash_key):
+        notif = json.loads(notif_str)
+        notif["read"] = "True"
+        await redis_client.set(user_hash_key, value=json.dumps(notif))
     response = web.json_response(status=web.HTTPNoContent.status_code)
     return response
