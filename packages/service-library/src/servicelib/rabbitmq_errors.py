@@ -2,7 +2,7 @@ from typing import Final
 
 from pydantic.errors import PydanticErrorMixin
 
-_ERROR_PREFIX: Final[str] = "rabbitmq.robust_rpc."
+_ERROR_PREFIX: Final[str] = "rabbitmq_error"
 
 
 class BaseRPCError(PydanticErrorMixin, RuntimeError):
