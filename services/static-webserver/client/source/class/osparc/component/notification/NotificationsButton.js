@@ -80,21 +80,19 @@ qx.Class.define("osparc.component.notification.NotificationsButton", {
       const notifications = osparc.component.notification.Notifications.getInstance().getNotifications();
       notifications.forEach(notification => notification.addListener("changeRead", () => this.__updateButton(), this));
 
-      const nUnreadNotifications = notifications.filter(notification => notification.getRead() === false).length;
-
       this.set({
-        visibility: nUnreadNotifications > 0 ? "visible" : "exclude"
+        visibility: notifications.length > 0 ? "visible" : "excluded"
       });
 
+      const nUnreadNotifications = notifications.filter(notification => notification.getRead() === false).length;
       const icon = this.getChildControl("icon");
       icon.set({
         source: nUnreadNotifications > 0 ? "@FontAwesome5Solid/bell/22" : "@FontAwesome5Regular/bell/22"
       });
-
       const number = this.getChildControl("number");
       number.set({
         value: nUnreadNotifications.toString(),
-        visibility: nUnreadNotifications > 0 ? "visible" : "exclude"
+        visibility: nUnreadNotifications > 0 ? "visible" : "excluded"
       });
     },
 
