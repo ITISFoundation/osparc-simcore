@@ -20,7 +20,6 @@ services_vendor_environments = sa.Table(
     sa.Column(
         "service_key",
         sa.String,
-        primary_key=True,
         doc="A single environment is allowed per service",
     ),
     sa.Column(
@@ -33,4 +32,10 @@ services_vendor_environments = sa.Table(
     # TIME STAMPS ----
     column_created_datetime(),
     column_modified_datetime(),
+    #
+    # CONSTRAINTS --
+    #
+    sa.PrimaryKeyConstraint(
+        "service_key", name="services_vendor_environments_service_key_pk"
+    ),
 )
