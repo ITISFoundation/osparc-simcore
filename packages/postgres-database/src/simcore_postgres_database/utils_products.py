@@ -6,6 +6,7 @@ from typing import Any, Protocol
 
 import sqlalchemy as sa
 
+from ._protocols import AiopgConnection, DBConnection
 from .models.groups import GroupType, groups
 from .models.products import products
 
@@ -49,8 +50,8 @@ async def get_default_product_name(conn: _DBConnection) -> str:
 
 
 async def get_product_group_id(
-    connection: _DBConnection, product_name: str
-) -> _GroupID | None:
+    connection: DBConnection, product_name: str
+) -> Optional[_GroupID]:
     group_id = await connection.scalar(
         sa.select(products.c.group_id).where(products.c.name == product_name)
     )
@@ -58,7 +59,7 @@ async def get_product_group_id(
 
 
 async def get_or_create_product_group(
-    connection: _AiopgConnection, product_name: str
+    connection: AiopgConnection, product_name: str
 ) -> _GroupID:
     """
     Returns group_id of a product. Creates it if undefined
