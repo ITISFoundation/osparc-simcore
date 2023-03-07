@@ -10,6 +10,7 @@ import aiodocker
 import pytest
 import simcore_service_agent
 from aiodocker.volumes import DockerVolume
+from faker import Faker
 from models_library.basic_types import BootModeEnum
 from moto.server import ThreadedMotoServer
 from pydantic import HttpUrl, parse_obj_as
@@ -161,6 +162,7 @@ def env(
     mocked_s3_server_url: HttpUrl,
     bucket: str,
     swarm_stack_name: str,
+    faker: Faker,
 ) -> None:
     mock_dict = {
         "LOGLEVEL": "DEBUG",
@@ -171,6 +173,7 @@ def env(
         "AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY": "xxx",
         "AGENT_VOLUMES_CLEANUP_S3_BUCKET": bucket,
         "AGENT_VOLUMES_CLEANUP_S3_PROVIDER": S3Provider.MINIO,
+        "AGENT_DOCKER_NODE_ID": f"{faker.uuid4()}",
     }
     for key, value in mock_dict.items():
         monkeypatch.setenv(key, value)
