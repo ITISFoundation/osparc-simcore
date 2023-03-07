@@ -114,10 +114,12 @@ async def delete_token(request: web.Request):
         raise web.HTTPNotFound(reason=f"Token for {service_id} not found") from exc
 
 
+# me/notifications -----------------------------------------------------------
+
 async def _get_user_notifications(redis_client: aioredis.Redis, user_id: int):
     notifs = []
-    user_hash_key = f'user_id={user_id}:notification_id=*'
-    async for scanned_notification_key in redis_client.scan_iter(match=user_hash_key):
+    notif_wildcard = f'user_id={user_id}:notification_id=*'
+    async for scanned_notification_key in redis_client.scan_iter(match=notif_wildcard):
         if notif_str := await redis_client.get(scanned_notification_key):
             notif = json.loads(notif_str)
             notifs.append(notif)
@@ -138,12 +140,13 @@ async def get_user_notifications(request: web.Request):
 @login_required
 async def post_user_notification(request: web.Request):
     redis_client = get_redis_user_notifications_client(request.app)
+    # body includes the new notification
     notif = await request.json()
     nid = random.randint(100, 1000)
     notif["id"] = str(nid)
     notif["read"] = "False"
-    user_hash_key = f'user_id={notif["user_id"]}:notification_id={nid}'
-    await redis_client.set(user_hash_key, value=json.dumps(notif))
+    notif_hash_key = f'user_id={notif["user_id"]}:notification_id={nid}'
+    await redis_client.set(notif_hash_key, value=json.dumps(notif))
     response = web.json_response(status=web.HTTPNoContent.status_code)
     assert response.status == 204  # nosec
     return response
@@ -154,10 +157,18 @@ async def update_user_notification(request: web.Request):
     redis_client = get_redis_user_notifications_client(request.app)
     user_id = request[RQT_USERID_KEY]
     nid = request.params["nid"]
-    user_hash_key = f'user_id={user_id}:notification_id={nid}'
-    if notif_str := await redis_client.get(user_hash_key):
+    notif_hash_key = f'user_id={user_id}:notification_id={nid}'
+    print("notif_hash_key", notif_hash_key)
+    if notif_str := await redis_client.get(notif_hash_key):
         notif = json.loads(notif_str)
-        notif["read"] = "True"
-        await redis_client.set(user_hash_key, value=json.dumps(notif))
-    response = web.json_response(status=web.HTTPNoContent.status_code)
+        # body includes a dict with the changes to make
+        body = await request.json()
+        print("old notif", notif)
+        for k, v in body.items():
+            notif[k] = v
+        print("new notif", notif)
+        await redis_client.set(notif_hash_key, value=json.dumps(notif))
+        response = web.json_response(status=web.HTTPNoContent.status_code)
+        return response
+    response = web.json_response(status=web.HTTPNotFound.status_code)
     return response
