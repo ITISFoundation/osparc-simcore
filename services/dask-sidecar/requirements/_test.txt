@@ -23,13 +23,10 @@ attrs==21.4.0
     #   pytest
 certifi==2022.12.7
     # via
-    #   -c requirements/_base.txt
     #   minio
     #   requests
 cffi==1.15.1
-    # via
-    #   -c requirements/_base.txt
-    #   cryptography
+    # via cryptography
 charset-normalizer==3.1.0
     # via
     #   -c requirements/_base.txt
@@ -86,9 +83,7 @@ pluggy==1.0.0
 pprintpp==0.4.0
     # via pytest-icdiff
 pycparser==2.21
-    # via
-    #   -c requirements/_base.txt
-    #   cffi
+    # via cffi
 pyftpdlib==1.5.7
     # via pytest-localftpserver
 pyopenssl==23.0.0
@@ -128,7 +123,6 @@ python-dotenv==1.0.0
     # via -r requirements/_test.in
 requests==2.28.2
     # via
-    #   -c requirements/_base.txt
     #   coveralls
     #   docker
 six==1.16.0
@@ -148,9 +142,7 @@ urllib3==1.26.14
     #   minio
     #   requests
 websocket-client==1.5.1
-    # via
-    #   -c requirements/_base.txt
-    #   docker
+    # via docker
 yarl==1.8.2
     # via
     #   -c requirements/_base.txt

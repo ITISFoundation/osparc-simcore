@@ -50,7 +50,6 @@ pip-tools==6.12.3
     # via -r requirements/../../../requirements/devenv.txt
 platformdirs==3.1.0
     # via
-    #   -c requirements/_base.txt
     #   black
     #   pylint
     #   virtualenv
