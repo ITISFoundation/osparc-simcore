@@ -322,3 +322,25 @@ async def test_register_handler_under_same_name_raises_error(
     with pytest.raises(RuntimeError) as exec_info:
         await rabbit_replier.rpc_register(namespace, "same_name", _another_handler)
     assert "Method name already used for" in f"{exec_info.value}"
+
+
+async def test_rpc_register_for_is_equivalent_to_rpc_register(
+    rabbit_replier: RabbitMQClient,
+):
+    namespace_entries = {"hello": "test", "1": "me"}
+    namespace = get_namespace(namespace_entries)
+
+    async def _a_handler() -> int:
+        return 42
+
+    async def _assert_call_ok():
+        result = await rabbit_replier.rpc_request(namespace, "_a_handler")
+        assert result == 42
+
+    await rabbit_replier.rpc_register(namespace, "_a_handler", _a_handler)
+    await _assert_call_ok()
+
+    await rabbit_replier.rpc_unregister(_a_handler)
+
+    await rabbit_replier.rpc_register_for(namespace_entries, _a_handler)
+    await _assert_call_ok()

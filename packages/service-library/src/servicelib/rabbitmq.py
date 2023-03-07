@@ -15,7 +15,7 @@ from servicelib.logging_utils import log_context
 from settings_library.rabbit import RabbitSettings
 
 from .rabbitmq_errors import RemoteMethodNotRegisteredError, RPCNotInitializedError
-from .rabbitmq_utils import RPCNamespace
+from .rabbitmq_utils import RPCNamespace, get_namespace
 
 log = logging.getLogger(__name__)
 
@@ -220,6 +220,18 @@ class RabbitMQClient:
                     method_name=namespaced_method_name, incoming_message=e.args[1]
                 ) from e
             raise e
+
+    async def rpc_register_for(self, entries: dict[str, str], handler: Awaitable):
+        """
+        Bind a local `handler` to a `namespace` derived from the provided `entries`
+        dictionary.
+
+        NOTE: This is a helper enforce the pattern defined in `rpc_register`'s
+        docstring.
+        """
+        await self.rpc_register(
+            get_namespace(entries), method_name=handler.__name__, handler=handler
+        )
 
     async def rpc_register(
         self, namespace: RPCNamespace, method_name: str, handler: Awaitable
