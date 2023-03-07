@@ -7,8 +7,9 @@ from contextlib import contextmanager
 
 import sqlalchemy as sa
 from aiohttp import ClientError, ClientResponseError, web
-from pydantic import ValidationError
+from pydantic import AnyHttpUrl, ValidationError, parse_obj_as
 from pydantic.errors import PydanticErrorMixin
+from servicelib.error_codes import create_error_code
 from simcore_postgres_database.models.users import users
 
 from .db import get_database_engine
@@ -46,7 +47,7 @@ class InvitationsErrors(PydanticErrorMixin, ValueError):
 
 
 class InvalidInvitation(InvitationsErrors):
-    msg_template = "Invalid invitation: {reason}"
+    msg_template = "Invalid invitation. {reason}"
 
 
 class InvitationsServiceUnavailable(InvitationsErrors):
@@ -65,7 +66,14 @@ def _handle_exceptions_as_invitations_errors():
     except ClientResponseError as err:
         # check possible errors
         if err.status == web.HTTPUnprocessableEntity.status_code:
-            raise InvalidInvitation(reason=err.message) from err
+            error_code = create_error_code(err)
+            logger.exception(
+                "Invitation request %s unexpectedly failed [%s]",
+                f"{err=} ",
+                f"{error_code}",
+                extra={"error_code": error_code},
+            )
+            raise InvalidInvitation(reason=f"Unexpected error [{error_code}]") from err
 
         assert 400 <= err.status  # nosec
         # any other error status code
@@ -93,6 +101,9 @@ def is_service_invitation_code(code: str):
     return len(code) > 100  # typically long strings
 
 
+_MGS_INVALID_INVITATION_URL = "Link seems corrupted or incomplete"
+
+
 async def validate_invitation_url(
     app: web.Application, guest_email: str, invitation_url: str
 ) -> InvitationContent:
@@ -103,6 +114,11 @@ async def validate_invitation_url(
     invitations_service: InvitationsServiceApi = get_invitations_service_api(app=app)
 
     with _handle_exceptions_as_invitations_errors():
+
+        try:
+            invitation_url = parse_obj_as(AnyHttpUrl, invitation_url)
+        except ValidationError as err:
+            raise InvalidInvitation(reason=_MGS_INVALID_INVITATION_URL) from err
 
         # check with service
         invitation = await invitations_service.extract_invitation(
@@ -131,6 +147,11 @@ async def extract_invitation(
     invitations_service: InvitationsServiceApi = get_invitations_service_api(app=app)
 
     with _handle_exceptions_as_invitations_errors():
+
+        try:
+            invitation_url = parse_obj_as(AnyHttpUrl, invitation_url)
+        except ValidationError as err:
+            raise InvalidInvitation(reason=_MGS_INVALID_INVITATION_URL) from err
 
         # check with service
         invitation = await invitations_service.extract_invitation(
