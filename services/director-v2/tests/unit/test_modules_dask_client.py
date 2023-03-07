@@ -412,7 +412,9 @@ async def test_dask_does_not_report_asyncio_cancelled_error_in_task(
 async def test_dask_does_not_report_base_exception_in_task(dask_client: DaskClient):
     def fct_that_raise_base_exception():
 
-        raise BaseException("task triggers a base exception, but dask does not care...")  # pylint: disable=broad-exception-raised
+        raise BaseException(  # pylint: disable=broad-exception-raised
+            "task triggers a base exception, but dask does not care..."
+        )
 
     future = dask_client.backend.client.submit(fct_that_raise_base_exception)
     # NOTE: Since asyncio.CancelledError is derived from BaseException and the worker code checks Exception only
@@ -476,7 +478,7 @@ async def test_send_computation_task(
     ) -> TaskOutputData:
         # get the task data
         worker = get_worker()
-        task = worker.tasks.get(worker.get_current_task())
+        task = worker.state.tasks.get(worker.get_current_task())
         assert task is not None
         assert task.annotations == expected_annotations
         assert command == ["run"]
@@ -567,7 +569,7 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
     ) -> TaskOutputData:
         # get the task data
         worker = get_worker()
-        task = worker.tasks.get(worker.get_current_task())
+        task = worker.state.tasks.get(worker.get_current_task())
         assert task is not None
 
         return TaskOutputData.parse_obj({"some_output_key": 123})
@@ -645,7 +647,7 @@ async def test_abort_computation_tasks(
     ) -> TaskOutputData:
         # get the task data
         worker = get_worker()
-        task = worker.tasks.get(worker.get_current_task())
+        task = worker.state.tasks.get(worker.get_current_task())
         assert task is not None
         print(f"--> task {task=} started")
         cancel_event = Event(TaskCancelEventName.format(task.key))
@@ -1103,7 +1105,7 @@ async def test_get_cluster_details(
     ) -> TaskOutputData:
         # get the task data
         worker = get_worker()
-        task = worker.tasks.get(worker.get_current_task())
+        task = worker.state.tasks.get(worker.get_current_task())
         assert task is not None
         assert task.annotations == expected_annotations
         assert command == ["run"]
