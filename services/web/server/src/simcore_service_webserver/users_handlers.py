@@ -124,8 +124,7 @@ async def _get_user_notifications(redis_client: aioredis.Redis, user_id: int):
         if notif_str := await redis_client.get(scanned_notification_key):
             notif = json.loads(notif_str)
             notifs.append(notif)
-    notifs.sort(key=lambda n: n["date"])
-    notifs.reverse()
+    notifs.sort(key=lambda n: n["date"], reverse=True)    
     return notifs
 
 
