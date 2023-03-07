@@ -395,7 +395,7 @@ class DaskClient:
             # NOTE: It seems there is a bug in the pubsub system in dask
             # Event are more robust to connections/disconnections
             cancel_event = await distributed.Event(
-                name=TaskCancelEventName.format(job_id)
+                name=TaskCancelEventName.format(job_id), client=self.backend.client
             )
             await cancel_event.set()  # type: ignore
             await task_future.cancel()  # type: ignore

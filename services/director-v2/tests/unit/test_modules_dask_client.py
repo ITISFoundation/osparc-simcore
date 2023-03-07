@@ -485,7 +485,7 @@ async def test_send_computation_task(
         assert task.annotations == expected_annotations
         assert command == ["run"]
         event = distributed.Event(_DASK_EVENT_NAME)
-        event.wait(timeout=5)
+        event.wait(timeout=25)
 
         return TaskOutputData.parse_obj({"some_output_key": 123})
 
@@ -511,7 +511,7 @@ async def test_send_computation_task(
     )
 
     # using the event we let the remote fct continue
-    event = distributed.Event(_DASK_EVENT_NAME)
+    event = distributed.Event(_DASK_EVENT_NAME, client=dask_client.backend.client)
     await event.set()  # type: ignore
     await _assert_wait_for_cb_call(
         mocked_user_completed_cb, timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS
@@ -685,7 +685,9 @@ async def test_abort_computation_tasks(
     await start_event.wait(timeout=10)  # type: ignore
 
     # now let's abort the computation
-    cancel_event = await distributed.Event(name=TaskCancelEventName.format(job_id))
+    cancel_event = await distributed.Event(
+        name=TaskCancelEventName.format(job_id), client=dask_client.backend.client
+    )
     await dask_client.abort_computation_task(job_id)
     assert await cancel_event.is_set()  # type: ignore
 
