@@ -6,7 +6,7 @@ from typing import Optional
 
 from aiohttp import BasicAuth, ClientSession, web
 from aiohttp.client_exceptions import ClientError
-from pydantic import BaseModel, EmailStr, parse_obj_as
+from pydantic import AnyHttpUrl, BaseModel, EmailStr, parse_obj_as
 from yarl import URL
 
 from ._constants import APP_SETTINGS_KEY
@@ -86,7 +86,7 @@ class InvitationsServiceApi:
     # service API
     #
 
-    async def extract_invitation(self, invitation_url: str) -> InvitationContent:
+    async def extract_invitation(self, invitation_url: AnyHttpUrl) -> InvitationContent:
         response = await self.client.post(
             url=self._url_vtag("/invitations:extract"),
             json={"invitation_url": invitation_url},
