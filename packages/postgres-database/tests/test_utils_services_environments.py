@@ -9,6 +9,9 @@ from simcore_postgres_database.models.services_environments import (
     OsparcEnvironmentsDict,
     services_vendor_environments,
 )
+from simcore_postgres_database.utils_services_specifications import (
+    get_vendor_environments,
+)
 from sqlalchemy.sql import select
 
 
@@ -81,3 +84,5 @@ async def test_services_environments_table(connection: SAConnection):
     assert [row.identifiers_map for row in await vendor_substitutions.fetchall()] == [
         substitutions
     ]
+
+    assert await get_vendor_environments(connection, vendor_service) == substitutions
