@@ -438,7 +438,9 @@ class DaskClient:
 
         used_resources_per_worker: dict[
             str, dict[str, Any]
-        ] = await self.backend.client.run_on_scheduler(_get_worker_used_resources)
+        ] = await self.backend.client.run_on_scheduler(
+            _get_worker_used_resources
+        )  # type: ignore
 
         for k, v in used_resources_per_worker.items():
             scheduler_info.get("workers", {}).get(k, {}).update(used_resources=v)
