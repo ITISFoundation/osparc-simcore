@@ -152,7 +152,7 @@ mako==1.2.2
     # via
     #   -c requirements/_base.txt
     #   alembic
-markupsafe==2.1.2
+markupsafe==2.1.1
     # via
     #   -c requirements/_base.txt
     #   jinja2
@@ -172,7 +172,7 @@ numpy==1.24.2
     #   bokeh
     #   contourpy
     #   pandas
-packaging==23.0
+packaging==21.3
     # via
     #   -c requirements/_base.txt
     #   bokeh
@@ -196,6 +196,10 @@ pycparser==2.21
     # via cffi
 pylint==2.16.2
     # via -r requirements/_test.in
+pyparsing==3.0.9
+    # via
+    #   -c requirements/_base.txt
+    #   packaging
 pytest==7.2.1
     # via
     #   -r requirements/_test.in
@@ -271,7 +275,7 @@ tomli==2.0.1
     #   pytest
 tomlkit==0.11.6
     # via pylint
-tornado==6.2
+tornado==6.1
     # via
     #   -c requirements/_base.txt
     #   bokeh
@@ -283,7 +287,7 @@ typing-extensions==4.3.0
     #   aioitertools
     #   astroid
     #   pylint
-urllib3==1.26.14
+urllib3==1.26.9
     # via
     #   -c requirements/_base.txt
     #   botocore
