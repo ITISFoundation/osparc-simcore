@@ -218,7 +218,9 @@ async def create_dask_client_from_gateway(
     params=["create_dask_client_from_scheduler", "create_dask_client_from_gateway"]
 )
 async def dask_client(
-    create_dask_client_from_scheduler, create_dask_client_from_gateway, request
+    create_dask_client_from_scheduler: Callable[[], Awaitable[DaskClient]],
+    create_dask_client_from_gateway: Callable[[], Awaitable[DaskClient]],
+    request,
 ) -> DaskClient:
     client: DaskClient = await {
         "create_dask_client_from_scheduler": create_dask_client_from_scheduler,
@@ -1159,7 +1161,7 @@ async def test_get_cluster_details(
             ), f"there is no worker in {cluster_details.scheduler.workers.keys()=} consuming {image_params.expected_annotations=!r}"
 
     # using the event we let the remote fct continue
-    event = distributed.Event(_DASK_EVENT_NAME)
+    event = distributed.Event(_DASK_EVENT_NAME, client=dask_client.backend.client)
     await event.set()  # type: ignore
 
     # wait for the task to complete
