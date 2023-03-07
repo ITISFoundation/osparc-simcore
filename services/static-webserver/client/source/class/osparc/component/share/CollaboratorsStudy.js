@@ -144,10 +144,10 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
       osparc.store.Store.getInstance().getPotentialCollaborators()
         .then(potentialCollaborators => {
           gids.forEach(gid => {
-            const collabFound = potentialCollaborators.find(potentialCollaborator => potentialCollaborator === gid);
-            if ("id" in collabFound) {
-              // it's a user not an organization
-              const uid = collabFound["id"];
+            const collab = potentialCollaborators[gid];
+            if ("id" in collab) {
+              // it's a user, not an organization
+              const uid = collab["id"];
               if (this.__resourceType === "study") {
                 osparc.component.notification.Notifications.postNewStudy(uid, this._serializedData["uuid"]);
               } else {
