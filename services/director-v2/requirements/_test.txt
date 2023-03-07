@@ -144,7 +144,7 @@ mako==1.2.2
     # via
     #   -c requirements/_base.txt
     #   alembic
-markupsafe==2.1.1
+markupsafe==2.1.2
     # via
     #   -c requirements/_base.txt
     #   mako
@@ -158,7 +158,7 @@ multidict==6.0.2
     #   aiohttp
     #   async-asgi-testclient
     #   yarl
-packaging==21.3
+packaging==23.0
     # via
     #   -c requirements/_base.txt
     #   docker
@@ -177,10 +177,6 @@ pycparser==2.21
     # via cffi
 pylint==2.16.2
     # via -r requirements/_test.in
-pyparsing==3.0.9
-    # via
-    #   -c requirements/_base.txt
-    #   packaging
 pytest==7.2.1
     # via
     #   -r requirements/_test.in
@@ -257,7 +253,7 @@ typing-extensions==4.3.0
     #   aioitertools
     #   astroid
     #   pylint
-urllib3==1.26.9
+urllib3==1.26.14
     # via
     #   -c requirements/_base.txt
     #   botocore

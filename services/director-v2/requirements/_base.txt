@@ -59,7 +59,7 @@ attrs==21.4.0
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/./constraints.txt
     #   aiohttp
     #   jsonschema
-blosc==1.10.6
+blosc==1.11.1
     # via -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
 certifi==2022.12.7
     # via
@@ -73,28 +73,28 @@ charset-normalizer==2.0.12
 click==8.1.3
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   dask
     #   dask-gateway
     #   distributed
     #   typer
     #   uvicorn
-cloudpickle==2.0.0
+cloudpickle==2.2.1
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
     #   distributed
 commonmark==0.9.1
     # via rich
-dask==2022.9.2
+dask==2023.3.0
     # via
     #   -r requirements/../../../packages/dask-task-models-library/requirements/_base.in
-    #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask-gateway
     #   distributed
 dask-gateway==2023.1.1
     # via -r requirements/_base.in
 decorator==4.4.2
     # via networkx
-distributed==2022.9.2
+distributed==2023.3.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
@@ -116,7 +116,7 @@ frozenlist==1.3.0
     # via
     #   aiohttp
     #   aiosignal
-fsspec==2022.5.0
+fsspec==2023.3.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
@@ -163,18 +163,18 @@ locket==1.0.0
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
     #   partd
-lz4==4.0.0
+lz4==4.3.2
     # via -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
 mako==1.2.2
     # via
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   alembic
-markupsafe==2.1.1
+markupsafe==2.1.2
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   jinja2
     #   mako
-msgpack==1.0.3
+msgpack==1.0.4
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   aiocache
@@ -195,7 +195,7 @@ orjson==3.7.2
     # via
     #   -r requirements/_base.in
     #   fastapi
-packaging==21.3
+packaging==23.0
     # via
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
@@ -203,13 +203,13 @@ packaging==21.3
     #   distributed
 pamqp==3.2.1
     # via aiormq
-partd==1.2.0
+partd==1.3.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
 pint==0.19.2
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
-psutil==5.9.1
+psutil==5.9.4
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
@@ -228,10 +228,6 @@ pyinstrument==4.1.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
-pyparsing==3.0.9
-    # via
-    #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
-    #   packaging
 pyrsistent==0.18.1
     # via jsonschema
 python-dotenv==0.20.0
@@ -293,13 +289,13 @@ threadloop==1.0.2
     # via jaeger-client
 thrift==0.16.0
     # via jaeger-client
-toolz==0.11.1
+toolz==0.12.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
     #   distributed
     #   partd
-tornado==6.1
+tornado==6.2
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask-gateway
@@ -325,7 +321,7 @@ ujson==5.5.0
     # via
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   fastapi
-urllib3==1.26.9
+urllib3==1.26.14
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
