@@ -162,7 +162,6 @@ async def update_user_notification(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     nid = request.match_info["nid"]
     notif_hash_key = f'user_id={user_id}:notification_id={nid}'
-    print("notif_hash_key", notif_hash_key)
     if notif_str := await redis_client.get(notif_hash_key):
         notif = json.loads(notif_str)
         # body includes a dict with the changes to make
