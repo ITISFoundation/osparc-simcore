@@ -19,7 +19,6 @@ from pydantic import (
     Field,
     HttpUrl,
     NonNegativeFloat,
-    NonNegativeInt,
     root_validator,
     validator,
 )
@@ -27,22 +26,17 @@ from pydantic.networks import AnyUrl
 from pydantic.types import ByteSize, PositiveFloat
 
 
+class TaskCounts(BaseModel):
+    error: int = 0
+    memory: int = 0
+    executing: int = 0
+
+
 class WorkerMetrics(BaseModel):
     cpu: float = Field(..., description="consumed % of cpus")
     memory: ByteSize = Field(..., description="consumed memory")
     num_fds: int = Field(..., description="consumed file descriptors")
-    ready: Optional[NonNegativeInt] = Field(
-        default=None, description="# tasks ready to run"
-    )
-    executing: Optional[NonNegativeInt] = Field(
-        default=None, description="# tasks currently executing"
-    )
-    in_flight: Optional[NonNegativeInt] = Field(
-        default=None, description="# tasks waiting for data"
-    )
-    in_memory: Optional[NonNegativeInt] = Field(
-        default=None, description="# tasks in worker memory"
-    )
+    task_counts: TaskCounts = Field(..., description="task details")
 
 
 AvailableResources = DictModel[str, PositiveFloat]

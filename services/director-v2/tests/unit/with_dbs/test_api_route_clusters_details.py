@@ -230,7 +230,7 @@ async def test_get_cluster_details(
     print(f"!!> cluster dashboard link: {dask_gateway_cluster.dashboard_link}")
 
     # let's start some computation
-    _TASK_SLEEP_TIME = 5
+    _TASK_SLEEP_TIME = 55
 
     def do_some_work(x: int):
         import time
@@ -249,7 +249,9 @@ async def test_get_cluster_details(
             )
             assert cluster_out.scheduler.workers
             assert (
-                next(iter(cluster_out.scheduler.workers.values())).metrics.executing
+                next(
+                    iter(cluster_out.scheduler.workers.values())
+                ).metrics.task_counts.executing
                 == 1
             ), "worker is not executing the task"
             print(
@@ -272,11 +274,15 @@ async def test_get_cluster_details(
                 f"!!> cluster metrics: {next(iter(cluster_out.scheduler.workers.values())).metrics=}"
             )
             assert (
-                next(iter(cluster_out.scheduler.workers.values())).metrics.executing
+                next(
+                    iter(cluster_out.scheduler.workers.values())
+                ).metrics.task_counts.executing
                 == 0
             ), "worker is still executing the task"
             assert (
-                next(iter(cluster_out.scheduler.workers.values())).metrics.in_memory
+                next(
+                    iter(cluster_out.scheduler.workers.values())
+                ).metrics.task_counts.memory
                 == 1
             ), "worker did not keep the result in memory"
             # NOTE: this is a CPU percent use
@@ -289,6 +295,6 @@ async def test_get_cluster_details(
         async_client, user_1["id"], some_cluster.id
     )
     worker_data = next(iter(cluster_out.scheduler.workers.values()))
-    assert worker_data.metrics.executing == 0
+    assert worker_data.metrics.task_counts.executing == 0
     # in dask, the task remains in memory until the result is deleted
-    assert worker_data.metrics.in_memory == 1
+    assert worker_data.metrics.task_counts.memory == 1
