@@ -54,7 +54,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationTemplatesList", {
     },
 
     __getTemplatesFilter: function() {
-      const filter = new osparc.component.filter.TextFilter("name", "organizationTemplatesList").set({
+      const filter = new osparc.component.filter.TextFilter("text", "organizationTemplatesList").set({
         allowStretchX: true,
         margin: [0, 10, 5, 10]
       });

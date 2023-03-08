@@ -258,11 +258,13 @@ qx.Class.define("osparc.ui.list.ListItem", {
     },
 
     _shouldApplyFilter: function(data) {
-      if (data.text && this.getTitle()) {
-        const label = this.getTitle()
-          .trim()
-          .toLowerCase();
-        if (label.indexOf(data.text) === -1) {
+      if (data.text) {
+        const checks = [
+          this.getTitle(),
+          this.getSubtitle(),
+          this.getSubtitleMD()
+        ];
+        if (checks.filter(label => label.toLowerCase().trim().includes(data.text)).length == 0) {
           return true;
         }
       }
