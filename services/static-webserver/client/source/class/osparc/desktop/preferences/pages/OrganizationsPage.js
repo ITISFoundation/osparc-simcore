@@ -39,7 +39,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
     __createPages: function() {
       const stack = this.__stack = new qx.ui.container.Stack();
       const orgsPage = this.__orgsList = new osparc.desktop.preferences.pages.OrganizationsList();
-      const orgDetails = this.__orgDetails = new osparc.desktop.preferences.pages.OrganizationMembersList();
+      const orgDetails = this.__orgDetails = new osparc.desktop.preferences.pages.OrganizationDetails();
       stack.add(orgsPage);
       stack.add(orgDetails);
       this.add(stack, {
