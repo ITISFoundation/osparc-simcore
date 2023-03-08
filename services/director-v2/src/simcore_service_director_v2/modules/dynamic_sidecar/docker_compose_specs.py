@@ -1,6 +1,6 @@
 import logging
 from copy import deepcopy
-from typing import Optional
+from typing import Any, Optional
 
 from fastapi.applications import FastAPI
 from models_library.docker import SimcoreServiceDockerLabelKeys
@@ -126,6 +126,7 @@ def _update_resource_limits_and_reservations(
     for spec_service_key, spec in service_spec["services"].items():
         if spec_service_key not in service_resources:
             continue
+
         resources: ResourcesDict = service_resources[spec_service_key].resources
         logger.debug("Resources for %s: %s", spec_service_key, f"{resources=}")
 
@@ -138,10 +139,10 @@ def _update_resource_limits_and_reservations(
 
         if docker_compose_major_version >= 3:
             # compos spec version 3 and beyond
-            deploy = spec.get("deploy", {})
-            resources = deploy.get("resources", {})
-            limits = resources.get("limits", {})
-            reservations = resources.get("reservations", {})
+            deploy: dict[str, Any] = spec.get("deploy", {})
+            resources_v3: dict[str, Any] = deploy.get("resources", {})
+            limits: dict[str, Any] = resources_v3.get("limits", {})
+            reservations: dict[str, Any] = resources_v3.get("reservations", {})
 
             # assign limits
             limits["cpus"] = float(cpu.limit)
@@ -150,9 +151,9 @@ def _update_resource_limits_and_reservations(
             reservations["cpus"] = float(cpu.reservation)
             reservations["memory"] = f"{memory.reservation}"
 
-            resources["reservations"] = reservations
-            resources["limits"] = limits
-            deploy["resources"] = resources
+            resources_v3["reservations"] = reservations
+            resources_v3["limits"] = limits
+            deploy["resources"] = resources_v3
             spec["deploy"] = deploy
 
             nano_cpu_limits = limits["cpus"]
