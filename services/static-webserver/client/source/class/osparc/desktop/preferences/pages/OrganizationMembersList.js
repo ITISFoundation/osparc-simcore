@@ -91,10 +91,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
     },
 
     __createIntroText: function() {
-      const msg = this.tr("\
-        This is the list of members in the organization.\
-        Here, if you are a manager or administrator, you can add new members and promote or demote existing ones.\
-      ");
+      const msg = this.tr("If you are a manager or administrator, you can add new members and promote or demote existing ones.");
       const intro = new qx.ui.basic.Label().set({
         value: msg,
         alignX: "left",
