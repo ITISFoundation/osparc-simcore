@@ -147,9 +147,7 @@ async def post_user_notification(request: web.Request):
     notif["read"] = "False"
     notif_hash_key = f'user_id={notif["user_id"]}:notification_id={nid}'
     await redis_client.set(notif_hash_key, value=json.dumps(notif))
-    response = web.json_response(status=web.HTTPNoContent.status_code)
-    assert response.status == 204  # nosec
-    return response
+    return web.json_response(status=web.HTTPNoContent.status_code)
 
 
 routes = web.RouteTableDef()
