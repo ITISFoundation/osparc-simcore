@@ -142,7 +142,7 @@ async def post_user_notification(request: web.Request):
     redis_client = get_redis_user_notifications_client(request.app)
     # body includes the new notification
     notif = await request.json()
-    nid = uuid4()
+    nid = str(uuid4())
     notif["id"] = nid
     notif["read"] = False
     notif_hash_key = f'user_id={notif["user_id"]}:notification_id={nid}'
@@ -165,7 +165,7 @@ async def update_user_notification(request: web.Request):
         # body includes a dict with the changes to make
         body = await request.json()
         for k, v in body.items():
-            notif[k] = str(v)
+            notif[k] = v
         await redis_client.set(notif_hash_key, value=json.dumps(notif))
         return web.json_response(status=web.HTTPNoContent.status_code)
     return web.json_response(status=web.HTTPNotFound.status_code)
