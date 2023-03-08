@@ -170,6 +170,5 @@ async def update_user_notification(request: web.Request):
         for k, v in body.items():
             notif[k] = str(v)
         await redis_client.set(notif_hash_key, value=json.dumps(notif))
-        response = web.json_response(status=web.HTTPNoContent.status_code)
-        return response
+        return web.json_response(status=web.HTTPNoContent.status_code)
     return web.json_response(status=web.HTTPNotFound.status_code)
