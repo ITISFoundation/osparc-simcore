@@ -387,7 +387,8 @@ def start_task(
         task_name (Optional[str], optional): optional task name. Defaults to None.
         fire_and_forget: if True, then the task will not be cancelled if the status is never called
 
-    NOTE: if `unique` is `True` and a task is already running, returns the task_id of that task
+    Raises:
+        TaskAlreadyRunningError: if unique is True, will raise if more than 1 such named task is started
 
     Returns:
         TaskId: the task unique identifier
