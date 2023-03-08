@@ -130,7 +130,11 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationDetails", {
           button.setFetching(false);
           win.close();
           osparc.store.Store.getInstance().reset("organizations");
-          this.__reloadOrganizations();
+          this.__orgModel.set({
+            label: name,
+            description: description,
+            thumbnail: thumbnail || null
+          });
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing ") + name, "ERROR");
