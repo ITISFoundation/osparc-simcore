@@ -90,12 +90,14 @@ class RabbitMQClient:
         self._channel_pool = aio_pika.pool.Pool(self._get_channel, max_size=10)
 
     async def rpc_initialize(self) -> None:
-        # TODO: to SAN: not sure that we always want to setup RPC connection
         self._rpc_connection = await aio_pika.connect_robust(
-            self.settings.dsn, client_properties={"connection_name": f"rpc.{uuid4()}"}
+            self.settings.dsn,
+            client_properties={"connection_name": f"{self.client_name}.rpc.{uuid4()}"},
         )
         self._rpc_channel = await self._rpc_connection.channel()
-        self._rpc = await RPC.create(self._rpc_channel)
+
+        self._rpc = RPC(self._rpc_channel, host_exceptions=True)
+        await self._rpc.initialize()
 
     async def close(self) -> None:
         with log_context(log, logging.INFO, msg="Closing connection to RabbitMQ"):
@@ -191,7 +193,7 @@ class RabbitMQClient:
         namespace: RPCNamespace,
         method_name: str,
         *,
-        timeout: Optional[PositiveInt] = 5,
+        timeout_s: Optional[PositiveInt] = 5,
         **kwargs: dict[str, Any],
     ) -> Any:
         """
@@ -206,13 +208,13 @@ class RabbitMQClient:
 
         namespaced_method_name = _get_namespaced_method_name(namespace, method_name)
         try:
-            queue_expiration_timeout = timeout
+            queue_expiration_timeout = timeout_s
             awaitable = self._rpc.call(
                 namespaced_method_name,
                 expiration=queue_expiration_timeout,
                 kwargs=kwargs,
             )
-            return await asyncio.wait_for(awaitable, timeout=timeout)
+            return await asyncio.wait_for(awaitable, timeout=timeout_s)
         except aio_pika.MessageProcessError as e:
             if e.args[0] == "Message has been returned":
                 raise RemoteMethodNotRegisteredError(
