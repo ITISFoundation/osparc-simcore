@@ -2,7 +2,7 @@ import logging
 from textwrap import dedent
 from typing import Optional
 
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request, status
+from fastapi import APIRouter, Depends, FastAPI, Request, status
 from servicelib.fastapi.long_running_tasks.server import (
     TaskAlreadyRunningError,
     TaskId,
@@ -56,11 +56,6 @@ router = APIRouter()
     ).strip(),
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
-    responses={
-        status.HTTP_409_CONFLICT: {
-            "description": "Task already running, cannot start a new one"
-        }
-    },
 )
 @cancel_on_disconnect
 async def create_service_containers_task(  # pylint: disable=too-many-arguments
@@ -89,7 +84,7 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
         )
         return task_id
     except TaskAlreadyRunningError as e:
-        raise HTTPException(status.HTTP_409_CONFLICT, detail=f"{e}") from e
+        return e.managed_task.task_id
 
 
 @router.post(
@@ -97,11 +92,6 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
     summary="Remove the previously started containers",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
-    responses={
-        status.HTTP_409_CONFLICT: {
-            "description": "Task already running, cannot start a new one"
-        }
-    },
 )
 @cancel_on_disconnect
 async def runs_docker_compose_down_task(
@@ -124,7 +114,7 @@ async def runs_docker_compose_down_task(
         )
         return task_id
     except TaskAlreadyRunningError as e:
-        raise HTTPException(status.HTTP_409_CONFLICT, detail=f"{e}") from e
+        return e.managed_task.task_id
 
 
 @router.post(
@@ -132,11 +122,6 @@ async def runs_docker_compose_down_task(
     summary="Restores the state of the dynamic service",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
-    responses={
-        status.HTTP_409_CONFLICT: {
-            "description": "Task already running, cannot start a new one"
-        }
-    },
 )
 @cancel_on_disconnect
 async def state_restore_task(
@@ -159,7 +144,7 @@ async def state_restore_task(
         )
         return task_id
     except TaskAlreadyRunningError as e:
-        raise HTTPException(status.HTTP_409_CONFLICT, detail=f"{e}") from e
+        return e.managed_task.task_id
 
 
 @router.post(
@@ -167,11 +152,6 @@ async def state_restore_task(
     summary="Stores the state of the dynamic service",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
-    responses={
-        status.HTTP_409_CONFLICT: {
-            "description": "Task already running, cannot start a new one"
-        }
-    },
 )
 @cancel_on_disconnect
 async def state_save_task(
@@ -194,7 +174,7 @@ async def state_save_task(
         )
         return task_id
     except TaskAlreadyRunningError as e:
-        raise HTTPException(status.HTTP_409_CONFLICT, detail=f"{e}") from e
+        return e.managed_task.task_id
 
 
 @router.post(
@@ -202,11 +182,6 @@ async def state_save_task(
     summary="Pull input ports data",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
-    responses={
-        status.HTTP_409_CONFLICT: {
-            "description": "Task already running, cannot start a new one"
-        }
-    },
 )
 @cancel_on_disconnect
 async def ports_inputs_pull_task(
@@ -229,7 +204,7 @@ async def ports_inputs_pull_task(
         )
         return task_id
     except TaskAlreadyRunningError as e:
-        raise HTTPException(status.HTTP_409_CONFLICT, detail=f"{e}") from e
+        return e.managed_task.task_id
 
 
 @router.post(
@@ -237,11 +212,6 @@ async def ports_inputs_pull_task(
     summary="Pull output ports data",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
-    responses={
-        status.HTTP_409_CONFLICT: {
-            "description": "Task already running, cannot start a new one"
-        }
-    },
 )
 @cancel_on_disconnect
 async def ports_outputs_pull_task(
@@ -264,7 +234,7 @@ async def ports_outputs_pull_task(
         )
         return task_id
     except TaskAlreadyRunningError as e:
-        raise HTTPException(status.HTTP_409_CONFLICT, detail=f"{e}") from e
+        return e.managed_task.task_id
 
 
 @router.post(
@@ -272,11 +242,6 @@ async def ports_outputs_pull_task(
     summary="Push output ports data",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
-    responses={
-        status.HTTP_409_CONFLICT: {
-            "description": "Task already running, cannot start a new one"
-        }
-    },
 )
 @cancel_on_disconnect
 async def ports_outputs_push_task(
@@ -297,7 +262,7 @@ async def ports_outputs_push_task(
         )
         return task_id
     except TaskAlreadyRunningError as e:
-        raise HTTPException(status.HTTP_409_CONFLICT, detail=f"{e}") from e
+        return e.managed_task.task_id
 
 
 @router.post(
@@ -305,11 +270,6 @@ async def ports_outputs_push_task(
     summary="Restarts previously started containers",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
-    responses={
-        status.HTTP_409_CONFLICT: {
-            "description": "Task already running, cannot start a new one"
-        }
-    },
 )
 @cancel_on_disconnect
 async def containers_restart_task(
@@ -332,4 +292,4 @@ async def containers_restart_task(
         )
         return task_id
     except TaskAlreadyRunningError as e:
-        raise HTTPException(status.HTTP_409_CONFLICT, detail=f"{e}") from e
+        return e.managed_task.task_id
