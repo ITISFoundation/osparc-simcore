@@ -83,18 +83,31 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationDetails", {
       return organizationListItem;
     },
 
+    __createTabPage: function(label, icon) {
+      const tabPage = new qx.ui.tabview.Page().set({
+        layout: new qx.ui.layout.VBox()
+      });
+      if (label) {
+        tabPage.setLabel(label);
+      }
+      if (icon) {
+        tabPage.setIcon(icon);
+      }
+      tabPage.getChildControl("button").set({
+        font: "text-13"
+      });
+      return tabPage;
+    },
+
     __getTabs: function() {
       const tabView = new qx.ui.tabview.TabView().set({
-        backgroundColor: "background-main-2",
-        contentPadding: 5
+        contentPadding: 10
       });
-
-      const membersListPage = new qx.ui.tabview.Page().set({
-        label: this.tr("Members"),
-        icon: "@FontAwesome5Solid/users/14",
-        layout: new qx.ui.layout.VBox(),
+      tabView.getChildControl("pane").set({
         backgroundColor: "background-main-2"
       });
+
+      const membersListPage = this.__createTabPage(this.tr("Members"), "@FontAwesome5Solid/users/14");
       const membersList = this.__membersList = new osparc.desktop.preferences.pages.OrganizationMembersList();
       membersListPage.add(membersList, {
         flex: 1

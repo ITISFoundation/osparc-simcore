@@ -21,7 +21,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(5));
+    this._setLayout(new qx.ui.layout.VBox(10));
 
     this._add(this.__createIntroText());
     this._add(this.__getMemberInvitation());
