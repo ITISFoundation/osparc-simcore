@@ -86,7 +86,9 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationDetails", {
       organizationListItem.getChildControl("options").exclude();
       organizationListItem.setShowDeleteButton(false);
       organizationListItem.addListener("openEditOrganization", () => this.__openEditOrganization());
-      this.__titleLayout.add(organizationListItem);
+      this.__titleLayout.add(organizationListItem, {
+        flex: 1
+      });
       return organizationListItem;
     },
 
