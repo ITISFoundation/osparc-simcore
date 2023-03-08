@@ -176,7 +176,11 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationDetails", {
       });
       tabView.add(membersListPage);
 
-      const templatesListPage = this.__createTabPage(this.tr("Templates"), "@FontAwesome5Solid/copy/14");
+      const templatesText = osparc.product.Utils.getTemplateAlias({
+        plural: true,
+        firstUpperCase: true
+      });
+      const templatesListPage = this.__createTabPage(templatesText, "@FontAwesome5Solid/copy/14");
       const templatesList = this.__templatesList = new osparc.desktop.preferences.pages.OrganizationTemplatesList();
       templatesListPage.add(templatesList, {
         flex: 1

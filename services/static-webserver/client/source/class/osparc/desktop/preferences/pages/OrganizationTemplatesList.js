@@ -72,9 +72,13 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationTemplatesList", {
       const templatesModel = this.__templatesModel = new qx.data.Array();
       const templatesCtrl = new qx.data.controller.List(templatesModel, templatesUIList, "name");
       templatesCtrl.setDelegate({
-        createItem: () => new osparc.dashboard.ListButtonItem(),
+        createItem: () => new osparc.ui.list.ListItem(),
         bindItem: (ctrl, item, id) => {
-          ctrl.bindProperty("resourceData", "resourceData", null, item, id);
+          ctrl.bindProperty("uuid", "model", null, item, id);
+          ctrl.bindProperty("uuid", "key", null, item, id);
+          ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
+          ctrl.bindProperty("name", "title", null, item, id);
+          ctrl.bindProperty("description", "subtitleMD", null, item, id);
         },
         configureItem: item => {
           item.subscribeToFilterGroup("organizationTemplatesList");
@@ -85,14 +89,20 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationTemplatesList", {
     },
 
     __reloadOrgTemplates: function() {
-      const membersModel = this.__templatesModel;
-      membersModel.removeAll();
+      const templatesModel = this.__templatesModel;
+      templatesModel.removeAll();
 
       const orgModel = this.__currentOrg;
       if (orgModel === null) {
         return;
       }
-      return;
+
+      osparc.data.Resources.getInstance().getAllPages("templates")
+        .then(templates => {
+          const gid = orgModel.getGid();
+          const orgTemplates = templates.filter(template => gid in template["accessRights"]);
+          orgTemplates.forEach(orgTemplate => templatesModel.append(qx.data.marshal.Json.createModel(orgTemplate)));
+        });
     }
   }
 });
