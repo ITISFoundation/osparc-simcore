@@ -80,6 +80,6 @@ async def rpc_register_entries(
     NOTE: This is a helper enforce the pattern defined in `rpc_register`'s
     docstring.
     """
-    await rabbit_client.rpc_register(
+    await rabbit_client.rpc_register_handler(
         get_namespace(entries), method_name=handler.__name__, handler=handler
     )
