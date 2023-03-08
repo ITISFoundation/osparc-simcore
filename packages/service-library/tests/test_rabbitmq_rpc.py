@@ -10,6 +10,7 @@ from pytest import LogCaptureFixture
 from servicelib.rabbitmq import RabbitMQClient, RPCNamespace
 from servicelib.rabbitmq_errors import (
     RemoteMethodNotRegisteredError,
+    RPCHandlerNameTooLongError,
     RPCNotInitializedError,
 )
 from servicelib.rabbitmq_utils import get_namespace
@@ -342,5 +343,25 @@ async def test_rpc_register_for_is_equivalent_to_rpc_register(
 
     await rabbit_replier.rpc_unregister(_a_handler)
 
-    await rabbit_replier.rpc_register_for(namespace_entries, _a_handler)
+    await rabbit_replier.rpc_register_entries(namespace_entries, _a_handler)
     await _assert_call_ok()
+
+
+@pytest.mark.parametrize(
+    "handler_name, expect_fail",
+    [
+        ("a" * 255, True),
+        ("a" * 254, False),
+    ],
+)
+async def test_get_namespaced_method_name_max_length(
+    rabbit_replier: RabbitMQClient, handler_name: str, expect_fail: bool
+):
+    async def _a_handler() -> None:
+        pass
+
+    if expect_fail:
+        with pytest.raises(RPCHandlerNameTooLongError):
+            await rabbit_replier.rpc_register("", handler_name, _a_handler)
+    else:
+        await rabbit_replier.rpc_register("", handler_name, _a_handler)

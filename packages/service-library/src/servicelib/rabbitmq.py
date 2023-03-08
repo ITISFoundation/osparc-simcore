@@ -13,8 +13,12 @@ from pydantic import PositiveInt
 from servicelib.logging_utils import log_context
 from settings_library.rabbit import RabbitSettings
 
-from .rabbitmq_errors import RemoteMethodNotRegisteredError, RPCNotInitializedError
-from .rabbitmq_utils import RPCNamespace, get_namespace
+from .rabbitmq_errors import (
+    RemoteMethodNotRegisteredError,
+    RPCHandlerNameTooLongError,
+    RPCNotInitializedError,
+)
+from .rabbitmq_utils import RPCMethodName, RPCNamespace, get_namespace
 
 log = logging.getLogger(__name__)
 
@@ -66,8 +70,15 @@ _MINUTE: Final[int] = 60
 _RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_S: Final[int] = 15 * _MINUTE
 
 
-def _get_namespaced_method_name(namespace: RPCNamespace, handler_name: str) -> str:
-    return f"{namespace}.{handler_name}"
+def _get_namespaced_method_name(
+    namespace: RPCNamespace, method_name: RPCMethodName
+) -> str:
+    namespaced_method_name = f"{namespace}.{method_name}"
+    if len(namespaced_method_name) >= 256:
+        raise RPCHandlerNameTooLongError(
+            length=len(namespaced_method_name), result=namespaced_method_name
+        )
+    return namespaced_method_name
 
 
 @dataclass
@@ -191,16 +202,22 @@ class RabbitMQClient:
     async def rpc_request(
         self,
         namespace: RPCNamespace,
-        method_name: str,
+        method_name: RPCMethodName,
         *,
         timeout_s: Optional[PositiveInt] = 5,
         **kwargs: dict[str, Any],
     ) -> Any:
         """
         Call a remote registered `handler` by providing it's `namespace`, `method_name`
-        and list of expected arguments.
+        and `kwargs` containing the key value arguments expected by the remote `handler`.
 
         NOTE: `namespace` should always be composed via `get_namespace`
+
+        :raises asyncio.TimeoutError: when message expired
+        :raises CancelledError: when called :func:`RPC.cancel`
+        :raises RuntimeError: internal error
+        :raises RemoteMethodNotRegisteredError: when no handler was registered to the
+            `namespaced_method_name`
         """
 
         if not self._rpc:
@@ -222,7 +239,7 @@ class RabbitMQClient:
                 ) from e
             raise e
 
-    async def rpc_register_for(self, entries: dict[str, str], handler: Awaitable):
+    async def rpc_register_entries(self, entries: dict[str, str], handler: Awaitable):
         """
         Bind a local `handler` to a `namespace` derived from the provided `entries`
         dictionary.
@@ -235,7 +252,7 @@ class RabbitMQClient:
         )
 
     async def rpc_register(
-        self, namespace: RPCNamespace, method_name: str, handler: Awaitable
+        self, namespace: RPCNamespace, method_name: RPCMethodName, handler: Awaitable
     ) -> None:
         """
         Bind a local `handler` to a `namespace` and `method_name`.

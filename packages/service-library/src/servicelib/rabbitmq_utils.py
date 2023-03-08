@@ -22,6 +22,7 @@ _NAMESPACE_CHAR_LIMIT: Final[int] = 100
 REGEX_VALIDATE_RABBIT_QUEUE_NAME: Final[str] = r"^[\w\-\.]{1,255}$"
 
 RPCNamespace = str
+RPCMethodName = str
 
 
 def get_namespace(entries: dict[str, str]) -> RPCNamespace:

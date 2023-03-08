@@ -36,3 +36,12 @@ class RPCNamespaceInvalidCharsError(BaseRPCError):
         "Generated namespace {namespace} contains not allowed characters."
         "Allowed chars must match {match_regex}."
     )
+
+
+class RPCHandlerNameTooLongError(BaseRPCError):
+    code = f"{_ERROR_PREFIX}.namespaced_method_too_long"
+    msg_template = (
+        "The combined values of '{{namespace}}.{{method_name}}' "
+        "must be less than 256 bytes. It is currently {length} bytes: "
+        "{namespaced_method_name}"
+    )
