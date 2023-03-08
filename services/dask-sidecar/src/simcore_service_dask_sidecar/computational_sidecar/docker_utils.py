@@ -54,7 +54,6 @@ async def create_container_config(
     boot_mode: BootMode,
     task_max_resources: dict[str, Any],
 ) -> DockerContainerConfig:
-
     nano_cpus_limit = int(task_max_resources.get("CPU", 1) * 1e9)
     memory_limit = ByteSize(task_max_resources.get("RAM", 1024**3))
     config = DockerContainerConfig(
@@ -120,10 +119,10 @@ async def managed_container(
             raise
 
 
-DOCKER_LOG_REGEXP = re.compile(
-    r"^([0-9]+-[0-9]+-[0-9]+T[0-9]+:[0-9]+:[0-9]+.[0-9]+.) (.+)$"
+DOCKER_LOG_REGEXP: re.Pattern[str] = re.compile(
+    r"^(?P<timestamp>[0-9]+-[0-9]+-[0-9]+T[0-9]+:[0-9]+:[0-9]+\.[0-9]+[^\s]+) (?P<log>.+)$"
 )
-PROGRESS_REGEXP = re.compile(
+PROGRESS_REGEXP: re.Pattern[str] = re.compile(
     r"\[?progress[\]:]?\s*([0-1]?\.\d+|\d+(%)|\d+\s*(percent)|(\d+\/\d+))"
 )
 DEFAULT_TIME_STAMP = "2000-01-01T00:00:00.000000000Z"
@@ -136,8 +135,8 @@ async def parse_line(line: str) -> tuple[LogType, str, str]:
         return (LogType.LOG, DEFAULT_TIME_STAMP, f"{line}")
 
     log_type = LogType.LOG
-    timestamp = match.group(1)
-    log = f"{match.group(2)}"
+    timestamp = match.group("timestamp")
+    log = f"{match.group('log')}"
     # now look for progress
     match = re.search(PROGRESS_REGEXP, log.lower())
     if match:
@@ -474,7 +473,6 @@ async def pull_image(
     service_version: str,
     log_publishing_cb: LogPublishingCB,
 ) -> None:
-
     async for pull_progress in docker_client.images.pull(
         f"{docker_auth.server_address}/{service_key}:{service_version}",
         stream=True,
