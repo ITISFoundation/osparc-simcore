@@ -12,6 +12,7 @@ from uuid import uuid4
 from pydantic import PositiveFloat
 
 from ._errors import (
+    TaskAlreadyRunningError,
     TaskCancelledError,
     TaskExceptionError,
     TaskNotCompletedError,
@@ -402,13 +403,9 @@ def start_task(
     # only one unique task can be running
     if unique and tasks_manager.is_task_running(task_name):
         managed_tasks_ids = list(tasks_manager.get_task_group(task_name).keys())
-        if len(managed_tasks_ids) != 1:
-            raise RuntimeError(f"Unexpected amount of entries in {managed_tasks_ids=}")
-        task_id = managed_tasks_ids[0]
-        logger.info(
-            "A unique task '%s' already running. Returning it's task_id.", task_id
-        )
-        return task_id
+        assert len(managed_tasks_ids) == 1  # nosec
+        managed_task = tasks_manager.get_task_group(task_name)[managed_tasks_ids[0]]
+        raise TaskAlreadyRunningError(task_name=task_name, managed_task=managed_task)
 
     task_progress = TaskProgress.create()
 
