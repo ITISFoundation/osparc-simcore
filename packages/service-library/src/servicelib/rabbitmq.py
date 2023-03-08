@@ -7,7 +7,6 @@ from typing import Any, Awaitable, Callable, Final, Optional
 from uuid import uuid4
 
 import aio_pika
-from aio_pika import MessageProcessError, RobustChannel, RobustConnection
 from aio_pika.exceptions import ChannelClosed
 from aio_pika.patterns import RPC
 from pydantic import PositiveInt
@@ -78,8 +77,8 @@ class RabbitMQClient:
     _connection_pool: Optional[aio_pika.pool.Pool] = field(init=False, default=None)
     _channel_pool: Optional[aio_pika.pool.Pool] = field(init=False, default=None)
 
-    _rpc_connection: Optional[RobustConnection] = None
-    _rpc_channel: Optional[RobustChannel] = None
+    _rpc_connection: Optional[aio_pika.RobustConnection] = None
+    _rpc_channel: Optional[aio_pika.RobustChannel] = None
     _rpc: Optional[RPC] = None
 
     def __post_init__(self):
@@ -214,7 +213,7 @@ class RabbitMQClient:
                 kwargs=kwargs,
             )
             return await asyncio.wait_for(awaitable, timeout=timeout)
-        except MessageProcessError as e:
+        except aio_pika.MessageProcessError as e:
             if e.args[0] == "Message has been returned":
                 raise RemoteMethodNotRegisteredError(
                     method_name=namespaced_method_name, incoming_message=e.args[1]
