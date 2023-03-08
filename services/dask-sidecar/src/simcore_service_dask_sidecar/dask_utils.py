@@ -32,7 +32,7 @@ def _get_current_task_state() -> Optional[TaskState]:
     logger.debug("current worker %s", f"{worker=}")
     current_task = worker.get_current_task()
     logger.debug("current task %s", f"{current_task=}")
-    return worker.tasks.get(current_task)
+    return worker.state.tasks.get(current_task)
 
 
 def is_current_task_aborted() -> bool:
