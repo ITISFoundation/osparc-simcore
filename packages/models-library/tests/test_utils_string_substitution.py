@@ -3,8 +3,10 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+import json
 import sys
 from pathlib import Path
+from textwrap import dedent
 
 import pytest
 from models_library.utils.string_substitution import (
@@ -13,6 +15,8 @@ from models_library.utils.string_substitution import (
     substitute_all_legacy_identifiers,
     upgrade_identifier,
 )
+from pydantic import BaseModel, Json, parse_obj_as
+from pytest_simcore.helpers.utils_envs import load_dotenv
 
 
 @pytest.mark.parametrize(
@@ -172,3 +176,91 @@ def test_substitution_against_service_metadata_configs(metadata_path: Path):
         assert all(
             identifier in KNOWN_IDENTIFIERS for identifier in found
         ), f"some identifiers in {found} are new and therefore potentially unsupported"
+
+
+def test_template_substitution_on_envfiles():
+
+    envfile_template = dedent(
+        """
+    x=$VALUE1
+    y=$VALUE2
+    """
+    )
+    template = TemplateText(envfile_template)
+    assert set(template.get_identifiers()) == {"VALUE1", "VALUE2"}
+
+    # NOTE how it casts string to to int
+    assert template.substitute({"VALUE1": "3", "VALUE2": 3}) == dedent(
+        """
+    x=3
+    y=3
+    """
+    )
+
+    # NOTE does not cast if it is in a container
+    assert template.substitute({"VALUE1": ["3", "4"], "VALUE2": [3, 4]}) == dedent(
+        """
+    x=['3', '4']
+    y=[3, 4]
+    """
+    )
+
+    # deserialized AFTER substitution in envfile template
+    deserialize = load_dotenv(template.substitute({"VALUE1": "3", "VALUE2": 3}))
+    assert deserialize == {
+        "x": "3",
+        "y": "3",
+    }
+
+    deserialize = load_dotenv(
+        template.substitute({"VALUE1": ["3", "4"], "VALUE2": [3, 4]})
+    )
+    assert deserialize == {
+        "x": "['3', '4']",
+        "y": "[3, 4]",
+    }
+
+
+@pytest.mark.testit
+def test_template_substitution_on_jsondumps():
+    # NOTE: compare with test_template_substitution_on_envfiles
+
+    json_template = {"x": "$VALUE1", "y": "$VALUE2"}
+    json_dumps_template = json.dumps(json_template)  # LIKE image labels!
+
+    # NOTE: that here we are enforcing the values to be strings!
+    assert '{"x": "$VALUE1", "y": "$VALUE2"}' == json_dumps_template
+
+    template = TemplateText(json_dumps_template)
+    assert set(template.get_identifiers()) == {"VALUE1", "VALUE2"}
+
+    # NOTE how it casts string to str
+    deserialized = json.loads(template.substitute({"VALUE1": "3", "VALUE2": 3}))
+
+    assert deserialized == {
+        "x": "3",
+        "y": "3",  # <--- NOTE cast to str!
+    }
+
+    # NOTE does not cast if it is in a container
+    deserialized = json.loads(
+        template.substitute({"VALUE1": ["3", "4"], "VALUE2": [3, 4]})
+    )
+
+    assert deserialized == {
+        "x": "['3', '4']",
+        "y": "[3, 4]",
+    }
+
+    # Let's try with pydantic parser!
+    class Schema(BaseModel):
+        x: Json[list[str]]
+        y: Json[list[int]]
+
+    deserialized = parse_obj_as(
+        Json[Schema], template.substitute({"VALUE1": ["3", "4"], "VALUE2": [3, 4]})
+    )
+    assert deserialized == {
+        "x": [3, 4],
+        "y": [3, 4],
+    }
