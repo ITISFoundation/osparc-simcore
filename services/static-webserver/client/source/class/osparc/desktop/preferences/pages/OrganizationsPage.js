@@ -50,11 +50,14 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
         const orgId = e.getData();
         const orgModel = this.__orgsList.getOrgModel(orgId);
         this.__orgDetails.setCurrentOrg(orgModel);
+
+        this.getChildControl("title").setValue(this.tr("Organization details"));
         this.__stack.setSelection([this.__orgDetails]);
       });
 
       orgDetails.addListener("backToOrganizations", () => {
-        stack.setSelection([orgsPage]);
+        this.getChildControl("title").setValue(this.tr("Organizations"));
+        this.__stack.setSelection([orgsPage]);
         orgsPage.reloadOrganizations();
       });
     }
