@@ -88,7 +88,6 @@ commonmark==0.9.1
 dask==2023.3.0
     # via
     #   -r requirements/../../../packages/dask-task-models-library/requirements/_base.in
-    #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask-gateway
     #   distributed
 dask-gateway==2023.1.1
@@ -175,7 +174,7 @@ markupsafe==2.1.2
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   jinja2
     #   mako
-msgpack==1.0.4
+msgpack==1.0.5
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   aiocache
