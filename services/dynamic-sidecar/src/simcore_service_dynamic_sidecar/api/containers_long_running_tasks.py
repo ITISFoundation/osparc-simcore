@@ -84,7 +84,7 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
         )
         return task_id
     except TaskAlreadyRunningError as e:
-        return e.managed_task.task_id
+        return e.managed_task.task_id  # pylint: disable=no-member
 
 
 @router.post(
@@ -114,7 +114,7 @@ async def runs_docker_compose_down_task(
         )
         return task_id
     except TaskAlreadyRunningError as e:
-        return e.managed_task.task_id
+        return e.managed_task.task_id  # pylint: disable=no-member
 
 
 @router.post(
@@ -144,7 +144,7 @@ async def state_restore_task(
         )
         return task_id
     except TaskAlreadyRunningError as e:
-        return e.managed_task.task_id
+        return e.managed_task.task_id  # pylint: disable=no-member
 
 
 @router.post(
@@ -174,7 +174,7 @@ async def state_save_task(
         )
         return task_id
     except TaskAlreadyRunningError as e:
-        return e.managed_task.task_id
+        return e.managed_task.task_id  # pylint: disable=no-member
 
 
 @router.post(
@@ -204,7 +204,7 @@ async def ports_inputs_pull_task(
         )
         return task_id
     except TaskAlreadyRunningError as e:
-        return e.managed_task.task_id
+        return e.managed_task.task_id  # pylint: disable=no-member
 
 
 @router.post(
@@ -234,7 +234,7 @@ async def ports_outputs_pull_task(
         )
         return task_id
     except TaskAlreadyRunningError as e:
-        return e.managed_task.task_id
+        return e.managed_task.task_id  # pylint: disable=no-member
 
 
 @router.post(
@@ -262,7 +262,7 @@ async def ports_outputs_push_task(
         )
         return task_id
     except TaskAlreadyRunningError as e:
-        return e.managed_task.task_id
+        return e.managed_task.task_id  # pylint: disable=no-member
 
 
 @router.post(
@@ -292,4 +292,4 @@ async def containers_restart_task(
         )
         return task_id
     except TaskAlreadyRunningError as e:
-        return e.managed_task.task_id
+        return e.managed_task.task_id  # pylint: disable=no-member
