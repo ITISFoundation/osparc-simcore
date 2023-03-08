@@ -239,7 +239,7 @@ class RabbitMQClient:
                 ) from e
             raise e
 
-    async def rpc_register(
+    async def rpc_register_handler(
         self, namespace: RPCNamespace, method_name: RPCMethodName, handler: Awaitable
     ) -> None:
         """
