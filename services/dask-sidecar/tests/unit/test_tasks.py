@@ -332,7 +332,6 @@ def test_run_computational_sidecar_real_fct(
     mocker: MockerFixture,
     s3_settings: S3Settings,
 ):
-
     mocked_get_integration_version = mocker.patch(
         "simcore_service_dask_sidecar.computational_sidecar.core.get_integration_version",
         autospec=True,
@@ -470,9 +469,10 @@ def test_run_computational_sidecar_dask(
 
     # check that the task produces expected logs
     worker_logs = [log for _, log in dask_client.get_worker_logs()[worker_name]]  # type: ignore
+    worker_logs.reverse()
     for log in ubuntu_task.expected_logs:
         r = re.compile(
-            rf"\[{ubuntu_task.service_key}:{ubuntu_task.service_version} - .+\/.+ - .+\]: ({log})"
+            rf"\[{ubuntu_task.service_key}:{ubuntu_task.service_version} - [^\/]+\/[^\s]+ - [^\]]+\]: ({log})"
         )
         search_results = list(filter(r.search, worker_logs))
         assert (
