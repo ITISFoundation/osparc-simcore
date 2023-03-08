@@ -2,7 +2,7 @@
 
 import json
 import logging
-import random
+from uuid import uuid4
 
 from aiohttp import web
 from models_library.generics import Envelope
@@ -142,8 +142,8 @@ async def post_user_notification(request: web.Request):
     redis_client = get_redis_user_notifications_client(request.app)
     # body includes the new notification
     notif = await request.json()
-    nid = random.randint(100, 1000)
-    notif["id"] = str(nid)
+    nid = uuid4()
+    notif["id"] = nid
     notif["read"] = "False"
     notif_hash_key = f'user_id={notif["user_id"]}:notification_id={nid}'
     await redis_client.set(notif_hash_key, value=json.dumps(notif))
