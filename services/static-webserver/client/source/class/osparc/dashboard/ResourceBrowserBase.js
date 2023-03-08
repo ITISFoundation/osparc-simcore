@@ -76,6 +76,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
   },
 
   members: {
+    _resourceType: null,
     _resourcesList: null,
     _topBar: null,
     _secondaryBar: null,
@@ -113,8 +114,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
-    _createResourcesLayout: function(resourceType) {
-      const topBar = this.__createTopBar(resourceType);
+    _createResourcesLayout: function() {
+      const topBar = this.__createTopBar();
       this._add(topBar);
 
       const secondaryBar = this._secondaryBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
@@ -138,15 +139,15 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       this._add(resourcesContainer);
     },
 
-    __createTopBar: function(resourceType) {
+    __createTopBar: function() {
       const topBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
         paddingRight: 8,
         alignY: "middle"
       });
 
-      const searchBarFilter = this.__searchBarFilter = new osparc.dashboard.SearchBarFilter(resourceType);
+      const searchBarFilter = this.__searchBarFilter = new osparc.dashboard.SearchBarFilter(this._resourceType);
       const textField = searchBarFilter.getChildControl("text-field");
-      osparc.utils.Utils.setIdToWidget(textField, resourceType ? "searchBarFilter-textField-"+resourceType : "searchBarFilter-textField");
+      osparc.utils.Utils.setIdToWidget(textField, "searchBarFilter-textField-"+this._resourceType);
       topBar.add(searchBarFilter, {
         flex: 1
       });
