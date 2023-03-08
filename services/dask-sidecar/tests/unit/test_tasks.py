@@ -89,7 +89,9 @@ def dask_subsystem_mock(mocker: MockerFixture) -> dict[str, MockerFixture]:
         "simcore_service_dask_sidecar.dask_utils.TaskState", autospec=True
     )
     dask_task_mock.resource_restrictions = {}
-    dask_distributed_worker_mock.return_value.tasks.get.return_value = dask_task_mock
+    dask_distributed_worker_mock.return_value.state.tasks.get.return_value = (
+        dask_task_mock
+    )
 
     # ensure dask logger propagates
     logging.getLogger("distributed").propagate = True
