@@ -260,7 +260,7 @@ class RabbitMQClient:
             auto_delete=True,
         )
 
-    async def rpc_unregister(self, handler: Awaitable) -> None:
+    async def rpc_unregister_handler(self, handler: Awaitable) -> None:
         """Unbind a locally added `handler`"""
 
         if self._rpc is None:

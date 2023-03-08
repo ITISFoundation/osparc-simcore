@@ -106,7 +106,7 @@ async def test_base_rpc_pattern(
     assert request_result == expected_result
     assert type(request_result) == expected_type
 
-    await rabbit_replier.rpc_unregister(add_me)
+    await rabbit_replier.rpc_unregister_handler(add_me)
 
 
 async def test_multiple_requests_sequence_same_replier_and_requester(
@@ -188,7 +188,7 @@ async def test_raise_error_if_not_started(
         await replier.rpc_register_handler(namespace, add_me.__name__, add_me)
 
     with pytest.raises(RPCNotInitializedError):
-        await replier.rpc_unregister(add_me)
+        await replier.rpc_unregister_handler(add_me)
 
     # expect not to raise error
     await replier.close()
@@ -345,7 +345,7 @@ async def test_rpc_register_for_is_equivalent_to_rpc_register(
     await rabbit_replier.rpc_register_handler(namespace, "_a_handler", _a_handler)
     await _assert_call_ok()
 
-    await rabbit_replier.rpc_unregister(_a_handler)
+    await rabbit_replier.rpc_unregister_handler(_a_handler)
 
     await rpc_register_entries(rabbit_replier, namespace_entries, _a_handler)
     await _assert_call_ok()
