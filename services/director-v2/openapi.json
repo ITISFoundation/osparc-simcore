@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-director-v2",
     "description": " Orchestrates the pipeline of services defined by the user",
-    "version": "2.2.0"
+    "version": "2.3.0"
   },
   "servers": [
     {
@@ -1623,6 +1623,9 @@
               }
             }
           },
+          "409": {
+            "description": "Task already running, cannot start a new one"
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -1666,6 +1669,9 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "Task already running, cannot start a new one"
           },
           "422": {
             "description": "Validation Error",
@@ -1711,6 +1717,9 @@
               }
             }
           },
+          "409": {
+            "description": "Task already running, cannot start a new one"
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -1754,6 +1763,9 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "Task already running, cannot start a new one"
           },
           "422": {
             "description": "Validation Error",
