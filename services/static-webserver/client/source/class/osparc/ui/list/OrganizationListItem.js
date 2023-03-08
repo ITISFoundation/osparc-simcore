@@ -24,6 +24,13 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
       nullable: false,
       apply: "__applyAccessRights",
       event: "changeAccessRights"
+    },
+
+    showDeleteButton: {
+      check: "Boolean",
+      init: true,
+      nullable: false,
+      event: "changeShowDeleteButton"
     }
   },
 
@@ -90,6 +97,9 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
 
       if (accessRights.getDelete()) {
         const deleteOrgButton = new qx.ui.menu.Button(this.tr("Delete"));
+        this.bind("showDeleteButton", deleteOrgButton, "visibility", {
+          converter: show => show ? "visible" : "excluded"
+        });
         deleteOrgButton.addListener("execute", () => {
           this.fireDataEvent("deleteOrganization", this.getKey());
         });

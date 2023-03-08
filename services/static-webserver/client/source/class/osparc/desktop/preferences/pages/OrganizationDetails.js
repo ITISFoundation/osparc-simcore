@@ -34,7 +34,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationDetails", {
   },
 
   members: {
-    __currentOrg: null,
+    __orgModel: null,
     __titleLayout: null,
     __organizationListItem: null,
     __membersList: null,
@@ -45,6 +45,8 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationDetails", {
       if (orgModel === null) {
         return;
       }
+      this.__orgModel = orgModel;
+
       const organizationListItem = this.__addOrganizationListItem();
       orgModel.bind("gid", organizationListItem, "key");
       orgModel.bind("gid", organizationListItem, "model");
@@ -53,7 +55,6 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationDetails", {
       orgModel.bind("description", organizationListItem, "subtitle");
       orgModel.bind("nMembers", organizationListItem, "contact");
       orgModel.bind("accessRights", organizationListItem, "accessRights");
-      this.__currentOrg = organizationListItem;
 
       // set orgModel to the tab views
       this.__membersList.setCurrentOrg(orgModel);
@@ -83,8 +84,29 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationDetails", {
       }
       const organizationListItem = this.__organizationListItem = new osparc.ui.list.OrganizationListItem();
       organizationListItem.getChildControl("options").exclude();
+      organizationListItem.setShowDeleteButton(false);
+      organizationListItem.addListener("openEditOrganization", () => this.__openEditOrganization());
       this.__titleLayout.add(organizationListItem);
       return organizationListItem;
+    },
+
+    __openEditOrganization: function() {
+      const org = this.__orgModel;
+
+      const newOrg = false;
+      const orgEditor = new osparc.component.editor.OrganizationEditor(newOrg);
+      org.bind("gid", orgEditor, "gid");
+      org.bind("label", orgEditor, "label");
+      org.bind("description", orgEditor, "description");
+      org.bind("thumbnail", orgEditor, "thumbnail", {
+        converter: val => val ? val : ""
+      });
+      const title = this.tr("Organization Details Editor");
+      const win = osparc.ui.window.Window.popUpInWindow(orgEditor, title, 400, 250);
+      orgEditor.addListener("updateOrg", () => {
+        this.__updateOrganization(win, orgEditor.getChildControl("save"), orgEditor);
+      });
+      orgEditor.addListener("cancel", () => win.close());
     },
 
     __updateOrganization: function(win, button, orgEditor) {
