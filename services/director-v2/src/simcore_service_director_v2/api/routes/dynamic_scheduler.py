@@ -54,6 +54,11 @@ async def update_service_observation(
     summary="Removes the service's user services",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
+    responses={
+        status.HTTP_409_CONFLICT: {
+            "description": "Task already running, cannot start a new one"
+        }
+    },
 )
 async def delete_service_containers(
     node_uuid: NodeID,
@@ -91,6 +96,11 @@ async def delete_service_containers(
     summary="Starts the saving of the state for the service",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
+    responses={
+        status.HTTP_409_CONFLICT: {
+            "description": "Task already running, cannot start a new one"
+        }
+    },
 )
 async def save_service_state(
     node_uuid: NodeID,
@@ -129,6 +139,11 @@ async def save_service_state(
     summary="Starts the pushing of the outputs for the service",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
+    responses={
+        status.HTTP_409_CONFLICT: {
+            "description": "Task already running, cannot start a new one"
+        }
+    },
 )
 async def push_service_outputs(
     node_uuid: NodeID,
@@ -166,6 +181,11 @@ async def push_service_outputs(
     summary="Removes the service's sidecar, proxy and docker networks & volumes",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
+    responses={
+        status.HTTP_409_CONFLICT: {
+            "description": "Task already running, cannot start a new one"
+        }
+    },
 )
 async def delete_service_docker_resources(
     node_uuid: NodeID,

@@ -172,7 +172,7 @@ async def test_update_service_observation(
         ("DELETE", "docker-resources", "_task_cleanup_service_docker_resources"),
     ],
 )
-async def test_repeat_service_creation_returns_same_task_id(
+async def test_409_response(
     mock_scheduler_service_shutdown_tasks: None,
     client: TestClient,
     observed_service: SchedulerData,
@@ -194,5 +194,5 @@ async def test_repeat_service_creation_returns_same_task_id(
         method,
         f"/v2/dynamic_scheduler/services/{observed_service.node_uuid}/{route_suffix}",
     )
-    assert response.status_code == status.HTTP_202_ACCEPTED
-    assert task_id == response.json()
+    assert response.status_code == status.HTTP_409_CONFLICT
+    assert "must be unique" in response.text
