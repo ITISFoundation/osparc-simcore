@@ -5,15 +5,17 @@
 import json
 from copy import deepcopy
 from pprint import pformat
-from typing import Any, NamedTuple
+from typing import Any, NamedTuple, Union, get_args
 
 import pytest
+from models_library.basic_types import PortInt
 from models_library.service_settings_labels import (
     DEFAULT_DNS_SERVER_ADDRESS,
     DEFAULT_DNS_SERVER_PORT,
     DNSResolver,
     DynamicSidecarServiceLabels,
     NATRule,
+    OEnvSubstitutionStr,
     PathMappingsLabel,
     SimcoreServiceLabels,
     SimcoreServiceSettingLabelEntry,
@@ -22,7 +24,7 @@ from models_library.service_settings_labels import (
 )
 from models_library.services_resources import DEFAULT_SINGLE_SERVICE_NAME
 from models_library.utils.string_substitution import TemplateText
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, Json, ValidationError, parse_obj_as
 
 
 class _Parametrization(NamedTuple):
@@ -389,15 +391,10 @@ def test_not_allowed_in_both_permit_list_and_outgoing_internet():
     )
 
 
-@pytest.mark.testit
-def test_it():
-
-    # in db
-    osparc_vendor_config = {
+@pytest.fixture
+def vendor_environments() -> dict[str, Any]:
+    return {
         # NO list or dict!
-        "SIMCORE_REGISTRY": "foo/bar",
-        "SERVICE_VERSION": "1.0",
-        "DISPLAY": ":1",
         "OSPARC_ENVIRONMENT_VENDOR_DNS_RESOLVER_ADDRESS": "172.0.0.1",
         "OSPARC_ENVIRONMENT_VENDOR_DNS_RESOLVER_PORT": 1234,
         "OSPARC_ENVIRONMENT_VENDOR_LICENCE_HOSTNAME": "hostname",
@@ -415,11 +412,12 @@ def test_it():
         "OSPARC_ENVIRONMENT_VENDOR_TCP_PORTS_1": 1,
         "OSPARC_ENVIRONMENT_VENDOR_TCP_PORTS_2": 2,
         "OSPARC_ENVIRONMENT_VENDOR_TCP_PORTS_3": 3,
-        "OSPARC_ENVIRONMENT_VENDOR_TCP_PORTS_4": 4,
     }
 
-    # submitted w/ service in labels
-    service_labels = {
+
+@pytest.fixture
+def service_labels() -> dict[str, str]:
+    return {
         "simcore.service.paths-mapping": json.dumps(
             {
                 "inputs_path": "/tmp/inputs",
@@ -453,11 +451,11 @@ def test_it():
             {
                 "s4l-core": [
                     {
-                        "hostname": "$OSPARC_ENVIRONMENT_VENDOR_LICENCE_HOSTNAME",
+                        "hostname": "license.com",
                         "tcp_ports": [
                             "$OSPARC_ENVIRONMENT_VENDOR_TCP_PORTS_1",
                             "$OSPARC_ENVIRONMENT_VENDOR_TCP_PORTS_2",
-                            "$OSPARC_ENVIRONMENT_VENDOR_TCP_PORTS_3",
+                            3,
                         ],
                         "dns_resolver": {
                             "address": "$OSPARC_ENVIRONMENT_VENDOR_DNS_RESOLVER_ADDRESS",
@@ -467,7 +465,6 @@ def test_it():
                 ]
             }
         ),
-        "simcore.service.containers-allowed-outgoing-internet": None,
         "simcore.service.settings": json.dumps(
             [
                 {
@@ -506,8 +503,16 @@ def test_it():
                         }
                     ],
                 },
-                {"name": "env", "type": "string", "value": ["DISPLAY=${DISPLAY}"]},
-                {"name": "ports", "type": "int", "value": 8888},
+                {
+                    "name": "env",
+                    "type": "string",
+                    "value": ["DISPLAY=${DISPLAY}"],
+                },
+                {
+                    "name": "ports",
+                    "type": "int",
+                    "value": 8888,
+                },
                 {
                     "name": "resources",
                     "type": "Resources",
@@ -519,20 +524,94 @@ def test_it():
         ),
     }
 
+
+class Leaf(NamedTuple):
+    parent: Any
+    field: str
+    value: Any
+
+
+def iter_leafs(parent: BaseModel):
+    for field in parent.__fields__.values():
+        value = getattr(parent, field.name)
+        if isinstance(value, BaseModel):
+            yield from iter_leafs(value)
+
+        elif isinstance(value, dict):
+            for item_key, item_valye in value.items():
+                yield value, item_key, item_valye
+
+        else:
+            yield parent, field.name, value
+
+
+@pytest.mark.testit
+def test_it():
+    obj = {"x": [1, 2, 3], "y": 1}
+    parsed = parse_obj_as(Json, json.dumps(obj))
+
+    assert parsed == obj
+
+    obj = {"x": [1, 2, 3], "y": "$VALUE1"}
+    parsed = parse_obj_as(Json, json.dumps(obj))
+    assert parsed == obj
+
+    obj = ["1", 2, 3]
+    parsed = parse_obj_as(list[int], obj)
+    assert parsed == [1, 2, 3]
+
+    def can_be_substituted(tp):
+        pass
+
+    assert get_args(list[Union[int, float]]) == (int, float)
+    assert get_args(Union[str, OEnvSubstitutionStr]) == (str, OEnvSubstitutionStr)
+    assert get_args(list[Union[_PortRange, PortInt, OEnvSubstitutionStr]]) == (
+        _PortRange,
+        PortInt,
+        OEnvSubstitutionStr,
+    )
+
+
+def test_it3(vendor_environments: dict[str, Any], service_labels: dict[str, str]):
+
+    # can load OSPARC_ENVIRONMENT_ identifiers
+    service_meta = SimcoreServiceLabels.parse_obj(service_labels)
+
+    assert service_meta.containers_allowed_outgoing_permit_list["s4l-core"][
+        0
+    ].tcp_ports == [
+        "$OSPARC_ENVIRONMENT_VENDOR_TCP_PORTS_1",
+        "$OSPARC_ENVIRONMENT_VENDOR_TCP_PORTS_2",
+        3,
+    ]
+
+    service_meta_str = TemplateText(
+        service_meta.json(include={"containers_allowed_outgoing_permit_list"})
+    ).safe_substitute(vendor_environments)
+
+    assert "$" not in service_meta_str
+
+
+def test_it2(vendor_environments: dict[str, Any], service_labels: dict[str, str]):
+
+    # in db
+
+    # submitted w/ service in labels
+
     print(json.dumps(service_labels, indent=1))
 
-    # 1. a selection of label values get resolved here !
+    # Resolving at load-time (some of them are possible)
+
     for label_name in (
         "simcore.service.compose-spec",
         "simcore.service.settings",
         "simcore.service.containers-allowed-outgoing-permit-list",
     ):
-
         template = TemplateText(service_labels[label_name])
         if template.is_valid() and (identifiers := template.get_identifiers()):
 
-            assert set(identifiers).issubset(osparc_vendor_config)
-            resolved_label: str = template.substitute(osparc_vendor_config)
+            assert set(identifiers).issubset(vendor_environments)
+            resolved_label: str = template.substitute(vendor_environments)
             service_labels[label_name] = json.dumps(json.loads(resolved_label))
 
     print(json.dumps(service_labels, indent=1))

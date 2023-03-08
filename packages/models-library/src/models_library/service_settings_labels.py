@@ -15,6 +15,7 @@ from pydantic import (
     PrivateAttr,
     ValidationError,
     parse_obj_as,
+    constr,
     root_validator,
     validator,
 )
@@ -26,6 +27,9 @@ from .services_resources import DEFAULT_SINGLE_SERVICE_NAME
 # Cloudflare DNS server address
 DEFAULT_DNS_SERVER_ADDRESS: Final[str] = "1.1.1.1"  # NOSONAR
 DEFAULT_DNS_SERVER_PORT: Final[PortInt] = 53
+
+# NOTE: To allow parametrized value, set the type to Union[..., OEnvSubstitutionStr]
+OEnvSubstitutionStr = constr(regex=r"^\$OSPARC_ENVIRONMENT_\w+$")
 
 
 class _BaseConfig:
@@ -56,6 +60,9 @@ class ContainerSpec(BaseModel):
         }
 
 
+#
+# "simcore.service.settings" label
+#
 class SimcoreServiceSettingLabelEntry(BaseModel):
     """These values are used to build the request body of https://docs.docker.com/engine/api/v1.41/#operation/ServiceCreate
     Specifically the section under ``TaskTemplate``
@@ -148,6 +155,10 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
 
 
 SimcoreServiceSettingsLabel = ListModel[SimcoreServiceSettingLabelEntry]
+
+#
+# "simcore.service.paths-mapping" label
+#
 
 
 class PathMappingsLabel(BaseModel):
@@ -248,6 +259,9 @@ class RestartPolicy(str, Enum):
     ON_INPUTS_DOWNLOADED = "on-inputs-downloaded"
 
 
+#
+# "simcore.service.containers-allowed-outgoing-permit-list" label
+#
 class _PortRange(BaseModel):
     """`lower` and `upper` are included"""
 
@@ -263,12 +277,12 @@ class _PortRange(BaseModel):
             raise ValueError(f"Condition not satisfied: {lower=} < {upper=}")
         return v
 
-
+from typing import Union
 class DNSResolver(BaseModel):
-    address: str = Field(
+    address: Union[str, OEnvSubstitutionStr] = Field(
         ..., description="this is not an url address is derived from IP address"
     )
-    port: PortInt
+    port: Union[PortInt, OEnvSubstitutionStr]
 
     class Config(_BaseConfig):
         extra = Extra.allow
@@ -281,8 +295,8 @@ class DNSResolver(BaseModel):
 
 
 class NATRule(BaseModel):
-    hostname: str
-    tcp_ports: list[_PortRange | PortInt]
+    hostname: str, | OEnvSubstitutionStr
+    tcp_ports: list[ _PortRange | PortInt | OEnvSubstitutionStr ]
     dns_resolver: DNSResolver = Field(
         default_factory=lambda: DNSResolver(
             address=DEFAULT_DNS_SERVER_ADDRESS, port=DEFAULT_DNS_SERVER_PORT
@@ -296,6 +310,11 @@ class NATRule(BaseModel):
                 yield from range(port.lower, port.upper + 1)
             else:
                 yield port
+
+
+#
+#  "simcore.service.*" labels
+#
 
 
 class DynamicSidecarServiceLabels(BaseModel):
