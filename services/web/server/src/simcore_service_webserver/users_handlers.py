@@ -144,7 +144,7 @@ async def post_user_notification(request: web.Request):
     notif = await request.json()
     nid = uuid4()
     notif["id"] = nid
-    notif["read"] = "False"
+    notif["read"] = False
     notif_hash_key = f'user_id={notif["user_id"]}:notification_id={nid}'
     await redis_client.set(notif_hash_key, value=json.dumps(notif))
     return web.json_response(status=web.HTTPNoContent.status_code)
