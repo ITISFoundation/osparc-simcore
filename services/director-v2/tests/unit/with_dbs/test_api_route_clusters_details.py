@@ -294,6 +294,7 @@ async def test_get_cluster_details(
     cluster_out = await _get_cluster_details(
         async_client, user_1["id"], some_cluster.id
     )
+    assert cluster_out.scheduler.workers
     worker_data = next(iter(cluster_out.scheduler.workers.values()))
     assert worker_data.metrics.task_counts.executing == 0
     # in dask, the task remains in memory until the result is deleted
