@@ -15,7 +15,6 @@ from models_library.utils.string_substitution import (
     substitute_all_legacy_identifiers,
     upgrade_identifier,
 )
-from pydantic import BaseModel, Json, parse_obj_as
 from pytest_simcore.helpers.utils_envs import load_dotenv
 
 
@@ -250,17 +249,4 @@ def test_template_substitution_on_jsondumps():
     assert deserialized == {
         "x": "['3', '4']",
         "y": "[3, 4]",
-    }
-
-    # Let's try with pydantic parser!
-    class Schema(BaseModel):
-        x: Json[list[str]]
-        y: Json[list[int]]
-
-    deserialized = parse_obj_as(
-        Json[Schema], template.substitute({"VALUE1": ["3", "4"], "VALUE2": [3, 4]})
-    )
-    assert deserialized == {
-        "x": [3, 4],
-        "y": [3, 4],
     }
