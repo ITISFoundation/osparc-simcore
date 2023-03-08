@@ -43,7 +43,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationTemplatesList", {
     },
 
     __createIntroText: function() {
-      const msg = this.tr("This is the list of templates shared with this Organization");
+      const msg = this.tr("This is the list of ") + osparc.product.Utils.getTemplateAlias({plural: true}) + this.tr(" shared with this Organization");
       const intro = new qx.ui.basic.Label().set({
         value: msg,
         alignX: "left",
