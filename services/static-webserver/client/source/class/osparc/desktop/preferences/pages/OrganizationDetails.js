@@ -38,6 +38,8 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationDetails", {
     __titleLayout: null,
     __organizationListItem: null,
     __membersList: null,
+    __templatesList: null,
+    __servicesList: null,
 
     setCurrentOrg: function(orgModel) {
       if (orgModel === null) {
@@ -55,6 +57,8 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationDetails", {
 
       // set orgModel to the tab views
       this.__membersList.setCurrentOrg(orgModel);
+      this.__templatesList.setCurrentOrg(orgModel);
+      this.__servicesList.setCurrentOrg(orgModel);
     },
 
     __getTitleLayout: function() {
@@ -81,6 +85,36 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationDetails", {
       organizationListItem.getChildControl("options").exclude();
       this.__titleLayout.add(organizationListItem);
       return organizationListItem;
+    },
+
+    __updateOrganization: function(win, button, orgEditor) {
+      const orgKey = orgEditor.getGid();
+      const name = orgEditor.getLabel();
+      const description = orgEditor.getDescription();
+      const thumbnail = orgEditor.getThumbnail();
+      const params = {
+        url: {
+          "gid": orgKey
+        },
+        data: {
+          "label": name,
+          "description": description,
+          "thumbnail": thumbnail || null
+        }
+      };
+      osparc.data.Resources.fetch("organizations", "patch", params)
+        .then(() => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(name + this.tr(" successfully edited"));
+          button.setFetching(false);
+          win.close();
+          osparc.store.Store.getInstance().reset("organizations");
+          this.__reloadOrganizations();
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing ") + name, "ERROR");
+          button.setFetching(false);
+          console.error(err);
+        });
     },
 
     __createTabPage: function(label, icon) {
@@ -113,6 +147,20 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationDetails", {
         flex: 1
       });
       tabView.add(membersListPage);
+
+      const templatesListPage = this.__createTabPage(this.tr("Templates"), "@FontAwesome5Solid/copy/14");
+      const templatesList = this.__templatesList = new osparc.desktop.preferences.pages.OrganizationTemplatesList();
+      templatesListPage.add(templatesList, {
+        flex: 1
+      });
+      tabView.add(templatesListPage);
+
+      const servicesListPage = this.__createTabPage(this.tr("Services"), "@FontAwesome5Solid/cogs/14");
+      const servicesList = this.__servicesList = new osparc.desktop.preferences.pages.OrganizationServicesList();
+      servicesListPage.add(servicesList, {
+        flex: 1
+      });
+      tabView.add(servicesListPage);
 
       return tabView;
     }
