@@ -89,19 +89,19 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
     __memberInvitation: null,
     __membersModel: null,
 
-    setCurrentOrg: function(currentOrg) {
-      if (currentOrg === null) {
+    setCurrentOrg: function(orgModel) {
+      if (orgModel === null) {
         return;
       }
-      this.__currentOrg = currentOrg;
       const organizationListItem = this.__addOrganizationListItem();
-      organizationListItem.set({
-        key: currentOrg.getKey(),
-        thumbnail: currentOrg.getThumbnail(),
-        title: currentOrg.getTitle(),
-        subtitle: currentOrg.getSubtitle(),
-        accessRights: currentOrg.getAccessRights()
-      });
+      orgModel.bind("gid", organizationListItem, "key");
+      orgModel.bind("gid", organizationListItem, "model");
+      orgModel.bind("thumbnail", organizationListItem, "thumbnail");
+      orgModel.bind("label", organizationListItem, "title");
+      orgModel.bind("description", organizationListItem, "subtitle");
+      orgModel.bind("nMembers", organizationListItem, "contact");
+      orgModel.bind("accessRights", organizationListItem, "accessRights");
+      this.__currentOrg = organizationListItem;
       this.__reloadOrgMembers();
     },
 

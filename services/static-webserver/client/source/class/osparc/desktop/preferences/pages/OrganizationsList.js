@@ -45,6 +45,8 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsList", {
     if (osparc.data.Permissions.getInstance().canDo("user.organizations.create")) {
       this._add(this.__getCreateOrganizationSection());
     }
+
+    this.reloadOrganizations();
   },
 
   events: {
@@ -67,6 +69,16 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsList", {
   members: {
     __orgsUIList: null,
     __orgsModel: null,
+
+    getOrgModel: function(orgId) {
+      let org = null;
+      this.__orgsModel.forEach(orgModel => {
+        if (orgModel.getGid() === parseInt(orgId)) {
+          org = orgModel;
+        }
+      });
+      return org;
+    },
 
     __getCreateOrganizationSection: function() {
       const createOrgBtn = new qx.ui.form.Button().set({
@@ -148,8 +160,8 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsList", {
 
     __organizationSelected: function(data) {
       if (data && data.length>0) {
-        const orgId = data[0];
-        this.fireDataEvent("organizationSelected", orgId);
+        const org = data[0];
+        this.fireDataEvent("organizationSelected", org.getModel());
       }
     },
 
@@ -177,13 +189,8 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsList", {
         });
     },
 
-    __openEditOrganization: function(orgKey) {
-      let org = null;
-      this.__orgsModel.forEach(orgModel => {
-        if (orgModel.getGid() === parseInt(orgKey)) {
-          org = orgModel;
-        }
-      });
+    __openEditOrganization: function(orgId) {
+      const org = this.getOrgModel(orgId);
       if (org === null) {
         return;
       }
