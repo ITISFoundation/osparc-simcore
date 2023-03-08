@@ -5,15 +5,14 @@ import asyncio
 from typing import Any, Awaitable, Final
 
 import pytest
-from pydantic import NonNegativeInt
+from pydantic import NonNegativeInt, ValidationError
 from pytest import LogCaptureFixture
-from servicelib.rabbitmq import RabbitMQClient, RPCNamespace
+from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq_errors import (
     RemoteMethodNotRegisteredError,
-    RPCHandlerNameTooLongError,
     RPCNotInitializedError,
 )
-from servicelib.rabbitmq_utils import get_namespace, rpc_register_entries
+from servicelib.rabbitmq_utils import RPCNamespace, rpc_register_entries
 from settings_library.rabbit import RabbitSettings
 
 pytest_simcore_core_services_selection = [
@@ -25,7 +24,7 @@ MULTIPLE_REQUESTS_COUNT: Final[NonNegativeInt] = 100
 
 @pytest.fixture
 def namespace() -> RPCNamespace:
-    return get_namespace({f"test{i}": f"test{i}" for i in range(8)})
+    return RPCNamespace.from_entries({f"test{i}": f"test{i}" for i in range(8)})
 
 
 @pytest.fixture
@@ -333,7 +332,7 @@ async def test_rpc_register_for_is_equivalent_to_rpc_register(
     rabbit_replier: RabbitMQClient,
 ):
     namespace_entries = {"hello": "test", "1": "me"}
-    namespace = get_namespace(namespace_entries)
+    namespace = RPCNamespace.from_entries(namespace_entries)
 
     async def _a_handler() -> int:
         return 42
@@ -354,8 +353,8 @@ async def test_rpc_register_for_is_equivalent_to_rpc_register(
 @pytest.mark.parametrize(
     "handler_name, expect_fail",
     [
-        ("a" * 255, True),
-        ("a" * 254, False),
+        ("a" * 254, True),
+        ("a" * 253, False),
     ],
 )
 async def test_get_namespaced_method_name_max_length(
@@ -365,7 +364,8 @@ async def test_get_namespaced_method_name_max_length(
         pass
 
     if expect_fail:
-        with pytest.raises(RPCHandlerNameTooLongError):
-            await rabbit_replier.rpc_register_handler("", handler_name, _a_handler)
+        with pytest.raises(ValidationError) as exec_info:
+            await rabbit_replier.rpc_register_handler("a", handler_name, _a_handler)
+        assert "ensure this value has at most 255 characters" in f"{exec_info.value}"
     else:
-        await rabbit_replier.rpc_register_handler("", handler_name, _a_handler)
+        await rabbit_replier.rpc_register_handler("a", handler_name, _a_handler)

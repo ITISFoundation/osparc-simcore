@@ -13,12 +13,8 @@ from pydantic import PositiveInt
 from servicelib.logging_utils import log_context
 from settings_library.rabbit import RabbitSettings
 
-from .rabbitmq_errors import (
-    RemoteMethodNotRegisteredError,
-    RPCHandlerNameTooLongError,
-    RPCNotInitializedError,
-)
-from .rabbitmq_utils import RPCMethodName, RPCNamespace
+from .rabbitmq_errors import RemoteMethodNotRegisteredError, RPCNotInitializedError
+from .rabbitmq_utils import RPCMethodName, RPCNamespace, RPCNamespacedMethodName
 
 log = logging.getLogger(__name__)
 
@@ -68,17 +64,6 @@ Message = str
 
 _MINUTE: Final[int] = 60
 _RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_S: Final[int] = 15 * _MINUTE
-
-
-def _get_namespaced_method_name(
-    namespace: RPCNamespace, method_name: RPCMethodName
-) -> str:
-    namespaced_method_name = f"{namespace}.{method_name}"
-    if len(namespaced_method_name) >= 256:
-        raise RPCHandlerNameTooLongError(
-            length=len(namespaced_method_name), result=namespaced_method_name
-        )
-    return namespaced_method_name
 
 
 @dataclass
@@ -211,8 +196,6 @@ class RabbitMQClient:
         Call a remote registered `handler` by providing it's `namespace`, `method_name`
         and `kwargs` containing the key value arguments expected by the remote `handler`.
 
-        NOTE: `namespace` should always be composed via `get_namespace`
-
         :raises asyncio.TimeoutError: when message expired
         :raises CancelledError: when called :func:`RPC.cancel`
         :raises RuntimeError: internal error
@@ -223,7 +206,9 @@ class RabbitMQClient:
         if not self._rpc:
             raise RPCNotInitializedError()
 
-        namespaced_method_name = _get_namespaced_method_name(namespace, method_name)
+        namespaced_method_name = RPCNamespacedMethodName.from_namespace_and_method(
+            namespace, method_name
+        )
         try:
             queue_expiration_timeout = timeout_s
             awaitable = self._rpc.call(
@@ -248,14 +233,13 @@ class RabbitMQClient:
 
         NOTE: method_name could be computed from the handler, but by design, it is
         left to the caller to do so.
-        NOTE: `namespace` should always be composed via `get_namespace`
         """
 
         if self._rpc is None:
             raise RPCNotInitializedError()
 
         await self._rpc.register(
-            _get_namespaced_method_name(namespace, method_name),
+            RPCNamespacedMethodName.from_namespace_and_method(namespace, method_name),
             handler,
             auto_delete=True,
         )
