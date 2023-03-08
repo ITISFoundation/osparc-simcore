@@ -21,5 +21,8 @@ async def get_vendor_environments(
         environments = dict(identifiers_map)
 
     assert all(key.startswith("OSPARC_ENVIRONMENT_") for key in environments)  # nosec
+    assert all(  # nosec
+        isinstance(value, (bool, int, str, float)) for value in environments.values()
+    )
 
     return environments
