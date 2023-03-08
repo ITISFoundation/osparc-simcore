@@ -13,7 +13,7 @@ from servicelib.rabbitmq_errors import (
     RPCHandlerNameTooLongError,
     RPCNotInitializedError,
 )
-from servicelib.rabbitmq_utils import get_namespace
+from servicelib.rabbitmq_utils import get_namespace, rpc_register_entries
 from settings_library.rabbit import RabbitSettings
 
 pytest_simcore_core_services_selection = [
@@ -343,7 +343,7 @@ async def test_rpc_register_for_is_equivalent_to_rpc_register(
 
     await rabbit_replier.rpc_unregister(_a_handler)
 
-    await rabbit_replier.rpc_register_entries(namespace_entries, _a_handler)
+    await rpc_register_entries(rabbit_replier, namespace_entries, _a_handler)
     await _assert_call_ok()
 
 

@@ -2,7 +2,7 @@
 
 import logging
 import re
-from typing import Final, Optional
+from typing import Awaitable, Final, Optional
 
 import aio_pika
 from tenacity import retry
@@ -68,3 +68,18 @@ async def wait_till_rabbitmq_responsive(url: str) -> bool:
         await connection.close()
         log.info("rabbitmq connection established")
         return True
+
+
+async def rpc_register_entries(
+    rabbit_client: "RabbitMQClient", entries: dict[str, str], handler: Awaitable
+) -> None:
+    """
+    Bind a local `handler` to a `namespace` derived from the provided `entries`
+    dictionary.
+
+    NOTE: This is a helper enforce the pattern defined in `rpc_register`'s
+    docstring.
+    """
+    await rabbit_client.rpc_register(
+        get_namespace(entries), method_name=handler.__name__, handler=handler
+    )
