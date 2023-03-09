@@ -81,7 +81,7 @@ RUN  --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=loc
 RUN python -m venv "${VIRTUAL_ENV}"
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
   pip install --upgrade \
-  pip~=22.0  \
+  pip~=23.0  \
   wheel \
   setuptools
 
