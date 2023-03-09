@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --resolver=backtracking --strip-extras requirements/_test.in
 #
-aio-pika==8.2.4
+aio-pika==8.2.5
     # via -r requirements/_test.in
 aioboto3==10.4.0
     # via -r requirements/_test.in

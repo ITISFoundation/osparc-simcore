@@ -97,7 +97,9 @@ watchdog==2.3.1
 wheel==0.38.4
     # via pip-tools
 wrapt==1.15.0
-    # via astroid
+    # via
+    #   -c requirements/_test.txt
+    #   astroid
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip

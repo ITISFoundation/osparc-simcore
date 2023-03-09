@@ -4,10 +4,8 @@
 #
 #    pip-compile --output-file=requirements/_base.txt --resolver=backtracking --strip-extras requirements/_base.in
 #
-aio-pika==8.2.4
-    # via
-    #   -r requirements/../../../packages/service-library/requirements/_base.in
-    #   -r requirements/_base.in
+aio-pika==8.2.5
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiocache==0.11.1
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 aiodebug==2.3.0
@@ -73,7 +71,9 @@ click==8.1.3
     #   typer
     #   uvicorn
 cryptography==39.0.1
-    # via paramiko
+    # via
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   paramiko
 distro==1.5.0
     # via docker-compose
 dnspython==2.1.0
