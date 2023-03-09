@@ -19,7 +19,9 @@ aiofiles==0.8.0
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
 aiohttp==3.8.4
-    # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
+    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 aiopg==1.3.3
     # via
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
@@ -175,10 +177,8 @@ pyyaml==5.4.1
     #   -r requirements/_base.in
     #   fastapi
     #   uvicorn
-redis==4.4.0
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.in
-    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+redis==4.5.1
+    # via -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 requests==2.27.1
     # via fastapi
 rfc3986==1.5.0

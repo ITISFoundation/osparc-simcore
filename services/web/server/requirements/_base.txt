@@ -21,6 +21,7 @@ aiofiles==0.8.0
 aiohttp==3.8.4
     # via
     #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
+    #   -r requirements/_base.in
     #   aiohttp-jinja2
     #   aiohttp-security
     #   aiohttp-session
@@ -198,10 +199,8 @@ pyyaml==5.4.1
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   aiohttp-swagger
     #   openapi-spec-validator
-redis==4.4.0
-    # via
-    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
-    #   -r requirements/_base.in
+redis==4.5.1
+    # via -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 requests==2.28.1
     # via twilio
 setproctitle==1.2.3

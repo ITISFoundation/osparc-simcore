@@ -13,7 +13,9 @@ aiodocker==0.21.0
 aiofiles==22.1.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiohttp==3.8.4
-    # via aiodocker
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   aiodocker
 aiormq==6.4.2
     # via aio-pika
 aiosignal==1.2.0
@@ -77,7 +79,7 @@ pyrsistent==0.19.2
     # via jsonschema
 pyyaml==5.4.1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-redis==4.4.0
+redis==4.5.1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 six==1.16.0
     # via jsonschema

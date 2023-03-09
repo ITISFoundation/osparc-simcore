@@ -9,7 +9,9 @@ aioboto3==9.6.0
 aiobotocore==2.3.0
     # via aioboto3
 aiohttp==3.8.4
-    # via aiobotocore
+    # via
+    #   -c requirements/_base.txt
+    #   aiobotocore
 aioitertools==0.11.0
     # via aiobotocore
 aiosignal==1.2.0
