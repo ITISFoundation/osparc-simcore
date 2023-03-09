@@ -215,16 +215,19 @@ def solver_version() -> str:
     return "1.2.3"
 
 
-@pytest.mark.testit("https://github.com/ITISFoundation/osparc-simcore/issues/3940")
-@pytest.mark.acceptance_test
+@pytest.mark.testit
+@pytest.mark.acceptance_test(
+    "New feature https://github.com/ITISFoundation/osparc-simcore/issues/3940"
+)
 async def test_run_solver_job(
     client: httpx.AsyncClient,
-    mocked_catalog_service_api: MockRouter,
-    mocked_directorv2_service_api: MockRouter,
-    auth: httpx.BasicAuth,
-    project_id: str,
     directorv2_service_openapi_specs: dict[str, Any],
     catalog_service_openapi_specs: dict[str, Any],
+    mocked_catalog_service_api: MockRouter,
+    mocked_directorv2_service_api: MockRouter,
+    mocked_webserver_service_api: MockRouter,
+    auth: httpx.BasicAuth,
+    project_id: str,
     solver_key: str,
     solver_version: str,
 ):
@@ -341,6 +344,10 @@ async def test_run_solver_job(
     assert mocked_directorv2_service_api[
         "create_computation_v2_computations_post"
     ].called
+
+    assert mocked_webserver_service_api["create_projects"].called
+    assert mocked_webserver_service_api["get_task_status"].called
+    assert mocked_webserver_service_api["get_task_result"].called
 
     job = Job.parse_obj(resp.json())
 

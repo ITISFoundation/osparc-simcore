@@ -10,8 +10,10 @@ from typing import Any, Iterator
 
 import pytest
 import respx
-from fastapi import FastAPI
+import yaml
+from fastapi import FastAPI, status
 from pytest_simcore.helpers import faker_catalog
+from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
 from respx import MockRouter
 from simcore_service_api_server.core.settings import ApplicationSettings
 
@@ -30,6 +32,92 @@ def directorv2_service_openapi_specs(
     return json.loads(
         (osparc_simcore_services_dir / "director-v2" / "openapi.json").read_text()
     )
+
+
+@pytest.fixture
+def webserver_service_openapi_specs(
+    osparc_simcore_services_dir: Path,
+) -> dict[str, Any]:
+    return yaml.safe_load(
+        (
+            osparc_simcore_services_dir
+            / "web/server/src/simcore_service_webserver/api/v0/openapi.yaml"
+        ).read_text()
+    )
+
+
+@pytest.fixture
+def mocked_webserver_service_api(
+    app: FastAPI, webserver_service_openapi_specs: dict[str, Any]
+) -> Iterator[MockRouter]:
+    settings: ApplicationSettings = app.state.settings
+    assert settings.API_SERVER_WEBSERVER
+
+    openapi = deepcopy(webserver_service_openapi_specs)
+
+    # pylint: disable=not-context-manager
+    with respx.mock(
+        base_url=settings.API_SERVER_WEBSERVER.base_url,
+        assert_all_called=False,
+        assert_all_mocked=True,
+    ) as respx_mock:
+
+        # include /v0
+        assert settings.API_SERVER_WEBSERVER.base_url.endswith("/v0")
+
+        # healthcheck_readiness_probe, healthcheck_liveness_probe
+        response_body = (
+            {
+                "data": openapi["paths"]["/"]["get"]["responses"]["200"]["content"][
+                    "application/json"
+                ]["schema"]["properties"]["data"]["example"]
+            },
+        )
+        respx_mock.get(path="/v0/", name="healthcheck_readiness_probe").respond(
+            status.HTTP_200_OK, json=response_body
+        )
+        respx_mock.get(path="/v0/health", name="healthcheck_liveness_probe").respond(
+            status.HTTP_200_OK, json=response_body
+        )
+
+        # get_task_status
+        respx_mock.get(
+            path__regex=r"/tasks/(?P<task_id>[\w/%]+)",
+            name="get_task_status",
+        ).respond(
+            status.HTTP_200_OK,
+            json={
+                "data": {
+                    "task_progress": 1,
+                    "done": True,
+                    "started": "2018-07-01T11:13:43Z",
+                }
+            },
+        )
+
+        # get_task_result
+        respx_mock.get(
+            path__regex=r"/tasks/(?P<task_id>[\w/%]+)/result",
+            name="get_task_result",
+        ).respond(
+            status.HTTP_200_OK,
+            json=GET_PROJECT.response_body,
+        )
+
+        # create_projects
+        task_id = "abc"
+        # http://webserver:8080/v0/projects?hidden=true
+        respx_mock.post(path__regex="/projects$", name="create_projects").respond(
+            status.HTTP_202_ACCEPTED,
+            json={
+                "data": {
+                    "task_id": "123",
+                    "status_hef": f"{settings.API_SERVER_WEBSERVER.base_url}/task/{task_id}",
+                    "result_href": f"{settings.API_SERVER_WEBSERVER.base_url}/task/{task_id}/result",
+                }
+            },
+        )
+        yield respx_mock
 
 
 @pytest.fixture
