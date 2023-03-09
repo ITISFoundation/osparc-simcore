@@ -42,7 +42,11 @@ async def test_remove_volumes(faker: Faker):
         for volume in volumes:
             assert await is_volume_present(volume.name) is True
 
-        await remove_volumes([v.name for v in volumes])
+        await remove_volumes(
+            [v.name for v in volumes],
+            volume_removal_attempts=15,
+            sleep_between_attempts_s=3,
+        )
 
         for volume in volumes:
             assert await is_volume_present(volume.name) is False

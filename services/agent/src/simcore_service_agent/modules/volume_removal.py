@@ -23,9 +23,8 @@ async def _remove_single_volume(
 
 async def remove_volumes(
     volume_names: list[str],
-    *,
-    volume_removal_attempts: float = 15,
-    sleep_between_attempts_s: float = 2,
+    volume_removal_attempts: float,
+    sleep_between_attempts_s: float,
 ) -> None:
     """
     Attempts to remove each individual volume a few times before giving up.

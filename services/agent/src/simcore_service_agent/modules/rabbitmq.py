@@ -26,8 +26,8 @@ def _get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
 async def _safe_remove_volumes(
     app: FastAPI,
     volume_names: list[str],
-    volume_removal_attempts: float = 15,
-    sleep_between_attempts_s: float = 2,
+    volume_removal_attempts: float,
+    sleep_between_attempts_s: float,
 ) -> None:
     async with disable_volume_removal_task(app):
         await _remove_volumes(
