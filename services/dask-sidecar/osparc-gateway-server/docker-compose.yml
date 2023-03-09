@@ -1,0 +1,35 @@
+version: '3.9'
+services:
+  osparc-gateway-server:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/osparc-gateway-server:${DOCKER_IMAGE_TAG:-latest}
+    ports:
+      - "8000:8000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - dask_net
+    configs:
+      - source: gateway_config
+        target: ${GATEWAY_SERVER_CONFIG_FILE_CONTAINER:-/etc/dask/dask_config.py}
+    environment:
+      - GATEWAY_WORKERS_NETWORK=${SWARM_STACK_NAME:?swarm_stack_name_required}_dask_net
+      - GATEWAY_SERVER_NAME=${SWARM_STACK_NAME:?swarm_stack_name_required}_osparc-gateway-server
+      - COMPUTATIONAL_SIDECAR_VOLUME_NAME=${SWARM_STACK_NAME:?swarm_stack_name_required}_sidecar_data
+      - COMPUTATIONAL_SIDECAR_IMAGE=${COMPUTATIONAL_SIDECAR_IMAGE:-local/dask-sidecar:production}
+      - COMPUTATIONAL_SIDECAR_LOG_LEVEL=${COMPUTATIONAL_SIDECAR_LOG_LEVEL:-WARNING}
+      - GATEWAY_SERVER_ONE_WORKER_PER_NODE=${GATEWAY_SERVER_ONE_WORKER_PER_NODE-True}
+      - GATEWAY_SERVER_CONFIG_FILE_CONTAINER=${GATEWAY_SERVER_CONFIG_FILE_CONTAINER:-/etc/dask/dask_config.py}
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+networks:
+  dask_net:
+    name: ${SWARM_STACK_NAME:?swarm_stack_name_required}_dask_net
+
+volumes:
+  sidecar_data: null
+
+configs:
+  gateway_config:
+    file: ./../${OSPARC_GATEWAY_CONFIG_FILE_HOST:?gateway_config_required}
