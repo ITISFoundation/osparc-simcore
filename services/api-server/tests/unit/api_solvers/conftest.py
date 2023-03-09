@@ -16,12 +16,20 @@ from respx import MockRouter
 from simcore_service_api_server.core.settings import ApplicationSettings
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def catalog_service_openapi_specs(osparc_simcore_services_dir: Path) -> dict[str, Any]:
-
     openapi_path = osparc_simcore_services_dir / "catalog" / "openapi.json"
     openapi_specs = json.loads(openapi_path.read_text())
     return openapi_specs
+
+
+@pytest.fixture
+def directorv2_service_openapi_specs(
+    osparc_simcore_services_dir: Path,
+) -> dict[str, Any]:
+    return json.loads(
+        (osparc_simcore_services_dir / "director-v2" / "openapi.json").read_text()
+    )
 
 
 @pytest.fixture
