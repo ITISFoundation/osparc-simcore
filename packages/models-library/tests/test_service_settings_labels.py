@@ -2,10 +2,11 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+
 import json
 from copy import deepcopy
 from pprint import pformat
-from typing import Any, NamedTuple, Union, get_args
+from typing import Any, NamedTuple, Optional, Union, get_args, get_origin
 
 import pytest
 from models_library.basic_types import PortInt
@@ -139,7 +140,9 @@ def test_path_mappings_json_encoding() -> None:
     assert PathMappingsLabel.parse_raw(path_mappings.json()) == path_mappings
 
 
-def test_simcore_services_labels_compose_spec_null_container_http_entry_provided() -> None:
+def test_simcore_services_labels_compose_spec_null_container_http_entry_provided() -> (
+    None
+):
     sample_data: dict[str, Any] = deepcopy(
         SimcoreServiceLabels.Config.schema_extra["examples"][2]
     )
@@ -533,20 +536,34 @@ def test_it():
     parsed = parse_obj_as(list[int], obj)
     assert parsed == [1, 2, 3]
 
-    def can_be_substituted(tp):
-        pass
+    def get_flat_args(tp):
+        args = get_args(tp)
 
-    assert get_args(list[Union[int, float]]) == (int, float)
-    assert get_args(Union[str, OEnvSubstitutionStr]) == (str, OEnvSubstitutionStr)
-    assert get_args(list[Union[_PortRange, PortInt, OEnvSubstitutionStr]]) == (
-        _PortRange,
-        PortInt,
-        OEnvSubstitutionStr,
+        if args:
+            flat_args = []
+            for a in args:
+                if get_origin(a) is not None:
+                    flat_a = get_flat_args(a)
+                    flat_args.extend(flat_a)
+                else:
+                    flat_args.append(a)
+            return tuple(flat_args)
+        return args
+
+    assert get_flat_args(Optional[list[Union[int, float]]]) == (
+        int,
+        float,
+        None.__class__,
     )
+
+    assert get_flat_args(list[Union[int, float]]) == (int, float)
+    assert get_flat_args(Union[str, OEnvSubstitutionStr]) == (str, OEnvSubstitutionStr)
+    assert get_flat_args(
+        list[Union[_PortRange, PortInt, OEnvSubstitutionStr, list[int]]]
+    ) == (_PortRange, PortInt, OEnvSubstitutionStr, int)
 
 
 def test_it3(vendor_environments: dict[str, Any], service_labels: dict[str, str]):
-
     # can load OSPARC_ENVIRONMENT_ identifiers
     service_meta = SimcoreServiceLabels.parse_obj(service_labels)
 
@@ -566,7 +583,6 @@ def test_it3(vendor_environments: dict[str, Any], service_labels: dict[str, str]
 
 
 def test_it2(vendor_environments: dict[str, Any], service_labels: dict[str, str]):
-
     # in db
 
     # submitted w/ service in labels
@@ -582,7 +598,6 @@ def test_it2(vendor_environments: dict[str, Any], service_labels: dict[str, str]
     ):
         template = TemplateText(service_labels[label_name])
         if template.is_valid() and (identifiers := template.get_identifiers()):
-
             assert set(identifiers).issubset(vendor_environments)
             resolved_label: str = template.substitute(vendor_environments)
             service_labels[label_name] = json.dumps(json.loads(resolved_label))
