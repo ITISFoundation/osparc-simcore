@@ -7,6 +7,9 @@ include ../../../scripts/common-package.Makefile
 
 PACKAGE_NAME=osparc_gateway_server
 COVERAGERC_PATH=../../../.coveragerc
+# version tags
+export DOCKER_IMAGE_TAG ?= latest
+export DOCKER_REGISTRY  ?= itisfoundation
 
 .PHONY: install-dev install-prod install-ci
 install-dev install-prod install-ci: _check_venv_active ## install app in development/production or CI mode
@@ -153,13 +156,29 @@ else
 	@@$(_docker_compose_build)
 endif
 
-.PHONY: shell
-shell:
-	docker run -it local/$(target):production /bin/sh
+##
+## TAGGING
+##
+.PHONY: tag-local tag-version tag-latest
+tag-local: ## Tags version '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}' images as 'local/{service}:production'
+	# Tagging all '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}' as 'local/{service}:production'
+	@$(foreach service, $(SERVICES_LIST)\
+		,docker tag ${DOCKER_REGISTRY}/$(service):${DOCKER_IMAGE_TAG} local/$(service):production; \
+	)
 
-#
-# INFOS
-#
+tag-version: ## Tags 'local/{service}:production' images as versioned '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
+	# Tagging all 'local/{service}:production' as '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
+	@$(foreach service, $(SERVICES_LIST)\
+		,docker tag local/$(service):production ${DOCKER_REGISTRY}/$(service):${DOCKER_IMAGE_TAG}; \
+	)
+
+tag-latest: ## Tags last locally built production images as '${DOCKER_REGISTRY}/{service}:latest'
+	@export DOCKER_IMAGE_TAG=latest; \
+	$(MAKE) tag-version
+
+##
+## INFOS
+##
 .PHONY: info-images info-swarm  info-tools
 define show-meta
 	$(foreach iid,$(shell docker images "*/$(1):*" -q | sort | uniq),\
