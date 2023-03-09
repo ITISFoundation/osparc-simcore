@@ -83,7 +83,7 @@ RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
 WORKDIR /build
 
 # install base 3rd party dependencies (NOTE: this speeds up devel mode)
-COPY --chown=scu:scu services/osparc-gateway-server/requirements/_base.txt .
+COPY --chown=scu:scu requirements/_base.txt .
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
   pip install \
   --requirement _base.txt
@@ -107,7 +107,7 @@ FROM build as prod-only-deps
 
 ENV SC_BUILD_TARGET=prod-only-deps
 
-COPY --chown=scu:scu services/osparc-gateway-server/ /build/services/osparc-gateway-server
+COPY --chown=scu:scu ./ /build/services/osparc-gateway-server
 
 WORKDIR /build/services/osparc-gateway-server
 
@@ -134,7 +134,7 @@ WORKDIR /home/scu
 # bring installed package without build tools
 COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 # copy docker entrypoint and boot scripts
-COPY --chown=scu:scu services/osparc-gateway-server/docker services/osparc-gateway-server/docker
+COPY --chown=scu:scu ./docker services/osparc-gateway-server/docker
 
 
 # TODO: Create healthcheck
