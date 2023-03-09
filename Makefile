@@ -42,6 +42,7 @@ SERVICES_NAMES_TO_BUILD := \
   dynamic-sidecar \
 	invitations \
   migration \
+	osparc-gateway-server \
   service-integration \
   static-webserver \
   storage \
