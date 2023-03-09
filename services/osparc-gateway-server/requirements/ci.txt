@@ -12,7 +12,7 @@
 --requirement _test.txt
 
 # installs this repo's packages
-../../../packages/pytest-simcore/
+../../packages/pytest-simcore/
 
 # installs current package
 .
