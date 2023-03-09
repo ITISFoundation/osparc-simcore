@@ -7,4 +7,4 @@ services:
       - DEBUG=true
     volumes:
       - ./:/devel/services/osparc-gateway-server
-      - ../../../packages:/devel/packages
+      - ../../packages:/devel/packages
