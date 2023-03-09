@@ -12,7 +12,7 @@ WORKDIR /src
 
 # update pip
 RUN pip install --no-cache-dir --upgrade \
-      pip~=22.0  \
+      pip~=23.0  \
       wheel \
       setuptools
 
