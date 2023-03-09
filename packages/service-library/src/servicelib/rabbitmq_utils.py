@@ -2,47 +2,57 @@
 
 import logging
 import re
-from typing import Final, Optional
+from typing import Awaitable, Final, Optional, Pattern
 
 import aio_pika
+from pydantic import ConstrainedStr, parse_obj_as
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 from .logging_utils import log_context
-from .rabbitmq_errors import RPCNamespaceInvalidCharsError, RPCNamespaceTooLongError
 
 log = logging.getLogger(__file__)
 
 
 _MINUTE: Final[int] = 60
-_NAMESPACE_CHAR_LIMIT: Final[int] = 100
 
-REGEX_VALIDATE_RABBIT_QUEUE_NAME: Final[str] = r"^[\w\-\.]{1,255}$"
-
-RPCNamespace = str
+REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS: Final[str] = r"^[\w\-\.]*$"
 
 
-def get_namespace(entries: dict[str, str]) -> RPCNamespace:
-    """
-    Given a list of entries creates a namespace to be used in declaring the rabbitmq queue.
-    Keeping this to a predefined length
-    """
+class RPCMethodName(ConstrainedStr):
+    min_length: int = 1
+    max_length: int = 252
+    regex: Optional[Pattern[str]] = re.compile(REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS)
 
-    namespace = "-".join(f"{k}_{v}" for k, v in sorted(entries.items()))
-    if len(namespace) > _NAMESPACE_CHAR_LIMIT:
-        raise RPCNamespaceTooLongError(
-            namespace=namespace,
-            namespace_length=len(namespace),
-            char_limit=_NAMESPACE_CHAR_LIMIT,
-        )
 
-    if not re.compile(REGEX_VALIDATE_RABBIT_QUEUE_NAME).match(namespace):
-        raise RPCNamespaceInvalidCharsError(
-            namespace=namespace, match_regex=REGEX_VALIDATE_RABBIT_QUEUE_NAME
-        )
-    return namespace
+class RPCNamespace(ConstrainedStr):
+    min_length: int = 1
+    max_length: int = 252
+    regex: Optional[Pattern[str]] = re.compile(REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS)
+
+    @classmethod
+    def from_entries(cls, entries: dict[str, str]) -> "RPCNamespace":
+        """
+        Given a list of entries creates a namespace to be used in declaring the rabbitmq queue.
+        Keeping this to a predefined length
+        """
+        composed_string = "-".join(f"{k}_{v}" for k, v in sorted(entries.items()))
+        return parse_obj_as(cls, composed_string)
+
+
+class RPCNamespacedMethodName(ConstrainedStr):
+    min_length: int = 1
+    max_length: int = 255
+    regex: Optional[Pattern[str]] = re.compile(REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS)
+
+    @classmethod
+    def from_namespace_and_method(
+        cls, namespace: RPCNamespace, method_name: RPCMethodName
+    ) -> "RPCNamespacedMethodName":
+        namespaced_method_name = f"{namespace}.{method_name}"
+        return parse_obj_as(cls, namespaced_method_name)
 
 
 class RabbitMQRetryPolicyUponInitialization:
@@ -67,3 +77,20 @@ async def wait_till_rabbitmq_responsive(url: str) -> bool:
         await connection.close()
         log.info("rabbitmq connection established")
         return True
+
+
+async def rpc_register_entries(
+    rabbit_client: "RabbitMQClient", entries: dict[str, str], handler: Awaitable
+) -> None:
+    """
+    Bind a local `handler` to a `namespace` derived from the provided `entries`
+    dictionary.
+
+    NOTE: This is a helper enforce the pattern defined in `rpc_register`'s
+    docstring.
+    """
+    await rabbit_client.rpc_register_handler(
+        RPCNamespace.from_entries(entries),
+        method_name=handler.__name__,
+        handler=handler,
+    )
