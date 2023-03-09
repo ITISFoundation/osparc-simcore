@@ -332,22 +332,3 @@ class OsparcBackend(DBBackendBase):
                 self.log.info("Worker %s is running", w.name)
 
         self.db.update_workers([(w, {"close_expected": True}) for w in close_expected])
-
-
-# Currently disabled because it seems not possible to change the cluster max_cluster_worker dynamically
-# TODO: see if a better way is doable
-# async def _background_task(backend: OsparcBackend, cluster: Cluster):
-#     backend.log.info("%s", f"{cluster.options=}")
-#     while await asyncio.sleep(2, result=True):
-#         backend.log.debug("osparc bck task: getting cluster information")
-#         cluster_info = await get_cluster_information(backend.docker_client)
-#         backend.log.debug("osparc bck task: %s", f"{cluster_info.json(indent=2)}")
-#         backend.config.ClusterConfig.cluster_max_workers = len(cluster_info)
-#         # backend.log.debug(
-#         #     "%s", f"{backend.db.get_cluster(cluster.name).config.cluster_max_workers=}"
-#         # )
-#         # cluster.config.cluster_max_workers = len(cluster_info)
-#         unfrozen_cluster_config = dict(cluster.config.items())
-#         unfrozen_cluster_config["cluster_max_workers"] = len(cluster_info)
-#         backend.db.update_cluster(cluster, config=unfrozen_cluster_config)
-#         # cluster.config.cluster_max_workers = len(cluster_info)
