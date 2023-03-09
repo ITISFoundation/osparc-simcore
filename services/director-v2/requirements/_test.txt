@@ -10,9 +10,8 @@ aioboto3==10.4.0
     # via -r requirements/_test.in
 aiobotocore==2.4.2
     # via aioboto3
-aiohttp==3.8.3
+aiohttp==3.8.4
     # via
-    #   -c requirements/_base.txt
     #   aiobotocore
     #   dask-gateway-server
     #   pytest-aiohttp

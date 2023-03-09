@@ -12,10 +12,8 @@ aiodocker==0.21.0
     # via -r requirements/_base.in
 aiofiles==22.1.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-aiohttp==3.8.3
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   aiodocker
+aiohttp==3.8.4
+    # via aiodocker
 aiormq==6.4.2
     # via aio-pika
 aiosignal==1.2.0

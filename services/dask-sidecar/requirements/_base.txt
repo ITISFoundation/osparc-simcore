@@ -18,7 +18,6 @@ aiofiles==23.1.0
     #   -r requirements/_base.in
 aiohttp==3.8.4
     # via
-    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   aiobotocore
     #   aiodocker
     #   dask-gateway

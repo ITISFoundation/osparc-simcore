@@ -5,7 +5,9 @@
 #    pip-compile --output-file=requirements/_base.txt --resolver=backtracking --strip-extras requirements/_base.in
 #
 aio-pika==9.0.4
-    # via -r requirements/../../../packages/service-library/requirements/_base.in
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
 aioboto3==10.4.0
     # via -r requirements/_base.in
 aiobotocore==2.4.2
@@ -22,7 +24,6 @@ aiofiles==23.1.0
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 aiohttp==3.8.4
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
     #   aiobotocore
     #   aiodocker
 aioitertools==0.11.0
