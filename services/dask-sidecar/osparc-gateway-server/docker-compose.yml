@@ -32,4 +32,4 @@ volumes:
 
 configs:
   gateway_config:
-    file: ./../${OSPARC_GATEWAY_CONFIG_FILE_HOST:?gateway_config_required}
+    file: ./${OSPARC_GATEWAY_CONFIG_FILE_HOST:?gateway_config_required}
