@@ -5,30 +5,55 @@
    https://osparc.io
 
    Copyright:
-     2018 IT'IS Foundation, https://itis.swiss
+     2023 IT'IS Foundation, https://itis.swiss
 
    License:
      MIT: https://opensource.org/licenses/MIT
 
    Authors:
-     * Pedro Crespo (pcrespov)
+     * Odei Maiz (odeimaiz)
 
 ************************************************************************ */
 
-/**
- *  Organization and members in preferences dialog
- *
- */
-
-qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
-  extend: osparc.desktop.preferences.pages.BasePage,
+qx.Class.define("osparc.desktop.organizations.OrganizationsWindow", {
+  extend: osparc.ui.window.SingletonWindow,
 
   construct: function() {
-    const iconSrc = "@FontAwesome5Solid/users/24";
-    const title = this.tr("Organizations");
-    this.base(arguments, title, iconSrc);
+    this.base(arguments, "organizations", this.tr("Organizations"));
 
-    this.__createPages();
+    this.set({
+      layout: new qx.ui.layout.VBox(),
+      modal: true,
+      width: 550,
+      height: 660,
+      showMaximize: false,
+      showMinimize: false,
+      appearance: "service-window"
+    });
+
+    this.__buildLayout();
+  },
+
+  statics: {
+    openWindow: function() {
+      const orgsWindow = new osparc.desktop.organizations.OrganizationsWindow();
+      orgsWindow.center();
+      orgsWindow.open();
+      return orgsWindow;
+    },
+
+    evaluateOrganizationsButton: function(btn) {
+      if (!osparc.data.Permissions.getInstance().canDo("user.organizations.create")) {
+        btn.exclude();
+      }
+      osparc.data.Resources.get("organizations")
+        .then(resp => {
+          const orgs = resp["organizations"];
+          if (orgs.length) {
+            btn.show();
+          }
+        });
+    }
   },
 
   members: {
@@ -36,15 +61,16 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
     __orgsList: null,
     __orgDetails: null,
 
-    __createPages: function() {
+    __buildLayout: function() {
       const stack = this.__stack = new qx.ui.container.Stack();
+      this.add(stack, {
+        flex: 1
+      });
+
       const orgsPage = this.__orgsList = new osparc.desktop.preferences.pages.OrganizationsList();
       const orgDetails = this.__orgDetails = new osparc.desktop.preferences.pages.OrganizationDetails();
       stack.add(orgsPage);
       stack.add(orgDetails);
-      this.add(stack, {
-        flex: 1
-      });
 
       orgsPage.addListener("organizationSelected", e => {
         const orgId = e.getData();
