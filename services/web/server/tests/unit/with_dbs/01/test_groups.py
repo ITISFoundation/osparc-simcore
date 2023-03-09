@@ -596,21 +596,31 @@ async def test_add_user_gets_added_to_group(
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_it(
     client: TestClient,
-    standard_groups: list[dict[str, str]],
+    logged_user: UserInfoDict,
     user_role: UserRole,
     faker: Faker,
 ):
-    # Tests  🐛 https://github.com/ITISFoundation/osparc-issues/issues/812
+    # create a new group
+    url = client.app.router["create_group"].url_for()
+    assert f"{url}" == f"/{API_VTAG}/groups"
 
-    standard_group = standard_groups[0]
-    email = faker.email()
-    url = client.app.router["add_group_user"].url_for(gid=f"{standard_group['gid']}")
+    new_group = {
+        "gid": "6543",
+        "label": f"this is user {logged_user['id']} group",
+        "description": f"user {logged_user['email']} is the owner of that one",
+        "thumbnail": None,
+    }
+    resp = await client.post(url, json=new_group)
+    data, error = await assert_status(resp, web.HTTPCreated)
+
+    url = client.app.router["add_group_user"].url_for(gid=f"{data['gid']}")
 
     # adding a user that is NOT registered
+    email = faker.email()  # <--- this email is lower case
     response: ClientResponse = await client.post(url, json={"email": email})
     assert response.status == 404
 
-    # Register the user
+    # Register the user with the email in lower case
     async with NewUser(
         params={
             "name": "foo",
@@ -618,27 +628,53 @@ async def test_it(
         },
         app=client.app,
     ) as registered_user:
-
         assert registered_user["email"] == email
 
-        # adding a user to group
         response = await client.post(
             url,
             json={"email": email},
         )
-
-        data, error = await assert_status(response, web.HTTPOk)
+        data, error = await assert_status(response, web.HTTPNoContent)
 
         assert not data
         assert not error
 
-        #
-        # adding a user to group with the email in capital letters
-        # SEE https://github.com/ITISFoundation/osparc-issues/issues/812
+    # adding a user to group with the email in capital letters
+    # Tests 🐛 https://github.com/ITISFoundation/osparc-issues/issues/812
+    async with NewUser(
+        params={
+            "name": "foo",
+            "email": email,
+        },
+        app=client.app,
+    ) as registered_user:
+        assert registered_user["email"] == email
+
         response = await client.post(
             url,
-            json={"email": email.upper()},
+            json={"email": email.upper()},  # <--- email in upper case
         )
-        assert response.status == 404
+        data, error = await assert_status(response, web.HTTPNoContent)
 
-    print(response)
+        assert not data
+        assert not error
+
+    # User is registered with the email in capital letters (but should be stored in the DB in lower case)
+    # adding a user to group with the email in lower case
+    async with NewUser(
+        params={
+            "name": "foo",
+            "email": email.upper(),  # <--- email in upper case
+        },
+        app=client.app,
+    ) as registered_user:
+        assert registered_user["email"] == email
+
+        response = await client.post(
+            url,
+            json={"email": email},
+        )
+        data, error = await assert_status(response, web.HTTPNoContent)
+
+        assert not data
+        assert not error
