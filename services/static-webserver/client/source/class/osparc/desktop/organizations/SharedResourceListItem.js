@@ -18,6 +18,15 @@
 qx.Class.define("osparc.desktop.organizations.SharedResourceListItem", {
   extend: osparc.ui.list.ListItemWithMenu,
 
+  properties: {
+    orgId: {
+      check: "Integer",
+      init: true,
+      nullable: false,
+      event: "changeOrgId"
+    }
+  },
+
   events: {
     "openMoreInfo": "qx.event.type.Event"
   },

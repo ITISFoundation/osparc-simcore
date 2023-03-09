@@ -76,10 +76,13 @@ qx.Class.define("osparc.desktop.organizations.TemplatesList", {
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("uuid", "model", null, item, id);
           ctrl.bindProperty("uuid", "key", null, item, id);
+          ctrl.bindProperty("orgId", "orgId", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id);
           ctrl.bindProperty("description", "subtitleMD", null, item, id);
-          ctrl.bindProperty("accessRights", "accessRights", null, item, id);
+          ctrl.bindProperty("accessRights", "accessRights", {
+            converter: data => data.get(item.getOrgId())
+          }, item, id);
         },
         configureItem: item => {
           item.subscribeToFilterGroup("organizationTemplatesList");
@@ -102,7 +105,10 @@ qx.Class.define("osparc.desktop.organizations.TemplatesList", {
         .then(templates => {
           const gid = orgModel.getGid();
           const orgTemplates = templates.filter(template => gid in template["accessRights"]);
-          orgTemplates.forEach(orgTemplate => templatesModel.append(qx.data.marshal.Json.createModel(orgTemplate)));
+          orgTemplates.forEach(orgTemplate => {
+            orgTemplate["orgId"] = gid;
+            templatesModel.append(qx.data.marshal.Json.createModel(orgTemplate));
+          });
         });
     }
   }
