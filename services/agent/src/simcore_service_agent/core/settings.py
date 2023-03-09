@@ -4,6 +4,7 @@ from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import Field, NonNegativeInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.r_clone import S3Provider
+from settings_library.rabbit import RabbitSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 _MINUTE: Final[NonNegativeInt] = 60
@@ -38,6 +39,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     AGENT_VOLUMES_CLEANUP_INTERVAL_S: NonNegativeInt = Field(
         60 * _MINUTE, description="interval at which to repeat volumes cleanup"
     )
+
+    AGENT_DOCKER_NODE_ID: str = Field(..., description="used by the rabbitmq module")
+    AGENT_RABBITMQ: Optional[RabbitSettings] = Field(auto_default_from_env=True)
 
     @validator("AGENT_VOLUMES_CLEANUP_S3_ENDPOINT", pre=True)
     @classmethod

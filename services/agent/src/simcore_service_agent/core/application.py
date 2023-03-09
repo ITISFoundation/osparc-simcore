@@ -15,7 +15,7 @@ from .._meta import (
     SUMMARY,
     VERSION,
 )
-from ..modules import task_monitor
+from ..modules import rabbitmq, task_monitor
 from ._routes import router
 from .settings import ApplicationSettings
 
@@ -50,8 +50,9 @@ def create_app() -> FastAPI:
     # ROUTERS
     app.include_router(router)
 
-    # EVENTS
+    # SUBMODULES
     task_monitor.setup(app)
+    rabbitmq.setup(app)
 
     async def _on_startup() -> None:
         print(APP_STARTED_BANNER_MSG, flush=True)
