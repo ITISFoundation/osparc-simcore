@@ -163,7 +163,7 @@ docker buildx bake \
 		)\
 	)\
 	$(if $(push),--push,) \
-	$(if $(push),--file docker-bake.hcml,) --file docker-compose-build.yml $(if $(target),$(target),) \
+	$(if $(push),--file docker-bake.hcl,) --file docker-compose-build.yml $(if $(target),$(target),) \
 	$(if $(findstring -nc,$@),--no-cache,\
 		$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
 			--set $(service).cache-to=type=gha$(comma)mode=max$(comma)scope=$(service) \
