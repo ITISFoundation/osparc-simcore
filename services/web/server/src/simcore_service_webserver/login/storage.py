@@ -53,6 +53,8 @@ class AsyncpgStorage:
     async def create_user(self, data: dict) -> asyncpg.Record:
         data.setdefault("created_at", datetime.utcnow())
         async with self.pool.acquire() as conn:
+            if data.get("email"):
+                data["email"] = data["email"].lower()
             data["id"] = await _sql.insert(conn, self.user_tbl, data)
             new_user = await _sql.find_one(conn, self.user_tbl, {"id": data["id"]})
             data["primary_gid"] = new_user["primary_gid"]

@@ -101,7 +101,9 @@ async def _get_user_group(conn: SAConnection, user_id: int, gid: int) -> RowProx
 async def _get_user_from_email(app: web.Application, email: str) -> RowProxy:
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
-        result = await conn.execute(sa.select([users]).where(users.c.email == email))
+        result = await conn.execute(
+            sa.select([users]).where(users.c.email == email.lower())
+        )
         user: RowProxy = await result.fetchone()
         if not user:
             raise UserNotFoundError(email=email)

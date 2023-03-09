@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Set
+from typing import Optional
 
 import sqlalchemy as sa
 from pydantic.networks import EmailStr
@@ -11,7 +11,7 @@ from ._base import BaseRepository
 
 
 class GroupsRepository(BaseRepository):
-    async def list_user_groups(self, user_id: int) -> List[GroupAtDB]:
+    async def list_user_groups(self, user_id: int) -> list[GroupAtDB]:
         groups_in_db = []
         async with self.db_engine.connect() as conn:
             async for row in await conn.stream(
@@ -39,7 +39,9 @@ class GroupsRepository(BaseRepository):
     ) -> Optional[PositiveInt]:
         async with self.db_engine.connect() as conn:
             return await conn.scalar(
-                sa.select([users.c.primary_gid]).where(users.c.email == user_email)
+                sa.select([users.c.primary_gid]).where(
+                    users.c.email == user_email.lower()
+                )
             )
 
     async def get_gid_from_affiliation(self, affiliation: str) -> Optional[PositiveInt]:
@@ -55,8 +57,8 @@ class GroupsRepository(BaseRepository):
             )
 
     async def list_user_emails_from_gids(
-        self, gids: Set[PositiveInt]
-    ) -> Dict[PositiveInt, Optional[EmailStr]]:
+        self, gids: set[PositiveInt]
+    ) -> dict[PositiveInt, Optional[EmailStr]]:
         service_owners = {}
         async with self.db_engine.connect() as conn:
             async for row in await conn.stream(
