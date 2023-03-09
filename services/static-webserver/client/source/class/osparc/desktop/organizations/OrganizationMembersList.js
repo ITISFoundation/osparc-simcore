@@ -130,7 +130,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationMembersList", {
     },
 
     __getMembersFilter: function() {
-      const filter = new osparc.component.filter.TextFilter("name", "organizationMembersList").set({
+      const filter = new osparc.component.filter.TextFilter("text", "organizationMembersList").set({
         allowStretchX: true,
         margin: [0, 10, 5, 10]
       });
