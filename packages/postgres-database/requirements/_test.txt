@@ -107,7 +107,9 @@ six==1.16.0
     #   -c requirements/_migration.txt
     #   python-dateutil
 sqlalchemy==1.4.46
-    # via aiopg
+    # via
+    #   -c requirements/_migration.txt
+    #   aiopg
 tomli==2.0.1
     # via
     #   coverage

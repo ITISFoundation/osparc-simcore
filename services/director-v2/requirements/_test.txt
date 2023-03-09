@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --resolver=backtracking --strip-extras requirements/_test.in
 #
-aio-pika==8.2.5
+aio-pika==9.0.4
     # via -r requirements/_test.in
 aioboto3==10.4.0
     # via -r requirements/_test.in
@@ -18,7 +18,7 @@ aiohttp==3.8.4
     #   pytest-aiohttp
 aioitertools==0.11.0
     # via aiobotocore
-aiormq==6.4.2
+aiormq==6.7.3
     # via
     #   -c requirements/_base.txt
     #   aio-pika
@@ -235,6 +235,7 @@ sniffio==1.2.0
     #   httpx
 sqlalchemy==1.4.46
     # via
+    #   -c requirements/_base.txt
     #   alembic
     #   dask-gateway-server
 tomli==2.0.1

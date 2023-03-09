@@ -4,10 +4,8 @@
 #
 #    pip-compile --output-file=requirements/_base.txt --resolver=backtracking --strip-extras requirements/_base.in
 #
-aio-pika==8.2.5
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.in
-    #   -r requirements/../../../packages/service-library/requirements/_base.in
+aio-pika==9.0.4
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiocache==0.11.1
     # via -r requirements/_base.in
 aiodebug==2.3.0
@@ -20,7 +18,7 @@ aiofiles==0.8.0
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 aioredis==2.0.1
     # via aiocache
-aiormq==6.4.2
+aiormq==6.7.3
     # via aio-pika
 alembic==1.8.1
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
@@ -168,6 +166,7 @@ sniffio==1.2.0
 sqlalchemy==1.4.46
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
+    #   -r requirements/_base.in
     #   alembic
 starlette==0.20.4
     # via fastapi

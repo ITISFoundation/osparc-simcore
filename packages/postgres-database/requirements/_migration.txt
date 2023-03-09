@@ -37,7 +37,9 @@ requests==2.28.2
 six==1.16.0
     # via websocket-client
 sqlalchemy==1.4.46
-    # via alembic
+    # via
+    #   -c requirements/_base.txt
+    #   alembic
 tenacity==8.2.2
     # via -r requirements/_migration.in
 urllib3==1.26.14

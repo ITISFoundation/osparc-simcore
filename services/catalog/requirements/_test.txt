@@ -169,7 +169,9 @@ sniffio==1.2.0
     #   httpcore
     #   httpx
 sqlalchemy==1.4.46
-    # via alembic
+    # via
+    #   -c requirements/_base.txt
+    #   alembic
 tomli==2.0.1
     # via
     #   coverage

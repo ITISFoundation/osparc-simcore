@@ -201,7 +201,9 @@ six==1.16.0
 sortedcontainers==2.4.0
     # via hypothesis
 sqlalchemy==1.4.46
-    # via alembic
+    # via
+    #   -c requirements/_base.txt
+    #   alembic
 tenacity==8.0.1
     # via -r requirements/_test.in
 termcolor==2.2.0

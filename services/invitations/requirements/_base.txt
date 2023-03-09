@@ -4,10 +4,8 @@
 #
 #    pip-compile --output-file=requirements/_base.txt --resolver=backtracking --strip-extras requirements/_base.in
 #
-aio-pika==8.3.0
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.in
-    #   -r requirements/../../../packages/service-library/requirements/_base.in
+aio-pika==9.0.4
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiodebug==2.3.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
@@ -16,7 +14,7 @@ aiofiles==22.1.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-aiormq==6.6.4
+aiormq==6.7.3
     # via aio-pika
 anyio==3.6.2
     # via

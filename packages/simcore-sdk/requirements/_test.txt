@@ -286,7 +286,9 @@ six==1.16.0
     #   junit-xml
     #   python-dateutil
 sqlalchemy==1.4.46
-    # via alembic
+    # via
+    #   -c requirements/_base.txt
+    #   alembic
 sshpubkeys==3.3.1
     # via moto
 termcolor==2.2.0
