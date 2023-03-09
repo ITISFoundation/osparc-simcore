@@ -31,7 +31,7 @@ class DockerVersion(str):
     @classmethod
     def validate_docker_version(cls, docker_version: str) -> str:
         try:
-            search_result = re.search(r"^\d\d.\d\d.\d\d", docker_version)
+            search_result = re.search(r"^\d\d.(\d\d|\d).(\d\d|\d)", docker_version)
             return search_result.group()
         except AttributeError:
             raise ValueError(  # pylint: disable=raise-missing-from
