@@ -593,6 +593,9 @@ async def test_add_user_gets_added_to_group(
 
 
 @pytest.mark.testit
+@pytest.mark.acceptance_test(
+    "Fixes 🐛 https://github.com/ITISFoundation/osparc-issues/issues/812"
+)
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_it(
     client: TestClient,
@@ -604,13 +607,15 @@ async def test_it(
     url = client.app.router["create_group"].url_for()
     assert f"{url}" == f"/{API_VTAG}/groups"
 
-    new_group = {
-        "gid": "6543",
-        "label": f"this is user {logged_user['id']} group",
-        "description": f"user {logged_user['email']} is the owner of that one",
-        "thumbnail": None,
-    }
-    resp = await client.post(url, json=new_group)
+    resp = await client.post(
+        url,
+        json={
+            "gid": "6543",
+            "label": f"this is user {logged_user['id']} group",
+            "description": f"user {logged_user['email']} is the owner of that one",
+            "thumbnail": None,
+        },
+    )
     data, error = await assert_status(resp, web.HTTPCreated)
 
     url = client.app.router["add_group_user"].url_for(gid=f"{data['gid']}")
@@ -623,7 +628,6 @@ async def test_it(
     # Register the user with the email in lower case
     async with NewUser(
         params={
-            "name": "foo",
             "email": email,
         },
         app=client.app,
@@ -642,17 +646,15 @@ async def test_it(
     # adding a user to group with the email in capital letters
     # Tests 🐛 https://github.com/ITISFoundation/osparc-issues/issues/812
     async with NewUser(
-        params={
-            "name": "foo",
-            "email": email,
-        },
         app=client.app,
     ) as registered_user:
-        assert registered_user["email"] == email
+        assert registered_user["email"]
 
         response = await client.post(
             url,
-            json={"email": email.upper()},  # <--- email in upper case
+            json={
+                "email": registered_user["email"].upper()
+            },  # <--- email in upper case
         )
         data, error = await assert_status(response, web.HTTPNoContent)
 
@@ -663,7 +665,6 @@ async def test_it(
     # adding a user to group with the email in lower case
     async with NewUser(
         params={
-            "name": "foo",
             "email": email.upper(),  # <--- email in upper case
         },
         app=client.app,
