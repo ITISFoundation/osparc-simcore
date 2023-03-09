@@ -33,22 +33,14 @@ qx.Class.define("osparc.desktop.organizations.SharedResourceListItem", {
 
   members: {
     // overridden
-    _getOptionsMenu: function() {
-      let menu = null;
+    _getInfoButton: function() {
       const accessRights = this.getAccessRights();
       if (accessRights.getRead()) {
-        const optionsMenu = this.getChildControl("options");
-        optionsMenu.show();
-
-        menu = new qx.ui.menu.Menu().set({
-          position: "bottom-right"
-        });
-
-        const moreInfoButton = new qx.ui.menu.Button(this.tr("More Info..."));
-        moreInfoButton.addListener("execute", () => this.fireEvent("openMoreInfo", this.getKey()));
-        menu.add(moreInfoButton);
+        const button = this.getChildControl("info-button");
+        button.addListener("execute", () => this.fireEvent("openMoreInfo", this.getKey()));
+        return button;
       }
-      return menu;
+      return null;
     }
   }
 });
