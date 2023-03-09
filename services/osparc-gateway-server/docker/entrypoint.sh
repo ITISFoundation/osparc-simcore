@@ -85,7 +85,7 @@ if stat $DOCKER_MOUNT >/dev/null 2>&1; then
     adduser "$SC_USER_NAME" "$GROUPNAME"
 fi
 
-echo "$INFO Starting osparc-dask-gateway-server ..."
+echo "$INFO Starting osparc-gateway-server ..."
 echo "  $SC_USER_NAME rights    : $(id "$SC_USER_NAME")"
 echo "  local dir : $(ls -al)"
 

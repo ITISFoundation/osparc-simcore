@@ -83,7 +83,7 @@ RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
 WORKDIR /build
 
 # install base 3rd party dependencies (NOTE: this speeds up devel mode)
-COPY --chown=scu:scu services/dask-gateway-server/requirements/_base.txt .
+COPY --chown=scu:scu services/osparc-gateway-server/requirements/_base.txt .
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
   pip install \
   --requirement _base.txt
@@ -92,7 +92,7 @@ RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
 RUN dpkgArch="$(dpkg --print-architecture)";\
   case "$dpkgArch" in \
   arm64) git clone --depth 1 --branch 0.9.0 https://github.com/dask/dask-gateway.git \
-  && cd dask-gateway/dask-gateway-server \
+  && cd dask-gateway/osparc-gateway-server \
   && pip install .\
   ;; \
   esac;
@@ -101,15 +101,15 @@ RUN dpkgArch="$(dpkg --print-architecture)";\
 # This stage is for production only dependencies that get partially wiped out afterwards (final docker image concerns)
 #
 #  + /build
-#    + services/dask-gateway-server [scu:scu] WORKDIR
+#    + services/osparc-gateway-server [scu:scu] WORKDIR
 #
 FROM build as prod-only-deps
 
 ENV SC_BUILD_TARGET=prod-only-deps
 
-COPY --chown=scu:scu services/dask-gateway-server/ /build/services/dask-gateway-server
+COPY --chown=scu:scu services/osparc-gateway-server/ /build/services/osparc-gateway-server
 
-WORKDIR /build/services/dask-gateway-server
+WORKDIR /build/services/osparc-gateway-server
 
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
   pip install \
@@ -120,7 +120,7 @@ RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
 # Runs as scu (non-root user)
 #
 #  + /home/scu     $HOME = WORKDIR
-#    + services/dask-gateway-server [scu:scu]
+#    + services/osparc-gateway-server [scu:scu]
 #
 FROM base as production
 
@@ -134,7 +134,7 @@ WORKDIR /home/scu
 # bring installed package without build tools
 COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 # copy docker entrypoint and boot scripts
-COPY --chown=scu:scu services/dask-gateway-server/docker services/dask-gateway-server/docker
+COPY --chown=scu:scu services/osparc-gateway-server/docker services/osparc-gateway-server/docker
 
 
 # TODO: Create healthcheck
@@ -145,8 +145,8 @@ COPY --chown=scu:scu services/dask-gateway-server/docker services/dask-gateway-s
 #   --retries=3 \
 #   CMD ["curl", "-Lf", "http://127.0.0.1:8787/health"]
 
-ENTRYPOINT [ "/bin/sh", "services/dask-gateway-server/docker/entrypoint.sh" ]
-CMD ["/bin/sh", "services/dask-gateway-server/docker/boot.sh"]
+ENTRYPOINT [ "/bin/sh", "services/osparc-gateway-server/docker/entrypoint.sh" ]
+CMD ["/bin/sh", "services/osparc-gateway-server/docker/boot.sh"]
 
 
 # --------------------------Development stage -------------------
@@ -166,5 +166,5 @@ RUN chown -R scu:scu "${VIRTUAL_ENV}"
 
 # NOTE: devel mode does NOT have HEALTHCHECK
 
-ENTRYPOINT [ "/bin/sh", "services/dask-gateway-server/docker/entrypoint.sh" ]
-CMD ["/bin/sh", "services/dask-gateway-server/docker/boot.sh"]
+ENTRYPOINT [ "/bin/sh", "services/osparc-gateway-server/docker/entrypoint.sh" ]
+CMD ["/bin/sh", "services/osparc-gateway-server/docker/boot.sh"]

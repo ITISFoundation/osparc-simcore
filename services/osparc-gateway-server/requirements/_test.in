@@ -1,5 +1,5 @@
 #
-# Specifies dependencies required to run 'osparc-dask-gateway-server'
+# Specifies dependencies required to run 'osparc-gateway-server'
 #
 --constraint ../../../requirements/constraints.txt
 

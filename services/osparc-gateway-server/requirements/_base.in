@@ -1,4 +1,4 @@
-# Specifies third-party dependencies for the 'dask-gateway-server'
+# Specifies third-party dependencies for the 'osparc-gateway-server'
 #
 #
 --constraint ../../../requirements/constraints.txt

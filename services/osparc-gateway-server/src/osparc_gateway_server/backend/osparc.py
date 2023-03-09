@@ -34,7 +34,7 @@ from .utils import (
 )
 
 #
-# https://patorjk.com/software/taag/#p=display&v=0&f=Avatar&t=osparc-dask-gateway-server
+# https://patorjk.com/software/taag/#p=display&v=0&f=Avatar&t=osparc-gateway-server
 #
 WELCOME_MSG = r"""
  ____  ____  ____  ____  ____  ____       ____  ____  ____  _  __      _____ ____  _____  _____ _      ____ ___  _      ____  _____ ____  _     _____ ____
