@@ -1,8 +1,8 @@
---constraint ../../../../requirements/constraints.txt
+--constraint ../../../requirements/constraints.txt
 --constraint _base.txt
 --constraint _test.txt
 
---requirement ../../../../requirements/devenv.txt
+--requirement ../../../requirements/devenv.txt
 
 # basic dev tools
 watchdog[watchmedo]
