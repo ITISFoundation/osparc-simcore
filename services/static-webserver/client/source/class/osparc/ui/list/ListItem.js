@@ -264,7 +264,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
           this.getSubtitle(),
           this.getSubtitleMD()
         ];
-        if (checks.filter(label => label.toLowerCase().trim().includes(data.text)).length == 0) {
+        if (checks.filter(check => check && check.toLowerCase().trim().includes(data.text)).length == 0) {
           return true;
         }
       }
