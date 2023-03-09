@@ -126,21 +126,20 @@ qx.Class.define("osparc.desktop.organizations.ServicesList", {
           for (const key in services) {
             const latestService = osparc.utils.Services.getLatest(services, key);
             if (gid in latestService["accessRights"]) {
-              if (latestService["thumbnail"] === null) {
-                if (osparc.data.model.Node.isDynamic(latestService)) {
-                  latestService["thumbnail"] = osparc.dashboard.CardBase.DYNAMIC_SERVICE_ICON+"24";
-                } else if (osparc.data.model.Node.isComputational(latestService)) {
-                  latestService["thumbnail"] = osparc.dashboard.CardBase.COMP_SERVICE_ICON+"24";
-                } else {
-                  latestService["thumbnail"] = osparc.dashboard.CardBase.SERVICE_ICON+"24";
-                }
-              }
               orgServices.push(latestService);
             }
           }
           orgServices.forEach(orgService => {
-            orgService["orgId"] = gid;
-            servicesModel.append(qx.data.marshal.Json.createModel(orgService));
+            const orgServiceCopy = osparc.utils.Utils.deepCloneObject(orgService);
+            orgServiceCopy["orgId"] = gid;
+            if (osparc.data.model.Node.isDynamic(orgServiceCopy)) {
+              orgServiceCopy["thumbnail"] = osparc.dashboard.CardBase.DYNAMIC_SERVICE_ICON+"24";
+            } else if (osparc.data.model.Node.isComputational(orgServiceCopy)) {
+              orgServiceCopy["thumbnail"] = osparc.dashboard.CardBase.COMP_SERVICE_ICON+"24";
+            } else {
+              orgServiceCopy["thumbnail"] = osparc.dashboard.CardBase.SERVICE_ICON+"24";
+            }
+            servicesModel.append(qx.data.marshal.Json.createModel(orgServiceCopy));
           });
         });
     }

@@ -122,8 +122,9 @@ qx.Class.define("osparc.desktop.organizations.TemplatesList", {
         .then(templates => {
           const orgTemplates = templates.filter(template => gid in template["accessRights"]);
           orgTemplates.forEach(orgTemplate => {
-            orgTemplate["orgId"] = gid;
-            templatesModel.append(qx.data.marshal.Json.createModel(orgTemplate));
+            const orgTemplateCopy = osparc.utils.Utils.deepCloneObject(orgTemplate);
+            orgTemplateCopy["orgId"] = gid;
+            templatesModel.append(qx.data.marshal.Json.createModel(orgTemplateCopy));
           });
         });
     }
