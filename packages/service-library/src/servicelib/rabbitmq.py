@@ -93,7 +93,9 @@ class RabbitMQClient:
         )
         self._rpc_channel = await self._rpc_connection.channel()
 
-        self._rpc = RPC(self._rpc_channel, host_exceptions=True)
+        # NOTE when upgrading to aio-pike>=9.0.4 use below
+        # self._rpc = RPC(self._rpc_channel, host_exceptions=True)
+        self._rpc = RPC(self._rpc_channel)
         await self._rpc.initialize()
 
     async def close(self) -> None:
