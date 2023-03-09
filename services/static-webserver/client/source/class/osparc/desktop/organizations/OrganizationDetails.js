@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.desktop.preferences.pages.OrganizationDetails", {
+qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -170,7 +170,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationDetails", {
       });
 
       const membersListPage = this.__createTabPage(this.tr("Members"), "@FontAwesome5Solid/users/14");
-      const membersList = this.__membersList = new osparc.desktop.preferences.pages.OrganizationMembersList();
+      const membersList = this.__membersList = new osparc.desktop.organizations.OrganizationMembersList();
       membersListPage.add(membersList, {
         flex: 1
       });
@@ -181,14 +181,14 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationDetails", {
         firstUpperCase: true
       });
       const templatesListPage = this.__createTabPage(templatesText, "@FontAwesome5Solid/copy/14");
-      const templatesList = this.__templatesList = new osparc.desktop.preferences.pages.OrganizationTemplatesList();
+      const templatesList = this.__templatesList = new osparc.desktop.organizations.OrganizationTemplatesList();
       templatesListPage.add(templatesList, {
         flex: 1
       });
       tabView.add(templatesListPage);
 
       const servicesListPage = this.__createTabPage(this.tr("Services"), "@FontAwesome5Solid/cogs/14");
-      const servicesList = this.__servicesList = new osparc.desktop.preferences.pages.OrganizationServicesList();
+      const servicesList = this.__servicesList = new osparc.desktop.organizations.OrganizationServicesList();
       servicesListPage.add(servicesList, {
         flex: 1
       });

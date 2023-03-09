@@ -67,8 +67,8 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsWindow", {
         flex: 1
       });
 
-      const orgsPage = this.__orgsList = new osparc.desktop.preferences.pages.OrganizationsList();
-      const orgDetails = this.__orgDetails = new osparc.desktop.preferences.pages.OrganizationDetails();
+      const orgsPage = this.__orgsList = new osparc.desktop.organizations.OrganizationsList();
+      const orgDetails = this.__orgDetails = new osparc.desktop.organizations.OrganizationDetails();
       stack.add(orgsPage);
       stack.add(orgDetails);
 
