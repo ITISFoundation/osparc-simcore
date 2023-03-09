@@ -189,6 +189,11 @@ async def start_job(
     director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
     product_name: str = Depends(get_product_name),
 ):
+    """Starts job job_id created with the solver solver_key:version
+
+    New in *version 0.4.3*: cluster_id
+    """
+
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     logger.debug("Start Job '%s'", job_name)
 
