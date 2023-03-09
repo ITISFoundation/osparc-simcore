@@ -144,7 +144,7 @@ up-latest:
 	@export DOCKER_IMAGE_TAG=latest && \
 	$(MAKE) up-version
 
-.PHONY: down leave
+.PHONY: down
 down: ## Stops and removes stack
 	# Removing stacks in reverse order to creation
 	-@docker stack rm $(SWARM_STACK_NAME)
