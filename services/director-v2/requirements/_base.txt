@@ -247,7 +247,9 @@ pyyaml==5.4.1
     #   fastapi
     #   uvicorn
 redis==4.5.1
-    # via -r requirements/../../../packages/service-library/requirements/_base.in
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/_base.in
 requests==2.27.1
     # via fastapi
 rfc3986==1.4.0
@@ -268,9 +270,8 @@ sortedcontainers==2.4.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
-sqlalchemy==1.4.37
+sqlalchemy==1.4.46
     # via
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiopg
     #   alembic

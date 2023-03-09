@@ -225,7 +225,9 @@ pyyaml==5.4.1
     #   moto
     #   openapi-spec-validator
 redis==4.5.1
-    # via fakeredis
+    # via
+    #   -c requirements/_base.txt
+    #   fakeredis
 requests==2.28.2
     # via
     #   codecov

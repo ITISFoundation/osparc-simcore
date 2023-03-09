@@ -233,9 +233,8 @@ sniffio==1.2.0
     #   asgi-lifespan
     #   httpcore
     #   httpx
-sqlalchemy==1.4.37
+sqlalchemy==1.4.46
     # via
-    #   -c requirements/_base.txt
     #   alembic
     #   dask-gateway-server
 tomli==2.0.1

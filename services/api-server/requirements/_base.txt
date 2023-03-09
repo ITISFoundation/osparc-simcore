@@ -178,7 +178,9 @@ pyyaml==5.4.1
     #   fastapi
     #   uvicorn
 redis==4.5.1
-    # via -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 requests==2.27.1
     # via fastapi
 rfc3986==1.5.0
@@ -193,9 +195,8 @@ sniffio==1.2.0
     #   anyio
     #   httpcore
     #   httpx
-sqlalchemy==1.4.37
+sqlalchemy==1.4.46
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiopg
     #   alembic

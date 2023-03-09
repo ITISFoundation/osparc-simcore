@@ -282,10 +282,8 @@ sniffio==1.2.0
     #   asgi-lifespan
     #   httpcore
     #   httpx
-sqlalchemy==1.4.37
-    # via
-    #   -c requirements/_base.txt
-    #   alembic
+sqlalchemy==1.4.46
+    # via alembic
 sshpubkeys==3.3.1
     # via moto
 toml==0.10.2

@@ -134,7 +134,9 @@ pyyaml==5.4.1
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 redis==4.5.1
-    # via -r requirements/../../../packages/service-library/requirements/_base.in
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
 rfc3986==1.5.0
     # via httpx
 s3transfer==0.6.0

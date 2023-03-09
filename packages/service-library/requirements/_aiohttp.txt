@@ -75,9 +75,7 @@ six==1.16.0
     #   jsonschema
     #   openapi-core
 sqlalchemy==1.4.46
-    # via
-    #   -c requirements/./../../../requirements/constraints.txt
-    #   aiopg
+    # via aiopg
 strict-rfc3339==0.7
     # via openapi-core
 werkzeug==2.2.3
