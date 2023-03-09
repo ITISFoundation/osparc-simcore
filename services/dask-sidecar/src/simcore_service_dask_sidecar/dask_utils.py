@@ -14,7 +14,8 @@ from dask_task_models_library.container_tasks.events import (
     TaskStateEvent,
 )
 from dask_task_models_library.container_tasks.io import TaskCancelEventName
-from distributed.worker import TaskState, get_worker
+from distributed.worker import get_worker
+from distributed.worker_state_machine import TaskState
 
 from .boot_mode import BootMode
 
@@ -31,7 +32,7 @@ def _get_current_task_state() -> Optional[TaskState]:
     logger.debug("current worker %s", f"{worker=}")
     current_task = worker.get_current_task()
     logger.debug("current task %s", f"{current_task=}")
-    return worker.tasks.get(current_task)
+    return worker.state.tasks.get(current_task)
 
 
 def is_current_task_aborted() -> bool:
