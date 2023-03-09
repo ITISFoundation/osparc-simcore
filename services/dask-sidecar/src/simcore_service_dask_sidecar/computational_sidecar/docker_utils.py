@@ -119,17 +119,17 @@ async def managed_container(
             raise
 
 
-DOCKER_LOG_REGEXP: re.Pattern[str] = re.compile(
+_DOCKER_LOG_REGEXP: re.Pattern[str] = re.compile(
     r"^(?P<timestamp>\d+-\d+-\d+T\d+:\d+:\d+\.\d+[^\s]+) (?P<log>.+)$"
 )
-PROGRESS_REGEXP: re.Pattern[str] = re.compile(
+_PROGRESS_REGEXP: re.Pattern[str] = re.compile(
     r"\[?progress[\]:]?\s*([0-1]?\.\d+|\d+(%)|\d+\s*(percent)|(\d+\/\d+))"
 )
 DEFAULT_TIME_STAMP = "2000-01-01T00:00:00.000000000Z"
 
 
 async def parse_line(line: str) -> tuple[LogType, str, str]:
-    match = re.search(DOCKER_LOG_REGEXP, line)
+    match = re.search(_DOCKER_LOG_REGEXP, line)
     if not match:
         # default return as log
         return (LogType.LOG, DEFAULT_TIME_STAMP, f"{line}")
@@ -138,7 +138,7 @@ async def parse_line(line: str) -> tuple[LogType, str, str]:
     timestamp = match.group("timestamp")
     log = f"{match.group('log')}"
     # now look for progress
-    match = re.search(PROGRESS_REGEXP, log.lower())
+    match = re.search(_PROGRESS_REGEXP, log.lower())
     if match:
         try:
             # can be anything from "23 percent", 23%, 23/234, 0.0-1.0
