@@ -120,7 +120,7 @@ async def managed_container(
 
 
 DOCKER_LOG_REGEXP: re.Pattern[str] = re.compile(
-    r"^(?P<timestamp>[0-9]+-[0-9]+-[0-9]+T[0-9]+:[0-9]+:[0-9]+\.[0-9]+[^\s]+) (?P<log>.+)$"
+    r"^(?P<timestamp>\d+-\d+-\d+T\d+:\d+:\d+\.\d+[^\s]+) (?P<log>.+)$"
 )
 PROGRESS_REGEXP: re.Pattern[str] = re.compile(
     r"\[?progress[\]:]?\s*([0-1]?\.\d+|\d+(%)|\d+\s*(percent)|(\d+\/\d+))"
