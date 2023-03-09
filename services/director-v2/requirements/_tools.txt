@@ -47,7 +47,7 @@ mypy-extensions==1.0.0
     # via black
 nodeenv==1.7.0
     # via pre-commit
-packaging==21.3
+packaging==23.0
     # via
     #   -c requirements/_test.txt
     #   build
@@ -65,15 +65,11 @@ pre-commit==3.1.1
     # via -r requirements/../../../requirements/devenv.txt
 pylint==2.16.2
     # via -r requirements/../../../requirements/devenv.txt
-pyparsing==3.0.9
-    # via
-    #   -c requirements/_test.txt
-    #   packaging
 pyproject-hooks==1.0.0
     # via build
 pyyaml==5.4.1
     # via
-    #   -c requirements/_test.txt
+    #   -c requirements/_base.txt
     #   pre-commit
     #   watchdog
 tomli==2.0.1
