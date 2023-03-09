@@ -28,7 +28,7 @@ qx.Class.define("osparc.desktop.organizations.SharedResourceListItem", {
   },
 
   events: {
-    "openMoreInfo": "qx.event.type.Event"
+    "openMoreInfo": "qx.event.type.Data"
   },
 
   members: {
@@ -37,7 +37,7 @@ qx.Class.define("osparc.desktop.organizations.SharedResourceListItem", {
       const accessRights = this.getAccessRights();
       if (accessRights.getRead()) {
         const button = this.getChildControl("info-button");
-        button.addListener("execute", () => this.fireEvent("openMoreInfo", this.getKey()));
+        button.addListener("execute", () => this.fireDataEvent("openMoreInfo", this.getKey()));
         return button;
       }
       return null;

@@ -49,7 +49,7 @@ qx.Class.define("osparc.ui.list.ListItemWithMenu", {
             maxHeight: 28,
             alignX: "center",
             alignY: "middle",
-            icon: "@MaterialIcons/info_outline/16",
+            icon: "@MaterialIcons/info_outline/14",
             focusable: false
           });
           this._add(control, {

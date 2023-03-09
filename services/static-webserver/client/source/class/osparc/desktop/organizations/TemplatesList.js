@@ -86,6 +86,23 @@ qx.Class.define("osparc.desktop.organizations.TemplatesList", {
         },
         configureItem: item => {
           item.subscribeToFilterGroup("organizationTemplatesList");
+          item.addListener("openMoreInfo", e => {
+            const templateId = e.getData();
+            osparc.data.Resources.get("templates")
+              .then(templates => {
+                const templateData = templates.find(t => t.uuid === templateId);
+                if (templateData) {
+                  const moreOpts = new osparc.dashboard.ResourceMoreOptions(templateData);
+                  const title = this.tr("Options");
+                  osparc.ui.window.Window.popUpInWindow(
+                    moreOpts,
+                    title,
+                    osparc.dashboard.ResourceMoreOptions.WIDTH,
+                    osparc.dashboard.ResourceMoreOptions.HEIGHT
+                  );
+                }
+              });
+          });
         }
       });
 
