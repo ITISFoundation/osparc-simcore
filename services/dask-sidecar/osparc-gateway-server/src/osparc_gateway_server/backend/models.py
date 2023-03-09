@@ -35,7 +35,6 @@ def cluster_information_from_docker_nodes(
                 "resources": {
                     "memory": node["Description"]["Resources"]["MemoryBytes"],
                     "cpus": node["Description"]["Resources"]["NanoCPUs"] / 1e9,
-                    # "others": node["Description"]["Resources"]["GenericResources"],
                 },
             }
             for node in nodes_list
