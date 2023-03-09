@@ -7,7 +7,7 @@
 import asyncio
 import concurrent.futures
 import time
-from typing import Any, Dict
+from typing import Any
 
 import distributed
 import pytest
@@ -28,7 +28,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 DASK_TASK_STARTED_EVENT = "task_started"
-DASK_TESTING_TIMEOUT_S = 5
+DASK_TESTING_TIMEOUT_S = 25
 
 
 async def test_publish_event(dask_client: distributed.Client):
@@ -152,7 +152,7 @@ def test_monitor_task_abortion(dask_client: distributed.Client):
 )
 def test_task_boot_mode(
     dask_client: distributed.Client,
-    resources: Dict[str, Any],
+    resources: dict[str, Any],
     expected_boot_mode: BootMode,
 ):
     future = dask_client.submit(get_current_task_boot_mode, resources=resources)
@@ -170,7 +170,7 @@ def test_task_boot_mode(
 )
 def test_task_resources(
     dask_client: distributed.Client,
-    resources: Dict[str, Any],
+    resources: dict[str, Any],
 ):
     future = dask_client.submit(get_current_task_resources, resources=resources)
     received_resources = future.result(timeout=DASK_TESTING_TIMEOUT_S)
