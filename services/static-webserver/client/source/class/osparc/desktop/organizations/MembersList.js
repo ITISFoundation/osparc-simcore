@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.desktop.organizations.OrganizationMembersList", {
+qx.Class.define("osparc.desktop.organizations.MembersList", {
   extend: qx.ui.core.Widget,
 
   construct: function() {

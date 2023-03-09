@@ -170,7 +170,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
       });
 
       const membersListPage = this.__createTabPage(this.tr("Members"), "@FontAwesome5Solid/users/14");
-      const membersList = this.__membersList = new osparc.desktop.organizations.OrganizationMembersList();
+      const membersList = this.__membersList = new osparc.desktop.organizations.MembersList();
       membersListPage.add(membersList, {
         flex: 1
       });
@@ -181,14 +181,14 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
         firstUpperCase: true
       });
       const templatesListPage = this.__createTabPage(templatesText, "@FontAwesome5Solid/copy/14");
-      const templatesList = this.__templatesList = new osparc.desktop.organizations.OrganizationTemplatesList();
+      const templatesList = this.__templatesList = new osparc.desktop.organizations.TemplatesList();
       templatesListPage.add(templatesList, {
         flex: 1
       });
       tabView.add(templatesListPage);
 
       const servicesListPage = this.__createTabPage(this.tr("Services"), "@FontAwesome5Solid/cogs/14");
-      const servicesList = this.__servicesList = new osparc.desktop.organizations.OrganizationServicesList();
+      const servicesList = this.__servicesList = new osparc.desktop.organizations.ServicesList();
       servicesListPage.add(servicesList, {
         flex: 1
       });
