@@ -25,7 +25,7 @@ TEST_REQUIREMENTS = tuple(read_reqs(CURRENT_DIR / "requirements" / "_test.txt"))
 
 
 SETUP = dict(
-    name="simcore-dask-gateway-server",
+    name="osparc-gateway-server",
     version=(CURRENT_DIR / "VERSION").read_text().strip(),
     author="Manuel Guidon (mguidon), Sylvain Anderegg (sanderegg)",
     description="Osparc backend for dask-gateway-server",
