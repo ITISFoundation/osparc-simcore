@@ -4,7 +4,6 @@ import os
 import socket
 from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable, Final, Optional
-from uuid import uuid4
 
 import aio_pika
 from aio_pika.exceptions import ChannelClosed
@@ -88,7 +87,9 @@ class RabbitMQClient:
     async def rpc_initialize(self) -> None:
         self._rpc_connection = await aio_pika.connect_robust(
             self.settings.dsn,
-            client_properties={"connection_name": f"{self.client_name}.rpc.{uuid4()}"},
+            client_properties={
+                "connection_name": f"{self.client_name}.rpc.{socket.gethostname()}"
+            },
         )
         self._rpc_channel = await self._rpc_connection.channel()
 
