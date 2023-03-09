@@ -238,7 +238,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
 
       const productEveryone = await osparc.store.Store.getInstance().getProductEveryone();
 
-      const orgId = this.__currentOrg.getKey();
+      const orgId = this.__currentOrg.getGid();
       const params = {
         url: {
           "gid": orgId
@@ -285,7 +285,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
 
       const params = {
         url: {
-          "gid": this.__currentOrg.getKey(),
+          "gid": this.__currentOrg.getGid(),
           "uid": orgMember["id"]
         },
         data: {
@@ -311,7 +311,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
 
       const params = {
         url: {
-          "gid": this.__currentOrg.getKey(),
+          "gid": this.__currentOrg.getGid(),
           "uid": "id" in orgMember ? orgMember["id"] : orgMember["key"]
         },
         data: {
@@ -340,7 +340,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
 
       const params = {
         url: {
-          "gid": this.__currentOrg.getKey(),
+          "gid": this.__currentOrg.getGid(),
           "uid": orgMember["id"]
         },
         data: {
@@ -366,7 +366,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
 
       const params = {
         url: {
-          "gid": this.__currentOrg.getKey(),
+          "gid": this.__currentOrg.getGid(),
           "uid": orgMember["id"]
         },
         data: {
@@ -392,7 +392,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
 
       const params = {
         url: {
-          "gid": this.__currentOrg.getKey(),
+          "gid": this.__currentOrg.getGid(),
           "uid": orgMember["id"]
         },
         data: {
@@ -418,7 +418,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
 
       const params = {
         url: {
-          "gid": this.__currentOrg.getKey(),
+          "gid": this.__currentOrg.getGid(),
           "uid": orgMember["id"]
         },
         data: {
@@ -444,7 +444,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
 
       const params = {
         url: {
-          "gid": this.__currentOrg.getKey(),
+          "gid": this.__currentOrg.getGid(),
           "uid": orgMember["id"]
         }
       };
