@@ -86,3 +86,116 @@ tests-integration-ci: ## runs integration tests against local+production images 
 
 tests: tests-unit tests-integration ## runs all tests
 	# running tests
+
+
+##
+## BUILD
+##
+SERVICES_LIST := osparc-gateway-server
+
+.env: .env-devel ## creates .env file from defaults in .env-devel
+	$(if $(wildcard $@), \
+	@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
+	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
+
+
+
+# version control
+export VCS_URL          := $(shell git config --get remote.origin.url)
+export VCS_REF          := $(shell git rev-parse --short HEAD)
+export VCS_STATUS_CLIENT:= $(if $(shell git status -s),'modified/untracked','clean')
+export BUILD_DATE       := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+# docker buildx cache location
+DOCKER_BUILDX_CACHE_FROM ?= /tmp/.buildx-cache
+DOCKER_BUILDX_CACHE_TO ?= /tmp/.buildx-cache
+DOCKER_TARGET_PLATFORMS ?= linux/amd64
+comma := ,
+
+define _docker_compose_build
+$(if $(create_cache),$(info creating cache file in $(DOCKER_BUILDX_CACHE_TO)),)
+export BUILD_TARGET=$(if $(findstring -devel,$@),development,production) && \
+$(foreach service, $(SERVICES_LIST),\
+	$(if $(push),\
+		export $(subst -,_,$(shell echo $(service) | tr a-z A-Z))_VERSION=$(shell cat services/$(service)/VERSION);\
+	,) \
+)\
+docker buildx bake \
+	$(if $(findstring -devel,$@),,\
+	--set *.platform=$(DOCKER_TARGET_PLATFORMS) \
+	$(foreach service, $(SERVICES_LIST),\
+		--set $(service).cache-from="type=local,src=$(DOCKER_BUILDX_CACHE_FROM)/$(service)" \
+		$(if $(create_cache),--set $(service).cache-to="type=local$(comma)mode=max$(comma)dest=$(DOCKER_BUILDX_CACHE_TO)/$(service)",) \
+	)\
+	)\
+	$(if $(findstring $(comma),$(DOCKER_TARGET_PLATFORMS)),,--set *.output="type=docker$(comma)push=false") \
+	$(if $(push),--push,) \
+	$(if $(push),--file docker-bake.hcl,) --file docker-compose-build.yml $(if $(target),$(target),)
+endef
+
+.PHONY: build build-nc rebuild build-devel build-devel-nc
+rebuild: build-nc # alias
+build build-nc: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=osparc-$(SWARM_STACK_NAME) build'
+ifeq ($(target),)
+	# Building services
+	@$(_docker_compose_build)
+else
+	# Building service $(target)
+	@$(_docker_compose_build)
+endif
+
+
+build-devel build-devel-nc: .env ## Builds development images and tags them as 'local/{service-name}:development'. For single target e.g. 'make target=osparc-$(SWARM_STACK_NAME) build-devel'
+ifeq ($(target),)
+	# Building services
+	@$(_docker_compose_build)
+else
+	# Building service $(target)
+	@@$(_docker_compose_build)
+endif
+
+.PHONY: shell
+shell:
+	docker run -it local/$(target):production /bin/sh
+
+#
+# INFOS
+#
+.PHONY: info-images info-swarm  info-tools
+define show-meta
+	$(foreach iid,$(shell docker images "*/$(1):*" -q | sort | uniq),\
+		docker image inspect $(iid) | jq '.[0] | .RepoTags, .Config.Labels, .Architecture';)
+endef
+
+info-images:  ## lists tags and labels of built images. To display one: 'make target=webserver info-images'
+ifeq ($(target),)
+	@$(foreach service,$(SERVICES_LIST),\
+		echo "## $(service) images:";\
+			docker images */$(service):*;\
+			$(call show-meta,$(service))\
+		)
+else
+	## $(target) images:
+	@$(call show-meta,$(target))
+endif
+
+info-swarm: ## displays info about stacks and networks
+ifneq ($(SWARM_HOSTS), )
+	# Stacks in swarm
+	@docker stack ls
+	# Containers (tasks) running in '$(SWARM_STACK_NAME)' stack
+	-@docker stack ps $(SWARM_STACK_NAME)
+	# Services in '$(SWARM_STACK_NAME)' stack
+	-@docker stack services $(SWARM_STACK_NAME)
+	# Networks
+	@docker network ls
+endif
+
+## Initial config
+.PHONY: config
+# osparc-dask-gateway configuration file
+export OSPARC_GATEWAY_CONFIG_FILE_HOST = .osparc-dask-gateway-config.py
+$(OSPARC_GATEWAY_CONFIG_FILE_HOST): $(CURDIR)/config/default_config.py  ## creates .env file from defaults in .env-devel
+	$(if $(wildcard $@), \
+	@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
+	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
+config: $(OSPARC_GATEWAY_CONFIG_FILE_HOST)  ## create default configuration file
