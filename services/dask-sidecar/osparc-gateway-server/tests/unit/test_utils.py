@@ -1,4 +1,5 @@
 # pylint: disable=unused-argument
+# pylint: disable=unused-variable
 # pylint: disable=redefined-outer-name
 
 import asyncio

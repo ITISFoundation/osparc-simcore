@@ -1,3 +1,6 @@
+# pylint: disable=unused-argument
+# pylint: disable=redefined-outer-name
+
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from osparc_gateway_server.backend.settings import AppSettings
