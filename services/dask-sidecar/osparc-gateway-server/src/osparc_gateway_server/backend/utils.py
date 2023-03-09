@@ -12,7 +12,7 @@ from dask_gateway_server.backends.db_base import Cluster, DBBackendBase
 from yarl import URL
 
 from .errors import NoHostFoundError, NoServiceTasksError, TaskNotAssignedError
-from .models import ClusterInformation, Hostname
+from .models import ClusterInformation, Hostname, cluster_information_from_docker_nodes
 from .settings import AppSettings
 
 _SHARED_COMPUTATIONAL_FOLDER_IN_SIDECAR = "/home/scu/shared_computational_data"
@@ -335,7 +335,7 @@ def modify_cmd_argument(
 
 
 async def get_cluster_information(docker_client: Docker) -> ClusterInformation:
-    cluster_information = ClusterInformation.from_docker(
+    cluster_information = cluster_information_from_docker_nodes(
         await docker_client.nodes.list()
     )
 
