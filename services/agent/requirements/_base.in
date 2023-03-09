@@ -10,6 +10,7 @@
 --requirement ../../../packages/settings-library/requirements/_base.in
 --requirement ../../../packages/service-library/requirements/_base.in
 
+aio-pika
 aiodocker
 fastapi
 packaging

@@ -21,3 +21,4 @@ pytest-asyncio
 pytest-cov
 pytest-mock
 pytest-runner
+python-dotenv
