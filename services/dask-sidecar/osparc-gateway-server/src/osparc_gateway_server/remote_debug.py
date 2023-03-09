@@ -12,7 +12,7 @@ def setup_remote_debugging(logger: logging.Logger) -> None:
         import debugpy
 
         REMOTE_DEBUGGING_PORT = 3000
-        debugpy.listen(("0.0.0.0", REMOTE_DEBUGGING_PORT))
+        debugpy.listen(("0.0.0.0", REMOTE_DEBUGGING_PORT))  # nosec
         # debugpy.wait_for_client()
 
     except ImportError as err:
