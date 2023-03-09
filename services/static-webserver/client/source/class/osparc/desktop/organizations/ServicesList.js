@@ -73,8 +73,9 @@ qx.Class.define("osparc.desktop.organizations.ServicesList", {
       servicesCtrl.setDelegate({
         createItem: () => new osparc.desktop.organizations.SharedResourceListItem(),
         bindItem: (ctrl, item, id) => {
-          ctrl.bindProperty("uuid", "model", null, item, id);
-          ctrl.bindProperty("uuid", "key", null, item, id);
+          ctrl.bindProperty("key", "model", null, item, id);
+          ctrl.bindProperty("key", "key", null, item, id);
+          ctrl.bindProperty("version", "version", null, item, id);
           ctrl.bindProperty("orgId", "orgId", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id);
@@ -86,8 +87,21 @@ qx.Class.define("osparc.desktop.organizations.ServicesList", {
         configureItem: item => {
           item.subscribeToFilterGroup("organizationTemplatesList");
           item.addListener("openMoreInfo", e => {
-            const serviceData = e.getData();
-            console.log(serviceData);
+            const serviceKey = e.getData()["key"];
+            const serviceVersion = e.getData()["version"];
+            osparc.store.Store.getInstance().getService(serviceKey, serviceVersion)
+              .then(serviceData => {
+                if (serviceData) {
+                  const moreOpts = new osparc.dashboard.ResourceMoreOptions(serviceData);
+                  const title = this.tr("Options");
+                  osparc.ui.window.Window.popUpInWindow(
+                    moreOpts,
+                    title,
+                    osparc.dashboard.ResourceMoreOptions.WIDTH,
+                    osparc.dashboard.ResourceMoreOptions.HEIGHT
+                  );
+                }
+              });
           });
         }
       });
@@ -108,11 +122,19 @@ qx.Class.define("osparc.desktop.organizations.ServicesList", {
       const store = osparc.store.Store.getInstance();
       store.getAllServices(false, false)
         .then(services => {
-          console.log(services);
           const orgServices = [];
           for (const key in services) {
             const latestService = osparc.utils.Services.getLatest(services, key);
             if (gid in latestService["accessRights"]) {
+              if (latestService["thumbnail"] === null) {
+                if (osparc.data.model.Node.isDynamic(latestService)) {
+                  latestService["thumbnail"] = osparc.dashboard.CardBase.DYNAMIC_SERVICE_ICON+"24";
+                } else if (osparc.data.model.Node.isComputational(latestService)) {
+                  latestService["thumbnail"] = osparc.dashboard.CardBase.COMP_SERVICE_ICON+"24";
+                } else {
+                  latestService["thumbnail"] = osparc.dashboard.CardBase.SERVICE_ICON+"24";
+                }
+              }
               orgServices.push(latestService);
             }
           }
