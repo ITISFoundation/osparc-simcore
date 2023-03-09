@@ -65,7 +65,6 @@ qx.Class.define("osparc.desktop.organizations.TemplatesList", {
       const templatesUIList = new qx.ui.form.List().set({
         decorator: "no-border",
         spacing: 3,
-        width: 150,
         backgroundColor: "background-main-2"
       });
 
@@ -118,9 +117,9 @@ qx.Class.define("osparc.desktop.organizations.TemplatesList", {
         return;
       }
 
+      const gid = orgModel.getGid();
       osparc.data.Resources.getInstance().getAllPages("templates")
         .then(templates => {
-          const gid = orgModel.getGid();
           const orgTemplates = templates.filter(template => gid in template["accessRights"]);
           orgTemplates.forEach(orgTemplate => {
             orgTemplate["orgId"] = gid;

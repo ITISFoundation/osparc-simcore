@@ -102,11 +102,19 @@ qx.Class.define("osparc.ui.list.ListItemWithMenu", {
     __setSubtitle: function() {
       const accessRights = this.getAccessRights();
       const subtitle = this.getChildControl("contact");
-      if (accessRights.getDelete()) {
+      if (
+        "getDelete" in accessRights && accessRights.getDelete()
+      ) {
         subtitle.setValue(osparc.data.Roles.ORG[3].longLabel);
-      } else if (accessRights.getWrite()) {
+      } else if (
+        ("getWrite" in accessRights && accessRights.getWrite()) ||
+        ("getWrite_access" in accessRights && accessRights.getWrite_access())
+      ) {
         subtitle.setValue(osparc.data.Roles.ORG[2].longLabel);
-      } else if (accessRights.getRead()) {
+      } else if (
+        ("getRead" in accessRights && accessRights.getRead()) ||
+        ("getExecute_access" in accessRights && accessRights.getExecute_access())
+      ) {
         subtitle.setValue(osparc.data.Roles.ORG[1].longLabel);
       } else {
         subtitle.setValue(osparc.data.Roles.ORG[0].longLabel);

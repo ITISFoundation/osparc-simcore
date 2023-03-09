@@ -35,7 +35,10 @@ qx.Class.define("osparc.desktop.organizations.SharedResourceListItem", {
     // overridden
     _getInfoButton: function() {
       const accessRights = this.getAccessRights();
-      if (accessRights.getRead()) {
+      if (
+        ("getRead" in accessRights && accessRights.getRead()) ||
+        ("getExecute_access" in accessRights && accessRights.getExecute_access())
+      ) {
         const button = this.getChildControl("info-button");
         button.addListener("execute", () => this.fireDataEvent("openMoreInfo", this.getKey()));
         return button;

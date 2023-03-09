@@ -65,19 +65,30 @@ qx.Class.define("osparc.desktop.organizations.ServicesList", {
       const servicesUIList = new qx.ui.form.List().set({
         decorator: "no-border",
         spacing: 3,
-        width: 150,
         backgroundColor: "background-main-2"
       });
 
       const servicesModel = this.__servicesModel = new qx.data.Array();
       const servicesCtrl = new qx.data.controller.List(servicesModel, servicesUIList, "name");
       servicesCtrl.setDelegate({
-        createItem: () => new osparc.dashboard.ListButtonItem(),
+        createItem: () => new osparc.desktop.organizations.SharedResourceListItem(),
         bindItem: (ctrl, item, id) => {
-          ctrl.bindProperty("resourceData", "resourceData", null, item, id);
+          ctrl.bindProperty("uuid", "model", null, item, id);
+          ctrl.bindProperty("uuid", "key", null, item, id);
+          ctrl.bindProperty("orgId", "orgId", null, item, id);
+          ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
+          ctrl.bindProperty("name", "title", null, item, id);
+          ctrl.bindProperty("description", "subtitleMD", null, item, id);
+          ctrl.bindProperty("accessRights", "accessRights", {
+            converter: data => data.get(item.getOrgId())
+          }, item, id);
         },
         configureItem: item => {
-          item.subscribeToFilterGroup("organizationServicesList");
+          item.subscribeToFilterGroup("organizationTemplatesList");
+          item.addListener("openMoreInfo", e => {
+            const serviceData = e.getData();
+            console.log(serviceData);
+          });
         }
       });
 
@@ -85,14 +96,31 @@ qx.Class.define("osparc.desktop.organizations.ServicesList", {
     },
 
     __reloadOrgServices: function() {
-      const membersModel = this.__servicesModel;
-      membersModel.removeAll();
+      const servicesModel = this.__servicesModel;
+      servicesModel.removeAll();
 
       const orgModel = this.__currentOrg;
       if (orgModel === null) {
         return;
       }
-      return;
+
+      const gid = orgModel.getGid();
+      const store = osparc.store.Store.getInstance();
+      store.getAllServices(false, false)
+        .then(services => {
+          console.log(services);
+          const orgServices = [];
+          for (const key in services) {
+            const latestService = osparc.utils.Services.getLatest(services, key);
+            if (gid in latestService["accessRights"]) {
+              orgServices.push(latestService);
+            }
+          }
+          orgServices.forEach(orgService => {
+            orgService["orgId"] = gid;
+            servicesModel.append(qx.data.marshal.Json.createModel(orgService));
+          });
+        });
     }
   }
 });
