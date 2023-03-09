@@ -91,6 +91,7 @@ qx.Class.define("osparc.desktop.organizations.TemplatesList", {
               .then(templates => {
                 const templateData = templates.find(t => t.uuid === templateId);
                 if (templateData) {
+                  templateData["resourceType"] = "template";
                   const moreOpts = new osparc.dashboard.ResourceMoreOptions(templateData);
                   const title = this.tr("Options");
                   osparc.ui.window.Window.popUpInWindow(

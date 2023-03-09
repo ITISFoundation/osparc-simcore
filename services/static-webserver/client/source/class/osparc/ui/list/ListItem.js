@@ -49,6 +49,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
     this.base(arguments);
 
     const layout = new qx.ui.layout.Grid(8, 5);
+    layout.setColumnWidth(0, 32);
     layout.setColumnFlex(1, 1);
     this._setLayout(layout);
     this.setPadding(5);

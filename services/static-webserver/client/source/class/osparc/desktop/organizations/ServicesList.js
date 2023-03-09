@@ -92,6 +92,7 @@ qx.Class.define("osparc.desktop.organizations.ServicesList", {
             osparc.store.Store.getInstance().getService(serviceKey, serviceVersion)
               .then(serviceData => {
                 if (serviceData) {
+                  serviceData["resourceType"] = "service";
                   const moreOpts = new osparc.dashboard.ResourceMoreOptions(serviceData);
                   const title = this.tr("Options");
                   osparc.ui.window.Window.popUpInWindow(
