@@ -114,7 +114,7 @@ def create_service_config(
         },
     ]
 
-    task_template = {
+    task_template: dict[str, Any] = {
         "ContainerSpec": {
             "Env": env,
             "Image": settings.COMPUTATIONAL_SIDECAR_IMAGE,
@@ -345,10 +345,8 @@ async def get_cluster_information(docker_client: Docker) -> ClusterInformation:
 async def get_next_empty_node_hostname(
     docker_client: Docker, cluster: Cluster
 ) -> Hostname:
-    if not hasattr(get_next_empty_node_hostname, "counter"):
-        get_next_empty_node_hostname.counter = 0
-    else:
-        get_next_empty_node_hostname.counter += 1
+    current_count = getattr(get_next_empty_node_hostname, "counter", -1) + 1
+    setattr(get_next_empty_node_hostname, "counter", current_count)
 
     cluster_nodes = deque(await docker_client.nodes.list())
     current_worker_services = await docker_client.services.list(
@@ -372,7 +370,7 @@ async def get_next_empty_node_hostname(
                 "running",
             ):
                 used_docker_node_ids.add(task["NodeID"])
-    cluster_nodes.rotate(get_next_empty_node_hostname.counter)
+    cluster_nodes.rotate(current_count)
     for node in cluster_nodes:
         if node["ID"] in used_docker_node_ids:
             continue
