@@ -3,12 +3,13 @@
 
 import logging
 from collections import deque
-from typing import Callable, Union
+from typing import Callable, Optional, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import RedirectResponse
+from models_library.clusters import ClusterID
 from models_library.projects_nodes_io import BaseFileLink
 from pydantic.types import PositiveInt
 
@@ -183,11 +184,11 @@ async def start_job(
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: UUID,
+    cluster_id: Optional[ClusterID] = None,
     user_id: PositiveInt = Depends(get_current_user_id),
     director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
     product_name: str = Depends(get_product_name),
 ):
-
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     logger.debug("Start Job '%s'", job_name)
 
@@ -195,6 +196,7 @@ async def start_job(
         project_id=job_id,
         user_id=user_id,
         product_name=product_name,
+        cluster_id=cluster_id,
     )
     job_status: JobStatus = create_jobstatus_from_task(task)
     return job_status
@@ -210,7 +212,6 @@ async def stop_job(
     user_id: PositiveInt = Depends(get_current_user_id),
     director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
 ):
-
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     logger.debug("Stopping Job '%s'", job_name)
 
@@ -232,7 +233,6 @@ async def inspect_job(
     user_id: PositiveInt = Depends(get_current_user_id),
     director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
 ):
-
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     logger.debug("Inspecting Job '%s'", job_name)
 
@@ -254,7 +254,6 @@ async def get_job_outputs(
     webserver_api: AuthSession = Depends(get_webserver_session),
     storage_client: StorageApi = Depends(get_api_client(StorageApi)),
 ):
-
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     logger.debug("Get Job '%s' outputs", job_name)
 
