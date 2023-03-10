@@ -105,7 +105,7 @@ compose_paths = filter(
             repo_dir.rglob(glob)
             for glob in (
                 "docker-compose.yml",
-                # "docker-compose-ops.yml",
+                "docker-compose-ops.yml",
             )
         ]
     ),
