@@ -30,8 +30,6 @@ async def _safe_remove_volumes(
     sleep_between_attempts_s: float,
 ) -> None:
     async with disable_volume_removal_task(app):
-        # TODO: a shared lock with the task is required
-        # for multiple parallel requests for volume removals!!!
         await _remove_volumes(
             volume_names,
             volume_removal_attempts=volume_removal_attempts,
