@@ -1,6 +1,6 @@
 import logging
 from functools import partial
-from typing import Optional, cast
+from typing import cast
 
 from fastapi import FastAPI
 from servicelib.rabbitmq import RabbitMQClient
@@ -44,10 +44,7 @@ def setup(app: FastAPI) -> None:
     async def on_startup() -> None:
         app.state.rabbitmq_client = None
         settings: ApplicationSettings = app.state.settings
-        rabbit_settings: Optional[RabbitSettings] = app.state.settings.AGENT_RABBITMQ
-        if not rabbit_settings:
-            logger.warning("Rabbit MQ client is de-activated in the settings")
-            return
+        rabbit_settings: RabbitSettings = app.state.settings.AGENT_RABBITMQ
         await wait_till_rabbitmq_responsive(rabbit_settings.dsn)
         app.state.rabbitmq_client = RabbitMQClient(
             client_name="autoscaling", settings=rabbit_settings
