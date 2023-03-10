@@ -11,7 +11,7 @@ from tenacity.stop import stop_after_attempt
 
 from ..core.errors import ConfigurationError
 from ..core.settings import ApplicationSettings
-from .concurrency import HandlerUsageIsBlockedError, LowPriorityHandlerManager
+from .concurrency import HandlerIsRunningError, LowPriorityHandlerManager
 from .low_priority_managers import get_low_priority_managers
 from .task_monitor import (
     disable_volume_removal_task,
@@ -67,7 +67,7 @@ async def _safe_remove_volumes(
                         volume_removal_attempts=volume_removal_attempts,
                         sleep_between_attempts_s=sleep_between_attempts_s,
                     )
-            except HandlerUsageIsBlockedError:
+            except HandlerIsRunningError:
                 await disable_volume_removal_task(app)
                 raise
 

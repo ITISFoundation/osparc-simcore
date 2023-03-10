@@ -1,21 +1,72 @@
 # pylint: disable=unused-argument
 # pylint: disable=redefined-outer-name
 
-from typing import AsyncIterator
+import asyncio
+from contextlib import asynccontextmanager
+from typing import Any, AsyncIterator
+from uuid import uuid4
 
+import aiodocker
 import pytest
 from aiodocker import DockerError
 from aiodocker.volumes import DockerVolume
 from fastapi import FastAPI
+from pytest import LogCaptureFixture
+from pytest_mock import MockerFixture
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq_utils import RPCNamespace
 from settings_library.rabbit import RabbitSettings
 from simcore_service_agent.core.application import create_app
 from simcore_service_agent.core.settings import ApplicationSettings
+from simcore_service_agent.modules.volumes_cleanup import _core
 
 pytest_simcore_core_services_selection = [
     "rabbit",
 ]
+
+
+# UTILS
+
+
+async def _request_volume_removal(
+    initialized_app: FastAPI, test_rabbit_client: RabbitMQClient, volumes: list[str]
+):
+    settings: ApplicationSettings = initialized_app.state.settings
+
+    namespace = RPCNamespace.from_entries(
+        {"service": "agent", "docker_node_id": settings.AGENT_DOCKER_NODE_ID}
+    )
+    await test_rabbit_client.rpc_request(
+        namespace,
+        "remove_volumes",
+        volume_names=volumes,
+        volume_removal_attempts=1,
+        sleep_between_attempts_s=0.1,
+    )
+
+
+@asynccontextmanager
+async def _create_volumes(count: int) -> list[str]:
+    volumes: set[DockerVolume] = set()
+    async with aiodocker.Docker() as docker_client:
+
+        result = await asyncio.gather(
+            *(
+                docker_client.volumes.create({"Name": f"volume-to-remove{uuid4()}"})
+                for _ in range(count)
+            )
+        )
+        volumes.update(result)
+
+        yield [x.name for x in volumes]
+
+        try:
+            await asyncio.gather(*(v.delete() for v in volumes))
+        except aiodocker.DockerError:
+            pass
+
+
+# FIXTURES
 
 
 @pytest.fixture
@@ -40,31 +91,59 @@ async def test_rabbit_client(initialized_app: FastAPI) -> RabbitMQClient:
     rabbit_client.close()
 
 
-async def _request_volume_removal(
-    initialized_app: FastAPI, test_rabbit_client: RabbitMQClient, volumes: list[str]
-):
-    settings: ApplicationSettings = initialized_app.state.settings
+@pytest.fixture
+def infinitely_running_volumes_removal_task(mocker: MockerFixture) -> None:
+    async def _sleep_forever(*arg: Any, **kwargs: Any) -> None:
+        while True:
+            print("sleeping Zzzzzzzz")
+            await asyncio.sleep(0.1)
 
-    namespace = RPCNamespace.from_entries(
-        {"service": "agent", "docker_node_id": settings.AGENT_DOCKER_NODE_ID}
-    )
-    await test_rabbit_client.rpc_request(
-        namespace,
-        "remove_volumes",
-        volume_names=volumes,
-        volume_removal_attempts=1,
-        sleep_between_attempts_s=0.1,
-    )
+    mocker.patch.object(_core, "_backup_and_remove_volumes", side_effect=_sleep_forever)
+    # __name__ is missing from mock
+    # pylint:disable=protected-access
+    _core._backup_and_remove_volumes.__name__ = _sleep_forever.__name__
+
+
+# TESTS
 
 
 async def test_rpc_remove_volumes_ok(
+    initialized_app: FastAPI, test_rabbit_client: RabbitMQClient
+):
+    async with _create_volumes(100) as volumes:
+        await _request_volume_removal(initialized_app, test_rabbit_client, volumes)
+
+
+async def test_rpc_remove_volumes_in_parallel_ok(
+    initialized_app: FastAPI, test_rabbit_client: RabbitMQClient
+):
+    async with _create_volumes(100) as volumes:
+        await asyncio.gather(
+            *(
+                _request_volume_removal(initialized_app, test_rabbit_client, [v])
+                for v in volumes
+            )
+        )
+
+
+async def test_rpc_remove_volumes_with_already_running_volumes_removal_task_ok(
+    infinitely_running_volumes_removal_task: None,
     initialized_app: FastAPI,
     test_rabbit_client: RabbitMQClient,
-    unused_volume: AsyncIterator[DockerVolume],
+    caplog_info_debug: LogCaptureFixture,
 ):
-    await _request_volume_removal(
-        initialized_app, test_rabbit_client, [unused_volume.name]
-    )
+
+    async with _create_volumes(100) as volumes:
+        await asyncio.gather(
+            *(
+                _request_volume_removal(initialized_app, test_rabbit_client, [v])
+                for v in volumes
+            )
+        )
+
+    handler_name = "backup_and_remove_volumes"
+    assert caplog_info_debug.text.count(f"Disabled '{handler_name}' job.") == 1
+    assert caplog_info_debug.text.count(f"Enabled '{handler_name}' job.") == 1
 
 
 async def test_rpc_remove_volumes_volume_does_not_exist(

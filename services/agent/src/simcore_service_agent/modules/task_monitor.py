@@ -113,11 +113,16 @@ class TaskMonitor:
 
         self._to_start[job_name] = task_data
 
-    def start_job(self, name: str) -> None:
+    def start_job(self, name: str) -> bool:
+        if name in self._tasks:
+            logger.debug("Job '%s' already started", name)
+            return False
+
         task_data: _TaskData = self._to_start[name]
         self._tasks[task_data.job_name] = asyncio.create_task(
             _task_runner(task_data), name=f"task_{name}"
         )
+        return True
 
     async def unregister_job(self, target: Callable) -> None:
         job_name = target.__name__
@@ -125,7 +130,7 @@ class TaskMonitor:
         if task is not None:
             await self._cancel_task(task)
             del self._tasks[job_name]
-        del self._to_start[job_name]
+            del self._to_start[job_name]
 
     async def start(self) -> None:
         """schedule tasks for all jobs"""
@@ -159,6 +164,10 @@ async def disable_volume_removal_task(app: FastAPI) -> None:
     task_monitor: TaskMonitor = app.state.task_monitor
 
     await task_monitor.unregister_job(backup_and_remove_volumes)
+    logger.debug(
+        "Disabled '%s' job.",
+        backup_and_remove_volumes.__name__,
+    )
 
 
 async def enable_volume_removal_task_if_missing(app: FastAPI) -> None:
@@ -171,7 +180,11 @@ async def enable_volume_removal_task_if_missing(app: FastAPI) -> None:
             app,
             repeat_interval_s=settings.AGENT_VOLUMES_CLEANUP_INTERVAL_S,
         )
-        task_monitor.start_job(backup_and_remove_volumes.__name__)
+        if task_monitor.start_job(backup_and_remove_volumes.__name__):
+            logger.debug(
+                "Enabled '%s' job.",
+                backup_and_remove_volumes.__name__,
+            )
     except JobAlreadyRegisteredError:
         logger.debug(
             "Job '%s' was already registered.",
