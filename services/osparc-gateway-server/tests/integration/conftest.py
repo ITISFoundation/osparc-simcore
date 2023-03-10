@@ -12,7 +12,6 @@ import pytest
 import traitlets
 import traitlets.config
 from _dask_helpers import DaskGatewayServer
-from _host_helpers import get_this_computer_ip
 from dask_gateway_server.app import DaskGateway
 from faker import Faker
 from osparc_gateway_server.backend.osparc import OsparcBackend
@@ -20,6 +19,7 @@ from osparc_gateway_server.backend.utils import (
     OSPARC_SCHEDULER_API_PORT,
     OSPARC_SCHEDULER_DASHBOARD_PORT,
 )
+from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from tenacity._asyncio import AsyncRetrying
 from tenacity.wait import wait_fixed
 
@@ -95,7 +95,7 @@ async def local_dask_gateway_server(
     c.DaskGateway.backend_class = OsparcBackend  # type: ignore
     c.DaskGateway.address = "127.0.0.1:0"  # type: ignore
     c.DaskGateway.log_level = "DEBUG"  # type: ignore
-    c.Proxy.address = f"{get_this_computer_ip()}:0"  # type: ignore
+    c.Proxy.address = f"{get_localhost_ip()}:0"  # type: ignore
     c.DaskGateway.authenticator_class = "dask_gateway_server.auth.SimpleAuthenticator"  # type: ignore
     c.SimpleAuthenticator.password = gateway_password  # type: ignore
     print(f"--> local dask gateway config: {json.dumps(_convert_to_dict(c), indent=2)}")
