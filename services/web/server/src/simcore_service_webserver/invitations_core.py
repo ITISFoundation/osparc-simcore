@@ -60,7 +60,6 @@ class InvitationsServiceUnavailable(InvitationsErrors):
 @contextmanager
 def _handle_exceptions_as_invitations_errors():
     try:
-
         yield  # API function calls happen
 
     except ClientResponseError as err:
@@ -114,7 +113,6 @@ async def validate_invitation_url(
     invitations_service: InvitationsServiceApi = get_invitations_service_api(app=app)
 
     with _handle_exceptions_as_invitations_errors():
-
         try:
             invitation_url = parse_obj_as(AnyHttpUrl, invitation_url)
         except ValidationError as err:
@@ -125,7 +123,7 @@ async def validate_invitation_url(
             invitation_url=invitation_url
         )
 
-        if invitation.guest != guest_email:
+        if invitation.guest.lower() != guest_email.lower():
             raise InvalidInvitation(
                 reason="This invitation was issued for a different email"
             )
@@ -147,7 +145,6 @@ async def extract_invitation(
     invitations_service: InvitationsServiceApi = get_invitations_service_api(app=app)
 
     with _handle_exceptions_as_invitations_errors():
-
         try:
             invitation_url = parse_obj_as(AnyHttpUrl, invitation_url)
         except ValidationError as err:
