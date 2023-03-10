@@ -463,7 +463,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     // LAYOUT //
     _createLayout: function() {
-      this._createResourcesLayout("study");
+      this._createResourcesLayout();
       const list = this._resourcesContainer.getFlatList();
       if (list) {
         osparc.utils.Utils.setIdToWidget(list, "studiesList");

@@ -249,9 +249,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       };
       osparc.data.Resources.fetch("organizationMembers", "post", params)
         .then(() => {
-          let text = orgMemberEmail + this.tr(" successfully added.");
-          text += "<br>";
-          text += this.tr("The user will not get notified.");
+          const text = orgMemberEmail + this.tr(" successfully added.");
           if (productEveryone && productEveryone["gid"] === parseInt(orgId)) {
             // demote the new member to user
             const params2 = {
@@ -270,6 +268,20 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
             osparc.component.message.FlashMessenger.getInstance().logAs(text);
             osparc.store.Store.getInstance().reset("organizationMembers");
             this.__reloadOrgMembers();
+
+            // push 'new_organization' notification
+            const params2 = {
+              url: {
+                "gid": orgId
+              }
+            };
+            osparc.data.Resources.get("organizationMembers", params2)
+              .then(respOrgMembers => {
+                const newMember = respOrgMembers.find(m => m["login"] === orgMemberEmail);
+                if (newMember) {
+                  osparc.component.notification.Notifications.postNewOrganization(newMember["id"], orgId);
+                }
+              });
           }
         })
         .catch(err => {

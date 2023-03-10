@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.notification.NotificationsRibbon", {
+qx.Class.define("osparc.component.notification.RibbonNotifications", {
   extend: qx.ui.core.Widget,
   type: "singleton",
 
