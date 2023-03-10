@@ -18,6 +18,11 @@
 qx.Class.define("osparc.dashboard.TemplateBrowser", {
   extend: osparc.dashboard.ResourceBrowserBase,
 
+  construct: function() {
+    this._resourceType = "template";
+    this.base(arguments);
+  },
+
   members: {
     __updateAllButton: null,
 

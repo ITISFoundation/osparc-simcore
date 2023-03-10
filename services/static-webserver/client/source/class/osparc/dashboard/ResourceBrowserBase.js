@@ -76,6 +76,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
   },
 
   members: {
+    _resourceType: null,
     _resourcesList: null,
     _topBar: null,
     _secondaryBar: null,
@@ -113,8 +114,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
-    _createResourcesLayout: function(resourceType) {
-      const topBar = this.__createTopBar(resourceType);
+    _createResourcesLayout: function() {
+      const topBar = this.__createTopBar();
       this._add(topBar);
 
       const secondaryBar = this._secondaryBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
@@ -138,15 +139,15 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       this._add(resourcesContainer);
     },
 
-    __createTopBar: function(resourceType) {
+    __createTopBar: function() {
       const topBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
         paddingRight: 8,
         alignY: "middle"
       });
 
-      const searchBarFilter = this.__searchBarFilter = new osparc.dashboard.SearchBarFilter(resourceType);
+      const searchBarFilter = this.__searchBarFilter = new osparc.dashboard.SearchBarFilter(this._resourceType);
       const textField = searchBarFilter.getChildControl("text-field");
-      osparc.utils.Utils.setIdToWidget(textField, resourceType ? "searchBarFilter-textField-"+resourceType : "searchBarFilter-textField");
+      osparc.utils.Utils.setIdToWidget(textField, "searchBarFilter-textField-"+this._resourceType);
       topBar.add(searchBarFilter, {
         flex: 1
       });
@@ -174,27 +175,29 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       const groupByButton = new qx.ui.form.MenuButton(this.tr("Group"), "@FontAwesome5Solid/chevron-down/10", groupByMenu);
       osparc.utils.Utils.setIdToWidget(groupByButton, "groupByButton");
 
+      const groupOptions = new qx.ui.form.RadioGroup();
+
       const dontGroup = new qx.ui.menu.RadioButton(this.tr("None"));
       osparc.utils.Utils.setIdToWidget(dontGroup, "groupByNone");
       dontGroup.addListener("execute", () => this._groupByChanged(null));
-      const tagByGroup = new qx.ui.menu.RadioButton(this.tr("Tags"));
-      tagByGroup.addListener("execute", () => this._groupByChanged("tags"));
+
+      groupByMenu.add(dontGroup);
+      groupOptions.add(dontGroup);
+
+      if (this._resourceType === "template") {
+        const tagByGroup = new qx.ui.menu.RadioButton(this.tr("Tags"));
+        tagByGroup.addListener("execute", () => this._groupByChanged("tags"));
+        groupByMenu.add(tagByGroup);
+        groupOptions.add(tagByGroup);
+        if (osparc.product.Utils.isProduct("s4llite")) {
+          tagByGroup.execute();
+        }
+      }
+
       const groupByShared = new qx.ui.menu.RadioButton(this.tr("Shared with"));
       groupByShared.addListener("execute", () => this._groupByChanged("shared"));
-
-      const groupOptions = new qx.ui.form.RadioGroup();
-      [
-        dontGroup,
-        tagByGroup,
-        groupByShared
-      ].forEach(btn => {
-        groupByMenu.add(btn);
-        groupOptions.add(btn);
-      });
-
-      if (osparc.product.Utils.isProduct("s4llite")) {
-        tagByGroup.execute();
-      }
+      groupByMenu.add(groupByShared);
+      groupOptions.add(groupByShared);
 
       this._secondaryBar.add(groupByButton);
     },
@@ -293,7 +296,12 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       moreOptsButton.addListener("execute", () => {
         const moreOpts = new osparc.dashboard.ResourceMoreOptions(resourceData);
         const title = this.tr("Options");
-        const win = osparc.ui.window.Window.popUpInWindow(moreOpts, title, 700, 660);
+        const win = osparc.ui.window.Window.popUpInWindow(
+          moreOpts,
+          title,
+          osparc.dashboard.ResourceMoreOptions.WIDTH,
+          osparc.dashboard.ResourceMoreOptions.HEIGHT
+        );
         moreOpts.addListener("updateStudy", e => this._updateStudyData(e.getData()));
         moreOpts.addListener("updateTemplate", e => this._updateTemplateData(e.getData()));
         moreOpts.addListener("updateService", e => this._updateServiceData(e.getData()));

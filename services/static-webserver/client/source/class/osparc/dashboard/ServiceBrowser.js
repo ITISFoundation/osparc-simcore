@@ -26,6 +26,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
   extend: osparc.dashboard.ResourceBrowserBase,
 
   construct: function() {
+    this._resourceType = "service";
     this.base(arguments);
 
     this.__sortBy = osparc.component.service.SortServicesButtons.DefaultSorting;
