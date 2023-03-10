@@ -133,8 +133,8 @@ async def get_user_notifications(request: web.Request):
     redis_client = get_redis_user_notifications_client(request.app)
     user_id = request[RQT_USERID_KEY]
     notifs = await _get_user_notifications(redis_client, user_id)
-    # last 10 items only
-    return web.json_response(data={"data": notifs[-10:]})
+    # first (last in time) 10 items only
+    return web.json_response(data={"data": notifs[:10]})
 
 
 @login_required
