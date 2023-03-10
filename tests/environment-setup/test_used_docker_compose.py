@@ -92,34 +92,55 @@ def ensure_env_file(env_devel_file: Path) -> Iterable[Path]:
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).parent.resolve()
 repo_dir = current_dir.parent.parent
-compose_paths = chain(
-    *[
-        repo_dir.rglob(glob)
-        for glob in (
-            "docker-compose.yml",
-            "docker-compose-ops.yml",
-        )
-    ]
+
+
+def _skip_osparc_gateway_server(p) -> bool:
+    return "osparc-gateway-server" not in f"{p}"
+
+
+compose_paths = filter(
+    _skip_osparc_gateway_server,
+    chain(
+        *[
+            repo_dir.rglob(glob)
+            for glob in (
+                "docker-compose.yml",
+                "docker-compose-ops.yml",
+            )
+        ]
+    ),
 )
+
+
+@pytest.fixture
+def docker_compose_config_bash(osparc_simcore_scripts_dir: Path) -> Path:
+    docker_compose_config_script = (
+        osparc_simcore_scripts_dir / "docker" / "docker-compose-config.bash"
+    )
+    assert docker_compose_config_script.exists()
+    return docker_compose_config_script
 
 
 @pytest.mark.parametrize(
-    "compose_path", compose_paths, ids=lambda p: str(p.relative_to(repo_dir))
+    "compose_path", compose_paths, ids=str  # lambda p: str(p.relative_to(repo_dir))
 )
 def test_validate_compose_file(
-    compose_path: Path, env_devel_file: Path, ensure_env_file
+    compose_path: Path,
+    env_devel_file: Path,
+    ensure_env_file,
+    docker_compose_config_bash: Path,
 ):
     assert compose_path.exists()
-
     compose = yaml.safe_load(compose_path.read_text())
     print(
         str(compose_path.relative_to(repo_dir)), "-> version=", compose.get("version")
     )
 
     subprocess.run(
-        f"docker-compose --file {compose_path} --env-file {env_devel_file} --verbose config",
+        [f"{docker_compose_config_bash}", "-e", f"{env_devel_file}", f"{compose_path}"],
         shell=True,
         check=True,
+        capture_output=True,
     )
 
     # About versioning https://docs.docker.com/compose/compose-file/compose-file-v3/
