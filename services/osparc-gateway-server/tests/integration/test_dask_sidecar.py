@@ -100,7 +100,7 @@ async def _wait_for_service_to_be_ready(
 @pytest.mark.parametrize(
     "image_name",
     [
-        "itisfoundation/dask-sidecar:master-github-latest",
+        "local/dask-sidecar:production",
     ],
 )
 async def test_computational_sidecar_properly_start_stop(

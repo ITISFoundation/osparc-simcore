@@ -14,7 +14,7 @@ from pytest_simcore.helpers.utils_docker import get_localhost_ip
 
 @pytest.fixture(
     params=[
-        "itisfoundation/dask-sidecar:master-github-latest",
+        "local/dask-sidecar:production",
     ]
 )
 def minimal_config(
