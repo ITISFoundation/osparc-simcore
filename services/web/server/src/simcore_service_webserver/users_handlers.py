@@ -160,14 +160,16 @@ routes = web.RouteTableDef()
 async def update_user_notification(request: web.Request):
     redis_client = get_redis_user_notifications_client(request.app)
     user_id = request[RQT_USERID_KEY]
+    nid = request.match_info["nid"]
     notifs = await _get_user_notifications(redis_client, user_id)
-    if notif_str := await redis_client.get(notif_hash_key):
-        notif = json.loads(notif_str)
+    notif_idx = next((idx for (idx, n) in enumerate(notifs) if n["id"] == nid), None)
+    if notif_idx:
+        notif = notifs[notif_idx]
         # body includes a dict with the changes to make
         body = await request.json()
         for k, v in body.items():
             notif[k] = v
-        idx = 0
-        await redis_client.lset(idx, value=json.dumps(notif))
+        user_hash_key = f'user_id={notif["user_id"]}'
+        await redis_client.lset(user_hash_key, notif_idx, json.dumps(notif))
         return web.json_response(status=web.HTTPNoContent.status_code)
     return web.json_response(status=web.HTTPNotFound.status_code)
