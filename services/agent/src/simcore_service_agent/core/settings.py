@@ -41,7 +41,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     AGENT_DOCKER_NODE_ID: str = Field(..., description="used by the rabbitmq module")
-    AGENT_RABBITMQ: Optional[RabbitSettings] = Field(auto_default_from_env=True)
+    AGENT_RABBITMQ: RabbitSettings = Field(auto_default_from_env=True)
 
     @validator("AGENT_VOLUMES_CLEANUP_S3_ENDPOINT", pre=True)
     @classmethod
