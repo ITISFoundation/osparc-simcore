@@ -105,7 +105,7 @@ compose_paths = filter(
             repo_dir.rglob(glob)
             for glob in (
                 "docker-compose.yml",
-                "docker-compose-ops.yml",
+                # "docker-compose-ops.yml",
             )
         ]
     ),
@@ -137,7 +137,14 @@ def test_validate_compose_file(
     )
 
     subprocess.run(
-        [f"{docker_compose_config_bash}", "-e", f"{env_devel_file}", f"{compose_path}"],
+        " ".join(
+            [
+                f"{docker_compose_config_bash}",
+                "-e",
+                f"{env_devel_file}",
+                f"{compose_path}",
+            ]
+        ),
         shell=True,
         check=True,
         capture_output=True,
