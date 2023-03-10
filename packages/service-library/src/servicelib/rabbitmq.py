@@ -6,7 +6,6 @@ from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable, Final, Optional
 
 import aio_pika
-from aio_pika.exceptions import ChannelClosed
 from aio_pika.patterns import RPC
 from packaging.version import Version
 from pydantic import PositiveInt
@@ -31,18 +30,12 @@ def _connection_close_callback(sender: Any, exc: Optional[BaseException]) -> Non
             )
 
 
-def _channel_close_callback(sender: Any, exc: Optional[BaseException]) -> None:
+def _channel_close_callback(_: Any, exc: Optional[BaseException]) -> None:
     if exc:
         if isinstance(exc, asyncio.CancelledError):
             log.info("Rabbit channel was cancelled")
-        elif isinstance(exc, ChannelClosed):
-            log.info("%s", exc)
         else:
-            log.error(
-                "Rabbit channel closed with exception from %s:%s",
-                sender,
-                exc,
-            )
+            log.error("Rabbit channel closed with exception from %s", exc)
 
 
 async def _get_connection(
