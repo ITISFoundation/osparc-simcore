@@ -130,7 +130,7 @@ class TaskMonitor:
         if task is not None:
             await self._cancel_task(task)
             del self._tasks[job_name]
-            del self._to_start[job_name]
+        self._to_start.pop(job_name, None)
 
     async def start(self) -> None:
         """schedule tasks for all jobs"""
