@@ -147,7 +147,7 @@ async def post_user_notification(request: web.Request):
     notif["read"] = False
     user_hash_key = f'user_id={notif["user_id"]}'
     # insert at the head of the list
-    await redis_client.lpushx(user_hash_key, json.dumps(notif))
+    await redis_client.lpush(user_hash_key, json.dumps(notif))
     return web.json_response(status=web.HTTPNoContent.status_code)
 
 
