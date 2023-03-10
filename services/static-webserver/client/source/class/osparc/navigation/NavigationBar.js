@@ -53,8 +53,13 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       backgroundColor: "background-main-1"
     });
 
-    osparc.data.Resources.get("statics")
-      .then(() => {
+    Promise.all([
+      osparc.data.Resources.get("statics"),
+      osparc.data.Resources.get("notifications")
+    ])
+      .then(values => {
+        const notifications = values[1];
+        osparc.component.notification.Notifications.getInstance().addNotifications(notifications);
         this.buildLayout();
         this.setPageContext("dashboard");
         osparc.WindowSizeTracker.getInstance().addListener("changeCompactVersion", () => this.__navBarResized(), this);

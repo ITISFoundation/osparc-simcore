@@ -74,11 +74,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsWindow", {
 
       orgsPage.addListener("organizationSelected", e => {
         const orgId = e.getData();
-        const orgModel = this.__orgsList.getOrgModel(orgId);
-        this.__orgDetails.setCurrentOrg(orgModel);
-
-        this.getChildControl("title").setValue(this.tr("Organization details"));
-        this.__stack.setSelection([this.__orgDetails]);
+        this.openOrganizationDetails(orgId);
       });
 
       orgDetails.addListener("backToOrganizations", () => {
@@ -86,6 +82,20 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsWindow", {
         this.__stack.setSelection([orgsPage]);
         orgsPage.reloadOrganizations();
       });
+    },
+
+    openOrganizationDetails: function(organizationId) {
+      const openOrgDetails = orgId => {
+        const orgModel = this.__orgsList.getOrgModel(orgId);
+        this.__orgDetails.setCurrentOrg(orgModel);
+        this.getChildControl("title").setValue(this.tr("Organization details"));
+        this.__stack.setSelection([this.__orgDetails]);
+      };
+      if (this.__orgsList.isOrganizationsLoaded()) {
+        openOrgDetails(organizationId);
+      } else {
+        this.__orgsList.addListenerOnce("changeOrganizationsLoaded", () => openOrgDetails(organizationId));
+      }
     }
   }
 });

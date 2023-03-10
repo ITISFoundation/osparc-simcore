@@ -2,14 +2,18 @@
 
 import json
 import logging
+from uuid import uuid4
 
 from aiohttp import web
 from models_library.generics import Envelope
+import redis.asyncio as aioredis
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from . import users_api
+from ._meta import API_VTAG
 from .login.decorators import RQT_USERID_KEY, login_required
+from .redis import get_redis_user_notifications_client
 from .security_decorators import permission_required
 from .users_exceptions import TokenNotFoundError, UserNotFoundError
 from .users_models import ProfileGet, ProfileUpdate
@@ -109,3 +113,62 @@ async def delete_token(request: web.Request):
         raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
     except TokenNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Token for {service_id} not found") from exc
+
+
+# me/notifications -----------------------------------------------------------
+
+async def _get_user_notifications(redis_client: aioredis.Redis, user_id: int):
+    notifs = []
+    user_hash_key = f'user_id={user_id}'
+    llen = await redis_client.llen(user_hash_key)
+    if notifs_list := await redis_client.lrange(user_hash_key, 0, llen):
+        for notif_str in notifs_list:
+            notif = json.loads(notif_str)
+            notifs.append(notif)
+    return notifs
+
+
+@login_required
+async def get_user_notifications(request: web.Request):
+    redis_client = get_redis_user_notifications_client(request.app)
+    user_id = request[RQT_USERID_KEY]
+    notifs = await _get_user_notifications(redis_client, user_id)
+    # first (last in time) 10 items only
+    return web.json_response(data={"data": notifs[:10]})
+
+
+@login_required
+async def post_user_notification(request: web.Request):
+    redis_client = get_redis_user_notifications_client(request.app)
+    # body includes the new notification
+    notif = await request.json()
+    nid = str(uuid4())
+    notif["id"] = nid
+    notif["read"] = False
+    user_hash_key = f'user_id={notif["user_id"]}'
+    # insert at the head of the list
+    await redis_client.lpush(user_hash_key, json.dumps(notif))
+    return web.json_response(status=web.HTTPNoContent.status_code)
+
+
+routes = web.RouteTableDef()
+
+
+@routes.patch(f"/{API_VTAG}/notifications/{{nid}}", name="update_user_notification")
+@login_required
+async def update_user_notification(request: web.Request):
+    redis_client = get_redis_user_notifications_client(request.app)
+    user_id = request[RQT_USERID_KEY]
+    nid = request.match_info["nid"]
+    notifs = await _get_user_notifications(redis_client, user_id)
+    notif_idx = next((idx for (idx, n) in enumerate(notifs) if n["id"] == nid), None)
+    if notif_idx:
+        notif = notifs[notif_idx]
+        # body includes a dict with the changes to make
+        body = await request.json()
+        for k, v in body.items():
+            notif[k] = v
+        user_hash_key = f'user_id={notif["user_id"]}'
+        await redis_client.lset(user_hash_key, notif_idx, json.dumps(notif))
+        return web.json_response(status=web.HTTPNoContent.status_code)
+    return web.json_response(status=web.HTTPNotFound.status_code)
