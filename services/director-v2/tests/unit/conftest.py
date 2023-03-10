@@ -15,7 +15,6 @@ from typing import (
     Mapping,
 )
 
-import aiodocker
 import pytest
 import respx
 import traitlets.config
@@ -427,9 +426,3 @@ def mock_docker_api(mocker: MockerFixture) -> None:
         f"{module_base}._core._scheduler.get_dynamic_sidecar_state",
         return_value=(ServiceState.PENDING, ""),
     )
-
-
-@pytest.fixture
-async def async_docker_client() -> AsyncIterable[aiodocker.Docker]:
-    async with aiodocker.Docker() as docker_client:
-        yield docker_client

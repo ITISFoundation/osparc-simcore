@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, AsyncIterable, Iterable
 from unittest.mock import AsyncMock
 
+import aiodocker
 import httpx
 import pytest
 import simcore_service_director_v2
@@ -261,3 +262,9 @@ def disable_rabbitmq(mocker) -> None:
     mocker.patch(
         "simcore_service_director_v2.modules.rabbitmq.setup", side_effect=mock_setup
     )
+
+
+@pytest.fixture
+async def async_docker_client() -> AsyncIterable[aiodocker.Docker]:
+    async with aiodocker.Docker() as docker_client:
+        yield docker_client
