@@ -122,7 +122,6 @@ async def _get_user_notifications(redis_client: aioredis.Redis, user_id: int):
     user_hash_key = f'user_id={user_id}'
     llen = await redis_client.llen(user_hash_key)
     if notifs_list := await redis_client.lrange(user_hash_key, 0, llen):
-        print("notifs_list", notifs_list)
         for notif_str in notifs_list:
             notif = json.loads(notif_str)
             notifs.append(notif)
