@@ -3,13 +3,18 @@
 
 
 from pathlib import Path
+from typing import AsyncIterator
 
 import pytest
 from aiodocker.volumes import DockerVolume
+from fastapi import FastAPI
 from pytest import LogCaptureFixture
 from pytest_mock.plugin import MockerFixture
 from simcore_service_agent.core.settings import ApplicationSettings
+from simcore_service_agent.modules import low_priority_managers
 from simcore_service_agent.modules.volumes_cleanup import backup_and_remove_volumes
+
+# FIXTURES
 
 
 @pytest.fixture
@@ -50,14 +55,28 @@ async def unused_volume_name(unused_volume: DockerVolume) -> str:
     return (await unused_volume.show())["Name"]
 
 
+@pytest.fixture
+async def app(settings: ApplicationSettings) -> AsyncIterator[FastAPI]:
+    app = FastAPI()
+    app.state.settings = settings
+    low_priority_managers.setup(app)
+
+    await app.router.startup()
+    yield app
+    await app.router.shutdown()
+
+
+# TESTS
+
+
 async def test_workflow(
     mock_volumes_folders: None,
+    app: FastAPI,
     caplog_info_debug: LogCaptureFixture,
-    settings: ApplicationSettings,
     used_volume_name: str,
     unused_volume_name: str,
 ):
-    await backup_and_remove_volumes(settings)
+    await backup_and_remove_volumes(app)
 
     log_messages = caplog_info_debug.messages
     assert f"Removed docker volume: '{unused_volume_name}'" in log_messages
@@ -74,7 +93,7 @@ async def test_workflow(
 async def test_regression_error_handling(
     mock_volumes_folders: None,
     caplog_info_debug: LogCaptureFixture,
-    settings: ApplicationSettings,
+    app: FastAPI,
     used_volume_name: str,
     unused_volume_name: str,
     mocker: MockerFixture,
@@ -86,7 +105,7 @@ async def test_regression_error_handling(
         side_effect=error_class(error_message),
     )
 
-    await backup_and_remove_volumes(settings)
+    await backup_and_remove_volumes(app)
 
     log_messages = caplog_info_debug.messages
     assert error_message in log_messages
