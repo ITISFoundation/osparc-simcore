@@ -18,7 +18,6 @@ import yaml
 def docker_compose_in_requirement_files(
     osparc_simcore_root_dir: Path,
 ) -> list[tuple[Path, str]]:
-
     reqs_path_version_tuples = []
 
     for req_path in osparc_simcore_root_dir.rglob("*.txt"):
@@ -99,7 +98,6 @@ compose_paths = chain(
         for glob in (
             "docker-compose.yml",
             "docker-compose-ops.yml",
-            "docker-compose.yml",
         )
     ]
 )
@@ -111,7 +109,6 @@ compose_paths = chain(
 def test_validate_compose_file(
     compose_path: Path, env_devel_file: Path, ensure_env_file
 ):
-
     assert compose_path.exists()
 
     compose = yaml.safe_load(compose_path.read_text())
