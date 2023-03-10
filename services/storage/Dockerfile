@@ -76,7 +76,7 @@ RUN apt-get update \
 RUN python -m venv "${VIRTUAL_ENV}"
 
 RUN pip --no-cache-dir install --upgrade \
-  pip~=22.0  \
+  pip~=23.0  \
   wheel \
   setuptools
 

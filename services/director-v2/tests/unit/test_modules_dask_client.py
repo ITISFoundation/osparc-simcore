@@ -218,7 +218,9 @@ async def create_dask_client_from_gateway(
     params=["create_dask_client_from_scheduler", "create_dask_client_from_gateway"]
 )
 async def dask_client(
-    create_dask_client_from_scheduler, create_dask_client_from_gateway, request
+    create_dask_client_from_scheduler: Callable[[], Awaitable[DaskClient]],
+    create_dask_client_from_gateway: Callable[[], Awaitable[DaskClient]],
+    request,
 ) -> DaskClient:
     client: DaskClient = await {
         "create_dask_client_from_scheduler": create_dask_client_from_scheduler,
@@ -412,7 +414,9 @@ async def test_dask_does_not_report_asyncio_cancelled_error_in_task(
 async def test_dask_does_not_report_base_exception_in_task(dask_client: DaskClient):
     def fct_that_raise_base_exception():
 
-        raise BaseException("task triggers a base exception, but dask does not care...")  # pylint: disable=broad-exception-raised
+        raise BaseException(  # pylint: disable=broad-exception-raised
+            "task triggers a base exception, but dask does not care..."
+        )
 
     future = dask_client.backend.client.submit(fct_that_raise_base_exception)
     # NOTE: Since asyncio.CancelledError is derived from BaseException and the worker code checks Exception only
@@ -476,12 +480,12 @@ async def test_send_computation_task(
     ) -> TaskOutputData:
         # get the task data
         worker = get_worker()
-        task = worker.tasks.get(worker.get_current_task())
+        task = worker.state.tasks.get(worker.get_current_task())
         assert task is not None
         assert task.annotations == expected_annotations
         assert command == ["run"]
         event = distributed.Event(_DASK_EVENT_NAME)
-        event.wait(timeout=5)
+        event.wait(timeout=25)
 
         return TaskOutputData.parse_obj({"some_output_key": 123})
 
@@ -507,7 +511,7 @@ async def test_send_computation_task(
     )
 
     # using the event we let the remote fct continue
-    event = distributed.Event(_DASK_EVENT_NAME)
+    event = distributed.Event(_DASK_EVENT_NAME, client=dask_client.backend.client)
     await event.set()  # type: ignore
     await _assert_wait_for_cb_call(
         mocked_user_completed_cb, timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS
@@ -567,7 +571,7 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
     ) -> TaskOutputData:
         # get the task data
         worker = get_worker()
-        task = worker.tasks.get(worker.get_current_task())
+        task = worker.state.tasks.get(worker.get_current_task())
         assert task is not None
 
         return TaskOutputData.parse_obj({"some_output_key": 123})
@@ -645,7 +649,7 @@ async def test_abort_computation_tasks(
     ) -> TaskOutputData:
         # get the task data
         worker = get_worker()
-        task = worker.tasks.get(worker.get_current_task())
+        task = worker.state.tasks.get(worker.get_current_task())
         assert task is not None
         print(f"--> task {task=} started")
         cancel_event = Event(TaskCancelEventName.format(task.key))
@@ -654,7 +658,7 @@ async def test_abort_computation_tasks(
         start_event.set()
         # sleep a bit in case someone is aborting us
         print("--> waiting for task to be aborted...")
-        cancel_event.wait(timeout=10)
+        cancel_event.wait(timeout=60)
         if cancel_event.is_set():
             # NOTE: asyncio.CancelledError is not propagated back to the client...
             print("--> raising cancellation error now")
@@ -677,11 +681,16 @@ async def test_abort_computation_tasks(
     await _assert_wait_for_task_status(job_id, dask_client, RunningState.STARTED)
 
     # we wait to be sure the remote fct is started
-    start_event = Event(_DASK_EVENT_NAME)
+    start_event = Event(_DASK_EVENT_NAME, client=dask_client.backend.client)
     await start_event.wait(timeout=10)  # type: ignore
 
     # now let's abort the computation
+    cancel_event = await distributed.Event(
+        name=TaskCancelEventName.format(job_id), client=dask_client.backend.client
+    )
     await dask_client.abort_computation_task(job_id)
+    assert await cancel_event.is_set()  # type: ignore
+
     await _assert_wait_for_cb_call(mocked_user_completed_cb)
     await _assert_wait_for_task_status(job_id, dask_client, RunningState.ABORTED)
 
@@ -752,9 +761,9 @@ async def test_failed_task_returns_exceptions(
         match="sadly we are failing to execute anything cause we are dumb...",
     ):
         await dask_client.get_task_result(job_id)
-    assert len(await dask_client.backend.client.list_datasets()) > 0
+    assert len(await dask_client.backend.client.list_datasets()) > 0  # type: ignore
     await dask_client.release_task_result(job_id)
-    assert len(await dask_client.backend.client.list_datasets()) == 0
+    assert len(await dask_client.backend.client.list_datasets()) == 0  # type: ignore
 
 
 # currently in the case of a dask-gateway we do not check for missing resources
@@ -1103,7 +1112,7 @@ async def test_get_cluster_details(
     ) -> TaskOutputData:
         # get the task data
         worker = get_worker()
-        task = worker.tasks.get(worker.get_current_task())
+        task = worker.state.tasks.get(worker.get_current_task())
         assert task is not None
         assert task.annotations == expected_annotations
         assert command == ["run"]
@@ -1154,7 +1163,7 @@ async def test_get_cluster_details(
             ), f"there is no worker in {cluster_details.scheduler.workers.keys()=} consuming {image_params.expected_annotations=!r}"
 
     # using the event we let the remote fct continue
-    event = distributed.Event(_DASK_EVENT_NAME)
+    event = distributed.Event(_DASK_EVENT_NAME, client=dask_client.backend.client)
     await event.set()  # type: ignore
 
     # wait for the task to complete

@@ -2,6 +2,7 @@
 # pylint: disable=protected-access
 
 
+from copy import deepcopy
 from typing import Any
 from uuid import uuid4
 
@@ -143,6 +144,20 @@ async def test_inject_resource_limits_and_reservations(
                 in spec["environment"]
             )
             assert f"{MEM_RESOURCE_LIMIT_KEY}={memory.limit}" in spec["environment"]
+
+
+def test_regression_service_has_no_reservations():
+    service_spec: dict[str, Any] = {
+        "version": "3.7",
+        "services": {DEFAULT_SINGLE_SERVICE_NAME: {}},
+    }
+    service_resources: ServiceResourcesDict = parse_obj_as(ServiceResourcesDict, {})
+
+    spec_before = deepcopy(service_spec)
+    docker_compose_specs._update_resource_limits_and_reservations(
+        service_spec=service_spec, service_resources=service_resources
+    )
+    assert spec_before == service_spec
 
 
 USER_ID: UserID = 1
