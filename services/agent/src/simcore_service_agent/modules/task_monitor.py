@@ -168,7 +168,7 @@ async def enable_volume_removal_task_if_missing(app: FastAPI) -> None:
     try:
         task_monitor.register_job(
             backup_and_remove_volumes,
-            settings,
+            app,
             repeat_interval_s=settings.AGENT_VOLUMES_CLEANUP_INTERVAL_S,
         )
         task_monitor.start_job(backup_and_remove_volumes.__name__)
@@ -182,16 +182,11 @@ async def enable_volume_removal_task_if_missing(app: FastAPI) -> None:
 def setup(app: FastAPI) -> None:
     async def _on_startup() -> None:
         task_monitor = app.state.task_monitor = TaskMonitor()
-        settings: ApplicationSettings = app.state.settings
-
-        # setup all relative jobs
-        task_monitor.register_job(
-            backup_and_remove_volumes,
-            settings,
-            repeat_interval_s=settings.AGENT_VOLUMES_CLEANUP_INTERVAL_S,
-        )
 
         await task_monitor.start()
+        # setup all relative jobs
+        await enable_volume_removal_task_if_missing(app)
+
         logger.info("Started 🔍 task_monitor")
 
     async def _on_shutdown() -> None:

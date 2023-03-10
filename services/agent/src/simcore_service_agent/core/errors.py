@@ -6,4 +6,5 @@ class AgentRuntimeError(PydanticErrorMixin, RuntimeError):
 
 
 class ConfigurationError(AgentRuntimeError):
+    code: str = "agent.application_configuration"
     msg_template: str = "Application misconfiguration: {msg}"

@@ -23,7 +23,7 @@ async def _remove_single_volume(
 
 async def remove_volumes(
     volume_names: list[str],
-    volume_removal_attempts: float,
+    volume_removal_attempts: int,
     sleep_between_attempts_s: float,
 ) -> None:
     """

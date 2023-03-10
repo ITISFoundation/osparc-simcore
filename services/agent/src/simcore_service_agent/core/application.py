@@ -15,7 +15,7 @@ from .._meta import (
     SUMMARY,
     VERSION,
 )
-from ..modules import rabbitmq, task_monitor
+from ..modules import low_priority_managers, rabbitmq, task_monitor
 from ._routes import router
 from .settings import ApplicationSettings
 
@@ -51,6 +51,7 @@ def create_app() -> FastAPI:
     app.include_router(router)
 
     # SUBMODULES
+    low_priority_managers.setup(app)
     task_monitor.setup(app)
     rabbitmq.setup(app)
 

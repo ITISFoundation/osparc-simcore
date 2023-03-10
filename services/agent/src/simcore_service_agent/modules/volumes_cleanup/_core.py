@@ -1,13 +1,17 @@
 import logging
 
+from fastapi import FastAPI
+
 from ...core.settings import ApplicationSettings
+from ..concurrency import HandlerUsageIsBlockedError, LowPriorityHandlerManager
 from ..docker import delete_volume, docker_client, get_dyv_volumes, is_volume_used
+from ..low_priority_managers import get_low_priority_managers
 from ._s3 import store_to_s3
 
 logger = logging.getLogger(__name__)
 
 
-async def backup_and_remove_volumes(settings: ApplicationSettings) -> None:
+async def _backup_and_remove_volumes(settings: ApplicationSettings) -> None:
     async with docker_client() as client:
         dyv_volumes: list[dict] = await get_dyv_volumes(
             client, settings.AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME
@@ -59,3 +63,20 @@ async def backup_and_remove_volumes(settings: ApplicationSettings) -> None:
             )
         else:
             logger.info("Found no zombie dy-sidecar volumes to cleanup.")
+
+
+async def backup_and_remove_volumes(app: FastAPI) -> None:
+    settings: ApplicationSettings = app.state.settings
+    volumes_cleanup_manager: LowPriorityHandlerManager = get_low_priority_managers(
+        app
+    ).volumes_cleanup
+    try:
+        async with volumes_cleanup_manager.handler_barrier():
+            await _backup_and_remove_volumes(settings)
+    except HandlerUsageIsBlockedError:
+        logger.info(
+            "Skipped `%s` run since handler is not allowed to run. "
+            "Blocked by '%s' higher priority requests.",
+            backup_and_remove_volumes.__name__,
+            await volumes_cleanup_manager.usage(),
+        )

@@ -1,15 +1,22 @@
 import logging
 from functools import partial
-from typing import cast
+from typing import Optional, cast
 
 from fastapi import FastAPI
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq_utils import RPCNamespace, wait_till_rabbitmq_responsive
 from settings_library.rabbit import RabbitSettings
+from tenacity._asyncio import AsyncRetrying
+from tenacity.stop import stop_after_attempt
 
 from ..core.errors import ConfigurationError
 from ..core.settings import ApplicationSettings
-from .task_monitor import disable_volume_removal_task
+from .concurrency import HandlerUsageIsBlockedError, LowPriorityHandlerManager
+from .low_priority_managers import get_low_priority_managers
+from .task_monitor import (
+    disable_volume_removal_task,
+    enable_volume_removal_task_if_missing,
+)
 from .volume_removal import remove_volumes as _remove_volumes
 
 logger = logging.getLogger(__name__)
@@ -26,15 +33,42 @@ def _get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
 async def _safe_remove_volumes(
     app: FastAPI,
     volume_names: list[str],
-    volume_removal_attempts: float,
+    volume_removal_attempts: int,
     sleep_between_attempts_s: float,
 ) -> None:
-    async with disable_volume_removal_task(app):
-        await _remove_volumes(
-            volume_names,
-            volume_removal_attempts=volume_removal_attempts,
-            sleep_between_attempts_s=sleep_between_attempts_s,
-        )
+    volumes_cleanup_manager: LowPriorityHandlerManager = get_low_priority_managers(
+        app
+    ).volumes_cleanup
+
+    # Below workflow allows for parallel volume remove requests fo play nice with the
+    # `volumes_cleanup` task that can be running at any time. The idea is to cancel
+    # the task and give priority to the volume removal:
+    # - case 1: `volumes_cleanup` task is running
+    #   - the `deny_handler_usage` will raise an error
+    #   - the `volumes_cleanup` task is unscheduled
+    #   - any current backup of the volumes will be stopped
+    #   - the `deny_handler_usage` will now work
+    #   - the `volumes_cleanup` task will be blocked form running
+    #   - PAYLOAD RUNS
+    #   - the `volumes_cleanup` task is scheduled once again
+    # - case 2: `volumes_cleanup is not running`
+    #   - the `deny_handler_usage` will NOT raise an error
+    #   - the `volumes_cleanup` task will be blocked form running
+    #   - PAYLOAD RUNS
+    async for attempt in AsyncRetrying(stop=stop_after_attempt(2), reraise=True):
+        with attempt:
+            try:
+                async with volumes_cleanup_manager.deny_handler_usage():
+                    await _remove_volumes(
+                        volume_names,
+                        volume_removal_attempts=volume_removal_attempts,
+                        sleep_between_attempts_s=sleep_between_attempts_s,
+                    )
+            except HandlerUsageIsBlockedError:
+                await disable_volume_removal_task(app)
+                raise
+
+    await enable_volume_removal_task_if_missing(app)
 
 
 def setup(app: FastAPI) -> None:
@@ -44,7 +78,11 @@ def setup(app: FastAPI) -> None:
     async def on_startup() -> None:
         app.state.rabbitmq_client = None
         settings: ApplicationSettings = app.state.settings
-        rabbit_settings: RabbitSettings = app.state.settings.AGENT_RABBITMQ
+        rabbit_settings: Optional[RabbitSettings] = app.state.settings.AGENT_RABBITMQ
+        if rabbit_settings is None:
+            logger.warning("rabbitmq module is disabled")
+            return
+
         await wait_till_rabbitmq_responsive(rabbit_settings.dsn)
         app.state.rabbitmq_client = RabbitMQClient(
             client_name="autoscaling", settings=rabbit_settings
