@@ -193,7 +193,6 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
             rabbitmq_client: RabbitMQClient = app.state.rabbitmq_client
             await remove_volumes_from_node(
                 rabbitmq_client=rabbitmq_client,
-                dynamic_sidecar_settings=dynamic_sidecar_settings,
                 volume_names=unique_volume_names,
                 docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,
             )
