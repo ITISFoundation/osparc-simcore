@@ -15,6 +15,26 @@ show_error() {
   echo -e "\e[31mError:\e[0m $message" >&2
 }
 
+
+env_file=".env"
+# Parse command line arguments
+while getopts ":e:" opt; do
+  case $opt in
+    e)
+      env_file="$OPTARG"
+      ;;
+    \?)
+      show_error "Invalid option: -$OPTARG"
+      exit 1
+      ;;
+    :)
+      show_error "Option -$OPTARG requires an argument."
+      exit 1
+      ;;
+  esac
+done
+shift $((OPTIND-1))
+
 if [[ "$#" -eq 0 ]]; then
     show_error "No compose files specified!"
     exit 1
@@ -42,7 +62,7 @@ if docker compose version --short | grep --quiet "^2\." ; then
 docker \
 --log-level=ERROR \
 compose \
---env-file .env"
+--env-file ${env_file}"
 
   for compose_file_path in "$@"
   do
@@ -66,7 +86,7 @@ else
     docker_command="\
 docker-compose \
 --log-level=ERROR \
---env-file .env"
+--env-file ${env_file}"
     for compose_file_path in "$@"
     do
       docker_command+=" --file=${compose_file_path}"
