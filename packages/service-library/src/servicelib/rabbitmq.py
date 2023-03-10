@@ -241,8 +241,14 @@ class RabbitMQClient:
         if self._rpc is None:
             raise RPCNotInitializedError()
 
+        namespaced_method_name = RPCNamespacedMethodName.from_namespace_and_method(
+            namespace, method_name
+        )
+        log.info(
+            "RPC registered handler '%s' to queue '%s'", handler, namespaced_method_name
+        )
         await self._rpc.register(
-            RPCNamespacedMethodName.from_namespace_and_method(namespace, method_name),
+            namespaced_method_name,
             handler,
             auto_delete=True,
         )
