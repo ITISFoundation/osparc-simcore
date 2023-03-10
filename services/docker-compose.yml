@@ -505,7 +505,7 @@ services:
         "--loglevel",
         "verbose",
         "--databases",
-        "4",
+        "5",
         "--appendonly",
         "yes"
       ]
