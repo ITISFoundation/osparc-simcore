@@ -19,7 +19,6 @@ from aiohttp.test_utils import TestClient, TestServer
 from models_library.projects_state import ProjectLocked, ProjectStatus
 from pytest import MonkeyPatch
 from pytest_mock import MockerFixture
-from pytest_mock.plugin import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -85,6 +84,40 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
     return {**app_environment, **envs_plugins, **envs_studies_dispatcher}
 
 
+async def _get_user_projects(client):
+    url = client.app.router["list_projects"].url_for()
+    resp = await client.get(url.with_query(type="user"))
+
+    payload = await resp.json()
+    assert resp.status == 200, payload
+
+    projects, error = unwrap_envelope(payload)
+    assert not error, pprint(error)
+
+    return projects
+
+
+def _assert_same_projects(got: dict, expected: dict):
+    # TODO: validate using api/specs/webserver/v0/components/schemas/project-v0.0.1.json
+    # TODO: validate workbench!
+    exclude = {
+        "creationDate",
+        "lastChangeDate",
+        "prjOwner",
+        "uuid",
+        "workbench",
+        "accessRights",
+        "ui",
+    }
+    for key in expected.keys():
+        if key not in exclude:
+            assert got[key] == expected[key], "Failed in %s" % key
+
+
+def _is_user_authenticated(session: ClientSession) -> bool:
+    return "osparc.WEBAPI_SESSION" in [c.key for c in session.cookie_jar]
+
+
 @pytest.fixture
 async def published_project(
     client: TestClient,
@@ -131,68 +164,6 @@ async def unpublished_project(
         as_template=True,
     ) as template_project:
         yield template_project
-
-
-async def _get_user_projects(client):
-    url = client.app.router["list_projects"].url_for()
-    resp = await client.get(url.with_query(type="user"))
-
-    payload = await resp.json()
-    assert resp.status == 200, payload
-
-    projects, error = unwrap_envelope(payload)
-    assert not error, pprint(error)
-
-    return projects
-
-
-def _assert_same_projects(got: dict, expected: dict):
-    # TODO: validate using api/specs/webserver/v0/components/schemas/project-v0.0.1.json
-    # TODO: validate workbench!
-    exclude = {
-        "creationDate",
-        "lastChangeDate",
-        "prjOwner",
-        "uuid",
-        "workbench",
-        "accessRights",
-        "ui",
-    }
-    for key in expected.keys():
-        if key not in exclude:
-            assert got[key] == expected[key], "Failed in %s" % key
-
-
-def _is_user_authenticated(session: ClientSession) -> bool:
-    return "osparc.WEBAPI_SESSION" in [c.key for c in session.cookie_jar]
-
-
-async def _assert_redirected_to_study(
-    resp: ClientResponse, session: ClientSession
-) -> str:
-
-    # https://docs.aiohttp.org/en/stable/client_advanced.html#redirection-history
-    assert len(resp.history) == 1, "Is a re-direction"
-
-    content = await resp.text()
-    assert resp.status == web.HTTPOk.status_code, f"Got {content}"
-
-    # Expects redirection to osparc web
-    assert resp.url.path == "/"
-    assert (
-        "OSPARC-SIMCORE" in content
-    ), "Expected front-end rendering workbench's study, got %s" % str(content)
-
-    # Expects auth cookie for current user
-    assert _is_user_authenticated(session)
-
-    # Expects fragment to indicate client where to find newly created project
-    m = re.match(r"/study/([\d\w-]+)", resp.real_url.fragment)
-    assert m, f"Expected /study/uuid, got {resp.real_url.fragment}"
-
-    # returns newly created project
-    redirected_project_id = m.group(1)
-    return redirected_project_id
 
 
 @pytest.fixture
@@ -242,11 +213,15 @@ async def storage_subsystem_mock(storage_subsystem_mock, mocker: MockerFixture):
 
 
 #
-# Covers user stories for ISAN : #501, #712, #730
+# Covers user stories for ISAN:
+#
+# - The ISAN Portal (M8; MS11.b,D11.b https://github.com/ITISFoundation/osparc-simcore/issues/501
+# - User access management for ISAN https://github.com/ITISFoundation/osparc-simcore/issues/712
+# - Direct link to study in workbench https://github.com/ITISFoundation/osparc-simcore/issues/730
 #
 
 
-def _assert_redirection(
+def _assert_redirection_to_error_page(
     response: ClientResponse, expected_page: str, expected_status_code: int
 ):
     # checks is a redirection
@@ -265,24 +240,51 @@ def _assert_redirection(
 
 async def test_access_to_invalid_study(client: TestClient):
     response = await client.get("/study/SOME_INVALID_UUID")
-    _assert_redirection(
+    _assert_redirection_to_error_page(
         response,
         expected_page="error",
         expected_status_code=web.HTTPNotFound.status_code,
     )
 
 
-@pytest.mark.testit
 async def test_access_to_forbidden_study(
     client: TestClient, unpublished_project: ProjectDict
 ):
     response = await client.get(f"/study/{unpublished_project['uuid']}")
 
-    _assert_redirection(
+    _assert_redirection_to_error_page(
         response,
         expected_page="error",
         expected_status_code=web.HTTPNotFound.status_code,
     )
+
+
+async def _assert_redirected_to_study(
+    response: ClientResponse, session: ClientSession
+) -> str:
+
+    # https://docs.aiohttp.org/en/stable/client_advanced.html#redirection-history
+    assert len(response.history) == 1, "Is a re-direction"
+
+    content = await response.text()
+    assert response.status == web.HTTPOk.status_code, f"Got {content}"
+
+    # Expects redirection to osparc web
+    assert response.url.path == "/"
+    assert (
+        "OSPARC-SIMCORE" in content
+    ), "Expected front-end rendering workbench's study, got %s" % str(content)
+
+    # Expects auth cookie for current user
+    assert _is_user_authenticated(session)
+
+    # Expects fragment to indicate client where to find newly created project
+    m = re.match(r"/study/([\d\w-]+)", response.real_url.fragment)
+    assert m, f"Expected /study/uuid, got {response.real_url.fragment}"
+
+    # returns newly created project
+    redirected_project_id = m.group(1)
+    return redirected_project_id
 
 
 @pytest.mark.flaky(max_runs=3)
