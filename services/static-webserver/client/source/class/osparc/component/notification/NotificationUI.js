@@ -183,9 +183,8 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
         case "new_organization": {
           const items = actionablePath.split("/");
           const orgId = items.pop();
-          const preferencesWindow = osparc.desktop.preferences.PreferencesWindow.openWindow();
-          const organizationsPage = preferencesWindow.openOrganizations();
-          organizationsPage.openOrganizationDetails(parseInt(orgId));
+          const orgsWindow = osparc.desktop.organizations.OrganizationsWindow.openWindow();
+          orgsWindow.openOrganizationDetails(parseInt(orgId));
           break;
         }
         case "template_shared":
