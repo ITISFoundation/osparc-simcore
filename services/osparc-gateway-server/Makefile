@@ -7,11 +7,8 @@ include ../../scripts/common-service.Makefile
 
 
 APP_PACKAGE_NAME=osparc_gateway_server
-
-##
-## BUILD
-##
-SERVICES_LIST := osparc-gateway-server
+SERVICE_NAME=osparc-gateway-server
+DASK_SIDECAR_NAME=dask-sidecar
 
 .env: .env-devel ## creates .env file from defaults in .env-devel
 	$(if $(wildcard $@), \
@@ -23,23 +20,20 @@ SERVICES_LIST := osparc-gateway-server
 ##
 ## INFOS
 ##
-.PHONY: info-images info-swarm  info-tools
+.PHONY: info-images info-swarm
 define show-meta
-	$(foreach iid,$(shell docker images "*/$(1):*" -q | sort | uniq),\
-		docker image inspect $(iid) | jq '.[0] | .RepoTags, .Config.Labels, .Architecture';)
+	$(foreach iid,$(shell docker images "*/$(1):*" --quiet | sort | uniq),\
+		docker image inspect $(iid) | jq '.[0] | {tags:.RepoTags, labels:.Config.Labels, arch:.Architecture}';)
 endef
 
 info-images:  ## lists tags and labels of built images. To display one: 'make target=webserver info-images'
-ifeq ($(target),)
-	@$(foreach service,$(SERVICES_LIST),\
-		echo "## $(service) images:";\
-			docker images */$(service):*;\
-			$(call show-meta,$(service))\
-		)
-else
-	## $(target) images:
-	@$(call show-meta,$(target))
-endif
+	@echo "## $(SERVICE_NAME) images:";\
+		docker images */$(SERVICE_NAME):*;\
+		$(call show-meta,$(SERVICE_NAME))
+	@echo "## $(DASK_SIDECAR_NAME) images:";\
+		docker images */$(DASK_SIDECAR_NAME):*;\
+		$(call show-meta,$(DASK_SIDECAR_NAME))
+
 
 info-swarm: ## displays info about stacks and networks
 ifneq ($(SWARM_HOSTS), )
@@ -152,3 +146,10 @@ down: ## Stops and removes stack
 	# Removing generated docker compose configurations, i.e. .stack-*
 	-@rm $(wildcard .stack-*)
 	-@rm $(wildcard $(OSPARC_GATEWAY_CONFIG_FILE_HOST))
+
+##
+## system tests
+##
+test-system: ## Runs system tests (needs local docker images of osparc-gateway-server and dask-sidecar)
+	$(MAKE_C) tests/system install-ci
+	$(MAKE_C) tests/system tests
