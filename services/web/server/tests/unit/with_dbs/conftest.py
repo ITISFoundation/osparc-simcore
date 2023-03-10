@@ -179,6 +179,10 @@ def client(
     mock_orphaned_services,
     redis_client: Redis,
 ) -> TestClient:
+    """
+    Deployed web-server + postgres + redis services
+    client connect to web-server
+    """
     # WARNING: this fixture is commonly overriden. Check before renaming.
     cli = event_loop.run_until_complete(aiohttp_client(web_server))
     return cli
@@ -223,12 +227,12 @@ async def catalog_subsystem_mock(
 @pytest.fixture
 def disable_static_webserver(monkeypatch: MonkeyPatch) -> Callable:
     """
-    Disables the static-webserver module.
+    Disables the static-webserver module
     Avoids fecthing and caching index.html pages
-    Mocking a response for all the services which expect it.
+    Mocking a response for all the services which expect it
     """
 
-    async def _mocked_index_html(request: web.Request) -> web.Response:
+    async def fake_front_end_handler(request: web.Request) -> web.Response:
         """
         Emulates the reply of the '/' path when the static-webserver is disabled
         """
@@ -238,7 +242,13 @@ def disable_static_webserver(monkeypatch: MonkeyPatch) -> Callable:
             <html>
             <body>
                 <h1>OSPARC-SIMCORE</h1>
-                <p> This is a result of disable_static_webserver fixture for product OSPARC ({__file__})</p>
+                    <p> This is a result of disable_static_webserver fixture for product OSPARC ({__name__})</p>
+                <h2>Request info</h2>
+                    <ul>
+                        <li>{request.url=}</li>
+                        <li>{request.headers=}</li>
+                        <li>{request.content_length=}</li>
+                    </ul>
             </body>
             </html>
             """
@@ -249,7 +259,7 @@ def disable_static_webserver(monkeypatch: MonkeyPatch) -> Callable:
     monkeypatch.setenv("WEBSERVER_STATICWEB", "null")
 
     def add_index_route(app: web.Application) -> None:
-        app.router.add_get("/", _mocked_index_html, name=INDEX_RESOURCE_NAME)
+        app.router.add_get("/", fake_front_end_handler, name=INDEX_RESOURCE_NAME)
 
     return add_index_route
 
