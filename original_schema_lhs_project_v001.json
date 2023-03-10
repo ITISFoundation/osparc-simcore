@@ -1,0 +1,768 @@
+{
+ "$schema": "http://json-schema.org/draft-07/schema#",
+ "$id": "https://simcore.io/api/specs/webserver/v0/components/schemas/project-v0.0.1.json",
+ "title": "simcore project",
+ "description": "Description of a simcore project",
+ "type": "object",
+ "additionalProperties": false,
+ "required": [
+  "uuid",
+  "name",
+  "description",
+  "prjOwner",
+  "accessRights",
+  "creationDate",
+  "lastChangeDate",
+  "thumbnail",
+  "workbench"
+ ],
+ "properties": {
+  "uuid": {
+   "type": "string",
+   "format": "uuid",
+   "description": "project unique identifier",
+   "examples": [
+    "07640335-a91f-468c-ab69-a374fa82078d",
+    "9bcf8feb-c1b1-41b6-b201-639cd6ccdba8"
+   ]
+  },
+  "name": {
+   "type": "string",
+   "description": "project name",
+   "examples": [
+    "Temporal Distortion Simulator"
+   ]
+  },
+  "description": {
+   "type": "string",
+   "description": "longer one-line description about the project",
+   "examples": [
+    "Dabbling in temporal transitions ..."
+   ]
+  },
+  "prjOwner": {
+   "type": "string",
+   "format": "email",
+   "description": "user email"
+  },
+  "accessRights": {
+   "type": "object",
+   "description": "object containing the GroupID as key and read/write/execution permissions as value",
+   "patternProperties": {
+    "^\\S+$": {
+     "type": "object",
+     "description": "the group id",
+     "additionalProperties": false,
+     "required": [
+      "read",
+      "write",
+      "delete"
+     ],
+     "properties": {
+      "read": {
+       "type": "boolean",
+       "description": "gives read access"
+      },
+      "write": {
+       "type": "boolean",
+       "description": "gives write access"
+      },
+      "delete": {
+       "type": "boolean",
+       "description": "gives deletion rights"
+      }
+     }
+    }
+   }
+  },
+  "creationDate": {
+   "type": "string",
+   "description": "project creation date",
+   "pattern": "\\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\\d)T(2[0-3]|1\\d|0?[0-9])(:(\\d|[0-5]\\d)){2}(\\.\\d{3})?Z",
+   "examples": [
+    "2018-07-01T11:13:43Z"
+   ]
+  },
+  "lastChangeDate": {
+   "type": "string",
+   "description": "last save date",
+   "pattern": "\\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\\d)T(2[0-3]|1\\d|0?[0-9])(:(\\d|[0-5]\\d)){2}(\\.\\d{3})?Z",
+   "examples": [
+    "2018-07-01T11:13:43Z"
+   ]
+  },
+  "thumbnail": {
+   "type": "string",
+   "minLength": 0,
+   "maxLength": 2083,
+   "format": "uri",
+   "description": "url of the latest screenshot of the project",
+   "examples": [
+    "https://placeimg.com/171/96/tech/grayscale/?0.jpg"
+   ]
+  },
+  "workbench": {
+   "type": "object",
+   "patternProperties": {
+    "^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$": {
+     "type": "object",
+     "additionalProperties": false,
+     "required": [
+      "key",
+      "version",
+      "label"
+     ],
+     "properties": {
+      "key": {
+       "type": "string",
+       "description": "distinctive name for the node based on the docker registry path",
+       "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
+       "examples": [
+        "simcore/services/comp/sleeper",
+        "simcore/services/dynamic/3dviewer",
+        "simcore/services/frontend/file-picker"
+       ]
+      },
+      "version": {
+       "type": "string",
+       "description": "semantic version number of the node",
+       "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+       "examples": [
+        "1.0.0",
+        "0.0.1"
+       ]
+      },
+      "label": {
+       "type": "string",
+       "description": "The short name of the node",
+       "example": [
+        "JupyterLab"
+       ]
+      },
+      "progress": {
+       "type": "number",
+       "maximum": 100,
+       "minimum": 0,
+       "description": "the node progress value"
+      },
+      "thumbnail": {
+       "minLength": 0,
+       "maxLength": 2083,
+       "format": "uri",
+       "type": "string",
+       "description": "url of the latest screenshot of the node",
+       "examples": [
+        "https://placeimg.com/171/96/tech/grayscale/?0.jpg"
+       ]
+      },
+      "runHash": {
+       "description": "the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated",
+       "type": [
+        "string",
+        "null"
+       ],
+       "examples": [
+        "a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2"
+       ]
+      },
+      "inputs": {
+       "type": "object",
+       "description": "values of input properties",
+       "patternProperties": {
+        "^[-_a-zA-Z0-9]+$": {
+         "oneOf": [
+          {
+           "type": [
+            "integer",
+            "boolean",
+            "string",
+            "number",
+            "null"
+           ]
+          },
+          {
+           "type": "object",
+           "additionalProperties": false,
+           "required": [
+            "nodeUuid",
+            "output"
+           ],
+           "properties": {
+            "nodeUuid": {
+             "type": "string",
+             "format": "uuid"
+            },
+            "output": {
+             "type": "string",
+             "pattern": "^[-_a-zA-Z0-9]+$"
+            }
+           }
+          },
+          {
+           "type": "object",
+           "additionalProperties": false,
+           "required": [
+            "store",
+            "path"
+           ],
+           "properties": {
+            "store": {
+             "type": [
+              "string",
+              "integer"
+             ]
+            },
+            "dataset": {
+             "type": "string"
+            },
+            "path": {
+             "type": "string"
+            },
+            "label": {
+             "type": "string"
+            },
+            "eTag": {
+             "type": "string"
+            }
+           }
+          },
+          {
+           "type": "object",
+           "additionalProperties": false,
+           "required": [
+            "downloadLink"
+           ],
+           "properties": {
+            "downloadLink": {
+             "minLength": 1,
+             "maxLength": 65536,
+             "type": "string",
+             "format": "uri"
+            },
+            "label": {
+             "type": "string"
+            }
+           }
+          },
+          {
+           "type": "array",
+           "items": {}
+          }
+         ]
+        }
+       }
+      },
+      "inputsUnits": {
+       "type": "object",
+       "description": "values of input unit",
+       "patternProperties": {
+        "^[-_a-zA-Z0-9]+$": {
+         "type": "string",
+         "examples": [
+          "kilo-meter",
+          "milli-second",
+          "micro-gram",
+          "kelvin"
+         ]
+        }
+       }
+      },
+      "inputAccess": {
+       "description": "map with key - access level pairs",
+       "type": "object",
+       "patternProperties": {
+        "^[-_a-zA-Z0-9]+$": {
+         "type": "string",
+         "enum": [
+          "Invisible",
+          "ReadOnly",
+          "ReadAndWrite"
+         ],
+         "default": "ReadAndWrite",
+         "examples": [
+          "ReadOnly"
+         ]
+        }
+       }
+      },
+      "inputNodes": {
+       "type": "array",
+       "items": {
+        "type": "string",
+        "format": "uuid"
+       },
+       "description": "node IDs of where the node is connected to",
+       "examples": [
+        "nodeUuid1",
+        "nodeUuid2"
+       ]
+      },
+      "outputs": {
+       "default": {},
+       "type": "object",
+       "patternProperties": {
+        "^[-_a-zA-Z0-9]+$": {
+         "oneOf": [
+          {
+           "type": [
+            "integer",
+            "boolean",
+            "string",
+            "number",
+            "null"
+           ]
+          },
+          {
+           "type": "object",
+           "additionalProperties": false,
+           "required": [
+            "store",
+            "path"
+           ],
+           "properties": {
+            "store": {
+             "type": [
+              "string",
+              "integer"
+             ]
+            },
+            "dataset": {
+             "type": "string"
+            },
+            "path": {
+             "type": "string"
+            },
+            "label": {
+             "type": "string"
+            },
+            "eTag": {
+             "type": "string"
+            }
+           }
+          },
+          {
+           "type": "object",
+           "additionalProperties": false,
+           "required": [
+            "downloadLink"
+           ],
+           "properties": {
+            "downloadLink": {
+             "minLength": 1,
+             "maxLength": 65536,
+             "type": "string",
+             "format": "uri"
+            },
+            "label": {
+             "type": "string"
+            }
+           }
+          },
+          {
+           "type": "array",
+           "items": {}
+          }
+         ]
+        }
+       }
+      },
+      "outputNode": {
+       "type": "boolean",
+       "deprecated": true
+      },
+      "outputNodes": {
+       "type": "array",
+       "items": {
+        "type": "string",
+        "format": "uuid"
+       },
+       "description": "Used in group-nodes. Node IDs of those connected to the output",
+       "examples": [
+        "nodeUuid1",
+        "nodeUuid2"
+       ]
+      },
+      "parent": {
+       "type": [
+        "null",
+        "string"
+       ],
+       "format": "uuid",
+       "description": "Parent's (group-nodes') node ID s.",
+       "examples": [
+        "nodeUuid1",
+        "nodeUuid2"
+       ]
+      },
+      "position": {
+       "type": "object",
+       "additionalProperties": false,
+       "required": [
+        "x",
+        "y"
+       ],
+       "properties": {
+        "x": {
+         "type": "integer",
+         "description": "The x position",
+         "example": [
+          "12"
+         ]
+        },
+        "y": {
+         "type": "integer",
+         "description": "The y position",
+         "example": [
+          "15"
+         ]
+        }
+       },
+       "deprecated": true
+      },
+      "state": {
+       "title": "NodeState",
+       "type": "object",
+       "properties": {
+        "modified": {
+         "title": "Modified",
+         "description": "true if the node's outputs need to be re-computed",
+         "default": true,
+         "type": "boolean"
+        },
+        "dependencies": {
+         "title": "Dependencies",
+         "description": "contains the node inputs dependencies if they need to be computed first",
+         "type": "array",
+         "uniqueItems": true,
+         "items": {
+          "type": "string",
+          "format": "uuid"
+         }
+        },
+        "currentStatus": {
+         "description": "the node's current state",
+         "default": "NOT_STARTED",
+         "examples": [
+          "RUNNING",
+          "FAILED"
+         ],
+         "enum": [
+          "UNKNOWN",
+          "PUBLISHED",
+          "NOT_STARTED",
+          "PENDING",
+          "STARTED",
+          "RETRY",
+          "SUCCESS",
+          "FAILED",
+          "ABORTED"
+         ],
+         "type": "string"
+        }
+       },
+       "additionalProperties": false
+      },
+      "bootOptions": {
+       "title": "Boot Options",
+       "description": "Some services provide alternative parameters to be injected at boot time. The user selection should be stored here, and it will overwrite the services's defaults.",
+       "type": "object",
+       "patternProperties": {
+        "[a-zA-Z][a-azA-Z0-9_]*": {
+         "type": "string"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "ui": {
+   "type": "object",
+   "additionalProperties": true,
+   "properties": {
+    "workbench": {
+     "type": "object",
+     "patternProperties": {
+      "^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$": {
+       "type": "object",
+       "additionalProperties": false,
+       "required": [
+        "position"
+       ],
+       "properties": {
+        "position": {
+         "type": "object",
+         "additionalProperties": false,
+         "required": [
+          "x",
+          "y"
+         ],
+         "properties": {
+          "x": {
+           "type": "integer",
+           "description": "The x position",
+           "example": [
+            "12"
+           ]
+          },
+          "y": {
+           "type": "integer",
+           "description": "The y position",
+           "example": [
+            "15"
+           ]
+          }
+         }
+        },
+        "marker": {
+         "type": "object",
+         "additionalProperties": false,
+         "required": [
+          "color"
+         ],
+         "properties": {
+          "color": {
+           "type": "string",
+           "description": "Marker's color",
+           "examples": [
+            "#FF0000",
+            "#0000FF"
+           ]
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "slideshow": {
+     "type": "object",
+     "patternProperties": {
+      "^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$": {
+       "type": "object",
+       "additionalProperties": false,
+       "required": [
+        "position"
+       ],
+       "properties": {
+        "position": {
+         "type": "integer",
+         "description": "Slide's position",
+         "examples": [
+          0,
+          2
+         ]
+        },
+        "instructions": {
+         "type": [
+          "string",
+          "null"
+         ],
+         "description": "Instructions about what to do in this step",
+         "examples": [
+          "This is a **sleeper**",
+          "Please, select the config file defined [in this link](asdf)"
+         ]
+        }
+       }
+      }
+     }
+    },
+    "currentNodeId": {
+     "type": "string",
+     "format": "uuid"
+    },
+    "annotations": {
+     "type": "object",
+     "patternProperties": {
+      "^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$": {
+       "type": "object",
+       "additionalProperties": false,
+       "required": [
+        "type",
+        "color",
+        "attributes"
+       ],
+       "properties": {
+        "type": {
+         "type": "string",
+         "description": "Annotation type",
+         "examples": [
+          "rect",
+          "text"
+         ]
+        },
+        "color": {
+         "type": "string",
+         "description": "Annotation's color",
+         "examples": [
+          "#FF0000",
+          "#0000FF"
+         ]
+        },
+        "attributes": {
+         "type": "object",
+         "description": "svg attributes"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "tags": {
+   "type": "array",
+   "items": {
+    "type": "integer"
+   }
+  },
+  "classifiers": {
+   "type": "array",
+   "description": "Contains the reference to the project classifiers",
+   "examples": [
+    "some:id:to:a:classifier"
+   ],
+   "items": {
+    "type": "string"
+   }
+  },
+  "dev": {
+   "type": "object",
+   "description": "object used for development purposes only"
+  },
+  "state": {
+   "title": "State",
+   "description": "Project state",
+   "anyOf": [
+    {
+     "type": "null"
+    },
+    {
+     "title": "ProjectState",
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "locked": {
+       "title": "Locked",
+       "description": "The project lock state",
+       "allOf": [
+        {
+         "title": "ProjectLocked",
+         "type": "object",
+         "additionalProperties": false,
+         "properties": {
+          "value": {
+           "title": "Value",
+           "description": "True if the project is locked",
+           "type": "boolean"
+          },
+          "owner": {
+           "title": "Owner",
+           "description": "If locked, the user that owns the lock",
+           "allOf": [
+            {
+             "title": "Owner",
+             "type": "object",
+             "additionalProperties": false,
+             "properties": {
+              "user_id": {
+               "title": "User Id",
+               "type": "integer",
+               "description": "Owner's identifier when registered in the user's database table",
+               "example": [
+                2
+               ]
+              },
+              "first_name": {
+               "title": "First Name",
+               "description": "Owner first name",
+               "example": [
+                "John"
+               ],
+               "type": "string"
+              },
+              "last_name": {
+               "title": "Last Name",
+               "description": "Owner last name",
+               "example": [
+                "Smith"
+               ],
+               "type": "string"
+              }
+             },
+             "required": [
+              "user_id",
+              "first_name",
+              "last_name"
+             ]
+            }
+           ]
+          },
+          "status": {
+           "title": "Status",
+           "description": "The status of the project",
+           "enum": [
+            "CLOSED",
+            "CLOSING",
+            "CLONING",
+            "OPENING",
+            "EXPORTING",
+            "OPENED"
+           ],
+           "type": "string"
+          }
+         },
+         "required": [
+          "value",
+          "status"
+         ]
+        }
+       ]
+      },
+      "state": {
+       "title": "State",
+       "description": "The project running state",
+       "allOf": [
+        {
+         "title": "ProjectRunningState",
+         "type": "object",
+         "additionalProperties": false,
+         "properties": {
+          "value": {
+           "title": "RunningState",
+           "description": "An enumeration.",
+           "enum": [
+            "UNKNOWN",
+            "NOT_STARTED",
+            "PUBLISHED",
+            "PENDING",
+            "STARTED",
+            "RETRY",
+            "SUCCESS",
+            "FAILED",
+            "ABORTED"
+           ],
+           "type": "string"
+          }
+         },
+         "required": [
+          "value"
+         ]
+        }
+       ]
+      }
+     },
+     "required": [
+      "locked",
+      "state"
+     ]
+    }
+   ]
+  },
+  "quality": {
+   "type": "object",
+   "title": "Quality",
+   "description": "Object containing Quality Assessment related data"
+  }
+ }
+}

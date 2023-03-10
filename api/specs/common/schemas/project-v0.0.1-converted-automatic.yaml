@@ -1,0 +1,606 @@
+paths:
+  ? ''
+  : get:
+      summary: Get Project Inputs
+      description: New in version *0.10*
+      operationId: get_project_inputs_get
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Project'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+components:
+  schemas:
+    AccessEnum:
+      title: AccessEnum
+      enum:
+      - ReadAndWrite
+      - Invisible
+      - ReadOnly
+      type: string
+      description: An enumeration.
+    AccessRights:
+      title: AccessRights
+      required:
+      - read
+      - write
+      - delete
+      type: object
+      properties:
+        read:
+          title: Read
+          type: boolean
+          description: gives read access
+        write:
+          title: Write
+          type: boolean
+          description: gives write access
+        delete:
+          title: Delete
+          type: boolean
+          description: gives deletion rights
+      additionalProperties: false
+    Annotation:
+      title: Annotation
+      required:
+      - type
+      - color
+      - attributes
+      type: object
+      properties:
+        type:
+          title: Type
+          enum:
+          - rect
+          - text
+          type: string
+        color:
+          title: Color
+          type: string
+          format: color
+        attributes:
+          title: Attributes
+          type: object
+          description: svg attributes
+      additionalProperties: false
+    DatCoreFileLink:
+      title: DatCoreFileLink
+      required:
+      - store
+      - path
+      - label
+      - dataset
+      type: object
+      properties:
+        store:
+          title: Store
+          type: integer
+          description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+        path:
+          title: Path
+          anyOf:
+          - pattern: ^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$
+            type: string
+          - pattern: ^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$
+            type: string
+          description: The path to the file in the storage provider domain
+        label:
+          title: Label
+          type: string
+          description: The real file name
+        eTag:
+          title: Etag
+          type: string
+          description: Entity tag that uniquely represents the file. The method to
+            generate the tag is not specified (black box).
+        dataset:
+          title: Dataset
+          type: string
+          description: Unique identifier to access the dataset on datcore (REQUIRED
+            for datcore)
+      additionalProperties: false
+      description: I/O port type to hold a link to a file in DATCORE storage
+      example:
+        store: 1
+        dataset: N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4
+        path: N:package:32df09ba-e8d6-46da-bd54-f696157de6ce
+        label: initial_WTstates
+    DownloadLink:
+      title: DownloadLink
+      required:
+      - downloadLink
+      type: object
+      properties:
+        downloadLink:
+          title: Downloadlink
+          maxLength: 65536
+          minLength: 1
+          type: string
+          format: uri
+        label:
+          title: Label
+          type: string
+      additionalProperties: false
+      description: I/O port type to hold a generic download link to a file (e.g. S3
+        pre-signed link, etc)
+    HTTPValidationError:
+      title: HTTPValidationError
+      type: object
+      properties:
+        detail:
+          title: Detail
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationError'
+    Marker:
+      title: Marker
+      required:
+      - color
+      type: object
+      properties:
+        color:
+          title: Color
+          type: string
+          format: color
+      additionalProperties: false
+    Node:
+      title: Node
+      required:
+      - key
+      - version
+      - label
+      type: object
+      properties:
+        key:
+          title: Key
+          pattern: ^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$
+          type: string
+          description: distinctive name for the node based on the docker registry
+            path
+        version:
+          title: Version
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
+          description: semantic version number of the node
+        label:
+          title: Label
+          type: string
+          description: The short name of the node
+        progress:
+          title: Progress
+          maximum: 100.0
+          minimum: 0.0
+          type: number
+          description: the node progress value
+        thumbnail:
+          title: Thumbnail
+          maxLength: 2083
+          minLength: 1
+          type: string
+          description: url of the latest screenshot of the node
+          format: uri
+        runHash:
+          anyOf:
+          - type: 'null'
+          - title: Runhash
+            type: string
+            description: the hex digest of the resolved inputs +outputs hash at the
+              time when the last outputs were generated
+        inputs:
+          title: Inputs
+          type: object
+          description: values of input properties
+        inputsUnits:
+          title: Inputsunits
+          type: object
+          description: Overrides default unit (if any) defined in the service for
+            each port
+        inputAccess:
+          type: object
+          description: map with key - access level pairs
+        inputNodes:
+          title: Inputnodes
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: node IDs of where the node is connected to
+        outputs:
+          title: Outputs
+          type: object
+          description: values of output properties
+        outputNode:
+          title: Outputnode
+          type: boolean
+          deprecated: true
+        outputNodes:
+          title: Outputnodes
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Used in group-nodes. Node IDs of those connected to the output
+        parent:
+          anyOf:
+          - type: 'null'
+          - title: Parent
+            type: string
+            description: Parent's (group-nodes') node ID s. Used to group
+            format: uuid
+        position:
+          title: Position
+          allOf:
+          - $ref: '#/components/schemas/Position'
+          description: Use projects_ui.WorkbenchUI.position instead
+          deprecated: true
+        state:
+          title: State
+          allOf:
+          - $ref: '#/components/schemas/NodeState'
+          description: The node's state object
+        bootOptions:
+          title: Bootoptions
+          type: object
+          description: Some services provide alternative parameters to be injected
+            at boot time. The user selection should be stored here, and it will overwrite
+            the services's defaults.
+      additionalProperties: false
+    NodeState:
+      title: NodeState
+      type: object
+      properties:
+        modified:
+          title: Modified
+          type: boolean
+          description: true if the node's outputs need to be re-computed
+          default: true
+        dependencies:
+          title: Dependencies
+          uniqueItems: true
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: contains the node inputs dependencies if they need to be computed
+            first
+        currentStatus:
+          allOf:
+          - $ref: '#/components/schemas/RunningState'
+          description: the node's current state
+          default: NOT_STARTED
+      additionalProperties: false
+    Owner:
+      title: Owner
+      required:
+      - user_id
+      - first_name
+      - last_name
+      type: object
+      properties:
+        user_id:
+          title: User Id
+          exclusiveMinimum: true
+          type: integer
+          description: Owner's identifier when registered in the user's database table
+          minimum: 0
+        first_name:
+          title: First Name
+          type: string
+          description: Owner first name
+        last_name:
+          title: Last Name
+          type: string
+          description: Owner last name
+      additionalProperties: false
+    PortLink:
+      title: PortLink
+      required:
+      - nodeUuid
+      - output
+      type: object
+      properties:
+        nodeUuid:
+          title: Nodeuuid
+          type: string
+          description: The node to get the port output from
+          format: uuid
+        output:
+          title: Output
+          pattern: ^[-_a-zA-Z0-9]+$
+          type: string
+          description: The port key in the node given by nodeUuid
+      additionalProperties: false
+      description: I/O port type to reference to an output port of another node in
+        the same project
+    Position:
+      title: Position
+      required:
+      - x
+      - y
+      type: object
+      properties:
+        x:
+          title: X
+          type: integer
+          description: The x position
+          example:
+          - '12'
+        y:
+          title: Y
+          type: integer
+          description: The y position
+          example:
+          - '15'
+      additionalProperties: false
+    Project:
+      title: osparc-simcore project
+      required:
+      - uuid
+      - name
+      - description
+      - thumbnail
+      - creationDate
+      - lastChangeDate
+      - workbench
+      - prjOwner
+      - accessRights
+      type: object
+      properties:
+        uuid:
+          title: Uuid
+          type: string
+          description: project unique identifier
+          format: uuid
+        name:
+          title: Name
+          type: string
+          description: project name
+        description:
+          title: Description
+          type: string
+          description: longer one-line description about the project
+        thumbnail:
+          title: Thumbnail
+          maxLength: 2083
+          minLength: 1
+          type: string
+          description: url of the project thumbnail
+          format: uri
+        creationDate:
+          title: Creationdate
+          pattern: \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
+          type: string
+          description: project creation date
+        lastChangeDate:
+          title: Lastchangedate
+          pattern: \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
+          type: string
+          description: last save date
+        workbench:
+          title: Workbench
+          type: object
+          description: Project's pipeline
+        prjOwner:
+          title: Prjowner
+          type: string
+          description: user email
+          format: email
+        accessRights:
+          title: Accessrights
+          type: object
+          description: object containing the GroupID as key and read/write/execution
+            permissions as value
+        tags:
+          title: Tags
+          type: array
+          items:
+            type: integer
+          default: []
+        classifiers:
+          title: Classifiers
+          type: array
+          items:
+            type: string
+          description: Contains the reference to the project classifiers
+        state:
+          anyOf:
+          - type: 'null'
+          - $ref: '#/components/schemas/ProjectState'
+        ui:
+          $ref: '#/components/schemas/StudyUI'
+        quality:
+          title: Quality
+          type: object
+          description: stores the study quality assessment
+          default: {}
+        dev:
+          title: Dev
+          type: object
+          description: object used for development purposes only
+      additionalProperties: false
+    ProjectLocked:
+      title: ProjectLocked
+      required:
+      - value
+      - status
+      type: object
+      properties:
+        value:
+          title: Value
+          type: boolean
+          description: True if the project is locked
+        owner:
+          title: Owner
+          allOf:
+          - $ref: '#/components/schemas/Owner'
+          description: If locked, the user that owns the lock
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ProjectStatus'
+          description: The status of the project
+      additionalProperties: false
+    ProjectRunningState:
+      title: ProjectRunningState
+      required:
+      - value
+      type: object
+      properties:
+        value:
+          allOf:
+          - $ref: '#/components/schemas/RunningState'
+          description: The running state of the project
+      additionalProperties: false
+    ProjectState:
+      title: ProjectState
+      required:
+      - locked
+      - state
+      type: object
+      properties:
+        locked:
+          title: Locked
+          allOf:
+          - $ref: '#/components/schemas/ProjectLocked'
+          description: The project lock state
+        state:
+          title: State
+          allOf:
+          - $ref: '#/components/schemas/ProjectRunningState'
+          description: The project running state
+      additionalProperties: false
+    ProjectStatus:
+      title: ProjectStatus
+      enum:
+      - CLOSED
+      - CLOSING
+      - CLONING
+      - EXPORTING
+      - OPENING
+      - OPENED
+      type: string
+      description: An enumeration.
+    RunningState:
+      title: RunningState
+      enum:
+      - UNKNOWN
+      - PUBLISHED
+      - NOT_STARTED
+      - PENDING
+      - STARTED
+      - RETRY
+      - SUCCESS
+      - FAILED
+      - ABORTED
+      type: string
+      description: "State of execution of a project's computational workflow\n\n \
+        \   SEE StateType for task state\n    "
+    SimCoreFileLink:
+      title: SimCoreFileLink
+      required:
+      - store
+      - path
+      type: object
+      properties:
+        store:
+          title: Store
+          type: integer
+          description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+        path:
+          title: Path
+          anyOf:
+          - pattern: ^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$
+            type: string
+          - pattern: ^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$
+            type: string
+          description: The path to the file in the storage provider domain
+        label:
+          title: Label
+          type: string
+          description: The real file name
+        eTag:
+          title: Etag
+          type: string
+          description: Entity tag that uniquely represents the file. The method to
+            generate the tag is not specified (black box).
+        dataset:
+          title: Dataset
+          type: string
+          deprecated: true
+      additionalProperties: false
+      description: I/O port type to hold a link to a file in simcore S3 storage
+      example:
+        store: 0
+        path: 94453a6a-c8d4-52b3-a22d-ccbf81f8d636/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt
+        eTag: 859fda0cb82fc4acb4686510a172d9a9-1
+        label: input.txt
+    Slideshow:
+      title: Slideshow
+      required:
+      - position
+      type: object
+      properties:
+        position:
+          title: Position
+          type: integer
+        instructions:
+          title: Instructions
+          type: string
+    StudyUI:
+      title: StudyUI
+      type: object
+      properties:
+        workbench:
+          title: Workbench
+          type: object
+        slideshow:
+          title: Slideshow
+          type: object
+        currentNodeId:
+          title: Currentnodeid
+          type: string
+          format: uuid
+        annotations:
+          title: Annotations
+          type: object
+    ValidationError:
+      title: ValidationError
+      required:
+      - loc
+      - msg
+      - type
+      type: object
+      properties:
+        loc:
+          title: Location
+          type: array
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+        msg:
+          title: Message
+          type: string
+        type:
+          title: Error Type
+          type: string
+    WorkbenchUI:
+      title: WorkbenchUI
+      required:
+      - position
+      type: object
+      properties:
+        position:
+          title: Position
+          allOf:
+          - $ref: '#/components/schemas/Position'
+          description: The node position in the workbench
+        marker:
+          $ref: '#/components/schemas/Marker'
+      additionalProperties: false
