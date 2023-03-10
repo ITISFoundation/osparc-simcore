@@ -145,9 +145,9 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         alignY: "middle"
       });
 
-      const searchBarFilter = this.__searchBarFilter = new osparc.dashboard.SearchBarFilter();
+      const searchBarFilter = this.__searchBarFilter = new osparc.dashboard.SearchBarFilter(this._resourceType);
       const textField = searchBarFilter.getChildControl("text-field");
-      osparc.utils.Utils.setIdToWidget(textField, "searchBarFilter-textField-" + this._resourceType);
+      osparc.utils.Utils.setIdToWidget(textField, "searchBarFilter-textField-"+this._resourceType);
       topBar.add(searchBarFilter, {
         flex: 1
       });
@@ -180,6 +180,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       const dontGroup = new qx.ui.menu.RadioButton(this.tr("None"));
       osparc.utils.Utils.setIdToWidget(dontGroup, "groupByNone");
       dontGroup.addListener("execute", () => this._groupByChanged(null));
+
       groupByMenu.add(dontGroup);
       groupOptions.add(dontGroup);
 
@@ -192,11 +193,11 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
           tagByGroup.execute();
         }
       }
+
       const groupByShared = new qx.ui.menu.RadioButton(this.tr("Shared with"));
       groupByShared.addListener("execute", () => this._groupByChanged("shared"));
       groupByMenu.add(groupByShared);
       groupOptions.add(groupByShared);
-
 
       this._secondaryBar.add(groupByButton);
     },

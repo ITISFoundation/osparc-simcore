@@ -30,7 +30,7 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
       layout: new qx.ui.layout.Grow(),
       modal: true,
       width: 550,
-      height: 550 * 1.2,
+      height: 660,
       showMaximize: false,
       showMinimize: false,
       resizable: false,
@@ -39,7 +39,7 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
     const closeBtn = this.getChildControl("close-button");
     osparc.utils.Utils.setIdToWidget(closeBtn, "preferencesWindowCloseBtn");
 
-    const tabView = this.__tabView = new qx.ui.tabview.TabView().set({
+    const tabView = new qx.ui.tabview.TabView().set({
       barPosition: "left",
       contentPadding: 0
     });
@@ -77,12 +77,6 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
       tabView.add(tagsPage);
     }
 
-    const orgsPage = this.__organizationsPage = new osparc.desktop.preferences.pages.OrganizationsPage();
-    const orgsBtn = orgsPage.getChildControl("button");
-    osparc.utils.Utils.setIdToWidget(orgsBtn, "preferencesOrganizationsTabBtn");
-    tabView.add(orgsPage);
-    this.self().evaluateOrganizationsButton(orgsBtn);
-
     if (osparc.product.Utils.showClusters()) {
       const clustersPage = new osparc.desktop.preferences.pages.ClustersPage();
       const clustersBtn = clustersPage.getChildControl("button");
@@ -117,35 +111,6 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
       preferencesWindow.center();
       preferencesWindow.open();
       return preferencesWindow;
-    },
-
-    evaluateOrganizationsButton: function(btn) {
-      if (!osparc.data.Permissions.getInstance().canDo("user.organizations.create")) {
-        btn.exclude();
-      }
-      osparc.data.Resources.get("organizations")
-        .then(resp => {
-          const orgs = resp["organizations"];
-          if (orgs.length) {
-            btn.show();
-          }
-        });
-    }
-  },
-
-  members: {
-    __tabView: null,
-    __organizationsPage: null,
-
-    openOrganizations: function() {
-      this.__openPage(this.__organizationsPage);
-      return this.__organizationsPage;
-    },
-
-    __openPage: function(page) {
-      if (page) {
-        this.__tabView.setSelection([page]);
-      }
     }
   }
 });

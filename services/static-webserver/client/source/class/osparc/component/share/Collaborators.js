@@ -98,11 +98,8 @@ qx.Class.define("osparc.component.share.Collaborators", {
             allowGrowX: false,
             icon: osparc.dashboard.CardBase.SHARED_ORGS
           });
-          osparc.desktop.preferences.PreferencesWindow.evaluateOrganizationsButton(control);
-          control.addListener("execute", () => {
-            const preferencesWindow = osparc.desktop.preferences.PreferencesWindow.openWindow();
-            preferencesWindow.openOrganizations();
-          }, this);
+          osparc.desktop.organizations.OrganizationsWindow.evaluateOrganizationsButton(control);
+          control.addListener("execute", () => osparc.desktop.organizations.OrganizationsWindow.openWindow(), this);
           this._add(control, {
             flex: 1
           });
