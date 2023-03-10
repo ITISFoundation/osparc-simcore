@@ -10,6 +10,7 @@
 
 TODO: Refactor to reduce modules coupling! See all TODO: .``from ...`` comments
 """
+import functools
 import logging
 from functools import lru_cache
 from uuid import UUID, uuid5
@@ -17,7 +18,9 @@ from uuid import UUID, uuid5
 import redis.asyncio as aioredis
 from aiohttp import web
 from aiohttp_session import get_session
+from servicelib.aiohttp.typing_extension import Handler
 from servicelib.error_codes import create_error_code
+from simcore_service_webserver.projects.project_models import ProjectDict
 
 from .._constants import INDEX_RESOURCE_NAME
 from ..garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
@@ -28,6 +31,12 @@ from ..redis import get_redis_lock_manager_client
 from ..security_api import is_anonymous, remember
 from ..storage_api import copy_data_folders_from_project
 from ..utils import compose_support_error_msg
+from ..utils_aiohttp import create_redirect_response
+from ._constants import (
+    MSG_PROJECT_NOT_FOUND,
+    MSG_PROJECT_NOT_PUBLISHED,
+    MSG_UNEXPECTED_ERROR,
+)
 
 log = logging.getLogger(__name__)
 
@@ -46,13 +55,16 @@ def compose_uuid(template_uuid, user_id, query="") -> str:
     return new_uuid
 
 
-async def get_public_project(app: web.Application, project_uuid: str):
+async def get_public_project(app: web.Application, project_uuid: str) -> ProjectDict:
     """
     Returns project if project_uuid is a template and is marked as published, otherwise None
     """
     db = ProjectDBAPI.get_from_app_context(app)
     prj, _ = await db.get_project(
-        -1, project_uuid, only_published=True, only_templates=True
+        user_id=-1,  # < ---- ????
+        project_uuid=project_uuid,
+        only_published=True,
+        only_templates=True,
     )
     return prj
 
@@ -112,6 +124,7 @@ async def create_temporary_user(request: web.Request):
                 "status": ACTIVE,
                 "role": GUEST,
                 "created_ip": get_client_ip(request),
+                # TODO: now user has also trial account of 1 day? Make sure it does not show!
             }
         )
         # (2) read details above
@@ -211,6 +224,65 @@ async def copy_study_to_account(
 
 
 # HANDLERS --------------------------------------------------------
+
+
+class RedirectToFrontEndPageError(Exception):
+    def __init__(
+        self, human_readable_message: str, error_code: str, status_code: int
+    ) -> None:
+        self.human_readable_message = human_readable_message
+        self.error_code = error_code
+        self.status_code = status_code
+        super().__init__(*human_readable_message)
+
+
+def _handle_errors_with_error_page(handler: Handler):
+    @functools.wraps(handler)
+    async def wrapper(request: web.Request) -> web.Response:
+        try:
+            return await handler(request)
+
+        except ProjectNotFoundError as err:
+            raise create_redirect_response(
+                request.app,
+                page="error",
+                message=compose_support_error_msg(
+                    msg=MSG_PROJECT_NOT_FOUND.format(project_id=err.project_uuid),
+                    error_code="PROJECT_NOT_FOUND",
+                ),
+                status_code=web.HTTPNotFound.status_code,
+            ) from err
+
+        except RedirectToFrontEndPageError as err:
+            raise create_redirect_response(
+                request.app,
+                page="error",
+                message=compose_support_error_msg(
+                    msg=err.human_readable_message, error_code=err.error_code
+                ),
+                status_code=err.status_code,
+            ) from err
+
+        except Exception as err:
+
+            # FIXME: if request.app.router[INDEX_RESOURCE_NAME] does nto exist, return a local error message page
+
+            error_code = create_error_code(err)
+            log.exception(
+                "Unexpected failure. TIP: too many simultaneous request? [%s]",
+                f"{error_code}",
+                extra={"error_code": error_code},
+            )
+            raise RedirectToFrontEndPageError(
+                MSG_UNEXPECTED_ERROR.format(hint=""),
+                error_code=error_code,
+                status_code=web.HTTPInternalServerError.status_code,
+            ) from err
+
+    return wrapper
+
+
+@_handle_errors_with_error_page
 async def get_redirection_to_study_page(request: web.Request) -> web.Response:
     """
     Handles requests to get and open a public study
@@ -219,23 +291,19 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
     - if user is not registered, it creates a temporary guest account with limited resources and expiration
     - this handler is NOT part of the API and therefore does NOT respond with json
     """
-    # TODO: implement nice error-page.html
     project_id = request.match_info["id"]
+    assert request.app.router[INDEX_RESOURCE_NAME]  # nosec
 
-    try:
-        template_project = await get_public_project(request.app, project_id)
-    except ProjectNotFoundError as exc:
-        raise web.HTTPNotFound(
-            reason=f"Requested study ({project_id}) has not been published.\
-             Please contact the data curators for more information."
-        ) from exc
+    # Get linked PUBLIC PROJECT
+    template_project = await get_public_project(request.app, project_id)
     if not template_project:
-        raise web.HTTPNotFound(
-            reason=f"Requested study ({project_id}) has not been published.\
-             Please contact the data curators for more information."
+        raise RedirectToFrontEndPageError(
+            MSG_PROJECT_NOT_PUBLISHED.format(project_id=project_id),
+            error_code="PROJECT_NOT_PUBLISHED",
+            status_code=web.HTTPNotFound.status_code,
         )
 
-    # Get or create a valid user
+    # Get or create a valid USER
     user = None
     is_anonymous_user = await is_anonymous(request)
     if not is_anonymous_user:
@@ -243,23 +311,12 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
         # TODO: test if temp user overrides old cookie properly
         user = await get_authorized_user(request)
 
-    try:
-        if not user:
-            log.debug("Creating temporary user ...")
-            user = await create_temporary_user(request)
-            is_anonymous_user = True
-    except Exception as exc:  # pylint: disable=broad-except
-        error_code = create_error_code(exc)
-        log.exception(
-            "Failed while creating temporary user. TIP: too many simultaneous request? [%s]",
-            f"{error_code}",
-            extra={"error_code": error_code},
-        )
-        raise web.HTTPInternalServerError(
-            reason=compose_support_error_msg(
-                "Unable to create temporary user", error_code
-            )
-        ) from exc
+    if not user:
+        log.debug("Creating temporary user ...")
+        user = await create_temporary_user(request)
+        is_anonymous_user = True
+
+    # COPY
     try:
         log.debug(
             "Granted access to study '%s' for user %s. Copying study over ...",
@@ -271,6 +328,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
         log.debug("Study %s copied", copied_project_id)
 
     except Exception as exc:  # pylint: disable=broad-except
+        # TODO: disable anonymous user!!
         error_code = create_error_code(exc)
         log.exception(
             "Failed while copying project '%s' to '%s' [%s]",
@@ -279,27 +337,18 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
             f"{error_code}",
             extra={"error_code": error_code},
         )
-        raise web.HTTPInternalServerError(
-            reason=compose_support_error_msg("Unable to copy project", error_code)
+        raise RedirectToFrontEndPageError(
+            MSG_UNEXPECTED_ERROR.format(hint="while copying your study"),
+            error_code=error_code,
+            status_code=web.HTTPInternalServerError.status_code,
         ) from exc
 
-    try:
-        redirect_url = (
-            request.app.router[INDEX_RESOURCE_NAME]
-            .url_for()
-            .with_fragment(f"/study/{copied_project_id}")
-        )
-    except KeyError as exc:
-        error_code = create_error_code(exc)
-        log.exception(
-            "Cannot redirect to website because route was not registered. "
-            "Probably the static-webserver is disabled (see statics.py) [%s]",
-            f"{error_code}",
-            extra={"error_code": error_code},
-        )
-        raise web.HTTPInternalServerError(
-            reason=compose_support_error_msg("Unable to serve front-end", error_code)
-        ) from exc
+    # Creating REDIRECTION LINK
+    redirect_url = (
+        request.app.router[INDEX_RESOURCE_NAME]
+        .url_for()
+        .with_fragment(f"/study/{copied_project_id}")
+    )
 
     response = web.HTTPFound(location=redirect_url)
     if is_anonymous_user:
@@ -308,10 +357,8 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
 
         await remember(request, response, identity)
 
+        # NOTE: session is encrypted and stored in a cookie in the session middleware
         assert (await get_session(request))["AIOHTTP_SECURITY"] == identity  # nosec
 
-        # NOTE: session is encrypted and stored in a cookie in the session middleware
-
     # WARNING: do NOT raise this response. From aiohttp 3.7.X, response is rebuild and cookie ignore.
-    # TODO: PC: security with SessionIdentityPolicy, session with EncryptedCookieStorage -> remember() and raise response.
     return response
