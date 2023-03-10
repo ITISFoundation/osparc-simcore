@@ -30,7 +30,6 @@ from models_library.generated_models.docker_rest_api import (
 )
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import RunID, ServiceKeyVersion
-from pydantic import parse_obj_as
 from pydantic.types import NonNegativeInt
 from pytest import LogCaptureFixture, MonkeyPatch
 from pytest_mock.plugin import MockerFixture
@@ -48,9 +47,6 @@ from simcore_service_director_v2.models.schemas.dynamic_services import (
     SchedulerData,
     ServiceDetails,
     ServiceState,
-)
-from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.volume_remover import (
-    DockerVersion,
 )
 from yarl import URL
 
@@ -437,13 +433,3 @@ def mock_docker_api(mocker: MockerFixture) -> None:
 async def async_docker_client() -> AsyncIterable[aiodocker.Docker]:
     async with aiodocker.Docker() as docker_client:
         yield docker_client
-
-
-@pytest.fixture
-async def docker_version(async_docker_client: aiodocker.Docker) -> DockerVersion:
-    version_request = (
-        await async_docker_client._query_json(  # pylint: disable=protected-access
-            "version", versioned_api=False
-        )
-    )
-    return parse_obj_as(DockerVersion, version_request["Version"])

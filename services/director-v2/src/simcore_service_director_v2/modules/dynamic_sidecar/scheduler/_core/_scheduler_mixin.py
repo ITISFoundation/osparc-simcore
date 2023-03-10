@@ -28,7 +28,6 @@ class SchedulerInternalsMixin(  # pylint: disable=too-many-instance-attributes
     _keep_running: bool = False
     _inverse_search_mapping: dict[NodeID, str] = field(default_factory=dict)
     _scheduler_task: Optional[Task] = None
-    _cleanup_volume_removal_services_task: Optional[Task] = None
     _trigger_observation_queue_task: Optional[Task] = None
     _trigger_observation_queue: Queue = field(default_factory=Queue)
     _observation_counter: int = 0
@@ -45,10 +44,6 @@ class SchedulerInternalsMixin(  # pylint: disable=too-many-instance-attributes
             name="dynamic-scheduler-trigger-obs-queue",
         )
 
-        self._cleanup_volume_removal_services_task = asyncio.create_task(
-            self._cleanup_volume_removal_services(),
-            name="dynamic-scheduler-cleanup-volume-removal-services",
-        )
         await self._discover_running_services()
 
     async def shutdown(self):
@@ -56,12 +51,6 @@ class SchedulerInternalsMixin(  # pylint: disable=too-many-instance-attributes
         self._keep_running = False
         self._inverse_search_mapping = {}
         self._to_observe = {}
-
-        if self._cleanup_volume_removal_services_task is not None:
-            self._cleanup_volume_removal_services_task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await self._cleanup_volume_removal_services_task
-            self._cleanup_volume_removal_services_task = None
 
         if self._scheduler_task is not None:
             self._scheduler_task.cancel()

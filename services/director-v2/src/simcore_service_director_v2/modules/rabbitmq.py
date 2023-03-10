@@ -18,6 +18,7 @@ def setup(app: FastAPI) -> None:
         app.state.rabbitmq_client = RabbitMQClient(
             client_name="director-v2", settings=settings
         )
+        await app.state.rabbitmq_client.rpc_initialize()
 
     async def on_shutdown() -> None:
         if app.state.rabbitmq_client:
