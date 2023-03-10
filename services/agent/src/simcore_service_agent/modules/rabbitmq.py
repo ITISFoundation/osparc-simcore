@@ -40,7 +40,7 @@ async def _safe_remove_volumes(
         app
     ).volumes_cleanup
 
-    # Below workflow allows for parallel volume remove requests fo play nice with the
+    # Below workflow allows for parallel volume remove requests to play nice with the
     # `volumes_cleanup` task that can be running at any time. The idea is to cancel
     # the task and give priority to the volume removal:
     # - case 1: `volumes_cleanup` task is running
@@ -49,12 +49,15 @@ async def _safe_remove_volumes(
     #   - any current backup of the volumes will be stopped
     #   - the `deny_handler_usage` will now work
     #   - the `volumes_cleanup` task will be blocked form running
-    #   - PAYLOAD RUNS
+    #   - PAYLOAD RUNS:
+    #       - `volumes_cleanup` cannot possibly start
     #   - the `volumes_cleanup` task is scheduled once again
     # - case 2: `volumes_cleanup is not running`
     #   - the `deny_handler_usage` will NOT raise an error
     #   - the `volumes_cleanup` task will be blocked form running
-    #   - PAYLOAD RUNS
+    #   - PAYLOAD RUNS:
+    #     - if the `volumes_cleanup` were to be triggered again it
+    #       is blocked while this is running
     async for attempt in AsyncRetrying(stop=stop_after_attempt(2), reraise=True):
         with attempt:
             try:
