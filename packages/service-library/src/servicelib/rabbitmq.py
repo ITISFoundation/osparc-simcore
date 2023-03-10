@@ -8,6 +8,7 @@ from typing import Any, Awaitable, Callable, Final, Optional
 import aio_pika
 from aio_pika.exceptions import ChannelClosed
 from aio_pika.patterns import RPC
+from packaging.version import Version
 from pydantic import PositiveInt
 from servicelib.logging_utils import log_context
 from settings_library.rabbit import RabbitSettings
@@ -93,8 +94,10 @@ class RabbitMQClient:
         )
         self._rpc_channel = await self._rpc_connection.channel()
 
-        # NOTE when upgrading to aio-pike>=9.0.4 use below
-        # self._rpc = RPC(self._rpc_channel, host_exceptions=True)
+        if Version(aio_pika.__version__) >= Version("9.0.4"):
+            raise RuntimeError(
+                "Please use `self._rpc = RPC(self._rpc_channel, host_exceptions=True)` below"
+            )
         self._rpc = RPC(self._rpc_channel)
         await self._rpc.initialize()
 
