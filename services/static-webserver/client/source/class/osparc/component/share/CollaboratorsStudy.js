@@ -228,15 +228,31 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
     },
 
     _demoteToViewer: function(collaborator, item) {
-      const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
-      if (preferencesSettings.getConfirmDemoteOrgnaization()) {
+      const demoteToViewer = (collab, itm) => {
         this.__make(
-          collaborator["gid"],
+          collab["gid"],
           this.self().getViewerAccessRight(),
           this.tr("Collaborator successfully made Viewer"),
           this.tr("Something went wrong making Collaborator Viewer"),
-          item
+          itm
         );
+      };
+      const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+      if (preferencesSettings.getConfirmDemoteOrgnaization()) {
+        const msg = this.tr("Demoting an Organization to Viewer, will make all its members Viewers");
+        const win = new osparc.ui.window.Confirmation(msg).set({
+          confirmAction: "delete",
+          confirmText: this.tr("Demote")
+        });
+        win.center();
+        win.open();
+        win.addListener("close", () => {
+          if (win.getConfirmed()) {
+            demoteToViewer(collaborator, item);
+          }
+        }, this);
+      } else {
+        demoteToViewer(collaborator, item);
       }
     },
 
