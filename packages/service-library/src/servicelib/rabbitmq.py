@@ -95,8 +95,10 @@ class RabbitMQClient:
         self._rpc_channel = await self._rpc_connection.channel()
 
         if Version(aio_pika.__version__) >= Version("9.0.4"):
-            raise RuntimeError(
-                "Please use `self._rpc = RPC(self._rpc_channel, host_exceptions=True)` below"
+            log.warning(
+                "When all libraries have `aio_pika>=9.0.4` use:"
+                "`self._rpc = RPC(self._rpc_channel, host_exceptions=True)`"
+                "on the line below"
             )
         self._rpc = RPC(self._rpc_channel)
         await self._rpc.initialize()
