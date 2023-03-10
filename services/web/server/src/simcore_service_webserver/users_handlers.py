@@ -119,11 +119,10 @@ async def delete_token(request: web.Request):
 
 async def _get_user_notifications(redis_client: aioredis.Redis, user_id: int):
     notifs = []
-    notif_wildcard = f'user_id={user_id}:notification_id=*'
-    async for scanned_notification_key in redis_client.scan_iter(match=notif_wildcard):
-        if notif_str := await redis_client.get(scanned_notification_key):
-            notif = json.loads(notif_str)
-            notifs.append(notif)
+    user_hash_key = f'user_id={user_id}'
+    if notif_str := await redis_client.get(user_hash_key):
+        notif = json.loads(notif_str)
+        notifs.append(notif)
     notifs.sort(key=lambda n: n["date"], reverse=True)    
     return notifs
 
@@ -145,8 +144,8 @@ async def post_user_notification(request: web.Request):
     nid = str(uuid4())
     notif["id"] = nid
     notif["read"] = False
-    notif_hash_key = f'user_id={notif["user_id"]}:notification_id={nid}'
-    await redis_client.set(notif_hash_key, value=json.dumps(notif))
+    user_hash_key = f'user_id={notif["user_id"]}'
+    await redis_client.lpushx(user_hash_key, json.dumps(notif))
     return web.json_response(status=web.HTTPNoContent.status_code)
 
 
@@ -158,14 +157,14 @@ routes = web.RouteTableDef()
 async def update_user_notification(request: web.Request):
     redis_client = get_redis_user_notifications_client(request.app)
     user_id = request[RQT_USERID_KEY]
-    nid = request.match_info["nid"]
-    notif_hash_key = f'user_id={user_id}:notification_id={nid}'
+    notifs = await _get_user_notifications(redis_client, user_id)
     if notif_str := await redis_client.get(notif_hash_key):
         notif = json.loads(notif_str)
         # body includes a dict with the changes to make
         body = await request.json()
         for k, v in body.items():
             notif[k] = v
-        await redis_client.set(notif_hash_key, value=json.dumps(notif))
+        idx = 0
+        await redis_client.lset(idx, value=json.dumps(notif))
         return web.json_response(status=web.HTTPNoContent.status_code)
     return web.json_response(status=web.HTTPNotFound.status_code)
