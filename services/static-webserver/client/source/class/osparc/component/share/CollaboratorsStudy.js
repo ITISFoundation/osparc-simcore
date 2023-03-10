@@ -213,13 +213,16 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
     },
 
     _demoteToViewer: function(collaborator, item) {
-      this.__make(
-        collaborator["gid"],
-        this.self().getViewerAccessRight(),
-        this.tr("Collaborator successfully made Viewer"),
-        this.tr("Something went wrong making Collaborator Viewer"),
-        item
-      );
+      const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+      if (preferencesSettings.getConfirmDemoteOrgnaization()) {
+        this.__make(
+          collaborator["gid"],
+          this.self().getViewerAccessRight(),
+          this.tr("Collaborator successfully made Viewer"),
+          this.tr("Something went wrong making Collaborator Viewer"),
+          item
+        );
+      }
     },
 
     _demoteToCollaborator: function(collaborator, item) {
