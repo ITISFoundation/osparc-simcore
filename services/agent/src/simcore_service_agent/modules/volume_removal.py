@@ -4,6 +4,7 @@ from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_random
 
+from ..core.errors import CouldNotRemoveVolumesError
 from .docker import delete_volume, docker_client
 
 
@@ -31,7 +32,7 @@ async def remove_volumes(
     Will rase an error if it does not manage to remove a volume.
     """
     async with docker_client() as docker:
-        await logged_gather(
+        results = await logged_gather(
             *(
                 _remove_single_volume(
                     docker,
@@ -40,5 +41,9 @@ async def remove_volumes(
                     sleep_between_attempts_s,
                 )
                 for volume_name in volume_names
-            )
+            ),
+            reraise=False
         )
+        errors = [r for r in results if r is not None]
+        if errors:
+            raise CouldNotRemoveVolumesError(errors=errors)
