@@ -4,8 +4,6 @@
 
 import asyncio
 import json
-import socket
-import sys
 from copy import deepcopy
 from pathlib import Path
 from typing import AsyncIterator
@@ -14,24 +12,12 @@ import aiohttp
 import dask_gateway
 import pytest
 from faker import Faker
+from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 pytest_plugins = ["pytest_simcore.repository_paths", "pytest_simcore.docker_swarm"]
-
-
-def _get_this_computer_ip() -> str:
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        # doesn't even have to be reachable
-        s.connect(("10.255.255.255", 1))
-        IP = s.getsockname()[0]
-    except Exception:  # pylint: disable=broad-except
-        IP = "127.0.0.1"
-    finally:
-        s.close()
-    return IP
 
 
 @pytest.fixture
@@ -46,49 +32,9 @@ def minimal_config(monkeypatch):
     monkeypatch.setenv("GATEWAY_SERVER_ONE_WORKER_PER_NODE", "False")
 
 
-## current directory
-CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-WILDCARD = "services/osparc-gateway-server/README.md"
-ROOT = Path("/")
-
-
-# overrides pytest-simcore fixture such that this folder is legal
-@pytest.fixture(scope="session")
-def osparc_gateway_server_root_dir(request) -> Path:
-    """osparc-simcore repo root dir"""
-    test_dir = Path(request.session.fspath)  # expected test dir in simcore
-
-    root_dir = CURRENT_DIR
-    for start_dir in (CURRENT_DIR, test_dir):
-        root_dir = start_dir
-        while not any(root_dir.glob(WILDCARD)) and root_dir != ROOT:
-            root_dir = root_dir.parent
-
-        if root_dir != ROOT:
-            break
-
-    msg = (
-        f"'{root_dir}' does not look like the git root directory of osparc-dask-gateway"
-    )
-
-    assert root_dir != ROOT, msg
-    assert root_dir.exists(), msg
-    assert any(root_dir.glob(WILDCARD)), msg
-    assert any(root_dir.glob(".git")), msg
-
-    return root_dir
-
-
-@pytest.fixture(scope="session")
-def package_dir(osparc_simcore_services_dir: Path):
-    package_folder = osparc_simcore_services_dir / "osparc-gateway-server"
-    assert package_folder.exists()
-    return package_folder
-
-
 @pytest.fixture(scope="session")
 def dask_gateway_entrypoint() -> str:
-    return f"http://{_get_this_computer_ip()}:8000"
+    return f"http://{get_localhost_ip()}:8000"
 
 
 @pytest.fixture(scope="session")

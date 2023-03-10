@@ -4,12 +4,12 @@
 import pytest
 import traitlets
 import traitlets.config
-from _host_helpers import get_this_computer_ip
 from _pytest.fixtures import FixtureRequest
 from _pytest.monkeypatch import MonkeyPatch
 from dask_gateway_server.app import DaskGateway
 from faker import Faker
 from osparc_gateway_server.backend.osparc import OsparcBackend
+from pytest_simcore.helpers.utils_docker import get_localhost_ip
 
 
 @pytest.fixture(
@@ -24,7 +24,7 @@ def minimal_config(
     request: FixtureRequest,
 ):
     monkeypatch.setenv("GATEWAY_WORKERS_NETWORK", faker.pystr())
-    monkeypatch.setenv("GATEWAY_SERVER_NAME", get_this_computer_ip())
+    monkeypatch.setenv("GATEWAY_SERVER_NAME", get_localhost_ip())
     monkeypatch.setenv("COMPUTATIONAL_SIDECAR_VOLUME_NAME", faker.pystr())
     monkeypatch.setenv(
         "COMPUTATIONAL_SIDECAR_IMAGE",

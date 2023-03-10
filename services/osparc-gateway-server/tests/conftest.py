@@ -2,12 +2,10 @@
 # pylint: disable=redefined-outer-name
 
 import asyncio
-import sys
 from pathlib import Path
 from typing import Any, AsyncIterator, Awaitable, Callable
 
 import aiodocker
-import osparc_gateway_server
 import pytest
 from faker import Faker
 from tenacity._asyncio import AsyncRetrying
@@ -17,16 +15,11 @@ from tenacity.wait import wait_fixed
 pytest_plugins = ["pytest_simcore.repository_paths", "pytest_simcore.docker_swarm"]
 
 
-CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-WILDCARD = "services/osparc-gateway-server/README.md"
-ROOT = Path("/")
-
-
 @pytest.fixture(scope="session")
-def package_dir() -> Path:
-    pdir = Path(osparc_gateway_server.__file__).resolve().parent
-    assert pdir.exists()
-    return pdir
+def package_dir(osparc_simcore_services_dir: Path):
+    package_folder = osparc_simcore_services_dir / "osparc-gateway-server"
+    assert package_folder.exists()
+    return package_folder
 
 
 @pytest.fixture

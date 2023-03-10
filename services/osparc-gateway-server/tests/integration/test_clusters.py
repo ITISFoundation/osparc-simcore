@@ -6,12 +6,12 @@ from typing import Any, Awaitable, Callable
 
 import pytest
 from _dask_helpers import DaskGatewayServer
-from _host_helpers import get_this_computer_ip
 from _pytest.fixtures import FixtureRequest
 from _pytest.monkeypatch import MonkeyPatch
 from aiodocker import Docker
 from dask_gateway import Gateway
 from faker import Faker
+from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -29,7 +29,7 @@ def minimal_config(
     request: FixtureRequest,
 ):
     monkeypatch.setenv("GATEWAY_WORKERS_NETWORK", faker.pystr())
-    monkeypatch.setenv("GATEWAY_SERVER_NAME", get_this_computer_ip())
+    monkeypatch.setenv("GATEWAY_SERVER_NAME", get_localhost_ip())
     monkeypatch.setenv("COMPUTATIONAL_SIDECAR_VOLUME_NAME", faker.pystr())
     monkeypatch.setenv(
         "COMPUTATIONAL_SIDECAR_IMAGE",

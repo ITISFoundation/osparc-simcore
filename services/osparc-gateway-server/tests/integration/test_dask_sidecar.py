@@ -6,8 +6,8 @@ from typing import Any, AsyncIterator, Awaitable, Callable
 
 import aiodocker
 import pytest
-from _host_helpers import get_this_computer_ip
 from faker import Faker
+from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -132,7 +132,7 @@ async def test_computational_sidecar_properly_start_stop(
             "ContainerSpec": {
                 "Image": image_name,
                 "Env": sidecar_envs
-                | {"DASK_SCHEDULER_URL": f"tcp://{get_this_computer_ip()}:8786"},
+                | {"DASK_SCHEDULER_URL": f"tcp://{get_localhost_ip()}:8786"},
                 "Init": True,
                 "Mounts": sidecar_mounts,
             }
