@@ -90,12 +90,12 @@ qx.Class.define("osparc.WindowSizeTracker", {
 
       let notification = null;
       if (tooSmall === "shortText") {
-        notification = new osparc.component.notification.Notification(null, "smallWindow", true);
+        notification = new osparc.component.notification.RibbonNotification(null, "smallWindow", true);
       } else if (tooSmall === "longText") {
         const text = this.__getLongText(true);
-        notification = new osparc.component.notification.Notification(text, "smallWindow", true);
+        notification = new osparc.component.notification.RibbonNotification(text, "smallWindow", true);
       }
-      osparc.component.notification.NotificationsRibbon.getInstance().addNotification(notification);
+      osparc.component.notification.RibbonNotifications.getInstance().addNotification(notification);
       this.__lastRibbonMessage = notification;
     },
 
@@ -108,7 +108,7 @@ qx.Class.define("osparc.WindowSizeTracker", {
 
     __removeRibbonMessage: function() {
       if (this.__lastRibbonMessage) {
-        osparc.component.notification.NotificationsRibbon.getInstance().removeNotification(this.__lastRibbonMessage);
+        osparc.component.notification.RibbonNotifications.getInstance().removeNotification(this.__lastRibbonMessage);
         this.__lastRibbonMessage = null;
       }
     }

@@ -53,6 +53,15 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
     "organizationSelected": "qx.event.type.Data"
   },
 
+  properties: {
+    organizationsLoaded: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      event: "changeOrganizationsLoaded"
+    }
+  },
+
   statics: {
     sortOrganizations: function(a, b) {
       const sorted = osparc.component.share.Collaborators.sortByAccessRights(a, b);
@@ -186,6 +195,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
           const orgsList = await Promise.all(promises);
           orgsList.sort(this.self().sortOrganizations);
           orgsList.forEach(org => orgsModel.append(qx.data.marshal.Json.createModel(org)));
+          this.setOrganizationsLoaded(true);
         });
     },
 
