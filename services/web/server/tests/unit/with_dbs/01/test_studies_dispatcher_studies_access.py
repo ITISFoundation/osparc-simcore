@@ -1,14 +1,13 @@
-""" Covers user stories for ISAN : #501, #712, #730
-
-"""
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
 
 import asyncio
 import logging
 import re
+import urllib.parse
 from copy import deepcopy
 from pathlib import Path
 from pprint import pprint
@@ -16,80 +15,74 @@ from typing import AsyncGenerator, AsyncIterator, Callable
 
 import pytest
 from aiohttp import ClientResponse, ClientSession, web
-from aiohttp.test_utils import TestClient
-from aioresponses import aioresponses
+from aiohttp.test_utils import TestClient, TestServer
 from models_library.projects_state import ProjectLocked, ProjectStatus
+from pytest import MonkeyPatch
+from pytest_mock import MockerFixture
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.aioresponses_mocker import AioResponsesMock
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_dict import ConfigDict
-from pytest_simcore.helpers.utils_login import UserRole
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
+from pytest_simcore.helpers.utils_login import UserInfoDict, UserRole
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from servicelib.aiohttp.long_running_tasks.client import LRTask
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.aiohttp.rest_responses import unwrap_envelope
-from settings_library.redis import RedisSettings
 from simcore_service_webserver.log import setup_logging
 from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.projects.projects_api import submit_delete_project_task
 from simcore_service_webserver.users_api import delete_user, get_user_role
 
-SHARED_STUDY_UUID = "e2e38eee-c569-4e55-b104-70d159e49c87"
-
 
 @pytest.fixture
-def app_cfg(
-    default_app_cfg: ConfigDict,
-    unused_tcp_port_factory: Callable,
-    redis_service: RedisSettings,
-):
-    """App's configuration used for every test in this module
+def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
+    envs_plugins = setenvs_from_dict(
+        monkeypatch,
+        {
+            "WEBSERVER_ACTIVITY": "null",
+            "WEBSERVER_CATALOG": "null",
+            "WEBSERVER_CLUSTERS": "null",
+            "WEBSERVER_COMPUTATION": "0",
+            "WEBSERVER_DIAGNOSTICS": "null",
+            "WEBSERVER_DIRECTOR": "null",
+            "WEBSERVER_DIRECTOR_V2": "null",
+            "WEBSERVER_EXPORTER": "null",
+            # Enforces smallest GC in the background task
+            # "WEBSERVER_GARBAGE_COLLECTOR": "null",
+            # cfg["resource_manager"]["garbage_collection_interval_seconds"] = 1
+            # "GARBAGE_COLLECTOR_INTERVAL_S": "1",
+            "WEBSERVER_GROUPS": "1",
+            "WEBSERVER_META_MODELING": "null",
+            "WEBSERVER_PRODUCTS": "1",
+            "WEBSERVER_PUBLICATIONS": "0",
+            "WEBSERVER_RABBITMQ": "null",
+            "WEBSERVER_REMOTE_DEBUG": "0",
+            "WEBSERVER_SOCKETIO": "0",
+            "WEBSERVER_TAGS": "1",
+            "WEBSERVER_TRACING": "null",
+            "WEBSERVER_USERS": "1",
+            "WEBSERVER_VERSION_CONTROL": "0",
+        },
+    )
 
-    NOTE: Overrides services/web/server/tests/unit/with_dbs/conftest.py::app_cfg to influence app setup
-    """
-    cfg = deepcopy(default_app_cfg)
+    monkeypatch.delenv("WEBSERVER_STUDIES_DISPATCHER", raising=False)
+    app_environment.pop("WEBSERVER_STUDIES_DISPATCHER", None)
 
-    cfg["main"]["port"] = unused_tcp_port_factory()
-    cfg["main"]["studies_access_enabled"] = True
-
-    exclude = {
-        "tracing",
-        "director",
-        "smtp",
-        "storage",
-        "activity",
-        "diagnostics",
-        "groups",
-        "tags",
-        "publications",
-        "catalog",
-        "computation",
-        "clusters",
-    }
-    include = {
-        "db",
-        "rest",
-        "projects",
-        "login",
-        "socketio",
-        "resource_manager",
-        "users",
-        "products",
-    }
-
-    assert include.intersection(exclude) == set()
-
-    for section in include:
-        cfg[section]["enabled"] = True
-    for section in exclude:
-        cfg[section]["enabled"] = False
+    monkeypatch.delenv(
+        "WEBSERVER_STUDIES_ACCESS_ENABLED", raising=False
+    )  # legacy for STUDIES_ACCESS_ANONYMOUS_ALLOWED
+    envs_studies_dispatcher = setenvs_from_dict(
+        monkeypatch,
+        {
+            "STUDIES_ACCESS_ANONYMOUS_ALLOWED": "1",
+        },
+    )
 
     # NOTE: To see logs, use pytest -s --log-cli-level=DEBUG
     setup_logging(level=logging.DEBUG)
 
-    # Enforces smallest GC in the background task
-    cfg["resource_manager"]["garbage_collection_interval_seconds"] = 1
-
-    return cfg
+    return {**app_environment, **envs_plugins, **envs_studies_dispatcher}
 
 
 @pytest.fixture
@@ -98,10 +91,11 @@ async def published_project(
     fake_project: ProjectDict,
     tests_data_dir: Path,
     osparc_product_name: str,
-) -> AsyncIterator[dict]:
+) -> AsyncIterator[ProjectDict]:
+
     project_data = deepcopy(fake_project)
     project_data["name"] = "Published project"
-    project_data["uuid"] = SHARED_STUDY_UUID
+    project_data["uuid"] = "e2e38eee-c569-4e55-b104-70d159e49c87"
     project_data["published"] = True
 
     async with NewProject(
@@ -121,7 +115,7 @@ async def unpublished_project(
     fake_project: ProjectDict,
     tests_data_dir: Path,
     osparc_product_name: str,
-):
+) -> ProjectDict:
     project_data = deepcopy(fake_project)
     project_data["name"] = "Template Unpublished project"
     project_data["uuid"] = "b134a337-a74f-40ff-a127-b36a1ccbede6"
@@ -137,11 +131,6 @@ async def unpublished_project(
         as_template=True,
     ) as template_project:
         yield template_project
-
-
-@pytest.fixture
-async def director_v2_mock(director_v2_service_mock) -> AsyncIterator[aioresponses]:
-    yield director_v2_service_mock
 
 
 async def _get_user_projects(client):
@@ -174,11 +163,11 @@ def _assert_same_projects(got: dict, expected: dict):
             assert got[key] == expected[key], "Failed in %s" % key
 
 
-def is_user_authenticated(session: ClientSession) -> bool:
+def _is_user_authenticated(session: ClientSession) -> bool:
     return "osparc.WEBAPI_SESSION" in [c.key for c in session.cookie_jar]
 
 
-async def assert_redirected_to_study(
+async def _assert_redirected_to_study(
     resp: ClientResponse, session: ClientSession
 ) -> str:
 
@@ -195,7 +184,7 @@ async def assert_redirected_to_study(
     ), "Expected front-end rendering workbench's study, got %s" % str(content)
 
     # Expects auth cookie for current user
-    assert is_user_authenticated(session)
+    assert _is_user_authenticated(session)
 
     # Expects fragment to indicate client where to find newly created project
     m = re.match(r"/study/([\d\w-]+)", resp.real_url.fragment)
@@ -207,7 +196,7 @@ async def assert_redirected_to_study(
 
 
 @pytest.fixture
-def mocks_on_projects_api(mocker) -> None:
+def mocks_on_projects_api(mocker: MockerFixture) -> None:
     """
     All projects in this module are UNLOCKED
     """
@@ -252,44 +241,68 @@ async def storage_subsystem_mock(storage_subsystem_mock, mocker: MockerFixture):
     mock.side_effect = _mock_copy_data_from_project
 
 
-async def test_access_to_invalid_study(client, published_project):
-    resp = await client.get("/study/SOME_INVALID_UUID")
-    content = await resp.text()
-
-    assert resp.status == web.HTTPNotFound.status_code, str(content)
+#
+# Covers user stories for ISAN : #501, #712, #730
+#
 
 
-async def test_access_to_forbidden_study(client, unpublished_project):
-    app = client.app
+def _assert_redirection(
+    response: ClientResponse, expected_page: str, expected_status_code: int
+):
+    # checks is a redirection
+    assert len(response.history) == 1
+    assert response.history[0].status == 302
 
-    valid_but_not_sharable = unpublished_project["uuid"]
+    # checks fragment
+    fragment = response.history[0].headers["Location"]
+    r = urllib.parse.urlparse(fragment.removeprefix("/#"))
 
-    resp = await client.get("/study/valid_but_not_sharable")
-    content = await resp.text()
+    assert r.path == f"/{expected_page}"
 
-    assert (
-        resp.status == web.HTTPNotFound.status_code
-    ), f"STANDARD studies are NOT sharable: {content}"
+    params = urllib.parse.parse_qs(r.query)
+    assert params["status_code"] == [f"{expected_status_code}"], params
+
+
+async def test_access_to_invalid_study(client: TestClient):
+    response = await client.get("/study/SOME_INVALID_UUID")
+    _assert_redirection(
+        response,
+        expected_page="error",
+        expected_status_code=web.HTTPNotFound.status_code,
+    )
+
+
+@pytest.mark.testit
+async def test_access_to_forbidden_study(
+    client: TestClient, unpublished_project: ProjectDict
+):
+    response = await client.get(f"/study/{unpublished_project['uuid']}")
+
+    _assert_redirection(
+        response,
+        expected_page="error",
+        expected_status_code=web.HTTPNotFound.status_code,
+    )
 
 
 @pytest.mark.flaky(max_runs=3)
 async def test_access_study_anonymously(
-    client,
-    published_project,
+    client: TestClient,
+    published_project: ProjectDict,
     storage_subsystem_mock,
     catalog_subsystem_mock,
-    director_v2_mock,
+    director_v2_service_mock,
     mocks_on_projects_api,
     redis_locks_client,  # needed to cleanup the locks between parametrizations
 ):
     catalog_subsystem_mock([published_project])
-    assert not is_user_authenticated(client.session), "Is anonymous"
+    assert not _is_user_authenticated(client.session), "Is anonymous"
 
     study_url = client.app.router["study"].url_for(id=published_project["uuid"])
 
     resp = await client.get(study_url)
 
-    expected_prj_id = await assert_redirected_to_study(resp, client.session)
+    expected_prj_id = await _assert_redirected_to_study(resp, client.session)
 
     # has auto logged in as guest?
     me_url = client.app.router["get_my_profile"].url_for()
@@ -312,29 +325,29 @@ async def test_access_study_anonymously(
 
 
 @pytest.fixture
-async def auto_delete_projects(client) -> AsyncIterator[None]:
+async def auto_delete_projects(client: TestClient) -> AsyncIterator[None]:
     yield
     await delete_all_projects(client.app)
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER, UserRole.TESTER])
 async def test_access_study_by_logged_user(
-    client,
-    logged_user,
-    published_project,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    published_project: ProjectDict,
     storage_subsystem_mock,
     catalog_subsystem_mock,
-    director_v2_mock,
+    director_v2_service_mock: AioResponsesMock,
     mocks_on_projects_api,
-    auto_delete_projects,
+    auto_delete_projects: None,
     redis_locks_client,  # needed to cleanup the locks between parametrizations
 ):
     catalog_subsystem_mock([published_project])
-    assert is_user_authenticated(client.session), "Is already logged-in"
+    assert _is_user_authenticated(client.session), "Is already logged-in"
 
     study_url = client.app.router["study"].url_for(id=published_project["uuid"])
     resp = await client.get(study_url)
-    await assert_redirected_to_study(resp, client.session)
+    await _assert_redirected_to_study(resp, client.session)
 
     # user has a copy of the template project
     projects = await _get_user_projects(client)
@@ -349,11 +362,11 @@ async def test_access_study_by_logged_user(
 
 
 async def test_access_cookie_of_expired_user(
-    client,
-    published_project,
+    client: TestClient,
+    published_project: ProjectDict,
     storage_subsystem_mock,
     catalog_subsystem_mock,
-    director_v2_mock,
+    director_v2_service_mock: AioResponsesMock,
     mocks_on_projects_api,
     redis_locks_client,  # needed to cleanup the locks between parametrizations
 ):
@@ -364,7 +377,7 @@ async def test_access_cookie_of_expired_user(
     study_url = app.router["study"].url_for(id=published_project["uuid"])
     resp = await client.get(study_url)
 
-    await assert_redirected_to_study(resp, client.session)
+    await _assert_redirected_to_study(resp, client.session)
 
     # Expects valid cookie and GUEST access
     me_url = app.router["get_my_profile"].url_for()
@@ -400,7 +413,7 @@ async def test_access_cookie_of_expired_user(
 
     # But still can access as a new user
     resp = await client.get(study_url)
-    await assert_redirected_to_study(resp, client.session)
+    await _assert_redirected_to_study(resp, client.session)
 
     # as a guest user
     resp = await client.get(me_url)
@@ -414,13 +427,13 @@ async def test_access_cookie_of_expired_user(
 
 @pytest.mark.parametrize("number_of_simultaneous_requests", [1, 2, 64])
 async def test_guest_user_is_not_garbage_collected(
-    number_of_simultaneous_requests,
-    web_server,
-    aiohttp_client,
-    published_project,
+    number_of_simultaneous_requests: int,
+    web_server: TestServer,
+    aiohttp_client: Callable,
+    published_project: ProjectDict,
     storage_subsystem_mock,
     catalog_subsystem_mock,
-    director_v2_mock,
+    director_v2_service_mock: AioResponsesMock,
     mocks_on_projects_api,
     redis_locks_client,  # needed to cleanup the locks between parametrizations
 ):
@@ -440,7 +453,7 @@ async def test_guest_user_is_not_garbage_collected(
         # clicks link to study
         resp = await client.get(f"{study_url}")
 
-        expected_prj_id = await assert_redirected_to_study(resp, client.session)
+        expected_prj_id = await _assert_redirected_to_study(resp, client.session)
 
         # has auto logged in as guest?
         me_url = client.app.router["get_my_profile"].url_for()

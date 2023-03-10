@@ -60,6 +60,9 @@ async def get_public_project(app: web.Application, project_uuid: str) -> Project
     Returns project if project_uuid is a template and is marked as published, otherwise None
     """
     db = ProjectDBAPI.get_from_app_context(app)
+
+    # TODO: what can raise???
+
     prj, _ = await db.get_project(
         user_id=-1,  # < ---- ????
         project_uuid=project_uuid,
