@@ -128,6 +128,12 @@ paths:
   /me/tokens/{service}:
     $ref: "./openapi-user.yaml#/paths/~1me~1tokens~1{service}"
 
+  /me/notifications:
+    $ref: "./openapi-user.yaml#/paths/~1me~1notifications"
+
+  /me/notifications/{nid}:
+    $ref: "./openapi-user.yaml#/paths/~1me~1notifications~1{nid}"
+
   # GROUP SETTINGS ------------------------------------------------------------------
 
   /groups:

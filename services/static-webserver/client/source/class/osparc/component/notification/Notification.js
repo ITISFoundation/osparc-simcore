@@ -18,59 +18,68 @@
 qx.Class.define("osparc.component.notification.Notification", {
   extend: qx.core.Object,
 
-  construct: function(text, type = "maintenance", closable = false) {
+  construct: function(notificationObj) {
     this.base(arguments);
 
-    if (text) {
-      this.setText(text);
-    }
-
-    this.setType(type);
-    this.setClosable(closable);
+    this.set({
+      id: notificationObj.id,
+      category: notificationObj.category,
+      actionablePath: notificationObj.actionable_path,
+      title: notificationObj.title,
+      text: notificationObj.text,
+      date: new Date(notificationObj.date),
+      read: ["true", "True", true].includes(notificationObj.read)
+    });
   },
 
   properties: {
-    type: {
-      check: ["maintenance", "smallWindow"],
+    id: {
+      check: "String",
       init: null,
-      nullable: false
+      nullable: false,
+      event: "changeId"
+    },
+
+    category: {
+      check: ["new_organization", "study_shared", "template_shared"],
+      init: null,
+      nullable: false,
+      event: "changeCategory"
+    },
+
+    actionablePath: {
+      check: "String",
+      init: null,
+      nullable: false,
+      event: "changeActionablePath"
+    },
+
+    title: {
+      check: "String",
+      init: null,
+      nullable: false,
+      event: "changeTitle"
     },
 
     text: {
       check: "String",
-      init: "",
-      nullable: false
+      init: null,
+      nullable: false,
+      event: "changeText"
     },
 
-    closable: {
-      check: "Boolean",
-      init: true,
-      nullable: false
-    }
-  },
+    date: {
+      check: "Date",
+      init: null,
+      nullable: false,
+      event: "changeDate"
+    },
 
-  members: {
-    getFullText: function(wLineBreak = false) {
-      let fullText = "";
-      switch (this.getType()) {
-        case "maintenance": {
-          fullText += qx.locale.Manager.tr("Maintenance scheduled.");
-          fullText += wLineBreak ? "<br>" : " ";
-          fullText += this.getText() + ".";
-          fullText += wLineBreak ? "<br>" : " ";
-          fullText += qx.locale.Manager.tr("Please save your work and logout.");
-          break;
-        }
-        case "smallWindow": {
-          fullText += qx.locale.Manager.tr("Oops, your window size is a bit small!");
-          const longText = this.getText();
-          if (longText) {
-            fullText += " " + longText;
-          }
-          break;
-        }
-      }
-      return fullText;
+    read: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      event: "changeRead"
     }
   }
 });
