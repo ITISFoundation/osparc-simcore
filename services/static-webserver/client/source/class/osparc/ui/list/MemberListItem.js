@@ -16,23 +16,7 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.ui.list.MemberListItem", {
-  extend: osparc.ui.list.ListItem,
-
-  properties: {
-    accessRights: {
-      check: "Object",
-      apply: "__applyAccessRights",
-      event: "changeAccessRights",
-      nullable: true
-    },
-
-    showOptions: {
-      check: "Boolean",
-      apply: "__applyShowOptions",
-      event: "changeShowOptions",
-      nullable: true
-    }
-  },
+  extend: osparc.ui.list.ListItemWithMenu,
 
   events: {
     "promoteToMember": "qx.event.type.Data",
@@ -45,58 +29,8 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
   },
 
   members: {
-    _createChildControlImpl: function(id) {
-      let control;
-      switch (id) {
-        case "options": {
-          const iconSize = 25;
-          control = new qx.ui.form.MenuButton().set({
-            maxWidth: iconSize,
-            maxHeight: iconSize,
-            alignX: "center",
-            alignY: "middle",
-            icon: "@FontAwesome5Solid/ellipsis-v/"+(iconSize-11),
-            focusable: false
-          });
-          this._add(control, {
-            row: 0,
-            column: 3,
-            rowSpan: 2
-          });
-          break;
-        }
-      }
-
-      return control || this.base(arguments, id);
-    },
-
-    __applyAccessRights: function(value) {
-      if (value === null) {
-        return;
-      }
-
-      this.__setSubtitle();
-
-      const menu = this.__getOptionsMenu();
-      const optionsMenu = this.getChildControl("options");
-      optionsMenu.setMenu(menu);
-    },
-
-    __setSubtitle: function() {
-      const accessRights = this.getAccessRights();
-      const subtitle = this.getChildControl("contact");
-      if (accessRights.getDelete()) {
-        subtitle.setValue(osparc.data.Roles.ORG[3].longLabel);
-      } else if (accessRights.getWrite()) {
-        subtitle.setValue(osparc.data.Roles.ORG[2].longLabel);
-      } else if (accessRights.getRead()) {
-        subtitle.setValue(osparc.data.Roles.ORG[1].longLabel);
-      } else {
-        subtitle.setValue(osparc.data.Roles.ORG[0].longLabel);
-      }
-    },
-
-    __getOptionsMenu: function() {
+    // overridden
+    _getOptionsMenu: function() {
       const menu = new qx.ui.menu.Menu().set({
         position: "bottom-right"
       });
@@ -191,40 +125,6 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
       menu.add(removeButton);
 
       return menu;
-    },
-
-    __applyShowOptions: function(value) {
-      const optionsMenu = this.getChildControl("options");
-      optionsMenu.setVisibility(value ? "visible" : "excluded");
-    },
-
-    _filter: function() {
-      this.exclude();
-    },
-
-    _unfilter: function() {
-      this.show();
-    },
-
-    _shouldApplyFilter: function(data) {
-      if (data.name) {
-        const checks = [
-          this.getTitle(),
-          this.getSubtitleMD()
-        ];
-        // data.name comes lowercased
-        if (checks.filter(check => check.toLowerCase().includes(data.name)).length == 0) {
-          return true;
-        }
-      }
-      return false;
-    },
-
-    _shouldReactToFilter: function(data) {
-      if (data.name && data.name.length > 1) {
-        return true;
-      }
-      return false;
     }
   }
 });

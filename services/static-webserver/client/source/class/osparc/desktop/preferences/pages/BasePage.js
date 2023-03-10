@@ -26,21 +26,35 @@ qx.Class.define("osparc.desktop.preferences.pages.BasePage", {
       alignX: "center"
     }));
 
-    // Page title
-    this.add(new qx.ui.basic.Label(title).set({
-      font: "text-14",
-      alignX: "left"
-    }));
+    this.getChildControl("title").set({
+      value: title
+    });
+
     // spacer
     this.add(new qx.ui.core.Spacer(null, 10)); // TODO add decorator?
     this.set({
       backgroundColor: "background-main-2",
-      paddingTop: 10,
-      paddingLeft: 20
+      paddingTop: 5,
+      paddingLeft: 15
     });
   },
 
   members: {
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "title": {
+          control = new qx.ui.basic.Label().set({
+            font: "text-14",
+            alignX: "left"
+          });
+          this.add(control);
+          break;
+        }
+      }
+      return control || this.base(arguments, id);
+    },
+
     /**
      * Common layout of section's box
      * @param {page section's name} sectionName

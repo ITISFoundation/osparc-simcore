@@ -33,6 +33,11 @@
 qx.Class.define("osparc.dashboard.DataBrowser", {
   extend: osparc.dashboard.ResourceBrowserBase,
 
+  construct: function() {
+    this._resourceType = "data";
+    this.base(arguments);
+  },
+
   members: {
     __filesTree: null,
     __folderViewer: null,
