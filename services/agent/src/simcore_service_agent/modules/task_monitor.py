@@ -1,20 +1,26 @@
 import asyncio
 import logging
-from contextlib import asynccontextmanager, suppress
+from contextlib import suppress
 from dataclasses import dataclass, field
 from time import time
-from typing import Any, AsyncIterable, Callable, Final, Optional
+from typing import Any, Callable, Final, Optional
 
 from fastapi import FastAPI
 from pydantic import PositiveFloat, PositiveInt
 from servicelib.logging_utils import log_context
 
+from ..core.errors import AgentRuntimeError
 from ..core.settings import ApplicationSettings
 from .volumes_cleanup import backup_and_remove_volumes
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_TASK_WAIT_ON_ERROR: Final[PositiveInt] = 10
+
+
+class JobAlreadyRegisteredError(AgentRuntimeError):
+    code: str = "agent.task_monitor.job_already_registered"
+    msg_template: str = "Job is already registered: {job_name}"
 
 
 @dataclass
@@ -103,7 +109,7 @@ class TaskMonitor:
         task_data = _TaskData(target, args, repeat_interval_s)
         job_name = task_data.job_name
         if job_name in self._to_start:
-            raise RuntimeError(f"{job_name} is already registered")
+            raise JobAlreadyRegisteredError(job_name=job_name)
 
         self._to_start[job_name] = task_data
 
@@ -149,20 +155,28 @@ class TaskMonitor:
         self._to_start.clear()
 
 
-@asynccontextmanager
-async def disable_volume_removal_task(app: FastAPI) -> AsyncIterable[None]:
+async def disable_volume_removal_task(app: FastAPI) -> None:
     task_monitor: TaskMonitor = app.state.task_monitor
-    settings: ApplicationSettings = app.state.settings
 
     await task_monitor.unregister_job(backup_and_remove_volumes)
 
-    yield
-    task_monitor.register_job(
-        backup_and_remove_volumes,
-        settings,
-        repeat_interval_s=settings.AGENT_VOLUMES_CLEANUP_INTERVAL_S,
-    )
-    task_monitor.start_job(backup_and_remove_volumes.__name__)
+
+async def enable_volume_removal_task_if_missing(app: FastAPI) -> None:
+    task_monitor: TaskMonitor = app.state.task_monitor
+    settings: ApplicationSettings = app.state.settings
+
+    try:
+        task_monitor.register_job(
+            backup_and_remove_volumes,
+            settings,
+            repeat_interval_s=settings.AGENT_VOLUMES_CLEANUP_INTERVAL_S,
+        )
+        task_monitor.start_job(backup_and_remove_volumes.__name__)
+    except JobAlreadyRegisteredError:
+        logger.debug(
+            "Job '%s' was already registered.",
+            backup_and_remove_volumes.__name__,
+        )
 
 
 def setup(app: FastAPI) -> None:

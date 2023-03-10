@@ -11,8 +11,10 @@ from pydantic import PositiveFloat
 from pytest import LogCaptureFixture
 from simcore_service_agent.core.application import create_app
 from simcore_service_agent.modules.task_monitor import (
+    JobAlreadyRegisteredError,
     TaskMonitor,
     disable_volume_removal_task,
+    enable_volume_removal_task_if_missing,
 )
 
 REPEAT_TASK_INTERVAL_S: Final[PositiveFloat] = 0.05
@@ -65,12 +67,8 @@ async def test_task_monitor_recovers_from_error(
 async def test_add_same_task_fails():
     task_monitor = TaskMonitor()
     task_monitor.register_job(_job_which_raises_error, repeat_interval_s=1)
-    with pytest.raises(RuntimeError) as exe_info:
+    with pytest.raises(JobAlreadyRegisteredError):
         task_monitor.register_job(_job_which_raises_error, repeat_interval_s=1)
-    assert (
-        f"{exe_info.value}"
-        == f"{_job_which_raises_error.__name__} is already registered"
-    )
 
 
 async def test_hanging_jobs_are_detected():
@@ -115,15 +113,28 @@ async def initialized_app(env: None) -> AsyncIterator[FastAPI]:
     await app.router.shutdown()
 
 
-async def test_disable_volume_removal_task(initialized_app: FastAPI):
+async def test_disable_enable_volume_removal_task_workflow(
+    initialized_app: FastAPI, caplog_info_debug: LogCaptureFixture
+):
     task_monitor: TaskMonitor = initialized_app.state.task_monitor
 
     job_name = "backup_and_remove_volumes"
 
     assert job_name in task_monitor._to_start
     assert job_name in task_monitor._tasks
-    async with disable_volume_removal_task(initialized_app):
-        assert job_name not in task_monitor._to_start
-        assert job_name not in task_monitor._tasks
+
+    await disable_volume_removal_task(initialized_app)
+    assert job_name not in task_monitor._to_start
+    assert job_name not in task_monitor._tasks
+    await enable_volume_removal_task_if_missing(initialized_app)
+
+    assert job_name in task_monitor._to_start
+    assert job_name in task_monitor._tasks
+
+    test_log_message = "was already registered."
+    assert test_log_message not in caplog_info_debug.text
+    await enable_volume_removal_task_if_missing(initialized_app)
+    assert test_log_message in caplog_info_debug.text
+
     assert job_name in task_monitor._to_start
     assert job_name in task_monitor._tasks
