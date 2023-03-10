@@ -1,7 +1,7 @@
 #
 # Targets for DEVELOPMENT for system tests
 #
-include ../../../scripts/common.Makefile
+include ../../../../scripts/common.Makefile
 
 
 .PHONY: requirements

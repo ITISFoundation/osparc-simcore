@@ -1,4 +1,0 @@
---constraint ../../../../requirements/constraints.txt
---constraint _test.txt
-
---requirement ../../../../requirements/devenv.txt
