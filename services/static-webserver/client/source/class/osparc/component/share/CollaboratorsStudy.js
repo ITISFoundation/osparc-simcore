@@ -237,6 +237,7 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
           itm
         );
       };
+      // OM todo: check gid is an organization
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
       if (preferencesSettings.getConfirmDemoteOrgnaization()) {
         const msg = this.tr("Demoting an Organization to Viewer, will make all its members Viewers");
