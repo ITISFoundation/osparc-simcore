@@ -2378,98 +2378,96 @@ paths:
                     type: string
                   description: Contains the reference to the project classifiers
                 state:
-                  anyOf:
-                    - title: ProjectState
-                      required:
-                        - locked
-                        - state
-                      type: object
-                      properties:
-                        locked:
-                          title: Locked
-                          allOf:
-                            - title: ProjectLocked
-                              required:
-                                - value
-                                - status
-                              type: object
-                              properties:
-                                value:
-                                  title: Value
-                                  type: boolean
-                                  description: True if the project is locked
-                                owner:
-                                  title: Owner
-                                  allOf:
-                                    - title: Owner
-                                      required:
-                                        - user_id
-                                        - first_name
-                                        - last_name
-                                      type: object
-                                      properties:
-                                        user_id:
-                                          title: User Id
-                                          exclusiveMinimum: true
-                                          type: integer
-                                          description: Owner's identifier when registered in the user's database table
-                                          minimum: 0
-                                        first_name:
-                                          title: First Name
-                                          type: string
-                                          description: Owner first name
-                                        last_name:
-                                          title: Last Name
-                                          type: string
-                                          description: Owner last name
-                                      additionalProperties: false
-                                  description: 'If locked, the user that owns the lock'
-                                status:
-                                  allOf:
-                                    - title: ProjectStatus
-                                      enum:
-                                        - CLOSED
-                                        - CLOSING
-                                        - CLONING
-                                        - EXPORTING
-                                        - OPENING
-                                        - OPENED
+                  title: ProjectState
+                  required:
+                    - locked
+                    - state
+                  type: object
+                  properties:
+                    locked:
+                      title: Locked
+                      allOf:
+                        - title: ProjectLocked
+                          required:
+                            - value
+                            - status
+                          type: object
+                          properties:
+                            value:
+                              title: Value
+                              type: boolean
+                              description: True if the project is locked
+                            owner:
+                              title: Owner
+                              allOf:
+                                - title: Owner
+                                  required:
+                                    - user_id
+                                    - first_name
+                                    - last_name
+                                  type: object
+                                  properties:
+                                    user_id:
+                                      title: User Id
+                                      exclusiveMinimum: true
+                                      type: integer
+                                      description: Owner's identifier when registered in the user's database table
+                                      minimum: 0
+                                    first_name:
+                                      title: First Name
                                       type: string
-                                      description: An enumeration.
-                                  description: The status of the project
-                              additionalProperties: false
-                          description: The project lock state
-                        state:
-                          title: State
-                          allOf:
-                            - title: ProjectRunningState
-                              required:
-                                - value
-                              type: object
-                              properties:
-                                value:
-                                  allOf:
-                                    - title: RunningState
-                                      enum:
-                                        - UNKNOWN
-                                        - PUBLISHED
-                                        - NOT_STARTED
-                                        - PENDING
-                                        - STARTED
-                                        - RETRY
-                                        - SUCCESS
-                                        - FAILED
-                                        - ABORTED
+                                      description: Owner first name
+                                    last_name:
+                                      title: Last Name
                                       type: string
-                                      description: |-
-                                        State of execution of a project's computational workflow
+                                      description: Owner last name
+                                  additionalProperties: false
+                              description: 'If locked, the user that owns the lock'
+                            status:
+                              allOf:
+                                - title: ProjectStatus
+                                  enum:
+                                    - CLOSED
+                                    - CLOSING
+                                    - CLONING
+                                    - EXPORTING
+                                    - OPENING
+                                    - OPENED
+                                  type: string
+                                  description: An enumeration.
+                              description: The status of the project
+                          additionalProperties: false
+                      description: The project lock state
+                    state:
+                      title: State
+                      allOf:
+                        - title: ProjectRunningState
+                          required:
+                            - value
+                          type: object
+                          properties:
+                            value:
+                              allOf:
+                                - title: RunningState
+                                  enum:
+                                    - UNKNOWN
+                                    - PUBLISHED
+                                    - NOT_STARTED
+                                    - PENDING
+                                    - STARTED
+                                    - RETRY
+                                    - SUCCESS
+                                    - FAILED
+                                    - ABORTED
+                                  type: string
+                                  description: |-
+                                    State of execution of a project's computational workflow
 
-                                            SEE StateType for task state
-
-                                  description: The running state of the project
-                              additionalProperties: false
-                          description: The project running state
-                      additionalProperties: false
+                                    SEE StateType for task state
+                              description: The running state of the project
+                          additionalProperties: false
+                      description: The project running state
+                  additionalProperties: false
                 ui:
                   title: StudyUI
                   type: object

@@ -30,14 +30,14 @@ run-devel: ## runs app with pg service
 
 
 
-_project_models_rest.py: ## auto-generates pydantic model for project rest API model
-	# auto-generates $@ from $<
-	datamodel-codegen  \
-		--input $(CURDIR)/src/simcore_service_webserver/api/v0/schemas/project-v0.0.1.json  \
-		--input-file-type jsonschema \
-		--snake-case-field \
-		--use-schema-description  \
-		--output $@
+# _project_models_rest.py: ## auto-generates pydantic model for project rest API model
+# 	# auto-generates $@ from $<
+# 	datamodel-codegen  \
+# 		--input $(CURDIR)/src/simcore_service_webserver/api/v0/schemas/project-v0.0.1.json  \
+# 		--input-file-type jsonschema \
+# 		--snake-case-field \
+# 		--use-schema-description  \
+# 		--output $@
 
 
 

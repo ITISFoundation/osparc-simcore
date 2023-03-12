@@ -20,7 +20,7 @@ def common_schemas_specs_dir(osparc_simcore_root_dir: Path) -> Path:
 
 @pytest.fixture(scope="session")
 def node_meta_schema_file(common_schemas_specs_dir: Path) -> Path:
-    node_meta_file = common_schemas_specs_dir / "node-meta-v0.0.1.json"
+    node_meta_file = common_schemas_specs_dir / "json-schema-node-meta-generated.json"
     assert node_meta_file.exists()
     return node_meta_file
 

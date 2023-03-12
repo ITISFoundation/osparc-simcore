@@ -13,7 +13,7 @@ from pydantic.main import BaseModel
 
 @pytest.mark.parametrize(
     "pydantic_model, original_json_schema",
-    [(ServiceDockerData, "node-meta-v0.0.1.json"), (Project, "project-v0.0.1.json")],
+    [(ServiceDockerData, "json-schema-node-meta-generated.json"), (Project, "json-schema-project-generated.json")],
 )
 def test_generated_schema_same_as_original(
     pydantic_model: BaseModel,

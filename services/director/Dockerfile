@@ -90,8 +90,8 @@ RUN pip --no-cache-dir install -r /build/services/director/requirements/_base.tx
 # FIXME:
 # necessary to prevent duplicated files.
 # Will be removed when director is refactored using cookiecutter as this will not be necessary anymore
-COPY --chown=scu:scu api/specs/common/schemas/node-meta-v0.0.1.json \
-      /build/services/director/src/simcore_service_director/api/v0/oas-parts/schemas/node-meta-v0.0.1.json
+COPY --chown=scu:scu api/specs/common/schemas/json-schema-node-meta-generated.json \
+      /build/services/director/src/simcore_service_director/api/v0/oas-parts/schemas/json-schema-node-meta-generated.json
 
 # --------------------------Prod-depends-only stage -------------------
 # This stage is for production only dependencies that get partially wiped out afterwards (final docker image concerns)
@@ -147,7 +147,7 @@ CMD ["services/director/docker/boot.sh"]
 FROM build as development
 
 ENV SC_BUILD_TARGET=development
-ENV NODE_SCHEMA_LOCATION=../../../api/specs/common/schemas/node-meta-v0.0.1.json
+ENV NODE_SCHEMA_LOCATION=../../../api/specs/common/schemas/json-schema-node-meta-generated.json
 WORKDIR /devel
 RUN chown -R scu:scu "${VIRTUAL_ENV}"
 ENTRYPOINT [ "/bin/sh", "services/director/docker/entrypoint.sh" ]

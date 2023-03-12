@@ -410,9 +410,7 @@ components:
             type: string
           description: Contains the reference to the project classifiers
         state:
-          anyOf:
-          - type: 'null'
-          - $ref: '#/components/schemas/ProjectState'
+          $ref: '#/components/schemas/ProjectState'
         ui:
           $ref: '#/components/schemas/StudyUI'
         quality:
@@ -499,8 +497,10 @@ components:
       - FAILED
       - ABORTED
       type: string
-      description: "State of execution of a project's computational workflow\n\n \
-        \   SEE StateType for task state\n    "
+      description: 'State of execution of a project''s computational workflow
+
+
+        SEE StateType for task state'
     SimCoreFileLink:
       title: SimCoreFileLink
       required:

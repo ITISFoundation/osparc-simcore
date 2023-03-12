@@ -8,7 +8,7 @@ components:
         data:
           type: array
           items:
-            $ref: "./node-meta-v0.0.1-converted.yaml"
+            $ref: "./openapi-node-meta-generated.yaml#/components/schemas/ServiceDockerData"
         error:
           nullable: true
           default: null

@@ -182,10 +182,10 @@ def test_services_model_examples(model_cls, model_cls_examples):
 @pytest.mark.parametrize(
     "python_regex_pattern, json_schema_file_name, json_schema_entry_paths",
     [
-        (SERVICE_KEY_RE, "project-v0.0.1.json", ["key"]),
-        (VERSION_RE, "project-v0.0.1.json", ["version"]),
-        (VERSION_RE, "node-meta-v0.0.1.json", ["version"]),
-        (SERVICE_KEY_RE, "node-meta-v0.0.1.json", ["key"]),
+        (SERVICE_KEY_RE, "json-schema-project-generated.json", ["key"]),
+        (VERSION_RE, "json-schema-project-generated.json", ["version"]),
+        (VERSION_RE, "json-schema-node-meta-generated.json", ["version"]),
+        (SERVICE_KEY_RE, "json-schema-node-meta-generated.json", ["key"]),
     ],
 )
 def test_same_regex_patterns_in_jsonschema_and_python(

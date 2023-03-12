@@ -65,7 +65,7 @@ def registry_service_model_schema(osparc_simcore_root_dir: Path) -> Dict:
     #      https://github.com/ITISFoundation/osparc-simcore/tree/master/api/specs/common/schemas/node-meta-v0.0.1.json
     schema = json.loads(
         (
-            osparc_simcore_root_dir / "api/specs/common/schemas/node-meta-v0.0.1.json"
+            osparc_simcore_root_dir / "api/specs/common/schemas/json-schema-node-meta-generated.json"
         ).read_text()
     )
 
