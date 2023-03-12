@@ -11,6 +11,7 @@ This OAS are the source of truth
 
 from fastapi import FastAPI
 import json
+import jsonref
 
 from models_library.services import ServiceDockerData
 
@@ -31,5 +32,8 @@ if __name__ == "__main__":
     create_openapi_specs(app, CURRENT_DIR.parent / "../common/schemas/openapi-node-meta-generated.yaml")
 
     # Generate json schema from the ServiceDockerData pydantic model
-    with open(CURRENT_DIR.parent / "../common/schemas/json-schema-node-meta-generated.json", 'w') as f:
-        json.dump(json.loads(ServiceDockerData.schema_json()), f, indent=2)
+    with open(CURRENT_DIR.parent / "../common/schemas/node-meta-v0.0.1-pydantic.json", 'w') as f:
+        schema = ServiceDockerData.schema_json()
+        schema_without_ref = jsonref.loads(schema)
+
+        json.dump(schema_without_ref, f, indent=2)

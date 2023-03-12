@@ -1,7 +1,8 @@
 .PHONY: all build clean help
 
 objects = $(wildcard *.json)
-outputs := $(objects:.json=-converted.yaml)
+outputs := $(objects:.json=-converted-clean.yaml)
+
 
 TOOL_IMAGE_NAME := json-schema-to-openapi-schema
 
@@ -14,6 +15,13 @@ all: check $(outputs)
 		-v ${CURDIR}:/input \
 		-v ${CURDIR}:/output \
 		$(TOOL_IMAGE_NAME)
+
+.PRECIOUS: %-converted.yaml
+%-converted-clean.yaml:%-converted.yaml
+	# remove the "definition" key from %-converted.yaml
+	python scripts/remove_definitions.py $^ $@
+	# # remove the temporary created %-converted.yaml
+	# rm $^
 
 # target: check – Checks whether tool is installed
 check:

@@ -107,11 +107,6 @@ components:
             for datcore)
       additionalProperties: false
       description: I/O port type to hold a link to a file in DATCORE storage
-      example:
-        store: 1
-        dataset: N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4
-        path: N:package:32df09ba-e8d6-46da-bd54-f696157de6ce
-        label: initial_WTstates
     DownloadLink:
       title: DownloadLink
       required:
@@ -535,11 +530,6 @@ components:
           deprecated: true
       additionalProperties: false
       description: I/O port type to hold a link to a file in simcore S3 storage
-      example:
-        store: 0
-        path: 94453a6a-c8d4-52b3-a22d-ccbf81f8d636/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt
-        eTag: 859fda0cb82fc4acb4686510a172d9a9-1
-        label: input.txt
     Slideshow:
       title: Slideshow
       required:

@@ -193,10 +193,7 @@ components:
           format: email
         inputs:
           title: Inputs
-          pattern: ^[-_a-zA-Z0-9]+$
           type: object
-          additionalProperties:
-            $ref: '#/components/schemas/ServiceInput'
           description: definition of the inputs of this node
         outputs:
           title: Outputs

@@ -1,3 +1,4 @@
 # Extra reqs, besides webserver's
 
 fastapi
+jsonref

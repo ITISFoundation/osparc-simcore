@@ -146,14 +146,13 @@ class SimCoreFileLink(BaseFileLink):
     class Config:
         extra = Extra.forbid
         schema_extra = {
-            # a project file
-            "example": {
+            "examples": [
+                {
                 "store": 0,
                 "path": "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
                 "eTag": "859fda0cb82fc4acb4686510a172d9a9-1",
                 "label": "input.txt",
-            },
-            "examples": [
+                },
                 # legacy: store as string (SEE incident https://git.speag.com/oSparc/e2e-testing/-/issues/1)
                 {
                     "store": "0",
@@ -199,14 +198,14 @@ class DatCoreFileLink(BaseFileLink):
     class Config:
         extra = Extra.forbid
         schema_extra = {
-            "example": {
-                # minimal
-                "store": 1,
-                "dataset": "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4",
-                "path": "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce",
-                "label": "initial_WTstates",
-            },
             "examples": [
+                {
+                    # minimal
+                    "store": 1,
+                    "dataset": "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4",
+                    "path": "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce",
+                    "label": "initial_WTstates",
+                },
                 # with store id as str
                 {
                     "store": 1,

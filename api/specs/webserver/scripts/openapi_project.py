@@ -10,6 +10,7 @@ This OAS are the source of truth
 
 from fastapi import FastAPI
 import json
+import jsonref
 
 from models_library.projects import Project
 
@@ -27,8 +28,12 @@ if __name__ == "__main__":
     from _common import CURRENT_DIR, create_openapi_specs
 
     # Generate OAS for the Project pydantic model via the FastAPI app
+    # NOTE: currently not used, see:
     create_openapi_specs(app, CURRENT_DIR.parent / "../common/schemas/openapi-project-generated.yaml")
 
     # Generate json schema from the Project pydantic model
-    with open(CURRENT_DIR.parent / "../common/schemas/json-schema-project-generated.json", 'w') as f:
-        json.dump(json.loads(Project.schema_json()), f, indent=2)
+    with open(CURRENT_DIR.parent / "../common/schemas/project-v0.0.1-pydantic.json", 'w') as f:
+        schema = Project.schema_json()
+        schema_without_ref = jsonref.loads(schema)
+
+        json.dump(schema_without_ref, f, indent=2)
