@@ -230,52 +230,45 @@ CPU_COUNT = $(shell cat /proc/cpuinfo | grep processor | wc -l )
 
 .stack-simcore-development.yml: .env $(docker-compose-configs)
 	# Creating config for stack with 'local/{service}:development' to $@
-	@export DOCKER_REGISTRY=local \
-	export DOCKER_IMAGE_TAG=development; \
-	export DEV_PC_CPU_COUNT=${CPU_COUNT}; \
-	docker-compose \
-		--env-file .env \
-		--file services/docker-compose.yml \
-		--file services/docker-compose.local.yml \
-		--file services/docker-compose.devel.yml \
-		--log-level=ERROR \
-		config | sed --regexp-extended "s/cpus: ([0-9\\.]+)/cpus: '\\1'/" > $@
+	@export DOCKER_REGISTRY=local && \
+	export DOCKER_IMAGE_TAG=development && \
+	export DEV_PC_CPU_COUNT=${CPU_COUNT} && \
+	scripts/docker/docker-compose-config.bash -e .env \
+		services/docker-compose.yml \
+		services/docker-compose.local.yml \
+		services/docker-compose.devel.yml \
+		> $@
 
 .stack-simcore-production.yml: .env $(docker-compose-configs)
 	# Creating config for stack with 'local/{service}:production' to $@
-	@export DOCKER_REGISTRY=local;       \
-	export DOCKER_IMAGE_TAG=production; \
-	docker-compose \
-		--env-file .env \
-		--file services/docker-compose.yml \
-		--file services/docker-compose.local.yml \
-		--log-level=ERROR \
-		config | sed --regexp-extended "s/cpus: ([0-9\\.]+)/cpus: '\\1'/" > $@
+	@export DOCKER_REGISTRY=local && \
+	export DOCKER_IMAGE_TAG=production && \
+	scripts/docker/docker-compose-config.bash -e .env \
+		services/docker-compose.yml \
+		services/docker-compose.local.yml \
+		> $@
 
 .stack-simcore-version.yml: .env $(docker-compose-configs)
 	# Creating config for stack with '$(DOCKER_REGISTRY)/{service}:${DOCKER_IMAGE_TAG}' to $@
-	@docker-compose \
-		--env-file .env \
-		--file services/docker-compose.yml \
-		--file services/docker-compose.local.yml \
-		--log-level=ERROR \
-		config | sed --regexp-extended "s/cpus: ([0-9\\.]+)/cpus: '\\1'/" > $@
+	@scripts/docker/docker-compose-config.bash -e .env \
+		services/docker-compose.yml \
+		services/docker-compose.local.yml \
+		> $@
+
 
 .stack-ops.yml: .env $(docker-compose-configs)
 	# Compiling config file for filestash
-	$(eval TMP_PATH_TO_FILESTASH_CONFIG=$(shell set -o allexport; \
-	source $(CURDIR)/.env; \
-	set +o allexport; \
+	$(eval TMP_PATH_TO_FILESTASH_CONFIG=$(shell set -o allexport && \
+	source $(CURDIR)/.env && \
+	set +o allexport && \
 	python3 scripts/filestash/create_config.py))
 	# Creating config for ops stack to $@
 	# -> filestash config at $(TMP_PATH_TO_FILESTASH_CONFIG)
 	@$(shell \
 		export TMP_PATH_TO_FILESTASH_CONFIG="${TMP_PATH_TO_FILESTASH_CONFIG}" && \
-		docker-compose \
-			--env-file .env \
-			--file services/docker-compose-ops.yml \
-			--log-level=DEBUG \
-			config | sed --regexp-extended "s/cpus: ([0-9\\.]+)/cpus: '\\1'/" > $@ \
+		scripts/docker/docker-compose-config.bash -e .env \
+		services/docker-compose-ops.yml \
+		> $@ \
 	)
 
 
