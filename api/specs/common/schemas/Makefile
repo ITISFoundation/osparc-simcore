@@ -20,8 +20,6 @@ all: check $(outputs)
 %-converted-clean.yaml:%-converted.yaml
 	# remove the "definition" key from %-converted.yaml
 	python scripts/remove_definitions.py $^ $@
-	# # remove the temporary created %-converted.yaml
-	# rm $^
 
 # target: check – Checks whether tool is installed
 check:
