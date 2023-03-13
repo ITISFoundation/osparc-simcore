@@ -76,9 +76,13 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
           this._add(control);
           break;
         case "download-progress":
-          control = new qx.ui.indicator.ProgressBar(0, 1).set({
+          control = new qx.ui.indicator.ProgressBar().set({
+            alignY: "middle",
             maxHeight: 15,
             width: 100
+          });
+          control.getChildControl("progress").set({
+            backgroundColor: "strong-main"
           });
           this._add(control);
           break;
