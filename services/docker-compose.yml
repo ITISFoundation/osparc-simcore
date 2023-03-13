@@ -420,6 +420,8 @@ services:
       timeout: 30s
       retries: 5
       start_period: 5s
+    volumes:
+      - rabbit_data:/var/lib/rabbitmq
 
   migration:
     image: ${DOCKER_REGISTRY:-itisfoundation}/migration:${DOCKER_IMAGE_TAG:-latest}
@@ -584,6 +586,7 @@ volumes:
   postgres_data: {}
   computational_shared_data: {}
   redis-data: {}
+  rabbit_data: {}
 
 networks:
   default:
