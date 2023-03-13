@@ -2,9 +2,11 @@
 # pylint:disable=unused-argument
 
 import asyncio
-from typing import Any, Awaitable, Final
+from typing import Any, Awaitable, Callable, Final
 
 import pytest
+from docker.client import DockerClient
+from docker.models.containers import Container
 from pydantic import NonNegativeInt, ValidationError
 from pytest import LogCaptureFixture
 from servicelib.rabbitmq import RabbitMQClient
@@ -20,6 +22,8 @@ pytest_simcore_core_services_selection = [
 ]
 
 MULTIPLE_REQUESTS_COUNT: Final[NonNegativeInt] = 100
+
+# FIXTURES
 
 
 @pytest.fixture
@@ -43,6 +47,32 @@ async def rabbit_replier(rabbit_service: RabbitSettings) -> RabbitMQClient:
     await client.close()
 
 
+@pytest.fixture
+def restart_rabbit(
+    docker_stack: dict,
+    testing_environ_vars: dict,
+    docker_client: DockerClient,
+) -> Callable:
+    prefix = testing_environ_vars["SWARM_STACK_NAME"]
+    service_name = f"{prefix}_rabbit"
+    assert service_name in docker_stack["services"]
+
+    async def _reboot() -> None:
+        containers = docker_client.containers.list(
+            filters={"label": f"com.docker.swarm.service.name={service_name}"}
+        )
+        assert len(containers) == 1
+        container: Container = containers[0]
+        # killing the container will cause the service to be unavailable
+        #  and swarm to restart it. Exactly what we are trying to test
+        container.kill()
+
+    return _reboot
+
+
+# UTILS
+
+
 async def add_me(*, x: Any, y: Any) -> Any:
     result = x + y
     # NOTE: types are not enforced
@@ -63,6 +93,9 @@ class CustomClass:
 
     def __add__(self, other: "CustomClass") -> "CustomClass":
         return CustomClass(x=self.x + other.x, y=self.y + other.y)
+
+
+# TESTS
 
 
 @pytest.mark.parametrize(
@@ -369,3 +402,25 @@ async def test_get_namespaced_method_name_max_length(
         assert "ensure this value has at most 255 characters" in f"{exec_info.value}"
     else:
         await rabbit_replier.rpc_register_handler("a", handler_name, _a_handler)
+
+
+async def test_rabbit_unavailable_just_before_request(
+    rabbit_requester: RabbitMQClient,
+    rabbit_replier: RabbitMQClient,
+    namespace: RPCNamespace,
+    restart_rabbit: Callable,
+):
+    times_called = 0
+
+    async def _func() -> None:
+        nonlocal times_called
+        times_called += 1
+
+    await rabbit_replier.rpc_register_handler(namespace, _func.__name__, _func)
+
+    await restart_rabbit()
+
+    # this function will be retried because rabbitmq is restarting
+    await rabbit_requester.rpc_request(namespace, _func.__name__)
+
+    assert times_called == 1

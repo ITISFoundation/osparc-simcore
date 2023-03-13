@@ -7,10 +7,15 @@ from typing import Any, Awaitable, Callable, Final, Optional
 
 import aio_pika
 from aio_pika.patterns import RPC
+from aiormq import AMQPConnectionError
 from packaging.version import Version
 from pydantic import PositiveFloat
 from servicelib.logging_utils import log_context
 from settings_library.rabbit import RabbitSettings
+from tenacity._asyncio import AsyncRetrying
+from tenacity.retry import retry_if_exception
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_random
 
 from .rabbitmq_errors import RemoteMethodNotRegisteredError, RPCNotInitializedError
 from .rabbitmq_utils import RPCMethodName, RPCNamespace, RPCNamespacedMethodName
@@ -190,12 +195,18 @@ class RabbitMQClient:
         namespace: RPCNamespace,
         method_name: RPCMethodName,
         *,
-        timeout_s: Optional[PositiveFloat] = 5,
+        timeout_s: PositiveFloat = 5,
+        connection_error_timeout_s: PositiveFloat = 60,
         **kwargs: dict[str, Any],
     ) -> Any:
         """
         Call a remote registered `handler` by providing it's `namespace`, `method_name`
         and `kwargs` containing the key value arguments expected by the remote `handler`.
+
+        param: `timeout_s` amount of seconds to wait for a reply once the message
+            was accepted by the remove replier
+        param: `connection_error_timeout_s` amount of seconds to wait for rabbit to
+            be available again in case there was a connection error
 
         :raises asyncio.TimeoutError: when message expired
         :raises CancelledError: when called :func:`RPC.cancel`
@@ -211,13 +222,23 @@ class RabbitMQClient:
             namespace, method_name
         )
         try:
-            queue_expiration_timeout = timeout_s
-            awaitable = self._rpc.call(
-                namespaced_method_name,
-                expiration=queue_expiration_timeout,
-                kwargs=kwargs,
-            )
-            return await asyncio.wait_for(awaitable, timeout=timeout_s)
+            from tenacity.before import before_log
+
+            async for attempt in AsyncRetrying(
+                wait=wait_random(2),
+                stop=stop_after_delay(connection_error_timeout_s),
+                retry=retry_if_exception(AMQPConnectionError),
+                before=before_log(log, logging.DEBUG),
+                reraise=True,
+            ):
+                with attempt:
+                    queue_expiration_timeout = timeout_s
+                    awaitable = self._rpc.call(
+                        namespaced_method_name,
+                        expiration=queue_expiration_timeout,
+                        kwargs=kwargs,
+                    )
+                    return await asyncio.wait_for(awaitable, timeout=timeout_s)
         except aio_pika.MessageProcessError as e:
             if e.args[0] == "Message has been returned":
                 raise RemoteMethodNotRegisteredError(
