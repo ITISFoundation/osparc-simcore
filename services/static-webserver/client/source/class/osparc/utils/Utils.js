@@ -477,7 +477,6 @@ qx.Class.define("osparc.utils.Utils", {
           if (xhr.readyState === XMLHttpRequest.LOADING) {
             if (xhr.status === 0 || (xhr.status >= 200 && xhr.status < 400)) {
               if (e["type"] === "progress" && progressCb) {
-                console.log("Progress", e);
                 progressCb(e.loaded / e.total);
               }
             }
