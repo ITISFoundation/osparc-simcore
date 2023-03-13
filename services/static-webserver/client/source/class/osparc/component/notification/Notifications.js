@@ -22,49 +22,84 @@ qx.Class.define("osparc.component.notification.Notifications", {
   construct: function() {
     this.base(arguments);
     this.__notifications = new qx.data.Array();
+  },
 
-    const notificationsContainer = this.__notificationsContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(3)).set({
-      zIndex: 110000,
-      visibility: "excluded"
-    });
-    osparc.utils.Utils.setIdToWidget(notificationsContainer, "notifications");
-    const root = qx.core.Init.getApplication().getRoot();
-    root.add(notificationsContainer, {
-      top: 0,
-      right: 0
-    });
+  statics: {
+    __newOrganizationObj: function(userId, orgId) {
+      return {
+        "user_id": userId.toString(),
+        "category": "new_organization",
+        "actionable_path": "organization/"+orgId,
+        "title": "New organization",
+        "text": "You're now member of a new Organization",
+        "date": new Date().toISOString()
+      };
+    },
+
+    __newStudyObj: function(userId, studyId) {
+      return {
+        "user_id": userId.toString(),
+        "category": "study_shared",
+        "actionable_path": "study/"+studyId,
+        "title": "Study shared",
+        "text": "A study was shared with you",
+        "date": new Date().toISOString()
+      };
+    },
+
+    __newTemplateObj: function(userId, templateId) {
+      return {
+        "user_id": userId.toString(),
+        "category": "template_shared",
+        "actionable_path": "template/"+templateId,
+        "title": "Template shared",
+        "text": "A template was shared with you",
+        "date": new Date().toISOString()
+      };
+    },
+
+    postNewOrganization: function(userId, orgId) {
+      const params = {
+        data: this.__newOrganizationObj(userId, orgId)
+      };
+      return osparc.data.Resources.fetch("notifications", "post", params);
+    },
+
+    postNewStudy: function(userId, studyId) {
+      const params = {
+        data: this.__newStudyObj(userId, studyId)
+      };
+      return osparc.data.Resources.fetch("notifications", "post", params);
+    },
+
+    postNewTemplate: function(userId, templateId) {
+      const params = {
+        data: this.__newTemplateObj(userId, templateId)
+      };
+      return osparc.data.Resources.fetch("notifications", "post", params);
+    }
   },
 
   members: {
     __notifications: null,
-    __notificationsContainer: null,
 
-    addNotification: function(notification) {
+    __addNotification: function(notificationObj) {
+      const notification = new osparc.component.notification.Notification(notificationObj);
       this.__notifications.push(notification);
-      this.__notificationsContainer.addAt(notification, 0);
+      this.__notifications.sort((a, b) => new Date(b.getDate()) - new Date(a.getDate()));
+    },
+
+    addNotifications: function(notifications) {
+      this.__notifications.removeAll();
+      notifications.forEach(notification => this.__addNotification(notification));
     },
 
     removeNotification: function(notification) {
       this.__notifications.remove(notification);
-      this.__notificationsContainer.remove(notification);
     },
 
     getNotifications: function() {
       return this.__notifications;
-    },
-
-    getNotificationsContainer: function() {
-      return this.__notificationsContainer;
-    },
-
-    setNotificationsContainerPosition: function(x, y) {
-      const root = qx.core.Init.getApplication().getRoot();
-      if (root && root.getBounds()) {
-        this.__notificationsContainer.setLayoutProperties({
-          left: x - osparc.component.notification.NotificationUI.MAX_WIDTH,
-          top: y
-        });
-      }
     }
   }
 });

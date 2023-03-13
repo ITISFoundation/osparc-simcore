@@ -300,7 +300,6 @@ class TasksManager:
                 task, task_id, reraise_errors=reraise_errors
             )
         except Exception as e:  # pylint:disable=broad-except
-
             formatted_traceback = "".join(
                 # pylint: disable=protected-access,no-value-for-parameter,unexpected-keyword-arg
                 traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__)
@@ -406,7 +405,9 @@ def start_task(
     if unique and tasks_manager.is_task_running(task_name):
         managed_tasks_ids = list(tasks_manager.get_task_group(task_name).keys())
         assert len(managed_tasks_ids) == 1  # nosec
-        managed_task = tasks_manager.get_task_group(task_name)[managed_tasks_ids[0]]
+        managed_task: TrackedTask = tasks_manager.get_task_group(task_name)[
+            managed_tasks_ids[0]
+        ]
         raise TaskAlreadyRunningError(task_name=task_name, managed_task=managed_task)
 
     task_progress = TaskProgress.create()

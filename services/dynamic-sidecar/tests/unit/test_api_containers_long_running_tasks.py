@@ -405,7 +405,7 @@ async def test_create_containers_task_invalid_yaml_spec(
         _get_task_id_task_containers_restart,
     ],
 )
-async def test_task_is_unique(
+async def test_same_task_id_is_returned_if_task_exists(
     httpx_async_client: AsyncClient,
     client: Client,
     mocker: MockerFixture,
@@ -422,16 +422,12 @@ async def test_task_is_unique(
     with mock_tasks(mocker):
         task_id = await _get_awaitable()
         async with auto_remove_task(client, task_id):
-
-            # cannot create a task while another unique task is running
-            with pytest.raises(AssertionError) as exec_info:
-                await _get_awaitable()
-
-            assert "must be unique, found:" in f"{exec_info.value}"
+            assert await _get_awaitable() == task_id
 
         # since the previous task was already removed it is again possible
         # to create a task
-        task_id = await _get_awaitable()
+        new_task_id = await _get_awaitable()
+        assert new_task_id != task_id
         async with auto_remove_task(client, task_id):
             pass
 

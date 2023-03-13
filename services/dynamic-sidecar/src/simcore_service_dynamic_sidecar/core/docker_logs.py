@@ -62,7 +62,13 @@ class BackgroundLogFetcher:
     async def stop_log_fetching(self, container_name: str) -> None:
         logger.debug("Stopping logs fetching from container '%s'", container_name)
 
-        task = self._log_processor_tasks.pop(container_name)
+        task: Optional[Task] = self._log_processor_tasks.pop(container_name, None)
+        if task is None:
+            logger.info(
+                "No log_processor task found for container: %s ", container_name
+            )
+            return
+
         task.cancel()
         with suppress(CancelledError):
             await task
