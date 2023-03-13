@@ -141,7 +141,12 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
               const pBar = this.getChildControl("download-progress");
               pBar.show();
               const progressCB = p => pBar.setValue(p);
-              osparc.utils.Utils.downloadLink(data.link, "GET", data.fileName, progressCB);
+              const loadCB = () => {
+                this.getChildControl("download-button").show();
+                pBar.exclude();
+                pBar.setValue(0);
+              };
+              osparc.utils.Utils.downloadLink(data.link, "GET", data.fileName, progressCB, loadCB);
               this.getChildControl("download-button").exclude();
             }
           });
