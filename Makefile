@@ -435,7 +435,7 @@ push-version: tag-version
 	python3 -m venv $@
 	## upgrading tools to latest version in $(shell python3 --version)
 	$@/bin/pip3 --quiet install --upgrade \
-		pip~=22.0 \
+		pip~=23.0 \
 		wheel \
 		setuptools
 	@$@/bin/pip3 list --verbose
@@ -509,6 +509,15 @@ openapi-specs: ## bundles and validates openapi specifications and schemas of AL
 	@$(MAKE_C) services/web/server $@
 	@$(MAKE_C) services/storage $@
 	@$(MAKE_C) services/director $@
+
+.PHONY: settings-schema.json
+settings-schema.json: ## [container] dumps json-schema settings of all services
+	@$(MAKE_C) services/api-server $@
+	@$(MAKE_C) services/autoscaling $@
+	@$(MAKE_C) services/director-v2 $@
+	@$(MAKE_C) services/invitations $@
+	@$(MAKE_C) services/storage $@
+	@$(MAKE_C) services/web/server $@
 
 
 .PHONY: code-analysis

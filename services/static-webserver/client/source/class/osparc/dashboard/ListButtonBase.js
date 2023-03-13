@@ -48,12 +48,12 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
       LOCK_STATUS: 1,
       TITLE: 2,
       DESCRIPTION: 3,
-      TAGS: 4,
-      PERMISSION: 5,
-      SHARED: 6,
-      TSR: 7,
-      UI_MODE: 8,
-      UPDATE_STUDY: 9,
+      UPDATES: 4,
+      UI_MODE: 5,
+      TAGS: 6,
+      PERMISSION: 7,
+      TSR: 8,
+      SHARED: 9,
       LAST_CHANGE: 10,
       HITS: 11,
       OPTIONS: 12
@@ -65,10 +65,9 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
       let control;
       switch (id) {
         case "icon": {
-          control = new osparc.ui.basic.Thumbnail().set({
-            maxImageWidth: 40,
-            maxImageHeight: this.self().ITEM_HEIGHT-2*5,
-            minImageWidth: 40
+          control = new osparc.ui.basic.Thumbnail(null, 40, this.self().ITEM_HEIGHT-2*5).set({
+            minHeight: 22,
+            minWidth: 40
           });
           control.getChildControl("image").set({
             anonymous: true
@@ -81,8 +80,10 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
         }
         case "title":
           control = new qx.ui.basic.Label().set({
-            font: "title-14",
+            font: "text-14",
             alignY: "middle",
+            maxWidth: 400,
+            maxHeight: 19,
             rich: true
           });
           this._add(control, {
@@ -93,7 +94,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
         case "description":
           control = new qx.ui.basic.Label().set({
             rich: true,
-            maxHeight: 15,
+            maxHeight: 16,
             minWidth: 100,
             font: "text-14",
             alignY: "middle",
@@ -106,7 +107,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
           break;
         case "description-md":
           control = new osparc.ui.markdown.Markdown().set({
-            maxHeight: 15,
+            maxHeight: 16,
             alignY: "middle",
             allowGrowX: true
           });
@@ -121,7 +122,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
 
     _applyIcon: function(value, old) {
       if (value.includes("@FontAwesome5Solid/")) {
-        value += "24";
+        value += "22";
       }
       const image = this.getChildControl("icon").getChildControl("image");
       image.set({

@@ -4,11 +4,11 @@
 #
 #    pip-compile --output-file=requirements/_tools.txt --resolver=backtracking --strip-extras requirements/_tools.in
 #
-astroid==2.13.2
+astroid==2.14.2
     # via pylint
-black==22.12.0
+black==23.1.0
     # via -r requirements/../../../requirements/devenv.txt
-build==0.9.0
+build==0.10.0
     # via pip-tools
 bump2version==1.0.1
     # via -r requirements/../../../requirements/devenv.txt
@@ -25,9 +25,9 @@ distlib==0.3.6
     # via virtualenv
 filelock==3.9.0
     # via virtualenv
-identify==2.5.12
+identify==2.5.18
     # via pre-commit
-isort==5.11.4
+isort==5.12.0
     # via
     #   -r requirements/../../../requirements/devenv.txt
     #   pylint
@@ -35,29 +35,30 @@ lazy-object-proxy==1.9.0
     # via astroid
 mccabe==0.7.0
     # via pylint
-mypy-extensions==0.4.3
+mypy-extensions==1.0.0
     # via black
 nodeenv==1.7.0
     # via pre-commit
 packaging==23.0
     # via
     #   -c requirements/_test.txt
+    #   black
     #   build
-pathspec==0.10.3
+pathspec==0.11.0
     # via black
-pep517==0.13.0
-    # via build
-pip-tools==6.12.1
+pip-tools==6.12.2
     # via -r requirements/../../../requirements/devenv.txt
-platformdirs==2.6.2
+platformdirs==3.0.0
     # via
     #   black
     #   pylint
     #   virtualenv
-pre-commit==2.21.0
+pre-commit==3.1.1
     # via -r requirements/../../../requirements/devenv.txt
-pylint==2.15.10
+pylint==2.16.2
     # via -r requirements/../../../requirements/devenv.txt
+pyproject-hooks==1.0.0
+    # via build
 pyyaml==5.4.1
     # via
     #   -c requirements/_base.txt
@@ -68,8 +69,8 @@ tomli==2.0.1
     #   -c requirements/_test.txt
     #   black
     #   build
-    #   pep517
     #   pylint
+    #   pyproject-hooks
 tomlkit==0.11.6
     # via pylint
 typing-extensions==4.4.0
@@ -78,13 +79,13 @@ typing-extensions==4.4.0
     #   astroid
     #   black
     #   pylint
-virtualenv==20.17.1
+virtualenv==20.20.0
     # via pre-commit
-watchdog==2.2.1
+watchdog==2.3.1
     # via -r requirements/_tools.in
 wheel==0.38.4
     # via pip-tools
-wrapt==1.14.1
+wrapt==1.15.0
     # via astroid
 
 # The following packages are considered to be unsafe in a requirements file:

@@ -80,7 +80,7 @@ qx.Class.define("osparc.desktop.CollapseWithUserMenu", {
           control.getMenu().set({
             backgroundColor: "background-main-4"
           });
-          control.populateExtendedMenu();
+          control.populateMenuCompact();
           this._add(control);
           break;
         case "collapse-expand-stack": {

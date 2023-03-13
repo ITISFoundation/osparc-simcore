@@ -9,18 +9,17 @@ from typing import Any, Awaitable, Callable
 import aiodocker
 from faker import Faker
 from fastapi import FastAPI
-from models_library.docker import DockerLabelKey
+from models_library.docker import DockerLabelKey, SimcoreServiceDockerLabelKeys
 from models_library.generated_models.docker_rest_api import Service, Task
 from models_library.rabbitmq_messages import (
     LoggerRabbitMessage,
-    ProgressRabbitMessage,
+    ProgressRabbitMessageNode,
     ProgressType,
 )
 from pydantic import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from servicelib.rabbitmq import RabbitMQClient
 from settings_library.rabbit import RabbitSettings
-from simcore_service_autoscaling.models import SimcoreServiceDockerLabelKeys
 from simcore_service_autoscaling.utils.rabbitmq import (
     post_task_log_message,
     post_task_progress_message,
@@ -145,7 +144,7 @@ async def test_post_task_progress_message(
 ):
     mocked_message_handler = mocker.AsyncMock(return_value=True)
     await rabbit_client.subscribe(
-        ProgressRabbitMessage.get_channel_name(), mocked_message_handler
+        ProgressRabbitMessageNode.get_channel_name(), mocked_message_handler
     )
 
     service_with_labels = await create_service(
@@ -167,10 +166,10 @@ async def test_post_task_progress_message(
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             print(
-                f"--> checking for message in rabbit exchange {ProgressRabbitMessage.get_channel_name()}, {attempt.retry_state.retry_object.statistics}"
+                f"--> checking for message in rabbit exchange {ProgressRabbitMessageNode.get_channel_name()}, {attempt.retry_state.retry_object.statistics}"
             )
             mocked_message_handler.assert_called_once_with(
-                ProgressRabbitMessage(
+                ProgressRabbitMessageNode(
                     node_id=osparc_docker_label_keys.node_id,
                     project_id=osparc_docker_label_keys.project_id,
                     user_id=osparc_docker_label_keys.user_id,

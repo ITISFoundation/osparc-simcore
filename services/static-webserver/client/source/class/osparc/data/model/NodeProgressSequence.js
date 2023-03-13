@@ -17,8 +17,8 @@
 
 /**
  * The progress sequence of a dynamic service is as follows:
- * - CLUSTER_UP_SCALING      (1)
- * - SIDECARS_PULLING        (2)
+ * - SIDECARS_PULLING        (1)
+ * - CLUSTER_UP_SCALING      (2)
  * - SERVICE_INPUTS_PULLING  (3a)
  * - SERVICE_OUTPUTS_PULLING (3b)
  * - SERVICE_STATE_PULLING   (3c)
@@ -39,18 +39,18 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
   },
 
   properties: {
-    clusterUpScaling: {
-      check: "Number",
-      init: 0,
-      nullable: false,
-      apply: "__applyClusterUpScaling"
-    },
-
     sidecarPulling: {
       check: "Number",
       init: 0,
       nullable: false,
       apply: "__applySidecarPulling"
+    },
+
+    clusterUpScaling: {
+      check: "Number",
+      init: 0,
+      nullable: false,
+      apply: "__applyClusterUpScaling"
     },
 
     inputsPulling: {
@@ -133,11 +133,11 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
 
   members: {
     __sequenceLoadingPage: null,
+    __pullingSidecarTitle: null,
+    __pullingSidecarPBar: null,
     __clusterUpScalingTitle: null,
     __clusterUpScalingSubtitle: null,
     __clusterUpScalingPBar: null,
-    __pullingSidecarTitle: null,
-    __pullingSidecarPBar: null,
     __pullingInputsTitle: null,
     __pullingInputsPBar: null,
     __pullingOutputsTitle: null,
@@ -157,19 +157,19 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       this.setStatePulling(0);
       this.setOutputsPulling(0);
       this.setInputsPulling(0);
-      this.setSidecarPulling(0);
       this.setClusterUpScaling(0);
+      this.setSidecarPulling(0);
     },
 
     addProgressMessage: function(progressType, progress) {
       console.log(progressType, progress);
 
       switch (progressType) {
-        case "CLUSTER_UP_SCALING":
-          this.setClusterUpScaling(progress);
-          break;
         case "SIDECARS_PULLING":
           this.setSidecarPulling(progress);
+          break;
+        case "CLUSTER_UP_SCALING":
+          this.setClusterUpScaling(progress);
           break;
         case "SERVICE_INPUTS_PULLING":
           this.setInputsPulling(progress);
@@ -192,6 +192,12 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
         minHeight: 250
       });
 
+      const pullingSidecarTitle = this.__pullingSidecarTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Pulling sidecar..."));
+      this.__sequenceLoadingPage.add(pullingSidecarTitle);
+
+      const pullingSidecarPBar = this.__pullingSidecarPBar = this.self().createProgressBar();
+      this.__sequenceLoadingPage.add(pullingSidecarPBar);
+
       const scalingTitle = this.__clusterUpScalingTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Scaling up the cluster..."));
       this.__sequenceLoadingPage.add(scalingTitle);
 
@@ -201,12 +207,6 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
 
       const clusterUpScalingPBar = this.__clusterUpScalingPBar = this.self().createProgressBar();
       this.__sequenceLoadingPage.add(clusterUpScalingPBar);
-
-      const pullingSidecarTitle = this.__pullingSidecarTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Pulling sidecar..."));
-      this.__sequenceLoadingPage.add(pullingSidecarTitle);
-
-      const pullingSidecarPBar = this.__pullingSidecarPBar = this.self().createProgressBar();
-      this.__sequenceLoadingPage.add(pullingSidecarPBar);
 
       const pullingInputsTitle = this.__pullingInputsTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Pulling inputs..."));
       this.__sequenceLoadingPage.add(pullingInputsTitle);
@@ -233,7 +233,13 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       this.__sequenceLoadingPage.add(pullingImagesPBar);
     },
 
+    __applySidecarPulling: function(value) {
+      this.self().progressReceived(this.__pullingSidecarTitle, this.__pullingSidecarPBar, value);
+    },
+
     __applyClusterUpScaling: function(value) {
+      this.setSidecarPulling(1);
+
       this.self().progressReceived(this.__clusterUpScalingTitle, this.__clusterUpScalingPBar, value);
 
       if (value > 0 && value < 1) {
@@ -243,26 +249,20 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       }
     },
 
-    __applySidecarPulling: function(value) {
-      this.setClusterUpScaling(1);
-
-      this.self().progressReceived(this.__pullingSidecarTitle, this.__pullingSidecarPBar, value);
-    },
-
     __applyInputsPulling: function(value) {
-      this.setSidecarPulling(1);
+      this.setClusterUpScaling(1);
 
       this.self().progressReceived(this.__pullingInputsTitle, this.__pullingInputsPBar, value);
     },
 
     __applyOutputsPulling: function(value) {
-      this.setSidecarPulling(1);
+      this.setClusterUpScaling(1);
 
       this.self().progressReceived(this.__pullingOutputsTitle, this.__pullingOutputsPBar, value);
     },
 
     __applyStatePulling: function(value) {
-      this.setSidecarPulling(1);
+      this.setClusterUpScaling(1);
 
       this.self().progressReceived(this.__pullingStateTitle, this.__pullingStatePBar, value);
     },

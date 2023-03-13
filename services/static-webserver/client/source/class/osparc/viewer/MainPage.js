@@ -23,7 +23,7 @@ qx.Class.define("osparc.viewer.MainPage", {
 
     this._setLayout(new qx.ui.layout.VBox(null, null, "separator-vertical"));
 
-    this._add(osparc.component.notification.NotificationsRibbon.getInstance());
+    this._add(osparc.component.notification.RibbonNotifications.getInstance());
 
     const navBar = this.__createNavigationBar();
     this._add(navBar);

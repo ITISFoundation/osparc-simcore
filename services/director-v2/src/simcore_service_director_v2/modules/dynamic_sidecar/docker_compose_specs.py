@@ -3,6 +3,9 @@ from copy import deepcopy
 from typing import Optional, Union
 
 from fastapi.applications import FastAPI
+from models_library.docker import SimcoreServiceDockerLabelKeys
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import (
     ComposeSpecLabel,
     PathMappingsLabel,
@@ -122,6 +125,8 @@ def _update_resource_limits_and_reservations(
     # example: '2.3' -> 2 ; '3.7' -> 3
     docker_compose_major_version: int = int(service_spec["version"].split(".")[0])
     for spec_service_key, spec in service_spec["services"].items():
+        if spec_service_key not in service_resources:
+            continue
         resources: ResourcesDict = service_resources[spec_service_key].resources
         logger.debug("Resources for %s: %s", spec_service_key, f"{resources=}")
 
@@ -182,6 +187,25 @@ def _update_resource_limits_and_reservations(
         spec["environment"] = environment
 
 
+def _update_container_labels(
+    service_spec: ComposeSpecLabel,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+) -> None:
+    for spec in service_spec["services"].values():
+        labels: list[str] = spec.setdefault("labels", [])
+
+        label_keys = SimcoreServiceDockerLabelKeys(
+            user_id=user_id, study_id=project_id, uuid=node_id
+        )
+        docker_labels = [f"{k}={v}" for k, v in label_keys.to_docker_labels().items()]
+
+        for docker_label in docker_labels:
+            if docker_label not in labels:
+                labels.append(docker_label)
+
+
 def assemble_spec(
     *,
     app: FastAPI,
@@ -197,6 +221,8 @@ def assemble_spec(
     allow_internet_access: bool,
     product_name: str,
     user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
 ) -> str:
     """
     returns a docker-compose spec used by
@@ -227,7 +253,7 @@ def assemble_spec(
         }
         container_name = DEFAULT_SINGLE_SERVICE_NAME
     else:
-        service_spec = compose_spec
+        service_spec = deepcopy(compose_spec)
         container_name = container_http_entry
 
     assert service_spec is not None  # nosec
@@ -255,8 +281,14 @@ def assemble_spec(
             egress_proxy_settings=egress_proxy_settings,
         )
 
+    _update_container_labels(
+        service_spec=service_spec,
+        user_id=user_id,
+        project_id=project_id,
+        node_id=node_id,
+    )
+
     # TODO: will be used in next PR
-    assert user_id  # nosec
     assert product_name  # nosec
 
     stringified_service_spec = replace_env_vars_in_compose_spec(

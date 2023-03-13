@@ -72,6 +72,11 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
       }, this);
       box.add(cbConfirmDeleteStudy);
 
+      const cbConfirmDemoteOrgnaization = new qx.ui.form.CheckBox(this.tr("Demote Organization collaboration"));
+      preferencesSettings.bind("confirmDemoteOrgnaization", cbConfirmDemoteOrgnaization, "value");
+      cbConfirmDemoteOrgnaization.bind("value", preferencesSettings, "confirmDemoteOrgnaization");
+      box.add(cbConfirmDemoteOrgnaization);
+
       if (!(osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("s4llite"))) {
         const cbConfirmDeleteNode = new qx.ui.form.CheckBox(this.tr("Delete a Node"));
         preferencesSettings.bind("confirmDeleteNode", cbConfirmDeleteNode, "value");
@@ -98,6 +103,11 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
         preferencesSettings.bind("confirmStopNode", cbConfirmStopNode, "value");
         cbConfirmStopNode.bind("value", preferencesSettings, "confirmStopNode");
         box.add(cbConfirmStopNode);
+
+        const cbSnapNodeToGrid = new qx.ui.form.CheckBox(this.tr("Snap Node to grid"));
+        preferencesSettings.bind("snapNodeToGrid", cbSnapNodeToGrid, "value");
+        cbSnapNodeToGrid.bind("value", preferencesSettings, "snapNodeToGrid");
+        box.add(cbSnapNodeToGrid);
       }
 
       return box;

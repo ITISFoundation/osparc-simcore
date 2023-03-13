@@ -342,13 +342,15 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         alignX: "center",
         marginLeft: 14
       });
-      addNewNodeBtn.addListener("execute", () => this.__workbenchUI.openServiceCatalog({
-        x: 50,
-        y: 50
-      }, {
-        x: 50,
-        y: 50
-      }));
+      addNewNodeBtn.addListener("execute", () => {
+        this.__workbenchUI.openServiceCatalog({
+          x: 50,
+          y: 50
+        }, {
+          x: 50,
+          y: 50
+        });
+      });
       homeAndNodesTree.add(addNewNodeBtn);
 
       const nodesPage = this.__nodesPage = this.__createTabPage("@FontAwesome5Solid/list", this.tr("Nodes"), homeAndNodesTree, primaryColumnBGColor);
@@ -878,7 +880,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __getSlideshowSection: function() {
       const slideshowSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       slideshowSection.add(new qx.ui.basic.Label(this.tr("App Mode")).set({
-        font: "title-14"
+        font: "text-14"
       }));
 
       const slideshowButtons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
@@ -921,7 +923,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __getAnnotationsSection: function() {
       const annotationsSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       annotationsSection.add(new qx.ui.basic.Label(this.tr("Annotations")).set({
-        font: "title-14"
+        font: "text-14"
       }));
 
       const annotationsButtons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
@@ -950,7 +952,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __getSnapshotsSection: function() {
       const snapshotSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       snapshotSection.add(new qx.ui.basic.Label(this.tr("Checkpoints")).set({
-        font: "title-14"
+        font: "text-14"
       }));
 
       const snapshotButtons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
@@ -982,7 +984,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __getIterationsSection: function() {
       const iterationsSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       iterationsSection.add(new qx.ui.basic.Label(this.tr("Iterations")).set({
-        font: "title-14"
+        font: "text-14"
       }));
 
       const iterationButtons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
@@ -1087,16 +1089,17 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__outputsPage.add(chip);
 
         if (node.isDeprecated()) {
-          const deprecateDateText = new qx.ui.basic.Label(osparc.utils.Services.getDeprecationDateText(node.getMetaData())).set({
+          const deprecateDateLabel = new qx.ui.basic.Label(osparc.utils.Services.getDeprecationDateText(node.getMetaData())).set({
             rich: true
           });
-          this.__outputsPage.add(deprecateDateText);
+          this.__outputsPage.add(deprecateDateLabel);
         }
 
-        const deprecatedMsg = new qx.ui.basic.Label(osparc.utils.Services.DEPRECATED_DYNAMIC_INSTRUCTIONS).set({
+        const instructionsMsg = node.isDeprecated() ? osparc.utils.Services.DEPRECATED_DYNAMIC_INSTRUCTIONS : osparc.utils.Services.RETIRED_DYNAMIC_INSTRUCTIONS;
+        const instructionsLabel = new qx.ui.basic.Label(instructionsMsg).set({
           rich: true
         });
-        this.__outputsPage.add(deprecatedMsg);
+        this.__outputsPage.add(instructionsLabel);
 
         this.getChildControl("side-panel-right-tabs").setSelection([this.__outputsPage]);
       }

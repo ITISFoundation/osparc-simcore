@@ -27,7 +27,7 @@ RUN mkdir -p ${HOME_DIR}
 COPY .pydeps ${HOME_DIR}/.pydeps
 
 RUN pip --no-cache-dir install --upgrade \
-  pip~=22.0  \
+  pip~=23.0  \
   wheel \
   setuptools
 

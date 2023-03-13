@@ -12,7 +12,7 @@ from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.rabbitmq_messages import (
     InstrumentationRabbitMessage,
-    ProgressRabbitMessage,
+    ProgressRabbitMessageNode,
     ProgressType,
 )
 from models_library.service_settings_labels import (
@@ -221,8 +221,8 @@ class CreateSidecars(DynamicSchedulerEvent):
             )
         )
         await rabbitmq_client.publish(
-            ProgressRabbitMessage.get_channel_name(),
-            ProgressRabbitMessage(
+            ProgressRabbitMessageNode.get_channel_name(),
+            ProgressRabbitMessageNode(
                 user_id=scheduler_data.user_id,
                 project_id=scheduler_data.project_id,
                 node_id=scheduler_data.node_uuid,
@@ -240,8 +240,8 @@ class CreateSidecars(DynamicSchedulerEvent):
             )
         )
         await rabbitmq_client.publish(
-            ProgressRabbitMessage.get_channel_name(),
-            ProgressRabbitMessage(
+            ProgressRabbitMessageNode.get_channel_name(),
+            ProgressRabbitMessageNode(
                 user_id=scheduler_data.user_id,
                 project_id=scheduler_data.project_id,
                 node_id=scheduler_data.node_uuid,
@@ -358,8 +358,8 @@ class GetStatus(DynamicSchedulerEvent):
                 scheduler_data.service_name,
             )
             return
-        else:
-            scheduler_data.dynamic_sidecar.inspect_error_handler.else_reset()
+
+        scheduler_data.dynamic_sidecar.inspect_error_handler.else_reset()
 
         # parse and store data from container
         scheduler_data.dynamic_sidecar.containers_inspect = parse_containers_inspect(
@@ -480,7 +480,10 @@ class CreateUserServices(DynamicSchedulerEvent):
             allow_internet_access=allow_internet_access,
             product_name=scheduler_data.product_name,
             user_id=scheduler_data.user_id,
+            project_id=scheduler_data.project_id,
+            node_id=scheduler_data.node_uuid,
         )
+
         logger.debug(
             "Starting containers %s with compose-specs:\n%s",
             scheduler_data.service_name,

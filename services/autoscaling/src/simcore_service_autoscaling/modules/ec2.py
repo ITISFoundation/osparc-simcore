@@ -15,6 +15,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random_exponential
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
+from types_aiobotocore_ec2.type_defs import FilterTypeDef
 
 from ..core.errors import (
     ConfigurationError,
@@ -98,9 +99,7 @@ class AutoscalingEC2:
             msg=f"launching {number_of_instances} AWS instance(s) {instance_type} with {tags=}",
         ):
             # first check the max amount is not already reached
-            current_instances = await self.get_instances(
-                instance_settings, list(tags.keys())
-            )
+            current_instances = await self.get_instances(instance_settings, tags)
             if (
                 len(current_instances) + number_of_instances
                 > instance_settings.EC2_INSTANCES_MAX_INSTANCES
@@ -162,7 +161,7 @@ class AutoscalingEC2:
     async def get_instances(
         self,
         instance_settings: EC2InstancesSettings,
-        tag_keys: list[str],
+        tags: dict[str, str],
         *,
         state_names: Optional[list[InstanceStateNameType]] = None,
     ) -> list[EC2InstanceData]:
@@ -171,14 +170,16 @@ class AutoscalingEC2:
         if state_names is None:
             state_names = ["pending", "running"]
 
-        filters = [
+        filters: list[FilterTypeDef] = [
             {
                 "Name": "key-name",
                 "Values": [instance_settings.EC2_INSTANCES_KEY_NAME],
             },
             {"Name": "instance-state-name", "Values": state_names},
         ]
-        filters.extend([{"Name": "tag-key", "Values": [t]} for t in tag_keys])
+        filters.extend(
+            [{"Name": f"tag:{key}", "Values": [value]} for key, value in tags.items()]
+        )
 
         instances = await self.client.describe_instances(Filters=filters)
         all_instances = []
@@ -202,46 +203,6 @@ class AutoscalingEC2:
                 )
         logger.debug("received: %s", f"{all_instances=}")
         return all_instances
-
-    async def get_running_instance(
-        self,
-        instance_settings: EC2InstancesSettings,
-        tag_keys: list[str],
-        instance_host_name: str,
-    ) -> EC2InstanceData:
-        filters = [
-            {
-                "Name": "key-name",
-                "Values": [instance_settings.EC2_INSTANCES_KEY_NAME],
-            },
-            {"Name": "instance-state-name", "Values": ["running"]},
-            {
-                "Name": "network-interface.private-dns-name",
-                "Values": [f"{instance_host_name}.ec2.internal"],
-            },
-        ]
-        filters.extend([{"Name": "tag-key", "Values": [t]} for t in tag_keys])
-        instances = await self.client.describe_instances(Filters=filters)
-        if not instances["Reservations"]:
-            # NOTE: wrong hostname, or not running, or wrong usage
-            raise Ec2InstanceNotFoundError()
-
-        # NOTE: since the hostname is unique, there is only one instance here
-        assert "Instances" in instances["Reservations"][0]  # nosec
-        instance = instances["Reservations"][0]["Instances"][0]
-        assert "LaunchTime" in instance  # nosec
-        assert "InstanceId" in instance  # nosec
-        assert "PrivateDnsName" in instance  # nosec
-        assert "InstanceType" in instance  # nosec
-        assert "State" in instance  # nosec
-        assert "Name" in instance["State"]  # nosec
-        return EC2InstanceData(
-            launch_time=instance["LaunchTime"],
-            id=instance["InstanceId"],
-            aws_private_dns=instance["PrivateDnsName"],
-            type=instance["InstanceType"],
-            state=instance["State"]["Name"],
-        )
 
     async def terminate_instances(self, instance_datas: list[EC2InstanceData]) -> None:
         try:

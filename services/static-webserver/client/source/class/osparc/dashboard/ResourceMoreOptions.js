@@ -43,6 +43,20 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     "openService": "qx.event.type.Data"
   },
 
+  statics: {
+    WIDTH: 700,
+    HEIGHT: 660
+  },
+
+  properties: {
+    showOpenButton: {
+      check: "Boolean",
+      init: true,
+      nullable: false,
+      event: "changeShowOpenButton"
+    }
+  },
+
   members: {
     __resourceData: null,
     __serviceVersionLayout: null,
@@ -108,7 +122,6 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
             store.getAllServices()
               .then(services => {
                 const serviceData = osparc.utils.Services.getFromObject(services, this.__resourceData["key"], serviceVersion);
-                console.log(serviceData);
                 serviceData["resourceType"] = "service";
                 this.__resourceData = serviceData;
                 this.__addPages();
@@ -177,7 +190,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
       // Page title
       tabPage.add(new qx.ui.basic.Label(title).set({
-        font: "title-16"
+        font: "text-15"
       }));
 
       // Page content
@@ -236,6 +249,9 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
           allowGrowX: false,
           alignX: "right"
         });
+        this.bind("showOpenButton", openServiceButton, "visibility", {
+          converter: show => show ? "visible" : "excluded"
+        });
         openServiceButton.addListener("execute", () => {
           this.fireDataEvent("openService", {
             key: resourceData["key"],
@@ -270,7 +286,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const icon = "@FontAwesome5Solid/share-alt";
       let permissionsView = null;
       if (osparc.utils.Resources.isService(resourceData)) {
-        permissionsView = new osparc.component.permissions.Service(resourceData);
+        permissionsView = new osparc.component.share.CollaboratorsService(resourceData);
         permissionsView.addListener("updateAccessRights", e => {
           const updatedData = e.getData();
           if (osparc.utils.Resources.isService(resourceData)) {
@@ -278,7 +294,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
           }
         }, this);
       } else {
-        permissionsView = new osparc.component.permissions.Study(resourceData);
+        permissionsView = new osparc.component.share.CollaboratorsStudy(resourceData);
         if (osparc.utils.Resources.isStudy(resourceData)) {
           permissionsView.getChildControl("study-link").show();
         }

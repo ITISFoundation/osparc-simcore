@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from models_library.rabbitmq_messages import (
     EventRabbitMessage,
     LoggerRabbitMessage,
-    ProgressRabbitMessage,
+    ProgressRabbitMessageNode,
     ProgressType,
     RabbitEventMessageType,
     RabbitMessageBase,
@@ -43,7 +43,7 @@ async def post_progress_message(
     app: FastAPI, progress_type: ProgressType, progress_value: NonNegativeFloat
 ) -> None:
     app_settings: ApplicationSettings = app.state.settings
-    message = ProgressRabbitMessage(
+    message = ProgressRabbitMessageNode(
         node_id=app_settings.DY_SIDECAR_NODE_ID,
         user_id=app_settings.DY_SIDECAR_USER_ID,
         project_id=app_settings.DY_SIDECAR_PROJECT_ID,

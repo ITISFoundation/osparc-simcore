@@ -92,7 +92,8 @@ qx.Class.define("osparc.component.form.tag.TagToggleButton", {
 
     _shouldApplyFilter: function(data) {
       if (data.name) {
-        if (!this.getLabel().includes(data.name)) {
+        // data.name comes lowercased
+        if (!this.getLabel().toLowerCase().includes(data.name)) {
           return true;
         }
       }

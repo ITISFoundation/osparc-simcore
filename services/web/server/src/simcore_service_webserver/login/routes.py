@@ -34,6 +34,7 @@ def create_routes(validated_specs: openapi.Spec) -> list[web.RouteDef]:
     handlers_map = {
         "auth_change_email": change_handlers.submit_request_to_change_email,
         "auth_change_password": change_handlers.change_password,
+        "auth_check_registration_invitation": register_handlers.check_registration_invitation,
         "auth_confirmation": confirmation_handlers.validate_confirmation_and_redirect,
         "auth_login_2fa": login_handlers.login_2fa,
         "auth_login": login_handlers.login,

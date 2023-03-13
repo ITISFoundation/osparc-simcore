@@ -30,9 +30,7 @@ qx.Class.define("osparc.desktop.preferences.window.CreateAPIKey", {
 
   members: {
     __populateWindow: function() {
-      const hBox1 = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
-        appearance: "margined-layout"
-      });
+      const hBox1 = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
       const sTitle = new qx.ui.basic.Label(this.tr("API Key")).set({
         width: 50,
         alignY: "middle"
@@ -45,11 +43,9 @@ qx.Class.define("osparc.desktop.preferences.window.CreateAPIKey", {
       hBox1.add(labelEditor, {
         flex: 1
       });
-      this._add(hBox1);
+      this.add(hBox1);
 
-      const hBox2 = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
-        appearance: "margined-layout"
-      });
+      const hBox2 = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
       hBox2.add(new qx.ui.core.Spacer(), {
         flex: 1
       });
@@ -60,7 +56,7 @@ qx.Class.define("osparc.desktop.preferences.window.CreateAPIKey", {
       }, this);
       hBox2.add(confirmBtn);
 
-      this._add(hBox2);
+      this.add(hBox2);
     }
   }
 });

@@ -5,7 +5,7 @@ import time
 import zipfile
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Awaitable, Callable, Final, Optional, TypedDict, cast
+from typing import Any, Awaitable, Callable, Final, Optional, TypedDict, Union, cast
 
 import aiofiles
 import aiofiles.tempfile
@@ -136,7 +136,7 @@ async def pull_file_from_remote(
     if not target_mime_type:
         target_mime_type, _ = mimetypes.guess_type(dst_path)
 
-    storage_kwargs = {}
+    storage_kwargs: Union[S3FsSettingsDict, dict[str, Any]] = {}
     if s3_settings and src_url.scheme in S3_FILE_SYSTEM_SCHEMES:
         storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
     await _copy_file(
@@ -203,7 +203,7 @@ async def _push_file_to_remote(
     logger.debug("Uploading %s to %s...", file_to_upload, dst_url)
     assert dst_url.path  # nosec
 
-    storage_kwargs = {}
+    storage_kwargs: Union[S3FsSettingsDict, dict[str, Any]] = {}
     if s3_settings:
         storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
 

@@ -301,10 +301,15 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
 
             service_name = self._inverse_search_mapping[node_uuid]
             if service_name not in self._to_observe:
-                return
+                logger.warning(
+                    "Unexpected: '%s' not found in %s, but found in %s",
+                    f"{service_name}",
+                    f"{self._to_observe=}",
+                    f"{self._inverse_search_mapping=}",
+                )
 
-            del self._to_observe[service_name]
             del self._inverse_search_mapping[node_uuid]
+            self._to_observe.pop(service_name, None)
 
         logger.debug("Removed service '%s' from scheduler", service_name)
 

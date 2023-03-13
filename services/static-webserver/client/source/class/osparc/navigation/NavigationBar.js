@@ -42,15 +42,9 @@ qx.Class.define("osparc.navigation.NavigationBar", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.HBox(10).set({
+    this._setLayout(new qx.ui.layout.HBox(20).set({
       alignY: "middle"
     }));
-
-    osparc.data.Resources.get("statics")
-      .then(statics => {
-        this.__serverStatics = statics;
-        this.buildLayout();
-      });
 
     this.set({
       paddingLeft: 10,
@@ -58,6 +52,18 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       height: this.self().HEIGHT,
       backgroundColor: "background-main-1"
     });
+
+    Promise.all([
+      osparc.data.Resources.get("statics"),
+      osparc.data.Resources.get("notifications")
+    ])
+      .then(values => {
+        const notifications = values[1];
+        osparc.component.notification.Notifications.getInstance().addNotifications(notifications);
+        this.buildLayout();
+        this.setPageContext("dashboard");
+        osparc.WindowSizeTracker.getInstance().addListener("changeCompactVersion", () => this.__navBarResized(), this);
+      });
   },
 
   events: {
@@ -81,6 +87,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
   statics: {
     HEIGHT: 50,
+    SMALL_SCREEN_BREAKPOINT: 800,
 
     BUTTON_OPTIONS: {
       font: "text-14",
@@ -97,33 +104,14 @@ qx.Class.define("osparc.navigation.NavigationBar", {
   },
 
   members: {
-    __serverStatics: null,
+    __tabButtons: null,
 
     buildLayout: function() {
       this.getChildControl("left-items");
       this.getChildControl("center-items");
       this.getChildControl("right-items");
 
-      this.getChildControl("logo");
-      if (!osparc.product.Utils.isProduct("osparc")) {
-        this.getChildControl("logo-powered");
-      }
-
-      this.getChildControl("dashboard-button");
-      this.getChildControl("dashboard-label");
-
-      this.getChildControl("read-only-icon");
-
-      this.getChildControl("tasks-button");
-      this.getChildControl("notifications-button");
-      this.getChildControl("expiration-icon");
-      this.getChildControl("manual");
-      this.getChildControl("feedback");
-      this.getChildControl("theme-switch");
-      this.getChildControl("user-menu");
-
-      this.setPageContext("dashboard");
-
+      // left-items
       const logo = this.getChildControl("logo");
       logo.getChildControl("off-logo").set({
         width: 100,
@@ -133,13 +121,31 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         width: 100,
         height: 50
       });
+      if (!osparc.product.Utils.isProduct("osparc")) {
+        this.getChildControl("logo-powered");
+      }
+
+      this.getChildControl("dashboard-label");
+      this.getChildControl("dashboard-button");
+
+      // center-items
+      this.getChildControl("read-only-info");
+
+      // right-items
+      this.getChildControl("tasks-button");
+      this.getChildControl("notifications-button");
+      this.getChildControl("expiration-icon");
+      this.getChildControl("manual");
+      this.getChildControl("feedback");
+      this.getChildControl("theme-switch");
+      this.getChildControl("user-menu");
     },
 
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
         case "left-items":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(30).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(20).set({
             alignY: "middle",
             alignX: "left"
           }));
@@ -168,14 +174,15 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "logo-powered":
           control = new osparc.ui.basic.PoweredByOsparc().set({
             width: 50,
-            height: 50
+            padding: 3,
+            paddingTop: 1,
+            maxHeight: 50
           });
           this.getChildControl("left-items").add(control);
           break;
         case "dashboard-button":
           control = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesome5Solid/home/16").set({
-            ...this.self().BUTTON_OPTIONS,
-            font: "title-14"
+            ...this.self().BUTTON_OPTIONS
           });
           osparc.utils.Utils.setIdToWidget(control, "dashboardBtn");
           control.addListener("execute", () => this.fireEvent("backToDashboardPressed"), this);
@@ -183,7 +190,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         case "dashboard-label":
           control = new qx.ui.basic.Label(this.tr("Dashboard")).set({
-            paddingLeft: 20, // to align it with the button
+            paddingLeft: 10,
             font: "text-14"
           });
           this.getChildControl("left-items").add(control);
@@ -233,14 +240,25 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           });
           this.getChildControl("left-items").add(control);
           break;
-        case "read-only-icon":
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/eye/22").set({
-            visibility: "excluded",
-            paddingRight: 10,
-            toolTipText: "Read Only"
+        case "read-only-info": {
+          control = new qx.ui.basic.Atom().set({
+            label: this.tr("Read only"),
+            icon: "@FontAwesome5Solid/eye/22",
+            gap: 10,
+            font: "text-14",
+            visibility: "excluded"
           });
+          const hint = new osparc.ui.hint.Hint(control, osparc.desktop.StudyEditor.READ_ONLY_TEXT).set({
+            active: false
+          });
+          hint.getLabel().set({
+            maxWidth: 300,
+            font: "text-14"
+          });
+          control.addListenerOnce("appear", () => hint.attachShowHideHandlers());
           this.getChildControl("center-items").add(control);
           break;
+        }
         case "tasks-button":
           control = new osparc.component.task.TasksButton();
           this.getChildControl("right-items").add(control);
@@ -292,7 +310,13 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         case "user-menu":
           control = new osparc.navigation.UserMenuButton();
-          control.populateSimpleMenu();
+          control.populateMenu();
+          control.set(this.self().BUTTON_OPTIONS);
+          this.getChildControl("right-items").add(control);
+          break;
+        case "user-menu-compact":
+          control = new osparc.navigation.UserMenuButton();
+          control.populateMenuCompact();
           control.set(this.self().BUTTON_OPTIONS);
           this.getChildControl("right-items").add(control);
           break;
@@ -309,7 +333,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
             this.getChildControl("study-menu-button").exclude();
             this.getChildControl("edit-title-label").exclude();
           }
-          this.getChildControl("read-only-icon").exclude();
+          this.getChildControl("read-only-info").exclude();
           if (this.__tabButtons) {
             this.__tabButtons.show();
           }
@@ -338,6 +362,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       const menuButton = new qx.ui.form.MenuButton(null, "@FontAwesome5Solid/book/22", menu).set({
         toolTipText: this.tr("Manuals")
       });
+      osparc.store.Support.addQuickStartToMenu(menu);
       osparc.store.Support.addManualButtonsToMenu(menu, menuButton);
       return menuButton;
     },
@@ -356,13 +381,54 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     addDashboardTabButtons: function(tabButtons) {
       this.__tabButtons = tabButtons;
       this.getChildControl("center-items").add(tabButtons);
+      this.__navBarResized();
     },
 
     _applyStudy: function(study) {
       if (study) {
-        study.bind("readOnly", this.getChildControl("read-only-icon"), "visibility", {
+        study.bind("readOnly", this.getChildControl("read-only-info"), "visibility", {
           converter: value => value ? "visible" : "excluded"
         });
+      }
+    },
+
+    __navBarResized: function() {
+      let tabButtons = [];
+      if (this.__tabButtons) {
+        tabButtons = this.__tabButtons.getChildControl("content").getChildren();
+      }
+      if (osparc.WindowSizeTracker.getInstance().isCompactVersion()) {
+        // left-items
+        if (!osparc.product.Utils.isProduct("osparc")) {
+          this.getChildControl("logo-powered").exclude();
+        }
+        // center-items
+        tabButtons.forEach(tabButton => {
+          tabButton.getChildControl("icon").show();
+          tabButton.getChildControl("label").exclude();
+        });
+        // right-items
+        this.getChildControl("user-menu").exclude();
+        this.getChildControl("manual").exclude();
+        this.getChildControl("feedback").exclude();
+        this.getChildControl("theme-switch").exclude();
+        this.getChildControl("user-menu-compact").show();
+      } else {
+        // left-items
+        if (!osparc.product.Utils.isProduct("osparc")) {
+          this.getChildControl("logo-powered").show();
+        }
+        // center-items
+        tabButtons.forEach(tabButton => {
+          tabButton.getChildControl("label").show();
+          tabButton.getChildControl("icon").exclude();
+        });
+        // right-items
+        this.getChildControl("user-menu-compact").exclude();
+        this.getChildControl("manual").show();
+        this.getChildControl("feedback").show();
+        this.getChildControl("theme-switch").show();
+        this.getChildControl("user-menu").show();
       }
     }
   }

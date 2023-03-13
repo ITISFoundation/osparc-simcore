@@ -24,11 +24,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
       */
     createTitle: function(study) {
-      const title = new qx.ui.basic.Label().set({
-        font: "title-14",
-        allowStretchX: true,
-        rich: true
-      });
+      const title = osparc.info.Utils.createTitle();
       if (study instanceof osparc.data.model.Study) {
         study.bind("name", title, "value");
       } else {
@@ -41,9 +37,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
       */
     createUuid: function(study) {
-      const uuid = new qx.ui.basic.Label().set({
-        maxWidth: 150
-      });
+      const uuid = osparc.info.Utils.createId();
       if (study instanceof osparc.data.model.Study) {
         study.bind("uuid", uuid, "value");
         study.bind("uuid", uuid, "toolTipText");
@@ -185,15 +179,12 @@ qx.Class.define("osparc.info.StudyUtils", {
       * @param maxWidth {Number} thumbnail's maxWidth
       * @param maxHeight {Number} thumbnail's maxHeight
       */
-    createThumbnail: function(study, maxWidth, maxHeight = 160) {
+    createThumbnail: function(study, maxWidth, maxHeight) {
+      const thumbnail = osparc.info.Utils.createThumbnail(maxWidth, maxHeight);
       const noThumbnail = "osparc/no_photography_black_24dp.svg";
-      const image = new osparc.ui.basic.Thumbnail().set({
-        maxImageWidth: maxWidth,
-        maxImageHeight: maxHeight
-      });
       if (study instanceof osparc.data.model.Study) {
-        study.bind("thumbnail", image, "source", {
-          converter: thumbnail => thumbnail ? thumbnail : noThumbnail,
+        study.bind("thumbnail", thumbnail, "source", {
+          converter: thumb => thumb ? thumb : noThumbnail,
           onUpdate: (source, target) => {
             if (source.getThumbnail() === "") {
               target.getChildControl("image").set({
@@ -204,17 +195,17 @@ qx.Class.define("osparc.info.StudyUtils", {
           }
         });
       } else if (study["thumbnail"]) {
-        image.set({
+        thumbnail.set({
           source: study["thumbnail"]
         });
       } else {
-        image.set({
+        thumbnail.set({
           source: noThumbnail,
           minWidth: 100,
           minHeight: 100
         });
       }
-      return image;
+      return thumbnail;
     },
 
     /**
@@ -227,7 +218,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       }));
 
       const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Description")).set({
-        font: "title-12"
+        font: "text-13"
       });
       descriptionLayout.add(label);
 
@@ -254,7 +245,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       }));
 
       const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Tags")).set({
-        font: "title-12"
+        font: "text-13"
       });
       tagsLayout.add(label);
 
@@ -278,7 +269,7 @@ qx.Class.define("osparc.info.StudyUtils", {
     },
 
     createExtraInfo: function(extraInfos) {
-      const grid = new qx.ui.layout.Grid(5, 3);
+      const grid = new qx.ui.layout.Grid(8, 5);
       grid.setColumnAlign(0, "right", "middle");
       grid.setColumnAlign(1, "left", "middle");
       const moreInfo = new qx.ui.container.Composite(grid).set({
@@ -290,7 +281,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       for (let i=0; i<extraInfos.length; i++) {
         const extraInfo = extraInfos[i];
         moreInfo.add(new qx.ui.basic.Label(extraInfo.label).set({
-          font: "title-12"
+          font: "text-13"
         }), {
           row: i,
           column: 0
@@ -324,7 +315,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       * @param studyData {Object} Serialized Study Object
       */
     openAccessRights: function(studyData) {
-      const permissionsView = new osparc.component.permissions.Study(studyData);
+      const permissionsView = new osparc.component.share.CollaboratorsStudy(studyData);
       const title = qx.locale.Manager.tr("Share with Collaborators and Organizations");
       osparc.ui.window.Window.popUpInWindow(permissionsView, title, 500, 400);
       return permissionsView;

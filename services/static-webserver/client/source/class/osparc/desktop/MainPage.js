@@ -45,7 +45,7 @@ qx.Class.define("osparc.desktop.MainPage", {
 
     this._setLayout(new qx.ui.layout.VBox(null, null, "separator-vertical"));
 
-    this._add(osparc.component.notification.NotificationsRibbon.getInstance());
+    this._add(osparc.component.notification.RibbonNotifications.getInstance());
 
     const navBar = this.__navBar = this.__createNavigationBar();
     this._add(navBar);
@@ -68,6 +68,10 @@ qx.Class.define("osparc.desktop.MainPage", {
     });
   },
 
+  statics: {
+    MIN_STUDIES_PER_ROW: 4
+  },
+
   members: {
     __navBar: null,
     __mainStack: null,
@@ -88,9 +92,10 @@ qx.Class.define("osparc.desktop.MainPage", {
         return;
       }
       if (this.__studyEditor) {
-        const studyName = this.__studyEditor.getStudy().getName();
+        const isReadOnly = this.__studyEditor.getStudy().isReadOnly();
         const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
-        if (preferencesSettings.getConfirmBackToDashboard()) {
+        if (!isReadOnly && preferencesSettings.getConfirmBackToDashboard()) {
+          const studyName = this.__studyEditor.getStudy().getName();
           const win = new osparc.ui.window.Confirmation();
           if (osparc.product.Utils.isProduct("s4llite")) {
             let msg = this.tr("Do you want to close ") + "<b>" + studyName + "</b>?";
@@ -179,15 +184,14 @@ qx.Class.define("osparc.desktop.MainPage", {
       const dashboard = this.__dashboard = new osparc.dashboard.Dashboard();
       const tabsBar = dashboard.getChildControl("bar");
       tabsBar.set({
-        paddingBottom: 8
+        paddingBottom: 6
       });
       this.__navBar.addDashboardTabButtons(tabsBar);
-      const minNStudyItemsPerRow = 5;
       const itemWidth = osparc.dashboard.GridButtonBase.ITEM_WIDTH + osparc.dashboard.GridButtonBase.SPACING;
-      dashboard.setMinWidth(minNStudyItemsPerRow * itemWidth + 8);
+      dashboard.setMinWidth(this.self().MIN_STUDIES_PER_ROW * itemWidth + 8);
       const fitResourceCards = () => {
         const w = document.documentElement.clientWidth;
-        const nStudies = Math.floor((w - 2*260 - 8) / itemWidth);
+        const nStudies = Math.floor((w - 2*150 - 8) / itemWidth);
         const newWidth = nStudies * itemWidth + 8;
         if (newWidth > dashboard.getMinWidth()) {
           dashboard.setWidth(newWidth);

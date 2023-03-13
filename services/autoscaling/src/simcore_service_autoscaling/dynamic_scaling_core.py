@@ -3,7 +3,6 @@ import collections
 import dataclasses
 import itertools
 import logging
-from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from typing import cast
 
@@ -35,6 +34,7 @@ from .modules.ec2 import get_ec2_client
 from .utils import ec2, utils_docker
 from .utils.dynamic_scaling import (
     associate_ec2_instances_with_nodes,
+    ec2_startup_script,
     node_host_name_from_ec2_private_dns,
     try_assigning_task_to_instances,
     try_assigning_task_to_node,
@@ -271,7 +271,7 @@ async def _find_needed_instances(
                 f"{task.Name or 'unknown task name'}:{task.ServiceID or 'unknown service ID'}",
             )
 
-    num_instances_per_type = defaultdict(
+    num_instances_per_type = collections.defaultdict(
         int, collections.Counter(t for t, _ in needed_new_instance_to_tasks)
     )
 
@@ -306,21 +306,20 @@ async def _start_instances(
     ec2_client = get_ec2_client(app)
     app_settings: ApplicationSettings = app.state.settings
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-    assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
 
-    startup_script = await utils_docker.get_docker_swarm_join_bash_command()
-
+    instance_tags = ec2.get_ec2_tags(app_settings)
+    instance_startup_script = await ec2_startup_script(app_settings)
     results = await asyncio.gather(
-        *(
+        *[
             ec2_client.start_aws_instance(
                 app_settings.AUTOSCALING_EC2_INSTANCES,
                 instance_type=parse_obj_as(InstanceTypeType, instance.name),
-                tags=ec2.get_ec2_tags(app_settings),
-                startup_script=startup_script,
+                tags=instance_tags,
+                startup_script=instance_startup_script,
                 number_of_instances=instance_num,
             )
             for instance, instance_num in needed_instances.items()
-        ),
+        ],
         return_exceptions=True,
     )
     # parse results
@@ -391,11 +390,15 @@ async def _scale_up_cluster(
             "service is pending due to missing resources, scaling up cluster now\n"
             f"{sum(n for n in needed_ec2_instances.values())} new machines will be added, please wait...",
         )
+        # NOTE: notify the up-scaling progress started...
+        await progress_tasks_message(app, pending_tasks, 0.001)
         new_pending_instances = await _start_instances(
             app, needed_ec2_instances, pending_tasks
         )
         cluster.pending_ec2s.extend(new_pending_instances)
-        await progress_tasks_message(app, pending_tasks, 0)
+        # NOTE: to check the logs of UserData in EC2 instance
+        # run: tail -f -n 1000 /var/log/cloud-init-output.log in the instance
+
     return cluster
 
 
@@ -450,15 +453,15 @@ async def _analyze_current_cluster(app: FastAPI) -> Cluster:
         node_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS,
     )
 
-    # get the whatever EC2 instances we have
+    # get the EC2 instances we have
     existing_ec2_instances = await get_ec2_client(app).get_instances(
         app_settings.AUTOSCALING_EC2_INSTANCES,
-        list(ec2.get_ec2_tags(app_settings).keys()),
+        ec2.get_ec2_tags(app_settings),
     )
 
     terminated_ec2_instances = await get_ec2_client(app).get_instances(
         app_settings.AUTOSCALING_EC2_INSTANCES,
-        list(ec2.get_ec2_tags(app_settings).keys()),
+        ec2.get_ec2_tags(app_settings),
         state_names=["terminated"],
     )
 

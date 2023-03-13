@@ -1,15 +1,17 @@
 import functools
 import logging
-from typing import AsyncIterator
+from typing import Union
 
 from aiohttp import web
 from models_library.rabbitmq_messages import (
     EventRabbitMessage,
     InstrumentationRabbitMessage,
     LoggerRabbitMessage,
-    ProgressRabbitMessage,
+    ProgressRabbitMessageNode,
+    ProgressRabbitMessageProject,
     ProgressType,
 )
+from pydantic import parse_raw_as
 from servicelib.aiohttp.monitor_services import (
     SERVICE_STARTED_LABELS,
     SERVICE_STOPPED_LABELS,
@@ -19,16 +21,16 @@ from servicelib.aiohttp.monitor_services import (
 from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQClient
-from servicelib.rabbitmq_utils import wait_till_rabbitmq_responsive
 
-from .computation_settings import RabbitSettings, get_plugin_settings
 from .projects import projects_api
 from .projects.projects_exceptions import NodeNotFoundError, ProjectNotFoundError
+from .rabbitmq import get_rabbitmq_client
 from .socketio.events import (
     SOCKET_IO_EVENT,
     SOCKET_IO_LOG_EVENT,
     SOCKET_IO_NODE_PROGRESS_EVENT,
     SOCKET_IO_NODE_UPDATED_EVENT,
+    SOCKET_IO_PROJECT_PROGRESS_EVENT,
     SocketMessageDict,
     send_messages,
 )
@@ -37,7 +39,7 @@ log = logging.getLogger(__name__)
 
 
 async def _handle_computation_running_progress(
-    app: web.Application, message: ProgressRabbitMessage
+    app: web.Application, message: ProgressRabbitMessageNode
 ) -> bool:
     try:
         project = await projects_api.update_project_node_progress(
@@ -77,29 +79,32 @@ async def _handle_computation_running_progress(
 
 async def progress_message_parser(app: web.Application, data: bytes) -> bool:
     # update corresponding project, node, progress value
-    rabbit_message = ProgressRabbitMessage.parse_raw(data)
+    rabbit_message = parse_raw_as(
+        Union[ProgressRabbitMessageNode, ProgressRabbitMessageProject], data
+    )
 
     if rabbit_message.progress_type is ProgressType.COMPUTATION_RUNNING:
         # NOTE: backward compatibility, this progress is kept in the project
         return await _handle_computation_running_progress(app, rabbit_message)
 
     # NOTE: other types of progress are transient
-    await send_messages(
-        app,
-        f"{rabbit_message.user_id}",
-        [
-            {
-                "event_type": SOCKET_IO_NODE_PROGRESS_EVENT,
-                "data": {
-                    "project_id": rabbit_message.project_id,
-                    "node_id": rabbit_message.node_id,
-                    "user_id": rabbit_message.user_id,
-                    "progress_type": rabbit_message.progress_type,
-                    "progress": rabbit_message.progress,
-                },
-            }
-        ],
-    )
+    is_type_message_node = type(rabbit_message) == ProgressRabbitMessageNode
+    message = {
+        "event_type": (
+            SOCKET_IO_NODE_PROGRESS_EVENT
+            if is_type_message_node
+            else SOCKET_IO_PROJECT_PROGRESS_EVENT
+        ),
+        "data": {
+            "project_id": rabbit_message.project_id,
+            "user_id": rabbit_message.user_id,
+            "progress_type": rabbit_message.progress_type,
+            "progress": rabbit_message.progress,
+        },
+    }
+    if is_type_message_node:
+        message["node_id"] = rabbit_message.node_id
+    await send_messages(app, f"{rabbit_message.user_id}", [message])
     return True
 
 
@@ -152,7 +157,7 @@ EXCHANGE_TO_PARSER_CONFIG = (
         {},
     ),
     (
-        ProgressRabbitMessage.get_channel_name(),
+        ProgressRabbitMessageNode.get_channel_name(),
         progress_message_parser,
         {},
     ),
@@ -169,25 +174,11 @@ EXCHANGE_TO_PARSER_CONFIG = (
 )
 
 
-async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
-    settings: RabbitSettings = get_plugin_settings(app)
-    with log_context(
-        log, logging.INFO, msg=f"Check RabbitMQ backend is ready on {settings.dsn}"
-    ):
-        await wait_till_rabbitmq_responsive(f"{settings.dsn}")
-
-    with log_context(
-        log, logging.INFO, msg=f"Connect RabbitMQ client to {settings.dsn}"
-    ):
-        rabbit_client = RabbitMQClient("webserver", settings)
+async def setup_rabbitmq_consumers(app: web.Application) -> None:
+    with log_context(log, logging.INFO, msg="Subscribing to rabbitmq channels"):
+        rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
 
         for exchange_name, parser_fct, queue_kwargs in EXCHANGE_TO_PARSER_CONFIG:
             await rabbit_client.subscribe(
                 exchange_name, functools.partial(parser_fct, app), **queue_kwargs
             )
-
-    yield
-
-    # cleanup
-    with log_context(log, logging.INFO, msg="Closing RabbitMQ client"):
-        await rabbit_client.close()

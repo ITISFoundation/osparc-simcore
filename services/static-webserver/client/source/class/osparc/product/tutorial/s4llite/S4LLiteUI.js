@@ -26,7 +26,7 @@ qx.Class.define("osparc.product.tutorial.s4llite.S4LLiteUI", {
   members: {
     _populateCard: function() {
       const introText = this.tr("\
-      To check the <i>S4L<sup>lite</sup></i> manual, please open a project and access the documentation via Help in the menu as shown below. Enjoy!\
+        To check the <i>S4L<sup>lite</sup></i> manual, please open a project and access the documentation via Help in the menu as shown below. Enjoy!\
       ");
       const intro = osparc.product.tutorial.Utils.createLabel(introText);
       this._add(intro);

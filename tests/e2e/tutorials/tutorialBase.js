@@ -574,10 +574,12 @@ class TutorialBase {
       console.error("Failed going to dashboard study", err);
       throw (err);
     }
+    await this.waitFor(5000, 'Going back to Dashboard');
     await this.takeScreenshot("toDashboard_after");
   }
 
   async removeStudy(studyId, waitFor = 5000) {
+    await auto.dashboardStudiesBrowser(this.__page);
     await this.waitFor(waitFor, 'Wait to be unlocked');
     await this.takeScreenshot("deleteFirstStudy_before");
     const intervalWait = 3000;
@@ -622,8 +624,25 @@ class TutorialBase {
     await this.takeScreenshot('waitFor_finished')
   }
 
+  async __s4lSplashScreenOff(s4lNodeId) {
+    await this.waitFor(10000, 'Wait for the s4l iframe to appear');
+    await this.takeScreenshot("s4l");
+
+    const s4lIframe = await this.getIframe(s4lNodeId);
+    return new Promise(resolve => {
+      s4lIframe.waitForSelector("[osparc-test-id=splash-screen-off]", {
+        timeout: 60000
+      })
+        .then(() => resolve(true))
+        .catch(() => resolve(false));
+    });
+  }
+
   async testS4L(s4lNodeId) {
-    await this.waitFor(20000, 'Wait for the splash screen to disappear');
+    const splashScreenGone = await this.__s4lSplashScreenOff(s4lNodeId);
+    if (!splashScreenGone) {
+      throw("S4L Splash Screen Timeout");
+    }
 
     const s4lIframe = await this.getIframe(s4lNodeId);
     await this.waitAndClick('mode-button-modeling', s4lIframe);
@@ -646,8 +665,10 @@ class TutorialBase {
   }
 
   async testS4LTIPostPro(s4lNodeId) {
-    await this.waitFor(20000, 'Wait for the splash screen to disappear');
-    await this.takeScreenshot("s4l");
+    const splashScreenGone = await this.__s4lSplashScreenOff(s4lNodeId);
+    if (!splashScreenGone) {
+      throw("S4L Splash screen Timeout");
+    }
 
     const s4lIframe = await this.getIframe(s4lNodeId);
     await this.waitAndClick('mode-button-postro', s4lIframe);
@@ -673,7 +694,10 @@ class TutorialBase {
   }
 
   async testS4LDipole(s4lNodeId) {
-    await this.waitFor(20000, 'Wait for the splash screen to disappear');
+    const splashScreenGone = await this.__s4lSplashScreenOff(s4lNodeId);
+    if (!splashScreenGone) {
+      throw("S4L Splash screen Timeout");
+    }
 
     const s4lIframe = await this.getIframe(s4lNodeId);
     await this.waitAndClick('mode-button-modeling', s4lIframe);

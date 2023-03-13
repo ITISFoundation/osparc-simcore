@@ -35,6 +35,11 @@
 qx.Class.define("osparc.dashboard.StudyBrowser", {
   extend: osparc.dashboard.ResourceBrowserBase,
 
+  construct: function() {
+    this._resourceType = "study";
+    this.base(arguments);
+  },
+
   statics: {
     EXPECTED_TI_TEMPLATE_TITLE: "TI Planning Tool",
     EXPECTED_S4L_SERVICE_KEYS: {
@@ -165,7 +170,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                 const noAccessText = new qx.ui.basic.Label().set({
                   selectable: true,
                   rich: true,
-                  font: "title-16",
+                  font: "text-18",
                   paddingTop: 20
                 });
                 let msg = this.tr("It seems you don't have access to this product.");
@@ -458,7 +463,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     // LAYOUT //
     _createLayout: function() {
-      this._createResourcesLayout("study");
+      this._createResourcesLayout();
       const list = this._resourcesContainer.getFlatList();
       if (list) {
         osparc.utils.Utils.setIdToWidget(list, "studiesList");
@@ -566,11 +571,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           win.open();
           win.addListener("close", () => {
             if (win.getConfirmed()) {
-              this.__deleteStudies(selection.map(button => this.__getStudyData(button.getUuid(), false)), false);
+              this.__doDeleteStudies(selection.map(button => this.__getStudyData(button.getUuid(), false)), false);
             }
           }, this);
         } else {
-          this.__deleteStudies(selection.map(button => this.__getStudyData(button.getUuid(), false)), false);
+          this.__doDeleteStudies(selection.map(button => this.__getStudyData(button.getUuid(), false)), false);
         }
       }, this);
       return deleteButton;
@@ -801,24 +806,30 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return exportButton;
     },
 
+    _deleteResourceRequested: function(studyId) {
+      this.__deleteStudyRequested(this.__getStudyData(studyId));
+    },
+
+    __deleteStudyRequested: function(studyData) {
+      const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+      if (preferencesSettings.getConfirmDeleteStudy()) {
+        const win = this.__createConfirmWindow([studyData.name]);
+        win.center();
+        win.open();
+        win.addListener("close", () => {
+          if (win.getConfirmed()) {
+            this.__doDeleteStudy(studyData);
+          }
+        }, this);
+      } else {
+        this.__doDeleteStudy(studyData);
+      }
+    },
+
     __getDeleteStudyMenuButton: function(studyData) {
       const deleteButton = new qx.ui.menu.Button(this.tr("Delete"));
       osparc.utils.Utils.setIdToWidget(deleteButton, "studyItemMenuDelete");
-      deleteButton.addListener("execute", () => {
-        const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
-        if (preferencesSettings.getConfirmDeleteStudy()) {
-          const win = this.__createConfirmWindow([studyData.name]);
-          win.center();
-          win.open();
-          win.addListener("close", () => {
-            if (win.getConfirmed()) {
-              this.__deleteStudy(studyData);
-            }
-          }, this);
-        } else {
-          this.__deleteStudy(studyData);
-        }
-      }, this);
+      deleteButton.addListener("execute", () => this.__deleteStudyRequested(studyData), this);
       return deleteButton;
     },
 
@@ -968,7 +979,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       req.send(body);
     },
 
-    __deleteStudy: function(studyData) {
+    __doDeleteStudy: function(studyData) {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       const collabGids = Object.keys(studyData["accessRights"]);
       const amICollaborator = collabGids.indexOf(myGid) > -1;
@@ -976,7 +987,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       let operationPromise = null;
       if (collabGids.length > 1 && amICollaborator) {
         // remove collaborator
-        osparc.component.permissions.Study.removeCollaborator(studyData, myGid);
+        osparc.component.share.CollaboratorsStudy.removeCollaborator(studyData, myGid);
         const params = {
           url: {
             "studyId": studyData.uuid
@@ -999,10 +1010,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __deleteStudies: function(studiesData) {
-      studiesData.forEach(studyData => {
-        this.__deleteStudy(studyData);
-      });
+    __doDeleteStudies: function(studiesData) {
+      studiesData.forEach(studyData => this.__doDeleteStudy(studyData));
     },
 
     __createConfirmWindow: function(studyNames) {

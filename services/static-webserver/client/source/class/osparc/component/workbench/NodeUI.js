@@ -71,6 +71,10 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     NODE_HEIGHT: 80
   },
 
+  events: {
+    "updateNodeDecorator": "qx.event.type.Event"
+  },
+
   members: {
     __thumbnail: null,
     __svgWorkbenchCanvas: null,
@@ -190,7 +194,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       const node = this.getNode();
       node.bind("label", this, "caption", {
         onUpdate: () => {
-          setTimeout(() => this.fireEvent("nodeMoving"), 50);
+          setTimeout(() => this.fireEvent("updateNodeDecorator"), 50);
         }
       });
       const metaData = node.getMetaData();
@@ -291,16 +295,14 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           maxWidth: 250
         });
         deprecatedIcon.setToolTip(toolTip);
-      }
-
-      if (node.isRetired()) {
+      } else if (node.isRetired()) {
         const retiredIcon = this.getChildControl("deprecated-icon");
         retiredIcon.set({
           textColor: osparc.utils.StatusUI.getColor("retired")
         });
 
         let ttMsg = osparc.utils.Services.RETIRED_SERVICE_TEXT;
-        const deprecatedTTMsg = node.isDynamic() ? osparc.utils.Services.DEPRECATED_DYNAMIC_INSTRUCTIONS : osparc.utils.Services.DEPRECATED_COMPUTATIONAL_INSTRUCTIONS;
+        const deprecatedTTMsg = node.isDynamic() ? osparc.utils.Services.RETIRED_DYNAMIC_INSTRUCTIONS : osparc.utils.Services.RETIRED_COMPUTATIONAL_INSTRUCTIONS;
         if (deprecatedTTMsg) {
           ttMsg = ttMsg + "<br>" + deprecatedTTMsg;
         }
@@ -380,7 +382,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       if (imageSrc) {
         this.setThumbnail(imageSrc);
       }
-      this.fireEvent("nodeMoving");
+      this.fireEvent("updateNodeDecorator");
     },
 
     __turnIntoParameterUI: function() {
@@ -405,7 +407,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           return "";
         }
       });
-      this.fireEvent("nodeMoving");
+      this.fireEvent("updateNodeDecorator");
     },
 
     __turnIntoIteratorUI: function() {
@@ -562,6 +564,28 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       const coords = this._setPositionFromEvent(e);
       this.getNode().setPosition(coords);
       this.base(arguments, e);
+    },
+
+    setPosition: function(pos) {
+      const node = this.getNode();
+      node.setPosition(pos);
+      this.moveTo(node.getPosition().x, node.getPosition().y);
+    },
+
+    snapToGrid: function() {
+      const node = this.getNode();
+      const {
+        x,
+        y
+      } = node.getPosition();
+      const snapGrid = 20;
+      const snapX = Math.round(x/snapGrid)*snapGrid;
+      const snapY = Math.round(y/snapGrid)*snapGrid;
+      node.setPosition({
+        x: snapX,
+        y: snapY
+      });
+      this.moveTo(node.getPosition().x, node.getPosition().y);
     },
 
     __applyThumbnail: function(thumbnailSrc) {

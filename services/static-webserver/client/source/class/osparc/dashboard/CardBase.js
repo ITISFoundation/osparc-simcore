@@ -39,14 +39,20 @@ qx.Class.define("osparc.dashboard.CardBase", {
     "updateStudy": "qx.event.type.Data",
     "updateTemplate": "qx.event.type.Data",
     "updateService": "qx.event.type.Data",
-    "publishTemplate": "qx.event.type.Data"
+    "publishTemplate": "qx.event.type.Data",
+    "tagClicked": "qx.event.type.Data",
+    "emptyStudyClicked": "qx.event.type.Data"
   },
 
   statics: {
-    SHARE_ICON: "@FontAwesome5Solid/share-alt/14",
-    SHARED_USER: "@FontAwesome5Solid/user/14",
-    SHARED_ORGS: "@FontAwesome5Solid/users/14",
-    SHARED_ALL: "@FontAwesome5Solid/globe/14",
+    SHARE_ICON: "@FontAwesome5Solid/share-alt/13",
+    SHARED_USER: "@FontAwesome5Solid/user/13",
+    SHARED_ORGS: "@FontAwesome5Solid/users/13",
+    SHARED_ALL: "@FontAwesome5Solid/globe/13",
+    PERM_READ: "@FontAwesome5Solid/eye/13",
+    MODE_WORKBENCH: "@FontAwesome5Solid/cubes/13",
+    MODE_GUIDED: "@FontAwesome5Solid/play/13",
+    MODE_APP: "@FontAwesome5Solid/desktop/13",
     NEW_ICON: "@FontAwesome5Solid/plus/",
     LOADING_ICON: "@FontAwesome5Solid/circle-notch/",
     STUDY_ICON: "@FontAwesome5Solid/file-alt/",
@@ -54,16 +60,30 @@ qx.Class.define("osparc.dashboard.CardBase", {
     SERVICE_ICON: "@FontAwesome5Solid/paw/",
     COMP_SERVICE_ICON: "@FontAwesome5Solid/cogs/",
     DYNAMIC_SERVICE_ICON: "@FontAwesome5Solid/mouse-pointer/",
-    PERM_READ: "@FontAwesome5Solid/eye/14",
-    MODE_WORKBENCH: "@FontAwesome5Solid/cubes/14",
-    MODE_GUIDED: "@FontAwesome5Solid/play/14",
-    MODE_APP: "@FontAwesome5Solid/desktop/14",
 
     CARD_PRIORITY: {
       NEW: 0,
       PLACEHOLDER: 1,
       ITEM: 2,
       LOADER: 3
+    },
+
+    createTSRLayout: function() {
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2).set({
+        alignY: "middle"
+      })).set({
+        toolTipText: qx.locale.Manager.tr("Ten Simple Rules"),
+        minWidth: 85
+      });
+      const tsrLabel = new qx.ui.basic.Label(qx.locale.Manager.tr("TSR:")).set({
+        alignY: "middle"
+      });
+      layout.add(tsrLabel);
+      const tsrRating = new osparc.ui.basic.StarsRating().set({
+        alignY: "middle"
+      });
+      layout.add(tsrRating);
+      return layout;
     },
 
     filterText: function(checks, text) {
@@ -175,6 +195,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
       check: ["workbench", "guided", "app"],
       nullable: true,
       apply: "__applyUiMode"
+    },
+
+    emptyWorkbench: {
+      check: "Boolean",
+      nullable: false,
+      init: null,
+      event: "changeEmptyWorkbench",
+      apply: "__applyEmptyWorkbench"
     },
 
     updatable: {
@@ -375,7 +403,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyWorkbench: function(workbench) {
+      if (this.isResourceType("study") || this.isResourceType("template")) {
+        this.setEmptyWorkbench(Object.keys(workbench).length === 0);
+      }
       if (workbench === null) {
+        // it is a service
         return;
       }
 
@@ -406,6 +438,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
             this.__blockCard(image, toolTipText);
           }
         });
+    },
+
+    __applyEmptyWorkbench: function(isEmpty) {
+      const emptyWorkbench = this.getChildControl("empty-workbench");
+      emptyWorkbench.setVisibility(isEmpty ? "visible" : "excluded");
     },
 
     __applyUpdatable: function(updatable) {
@@ -548,7 +585,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
       const resourceData = this.getResourceData();
       const moreOpts = new osparc.dashboard.ResourceMoreOptions(resourceData);
       const title = this.tr("Options");
-      const win = osparc.ui.window.Window.popUpInWindow(moreOpts, title, 750, 725);
+      const win = osparc.ui.window.Window.popUpInWindow(
+        moreOpts,
+        title,
+        osparc.dashboard.ResourceMoreOptions.WIDTH,
+        osparc.dashboard.ResourceMoreOptions.HEIGHT
+      );
       [
         "updateStudy",
         "updateTemplate",
@@ -677,6 +719,26 @@ qx.Class.define("osparc.dashboard.CardBase", {
       const hint = new osparc.ui.hint.Hint(shareIcon, hintText);
       shareIcon.addListener("mouseover", () => hint.show(), this);
       shareIcon.addListener("mouseout", () => hint.exclude(), this);
+    },
+
+    _getEmptyWorkbenchIcon: function() {
+      let toolTipText = this.tr("Empty") + " ";
+      if (this.isResourceType("study")) {
+        toolTipText += osparc.product.Utils.getStudyAlias();
+      } else if (this.isResourceType("template")) {
+        toolTipText += osparc.product.Utils.getTemplateAlias();
+      }
+      const control = new qx.ui.basic.Image().set({
+        source: "@FontAwesome5Solid/times-circle/14",
+        alignY: "bottom",
+        toolTipText
+      });
+      control.addListener("tap", e => {
+        e.stopPropagation();
+        this.setValue(false);
+        this.fireDataEvent("emptyStudyClicked", this.getUuid());
+      }, this);
+      return control;
     },
 
     /**

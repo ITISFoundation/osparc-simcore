@@ -152,7 +152,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
         caretSize: 14
       });
       more.setCollapsed(true);
-      more.getChildControl("title").setFont("title-12");
+      more.getChildControl("title").setFont("text-12");
       this._add(more, {
         flex: 1
       });
@@ -177,11 +177,10 @@ qx.Class.define("osparc.info.ServiceLarge", {
 
     __createDeprecated: function() {
       const isDeprecated = osparc.utils.Services.isDeprecated(this.getService());
+      const isRetired = osparc.utils.Services.isRetired(this.getService());
       if (isDeprecated) {
         return osparc.utils.StatusUI.createServiceDeprecatedChip();
-      }
-      const isRetired = osparc.utils.Services.isRetired(this.getService());
-      if (isRetired) {
+      } else if (isRetired) {
         return osparc.utils.StatusUI.createServiceRetiredChip();
       }
       return null;
@@ -196,7 +195,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
         text = serviceName;
       }
       const title = osparc.info.ServiceUtils.createTitle(text).set({
-        font: "title-16"
+        font: "text-14"
       });
       return title;
     },
@@ -423,7 +422,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
     __openThumbnailEditor: function() {
       const title = this.tr("Edit Thumbnail");
       const thumbnailEditor = new osparc.component.editor.ThumbnailEditor(this.getService()["thumbnail"]);
-      const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, 300, 120);
+      const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, 300, 115);
       thumbnailEditor.addListener("updateThumbnail", e => {
         win.close();
         const validUrl = e.getData();

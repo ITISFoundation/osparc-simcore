@@ -37,10 +37,10 @@ qx.Class.define("osparc.ui.hint.Hint", {
       }
     }
 
+    this.setLayout(new qx.ui.layout.Basic());
     if (text === undefined) {
       text = "";
     }
-    this.setLayout(new qx.ui.layout.Basic());
     const label = this.__label = new qx.ui.basic.Label(text).set({
       rich: true,
       maxWidth: 200
@@ -62,11 +62,13 @@ qx.Class.define("osparc.ui.hint.Hint", {
       check: "qx.ui.core.Widget",
       apply: "_applyElement"
     },
+
     active: {
       check: "Boolean",
       nullable: false,
       init: false
     },
+
     orientation: {
       check: "Integer",
       nullable: false,
@@ -77,8 +79,37 @@ qx.Class.define("osparc.ui.hint.Hint", {
 
   members: {
     __hintContainer: null,
+    __label: null,
     __caret: null,
     __root: null,
+
+    attachShowHideHandlers: function() {
+      if (this.getElement()) {
+        const element = this.getElement();
+
+        const showHint = () => this.show();
+        const hideHint = () => this.exclude();
+        const tapListener = e => {
+          // Make hint "modal" when parent element is clicked
+          if (osparc.utils.Utils.isMouseOnElement(this, e)) {
+            return;
+          }
+          hideHint();
+          document.removeEventListener("mousedown", tapListener);
+          element.addListener("mouseover", showHint);
+          element.addListener("mouseout", hideHint);
+        };
+
+        element.addListener("mouseover", showHint);
+        element.addListener("mouseout", hideHint);
+        element.addListener("tap", () => {
+          showHint();
+          document.addEventListener("mousedown", tapListener);
+          element.removeListener("mouseover", showHint);
+          element.removeListener("mouseout", hideHint);
+        }, this);
+      }
+    },
 
     __createWidget: function() {
       this.__hintContainer = this.__hintContainer || new qx.ui.container.Composite().set({
@@ -125,6 +156,10 @@ qx.Class.define("osparc.ui.hint.Hint", {
           this.__caret.setHeight(5);
           break;
       }
+    },
+
+    getLabel: function() {
+      return this.__label;
     },
 
     getText: function() {
