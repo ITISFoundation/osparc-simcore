@@ -155,13 +155,13 @@ class Project(BaseProjectModel):
         title = "osparc-simcore project"
         extra = Extra.forbid
 
-        # @staticmethod
-        # def schema_extra(schema: dict, _model: "Project"):
-        #     # pylint: disable=unsubscriptable-object
+        @staticmethod
+        def schema_extra(schema: dict, _model: "Project"):
+            # pylint: disable=unsubscriptable-object
 
-        #     # Patch to allow jsonschema nullable
-        #     # SEE https://github.com/samuelcolvin/pydantic/issues/990#issuecomment-645961530
-        #     state_pydantic_schema = deepcopy(schema["properties"]["state"])
-        #     schema["properties"]["state"] = {
-        #         "anyOf": [{"type": "null"}, state_pydantic_schema]
-        #     }
+            # Patch to allow jsonschema nullable
+            # SEE https://github.com/samuelcolvin/pydantic/issues/990#issuecomment-645961530
+            state_pydantic_schema = deepcopy(schema["properties"]["state"])
+            schema["properties"]["state"] = {
+                "anyOf": [{"type": "null"}, state_pydantic_schema]
+            }

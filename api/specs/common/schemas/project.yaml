@@ -1,12 +1,10 @@
 components:
   schemas:
     ProjectIn:
-      # $ref: "./matus-without-ref-converted.yaml"
       $ref: "./project-v0.0.1-pydantic-converted-clean.yaml"
 
     ProjectOut:
       allOf:
-        # - $ref: "./matus-without-ref-converted.yaml"
         - $ref: "./project-v0.0.1-pydantic-converted-clean.yaml"
         - type: object
           properties:

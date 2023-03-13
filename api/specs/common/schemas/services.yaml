@@ -9,8 +9,6 @@ components:
           type: array
           items:
             $ref: "./node-meta-v0.0.1-pydantic-converted-clean.yaml"
-            # $ref: "./openapi-node-meta-generated.yaml#/components/schemas/ServiceDockerData"
-            # $ref: "./depreciated/node-meta-v0.0.1-converted.yaml"
         error:
           nullable: true
           default: null

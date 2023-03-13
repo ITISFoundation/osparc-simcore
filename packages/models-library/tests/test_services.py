@@ -5,7 +5,7 @@
 import re
 from copy import deepcopy
 from pprint import pformat
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable
 
 import pytest
 from models_library.basic_regex import VERSION_RE
@@ -24,7 +24,7 @@ from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataA
 
 
 @pytest.fixture()
-def minimal_service_common_data() -> Dict[str, Any]:
+def minimal_service_common_data() -> dict[str, Any]:
     return dict(
         name="this is a nice sample service",
         description="this is the description of the service",
@@ -32,7 +32,7 @@ def minimal_service_common_data() -> Dict[str, Any]:
 
 
 def test_create_minimal_service_common_data(
-    minimal_service_common_data: Dict[str, Any]
+    minimal_service_common_data: dict[str, Any]
 ):
     service = _BaseServiceCommonDataModel(**minimal_service_common_data)
 
@@ -41,7 +41,7 @@ def test_create_minimal_service_common_data(
     assert service.thumbnail == None
 
 
-def test_node_with_empty_thumbnail(minimal_service_common_data: Dict[str, Any]):
+def test_node_with_empty_thumbnail(minimal_service_common_data: dict[str, Any]):
     service_data = minimal_service_common_data
     service_data.update({"thumbnail": ""})
 
@@ -52,7 +52,7 @@ def test_node_with_empty_thumbnail(minimal_service_common_data: Dict[str, Any]):
     assert service.thumbnail == None
 
 
-def test_node_with_thumbnail(minimal_service_common_data: Dict[str, Any]):
+def test_node_with_thumbnail(minimal_service_common_data: dict[str, Any]):
     service_data = minimal_service_common_data
     service_data.update(
         {
@@ -182,22 +182,22 @@ def test_services_model_examples(model_cls, model_cls_examples):
 @pytest.mark.parametrize(
     "python_regex_pattern, json_schema_file_name, json_schema_entry_paths",
     [
-        (SERVICE_KEY_RE, "json-schema-project-generated.json", ["key"]),
-        (VERSION_RE, "json-schema-project-generated.json", ["version"]),
-        (VERSION_RE, "json-schema-node-meta-generated.json", ["version"]),
-        (SERVICE_KEY_RE, "json-schema-node-meta-generated.json", ["key"]),
+        (SERVICE_KEY_RE, "project-v0.0.1-pydantic.json", ["key"]),
+        (VERSION_RE, "project-v0.0.1-pydantic.json", ["version"]),
+        (VERSION_RE, "node-meta-v0.0.1-pydantic.json", ["version"]),
+        (SERVICE_KEY_RE, "node-meta-v0.0.1-pydantic.json", ["key"]),
     ],
 )
 def test_same_regex_patterns_in_jsonschema_and_python(
     python_regex_pattern: str,
     json_schema_file_name: str,
-    json_schema_entry_paths: List[str],
+    json_schema_entry_paths: list[str],
     json_schema_dict: Callable,
 ):
     # read file in
     json_schema_config = json_schema_dict(json_schema_file_name)
     # go to keys
-    def _find_pattern_entry(obj: Dict[str, Any], key: str) -> Any:
+    def _find_pattern_entry(obj: dict[str, Any], key: str) -> Any:
         if key in obj:
             return obj[key]["pattern"]
         for v in obj.values():

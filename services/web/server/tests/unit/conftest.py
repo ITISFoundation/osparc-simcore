@@ -69,7 +69,7 @@ def empty_project() -> Callable:
 @pytest.fixture
 def project_schema_file(api_version_prefix) -> Path:
     prj_schema_path = resources.get_path(
-        f"api/{api_version_prefix}/schemas/json-schema-project-generated.json"
+        f"api/{api_version_prefix}/schemas/project-v0.0.1-pydantic.json"
     )
     assert prj_schema_path.exists()
     return prj_schema_path

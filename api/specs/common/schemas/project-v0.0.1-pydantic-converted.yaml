@@ -499,8 +499,8 @@ properties:
                           State of execution of a project's computational
                           workflow
 
+                              SEE StateType for task state
 
-                          SEE StateType for task state
                         enum:
                           - UNKNOWN
                           - PUBLISHED
@@ -588,105 +588,109 @@ properties:
       type: string
     example: some:id:to:a:classifier
   state:
-    title: ProjectState
-    type: object
-    properties:
-      locked:
-        title: Locked
-        description: The project lock state
-        allOf:
-          - title: ProjectLocked
-            type: object
-            properties:
-              value:
-                title: Value
-                description: True if the project is locked
-                type: boolean
-              owner:
-                title: Owner
-                description: If locked, the user that owns the lock
-                allOf:
-                  - title: Owner
-                    type: object
-                    properties:
-                      user_id:
-                        title: User Id
+    anyOf:
+      - nullable: true
+      - title: ProjectState
+        type: object
+        properties:
+          locked:
+            title: Locked
+            description: The project lock state
+            allOf:
+              - title: ProjectLocked
+                type: object
+                properties:
+                  value:
+                    title: Value
+                    description: True if the project is locked
+                    type: boolean
+                  owner:
+                    title: Owner
+                    description: If locked, the user that owns the lock
+                    allOf:
+                      - title: Owner
+                        type: object
+                        properties:
+                          user_id:
+                            title: User Id
+                            description: >-
+                              Owner's identifier when registered in the user's
+                              database table
+                            exclusiveMinimum: true
+                            type: integer
+                            minimum: 0
+                            example: 2
+                          first_name:
+                            title: First Name
+                            description: Owner first name
+                            type: string
+                            example: John
+                          last_name:
+                            title: Last Name
+                            description: Owner last name
+                            type: string
+                            example: Smith
+                        required:
+                          - user_id
+                          - first_name
+                          - last_name
+                        additionalProperties: false
+                  status:
+                    description: The status of the project
+                    allOf:
+                      - title: ProjectStatus
+                        description: An enumeration.
+                        enum:
+                          - CLOSED
+                          - CLOSING
+                          - CLONING
+                          - EXPORTING
+                          - OPENING
+                          - OPENED
+                        type: string
+                required:
+                  - value
+                  - status
+                additionalProperties: false
+                example:
+                  value: false
+                  status: CLOSED
+          state:
+            title: State
+            description: The project running state
+            allOf:
+              - title: ProjectRunningState
+                type: object
+                properties:
+                  value:
+                    description: The running state of the project
+                    allOf:
+                      - title: RunningState
                         description: >-
-                          Owner's identifier when registered in the user's
-                          database table
-                        exclusiveMinimum: true
-                        type: integer
-                        minimum: 0
-                        example: 2
-                      first_name:
-                        title: First Name
-                        description: Owner first name
-                        type: string
-                        example: John
-                      last_name:
-                        title: Last Name
-                        description: Owner last name
-                        type: string
-                        example: Smith
-                    required:
-                      - user_id
-                      - first_name
-                      - last_name
-                    additionalProperties: false
-              status:
-                description: The status of the project
-                allOf:
-                  - title: ProjectStatus
-                    description: An enumeration.
-                    enum:
-                      - CLOSED
-                      - CLOSING
-                      - CLONING
-                      - EXPORTING
-                      - OPENING
-                      - OPENED
-                    type: string
-            required:
-              - value
-              - status
-            additionalProperties: false
-            example:
-              value: false
-              status: CLOSED
-      state:
-        title: State
-        description: The project running state
-        allOf:
-          - title: ProjectRunningState
-            type: object
-            properties:
-              value:
-                description: The running state of the project
-                allOf:
-                  - title: RunningState
-                    description: |-
-                      State of execution of a project's computational workflow
+                          State of execution of a project's computational
+                          workflow
 
-                      SEE StateType for task state
-                    enum:
-                      - UNKNOWN
-                      - PUBLISHED
-                      - NOT_STARTED
-                      - PENDING
-                      - STARTED
-                      - RETRY
-                      - SUCCESS
-                      - FAILED
-                      - ABORTED
-                    type: string
-                example: STARTED
-            required:
-              - value
-            additionalProperties: false
-    required:
-      - locked
-      - state
-    additionalProperties: false
+                              SEE StateType for task state
+
+                        enum:
+                          - UNKNOWN
+                          - PUBLISHED
+                          - NOT_STARTED
+                          - PENDING
+                          - STARTED
+                          - RETRY
+                          - SUCCESS
+                          - FAILED
+                          - ABORTED
+                        type: string
+                    example: STARTED
+                required:
+                  - value
+                additionalProperties: false
+        required:
+          - locked
+          - state
+        additionalProperties: false
   ui:
     title: StudyUI
     type: object
@@ -1001,7 +1005,8 @@ definitions:
     description: |-
       State of execution of a project's computational workflow
 
-      SEE StateType for task state
+          SEE StateType for task state
+
     enum:
       - UNKNOWN
       - PUBLISHED
@@ -1040,7 +1045,8 @@ definitions:
             description: |-
               State of execution of a project's computational workflow
 
-              SEE StateType for task state
+                  SEE StateType for task state
+
             enum:
               - UNKNOWN
               - PUBLISHED
@@ -1508,7 +1514,8 @@ definitions:
                     description: |-
                       State of execution of a project's computational workflow
 
-                      SEE StateType for task state
+                          SEE StateType for task state
+
                     enum:
                       - UNKNOWN
                       - PUBLISHED
@@ -1687,7 +1694,8 @@ definitions:
             description: |-
               State of execution of a project's computational workflow
 
-              SEE StateType for task state
+                  SEE StateType for task state
+
             enum:
               - UNKNOWN
               - PUBLISHED
@@ -1792,7 +1800,8 @@ definitions:
                     description: |-
                       State of execution of a project's computational workflow
 
-                      SEE StateType for task state
+                          SEE StateType for task state
+
                     enum:
                       - UNKNOWN
                       - PUBLISHED

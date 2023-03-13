@@ -4,7 +4,7 @@
 import logging
 import os
 from distutils.util import strtobool
-from typing import Dict, Optional
+from typing import Optional
 
 from servicelib.client_session import (  # pylint: disable=no-name-in-module
     APP_CLIENT_SESSION_KEY,
@@ -99,7 +99,7 @@ REGISTRY_SSL: bool = strtobool(os.environ.get("REGISTRY_SSL", "True"))
 EXTRA_HOSTS_SUFFIX: str = os.environ.get("EXTRA_HOSTS_SUFFIX", "undefined")
 
 # these are the envs passed to the dynamic services by default
-SERVICES_DEFAULT_ENVS: Dict[str, str] = {
+SERVICES_DEFAULT_ENVS: dict[str, str] = {
     "POSTGRES_ENDPOINT": os.environ.get(
         "POSTGRES_ENDPOINT", "undefined postgres endpoint"
     ),
@@ -121,7 +121,7 @@ SWARM_STACK_NAME: str = os.environ.get("SWARM_STACK_NAME", "undefined-please-che
 
 # used when in devel mode vs release mode
 NODE_SCHEMA_LOCATION: str = os.environ.get(
-    "NODE_SCHEMA_LOCATION", f"{API_ROOT}/{API_VERSION}/schemas/json-schema-node-meta-generated.json"
+    "NODE_SCHEMA_LOCATION", f"{API_ROOT}/{API_VERSION}/schemas/node-meta-v0.0.1-pydantic.json"
 )
 # used to find the right network name
 SIMCORE_SERVICES_NETWORK_NAME: Optional[str] = os.environ.get(

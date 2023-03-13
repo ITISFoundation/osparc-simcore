@@ -1231,103 +1231,106 @@ components:
           title: Quality
           type: object
         state:
-          additionalProperties: false
-          properties:
-            locked:
-              allOf:
-                - additionalProperties: false
-                  example:
-                    status: CLOSED
-                    value: false
-                  properties:
-                    owner:
-                      allOf:
-                        - additionalProperties: false
-                          properties:
-                            first_name:
-                              description: Owner first name
-                              example: John
-                              title: First Name
-                              type: string
-                            last_name:
-                              description: Owner last name
-                              example: Smith
-                              title: Last Name
-                              type: string
-                            user_id:
-                              description: Owner's identifier when registered in the user's database table
-                              example: 2
-                              exclusiveMinimum: true
-                              minimum: 0
-                              title: User Id
-                              type: integer
-                          required:
-                            - user_id
-                            - first_name
-                            - last_name
+          anyOf:
+            - nullable: true
+            - additionalProperties: false
+              properties:
+                locked:
+                  allOf:
+                    - additionalProperties: false
+                      example:
+                        status: CLOSED
+                        value: false
+                      properties:
+                        owner:
+                          allOf:
+                            - additionalProperties: false
+                              properties:
+                                first_name:
+                                  description: Owner first name
+                                  example: John
+                                  title: First Name
+                                  type: string
+                                last_name:
+                                  description: Owner last name
+                                  example: Smith
+                                  title: Last Name
+                                  type: string
+                                user_id:
+                                  description: Owner's identifier when registered in the user's database table
+                                  example: 2
+                                  exclusiveMinimum: true
+                                  minimum: 0
+                                  title: User Id
+                                  type: integer
+                              required:
+                                - user_id
+                                - first_name
+                                - last_name
+                              title: Owner
+                              type: object
+                          description: 'If locked, the user that owns the lock'
                           title: Owner
-                          type: object
-                      description: 'If locked, the user that owns the lock'
-                      title: Owner
-                    status:
-                      allOf:
-                        - description: An enumeration.
-                          enum:
-                            - CLOSED
-                            - CLOSING
-                            - CLONING
-                            - EXPORTING
-                            - OPENING
-                            - OPENED
-                          title: ProjectStatus
-                          type: string
-                      description: The status of the project
-                    value:
-                      description: True if the project is locked
-                      title: Value
-                      type: boolean
-                  required:
-                    - value
-                    - status
-                  title: ProjectLocked
-                  type: object
-              description: The project lock state
-              title: Locked
-            state:
-              allOf:
-                - additionalProperties: false
-                  properties:
-                    value:
-                      allOf:
-                        - description: |-
-                            State of execution of a project's computational workflow
+                        status:
+                          allOf:
+                            - description: An enumeration.
+                              enum:
+                                - CLOSED
+                                - CLOSING
+                                - CLONING
+                                - EXPORTING
+                                - OPENING
+                                - OPENED
+                              title: ProjectStatus
+                              type: string
+                          description: The status of the project
+                        value:
+                          description: True if the project is locked
+                          title: Value
+                          type: boolean
+                      required:
+                        - value
+                        - status
+                      title: ProjectLocked
+                      type: object
+                  description: The project lock state
+                  title: Locked
+                state:
+                  allOf:
+                    - additionalProperties: false
+                      properties:
+                        value:
+                          allOf:
+                            - description: |-
+                                State of execution of a project's computational workflow
 
-                            SEE StateType for task state
-                          enum:
-                            - UNKNOWN
-                            - PUBLISHED
-                            - NOT_STARTED
-                            - PENDING
-                            - STARTED
-                            - RETRY
-                            - SUCCESS
-                            - FAILED
-                            - ABORTED
-                          title: RunningState
-                          type: string
-                      description: The running state of the project
-                      example: STARTED
-                  required:
-                    - value
-                  title: ProjectRunningState
-                  type: object
-              description: The project running state
-              title: State
-          required:
-            - locked
-            - state
-          title: ProjectState
-          type: object
+                                    SEE StateType for task state
+
+                              enum:
+                                - UNKNOWN
+                                - PUBLISHED
+                                - NOT_STARTED
+                                - PENDING
+                                - STARTED
+                                - RETRY
+                                - SUCCESS
+                                - FAILED
+                                - ABORTED
+                              title: RunningState
+                              type: string
+                          description: The running state of the project
+                          example: STARTED
+                      required:
+                        - value
+                      title: ProjectRunningState
+                      type: object
+                  description: The project running state
+                  title: State
+              required:
+                - locked
+                - state
+              title: ProjectState
+              type: object
         tags:
           default: []
           items:
@@ -1855,7 +1858,8 @@ components:
                             - description: |-
                                 State of execution of a project's computational workflow
 
-                                SEE StateType for task state
+                                    SEE StateType for task state
+
                               enum:
                                 - UNKNOWN
                                 - PUBLISHED

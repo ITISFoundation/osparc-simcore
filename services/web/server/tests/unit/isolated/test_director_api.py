@@ -11,7 +11,7 @@
 import json
 import re
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable
 
 import pytest
 import yaml
@@ -36,14 +36,14 @@ def director_openapi_dir(osparc_simcore_root_dir: Path) -> Path:
 
 
 @pytest.fixture(scope="session")
-def director_openapi_specs(director_openapi_dir: Path) -> Dict[str, Any]:
+def director_openapi_specs(director_openapi_dir: Path) -> dict[str, Any]:
     openapi_path = director_openapi_dir / "openapi.yaml"
     openapi_specs = yaml.safe_load(openapi_path.read_text())
     return openapi_specs
 
 
 @pytest.fixture(scope="session")
-def running_service_model_schema(osparc_simcore_root_dir: Path) -> Dict:
+def running_service_model_schema(osparc_simcore_root_dir: Path) -> dict:
     # SEE: https://github.com/ITISFoundation/osparc-simcore/tree/master/api/specs/common/schemas/running_service.yaml#L30
     content = yaml.safe_load(
         (
@@ -60,12 +60,12 @@ def running_service_model_schema(osparc_simcore_root_dir: Path) -> Dict:
 
 
 @pytest.fixture(scope="session")
-def registry_service_model_schema(osparc_simcore_root_dir: Path) -> Dict:
+def registry_service_model_schema(osparc_simcore_root_dir: Path) -> dict:
     # SEE: https://github.com/ITISFoundation/osparc-simcore/tree/master/api/specs/common/schemas/services.yaml#L11
     #      https://github.com/ITISFoundation/osparc-simcore/tree/master/api/specs/common/schemas/node-meta-v0.0.1.json
     schema = json.loads(
         (
-            osparc_simcore_root_dir / "api/specs/common/schemas/json-schema-node-meta-generated.json"
+            osparc_simcore_root_dir / "api/specs/common/schemas/node-meta-v0.0.1.json"
         ).read_text()
     )
 
@@ -81,7 +81,7 @@ def model_fake_factory(random_json_from_schema: Callable) -> Callable:
     Adapter to create fake data instances of a mo
     """
 
-    def _create(schema: Dict, **override_attrs):
+    def _create(schema: dict, **override_attrs):
         model_instance = random_json_from_schema(json.dumps(schema))
         model_instance.update(override_attrs)
 
@@ -128,7 +128,7 @@ def mock_director_service(
     registry_service_model_schema,
     user_id: int,
     project_id: str,
-    project_nodes: List[Tuple[str, ...]],
+    project_nodes: list[tuple[str, ...]],
 ):
 
     # helpers
@@ -332,7 +332,7 @@ async def test_director_workflow(
     app_mock,
     user_id: int,
     project_id: str,
-    project_nodes: List[Tuple[str, ...]],
+    project_nodes: list[tuple[str, ...]],
 ):
 
     app = app_mock

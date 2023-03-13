@@ -661,7 +661,7 @@
                       "allOf": [
                         {
                           "title": "RunningState",
-                          "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state",
+                          "description": "State of execution of a project's computational workflow\n\n    SEE StateType for task state\n    ",
                           "enum": [
                             "UNKNOWN",
                             "PUBLISHED",
@@ -781,153 +781,160 @@
       }
     },
     "state": {
-      "title": "ProjectState",
-      "type": "object",
-      "properties": {
-        "locked": {
-          "title": "Locked",
-          "description": "The project lock state",
-          "allOf": [
-            {
-              "title": "ProjectLocked",
-              "type": "object",
-              "properties": {
-                "value": {
-                  "title": "Value",
-                  "description": "True if the project is locked",
-                  "type": "boolean"
-                },
-                "owner": {
-                  "title": "Owner",
-                  "description": "If locked, the user that owns the lock",
-                  "allOf": [
-                    {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "title": "ProjectState",
+          "type": "object",
+          "properties": {
+            "locked": {
+              "title": "Locked",
+              "description": "The project lock state",
+              "allOf": [
+                {
+                  "title": "ProjectLocked",
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "title": "Value",
+                      "description": "True if the project is locked",
+                      "type": "boolean"
+                    },
+                    "owner": {
                       "title": "Owner",
-                      "type": "object",
-                      "properties": {
-                        "user_id": {
-                          "title": "User Id",
-                          "description": "Owner's identifier when registered in the user's database table",
-                          "examples": [
-                            2
+                      "description": "If locked, the user that owns the lock",
+                      "allOf": [
+                        {
+                          "title": "Owner",
+                          "type": "object",
+                          "properties": {
+                            "user_id": {
+                              "title": "User Id",
+                              "description": "Owner's identifier when registered in the user's database table",
+                              "examples": [
+                                2
+                              ],
+                              "exclusiveMinimum": 0,
+                              "type": "integer"
+                            },
+                            "first_name": {
+                              "title": "First Name",
+                              "description": "Owner first name",
+                              "examples": [
+                                "John"
+                              ],
+                              "type": "string"
+                            },
+                            "last_name": {
+                              "title": "Last Name",
+                              "description": "Owner last name",
+                              "examples": [
+                                "Smith"
+                              ],
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "user_id",
+                            "first_name",
+                            "last_name"
                           ],
-                          "exclusiveMinimum": 0,
-                          "type": "integer"
-                        },
-                        "first_name": {
-                          "title": "First Name",
-                          "description": "Owner first name",
-                          "examples": [
-                            "John"
-                          ],
-                          "type": "string"
-                        },
-                        "last_name": {
-                          "title": "Last Name",
-                          "description": "Owner last name",
-                          "examples": [
-                            "Smith"
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "status": {
+                      "description": "The status of the project",
+                      "allOf": [
+                        {
+                          "title": "ProjectStatus",
+                          "description": "An enumeration.",
+                          "enum": [
+                            "CLOSED",
+                            "CLOSING",
+                            "CLONING",
+                            "EXPORTING",
+                            "OPENING",
+                            "OPENED"
                           ],
                           "type": "string"
                         }
-                      },
-                      "required": [
-                        "user_id",
-                        "first_name",
-                        "last_name"
-                      ],
-                      "additionalProperties": false
+                      ]
                     }
-                  ]
-                },
-                "status": {
-                  "description": "The status of the project",
-                  "allOf": [
+                  },
+                  "required": [
+                    "value",
+                    "status"
+                  ],
+                  "additionalProperties": false,
+                  "examples": [
                     {
-                      "title": "ProjectStatus",
-                      "description": "An enumeration.",
-                      "enum": [
-                        "CLOSED",
-                        "CLOSING",
-                        "CLONING",
-                        "EXPORTING",
-                        "OPENING",
-                        "OPENED"
-                      ],
-                      "type": "string"
+                      "value": false,
+                      "status": "CLOSED"
+                    },
+                    {
+                      "value": true,
+                      "status": "OPENED",
+                      "owner": {
+                        "user_id": 123,
+                        "first_name": "Johnny",
+                        "last_name": "Cash"
+                      }
                     }
                   ]
                 }
-              },
-              "required": [
-                "value",
-                "status"
-              ],
-              "additionalProperties": false,
-              "examples": [
+              ]
+            },
+            "state": {
+              "title": "State",
+              "description": "The project running state",
+              "allOf": [
                 {
-                  "value": false,
-                  "status": "CLOSED"
-                },
-                {
-                  "value": true,
-                  "status": "OPENED",
-                  "owner": {
-                    "user_id": 123,
-                    "first_name": "Johnny",
-                    "last_name": "Cash"
-                  }
+                  "title": "ProjectRunningState",
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "description": "The running state of the project",
+                      "examples": [
+                        "STARTED"
+                      ],
+                      "allOf": [
+                        {
+                          "title": "RunningState",
+                          "description": "State of execution of a project's computational workflow\n\n    SEE StateType for task state\n    ",
+                          "enum": [
+                            "UNKNOWN",
+                            "PUBLISHED",
+                            "NOT_STARTED",
+                            "PENDING",
+                            "STARTED",
+                            "RETRY",
+                            "SUCCESS",
+                            "FAILED",
+                            "ABORTED"
+                          ],
+                          "type": "string"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "value"
+                  ],
+                  "additionalProperties": false
                 }
               ]
             }
-          ]
-        },
-        "state": {
-          "title": "State",
-          "description": "The project running state",
-          "allOf": [
-            {
-              "title": "ProjectRunningState",
-              "type": "object",
-              "properties": {
-                "value": {
-                  "description": "The running state of the project",
-                  "examples": [
-                    "STARTED"
-                  ],
-                  "allOf": [
-                    {
-                      "title": "RunningState",
-                      "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state",
-                      "enum": [
-                        "UNKNOWN",
-                        "PUBLISHED",
-                        "NOT_STARTED",
-                        "PENDING",
-                        "STARTED",
-                        "RETRY",
-                        "SUCCESS",
-                        "FAILED",
-                        "ABORTED"
-                      ],
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
-              "required": [
-                "value"
-              ],
-              "additionalProperties": false
-            }
-          ]
+          },
+          "required": [
+            "locked",
+            "state"
+          ],
+          "additionalProperties": false
         }
-      },
-      "required": [
-        "locked",
-        "state"
-      ],
-      "additionalProperties": false
+      ]
     },
     "ui": {
       "title": "StudyUI",
@@ -1334,7 +1341,7 @@
     },
     "RunningState": {
       "title": "RunningState",
-      "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state",
+      "description": "State of execution of a project's computational workflow\n\n    SEE StateType for task state\n    ",
       "enum": [
         "UNKNOWN",
         "PUBLISHED",
@@ -1374,7 +1381,7 @@
           "allOf": [
             {
               "title": "RunningState",
-              "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state",
+              "description": "State of execution of a project's computational workflow\n\n    SEE StateType for task state\n    ",
               "enum": [
                 "UNKNOWN",
                 "PUBLISHED",
@@ -2011,7 +2018,7 @@
                   "allOf": [
                     {
                       "title": "RunningState",
-                      "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state",
+                      "description": "State of execution of a project's computational workflow\n\n    SEE StateType for task state\n    ",
                       "enum": [
                         "UNKNOWN",
                         "PUBLISHED",
@@ -2250,7 +2257,7 @@
           "allOf": [
             {
               "title": "RunningState",
-              "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state",
+              "description": "State of execution of a project's computational workflow\n\n    SEE StateType for task state\n    ",
               "enum": [
                 "UNKNOWN",
                 "PUBLISHED",
@@ -2390,7 +2397,7 @@
                   "allOf": [
                     {
                       "title": "RunningState",
-                      "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state",
+                      "description": "State of execution of a project's computational workflow\n\n    SEE StateType for task state\n    ",
                       "enum": [
                         "UNKNOWN",
                         "PUBLISHED",
