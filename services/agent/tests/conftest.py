@@ -190,7 +190,7 @@ def settings(env: None) -> ApplicationSettings:
 
 
 @pytest.fixture()
-def caplog_info_debug(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
+def caplog_debug(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
     with caplog.at_level(logging.DEBUG):
         yield caplog
 

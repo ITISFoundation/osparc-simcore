@@ -31,7 +31,7 @@ async def _job_which_hangs() -> None:
 
 @pytest.mark.parametrize("repeat_interval_s", [REPEAT_TASK_INTERVAL_S, None])
 async def test_task_monitor_recovers_from_error(
-    caplog_info_debug: LogCaptureFixture,
+    caplog_debug: LogCaptureFixture,
     repeat_interval_s: Optional[PositiveFloat],
 ):
 
@@ -48,7 +48,7 @@ async def test_task_monitor_recovers_from_error(
     assert len(task_monitor._tasks) == 0
     assert len(task_monitor._to_start) == 0
 
-    log_messages = caplog_info_debug.text
+    log_messages = caplog_debug.text
     print(log_messages)
 
     assert f"Starting '{_job_which_raises_error.__name__}' ..." in log_messages
@@ -114,7 +114,7 @@ async def initialized_app(env: None) -> AsyncIterator[FastAPI]:
 
 
 async def test_disable_enable_volume_removal_task_workflow(
-    initialized_app: FastAPI, caplog_info_debug: LogCaptureFixture
+    initialized_app: FastAPI, caplog_debug: LogCaptureFixture
 ):
     task_monitor: TaskMonitor = initialized_app.state.task_monitor
 
@@ -132,9 +132,9 @@ async def test_disable_enable_volume_removal_task_workflow(
     assert job_name in task_monitor._tasks
 
     test_log_message = "was already registered."
-    assert test_log_message not in caplog_info_debug.text
+    assert test_log_message not in caplog_debug.text
     await enable_volume_removal_task_if_missing(initialized_app)
-    assert test_log_message in caplog_info_debug.text
+    assert test_log_message in caplog_debug.text
 
     assert job_name in task_monitor._to_start
     assert job_name in task_monitor._tasks

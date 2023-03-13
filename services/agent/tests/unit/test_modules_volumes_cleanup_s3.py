@@ -178,7 +178,7 @@ async def test_regression_non_aws_providers(
     unused_volume_path: Path,
     bucket: str,
     settings: ApplicationSettings,
-    caplog_info_debug: LogCaptureFixture,
+    caplog_debug: LogCaptureFixture,
     provider: S3Provider,
 ):
     _create_data(unused_volume_path)
@@ -202,7 +202,7 @@ async def test_regression_non_aws_providers(
         exclude_files=settings.AGENT_VOLUMES_CLEANUP_EXCLUDE_FILES,
     )
 
-    assert f'provider "{provider}" not known' not in caplog_info_debug.text
+    assert f'provider "{provider}" not known' not in caplog_debug.text
 
 
 async def test_regression_store_to_s3_volume_mountpoint_not_found(
@@ -211,7 +211,7 @@ async def test_regression_store_to_s3_volume_mountpoint_not_found(
     unused_volume_path: Path,
     bucket: str,
     settings: ApplicationSettings,
-    caplog_info_debug: LogCaptureFixture,
+    caplog_debug: LogCaptureFixture,
 ):
     dyv_volume = await unused_volume.show()
     assert unused_volume_path.exists() is False
@@ -233,5 +233,5 @@ async def test_regression_store_to_s3_volume_mountpoint_not_found(
         s3_retries=1,
         exclude_files=settings.AGENT_VOLUMES_CLEANUP_EXCLUDE_FILES,
     )
-    assert f"mountpoint {unused_volume_path} does not exist" in caplog_info_debug.text
-    assert f"{unused_volume.name}" in caplog_info_debug.text
+    assert f"mountpoint {unused_volume_path} does not exist" in caplog_debug.text
+    assert f"{unused_volume.name}" in caplog_debug.text

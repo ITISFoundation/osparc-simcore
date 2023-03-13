@@ -130,7 +130,7 @@ async def test_rpc_remove_volumes_with_already_running_volumes_removal_task_ok(
     infinitely_running_volumes_removal_task: None,
     initialized_app: FastAPI,
     test_rabbit_client: RabbitMQClient,
-    caplog_info_debug: LogCaptureFixture,
+    caplog_debug: LogCaptureFixture,
 ):
 
     async with _create_volumes(100) as volumes:
@@ -142,8 +142,8 @@ async def test_rpc_remove_volumes_with_already_running_volumes_removal_task_ok(
         )
 
     handler_name = "backup_and_remove_volumes"
-    assert caplog_info_debug.text.count(f"Disabled '{handler_name}' job.") == 1
-    assert caplog_info_debug.text.count(f"Enabled '{handler_name}' job.") == 1
+    assert caplog_debug.text.count(f"Disabled '{handler_name}' job.") == 1
+    assert caplog_debug.text.count(f"Enabled '{handler_name}' job.") == 1
 
 
 async def test_rpc_remove_volumes_volume_does_not_exist(

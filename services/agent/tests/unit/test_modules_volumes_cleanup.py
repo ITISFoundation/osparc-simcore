@@ -72,13 +72,13 @@ async def app(settings: ApplicationSettings) -> AsyncIterator[FastAPI]:
 async def test_workflow(
     mock_volumes_folders: None,
     app: FastAPI,
-    caplog_info_debug: LogCaptureFixture,
+    caplog_debug: LogCaptureFixture,
     used_volume_name: str,
     unused_volume_name: str,
 ):
     await backup_and_remove_volumes(app)
 
-    log_messages = caplog_info_debug.messages
+    log_messages = caplog_debug.messages
     assert f"Removed docker volume: '{unused_volume_name}'" in log_messages
     assert f"Skipped in use docker volume: '{used_volume_name}'" in log_messages
 
@@ -92,7 +92,7 @@ async def test_workflow(
 )
 async def test_regression_error_handling(
     mock_volumes_folders: None,
-    caplog_info_debug: LogCaptureFixture,
+    caplog_debug: LogCaptureFixture,
     app: FastAPI,
     used_volume_name: str,
     unused_volume_name: str,
@@ -107,5 +107,5 @@ async def test_regression_error_handling(
 
     await backup_and_remove_volumes(app)
 
-    log_messages = caplog_info_debug.messages
+    log_messages = caplog_debug.messages
     assert error_message in log_messages
