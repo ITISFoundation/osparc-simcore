@@ -24,7 +24,7 @@ async def login_granted_response(
 
     Uses security API
     """
-    email = user["email"]
+    email = user["email"].lower()
     with log_context(
         log,
         logging.INFO,

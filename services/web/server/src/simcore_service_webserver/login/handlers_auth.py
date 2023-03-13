@@ -110,7 +110,7 @@ async def login(request: web.Request):
         )
 
     assert user["status"] == ACTIVE, "db corrupted. Invalid status"  # nosec
-    assert user["email"] == login_.email, "db corrupted. Invalid email"  # nosec
+    assert user["email"] == login_.email.lower(), "db corrupted. Invalid email"  # nosec
 
     # Some roles have login privileges
     has_privileges: Final[bool] = UserRole.USER < UserRole(user["role"])

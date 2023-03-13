@@ -47,6 +47,8 @@ class AsyncpgStorage:
 
     async def get_user(self, with_data) -> asyncpg.Record:
         async with self.pool.acquire() as conn:
+            if with_data.get("email"):
+                with_data["email"] = with_data["email"].lower()
             data = await _sql.find_one(conn, self.user_tbl, with_data)
             return data
 
