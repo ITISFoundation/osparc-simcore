@@ -76,11 +76,8 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           break;
         case "organizations":
           control = new qx.ui.menu.Button(this.tr("Organizations"));
-          osparc.desktop.preferences.PreferencesWindow.evaluateOrganizationsButton(control);
-          control.addListener("execute", () => {
-            const preferences = osparc.navigation.UserMenuButton.openPreferences();
-            preferences.openOrganizations();
-          }, this);
+          osparc.desktop.organizations.OrganizationsWindow.evaluateOrganizationsButton(control);
+          control.addListener("execute", () => osparc.desktop.organizations.OrganizationsWindow.openWindow(), this);
           this.getMenu().add(control);
           break;
         case "clusters":

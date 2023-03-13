@@ -183,7 +183,8 @@ qx.Class.define("osparc.utils.Utils", {
     isMouseOnElement: function(element, event, offset = 0) {
       const domElement = element.getContentElement().getDomElement();
       const boundRect = domElement.getBoundingClientRect();
-      if (event.x > boundRect.x - offset &&
+      if (boundRect &&
+        event.x > boundRect.x - offset &&
         event.y > boundRect.y - offset &&
         event.x < (boundRect.x + boundRect.width) + offset &&
         event.y < (boundRect.y + boundRect.height) + offset) {
