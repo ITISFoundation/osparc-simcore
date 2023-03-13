@@ -454,7 +454,6 @@ qx.Class.define("osparc.utils.Utils", {
         xhr.open(method, url, true);
         xhr.responseType = "blob";
         xhr.addEventListener("readystatechange", () => {
-        // xhr.onreadystatechange = () => {
           if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
             // The responseType value can be changed at any time before the readyState reaches 3.
             // When the readyState reaches 2, we have access to the response headers to make that decision with.
