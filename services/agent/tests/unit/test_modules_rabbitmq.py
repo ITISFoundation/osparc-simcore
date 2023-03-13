@@ -132,6 +132,7 @@ async def test_rpc_remove_volumes_with_already_running_volumes_removal_task_ok(
     initialized_app: FastAPI,
     test_rabbit_client: RabbitMQClient,
 ):
+    caplog_debug.clear()
 
     async with _create_volumes(100) as volumes:
         await asyncio.gather(
