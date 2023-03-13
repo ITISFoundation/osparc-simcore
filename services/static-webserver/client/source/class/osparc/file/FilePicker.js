@@ -227,7 +227,7 @@ qx.Class.define("osparc.file.FilePicker", {
               osparc.utils.Utils.retrieveURLAndDownload(locationId, fileId)
                 .then(data => {
                   if (data) {
-                    osparc.utils.Utils.downloadLink(data.link, "GET", data.fileName);
+                    osparc.DownloadLinkTracker.getInstance().downloadLinkUnattended(data.link, data.fileName);
                   }
                 });
             }
@@ -235,7 +235,7 @@ qx.Class.define("osparc.file.FilePicker", {
       } else if (osparc.file.FilePicker.isOutputDownloadLink(node.getOutputs())) {
         const outFileValue = osparc.file.FilePicker.getOutput(node.getOutputs());
         if (osparc.utils.Utils.isObject(outFileValue) && "downloadLink" in outFileValue) {
-          osparc.utils.Utils.downloadLink(outFileValue["downloadLink"], "GET");
+          osparc.DownloadLinkTracker.getInstance().downloadLinkUnattended(outFileValue["downloadLink"]);
         }
       }
     },
