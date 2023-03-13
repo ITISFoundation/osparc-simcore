@@ -433,19 +433,27 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     retrieveURLAndDownload: function(locationId, fileId) {
-      let fileName = fileId.split("/");
-      fileName = fileName[fileName.length-1];
-      const download = true;
-      const dataStore = osparc.store.Data.getInstance();
-      dataStore.getPresignedLink(download, locationId, fileId)
-        .then(presignedLinkData => {
-          if (presignedLinkData.resp) {
-            const link = presignedLinkData.resp.link;
-            const fileNameFromLink = this.fileNameFromPresignedLink(link);
-            fileName = fileNameFromLink ? fileNameFromLink : fileName;
-            this.downloadLink(link, "GET", fileName);
-          }
-        });
+      return new Promise((resolve, reject) => {
+        let fileName = fileId.split("/");
+        fileName = fileName[fileName.length-1];
+        const download = true;
+        const dataStore = osparc.store.Data.getInstance();
+        dataStore.getPresignedLink(download, locationId, fileId)
+          .then(presignedLinkData => {
+            if (presignedLinkData.resp) {
+              const link = presignedLinkData.resp.link;
+              const fileNameFromLink = this.fileNameFromPresignedLink(link);
+              fileName = fileNameFromLink ? fileNameFromLink : fileName;
+              resolve({
+                link,
+                fileName
+              });
+            } else {
+              resolve(null);
+            }
+          })
+          .catch(err => reject(err));
+      });
     },
 
     downloadLink: function(url, method, fileName, downloadStartedCB) {
@@ -465,9 +473,10 @@ qx.Class.define("osparc.utils.Utils", {
             }
           }
         });
-        xhr.addEventListener("progress", () => {
+        xhr.addEventListener("progress", e => {
           if (xhr.readyState === XMLHttpRequest.LOADING) {
             if (xhr.status === 0 || (xhr.status >= 200 && xhr.status < 400)) {
+              console.log("Progress", e.getData());
               if (downloadStartedCB) {
                 downloadStartedCB();
               }

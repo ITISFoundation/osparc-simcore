@@ -224,7 +224,12 @@ qx.Class.define("osparc.file.FilePicker", {
             if ("location_id" in fileMetadata && "file_id" in fileMetadata) {
               const locationId = fileMetadata["location_id"];
               const fileId = fileMetadata["file_id"];
-              osparc.utils.Utils.retrieveURLAndDownload(locationId, fileId);
+              osparc.utils.Utils.retrieveURLAndDownload(locationId, fileId)
+                .then(data => {
+                  if (data) {
+                    this.downloadLink(data.link, "GET", data.fileName);
+                  }
+                });
             }
           });
       } else if (osparc.file.FilePicker.isOutputDownloadLink(node.getOutputs())) {

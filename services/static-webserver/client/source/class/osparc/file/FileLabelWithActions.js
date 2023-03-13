@@ -135,10 +135,14 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
       if (selection) {
         const fileId = selection.getFileId();
         const locationId = selection.getLocation();
-        osparc.utils.Utils.retrieveURLAndDownload(locationId, fileId);
-        this.getChildControl("download-button").exclude();
-        const pBar = this.getChildControl("download-progress");
-        pBar.show();
+        osparc.utils.Utils.retrieveURLAndDownload(locationId, fileId)
+          .then(data => {
+            if (data) {
+              this.downloadLink(data.link, "GET", data.fileName);
+              this.getChildControl("download-button").exclude();
+              const pBar = this.getChildControl("download-progress");
+              pBar.show();
+          });
       }
     },
 
