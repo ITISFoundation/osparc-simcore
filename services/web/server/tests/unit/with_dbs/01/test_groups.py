@@ -6,7 +6,7 @@
 
 import random
 from copy import deepcopy
-from typing import Callable
+from typing import Any, AsyncIterator, Callable
 
 import pytest
 from aiohttp import ClientResponse, web
@@ -26,6 +26,8 @@ from simcore_service_webserver.groups_api import (
     DEFAULT_GROUP_OWNER_ACCESS_RIGHTS,
     DEFAULT_GROUP_READ_ACCESS_RIGHTS,
     auto_add_user_to_groups,
+    create_user_group,
+    delete_user_group,
 )
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.login.storage import AsyncpgStorage
@@ -592,36 +594,35 @@ async def test_add_user_gets_added_to_group(
             assert len(data["organizations"]) == (0 if "bad" in email else 1)
 
 
-@pytest.mark.testit
-@pytest.mark.acceptance_test(
-    "Fixes 🐛 https://github.com/ITISFoundation/osparc-issues/issues/812"
-)
-@pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_it(
-    client: TestClient,
-    logged_user: UserInfoDict,
-    user_role: UserRole,
-    faker: Faker,
-):
-    # create a new group
-    url = client.app.router["create_group"].url_for()
-    assert f"{url}" == f"/{API_VTAG}/groups"
-
-    resp = await client.post(
-        url,
-        json={
+@pytest.fixture
+async def tmp_group(
+    client: TestClient, logged_user: UserInfoDict
+) -> AsyncIterator[dict[str, Any]]:
+    tmp_group = await create_user_group(
+        app=client.app,
+        user_id=logged_user["id"],
+        new_group={
             "gid": "6543",
             "label": f"this is user {logged_user['id']} group",
             "description": f"user {logged_user['email']} is the owner of that one",
             "thumbnail": None,
         },
     )
-    data, error = await assert_status(resp, web.HTTPCreated)
+    yield tmp_group
+    await delete_user_group(client.app, logged_user["id"], tmp_group["gid"])
 
-    url = client.app.router["add_group_user"].url_for(gid=f"{data['gid']}")
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def adding_user_to_group(
+    client: TestClient,
+    user_role: UserRole,
+    tmp_group: dict[str, str],
+    faker: Faker,
+):
+    url = client.app.router["add_group_user"].url_for(gid=f"{tmp_group['gid']}")
 
     # adding a user that is NOT registered
-    email = faker.email()  # <--- this email is lower case
+    email = faker.email()
     response: ClientResponse = await client.post(url, json={"email": email})
     assert response.status == 404
 
@@ -643,12 +644,25 @@ async def test_it(
         assert not data
         assert not error
 
+
+@pytest.mark.acceptance_test(
+    "Fixes 🐛 https://github.com/ITISFoundation/osparc-issues/issues/812"
+)
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def adding_user_to_group_with_upper_case_email(
+    client: TestClient,
+    user_role: UserRole,
+    tmp_group: dict[str, str],
+    faker: Faker,
+):
+    url = client.app.router["add_group_user"].url_for(gid=f"{tmp_group['gid']}")
+    email = faker.email()
     # adding a user to group with the email in capital letters
     # Tests 🐛 https://github.com/ITISFoundation/osparc-issues/issues/812
     async with NewUser(
         app=client.app,
     ) as registered_user:
-        assert registered_user["email"]
+        assert registered_user["email"]  # <--- this email is lower case
 
         response = await client.post(
             url,
@@ -660,6 +674,17 @@ async def test_it(
 
         assert not data
         assert not error
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def adding_user_to_group_with_lower_case_email(
+    client: TestClient,
+    user_role: UserRole,
+    tmp_group: dict[str, str],
+    faker: Faker,
+):
+    url = client.app.router["add_group_user"].url_for(gid=f"{tmp_group['gid']}")
+    email = faker.email()
 
     # User is registered with the email in capital letters (but should be stored in the DB in lower case)
     # adding a user to group with the email in lower case
@@ -673,7 +698,7 @@ async def test_it(
 
         response = await client.post(
             url,
-            json={"email": email},
+            json={"email": email},  # <--- email in lower case
         )
         data, error = await assert_status(response, web.HTTPNoContent)
 
