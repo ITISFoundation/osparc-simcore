@@ -227,7 +227,7 @@ qx.Class.define("osparc.file.FilePicker", {
               osparc.utils.Utils.retrieveURLAndDownload(locationId, fileId)
                 .then(data => {
                   if (data) {
-                    this.downloadLink(data.link, "GET", data.fileName);
+                    osparc.utils.Utils.downloadLink(data.link, "GET", data.fileName);
                   }
                 });
             }

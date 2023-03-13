@@ -138,7 +138,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
         osparc.utils.Utils.retrieveURLAndDownload(locationId, fileId)
           .then(data => {
             if (data) {
-              this.downloadLink(data.link, "GET", data.fileName);
+              osparc.utils.Utils.downloadLink(data.link, "GET", data.fileName);
               this.getChildControl("download-button").exclude();
               const pBar = this.getChildControl("download-progress");
               pBar.show();
