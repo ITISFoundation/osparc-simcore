@@ -141,7 +141,10 @@ async def test_login_successfully_with_upper_email(
 
         r = await client.post(
             f"{url}",
-            json={"email": user["email"].upper(), "password": user["raw_password"]},
+            json={
+                "email": user["email"].upper(),  # <--- upper case email
+                "password": user["raw_password"],
+            },
         )
     assert r.status == 200
     data, error = unwrap_envelope(await r.json())
@@ -155,7 +158,7 @@ async def test_login_successfully_with_upper_email(
     async with NewUser(
         app=client.app,
         params={
-            "email": email.upper(),
+            "email": email.upper(),  # <--- upper case email
         },
     ) as user:
 
