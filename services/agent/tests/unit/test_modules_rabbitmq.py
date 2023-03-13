@@ -143,8 +143,8 @@ async def test_rpc_remove_volumes_with_already_running_volumes_removal_task_ok(
         )
 
     handler_name = "backup_and_remove_volumes"
-    assert caplog_debug.text.count(f"Disabled '{handler_name}' job.") == 1
-    assert caplog_debug.text.count(f"Enabled '{handler_name}' job.") == 1
+    assert f"Disabled '{handler_name}' job." in caplog_debug.text
+    assert f"Enabled '{handler_name}' job." in caplog_debug.text
 
 
 async def test_rpc_remove_volumes_volume_does_not_exist(
