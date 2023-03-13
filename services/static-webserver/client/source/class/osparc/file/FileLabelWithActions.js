@@ -142,6 +142,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
               this.getChildControl("download-button").exclude();
               const pBar = this.getChildControl("download-progress");
               pBar.show();
+            }
           });
       }
     },
