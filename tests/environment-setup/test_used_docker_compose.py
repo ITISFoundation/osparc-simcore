@@ -122,7 +122,7 @@ def docker_compose_config_bash(osparc_simcore_scripts_dir: Path) -> Path:
 
 
 @pytest.mark.parametrize(
-    "compose_path", compose_paths, ids=str  # lambda p: str(p.relative_to(repo_dir))
+    "compose_path", compose_paths, ids=lambda p: str(p.relative_to(repo_dir))
 )
 def test_validate_compose_file(
     compose_path: Path,
