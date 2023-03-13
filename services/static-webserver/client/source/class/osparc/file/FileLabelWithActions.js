@@ -47,6 +47,8 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     const downloadBtn = this.getChildControl("download-button");
     downloadBtn.addListener("execute", () => this.__retrieveURLAndDownload(), this);
 
+    this.getChildControl("download-progress").exclude();
+
     const deleteBtn = this.getChildControl("delete-button");
     deleteBtn.addListener("execute", () => this.__deleteFile(), this);
   },
@@ -70,6 +72,13 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
         case "selected-label":
           control = new qx.ui.basic.Label().set({
             alignY: "middle"
+          });
+          this._add(control);
+          break;
+        case "download-progress":
+          control = new qx.ui.indicator.ProgressBar(0, 1).set({
+            maxHeight: 15,
+            width: 100
           });
           this._add(control);
           break;
@@ -123,6 +132,9 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
         const fileId = selection.getFileId();
         const locationId = selection.getLocation();
         osparc.utils.Utils.retrieveURLAndDownload(locationId, fileId);
+        this.getChildControl("download-button").exclude();
+        const pBar = this.getChildControl("download-progress");
+        pBar.show();
       }
     },
 
