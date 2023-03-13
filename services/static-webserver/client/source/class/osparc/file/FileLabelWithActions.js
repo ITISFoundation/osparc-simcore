@@ -87,7 +87,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
           this._add(control);
           break;
         case "download-button":
-          control = new qx.ui.form.Button(this.tr("Download"), "@FontAwesome5Solid/cloud-download-alt/16");
+          control = new osparc.ui.form.FetchButton(this.tr("Download"), "@FontAwesome5Solid/cloud-download-alt/16");
           osparc.utils.Utils.setIdToWidget(control, "filesTreeDownloadBtn");
           this._add(control);
           break;
@@ -138,16 +138,27 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
         osparc.utils.Utils.retrieveURLAndDownload(locationId, fileId)
           .then(data => {
             if (data) {
+              const downloadButton = this.getChildControl("download-button");
               const pBar = this.getChildControl("download-progress");
               pBar.show();
               const progressCB = p => pBar.setValue(p);
-              const loadCB = () => {
-                this.getChildControl("download-button").show();
-                pBar.exclude();
-                pBar.setValue(0);
+              const loadingCb = () => {
+                pBar.set({
+                  value: 0,
+                  visibility: "excluded"
+                });
+                downloadButton.set({
+                  fetching: true,
+                  visibility: "visible"
+                });
               };
-              osparc.utils.Utils.downloadLink(data.link, "GET", data.fileName, progressCB, loadCB);
-              this.getChildControl("download-button").exclude();
+              const loadedCb = () => {
+                downloadButton.set({
+                  fetching: false
+                });
+              };
+              osparc.utils.Utils.downloadLink(data.link, "GET", data.fileName, progressCB, loadingCb, loadedCb);
+              downloadButton.exclude();
             }
           });
       }

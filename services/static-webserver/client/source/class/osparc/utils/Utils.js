@@ -456,7 +456,7 @@ qx.Class.define("osparc.utils.Utils", {
       });
     },
 
-    downloadLink: function(url, method, fileName, progressCb, loadCb) {
+    downloadLink: function(url, method, fileName, progressCb, loadingCb, loadedCb) {
       return new Promise((resolve, reject) => {
         let xhr = new XMLHttpRequest();
         xhr.open(method, url, true);
@@ -484,16 +484,19 @@ qx.Class.define("osparc.utils.Utils", {
         });
         xhr.addEventListener("load", () => {
           if (xhr.status == 200) {
-            let blob = new Blob([xhr.response]);
-            let urlBlob = window.URL.createObjectURL(blob);
+            if (loadingCb) {
+              loadingCb();
+            }
+            const blob = new Blob([xhr.response]);
+            const urlBlob = window.URL.createObjectURL(blob);
             if (!fileName) {
               fileName = this.self().filenameFromContentDisposition(xhr);
             }
             this.self().downloadContent(urlBlob, fileName);
-            resolve();
-            if (loadCb) {
-              loadCb();
+            if (loadedCb) {
+              loadedCb();
             }
+            resolve();
           } else {
             reject(xhr);
           }
