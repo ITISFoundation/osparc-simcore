@@ -127,10 +127,10 @@ async def test_rpc_remove_volumes_in_parallel_ok(
 
 
 async def test_rpc_remove_volumes_with_already_running_volumes_removal_task_ok(
+    caplog_debug: LogCaptureFixture,
     infinitely_running_volumes_removal_task: None,
     initialized_app: FastAPI,
     test_rabbit_client: RabbitMQClient,
-    caplog_debug: LogCaptureFixture,
 ):
 
     async with _create_volumes(100) as volumes:
