@@ -227,14 +227,37 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
       );
     },
 
-    _demoteToViewer: function(collaborator, item) {
-      this.__make(
-        collaborator["gid"],
-        this.self().getViewerAccessRight(),
-        this.tr("Collaborator successfully made Viewer"),
-        this.tr("Something went wrong making Collaborator Viewer"),
-        item
-      );
+    _demoteToViewer: async function(collaborator, item) {
+      const groupId = collaborator["gid"];
+      const demoteToViewer = (gid, itm) => {
+        this.__make(
+          gid,
+          this.self().getViewerAccessRight(),
+          this.tr("Collaborator successfully made Viewer"),
+          this.tr("Something went wrong making Collaborator Viewer"),
+          itm
+        );
+      };
+
+      const groupData = await osparc.store.Store.getInstance().getGroup(groupId);
+      const isOrganization = (groupData && !("id" in groupData));
+      const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+      if (isOrganization && preferencesSettings.getConfirmDemoteOrgnaization()) {
+        const msg = this.tr("Demoting to Viewer will remove write access to all the members of the Organization. Are you sure?");
+        const win = new osparc.ui.window.Confirmation(msg).set({
+          confirmAction: "delete",
+          confirmText: this.tr("Yes")
+        });
+        win.center();
+        win.open();
+        win.addListener("close", () => {
+          if (win.getConfirmed()) {
+            demoteToViewer(groupId, item);
+          }
+        }, this);
+      } else {
+        demoteToViewer(groupId, item);
+      }
     },
 
     _demoteToCollaborator: function(collaborator, item) {
