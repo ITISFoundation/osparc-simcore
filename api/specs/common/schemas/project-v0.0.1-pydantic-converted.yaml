@@ -20,7 +20,7 @@ properties:
   thumbnail:
     title: Thumbnail
     description: url of the project thumbnail
-    minLength: 1
+    minLength: 0
     maxLength: 2083
     format: uri
     type: string
@@ -616,9 +616,7 @@ properties:
                             description: >-
                               Owner's identifier when registered in the user's
                               database table
-                            exclusiveMinimum: true
                             type: integer
-                            minimum: 0
                             example: 2
                           first_name:
                             title: First Name
@@ -1584,7 +1582,6 @@ definitions:
         description: Owner's identifier when registered in the user's database table
         example:
           - 2
-        exclusiveMinimum: 0
         type: integer
       first_name:
         title: First Name
@@ -1636,7 +1633,6 @@ definitions:
                   table
                 example:
                   - 2
-                exclusiveMinimum: 0
                 type: integer
               first_name:
                 title: First Name
@@ -1739,7 +1735,6 @@ definitions:
                           database table
                         example:
                           - 2
-                        exclusiveMinimum: 0
                         type: integer
                       first_name:
                         title: First Name

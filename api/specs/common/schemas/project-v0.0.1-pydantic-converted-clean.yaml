@@ -101,8 +101,6 @@ properties:
                       description: Owner's identifier when registered in the user's
                         database table
                       example: 2
-                      exclusiveMinimum: true
-                      minimum: 0
                       title: User Id
                       type: integer
                   required:
@@ -181,7 +179,7 @@ properties:
     example: https://placeimg.com/171/96/tech/grayscale/?0.jpg
     format: uri
     maxLength: 2083
-    minLength: 1
+    minLength: 0
     title: Thumbnail
     type: string
   ui:

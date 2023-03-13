@@ -36,6 +36,14 @@ class ProjectType(str, Enum):
     STANDARD = "STANDARD"
 
 
+class HttpUrlWithCustomLength(HttpUrl):
+    # As we are trying to match this Pydantic model to a historical json schema "project-v0.0.1" we need to update this.
+    # We override the default min_length=1 from parent class to min_length=0
+    @classmethod
+    def __modify_schema__(cls, field_schema):
+        field_schema.update(minLength=0, maxLength=2083, format="uri")
+
+
 class BaseProjectModel(BaseModel):
     # Description of the project
     uuid: ProjectID = Field(
@@ -54,7 +62,7 @@ class BaseProjectModel(BaseModel):
         description="longer one-line description about the project",
         examples=["Dabbling in temporal transitions ..."],
     )
-    thumbnail: Optional[HttpUrl] = Field(
+    thumbnail: Optional[HttpUrlWithCustomLength] = Field(
         ...,
         description="url of the project thumbnail",
         examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
@@ -65,6 +73,12 @@ class BaseProjectModel(BaseModel):
 
     # Pipeline of nodes (SEE projects_nodes.py)
     workbench: Workbench = Field(..., description="Project's pipeline")
+
+    @validator("thumbnail", always=True, pre=True)
+    @classmethod
+    def validate_length(cls, value):
+        if len(value) < 1:
+            return value
 
     @validator("thumbnail", always=True, pre=True)
     @classmethod

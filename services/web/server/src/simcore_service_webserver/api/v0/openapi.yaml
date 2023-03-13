@@ -2529,8 +2529,6 @@ paths:
                                         user_id:
                                           description: Owner's identifier when registered in the user's database table
                                           example: 2
-                                          exclusiveMinimum: true
-                                          minimum: 0
                                           title: User Id
                                           type: integer
                                       required:
@@ -2612,7 +2610,7 @@ paths:
                   example: 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
                   format: uri
                   maxLength: 2083
-                  minLength: 1
+                  minLength: 0
                   title: Thumbnail
                   type: string
                 ui:
@@ -3226,12 +3224,12 @@ paths:
             CreationStatus:
               operationId: get_task_status
               parameters:
-                task_id: '$response.body#/data/task_id'
+                task_id: $response.body#/data/task_id
             CreationResult:
               operationId: get_task_result
               description: Returns 201 if creation succeeded
               parameters:
-                task_id: '$response.body#/data/task_id'
+                task_id: $response.body#/data/task_id
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /projects/active:

@@ -15,7 +15,7 @@ from utils import current_repo_dir
 
 SYNCED_VERSIONS_SUFFIX = [
     ".json",  # json-schema specs file
-    "-converted.yaml",  # equivalent openapi specs file (see scripts/json-schema-to-openapi-schema)
+    "-converted-clean.yaml",  # equivalent openapi specs file (see scripts/json-schema-to-openapi-schema)
 ]
 
 # Add here paths to files containing project's data that can be validated with projects schema
@@ -54,6 +54,7 @@ def project_schema(request, api_specs_dir):
     return _load_data(schema_path)
 
 
+@pytest.mark.testit
 @pytest.mark.parametrize("data_path", PROJECTS_PATHS)
 def test_project_against_schema(data_path, project_schema, this_repo_root_dir):
     """

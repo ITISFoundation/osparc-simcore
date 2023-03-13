@@ -281,10 +281,8 @@ components:
       properties:
         user_id:
           title: User Id
-          exclusiveMinimum: true
           type: integer
           description: Owner's identifier when registered in the user's database table
-          minimum: 0
         first_name:
           title: First Name
           type: string
@@ -364,7 +362,7 @@ components:
         thumbnail:
           title: Thumbnail
           maxLength: 2083
-          minLength: 1
+          minLength: 0
           type: string
           description: url of the project thumbnail
           format: uri
