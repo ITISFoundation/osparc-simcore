@@ -20,3 +20,13 @@ class RemoteMethodNotRegisteredError(BaseRPCError):
         "Could not find a remote method named: '{method_name}'. "
         "Message from remote server was returned: {incoming_message}. "
     )
+
+
+class GatheredRuntimeErrors(BaseRPCError):
+    """
+    Has to be defined in both `requester` and `replier`
+    source codes to work as expected.
+    """
+
+    code = f"{_ERROR_PREFIX}.executing_raised_errors"
+    msg_template = "The following errors occurred: {errors}"

@@ -7,6 +7,7 @@ from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq_utils import RPCNamespace, wait_till_rabbitmq_responsive
 from settings_library.rabbit import RabbitSettings
 from tenacity._asyncio import AsyncRetrying
+from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 
 from ..core.errors import ConfigurationError
@@ -58,7 +59,11 @@ async def _safe_remove_volumes(
     #   - PAYLOAD RUNS:
     #     - if the `volumes_cleanup` were to be triggered again it
     #       is blocked while this is running
-    async for attempt in AsyncRetrying(stop=stop_after_attempt(2), reraise=True):
+    async for attempt in AsyncRetrying(
+        stop=stop_after_attempt(2),
+        retry=retry_if_exception_type(HandlerIsRunningError),
+        reraise=True,
+    ):
         with attempt:
             try:
                 async with volumes_cleanup_manager.deny_handler_usage():

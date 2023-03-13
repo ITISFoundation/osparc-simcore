@@ -11,6 +11,7 @@ from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI
 from servicelib.rabbitmq import RabbitMQClient
+from servicelib.rabbitmq_errors import GatheredRuntimeErrors
 from settings_library.rabbit import RabbitSettings
 from simcore_service_director_v2.modules import rabbitmq
 from simcore_service_director_v2.modules.dynamic_sidecar.volume_removal import (
@@ -109,20 +110,26 @@ async def test_remove_volume_from_node_no_volume_found(
     missing_volume_name = "nope-i-am-fake-and-do-not-exist"
     assert await is_volume_present(async_docker_client, missing_volume_name) is False
 
+    for named_volume in named_volumes:
+        assert await is_volume_present(async_docker_client, named_volume) is True
+
     # put the missing one in the middle of the sequence
     volumes_to_remove = named_volumes[:1] + [missing_volume_name] + named_volumes[1:]
+    assert len(volumes_to_remove) == 11
 
     with pytest.raises(
-        aiodocker.DockerError,
-        match="get nope-i-am-fake-and-do-not-exist: no such volume",
-    ):
+        GatheredRuntimeErrors,
+        match=f"get {missing_volume_name}: no such volume",
+    ) as exec_info:
         await remove_volumes_from_node(
             rabbitmq_client=rabbitmq_client,
             volume_names=volumes_to_remove,
             docker_node_id=target_node_id,
-            volume_removal_attempts=2,
-            sleep_between_attempts_s=1,
+            volume_removal_attempts=3,
+            sleep_between_attempts_s=0.1,
         )
+    assert len(exec_info.value.errors) == 1, f"{exec_info.value.errors}"
+
     assert await is_volume_present(async_docker_client, missing_volume_name) is False
     for named_volume in named_volumes:
         assert await is_volume_present(async_docker_client, named_volume) is False

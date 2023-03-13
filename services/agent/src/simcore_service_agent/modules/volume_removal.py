@@ -1,11 +1,16 @@
+import logging
+
 from aiodocker import Docker
+from servicelib.logging_utils import log_context
+from servicelib.rabbitmq_errors import GatheredRuntimeErrors
 from servicelib.utils import logged_gather
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_random
 
-from ..core.errors import CouldNotRemoveVolumesError
 from .docker import delete_volume, docker_client
+
+logger = logging.getLogger(__name__)
 
 
 async def _remove_single_volume(
@@ -19,7 +24,8 @@ async def _remove_single_volume(
         reraise=True,
     ):
         with attempt:
-            await delete_volume(docker, volume_name)
+            with log_context(logger, logging.DEBUG, f"to remove '{volume_name}'"):
+                await delete_volume(docker, volume_name)
 
 
 async def remove_volumes(
@@ -31,6 +37,7 @@ async def remove_volumes(
     Attempts to remove each individual volume a few times before giving up.
     Will rase an error if it does not manage to remove a volume.
     """
+    logger.debug("Removing the following volumes: %s", volume_names)
     async with docker_client() as docker:
         results = await logged_gather(
             *(
@@ -42,8 +49,8 @@ async def remove_volumes(
                 )
                 for volume_name in volume_names
             ),
-            reraise=False
+            reraise=False,
         )
         errors = [r for r in results if r is not None]
         if errors:
-            raise CouldNotRemoveVolumesError(errors=errors)
+            raise GatheredRuntimeErrors(errors=errors)
