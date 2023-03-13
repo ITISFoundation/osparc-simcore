@@ -122,7 +122,12 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
       if (selection) {
         const fileId = selection.getFileId();
         const locationId = selection.getLocation();
-        osparc.utils.Utils.retrieveURLAndDownload(locationId, fileId);
+        osparc.utils.Utils.retrieveURLAndDownload(locationId, fileId)
+          .then(data => {
+            if (data) {
+              osparc.DownloadLinkTracker.getInstance().downloadLinkUnattended(data.link, data.fileName);
+            }
+          });
       }
     },
 
