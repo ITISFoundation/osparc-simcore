@@ -18,42 +18,38 @@
 qx.Class.define("osparc.component.notification.NotificationUI", {
   extend: qx.ui.core.Widget,
 
-  construct: function(text) {
+  construct: function(notification) {
     this.base(arguments);
 
     this.set({
       maxWidth: this.self().MAX_WIDTH,
-      padding: this.self().PADDING
+      padding: this.self().PADDING,
+      cursor: "pointer"
     });
 
-    const layout = new qx.ui.layout.HBox().set({
-      alignY: "middle"
-    });
+    const layout = new qx.ui.layout.Grid(10, 3);
+    layout.setColumnAlign(0, "center", "middle");
+    layout.setColumnAlign(1, "left", "middle");
+    layout.setColumnFlex(1, 1);
     this._setLayout(layout);
 
-    if (text) {
-      this.setText(text);
+    if (notification) {
+      this.setNotification(notification);
     }
 
-    this.bind("read", this, "backgroundColor", {
-      converter: read => read ? "background-main-3" : "background-main-4"
-    });
+    this.addListener("tap", () => this.__notificationTapped());
+  },
+
+  events: {
+    "notificationTapped": "qx.event.type.Event"
   },
 
   properties: {
-    text: {
-      check: "String",
-      init: "",
+    notification: {
+      check: "osparc.component.notification.Notification",
+      init: null,
       nullable: false,
-      event: "changeText",
-      apply: "__applyText"
-    },
-
-    read: {
-      check: "Boolean",
-      init: false,
-      nullable: false,
-      event: "changeRead"
+      apply: "__applyNotification"
     }
   },
 
@@ -66,24 +62,158 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "text":
+        case "icon":
+          control = new qx.ui.basic.Image().set({
+            source: "@FontAwesome5Solid/paw/14",
+            alignX: "center",
+            alignY: "middle",
+            minWidth: 18
+          });
+          this._add(control, {
+            row: 0,
+            column: 0,
+            rowSpan: 3
+          });
+          break;
+        case "title":
           control = new qx.ui.basic.Label().set({
-            maxWidth: this.self().MAX_WIDTH - 2*this.self().PADDING,
-            font: "text-14",
+            font: "text-13",
             rich: true,
             wrap: true
           });
-          this.bind("text", control, "value");
           this._add(control, {
-            flex: 1
+            row: 0,
+            column: 1
+          });
+          break;
+        case "text":
+          control = new qx.ui.basic.Label().set({
+            font: "text-12",
+            rich: true,
+            wrap: true
+          });
+          this._add(control, {
+            row: 1,
+            column: 1
+          });
+          break;
+        case "date":
+          control = new qx.ui.basic.Label().set({
+            font: "text-11",
+            rich: true,
+            wrap: true
+          });
+          this._add(control, {
+            row: 2,
+            column: 1
           });
           break;
       }
       return control || this.base(arguments, id);
     },
 
-    __applyText: function() {
-      this.getChildControl("text");
+    __applyNotification: function(notification) {
+      const icon = this.getChildControl("icon");
+      notification.bind("category", icon, "source", {
+        converter: value => {
+          let source = "";
+          switch (value) {
+            case "new_organization":
+              source = "@FontAwesome5Solid/users/14";
+              break;
+            case "study_shared":
+              source = "@FontAwesome5Solid/file/14";
+              break;
+            case "template_shared":
+              source = "@FontAwesome5Solid/copy/14";
+              break;
+          }
+          return source;
+        }
+      });
+
+      const title = this.getChildControl("title");
+      notification.bind("title", title, "value");
+
+      const text = this.getChildControl("text");
+      notification.bind("text", text, "value");
+
+      const date = this.getChildControl("date");
+      notification.bind("date", date, "value", {
+        converter: value => {
+          if (value) {
+            return osparc.utils.Utils.formatDateAndTime(new Date(value));
+          }
+          return "";
+        }
+      });
+
+      notification.bind("read", this, "backgroundColor", {
+        converter: read => read ? "background-main-3" : "background-main-4"
+      });
+    },
+
+    __notificationTapped: function() {
+      const notification = this.getNotification();
+      if (!notification) {
+        return;
+      }
+
+      this.fireEvent("notificationTapped");
+
+      if (notification.isRead() === false) {
+        // set as read
+        const params = {
+          url: {
+            notificationId: notification.getId()
+          },
+          data: {
+            "read": true
+          }
+        };
+        osparc.data.Resources.fetch("notifications", "patch", params)
+          .then(() => notification.setRead(true))
+          .catch(() => notification.setRead(false));
+      }
+
+      // open actionable path
+      const actionablePath = notification.getActionablePath();
+      const category = notification.getCategory();
+      switch (category) {
+        case "new_organization": {
+          const items = actionablePath.split("/");
+          const orgId = items.pop();
+          const orgsWindow = osparc.desktop.organizations.OrganizationsWindow.openWindow();
+          orgsWindow.openOrganizationDetails(parseInt(orgId));
+          break;
+        }
+        case "template_shared":
+        case "study_shared": {
+          const items = actionablePath.split("/");
+          const studyId = items.pop();
+          const params = {
+            url: {
+              "studyId": studyId
+            }
+          };
+          osparc.data.Resources.getOne("studies", params)
+            .then(studyData => {
+              if (studyData) {
+                const studyDataCopy = osparc.data.model.Study.deepCloneStudyObject(studyData);
+                studyDataCopy["resourceType"] = notification.getCategory() === "study_shared" ? "study" : "template";
+                const moreOpts = new osparc.dashboard.ResourceMoreOptions(studyData);
+                const title = this.tr("Options");
+                osparc.ui.window.Window.popUpInWindow(
+                  moreOpts,
+                  title,
+                  osparc.dashboard.ResourceMoreOptions.WIDTH,
+                  osparc.dashboard.ResourceMoreOptions.HEIGHT
+                );
+              }
+            });
+          break;
+        }
+      }
     }
   }
 });

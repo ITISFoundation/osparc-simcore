@@ -35,6 +35,11 @@
 qx.Class.define("osparc.dashboard.StudyBrowser", {
   extend: osparc.dashboard.ResourceBrowserBase,
 
+  construct: function() {
+    this._resourceType = "study";
+    this.base(arguments);
+  },
+
   statics: {
     EXPECTED_TI_TEMPLATE_TITLE: "TI Planning Tool",
     EXPECTED_S4L_SERVICE_KEYS: {
@@ -458,7 +463,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     // LAYOUT //
     _createLayout: function() {
-      this._createResourcesLayout("study");
+      this._createResourcesLayout();
       const list = this._resourcesContainer.getFlatList();
       if (list) {
         osparc.utils.Utils.setIdToWidget(list, "studiesList");

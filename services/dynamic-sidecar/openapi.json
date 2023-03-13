@@ -119,9 +119,6 @@
               }
             }
           },
-          "409": {
-            "description": "Task already running, cannot start a new one"
-          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -480,9 +477,6 @@
                 }
               }
             }
-          },
-          "409": {
-            "description": "Task already running, cannot start a new one"
           }
         }
       }
@@ -505,9 +499,6 @@
                 }
               }
             }
-          },
-          "409": {
-            "description": "Task already running, cannot start a new one"
           }
         }
       }
@@ -530,9 +521,6 @@
                 }
               }
             }
-          },
-          "409": {
-            "description": "Task already running, cannot start a new one"
           }
         }
       }
@@ -568,9 +556,6 @@
                 }
               }
             }
-          },
-          "409": {
-            "description": "Task already running, cannot start a new one"
           },
           "422": {
             "description": "Validation Error",
@@ -617,9 +602,6 @@
               }
             }
           },
-          "409": {
-            "description": "Task already running, cannot start a new one"
-          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -651,9 +633,6 @@
                 }
               }
             }
-          },
-          "409": {
-            "description": "Task already running, cannot start a new one"
           }
         }
       }
@@ -676,9 +655,6 @@
                 }
               }
             }
-          },
-          "409": {
-            "description": "Task already running, cannot start a new one"
           }
         }
       }

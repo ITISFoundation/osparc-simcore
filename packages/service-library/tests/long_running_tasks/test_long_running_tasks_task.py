@@ -159,9 +159,9 @@ async def test_unique_task_already_running(tasks_manager: TasksManager):
     start_task(tasks_manager=tasks_manager, task=unique_task, unique=True)
 
     # ensure unique running task regardless of how many times it gets started
-    for _ in range(5):
-        with pytest.raises(TaskAlreadyRunningError) as exec_info:
-            start_task(tasks_manager=tasks_manager, task=unique_task, unique=True)
+    with pytest.raises(TaskAlreadyRunningError) as exec_info:
+        start_task(tasks_manager=tasks_manager, task=unique_task, unique=True)
+    assert "must be unique, found: " in f"{exec_info.value}"
 
 
 async def test_start_multiple_not_unique_tasks(tasks_manager: TasksManager):

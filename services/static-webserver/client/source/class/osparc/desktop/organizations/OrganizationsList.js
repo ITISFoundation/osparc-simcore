@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.desktop.preferences.pages.OrganizationsList", {
+qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -45,10 +45,21 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsList", {
     if (osparc.data.Permissions.getInstance().canDo("user.organizations.create")) {
       this._add(this.__getCreateOrganizationSection());
     }
+
+    this.reloadOrganizations();
   },
 
   events: {
     "organizationSelected": "qx.event.type.Data"
+  },
+
+  properties: {
+    organizationsLoaded: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      event: "changeOrganizationsLoaded"
+    }
   },
 
   statics: {
@@ -67,6 +78,16 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsList", {
   members: {
     __orgsUIList: null,
     __orgsModel: null,
+
+    getOrgModel: function(orgId) {
+      let org = null;
+      this.__orgsModel.forEach(orgModel => {
+        if (orgModel.getGid() === parseInt(orgId)) {
+          org = orgModel;
+        }
+      });
+      return org;
+    },
 
     __getCreateOrganizationSection: function() {
       const createOrgBtn = new qx.ui.form.Button().set({
@@ -90,7 +111,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsList", {
     },
 
     __getOrganizationsFilter: function() {
-      const filter = new osparc.component.filter.TextFilter("name", "organizationsList").set({
+      const filter = new osparc.component.filter.TextFilter("text", "organizationsList").set({
         allowStretchX: true,
         margin: [0, 10, 5, 10]
       });
@@ -148,8 +169,8 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsList", {
 
     __organizationSelected: function(data) {
       if (data && data.length>0) {
-        const orgId = data[0];
-        this.fireDataEvent("organizationSelected", orgId);
+        const org = data[0];
+        this.fireDataEvent("organizationSelected", org.getModel());
       }
     },
 
@@ -174,16 +195,12 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsList", {
           const orgsList = await Promise.all(promises);
           orgsList.sort(this.self().sortOrganizations);
           orgsList.forEach(org => orgsModel.append(qx.data.marshal.Json.createModel(org)));
+          this.setOrganizationsLoaded(true);
         });
     },
 
-    __openEditOrganization: function(orgKey) {
-      let org = null;
-      this.__orgsModel.forEach(orgModel => {
-        if (orgModel.getGid() === parseInt(orgKey)) {
-          org = orgModel;
-        }
-      });
+    __openEditOrganization: function(orgId) {
+      const org = this.getOrgModel(orgId);
       if (org === null) {
         return;
       }
