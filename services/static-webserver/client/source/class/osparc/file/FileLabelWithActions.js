@@ -47,8 +47,6 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     const downloadBtn = this.getChildControl("download-button");
     downloadBtn.addListener("execute", () => this.__retrieveURLAndDownload(), this);
 
-    this.getChildControl("download-progress").exclude();
-
     const deleteBtn = this.getChildControl("delete-button");
     deleteBtn.addListener("execute", () => this.__deleteFile(), this);
   },
@@ -72,17 +70,6 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
         case "selected-label":
           control = new qx.ui.basic.Label().set({
             alignY: "middle"
-          });
-          this._add(control);
-          break;
-        case "download-progress":
-          control = new qx.ui.indicator.ProgressBar(0, 1).set({
-            alignY: "middle",
-            maxHeight: 15,
-            width: 100
-          });
-          control.getChildControl("progress").set({
-            backgroundColor: "strong-main"
           });
           this._add(control);
           break;
@@ -138,21 +125,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
         osparc.utils.Utils.retrieveURLAndDownload(locationId, fileId)
           .then(data => {
             if (data) {
-              const downloadButton = this.getChildControl("download-button");
-              const pBar = this.getChildControl("download-progress");
-              pBar.show();
-              const progressCB = p => pBar.setValue(p);
-              const loadedCb = () => {
-                pBar.set({
-                  value: 0,
-                  visibility: "excluded"
-                });
-                downloadButton.set({
-                  visibility: "visible"
-                });
-              };
-              osparc.utils.Utils.downloadLink(data.link, "GET", data.fileName, progressCB, loadedCb);
-              downloadButton.exclude();
+              osparc.DownloadLinkTracker.getInstance().downloadLinkUnattended(data.link, data.fileName);
             }
           });
       }
