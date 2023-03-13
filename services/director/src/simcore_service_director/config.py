@@ -4,7 +4,7 @@
 import logging
 import os
 from distutils.util import strtobool
-from typing import Optional
+from typing import Dict, Optional
 
 from servicelib.client_session import (  # pylint: disable=no-name-in-module
     APP_CLIENT_SESSION_KEY,
@@ -99,7 +99,7 @@ REGISTRY_SSL: bool = strtobool(os.environ.get("REGISTRY_SSL", "True"))
 EXTRA_HOSTS_SUFFIX: str = os.environ.get("EXTRA_HOSTS_SUFFIX", "undefined")
 
 # these are the envs passed to the dynamic services by default
-SERVICES_DEFAULT_ENVS: dict[str, str] = {
+SERVICES_DEFAULT_ENVS: Dict[str, str] = {
     "POSTGRES_ENDPOINT": os.environ.get(
         "POSTGRES_ENDPOINT", "undefined postgres endpoint"
     ),
