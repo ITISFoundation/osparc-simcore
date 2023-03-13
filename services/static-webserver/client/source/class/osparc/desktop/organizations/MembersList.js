@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
+qx.Class.define("osparc.desktop.organizations.MembersList", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -24,17 +24,12 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
     this._setLayout(new qx.ui.layout.VBox(10));
 
     this._add(this.__createIntroText());
-    this._add(this.__getTitleLayout());
     this._add(this.__getMemberInvitation());
     this._add(osparc.data.Roles.createRolesOrgInfo());
     this._add(this.__getMembersFilter());
     this._add(this.__getMembersList(), {
       flex: 1
     });
-  },
-
-  events: {
-    "backToOrganizations": "qx.event.type.Event"
   },
 
   statics: {
@@ -84,32 +79,19 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
 
   members: {
     __currentOrg: null,
-    __titleLayout: null,
-    __organizationListItem: null,
     __memberInvitation: null,
     __membersModel: null,
 
-    setCurrentOrg: function(currentOrg) {
-      if (currentOrg === null) {
+    setCurrentOrg: function(orgModel) {
+      if (orgModel === null) {
         return;
       }
-      this.__currentOrg = currentOrg;
-      const organizationListItem = this.__addOrganizationListItem();
-      organizationListItem.set({
-        key: currentOrg.getKey(),
-        thumbnail: currentOrg.getThumbnail(),
-        title: currentOrg.getTitle(),
-        subtitle: currentOrg.getSubtitle(),
-        accessRights: currentOrg.getAccessRights()
-      });
+      this.__currentOrg = orgModel;
       this.__reloadOrgMembers();
     },
 
     __createIntroText: function() {
-      const msg = this.tr("\
-        This is the list of members in the organization.\
-        Here, if you are a manager or administrator, you can add new members and promote or demote existing ones.\
-      ");
+      const msg = this.tr("If you are a manager or administrator, you can add new members and promote or demote existing ones.");
       const intro = new qx.ui.basic.Label().set({
         value: msg,
         alignX: "left",
@@ -117,32 +99,6 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
         font: "text-13"
       });
       return intro;
-    },
-
-    __getTitleLayout: function() {
-      const titleLayout = this.__titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-
-      const prevBtn = new qx.ui.form.Button().set({
-        toolTipText: this.tr("Back to Organizations list"),
-        icon: "@FontAwesome5Solid/arrow-left/20",
-        backgroundColor: "transparent"
-      });
-      prevBtn.addListener("execute", () => this.fireEvent("backToOrganizations"));
-      titleLayout.add(prevBtn);
-
-      this.__addOrganizationListItem();
-
-      return titleLayout;
-    },
-
-    __addOrganizationListItem: function() {
-      if (this.__organizationListItem) {
-        this.__titleLayout.remove(this.__organizationListItem);
-      }
-      const organizationListItem = this.__organizationListItem = new osparc.ui.list.OrganizationListItem();
-      organizationListItem.getChildControl("options").exclude();
-      this.__titleLayout.add(organizationListItem);
-      return organizationListItem;
     },
 
     __getMemberInvitation: function() {
@@ -174,7 +130,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
     },
 
     __getMembersFilter: function() {
-      const filter = new osparc.component.filter.TextFilter("name", "organizationMembersList").set({
+      const filter = new osparc.component.filter.TextFilter("text", "organizationMembersList").set({
         allowStretchX: true,
         margin: [0, 10, 5, 10]
       });
@@ -258,7 +214,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
 
       const params = {
         url: {
-          "gid": orgModel.getKey()
+          "gid": orgModel.getGid()
         }
       };
       osparc.data.Resources.get("organizationMembers", params)
@@ -275,36 +231,6 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
         });
     },
 
-    __updateOrganization: function(win, button, orgEditor) {
-      const orgKey = orgEditor.getGid();
-      const name = orgEditor.getLabel();
-      const description = orgEditor.getDescription();
-      const thumbnail = orgEditor.getThumbnail();
-      const params = {
-        url: {
-          "gid": orgKey
-        },
-        data: {
-          "label": name,
-          "description": description,
-          "thumbnail": thumbnail || null
-        }
-      };
-      osparc.data.Resources.fetch("organizations", "patch", params)
-        .then(() => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(name + this.tr(" successfully edited"));
-          button.setFetching(false);
-          win.close();
-          osparc.store.Store.getInstance().reset("organizations");
-          this.__reloadOrganizations();
-        })
-        .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing ") + name, "ERROR");
-          button.setFetching(false);
-          console.error(err);
-        });
-    },
-
     __addMember: async function(orgMemberEmail) {
       if (this.__currentOrg === null) {
         return;
@@ -312,7 +238,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
 
       const productEveryone = await osparc.store.Store.getInstance().getProductEveryone();
 
-      const orgId = this.__currentOrg.getKey();
+      const orgId = this.__currentOrg.getGid();
       const params = {
         url: {
           "gid": orgId
@@ -323,9 +249,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
       };
       osparc.data.Resources.fetch("organizationMembers", "post", params)
         .then(() => {
-          let text = orgMemberEmail + this.tr(" successfully added.");
-          text += "<br>";
-          text += this.tr("The user will not get notified.");
+          const text = orgMemberEmail + this.tr(" successfully added.");
           if (productEveryone && productEveryone["gid"] === parseInt(orgId)) {
             // demote the new member to user
             const params2 = {
@@ -344,6 +268,20 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
             osparc.component.message.FlashMessenger.getInstance().logAs(text);
             osparc.store.Store.getInstance().reset("organizationMembers");
             this.__reloadOrgMembers();
+
+            // push 'new_organization' notification
+            const params2 = {
+              url: {
+                "gid": orgId
+              }
+            };
+            osparc.data.Resources.get("organizationMembers", params2)
+              .then(respOrgMembers => {
+                const newMember = respOrgMembers.find(m => m["login"] === orgMemberEmail);
+                if (newMember) {
+                  osparc.component.notification.Notifications.postNewOrganization(newMember["id"], orgId);
+                }
+              });
           }
         })
         .catch(err => {
@@ -359,7 +297,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
 
       const params = {
         url: {
-          "gid": this.__currentOrg.getKey(),
+          "gid": this.__currentOrg.getGid(),
           "uid": orgMember["id"]
         },
         data: {
@@ -385,7 +323,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
 
       const params = {
         url: {
-          "gid": this.__currentOrg.getKey(),
+          "gid": this.__currentOrg.getGid(),
           "uid": "id" in orgMember ? orgMember["id"] : orgMember["key"]
         },
         data: {
@@ -414,7 +352,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
 
       const params = {
         url: {
-          "gid": this.__currentOrg.getKey(),
+          "gid": this.__currentOrg.getGid(),
           "uid": orgMember["id"]
         },
         data: {
@@ -440,7 +378,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
 
       const params = {
         url: {
-          "gid": this.__currentOrg.getKey(),
+          "gid": this.__currentOrg.getGid(),
           "uid": orgMember["id"]
         },
         data: {
@@ -466,7 +404,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
 
       const params = {
         url: {
-          "gid": this.__currentOrg.getKey(),
+          "gid": this.__currentOrg.getGid(),
           "uid": orgMember["id"]
         },
         data: {
@@ -492,7 +430,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
 
       const params = {
         url: {
-          "gid": this.__currentOrg.getKey(),
+          "gid": this.__currentOrg.getGid(),
           "uid": orgMember["id"]
         },
         data: {
@@ -518,7 +456,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
 
       const params = {
         url: {
-          "gid": this.__currentOrg.getKey(),
+          "gid": this.__currentOrg.getGid(),
           "uid": orgMember["id"]
         }
       };

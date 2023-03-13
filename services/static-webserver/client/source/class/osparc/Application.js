@@ -247,11 +247,11 @@ qx.Class.define("osparc.Application", {
       if (!osparc.CookiePolicy.areCookiesAccepted()) {
         const cookiePolicy = new osparc.CookiePolicy();
         let title = this.tr("Privacy Policy");
-        let height = 155;
+        let height = 160;
         if (osparc.product.Utils.showLicenseExtra()) {
           // "tis" and "s4llite" include the license terms
           title = this.tr("Privacy Policy and License Terms");
-          height = 200;
+          height = 210;
         }
         const win = osparc.ui.window.Window.popUpInWindow(cookiePolicy, title, 400, height).set({
           clickAwayClose: false,

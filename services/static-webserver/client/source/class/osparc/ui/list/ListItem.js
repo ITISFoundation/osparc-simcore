@@ -49,6 +49,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
     this.base(arguments);
 
     const layout = new qx.ui.layout.Grid(8, 5);
+    layout.setColumnWidth(0, 32);
     layout.setColumnFlex(1, 1);
     this._setLayout(layout);
     this.setPadding(5);
@@ -258,11 +259,13 @@ qx.Class.define("osparc.ui.list.ListItem", {
     },
 
     _shouldApplyFilter: function(data) {
-      if (data.text && this.getTitle()) {
-        const label = this.getTitle()
-          .trim()
-          .toLowerCase();
-        if (label.indexOf(data.text) === -1) {
+      if (data.text) {
+        const checks = [
+          this.getTitle(),
+          this.getSubtitle(),
+          this.getSubtitleMD()
+        ];
+        if (checks.filter(check => check && check.toLowerCase().trim().includes(data.text)).length == 0) {
           return true;
         }
       }

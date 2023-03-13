@@ -125,6 +125,8 @@ def _update_resource_limits_and_reservations(
     # example: '2.3' -> 2 ; '3.7' -> 3
     docker_compose_major_version: int = int(service_spec["version"].split(".")[0])
     for spec_service_key, spec in service_spec["services"].items():
+        if spec_service_key not in service_resources:
+            continue
         resources: ResourcesDict = service_resources[spec_service_key].resources
         logger.debug("Resources for %s: %s", spec_service_key, f"{resources=}")
 
@@ -251,7 +253,7 @@ def assemble_spec(
         }
         container_name = DEFAULT_SINGLE_SERVICE_NAME
     else:
-        service_spec = compose_spec
+        service_spec = deepcopy(compose_spec)
         container_name = container_http_entry
 
     assert service_spec is not None  # nosec

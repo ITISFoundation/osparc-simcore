@@ -46,18 +46,24 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       alignY: "middle"
     }));
 
-    osparc.data.Resources.get("statics")
-      .then(statics => {
-        this.__serverStatics = statics;
-        this.buildLayout();
-      });
-
     this.set({
       paddingLeft: 10,
       paddingRight: 10,
       height: this.self().HEIGHT,
       backgroundColor: "background-main-1"
     });
+
+    Promise.all([
+      osparc.data.Resources.get("statics"),
+      osparc.data.Resources.get("notifications")
+    ])
+      .then(values => {
+        const notifications = values[1];
+        osparc.component.notification.Notifications.getInstance().addNotifications(notifications);
+        this.buildLayout();
+        this.setPageContext("dashboard");
+        osparc.WindowSizeTracker.getInstance().addListener("changeCompactVersion", () => this.__navBarResized(), this);
+      });
   },
 
   events: {
@@ -81,6 +87,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
   statics: {
     HEIGHT: 50,
+    SMALL_SCREEN_BREAKPOINT: 800,
 
     BUTTON_OPTIONS: {
       font: "text-14",
@@ -97,33 +104,14 @@ qx.Class.define("osparc.navigation.NavigationBar", {
   },
 
   members: {
-    __serverStatics: null,
+    __tabButtons: null,
 
     buildLayout: function() {
       this.getChildControl("left-items");
       this.getChildControl("center-items");
       this.getChildControl("right-items");
 
-      this.getChildControl("logo");
-      if (!osparc.product.Utils.isProduct("osparc")) {
-        this.getChildControl("logo-powered");
-      }
-
-      this.getChildControl("dashboard-button");
-      this.getChildControl("dashboard-label");
-
-      this.getChildControl("read-only-info");
-
-      this.getChildControl("tasks-button");
-      this.getChildControl("notifications-button");
-      this.getChildControl("expiration-icon");
-      this.getChildControl("manual");
-      this.getChildControl("feedback");
-      this.getChildControl("theme-switch");
-      this.getChildControl("user-menu");
-
-      this.setPageContext("dashboard");
-
+      // left-items
       const logo = this.getChildControl("logo");
       logo.getChildControl("off-logo").set({
         width: 100,
@@ -133,6 +121,24 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         width: 100,
         height: 50
       });
+      if (!osparc.product.Utils.isProduct("osparc")) {
+        this.getChildControl("logo-powered");
+      }
+
+      this.getChildControl("dashboard-label");
+      this.getChildControl("dashboard-button");
+
+      // center-items
+      this.getChildControl("read-only-info");
+
+      // right-items
+      this.getChildControl("tasks-button");
+      this.getChildControl("notifications-button");
+      this.getChildControl("expiration-icon");
+      this.getChildControl("manual");
+      this.getChildControl("feedback");
+      this.getChildControl("theme-switch");
+      this.getChildControl("user-menu");
     },
 
     _createChildControlImpl: function(id) {
@@ -304,7 +310,13 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         case "user-menu":
           control = new osparc.navigation.UserMenuButton();
-          control.populateSimpleMenu();
+          control.populateMenu();
+          control.set(this.self().BUTTON_OPTIONS);
+          this.getChildControl("right-items").add(control);
+          break;
+        case "user-menu-compact":
+          control = new osparc.navigation.UserMenuButton();
+          control.populateMenuCompact();
           control.set(this.self().BUTTON_OPTIONS);
           this.getChildControl("right-items").add(control);
           break;
@@ -350,6 +362,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       const menuButton = new qx.ui.form.MenuButton(null, "@FontAwesome5Solid/book/22", menu).set({
         toolTipText: this.tr("Manuals")
       });
+      osparc.store.Support.addQuickStartToMenu(menu);
       osparc.store.Support.addManualButtonsToMenu(menu, menuButton);
       return menuButton;
     },
@@ -368,6 +381,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     addDashboardTabButtons: function(tabButtons) {
       this.__tabButtons = tabButtons;
       this.getChildControl("center-items").add(tabButtons);
+      this.__navBarResized();
     },
 
     _applyStudy: function(study) {
@@ -375,6 +389,46 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         study.bind("readOnly", this.getChildControl("read-only-info"), "visibility", {
           converter: value => value ? "visible" : "excluded"
         });
+      }
+    },
+
+    __navBarResized: function() {
+      let tabButtons = [];
+      if (this.__tabButtons) {
+        tabButtons = this.__tabButtons.getChildControl("content").getChildren();
+      }
+      if (osparc.WindowSizeTracker.getInstance().isCompactVersion()) {
+        // left-items
+        if (!osparc.product.Utils.isProduct("osparc")) {
+          this.getChildControl("logo-powered").exclude();
+        }
+        // center-items
+        tabButtons.forEach(tabButton => {
+          tabButton.getChildControl("icon").show();
+          tabButton.getChildControl("label").exclude();
+        });
+        // right-items
+        this.getChildControl("user-menu").exclude();
+        this.getChildControl("manual").exclude();
+        this.getChildControl("feedback").exclude();
+        this.getChildControl("theme-switch").exclude();
+        this.getChildControl("user-menu-compact").show();
+      } else {
+        // left-items
+        if (!osparc.product.Utils.isProduct("osparc")) {
+          this.getChildControl("logo-powered").show();
+        }
+        // center-items
+        tabButtons.forEach(tabButton => {
+          tabButton.getChildControl("label").show();
+          tabButton.getChildControl("icon").exclude();
+        });
+        // right-items
+        this.getChildControl("user-menu-compact").exclude();
+        this.getChildControl("manual").show();
+        this.getChildControl("feedback").show();
+        this.getChildControl("theme-switch").show();
+        this.getChildControl("user-menu").show();
       }
     }
   }

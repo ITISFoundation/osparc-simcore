@@ -45,7 +45,7 @@ qx.Class.define("osparc.desktop.MainPage", {
 
     this._setLayout(new qx.ui.layout.VBox(null, null, "separator-vertical"));
 
-    this._add(osparc.component.notification.NotificationsRibbon.getInstance());
+    this._add(osparc.component.notification.RibbonNotifications.getInstance());
 
     const navBar = this.__navBar = this.__createNavigationBar();
     this._add(navBar);
@@ -185,9 +185,6 @@ qx.Class.define("osparc.desktop.MainPage", {
       const tabsBar = dashboard.getChildControl("bar");
       tabsBar.set({
         paddingBottom: 6
-      });
-      this.__navBar.getChildControl("center-items").addListener("resize", e => {
-        dashboard.topBarResized(e.getData());
       });
       this.__navBar.addDashboardTabButtons(tabsBar);
       const itemWidth = osparc.dashboard.GridButtonBase.ITEM_WIDTH + osparc.dashboard.GridButtonBase.SPACING;

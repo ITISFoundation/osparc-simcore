@@ -1,7 +1,7 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 
-from typing import Any, Dict, List, NamedTuple
+from typing import Any, NamedTuple
 
 from dask_gateway_server.app import DaskGateway
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
@@ -27,8 +27,8 @@ def fake_sidecar_fct(
     input_data: TaskInputData,
     output_data_keys: TaskOutputDataSchema,
     log_file_url: AnyUrl,
-    command: List[str],
-    expected_annotations: Dict[str, Any],
+    command: list[str],
+    expected_annotations: dict[str, Any],
 ) -> TaskOutputData:
     import time
 
@@ -39,7 +39,7 @@ def fake_sidecar_fct(
 
     # get the task data
     worker = get_worker()
-    task = worker.tasks.get(worker.get_current_task())
+    task = worker.state.tasks.get(worker.get_current_task())
     assert task is not None
     assert task.annotations == expected_annotations
 
@@ -53,7 +53,7 @@ def fake_failing_sidecar_fct(
     input_data: TaskInputData,
     output_data_keys: TaskOutputDataSchema,
     log_file_url: AnyUrl,
-    command: List[str],
+    command: list[str],
 ) -> TaskOutputData:
 
     raise ValueError("sadly we are failing to execute anything cause we are dumb...")

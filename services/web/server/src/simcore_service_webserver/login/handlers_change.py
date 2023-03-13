@@ -6,6 +6,7 @@ from pydantic import EmailStr, SecretStr, validator
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
+from .._meta import API_VTAG
 from ..products import Product, get_current_product
 from ..security_api import check_password, encrypt_password
 from ..utils import HOUR
@@ -44,7 +45,7 @@ class ResetPasswordBody(InputSchema):
 
 
 @global_rate_limit_route(number_of_requests=10, interval_seconds=HOUR)
-@routes.post("/v0/auth/reset-password", name="auth_reset_password")
+@routes.post(f"/{API_VTAG}/auth/reset-password", name="auth_reset_password")
 async def submit_request_to_reset_password(request: web.Request):
     """
         1. confirm user exists
@@ -130,7 +131,7 @@ class ChangeEmailBody(InputSchema):
     email: EmailStr
 
 
-@routes.post("/v0/auth/change-email", name="auth_change_email")
+@routes.post(f"/{API_VTAG}/auth/change-email", name="auth_change_email")
 @login_required
 async def submit_request_to_change_email(request: web.Request):
     db: AsyncpgStorage = get_plugin_storage(request.app)
@@ -188,7 +189,7 @@ class ChangePasswordBody(InputSchema):
     )
 
 
-@routes.post("/v0/auth/change-password", name="auth_change_password")
+@routes.post(f"/{API_VTAG}/auth/change-password", name="auth_change_password")
 @login_required
 async def change_password(request: web.Request):
 

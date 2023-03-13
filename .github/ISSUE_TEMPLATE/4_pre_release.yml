@@ -1,0 +1,116 @@
+name: 🚀 Pre-release to staging (developers-only)
+description: Issue to plan and log pre-release from master to staging deploy (including staging hotfixes)
+title: "🚀 Pre-release master -> staging_<sprint_name><version>"
+labels: ["t:maintenance", "release"]
+assignees: ["pcrespov"]
+body:
+  - type: dropdown
+    id: prerelease_kind
+    attributes:
+      label: What kind of pre-release?
+      options:
+        - "master branch"
+        - "🚑️ hotfix branch"
+    validations:
+      required: true
+  - type: input
+    id: sprint_name
+    attributes:
+      label: Sprint Name
+      description: Name of the sprint in camelcase. Check [Releases](https://github.com/ITISFoundation/osparc-simcore/releases)
+      placeholder: ex. ResistanceIsFutile
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Pre-release version
+      description: Pre-release count (>=1). Check [Releases](https://github.com/ITISFoundation/osparc-simcore/releases)
+      placeholder: ex. 9
+    validations:
+      required: true
+  - type: input
+    id: commit_sha
+    attributes:
+      label: Commit SHA
+      description: |
+        Selets the commit from which the release takes placeholder. Check [commits](https://github.com/ITISFoundation/osparc-simcore/commits/master)
+        IMPORTANT: make sure t (i.e. tests passed and images were built and pushed)
+      placeholder: 7d9dcc313f9ced0bd1e6508363148841683b6d7c
+    validations:
+      required: true
+  - type: checkboxes
+    attributes:
+      label: Did the commit CI suceeded?
+      description: Check the CI of the selected commit in the [repo commits](https://github.com/ITISFoundation/osparc-simcore/commits/master)
+      options:
+        - label: The commit CI succeeded.
+          required: true
+  - type: textarea
+    attributes:
+      label: Motivation
+      description: |
+        Staging is an intermediate environment between development (master) and production that allows us to test in isolation changes in the framework.
+        In addition, the pre-release workflow shall be used as a simulation to production that can help us to anticipate changes and mitigate failures.
+        - Explain what motivates this pre-release?
+        - Which important changes we might pay attention to?
+        - How should we test them?
+        - Is there anything in particular we should monitor?
+      placeholder: |
+        - Weekly release to staging (Tuesday)
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: Devops check ⚠️ devops
+      description: |
+        Check the PRs marked with (⚠️ devops).
+        Determine and prepare necessary changes required in the environments configs.
+        Log any issues since this procedure should be taken also as an exercise in preparation for the release to production as well.
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: e2e testing check 🧪
+      description: |
+        Check [e2e](https://git.speag.com/oSparc/e2e-testing/-/pipelines?page=1&scope=all&ref=master), [p2e](https://git.speag.com/oSparc/e2e-portal-testing/-/pipelines?page=1&scope=all&ref=staging) and [ops](https://git.speag.com/oSparc/e2e-ops/-/pipelines?page=1&scope=all&ref=master)
+
+        Keep an agenda of what has been reported on every daily
+      placeholder: |
+        - Mon. ...
+        - Tue. ...
+        - Wed. ...
+        - Thu. ...
+        - Fri. ...
+  - type: textarea
+    attributes:
+      label: Summary 📝
+      description: |
+        Summarizes all steps to prepare release.
+        - List [commits (in order)](https://github.com/ITISFoundation/osparc-simcore/commits/master)
+          - Is there anything in particular we should monitor?
+        - Mark commits with 🚨 to warn about possible issues. Contact PR creator to understand how to test/target
+        - Mark all the commits that were already cherry picked from master a hotfix as [ 📌  ``staging_switzer_5``]
+        - Fill up
+      value: |
+        - [ ] `` make release-staging name=<sprint_name> version=<version> git_sha=<commit_sha>``
+        - [ ] Draft [pre-release](https://github.com/ITISFoundation/osparc-simcore/releases)
+        - [ ] Announce
+          ```json
+          {"start": "2023-02-01T12:30:00.000Z", "end": "2023-02-01T13:00:00.000Z", "reason": "Release ResistanceIsFutile9 "}
+          ```
+  - type: textarea
+    attributes:
+      label: Releasing
+      value: |
+        - [ ] Release (release draft)
+        - [ ] Check Release CI
+        - [ ] Check deployed
+          - [ ] aws deploy
+          - [ ] dalco deploy
+        - [ ] Delete announcement
+        - [ ] Check e2e runs
+        - [ ] Announce
+        ``` md
+        https://github.com/ITISFoundation/osparc-simcore/releases/tag/staging_<sprint_name><version>
+        ```

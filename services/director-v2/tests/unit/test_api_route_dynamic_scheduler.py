@@ -172,7 +172,7 @@ async def test_update_service_observation(
         ("DELETE", "docker-resources", "_task_cleanup_service_docker_resources"),
     ],
 )
-async def test_delete_service_containers(
+async def test_409_response(
     mock_scheduler_service_shutdown_tasks: None,
     client: TestClient,
     observed_service: SchedulerData,

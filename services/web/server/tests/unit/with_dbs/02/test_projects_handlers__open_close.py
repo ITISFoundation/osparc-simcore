@@ -636,6 +636,8 @@ async def test_close_project(
     expected,
     mocked_director_v2_api: dict[str, mock.Mock],
     fake_services,
+    mock_rabbitmq: None,
+    mock_progress_bar: Any,
 ):
     # POST /v0/projects/{project_id}:close
     fake_dynamic_services = fake_services(number_services=5)
@@ -682,6 +684,7 @@ async def test_close_project(
                 app=client.server.app,
                 service_uuid=service["service_uuid"],
                 save_state=True,
+                progress=mock_progress_bar.sub_progress(1),
             )
             for service in fake_dynamic_services
         ]
