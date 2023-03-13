@@ -2,6 +2,7 @@ import logging
 from functools import partial
 from typing import Optional, cast
 
+from aiormq.exceptions import ChannelInvalidStateError
 from fastapi import FastAPI
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq_utils import RPCNamespace, wait_till_rabbitmq_responsive
@@ -112,7 +113,17 @@ def setup(app: FastAPI) -> None:
     async def on_shutdown() -> None:
         if app.state.rabbitmq_client:
             rabbit_client = _get_rabbitmq_client(app)
-            await rabbit_client.rpc_unregister_handler(handler=remove_volumes)
+            try:
+                await rabbit_client.rpc_unregister_handler(handler=remove_volumes)
+            except ChannelInvalidStateError as e:
+                # NOTE: `RPC.unregister` raise unexpected error when un registering
+                # handler before shutdown
+                if "closed" in f"{e}":
+                    logger.warning(
+                        "Unexpected aiormq exception when closing: %s", f"{e}"
+                    )
+                else:
+                    raise e
 
             await app.state.rabbitmq_client.close()
 

@@ -6,7 +6,7 @@ import pytest
 from aiodocker import Docker, DockerError
 from aiodocker.volumes import DockerVolume
 from faker import Faker
-from simcore_service_agent.core.errors import CouldNotRemoveVolumesError
+from servicelib.rabbitmq_errors import GatheredRuntimeErrors
 from simcore_service_agent.modules.volume_removal import remove_volumes
 
 
@@ -67,13 +67,14 @@ async def test_remove_volumes_a_volume_does_not_exist(faker: Faker):
         assert len(volumes_to_remove) == len(volume_names) + 1
 
         with pytest.raises(
-            CouldNotRemoveVolumesError, match="get fake_volume: no such volume"
-        ):
+            GatheredRuntimeErrors, match="get fake_volume: no such volume"
+        ) as exec_info:
             await remove_volumes(
                 volumes_to_remove,
                 volume_removal_attempts=3,
                 sleep_between_attempts_s=0.1,
             )
+        assert len(exec_info.value.errors) == 1, f"{exec_info.value.errors}"
 
         for volume in volumes:
             assert await is_volume_present(volume.name) is False

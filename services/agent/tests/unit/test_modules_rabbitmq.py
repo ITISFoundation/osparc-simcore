@@ -8,12 +8,12 @@ from uuid import uuid4
 
 import aiodocker
 import pytest
-from aiodocker import DockerError
 from aiodocker.volumes import DockerVolume
 from fastapi import FastAPI
 from pytest import LogCaptureFixture
 from pytest_mock import MockerFixture
 from servicelib.rabbitmq import RabbitMQClient
+from servicelib.rabbitmq_errors import GatheredRuntimeErrors
 from servicelib.rabbitmq_utils import RPCNamespace
 from settings_library.rabbit import RabbitSettings
 from simcore_service_agent.core.application import create_app
@@ -150,7 +150,10 @@ async def test_rpc_remove_volumes_volume_does_not_exist(
     initialized_app: FastAPI, test_rabbit_client: RabbitMQClient
 ):
     missing_volume_name = "volume_does_not_exit"
-    with pytest.raises(DockerError, match=f"get {missing_volume_name}: no such volume"):
+    with pytest.raises(
+        GatheredRuntimeErrors, match=f"get {missing_volume_name}: no such volume"
+    ) as exec_info:
         await _request_volume_removal(
             initialized_app, test_rabbit_client, [missing_volume_name]
         )
+    assert len(exec_info.value.errors) == 1, f"{exec_info.value.errors}"
