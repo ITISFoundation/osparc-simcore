@@ -76,7 +76,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
           this._add(control);
           break;
         case "download-progress":
-          control = new qx.ui.indicator.ProgressBar().set({
+          control = new qx.ui.indicator.ProgressBar(0, 1).set({
             alignY: "middle",
             maxHeight: 15,
             width: 100
@@ -138,10 +138,11 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
         osparc.utils.Utils.retrieveURLAndDownload(locationId, fileId)
           .then(data => {
             if (data) {
-              osparc.utils.Utils.downloadLink(data.link, "GET", data.fileName);
-              this.getChildControl("download-button").exclude();
               const pBar = this.getChildControl("download-progress");
               pBar.show();
+              const progressCB = p => pBar.setValue(p);
+              osparc.utils.Utils.downloadLink(data.link, "GET", data.fileName, progressCB);
+              this.getChildControl("download-button").exclude();
             }
           });
       }
