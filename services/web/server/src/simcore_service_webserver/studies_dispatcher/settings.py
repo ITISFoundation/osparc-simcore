@@ -29,6 +29,10 @@ class StudiesDispatcherSettings(BaseCustomSettings):
         return v
 
     def is_login_required(self):
+        """Returns False if study access entrypoint does not require auth
+
+        NOTE: in special cases this entrypoing can be programatically protected with auth
+        """
         return not self.STUDIES_ACCESS_ANONYMOUS_ALLOWED
 
     def get_guest_expiration(self) -> datetime:
