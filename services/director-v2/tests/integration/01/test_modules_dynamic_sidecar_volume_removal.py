@@ -1,7 +1,7 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
-from typing import AsyncIterator
+from typing import AsyncIterator, Final
 from unittest.mock import Mock
 
 import aiodocker
@@ -10,6 +10,7 @@ from aiodocker.volumes import DockerVolume
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI
+from pydantic import PositiveFloat
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq_errors import GatheredRuntimeErrors
 from settings_library.rabbit import RabbitSettings
@@ -22,6 +23,8 @@ pytest_simcore_core_services_selection = [
     "rabbit",
     "agent",
 ]
+
+DEFAULT_CONNECTION_ERROR_TIMEOUT_S: Final[PositiveFloat] = 1
 
 
 @pytest.fixture
@@ -94,6 +97,7 @@ async def test_remove_volume_from_node_ok(
         rabbitmq_client=rabbitmq_client,
         volume_names=named_volumes,
         docker_node_id=target_node_id,
+        connection_error_timeout_s=DEFAULT_CONNECTION_ERROR_TIMEOUT_S,
     )
 
     for named_volume in named_volumes:
@@ -125,6 +129,7 @@ async def test_remove_volume_from_node_no_volume_found(
             rabbitmq_client=rabbitmq_client,
             volume_names=volumes_to_remove,
             docker_node_id=target_node_id,
+            connection_error_timeout_s=DEFAULT_CONNECTION_ERROR_TIMEOUT_S,
             volume_removal_attempts=3,
             sleep_between_attempts_s=0.1,
         )

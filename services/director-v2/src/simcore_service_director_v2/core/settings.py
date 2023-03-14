@@ -360,6 +360,14 @@ class DynamicSidecarSettings(BaseCustomSettings):
         ),
     )
 
+    DYNAMIC_SIDECAR_DOCKER_RABBITMQ_CONNECTION_ERROR_TIMEOUT_S: PositiveFloat = Field(
+        60,
+        description=(
+            "Time to wait when there are connection issues with rabbitmq. "
+            "This is used in the context of RPC calls for retrying the request."
+        ),
+    )
+
     @validator("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", pre=True)
     @classmethod
     def auto_disable_if_production(cls, v, values):

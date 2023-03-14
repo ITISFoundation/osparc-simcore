@@ -8,6 +8,7 @@ async def remove_volumes_from_node(
     volume_names: list[str],
     docker_node_id: str,
     *,
+    connection_error_timeout_s: float,
     volume_removal_attempts: int = 15,
     sleep_between_attempts_s: int = 2
 ) -> None:
@@ -26,10 +27,11 @@ async def remove_volumes_from_node(
     volume_removal_timeout_s = volume_removal_attempts * sleep_between_attempts_s * 1.1
 
     await rabbitmq_client.rpc_request(
-        namespace,
-        "remove_volumes",
+        namespace=namespace,
+        method_name="remove_volumes",
         volume_names=volume_names,
         volume_removal_attempts=volume_removal_attempts,
         sleep_between_attempts_s=sleep_between_attempts_s,
         timeout_s_method=volume_removal_timeout_s,
+        timeout_s_connection_error=connection_error_timeout_s,
     )
