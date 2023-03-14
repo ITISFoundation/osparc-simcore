@@ -15,7 +15,7 @@ import sys
 import textwrap
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncIterator, Callable, Iterator, Optional, Union
+from typing import Any, AsyncIterator, Callable, Iterator
 from unittest.mock import AsyncMock, MagicMock, Mock
 from uuid import uuid4
 
