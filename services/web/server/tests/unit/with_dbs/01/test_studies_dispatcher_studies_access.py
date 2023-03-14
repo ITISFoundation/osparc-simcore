@@ -14,6 +14,7 @@ from pprint import pprint
 from typing import AsyncGenerator, AsyncIterator, Callable
 
 import pytest
+import redis.asyncio as aioredis
 from aiohttp import ClientResponse, ClientSession, web
 from aiohttp.test_utils import TestClient, TestServer
 from faker import Faker
@@ -26,6 +27,7 @@ from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict, UserRole
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
+from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
 from servicelib.aiohttp.long_running_tasks.client import LRTask
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.aiohttp.rest_responses import unwrap_envelope
@@ -178,9 +180,13 @@ def mocks_on_projects_api(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-async def storage_subsystem_mock(storage_subsystem_mock, mocker: MockerFixture):
+async def storage_subsystem_mock_override(
+    storage_subsystem_mock: MockedStorageSubsystem, mocker: MockerFixture
+) -> None:
     """
     Mocks functions that require storage client
+
+    NOTE: overrides conftest.storage_subsystem_mock
     """
     # Overrides + extends fixture in services/web/server/tests/unit/with_dbs/conftest.py
     # SEE https://docs.pytest.org/en/stable/fixture.html#override-a-fixture-on-a-folder-conftest-level
@@ -293,11 +299,12 @@ async def test_access_to_forbidden_study(
 async def test_access_study_anonymously(
     client: TestClient,
     published_project: ProjectDict,
-    storage_subsystem_mock,
+    storage_subsystem_mock_override: None,
     catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
-    director_v2_service_mock,
-    mocks_on_projects_api,
-    redis_locks_client,  # needed to cleanup the locks between parametrizations
+    director_v2_service_mock: AioResponsesMock,
+    mocks_on_projects_api: None,
+    # needed to cleanup the locks between parametrizations
+    redis_locks_client: AsyncIterator[aioredis.Redis],
 ):
     catalog_subsystem_mock([published_project])
 
@@ -340,12 +347,13 @@ async def test_access_study_by_logged_user(
     client: TestClient,
     logged_user: UserInfoDict,
     published_project: ProjectDict,
-    storage_subsystem_mock,
+    storage_subsystem_mock_override: None,
     catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     director_v2_service_mock: AioResponsesMock,
-    mocks_on_projects_api,
+    mocks_on_projects_api: None,
     auto_delete_projects: None,
-    redis_locks_client,  # needed to cleanup the locks between parametrizations
+    # needed to cleanup the locks between parametrizations
+    redis_locks_client: AsyncIterator[aioredis.Redis],
 ):
     catalog_subsystem_mock([published_project])
     assert _is_user_authenticated(client.session), "Is already logged-in"
@@ -369,11 +377,12 @@ async def test_access_study_by_logged_user(
 async def test_access_cookie_of_expired_user(
     client: TestClient,
     published_project: ProjectDict,
-    storage_subsystem_mock,
+    storage_subsystem_mock_override: None,
     catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     director_v2_service_mock: AioResponsesMock,
-    mocks_on_projects_api,
-    redis_locks_client,  # needed to cleanup the locks between parametrizations
+    mocks_on_projects_api: None,
+    # needed to cleanup the locks between parametrizations
+    redis_locks_client: AsyncIterator[aioredis.Redis],
 ):
     catalog_subsystem_mock([published_project])
     # emulates issue #1570
@@ -436,11 +445,12 @@ async def test_guest_user_is_not_garbage_collected(
     web_server: TestServer,
     aiohttp_client: Callable,
     published_project: ProjectDict,
-    storage_subsystem_mock,
+    storage_subsystem_mock_override: None,
     catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     director_v2_service_mock: AioResponsesMock,
-    mocks_on_projects_api,
-    redis_locks_client,  # needed to cleanup the locks between parametrizations
+    mocks_on_projects_api: None,
+    # needed to cleanup the locks between parametrizations
+    redis_locks_client: AsyncIterator[aioredis.Redis],
 ):
     catalog_subsystem_mock([published_project])
     ## NOTE: use pytest -s --log-cli-level=DEBUG  to see GC logs
