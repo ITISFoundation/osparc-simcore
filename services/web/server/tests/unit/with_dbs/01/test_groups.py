@@ -595,10 +595,10 @@ async def test_add_user_gets_added_to_group(
 
 
 @pytest.fixture
-async def tmp_group(
+async def group_where_logged_user_is_the_owner(
     client: TestClient, logged_user: UserInfoDict
 ) -> AsyncIterator[dict[str, Any]]:
-    tmp_group = await create_user_group(
+    group = await create_user_group(
         app=client.app,
         user_id=logged_user["id"],
         new_group={
@@ -608,18 +608,20 @@ async def tmp_group(
             "thumbnail": None,
         },
     )
-    yield tmp_group
-    await delete_user_group(client.app, logged_user["id"], tmp_group["gid"])
+    yield group
+    await delete_user_group(client.app, logged_user["id"], group["gid"])
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def adding_user_to_group(
+async def test_adding_user_to_group(
     client: TestClient,
     user_role: UserRole,
-    tmp_group: dict[str, str],
+    group_where_logged_user_is_the_owner: dict[str, str],
     faker: Faker,
 ):
-    url = client.app.router["add_group_user"].url_for(gid=f"{tmp_group['gid']}")
+    url = client.app.router["add_group_user"].url_for(
+        gid=f"{group_where_logged_user_is_the_owner['gid']}"
+    )
 
     # adding a user that is NOT registered
     email = faker.email()
@@ -649,13 +651,15 @@ async def adding_user_to_group(
     "Fixes 🐛 https://github.com/ITISFoundation/osparc-issues/issues/812"
 )
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def adding_user_to_group_with_upper_case_email(
+async def test_adding_user_to_group_with_upper_case_email(
     client: TestClient,
     user_role: UserRole,
-    tmp_group: dict[str, str],
+    group_where_logged_user_is_the_owner: dict[str, str],
     faker: Faker,
 ):
-    url = client.app.router["add_group_user"].url_for(gid=f"{tmp_group['gid']}")
+    url = client.app.router["add_group_user"].url_for(
+        gid=f"{group_where_logged_user_is_the_owner['gid']}"
+    )
     email = faker.email()
     # adding a user to group with the email in capital letters
     # Tests 🐛 https://github.com/ITISFoundation/osparc-issues/issues/812
@@ -677,13 +681,15 @@ async def adding_user_to_group_with_upper_case_email(
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def adding_user_to_group_with_lower_case_email(
+async def test_adding_user_to_group_with_lower_case_email(
     client: TestClient,
     user_role: UserRole,
-    tmp_group: dict[str, str],
+    group_where_logged_user_is_the_owner: dict[str, str],
     faker: Faker,
 ):
-    url = client.app.router["add_group_user"].url_for(gid=f"{tmp_group['gid']}")
+    url = client.app.router["add_group_user"].url_for(
+        gid=f"{group_where_logged_user_is_the_owner['gid']}"
+    )
     email = faker.email()
 
     # User is registered with the email in capital letters (but should be stored in the DB in lower case)
