@@ -551,28 +551,35 @@ rm-registry: ## remove the registry and changes to host/file
 		echo removing entry in /etc/hosts...;\
 		sudo sed -i "/127.0.0.1 $(LOCAL_REGISTRY_HOSTNAME)/d" /etc/hosts,\
 		echo /etc/hosts is already cleaned)
-	@$(if $(shell grep "{\"insecure-registries\": \[\"$(LOCAL_REGISTRY_HOSTNAME):5000\"\]}" /etc/docker/daemon.json),\
+	@$(if $(shell jq -e '.["insecure-registries"]? | index("http://$(LOCAL_REGISTRY_HOSTNAME):5000")? // empty' /etc/docker/daemon.json),\
 		echo removing entry in /etc/docker/daemon.json...;\
-		sudo sed -i '/{"insecure-registries": \["$(LOCAL_REGISTRY_HOSTNAME):5000"\]}/d' /etc/docker/daemon.json;,\
-		echo /etc/docker/daemon.json is already cleaned)
+		jq 'if .["insecure-registries"] then .["insecure-registries"] |= map(select(. != "http://$(LOCAL_REGISTRY_HOSTNAME):5000")) else . end' /etc/docker/daemon.json > /tmp/daemon.json && \
+		sudo mv /tmp/daemon.json /etc/docker/daemon.json &&\
+		echo restarting engine... &&\
+		sudo service docker restart &&\
+		echo done,\
+		echo /etc/docker/daemon.json already cleaned)
 	# removing container and volume
-	-docker rm --force $(LOCAL_REGISTRY_HOSTNAME)
-	-docker volume rm $(LOCAL_REGISTRY_VOLUME)
+	-@docker rm --force $(LOCAL_REGISTRY_HOSTNAME)
+	-@docker volume rm $(LOCAL_REGISTRY_VOLUME)
 
 local-registry: .env ## creates a local docker registry and configure simcore to use it (NOTE: needs admin rights)
 	@$(if $(shell grep "127.0.0.1 $(LOCAL_REGISTRY_HOSTNAME)" /etc/hosts),,\
 					echo configuring host file to redirect $(LOCAL_REGISTRY_HOSTNAME) to 127.0.0.1; \
 					sudo echo 127.0.0.1 $(LOCAL_REGISTRY_HOSTNAME) | sudo tee -a /etc/hosts;\
 					echo done)
-	@$(if $(shell grep "{\"insecure-registries\": \[\"registry:5000\"\]}" /etc/docker/daemon.json),,\
+	@$(if $(shell jq -e '.["insecure-registries"]? | index("http://$(LOCAL_REGISTRY_HOSTNAME):5000")? // empty' /etc/docker/daemon.json),,\
 					echo configuring docker engine to use insecure local registry...; \
-					sudo echo {\"insecure-registries\": [\"$(LOCAL_REGISTRY_HOSTNAME):5000\"]} | sudo tee -a /etc/docker/daemon.json; \
-					echo restarting engine...; \
-					sudo service docker restart;\
+					jq 'if .["insecure-registries"] | index("http://$(LOCAL_REGISTRY_HOSTNAME):5000") then . else .["insecure-registries"] += ["http://$(LOCAL_REGISTRY_HOSTNAME):5000"] end' /etc/docker/daemon.json > /tmp/daemon.json &&\
+					sudo mv /tmp/daemon.json /etc/docker/daemon.json &&\
+					echo restarting engine... &&\
+					sudo service docker restart &&\
 					echo done)
+
 	@$(if $(shell docker ps --format="{{.Names}}" | grep registry),,\
-					echo starting registry on $(LOCAL_REGISTRY_HOSTNAME):5000...; \
-					docker run --detach \
+					echo starting registry on http://$(LOCAL_REGISTRY_HOSTNAME):5000...; \
+					docker run \
+							--detach \
 							--init \
 							--env REGISTRY_STORAGE_DELETE_ENABLED=true \
 							--publish 5000:5000 \
