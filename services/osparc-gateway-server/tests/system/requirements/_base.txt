@@ -1,0 +1,6 @@
+# NOTE:
+#  This file file is just here as placeholder
+#  to fulfill dependencies of _tools.txt target in requirements/base.Makefile
+#
+#  This is a pure-tests project and all dependencies are added in _test.in
+#

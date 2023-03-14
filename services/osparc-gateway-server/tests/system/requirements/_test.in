@@ -1,0 +1,22 @@
+--constraint ../../../../../requirements/constraints.txt
+--constraint ../../../../dask-sidecar/requirements/_dask-distributed.txt
+
+
+
+aiodocker
+codecov
+dask-gateway
+docker
+faker
+lz4
+numpy
+pylint
+pytest
+pytest-asyncio
+pytest-cov
+pytest-icdiff
+pytest-instafail
+pytest-mock
+pytest-runner
+pytest-sugar
+tenacity
