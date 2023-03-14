@@ -194,20 +194,14 @@ components:
         inputs:
           title: Inputs
           type: object
-          additionalProperties:
-            $ref: '#/components/schemas/ServiceInput'
           description: definition of the inputs of this node
         outputs:
           title: Outputs
           type: object
-          additionalProperties:
-            $ref: '#/components/schemas/ServiceOutput'
           description: definition of the outputs of this node
         boot-options:
           title: Boot-Options
           type: object
-          additionalProperties:
-            $ref: '#/components/schemas/BootOption'
           description: Service defined boot options. These get injected in the service
             as env variables.
       additionalProperties: false
@@ -252,9 +246,6 @@ components:
         fileToKeyMap:
           title: Filetokeymap
           type: object
-          additionalProperties:
-            pattern: ^[-_a-zA-Z0-9]+$
-            type: string
           description: Place the data associated with the named keys in files
         unit:
           title: Unit
@@ -312,9 +303,6 @@ components:
         fileToKeyMap:
           title: Filetokeymap
           type: object
-          additionalProperties:
-            pattern: ^[-_a-zA-Z0-9]+$
-            type: string
           description: Place the data associated with the named keys in files
         unit:
           title: Unit

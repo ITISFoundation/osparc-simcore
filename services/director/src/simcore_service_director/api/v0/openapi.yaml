@@ -238,62 +238,7 @@ paths:
                           title: Badges
                           type: array
                         boot-options:
-                          additionalProperties:
-                            example:
-                              default: '0'
-                              description: Start it in web page mode
-                              items:
-                                '0':
-                                  description: Tooltip for non Voila boot mode
-                                  label: Non Voila
-                                '1':
-                                  description: Tooltip for Voila boot mode
-                                  label: Voila
-                              label: Boot mode
-                            properties:
-                              default:
-                                title: Default
-                                type: string
-                              description:
-                                title: Description
-                                type: string
-                              items:
-                                additionalProperties:
-                                  example:
-                                    default: '0'
-                                    description: Start it in web page mode
-                                    items:
-                                      '0':
-                                        description: Tooltip for non Voila boot mode
-                                        label: Non Voila
-                                      '1':
-                                        description: Tooltip for Voila boot mode
-                                        label: Voila
-                                    label: Boot mode
-                                  properties:
-                                    description:
-                                      title: Description
-                                      type: string
-                                    label:
-                                      title: Label
-                                      type: string
-                                  required:
-                                    - label
-                                    - description
-                                  title: BootChoice
-                                  type: object
-                                title: Items
-                                type: object
-                              label:
-                                title: Label
-                                type: string
-                            required:
-                              - label
-                              - description
-                              - default
-                              - items
-                            title: BootOption
-                            type: object
+                          additionalProperties: true
                           description: Service defined boot options. These get injected in the service as env variables.
                           title: Boot-Options
                           type: object
@@ -386,132 +331,7 @@ paths:
                           title: Description
                           type: string
                         inputs:
-                          additionalProperties:
-                            additionalProperties: false
-                            description: Metadata on a service input port
-                            example:
-                              description: Files downloaded from service connected at the input
-                              displayOrder: 1
-                              label: Input files - file-wo-widget
-                              type: 'data:*/*'
-                            properties:
-                              contentSchema:
-                                description: jsonschema of this input/output. Required when type='ref_contentSchema'
-                                title: Contentschema
-                                type: object
-                              defaultValue:
-                                anyOf:
-                                  - type: boolean
-                                  - type: integer
-                                  - type: number
-                                  - type: string
-                                example: Dog
-                                title: Defaultvalue
-                              description:
-                                description: description of the property
-                                example: Age in seconds since 1970
-                                title: Description
-                                type: string
-                              displayOrder:
-                                deprecated: true
-                                description: 'DEPRECATED: new display order is taken from the item position. This will be removed.'
-                                title: Displayorder
-                                type: number
-                              fileToKeyMap:
-                                additionalProperties:
-                                  pattern: '^[-_a-zA-Z0-9]+$'
-                                  type: string
-                                description: Place the data associated with the named keys in files
-                                example:
-                                  dir/input1.txt: key_1
-                                  dir33/input2.txt: key2
-                                title: Filetokeymap
-                                type: object
-                                x-patternProperties:
-                                  .+:
-                                    pattern: '^[-_a-zA-Z0-9]+$'
-                                    type: string
-                              label:
-                                description: short name for the property
-                                example: Age
-                                title: Label
-                                type: string
-                              type:
-                                description: data type expected on this input glob matching for data type is allowed
-                                example: number
-                                pattern: '^(number|integer|boolean|string|ref_contentSchema|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$'
-                                title: Type
-                                type: string
-                              unit:
-                                description: 'Units, when it refers to a physical quantity'
-                                title: Unit
-                                type: string
-                              widget:
-                                allOf:
-                                  - additionalProperties: false
-                                    properties:
-                                      details:
-                                        anyOf:
-                                          - additionalProperties: false
-                                            properties:
-                                              minHeight:
-                                                description: minimum Height of the textarea
-                                                title: Minheight
-                                                type: integer
-                                            required:
-                                              - minHeight
-                                            title: TextArea
-                                            type: object
-                                          - additionalProperties: false
-                                            properties:
-                                              structure:
-                                                items:
-                                                  additionalProperties: false
-                                                  properties:
-                                                    key:
-                                                      anyOf:
-                                                        - type: string
-                                                        - type: boolean
-                                                        - type: number
-                                                      title: Key
-                                                    label:
-                                                      title: Label
-                                                      type: string
-                                                  required:
-                                                    - key
-                                                    - label
-                                                  title: Structure
-                                                  type: object
-                                                minItems: 1
-                                                title: Structure
-                                                type: array
-                                            required:
-                                              - structure
-                                            title: SelectBox
-                                            type: object
-                                        title: Details
-                                      type:
-                                        allOf:
-                                          - description: An enumeration.
-                                            enum:
-                                              - TextArea
-                                              - SelectBox
-                                            title: WidgetType
-                                            type: string
-                                        description: type of the property
-                                    required:
-                                      - type
-                                      - details
-                                    title: Widget
-                                    type: object
-                                description: custom widget to use instead of the default one determined from the data-type
-                                title: Widget
-                            required:
-                              - label
-                              - description
-                              - type
-                            title: ServiceInput
-                            type: object
+                          additionalProperties: true
                           description: definition of the inputs of this node
                           title: Inputs
                           type: object
@@ -597,9 +417,6 @@ paths:
                                   title: Displayorder
                                   type: number
                                 fileToKeyMap:
-                                  additionalProperties:
-                                    pattern: '^[-_a-zA-Z0-9]+$'
-                                    type: string
                                   description: Place the data associated with the named keys in files
                                   example:
                                     - dir/input1.txt: key_1
@@ -720,125 +537,7 @@ paths:
                           title: Name
                           type: string
                         outputs:
-                          additionalProperties:
-                            additionalProperties: false
-                            description: Base class for service input/outputs
-                            example:
-                              description: Time the service waited before completion
-                              displayOrder: 2
-                              label: Time Slept
-                              type: number
-                            properties:
-                              contentSchema:
-                                description: jsonschema of this input/output. Required when type='ref_contentSchema'
-                                title: Contentschema
-                                type: object
-                              description:
-                                description: description of the property
-                                example: Age in seconds since 1970
-                                title: Description
-                                type: string
-                              displayOrder:
-                                deprecated: true
-                                description: 'DEPRECATED: new display order is taken from the item position. This will be removed.'
-                                title: Displayorder
-                                type: number
-                              fileToKeyMap:
-                                additionalProperties:
-                                  pattern: '^[-_a-zA-Z0-9]+$'
-                                  type: string
-                                description: Place the data associated with the named keys in files
-                                example:
-                                  dir/input1.txt: key_1
-                                  dir33/input2.txt: key2
-                                title: Filetokeymap
-                                type: object
-                                x-patternProperties:
-                                  .+:
-                                    pattern: '^[-_a-zA-Z0-9]+$'
-                                    type: string
-                              label:
-                                description: short name for the property
-                                example: Age
-                                title: Label
-                                type: string
-                              type:
-                                description: data type expected on this input glob matching for data type is allowed
-                                example: number
-                                pattern: '^(number|integer|boolean|string|ref_contentSchema|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$'
-                                title: Type
-                                type: string
-                              unit:
-                                description: 'Units, when it refers to a physical quantity'
-                                title: Unit
-                                type: string
-                              widget:
-                                allOf:
-                                  - additionalProperties: false
-                                    properties:
-                                      details:
-                                        anyOf:
-                                          - additionalProperties: false
-                                            properties:
-                                              minHeight:
-                                                description: minimum Height of the textarea
-                                                title: Minheight
-                                                type: integer
-                                            required:
-                                              - minHeight
-                                            title: TextArea
-                                            type: object
-                                          - additionalProperties: false
-                                            properties:
-                                              structure:
-                                                items:
-                                                  additionalProperties: false
-                                                  properties:
-                                                    key:
-                                                      anyOf:
-                                                        - type: string
-                                                        - type: boolean
-                                                        - type: number
-                                                      title: Key
-                                                    label:
-                                                      title: Label
-                                                      type: string
-                                                  required:
-                                                    - key
-                                                    - label
-                                                  title: Structure
-                                                  type: object
-                                                minItems: 1
-                                                title: Structure
-                                                type: array
-                                            required:
-                                              - structure
-                                            title: SelectBox
-                                            type: object
-                                        title: Details
-                                      type:
-                                        allOf:
-                                          - description: An enumeration.
-                                            enum:
-                                              - TextArea
-                                              - SelectBox
-                                            title: WidgetType
-                                            type: string
-                                        description: type of the property
-                                    required:
-                                      - type
-                                      - details
-                                    title: Widget
-                                    type: object
-                                deprecated: true
-                                description: custom widget to use instead of the default one determined from the data-type
-                                title: Widget
-                            required:
-                              - label
-                              - description
-                              - type
-                            title: ServiceOutput
-                            type: object
+                          additionalProperties: true
                           description: definition of the outputs of this node
                           title: Outputs
                           type: object
@@ -880,9 +579,6 @@ paths:
                                   title: Displayorder
                                   type: number
                                 fileToKeyMap:
-                                  additionalProperties:
-                                    pattern: '^[-_a-zA-Z0-9]+$'
-                                    type: string
                                   description: Place the data associated with the named keys in files
                                   example:
                                     - dir/input1.txt: key_1
@@ -1235,62 +931,7 @@ paths:
                           title: Badges
                           type: array
                         boot-options:
-                          additionalProperties:
-                            example:
-                              default: '0'
-                              description: Start it in web page mode
-                              items:
-                                '0':
-                                  description: Tooltip for non Voila boot mode
-                                  label: Non Voila
-                                '1':
-                                  description: Tooltip for Voila boot mode
-                                  label: Voila
-                              label: Boot mode
-                            properties:
-                              default:
-                                title: Default
-                                type: string
-                              description:
-                                title: Description
-                                type: string
-                              items:
-                                additionalProperties:
-                                  example:
-                                    default: '0'
-                                    description: Start it in web page mode
-                                    items:
-                                      '0':
-                                        description: Tooltip for non Voila boot mode
-                                        label: Non Voila
-                                      '1':
-                                        description: Tooltip for Voila boot mode
-                                        label: Voila
-                                    label: Boot mode
-                                  properties:
-                                    description:
-                                      title: Description
-                                      type: string
-                                    label:
-                                      title: Label
-                                      type: string
-                                  required:
-                                    - label
-                                    - description
-                                  title: BootChoice
-                                  type: object
-                                title: Items
-                                type: object
-                              label:
-                                title: Label
-                                type: string
-                            required:
-                              - label
-                              - description
-                              - default
-                              - items
-                            title: BootOption
-                            type: object
+                          additionalProperties: true
                           description: Service defined boot options. These get injected in the service as env variables.
                           title: Boot-Options
                           type: object
@@ -1383,132 +1024,7 @@ paths:
                           title: Description
                           type: string
                         inputs:
-                          additionalProperties:
-                            additionalProperties: false
-                            description: Metadata on a service input port
-                            example:
-                              description: Files downloaded from service connected at the input
-                              displayOrder: 1
-                              label: Input files - file-wo-widget
-                              type: 'data:*/*'
-                            properties:
-                              contentSchema:
-                                description: jsonschema of this input/output. Required when type='ref_contentSchema'
-                                title: Contentschema
-                                type: object
-                              defaultValue:
-                                anyOf:
-                                  - type: boolean
-                                  - type: integer
-                                  - type: number
-                                  - type: string
-                                example: Dog
-                                title: Defaultvalue
-                              description:
-                                description: description of the property
-                                example: Age in seconds since 1970
-                                title: Description
-                                type: string
-                              displayOrder:
-                                deprecated: true
-                                description: 'DEPRECATED: new display order is taken from the item position. This will be removed.'
-                                title: Displayorder
-                                type: number
-                              fileToKeyMap:
-                                additionalProperties:
-                                  pattern: '^[-_a-zA-Z0-9]+$'
-                                  type: string
-                                description: Place the data associated with the named keys in files
-                                example:
-                                  dir/input1.txt: key_1
-                                  dir33/input2.txt: key2
-                                title: Filetokeymap
-                                type: object
-                                x-patternProperties:
-                                  .+:
-                                    pattern: '^[-_a-zA-Z0-9]+$'
-                                    type: string
-                              label:
-                                description: short name for the property
-                                example: Age
-                                title: Label
-                                type: string
-                              type:
-                                description: data type expected on this input glob matching for data type is allowed
-                                example: number
-                                pattern: '^(number|integer|boolean|string|ref_contentSchema|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$'
-                                title: Type
-                                type: string
-                              unit:
-                                description: 'Units, when it refers to a physical quantity'
-                                title: Unit
-                                type: string
-                              widget:
-                                allOf:
-                                  - additionalProperties: false
-                                    properties:
-                                      details:
-                                        anyOf:
-                                          - additionalProperties: false
-                                            properties:
-                                              minHeight:
-                                                description: minimum Height of the textarea
-                                                title: Minheight
-                                                type: integer
-                                            required:
-                                              - minHeight
-                                            title: TextArea
-                                            type: object
-                                          - additionalProperties: false
-                                            properties:
-                                              structure:
-                                                items:
-                                                  additionalProperties: false
-                                                  properties:
-                                                    key:
-                                                      anyOf:
-                                                        - type: string
-                                                        - type: boolean
-                                                        - type: number
-                                                      title: Key
-                                                    label:
-                                                      title: Label
-                                                      type: string
-                                                  required:
-                                                    - key
-                                                    - label
-                                                  title: Structure
-                                                  type: object
-                                                minItems: 1
-                                                title: Structure
-                                                type: array
-                                            required:
-                                              - structure
-                                            title: SelectBox
-                                            type: object
-                                        title: Details
-                                      type:
-                                        allOf:
-                                          - description: An enumeration.
-                                            enum:
-                                              - TextArea
-                                              - SelectBox
-                                            title: WidgetType
-                                            type: string
-                                        description: type of the property
-                                    required:
-                                      - type
-                                      - details
-                                    title: Widget
-                                    type: object
-                                description: custom widget to use instead of the default one determined from the data-type
-                                title: Widget
-                            required:
-                              - label
-                              - description
-                              - type
-                            title: ServiceInput
-                            type: object
+                          additionalProperties: true
                           description: definition of the inputs of this node
                           title: Inputs
                           type: object
@@ -1594,9 +1110,6 @@ paths:
                                   title: Displayorder
                                   type: number
                                 fileToKeyMap:
-                                  additionalProperties:
-                                    pattern: '^[-_a-zA-Z0-9]+$'
-                                    type: string
                                   description: Place the data associated with the named keys in files
                                   example:
                                     - dir/input1.txt: key_1
@@ -1717,125 +1230,7 @@ paths:
                           title: Name
                           type: string
                         outputs:
-                          additionalProperties:
-                            additionalProperties: false
-                            description: Base class for service input/outputs
-                            example:
-                              description: Time the service waited before completion
-                              displayOrder: 2
-                              label: Time Slept
-                              type: number
-                            properties:
-                              contentSchema:
-                                description: jsonschema of this input/output. Required when type='ref_contentSchema'
-                                title: Contentschema
-                                type: object
-                              description:
-                                description: description of the property
-                                example: Age in seconds since 1970
-                                title: Description
-                                type: string
-                              displayOrder:
-                                deprecated: true
-                                description: 'DEPRECATED: new display order is taken from the item position. This will be removed.'
-                                title: Displayorder
-                                type: number
-                              fileToKeyMap:
-                                additionalProperties:
-                                  pattern: '^[-_a-zA-Z0-9]+$'
-                                  type: string
-                                description: Place the data associated with the named keys in files
-                                example:
-                                  dir/input1.txt: key_1
-                                  dir33/input2.txt: key2
-                                title: Filetokeymap
-                                type: object
-                                x-patternProperties:
-                                  .+:
-                                    pattern: '^[-_a-zA-Z0-9]+$'
-                                    type: string
-                              label:
-                                description: short name for the property
-                                example: Age
-                                title: Label
-                                type: string
-                              type:
-                                description: data type expected on this input glob matching for data type is allowed
-                                example: number
-                                pattern: '^(number|integer|boolean|string|ref_contentSchema|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$'
-                                title: Type
-                                type: string
-                              unit:
-                                description: 'Units, when it refers to a physical quantity'
-                                title: Unit
-                                type: string
-                              widget:
-                                allOf:
-                                  - additionalProperties: false
-                                    properties:
-                                      details:
-                                        anyOf:
-                                          - additionalProperties: false
-                                            properties:
-                                              minHeight:
-                                                description: minimum Height of the textarea
-                                                title: Minheight
-                                                type: integer
-                                            required:
-                                              - minHeight
-                                            title: TextArea
-                                            type: object
-                                          - additionalProperties: false
-                                            properties:
-                                              structure:
-                                                items:
-                                                  additionalProperties: false
-                                                  properties:
-                                                    key:
-                                                      anyOf:
-                                                        - type: string
-                                                        - type: boolean
-                                                        - type: number
-                                                      title: Key
-                                                    label:
-                                                      title: Label
-                                                      type: string
-                                                  required:
-                                                    - key
-                                                    - label
-                                                  title: Structure
-                                                  type: object
-                                                minItems: 1
-                                                title: Structure
-                                                type: array
-                                            required:
-                                              - structure
-                                            title: SelectBox
-                                            type: object
-                                        title: Details
-                                      type:
-                                        allOf:
-                                          - description: An enumeration.
-                                            enum:
-                                              - TextArea
-                                              - SelectBox
-                                            title: WidgetType
-                                            type: string
-                                        description: type of the property
-                                    required:
-                                      - type
-                                      - details
-                                    title: Widget
-                                    type: object
-                                deprecated: true
-                                description: custom widget to use instead of the default one determined from the data-type
-                                title: Widget
-                            required:
-                              - label
-                              - description
-                              - type
-                            title: ServiceOutput
-                            type: object
+                          additionalProperties: true
                           description: definition of the outputs of this node
                           title: Outputs
                           type: object
@@ -1877,9 +1272,6 @@ paths:
                                   title: Displayorder
                                   type: number
                                 fileToKeyMap:
-                                  additionalProperties:
-                                    pattern: '^[-_a-zA-Z0-9]+$'
-                                    type: string
                                   description: Place the data associated with the named keys in files
                                   example:
                                     - dir/input1.txt: key_1
@@ -3646,62 +3038,7 @@ components:
                 title: Badges
                 type: array
               boot-options:
-                additionalProperties:
-                  example:
-                    default: '0'
-                    description: Start it in web page mode
-                    items:
-                      '0':
-                        description: Tooltip for non Voila boot mode
-                        label: Non Voila
-                      '1':
-                        description: Tooltip for Voila boot mode
-                        label: Voila
-                    label: Boot mode
-                  properties:
-                    default:
-                      title: Default
-                      type: string
-                    description:
-                      title: Description
-                      type: string
-                    items:
-                      additionalProperties:
-                        example:
-                          default: '0'
-                          description: Start it in web page mode
-                          items:
-                            '0':
-                              description: Tooltip for non Voila boot mode
-                              label: Non Voila
-                            '1':
-                              description: Tooltip for Voila boot mode
-                              label: Voila
-                          label: Boot mode
-                        properties:
-                          description:
-                            title: Description
-                            type: string
-                          label:
-                            title: Label
-                            type: string
-                        required:
-                          - label
-                          - description
-                        title: BootChoice
-                        type: object
-                      title: Items
-                      type: object
-                    label:
-                      title: Label
-                      type: string
-                  required:
-                    - label
-                    - description
-                    - default
-                    - items
-                  title: BootOption
-                  type: object
+                additionalProperties: true
                 description: Service defined boot options. These get injected in the service as env variables.
                 title: Boot-Options
                 type: object
@@ -3794,132 +3131,7 @@ components:
                 title: Description
                 type: string
               inputs:
-                additionalProperties:
-                  additionalProperties: false
-                  description: Metadata on a service input port
-                  example:
-                    description: Files downloaded from service connected at the input
-                    displayOrder: 1
-                    label: Input files - file-wo-widget
-                    type: 'data:*/*'
-                  properties:
-                    contentSchema:
-                      description: jsonschema of this input/output. Required when type='ref_contentSchema'
-                      title: Contentschema
-                      type: object
-                    defaultValue:
-                      anyOf:
-                        - type: boolean
-                        - type: integer
-                        - type: number
-                        - type: string
-                      example: Dog
-                      title: Defaultvalue
-                    description:
-                      description: description of the property
-                      example: Age in seconds since 1970
-                      title: Description
-                      type: string
-                    displayOrder:
-                      deprecated: true
-                      description: 'DEPRECATED: new display order is taken from the item position. This will be removed.'
-                      title: Displayorder
-                      type: number
-                    fileToKeyMap:
-                      additionalProperties:
-                        pattern: '^[-_a-zA-Z0-9]+$'
-                        type: string
-                      description: Place the data associated with the named keys in files
-                      example:
-                        dir/input1.txt: key_1
-                        dir33/input2.txt: key2
-                      title: Filetokeymap
-                      type: object
-                      x-patternProperties:
-                        .+:
-                          pattern: '^[-_a-zA-Z0-9]+$'
-                          type: string
-                    label:
-                      description: short name for the property
-                      example: Age
-                      title: Label
-                      type: string
-                    type:
-                      description: data type expected on this input glob matching for data type is allowed
-                      example: number
-                      pattern: '^(number|integer|boolean|string|ref_contentSchema|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$'
-                      title: Type
-                      type: string
-                    unit:
-                      description: 'Units, when it refers to a physical quantity'
-                      title: Unit
-                      type: string
-                    widget:
-                      allOf:
-                        - additionalProperties: false
-                          properties:
-                            details:
-                              anyOf:
-                                - additionalProperties: false
-                                  properties:
-                                    minHeight:
-                                      description: minimum Height of the textarea
-                                      title: Minheight
-                                      type: integer
-                                  required:
-                                    - minHeight
-                                  title: TextArea
-                                  type: object
-                                - additionalProperties: false
-                                  properties:
-                                    structure:
-                                      items:
-                                        additionalProperties: false
-                                        properties:
-                                          key:
-                                            anyOf:
-                                              - type: string
-                                              - type: boolean
-                                              - type: number
-                                            title: Key
-                                          label:
-                                            title: Label
-                                            type: string
-                                        required:
-                                          - key
-                                          - label
-                                        title: Structure
-                                        type: object
-                                      minItems: 1
-                                      title: Structure
-                                      type: array
-                                  required:
-                                    - structure
-                                  title: SelectBox
-                                  type: object
-                              title: Details
-                            type:
-                              allOf:
-                                - description: An enumeration.
-                                  enum:
-                                    - TextArea
-                                    - SelectBox
-                                  title: WidgetType
-                                  type: string
-                              description: type of the property
-                          required:
-                            - type
-                            - details
-                          title: Widget
-                          type: object
-                      description: custom widget to use instead of the default one determined from the data-type
-                      title: Widget
-                  required:
-                    - label
-                    - description
-                    - type
-                  title: ServiceInput
-                  type: object
+                additionalProperties: true
                 description: definition of the inputs of this node
                 title: Inputs
                 type: object
@@ -4005,9 +3217,6 @@ components:
                         title: Displayorder
                         type: number
                       fileToKeyMap:
-                        additionalProperties:
-                          pattern: '^[-_a-zA-Z0-9]+$'
-                          type: string
                         description: Place the data associated with the named keys in files
                         example:
                           - dir/input1.txt: key_1
@@ -4128,125 +3337,7 @@ components:
                 title: Name
                 type: string
               outputs:
-                additionalProperties:
-                  additionalProperties: false
-                  description: Base class for service input/outputs
-                  example:
-                    description: Time the service waited before completion
-                    displayOrder: 2
-                    label: Time Slept
-                    type: number
-                  properties:
-                    contentSchema:
-                      description: jsonschema of this input/output. Required when type='ref_contentSchema'
-                      title: Contentschema
-                      type: object
-                    description:
-                      description: description of the property
-                      example: Age in seconds since 1970
-                      title: Description
-                      type: string
-                    displayOrder:
-                      deprecated: true
-                      description: 'DEPRECATED: new display order is taken from the item position. This will be removed.'
-                      title: Displayorder
-                      type: number
-                    fileToKeyMap:
-                      additionalProperties:
-                        pattern: '^[-_a-zA-Z0-9]+$'
-                        type: string
-                      description: Place the data associated with the named keys in files
-                      example:
-                        dir/input1.txt: key_1
-                        dir33/input2.txt: key2
-                      title: Filetokeymap
-                      type: object
-                      x-patternProperties:
-                        .+:
-                          pattern: '^[-_a-zA-Z0-9]+$'
-                          type: string
-                    label:
-                      description: short name for the property
-                      example: Age
-                      title: Label
-                      type: string
-                    type:
-                      description: data type expected on this input glob matching for data type is allowed
-                      example: number
-                      pattern: '^(number|integer|boolean|string|ref_contentSchema|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$'
-                      title: Type
-                      type: string
-                    unit:
-                      description: 'Units, when it refers to a physical quantity'
-                      title: Unit
-                      type: string
-                    widget:
-                      allOf:
-                        - additionalProperties: false
-                          properties:
-                            details:
-                              anyOf:
-                                - additionalProperties: false
-                                  properties:
-                                    minHeight:
-                                      description: minimum Height of the textarea
-                                      title: Minheight
-                                      type: integer
-                                  required:
-                                    - minHeight
-                                  title: TextArea
-                                  type: object
-                                - additionalProperties: false
-                                  properties:
-                                    structure:
-                                      items:
-                                        additionalProperties: false
-                                        properties:
-                                          key:
-                                            anyOf:
-                                              - type: string
-                                              - type: boolean
-                                              - type: number
-                                            title: Key
-                                          label:
-                                            title: Label
-                                            type: string
-                                        required:
-                                          - key
-                                          - label
-                                        title: Structure
-                                        type: object
-                                      minItems: 1
-                                      title: Structure
-                                      type: array
-                                  required:
-                                    - structure
-                                  title: SelectBox
-                                  type: object
-                              title: Details
-                            type:
-                              allOf:
-                                - description: An enumeration.
-                                  enum:
-                                    - TextArea
-                                    - SelectBox
-                                  title: WidgetType
-                                  type: string
-                              description: type of the property
-                          required:
-                            - type
-                            - details
-                          title: Widget
-                          type: object
-                      deprecated: true
-                      description: custom widget to use instead of the default one determined from the data-type
-                      title: Widget
-                  required:
-                    - label
-                    - description
-                    - type
-                  title: ServiceOutput
-                  type: object
+                additionalProperties: true
                 description: definition of the outputs of this node
                 title: Outputs
                 type: object
@@ -4288,9 +3379,6 @@ components:
                         title: Displayorder
                         type: number
                       fileToKeyMap:
-                        additionalProperties:
-                          pattern: '^[-_a-zA-Z0-9]+$'
-                          type: string
                         description: Place the data associated with the named keys in files
                         example:
                           - dir/input1.txt: key_1
