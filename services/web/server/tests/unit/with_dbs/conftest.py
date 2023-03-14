@@ -269,7 +269,7 @@ def disable_static_webserver(monkeypatch: MonkeyPatch) -> Callable:
 
 
 @pytest.fixture
-async def storage_subsystem_mock(mocker) -> MockedStorageSubsystem:
+async def storage_subsystem_mock(mocker: MonkeyPatch) -> MockedStorageSubsystem:
     """
     Patches client calls to storage service
 
