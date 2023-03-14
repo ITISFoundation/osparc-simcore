@@ -16,6 +16,7 @@ from typing import AsyncGenerator, AsyncIterator, Callable
 import pytest
 from aiohttp import ClientResponse, ClientSession, web
 from aiohttp.test_utils import TestClient, TestServer
+from faker import Faker
 from models_library.projects_state import ProjectLocked, ProjectStatus
 from pytest import MonkeyPatch
 from pytest_mock import MockerFixture
@@ -45,7 +46,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
             "WEBSERVER_COMPUTATION": "0",
             "WEBSERVER_DIAGNOSTICS": "null",
             "WEBSERVER_DIRECTOR": "null",
-            # "WEBSERVER_DIRECTOR_V2": mocked
+            # "WEBSERVER_DIRECTOR_V2": MOCKED
             "WEBSERVER_EXPORTER": "null",
             # Enforces smallest GC in the background task
             # "WEBSERVER_GARBAGE_COLLECTOR": "null",
@@ -57,6 +58,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
             "WEBSERVER_PUBLICATIONS": "0",
             "WEBSERVER_RABBITMQ": "null",
             "WEBSERVER_REMOTE_DEBUG": "0",
+            # "WEBSERVER_STORAGE":  MOCKED
             "WEBSERVER_SOCKETIO": "0",
             "WEBSERVER_TAGS": "1",
             "WEBSERVER_TRACING": "null",
@@ -89,7 +91,7 @@ async def _get_user_projects(client):
     resp = await client.get(url.with_query(type="user"))
 
     payload = await resp.json()
-    assert resp.status == 200, payload
+    assert resp.status == web.HTTPOk.status_code, payload
 
     projects, error = unwrap_envelope(payload)
     assert not error, pprint(error)
@@ -98,8 +100,6 @@ async def _get_user_projects(client):
 
 
 def _assert_same_projects(got: dict, expected: dict):
-    # TODO: validate using api/specs/webserver/v0/components/schemas/project-v0.0.1.json
-    # TODO: validate workbench!
     exclude = {
         "creationDate",
         "lastChangeDate",
@@ -212,16 +212,7 @@ async def storage_subsystem_mock(storage_subsystem_mock, mocker: MockerFixture):
     mock.side_effect = _mock_copy_data_from_project
 
 
-#
-# Covers user stories for ISAN:
-#
-# - The ISAN Portal (M8; MS11.b,D11.b https://github.com/ITISFoundation/osparc-simcore/issues/501
-# - User access management for ISAN https://github.com/ITISFoundation/osparc-simcore/issues/712
-# - Direct link to study in workbench https://github.com/ITISFoundation/osparc-simcore/issues/730
-#
-
-
-def _assert_redirection_to_error_page(
+def _assert_redirected_to_error_page(
     response: ClientResponse, expected_page: str, expected_status_code: int
 ):
     # checks is a redirection
@@ -236,27 +227,6 @@ def _assert_redirection_to_error_page(
 
     params = urllib.parse.parse_qs(r.query)
     assert params["status_code"] == [f"{expected_status_code}"], params
-
-
-async def test_access_to_invalid_study(client: TestClient):
-    response = await client.get("/study/SOME_INVALID_UUID")
-    _assert_redirection_to_error_page(
-        response,
-        expected_page="error",
-        expected_status_code=web.HTTPNotFound.status_code,
-    )
-
-
-async def test_access_to_forbidden_study(
-    client: TestClient, unpublished_project: ProjectDict
-):
-    response = await client.get(f"/study/{unpublished_project['uuid']}")
-
-    _assert_redirection_to_error_page(
-        response,
-        expected_page="error",
-        expected_status_code=web.HTTPNotFound.status_code,
-    )
 
 
 async def _assert_redirected_to_study(
@@ -287,17 +257,50 @@ async def _assert_redirected_to_study(
     return redirected_project_id
 
 
-@pytest.mark.flaky(max_runs=3)
+# -----------------------------------------------------------
+#
+# Covers user stories for ISAN:
+#
+# - The ISAN Portal (M8; MS11.b,D11.b): https://github.com/ITISFoundation/osparc-simcore/issues/501
+# - User access management for ISAN   : https://github.com/ITISFoundation/osparc-simcore/issues/712
+# - Direct link to study in workbench : https://github.com/ITISFoundation/osparc-simcore/issues/730
+#
+# -----------------------------------------------------------
+
+
+async def test_access_to_invalid_study(client: TestClient, faker: Faker):
+    response = await client.get(f"/study/{faker.uuid4()}")
+
+    _assert_redirected_to_error_page(
+        response,
+        expected_page="error",
+        expected_status_code=web.HTTPNotFound.status_code,
+    )
+
+
+async def test_access_to_forbidden_study(
+    client: TestClient, unpublished_project: ProjectDict
+):
+    response = await client.get(f"/study/{unpublished_project['uuid']}")
+
+    _assert_redirected_to_error_page(
+        response,
+        expected_page="error",
+        expected_status_code=web.HTTPNotFound.status_code,
+    )
+
+
 async def test_access_study_anonymously(
     client: TestClient,
     published_project: ProjectDict,
     storage_subsystem_mock,
-    catalog_subsystem_mock,
+    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     director_v2_service_mock,
     mocks_on_projects_api,
     redis_locks_client,  # needed to cleanup the locks between parametrizations
 ):
     catalog_subsystem_mock([published_project])
+
     assert not _is_user_authenticated(client.session), "Is anonymous"
 
     study_url = client.app.router["study"].url_for(id=published_project["uuid"])
@@ -338,7 +341,7 @@ async def test_access_study_by_logged_user(
     logged_user: UserInfoDict,
     published_project: ProjectDict,
     storage_subsystem_mock,
-    catalog_subsystem_mock,
+    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     director_v2_service_mock: AioResponsesMock,
     mocks_on_projects_api,
     auto_delete_projects: None,
@@ -367,7 +370,7 @@ async def test_access_cookie_of_expired_user(
     client: TestClient,
     published_project: ProjectDict,
     storage_subsystem_mock,
-    catalog_subsystem_mock,
+    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     director_v2_service_mock: AioResponsesMock,
     mocks_on_projects_api,
     redis_locks_client,  # needed to cleanup the locks between parametrizations
@@ -434,7 +437,7 @@ async def test_guest_user_is_not_garbage_collected(
     aiohttp_client: Callable,
     published_project: ProjectDict,
     storage_subsystem_mock,
-    catalog_subsystem_mock,
+    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     director_v2_service_mock: AioResponsesMock,
     mocks_on_projects_api,
     redis_locks_client,  # needed to cleanup the locks between parametrizations
