@@ -2,7 +2,7 @@ import logging
 
 from aiodocker import Docker
 from servicelib.logging_utils import log_context
-from servicelib.rabbitmq_errors import GatheredRuntimeErrors
+from servicelib.rabbitmq_errors import RPCExceptionGroup
 from servicelib.utils import logged_gather
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_attempt
@@ -53,4 +53,4 @@ async def remove_volumes(
         )
         errors = [r for r in results if r is not None]
         if errors:
-            raise GatheredRuntimeErrors(errors=errors)
+            raise RPCExceptionGroup(errors=errors)

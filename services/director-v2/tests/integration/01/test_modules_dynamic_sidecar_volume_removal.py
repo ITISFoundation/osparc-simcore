@@ -12,7 +12,7 @@ from faker import Faker
 from fastapi import FastAPI
 from pydantic import PositiveFloat
 from servicelib.rabbitmq import RabbitMQClient
-from servicelib.rabbitmq_errors import GatheredRuntimeErrors
+from servicelib.rabbitmq_errors import RPCExceptionGroup
 from settings_library.rabbit import RabbitSettings
 from simcore_service_director_v2.modules import rabbitmq
 from simcore_service_director_v2.modules.dynamic_sidecar.volume_removal import (
@@ -122,7 +122,7 @@ async def test_remove_volume_from_node_no_volume_found(
     assert len(volumes_to_remove) == 11
 
     with pytest.raises(
-        GatheredRuntimeErrors,
+        RPCExceptionGroup,
         match=f"get {missing_volume_name}: no such volume",
     ) as exec_info:
         await remove_volumes_from_node(

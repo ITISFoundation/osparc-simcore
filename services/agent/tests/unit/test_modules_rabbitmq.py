@@ -13,7 +13,7 @@ from fastapi import FastAPI
 from pytest import LogCaptureFixture
 from pytest_mock import MockerFixture
 from servicelib.rabbitmq import RabbitMQClient
-from servicelib.rabbitmq_errors import GatheredRuntimeErrors
+from servicelib.rabbitmq_errors import RPCExceptionGroup
 from servicelib.rabbitmq_utils import RPCNamespace
 from settings_library.rabbit import RabbitSettings
 from simcore_service_agent.core.application import create_app
@@ -153,7 +153,7 @@ async def test_rpc_remove_volumes_volume_does_not_exist(
 ):
     missing_volume_name = "volume_does_not_exit"
     with pytest.raises(
-        GatheredRuntimeErrors, match=f"get {missing_volume_name}: no such volume"
+        RPCExceptionGroup, match=f"get {missing_volume_name}: no such volume"
     ) as exec_info:
         await _request_volume_removal(
             initialized_app, test_rabbit_client, [missing_volume_name]

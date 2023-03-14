@@ -22,10 +22,10 @@ class RemoteMethodNotRegisteredError(BaseRPCError):
     )
 
 
-class GatheredRuntimeErrors(BaseRPCError):
+class RPCExceptionGroup(BaseRPCError):
     """
-    Has to be defined in both `requester` and `replier`
-    source codes to work as expected.
+    Has to be be present in the source code of the
+    `requester` and `replier` to work.
     """
 
     code = f"{_ERROR_PREFIX}.executing_raised_errors"
