@@ -43,7 +43,6 @@ async def _generate_tasks_list_from_project(
     director_client: DirectorV0Client,
     published_nodes: list[NodeID],
 ) -> list[CompTaskAtDB]:
-
     list_comp_tasks = []
     for internal_id, node_id in enumerate(project.workbench, 1):
         node: Node = project.workbench[node_id]
@@ -85,7 +84,7 @@ async def _generate_tasks_list_from_project(
 
         task_db = CompTaskAtDB(
             project_id=project.uuid,
-            node_id=node_id,
+            node_id=NodeID(node_id),
             schema=NodeSchema.parse_obj(
                 node_details.dict(
                     exclude_unset=True, by_alias=True, include={"inputs", "outputs"}
@@ -186,7 +185,6 @@ class CompTasksRepository(BaseRepository):
             # NOTE: an exception to this is when a frontend service changes its output since there is no node_ports, the UPDATE must be done here.
             inserted_comp_tasks_db: list[CompTaskAtDB] = []
             for comp_task_db in list_of_comp_tasks_in_project:
-
                 insert_stmt = insert(comp_tasks).values(**comp_task_db.to_db_model())
 
                 exclusion_rule = (
