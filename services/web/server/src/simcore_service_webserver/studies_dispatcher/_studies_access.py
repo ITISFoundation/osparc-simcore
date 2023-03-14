@@ -236,7 +236,7 @@ class RedirectToFrontEndPageError(Exception):
         self.human_readable_message = human_readable_message
         self.error_code = error_code
         self.status_code = status_code
-        super().__init__(*human_readable_message)
+        super().__init__(human_readable_message)
 
 
 def _handle_errors_with_error_page(handler: Handler):
