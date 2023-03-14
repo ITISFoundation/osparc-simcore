@@ -10,14 +10,16 @@ from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.services import ServiceDockerData, ServiceKeyVersion
+from models_library.users import UserID
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert
 
 from ....core.errors import ErrorDict
 from ....models.domains.comp_tasks import CompTaskAtDB, Image, NodeSchema
-from ....models.schemas.services import ServiceExtras
+from ....models.schemas.services import NodeRequirements, ServiceExtras
 from ....utils.computations import to_node_class
 from ....utils.db import RUNNING_STATE_TO_DB
+from ...catalog import CatalogClient
 from ...director_v0 import DirectorV0Client
 from ..tables import NodeClass, StateType, comp_tasks
 from ._base import BaseRepository
@@ -40,8 +42,11 @@ _FRONTEND_SERVICES_CATALOG: dict[str, ServiceDockerData] = {
 
 async def _generate_tasks_list_from_project(
     project: ProjectAtDB,
+    catalog_client: CatalogClient,
     director_client: DirectorV0Client,
     published_nodes: list[NodeID],
+    user_id: UserID,
+    product_name: str,
 ) -> list[CompTaskAtDB]:
     list_comp_tasks = []
     for internal_id, node_id in enumerate(project.workbench, 1):
@@ -53,25 +58,45 @@ async def _generate_tasks_list_from_project(
         )
         node_class = to_node_class(service_key_version.key)
         node_details: Optional[ServiceDockerData] = None
+        node_resources: Optional[dict[str, Any]] = None
         node_extras: Optional[ServiceExtras] = None
         if node_class == NodeClass.FRONTEND:
             node_details = _FRONTEND_SERVICES_CATALOG.get(service_key_version.key, None)
         else:
-            node_details, node_extras = await asyncio.gather(
-                director_client.get_service_details(service_key_version),
+            node_details, node_resources, node_extras = await asyncio.gather(
+                catalog_client.get_service(
+                    user_id,
+                    node.key,
+                    node.version,
+                    product_name,
+                ),
+                catalog_client.get_service_resources(user_id, node.key, node.version),
                 director_client.get_service_extras(service_key_version),
             )
+            if node_details:
+                node_details = ServiceDockerData.construct(**node_details)
 
         if not node_details:
             continue
 
-        # aggregates node_details amd node_extras into Image
+        # aggregates node_details and node_extras into Image
         data: dict[str, Any] = {
             "name": service_key_version.key,
             "tag": service_key_version.version,
         }
+        if node_resources:
+            # TODO: this works only for single containers
+            node_defined_resources = {}
+            for resource_name, resource_value in (
+                node_resources.get("container", {}).get("resources", {}).items()
+            ):
+                node_defined_resources[resource_name] = min(
+                    resource_value["limit"], resource_value["reservation"]
+                )
+            data.update(
+                node_requirements=NodeRequirements.parse_obj(node_defined_resources)
+            )
         if node_extras:
-            data.update(node_requirements=node_extras.node_requirements)
             if node_extras.container_spec:
                 data.update(command=node_extras.container_spec.command)
         image = Image.parse_obj(data)
@@ -82,6 +107,7 @@ async def _generate_tasks_list_from_project(
         if node_id in published_nodes and node_class == NodeClass.COMPUTATIONAL:
             task_state = RunningState.PUBLISHED
 
+        assert node_details  # nosec
         task_db = CompTaskAtDB(
             project_id=project.uuid,
             node_id=NodeID(node_id),
@@ -150,14 +176,22 @@ class CompTasksRepository(BaseRepository):
     async def upsert_tasks_from_project(
         self,
         project: ProjectAtDB,
+        catalog_client: CatalogClient,
         director_client: DirectorV0Client,
         published_nodes: list[NodeID],
+        user_id: UserID,
+        product_name: str,
     ) -> list[CompTaskAtDB]:
         # NOTE: really do an upsert here because of issue https://github.com/ITISFoundation/osparc-simcore/issues/2125
         list_of_comp_tasks_in_project: list[
             CompTaskAtDB
         ] = await _generate_tasks_list_from_project(
-            project, director_client, published_nodes
+            project,
+            catalog_client,
+            director_client,
+            published_nodes,
+            user_id,
+            product_name,
         )
         async with self.db_engine.acquire() as conn:
             # get current tasks

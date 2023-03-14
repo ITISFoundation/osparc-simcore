@@ -24,9 +24,7 @@ class ComputationCreate(BaseModel):
         default=False,
         description="if True the computation pipeline will start right away",
     )
-    product_name: Optional[str] = Field(
-        default=None, description="required if computation is started"
-    )
+    product_name: str
     subgraph: Optional[list[NodeID]] = Field(
         default=None,
         description="An optional set of nodes that must be executed, if empty the whole pipeline is executed",
