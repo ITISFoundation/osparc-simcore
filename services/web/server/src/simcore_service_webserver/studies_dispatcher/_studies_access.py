@@ -42,21 +42,21 @@ from .settings import StudiesDispatcherSettings, get_plugin_settings
 log = logging.getLogger(__name__)
 
 # TODO: Integrate this in studies_dispatcher
-BASE_UUID = UUID("71e0eb5e-0797-4469-89ba-00a0df4d338a")
+_BASE_UUID = UUID("71e0eb5e-0797-4469-89ba-00a0df4d338a")
 
 
 @lru_cache
-def compose_uuid(template_uuid, user_id, query="") -> str:
+def _compose_uuid(template_uuid, user_id, query="") -> str:
     """Creates a new uuid composing a project's and user ids such that
     any template pre-assigned to a user
 
     Enforces a constraint: a user CANNOT have multiple copies of the same template
     """
-    new_uuid = str(uuid5(BASE_UUID, str(template_uuid) + str(user_id) + str(query)))
+    new_uuid = str(uuid5(_BASE_UUID, str(template_uuid) + str(user_id) + str(query)))
     return new_uuid
 
 
-async def get_public_project(app: web.Application, project_uuid: str) -> ProjectDict:
+async def _get_public_project(app: web.Application, project_uuid: str) -> ProjectDict:
     """
     Returns project if project_uuid is a template and is marked as published, otherwise None
 
@@ -73,10 +73,7 @@ async def get_public_project(app: web.Application, project_uuid: str) -> Project
     return prj
 
 
-async def create_temporary_user(request: web.Request):
-    """
-    TODO: user should have an expiration date and limited persmissions!
-    """
+async def _create_temporary_user(request: web.Request):
     from ..login.storage import AsyncpgStorage, get_plugin_storage
     from ..login.utils import ACTIVE, GUEST, get_client_ip, get_random_string
     from ..security_api import encrypt_password
@@ -85,13 +82,11 @@ async def create_temporary_user(request: web.Request):
     redis_locks_client: aioredis.Redis = get_redis_lock_manager_client(request.app)
     settings: StudiesDispatcherSettings = get_plugin_settings(app=request.app)
 
-    # TODO: avatar is an icon of the hero!
+    # Profile for temporary user
     random_uname = get_random_string(min_len=5)
     email = random_uname + "@guest-at-osparc.io"
     password = get_random_string(min_len=12)
     expires_at = settings.get_guest_expiration()
-
-    # TODO: now user has also trial account of 1 day? Make sure it does not show!
 
     # GUEST_USER_RC_LOCK:
     #
@@ -177,7 +172,7 @@ async def copy_study_to_account(
     template_parameters = dict(request.query)
 
     # assign id to copy
-    project_uuid = compose_uuid(
+    project_uuid = _compose_uuid(
         template_project["uuid"], user["id"], str(template_parameters)
     )
 
@@ -303,7 +298,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
     assert request.app.router[INDEX_RESOURCE_NAME]  # nosec
 
     # Get linked PUBLIC PROJECT
-    template_project = await get_public_project(request.app, project_id)
+    template_project = await _get_public_project(request.app, project_id)
     if not template_project:
         raise RedirectToFrontEndPageError(
             MSG_PROJECT_NOT_PUBLISHED.format(project_id=project_id),
@@ -321,7 +316,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
 
     if not user:
         log.debug("Creating temporary user ...")
-        user = await create_temporary_user(request)
+        user = await _create_temporary_user(request)
         is_anonymous_user = True
 
     # COPY
@@ -336,7 +331,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
         log.debug("Study %s copied", copied_project_id)
 
     except Exception as exc:  # pylint: disable=broad-except
-        # TODO: disable anonymous user!!
+        # FIXME: force disable anonymous user!!
         error_code = create_error_code(exc)
         log.exception(
             "Failed while copying project '%s' to '%s' [%s]",
