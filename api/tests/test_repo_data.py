@@ -54,7 +54,6 @@ def project_schema(request, api_specs_dir):
     return _load_data(schema_path)
 
 
-@pytest.mark.testit
 @pytest.mark.parametrize("data_path", PROJECTS_PATHS)
 def test_project_against_schema(data_path, project_schema, this_repo_root_dir):
     """

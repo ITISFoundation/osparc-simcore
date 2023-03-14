@@ -16,6 +16,7 @@ def mock_environment(mock_environment_with_envdevel: EnvVarsDict) -> None:
     assert mock_environment_with_envdevel
 
 
+@pytest.mark.testit
 def test_openapi_spec(
     mock_environment: None, app: FastAPI, project_slug_dir: Path
 ) -> None:
