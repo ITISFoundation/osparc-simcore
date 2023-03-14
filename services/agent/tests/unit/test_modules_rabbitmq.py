@@ -42,6 +42,8 @@ async def _request_volume_removal(
         volume_names=volumes,
         volume_removal_attempts=1,
         sleep_between_attempts_s=0.1,
+        timeout_s_method=5,
+        timeout_s_connection_error=1,
     )
 
 
@@ -49,7 +51,6 @@ async def _request_volume_removal(
 async def _create_volumes(count: int) -> list[str]:
     volumes: set[DockerVolume] = set()
     async with aiodocker.Docker() as docker_client:
-
         result = await asyncio.gather(
             *(
                 docker_client.volumes.create({"Name": f"volume-to-remove{uuid4()}"})
