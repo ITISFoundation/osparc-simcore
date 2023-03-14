@@ -583,19 +583,28 @@ services:
     #  start_period: 20s
 
 volumes:
-  postgres_data: {}
-  computational_shared_data: {}
-  redis-data: {}
-  rabbit_data: {}
+  postgres_data:
+    name: ${SWARM_STACK_NAME}_postgres_data
+  computational_shared_data:
+    name: ${SWARM_STACK_NAME}_computational_shared_data
+  redis-data:
+    name: ${SWARM_STACK_NAME}_redis-data
+
+  rabbit_data:
+    name: ${SWARM_STACK_NAME}_rabbit_data
 
 networks:
   default:
     attachable: true
+    name: ${SWARM_STACK_NAME}_default
   storage_subnet:
     attachable: true
+    name: ${SWARM_STACK_NAME}_storage_subnet
   autoscaling_subnet:
     attachable: true
+    name: ${SWARM_STACK_NAME}_autoscaling_subnet
   interactive_services_subnet:
+    name: ${SWARM_STACK_NAME}_interactive_services_subnet
     driver: overlay
     attachable: true
     internal: false
@@ -606,6 +615,7 @@ networks:
       config:
         - subnet: "172.8.0.0/16"
   computational_services_subnet:
+    name: ${SWARM_STACK_NAME}_computational_services_subnet
     driver: overlay
     attachable: true
     internal: false
