@@ -877,11 +877,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
 
       const url = window.location.href + "v0/projects/" + studyData["uuid"] + ":xport";
-      const downloadStartedCB = () => {
+      const progressCB = () => {
         const textSuccess = this.tr("Download started");
         exportTask.setSubtitle(textSuccess);
       };
-      osparc.utils.Utils.downloadLink(url, "POST", null, downloadStartedCB)
+      osparc.utils.Utils.downloadLink(url, "POST", null, progressCB)
         .catch(e => {
           const msg = osparc.data.Resources.getErrorMsg(JSON.parse(e.response)) || this.tr("Something went wrong Exporting the study");
           osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
