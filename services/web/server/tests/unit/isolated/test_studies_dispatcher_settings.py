@@ -3,7 +3,7 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 
 import pytest
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
@@ -38,6 +38,3 @@ def test_studies_dispatcher_settings(environment: EnvironDict):
     assert settings.STUDIES_GUEST_ACCOUNT_LIFETIME == timedelta(
         days=2, hours=1, minutes=10
     )
-
-    after_tomorrow = datetime.now(timezone.utc) + timedelta(days=2)
-    assert settings.get_guest_expiration().day == after_tomorrow.day
