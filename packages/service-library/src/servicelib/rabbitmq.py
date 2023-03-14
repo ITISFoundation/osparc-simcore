@@ -196,8 +196,8 @@ class RabbitMQClient:
         namespace: RPCNamespace,
         method_name: RPCMethodName,
         *,
-        timeout_s_method: PositiveFloat = 5,
-        timeout_s_connection_error: PositiveFloat = 60,
+        timeout_s_method: PositiveFloat,
+        timeout_s_connection_error: PositiveFloat,
         **kwargs: dict[str, Any],
     ) -> Any:
         """

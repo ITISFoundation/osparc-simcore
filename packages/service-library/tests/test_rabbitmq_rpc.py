@@ -22,6 +22,8 @@ pytest_simcore_core_services_selection = [
 ]
 
 MULTIPLE_REQUESTS_COUNT: Final[NonNegativeInt] = 100
+DEFAULT_TIMEOUT_S_METHOD: Final[NonNegativeInt] = 1
+DEFAULT_TIMEOUT_S_CONNECTION_ERROR: Final[NonNegativeInt] = 1
 
 # FIXTURES
 
@@ -133,7 +135,12 @@ async def test_base_rpc_pattern(
     await rabbit_replier.rpc_register_handler(namespace, add_me.__name__, add_me)
 
     request_result = await rabbit_requester.rpc_request(
-        namespace, add_me.__name__, x=x, y=y
+        namespace,
+        add_me.__name__,
+        x=x,
+        y=y,
+        timeout_s_method=DEFAULT_TIMEOUT_S_METHOD,
+        timeout_s_connection_error=DEFAULT_TIMEOUT_S_CONNECTION_ERROR,
     )
     assert request_result == expected_result
     assert type(request_result) == expected_type
@@ -151,7 +158,12 @@ async def test_multiple_requests_sequence_same_replier_and_requester(
     for i in range(MULTIPLE_REQUESTS_COUNT):
         assert (
             await rabbit_requester.rpc_request(
-                namespace, add_me.__name__, x=1 + i, y=2 + i
+                namespace,
+                add_me.__name__,
+                x=1 + i,
+                y=2 + i,
+                timeout_s_method=DEFAULT_TIMEOUT_S_METHOD,
+                timeout_s_connection_error=DEFAULT_TIMEOUT_S_CONNECTION_ERROR,
             )
             == 3 + i * 2
         )
@@ -168,7 +180,14 @@ async def test_multiple_requests_parallel_same_replier_and_requester(
     requests: list[Awaitable] = []
     for i in range(MULTIPLE_REQUESTS_COUNT):
         requests.append(
-            rabbit_requester.rpc_request(namespace, add_me.__name__, x=1 + i, y=2 + i)
+            rabbit_requester.rpc_request(
+                namespace,
+                add_me.__name__,
+                x=1 + i,
+                y=2 + i,
+                timeout_s_method=DEFAULT_TIMEOUT_S_METHOD,
+                timeout_s_connection_error=DEFAULT_TIMEOUT_S_CONNECTION_ERROR,
+            )
         )
         expected_result.append(3 + i * 2)
 
@@ -195,7 +214,14 @@ async def test_multiple_requests_parallel_same_replier_different_requesters(
     for i in range(MULTIPLE_REQUESTS_COUNT):
         client = clients[i]
         requests.append(
-            client.rpc_request(namespace, add_me.__name__, x=1 + i, y=2 + i)
+            client.rpc_request(
+                namespace,
+                add_me.__name__,
+                x=1 + i,
+                y=2 + i,
+                timeout_s_method=DEFAULT_TIMEOUT_S_METHOD,
+                timeout_s_connection_error=DEFAULT_TIMEOUT_S_CONNECTION_ERROR,
+            )
         )
         expected_result.append(3 + i * 2)
 
@@ -210,7 +236,14 @@ async def test_raise_error_if_not_started(
 ):
     requester = RabbitMQClient("", settings=rabbit_service)
     with pytest.raises(RPCNotInitializedError):
-        await requester.rpc_request(namespace, add_me.__name__, x=1, y=2)
+        await requester.rpc_request(
+            namespace,
+            add_me.__name__,
+            x=1,
+            y=2,
+            timeout_s_method=DEFAULT_TIMEOUT_S_METHOD,
+            timeout_s_connection_error=DEFAULT_TIMEOUT_S_CONNECTION_ERROR,
+        )
 
     # expect not to raise error
     await requester.close()
@@ -231,7 +264,14 @@ async def _assert_event_not_registered(
 ):
     with pytest.raises(RemoteMethodNotRegisteredError) as exec_info:
         assert (
-            await rabbit_requester.rpc_request(namespace, add_me.__name__, x=1, y=3)
+            await rabbit_requester.rpc_request(
+                namespace,
+                add_me.__name__,
+                x=1,
+                y=3,
+                timeout_s_method=DEFAULT_TIMEOUT_S_METHOD,
+                timeout_s_connection_error=DEFAULT_TIMEOUT_S_CONNECTION_ERROR,
+            )
             == 3
         )
     assert (
@@ -263,7 +303,13 @@ async def test_request_is_missing_arguments(
 
     # missing 1 argument
     with pytest.raises(TypeError) as exec_info:
-        await rabbit_requester.rpc_request(namespace, add_me.__name__, x=1)
+        await rabbit_requester.rpc_request(
+            namespace,
+            add_me.__name__,
+            x=1,
+            timeout_s_method=DEFAULT_TIMEOUT_S_METHOD,
+            timeout_s_connection_error=DEFAULT_TIMEOUT_S_CONNECTION_ERROR,
+        )
     assert (
         f"{add_me.__name__}() missing 1 required keyword-only argument: 'y'"
         in f"{exec_info.value}"
@@ -271,7 +317,12 @@ async def test_request_is_missing_arguments(
 
     # missing all arguments
     with pytest.raises(TypeError) as exec_info:
-        await rabbit_requester.rpc_request(namespace, add_me.__name__)
+        await rabbit_requester.rpc_request(
+            namespace,
+            add_me.__name__,
+            timeout_s_method=DEFAULT_TIMEOUT_S_METHOD,
+            timeout_s_connection_error=DEFAULT_TIMEOUT_S_CONNECTION_ERROR,
+        )
     assert (
         f"{add_me.__name__}() missing 2 required keyword-only arguments: 'x' and 'y'"
         in f"{exec_info.value}"
@@ -292,7 +343,11 @@ async def test_requester_cancels_long_running_request_or_requester_takes_too_muc
 
     with pytest.raises(asyncio.TimeoutError):
         await rabbit_requester.rpc_request(
-            namespace, _long_running.__name__, time_to_sleep=3, timeout_s_method=1
+            namespace,
+            _long_running.__name__,
+            time_to_sleep=3,
+            timeout_s_method=DEFAULT_TIMEOUT_S_METHOD,
+            timeout_s_connection_error=DEFAULT_TIMEOUT_S_CONNECTION_ERROR,
         )
 
 
@@ -309,7 +364,12 @@ async def test_replier_handler_raises_error(
     )
 
     with pytest.raises(RuntimeError) as exec_info:
-        await rabbit_requester.rpc_request(namespace, _raising_error.__name__)
+        await rabbit_requester.rpc_request(
+            namespace,
+            _raising_error.__name__,
+            timeout_s_method=DEFAULT_TIMEOUT_S_METHOD,
+            timeout_s_connection_error=DEFAULT_TIMEOUT_S_CONNECTION_ERROR,
+        )
     assert "failed as requested" == f"{exec_info.value}"
 
 
@@ -336,7 +396,11 @@ async def test_replier_responds_with_not_locally_defined_object_instance(
         # There is no change of intercepting this message.
         with pytest.raises(asyncio.TimeoutError):
             await rabbit_requester.rpc_request(
-                namespace, "a_name", x=10, timeout_s_method=1
+                namespace,
+                "a_name",
+                x=10,
+                timeout_s_method=DEFAULT_TIMEOUT_S_METHOD,
+                timeout_s_connection_error=DEFAULT_TIMEOUT_S_CONNECTION_ERROR,
             )
 
         assert "Can't pickle local object" in caplog.text
@@ -373,7 +437,12 @@ async def test_rpc_register_for_is_equivalent_to_rpc_register(
         return 42
 
     async def _assert_call_ok():
-        result = await rabbit_replier.rpc_request(namespace, "_a_handler")
+        result = await rabbit_replier.rpc_request(
+            namespace,
+            "_a_handler",
+            timeout_s_method=DEFAULT_TIMEOUT_S_METHOD,
+            timeout_s_connection_error=DEFAULT_TIMEOUT_S_CONNECTION_ERROR,
+        )
         assert result == 42
 
     await rabbit_replier.rpc_register_handler(namespace, "_a_handler", _a_handler)
@@ -423,7 +492,12 @@ async def test_rabbit_unavailable_just_before_request(
     await restart_rabbit()
 
     # this function will be retried because rabbitmq is restarting
-    await rabbit_requester.rpc_request(namespace, _func.__name__)
+    await rabbit_requester.rpc_request(
+        namespace,
+        _func.__name__,
+        timeout_s_method=DEFAULT_TIMEOUT_S_METHOD,
+        timeout_s_connection_error=60,
+    )
 
     assert times_called == 1
 
@@ -452,6 +526,7 @@ async def test_rabbit_unavailable_during_request(
             namespace,
             _long_running_call.__name__,
             timeout_s_method=sleep_duration * 1.1,
+            timeout_s_connection_error=60,
         )
     )
 
