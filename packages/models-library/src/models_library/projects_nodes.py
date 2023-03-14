@@ -9,7 +9,6 @@ from pydantic import (
     BaseModel,
     Extra,
     Field,
-    HttpUrl,
     Json,
     StrictBool,
     StrictFloat,
@@ -122,10 +121,13 @@ class Node(BaseModel):
     progress: Optional[float] = Field(
         None, ge=0, le=100, description="the node progress value"
     )
-    thumbnail: Optional[HttpUrl] = Field(
+    thumbnail: Optional[str] = Field(
         None,
         description="url of the latest screenshot of the node",
         examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
+        min_length=0,
+        max_length=2083,
+        format="uri",
     )
 
     # RUN HASH

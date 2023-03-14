@@ -31,11 +31,11 @@
     "thumbnail": {
       "title": "Thumbnail",
       "description": "url of the project thumbnail",
+      "maxLength": 2083,
+      "minLength": 0,
       "examples": [
         "https://placeimg.com/171/96/tech/grayscale/?0.jpg"
       ],
-      "minLength": 0,
-      "maxLength": 2083,
       "format": "uri",
       "type": "string"
     },
@@ -105,11 +105,11 @@
             "thumbnail": {
               "title": "Thumbnail",
               "description": "url of the latest screenshot of the node",
+              "maxLength": 2083,
+              "minLength": 0,
               "examples": [
                 "https://placeimg.com/171/96/tech/grayscale/?0.jpg"
               ],
-              "minLength": 1,
-              "maxLength": 2083,
               "format": "uri",
               "type": "string"
             },
@@ -661,7 +661,7 @@
                       "allOf": [
                         {
                           "title": "RunningState",
-                          "description": "State of execution of a project's computational workflow\n\n    SEE StateType for task state\n    ",
+                          "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state",
                           "enum": [
                             "UNKNOWN",
                             "PUBLISHED",
@@ -902,7 +902,7 @@
                       "allOf": [
                         {
                           "title": "RunningState",
-                          "description": "State of execution of a project's computational workflow\n\n    SEE StateType for task state\n    ",
+                          "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state",
                           "enum": [
                             "UNKNOWN",
                             "PUBLISHED",
@@ -1340,7 +1340,7 @@
     },
     "RunningState": {
       "title": "RunningState",
-      "description": "State of execution of a project's computational workflow\n\n    SEE StateType for task state\n    ",
+      "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state",
       "enum": [
         "UNKNOWN",
         "PUBLISHED",
@@ -1380,7 +1380,7 @@
           "allOf": [
             {
               "title": "RunningState",
-              "description": "State of execution of a project's computational workflow\n\n    SEE StateType for task state\n    ",
+              "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state",
               "enum": [
                 "UNKNOWN",
                 "PUBLISHED",
@@ -1461,11 +1461,11 @@
         "thumbnail": {
           "title": "Thumbnail",
           "description": "url of the latest screenshot of the node",
+          "maxLength": 2083,
+          "minLength": 0,
           "examples": [
             "https://placeimg.com/171/96/tech/grayscale/?0.jpg"
           ],
-          "minLength": 1,
-          "maxLength": 2083,
           "format": "uri",
           "type": "string"
         },
@@ -2017,7 +2017,7 @@
                   "allOf": [
                     {
                       "title": "RunningState",
-                      "description": "State of execution of a project's computational workflow\n\n    SEE StateType for task state\n    ",
+                      "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state",
                       "enum": [
                         "UNKNOWN",
                         "PUBLISHED",
@@ -2254,7 +2254,7 @@
           "allOf": [
             {
               "title": "RunningState",
-              "description": "State of execution of a project's computational workflow\n\n    SEE StateType for task state\n    ",
+              "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state",
               "enum": [
                 "UNKNOWN",
                 "PUBLISHED",
@@ -2393,7 +2393,7 @@
                   "allOf": [
                     {
                       "title": "RunningState",
-                      "description": "State of execution of a project's computational workflow\n\n    SEE StateType for task state\n    ",
+                      "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state",
                       "enum": [
                         "UNKNOWN",
                         "PUBLISHED",

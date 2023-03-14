@@ -177,7 +177,7 @@ components:
         thumbnail:
           title: Thumbnail
           maxLength: 2083
-          minLength: 1
+          minLength: 0
           type: string
           description: url of the latest screenshot of the node
           format: uri
@@ -492,8 +492,10 @@ components:
       - FAILED
       - ABORTED
       type: string
-      description: "State of execution of a project's computational workflow\n\n \
-        \   SEE StateType for task state\n    "
+      description: 'State of execution of a project''s computational workflow
+
+
+        SEE StateType for task state'
     SimCoreFileLink:
       title: SimCoreFileLink
       required:

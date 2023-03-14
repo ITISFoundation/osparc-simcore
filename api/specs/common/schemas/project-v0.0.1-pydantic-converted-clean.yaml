@@ -141,8 +141,10 @@ properties:
             properties:
               value:
                 allOf:
-                - description: "State of execution of a project's computational workflow\n\
-                    \n    SEE StateType for task state\n    "
+                - description: 'State of execution of a project''s computational workflow
+
+
+                    SEE StateType for task state'
                   enum:
                   - UNKNOWN
                   - PUBLISHED
@@ -712,8 +714,11 @@ properties:
               properties:
                 currentStatus:
                   allOf:
-                  - description: "State of execution of a project's computational\
-                      \ workflow\n\n    SEE StateType for task state\n    "
+                  - description: 'State of execution of a project''s computational
+                      workflow
+
+
+                      SEE StateType for task state'
                     enum:
                     - UNKNOWN
                     - PUBLISHED
@@ -752,7 +757,7 @@ properties:
             - https://placeimg.com/171/96/tech/grayscale/?0.jpg
             format: uri
             maxLength: 2083
-            minLength: 1
+            minLength: 0
             title: Thumbnail
             type: string
           version:

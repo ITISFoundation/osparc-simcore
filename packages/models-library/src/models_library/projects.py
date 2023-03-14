@@ -7,7 +7,7 @@ from enum import Enum
 from typing import Any, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, constr, validator
+from pydantic import BaseModel, EmailStr, Extra, Field, constr, validator
 
 from .basic_regex import DATE_RE, UUID_RE_BASE
 from .projects_access import AccessRights, GroupIDStr
@@ -36,14 +36,6 @@ class ProjectType(str, Enum):
     STANDARD = "STANDARD"
 
 
-class HttpUrlWithCustomLength(HttpUrl):
-    # As we are trying to match this Pydantic model to a historical json schema "project-v0.0.1" we need to update this.
-    # We override the default min_length=1 from parent class to min_length=0
-    @classmethod
-    def __modify_schema__(cls, field_schema):
-        field_schema.update(minLength=0, maxLength=2083, format="uri")
-
-
 class BaseProjectModel(BaseModel):
     # Description of the project
     uuid: ProjectID = Field(
@@ -62,10 +54,13 @@ class BaseProjectModel(BaseModel):
         description="longer one-line description about the project",
         examples=["Dabbling in temporal transitions ..."],
     )
-    thumbnail: Optional[HttpUrlWithCustomLength] = Field(
+    thumbnail: Optional[str] = Field(
         ...,
         description="url of the project thumbnail",
         examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
+        min_length=0,
+        max_length=2083,
+        format="uri",
     )
 
     creation_date: datetime = Field(...)

@@ -1302,8 +1302,7 @@ components:
                             - description: |-
                                 State of execution of a project's computational workflow
 
-                                    SEE StateType for task state
-
+                                SEE StateType for task state
                               enum:
                                 - UNKNOWN
                                 - PUBLISHED
@@ -1856,8 +1855,7 @@ components:
                             - description: |-
                                 State of execution of a project's computational workflow
 
-                                    SEE StateType for task state
-
+                                SEE StateType for task state
                               enum:
                                 - UNKNOWN
                                 - PUBLISHED
@@ -1895,7 +1893,7 @@ components:
                     - 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
                   format: uri
                   maxLength: 2083
-                  minLength: 1
+                  minLength: 0
                   title: Thumbnail
                   type: string
                 version:
