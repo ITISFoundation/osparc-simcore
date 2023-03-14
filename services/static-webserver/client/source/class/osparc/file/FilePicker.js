@@ -217,20 +217,27 @@ qx.Class.define("osparc.file.FilePicker", {
       }
     },
 
-    downloadOutput: function(node) {
+    downloadOutput: function(node, downloadFileBtn) {
+      const progressCb = () => downloadFileBtn.setFetching(true);
+      const loadedCb = () => downloadFileBtn.setFetching(false);
       if (osparc.file.FilePicker.isOutputFromStore(node.getOutputs())) {
         this.self().getOutputFileMetadata(node)
           .then(fileMetadata => {
             if ("location_id" in fileMetadata && "file_id" in fileMetadata) {
               const locationId = fileMetadata["location_id"];
               const fileId = fileMetadata["file_id"];
-              osparc.utils.Utils.retrieveURLAndDownload(locationId, fileId);
+              osparc.utils.Utils.retrieveURLAndDownload(locationId, fileId)
+                .then(data => {
+                  if (data) {
+                    osparc.utils.Utils.downloadLink(data.link, "GET", data.fileName, progressCb, loadedCb);
+                  }
+                });
             }
           });
       } else if (osparc.file.FilePicker.isOutputDownloadLink(node.getOutputs())) {
         const outFileValue = osparc.file.FilePicker.getOutput(node.getOutputs());
         if (osparc.utils.Utils.isObject(outFileValue) && "downloadLink" in outFileValue) {
-          osparc.utils.Utils.downloadLink(outFileValue["downloadLink"], "GET");
+          osparc.utils.Utils.downloadLink(outFileValue["downloadLink"], "GET", null, progressCb, loadedCb);
         }
       }
     },
@@ -347,10 +354,10 @@ qx.Class.define("osparc.file.FilePicker", {
 
     __getDownloadFileButton: function() {
       const node = this.getNode();
-      const downloadFileBtn = new qx.ui.form.Button(this.tr("Download"), "@FontAwesome5Solid/cloud-download-alt/14").set({
+      const downloadFileBtn = new osparc.ui.form.FetchButton(this.tr("Download"), "@FontAwesome5Solid/cloud-download-alt/14").set({
         allowGrowX: false
       });
-      downloadFileBtn.addListener("execute", () => osparc.file.FilePicker.downloadOutput(node));
+      downloadFileBtn.addListener("execute", () => osparc.file.FilePicker.downloadOutput(node, downloadFileBtn));
       return downloadFileBtn;
     },
 
