@@ -179,4 +179,4 @@ async def add_new_project(
     #
     # TODO: Ensure this user has access to these services!
     #
-    await create_or_update_pipeline(app, user.id, project.uuid)
+    await create_or_update_pipeline(app, user.id, project.uuid, product_name)
