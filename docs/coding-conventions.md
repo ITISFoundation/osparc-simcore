@@ -56,3 +56,11 @@ For the rest basically:
 ###  CC1: Can I use ``TODO:``, ``FIXME:``?
 
 We should avoid merging PRs with ``TODO:`` and ``FIXME:`` into master. One of our bots detects those and flag them as code-smells. If we still want to keep this idea/fix noted in the code, those can be rewritten as ``NOTE:`` and should be extended with a link to a github issue with more details. For a context, see [discussion here](https://github.com/ITISFoundation/osparc-simcore/pull/3380#discussion_r979893502).
+
+
+## Retries
+
+[Tenacity](https://github.com/jd/tenacity) wherever a retry is required. While most retries are straight forward consider [the following article](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/) regarding retries services and how to avoid overwhelming them.
+
+When retrying an API call (or some sort of request) to an external system, consider that that system can have trouble replying.
+It is most effective to create a retry using `wait_random_exponential` from tenacity which implements what the article above describes.
