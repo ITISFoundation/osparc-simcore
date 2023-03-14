@@ -424,3 +424,34 @@ async def test_rabbit_unavailable_just_before_request(
     await rabbit_requester.rpc_request(namespace, _func.__name__)
 
     assert times_called == 1
+
+
+async def test_rabbit_unavailable_during_request(
+    rabbit_requester: RabbitMQClient,
+    rabbit_replier: RabbitMQClient,
+    namespace: RPCNamespace,
+    restart_rabbit: Callable,
+):
+    times_called = 0
+
+    sleep_duration = 5
+
+    async def _long_running_call() -> None:
+        nonlocal times_called
+        times_called += 1
+        await asyncio.sleep(sleep_duration)
+
+    await rabbit_replier.rpc_register_handler(
+        namespace, _long_running_call.__name__, _long_running_call
+    )
+
+    task = asyncio.create_task(
+        rabbit_requester.rpc_request(
+            namespace, _long_running_call.__name__, timeout_s=sleep_duration * 1.1
+        )
+    )
+
+    await restart_rabbit()
+    await task
+
+    assert times_called == 1
