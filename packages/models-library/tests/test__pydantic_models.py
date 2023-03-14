@@ -6,7 +6,7 @@ check some "corner cases" or critical setups with pydantic model such that:
 
 """
 
-from typing import List, Union, get_args, get_origin
+from typing import Union, get_args, get_origin
 
 import pytest
 from models_library.projects_nodes import InputTypes, OutputTypes
@@ -36,7 +36,7 @@ def test_json_type():
         data_schema: Json
 
     # notice that this is a raw string!
-    jsonschema_of_x = schema_json_of(List[int], title="schema[x]")
+    jsonschema_of_x = schema_json_of(list[int], title="schema[x]")
     assert isinstance(jsonschema_of_x, str)
 
     x_annotation = ArgumentAnnotation(name="x", data_schema=jsonschema_of_x)
@@ -138,7 +138,7 @@ def test_union_types_coercion():
     assert model.output == "some/path/or/string"
 
     # (undefined) json string vs SimCoreFileLink.dict() ------------
-    MINIMAL = 1
+    MINIMAL = 2  # <--- index of the example with the minimum required fields
     assert SimCoreFileLink in get_args(OutputTypes)
     example = SimCoreFileLink.parse_obj(
         SimCoreFileLink.Config.schema_extra["examples"][MINIMAL]
