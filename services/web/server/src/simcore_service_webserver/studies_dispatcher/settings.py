@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 
 from aiohttp import web
 from pydantic import validator
@@ -34,10 +34,6 @@ class StudiesDispatcherSettings(BaseCustomSettings):
         NOTE: in special cases this entrypoing can be programatically protected with auth
         """
         return not self.STUDIES_ACCESS_ANONYMOUS_ALLOWED
-
-    def get_guest_expiration(self) -> datetime:
-        """Value assigned to user.expires_at"""
-        return datetime.now(timezone.utc) + self.STUDIES_GUEST_ACCOUNT_LIFETIME
 
     class Config:
         schema_extra = {

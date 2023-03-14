@@ -12,6 +12,7 @@ TODO: Refactor to reduce modules coupling! See all TODO: .``from ...`` comments
 """
 import functools
 import logging
+from datetime import datetime, timezone
 from functools import lru_cache
 from uuid import UUID, uuid5
 
@@ -86,7 +87,7 @@ async def _create_temporary_user(request: web.Request):
     random_uname = get_random_string(min_len=5)
     email = random_uname + "@guest-at-osparc.io"
     password = get_random_string(min_len=12)
-    expires_at = settings.get_guest_expiration()
+    expires_at = datetime.now(timezone.utc) + settings.STUDIES_GUEST_ACCOUNT_LIFETIME
 
     # GUEST_USER_RC_LOCK:
     #
