@@ -25,6 +25,7 @@ pytest_simcore_core_services_selection = [
 ]
 
 DEFAULT_CONNECTION_ERROR_TIMEOUT_S: Final[PositiveFloat] = 1
+DEFAULT_VOLUME_REMOVE_TIMEOUT_S: Final[PositiveFloat] = 60
 
 
 @pytest.fixture
@@ -97,6 +98,7 @@ async def test_remove_volume_from_node_ok(
         rabbitmq_client=rabbitmq_client,
         volume_names=named_volumes,
         docker_node_id=target_node_id,
+        volume_remove_timeout_s=DEFAULT_VOLUME_REMOVE_TIMEOUT_S,
         connection_error_timeout_s=DEFAULT_CONNECTION_ERROR_TIMEOUT_S,
     )
 
@@ -129,9 +131,8 @@ async def test_remove_volume_from_node_no_volume_found(
             rabbitmq_client=rabbitmq_client,
             volume_names=volumes_to_remove,
             docker_node_id=target_node_id,
+            volume_remove_timeout_s=DEFAULT_VOLUME_REMOVE_TIMEOUT_S,
             connection_error_timeout_s=DEFAULT_CONNECTION_ERROR_TIMEOUT_S,
-            volume_removal_attempts=3,
-            sleep_between_attempts_s=0.1,
         )
     assert len(exec_info.value.errors) == 1, f"{exec_info.value.errors}"
 

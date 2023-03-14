@@ -360,7 +360,12 @@ class DynamicSidecarSettings(BaseCustomSettings):
         ),
     )
 
-    DYNAMIC_SIDECAR_DOCKER_RABBITMQ_CONNECTION_ERROR_TIMEOUT_S: PositiveFloat = Field(
+    DYNAMIC_SIDECAR_VOLUME_REMOVE_TIMEOUT_S: PositiveFloat = Field(
+        60,
+        description="Time to wait for docker volume be removed ",
+    )
+
+    DYNAMIC_SIDECAR_RABBITMQ_CONNECTION_ERROR_TIMEOUT_S: PositiveFloat = Field(
         60,
         description=(
             "Time to wait when there are connection issues with rabbitmq. "

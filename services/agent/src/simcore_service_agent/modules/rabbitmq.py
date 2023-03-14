@@ -32,10 +32,7 @@ def _get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
 
 
 async def _safe_remove_volumes(
-    app: FastAPI,
-    volume_names: list[str],
-    volume_removal_attempts: int,
-    sleep_between_attempts_s: float,
+    app: FastAPI, volume_names: list[str], volume_remove_timeout_s: float
 ) -> None:
     volumes_cleanup_manager: LowPriorityHandlerManager = get_low_priority_managers(
         app
@@ -68,9 +65,7 @@ async def _safe_remove_volumes(
             try:
                 async with volumes_cleanup_manager.deny_handler_usage():
                     await _remove_volumes(
-                        volume_names,
-                        volume_removal_attempts=volume_removal_attempts,
-                        sleep_between_attempts_s=sleep_between_attempts_s,
+                        volume_names, volume_remove_timeout_s=volume_remove_timeout_s
                     )
             except HandlerIsRunningError:
                 await disable_volume_removal_task(app)
