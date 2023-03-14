@@ -76,12 +76,6 @@ class BaseProjectModel(BaseModel):
 
     @validator("thumbnail", always=True, pre=True)
     @classmethod
-    def validate_length(cls, value):
-        if len(value) < 1:
-            return value
-
-    @validator("thumbnail", always=True, pre=True)
-    @classmethod
     def convert_empty_str_to_none(cls, v):
         if isinstance(v, str) and v == "":
             return None
