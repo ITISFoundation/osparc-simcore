@@ -51,6 +51,7 @@ from simcore_service_webserver.groups_api import (
     delete_user_group,
     list_user_groups,
 )
+from simcore_service_webserver.projects.project_models import ProjectDict
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -201,11 +202,14 @@ def osparc_product_name() -> str:
 
 @pytest.fixture
 async def catalog_subsystem_mock(
-    monkeypatch,
-) -> Callable[[Optional[Union[list[dict], dict]]], None]:
+    monkeypatch: MonkeyPatch,
+) -> Callable[[list[ProjectDict]], None]:
+    """
+    Patches some API calls in the catalog plugin
+    """
     services_in_project = []
 
-    def creator(projects: Optional[Union[list[dict], dict]] = None) -> None:
+    def _creator(projects: list[ProjectDict]) -> None:
         for proj in projects or []:
             services_in_project.extend(
                 [
@@ -221,7 +225,7 @@ async def catalog_subsystem_mock(
         catalog, "get_services_for_user_in_product", mocked_get_services_for_user
     )
 
-    return creator
+    return _creator
 
 
 @pytest.fixture
