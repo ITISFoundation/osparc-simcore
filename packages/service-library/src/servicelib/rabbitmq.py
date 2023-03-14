@@ -6,15 +6,15 @@ from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable, Final, Optional
 
 import aio_pika
+from aio_pika.exceptions import AMQPConnectionError, ChannelInvalidStateError
 from aio_pika.patterns import RPC
-from aiormq import AMQPConnectionError
 from packaging.version import Version
 from pydantic import PositiveFloat
 from servicelib.logging_utils import log_context
 from settings_library.rabbit import RabbitSettings
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
-from tenacity.retry import retry_if_exception
+from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random
 
@@ -226,7 +226,9 @@ class RabbitMQClient:
             async for attempt in AsyncRetrying(
                 wait=wait_random(2),
                 stop=stop_after_delay(timeout_s_connection_error),
-                retry=retry_if_exception(AMQPConnectionError),
+                retry=retry_if_exception_type(
+                    (AMQPConnectionError, ChannelInvalidStateError)
+                ),
                 before_sleep=before_sleep_log(log, logging.WARNING),
                 reraise=True,
             ):
