@@ -5,7 +5,7 @@ from models_library.generated_models.docker_rest_api import Task
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.users import UserID
-from pydantic import BaseModel, ConstrainedStr, Field, constr
+from pydantic import BaseModel, ConstrainedStr, Field
 
 from .basic_regex import (
     DOCKER_GENERIC_TAG_KEY_RE,
@@ -14,8 +14,13 @@ from .basic_regex import (
     DOCKER_LABEL_KEY_REGEX,
 )
 
-DockerImageKey = constr(regex=DOCKER_IMAGE_KEY_RE)
-DockerImageVersion = constr(regex=DOCKER_IMAGE_VERSION_RE)
+
+class DockerImageKey(ConstrainedStr):
+    regex = re.compile(DOCKER_IMAGE_KEY_RE)
+
+
+class DockerImageVersion(ConstrainedStr):
+    regex = re.compile(DOCKER_IMAGE_VERSION_RE)
 
 
 class DockerLabelKey(ConstrainedStr):
