@@ -45,7 +45,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
             "WEBSERVER_COMPUTATION": "0",
             "WEBSERVER_DIAGNOSTICS": "null",
             "WEBSERVER_DIRECTOR": "null",
-            "WEBSERVER_DIRECTOR_V2": "null",
+            # "WEBSERVER_DIRECTOR_V2": mocked
             "WEBSERVER_EXPORTER": "null",
             # Enforces smallest GC in the background task
             # "WEBSERVER_GARBAGE_COLLECTOR": "null",
