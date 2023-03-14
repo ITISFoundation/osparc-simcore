@@ -232,6 +232,7 @@ properties:
                           minHeight:
                             title: Minheight
                             description: minimum Height of the textarea
+                            exclusiveMinimum: 0
                             type: integer
                         required:
                           - minHeight
@@ -422,6 +423,7 @@ properties:
                           minHeight:
                             title: Minheight
                             description: minimum Height of the textarea
+                            exclusiveMinimum: 0
                             type: integer
                         required:
                           - minHeight
@@ -674,6 +676,7 @@ definitions:
       minHeight:
         title: Minheight
         description: minimum Height of the textarea
+        exclusiveMinimum: 0
         type: integer
     required:
       - minHeight
@@ -745,6 +748,7 @@ definitions:
               minHeight:
                 title: Minheight
                 description: minimum Height of the textarea
+                exclusiveMinimum: 0
                 type: integer
             required:
               - minHeight
@@ -881,6 +885,7 @@ definitions:
                       minHeight:
                         title: Minheight
                         description: minimum Height of the textarea
+                        exclusiveMinimum: 0
                         type: integer
                     required:
                       - minHeight
@@ -1065,6 +1070,7 @@ definitions:
                       minHeight:
                         title: Minheight
                         description: minimum Height of the textarea
+                        exclusiveMinimum: 0
                         type: integer
                     required:
                       - minHeight
