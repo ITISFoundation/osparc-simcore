@@ -16,7 +16,7 @@ from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_random
+from tenacity.wait import wait_random_exponential
 
 from .rabbitmq_errors import RemoteMethodNotRegisteredError, RPCNotInitializedError
 from .rabbitmq_utils import RPCMethodName, RPCNamespace, RPCNamespacedMethodName
@@ -224,7 +224,7 @@ class RabbitMQClient:
         )
         try:
             async for attempt in AsyncRetrying(
-                wait=wait_random(2),
+                wait=wait_random_exponential(max=5),
                 stop=stop_after_delay(timeout_s_connection_error),
                 retry=retry_if_exception_type(
                     (AMQPConnectionError, ChannelInvalidStateError)
