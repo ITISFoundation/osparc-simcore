@@ -83,7 +83,8 @@ else
 
   # add the GPUs if there are any
   if [ "$num_gpus" -gt 0 ]; then
-    resources="$resources,GPU=$num_gpus"
+    total_vram=$(python -c "from simcore_service_dask_sidecar.utils import video_memory; print(video_memory());")
+    resources="$resources,GPU=$num_gpus,VRAM=$total_vram"
   fi
 
   # add the MPI if possible
