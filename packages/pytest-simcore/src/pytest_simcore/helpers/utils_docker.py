@@ -242,7 +242,6 @@ def save_docker_infos(destination_path: Path):
                 destination_path.mkdir(parents=True, exist_ok=True)
 
         for container in all_containers:
-
             try:
                 container_name = safe_artifact_name(container.name)
 
