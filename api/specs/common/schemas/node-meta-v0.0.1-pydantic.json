@@ -246,6 +246,10 @@
                   "type": "string",
                   "pattern": "^[-_a-zA-Z0-9]+$"
                 }
+              },
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "^[-_a-zA-Z0-9]+$"
               }
             },
             "unit": {
@@ -306,7 +310,6 @@
                             "minHeight": {
                               "title": "Minheight",
                               "description": "minimum Height of the textarea",
-                              "exclusiveMinimum": 0,
                               "type": "integer"
                             }
                           },
@@ -453,6 +456,278 @@
             }
           ]
         }
+      },
+      "additionalProperties": {
+        "title": "ServiceInput",
+        "description": "Metadata on a service input port",
+        "type": "object",
+        "properties": {
+          "displayOrder": {
+            "title": "Displayorder",
+            "description": "DEPRECATED: new display order is taken from the item position. This will be removed.",
+            "deprecated": true,
+            "type": "number"
+          },
+          "label": {
+            "title": "Label",
+            "description": "short name for the property",
+            "example": "Age",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "description": "description of the property",
+            "example": "Age in seconds since 1970",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "description": "data type expected on this input glob matching for data type is allowed",
+            "pattern": "^(number|integer|boolean|string|ref_contentSchema|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
+            "examples": [
+              "number",
+              "boolean",
+              "data:*/*",
+              "data:text/*",
+              "data:[image/jpeg,image/png]",
+              "data:application/json",
+              "data:application/json;schema=https://my-schema/not/really/schema.json",
+              "data:application/vnd.ms-excel",
+              "data:text/plain",
+              "data:application/hdf5",
+              "data:application/edu.ucdavis@ceclancy.xyz"
+            ],
+            "type": "string"
+          },
+          "contentSchema": {
+            "title": "Contentschema",
+            "description": "jsonschema of this input/output. Required when type='ref_contentSchema'",
+            "type": "object"
+          },
+          "fileToKeyMap": {
+            "title": "Filetokeymap",
+            "description": "Place the data associated with the named keys in files",
+            "examples": [
+              {
+                "dir/input1.txt": "key_1",
+                "dir33/input2.txt": "key2"
+              }
+            ],
+            "type": "object",
+            "patternProperties": {
+              ".+": {
+                "type": "string",
+                "pattern": "^[-_a-zA-Z0-9]+$"
+              }
+            },
+            "additionalProperties": {
+              "type": "string",
+              "pattern": "^[-_a-zA-Z0-9]+$"
+            }
+          },
+          "unit": {
+            "title": "Unit",
+            "description": "Units, when it refers to a physical quantity",
+            "type": "string"
+          },
+          "defaultValue": {
+            "title": "Defaultvalue",
+            "examples": [
+              "Dog",
+              true
+            ],
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "widget": {
+            "title": "Widget",
+            "description": "custom widget to use instead of the default one determined from the data-type",
+            "allOf": [
+              {
+                "title": "Widget",
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "description": "type of the property",
+                    "allOf": [
+                      {
+                        "title": "WidgetType",
+                        "description": "An enumeration.",
+                        "enum": [
+                          "TextArea",
+                          "SelectBox"
+                        ],
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "details": {
+                    "title": "Details",
+                    "anyOf": [
+                      {
+                        "title": "TextArea",
+                        "type": "object",
+                        "properties": {
+                          "minHeight": {
+                            "title": "Minheight",
+                            "description": "minimum Height of the textarea",
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "minHeight"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "title": "SelectBox",
+                        "type": "object",
+                        "properties": {
+                          "structure": {
+                            "title": "Structure",
+                            "minItems": 1,
+                            "type": "array",
+                            "items": {
+                              "title": "Structure",
+                              "type": "object",
+                              "properties": {
+                                "key": {
+                                  "title": "Key",
+                                  "anyOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "boolean"
+                                    },
+                                    {
+                                      "type": "number"
+                                    }
+                                  ]
+                                },
+                                "label": {
+                                  "title": "Label",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "key",
+                                "label"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "structure"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "type",
+                  "details"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "required": [
+          "label",
+          "description",
+          "type"
+        ],
+        "additionalProperties": false,
+        "examples": [
+          {
+            "displayOrder": 1,
+            "label": "Input files - file-wo-widget",
+            "description": "Files downloaded from service connected at the input",
+            "type": "data:*/*"
+          },
+          {
+            "displayOrder": 2,
+            "label": "Sleep Time - v2",
+            "description": "Time to wait before completion",
+            "type": "number",
+            "defaultValue": 0,
+            "unit": "second",
+            "widget": {
+              "type": "TextArea",
+              "details": {
+                "minHeight": 3
+              }
+            }
+          },
+          {
+            "label": "Sleep Time - latest",
+            "description": "Time to wait before completion",
+            "type": "number",
+            "defaultValue": 0,
+            "unit": "second",
+            "widget": {
+              "type": "TextArea",
+              "details": {
+                "minHeight": 3
+              }
+            }
+          },
+          {
+            "label": "array_numbers",
+            "description": "Some array of numbers",
+            "type": "ref_contentSchema",
+            "contentSchema": {
+              "title": "list[number]",
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          {
+            "label": "my_object",
+            "description": "Some object",
+            "type": "ref_contentSchema",
+            "contentSchema": {
+              "title": "an object named A",
+              "type": "object",
+              "properties": {
+                "i": {
+                  "title": "Int",
+                  "type": "integer",
+                  "default": 3
+                },
+                "b": {
+                  "title": "Bool",
+                  "type": "boolean"
+                },
+                "s": {
+                  "title": "Str",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "b",
+                "s"
+              ]
+            }
+          }
+        ]
       }
     },
     "outputs": {
@@ -522,6 +797,10 @@
                   "type": "string",
                   "pattern": "^[-_a-zA-Z0-9]+$"
                 }
+              },
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "^[-_a-zA-Z0-9]+$"
               }
             },
             "unit": {
@@ -562,7 +841,6 @@
                             "minHeight": {
                               "title": "Minheight",
                               "description": "minimum Height of the textarea",
-                              "exclusiveMinimum": 0,
                               "type": "integer"
                             }
                           },
@@ -661,6 +939,210 @@
             }
           ]
         }
+      },
+      "additionalProperties": {
+        "title": "ServiceOutput",
+        "description": "Base class for service input/outputs",
+        "type": "object",
+        "properties": {
+          "displayOrder": {
+            "title": "Displayorder",
+            "description": "DEPRECATED: new display order is taken from the item position. This will be removed.",
+            "deprecated": true,
+            "type": "number"
+          },
+          "label": {
+            "title": "Label",
+            "description": "short name for the property",
+            "example": "Age",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "description": "description of the property",
+            "example": "Age in seconds since 1970",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "description": "data type expected on this input glob matching for data type is allowed",
+            "pattern": "^(number|integer|boolean|string|ref_contentSchema|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
+            "examples": [
+              "number",
+              "boolean",
+              "data:*/*",
+              "data:text/*",
+              "data:[image/jpeg,image/png]",
+              "data:application/json",
+              "data:application/json;schema=https://my-schema/not/really/schema.json",
+              "data:application/vnd.ms-excel",
+              "data:text/plain",
+              "data:application/hdf5",
+              "data:application/edu.ucdavis@ceclancy.xyz"
+            ],
+            "type": "string"
+          },
+          "contentSchema": {
+            "title": "Contentschema",
+            "description": "jsonschema of this input/output. Required when type='ref_contentSchema'",
+            "type": "object"
+          },
+          "fileToKeyMap": {
+            "title": "Filetokeymap",
+            "description": "Place the data associated with the named keys in files",
+            "examples": [
+              {
+                "dir/input1.txt": "key_1",
+                "dir33/input2.txt": "key2"
+              }
+            ],
+            "type": "object",
+            "patternProperties": {
+              ".+": {
+                "type": "string",
+                "pattern": "^[-_a-zA-Z0-9]+$"
+              }
+            },
+            "additionalProperties": {
+              "type": "string",
+              "pattern": "^[-_a-zA-Z0-9]+$"
+            }
+          },
+          "unit": {
+            "title": "Unit",
+            "description": "Units, when it refers to a physical quantity",
+            "type": "string"
+          },
+          "widget": {
+            "title": "Widget",
+            "description": "custom widget to use instead of the default one determined from the data-type",
+            "deprecated": true,
+            "allOf": [
+              {
+                "title": "Widget",
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "description": "type of the property",
+                    "allOf": [
+                      {
+                        "title": "WidgetType",
+                        "description": "An enumeration.",
+                        "enum": [
+                          "TextArea",
+                          "SelectBox"
+                        ],
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "details": {
+                    "title": "Details",
+                    "anyOf": [
+                      {
+                        "title": "TextArea",
+                        "type": "object",
+                        "properties": {
+                          "minHeight": {
+                            "title": "Minheight",
+                            "description": "minimum Height of the textarea",
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "minHeight"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "title": "SelectBox",
+                        "type": "object",
+                        "properties": {
+                          "structure": {
+                            "title": "Structure",
+                            "minItems": 1,
+                            "type": "array",
+                            "items": {
+                              "title": "Structure",
+                              "type": "object",
+                              "properties": {
+                                "key": {
+                                  "title": "Key",
+                                  "anyOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "boolean"
+                                    },
+                                    {
+                                      "type": "number"
+                                    }
+                                  ]
+                                },
+                                "label": {
+                                  "title": "Label",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "key",
+                                "label"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "structure"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "type",
+                  "details"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "required": [
+          "label",
+          "description",
+          "type"
+        ],
+        "additionalProperties": false,
+        "examples": [
+          {
+            "displayOrder": 2,
+            "label": "Time Slept",
+            "description": "Time the service waited before completion",
+            "type": "number"
+          },
+          {
+            "displayOrder": 2,
+            "label": "Time Slept - units",
+            "description": "Time the service waited before completion",
+            "type": "number",
+            "unit": "second"
+          },
+          {
+            "label": "Time Slept - w/o displayorder",
+            "description": "Time the service waited before completion",
+            "type": "number",
+            "unit": "second"
+          },
+          {
+            "label": "Output file 1",
+            "displayOrder": 4.0,
+            "description": "Output file uploaded from the outputs folder",
+            "type": "data:*/*"
+          }
+        ]
       }
     },
     "boot-options": {
@@ -778,6 +1260,116 @@
             }
           ]
         }
+      },
+      "additionalProperties": {
+        "title": "BootOption",
+        "type": "object",
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "default": {
+            "title": "Default",
+            "type": "string"
+          },
+          "items": {
+            "title": "Items",
+            "type": "object",
+            "additionalProperties": {
+              "title": "BootChoice",
+              "type": "object",
+              "properties": {
+                "label": {
+                  "title": "Label",
+                  "type": "string"
+                },
+                "description": {
+                  "title": "Description",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "label",
+                "description"
+              ],
+              "examples": [
+                {
+                  "label": "Boot mode",
+                  "description": "Start it in web page mode",
+                  "default": "0",
+                  "items": {
+                    "0": {
+                      "label": "Non Voila",
+                      "description": "Tooltip for non Voila boot mode"
+                    },
+                    "1": {
+                      "label": "Voila",
+                      "description": "Tooltip for Voila boot mode"
+                    }
+                  }
+                },
+                {
+                  "label": "Application theme",
+                  "description": "Select a theme for the application",
+                  "default": "b",
+                  "items": {
+                    "a": {
+                      "label": "Clear",
+                      "description": "Using white background"
+                    },
+                    "b": {
+                      "label": "Dark",
+                      "description": "Using black and gray tones"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "label",
+          "description",
+          "default",
+          "items"
+        ],
+        "examples": [
+          {
+            "label": "Boot mode",
+            "description": "Start it in web page mode",
+            "default": "0",
+            "items": {
+              "0": {
+                "label": "Non Voila",
+                "description": "Tooltip for non Voila boot mode"
+              },
+              "1": {
+                "label": "Voila",
+                "description": "Tooltip for Voila boot mode"
+              }
+            }
+          },
+          {
+            "label": "Application theme",
+            "description": "Select a theme for the application",
+            "default": "b",
+            "items": {
+              "a": {
+                "label": "Clear",
+                "description": "Using white background"
+              },
+              "b": {
+                "label": "Dark",
+                "description": "Using black and gray tones"
+              }
+            }
+          }
+        ]
       }
     }
   },
@@ -1017,7 +1609,6 @@
         "minHeight": {
           "title": "Minheight",
           "description": "minimum Height of the textarea",
-          "exclusiveMinimum": 0,
           "type": "integer"
         }
       },
@@ -1127,7 +1718,6 @@
                 "minHeight": {
                   "title": "Minheight",
                   "description": "minimum Height of the textarea",
-                  "exclusiveMinimum": 0,
                   "type": "integer"
                 }
               },
@@ -1251,6 +1841,10 @@
               "type": "string",
               "pattern": "^[-_a-zA-Z0-9]+$"
             }
+          },
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[-_a-zA-Z0-9]+$"
           }
         },
         "unit": {
@@ -1311,7 +1905,6 @@
                         "minHeight": {
                           "title": "Minheight",
                           "description": "minimum Height of the textarea",
-                          "exclusiveMinimum": 0,
                           "type": "integer"
                         }
                       },
@@ -1520,6 +2113,10 @@
               "type": "string",
               "pattern": "^[-_a-zA-Z0-9]+$"
             }
+          },
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[-_a-zA-Z0-9]+$"
           }
         },
         "unit": {
@@ -1560,7 +2157,6 @@
                         "minHeight": {
                           "title": "Minheight",
                           "description": "minimum Height of the textarea",
-                          "exclusiveMinimum": 0,
                           "type": "integer"
                         }
                       },

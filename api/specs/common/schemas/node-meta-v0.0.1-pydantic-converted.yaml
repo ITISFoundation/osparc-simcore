@@ -130,6 +130,141 @@ properties:
     title: Inputs
     description: definition of the inputs of this node
     type: object
+    additionalProperties:
+      title: ServiceInput
+      description: Metadata on a service input port
+      type: object
+      properties:
+        displayOrder:
+          title: Displayorder
+          description: >-
+            DEPRECATED: new display order is taken from the item position. This
+            will be removed.
+          deprecated: true
+          type: number
+        label:
+          title: Label
+          description: short name for the property
+          example: Age
+          type: string
+        description:
+          title: Description
+          description: description of the property
+          example: Age in seconds since 1970
+          type: string
+        type:
+          title: Type
+          description: >-
+            data type expected on this input glob matching for data type is
+            allowed
+          pattern: >-
+            ^(number|integer|boolean|string|ref_contentSchema|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$
+          type: string
+          example: number
+        contentSchema:
+          title: Contentschema
+          description: >-
+            jsonschema of this input/output. Required when
+            type='ref_contentSchema'
+          type: object
+        fileToKeyMap:
+          title: Filetokeymap
+          description: Place the data associated with the named keys in files
+          type: object
+          additionalProperties:
+            type: string
+            pattern: ^[-_a-zA-Z0-9]+$
+          example:
+            dir/input1.txt: key_1
+            dir33/input2.txt: key2
+          x-patternProperties:
+            .+:
+              type: string
+              pattern: ^[-_a-zA-Z0-9]+$
+        unit:
+          title: Unit
+          description: Units, when it refers to a physical quantity
+          type: string
+        defaultValue:
+          title: Defaultvalue
+          anyOf:
+            - type: boolean
+            - type: integer
+            - type: number
+            - type: string
+          example: Dog
+        widget:
+          title: Widget
+          description: >-
+            custom widget to use instead of the default one determined from the
+            data-type
+          allOf:
+            - title: Widget
+              type: object
+              properties:
+                type:
+                  description: type of the property
+                  allOf:
+                    - title: WidgetType
+                      description: An enumeration.
+                      enum:
+                        - TextArea
+                        - SelectBox
+                      type: string
+                details:
+                  title: Details
+                  anyOf:
+                    - title: TextArea
+                      type: object
+                      properties:
+                        minHeight:
+                          title: Minheight
+                          description: minimum Height of the textarea
+                          type: integer
+                      required:
+                        - minHeight
+                      additionalProperties: false
+                    - title: SelectBox
+                      type: object
+                      properties:
+                        structure:
+                          title: Structure
+                          minItems: 1
+                          type: array
+                          items:
+                            title: Structure
+                            type: object
+                            properties:
+                              key:
+                                title: Key
+                                anyOf:
+                                  - type: string
+                                  - type: boolean
+                                  - type: number
+                              label:
+                                title: Label
+                                type: string
+                            required:
+                              - key
+                              - label
+                            additionalProperties: false
+                      required:
+                        - structure
+                      additionalProperties: false
+              required:
+                - type
+                - details
+              additionalProperties: false
+      required:
+        - label
+        - description
+        - type
+      additionalProperties: false
+      example:
+        displayOrder: 1
+        label: Input files - file-wo-widget
+        description: Files downloaded from service connected at the input
+        type: data:*/*
     x-patternProperties:
       ^[-_a-zA-Z0-9]+$:
         title: ServiceInput
@@ -191,6 +326,9 @@ properties:
               .+:
                 type: string
                 pattern: ^[-_a-zA-Z0-9]+$
+            additionalProperties:
+              type: string
+              pattern: ^[-_a-zA-Z0-9]+$
           unit:
             title: Unit
             description: Units, when it refers to a physical quantity
@@ -232,7 +370,6 @@ properties:
                           minHeight:
                             title: Minheight
                             description: minimum Height of the textarea
-                            exclusiveMinimum: 0
                             type: integer
                         required:
                           - minHeight
@@ -325,11 +462,138 @@ properties:
               required:
                 - b
                 - s
-    additionalProperties: true
   outputs:
     title: Outputs
     description: definition of the outputs of this node
     type: object
+    additionalProperties:
+      title: ServiceOutput
+      description: Base class for service input/outputs
+      type: object
+      properties:
+        displayOrder:
+          title: Displayorder
+          description: >-
+            DEPRECATED: new display order is taken from the item position. This
+            will be removed.
+          deprecated: true
+          type: number
+        label:
+          title: Label
+          description: short name for the property
+          example: Age
+          type: string
+        description:
+          title: Description
+          description: description of the property
+          example: Age in seconds since 1970
+          type: string
+        type:
+          title: Type
+          description: >-
+            data type expected on this input glob matching for data type is
+            allowed
+          pattern: >-
+            ^(number|integer|boolean|string|ref_contentSchema|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$
+          type: string
+          example: number
+        contentSchema:
+          title: Contentschema
+          description: >-
+            jsonschema of this input/output. Required when
+            type='ref_contentSchema'
+          type: object
+        fileToKeyMap:
+          title: Filetokeymap
+          description: Place the data associated with the named keys in files
+          type: object
+          additionalProperties:
+            type: string
+            pattern: ^[-_a-zA-Z0-9]+$
+          example:
+            dir/input1.txt: key_1
+            dir33/input2.txt: key2
+          x-patternProperties:
+            .+:
+              type: string
+              pattern: ^[-_a-zA-Z0-9]+$
+        unit:
+          title: Unit
+          description: Units, when it refers to a physical quantity
+          type: string
+        widget:
+          title: Widget
+          description: >-
+            custom widget to use instead of the default one determined from the
+            data-type
+          deprecated: true
+          allOf:
+            - title: Widget
+              type: object
+              properties:
+                type:
+                  description: type of the property
+                  allOf:
+                    - title: WidgetType
+                      description: An enumeration.
+                      enum:
+                        - TextArea
+                        - SelectBox
+                      type: string
+                details:
+                  title: Details
+                  anyOf:
+                    - title: TextArea
+                      type: object
+                      properties:
+                        minHeight:
+                          title: Minheight
+                          description: minimum Height of the textarea
+                          type: integer
+                      required:
+                        - minHeight
+                      additionalProperties: false
+                    - title: SelectBox
+                      type: object
+                      properties:
+                        structure:
+                          title: Structure
+                          minItems: 1
+                          type: array
+                          items:
+                            title: Structure
+                            type: object
+                            properties:
+                              key:
+                                title: Key
+                                anyOf:
+                                  - type: string
+                                  - type: boolean
+                                  - type: number
+                              label:
+                                title: Label
+                                type: string
+                            required:
+                              - key
+                              - label
+                            additionalProperties: false
+                      required:
+                        - structure
+                      additionalProperties: false
+              required:
+                - type
+                - details
+              additionalProperties: false
+      required:
+        - label
+        - description
+        - type
+      additionalProperties: false
+      example:
+        displayOrder: 2
+        label: Time Slept
+        description: Time the service waited before completion
+        type: number
     x-patternProperties:
       ^[-_a-zA-Z0-9]+$:
         title: ServiceOutput
@@ -391,6 +655,9 @@ properties:
               .+:
                 type: string
                 pattern: ^[-_a-zA-Z0-9]+$
+            additionalProperties:
+              type: string
+              pattern: ^[-_a-zA-Z0-9]+$
           unit:
             title: Unit
             description: Units, when it refers to a physical quantity
@@ -423,7 +690,6 @@ properties:
                           minHeight:
                             title: Minheight
                             description: minimum Height of the textarea
-                            exclusiveMinimum: 0
                             type: integer
                         required:
                           - minHeight
@@ -482,13 +748,68 @@ properties:
             displayOrder: 4
             description: Output file uploaded from the outputs folder
             type: data:*/*
-    additionalProperties: true
   boot-options:
     title: Boot-Options
     description: >-
       Service defined boot options. These get injected in the service as env
       variables.
     type: object
+    additionalProperties:
+      title: BootOption
+      type: object
+      properties:
+        label:
+          title: Label
+          type: string
+        description:
+          title: Description
+          type: string
+        default:
+          title: Default
+          type: string
+        items:
+          title: Items
+          type: object
+          additionalProperties:
+            title: BootChoice
+            type: object
+            properties:
+              label:
+                title: Label
+                type: string
+              description:
+                title: Description
+                type: string
+            required:
+              - label
+              - description
+            example:
+              label: Boot mode
+              description: Start it in web page mode
+              default: '0'
+              items:
+                '0':
+                  label: Non Voila
+                  description: Tooltip for non Voila boot mode
+                '1':
+                  label: Voila
+                  description: Tooltip for Voila boot mode
+      required:
+        - label
+        - description
+        - default
+        - items
+      example:
+        label: Boot mode
+        description: Start it in web page mode
+        default: '0'
+        items:
+          '0':
+            label: Non Voila
+            description: Tooltip for non Voila boot mode
+          '1':
+            label: Voila
+            description: Tooltip for Voila boot mode
     x-patternProperties:
       '[a-zA-Z][a-azA-Z0-9_]*':
         title: BootOption
@@ -566,7 +887,6 @@ properties:
               b:
                 label: Dark
                 description: Using black and gray tones
-    additionalProperties: true
 required:
   - name
   - description
@@ -676,7 +996,6 @@ definitions:
       minHeight:
         title: Minheight
         description: minimum Height of the textarea
-        exclusiveMinimum: 0
         type: integer
     required:
       - minHeight
@@ -748,7 +1067,6 @@ definitions:
               minHeight:
                 title: Minheight
                 description: minimum Height of the textarea
-                exclusiveMinimum: 0
                 type: integer
             required:
               - minHeight
@@ -844,6 +1162,9 @@ definitions:
           .+:
             type: string
             pattern: ^[-_a-zA-Z0-9]+$
+        additionalProperties:
+          type: string
+          pattern: ^[-_a-zA-Z0-9]+$
       unit:
         title: Unit
         description: Units, when it refers to a physical quantity
@@ -885,7 +1206,6 @@ definitions:
                       minHeight:
                         title: Minheight
                         description: minimum Height of the textarea
-                        exclusiveMinimum: 0
                         type: integer
                     required:
                       - minHeight
@@ -1038,6 +1358,9 @@ definitions:
           .+:
             type: string
             pattern: ^[-_a-zA-Z0-9]+$
+        additionalProperties:
+          type: string
+          pattern: ^[-_a-zA-Z0-9]+$
       unit:
         title: Unit
         description: Units, when it refers to a physical quantity
@@ -1070,7 +1393,6 @@ definitions:
                       minHeight:
                         title: Minheight
                         description: minimum Height of the textarea
-                        exclusiveMinimum: 0
                         type: integer
                     required:
                       - minHeight
