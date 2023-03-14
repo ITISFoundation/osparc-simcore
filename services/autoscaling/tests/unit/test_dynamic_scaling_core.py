@@ -161,10 +161,18 @@ def mock_machines_buffer(monkeypatch: pytest.MonkeyPatch) -> Iterator[int]:
 
 
 @pytest.fixture
+def with_valid_time_before_termination(
+    monkeypatch: pytest.MonkeyPatch,
+) -> datetime.timedelta:
+    time = "00:11:00"
+    monkeypatch.setenv("EC2_INSTANCES_TIME_BEFORE_TERMINATION", time)
+    return parse_obj_as(datetime.timedelta, time)
+
+
+@pytest.fixture
 async def drained_host_node(
     host_node: Node, async_docker_client: aiodocker.Docker
 ) -> AsyncIterator[Node]:
-
     assert host_node.ID
     assert host_node.Version
     assert host_node.Version.Index
@@ -759,6 +767,7 @@ async def test__find_terminateable_nodes_with_no_hosts(
 
 async def test__find_terminateable_nodes_with_drained_host(
     minimal_configuration: None,
+    with_valid_time_before_termination: datetime.timedelta,
     initialized_app: FastAPI,
     cluster: Callable[..., Cluster],
     drained_host_node: Node,
@@ -870,13 +879,12 @@ def create_associated_instance(
     app_settings: ApplicationSettings,
     faker: Faker,
 ) -> Callable[[Node, bool], AssociatedInstance]:
-    assert app_settings.AUTOSCALING_EC2_INSTANCES
-    assert (
-        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
-        > datetime.timedelta(seconds=10)
-    ), "this tests relies on the fact that the time before termination is above 10 seconds"
-
     def _creator(node: Node, terminateable_time: bool) -> AssociatedInstance:
+        assert app_settings.AUTOSCALING_EC2_INSTANCES
+        assert (
+            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
+            > datetime.timedelta(seconds=10)
+        ), "this tests relies on the fact that the time before termination is above 10 seconds"
         assert app_settings.AUTOSCALING_EC2_INSTANCES
         seconds_delta = (
             -datetime.timedelta(seconds=10)
@@ -901,6 +909,7 @@ def create_associated_instance(
 
 async def test__try_scale_down_cluster_with_no_nodes(
     minimal_configuration: None,
+    with_valid_time_before_termination: datetime.timedelta,
     initialized_app: FastAPI,
     cluster: Callable[..., Cluster],
     mock_remove_nodes: mock.Mock,
@@ -920,6 +929,7 @@ async def test__try_scale_down_cluster_with_no_nodes(
 
 async def test__try_scale_down_cluster(
     minimal_configuration: None,
+    with_valid_time_before_termination: datetime.timedelta,
     initialized_app: FastAPI,
     cluster: Callable[..., Cluster],
     host_node: Node,
@@ -953,6 +963,7 @@ async def test__try_scale_down_cluster(
 
 async def test__activate_drained_nodes_with_no_tasks(
     minimal_configuration: None,
+    with_valid_time_before_termination: datetime.timedelta,
     initialized_app: FastAPI,
     host_node: Node,
     drained_host_node: Node,
@@ -985,6 +996,7 @@ async def test__activate_drained_nodes_with_no_tasks(
 
 async def test__activate_drained_nodes_with_no_drained_nodes(
     minimal_configuration: None,
+    with_valid_time_before_termination: datetime.timedelta,
     autoscaling_docker: AutoscalingDocker,
     initialized_app: FastAPI,
     host_node: Node,
@@ -1029,6 +1041,7 @@ async def test__activate_drained_nodes_with_no_drained_nodes(
 
 async def test__activate_drained_nodes_with_drained_node(
     minimal_configuration: None,
+    with_valid_time_before_termination: datetime.timedelta,
     autoscaling_docker: AutoscalingDocker,
     initialized_app: FastAPI,
     drained_host_node: Node,
