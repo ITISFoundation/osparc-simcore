@@ -8,10 +8,10 @@ This OAS are the source of truth
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-from fastapi import FastAPI
 import json
-import jsonref
 
+import jsonref
+from fastapi import FastAPI
 from models_library.projects import Project
 
 app = FastAPI(redoc_url=None, openapi_version="3.0.0")
@@ -27,12 +27,17 @@ async def get_project_inputs(project: Project):
 if __name__ == "__main__":
     from _common import CURRENT_DIR, create_openapi_specs
 
-    # Generate OAS for the Project pydantic model via the FastAPI app
-    # NOTE: currently not used, see:
-    create_openapi_specs(app, CURRENT_DIR.parent / "../common/schemas/openapi-project-generated.yaml")
+    #  Generate OAS for the Project pydantic model via the FastAPI app
+    #  NOTE: currently not used, as the generated OAS does not generate x-pattern properties
+    #  it has problem with types ex. Workbench = dict[NodeIDstr, Node], where key is a constrained string
+    create_openapi_specs(
+        app, CURRENT_DIR.parent / "../common/schemas/openapi-project-generated.yaml"
+    )
 
-    # Generate json schema from the Project pydantic model
-    with open(CURRENT_DIR.parent / "../common/schemas/project-v0.0.1-pydantic.json", 'w') as f:
+    # Generate dereferenced json schema from the Project pydantic model and save it
+    with open(
+        CURRENT_DIR.parent / "../common/schemas/project-v0.0.1-pydantic.json", "w"
+    ) as f:
         schema = Project.schema_json()
         schema_without_ref = jsonref.loads(schema)
 
