@@ -292,7 +292,7 @@ async def test_requester_cancels_long_running_request_or_requester_takes_too_muc
 
     with pytest.raises(asyncio.TimeoutError):
         await rabbit_requester.rpc_request(
-            namespace, _long_running.__name__, time_to_sleep=3, timeout_s=1
+            namespace, _long_running.__name__, time_to_sleep=3, timeout_s_method=1
         )
 
 
@@ -335,7 +335,9 @@ async def test_replier_responds_with_not_locally_defined_object_instance(
         # the server's request will just time out. I would prefer a cleaner interface.
         # There is no change of intercepting this message.
         with pytest.raises(asyncio.TimeoutError):
-            await rabbit_requester.rpc_request(namespace, "a_name", x=10, timeout_s=1)
+            await rabbit_requester.rpc_request(
+                namespace, "a_name", x=10, timeout_s_method=1
+            )
 
         assert "Can't pickle local object" in caplog.text
         assert ".<locals>.Custom" in caplog.text
@@ -447,7 +449,9 @@ async def test_rabbit_unavailable_during_request(
 
     task = asyncio.create_task(
         rabbit_requester.rpc_request(
-            namespace, _long_running_call.__name__, timeout_s=sleep_duration * 1.1
+            namespace,
+            _long_running_call.__name__,
+            timeout_s_method=sleep_duration * 1.1,
         )
     )
 

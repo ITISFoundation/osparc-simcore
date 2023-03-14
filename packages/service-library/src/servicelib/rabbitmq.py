@@ -196,17 +196,17 @@ class RabbitMQClient:
         namespace: RPCNamespace,
         method_name: RPCMethodName,
         *,
-        timeout_s: PositiveFloat = 5,
-        connection_error_timeout_s: PositiveFloat = 60,
+        timeout_s_method: PositiveFloat = 5,
+        timeout_s_connection_error: PositiveFloat = 60,
         **kwargs: dict[str, Any],
     ) -> Any:
         """
         Call a remote registered `handler` by providing it's `namespace`, `method_name`
         and `kwargs` containing the key value arguments expected by the remote `handler`.
 
-        param: `timeout_s` amount of seconds to wait for a reply once the message
-            was accepted by the remove replier
-        param: `connection_error_timeout_s` amount of seconds to wait for rabbit to
+        param: `timeout_s` amount of seconds to wait for a reply from the remote handler
+            invoked via `method_name`
+        param: `timeout_s_connection_error` amount of seconds to wait for rabbit to
             be available again in case there was a connection error
 
         :raises asyncio.TimeoutError: when message expired
@@ -225,19 +225,19 @@ class RabbitMQClient:
         try:
             async for attempt in AsyncRetrying(
                 wait=wait_random(2),
-                stop=stop_after_delay(connection_error_timeout_s),
+                stop=stop_after_delay(timeout_s_connection_error),
                 retry=retry_if_exception(AMQPConnectionError),
                 before_sleep=before_sleep_log(log, logging.WARNING),
                 reraise=True,
             ):
                 with attempt:
-                    queue_expiration_timeout = timeout_s
+                    queue_expiration_timeout = timeout_s_method
                     awaitable = self._rpc.call(
                         namespaced_method_name,
                         expiration=queue_expiration_timeout,
                         kwargs=kwargs,
                     )
-                    return await asyncio.wait_for(awaitable, timeout=timeout_s)
+                    return await asyncio.wait_for(awaitable, timeout=timeout_s_method)
         except aio_pika.MessageProcessError as e:
             if e.args[0] == "Message has been returned":
                 raise RemoteMethodNotRegisteredError(

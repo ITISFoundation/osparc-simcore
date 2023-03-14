@@ -31,5 +31,5 @@ async def remove_volumes_from_node(
         volume_names=volume_names,
         volume_removal_attempts=volume_removal_attempts,
         sleep_between_attempts_s=sleep_between_attempts_s,
-        timeout_s=volume_removal_timeout_s,
+        timeout_s_method=volume_removal_timeout_s,
     )
