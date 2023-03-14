@@ -10,8 +10,16 @@ class WidgetType(str, Enum):
     SelectBox = "SelectBox"
 
 
+class PositiveIntWithExclusiveMinimumRemoved(PositiveInt):
+    # As we are trying to match this Pydantic model to a historical json schema "project-v0.0.1" we need to remove this
+    # Pydantic does not support exclusiveMinimum boolean https://github.com/pydantic/pydantic/issues/4108
+    @classmethod
+    def __modify_schema__(cls, field_schema):
+        field_schema.pop("exclusiveMinimum", None)
+
+
 class TextArea(BaseModel):
-    min_height: PositiveInt = Field(
+    min_height: PositiveIntWithExclusiveMinimumRemoved = Field(
         ..., alias="minHeight", description="minimum Height of the textarea"
     )
 

@@ -324,7 +324,6 @@ properties:
                     properties:
                       minHeight:
                         description: minimum Height of the textarea
-                        exclusiveMinimum: 0
                         title: Minheight
                         type: integer
                     required:
@@ -490,7 +489,6 @@ properties:
                     properties:
                       minHeight:
                         description: minimum Height of the textarea
-                        exclusiveMinimum: 0
                         title: Minheight
                         type: integer
                     required:
