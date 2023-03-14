@@ -13,7 +13,7 @@ from pydantic import PositiveFloat
 from servicelib.logging_utils import log_context
 from settings_library.rabbit import RabbitSettings
 from tenacity._asyncio import AsyncRetrying
-from tenacity.before import before_log
+from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random
@@ -227,7 +227,7 @@ class RabbitMQClient:
                 wait=wait_random(2),
                 stop=stop_after_delay(connection_error_timeout_s),
                 retry=retry_if_exception(AMQPConnectionError),
-                before=before_log(log, logging.DEBUG),
+                before_sleep=before_sleep_log(log, logging.WARNING),
                 reraise=True,
             ):
                 with attempt:
