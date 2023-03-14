@@ -37,6 +37,7 @@ from ._constants import (
     MSG_PROJECT_NOT_PUBLISHED,
     MSG_UNEXPECTED_ERROR,
 )
+from .settings import StudiesDispatcherSettings, get_plugin_settings
 
 log = logging.getLogger(__name__)
 
@@ -58,10 +59,10 @@ def compose_uuid(template_uuid, user_id, query="") -> str:
 async def get_public_project(app: web.Application, project_uuid: str) -> ProjectDict:
     """
     Returns project if project_uuid is a template and is marked as published, otherwise None
+
+    :raises ProjectNotFoundError
     """
     db = ProjectDBAPI.get_from_app_context(app)
-
-    # TODO: what can raise???
 
     prj, _ = await db.get_project(
         user_id=-1,  # < ---- ????
@@ -82,11 +83,15 @@ async def create_temporary_user(request: web.Request):
 
     db: AsyncpgStorage = get_plugin_storage(request.app)
     redis_locks_client: aioredis.Redis = get_redis_lock_manager_client(request.app)
+    settings: StudiesDispatcherSettings = get_plugin_settings(app=request.app)
 
     # TODO: avatar is an icon of the hero!
     random_uname = get_random_string(min_len=5)
     email = random_uname + "@guest-at-osparc.io"
     password = get_random_string(min_len=12)
+    expires_at = settings.get_guest_expiration()
+
+    # TODO: now user has also trial account of 1 day? Make sure it does not show!
 
     # GUEST_USER_RC_LOCK:
     #
@@ -127,7 +132,7 @@ async def create_temporary_user(request: web.Request):
                 "status": ACTIVE,
                 "role": GUEST,
                 "created_ip": get_client_ip(request),
-                # TODO: now user has also trial account of 1 day? Make sure it does not show!
+                "expires_at": expires_at,
             }
         )
         # (2) read details above
