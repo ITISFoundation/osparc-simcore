@@ -8,7 +8,9 @@
     - access to security
     - access to login
 
-TODO: Refactor to reduce modules coupling! See all TODO: .``from ...`` comments
+
+NOTE: Some of the code below is duplicated in the studies_dispatcher!
+SEE refactoring plan in https://github.com/ITISFoundation/osparc-simcore/issues/3977
 """
 import functools
 import logging
@@ -42,7 +44,6 @@ from .settings import StudiesDispatcherSettings, get_plugin_settings
 
 log = logging.getLogger(__name__)
 
-# TODO: Integrate this in studies_dispatcher
 _BASE_UUID = UUID("71e0eb5e-0797-4469-89ba-00a0df4d338a")
 
 
@@ -140,7 +141,6 @@ async def _create_temporary_user(request: web.Request):
     return user
 
 
-# TODO: from .users import get_user?
 async def get_authorized_user(request: web.Request) -> dict:
     from ..login.storage import AsyncpgStorage, get_plugin_storage
     from ..security_api import authorized_userid
@@ -151,7 +151,6 @@ async def get_authorized_user(request: web.Request) -> dict:
     return user
 
 
-# TODO: from .projects import ...?
 async def copy_study_to_account(
     request: web.Request, template_project: dict, user: dict
 ):
@@ -242,7 +241,7 @@ class RedirectToFrontEndPageError(Exception):
 
 def _handle_errors_with_error_page(handler: Handler):
     @functools.wraps(handler)
-    async def wrapper(request: web.Request) -> web.Response:
+    async def wrapper(request: web.Request) -> web.StreamResponse:
         try:
             return await handler(request)
 
@@ -268,9 +267,6 @@ def _handle_errors_with_error_page(handler: Handler):
             ) from err
 
         except Exception as err:
-
-            # FIXME: if request.app.router[INDEX_RESOURCE_NAME] does nto exist, return a local error message page
-
             error_code = create_error_code(err)
             log.exception(
                 "Unexpected failure. TIP: too many simultaneous request? [%s]",
@@ -312,7 +308,6 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
     is_anonymous_user = await is_anonymous(request)
     if not is_anonymous_user:
         # NOTE: covers valid cookie with unauthorized user (e.g. expired guest/banned)
-        # TODO: test if temp user overrides old cookie properly
         user = await get_authorized_user(request)
 
     if not user:
