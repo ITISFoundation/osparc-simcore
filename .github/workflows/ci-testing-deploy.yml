@@ -671,8 +671,9 @@ jobs:
     strategy:
       matrix:
         # KEEP 3.6 Development of this service is frozen
+        # KEEP ubuntu 20.04, else no python 3.6
         python: [3.6]
-        os: [ubuntu-22.04]
+        os: [ubuntu-20.04]
         docker_buildx: [v0.10.2]
         docker_compose: [1.29.1]
         include:
