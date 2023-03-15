@@ -140,7 +140,11 @@ def _by_created_dt(task: Task) -> datetime.datetime:
     # NOTE: SAFE implementation to extract task.CreatedAt as datetime for comparison
     if task.CreatedAt:
         with suppress(ValueError):
-            return to_datetime(task.CreatedAt).replace(tzinfo=datetime.timezone.utc)
+            created_at = to_datetime(task.CreatedAt)
+            created_at_utc: datetime.datetime = created_at.replace(
+                tzinfo=datetime.timezone.utc
+            )
+            return created_at_utc
     return datetime.datetime.now(datetime.timezone.utc)
 
 
