@@ -658,6 +658,45 @@
           }
         }
       }
+    },
+    "/v1/volumes/{volume_id}/state:saved": {
+      "post": {
+        "tags": [
+          "volumes"
+        ],
+        "summary": "Marks the volume's content as saved to S3",
+        "operationId": "set_volume_state_as_saved_v1_volumes__volume_id__state_saved_post",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Volume Id",
+              "enum": [
+                "states",
+                "outputs"
+              ],
+              "type": "string"
+            },
+            "name": "volume_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
