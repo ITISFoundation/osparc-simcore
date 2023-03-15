@@ -168,7 +168,9 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this._addAt(control, 2);
           break;
         case "logo":
-          control = osparc.component.widget.LogoOnOff.getInstance();
+          control = osparc.component.widget.LogoOnOff.getInstance().set({
+            alignY: "middle"
+          });
           this.getChildControl("left-items").add(control);
           break;
         case "logo-powered":
