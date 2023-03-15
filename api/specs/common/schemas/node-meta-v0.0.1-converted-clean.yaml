@@ -1,0 +1,332 @@
+additionalProperties: false
+description: Description of a simcore node 'class' with input and output
+properties:
+  authors:
+    items:
+      additionalProperties: false
+      properties:
+        affiliation:
+          description: Affiliation of the author
+          example: Sense8
+          type: string
+        email:
+          description: Email address
+          example: sun@sense.eight
+          format: email
+          type: string
+        name:
+          description: Name of the author
+          example: Sun Bak
+          type: string
+      required:
+      - name
+      - email
+      type: object
+    minItems: 1
+    type: array
+  badges:
+    items:
+      additionalProperties: false
+      properties:
+        image:
+          description: Url to the shield
+          example: https://travis-ci.org/ITISFoundation/osparc-simcore.svg?branch=master
+          type: string
+        name:
+          description: Name of the subject
+          example: travis-ci
+          type: string
+        url:
+          description: Link to status
+          example: 'https://travis-ci.org/ITISFoundation/osparc-simcore ''State of
+            CI: build, test and pushing images'''
+          type: string
+      required:
+      - name
+      - image
+      - url
+      type: object
+    type: array
+  boot-options:
+    additionalProperties: true
+    description: Service defined boot options. These get injected in the service as
+      env variables.
+    title: Boot Options
+    type: object
+    x-patternProperties:
+      ^[_a-zA-Z0-9]+$:
+        properties:
+          default:
+            title: Default
+            type: string
+          description:
+            title: Description
+            type: string
+          items:
+            additionalProperties:
+              properties:
+                description:
+                  title: Description
+                  type: string
+                label:
+                  title: Label
+                  type: string
+              required:
+              - label
+              - description
+              title: BootOptionItem
+              type: object
+            title: Items
+            type: object
+          label:
+            title: Label
+            type: string
+        required:
+        - label
+        - description
+        - default
+        - items
+        title: BootOptionMode
+        type: object
+  contact:
+    description: email to correspond to the authors about the node
+    example: lab@net.flix
+    format: email
+    type: string
+  description:
+    description: human readable description of the purpose of the node
+    example: Our best node type
+    type: string
+  inputs:
+    additionalProperties: true
+    description: definition of the inputs of this node
+    type: object
+    x-patternProperties:
+      ^[-_a-zA-Z0-9]+$:
+        additionalProperties: false
+        description: all the input configurable for this service
+        properties:
+          contentSchema:
+            description: jsonschema of the content at this input/output. Required
+              when type='ref_contentSchema'
+            title: Content Schema
+            type: object
+          defaultValue:
+            description: initial value for this input
+            example:
+            - Dog
+            - true
+            type:
+            - string
+            - number
+            - integer
+            - boolean
+          description:
+            description: description of the property
+            example:
+            - Age in seconds since 1970
+            type: string
+          displayOrder:
+            deprecated: true
+            description: 'DEPRECATED: new display order is taken from the item position.
+              This property will be removed.'
+            type: number
+          fileToKeyMap:
+            description: Place the data associated with the named keys in files
+            example:
+            - dir/input1.txt: key_1
+              dir33/input2.txt: key2
+            patternProperties:
+              .+:
+                pattern: ^[-_a-zA-Z0-9]+$
+                type: string
+            type: object
+          label:
+            description: short name for the property
+            example:
+            - Age
+            type: string
+          type:
+            description: data type expected on this input glob matching for data type
+              is allowed
+            example:
+            - number
+            - boolean
+            - data:*/*
+            - data:text/*
+            - data:[image/jpeg,image/png]
+            - data:application/json
+            - data:application/json;schema=https://my-schema/not/really/schema.json
+            - data:application/vnd.ms-excel
+            - data:text/plain
+            - data:application/hdf5
+            - data:application/edu.ucdavis@ceclancy.xyz
+            pattern: ^(number|integer|boolean|string|ref_contentSchema|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$
+            type: string
+          unit:
+            description: Units of this input value, if a physical quantity
+            title: Unit
+            type: string
+          widget:
+            anyOf:
+            - additionalProperties: false
+              properties:
+                minHeight:
+                  description: minimum Height of the textarea
+                  minimum: 1
+                  type: integer
+                type:
+                  description: type of the property
+                  enum:
+                  - TextArea
+                  type: string
+              required:
+              - type
+              type: object
+            - additionalProperties: false
+              properties:
+                structure:
+                  items:
+                    additionalProperties: false
+                    example:
+                    - - key: rat
+                        label: The Rat
+                      - key: dog
+                        label: Bello the Dog
+                    properties:
+                      key:
+                        type:
+                        - string
+                        - boolean
+                        - number
+                      label:
+                        type: string
+                    required:
+                    - key
+                    - label
+                    type: object
+                  minItems: 1
+                  type: array
+                type:
+                  description: type of the property
+                  enum:
+                  - SelectBox
+                  type: string
+              required:
+              - type
+              - structure
+              type: object
+            description: custom widget to use instead of the default one determined
+              from the data-type
+        required:
+        - displayOrder
+        - label
+        - description
+        - type
+        type: object
+  integration-version:
+    description: integration version number
+    example: 1.0.0
+    pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+    type: string
+  key:
+    description: distinctive name for the node based on the docker registry path
+    example: simcore/services/comp/itis/sleeper
+    pattern: ^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$
+    type: string
+  name:
+    description: short, human readable name for the node
+    example: Fast Counter
+    type: string
+  outputs:
+    additionalProperties: true
+    description: definition of the outputs of this node
+    type: object
+    x-patternProperties:
+      ^[-_a-zA-Z0-9]+$:
+        additionalProperties: false
+        description: all the output produced by this node
+        properties:
+          contentSchema:
+            description: jsonschema of this input/output. Required when type='ref_contentSchema'
+            title: Content Schema
+            type: object
+          description:
+            description: description of the property
+            example:
+            - Age in seconds since 1970
+            type: string
+          displayOrder:
+            description: use this to numerically sort the properties for display
+            example:
+            - 1
+            - -0.2
+            type: number
+          fileToKeyMap:
+            description: Place the data stored in the named files and store it in
+              the locations pointed to by the respective output key.
+            example:
+            - dir/input1.txt: key_1
+              dir33/input2.txt: key2
+            patternProperties:
+              .+:
+                pattern: ^[-_a-zA-Z0-9]+$
+                type: string
+            type: object
+          label:
+            description: short name for the property
+            example:
+            - Age
+            type: string
+          type:
+            description: data type expected on this output
+            example:
+            - number
+            - integer
+            - boolean
+            - string
+            - data:application/json
+            - 'data:application/vnd.ms-excel '
+            - data:text/plain
+            - data:application/hdf5
+            pattern: ^(number|integer|boolean|string|ref_contentSchema|data:[^/\s,]+/[^/\s,]+)$
+            type: string
+          unit:
+            description: Units of the output value, if a physical quantity
+            title: Unit
+            type: string
+        required:
+        - displayOrder
+        - label
+        - description
+        - type
+        type: object
+  thumbnail:
+    description: url to the thumbnail
+    example: https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png
+    type: string
+  type:
+    description: service type
+    enum:
+    - frontend
+    - computational
+    - dynamic
+    example: computational
+    type: string
+  version:
+    description: service version number
+    example: 1.0.0
+    pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+    type: string
+required:
+- key
+- version
+- type
+- name
+- description
+- authors
+- contact
+- inputs
+- outputs
+title: simcore node
+type: object

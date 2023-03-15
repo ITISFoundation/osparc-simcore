@@ -1,0 +1,551 @@
+additionalProperties: false
+description: Description of a simcore project
+properties:
+  accessRights:
+    additionalProperties: true
+    description: object containing the GroupID as key and read/write/execution permissions
+      as value
+    type: object
+    x-patternProperties:
+      ^\S+$:
+        additionalProperties: false
+        description: the group id
+        properties:
+          delete:
+            description: gives deletion rights
+            type: boolean
+          read:
+            description: gives read access
+            type: boolean
+          write:
+            description: gives write access
+            type: boolean
+        required:
+        - read
+        - write
+        - delete
+        type: object
+  classifiers:
+    description: Contains the reference to the project classifiers
+    example: some:id:to:a:classifier
+    items:
+      type: string
+    type: array
+  creationDate:
+    description: project creation date
+    example: '2018-07-01T11:13:43Z'
+    pattern: \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
+    type: string
+  description:
+    description: longer one-line description about the project
+    example: Dabbling in temporal transitions ...
+    type: string
+  dev:
+    description: object used for development purposes only
+    type: object
+  lastChangeDate:
+    description: last save date
+    example: '2018-07-01T11:13:43Z'
+    pattern: \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
+    type: string
+  name:
+    description: project name
+    example: Temporal Distortion Simulator
+    type: string
+  prjOwner:
+    description: user email
+    format: email
+    type: string
+  quality:
+    description: Object containing Quality Assessment related data
+    title: Quality
+    type: object
+  state:
+    anyOf:
+    - nullable: true
+    - additionalProperties: false
+      properties:
+        locked:
+          allOf:
+          - additionalProperties: false
+            properties:
+              owner:
+                allOf:
+                - additionalProperties: false
+                  properties:
+                    first_name:
+                      description: Owner first name
+                      example:
+                      - John
+                      title: First Name
+                      type: string
+                    last_name:
+                      description: Owner last name
+                      example:
+                      - Smith
+                      title: Last Name
+                      type: string
+                    user_id:
+                      description: Owner's identifier when registered in the user's
+                        database table
+                      example:
+                      - 2
+                      title: User Id
+                      type: integer
+                  required:
+                  - user_id
+                  - first_name
+                  - last_name
+                  title: Owner
+                  type: object
+                description: If locked, the user that owns the lock
+                title: Owner
+              status:
+                description: The status of the project
+                enum:
+                - CLOSED
+                - CLOSING
+                - CLONING
+                - OPENING
+                - EXPORTING
+                - OPENED
+                title: Status
+                type: string
+              value:
+                description: True if the project is locked
+                title: Value
+                type: boolean
+            required:
+            - value
+            - status
+            title: ProjectLocked
+            type: object
+          description: The project lock state
+          title: Locked
+        state:
+          allOf:
+          - additionalProperties: false
+            properties:
+              value:
+                description: An enumeration.
+                enum:
+                - UNKNOWN
+                - NOT_STARTED
+                - PUBLISHED
+                - PENDING
+                - STARTED
+                - RETRY
+                - SUCCESS
+                - FAILED
+                - ABORTED
+                title: RunningState
+                type: string
+            required:
+            - value
+            title: ProjectRunningState
+            type: object
+          description: The project running state
+          title: State
+      required:
+      - locked
+      - state
+      title: ProjectState
+      type: object
+    description: Project state
+    title: State
+  tags:
+    items:
+      type: integer
+    type: array
+  thumbnail:
+    description: url of the latest screenshot of the project
+    example: https://placeimg.com/171/96/tech/grayscale/?0.jpg
+    format: uri
+    maxLength: 2083
+    minLength: 0
+    type: string
+  ui:
+    additionalProperties: true
+    properties:
+      annotations:
+        additionalProperties: true
+        type: object
+        x-patternProperties:
+          ^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$:
+            additionalProperties: false
+            properties:
+              attributes:
+                description: svg attributes
+                type: object
+              color:
+                description: Annotation's color
+                example:
+                - '#FF0000'
+                - '#0000FF'
+                type: string
+              type:
+                description: Annotation type
+                example:
+                - rect
+                - text
+                type: string
+            required:
+            - type
+            - color
+            - attributes
+            type: object
+      currentNodeId:
+        format: uuid
+        type: string
+      slideshow:
+        additionalProperties: true
+        type: object
+        x-patternProperties:
+          ^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$:
+            additionalProperties: false
+            properties:
+              instructions:
+                description: Instructions about what to do in this step
+                example:
+                - This is a **sleeper**
+                - Please, select the config file defined [in this link](asdf)
+                type:
+                - string
+                - 'null'
+              position:
+                description: Slide's position
+                example:
+                - 0
+                - 2
+                type: integer
+            required:
+            - position
+            type: object
+      workbench:
+        additionalProperties: true
+        type: object
+        x-patternProperties:
+          ^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$:
+            additionalProperties: false
+            properties:
+              marker:
+                additionalProperties: false
+                properties:
+                  color:
+                    description: Marker's color
+                    example:
+                    - '#FF0000'
+                    - '#0000FF'
+                    type: string
+                required:
+                - color
+                type: object
+              position:
+                additionalProperties: false
+                properties:
+                  x:
+                    description: The x position
+                    example:
+                    - '12'
+                    type: integer
+                  y:
+                    description: The y position
+                    example:
+                    - '15'
+                    type: integer
+                required:
+                - x
+                - y
+                type: object
+            required:
+            - position
+            type: object
+    type: object
+  uuid:
+    description: project unique identifier
+    example: 07640335-a91f-468c-ab69-a374fa82078d
+    format: uuid
+    type: string
+  workbench:
+    additionalProperties: true
+    type: object
+    x-patternProperties:
+      ^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$:
+        additionalProperties: false
+        properties:
+          bootOptions:
+            description: Some services provide alternative parameters to be injected
+              at boot time. The user selection should be stored here, and it will
+              overwrite the services's defaults.
+            patternProperties:
+              '[a-zA-Z][a-azA-Z0-9_]*':
+                type: string
+            title: Boot Options
+            type: object
+          inputAccess:
+            description: map with key - access level pairs
+            patternProperties:
+              ^[-_a-zA-Z0-9]+$:
+                default: ReadAndWrite
+                enum:
+                - Invisible
+                - ReadOnly
+                - ReadAndWrite
+                example:
+                - ReadOnly
+                type: string
+            type: object
+          inputNodes:
+            description: node IDs of where the node is connected to
+            example:
+            - nodeUuid1
+            - nodeUuid2
+            items:
+              format: uuid
+              type: string
+            type: array
+          inputs:
+            description: values of input properties
+            patternProperties:
+              ^[-_a-zA-Z0-9]+$:
+                oneOf:
+                - type:
+                  - integer
+                  - boolean
+                  - string
+                  - number
+                  - 'null'
+                - additionalProperties: false
+                  properties:
+                    nodeUuid:
+                      format: uuid
+                      type: string
+                    output:
+                      pattern: ^[-_a-zA-Z0-9]+$
+                      type: string
+                  required:
+                  - nodeUuid
+                  - output
+                  type: object
+                - additionalProperties: false
+                  properties:
+                    dataset:
+                      type: string
+                    eTag:
+                      type: string
+                    label:
+                      type: string
+                    path:
+                      type: string
+                    store:
+                      type:
+                      - string
+                      - integer
+                  required:
+                  - store
+                  - path
+                  type: object
+                - additionalProperties: false
+                  properties:
+                    downloadLink:
+                      format: uri
+                      maxLength: 65536
+                      minLength: 1
+                      type: string
+                    label:
+                      type: string
+                  required:
+                  - downloadLink
+                  type: object
+                - items: {}
+                  type: array
+            type: object
+          inputsUnits:
+            description: values of input unit
+            patternProperties:
+              ^[-_a-zA-Z0-9]+$:
+                example:
+                - kilo-meter
+                - milli-second
+                - micro-gram
+                - kelvin
+                type: string
+            type: object
+          key:
+            description: distinctive name for the node based on the docker registry
+              path
+            example:
+            - simcore/services/comp/sleeper
+            - simcore/services/dynamic/3dviewer
+            - simcore/services/frontend/file-picker
+            pattern: ^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$
+            type: string
+          label:
+            description: The short name of the node
+            example:
+            - JupyterLab
+            type: string
+          outputNode:
+            deprecated: true
+            type: boolean
+          outputNodes:
+            description: Used in group-nodes. Node IDs of those connected to the output
+            example:
+            - nodeUuid1
+            - nodeUuid2
+            items:
+              format: uuid
+              type: string
+            type: array
+          outputs:
+            default: {}
+            patternProperties:
+              ^[-_a-zA-Z0-9]+$:
+                oneOf:
+                - type:
+                  - integer
+                  - boolean
+                  - string
+                  - number
+                  - 'null'
+                - additionalProperties: false
+                  properties:
+                    dataset:
+                      type: string
+                    eTag:
+                      type: string
+                    label:
+                      type: string
+                    path:
+                      type: string
+                    store:
+                      type:
+                      - string
+                      - integer
+                  required:
+                  - store
+                  - path
+                  type: object
+                - additionalProperties: false
+                  properties:
+                    downloadLink:
+                      format: uri
+                      maxLength: 65536
+                      minLength: 1
+                      type: string
+                    label:
+                      type: string
+                  required:
+                  - downloadLink
+                  type: object
+                - items: {}
+                  type: array
+            type: object
+          parent:
+            description: Parent's (group-nodes') node ID s.
+            example:
+            - nodeUuid1
+            - nodeUuid2
+            format: uuid
+            type:
+            - 'null'
+            - string
+          position:
+            additionalProperties: false
+            deprecated: true
+            properties:
+              x:
+                description: The x position
+                example:
+                - '12'
+                type: integer
+              y:
+                description: The y position
+                example:
+                - '15'
+                type: integer
+            required:
+            - x
+            - y
+            type: object
+          progress:
+            description: the node progress value
+            maximum: 100
+            minimum: 0
+            type: number
+          runHash:
+            description: the hex digest of the resolved inputs +outputs hash at the
+              time when the last outputs were generated
+            example:
+            - a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2
+            type:
+            - string
+            - 'null'
+          state:
+            additionalProperties: false
+            properties:
+              currentStatus:
+                default: NOT_STARTED
+                description: the node's current state
+                enum:
+                - UNKNOWN
+                - PUBLISHED
+                - NOT_STARTED
+                - PENDING
+                - STARTED
+                - RETRY
+                - SUCCESS
+                - FAILED
+                - ABORTED
+                example:
+                - RUNNING
+                - FAILED
+                type: string
+              dependencies:
+                description: contains the node inputs dependencies if they need to
+                  be computed first
+                items:
+                  format: uuid
+                  type: string
+                title: Dependencies
+                type: array
+                uniqueItems: true
+              modified:
+                default: true
+                description: true if the node's outputs need to be re-computed
+                title: Modified
+                type: boolean
+            title: NodeState
+            type: object
+          thumbnail:
+            description: url of the latest screenshot of the node
+            example:
+            - https://placeimg.com/171/96/tech/grayscale/?0.jpg
+            format: uri
+            maxLength: 2083
+            minLength: 0
+            type: string
+          version:
+            description: semantic version number of the node
+            example:
+            - 1.0.0
+            - 0.0.1
+            pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+            type: string
+        required:
+        - key
+        - version
+        - label
+        type: object
+required:
+- uuid
+- name
+- description
+- prjOwner
+- accessRights
+- creationDate
+- lastChangeDate
+- thumbnail
+- workbench
+title: simcore project
+type: object
