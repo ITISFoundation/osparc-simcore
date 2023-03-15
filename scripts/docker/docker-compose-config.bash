@@ -49,7 +49,7 @@ fi
 
 
 # check if docker-compose V2 is available
-if docker compose version --short | grep --quiet "^2\." ; then
+if docker compose version --short | grep --quiet "^23\." ; then
   show_info "Running compose V2"
   # V2 does not write the version anymore, so we take it from the first compose file
   first_compose_file="${1}"
@@ -91,7 +91,7 @@ docker-compose \
     do
       docker_command+=" --file=${compose_file_path}"
     done
-    docker_command+="\
+    docker_command+=" \
 config \
 | sed --regexp-extended 's/cpus: ([0-9\\.]+)/cpus: \"\\1\"/'"
     # Execute the command
