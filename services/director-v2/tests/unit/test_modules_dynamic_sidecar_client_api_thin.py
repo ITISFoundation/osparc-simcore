@@ -7,6 +7,7 @@ from typing import Any, Callable, Optional
 import pytest
 from fastapi import FastAPI, status
 from httpx import Response
+from models_library.volumes import VolumeID
 from pydantic import AnyHttpUrl, parse_obj_as
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -244,23 +245,30 @@ async def test_post_containers_networks_detach(
     assert_responses(mock_response, response)
 
 
-@pytest.mark.parametrize("volume_id", ["states", "outputs"])
-async def test_post_volumes_state_save(
+@pytest.mark.parametrize("volume_id", VolumeID)
+@pytest.mark.parametrize("requires_saving", [True, False])
+@pytest.mark.parametrize("was_saved", [True, False, None])
+async def test_patch_volumes(
     thin_client: ThinDynamicSidecarClient,
     dynamic_sidecar_endpoint: AnyHttpUrl,
     mock_request: MockRequestType,
     volume_id: str,
+    requires_saving: bool,
+    was_saved: Optional[bool],
 ) -> None:
     mock_response = Response(status.HTTP_204_NO_CONTENT)
     mock_request(
-        "POST",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/volumes/{volume_id}/state:saved",
+        "PATCH",
+        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/volumes/{volume_id}",
         mock_response,
         None,
     )
 
-    response = await thin_client.post_volumes_state_save(
-        dynamic_sidecar_endpoint, volume_id=volume_id
+    response = await thin_client.patch_volumes(
+        dynamic_sidecar_endpoint,
+        volume_id=volume_id,
+        requires_saving=requires_saving,
+        was_saved=was_saved,
     )
     assert_responses(mock_response, response)
 

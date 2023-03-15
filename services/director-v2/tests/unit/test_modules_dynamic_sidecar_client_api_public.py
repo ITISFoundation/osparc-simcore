@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock
 import pytest
 from fastapi import FastAPI, status
 from httpx import HTTPError, Response
+from models_library.volumes import VolumeID
 from pydantic import AnyHttpUrl, parse_obj_as
 from pytest import LogCaptureFixture, MonkeyPatch
 from pytest_mock import MockerFixture
@@ -332,27 +333,26 @@ async def test_detach_container_from_network(
         )
 
 
-async def test_mark_states_volume_as_saved(
+@pytest.mark.parametrize("volume_id", VolumeID)
+@pytest.mark.parametrize("requires_saving", [True, False])
+@pytest.mark.parametrize("was_saved", [True, False, None])
+async def test_update_volume_state(
     get_patched_client: Callable,
     dynamic_sidecar_endpoint: AnyHttpUrl,
+    volume_id: VolumeID,
+    requires_saving: bool,
+    was_saved: Optional[bool],
 ) -> None:
     with get_patched_client(
-        "post_volumes_state_save",
+        "patch_volumes",
         return_value=Response(status_code=status.HTTP_204_NO_CONTENT),
     ) as client:
         assert (
-            await client.mark_states_volume_as_saved(dynamic_sidecar_endpoint) is None
-        )
-
-
-async def test_mark_outputs_volume_as_saved(
-    get_patched_client: Callable,
-    dynamic_sidecar_endpoint: AnyHttpUrl,
-) -> None:
-    with get_patched_client(
-        "post_volumes_state_save",
-        return_value=Response(status_code=status.HTTP_204_NO_CONTENT),
-    ) as client:
-        assert (
-            await client.mark_outputs_volume_as_saved(dynamic_sidecar_endpoint) is None
+            await client.update_volume_state(
+                dynamic_sidecar_endpoint,
+                volume_id=volume_id,
+                requires_saving=requires_saving,
+                was_saved=was_saved,
+            )
+            is None
         )

@@ -7,6 +7,7 @@ from fastapi import FastAPI, status
 from httpx import AsyncClient
 from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkAlias
+from models_library.volumes import VolumeID
 from pydantic import AnyHttpUrl, PositiveFloat
 from servicelib.fastapi.long_running_tasks.client import (
     Client,
@@ -400,19 +401,18 @@ class DynamicSidecarClient:
         )
 
     @log_decorator(logger=logger)
-    async def mark_states_volume_as_saved(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl
+    async def update_volume_state(
+        self,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
+        volume_id: VolumeID,
+        requires_saving: bool,
+        was_saved: Optional[bool],
     ) -> None:
-        await self._thin_client.post_volumes_state_save(
-            dynamic_sidecar_endpoint, volume_id="states"
-        )
-
-    @log_decorator(logger=logger)
-    async def mark_outputs_volume_as_saved(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl
-    ) -> None:
-        await self._thin_client.post_volumes_state_save(
-            dynamic_sidecar_endpoint, volume_id="outputs"
+        await self._thin_client.patch_volumes(
+            dynamic_sidecar_endpoint,
+            volume_id=volume_id,
+            requires_saving=requires_saving,
+            was_saved=was_saved,
         )
 
 

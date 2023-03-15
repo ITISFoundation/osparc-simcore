@@ -1,12 +1,12 @@
 import os
 import stat
 from dataclasses import dataclass
-from enum import Enum
 from pathlib import Path
 from typing import Optional, Union
 
 import aiofiles
 from aiofiles import os as aiofiles_os
+from models_library.volumes import VolumeID
 from servicelib.volumes_utils import (
     AGENT_FILE_NAME,
     HIDDEN_FILE_NAME,
@@ -17,13 +17,6 @@ from servicelib.volumes_utils import (
 from .mounted_fs import MountedVolumes
 
 chmod = aiofiles_os.wrap(os.chmod)  # type: ignore
-
-
-class VolumeID(str, Enum):
-    OUTPUTS = "outputs"
-    INPUTS = "inputs"
-    STATES = "states"
-    SHARED_STORE = "shared_store"
 
 
 @dataclass

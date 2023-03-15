@@ -12,6 +12,7 @@ from models_library.projects_nodes_io import NodeIDStr
 from models_library.rabbitmq_messages import InstrumentationRabbitMessage
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
+from models_library.volumes import VolumeID
 from servicelib.fastapi.long_running_tasks.client import (
     ProgressCallback,
     TaskClientResultError,
@@ -132,7 +133,12 @@ async def service_save_state(
     await dynamic_sidecar_client.save_service_state(
         scheduler_data.endpoint, progress_callback=progress_callback
     )
-    await dynamic_sidecar_client.mark_states_volume_as_saved(scheduler_data.endpoint)
+    await dynamic_sidecar_client.update_volume_state(
+        scheduler_data.endpoint,
+        volume_id=VolumeID.STATES,
+        requires_saving=True,
+        was_saved=True,
+    )
 
 
 async def service_push_outputs(
@@ -145,7 +151,12 @@ async def service_push_outputs(
     await dynamic_sidecar_client.push_service_output_ports(
         scheduler_data.endpoint, progress_callback=progress_callback
     )
-    await dynamic_sidecar_client.mark_outputs_volume_as_saved(scheduler_data.endpoint)
+    await dynamic_sidecar_client.update_volume_state(
+        scheduler_data.endpoint,
+        volume_id=VolumeID.OUTPUTS,
+        requires_saving=True,
+        was_saved=True,
+    )
 
 
 async def service_remove_sidecar_proxy_docker_networks_and_volumes(

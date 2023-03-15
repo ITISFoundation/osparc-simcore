@@ -1,9 +1,10 @@
 import json
 import logging
-from typing import Any, Literal, Optional
+from typing import Any, Optional
 
 from fastapi import FastAPI, status
 from httpx import Response, Timeout
+from models_library.volumes import VolumeID
 from pydantic import AnyHttpUrl
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 
@@ -228,12 +229,14 @@ class ThinDynamicSidecarClient(BaseThinClient):
 
     @retry_on_errors
     @expect_status(status.HTTP_204_NO_CONTENT)
-    async def post_volumes_state_save(
+    async def patch_volumes(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
-        volume_id: Literal["states", "outputs"],
+        volume_id: VolumeID,
+        requires_saving: bool,
+        was_saved: Optional[bool],
     ) -> Response:
-        url = self._get_url(
-            dynamic_sidecar_endpoint, f"/volumes/{volume_id}/state:saved"
+        url = self._get_url(dynamic_sidecar_endpoint, f"/volumes/{volume_id}")
+        return await self.client.patch(
+            url, json={"requires_saving": requires_saving, "was_saved": was_saved}
         )
-        return await self.client.post(url)
