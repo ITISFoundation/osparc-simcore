@@ -6,9 +6,10 @@ from fastapi.testclient import TestClient
 from servicelib.volumes_utils import AGENT_FILE_NAME, VolumeState, load_volume_state
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
+from simcore_service_dynamic_sidecar.modules.volume_files import VolumeID
 
 
-@pytest.mark.parametrize("volume_id", ["states", "outputs"])
+@pytest.mark.parametrize("volume_id", [VolumeID.STATES, VolumeID.OUTPUTS])
 async def test_volumes_state_saved_ok(test_client: TestClient, volume_id: str):
     mounted_volumes: MountedVolumes = test_client.application.state.mounted_volumes
 
@@ -22,8 +23,11 @@ async def test_volumes_state_saved_ok(test_client: TestClient, volume_id: str):
             requires_saving=True, was_saved=False
         )
 
-    response = await test_client.post(f"/{API_VTAG}/volumes/{volume_id}/state:saved")
-    assert response.status_code == status.HTTP_204_NO_CONTENT
+    response = await test_client.patch(
+        f"/{API_VTAG}/volumes/{volume_id}",
+        json={"requires_saving": True, "was_saved": True},
+    )
+    assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
 
     for path in volumes_path_map[volume_id]:
         assert await load_volume_state(path / AGENT_FILE_NAME) == VolumeState(
@@ -31,14 +35,14 @@ async def test_volumes_state_saved_ok(test_client: TestClient, volume_id: str):
         )
 
 
-@pytest.mark.parametrize("invalid_volume_id", ["OUTPUTS"])
+@pytest.mark.parametrize("invalid_volume_id", ["OUTPUTS", "outputS"])
 async def test_volumes_state_saved_error(
     test_client: TestClient, invalid_volume_id: str
 ):
-    response = await test_client.post(
-        f"/{API_VTAG}/volumes/{invalid_volume_id}/state:saved"
+    response = await test_client.patch(
+        f"/{API_VTAG}/volumes/{invalid_volume_id}",
+        json={"requires_saving": True, "was_saved": True},
     )
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
     json_response = response.json()
-    assert invalid_volume_id == json_response["detail"][0]["ctx"]["given"]
-    assert {"states", "outputs"} == set(json_response["detail"][0]["ctx"]["permitted"])
+    assert invalid_volume_id not in json_response["detail"][0]["ctx"]["enum_values"]

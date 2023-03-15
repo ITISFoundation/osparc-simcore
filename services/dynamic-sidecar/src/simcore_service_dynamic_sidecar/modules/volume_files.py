@@ -1,7 +1,9 @@
 import os
 import stat
 from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
+from typing import Optional, Union
 
 import aiofiles
 from aiofiles import os as aiofiles_os
@@ -15,6 +17,13 @@ from servicelib.volumes_utils import (
 from .mounted_fs import MountedVolumes
 
 chmod = aiofiles_os.wrap(os.chmod)  # type: ignore
+
+
+class VolumeID(str, Enum):
+    OUTPUTS = "outputs"
+    INPUTS = "inputs"
+    STATES = "states"
+    SHARED_STORE = "shared_store"
 
 
 @dataclass
@@ -34,6 +43,12 @@ class _MountedVolumesLocalPaths:
             states=tuple(mounted_volumes.disk_state_paths()),
             shared_store=mounted_volumes.disk_shared_store_path,
         )
+
+    def paths_from_volume_id(self, volume_id: VolumeID) -> list[Path]:
+        result: Union[Path, tuple[Path, ...]] = self.__getattribute__(volume_id)
+        if isinstance(result, Path):
+            return [result]
+        return list(result)
 
 
 async def _create_file_with_user_wrote_only_permissions(file: Path) -> None:
@@ -98,26 +113,20 @@ async def create_agent_file_on_all_volumes(mounted_volumes: MountedVolumes) -> N
         )
 
 
-async def set_volume_state_in_agent_file_outputs_saved(
+async def set_volume_state(
     mounted_volumes: MountedVolumes,
+    volume_id: VolumeID,
+    requires_saving: bool,
+    was_saved: Optional[bool],
 ) -> None:
     volumes_local_paths = _MountedVolumesLocalPaths.from_mounted_volumes(
         mounted_volumes
     )
-    await save_volume_state(
-        agent_file_path=volumes_local_paths.outputs / AGENT_FILE_NAME,
-        volume_state=VolumeState(requires_saving=True, was_saved=True),
-    )
-
-
-async def set_volume_state_in_agent_file_states_saved(
-    mounted_volumes: MountedVolumes,
-) -> None:
-    volumes_local_paths = _MountedVolumesLocalPaths.from_mounted_volumes(
-        mounted_volumes
-    )
-    for path in volumes_local_paths.states:
+    volume_paths: list[Path] = volumes_local_paths.paths_from_volume_id(volume_id)
+    for volume_path in volume_paths:
         await save_volume_state(
-            agent_file_path=path / AGENT_FILE_NAME,
-            volume_state=VolumeState(requires_saving=True, was_saved=True),
+            agent_file_path=volume_path / AGENT_FILE_NAME,
+            volume_state=VolumeState(
+                requires_saving=requires_saving, was_saved=was_saved
+            ),
         )
