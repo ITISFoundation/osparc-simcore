@@ -11,6 +11,7 @@ import pytest
 from aiodocker.volumes import DockerVolume
 from pydantic import HttpUrl
 from pytest import LogCaptureFixture
+from servicelib.volumes_utils import AGENT_FILE_NAME, HIDDEN_FILE_NAME
 from simcore_service_agent.core.settings import ApplicationSettings
 from simcore_service_agent.modules.volumes_cleanup._s3 import (
     S3Provider,
@@ -75,7 +76,8 @@ async def _download_files_from_bucket(
 
 def _create_data(folder: Path) -> None:
     for file in {  # pylint:disable=use-sequence-for-iteration
-        ".hidden_do_not_remove",
+        AGENT_FILE_NAME,
+        HIDDEN_FILE_NAME,
         "key_values.json",
         "f1.txt",
         "f2.txt",

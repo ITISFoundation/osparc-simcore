@@ -2,6 +2,7 @@ from typing import Final, Optional
 
 from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import Field, NonNegativeInt, validator
+from servicelib.volumes_utils import AGENT_FILE_NAME, HIDDEN_FILE_NAME
 from settings_library.base import BaseCustomSettings
 from settings_library.r_clone import S3Provider
 from settings_library.utils_logging import MixinLoggingSettings
@@ -32,7 +33,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         5, description="parallel transfers to s3"
     )
     AGENT_VOLUMES_CLEANUP_EXCLUDE_FILES: list[str] = Field(
-        [".hidden_do_not_remove", "key_values.json"],
+        [AGENT_FILE_NAME, HIDDEN_FILE_NAME, "key_values.json"],
         description="Files to ignore when syncing to s3",
     )
     AGENT_VOLUMES_CLEANUP_INTERVAL_S: NonNegativeInt = Field(
