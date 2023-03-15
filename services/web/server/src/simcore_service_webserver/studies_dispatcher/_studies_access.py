@@ -166,12 +166,10 @@ async def copy_study_to_account(
         substitute_parameterized_inputs,
     )
 
-    # FIXME: ONLY projects should have access to db since it avoids access layer
-    # TODO: move to project_api and add access layer
     db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
     template_parameters = dict(request.query)
 
-    # assign id to copy
+    # assign new uuid to copy
     project_uuid = _compose_uuid(
         template_project["uuid"], user["id"], str(template_parameters)
     )
@@ -179,8 +177,6 @@ async def copy_study_to_account(
     try:
         # Avoids multiple copies of the same template on each account
         await db.get_project(user["id"], project_uuid)
-
-        # FIXME: if template is parametrized and user has already a copy, then delete it and create a new one??
 
     except ProjectNotFoundError:
         # New project cloned from template
@@ -327,7 +323,6 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
         log.debug("Study %s copied", copied_project_id)
 
     except Exception as exc:  # pylint: disable=broad-except
-        # FIXME: force disable anonymous user!!
         error_code = create_error_code(exc)
         log.exception(
             "Failed while copying project '%s' to '%s' [%s]",
