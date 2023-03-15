@@ -215,10 +215,10 @@ def solver_version() -> str:
     return "1.2.3"
 
 
-@pytest.mark.xfail("Will adapt next PR")
 @pytest.mark.acceptance_test(
     "New feature https://github.com/ITISFoundation/osparc-simcore/issues/3940"
 )
+@pytest.mark.xfail  # TODO: will fix in next PR
 async def test_run_solver_job(
     client: httpx.AsyncClient,
     directorv2_service_openapi_specs: dict[str, Any],
