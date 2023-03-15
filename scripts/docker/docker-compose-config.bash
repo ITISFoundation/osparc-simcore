@@ -49,7 +49,7 @@ fi
 
 
 # check if docker-compose V2 is available
-if docker compose version --short | grep --quiet "^23\." ; then
+if docker compose version --short | grep --quiet "^2\." ; then
   show_info "Running compose V2"
   # V2 does not write the version anymore, so we take it from the first compose file
   first_compose_file="${1}"
