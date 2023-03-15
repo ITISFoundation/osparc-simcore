@@ -1,0 +1,7 @@
+version: '3.9'
+services:
+  osparc-gateway-server:
+    environment:
+      - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
+    ports:
+      - "3100:3000" # ptvsd port

@@ -1,0 +1,9 @@
+# Specifies third-party dependencies for the 'osparc-gateway-server'
+#
+#
+--constraint ../../../requirements/constraints.txt
+--constraint constraints.txt
+
+aiodocker
+dask-gateway-server[local]
+pydantic[email,dotenv]
