@@ -17,7 +17,7 @@
 
 
 qx.Class.define("osparc.info.StudyLarge", {
-  extend: qx.ui.core.Widget,
+  extend: osparc.info.CardLarge,
 
   /**
     * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
@@ -25,12 +25,6 @@ qx.Class.define("osparc.info.StudyLarge", {
     */
   construct: function(study, openOptions = true) {
     this.base(arguments);
-
-    this.set({
-      minHeight: 350,
-      padding: this.self().PADDING
-    });
-    this._setLayout(new qx.ui.layout.VBox(8));
 
     if (study instanceof osparc.data.model.Study) {
       this.setStudy(study);
@@ -43,18 +37,10 @@ qx.Class.define("osparc.info.StudyLarge", {
       this.setOpenOptions(openOptions);
     }
 
-    this.addListenerOnce("appear", () => {
-      this.__rebuildLayout();
-    }, this);
-    this.addListener("resize", () => {
-      this.__rebuildLayout();
-    }, this);
+    this._attachHandlers();
   },
 
   events: {
-    "openAccessRights": "qx.event.type.Event",
-    "openClassifiers": "qx.event.type.Event",
-    "openQuality": "qx.event.type.Event",
     "updateStudy": "qx.event.type.Data",
     "updateTags": "qx.event.type.Data"
   },
@@ -64,20 +50,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       check: "osparc.data.model.Study",
       init: null,
       nullable: false
-    },
-
-    openOptions: {
-      check: "Boolean",
-      init: true,
-      nullable: false
     }
-  },
-
-  statics: {
-    PADDING: 5,
-    EXTRA_INFO_WIDTH: 250,
-    THUMBNAIL_MIN_WIDTH: 150,
-    THUMBNAIL_MAX_WIDTH: 230
   },
 
   members: {
@@ -85,7 +58,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       return osparc.data.model.Study.canIWrite(this.getStudy().getAccessRights());
     },
 
-    __rebuildLayout: function() {
+    _rebuildLayout: function() {
       this._removeAll();
 
       const title = this.__createTitle();
@@ -99,9 +72,9 @@ qx.Class.define("osparc.info.StudyLarge", {
       const bounds = this.getBounds();
       const offset = 30;
       let widgetWidth = bounds ? bounds.width - offset : 500 - offset;
-      let thumbnailWidth = widgetWidth - 2*this.self().PADDING;
+      let thumbnailWidth = widgetWidth - 2 * osparc.info.CardLarge.PADDING;
       const maxThumbnailHeight = extraInfo.length*20;
-      const slim = widgetWidth < this.self().EXTRA_INFO_WIDTH + this.self().THUMBNAIL_MIN_WIDTH + 2*this.self().PADDING - 20;
+      const slim = widgetWidth < osparc.info.CardLarge.EXTRA_INFO_WIDTH + osparc.info.CardLarge.THUMBNAIL_MIN_WIDTH + 2 * osparc.info.CardLarge.PADDING - 20;
       let hBox = null;
       if (slim) {
         this._add(extraInfoLayout);
@@ -110,9 +83,9 @@ qx.Class.define("osparc.info.StudyLarge", {
           alignX: "center"
         }));
         hBox.add(extraInfoLayout);
-        thumbnailWidth -= this.self().EXTRA_INFO_WIDTH;
+        thumbnailWidth -= osparc.info.CardLarge.EXTRA_INFO_WIDTH;
       }
-      thumbnailWidth = Math.min(thumbnailWidth - 20, this.self().THUMBNAIL_MAX_WIDTH);
+      thumbnailWidth = Math.min(thumbnailWidth - 20, osparc.info.CardLarge.THUMBNAIL_MAX_WIDTH);
       const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
       const thumbnailLayout = this.__createViewWithEdit(thumbnail, this.__openThumbnailEditor);
       thumbnailLayout.getLayout().set({
@@ -225,7 +198,7 @@ qx.Class.define("osparc.info.StudyLarge", {
 
     __createExtraInfo: function(extraInfo) {
       const moreInfo = osparc.info.StudyUtils.createExtraInfo(extraInfo).set({
-        width: this.self().EXTRA_INFO_WIDTH
+        width: osparc.info.CardLarge.EXTRA_INFO_WIDTH
       });
 
       return moreInfo;

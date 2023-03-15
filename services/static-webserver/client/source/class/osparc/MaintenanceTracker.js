@@ -87,6 +87,7 @@ qx.Class.define("osparc.MaintenanceTracker", {
           text += " - " + osparc.utils.Utils.formatDateAndTime(this.getEnd());
         }
       }
+      text += " (local time)";
       if (this.getReason()) {
         text += ": " + this.getReason();
       }
