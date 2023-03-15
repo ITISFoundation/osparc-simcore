@@ -23,9 +23,8 @@ class StudiesDispatcherSettings(BaseCustomSettings):
     @validator("STUDIES_GUEST_ACCOUNT_LIFETIME")
     @classmethod
     def is_positive_lifetime(cls, v):
-        if v and isinstance(v, timedelta):
-            if v.total_seconds() <= 0:
-                raise ValueError("Must be a positive lifetime")
+        if v and isinstance(v, timedelta) and v.total_seconds() <= 0:
+            raise ValueError(f"Must be a positive number, got {v.total_seconds()=}")
         return v
 
     def is_login_required(self):
