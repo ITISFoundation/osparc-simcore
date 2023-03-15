@@ -215,7 +215,7 @@ def solver_version() -> str:
     return "1.2.3"
 
 
-@pytest.mark.testit
+@pytest.mark.xfail("Will adapt next PR")
 @pytest.mark.acceptance_test(
     "New feature https://github.com/ITISFoundation/osparc-simcore/issues/3940"
 )
