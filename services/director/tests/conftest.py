@@ -45,7 +45,7 @@ def package_dir():
 @pytest.fixture
 def configure_schemas_location(package_dir, common_schemas_specs_dir):
     config.NODE_SCHEMA_LOCATION = str(
-        common_schemas_specs_dir / "node-meta-v0.0.1-pydantic.json"
+        common_schemas_specs_dir / "node-meta-v0.0.1.json"
     )
     resources.RESOURCE_NODE_SCHEMA = os.path.relpath(
         config.NODE_SCHEMA_LOCATION, package_dir
