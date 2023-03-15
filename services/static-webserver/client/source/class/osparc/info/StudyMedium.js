@@ -35,9 +35,7 @@ qx.Class.define("osparc.info.StudyMedium", {
       this.setStudy(study);
     }
 
-    this.addListenerOnce("appear", () => {
-      this.__rebuildLayout();
-    }, this);
+    this.addListenerOnce("appear", () => this.__rebuildLayout(), this);
   },
 
   properties: {
