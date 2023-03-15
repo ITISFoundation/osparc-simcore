@@ -204,8 +204,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           control.addListener("execute", () => {
             const infoMerged = new osparc.info.MergedLarge(this.getStudy());
             const title = this.tr("Information");
-            const width = 600;
-            const height = 700;
+            const width = osparc.info.CardLarge.WIDTH;
+            const height = osparc.info.CardLarge.HEIGHT;
             osparc.ui.window.Window.popUpInWindow(infoMerged, title, width, height);
           });
           break;

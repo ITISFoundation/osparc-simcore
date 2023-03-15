@@ -45,6 +45,8 @@ qx.Class.define("osparc.info.CardLarge", {
   },
 
   statics: {
+    WIDTH: 600,
+    HEIGHT: 700,
     PADDING: 5,
     EXTRA_INFO_WIDTH: 250,
     THUMBNAIL_MIN_WIDTH: 150,

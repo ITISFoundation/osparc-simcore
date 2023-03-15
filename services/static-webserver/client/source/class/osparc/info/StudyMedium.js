@@ -263,8 +263,8 @@ qx.Class.define("osparc.info.StudyMedium", {
     __openStudyDetails: function() {
       const studyDetails = new osparc.info.StudyLarge(this.getStudy());
       const title = this.tr("Study Information");
-      const width = 500;
-      const height = 500;
+      const width = osparc.info.CardLarge.WIDTH;
+      const height = osparc.info.CardLarge.HEIGHT;
       osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height);
     }
   }
