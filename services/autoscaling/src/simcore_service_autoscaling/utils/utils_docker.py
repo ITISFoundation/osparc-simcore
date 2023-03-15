@@ -7,6 +7,7 @@ import collections
 import datetime
 import logging
 import re
+from contextlib import suppress
 from pathlib import Path
 from typing import Final, Optional, cast
 
@@ -135,6 +136,18 @@ async def _associated_service_has_no_node_placement_contraints(
     return True
 
 
+def _by_created_dt(task: Task) -> datetime.datetime:
+    # NOTE: SAFE implementation to extract task.CreatedAt as datetime for comparison
+    if task.CreatedAt:
+        with suppress(ValueError):
+            created_at = to_datetime(task.CreatedAt)
+            created_at_utc: datetime.datetime = created_at.replace(
+                tzinfo=datetime.timezone.utc
+            )
+            return created_at_utc
+    return datetime.datetime.now(datetime.timezone.utc)
+
+
 async def pending_service_tasks_with_insufficient_resources(
     docker_client: AutoscalingDocker,
     service_labels: list[DockerLabelKey],
@@ -157,17 +170,7 @@ async def pending_service_tasks_with_insufficient_resources(
         ),
     )
 
-    sorted_tasks = sorted(
-        tasks,
-        key=lambda task: cast(  # NOTE: some mypy fun here
-            datetime.datetime,
-            (
-                to_datetime(
-                    task.CreatedAt or f"{datetime.datetime.now(datetime.timezone.utc)}"
-                )
-            ),
-        ),
-    )
+    sorted_tasks = sorted(tasks, key=_by_created_dt)
 
     pending_tasks = [
         task
