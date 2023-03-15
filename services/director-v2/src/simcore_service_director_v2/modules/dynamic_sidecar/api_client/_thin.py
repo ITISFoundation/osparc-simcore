@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 from fastapi import FastAPI, status
 from httpx import Response, Timeout
@@ -224,4 +224,16 @@ class ThinDynamicSidecarClient(BaseThinClient):
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "/containers:restart")
+        return await self.client.post(url)
+
+    @retry_on_errors
+    @expect_status(status.HTTP_204_NO_CONTENT)
+    async def post_volumes_state_save(
+        self,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
+        volume_id: Literal["states", "outputs"],
+    ) -> Response:
+        url = self._get_url(
+            dynamic_sidecar_endpoint, f"/volumes/{volume_id}/state:saved"
+        )
         return await self.client.post(url)

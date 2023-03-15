@@ -399,6 +399,22 @@ class DynamicSidecarClient:
             _debug_progress_callback,
         )
 
+    @log_decorator(logger=logger)
+    async def mark_states_volume_as_saved(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
+    ) -> None:
+        await self._thin_client.post_volumes_state_save(
+            dynamic_sidecar_endpoint, volume_id="states"
+        )
+
+    @log_decorator(logger=logger)
+    async def mark_outputs_volume_as_saved(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
+    ) -> None:
+        await self._thin_client.post_volumes_state_save(
+            dynamic_sidecar_endpoint, volume_id="outputs"
+        )
+
 
 async def setup(app: FastAPI) -> None:
     logger.debug("dynamic-sidecar api client setup")

@@ -244,6 +244,27 @@ async def test_post_containers_networks_detach(
     assert_responses(mock_response, response)
 
 
+@pytest.mark.parametrize("volume_id", ["states", "outputs"])
+async def test_post_volumes_state_save(
+    thin_client: ThinDynamicSidecarClient,
+    dynamic_sidecar_endpoint: AnyHttpUrl,
+    mock_request: MockRequestType,
+    volume_id: str,
+) -> None:
+    mock_response = Response(status.HTTP_204_NO_CONTENT)
+    mock_request(
+        "POST",
+        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/volumes/{volume_id}/state:saved",
+        mock_response,
+        None,
+    )
+
+    response = await thin_client.post_volumes_state_save(
+        dynamic_sidecar_endpoint, volume_id=volume_id
+    )
+    assert_responses(mock_response, response)
+
+
 @pytest.mark.parametrize(
     "handler_name, mock_endpoint, extra_kwargs",
     [

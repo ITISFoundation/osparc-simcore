@@ -132,6 +132,7 @@ async def service_save_state(
     await dynamic_sidecar_client.save_service_state(
         scheduler_data.endpoint, progress_callback=progress_callback
     )
+    await dynamic_sidecar_client.mark_states_volume_as_saved(scheduler_data.endpoint)
 
 
 async def service_push_outputs(
@@ -144,6 +145,7 @@ async def service_push_outputs(
     await dynamic_sidecar_client.push_service_output_ports(
         scheduler_data.endpoint, progress_callback=progress_callback
     )
+    await dynamic_sidecar_client.mark_outputs_volume_as_saved(scheduler_data.endpoint)
 
 
 async def service_remove_sidecar_proxy_docker_networks_and_volumes(

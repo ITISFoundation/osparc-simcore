@@ -330,3 +330,29 @@ async def test_detach_container_from_network(
             )
             is None
         )
+
+
+async def test_mark_states_volume_as_saved(
+    get_patched_client: Callable,
+    dynamic_sidecar_endpoint: AnyHttpUrl,
+) -> None:
+    with get_patched_client(
+        "post_volumes_state_save",
+        return_value=Response(status_code=status.HTTP_204_NO_CONTENT),
+    ) as client:
+        assert (
+            await client.mark_states_volume_as_saved(dynamic_sidecar_endpoint) is None
+        )
+
+
+async def test_mark_outputs_volume_as_saved(
+    get_patched_client: Callable,
+    dynamic_sidecar_endpoint: AnyHttpUrl,
+) -> None:
+    with get_patched_client(
+        "post_volumes_state_save",
+        return_value=Response(status_code=status.HTTP_204_NO_CONTENT),
+    ) as client:
+        assert (
+            await client.mark_outputs_volume_as_saved(dynamic_sidecar_endpoint) is None
+        )
