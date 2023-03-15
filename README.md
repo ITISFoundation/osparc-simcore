@@ -13,7 +13,7 @@
 [![dockerhub_badge]](https://hub.docker.com/u/itisfoundation)
 [![license_badge]](./LICENSE)
 [![sonarcloud_badge]](https://sonarcloud.io/summary/new_code?id=ITISFoundation_osparc-simcore)
-[![osparc_status]](https://status.osparc.io")
+[![osparc_status]](https://status.osparc.io)
 [![s4l_status]](https://s4llite.statuspage.io)
 
 <!-- BADGES: LINKS TO IMAGES. Default to https://shields.io/ ------------------------------>
