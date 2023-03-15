@@ -308,7 +308,7 @@ services:
       resources:
         limits:
           cpus: "1.0"
-          memory: 200M
+          memory: 1024M
     networks:
       - default
     volumes:
