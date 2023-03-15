@@ -6,6 +6,8 @@
 from datetime import timedelta
 
 import pytest
+from models_library.errors import ErrorDict
+from pydantic import ValidationError
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_webserver.socketio.handlers_utils import EnvironDict
 from simcore_service_webserver.studies_dispatcher.settings import (
@@ -38,3 +40,19 @@ def test_studies_dispatcher_settings(environment: EnvironDict):
     assert settings.STUDIES_GUEST_ACCOUNT_LIFETIME == timedelta(
         days=2, hours=1, minutes=10
     )
+
+
+def test_studies_dispatcher_settings_invalid_lifetime(
+    environment: EnvironDict, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setenv("STUDIES_GUEST_ACCOUNT_LIFETIME", "-2")
+
+    with pytest.raises(ValidationError) as exc_info:
+        StudiesDispatcherSettings.create_from_envs()
+
+    validation_error: ErrorDict = exc_info.value.errors()[0]
+    assert "-2" in validation_error.pop("msg", "")
+    assert validation_error == {
+        "loc": ("STUDIES_GUEST_ACCOUNT_LIFETIME",),
+        "type": "value_error",
+    }
