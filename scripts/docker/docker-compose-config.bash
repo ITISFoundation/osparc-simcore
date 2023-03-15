@@ -89,7 +89,7 @@ docker-compose \
 --env-file ${env_file}"
     for compose_file_path in "$@"
     do
-      docker_command+=" --file=${compose_file_path}"
+      docker_command+=" --file=${compose_file_path} "
     done
     docker_command+="\
 config \
