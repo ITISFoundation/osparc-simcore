@@ -30,6 +30,9 @@ services:
   migration:
     image: ${DOCKER_REGISTRY:-itisfoundation}/migration:${DOCKER_IMAGE_TAG:-latest}
 
+  osparc-gateway-server:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/osparc-gateway-server:${DOCKER_IMAGE_TAG:-latest}
+
   service-integration:
     image: ${DOCKER_REGISTRY:-itisfoundation}/service-integration:${DOCKER_IMAGE_TAG:-latest}
 
