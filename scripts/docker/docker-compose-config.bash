@@ -91,7 +91,7 @@ docker-compose \
     do
       docker_command+=" --file=${compose_file_path}"
     done
-    docker_command+="\
+    docker_command+=" \
 config \
 | sed --regexp-extended 's/cpus: ([0-9\\.]+)/cpus: \"\\1\"/'"
     # Execute the command
