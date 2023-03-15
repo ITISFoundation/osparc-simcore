@@ -24,13 +24,7 @@ def test_to_datetime(docker_time: str, expected_datetime: datetime):
     )
 
 
-def test_to_datetime_conversion_known_errors():
-    """
-    Keeps an overview of formatting errors produced by 'to_datetime'
-    """
-    # this works
-    to_datetime("2020-10-09T12:28:14.123456099Z")
-
+def test_to_strptime_errors():
     # When “Z” (Zulu) is tacked on the end of a time, it indicates that that time is UTC,
     # so really the literal Z is part of the time. What is T between date and time?
     # The T is just a literal to separate the date from the time,
@@ -40,7 +34,16 @@ def test_to_datetime_conversion_known_errors():
         # Z at the end (represnting ZULU = UTC) should be removed
         datetime.strptime("2020-10-09T12:28:14.123456Z", "%Y-%m-%dT%H:%M:%S.%f")
 
-    assert err_info.value.args == ("unconverted data remains: Z",)
+    error_msg = err_info.value.args[0]
+    assert error_msg == "unconverted data remains: Z"
+
+
+def test_to_datetime_known_errors():
+    """
+    Keeps an overview of formatting errors produced by 'to_datetime'
+    """
+    # this works
+    to_datetime("2020-10-09T12:28:14.123456099Z")
 
     # %f (milliseconds) has here 5 digits (can have at most 6) but to_datetime truncates after 6!
     # therefore it cannot understand Z
@@ -48,7 +51,8 @@ def test_to_datetime_conversion_known_errors():
         # ValueError: unconverted data remains: Z
         to_datetime("2020-10-09T12:28:14.12345Z")
 
-    assert err_info.value.args == ("unconverted data remains: Z",)
+    error_msg = err_info.value.args[0]
+    assert error_msg == "unconverted data remains: Z"
 
     # This was the error in pending_service_tasks_with_insufficient_resources
     # The 'T' is missing between the date and the time stamp
@@ -56,5 +60,6 @@ def test_to_datetime_conversion_known_errors():
         # "time data '2023-03-15 13:01:21.774501' does not match format '%Y-%m-%dT%H:%M:%S.%f'"
         to_datetime(f"{datetime.now(timezone.utc)}")
 
-    assert "time data" in err_info.value.args
-    assert "does not match" in err_info.value.args
+    error_msg = err_info.value.args[0]
+    assert "time data" in error_msg
+    assert "does not match" in error_msg
