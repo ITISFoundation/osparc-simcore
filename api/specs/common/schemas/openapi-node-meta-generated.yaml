@@ -351,8 +351,10 @@ components:
       properties:
         minHeight:
           title: Minheight
+          exclusiveMinimum: true
           type: integer
           description: minimum Height of the textarea
+          minimum: 0
       additionalProperties: false
     ValidationError:
       title: ValidationError

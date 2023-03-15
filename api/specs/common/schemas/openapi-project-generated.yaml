@@ -492,10 +492,8 @@ components:
       - FAILED
       - ABORTED
       type: string
-      description: 'State of execution of a project''s computational workflow
-
-
-        SEE StateType for task state'
+      description: "State of execution of a project's computational workflow\n\n \
+        \   SEE StateType for task state\n    "
     SimCoreFileLink:
       title: SimCoreFileLink
       required:

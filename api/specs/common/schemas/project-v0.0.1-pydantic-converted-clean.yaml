@@ -141,10 +141,8 @@ properties:
             properties:
               value:
                 allOf:
-                - description: 'State of execution of a project''s computational workflow
-
-
-                    SEE StateType for task state'
+                - description: "State of execution of a project's computational workflow\n\
+                    \n    SEE StateType for task state\n    "
                   enum:
                   - UNKNOWN
                   - PUBLISHED
@@ -714,11 +712,8 @@ properties:
               properties:
                 currentStatus:
                   allOf:
-                  - description: 'State of execution of a project''s computational
-                      workflow
-
-
-                      SEE StateType for task state'
+                  - description: "State of execution of a project's computational\
+                      \ workflow\n\n    SEE StateType for task state\n    "
                     enum:
                     - UNKNOWN
                     - PUBLISHED

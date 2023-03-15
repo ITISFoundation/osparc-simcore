@@ -499,8 +499,8 @@ properties:
                           State of execution of a project's computational
                           workflow
 
+                              SEE StateType for task state
 
-                          SEE StateType for task state
                         enum:
                           - UNKNOWN
                           - PUBLISHED
@@ -668,8 +668,8 @@ properties:
                           State of execution of a project's computational
                           workflow
 
+                              SEE StateType for task state
 
-                          SEE StateType for task state
                         enum:
                           - UNKNOWN
                           - PUBLISHED
@@ -1003,7 +1003,8 @@ definitions:
     description: |-
       State of execution of a project's computational workflow
 
-      SEE StateType for task state
+          SEE StateType for task state
+
     enum:
       - UNKNOWN
       - PUBLISHED
@@ -1042,7 +1043,8 @@ definitions:
             description: |-
               State of execution of a project's computational workflow
 
-              SEE StateType for task state
+                  SEE StateType for task state
+
             enum:
               - UNKNOWN
               - PUBLISHED
@@ -1510,7 +1512,8 @@ definitions:
                     description: |-
                       State of execution of a project's computational workflow
 
-                      SEE StateType for task state
+                          SEE StateType for task state
+
                     enum:
                       - UNKNOWN
                       - PUBLISHED
@@ -1687,7 +1690,8 @@ definitions:
             description: |-
               State of execution of a project's computational workflow
 
-              SEE StateType for task state
+                  SEE StateType for task state
+
             enum:
               - UNKNOWN
               - PUBLISHED
@@ -1791,7 +1795,8 @@ definitions:
                     description: |-
                       State of execution of a project's computational workflow
 
-                      SEE StateType for task state
+                          SEE StateType for task state
+
                     enum:
                       - UNKNOWN
                       - PUBLISHED
