@@ -10,6 +10,21 @@ body:
       options:
         - label: I have searched the existing issues
           required: true
+  - type: dropdown
+    id: deploy
+    attributes:
+      label: Which deploy/s?
+      description: Where did you experience this bug? This will help us identifying the version of the faulty code you used.
+      multiple: true
+      options:
+        - "production aws (e.g. osparc.io)"
+        - "staging aws (e.g. staging.osparc.io)"
+        - "production on-premise (dalco)"
+        - "stating on-premise (dalco)"
+        - "development (master)"
+        - "other (e.g. local)"
+    validations:
+      required: false
   - type: textarea
     attributes:
       label: Current Behavior
