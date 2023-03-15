@@ -508,7 +508,7 @@ new-service: .venv ## Bakes a new project from cookiecutter-simcore-pyservice an
 openapi-specs: ## bundles and validates openapi specifications and schemas of ALL service's API
 	@$(MAKE_C) services/web/server $@
 	@$(MAKE_C) services/storage $@
-	@$(MAKE_C) services/director $@
+
 
 .PHONY: settings-schema.json
 settings-schema.json: ## [container] dumps json-schema settings of all services

@@ -306,6 +306,7 @@
                             "minHeight": {
                               "title": "Minheight",
                               "description": "minimum Height of the textarea",
+                              "exclusiveMinimum": 0,
                               "type": "integer"
                             }
                           },
@@ -561,6 +562,7 @@
                             "minHeight": {
                               "title": "Minheight",
                               "description": "minimum Height of the textarea",
+                              "exclusiveMinimum": 0,
                               "type": "integer"
                             }
                           },
@@ -1015,6 +1017,7 @@
         "minHeight": {
           "title": "Minheight",
           "description": "minimum Height of the textarea",
+          "exclusiveMinimum": 0,
           "type": "integer"
         }
       },
@@ -1124,6 +1127,7 @@
                 "minHeight": {
                   "title": "Minheight",
                   "description": "minimum Height of the textarea",
+                  "exclusiveMinimum": 0,
                   "type": "integer"
                 }
               },
@@ -1307,6 +1311,7 @@
                         "minHeight": {
                           "title": "Minheight",
                           "description": "minimum Height of the textarea",
+                          "exclusiveMinimum": 0,
                           "type": "integer"
                         }
                       },
@@ -1555,6 +1560,7 @@
                         "minHeight": {
                           "title": "Minheight",
                           "description": "minimum Height of the textarea",
+                          "exclusiveMinimum": 0,
                           "type": "integer"
                         }
                       },

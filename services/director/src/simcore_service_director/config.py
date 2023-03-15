@@ -121,7 +121,7 @@ SWARM_STACK_NAME: str = os.environ.get("SWARM_STACK_NAME", "undefined-please-che
 
 # used when in devel mode vs release mode
 NODE_SCHEMA_LOCATION: str = os.environ.get(
-    "NODE_SCHEMA_LOCATION", f"{API_ROOT}/{API_VERSION}/schemas/node-meta-v0.0.1-pydantic.json"
+    "NODE_SCHEMA_LOCATION", f"{API_ROOT}/{API_VERSION}/schemas/node-meta-v0.0.1.json"
 )
 # used to find the right network name
 SIMCORE_SERVICES_NETWORK_NAME: Optional[str] = os.environ.get(
