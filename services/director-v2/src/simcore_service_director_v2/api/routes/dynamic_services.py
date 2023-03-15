@@ -141,6 +141,7 @@ async def create_dynamic_service(
             port=dynamic_services_settings.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_PORT,
             request_dns=x_dynamic_sidecar_request_dns,
             request_scheme=x_dynamic_sidecar_request_scheme,
+            can_save=service.can_save,
         )
 
     return cast(DynamicServiceGet, await scheduler.get_stack_status(service.node_uuid))

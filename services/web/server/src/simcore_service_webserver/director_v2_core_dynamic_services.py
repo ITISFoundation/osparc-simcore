@@ -76,6 +76,7 @@ async def get_dynamic_service(app: web.Application, node_uuid: str) -> DataType:
 async def run_dynamic_service(
     app: web.Application,
     product_name: str,
+    save_state: bool,
     user_id: PositiveInt,
     project_id: str,
     service_key: str,
@@ -92,6 +93,7 @@ async def run_dynamic_service(
     """
     data = {
         "product_name": product_name,
+        "can_save": save_state,
         "user_id": user_id,
         "project_id": project_id,
         "key": service_key,

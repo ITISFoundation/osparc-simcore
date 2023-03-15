@@ -95,12 +95,18 @@ def request_scheme() -> str:
 
 
 @pytest.fixture
+def can_save() -> bool:
+    return True
+
+
+@pytest.fixture
 def scheduler_data_from_http_request(
     dynamic_service_create: DynamicServiceCreate,
     simcore_service_labels: SimcoreServiceLabels,
     dynamic_sidecar_port: int,
     request_dns: str,
     request_scheme: str,
+    can_save: bool,
     run_id: RunID,
 ) -> SchedulerData:
     return SchedulerData.from_http_request(
@@ -109,6 +115,7 @@ def scheduler_data_from_http_request(
         port=dynamic_sidecar_port,
         request_dns=request_dns,
         request_scheme=request_scheme,
+        can_save=can_save,
         run_id=run_id,
     )
 

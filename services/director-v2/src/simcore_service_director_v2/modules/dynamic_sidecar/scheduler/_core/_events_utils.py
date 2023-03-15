@@ -415,6 +415,32 @@ async def prepare_services_environment(
         app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
     )
 
+    # update if volume requires saving
+    def _get_state_params(can_save: Optional[bool]) -> dict[str, Optional[bool]]:
+        return (
+            {"requires_saving": True, "was_saved": False}
+            if can_save
+            else {"requires_saving": False, "was_saved": None}
+        )
+
+    update_volume_state_params = _get_state_params(
+        scheduler_data.dynamic_sidecar.service_removal_state.can_save
+    )
+    await logged_gather(
+        *(
+            dynamic_sidecar_client.update_volume_state(
+                scheduler_data.endpoint,
+                volume_id=VolumeID.STATES,
+                **update_volume_state_params,
+            ),
+            dynamic_sidecar_client.update_volume_state(
+                scheduler_data.endpoint,
+                volume_id=VolumeID.OUTPUTS,
+                **update_volume_state_params,
+            ),
+        )
+    )
+
     async def _pull_outputs_and_state():
         tasks = [
             dynamic_sidecar_client.pull_service_output_ports(dynamic_sidecar_endpoint)
