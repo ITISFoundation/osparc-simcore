@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Set
+from typing import Optional
 
 import sqlalchemy as sa
 from pydantic.networks import EmailStr
@@ -11,7 +11,7 @@ from ._base import BaseRepository
 
 
 class GroupsRepository(BaseRepository):
-    async def list_user_groups(self, user_id: int) -> List[GroupAtDB]:
+    async def list_user_groups(self, user_id: int) -> list[GroupAtDB]:
         groups_in_db = []
         async with self.db_engine.connect() as conn:
             async for row in await conn.stream(
@@ -29,7 +29,7 @@ class GroupsRepository(BaseRepository):
             result = await conn.execute(
                 sa.select([groups]).where(groups.c.type == GroupType.EVERYONE)
             )
-            row = result.first()
+            row = await result.first()
         if not row:
             raise RepositoryError(f"{GroupType.EVERYONE} groups was never initialized")
         return GroupAtDB(**row)
@@ -55,8 +55,8 @@ class GroupsRepository(BaseRepository):
             )
 
     async def list_user_emails_from_gids(
-        self, gids: Set[PositiveInt]
-    ) -> Dict[PositiveInt, Optional[EmailStr]]:
+        self, gids: set[PositiveInt]
+    ) -> dict[PositiveInt, Optional[EmailStr]]:
         service_owners = {}
         async with self.db_engine.connect() as conn:
             async for row in await conn.stream(
