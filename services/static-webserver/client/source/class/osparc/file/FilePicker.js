@@ -323,6 +323,7 @@ qx.Class.define("osparc.file.FilePicker", {
       });
 
       const stopButton = new osparc.ui.form.FetchButton().set({
+        minHeight: 24,
         icon: "@FontAwesome5Solid/times/16",
         toolTipText: this.tr("Cancel upload"),
         appearance: "danger-button",
