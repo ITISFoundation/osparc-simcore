@@ -328,7 +328,7 @@ qx.Class.define("osparc.file.FilePicker", {
         appearance: "danger-button",
         allowGrowX: false
       });
-      stopButton.addListener("tap", () => this.getNode()["abortRequested"] = true);
+      stopButton.addListener("tap", () => this.getNode()["requestAbortUpload"] = true);
       progressLayout.add(stopButton);
 
       const progressChanged = () => {
