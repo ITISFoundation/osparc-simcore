@@ -336,7 +336,7 @@ qx.Class.define("osparc.file.FilePicker", {
         appearance: "danger-button",
         allowGrowX: false
       });
-      stopButton.addListener("tap", () => this.abortUpload());
+      stopButton.addListener("tap", () => this.getNode()["abortRequested"] = true);
       progressLayout.add(stopButton);
 
       const progressChanged = () => {
@@ -652,8 +652,6 @@ qx.Class.define("osparc.file.FilePicker", {
 
     // Use XMLHttpRequest to upload the file to S3.
     __uploadFile: async function(file, presignedLinkData) {
-      this.__presignedLinkData = presignedLinkData;
-
       this.getNode().getStatus().setProgress(this.self().PROGRESS_VALUES.CHUNKING);
 
       // create empty object, it will be filled up with etags and 1 based chunk ids when chunks get uploaded
@@ -667,6 +665,9 @@ qx.Class.define("osparc.file.FilePicker", {
       const fileSize = presignedLinkData.fileSize;
       const chunkSize = presignedLinkData.resp["chunk_size"];
       for (let chunkIdx = 0; chunkIdx < presignedLinkData.resp.urls.length; chunkIdx++) {
+        if (this.getNode()["abortRequested"]) {
+          this.abortUpload(presignedLinkData);
+        }
         const chunkBlob = this.__createChunk(file, fileSize, chunkIdx, chunkSize);
         try {
           const uploaded = await this.__uploadChunk(file, chunkBlob, presignedLinkData, chunkIdx);
@@ -773,6 +774,8 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     __completeUpload: function(fileMetadata) {
+      this.getNode()["abortRequested"] = false;
+
       if ("location" in fileMetadata && "dataset" in fileMetadata && "path" in fileMetadata && "name" in fileMetadata) {
         this.setOutputValueFromStore(fileMetadata["location"], fileMetadata["dataset"], fileMetadata["path"], fileMetadata["name"]);
       }
@@ -781,6 +784,8 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     abortUpload: function(presignedLinkData) {
+      this.getNode()["abortRequested"] = false;
+
       this.getNode().getStatus().setProgress(this.self().PROGRESS_VALUES.NOTHING);
       const abortUrl = presignedLinkData.resp.links.abort_upload;
       const xhr = new XMLHttpRequest();
