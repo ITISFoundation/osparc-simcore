@@ -49,8 +49,6 @@ qx.Class.define("osparc.file.FilePicker", {
       pageContext
     });
 
-    this.__presignedLinkData = null;
-
     this.__buildLayout();
   },
 
@@ -274,7 +272,6 @@ qx.Class.define("osparc.file.FilePicker", {
     __selectedFile: null,
     __selectedFileFound: null,
     __fileDownloadLink: null,
-    __presignedLinkData: null,
     __uploadedParts: null,
 
     setOutputValueFromStore: function(store, dataset, path, label) {
@@ -647,7 +644,7 @@ qx.Class.define("osparc.file.FilePicker", {
               this.__uploadFile(file, presignedLinkData);
             } catch (error) {
               console.error(error);
-              this.abortUpload();
+              this.abortUpload(presignedLinkData);
             }
           }
         });
@@ -674,10 +671,10 @@ qx.Class.define("osparc.file.FilePicker", {
         try {
           const uploaded = await this.__uploadChunk(file, chunkBlob, presignedLinkData, chunkIdx);
           if (!uploaded) {
-            this.abortUpload();
+            this.abortUpload(presignedLinkData);
           }
         } catch (err) {
-          this.abortUpload();
+          this.abortUpload(presignedLinkData);
         }
       }
     },
@@ -705,7 +702,7 @@ qx.Class.define("osparc.file.FilePicker", {
             resolve(Boolean(eTag));
           } else {
             console.error(xhr.response);
-            this.abortUpload();
+            this.abortUpload(presignedLinkData);
             reject(xhr.response);
           }
         };
@@ -738,7 +735,7 @@ qx.Class.define("osparc.file.FilePicker", {
         const resp = JSON.parse(xhr.responseText);
         if ("error" in resp && resp["error"]) {
           console.error(resp["error"]);
-          this.abortUpload();
+          this.abortUpload(presignedLinkData);
         } else if ("data" in resp) {
           if (xhr.status == 202) {
             console.log("waiting for completion", file.name);
@@ -783,15 +780,11 @@ qx.Class.define("osparc.file.FilePicker", {
       this.fireEvent("fileUploaded");
     },
 
-    abortUpload: function() {
+    abortUpload: function(presignedLinkData) {
       this.getNode().getStatus().setProgress(this.self().PROGRESS_VALUES.NOTHING);
-      if (this.__presignedLinkData) {
-        const presignedLinkData = this.__presignedLinkData;
-        const abortUrl = presignedLinkData.resp.links.abort_upload;
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", abortUrl, true);
-        this.__presignedLinkData = null;
-      }
+      const abortUrl = presignedLinkData.resp.links.abort_upload;
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", abortUrl, true);
     }
   }
 });
