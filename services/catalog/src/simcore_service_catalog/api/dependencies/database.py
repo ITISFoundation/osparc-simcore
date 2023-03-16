@@ -1,5 +1,5 @@
 import logging
-from typing import AsyncGenerator, Callable, Type
+from typing import AsyncGenerator, Callable
 
 from fastapi import Depends
 from fastapi.requests import Request
@@ -14,7 +14,7 @@ def _get_db_engine(request: Request) -> AsyncEngine:
     return request.app.state.engine
 
 
-def get_repository(repo_type: Type[BaseRepository]) -> Callable:
+def get_repository(repo_type: type[BaseRepository]) -> Callable:
     async def _get_repo(
         engine: AsyncEngine = Depends(_get_db_engine),
     ) -> AsyncGenerator[BaseRepository, None]:
@@ -25,7 +25,7 @@ def get_repository(repo_type: Type[BaseRepository]) -> Callable:
         # now the current solution is to connect connection when needed.
         logger.info(
             "%s",
-            f"current pool connections {engine.pool.checkedin()=},{engine.pool.checkedout()=}",
+            f"current pool connections {engine.pool.checkedin()=},{engine.pool.checkedout()=}",  # type: ignore
         )
         yield repo_type(db_engine=engine)
 

@@ -139,7 +139,7 @@ class ServicesRepository(BaseRepository):
         releases = []
         async with self.db_engine.connect() as conn:
             async for row in await conn.stream(query):
-                releases.append(ServiceMetaDataAtDB(**row))
+                releases.append(ServiceMetaDataAtDB.from_orm(row))
 
         # Now sort naturally from latest first: (This is lame, the sorting should be done in the db)
         return sorted(
@@ -348,7 +348,7 @@ class ServicesRepository(BaseRepository):
         self,
         key: ServiceKey,
         version: ServiceVersion,
-        groups: tuple[GroupAtDB],
+        groups: tuple[GroupAtDB, ...],
         allow_use_latest_service_version: bool = False,
     ) -> Optional[ServiceSpecifications]:
         """returns the service specifications for service 'key:version' and for 'groups'
