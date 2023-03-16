@@ -36,6 +36,7 @@ qx.Class.define("osparc.file.FileUploader", {
   },
 
   events: {
+    "itemReset": "qx.event.type.Event",
     "fileUploaded": "qx.event.type.Event"
   },
 
@@ -207,7 +208,7 @@ qx.Class.define("osparc.file.FileUploader", {
       this.getNode()["abortRequested"] = false;
 
       if ("location" in fileMetadata && "dataset" in fileMetadata && "path" in fileMetadata && "name" in fileMetadata) {
-        this.setOutputValueFromStore(fileMetadata["location"], fileMetadata["dataset"], fileMetadata["path"], fileMetadata["name"]);
+        osparc.file.FilePicker.setOutputValueFromStore(this.getNode(), fileMetadata["location"], fileMetadata["dataset"], fileMetadata["path"], fileMetadata["name"]);
       }
       this.__presignedLinkData = null;
       this.fireEvent("fileUploaded");

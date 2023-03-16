@@ -328,7 +328,7 @@ qx.Class.define("osparc.file.FilePicker", {
         appearance: "danger-button",
         allowGrowX: false
       });
-      stopButton.addListener("tap", () => this.requestAbort());
+      stopButton.addListener("tap", () => this.getNode()["abortRequested"] = true);
       progressLayout.add(stopButton);
 
       const progressChanged = () => {
@@ -429,6 +429,22 @@ qx.Class.define("osparc.file.FilePicker", {
         fileDrop.resetDropAction();
       });
       return fileDrop;
+    },
+
+    uploadPendingFiles: function(files) {
+      if (files.length > 0) {
+        if (files.length === 1) {
+          const fileUploader = new osparc.file.FileUploader(this.getNode());
+          [
+            "itemReset",
+            "fileUploaded"
+          ].forEach(e => fileUploader.addListener(e, () => this.fireEvent(e)));
+          fileUploader.retrieveUrlAndUpload(files[0]);
+          return true;
+        }
+        osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
+      }
+      return false;
     },
 
     __getDownloadLinkSection: function() {
@@ -571,18 +587,6 @@ qx.Class.define("osparc.file.FilePicker", {
       }
     },
 
-    uploadPendingFiles: function(files) {
-      if (files.length > 0) {
-        if (files.length === 1) {
-          const fileUploader = new osparc.file.FileUploader(this.getNode());
-          fileUploader.retrieveUrlAndUpload(files[0]);
-          return true;
-        }
-        osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
-      }
-      return false;
-    },
-
     __selectionChanged: function(selectedData) {
       this.__selectedFile = selectedData;
       const isFile = osparc.file.FilesTree.isFile(selectedData);
@@ -613,10 +617,6 @@ qx.Class.define("osparc.file.FilePicker", {
           this.__filesTree.fireEvent("selectionChanged");
         }
       }
-    },
-
-    requestAbort: function() {
-      this.getNode()["abortRequested"] = true;
     }
   }
 });
