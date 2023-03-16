@@ -40,6 +40,18 @@ _FRONTEND_SERVICES_CATALOG: dict[str, ServiceDockerData] = {
 }
 
 
+async def _get_service_details(
+    catalog_client: CatalogClient, user_id: UserID, product_name: str, node: Node
+) -> ServiceDockerData:
+    service_details = await catalog_client.get_service(
+        user_id,
+        node.key,
+        node.version,
+        product_name,
+    )
+    return ServiceDockerData.construct(**service_details)
+
+
 async def _generate_tasks_list_from_project(
     project: ProjectAtDB,
     catalog_client: CatalogClient,
@@ -64,17 +76,10 @@ async def _generate_tasks_list_from_project(
             node_details = _FRONTEND_SERVICES_CATALOG.get(service_key_version.key, None)
         else:
             node_details, node_resources, node_extras = await asyncio.gather(
-                catalog_client.get_service(
-                    user_id,
-                    node.key,
-                    node.version,
-                    product_name,
-                ),
+                _get_service_details(catalog_client, user_id, product_name, node),
                 catalog_client.get_service_resources(user_id, node.key, node.version),
                 director_client.get_service_extras(service_key_version),
             )
-            if node_details:
-                node_details = ServiceDockerData.construct(**node_details)
 
         if not node_details:
             continue
