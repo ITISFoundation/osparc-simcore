@@ -1,0 +1,188 @@
+paths:
+  /viewers:
+    post:
+      tags:
+      - sparc
+      summary: List Viewers
+      operationId: list_viewers
+      parameters:
+      - required: false
+        schema:
+          title: File Type
+          type: string
+        name: file_type
+        in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.studies_dispatcher.handlers_rest.Viewer__'
+  /viewers/default:
+    post:
+      tags:
+      - sparc
+      summary: List Default Viewers
+      operationId: list_default_viewers
+      parameters:
+      - required: false
+        schema:
+          title: File Type
+          type: string
+        name: file_type
+        in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.studies_dispatcher.handlers_rest.Viewer__'
+  /view:
+    get:
+      tags:
+      - sparc
+      summary: Get Redirection To Viewer
+      description: Opens a viewer in osparc for data in the NIH-sparc portal
+      operationId: get_redirection_to_viewer
+      parameters:
+      - required: true
+        schema:
+          title: File Type
+          type: string
+        name: file_type
+        in: query
+      - required: true
+        schema:
+          title: Viewer Key
+          pattern: ^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$
+          type: string
+        name: viewer_key
+        in: query
+      - required: true
+        schema:
+          title: Viewer Version
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
+        name: viewer_version
+        in: query
+      - required: true
+        schema:
+          title: File Size
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: file_size
+        in: query
+      - required: true
+        schema:
+          title: Download Link
+          maxLength: 2083
+          minLength: 1
+          type: string
+          format: uri
+        name: download_link
+        in: query
+      - required: false
+        schema:
+          title: File Name
+          type: string
+          default: unknown
+        name: file_name
+        in: query
+      responses:
+        '302':
+          description: Opens osparc and starts viewer for selected data
+  /study/{study_id}:
+    get:
+      tags:
+      - sparc
+      summary: Get Redirection To Study Page
+      description: Opens a study published in osparc
+      operationId: get_redirection_to_study_page
+      parameters:
+      - required: true
+        schema:
+          title: Study Id
+          type: string
+          format: uuid
+        name: study_id
+        in: path
+      responses:
+        '302':
+          description: Opens osparc and opens a copy of publised study
+components:
+  schemas:
+    Envelope_list_simcore_service_webserver.studies_dispatcher.handlers_rest.Viewer__:
+      title: Envelope[list[simcore_service_webserver.studies_dispatcher.handlers_rest.Viewer]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/Viewer'
+        error:
+          title: Error
+    HTTPValidationError:
+      title: HTTPValidationError
+      type: object
+      properties:
+        detail:
+          title: Detail
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationError'
+    ValidationError:
+      title: ValidationError
+      required:
+      - loc
+      - msg
+      - type
+      type: object
+      properties:
+        loc:
+          title: Location
+          type: array
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+        msg:
+          title: Message
+          type: string
+        type:
+          title: Error Type
+          type: string
+    Viewer:
+      title: Viewer
+      required:
+      - title
+      - file_type
+      - view_url
+      type: object
+      properties:
+        title:
+          title: Title
+          type: string
+          description: Short formatted label with name and version of the viewer
+        file_type:
+          title: File Type
+          type: string
+          description: Identifier for the file type
+        view_url:
+          title: View Url
+          maxLength: 2083
+          minLength: 1
+          type: string
+          description: Base url to execute viewer. Needs appending file_size,[file_name]
+            and download_link as query parameters
+          format: uri
+      description: "API model for a viewer resource\n\nA viewer is a service with\
+        \ an associated filetype.\nYou can think of it as a tuple (filetype, service)\n\
+        \nThe service could consume other filetypes BUT at this\ninterface this is\
+        \ represented in yet another viewer resource\n\nFor instance, the same service\
+        \ can be in two different viewer resources\n  - viewer1=(JPEG, RawGraph service)\n\
+        \  - viewer2=(CSV, RawGraph service)\n\nA viewer can be dispatched using the\
+        \ view_url and appending the"
