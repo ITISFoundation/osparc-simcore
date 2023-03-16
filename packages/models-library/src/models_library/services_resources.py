@@ -29,7 +29,9 @@ ResourceName = str
 
 # NOTE: replace hard coded `container` with function which can
 # extract the name from the `service_key` or `registry_address/service_key`
-DEFAULT_SINGLE_SERVICE_NAME: Final[DockerComposeServiceName] = "container"
+DEFAULT_SINGLE_SERVICE_NAME: Final[DockerComposeServiceName] = parse_obj_as(
+    DockerComposeServiceName, "container"
+)
 
 MEMORY_50MB: Final[int] = parse_obj_as(ByteSize, "50mib")
 MEMORY_250MB: Final[int] = parse_obj_as(ByteSize, "250mib")
