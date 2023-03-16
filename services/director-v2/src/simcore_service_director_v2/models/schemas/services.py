@@ -33,21 +33,13 @@ class NodeRequirements(BaseModel):
         description="defines the required (maximum) amount of RAM for running the services",
         alias="RAM",
     )
-    mpi: Optional[int] = Field(
-        None,
-        deprecated=True,
-        description="defines whether a MPI node is required for running the services",
-        alias="MPI",
-        le=1,
-        ge=0,
-    )
     vram: Optional[ByteSize] = Field(
         default=None,
         description="defines the required (maximum) amount of VRAM for running the services",
         alias="VRAM",
     )
 
-    @validator("mpi", "vram", "gpu", always=True, pre=True)
+    @validator("vram", "gpu", always=True, pre=True)
     @classmethod
     def check_0_is_none(cls, v):
         if v == 0:
