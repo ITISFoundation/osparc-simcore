@@ -297,7 +297,7 @@ async def remove_users_manually_marked_as_guests(
         )
 
 
-@log_decorator(logger, logging.WARNING)
+@log_decorator(logger, log_traceback=True)
 async def _remove_single_orphaned_service(
     app: web.Application,
     interactive_service: dict[str, Any],
