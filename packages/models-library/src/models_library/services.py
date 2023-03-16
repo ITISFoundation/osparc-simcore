@@ -58,7 +58,7 @@ FileName = constr(regex=FILENAME_RE)
 
 
 class ServiceKey(ConstrainedStr):
-    regex = re.compile(KEY_RE)
+    regex = re.compile(SERVICE_KEY_RE)
 
 
 class ServiceVersion(ConstrainedStr):

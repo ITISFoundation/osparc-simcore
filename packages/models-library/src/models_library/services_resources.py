@@ -1,13 +1,14 @@
 import logging
+import re
 from typing import Any, Final, Union
 
 from pydantic import (
     BaseModel,
     ByteSize,
+    ConstrainedStr,
     Field,
     StrictFloat,
     StrictInt,
-    constr,
     parse_obj_as,
     root_validator,
 )
@@ -16,8 +17,15 @@ from .utils.fastapi_encoders import jsonable_encoder
 
 logger = logging.getLogger(__name__)
 
-DockerImage = constr(regex=r"[\w/-]+:[\w.@]+")
-DockerComposeServiceName = constr(regex=r"^[a-zA-Z0-9._-]+$")
+
+class DockerImage(ConstrainedStr):
+    regex = re.compile(r"[\w/-]+:[\w.@]+")
+
+
+class DockerComposeServiceName(ConstrainedStr):
+    regex = re.compile(r"^[a-zA-Z0-9._-]+$")
+
+
 ResourceName = str
 
 # NOTE: replace hard coded `container` with function which can
