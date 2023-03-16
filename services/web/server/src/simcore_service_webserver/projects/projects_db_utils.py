@@ -315,7 +315,7 @@ class BaseProjectDB:
         if not project_row:
             raise ProjectNotFoundError(
                 project_uuid=project_uuid,
-                condition=f"{user_id=}, {only_templates=}, {only_published=}, {check_permissions=}",
+                search_context=f"{user_id=}, {only_templates=}, {only_published=}, {check_permissions=}",
             )
 
         # check the access rights

@@ -82,6 +82,7 @@ async def _get_published_template_project(
             check_permissions="read",  # any user has read access
         )
         if not prj:
+            # Not sure this happens but this condition was checked before so better be safe
             raise ProjectNotFoundError(project_uuid)
 
         return prj
@@ -90,7 +91,7 @@ async def _get_published_template_project(
         log.debug(
             "Requested project with %s is not published. Reason: %s",
             f"{project_uuid=}",
-            err,
+            err.detailed_message(),
         )
 
         raise RedirectToFrontEndPageError(
