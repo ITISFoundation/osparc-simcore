@@ -54,7 +54,6 @@ class NodeRequirements(BaseModel):
                 {
                     "CPU": 1.0,
                     "RAM": 4194304,
-                    "MPI": 1,
                 },
             ]
         }

@@ -53,7 +53,6 @@ class Image(BaseModel):
                 CPU=1.0,
                 GPU=1 if values.get("requires_gpu") else 0,
                 RAM=parse_obj_as(ByteSize, "128 MiB"),
-                MPI=1 if values.get("requires_mpi") else 0,
             )
         return v
 
