@@ -227,7 +227,7 @@ qx.Class.define("osparc.file.FileUploader", {
 
       const aborted = () => {
         this.__presignedLinkData = null;
-        this.fireEvent("uploadAborted");
+        setTimeout(() => this.fireEvent("uploadAborted"), 2000);
       };
       const abortUrl = this.__presignedLinkData.resp.links.abort_upload;
       if (abortUrl) {

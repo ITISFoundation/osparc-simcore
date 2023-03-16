@@ -322,13 +322,16 @@ qx.Class.define("osparc.file.FilePicker", {
         flex: 1
       });
 
-      const stopButton = new qx.ui.form.Button().set({
+      const stopButton = new osparc.ui.form.FetchButton().set({
         icon: "@FontAwesome5Solid/times/16",
         toolTipText: this.tr("Cancel upload"),
         appearance: "danger-button",
         allowGrowX: false
       });
-      stopButton.addListener("tap", () => this.getNode()["requestAbortUpload"] = true);
+      stopButton.addListener("tap", () => {
+        stopButton.setFetching(true);
+        this.getNode()["requestAbortUpload"] = true;
+      });
       progressLayout.add(stopButton);
 
       const progressChanged = () => {
