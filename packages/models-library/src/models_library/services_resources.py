@@ -1,7 +1,10 @@
 import logging
 import re
+from enum import auto
 from typing import Any, Final, Union
 
+from models_library.docker import DockerGenericTag
+from models_library.utils.enums import StrAutoEnum
 from pydantic import (
     BaseModel,
     ByteSize,
@@ -16,10 +19,6 @@ from pydantic import (
 from .utils.fastapi_encoders import jsonable_encoder
 
 logger = logging.getLogger(__name__)
-
-
-class DockerImage(ConstrainedStr):
-    regex = re.compile(r"[\w/-]+:[\w.@]+")
 
 
 class DockerComposeServiceName(ConstrainedStr):
@@ -65,8 +64,14 @@ class ResourceValue(BaseModel):
 ResourcesDict = dict[ResourceName, ResourceValue]
 
 
+class BootMode(StrAutoEnum):
+    CPU = auto()
+    GPU = auto()
+    MPI = auto()
+
+
 class ImageResources(BaseModel):
-    image: DockerImage = Field(
+    image: DockerGenericTag = Field(
         ...,
         description=(
             "Used by the frontend to provide a context for the users."
@@ -76,6 +81,10 @@ class ImageResources(BaseModel):
         ),
     )
     resources: ResourcesDict
+    boot_modes: list[BootMode] = Field(
+        default=[BootMode.CPU],
+        description="describe how a service shall be booted, using CPU, MPI, openMP or GPU",
+    )
 
     class Config:
         schema_extra = {
