@@ -11,10 +11,10 @@ IFS=$'\n\t'
 
 
 # Installation instructions from https://rclone.org/docker/
-
-apt-get -y install fuse=2.9.9-3
+R_CLONE_VERSION="1.62.1"
+apt-get -y install fuse=2.9.9-5
 mkdir --parents /var/lib/docker-plugins/rclone/config
 mkdir --parents /var/lib/docker-plugins/rclone/cache
-docker plugin install rclone/docker-volume-rclone:amd64-1.57.0 args="-v" --alias rclone --grant-all-permissions
+docker plugin install rclone/docker-volume-rclone:amd64-${R_CLONE_VERSION} args="-v" --alias rclone --grant-all-permissions
 docker plugin list
 docker plugin inspect rclone
