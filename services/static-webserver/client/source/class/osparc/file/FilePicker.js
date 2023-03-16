@@ -256,6 +256,13 @@ qx.Class.define("osparc.file.FilePicker", {
       FILES_TREE: 1,
       TOOLBAR: 2,
       DOWNLOAD_LINK: 3
+    },
+
+    PROGRESS_VALUES: {
+      NOTHING: 0,
+      FETCHING_PLINK: 1,
+      CHUNKING: 2,
+      COMPLETING: 99
     }
   },
 
@@ -629,7 +636,7 @@ qx.Class.define("osparc.file.FilePicker", {
       const fileUuid = studyId +"/"+ nodeId +"/"+ fileId;
       const fileSize = file.size;
       const dataStore = osparc.store.Data.getInstance();
-      this.getNode().getStatus().setProgress(1);
+      this.getNode().getStatus().setProgress(this.self().PROGRESS_VALUES.FETCHING_PLINK);
       dataStore.getPresignedLink(download, locationId, fileUuid, fileSize)
         .then(presignedLinkData => {
           if (presignedLinkData.resp.urls) {
@@ -645,7 +652,7 @@ qx.Class.define("osparc.file.FilePicker", {
 
     // Use XMLHttpRequest to upload the file to S3.
     __uploadFile: async function(file, presignedLinkData) {
-      this.getNode().getStatus().setProgress(2);
+      this.getNode().getStatus().setProgress(this.self().PROGRESS_VALUES.CHUNKING);
 
       // create empty object, it will be filled up with etags and 1 based chunk ids when chunks get uploaded
       this.__uploadedParts = [];
@@ -711,7 +718,7 @@ qx.Class.define("osparc.file.FilePicker", {
 
     // Use XMLHttpRequest to complete the upload to S3
     __checkCompleteUpload: function(file, presignedLinkData) {
-      this.getNode().getStatus().setProgress(99);
+      this.getNode().getStatus().setProgress(this.self().PROGRESS_VALUES.COMPLETING);
       const completeUrl = presignedLinkData.resp.links.complete_upload;
       const location = presignedLinkData.locationId;
       const path = presignedLinkData.fileUuid;
@@ -771,7 +778,7 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     abortUpload: function(presignedLinkData) {
-      this.getNode().getStatus().setProgress(0);
+      this.getNode().getStatus().setProgress(this.self().PROGRESS_VALUES.NOTHING);
       const abortUrl = presignedLinkData.resp.links.abort_upload;
       const xhr = new XMLHttpRequest();
       xhr.open("POST", abortUrl, true);
