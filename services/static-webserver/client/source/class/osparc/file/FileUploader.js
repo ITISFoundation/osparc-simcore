@@ -113,17 +113,27 @@ qx.Class.define("osparc.file.FileUploader", {
         }
         const chunkBlob = this.self().createChunk(file, fileSize, chunkIdx, chunkSize);
         try {
-          const uploaded = await this.__uploadChunk(file, chunkBlob, chunkIdx);
-          if (!uploaded) {
-            this.__abortUpload();
+          const eTag = await this.__uploadChunk(chunkBlob, chunkIdx);
+          if (eTag) {
+            // remove double double quotes ""e_tag"" -> "e_tag"
+            this.__uploadedParts[chunkIdx]["e_tag"] = eTag.slice(1, -1);
+            const uploadedParts = this.__uploadedParts.filter(uploadedPart => uploadedPart["e_tag"] !== null).length;
+            const progress = uploadedParts/this.__uploadedParts.length;
+            // force progress value to be between 1 and 99
+            const nProgress = Math.min(Math.max(100*progress-1, 1), 99);
+            this.getNode().getStatus().setProgress(nProgress);
+            if (this.__uploadedParts.every(uploadedPart => uploadedPart["e_tag"] !== null)) {
+              this.__checkCompleteUpload(file);
+            }
           }
         } catch (err) {
+          console.error(err);
           this.__abortUpload();
         }
       }
     },
 
-    __uploadChunk: function(file, chunkBlob, chunkIdx) {
+    __uploadChunk: function(chunkBlob, chunkIdx) {
       return new Promise((resolve, reject) => {
         // From https://github.com/minio/cookbook/blob/master/docs/presigned-put-upload-via-browser.md
         const url = this.__presignedLinkData.resp.urls[chunkIdx];
@@ -131,22 +141,8 @@ qx.Class.define("osparc.file.FileUploader", {
         xhr.onload = () => {
           if (xhr.status == 200) {
             const eTag = xhr.getResponseHeader("etag");
-            if (eTag) {
-              // remove double double quotes ""etag"" -> "etag"
-              this.__uploadedParts[chunkIdx]["e_tag"] = eTag.slice(1, -1);
-              const uploadedParts = this.__uploadedParts.filter(uploadedPart => uploadedPart["e_tag"] !== null).length;
-              const progress = uploadedParts/this.__uploadedParts.length;
-              // force progress value to be between 1 and 99
-              const nProgress = Math.min(Math.max(100*progress-1, 1), 99);
-              this.getNode().getStatus().setProgress(nProgress);
-              if (this.__uploadedParts.every(uploadedPart => uploadedPart["e_tag"] !== null)) {
-                this.__checkCompleteUpload(file, xhr);
-              }
-            }
-            resolve(Boolean(eTag));
+            resolve(eTag);
           } else {
-            console.error(xhr.response);
-            this.__abortUpload();
             reject(xhr.response);
           }
         };
@@ -157,6 +153,11 @@ qx.Class.define("osparc.file.FileUploader", {
 
     // Use XMLHttpRequest to complete the upload to S3
     __checkCompleteUpload: function(file) {
+      if (this.getNode()["abortRequested"]) {
+        this.__abortUpload();
+        return;
+      }
+
       const presignedLinkData = this.__presignedLinkData;
       this.getNode().getStatus().setProgress(this.self().PROGRESS_VALUES.COMPLETING);
       const completeUrl = presignedLinkData.resp.links.complete_upload;
