@@ -1,11 +1,13 @@
 from typing import Final
 
-MSG_PROJECT_NOT_FOUND: Final[str] = "Link with ID '{project_id}' cannot be found."
+# NOTE: MSG_* strings MUST be human readable messages
+
+MSG_PROJECT_NOT_FOUND: Final[str] = "Cannot find any study with ID '{project_id}'."
 
 
 MSG_PROJECT_NOT_PUBLISHED: Final[
     str
-] = "Link with ID '{project_id}' does not match any published study."
+] = "Cannot find any published study with ID '{project_id}'"
 
 
 MSG_UNEXPECTED_ERROR: Final[
