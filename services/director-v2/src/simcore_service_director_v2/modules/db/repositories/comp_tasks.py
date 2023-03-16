@@ -9,7 +9,7 @@ from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
-from models_library.services import ServiceDockerData, ServiceKeyVersion
+from models_library.services import ServiceDockerData
 from models_library.users import UserID
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert
@@ -64,10 +64,7 @@ async def _generate_tasks_list_from_project(
     for internal_id, node_id in enumerate(project.workbench, 1):
         node: Node = project.workbench[node_id]
 
-        service_key_version = ServiceKeyVersion(
-            key=node.key,
-            version=node.version,
-        )
+        # get node infos
         node_class = to_node_class(node.key)
         node_details: Optional[ServiceDockerData] = None
         node_resources: Optional[dict[str, Any]] = None
@@ -78,7 +75,7 @@ async def _generate_tasks_list_from_project(
             node_details, node_resources, node_extras = await asyncio.gather(
                 _get_service_details(catalog_client, user_id, product_name, node),
                 catalog_client.get_service_resources(user_id, node.key, node.version),
-                director_client.get_service_extras(service_key_version),
+                director_client.get_service_extras(node.key, node.version),
             )
 
         if not node_details:
