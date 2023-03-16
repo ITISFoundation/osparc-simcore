@@ -29,7 +29,7 @@ class GroupsRepository(BaseRepository):
             result = await conn.execute(
                 sa.select([groups]).where(groups.c.type == GroupType.EVERYONE)
             )
-            row = result.first()
+            row = await result.first()
         if not row:
             raise RepositoryError(f"{GroupType.EVERYONE} groups was never initialized")
         return GroupAtDB.from_orm(row)
