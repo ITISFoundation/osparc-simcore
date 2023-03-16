@@ -168,7 +168,9 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this._addAt(control, 2);
           break;
         case "logo":
-          control = osparc.component.widget.LogoOnOff.getInstance();
+          control = osparc.component.widget.LogoOnOff.getInstance().set({
+            alignY: "middle"
+          });
           this.getChildControl("left-items").add(control);
           break;
         case "logo-powered":
@@ -204,8 +206,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           control.addListener("execute", () => {
             const infoMerged = new osparc.info.MergedLarge(this.getStudy());
             const title = this.tr("Information");
-            const width = 600;
-            const height = 700;
+            const width = osparc.info.CardLarge.WIDTH;
+            const height = osparc.info.CardLarge.HEIGHT;
             osparc.ui.window.Window.popUpInWindow(infoMerged, title, width, height);
           });
           break;
