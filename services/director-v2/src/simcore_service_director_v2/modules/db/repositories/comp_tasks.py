@@ -52,6 +52,17 @@ async def _get_service_details(
     return ServiceDockerData.construct(**service_details)
 
 
+def _compute_node_requirements(node_resources: dict[str, Any]) -> NodeRequirements:
+    node_defined_resources = {}
+
+    for image_data in node_resources.values():
+        for resource_name, resource_value in image_data.get("resources", {}).items():
+            node_defined_resources[resource_name] = node_defined_resources.get(
+                resource_name, 0
+            ) + min(resource_value["limit"], resource_value["reservation"])
+    return NodeRequirements.parse_obj(node_defined_resources)
+
+
 async def _generate_tasks_list_from_project(
     project: ProjectAtDB,
     catalog_client: CatalogClient,
@@ -86,29 +97,18 @@ async def _generate_tasks_list_from_project(
             "name": node.key,
             "tag": node.version,
         }
+
         if node_resources:
-            # TODO: this works only for single containers
-            node_defined_resources = {}
-            for resource_name, resource_value in (
-                node_resources.get("container", {}).get("resources", {}).items()
-            ):
-                node_defined_resources[resource_name] = min(
-                    resource_value["limit"], resource_value["reservation"]
-                )
-            data.update(
-                node_requirements=NodeRequirements.parse_obj(node_defined_resources)
-            )
+            data.update(node_requirements=_compute_node_requirements(node_resources))
         if node_extras and node_extras.container_spec:
             data.update(command=node_extras.container_spec.command)
         image = Image.parse_obj(data)
-        assert image.command  # nosec
 
         assert node.state is not None  # nosec
         task_state = node.state.current_status
         if node_id in published_nodes and node_class == NodeClass.COMPUTATIONAL:
             task_state = RunningState.PUBLISHED
 
-        assert node_details  # nosec
         task_db = CompTaskAtDB(
             project_id=project.uuid,
             node_id=NodeID(node_id),

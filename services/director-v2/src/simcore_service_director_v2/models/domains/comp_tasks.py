@@ -31,7 +31,7 @@ class Image(BaseModel):
     requires_mpi: Optional[bool] = Field(
         None, deprecated=True, description="Use instead node_requirements"
     )
-    node_requirements: NodeRequirements = Field(
+    node_requirements: Optional[NodeRequirements] = Field(
         None, description="the requirements for the service to run on a node"
     )
     command: list[str] = Field(
