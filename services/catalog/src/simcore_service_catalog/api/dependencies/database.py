@@ -23,10 +23,6 @@ def get_repository(repo_type: type[BaseRepository]) -> Callable:
         # 2nd one was acquiring a connection per request which works but blocks the director-v2 responsiveness once
         # the max amount of connections is reached
         # now the current solution is to connect connection when needed.
-        logger.info(
-            "%s",
-            f"current pool connections {engine.pool.checkedin()=},{engine.pool.checkedout()=}",  # type: ignore
-        )
         yield repo_type(db_engine=engine)
 
     return _get_repo

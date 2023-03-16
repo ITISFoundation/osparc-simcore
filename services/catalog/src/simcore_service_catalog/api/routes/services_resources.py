@@ -26,20 +26,20 @@ from ...models.schemas.constants import (
     RESPONSE_MODEL_POLICY,
     SIMCORE_SERVICE_SETTINGS_LABELS,
 )
+from ...services.director import DirectorApi
 from ...services.function_services import is_function_service
 from ...utils.service_resources import (
     merge_service_resources_with_user_specs,
     parse_generic_resource,
 )
 from ..dependencies.database import get_repository
-from ..dependencies.director import DirectorApi, get_director_api
+from ..dependencies.director import get_director_api
 from ..dependencies.services import get_default_service_resources
 from ..dependencies.user_groups import list_user_groups
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-SIMCORE_SERVICE_SETTINGS_LABELS: Final[str] = "simcore.service.settings"
 SIMCORE_SERVICE_COMPOSE_SPEC_LABEL: Final[str] = "simcore.service.compose-spec"
 
 
@@ -199,10 +199,10 @@ async def get_service_resources(
         )
 
         if not spec_service_labels:
-            spec_service_resources: ResourcesDict = default_service_resources
+            spec_service_resources = default_service_resources
         else:
             spec_service_settings = _get_service_settings(spec_service_labels)
-            spec_service_resources: ResourcesDict = _resources_from_settings(
+            spec_service_resources = _resources_from_settings(
                 spec_service_settings,
                 default_service_resources,
                 service_key,

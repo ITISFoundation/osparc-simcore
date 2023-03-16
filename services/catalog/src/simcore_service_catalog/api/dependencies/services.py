@@ -17,7 +17,7 @@ from ...models.schemas.services_specifications import ServiceSpecifications
 from ...services.director import DirectorApi
 from ...services.function_services import get_function_service, is_function_service
 from .database import get_repository
-from .director import DirectorApi, get_director_api
+from .director import get_director_api
 
 
 def get_default_service_resources(request: Request) -> ResourcesDict:

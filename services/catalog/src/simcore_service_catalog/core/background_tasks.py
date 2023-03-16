@@ -13,7 +13,7 @@ import asyncio
 import logging
 from contextlib import suppress
 from pprint import pformat
-from typing import Final
+from typing import Any, Final, cast
 
 from fastapi import FastAPI
 from models_library.services import ServiceDockerData
@@ -42,7 +42,7 @@ async def _list_registry_services(
 ) -> ServiceDockerDataMap:
 
     client = get_director_api(app)
-    data = await client.get("/services")
+    data = cast(list[dict[str, Any]], await client.get("/services"))
     services: ServiceDockerDataMap = {
         (s.key, s.version): s for s in iter_service_docker_data()
     }
