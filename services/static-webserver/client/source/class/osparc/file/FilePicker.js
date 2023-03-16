@@ -435,10 +435,8 @@ qx.Class.define("osparc.file.FilePicker", {
       if (files.length > 0) {
         if (files.length === 1) {
           const fileUploader = new osparc.file.FileUploader(this.getNode());
-          [
-            "itemReset",
-            "fileUploaded"
-          ].forEach(e => fileUploader.addListener(e, () => this.fireEvent(e)));
+          fileUploader.addListener("uploadAborted", () => this.__resetOutput());
+          fileUploader.addListener("fileUploaded", () => this.fireEvent("fileUploaded"));
           fileUploader.retrieveUrlAndUpload(files[0]);
           return true;
         }
@@ -601,6 +599,12 @@ qx.Class.define("osparc.file.FilePicker", {
         this.setOutputValueFromStore(selectedItem.getLocation(), selectedItem.getDatasetId(), selectedItem.getFileId(), selectedItem.getLabel());
         this.fireEvent("itemSelected");
       }
+    },
+
+    __resetOutput: function() {
+      const node = this.getNode();
+      osparc.file.FilePicker.resetOutputValue(node);
+      this.fireEvent("itemReset");
     },
 
     __getOutputFile: function() {

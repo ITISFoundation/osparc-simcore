@@ -36,7 +36,7 @@ qx.Class.define("osparc.file.FileUploader", {
   },
 
   events: {
-    "itemReset": "qx.event.type.Event",
+    "uploadAborted": "qx.event.type.Event",
     "fileUploaded": "qx.event.type.Event"
   },
 
@@ -222,13 +222,7 @@ qx.Class.define("osparc.file.FileUploader", {
       const xhr = new XMLHttpRequest();
       xhr.open("POST", abortUrl, true);
 
-      this.__resetOutput();
-    },
-
-    __resetOutput: function() {
-      const node = this.getNode();
-      osparc.file.FilePicker.resetOutputValue(node);
-      this.fireEvent("itemReset");
+      this.fireEvent("uploadAborted");
     }
   }
 });
