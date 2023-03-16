@@ -68,12 +68,12 @@ async def _generate_tasks_list_from_project(
             key=node.key,
             version=node.version,
         )
-        node_class = to_node_class(service_key_version.key)
+        node_class = to_node_class(node.key)
         node_details: Optional[ServiceDockerData] = None
         node_resources: Optional[dict[str, Any]] = None
         node_extras: Optional[ServiceExtras] = None
         if node_class == NodeClass.FRONTEND:
-            node_details = _FRONTEND_SERVICES_CATALOG.get(service_key_version.key, None)
+            node_details = _FRONTEND_SERVICES_CATALOG.get(node.key, None)
         else:
             node_details, node_resources, node_extras = await asyncio.gather(
                 _get_service_details(catalog_client, user_id, product_name, node),
@@ -86,8 +86,8 @@ async def _generate_tasks_list_from_project(
 
         # aggregates node_details and node_extras into Image
         data: dict[str, Any] = {
-            "name": service_key_version.key,
-            "tag": service_key_version.version,
+            "name": node.key,
+            "tag": node.version,
         }
         if node_resources:
             # TODO: this works only for single containers
