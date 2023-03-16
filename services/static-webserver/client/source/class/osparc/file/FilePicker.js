@@ -49,6 +49,8 @@ qx.Class.define("osparc.file.FilePicker", {
       pageContext
     });
 
+    this.__presignedLinkData = null;
+
     this.__buildLayout();
   },
 
@@ -272,6 +274,7 @@ qx.Class.define("osparc.file.FilePicker", {
     __selectedFile: null,
     __selectedFileFound: null,
     __fileDownloadLink: null,
+    __presignedLinkData: null,
     __uploadedParts: null,
 
     setOutputValueFromStore: function(store, dataset, path, label) {
@@ -644,7 +647,7 @@ qx.Class.define("osparc.file.FilePicker", {
               this.__uploadFile(file, presignedLinkData);
             } catch (error) {
               console.error(error);
-              this.abortUpload(presignedLinkData);
+              this.abortUpload();
             }
           }
         });
@@ -652,6 +655,8 @@ qx.Class.define("osparc.file.FilePicker", {
 
     // Use XMLHttpRequest to upload the file to S3.
     __uploadFile: async function(file, presignedLinkData) {
+      this.__presignedLinkData = presignedLinkData;
+
       this.getNode().getStatus().setProgress(this.self().PROGRESS_VALUES.CHUNKING);
 
       // create empty object, it will be filled up with etags and 1 based chunk ids when chunks get uploaded
@@ -669,10 +674,10 @@ qx.Class.define("osparc.file.FilePicker", {
         try {
           const uploaded = await this.__uploadChunk(file, chunkBlob, presignedLinkData, chunkIdx);
           if (!uploaded) {
-            this.abortUpload(presignedLinkData);
+            this.abortUpload();
           }
         } catch (err) {
-          this.abortUpload(presignedLinkData);
+          this.abortUpload();
         }
       }
     },
@@ -700,7 +705,7 @@ qx.Class.define("osparc.file.FilePicker", {
             resolve(Boolean(eTag));
           } else {
             console.error(xhr.response);
-            this.abortUpload(presignedLinkData);
+            this.abortUpload();
             reject(xhr.response);
           }
         };
@@ -733,7 +738,7 @@ qx.Class.define("osparc.file.FilePicker", {
         const resp = JSON.parse(xhr.responseText);
         if ("error" in resp && resp["error"]) {
           console.error(resp["error"]);
-          this.abortUpload(presignedLinkData);
+          this.abortUpload();
         } else if ("data" in resp) {
           if (xhr.status == 202) {
             console.log("waiting for completion", file.name);
@@ -774,14 +779,19 @@ qx.Class.define("osparc.file.FilePicker", {
       if ("location" in fileMetadata && "dataset" in fileMetadata && "path" in fileMetadata && "name" in fileMetadata) {
         this.setOutputValueFromStore(fileMetadata["location"], fileMetadata["dataset"], fileMetadata["path"], fileMetadata["name"]);
       }
+      this.__presignedLinkData = null;
       this.fireEvent("fileUploaded");
     },
 
-    abortUpload: function(presignedLinkData) {
+    abortUpload: function() {
       this.getNode().getStatus().setProgress(this.self().PROGRESS_VALUES.NOTHING);
-      const abortUrl = presignedLinkData.resp.links.abort_upload;
-      const xhr = new XMLHttpRequest();
-      xhr.open("POST", abortUrl, true);
+      if (this.__presignedLinkData) {
+        const presignedLinkData = this.__presignedLinkData;
+        const abortUrl = presignedLinkData.resp.links.abort_upload;
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", abortUrl, true);
+        this.__presignedLinkData = null;
+      }
     }
   }
 });
