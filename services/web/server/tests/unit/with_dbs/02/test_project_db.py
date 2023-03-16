@@ -29,6 +29,7 @@ from simcore_postgres_database.models.projects_to_products import projects_to_pr
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.projects.projects_db import (
+    ANY_USER,
     ProjectAccessRights,
     ProjectDBAPI,
     ProjectInvalidRightsError,
@@ -40,7 +41,7 @@ from simcore_service_webserver.projects.projects_db import (
 from simcore_service_webserver.projects.projects_db_utils import (
     DB_EXCLUSIVE_COLUMNS,
     SCHEMA_NON_NULL_KEYS,
-    Permission,
+    PermissionStr,
 )
 from simcore_service_webserver.projects.projects_exceptions import (
     NodeNotFoundError,
@@ -127,6 +128,17 @@ def all_permission_combinations() -> list[str]:
     for el in temp:
         res.append("|".join(el))
     return res
+
+
+def test_check_project_permissions_for_any_user():
+    project = {"access_rights": {"1": {"read": True, "write": False, "delete": False}}}
+
+    check_project_permissions(
+        project,
+        user_id=ANY_USER,
+        user_groups=[{"gid": 1, "type": GroupType.EVERYONE}],
+        permission="read",
+    )
 
 
 @pytest.mark.parametrize("wanted_permissions", all_permission_combinations())
@@ -348,7 +360,6 @@ async def test_insert_project_to_db(
     db_api: ProjectDBAPI,
     osparc_product_name: str,
 ):
-
     original_project = deepcopy(fake_project)
 
     # add project without user id -> by default creates a template
@@ -949,7 +960,7 @@ async def test_has_permission(
         product_name=osparc_product_name,
     )
 
-    for permission in get_args(Permission):
+    for permission in get_args(PermissionStr):
         assert permission in access_rights
 
         # owner always is allowed to do everything

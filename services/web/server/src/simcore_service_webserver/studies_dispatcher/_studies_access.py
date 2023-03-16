@@ -28,7 +28,7 @@ from simcore_service_webserver.projects.project_models import ProjectDict
 from .._constants import INDEX_RESOURCE_NAME
 from ..garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
 from ..products import get_product_name
-from ..projects.projects_db import ProjectDBAPI
+from ..projects.projects_db import ANY_USER, ProjectDBAPI
 from ..projects.projects_exceptions import (
     ProjectInvalidRightsError,
     ProjectNotFoundError,
@@ -78,7 +78,7 @@ async def _get_published_template_project(
             # 2. MUST be checked for publication
             only_published=True,
             # 3. MUST be shared with EVERYONE=1 in read mode, i.e.
-            user_id=-1,  # any user
+            user_id=ANY_USER,  # any user
             check_permissions="read",  # any user has read access
         )
         if not prj:
