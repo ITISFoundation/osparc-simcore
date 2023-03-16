@@ -1,5 +1,4 @@
 import logging
-import re
 from enum import auto
 from typing import Any, Final, Optional, Union
 
@@ -8,7 +7,6 @@ from models_library.utils.enums import StrAutoEnum
 from pydantic import (
     BaseModel,
     ByteSize,
-    ConstrainedStr,
     Field,
     StrictFloat,
     StrictInt,
@@ -21,16 +19,12 @@ from .utils.fastapi_encoders import jsonable_encoder
 logger = logging.getLogger(__name__)
 
 
-class DockerComposeServiceName(ConstrainedStr):
-    regex = re.compile(r"^[a-zA-Z0-9._-]+$")
-
-
 ResourceName = str
 
 # NOTE: replace hard coded `container` with function which can
 # extract the name from the `service_key` or `registry_address/service_key`
-DEFAULT_SINGLE_SERVICE_NAME: Final[DockerComposeServiceName] = parse_obj_as(
-    DockerComposeServiceName, "container"
+DEFAULT_SINGLE_SERVICE_NAME: Final[DockerGenericTag] = parse_obj_as(
+    DockerGenericTag, "container"
 )
 
 MEMORY_50MB: Final[int] = parse_obj_as(ByteSize, "50mib")
@@ -106,13 +100,13 @@ class ImageResources(BaseModel):
         }
 
 
-ServiceResourcesDict = dict[DockerComposeServiceName, ImageResources]
+ServiceResourcesDict = dict[DockerGenericTag, ImageResources]
 
 
 class ServiceResourcesDictHelpers:
     @staticmethod
     def create_from_single_service(
-        image: DockerComposeServiceName,
+        image: DockerGenericTag,
         resources: ResourcesDict,
         boot_modes: Optional[list[BootMode]] = None,
     ) -> ServiceResourcesDict:
@@ -132,7 +126,7 @@ class ServiceResourcesDictHelpers:
     @staticmethod
     def create_jsonable(
         service_resources: ServiceResourcesDict,
-    ) -> dict[DockerComposeServiceName, Any]:
+    ) -> dict[DockerGenericTag, Any]:
         return jsonable_encoder(service_resources)
 
     class Config:
