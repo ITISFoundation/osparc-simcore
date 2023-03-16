@@ -27,6 +27,8 @@ qx.Class.define("osparc.file.FileUploader", {
     this.set({
       node
     });
+
+    this.__presignedLinkData = null;
   },
 
   properties: {
@@ -57,6 +59,7 @@ qx.Class.define("osparc.file.FileUploader", {
   },
 
   members: {
+    __presignedLinkData: null,
     __uploadedParts: null,
 
     // Request to the server an upload URL.
@@ -77,18 +80,20 @@ qx.Class.define("osparc.file.FileUploader", {
       dataStore.getPresignedLink(download, locationId, fileUuid, fileSize)
         .then(presignedLinkData => {
           if (presignedLinkData.resp.urls) {
+            this.__presignedLinkData = presignedLinkData;
             try {
-              this.__uploadFile(file, presignedLinkData);
+              this.__uploadFile(file);
             } catch (error) {
               console.error(error);
-              this.__abortUpload(presignedLinkData);
+              this.__abortUpload();
             }
           }
         });
     },
 
     // Use XMLHttpRequest to upload the file to S3.
-    __uploadFile: async function(file, presignedLinkData) {
+    __uploadFile: async function(file) {
+      const presignedLinkData = this.__presignedLinkData;
       this.getNode().getStatus().setProgress(this.self().PROGRESS_VALUES.CHUNKING);
 
       // create empty object, it will be filled up with etags and 1 based chunk ids when chunks get uploaded
@@ -103,25 +108,25 @@ qx.Class.define("osparc.file.FileUploader", {
       const chunkSize = presignedLinkData.resp["chunk_size"];
       for (let chunkIdx = 0; chunkIdx < presignedLinkData.resp.urls.length; chunkIdx++) {
         if (this.getNode()["abortRequested"]) {
-          this.__abortUpload(presignedLinkData);
+          this.__abortUpload();
           break;
         }
         const chunkBlob = this.self().createChunk(file, fileSize, chunkIdx, chunkSize);
         try {
-          const uploaded = await this.__uploadChunk(file, chunkBlob, presignedLinkData, chunkIdx);
+          const uploaded = await this.__uploadChunk(file, chunkBlob, chunkIdx);
           if (!uploaded) {
-            this.__abortUpload(presignedLinkData);
+            this.__abortUpload();
           }
         } catch (err) {
-          this.__abortUpload(presignedLinkData);
+          this.__abortUpload();
         }
       }
     },
 
-    __uploadChunk: function(file, chunkBlob, presignedLinkData, chunkIdx) {
+    __uploadChunk: function(file, chunkBlob, chunkIdx) {
       return new Promise((resolve, reject) => {
         // From https://github.com/minio/cookbook/blob/master/docs/presigned-put-upload-via-browser.md
-        const url = presignedLinkData.resp.urls[chunkIdx];
+        const url = this.__presignedLinkData.resp.urls[chunkIdx];
         const xhr = new XMLHttpRequest();
         xhr.onload = () => {
           if (xhr.status == 200) {
@@ -135,13 +140,13 @@ qx.Class.define("osparc.file.FileUploader", {
               const nProgress = Math.min(Math.max(100*progress-1, 1), 99);
               this.getNode().getStatus().setProgress(nProgress);
               if (this.__uploadedParts.every(uploadedPart => uploadedPart["e_tag"] !== null)) {
-                this.__checkCompleteUpload(file, presignedLinkData, xhr);
+                this.__checkCompleteUpload(file, xhr);
               }
             }
             resolve(Boolean(eTag));
           } else {
             console.error(xhr.response);
-            this.__abortUpload(presignedLinkData);
+            this.__abortUpload();
             reject(xhr.response);
           }
         };
@@ -151,7 +156,8 @@ qx.Class.define("osparc.file.FileUploader", {
     },
 
     // Use XMLHttpRequest to complete the upload to S3
-    __checkCompleteUpload: function(file, presignedLinkData) {
+    __checkCompleteUpload: function(file) {
+      const presignedLinkData = this.__presignedLinkData;
       this.getNode().getStatus().setProgress(this.self().PROGRESS_VALUES.COMPLETING);
       const completeUrl = presignedLinkData.resp.links.complete_upload;
       const location = presignedLinkData.locationId;
@@ -167,7 +173,7 @@ qx.Class.define("osparc.file.FileUploader", {
         const resp = JSON.parse(xhr.responseText);
         if ("error" in resp && resp["error"]) {
           console.error(resp["error"]);
-          this.__abortUpload(presignedLinkData);
+          this.__abortUpload();
         } else if ("data" in resp) {
           if (xhr.status == 202) {
             console.log("waiting for completion", file.name);
@@ -214,14 +220,15 @@ qx.Class.define("osparc.file.FileUploader", {
       this.fireEvent("fileUploaded");
     },
 
-    __abortUpload: function(presignedLinkData) {
+    __abortUpload: function() {
       this.getNode()["abortRequested"] = false;
 
       this.getNode().getStatus().setProgress(this.self().PROGRESS_VALUES.NOTHING);
-      const abortUrl = presignedLinkData.resp.links.abort_upload;
+      const abortUrl = this.__presignedLinkData.resp.links.abort_upload;
       const xhr = new XMLHttpRequest();
       xhr.open("POST", abortUrl, true);
 
+      this.__presignedLinkData = null;
       this.fireEvent("uploadAborted");
     }
   }
