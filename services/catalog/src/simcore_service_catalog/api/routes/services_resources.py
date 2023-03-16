@@ -6,11 +6,11 @@ from typing import Any, Final, Optional, cast
 import yaml
 from aiocache import cached
 from fastapi import APIRouter, Depends, HTTPException, status
-from models_library.docker import DockerImageKey, DockerImageVersion
 from models_library.service_settings_labels import (
     ComposeSpecLabel,
     SimcoreServiceSettingLabelEntry,
 )
+from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import (
     ImageResources,
     ResourcesDict,
@@ -54,8 +54,8 @@ def _remove_deprecated_resources(resources: ResourcesDict) -> ResourcesDict:
 def _from_service_settings(
     settings: list[SimcoreServiceSettingLabelEntry],
     default_service_resources: ResourcesDict,
-    service_key: DockerImageKey,
-    service_version: DockerImageVersion,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
 ) -> ResourcesDict:
     # filter resource entries
     resource_entries = filter(lambda entry: entry.name.lower() == "resources", settings)
@@ -94,7 +94,7 @@ def _from_service_settings(
 
 
 async def _get_service_labels(
-    director_client: DirectorApi, key: DockerImageKey, version: DockerImageVersion
+    director_client: DirectorApi, key: ServiceKey, version: ServiceVersion
 ) -> Optional[dict[str, Any]]:
     try:
         service_labels = cast(
@@ -140,8 +140,8 @@ def _get_service_settings(
     key_builder=lambda f, *args, **kwargs: f"{f.__name__}_{kwargs.get('user_id', 'default')}_{kwargs['service_key']}_{kwargs['service_version']}",
 )
 async def get_service_resources(
-    service_key: DockerImageKey,
-    service_version: DockerImageVersion,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
     director_client: DirectorApi = Depends(get_director_api),
     default_service_resources: ResourcesDict = Depends(get_default_service_resources),
     services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
