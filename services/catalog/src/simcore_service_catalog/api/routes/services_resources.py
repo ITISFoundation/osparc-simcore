@@ -5,6 +5,7 @@ from typing import Any, Final, Optional, cast
 
 import yaml
 from fastapi import APIRouter, Depends, HTTPException, status
+from models_library.docker import DockerGenericTag
 from models_library.service_settings_labels import (
     ComposeSpecLabel,
     SimcoreServiceSettingLabelEntry,
@@ -178,7 +179,7 @@ async def get_service_resources(
     services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
     user_groups: list[GroupAtDB] = Depends(list_user_groups),
 ) -> ServiceResourcesDict:
-    image_version = f"{service_key}:{service_version}"
+    image_version = parse_obj_as(DockerGenericTag, f"{service_key}:{service_version}")
     if is_function_service(service_key):
         return ServiceResourcesDictHelpers.create_from_single_service(
             image_version, default_service_resources
