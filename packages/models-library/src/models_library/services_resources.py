@@ -1,7 +1,7 @@
 import logging
 import re
 from enum import auto
-from typing import Any, Final, Union
+from typing import Any, Final, Optional, Union
 
 from models_library.docker import DockerGenericTag
 from models_library.utils.enums import StrAutoEnum
@@ -112,11 +112,21 @@ ServiceResourcesDict = dict[DockerComposeServiceName, ImageResources]
 class ServiceResourcesDictHelpers:
     @staticmethod
     def create_from_single_service(
-        image: DockerComposeServiceName, resources: ResourcesDict
+        image: DockerComposeServiceName,
+        resources: ResourcesDict,
+        boot_modes: Optional[list[BootMode]] = None,
     ) -> ServiceResourcesDict:
+        if boot_modes is None:
+            boot_modes = [BootMode.CPU]
         return parse_obj_as(
             ServiceResourcesDict,
-            {DEFAULT_SINGLE_SERVICE_NAME: {"image": image, "resources": resources}},
+            {
+                DEFAULT_SINGLE_SERVICE_NAME: {
+                    "image": image,
+                    "resources": resources,
+                    "boot_modes": boot_modes,
+                }
+            },
         )
 
     @staticmethod
