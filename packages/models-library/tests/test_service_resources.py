@@ -23,7 +23,7 @@ from pydantic import parse_obj_as
         "simcore/services/dynamic/nice-service:v1.0.0",
         "a/docker-hub/image:1.0.0",
         "traefik:v1.0.0",
-        "traefik:v1.0.0@somehash",
+        "traefik:v1.0.0@sha256:4bed291aa5efb9f0d77b76ff7d4ab71eee410962965d052552db1fb80576431d",
     ),
 )
 def test_compose_image(example: str) -> None:
