@@ -29,7 +29,9 @@ def _setup_studies_access(app: web.Application, settings: StudiesDispatcherSetti
     # TODO: make sure that these routes are filtered properly in active middlewares
     app.router.add_routes(
         [
-            web.get(r"/study/{id}", study_handler, name="study"),
+            web.get(
+                r"/study/{id}", study_handler, name="get_redirection_to_study_page"
+            ),
         ]
     )
 
