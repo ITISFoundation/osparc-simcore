@@ -35,7 +35,6 @@ SCHEMA_NON_NULL_KEYS = ["thumbnail"]
 PermissionStr = Literal["read", "write", "delete"]
 
 ANY_USER_ID_SENTINEL = -1
-_NO_ACCESS_RIGHTS = {"read": False, "write": False, "delete": False}
 
 
 class ProjectAccessRights(Enum):
@@ -49,7 +48,7 @@ def check_project_permissions(
     project: Union[ProjectProxy, ProjectDict],
     user_id: int,
     user_groups: list[RowProxy],
-    permission: PermissionStr,
+    permission: str,
 ) -> None:
     """
     :raises ProjectInvalidRightsError if check fails
@@ -57,8 +56,9 @@ def check_project_permissions(
 
     if not permission:
         return
-    # TODO: type PermissionStr are literals. Either |-string or list[PermissionStr] !!
-    needed_permissions = permission.split("|")
+
+    requested_actions = set(permission.split("|"))
+    assert set(requested_actions).issubset(set(PermissionStr.__args__))  # nosec
 
     #
     # Get primary_gid, standard_gids and everyone_gid for user_id
@@ -96,21 +96,25 @@ def check_project_permissions(
     project_access_rights = deepcopy(project.get("access_rights", {}))
 
     # access rights for everyone
-    computed_permissions = project_access_rights.get(everyone_gid, _NO_ACCESS_RIGHTS)
+    can = project_access_rights.get(
+        everyone_gid, {"read": False, "write": False, "delete": False}
+    )
 
     # access rights for standard groups
     for group_id in standard_gids:
-        standard_project_access = project_access_rights.get(group_id, _NO_ACCESS_RIGHTS)
-        for k in computed_permissions.keys():
-            computed_permissions[k] = (
-                computed_permissions[k] or standard_project_access[k]
-            )
+        standard_project_access = project_access_rights.get(
+            group_id, {"read": False, "write": False, "delete": False}
+        )
+        for action in can.keys():
+            can[action] = can[action] or standard_project_access[action]
     # access rights for primary group
-    primary_access_right = project_access_rights.get(primary_gid, _NO_ACCESS_RIGHTS)
-    for k in computed_permissions.keys():
-        computed_permissions[k] = computed_permissions[k] or primary_access_right[k]
+    primary_access_right = project_access_rights.get(
+        primary_gid, {"read": False, "write": False, "delete": False}
+    )
+    for action in can.keys():
+        can[action] = can[action] or primary_access_right[action]
 
-    if any(not computed_permissions[p] for p in needed_permissions):
+    if any(not can[action] for action in requested_actions):
         raise ProjectInvalidRightsError(user_id, project.get("uuid"))
 
 
