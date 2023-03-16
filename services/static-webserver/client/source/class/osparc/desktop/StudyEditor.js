@@ -114,6 +114,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
   },
 
   statics: {
+    AUTO_SAVE_INTERVAL: 3000,
     READ_ONLY_TEXT: qx.locale.Manager.tr("You do not have writing permissions.<br>Your changes will not be saved.")
   },
 
@@ -553,8 +554,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __startAutoSaveTimer: function() {
       // Save every 3 seconds
-      const interval = 3000;
-      let timer = this.__autoSaveTimer = new qx.event.Timer(interval);
+      let timer = this.__autoSaveTimer = new qx.event.Timer(this.self().AUTO_SAVE_INTERVAL);
       timer.addListener("interval", () => {
         if (!osparc.wrapper.WebSocket.getInstance().isConnected()) {
           return;

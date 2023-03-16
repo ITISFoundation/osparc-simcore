@@ -227,7 +227,8 @@ qx.Class.define("osparc.file.FileUploader", {
 
       const aborted = () => {
         this.__presignedLinkData = null;
-        setTimeout(() => this.fireEvent("uploadAborted"), 2000);
+        // avoid interfering with the progress update
+        setTimeout(() => this.fireEvent("uploadAborted"), osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL);
       };
       const abortUrl = this.__presignedLinkData.resp.links.abort_upload;
       if (abortUrl) {
