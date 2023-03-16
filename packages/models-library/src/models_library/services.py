@@ -506,7 +506,7 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
                     "type": "computational",
                     "integration-version": "1.0.0",
                     "version": "1.7.0",
-                    "description": "oSparc Python Runner",
+                    "description": "oSparc Python Runner with boot options",
                     "contact": "smith@company.com",
                     "authors": [
                         {
