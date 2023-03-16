@@ -336,7 +336,7 @@ qx.Class.define("osparc.file.FilePicker", {
         appearance: "danger-button",
         allowGrowX: false
       });
-      stopButton.addListener("tap", () => this.getNode()["abortRequested"] = true);
+      stopButton.addListener("tap", () => this.requestAbort());
       progressLayout.add(stopButton);
 
       const progressChanged = () => {
@@ -771,6 +771,10 @@ qx.Class.define("osparc.file.FilePicker", {
         }
       };
       xhr.send();
+    },
+
+    requestAbort: function() {
+      this.getNode()["abortRequested"] = true;
     },
 
     __completeUpload: function(fileMetadata) {
