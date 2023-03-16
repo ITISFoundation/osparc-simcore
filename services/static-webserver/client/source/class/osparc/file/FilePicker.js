@@ -644,7 +644,7 @@ qx.Class.define("osparc.file.FilePicker", {
               this.__uploadFile(file, presignedLinkData);
             } catch (error) {
               console.error(error);
-              this.abortUpload(presignedLinkData);
+              this.__abortUpload(presignedLinkData);
             }
           }
         });
@@ -666,16 +666,16 @@ qx.Class.define("osparc.file.FilePicker", {
       const chunkSize = presignedLinkData.resp["chunk_size"];
       for (let chunkIdx = 0; chunkIdx < presignedLinkData.resp.urls.length; chunkIdx++) {
         if (this.getNode()["abortRequested"]) {
-          this.abortUpload(presignedLinkData);
+          this.__abortUpload(presignedLinkData);
         }
         const chunkBlob = this.__createChunk(file, fileSize, chunkIdx, chunkSize);
         try {
           const uploaded = await this.__uploadChunk(file, chunkBlob, presignedLinkData, chunkIdx);
           if (!uploaded) {
-            this.abortUpload(presignedLinkData);
+            this.__abortUpload(presignedLinkData);
           }
         } catch (err) {
-          this.abortUpload(presignedLinkData);
+          this.__abortUpload(presignedLinkData);
         }
       }
     },
@@ -703,7 +703,7 @@ qx.Class.define("osparc.file.FilePicker", {
             resolve(Boolean(eTag));
           } else {
             console.error(xhr.response);
-            this.abortUpload(presignedLinkData);
+            this.__abortUpload(presignedLinkData);
             reject(xhr.response);
           }
         };
@@ -736,7 +736,7 @@ qx.Class.define("osparc.file.FilePicker", {
         const resp = JSON.parse(xhr.responseText);
         if ("error" in resp && resp["error"]) {
           console.error(resp["error"]);
-          this.abortUpload(presignedLinkData);
+          this.__abortUpload(presignedLinkData);
         } else if ("data" in resp) {
           if (xhr.status == 202) {
             console.log("waiting for completion", file.name);
@@ -783,7 +783,7 @@ qx.Class.define("osparc.file.FilePicker", {
       this.fireEvent("fileUploaded");
     },
 
-    abortUpload: function(presignedLinkData) {
+    __abortUpload: function(presignedLinkData) {
       this.getNode()["abortRequested"] = false;
 
       this.getNode().getStatus().setProgress(this.self().PROGRESS_VALUES.NOTHING);
