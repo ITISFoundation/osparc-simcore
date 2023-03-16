@@ -24,31 +24,22 @@ servers:
           - v0
         default: v0
 tags:
+  - name: activity
   - name: admin
   - name: authentication
-  - name: user
-  - name: project
-  - name: cluster
   - name: catalog
-  - name: storage
-  - name: activity
-  - name: tag
-  - name: tasks
-    description: |
-      Asynchronously running tasks
-  - name: node
-    description: |
-      The simcore frontend provides a bunch of custom ui elements for nodes to interact with users.
-      The frontend uses these api calls to query the nodes about the gui elemets they want to use, and it
-      defines the protocol for the frontend to interact with the node.
+  - name: cluster
   - name: configuration
   - name: maintenance
+  - name: node
+  - name: project
   - name: publication
-    description: |
-      oSPARC users can make publications. Starting from submission of new service candidates, but this could
-      end up accepting other types of publications.
-  - name: viewer
   - name: repository
+  - name: sparc
+  - name: storage
+  - name: tag
+  - name: tasks
+  - name: user
 paths:
   '/email:test':
     post:
@@ -3002,12 +2993,12 @@ paths:
             CreationStatus:
               operationId: get_task_status
               parameters:
-                task_id: '$response.body#/data/task_id'
+                task_id: $response.body#/data/task_id
             CreationResult:
               operationId: get_task_result
               description: Returns 201 if creation succeeded
               parameters:
-                task_id: '$response.body#/data/task_id'
+                task_id: $response.body#/data/task_id
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /projects/active:
@@ -6276,84 +6267,162 @@ paths:
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /viewers:
-    get:
+    post:
+      tags:
+        - sparc
+      summary: List Viewers
       operationId: list_viewers
       parameters:
-        - in: query
-          name: file_type
-          required: false
+        - required: false
           schema:
             title: File Type
-            description: Filters list to viewers supporting that filetype
             type: string
+          name: file_type
+          in: query
       responses:
         '200':
+          description: Successful Response
           content:
             application/json:
               schema:
+                title: 'Envelope[list[simcore_service_webserver.studies_dispatcher.handlers_rest.Viewer]]'
+                type: object
                 properties:
                   data:
-                    items:
-                      $ref: '#/paths/~1viewers~1default/get/responses/200/content/application~1json/schema/properties/data'
+                    title: Data
                     type: array
-                required:
-                  - data
-                title: ViewerListEnveloped
-                type: object
-          description: Successful Response
-      summary: Lists viewers
-      description: Lists all publicaly available viewers. Notice that this might contain multiple services for the same filetype
-      tags:
-        - viewer
+                    items:
+                      title: Viewer
+                      required:
+                        - title
+                        - file_type
+                        - view_url
+                      type: object
+                      properties:
+                        title:
+                          title: Title
+                          type: string
+                          description: Short formatted label with name and version of the viewer
+                        file_type:
+                          title: File Type
+                          type: string
+                          description: Identifier for the file type
+                        view_url:
+                          title: View Url
+                          maxLength: 2083
+                          minLength: 1
+                          type: string
+                          description: 'Base url to execute viewer. Needs appending file_size,[file_name] and download_link as query parameters'
+                          format: uri
+                      description: |-
+                        API model for a viewer resource
+
+                        A viewer is a service with an associated filetype.
+                        You can think of it as a tuple (filetype, service)
+
+                        The service could consume other filetypes BUT at this
+                        interface this is represented in yet another viewer resource
+
+                        For instance, the same service can be in two different viewer resources
+                          - viewer1=(JPEG, RawGraph service)
+                          - viewer2=(CSV, RawGraph service)
+
+                        A viewer can be dispatched using the view_url and appending the
+                  error:
+                    title: Error
   /viewers/default:
-    get:
+    post:
+      tags:
+        - sparc
+      summary: List Default Viewers
       operationId: list_default_viewers
       parameters:
-        - in: query
-          name: file_type
-          required: false
+        - required: false
           schema:
             title: File Type
-            description: Filters list to viewers supporting that filetype
             type: string
+          name: file_type
+          in: query
       responses:
         '200':
+          description: Successful Response
           content:
             application/json:
               schema:
-                properties:
-                  data:
-                    properties:
-                      file_type:
-                        title: File Type
-                        type: string
-                        description: Identifier for the file type
-                      view_url:
-                        description: 'Base url to execute viewer. Needs appending file_size,[file_name] and download_link as query parameters'
-                        format: uri
-                        maxLength: 2083
-                        minLength: 1
-                        title: Redirection Url
-                        type: string
-                      title:
-                        description: Short formatted label with name and version of the viewer
-                        title: Viewer Title
-                        type: string
-                    required:
-                      - file_type
-                      - viewer_title
-                      - view_url
-                    title: Viewer
-                    type: object
-                required:
-                  - data
-                title: ViewerEnveloped
-                type: object
-          description: Successful Response
-      summary: List Default Viewers
-      description: Lists a default viewer for each supported filetype. Only publicaly available viewers.
+                $ref: '#/paths/~1viewers/post/responses/200/content/application~1json/schema'
+  /view:
+    get:
       tags:
-        - viewer
+        - sparc
+      summary: Get Redirection To Viewer
+      description: Opens a viewer in osparc for data in the NIH-sparc portal
+      operationId: get_redirection_to_viewer
+      parameters:
+        - required: true
+          schema:
+            title: File Type
+            type: string
+          name: file_type
+          in: query
+        - required: true
+          schema:
+            title: Viewer Key
+            pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+            type: string
+          name: viewer_key
+          in: query
+        - required: true
+          schema:
+            title: Viewer Version
+            pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
+            type: string
+          name: viewer_version
+          in: query
+        - required: true
+          schema:
+            title: File Size
+            exclusiveMinimum: true
+            type: integer
+            minimum: 0
+          name: file_size
+          in: query
+        - required: true
+          schema:
+            title: Download Link
+            maxLength: 2083
+            minLength: 1
+            type: string
+            format: uri
+          name: download_link
+          in: query
+        - required: false
+          schema:
+            title: File Name
+            type: string
+            default: unknown
+          name: file_name
+          in: query
+      responses:
+        '302':
+          description: Opens osparc and starts viewer for selected data
+  '/study/{study_id}':
+    get:
+      tags:
+        - sparc
+      summary: Get Redirection To Study Page
+      description: Opens a study published in osparc
+      operationId: get_redirection_to_study_page
+      parameters:
+        - required: true
+          schema:
+            title: Study Id
+            type: string
+            format: uuid
+          name: study_id
+          in: path
+      responses:
+        '302':
+          description: Opens osparc and opens a copy of publised study
 components:
   responses:
     DefaultErrorResponse:
