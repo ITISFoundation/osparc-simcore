@@ -4,7 +4,6 @@ from copy import deepcopy
 from typing import Any, Final, Optional, cast
 
 import yaml
-from aiocache import cached
 from fastapi import APIRouter, Depends, HTTPException, status
 from models_library.service_settings_labels import (
     ComposeSpecLabel,
@@ -23,7 +22,6 @@ from pydantic import parse_obj_as, parse_raw_as
 from ...db.repositories.services import ServicesRepository
 from ...models.domain.group import GroupAtDB
 from ...models.schemas.constants import (
-    DIRECTOR_CACHING_TTL,
     RESPONSE_MODEL_POLICY,
     SIMCORE_SERVICE_SETTINGS_LABELS,
 )
@@ -134,10 +132,6 @@ def _get_service_settings(
     "/{service_key:path}/{service_version}/resources",
     response_model=ServiceResourcesDict,
     **RESPONSE_MODEL_POLICY,
-)
-@cached(
-    ttl=DIRECTOR_CACHING_TTL,
-    key_builder=lambda f, *args, **kwargs: f"{f.__name__}_{kwargs.get('user_id', 'default')}_{kwargs['service_key']}_{kwargs['service_version']}",
 )
 async def get_service_resources(
     service_key: ServiceKey,
