@@ -68,7 +68,7 @@ async def close_director(app: FastAPI) -> None:
 
 def safe_request(
     request_func: Callable[..., Awaitable[httpx.Response]]
-) -> httpx.Response:
+) -> Callable[..., Awaitable[Union[list[Any], dict[str, Any]]]]:
     """
     Creates a context for safe inter-process communication (IPC)
     """
@@ -107,7 +107,9 @@ def safe_request(
         return data or {}
 
     @functools.wraps(request_func)
-    async def request_wrapper(zelf: "DirectorApi", path: str, *args, **kwargs):
+    async def request_wrapper(
+        zelf: "DirectorApi", path: str, *args, **kwargs
+    ) -> Union[list[Any], dict[str, Any]]:
         normalized_path = path.lstrip("/")
         try:
             resp = await request_func(zelf, path=normalized_path, *args, **kwargs)
