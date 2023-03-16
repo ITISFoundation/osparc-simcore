@@ -387,14 +387,10 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     __getResetFileButton: function() {
-      const node = this.getNode();
       const resetFileBtn = new qx.ui.form.Button(this.tr("Reset"), "@FontAwesome5Solid/sync-alt/14").set({
         allowGrowX: false
       });
-      resetFileBtn.addListener("execute", () => {
-        osparc.file.FilePicker.resetOutputValue(node);
-        this.fireEvent("itemReset");
-      }, this);
+      resetFileBtn.addListener("execute", () => this.__resetOutput());
       return resetFileBtn;
     },
 
@@ -667,6 +663,7 @@ qx.Class.define("osparc.file.FilePicker", {
       for (let chunkIdx = 0; chunkIdx < presignedLinkData.resp.urls.length; chunkIdx++) {
         if (this.getNode()["abortRequested"]) {
           this.__abortUpload(presignedLinkData);
+          break;
         }
         const chunkBlob = this.__createChunk(file, fileSize, chunkIdx, chunkSize);
         try {
@@ -794,6 +791,14 @@ qx.Class.define("osparc.file.FilePicker", {
       const abortUrl = presignedLinkData.resp.links.abort_upload;
       const xhr = new XMLHttpRequest();
       xhr.open("POST", abortUrl, true);
+
+      this.__resetOutput();
+    },
+
+    __resetOutput: function() {
+      const node = this.getNode();
+      osparc.file.FilePicker.resetOutputValue(node);
+      this.fireEvent("itemReset");
     }
   }
 });
