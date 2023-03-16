@@ -70,7 +70,6 @@ def check_project_permissions(
         raise ProjectInvalidRightsError(user_id, project.get("uuid"))
 
     everyone_gid = str(all_group["gid"])
-    assert everyone_gid == "1"  # nosec
 
     if user_id == ANY_USER_ID_SENTINEL:
         primary_gid = None
