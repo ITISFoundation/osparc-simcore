@@ -33,8 +33,8 @@ class ProjectOwnerNotFoundError(ProjectsException):
 class ProjectNotFoundError(ProjectsException):
     """Project was not found in DB"""
 
-    def __init__(self, project_uuid):
-        super().__init__(f"Project with uuid {project_uuid} not found")
+    def __init__(self, project_uuid, condition: str = ""):
+        super().__init__(f"Project with uuid {project_uuid} not found." + condition)
         self.project_uuid = project_uuid
 
 

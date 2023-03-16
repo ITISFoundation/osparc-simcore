@@ -29,7 +29,10 @@ from .._constants import INDEX_RESOURCE_NAME
 from ..garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
 from ..products import get_product_name
 from ..projects.projects_db import ProjectDBAPI
-from ..projects.projects_exceptions import ProjectNotFoundError
+from ..projects.projects_exceptions import (
+    ProjectInvalidRightsError,
+    ProjectNotFoundError,
+)
 from ..redis import get_redis_lock_manager_client
 from ..security_api import is_anonymous, remember
 from ..storage_api import copy_data_folders_from_project
@@ -58,21 +61,43 @@ def _compose_uuid(template_uuid, user_id, query="") -> str:
     return new_uuid
 
 
-async def _get_public_project(app: web.Application, project_uuid: str) -> ProjectDict:
+async def _get_published_template_project(
+    app: web.Application, project_uuid: str
+) -> ProjectDict:
     """
-    Returns project if project_uuid is a template and is marked as published, otherwise None
-
-    :raises ProjectNotFoundError
+    raises RedirectToFrontEndPageError
     """
     db = ProjectDBAPI.get_from_app_context(app)
 
-    prj, _ = await db.get_project(
-        user_id=-1,  # < ---- ????
-        project_uuid=project_uuid,
-        only_published=True,
-        only_templates=True,
-    )
-    return prj
+    try:
+        prj, _ = await db.get_project(
+            project_uuid=project_uuid,
+            # NOTE: these are the conditions for a published study
+            # 1. MUST be a template
+            only_templates=True,
+            # 2. MUST be checked for publication
+            only_published=True,
+            # 3. MUST be shared with EVERYONE=1 in read mode, i.e.
+            user_id=-1,  # any user
+            check_permissions="read",  # any user has read access
+        )
+        if not prj:
+            raise ProjectNotFoundError(project_uuid)
+
+        return prj
+
+    except (ProjectNotFoundError, ProjectInvalidRightsError) as err:
+        log.debug(
+            "Requested project with %s is not published. Reason: %s",
+            f"{project_uuid=}",
+            err,
+        )
+
+        raise RedirectToFrontEndPageError(
+            MSG_PROJECT_NOT_PUBLISHED.format(project_id=project_uuid),
+            error_code="PROJECT_NOT_PUBLISHED",
+            status_code=web.HTTPNotFound.status_code,
+        ) from err
 
 
 async def _create_temporary_user(request: web.Request):
@@ -290,14 +315,8 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
     project_id = request.match_info["id"]
     assert request.app.router[INDEX_RESOURCE_NAME]  # nosec
 
-    # Get linked PUBLIC PROJECT
-    template_project = await _get_public_project(request.app, project_id)
-    if not template_project:
-        raise RedirectToFrontEndPageError(
-            MSG_PROJECT_NOT_PUBLISHED.format(project_id=project_id),
-            error_code="PROJECT_NOT_PUBLISHED",
-            status_code=web.HTTPNotFound.status_code,
-        )
+    # Get published PROJECT referenced in link
+    template_project = await _get_published_template_project(request.app, project_id)
 
     # Get or create a valid USER
     user = None

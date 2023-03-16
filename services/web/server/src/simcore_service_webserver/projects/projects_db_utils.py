@@ -48,6 +48,10 @@ def check_project_permissions(
     user_groups: list[RowProxy],
     permission: Permission,
 ) -> None:
+    """
+    :raises ProjectInvalidRightsError if check fails
+    """
+
     if not permission:
         return
 
@@ -271,7 +275,8 @@ class BaseProjectDB:
         check_permissions: Permission = "read",
     ) -> dict:
         """
-        raises: ProjectNotFoundError
+        raises ProjectNotFoundError if project does not exists
+        raises ProjectInvalidRightsError if user_id does not have at 'check_permissions' access rights
         """
         exclude_foreign = exclude_foreign or []
 
@@ -308,13 +313,13 @@ class BaseProjectDB:
         project_row = await result.first()
 
         if not project_row:
-            raise ProjectNotFoundError(project_uuid)
-
-        # now carefuly check the access rights
-        if only_published is False:
-            check_project_permissions(
-                project_row, user_id, user_groups, check_permissions
+            raise ProjectNotFoundError(
+                project_uuid=project_uuid,
+                condition=f"{user_id=}, {only_templates=}, {only_published=}, {check_permissions=}",
             )
+
+        # check the access rights
+        check_project_permissions(project_row, user_id, user_groups, check_permissions)
 
         project: dict[str, Any] = dict(project_row.items())
 
