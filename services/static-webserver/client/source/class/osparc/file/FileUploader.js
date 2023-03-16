@@ -44,7 +44,6 @@ qx.Class.define("osparc.file.FileUploader", {
 
   statics: {
     PROGRESS_VALUES: {
-      NOTHING: 0,
       FETCHING_PLINK: 1,
       CHUNKING: 2,
       COMPLETING: 99
@@ -226,7 +225,6 @@ qx.Class.define("osparc.file.FileUploader", {
 
       const aborted = () => {
         this.__presignedLinkData = null;
-        this.getNode().getStatus().setProgress(this.self().PROGRESS_VALUES.NOTHING);
         this.fireEvent("uploadAborted");
       };
       const abortUrl = this.__presignedLinkData.resp.links.abort_upload;
