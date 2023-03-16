@@ -42,6 +42,13 @@ logger = logging.getLogger(__name__)
 
 SIMCORE_SERVICE_SETTINGS_LABELS: Final[str] = "simcore.service.settings"
 SIMCORE_SERVICE_COMPOSE_SPEC_LABEL: Final[str] = "simcore.service.compose-spec"
+_DEPRECATED_RESOURCES: Final[list[str]] = ["MPI"]
+
+
+def _remove_deprecated_resources(resources: ResourcesDict) -> ResourcesDict:
+    for res_name in _DEPRECATED_RESOURCES:
+        resources.pop(res_name, None)
+    return resources
 
 
 def _from_service_settings(
@@ -83,7 +90,7 @@ def _from_service_settings(
             entry.value.get("Reservations", {}).get("GenericResources", []),
         )
 
-    return service_resources
+    return _remove_deprecated_resources(service_resources)
 
 
 async def _get_service_labels(
