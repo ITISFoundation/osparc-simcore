@@ -37,6 +37,7 @@ qx.Class.define("osparc.Error", {
     layout.setColumnFlex(0, 1);
     layout.setColumnMinWidth(1, 400);
     layout.setColumnFlex(2, 1);
+    layout.setRowFlex(this.self().POS.MESSAGES, 1);
     this._setLayout(layout);
 
     this._add(new qx.ui.core.Spacer(), {
@@ -52,7 +53,6 @@ qx.Class.define("osparc.Error", {
     this.getChildControl("lying-panda");
     this.getChildControl("code");
     this.getChildControl("messages-layout");
-    this.getChildControl("actions-layout");
   },
 
   properties: {
@@ -175,7 +175,7 @@ qx.Class.define("osparc.Error", {
           });
           break;
         case "messages-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.Grow()).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
             alignX: "center",
             maxWidth: 400
           });
@@ -189,10 +189,6 @@ qx.Class.define("osparc.Error", {
             alignX: "center",
             maxWidth: 400
           });
-          this._add(control, {
-            column: 1,
-            row: this.self().POS.ACTIONS
-          });
           break;
         case "copy-to-clipboard": {
           control = new qx.ui.form.Button().set({
@@ -200,10 +196,6 @@ qx.Class.define("osparc.Error", {
             label: this.tr("Copy to clipboard")
           });
           control.addListener("execute", () => this.__copyMessagesToClipboard(), this);
-          const actionsLayout = this.getChildControl("actions-layout");
-          actionsLayout.add(control, {
-            flex: 1
-          });
           break;
         }
         case "support-email": {
@@ -238,9 +230,8 @@ qx.Class.define("osparc.Error", {
       const message = new qx.ui.basic.Label(text).set({
         font: "text-16",
         selectable: true,
-        rich : true,
-        allowGrowX: true,
-        width: 400
+        rich: true,
+        wrap: true
       });
       return message;
     },
@@ -253,9 +244,21 @@ qx.Class.define("osparc.Error", {
         messagesLayout.add(message);
       });
 
-      this.getChildControl("copy-to-clipboard");
-      this.getChildControl("support-email");
-      this.getChildControl("log-in-button");
+      const actionsLayout = this.getChildControl("actions-layout");
+      messagesLayout.add(actionsLayout);
+
+      const copyToClipboard = this.getChildControl("copy-to-clipboard");
+      actionsLayout.add(copyToClipboard, {
+        flex: 1
+      });
+      const supportEmail = this.getChildControl("support-email");
+      actionsLayout.add(supportEmail, {
+        flex: 1
+      });
+      const logIn = this.getChildControl("log-in-button");
+      actionsLayout.add(logIn, {
+        flex: 1
+      });
     },
 
     __copyMessagesToClipboard: function() {
