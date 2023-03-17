@@ -21,7 +21,9 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
   construct: function() {
     this.base(arguments);
 
-    const userEmail = osparc.auth.Data.getInstance().getEmail() || "bizzy@itis.ethz.ch";
+    const authData = osparc.auth.Data.getInstance();
+
+    const userEmail = authData.getEmail() || "bizzy@itis.ethz.ch";
     const menu = new qx.ui.menu.Menu().set({
       font: "text-14"
     });
@@ -31,7 +33,18 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       label: "bizzy",
       menu
     });
-    osparc.auth.Data.getInstance().bind("firstName", this, "label");
+    authData.bind("firstName", this, "label");
+    authData.bind("role", this, "label", {
+      converter: role => {
+        if (role === "anonymous") {
+          return "Anonymous";
+        }
+        if (role === "guest") {
+          return "Guest";
+        }
+        return authData.getLabel();
+      }
+    });
     osparc.utils.Utils.setIdToWidget(this, "userMenuMainBtn");
 
     this.getChildControl("icon").getContentElement().setStyles({
