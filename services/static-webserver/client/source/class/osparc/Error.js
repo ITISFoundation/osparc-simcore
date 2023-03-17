@@ -21,7 +21,7 @@
  * -----------------------
  * |  oSparc error logo  |
  * |   - status code     |
- * |   - error msg       |
+ * |   - error msgs       |
  * -----------------------
  *
  */
@@ -30,6 +30,7 @@ qx.Class.define("osparc.Error", {
 
   construct: function() {
     this.base(arguments);
+
     this._setLayout(new qx.ui.layout.HBox());
 
     this.__buildLayout();
@@ -104,11 +105,10 @@ qx.Class.define("osparc.Error", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "logo": {
+        case "logo":
           control = new osparc.ui.basic.Logo();
           break;
-        }
-        case "lying-panda": {
+        case "lying-panda":
           control = new qx.ui.basic.Image().set({
             source: "osparc/lyingpanda.png",
             scale: true,
@@ -117,8 +117,7 @@ qx.Class.define("osparc.Error", {
             height: 300
           });
           break;
-        }
-        case "code": {
+        case "code":
           control = new qx.ui.basic.Label().set({
             font: "text-18",
             alignX: "center",
@@ -127,15 +126,13 @@ qx.Class.define("osparc.Error", {
             width: 400
           });
           break;
-        }
-        case "messages-layout": {
+        case "messages-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
             alignX: "center",
             maxWidth: 400
           });
           break;
-        }
-        case "message": {
+        case "message":
           control = new qx.ui.basic.Label().set({
             font: "text-16",
             selectable: true,
@@ -143,7 +140,6 @@ qx.Class.define("osparc.Error", {
             width: 400
           });
           break;
-        }
       }
       return control || this.base(arguments, id);
     },
