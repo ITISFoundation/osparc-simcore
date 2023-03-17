@@ -131,12 +131,17 @@ async def published_project(
     project_data = deepcopy(fake_project)
     project_data["name"] = "Published project"
     project_data["uuid"] = "e2e38eee-c569-4e55-b104-70d159e49c87"
-    project_data["published"] = True
+    project_data["published"] = True  # OPENED
+    project_data["access_rights"] = {
+        # everyone HAS read access
+        "1": {"read": True, "write": False, "delete": False}
+    }
 
     async with NewProject(
         project_data,
         client.app,
         user_id=None,
+        as_template=True,  # <--IS a template
         product_name=osparc_product_name,
         clear_all=True,
         tests_data_dir=tests_data_dir,
@@ -151,19 +156,21 @@ async def unpublished_project(
     tests_data_dir: Path,
     osparc_product_name: str,
 ) -> ProjectDict:
+    """An unpublished template"""
+
     project_data = deepcopy(fake_project)
-    project_data["name"] = "Template Unpublished project"
+    project_data["name"] = "Unpublished project"
     project_data["uuid"] = "b134a337-a74f-40ff-a127-b36a1ccbede6"
-    project_data["published"] = False
+    project_data["published"] = False  # <--
 
     async with NewProject(
         project_data,
         client.app,
         user_id=None,
+        as_template=True,
         product_name=osparc_product_name,
         clear_all=True,
         tests_data_dir=tests_data_dir,
-        as_template=True,
     ) as template_project:
         yield template_project
 
@@ -251,12 +258,12 @@ async def _assert_redirected_to_study(
         "OSPARC-SIMCORE" in content
     ), "Expected front-end rendering workbench's study, got %s" % str(content)
 
-    # Expects auth cookie for current user
-    assert _is_user_authenticated(session)
-
     # Expects fragment to indicate client where to find newly created project
     m = re.match(r"/study/([\d\w-]+)", response.real_url.fragment)
     assert m, f"Expected /study/uuid, got {response.real_url.fragment}"
+
+    # Expects auth cookie for current user
+    assert _is_user_authenticated(session)
 
     # returns newly created project
     redirected_project_id = m.group(1)
