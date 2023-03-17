@@ -224,7 +224,7 @@ async def _start_dynamic_service(
     )
 
     await director_v2_api.run_dynamic_service(
-        request.app,
+        app=request.app,
         product_name=product_name,
         project_id=f"{project_uuid}",
         user_id=user_id,
