@@ -144,8 +144,8 @@ qx.Class.define("osparc.Error", {
             source: "osparc/lyingpanda.png",
             scale: true,
             alignX: "center",
-            width: 450,
-            height: 300
+            width: 300,
+            height: 200
           });
           this._add(control, {
             column: 1,
