@@ -44,13 +44,26 @@ class _MountedVolumesLocalPaths:
         return list(result)
 
 
-async def _create_file_with_user_wrote_only_permissions(file: Path) -> None:
+async def _create_file_with_restricted_permissions(file: Path) -> None:
     """only allows the user who created the files to change it"""
     # create empty file
     async with aiofiles.open(file, mode="w"):
         ...
 
-    await chmod(file, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH)
+    # NOTE: the `stat.S_IWGRP`, group write permission, should not be here
+    # when the user services start they change the ownership and user of all
+    # the existing files in the work directory (this happens on all the services)
+    # when applying those changes they should filter out all files in this env var
+    # `DY_SIDECAR_EXCLUDE_FILES`
+    await chmod(
+        file, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH
+    )
+
+    # NOTE: ideally the file should be also made immutable but there is an issue with
+    # docker https://github.com/moby/moby/issues/45177
+    # await async_command(f"chattr +i {hidden_file}", timeout=5)
+    # if this is fixed a context manager that disables immutability should be used to
+    # change the file
 
 
 async def create_hidden_file_on_all_volumes(mounted_volumes: MountedVolumes) -> None:
@@ -69,7 +82,7 @@ async def create_hidden_file_on_all_volumes(mounted_volumes: MountedVolumes) -> 
         hidden_file = volume_path / HIDDEN_FILE_NAME
 
         # restrict permissions
-        await _create_file_with_user_wrote_only_permissions(hidden_file)
+        await _create_file_with_restricted_permissions(hidden_file)
 
         # write content
         async with aiofiles.open(hidden_file, mode="w") as f:
@@ -88,7 +101,7 @@ async def create_agent_file_on_all_volumes(mounted_volumes: MountedVolumes) -> N
     # volumes which do not require saving
     for path in (volumes_local_paths.inputs, volumes_local_paths.shared_store):
         agent_file_path = path / AGENT_FILE_NAME
-        await _create_file_with_user_wrote_only_permissions(agent_file_path)
+        await _create_file_with_restricted_permissions(agent_file_path)
 
         await save_volume_state(
             agent_file_path=agent_file_path,
@@ -98,7 +111,7 @@ async def create_agent_file_on_all_volumes(mounted_volumes: MountedVolumes) -> N
     # volumes which require saving
     for path in volumes_local_paths.states + (volumes_local_paths.outputs,):
         agent_file_path = path / AGENT_FILE_NAME
-        await _create_file_with_user_wrote_only_permissions(agent_file_path)
+        await _create_file_with_restricted_permissions(agent_file_path)
 
         await save_volume_state(
             agent_file_path=agent_file_path,
