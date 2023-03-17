@@ -1,7 +1,8 @@
 import logging
 from collections import defaultdict
+from distutils.version import Version
 from itertools import chain
-from typing import Any, Iterable, Optional
+from typing import Any, Iterable, Optional, cast
 
 import packaging.version
 import sqlalchemy as sa
@@ -97,7 +98,7 @@ class ServicesRepository(BaseRepository):
                     product_name,
                 )
             ):
-                services_in_db.append(ServiceMetaDataAtDB(**row))
+                services_in_db.append(ServiceMetaDataAtDB.from_orm(row))
         return services_in_db
 
     async def list_service_releases(
@@ -142,9 +143,11 @@ class ServicesRepository(BaseRepository):
                 releases.append(ServiceMetaDataAtDB.from_orm(row))
 
         # Now sort naturally from latest first: (This is lame, the sorting should be done in the db)
-        return sorted(
-            releases, key=lambda x: packaging.version.parse(x.version), reverse=True
-        )
+        def _by_version(x: ServiceMetaDataAtDB) -> Version:
+            return cast(Version, packaging.version.parse(x.version))
+
+        releases_sorted = sorted(releases, key=_by_version, reverse=True)
+        return releases_sorted
 
     async def get_latest_release(self, key: str) -> Optional[ServiceMetaDataAtDB]:
         """Returns last release or None if service was never released"""
@@ -190,7 +193,8 @@ class ServicesRepository(BaseRepository):
             result = await conn.execute(query)
             row = result.first()
         if row:
-            return ServiceMetaDataAtDB(**row)
+            return ServiceMetaDataAtDB.from_orm(row)
+        return None  # mypy
 
     async def create_service(
         self,
@@ -216,7 +220,7 @@ class ServicesRepository(BaseRepository):
             )
             row = result.first()
             assert row  # nosec
-            created_service = ServiceMetaDataAtDB(**row)
+            created_service = ServiceMetaDataAtDB.from_orm(row)
 
             for access_rights in new_service_access_rights:
                 insert_stmt = pg_insert(services_access_rights).values(
@@ -242,7 +246,7 @@ class ServicesRepository(BaseRepository):
             )
             row = result.first()
             assert row  # nosec
-        updated_service = ServiceMetaDataAtDB(**row)
+        updated_service = ServiceMetaDataAtDB.from_orm(row)
         return updated_service
 
     async def get_service_access_rights(
@@ -360,6 +364,7 @@ class ServicesRepository(BaseRepository):
             "getting specifications from db for %s", f"{key}:{version} for {groups=}"
         )
         gid_to_group_map = {group.gid: group for group in groups}
+
         group_specs = {
             GroupType.EVERYONE: None,
             GroupType.PRIMARY: None,
@@ -418,6 +423,7 @@ class ServicesRepository(BaseRepository):
             group_specs[GroupType.PRIMARY],
         ):
             return ServiceSpecifications.parse_obj(merged_specifications)
+        return None  # mypy
 
 
 def _is_newer(
