@@ -81,6 +81,11 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           control = new osparc.ui.switch.ThemeSwitcherMenuBtn();
           this.getMenu().add(control);
           break;
+        case "register":
+          control = new qx.ui.menu.Button(this.tr("Register"));
+          control.addListener("execute", () => window.open(window.location.href, "_blank"));
+          this.getMenu().add(control);
+          break;
         case "preferences":
           control = new qx.ui.menu.Button(this.tr("Preferences"));
           control.addListener("execute", () => osparc.navigation.UserMenuButton.openPreferences(), this);
@@ -154,9 +159,15 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
 
     populateMenu: function() {
       this.getMenu().removeAll();
-      this.getChildControl("preferences");
-      this.getChildControl("organizations");
-      this.getChildControl("clusters");
+
+      const authData = osparc.auth.Data.getInstance();
+      if (["anonymous", "guest"].includes(authData.getRole())) {
+        this.getChildControl("register");
+      } else {
+        this.getChildControl("preferences");
+        this.getChildControl("organizations");
+        this.getChildControl("clusters");
+      }
       if (osparc.product.tutorial.Utils.getTutorial()) {
         this.getMenu().addSeparator();
         this.getChildControl("quick-start");
@@ -175,9 +186,14 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       this.getMenu().removeAll();
       osparc.data.Resources.get("statics")
         .then(async () => {
-          this.getChildControl("preferences");
-          this.getChildControl("organizations");
-          this.getChildControl("clusters");
+          const authData = osparc.auth.Data.getInstance();
+          if (["anonymous", "guest"].includes(authData.getRole())) {
+            this.getChildControl("register");
+          } else {
+            this.getChildControl("preferences");
+            this.getChildControl("organizations");
+            this.getChildControl("clusters");
+          }
           this.getMenu().addSeparator();
 
           // this part gets injected
