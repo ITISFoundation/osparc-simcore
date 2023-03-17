@@ -732,7 +732,7 @@ qx.Class.define("osparc.data.model.Node", {
 
     requestFileUploadAbort: function() {
       if (this.isFilePicker()) {
-        this["requestFileUploadAbort"] = true;
+        this["fileUploadAbortRequested"] = true;
       }
     },
 

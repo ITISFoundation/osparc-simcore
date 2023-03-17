@@ -106,7 +106,7 @@ qx.Class.define("osparc.file.FileUploader", {
       const fileSize = presignedLinkData.fileSize;
       const chunkSize = presignedLinkData.resp["chunk_size"];
       for (let chunkIdx = 0; chunkIdx < presignedLinkData.resp.urls.length; chunkIdx++) {
-        if (this.getNode()["requestFileUploadAbort"]) {
+        if (this.getNode()["fileUploadAbortRequested"]) {
           this.__abortUpload();
           break;
         }
@@ -154,7 +154,7 @@ qx.Class.define("osparc.file.FileUploader", {
 
     // Use XMLHttpRequest to complete the upload to S3
     __checkCompleteUpload: function(file) {
-      if (this.getNode()["requestFileUploadAbort"]) {
+      if (this.getNode()["fileUploadAbortRequested"]) {
         this.__abortUpload();
         return;
       }
@@ -213,7 +213,7 @@ qx.Class.define("osparc.file.FileUploader", {
     },
 
     __completeUpload: function(fileMetadata) {
-      this.getNode()["requestFileUploadAbort"] = false;
+      this.getNode()["fileUploadAbortRequested"] = false;
 
       if ("location" in fileMetadata && "dataset" in fileMetadata && "path" in fileMetadata && "name" in fileMetadata) {
         osparc.file.FilePicker.setOutputValueFromStore(this.getNode(), fileMetadata["location"], fileMetadata["dataset"], fileMetadata["path"], fileMetadata["name"]);
@@ -223,7 +223,7 @@ qx.Class.define("osparc.file.FileUploader", {
     },
 
     __abortUpload: function() {
-      this.getNode()["requestFileUploadAbort"] = false;
+      this.getNode()["fileUploadAbortRequested"] = false;
 
       const aborted = () => {
         this.__presignedLinkData = null;
