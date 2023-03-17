@@ -52,9 +52,11 @@ async def test_regression_remove_orphaned_services_node_ids_unhashable_type_set(
     await remove_orphaned_services(mock_registry, mock_app)
 
 
-async def test_regression_project_id_recovered_from_the_wrong_place(
+async def test_regression_project_id_recovered_from_the_wrong_data_structure(
     faker: Faker, mocker: MockerFixture
 ):
+    # tests that KeyError is not raised
+
     base_module = "simcore_service_webserver.garbage_collector_core"
     mocker.patch(
         f"{base_module}.is_node_id_present_in_any_project_workbench",
