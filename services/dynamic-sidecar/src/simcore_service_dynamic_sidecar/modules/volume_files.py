@@ -50,20 +50,21 @@ async def _create_file_with_restricted_permissions(file: Path) -> None:
     async with aiofiles.open(file, mode="w"):
         ...
 
-    # NOTE: the `stat.S_IWGRP`, group write permission, should not be here
-    # when the user services start they change the ownership and user of all
-    # the existing files in the work directory (this happens on all the services)
-    # when applying those changes they should filter out all files in this env var
-    # `DY_SIDECAR_EXCLUDE_FILES`
+    # NOTE: After the file creation, ideally the file should be set as
+    # `immutable`. There is an issue with docker https://github.com/moby/moby/issues/45177
+    # await async_command(f"chattr +i {hidden_file}", timeout=5)
+    # if above issue is fixed, a context manager that disables
+    # the file's immutability can be used by the dynamic-sidecar. This also allows
+    # to have protected files.
+
+    # NOTE: the `stat.S_IWGRP`, group write permission, should not be here.
+    # when the user services start they chown and chmod and all the existing
+    # files in the work directory.
+    # For now this is required otherwise the dynamic-sidecar will not be able to
+    # write back the created file any longer.
     await chmod(
         file, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH
     )
-
-    # NOTE: ideally the file should be also made immutable but there is an issue with
-    # docker https://github.com/moby/moby/issues/45177
-    # await async_command(f"chattr +i {hidden_file}", timeout=5)
-    # if this is fixed a context manager that disables immutability should be used to
-    # change the file
 
 
 async def create_hidden_file_on_all_volumes(mounted_volumes: MountedVolumes) -> None:
