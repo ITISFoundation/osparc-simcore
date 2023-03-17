@@ -99,8 +99,6 @@ qx.Class.define("osparc.Error", {
   },
 
   members: {
-    __messages: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -139,14 +137,48 @@ qx.Class.define("osparc.Error", {
             maxWidth: 400
           });
           break;
-        case "message":
-          control = new qx.ui.basic.Label().set({
-            font: "text-16",
-            selectable: true,
-            rich : true,
-            width: 400
+        case "actions-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
+            alignX: "center",
+            maxWidth: 400
           });
           break;
+        case "copy-to-clipboard": {
+          control = new qx.ui.form.Button().set({
+            icon: "@FontAwesome5Solid/copy/14",
+            label: this.tr("Copy to clipboard")
+          });
+          control.addListener("execute", () => this.__copyMessagesToClipboard(), this);
+          const actionsLayout = this.getChildControl("actions-layout");
+          actionsLayout.add(control, {
+            flex: 1
+          });
+          break;
+        }
+        case "support-email": {
+          control = new qx.ui.form.Button().set({
+            icon: "@FontAwesome5Solid/copy/14",
+            label: this.tr("Support email")
+          });
+          control.addListener("execute", () => this.__copyMessagesToClipboard(), this);
+          const actionsLayout = this.getChildControl("actions-layout");
+          actionsLayout.add(control, {
+            flex: 1
+          });
+          break;
+        }
+        case "log-in-button": {
+          control = new qx.ui.form.Button().set({
+            icon: "@FontAwesome5Solid/copy/14",
+            label: this.tr("Log in")
+          });
+          control.addListener("execute", () => this.__copyMessagesToClipboard(), this);
+          const actionsLayout = this.getChildControl("actions-layout");
+          actionsLayout.add(control, {
+            flex: 1
+          });
+          break;
+        }
       }
       return control || this.base(arguments, id);
     },
@@ -155,7 +187,8 @@ qx.Class.define("osparc.Error", {
       const logo = this.getChildControl("logo");
       const image = this.getChildControl("lying-panda");
       const status = this.getChildControl("code");
-      const message = this.__messages = this.getChildControl("messages-layout");
+      const messagesLayout = this.getChildControl("messages-layout");
+      const actionsLayout = this.getChildControl("actions-layout");
 
       const errorWidget = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
         alignY: "middle"
@@ -166,7 +199,8 @@ qx.Class.define("osparc.Error", {
       errorWidget.add(logo);
       errorWidget.add(image);
       errorWidget.add(status);
-      errorWidget.add(message);
+      errorWidget.add(messagesLayout);
+      errorWidget.add(actionsLayout);
       errorWidget.add(new qx.ui.core.Widget(), {
         flex: 1
       });
@@ -182,16 +216,34 @@ qx.Class.define("osparc.Error", {
       });
     },
 
-    __applyMessages: function(messages) {
-      this.__messages.removeAll();
-      messages.forEach(msg => {
-        const message = this.getChildControl("message");
-        message.set({
-          value: msg.toString(),
-          allowGrowX: true
-        });
-        this.__messages.add(message);
+    __createMessage: function(text) {
+      const message = new qx.ui.basic.Label(text).set({
+        font: "text-16",
+        selectable: true,
+        rich : true,
+        allowGrowX: true,
+        width: 400
       });
+      return message;
+    },
+
+    __applyMessages: function(messages) {
+      const messagesLayout = this.getChildControl("messages-layout");
+      messagesLayout.removeAll();
+      messages.forEach(msg => {
+        const message = this.__createMessage(msg.toString());
+        messagesLayout.add(message);
+      });
+
+      this.getChildControl("copy-to-clipboard");
+      this.getChildControl("support-email");
+      this.getChildControl("log-in-button");
+    },
+
+    __copyMessagesToClipboard: function() {
+      let text = "";
+      this.getMessages().forEach(msg => text+= msg);
+      osparc.utils.Utils.copyTextToClipboard(text);
     }
   }
 });
