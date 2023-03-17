@@ -19,9 +19,11 @@
  * The Error page
  *
  * -----------------------
- * |  oSparc error logo  |
+ * |    oSparc logo      |
+ * |       panda         |
  * |   - status code     |
- * |   - error msgs       |
+ * |   - error msgs      |
+ * |   action buttons    |
  * -----------------------
  *
  */
@@ -31,9 +33,26 @@ qx.Class.define("osparc.Error", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.HBox());
+    const layout = new qx.ui.layout.Grid(20, 20);
+    layout.setColumnFlex(0, 1);
+    layout.setColumnMinWidth(1, 400);
+    layout.setColumnFlex(2, 1);
+    this._setLayout(layout);
 
-    this.__buildLayout();
+    this._add(new qx.ui.core.Spacer(), {
+      column: 0,
+      row: 0
+    });
+    this._add(new qx.ui.core.Spacer(), {
+      column: 2,
+      row: 0
+    });
+
+    this.getChildControl("logo");
+    this.getChildControl("lying-panda");
+    this.getChildControl("code");
+    this.getChildControl("messages-layout");
+    this.getChildControl("actions-layout");
   },
 
   properties: {
@@ -95,6 +114,14 @@ qx.Class.define("osparc.Error", {
       "503": "Service Unavailable",
       "504": "Gateway Timeout",
       "505": "HTTP Version Not Supported"
+    },
+
+    POS: {
+      LOGO: 0,
+      PANDA: 1,
+      ERROR: 3,
+      MESSAGES: 4,
+      ACTIONS: 5
     }
   },
 
@@ -103,7 +130,14 @@ qx.Class.define("osparc.Error", {
       let control;
       switch (id) {
         case "logo":
-          control = new osparc.ui.basic.Logo();
+          control = new osparc.ui.basic.Logo().set({
+            width: 130,
+            height: 55
+          });
+          this._add(control, {
+            column: 1,
+            row: this.self().POS.LOGO
+          });
           break;
         case "lying-panda":
           control = new qx.ui.basic.Image().set({
@@ -112,6 +146,10 @@ qx.Class.define("osparc.Error", {
             alignX: "center",
             width: 450,
             height: 300
+          });
+          this._add(control, {
+            column: 1,
+            row: this.self().POS.PANDA
           });
           break;
         case "code":
@@ -131,17 +169,29 @@ qx.Class.define("osparc.Error", {
               return errorText + code;
             }
           });
+          this._add(control, {
+            column: 1,
+            row: this.self().POS.ERROR
+          });
           break;
         case "messages-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.Grow()).set({
             alignX: "center",
             maxWidth: 400
+          });
+          this._add(control, {
+            column: 1,
+            row: this.self().POS.MESSAGES
           });
           break;
         case "actions-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(20)).set({
             alignX: "center",
             maxWidth: 400
+          });
+          this._add(control, {
+            column: 1,
+            row: this.self().POS.ACTIONS
           });
           break;
         case "copy-to-clipboard": {
@@ -182,41 +232,6 @@ qx.Class.define("osparc.Error", {
         }
       }
       return control || this.base(arguments, id);
-    },
-
-    __buildLayout: function() {
-      const logo = this.getChildControl("logo");
-      const image = this.getChildControl("lying-panda");
-      const status = this.getChildControl("code");
-      const messagesLayout = this.getChildControl("messages-layout");
-      const actionsLayout = this.getChildControl("actions-layout");
-
-      const errorWidget = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
-        alignY: "middle"
-      }));
-      errorWidget.add(new qx.ui.core.Widget(), {
-        flex: 1
-      });
-      errorWidget.add(logo);
-      errorWidget.add(image);
-      errorWidget.add(status);
-      errorWidget.add(messagesLayout, {
-        flex: 1
-      });
-      errorWidget.add(actionsLayout);
-      errorWidget.add(new qx.ui.core.Widget(), {
-        flex: 1
-      });
-
-      this._add(new qx.ui.core.Widget(), {
-        flex: 1
-      });
-      this._add(errorWidget, {
-        flex: 1
-      });
-      this._add(new qx.ui.core.Widget(), {
-        flex: 1
-      });
     },
 
     __createMessage: function(text) {
