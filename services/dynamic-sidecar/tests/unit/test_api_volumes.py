@@ -3,10 +3,10 @@ from pathlib import Path
 import pytest
 from fastapi import status
 from fastapi.testclient import TestClient
+from models_library.volumes import VolumeID
 from servicelib.volumes_utils import AGENT_FILE_NAME, VolumeState, load_volume_state
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
-from simcore_service_dynamic_sidecar.modules.volume_files import VolumeID
 
 
 @pytest.mark.parametrize("volume_id", [VolumeID.STATES, VolumeID.OUTPUTS])

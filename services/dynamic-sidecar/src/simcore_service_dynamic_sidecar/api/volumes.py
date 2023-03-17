@@ -3,10 +3,11 @@ from typing import Optional
 from fastapi import APIRouter, Depends
 from fastapi import Path as PathParam
 from fastapi import status
+from models_library.volumes import VolumeID
 from pydantic import BaseModel
 
 from ..modules.mounted_fs import MountedVolumes
-from ..modules.volume_files import VolumeID, set_volume_state
+from ..modules.volume_files import set_volume_state
 from ._dependencies import get_mounted_volumes
 
 router = APIRouter()

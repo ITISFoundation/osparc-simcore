@@ -4,11 +4,11 @@ from pathlib import Path
 
 import pytest
 from faker import Faker
+from models_library.volumes import VolumeID
 from servicelib.volumes_utils import VolumeState, load_volume_state
 from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
 from simcore_service_dynamic_sidecar.modules.volume_files import (
     AGENT_FILE_NAME,
-    VolumeID,
     create_agent_file_on_all_volumes,
     create_hidden_file_on_all_volumes,
     set_volume_state,
