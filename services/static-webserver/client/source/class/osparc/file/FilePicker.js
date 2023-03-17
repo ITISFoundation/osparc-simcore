@@ -331,7 +331,7 @@ qx.Class.define("osparc.file.FilePicker", {
       });
       stopButton.addListener("tap", () => {
         stopButton.setFetching(true);
-        this.getNode()["requestAbortUpload"] = true;
+        this.getNode().requestFileUploadAbort();
       });
       progressLayout.add(stopButton);
 
