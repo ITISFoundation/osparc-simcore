@@ -2,6 +2,7 @@ import re
 from typing import Optional
 
 from models_library.generated_models.docker_rest_api import Task
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.users import UserID
@@ -37,6 +38,8 @@ class SimcoreServiceDockerLabelKeys(BaseModel):
     user_id: UserID = Field(..., alias="user_id")
     project_id: ProjectID = Field(..., alias="study_id")
     node_id: NodeID = Field(..., alias="uuid")
+    product_name: Optional[ProductName] = None
+    user_agent: Optional[str] = None
 
     def to_docker_labels(self) -> dict[str, str]:
         """returns a dictionary of strings as required by docker"""

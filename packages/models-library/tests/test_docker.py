@@ -3,6 +3,8 @@
 # pylint: disable=unused-variable
 
 
+from typing import Any
+
 import pytest
 from faker import Faker
 from models_library.docker import (
@@ -11,6 +13,8 @@ from models_library.docker import (
     SimcoreServiceDockerLabelKeys,
 )
 from pydantic import ValidationError, parse_obj_as
+
+faker = Faker()
 
 
 @pytest.mark.parametrize(
@@ -101,18 +105,33 @@ def test_docker_generic_tag(image_name: str, valid: bool):
             parse_obj_as(DockerGenericTag, image_name)
 
 
-@pytest.fixture
-def osparc_docker_label_keys(
-    faker: Faker,
-) -> SimcoreServiceDockerLabelKeys:
-    return SimcoreServiceDockerLabelKeys.parse_obj(
-        dict(user_id=faker.pyint(), project_id=faker.uuid4(), node_id=faker.uuid4())
+@pytest.mark.parametrize(
+    "obj_data",
+    [
+        pytest.param(
+            {
+                "user_id": faker.pyint(),
+                "project_id": faker.uuid4(),
+                "node_id": faker.uuid4(),
+            },
+            id="parse_existing_service_labels",
+        ),
+        pytest.param(
+            {
+                "user_id": faker.pyint(),
+                "project_id": faker.uuid4(),
+                "node_id": faker.uuid4(),
+                "product": "test_p",
+                "user_agent": "test/python",
+            },
+            id="parse_new_service_labels",
+        ),
+    ],
+)
+def test_simcore_service_docker_label_keys(obj_data: dict[str, Any]):
+    simcore_service_docker_label_keys = SimcoreServiceDockerLabelKeys.parse_obj(
+        obj_data
     )
-
-
-def test_osparc_docker_label_keys_to_docker_labels(
-    osparc_docker_label_keys: SimcoreServiceDockerLabelKeys,
-):
-    exported_dict = osparc_docker_label_keys.to_docker_labels()
+    exported_dict = simcore_service_docker_label_keys.to_docker_labels()
     assert all(isinstance(v, str) for v in exported_dict.values())
     assert parse_obj_as(SimcoreServiceDockerLabelKeys, exported_dict)
