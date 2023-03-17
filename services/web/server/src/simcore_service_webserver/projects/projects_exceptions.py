@@ -42,12 +42,12 @@ class ProjectNotFoundError(ProjectsException):
     def __init__(self, project_uuid, *, search_context: Optional[Any] = None):
         super().__init__(f"Project with uuid {project_uuid} not found.")
         self.project_uuid = project_uuid
-        self.context_msg = f"{search_context}"
+        self.search_context_msg = f"{search_context}"
 
     def detailed_message(self):
         msg = f"Project with uuid {self.project_uuid}"
-        if self.context_msg:
-            msg += f" and {self.context_msg}"
+        if self.search_context_msg:
+            msg += f" and {self.search_context_msg}"
         msg += " was not found"
         return msg
 

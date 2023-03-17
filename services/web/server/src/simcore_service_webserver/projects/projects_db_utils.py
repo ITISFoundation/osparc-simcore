@@ -57,8 +57,8 @@ def check_project_permissions(
     if not permission:
         return
 
-    requested_actions = set(permission.split("|"))
-    assert set(requested_actions).issubset(set(PermissionStr.__args__))  # nosec
+    operations_on_project = set(permission.split("|"))
+    assert set(operations_on_project).issubset(set(PermissionStr.__args__))  # nosec
 
     #
     # Get primary_gid, standard_gids and everyone_gid for user_id
@@ -96,7 +96,7 @@ def check_project_permissions(
     project_access_rights = deepcopy(project.get("access_rights", {}))
 
     # access rights for everyone
-    can = project_access_rights.get(
+    user_can = project_access_rights.get(
         everyone_gid, {"read": False, "write": False, "delete": False}
     )
 
@@ -105,16 +105,18 @@ def check_project_permissions(
         standard_project_access = project_access_rights.get(
             group_id, {"read": False, "write": False, "delete": False}
         )
-        for action in can.keys():
-            can[action] = can[action] or standard_project_access[action]
+        for operation in user_can.keys():
+            user_can[operation] = (
+                user_can[operation] or standard_project_access[operation]
+            )
     # access rights for primary group
     primary_access_right = project_access_rights.get(
         primary_gid, {"read": False, "write": False, "delete": False}
     )
-    for action in can.keys():
-        can[action] = can[action] or primary_access_right[action]
+    for operation in user_can.keys():
+        user_can[operation] = user_can[operation] or primary_access_right[operation]
 
-    if any(not can[action] for action in requested_actions):
+    if any(not user_can[operation] for operation in operations_on_project):
         raise ProjectInvalidRightsError(user_id, project.get("uuid"))
 
 

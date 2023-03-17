@@ -291,7 +291,7 @@ def _handle_errors_with_error_page(handler: Handler):
         except Exception as err:
             error_code = create_error_code(err)
             log.exception(
-                "Unexpected failure. TIP: too many simultaneous request? [%s]",
+                "Unexpected failure while dispatching study [%s]",
                 f"{error_code}",
                 extra={"error_code": error_code},
             )
