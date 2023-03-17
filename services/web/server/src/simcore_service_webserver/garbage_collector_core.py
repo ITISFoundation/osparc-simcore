@@ -10,6 +10,7 @@ from typing import Any, Optional
 import asyncpg.exceptions
 from aiohttp import web
 from redis.asyncio import Redis
+from servicelib.logging_utils import log_decorator
 from servicelib.utils import logged_gather
 from simcore_postgres_database.errors import DatabaseError
 from simcore_postgres_database.models.users import UserRole
@@ -296,6 +297,7 @@ async def remove_users_manually_marked_as_guests(
         )
 
 
+@log_decorator(logger, log_traceback=True)
 async def _remove_single_orphaned_service(
     app: web.Application,
     interactive_service: dict[str, Any],

@@ -145,7 +145,7 @@ def _log_arguments(
     return extra_args
 
 
-def log_decorator(logger=None, level: int = logging.DEBUG):
+def log_decorator(logger=None, level: int = logging.DEBUG, log_traceback: bool = False):
     # Build logger object
     logger_obj = logger or log
 
@@ -164,7 +164,10 @@ def log_decorator(logger=None, level: int = logging.DEBUG):
                 except:
                     # log exception if occurs in function
                     logger_obj.error(
-                        "Exception: %s", sys.exc_info()[1], extra=extra_args
+                        "Exception: %s",
+                        sys.exc_info()[1],
+                        extra=extra_args,
+                        exc_info=log_traceback,
                     )
                     raise
                 # Return function value
@@ -174,7 +177,7 @@ def log_decorator(logger=None, level: int = logging.DEBUG):
 
             @functools.wraps(func)
             def log_decorator_wrapper(*args, **kwargs):
-                extra_args = _log_arguments(logger_obj, func, *args, **kwargs)
+                extra_args = _log_arguments(logger_obj, level, func, *args, **kwargs)
                 try:
                     # log return value from the function
                     value = func(*args, **kwargs)
@@ -184,7 +187,10 @@ def log_decorator(logger=None, level: int = logging.DEBUG):
                 except:
                     # log exception if occurs in function
                     logger_obj.error(
-                        "Exception: %s", sys.exc_info()[1], extra=extra_args
+                        "Exception: %s",
+                        sys.exc_info()[1],
+                        extra=extra_args,
+                        exc_info=log_traceback,
                     )
                     raise
                 # Return function value
