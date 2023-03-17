@@ -79,6 +79,7 @@ class SchedulerPublicInterface(ABC):
         port: PortInt,
         request_dns: str,
         request_scheme: str,
+        request_user_agent: str,
     ) -> None:
         """
         Adds a new service.

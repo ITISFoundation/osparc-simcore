@@ -4,6 +4,7 @@ from typing import Optional, Union
 
 from fastapi.applications import FastAPI
 from models_library.docker import SimcoreServiceDockerLabelKeys
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import (
@@ -192,12 +193,18 @@ def _update_container_labels(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
+    user_agent: str,
+    product_name: ProductName,
 ) -> None:
     for spec in service_spec["services"].values():
         labels: list[str] = spec.setdefault("labels", [])
 
         label_keys = SimcoreServiceDockerLabelKeys(
-            user_id=user_id, study_id=project_id, uuid=node_id
+            user_id=user_id,
+            study_id=project_id,
+            uuid=node_id,
+            user_agent=user_agent,
+            product_name=product_name,
         )
         docker_labels = [f"{k}={v}" for k, v in label_keys.to_docker_labels().items()]
 
@@ -219,10 +226,11 @@ def assemble_spec(
     service_resources: ServiceResourcesDict,
     simcore_service_labels: SimcoreServiceLabels,
     allow_internet_access: bool,
-    product_name: str,
+    product_name: ProductName,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
+    user_agent: str,
 ) -> str:
     """
     returns a docker-compose spec used by
@@ -286,6 +294,8 @@ def assemble_spec(
         user_id=user_id,
         project_id=project_id,
         node_id=node_id,
+        product_name=product_name,
+        user_agent=user_agent,
     )
 
     # TODO: will be used in next PR

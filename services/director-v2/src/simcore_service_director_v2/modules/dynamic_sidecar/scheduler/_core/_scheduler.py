@@ -155,6 +155,7 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
         port: PortInt,
         request_dns: str,
         request_scheme: str,
+        request_user_agent: str,
     ) -> None:
         """Invoked before the service is started"""
         scheduler_data = SchedulerData.from_http_request(
@@ -163,6 +164,7 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
             port=port,
             request_dns=request_dns,
             request_scheme=request_scheme,
+            request_user_agent=request_user_agent,
         )
         await self._add_service(scheduler_data)
 

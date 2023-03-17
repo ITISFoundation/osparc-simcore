@@ -101,13 +101,13 @@ async def create_dynamic_service(
     service: DynamicServiceCreate,
     x_dynamic_sidecar_request_dns: str = Header(...),
     x_dynamic_sidecar_request_scheme: str = Header(...),
+    x_dynamic_sidecar_request_user_agent: str = Header(...),
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     dynamic_services_settings: DynamicServicesSettings = Depends(
         get_dynamic_services_settings
     ),
     scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
 ) -> Union[DynamicServiceGet, RedirectResponse]:
-
     simcore_service_labels: SimcoreServiceLabels = (
         await director_v0_client.get_service_labels(
             service=ServiceKeyVersion(key=service.key, version=service.version)
@@ -141,6 +141,7 @@ async def create_dynamic_service(
             port=dynamic_services_settings.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_PORT,
             request_dns=x_dynamic_sidecar_request_dns,
             request_scheme=x_dynamic_sidecar_request_scheme,
+            request_user_agent=x_dynamic_sidecar_request_user_agent,
         )
 
     return cast(DynamicServiceGet, await scheduler.get_stack_status(service.node_uuid))
@@ -156,7 +157,6 @@ async def get_dynamic_sidecar_status(
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
 ) -> Union[DynamicServiceGet, RedirectResponse]:
-
     try:
         return cast(DynamicServiceGet, await scheduler.get_stack_status(node_uuid))
     except DynamicSidecarNotFoundError:
@@ -317,7 +317,6 @@ async def update_projects_networks(
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     rabbitmq_client: RabbitMQClient = Depends(get_rabbitmq_client),
 ) -> None:
-
     await projects_networks.update_from_workbench(
         projects_networks_repository=projects_networks_repository,
         projects_repository=projects_repository,
