@@ -124,10 +124,11 @@ qx.Class.define("osparc.Error", {
           });
           this.bind("code", control, "value", {
             converter: code => {
+              const errorText = this.tr("Error: ");
               if (code in this.self().FRIENDLY_HTTP_STATUS) {
-                return this.tr("Error: ") + this.self().FRIENDLY_HTTP_STATUS[code];
+                return errorText + this.self().FRIENDLY_HTTP_STATUS[code];
               }
-              return code;
+              return errorText + code;
             }
           });
           break;
@@ -199,7 +200,9 @@ qx.Class.define("osparc.Error", {
       errorWidget.add(logo);
       errorWidget.add(image);
       errorWidget.add(status);
-      errorWidget.add(messagesLayout);
+      errorWidget.add(messagesLayout, {
+        flex: 1
+      });
       errorWidget.add(actionsLayout);
       errorWidget.add(new qx.ui.core.Widget(), {
         flex: 1
