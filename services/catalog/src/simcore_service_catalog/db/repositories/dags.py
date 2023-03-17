@@ -23,6 +23,7 @@ class DAGsRepository(BaseRepository):
             row = result.first()
         if row:
             return DAGAtDB.from_orm(row)
+        return None
 
     async def create_dag(self, dag: DAGIn) -> int:
         async with self.db_engine.begin() as conn:
