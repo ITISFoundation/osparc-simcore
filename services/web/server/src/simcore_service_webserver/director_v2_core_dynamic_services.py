@@ -74,6 +74,7 @@ async def get_dynamic_service(app: web.Application, node_uuid: str) -> DataType:
 
 @log_decorator(logger=log)
 async def run_dynamic_service(
+    *,
     app: web.Application,
     product_name: str,
     save_state: bool,
