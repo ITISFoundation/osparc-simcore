@@ -304,7 +304,7 @@ async def _remove_single_service_if_orphan(
     currently_opened_projects_node_ids: dict[str, str],
 ) -> None:
     """
-    Only removes the service if it is an orphan.
+    Removes the service if it is an orphan. Otherwise the service is left running.
     """
 
     service_host = interactive_service["service_host"]
