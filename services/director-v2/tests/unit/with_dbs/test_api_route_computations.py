@@ -190,8 +190,7 @@ async def test_create_computation(
         create_computation_url,
         json=jsonable_encoder(
             ComputationCreate(
-                user_id=user["id"],
-                project_id=proj.uuid,
+                user_id=user["id"], project_id=proj.uuid, product_name=product_name
             )
         ),
     )
