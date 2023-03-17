@@ -365,11 +365,9 @@ class ServicesRepository(BaseRepository):
         )
         gid_to_group_map = {group.gid: group for group in groups}
 
-        group_specs = {
-            GroupType.EVERYONE: None,
-            GroupType.PRIMARY: None,
-            GroupType.STANDARD: {},
-        }
+        everyone_specs = None
+        primary_specs = None
+        teams_specs: dict[GroupID, ServiceSpecificationsAtDB] = {}
 
         queried_version = packaging.version.parse(version)
         # we should instead use semver enabled postgres [https://pgxn.org/dist/semver/doc/semver.html]
@@ -401,14 +399,18 @@ class ServicesRepository(BaseRepository):
                     # filter by group type
                     group = gid_to_group_map[row.gid]
                     if (group.group_type == GroupType.STANDARD) and _is_newer(
-                        group_specs[group.group_type].get(db_service_spec.gid),
+                        teams_specs.get(db_service_spec.gid),
                         db_service_spec,
                     ):
-                        group_specs[group.group_type][
-                            db_service_spec.gid
-                        ] = db_service_spec
-                    elif _is_newer(group_specs[group.group_type], db_service_spec):
-                        group_specs[group.group_type] = db_service_spec
+                        teams_specs[db_service_spec.gid] = db_service_spec
+                    elif (group.group_type == GroupType.EVERYONE) and _is_newer(
+                        everyone_specs, db_service_spec
+                    ):
+                        everyone_specs = db_service_spec
+                    elif (group.group_type == GroupType.PRIMARY) and _is_newer(
+                        primary_specs, db_service_spec
+                    ):
+                        primary_specs = db_service_spec
 
                 except ValidationError as exc:
                     logger.warning(
@@ -418,9 +420,7 @@ class ServicesRepository(BaseRepository):
                     )
 
         if merged_specifications := _merge_specs(
-            group_specs[GroupType.EVERYONE],
-            group_specs[GroupType.STANDARD],
-            group_specs[GroupType.PRIMARY],
+            everyone_specs, teams_specs, primary_specs
         ):
             return ServiceSpecifications.parse_obj(merged_specifications)
         return None  # mypy
