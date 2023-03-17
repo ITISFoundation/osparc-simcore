@@ -1,6 +1,5 @@
 import logging
 from collections import defaultdict
-from distutils.version import Version
 from itertools import chain
 from typing import Any, Iterable, Optional, cast
 
@@ -143,8 +142,8 @@ class ServicesRepository(BaseRepository):
                 releases.append(ServiceMetaDataAtDB.from_orm(row))
 
         # Now sort naturally from latest first: (This is lame, the sorting should be done in the db)
-        def _by_version(x: ServiceMetaDataAtDB) -> Version:
-            return cast(Version, packaging.version.parse(x.version))
+        def _by_version(x: ServiceMetaDataAtDB) -> packaging.version.Version:
+            return cast(packaging.version.Version, packaging.version.parse(x.version))
 
         releases_sorted = sorted(releases, key=_by_version, reverse=True)
         return releases_sorted
@@ -269,7 +268,7 @@ class ServicesRepository(BaseRepository):
 
         async with self.db_engine.connect() as conn:
             async for row in await conn.stream(query):
-                services_in_db.append(ServiceAccessRightsAtDB(**row))
+                services_in_db.append(ServiceAccessRightsAtDB.from_orm(row))
         return services_in_db
 
     async def list_services_access_rights(
@@ -298,7 +297,7 @@ class ServicesRepository(BaseRepository):
                         row[services_access_rights.c.key],
                         row[services_access_rights.c.version],
                     )
-                ].append(ServiceAccessRightsAtDB(**row))
+                ].append(ServiceAccessRightsAtDB.from_orm(row))
         return service_to_access_rights
 
     async def upsert_service_access_rights(
