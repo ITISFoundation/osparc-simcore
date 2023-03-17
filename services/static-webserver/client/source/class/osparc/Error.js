@@ -169,7 +169,9 @@ qx.Class.define("osparc.Error", {
       this._add(new qx.ui.core.Widget(), {
         flex: 1
       });
-      this._add(errorWidget);
+      this._add(errorWidget, {
+        flex: 1
+      });
       this._add(new qx.ui.core.Widget(), {
         flex: 1
       });
