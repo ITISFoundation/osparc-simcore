@@ -138,7 +138,7 @@ qx.Class.define("osparc.Error", {
           });
           break;
         case "actions-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(20)).set({
             alignX: "center",
             maxWidth: 400
           });
@@ -157,10 +157,10 @@ qx.Class.define("osparc.Error", {
         }
         case "support-email": {
           control = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/copy/14",
+            icon: "@FontAwesome5Solid/envelope/14",
             label: this.tr("Support email")
           });
-          control.addListener("execute", () => this.__copyMessagesToClipboard(), this);
+          control.addListener("execute", () => this.__supportEmail(), this);
           const actionsLayout = this.getChildControl("actions-layout");
           actionsLayout.add(control, {
             flex: 1
@@ -172,7 +172,7 @@ qx.Class.define("osparc.Error", {
             icon: "@FontAwesome5Solid/copy/14",
             label: this.tr("Log in")
           });
-          control.addListener("execute", () => this.__copyMessagesToClipboard(), this);
+          control.addListener("execute", () => this.__logIn(), this);
           const actionsLayout = this.getChildControl("actions-layout");
           actionsLayout.add(control, {
             flex: 1
@@ -244,6 +244,20 @@ qx.Class.define("osparc.Error", {
       let text = "";
       this.getMessages().forEach(msg => text+= msg);
       osparc.utils.Utils.copyTextToClipboard(text);
+    },
+
+    __supportEmail: function() {
+      osparc.store.VendorInfo.getInstance().getSupportEmail()
+        .then(supportEmail => {
+          const giveEmailFeedbackWindow = new osparc.ui.window.Dialog("Support", null, qx.locale.Manager.tr("Please send us an email to:"));
+          const mailto = osparc.store.Support.getMailToLabel(supportEmail, "Access error");
+          giveEmailFeedbackWindow.addWidget(mailto);
+          giveEmailFeedbackWindow.open();
+        });
+    },
+
+    __logIn: function() {
+      window.location.reload();
     }
   }
 });
