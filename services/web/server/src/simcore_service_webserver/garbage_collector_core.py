@@ -366,7 +366,7 @@ async def _remove_single_service_if_orphan(
             except (UserNotFoundError, ValueError):
                 user_role = None
 
-            project_uuid = interactive_service.get("project_id", "")
+            project_uuid = interactive_service["project_id"]
 
             save_state = await ProjectDBAPI.get_from_app_context(app).has_permission(
                 user_id, project_uuid, "write"
