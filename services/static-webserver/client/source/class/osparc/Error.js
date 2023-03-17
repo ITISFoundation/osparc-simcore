@@ -41,14 +41,14 @@ qx.Class.define("osparc.Error", {
       check: "String",
       init: "",
       nullable: true,
-      apply: "_applyCode"
+      event: "changeCode"
     },
 
     messages: {
       check: "Array",
       init: [],
       nullable: true,
-      apply: "_applyMessages"
+      apply: "__applyMessages"
     }
   },
 
@@ -99,7 +99,6 @@ qx.Class.define("osparc.Error", {
   },
 
   members: {
-    __status: null,
     __messages: null,
 
     _createChildControlImpl: function(id) {
@@ -125,6 +124,14 @@ qx.Class.define("osparc.Error", {
             rich : true,
             width: 400
           });
+          this.bind("code", control, "value", {
+            converter: code => {
+              if (code in this.self().FRIENDLY_HTTP_STATUS) {
+                return this.tr("Error: ") + this.self().FRIENDLY_HTTP_STATUS[code];
+              }
+              return code;
+            }
+          });
           break;
         case "messages-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
@@ -147,7 +154,7 @@ qx.Class.define("osparc.Error", {
     __buildLayout: function() {
       const logo = this.getChildControl("logo");
       const image = this.getChildControl("lying-panda");
-      const status = this.__status = this.getChildControl("code");
+      const status = this.getChildControl("code");
       const message = this.__messages = this.getChildControl("messages-layout");
 
       const errorWidget = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
@@ -175,13 +182,7 @@ qx.Class.define("osparc.Error", {
       });
     },
 
-    _applyCode: function(status) {
-      if (status in this.self().FRIENDLY_HTTP_STATUS) {
-        this.__status.setValue("Error: " + this.self().FRIENDLY_HTTP_STATUS[status]);
-      }
-    },
-
-    _applyMessages: function(messages) {
+    __applyMessages: function(messages) {
       this.__messages.removeAll();
       messages.forEach(msg => {
         const message = this.getChildControl("message");
