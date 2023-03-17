@@ -83,6 +83,7 @@ async def run_dynamic_service(
     service_uuid: str,
     request_dns: str,
     request_scheme: str,
+    request_user_agent: str,
     service_resources: ServiceResourcesDict,
 ) -> DataType:
     """
@@ -106,6 +107,7 @@ async def run_dynamic_service(
     headers = {
         "X-Dynamic-Sidecar-Request-DNS": request_dns,
         "X-Dynamic-Sidecar-Request-Scheme": request_scheme,
+        "X-Dynamic-Sidecar-Request-User-Agent": request_user_agent,
     }
 
     settings: DirectorV2Settings = get_plugin_settings(app)

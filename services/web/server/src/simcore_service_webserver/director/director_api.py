@@ -6,7 +6,7 @@
 import logging
 import urllib.parse
 import warnings
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 from aiohttp import ClientSession, web
 from servicelib.aiohttp.client_session import get_client_session
@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 warnings.warn("Director-v0 is deprecated, please use Director-v2", DeprecationWarning)
 
 
-def _get_director_client(app: web.Application) -> Tuple[ClientSession, URL]:
+def _get_director_client(app: web.Application) -> tuple[ClientSession, URL]:
     settings: DirectorSettings = get_plugin_settings(app)
     api_endpoint = settings.base_url
     session = get_client_session(app)
@@ -32,7 +32,7 @@ async def get_running_interactive_services(
     app: web.Application,
     user_id: Optional[str] = None,
     project_id: Optional[str] = None,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     session, api_endpoint = _get_director_client(app)
 
     params = {}
@@ -59,7 +59,8 @@ async def start_service(
     service_uuid: str,
     request_dns: str,
     request_scheme: str,
-) -> Optional[Dict]:
+    request_user_agent: str,
+) -> Optional[dict]:
     session, api_endpoint = _get_director_client(app)
 
     params = {
@@ -74,6 +75,7 @@ async def start_service(
     headers = {
         "X-Dynamic-Sidecar-Request-DNS": request_dns,
         "X-Dynamic-Sidecar-Request-Scheme": request_scheme,
+        "X-Dynamic-Sidecar-Request-User-Agent": request_user_agent,
     }
 
     url = (api_endpoint / "running_interactive_services").with_query(params)
@@ -126,7 +128,7 @@ async def stop_services(
 
 async def get_service_by_key_version(
     app: web.Application, service_key: str, service_version: str
-) -> Optional[Dict]:
+) -> Optional[dict]:
     session, api_endpoint = _get_director_client(app)
 
     url = (
@@ -147,7 +149,7 @@ async def get_service_by_key_version(
 
 async def get_services_extras(
     app: web.Application, service_key: str, service_version: str
-) -> Optional[Dict]:
+) -> Optional[dict]:
     session, api_endpoint = _get_director_client(app)
 
     url = (

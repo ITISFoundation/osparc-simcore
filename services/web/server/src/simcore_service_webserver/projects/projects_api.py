@@ -233,6 +233,7 @@ async def _start_dynamic_service(
         service_uuid=f"{node_uuid}",
         request_dns=extract_dns_without_default_port(request.url),
         request_scheme=request.headers.get("X-Forwarded-Proto", request.url.scheme),
+        request_user_agent=request.headers.get("User-Agent", ""),
         service_resources=service_resources,
     )
 
@@ -591,7 +592,6 @@ async def try_open_project_for_user(
             await get_user_name(app, user_id),
             notify_users=False,
         ):
-
             with managed_resource(user_id, client_session_id, app) as rt:
                 # NOTE: if max_number_of_studies_per_user is set, the same
                 # project shall still be openable if the tab was closed
