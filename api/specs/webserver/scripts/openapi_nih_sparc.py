@@ -34,7 +34,12 @@ TAGS: list[Union[str, Enum]] = [
     operation_id="list_viewers",
 )
 async def list_viewers(file_type: Optional[str] = None):
-    ...
+    """Lists all publically available viewers
+
+    Notice that this might contain multiple services for the same filetype
+
+    If file_type is provided, then it filters viewer for that filetype
+    """
 
 
 @app.post(
@@ -44,7 +49,14 @@ async def list_viewers(file_type: Optional[str] = None):
     operation_id="list_default_viewers",
 )
 async def list_default_viewers(file_type: Optional[str] = None):
-    ...
+    """Lists the default viewer for each supported filetype
+
+    This was interfaced as a subcollection of viewers because it is a very common use-case
+
+    Only publicaly available viewers
+
+    If file_type is provided, then it filters viewer for that filetype
+    """
 
 
 @app.get(
