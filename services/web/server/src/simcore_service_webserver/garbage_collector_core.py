@@ -10,6 +10,7 @@ from typing import Any, Optional
 import asyncpg.exceptions
 from aiohttp import web
 from redis.asyncio import Redis
+from servicelib.logging_utils import log_decorator
 from servicelib.utils import logged_gather
 from simcore_postgres_database.errors import DatabaseError
 from simcore_postgres_database.models.users import UserRole
@@ -296,11 +297,16 @@ async def remove_users_manually_marked_as_guests(
         )
 
 
-async def _remove_single_orphaned_service(
+@log_decorator(logger, log_traceback=True)
+async def _remove_single_service_if_orphan(
     app: web.Application,
     interactive_service: dict[str, Any],
     currently_opened_projects_node_ids: dict[str, str],
 ) -> None:
+    """
+    Removes the service if it is an orphan. Otherwise the service is left running.
+    """
+
     service_host = interactive_service["service_host"]
     # if not present in DB or not part of currently opened projects, can be removed
     service_uuid = interactive_service["service_uuid"]
@@ -360,7 +366,7 @@ async def _remove_single_orphaned_service(
             except (UserNotFoundError, ValueError):
                 user_role = None
 
-            project_uuid = currently_opened_projects_node_ids[service_uuid]
+            project_uuid = interactive_service["project_id"]
 
             save_state = await ProjectDBAPI.get_from_app_context(app).has_permission(
                 user_id, project_uuid, "write"
@@ -423,7 +429,7 @@ async def remove_orphaned_services(
     # a big study with logs of heavy projects, this will
     # ensure it gets done in parallel
     tasks = [
-        _remove_single_orphaned_service(
+        _remove_single_service_if_orphan(
             app, interactive_service, currently_opened_projects_node_ids
         )
         for interactive_service in running_interactive_services

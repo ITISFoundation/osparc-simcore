@@ -17,7 +17,6 @@ from pydantic import (
     validator,
 )
 
-from .basic_regex import VERSION_RE
 from .basic_types import EnvVarKey
 from .projects_access import AccessEnum
 from .projects_nodes_io import (
@@ -29,7 +28,7 @@ from .projects_nodes_io import (
 )
 from .projects_nodes_ui import Position
 from .projects_state import RunningState
-from .services import PROPERTY_KEY_RE, SERVICE_KEY_RE
+from .services import PROPERTY_KEY_RE, ServiceKey, ServiceVersion
 
 # NOTE: WARNING the order here matters
 
@@ -99,20 +98,18 @@ class NodeState(BaseModel):
 
 
 class Node(BaseModel):
-    key: str = Field(
+    key: ServiceKey = Field(
         ...,
         description="distinctive name for the node based on the docker registry path",
-        regex=SERVICE_KEY_RE,
         examples=[
             "simcore/services/comp/itis/sleeper",
             "simcore/services/dynamic/3dviewer",
             "simcore/services/frontend/file-picker",
         ],
     )
-    version: str = Field(
+    version: ServiceVersion = Field(
         ...,
         description="semantic version number of the node",
-        regex=VERSION_RE,
         examples=["1.0.0", "0.0.1"],
     )
     label: str = Field(

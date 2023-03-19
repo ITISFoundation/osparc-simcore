@@ -1,13 +1,13 @@
 import logging
 from typing import Any, Final, Union
 
+from models_library.docker import DockerGenericTag
 from pydantic import (
     BaseModel,
     ByteSize,
     Field,
     StrictFloat,
     StrictInt,
-    constr,
     parse_obj_as,
     root_validator,
 )
@@ -16,13 +16,14 @@ from .utils.fastapi_encoders import jsonable_encoder
 
 logger = logging.getLogger(__name__)
 
-DockerImage = constr(regex=r"[\w/-]+:[\w.@]+")
-DockerComposeServiceName = constr(regex=r"^[a-zA-Z0-9._-]+$")
+
 ResourceName = str
 
 # NOTE: replace hard coded `container` with function which can
 # extract the name from the `service_key` or `registry_address/service_key`
-DEFAULT_SINGLE_SERVICE_NAME: Final[DockerComposeServiceName] = "container"
+DEFAULT_SINGLE_SERVICE_NAME: Final[DockerGenericTag] = parse_obj_as(
+    DockerGenericTag, "container"
+)
 
 MEMORY_50MB: Final[int] = parse_obj_as(ByteSize, "50mib")
 MEMORY_250MB: Final[int] = parse_obj_as(ByteSize, "250mib")
@@ -58,7 +59,7 @@ ResourcesDict = dict[ResourceName, ResourceValue]
 
 
 class ImageResources(BaseModel):
-    image: DockerImage = Field(
+    image: DockerGenericTag = Field(
         ...,
         description=(
             "Used by the frontend to provide a context for the users."
@@ -87,23 +88,29 @@ class ImageResources(BaseModel):
         }
 
 
-ServiceResourcesDict = dict[DockerComposeServiceName, ImageResources]
+ServiceResourcesDict = dict[DockerGenericTag, ImageResources]
 
 
 class ServiceResourcesDictHelpers:
     @staticmethod
     def create_from_single_service(
-        image: DockerComposeServiceName, resources: ResourcesDict
+        image: DockerGenericTag,
+        resources: ResourcesDict,
     ) -> ServiceResourcesDict:
         return parse_obj_as(
             ServiceResourcesDict,
-            {DEFAULT_SINGLE_SERVICE_NAME: {"image": image, "resources": resources}},
+            {
+                DEFAULT_SINGLE_SERVICE_NAME: {
+                    "image": image,
+                    "resources": resources,
+                }
+            },
         )
 
     @staticmethod
     def create_jsonable(
         service_resources: ServiceResourcesDict,
-    ) -> dict[DockerComposeServiceName, Any]:
+    ) -> dict[DockerGenericTag, Any]:
         return jsonable_encoder(service_resources)
 
     class Config:

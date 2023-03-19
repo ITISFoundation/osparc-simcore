@@ -4,7 +4,7 @@
 import logging
 import operator
 from datetime import datetime
-from typing import Callable, Optional, Union
+from typing import Any, Callable, Optional, Union, cast
 from urllib.parse import quote_plus
 
 from fastapi import FastAPI
@@ -31,8 +31,11 @@ def _is_frontend_service(service: ServiceDockerData) -> bool:
 async def _is_old_service(app: FastAPI, service: ServiceDockerData) -> bool:
     # get service build date
     client = get_director_api(app)
-    data = await client.get(
-        f"/service_extras/{quote_plus(service.key)}/{service.version}"
+    data = cast(
+        dict[str, Any],
+        await client.get(
+            f"/service_extras/{quote_plus(service.key)}/{service.version}"
+        ),
     )
     if not data or "build_date" not in data:
         return True
@@ -161,9 +164,10 @@ def reduce_access_rights(
 
     def get_flags(access: ServiceAccessRightsAtDB) -> dict[str, bool]:
         """Extracts only"""
-        return access.dict(include={"execute_access", "write_access"})
+        flags = access.dict(include={"execute_access", "write_access"})
+        return cast(dict[str, bool], flags)
 
-    access_flags_map = {}
+    access_flags_map: dict[tuple[Union[str, int], ...], dict[str, bool]] = {}
     for access in access_rights:
         target = get_target(access)
         access_flags = access_flags_map.get(target)
@@ -179,10 +183,10 @@ def reduce_access_rights(
     for target in access_flags_map:
         reduced_access_rights.append(
             ServiceAccessRightsAtDB(
-                key=target[0],
-                version=target[1],
-                gid=target[2],
-                product_name=target[3],
+                key=f"{target[0]}",
+                version=f"{target[1]}",
+                gid=int(target[2]),
+                product_name=f"{target[3]}",
                 **access_flags_map[target],
             )
         )

@@ -4,6 +4,7 @@ NOTE: to dump json-schema from CLI use
     python -c "from models_library.services import ServiceDockerData as cls; print(cls.schema_json(indent=2))" > services-schema.json
 """
 
+import re
 from datetime import datetime
 from enum import Enum
 from typing import Any, Optional, Union
@@ -11,6 +12,7 @@ from uuid import UUID
 
 from pydantic import (
     BaseModel,
+    ConstrainedStr,
     EmailStr,
     Extra,
     Field,
@@ -54,8 +56,14 @@ LATEST_INTEGRATION_VERSION = "1.0.0"
 ServicePortKey = constr(regex=PROPERTY_KEY_RE)
 FileName = constr(regex=FILENAME_RE)
 
-ServiceKey = constr(regex=KEY_RE)
-ServiceVersion = constr(regex=VERSION_RE)
+
+class ServiceKey(ConstrainedStr):
+    regex = re.compile(SERVICE_KEY_RE)
+
+
+class ServiceVersion(ConstrainedStr):
+    regex = re.compile(VERSION_RE)
+
 
 RunID = UUID
 
@@ -506,7 +514,7 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
                     "type": "computational",
                     "integration-version": "1.0.0",
                     "version": "1.7.0",
-                    "description": "oSparc Python Runner",
+                    "description": "oSparc Python Runner with boot options",
                     "contact": "smith@company.com",
                     "authors": [
                         {
