@@ -7,7 +7,7 @@ from enum import Enum
 from typing import Any, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Extra, Field, constr, validator
+from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, constr, validator
 
 from .basic_regex import DATE_RE, UUID_RE_BASE
 from .projects_access import AccessRights, GroupIDStr
@@ -36,6 +36,11 @@ class ProjectType(str, Enum):
     STANDARD = "STANDARD"
 
 
+class HttpUrlWithCustomMinLength(HttpUrl):
+    # Overwriting min length to be back compatible when generating OAS
+    min_length = 0
+
+
 class BaseProjectModel(BaseModel):
     # Description of the project
     uuid: ProjectID = Field(
@@ -54,13 +59,10 @@ class BaseProjectModel(BaseModel):
         description="longer one-line description about the project",
         examples=["Dabbling in temporal transitions ..."],
     )
-    thumbnail: Optional[str] = Field(
+    thumbnail: Optional[HttpUrlWithCustomMinLength] = Field(
         ...,
         description="url of the project thumbnail",
         examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
-        min_length=0,
-        max_length=2083,
-        format="uri",
     )
 
     creation_date: datetime = Field(...)
