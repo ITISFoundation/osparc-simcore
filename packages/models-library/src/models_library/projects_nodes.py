@@ -15,6 +15,7 @@ from pydantic import (
     StrictInt,
     constr,
     validator,
+    HttpUrl
 )
 
 from .basic_types import EnvVarKey
@@ -97,6 +98,11 @@ class NodeState(BaseModel):
         }
 
 
+class HttpUrlWithCustomMinLength(HttpUrl):
+    # Overwriting min length to be back compatible when generating OAS
+    min_length = 0
+
+
 class Node(BaseModel):
     key: ServiceKey = Field(
         ...,
@@ -118,13 +124,10 @@ class Node(BaseModel):
     progress: Optional[float] = Field(
         None, ge=0, le=100, description="the node progress value"
     )
-    thumbnail: Optional[str] = Field(
+    thumbnail: Optional[HttpUrlWithCustomMinLength] = Field(
         None,
         description="url of the latest screenshot of the node",
-        examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
-        min_length=0,
-        max_length=2083,
-        format="uri",
+        examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"]
     )
 
     # RUN HASH

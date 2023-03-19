@@ -69,22 +69,22 @@
             "key": {
               "title": "Key",
               "description": "distinctive name for the node based on the docker registry path",
-              "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
               "examples": [
                 "simcore/services/comp/itis/sleeper",
                 "simcore/services/dynamic/3dviewer",
                 "simcore/services/frontend/file-picker"
               ],
+              "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
               "type": "string"
             },
             "version": {
               "title": "Version",
               "description": "semantic version number of the node",
-              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
               "examples": [
                 "1.0.0",
                 "0.0.1"
               ],
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
               "type": "string"
             },
             "label": {
@@ -105,11 +105,11 @@
             "thumbnail": {
               "title": "Thumbnail",
               "description": "url of the latest screenshot of the node",
-              "maxLength": 2083,
-              "minLength": 0,
               "examples": [
                 "https://placeimg.com/171/96/tech/grayscale/?0.jpg"
               ],
+              "minLength": 0,
+              "maxLength": 2083,
               "format": "uri",
               "type": "string"
             },
@@ -1425,22 +1425,22 @@
         "key": {
           "title": "Key",
           "description": "distinctive name for the node based on the docker registry path",
-          "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
           "examples": [
             "simcore/services/comp/itis/sleeper",
             "simcore/services/dynamic/3dviewer",
             "simcore/services/frontend/file-picker"
           ],
+          "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
           "type": "string"
         },
         "version": {
           "title": "Version",
           "description": "semantic version number of the node",
-          "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
           "examples": [
             "1.0.0",
             "0.0.1"
           ],
+          "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
           "type": "string"
         },
         "label": {
@@ -1461,11 +1461,11 @@
         "thumbnail": {
           "title": "Thumbnail",
           "description": "url of the latest screenshot of the node",
-          "maxLength": 2083,
-          "minLength": 0,
           "examples": [
             "https://placeimg.com/171/96/tech/grayscale/?0.jpg"
           ],
+          "minLength": 0,
+          "maxLength": 2083,
           "format": "uri",
           "type": "string"
         },

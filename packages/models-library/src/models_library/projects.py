@@ -7,11 +7,11 @@ from enum import Enum
 from typing import Any, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, constr, validator
+from pydantic import BaseModel, EmailStr, Extra, Field, constr, validator
 
 from .basic_regex import DATE_RE, UUID_RE_BASE
 from .projects_access import AccessRights, GroupIDStr
-from .projects_nodes import Node
+from .projects_nodes import Node, HttpUrlWithCustomMinLength
 from .projects_nodes_io import NodeIDStr
 from .projects_state import ProjectState
 from .projects_ui import StudyUI
@@ -34,11 +34,6 @@ class ProjectType(str, Enum):
 
     TEMPLATE = "TEMPLATE"
     STANDARD = "STANDARD"
-
-
-class HttpUrlWithCustomMinLength(HttpUrl):
-    # Overwriting min length to be back compatible when generating OAS
-    min_length = 0
 
 
 class BaseProjectModel(BaseModel):
