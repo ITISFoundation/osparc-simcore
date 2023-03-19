@@ -1133,24 +1133,28 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }, this);
     },
 
-
     __removeNode: function(nodeId) {
-      const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
-      if (preferencesSettings.getConfirmDeleteNode()) {
-        const msg = this.tr("Are you sure you want to delete the selected node?");
-        const win = new osparc.ui.window.Confirmation(msg).set({
-          confirmText: this.tr("Delete"),
-          confirmAction: "delete"
-        });
-        win.center();
-        win.open();
-        win.addListener("close", () => {
-          if (win.getConfirmed()) {
-            this.__doRemoveNode(nodeId);
-          }
-        }, this);
-      } else {
-        this.__doRemoveNode(nodeId);
+      const workbench = this.getStudy().getWorkbench();
+      const node = workbench.getNode(nodeId);
+      if (node) {
+        const avoidConfirmation = node.isFilePicker() && !osparc.file.FilePicker.hasOutputAssigned(node.getOutputs());
+        const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+        if (!avoidConfirmation && preferencesSettings.getConfirmDeleteNode()) {
+          const msg = this.tr("Are you sure you want to delete the selected node?");
+          const win = new osparc.ui.window.Confirmation(msg).set({
+            confirmText: this.tr("Delete"),
+            confirmAction: "delete"
+          });
+          win.center();
+          win.open();
+          win.addListener("close", () => {
+            if (win.getConfirmed()) {
+              this.__doRemoveNode(nodeId);
+            }
+          }, this);
+        } else {
+          this.__doRemoveNode(nodeId);
+        }
       }
     },
 
