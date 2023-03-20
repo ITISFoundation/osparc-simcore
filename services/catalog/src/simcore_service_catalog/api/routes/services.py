@@ -21,10 +21,11 @@ from ...models.schemas.constants import (
     RESPONSE_MODEL_POLICY,
 )
 from ...models.schemas.services import ServiceGet, ServiceUpdate
+from ...services.director import DirectorApi
 from ...services.function_services import is_function_service
 from ...utils.requests_decorators import cancellable_request
 from ..dependencies.database import get_repository
-from ..dependencies.director import DirectorApi, get_director_api
+from ..dependencies.director import get_director_api
 from ..dependencies.services import get_service_from_registry
 
 logger = logging.getLogger(__name__)

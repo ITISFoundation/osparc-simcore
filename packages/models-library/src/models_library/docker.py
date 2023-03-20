@@ -6,17 +6,9 @@ from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.users import UserID
-from pydantic import BaseModel, ConstrainedStr, Field, constr
+from pydantic import BaseModel, ConstrainedStr, Field
 
-from .basic_regex import (
-    DOCKER_GENERIC_TAG_KEY_RE,
-    DOCKER_IMAGE_KEY_RE,
-    DOCKER_IMAGE_VERSION_RE,
-    DOCKER_LABEL_KEY_REGEX,
-)
-
-DockerImageKey = constr(regex=DOCKER_IMAGE_KEY_RE)
-DockerImageVersion = constr(regex=DOCKER_IMAGE_VERSION_RE)
+from .basic_regex import DOCKER_GENERIC_TAG_KEY_RE, DOCKER_LABEL_KEY_REGEX
 
 
 class DockerLabelKey(ConstrainedStr):
