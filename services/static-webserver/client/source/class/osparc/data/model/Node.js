@@ -894,7 +894,14 @@ qx.Class.define("osparc.data.model.Node", {
     },
     // !---- Output Nodes -----
 
+    canNodeStart: function() {
+      return this.isDynamic() && ["idle", "failed"].includes(this.getStatus());
+    },
+
     requestStartNode: function() {
+      if (!this.canNodeStart()) {
+        return;
+      }
       const params = {
         url: {
           studyId: this.getStudy().getUuid(),
@@ -1391,6 +1398,7 @@ qx.Class.define("osparc.data.model.Node", {
         converter: state => (state === "ready") ? "excluded" : "visible"
       });
       this.getStatus().bind("interactive", startButton, "enabled", {
+        // OM
         converter: state => ["idle", "failed"].includes(state)
       });
       const executeListenerId = startButton.addListener("execute", this.requestStartNode, this);
