@@ -138,6 +138,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       this.getChildControl("manual");
       this.getChildControl("feedback");
       this.getChildControl("theme-switch");
+      this.getChildControl("register-button");
       this.getChildControl("user-menu");
     },
 
@@ -312,6 +313,18 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           control.set(this.self().BUTTON_OPTIONS);
           this.getChildControl("right-items").add(control);
           break;
+        case "register-button": {
+          control = this.__createRegisterBtn().set({
+            visibility: "excluded"
+          });
+          control.set(this.self().BUTTON_OPTIONS);
+          const authData = osparc.auth.Data.getInstance();
+          authData.bind("role", control, "visibility", {
+            converter: role => ["anonymous", "guest"].includes(role) ? "visible" : "excluded"
+          });
+          this.getChildControl("right-items").add(control);
+          break;
+        }
         case "user-menu":
           control = new osparc.navigation.UserMenuButton();
           control.populateMenu();
@@ -380,6 +393,12 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       });
       osparc.store.Support.addSupportButtonsToMenu(menu, menuButton);
       return menuButton;
+    },
+
+    __createRegisterBtn: function() {
+      const registerButton = new qx.ui.form.Button(this.tr("Register"), "@FontAwesome5Solid/edit/14");
+      registerButton.addListener("execute", () => window.open(window.location.href, "_blank"));
+      return registerButton;
     },
 
     addDashboardTabButtons: function(tabButtons) {
