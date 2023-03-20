@@ -314,6 +314,7 @@ async def test_open_project(
     mock_orphaned_services: mock.Mock,
     mock_catalog_api: dict[str, mock.Mock],
     osparc_product_name: str,
+    user_role: UserRole,
 ):
     # POST /v0/projects/{project_id}:open
     # open project
@@ -335,7 +336,7 @@ async def test_open_project(
         for service_uuid, service in dynamic_services.items():
             calls.append(
                 call(
-                    client.app,
+                    app=client.app,
                     project_id=user_project["uuid"],
                     service_key=service["key"],
                     service_uuid=service_uuid,
@@ -344,6 +345,7 @@ async def test_open_project(
                     request_scheme=request_scheme,
                     request_dns=request_dns,
                     product_name=osparc_product_name,
+                    save_state=user_role > UserRole.GUEST,
                     service_resources=ServiceResourcesDictHelpers.create_jsonable(
                         mock_service_resources
                     ),
@@ -374,6 +376,7 @@ async def test_open_template_project_for_edition(
     mock_orphaned_services: mock.Mock,
     mock_catalog_api: dict[str, mock.Mock],
     osparc_product_name: str,
+    user_role: UserRole,
 ):
     # POST /v0/projects/{project_id}:open
     # open project
@@ -399,7 +402,7 @@ async def test_open_template_project_for_edition(
         for service_uuid, service in dynamic_services.items():
             calls.append(
                 call(
-                    client.app,
+                    app=client.app,
                     project_id=template_project["uuid"],
                     service_key=service["key"],
                     service_uuid=service_uuid,
@@ -411,6 +414,7 @@ async def test_open_template_project_for_edition(
                         mock_service_resources
                     ),
                     product_name=osparc_product_name,
+                    save_state=user_role > UserRole.GUEST,
                 )
             )
         mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_has_calls(
