@@ -24,13 +24,13 @@ from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from distributed.pubsub import Pub
+from models_library.services_resources import BootMode
 from packaging import version
 from pydantic import ByteSize
 from pydantic.networks import AnyUrl
 from servicelib.docker_utils import to_datetime
 from settings_library.s3 import S3Settings
 
-from ..boot_mode import BootMode
 from ..dask_utils import LogType, create_dask_worker_logger, publish_task_logs
 from ..file_utils import push_file_to_remote
 from ..settings import Settings

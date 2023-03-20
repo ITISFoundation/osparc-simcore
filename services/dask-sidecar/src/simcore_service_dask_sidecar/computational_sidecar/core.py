@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from pprint import pformat
 from types import TracebackType
-from typing import Any, Coroutine, Dict, List, Optional, Type, cast
+from typing import Any, Coroutine, Optional, cast
 from uuid import uuid4
 
 from aiodocker import Docker
@@ -19,13 +19,13 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputDataSchema,
 )
 from models_library.projects_state import RunningState
+from models_library.services_resources import BootMode
 from packaging import version
 from pydantic import ValidationError
 from pydantic.networks import AnyUrl
 from settings_library.s3 import S3Settings
 from yarl import URL
 
-from ..boot_mode import BootMode
 from ..dask_utils import TaskPublisher, create_dask_worker_logger, publish_event
 from ..file_utils import pull_file_from_remote, push_file_to_remote
 from ..settings import Settings
@@ -54,7 +54,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
     output_data_keys: TaskOutputDataSchema
     log_file_url: AnyUrl
     boot_mode: BootMode
-    task_max_resources: Dict[str, Any]
+    task_max_resources: dict[str, Any]
     task_publishers: TaskPublisher
     s3_settings: Optional[S3Settings]
 
@@ -170,7 +170,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
             TaskStateEvent.from_dask_worker(state=state, msg=msg),
         )
 
-    async def run(self, command: List[str]) -> TaskOutputData:
+    async def run(self, command: list[str]) -> TaskOutputData:
         await self._publish_sidecar_state(RunningState.STARTED)
         await self._publish_sidecar_log(
             f"Starting task for {self.service_key}:{self.service_version} on {socket.gethostname()}..."
@@ -262,7 +262,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
 
     async def __aexit__(
         self,
-        exc_type: Optional[Type[BaseException]],
+        exc_type: Optional[type[BaseException]],
         exc: Optional[BaseException],
         tb: Optional[TracebackType],
     ) -> None:

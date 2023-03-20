@@ -17,8 +17,6 @@ from dask_task_models_library.container_tasks.io import TaskCancelEventName
 from distributed.worker import get_worker
 from distributed.worker_state_machine import TaskState
 
-from .boot_mode import BootMode
-
 
 def create_dask_worker_logger(name: str) -> logging.Logger:
     return logging.getLogger(f"distributed.worker.{name}")
@@ -50,16 +48,6 @@ def is_current_task_aborted() -> bool:
         logger.debug("%s shall be aborted", f"{task=}")
         return True
     return False
-
-
-def get_current_task_boot_mode() -> BootMode:
-    task: Optional[TaskState] = _get_current_task_state()
-    if task and task.resource_restrictions:
-        if task.resource_restrictions.get("MPI", 0) > 0:
-            return BootMode.MPI
-        if task.resource_restrictions.get("GPU", 0) > 0:
-            return BootMode.GPU
-    return BootMode.CPU
 
 
 def get_current_task_resources() -> dict[str, Any]:

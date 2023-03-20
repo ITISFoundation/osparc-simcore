@@ -9,8 +9,8 @@ from unittest.mock import call
 
 import aiodocker
 import pytest
+from models_library.services_resources import BootMode
 from pytest_mock.plugin import MockerFixture
-from simcore_service_dask_sidecar.boot_mode import BootMode
 from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
     DEFAULT_TIME_STAMP,
     LogType,
@@ -58,7 +58,6 @@ async def test_create_container_config(
     boot_mode: BootMode,
     task_max_resources: dict[str, Any],
 ):
-
     container_config = await create_container_config(
         docker_registry,
         service_key,

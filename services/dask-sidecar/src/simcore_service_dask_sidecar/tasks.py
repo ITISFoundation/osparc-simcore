@@ -13,6 +13,7 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputDataSchema,
 )
 from distributed.worker import logger
+from models_library.services_resources import BootMode
 from pydantic.networks import AnyUrl
 from settings_library.s3 import S3Settings
 
@@ -20,7 +21,6 @@ from .computational_sidecar.core import ComputationalSidecar
 from .dask_utils import (
     TaskPublisher,
     create_dask_worker_logger,
-    get_current_task_boot_mode,
     get_current_task_resources,
     monitor_task_abortion,
 )
@@ -92,8 +92,8 @@ async def _run_computational_sidecar_async(
     log_file_url: AnyUrl,
     command: list[str],
     s3_settings: Optional[S3Settings],
+    boot_mode: BootMode,
 ) -> TaskOutputData:
-
     task_publishers = TaskPublisher()
 
     log.debug(
@@ -105,7 +105,6 @@ async def _run_computational_sidecar_async(
     async with monitor_task_abortion(
         task_name=current_task.get_name(), log_publisher=task_publishers.logs
     ):
-        sidecar_bootmode = get_current_task_boot_mode()
         task_max_resources = get_current_task_resources()
         async with ComputationalSidecar(
             service_key=service_key,
@@ -114,7 +113,7 @@ async def _run_computational_sidecar_async(
             output_data_keys=output_data_keys,
             log_file_url=log_file_url,
             docker_auth=docker_auth,
-            boot_mode=sidecar_bootmode,
+            boot_mode=boot_mode,
             task_max_resources=task_max_resources,
             task_publishers=task_publishers,
             s3_settings=s3_settings,
@@ -133,6 +132,7 @@ def run_computational_sidecar(
     log_file_url: AnyUrl,
     command: list[str],
     s3_settings: Optional[S3Settings],
+    boot_mode: BootMode = BootMode.CPU,
 ) -> TaskOutputData:
     # NOTE: The event loop MUST BE created in the main thread prior to this
     # Dask creates threads to run these calls, and the loop shall be created before
@@ -155,6 +155,7 @@ def run_computational_sidecar(
             log_file_url,
             command,
             s3_settings,
+            boot_mode,
         )
     )
     return result

@@ -14,7 +14,7 @@ import pytest
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import TaskLogEvent
 from dask_task_models_library.container_tasks.io import TaskCancelEventName
-from simcore_service_dask_sidecar.boot_mode import BootMode
+from models_library.services_resources import BootMode
 from simcore_service_dask_sidecar.dask_utils import (
     get_current_task_boot_mode,
     get_current_task_resources,
