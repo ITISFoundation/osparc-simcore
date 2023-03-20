@@ -62,6 +62,7 @@ else
   # CPU: number of CPUs available (= num of processing units - DASK_SIDECAR_NUM_NON_USABLE_CPUS)
   # GPU: number GPUs available (= num of GPUs if a nvidia-smi can be run inside a docker container)
   # RAM: amount of RAM available (= CPU/nproc * total virtual memory given by python psutil - DASK_SIDECAR_NON_USABLE_RAM)
+  # VRAM: amount of VRAM available (in bytes)
 
   # CPUs
   num_cpus=$(($(nproc) - ${DASK_SIDECAR_NUM_NON_USABLE_CPUS:-2}))
