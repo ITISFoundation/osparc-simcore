@@ -31,6 +31,7 @@ from models_library.clusters import ClusterAuthentication, ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
+from models_library.services_resources import BootMode
 from models_library.users import UserID
 from pydantic import parse_obj_as
 from pydantic.networks import AnyUrl
@@ -99,6 +100,7 @@ RemoteFct = Callable[
         LogFileUploadURL,
         Commands,
         Optional[S3Settings],
+        BootMode,
     ],
     TaskOutputData,
 ]
@@ -206,6 +208,7 @@ class DaskClient:
             log_file_url: AnyUrl,
             command: list[str],
             s3_settings: Optional[S3Settings],
+            boot_mode: BootMode,
         ) -> TaskOutputData:
             """This function is serialized by the Dask client and sent over to the Dask sidecar(s)
             Therefore, (screaming here) DO NOT MOVE THAT IMPORT ANYWHERE ELSE EVER!!"""
@@ -220,6 +223,7 @@ class DaskClient:
                 log_file_url,
                 command,
                 s3_settings,
+                boot_mode,
             )
 
         if remote_fct is None:
@@ -314,6 +318,7 @@ class DaskClient:
                     log_file_url=log_file_url,
                     command=node_image.command,
                     s3_settings=s3_settings,
+                    boot_mode=node_image.boot_mode,
                     key=job_id,
                     resources=dask_resources,
                     retries=0,

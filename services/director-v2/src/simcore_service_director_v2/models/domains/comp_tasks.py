@@ -13,6 +13,7 @@ from models_library.services import (
     ServiceOutput,
     ServicePortKey,
 )
+from models_library.services_resources import BootMode
 from pydantic import BaseModel, ByteSize, Extra, Field, parse_obj_as, validator
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.comp_tasks import NodeClass, StateType
@@ -34,6 +35,7 @@ class Image(BaseModel):
     node_requirements: Optional[NodeRequirements] = Field(
         None, description="the requirements for the service to run on a node"
     )
+    boot_mode: BootMode = BootMode.CPU
     command: list[str] = Field(
         default=[
             "run",

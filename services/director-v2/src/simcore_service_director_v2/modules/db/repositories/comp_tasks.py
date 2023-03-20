@@ -10,6 +10,7 @@ from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.services import ServiceDockerData
+from models_library.services_resources import BootMode
 from models_library.users import UserID
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert
@@ -63,6 +64,12 @@ def _compute_node_requirements(node_resources: dict[str, Any]) -> NodeRequiremen
     return NodeRequirements.parse_obj(node_defined_resources)
 
 
+def _compute_node_boot_mode(node_resources: dict[str, Any]) -> BootMode:
+    for image_data in node_resources.values():
+        return BootMode(image_data.get("boot_modes")[0])
+    raise RuntimeError("No BootMode")
+
+
 async def _generate_tasks_list_from_project(
     project: ProjectAtDB,
     catalog_client: CatalogClient,
@@ -100,6 +107,7 @@ async def _generate_tasks_list_from_project(
 
         if node_resources:
             data.update(node_requirements=_compute_node_requirements(node_resources))
+            data["boot_mode"] = _compute_node_boot_mode(node_resources)
         if node_extras and node_extras.container_spec:
             data.update(command=node_extras.container_spec.command)
         image = Image.parse_obj(data)
