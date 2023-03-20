@@ -74,7 +74,7 @@ def num_available_gpus() -> int:
 
 
 def video_memory() -> int:
-    """Returns the number of available GPUs, 0 if not a gpu node"""
+    """Returns the amount of VRAM available in bytes. 0 if no GPU available"""
 
     async def async_video_memory() -> int:
         video_ram: ByteSize = ByteSize(0)
