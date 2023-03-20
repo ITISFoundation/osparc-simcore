@@ -42,7 +42,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
         if (role === "guest") {
           return "Guest";
         }
-        return authData.getLabel();
+        return authData.getFirstName();
       }
     });
     osparc.utils.Utils.setIdToWidget(this, "userMenuMainBtn");
