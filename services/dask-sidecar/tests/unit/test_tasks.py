@@ -143,7 +143,20 @@ pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["minio"]
 
 
-@pytest.fixture(params=[f"{LEGACY_INTEGRATION_VERSION}", "1.0.0"])
+def _bash_check_env_exist(variable_name: str, variable_value: str) -> list[str]:
+    return [
+        f"if [ -z ${{{variable_name}+x}} ];then echo {variable_name} does not exist && exit 9;fi",
+        f'if [ "${{{variable_name}}}" != "{variable_value}" ];then echo expected "{variable_value}" and found "${{{variable_name}}}" && exit 9;fi',
+    ]
+
+
+@pytest.fixture(
+    # NOTE: legacy version comes second as it is less easy to debug issues with that one
+    params=[
+        "1.0.0",
+        f"{LEGACY_INTEGRATION_VERSION}",
+    ]
+)
 def ubuntu_task(
     request: FixtureRequest,
     file_on_s3_server: Callable[..., AnyUrl],
@@ -186,9 +199,24 @@ def ubuntu_task(
         "ls -tlah -R ${OUTPUT_FOLDER}",
         "echo Logs:",
         "ls -tlah -R ${LOG_FOLDER}",
+        "echo Envs:",
+        "printenv",
     ]
+
+    # check expected ENVS are set
+    list_of_commands += _bash_check_env_exist(
+        variable_name="SC_COMP_SERVICES_SCHEDULED_AS", variable_value="CPU"
+    )
+    list_of_commands += _bash_check_env_exist(
+        variable_name="SIMCORE_NANO_CPUS_LIMIT", variable_value="CPU"
+    )
+    list_of_commands += _bash_check_env_exist(
+        variable_name="SIMCORE_MEMORY_BYTES_LIMIT", variable_value="CPU"
+    )
+
+    # check input files
     list_of_commands += [
-        f"(test -f ${{INPUT_FOLDER}}/{file} || (echo ${{INPUT_FOLDER}}/{file} does not exists && exit 1))"
+        f"(test -f ${{INPUT_FOLDER}}/{file} || (echo ${{INPUT_FOLDER}}/{file} does not exist && exit 1))"
         for file in file_names
     ] + [f"echo $(cat ${{INPUT_FOLDER}}/{file})" for file in file_names]
 
@@ -279,7 +307,8 @@ def ubuntu_task(
         # NOTE: we use sleeper because it defines a user
         # that can write in outputs and the
         # sidecar can remove the outputs dirs
-        #
+        # it is based on ubuntu though but the bad part is that now it uses sh instead of bash...
+        # cause the entrypoint uses sh
         service_key="itisfoundation/sleeper",
         service_version="2.1.2",
         command=[
