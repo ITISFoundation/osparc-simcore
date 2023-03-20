@@ -25,6 +25,7 @@ from simcore_postgres_database.models.projects_to_products import projects_to_pr
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects import _delete
+from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.projects.projects_api import lock_with_notification
 from socketio.exceptions import ConnectionError as SocketConnectionError
 
@@ -47,7 +48,7 @@ async def test_delete_project(
     expected: ExpectedResponse,
     storage_subsystem_mock: MockedStorageSubsystem,
     mocked_director_v2_api: dict[str, MagicMock],
-    catalog_subsystem_mock: Callable,
+    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     fake_services: Callable,
     assert_get_same_project_caller: Callable,
     mock_rabbitmq: None,
