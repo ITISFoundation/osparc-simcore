@@ -34,6 +34,7 @@ from dask_task_models_library.container_tasks.io import (
 from distributed import Client
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.services_resources import BootMode
 from models_library.users import UserID
 from packaging import version
 from pydantic import AnyUrl, SecretStr
@@ -151,21 +152,32 @@ def _bash_check_env_exist(variable_name: str, variable_value: str) -> list[str]:
     ]
 
 
+@pytest.fixture(params=list(BootMode), ids=str)
+def boot_mode(request: FixtureRequest) -> BootMode:
+    return request.param
+
+
 @pytest.fixture(
     # NOTE: legacy version comes second as it is less easy to debug issues with that one
     params=[
         "1.0.0",
         f"{LEGACY_INTEGRATION_VERSION}",
-    ]
+    ],
+    ids=lambda v: f"integration.version.{v}",
 )
+def integration_version(request: FixtureRequest) -> version.Version:
+    print("Using service integration:", request.param)
+    return version.Version(request.param)
+
+
+@pytest.fixture
 def ubuntu_task(
-    request: FixtureRequest,
+    integration_version: version.Version,
     file_on_s3_server: Callable[..., AnyUrl],
     s3_remote_file_url: Callable[..., AnyUrl],
+    boot_mode: BootMode,
 ) -> ServiceExampleParam:
     """Creates a console task in an ubuntu distro that checks for the expected files and error in case they are missing"""
-    integration_version = version.Version(request.param)  # type: ignore
-    print("Using service integration:", integration_version)
     # let's have some input files on the file server
     NUM_FILES = 12
     list_of_files = [file_on_s3_server() for _ in range(NUM_FILES)]
@@ -206,7 +218,7 @@ def ubuntu_task(
 
     # check expected ENVS are set
     list_of_commands += _bash_check_env_exist(
-        variable_name="SC_COMP_SERVICES_SCHEDULED_AS", variable_value="CPU"
+        variable_name="SC_COMP_SERVICES_SCHEDULED_AS", variable_value=boot_mode.value
     )
     list_of_commands += _bash_check_env_exist(
         variable_name="SIMCORE_NANO_CPUS_LIMIT",
@@ -365,6 +377,7 @@ def test_run_computational_sidecar_real_fct(
     ubuntu_task: ServiceExampleParam,
     mocker: MockerFixture,
     s3_settings: S3Settings,
+    boot_mode: BootMode,
 ):
     mocked_get_integration_version = mocker.patch(
         "simcore_service_dask_sidecar.computational_sidecar.core.get_integration_version",
@@ -380,6 +393,7 @@ def test_run_computational_sidecar_real_fct(
         ubuntu_task.log_file_url,
         ubuntu_task.command,
         s3_settings,
+        boot_mode,
     )
     mocked_get_integration_version.assert_called_once_with(
         mock.ANY,
@@ -432,12 +446,16 @@ def test_run_computational_sidecar_real_fct(
         assert log in saved_logs
 
 
+@pytest.mark.parametrize(
+    "integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True
+)
 def test_run_multiple_computational_sidecar_dask(
     event_loop: asyncio.AbstractEventLoop,
     dask_client: Client,
     ubuntu_task: ServiceExampleParam,
     mocker: MockerFixture,
     s3_settings: S3Settings,
+    boot_mode: BootMode,
 ):
     NUMBER_OF_TASKS = 50
 
@@ -458,6 +476,7 @@ def test_run_multiple_computational_sidecar_dask(
             ubuntu_task.command,
             s3_settings,
             resources={},
+            boot_mode=boot_mode,
         )
         for _ in range(NUMBER_OF_TASKS)
     ]
@@ -473,11 +492,15 @@ def test_run_multiple_computational_sidecar_dask(
             assert output_data[k] == v
 
 
+@pytest.mark.parametrize(
+    "integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True
+)
 def test_run_computational_sidecar_dask(
     dask_client: Client,
     ubuntu_task: ServiceExampleParam,
     mocker: MockerFixture,
     s3_settings: S3Settings,
+    boot_mode: BootMode,
 ):
     mocker.patch(
         "simcore_service_dask_sidecar.computational_sidecar.core.get_integration_version",
@@ -495,11 +518,13 @@ def test_run_computational_sidecar_dask(
         ubuntu_task.command,
         s3_settings,
         resources={},
+        boot_mode=boot_mode,
     )
 
     worker_name = next(iter(dask_client.scheduler_info()["workers"]))
 
     output_data = future.result()
+    assert isinstance(output_data, dict)
 
     # check that the task produces expected logs
     worker_logs = [log for _, log in dask_client.get_worker_logs()[worker_name]]  # type: ignore
@@ -529,6 +554,9 @@ def test_run_computational_sidecar_dask(
                 assert fp.details.get("size") > 0  # type: ignore
 
 
+@pytest.mark.parametrize(
+    "integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True
+)
 def test_failing_service_raises_exception(
     caplog_info_level: LogCaptureFixture,
     event_loop: asyncio.AbstractEventLoop,
@@ -550,6 +578,9 @@ def test_failing_service_raises_exception(
         )
 
 
+@pytest.mark.parametrize(
+    "integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True
+)
 def test_running_service_that_generates_unexpected_data_raises_exception(
     caplog_info_level: LogCaptureFixture,
     event_loop: asyncio.AbstractEventLoop,
