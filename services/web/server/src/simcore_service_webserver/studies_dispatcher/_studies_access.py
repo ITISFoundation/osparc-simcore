@@ -95,8 +95,9 @@ async def _get_published_template_project(
 
     except (ProjectNotFoundError, ProjectInvalidRightsError) as err:
         log.debug(
-            "Requested project with %s is not published. Reason: %s",
+            "Project with %s %s was not found. Reason: %s",
             f"{project_uuid=}",
+            f"{only_public_projects=}",
             err.detailed_message(),
         )
 
@@ -107,12 +108,11 @@ async def _get_published_template_project(
                 status_code=web.HTTPNotFound.status_code,
             ) from err
 
-        else:
-            raise RedirectToFrontEndPageError(
-                MSG_PROJECT_NOT_PUBLISHED.format(project_id=project_uuid),
-                error_code="PROJECT_NOT_PUBLISHED",
-                status_code=web.HTTPNotFound.status_code,
-            ) from err
+        raise RedirectToFrontEndPageError(
+            MSG_PROJECT_NOT_PUBLISHED.format(project_id=project_uuid),
+            error_code="PROJECT_NOT_PUBLISHED",
+            status_code=web.HTTPNotFound.status_code,
+        ) from err
 
 
 async def _create_temporary_user(request: web.Request):
@@ -330,7 +330,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
     project_id = request.match_info["id"]
     assert request.app.router[INDEX_RESOURCE_NAME]  # nosec
 
-    # Checks user
+    # Checks USER
     user = None
     is_anonymous_user = await is_anonymous(request)
     if not is_anonymous_user:
@@ -346,8 +346,6 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
 
     # Get or create a valid USER
     if not user:
-        # NOTE: only published=1 are available for GUEST users
-        assert template_project["published"]  # nosec
         log.debug("Creating temporary user ...")
         user = await _create_temporary_user(request)
         is_anonymous_user = True
