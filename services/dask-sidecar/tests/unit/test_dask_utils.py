@@ -14,9 +14,7 @@ import pytest
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import TaskLogEvent
 from dask_task_models_library.container_tasks.io import TaskCancelEventName
-from models_library.services_resources import BootMode
 from simcore_service_dask_sidecar.dask_utils import (
-    get_current_task_boot_mode,
     get_current_task_resources,
     is_current_task_aborted,
     monitor_task_abortion,
@@ -143,28 +141,9 @@ def test_monitor_task_abortion(dask_client: distributed.Client):
 
 
 @pytest.mark.parametrize(
-    "resources, expected_boot_mode",
-    [
-        ({"CPU": 2}, BootMode.CPU),
-        ({"MPI": 1.0}, BootMode.MPI),
-        ({"GPU": 5.0}, BootMode.GPU),
-    ],
-)
-def test_task_boot_mode(
-    dask_client: distributed.Client,
-    resources: dict[str, Any],
-    expected_boot_mode: BootMode,
-):
-    future = dask_client.submit(get_current_task_boot_mode, resources=resources)
-    received_boot_mode = future.result(timeout=DASK_TESTING_TIMEOUT_S)
-    assert received_boot_mode == expected_boot_mode
-
-
-@pytest.mark.parametrize(
     "resources",
     [
         ({"CPU": 2}),
-        ({"MPI": 1.0}),
         ({"GPU": 5.0}),
     ],
 )
