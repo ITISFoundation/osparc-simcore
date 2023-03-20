@@ -30,7 +30,7 @@ from packaging import version
 from pydantic import ByteSize
 from pydantic.networks import AnyUrl
 from servicelib.docker_utils import to_datetime
-from servicelib.logging_utils import log_context
+from servicelib.logging_utils import log_catch, log_context
 from settings_library.s3 import S3Settings
 
 from ..dask_utils import LogType, create_dask_worker_logger, publish_task_logs
@@ -376,7 +376,7 @@ async def monitor_container_logs(
     Services above are not creating a file and use the usual docker logging. These logs
     are retrieved using the usual cli 'docker logs CONTAINERID'
     """
-    try:
+    with log_catch(logger, reraise=False):
         container_info = await container.show()
         container_name = container_info.get("Name", "undefined")
         logger.info(
@@ -419,14 +419,6 @@ async def monitor_container_logs(
             service_version,
             container.id,
             container_name,
-        )
-    except DockerError as exc:
-        logger.exception(
-            "log monitoring of [%s:%s - %s] stopped with unexpected error:\n%s",
-            service_key,
-            service_version,
-            container.id,
-            exc,
         )
 
 
