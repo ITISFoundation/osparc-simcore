@@ -50,6 +50,7 @@ from simcore_service_dask_sidecar.computational_sidecar.errors import (
 from simcore_service_dask_sidecar.computational_sidecar.models import (
     LEGACY_INTEGRATION_VERSION,
 )
+from simcore_service_dask_sidecar.dask_utils import _DEFAULT_MAX_RESOURCES
 from simcore_service_dask_sidecar.file_utils import _s3fs_settings_from_s3_settings
 from simcore_service_dask_sidecar.tasks import run_computational_sidecar
 
@@ -208,10 +209,12 @@ def ubuntu_task(
         variable_name="SC_COMP_SERVICES_SCHEDULED_AS", variable_value="CPU"
     )
     list_of_commands += _bash_check_env_exist(
-        variable_name="SIMCORE_NANO_CPUS_LIMIT", variable_value="CPU"
+        variable_name="SIMCORE_NANO_CPUS_LIMIT",
+        variable_value=f"{int(_DEFAULT_MAX_RESOURCES['CPU']*1e9)}",
     )
     list_of_commands += _bash_check_env_exist(
-        variable_name="SIMCORE_MEMORY_BYTES_LIMIT", variable_value="CPU"
+        variable_name="SIMCORE_MEMORY_BYTES_LIMIT",
+        variable_value=f"{_DEFAULT_MAX_RESOURCES['RAM']}",
     )
 
     # check input files
