@@ -89,7 +89,7 @@ def video_memory() -> int:
 
             try:
                 container = await docker.containers.run(
-                    config=spec_config, name=f"sidecar_{uuid.uuid4()}_test_gpu"
+                    config=spec_config, name=f"sidecar_{uuid.uuid4()}_test_gpu_memory"
                 )
                 if not container:
                     return 0
