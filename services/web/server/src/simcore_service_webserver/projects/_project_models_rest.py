@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import warnings
 from enum import Enum
-from typing import Any
+from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
 from models_library.emails import LowerCaseEmailStr
@@ -38,11 +38,11 @@ class Input1(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    store: str | int
-    dataset: str | None = None
+    store: Union[str, int]
+    dataset: Optional[str] = None
     path: str
-    label: str | None = None
-    e_tag: str | None = Field(None, alias="eTag")
+    label: Optional[str] = None
+    e_tag: Optional[str] = Field(None, alias="eTag")
 
 
 class Input2(BaseModel):
@@ -50,7 +50,7 @@ class Input2(BaseModel):
         extra = Extra.forbid
 
     download_link: AnyUrl = Field(..., alias="downloadLink")
-    label: str | None = None
+    label: Optional[str] = None
 
 
 class InputAccess(Enum):
@@ -63,11 +63,11 @@ class Output(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    store: str | int
-    dataset: str | None = None
+    store: Union[str, int]
+    dataset: Optional[str] = None
     path: str
-    label: str | None = None
-    e_tag: str | None = Field(None, alias="eTag")
+    label: Optional[str] = None
+    e_tag: Optional[str] = Field(None, alias="eTag")
 
 
 class Output1(BaseModel):
@@ -75,7 +75,7 @@ class Output1(BaseModel):
         extra = Extra.forbid
 
     download_link: AnyUrl = Field(..., alias="downloadLink")
-    label: str | None = None
+    label: Optional[str] = None
 
 
 class Position(BaseModel):
@@ -106,17 +106,17 @@ class State(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    modified: bool | None = Field(
+    modified: Optional[bool] = Field(
         True,
         description="true if the node's outputs need to be re-computed",
         title="Modified",
     )
-    dependencies: list[UUID] | None = Field(
+    dependencies: Optional[List[UUID]] = Field(
         None,
         description="contains the node inputs dependencies if they need to be computed first",
         title="Dependencies",
     )
-    current_status: CurrentStatus | None = Field(
+    current_status: Optional[CurrentStatus] = Field(
         "NOT_STARTED",
         alias="currentStatus",
         description="the node's current state",
@@ -149,55 +149,57 @@ class Workbench(BaseModel):
     label: str = Field(
         ..., description="The short name of the node", example=["JupyterLab"]
     )
-    progress: confloat(ge=0.0, le=100.0) | None = Field(
+    progress: Optional[confloat(ge=0.0, le=100.0)] = Field(
         None, description="the node progress value"
     )
-    thumbnail: AnyUrl | None = Field(
+    thumbnail: Optional[AnyUrl] = Field(
         None,
         description="url of the latest screenshot of the node",
         examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
     )
-    run_hash: str | None | None = Field(
+    run_hash: Optional[Optional[str]] = Field(
         None,
         alias="runHash",
         description="the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated",
         examples=["a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2"],
     )
-    inputs: None | (
-        dict[
+    inputs: Optional[
+        Dict[
             constr(regex=r"^[-_a-zA-Z0-9]+$"),
-            int | bool | str | float | None | Input | Input1 | Input2,
+            Union[Optional[Union[int, bool, str, float]], Input, Input1, Input2],
         ]
-    ) = Field(None, description="values of input properties")
-    input_access: None | (dict[constr(regex=r"^[-_a-zA-Z0-9]+$"), InputAccess]) = Field(
+    ] = Field(None, description="values of input properties")
+    input_access: Optional[
+        Dict[constr(regex=r"^[-_a-zA-Z0-9]+$"), InputAccess]
+    ] = Field(
         None, alias="inputAccess", description="map with key - access level pairs"
     )
-    input_nodes: list[UUID] | None = Field(
+    input_nodes: Optional[List[UUID]] = Field(
         None,
         alias="inputNodes",
         description="node IDs of where the node is connected to",
         examples=["nodeUuid1", "nodeUuid2"],
     )
-    outputs: None | (
-        dict[
+    outputs: Optional[
+        Dict[
             constr(regex=r"^[-_a-zA-Z0-9]+$"),
-            int | bool | str | float | None | Output | Output1,
+            Union[Optional[Union[int, bool, str, float]], Output, Output1],
         ]
-    ) = {}
-    output_node: bool | None = Field(None, alias="outputNode")
-    output_nodes: list[UUID] | None = Field(
+    ] = {}
+    output_node: Optional[bool] = Field(None, alias="outputNode")
+    output_nodes: Optional[List[UUID]] = Field(
         None,
         alias="outputNodes",
         description="Used in group-nodes. Node IDs of those connected to the output",
         examples=["nodeUuid1", "nodeUuid2"],
     )
-    parent: str | None | None = Field(
+    parent: Optional[Optional[str]] = Field(
         None,
         description="Parent's (group-nodes') node ID s.",
         examples=["nodeUuid1", "nodeUuid2"],
     )
-    position: Position | None = None
-    state: State | None = Field(None, title="NodeState")
+    position: Optional[Position] = None
+    state: Optional[State] = Field(None, title="NodeState")
 
 
 class Position1(BaseModel):
@@ -225,8 +227,8 @@ class Slideshow(BaseModel):
         description="Instructions about what to do in this step",
         examples=[
             "This is a **sleeper**",
-            "Please, select the config file defined [in this link](asdf)",
-        ],
+            "Please, select the config file defined [in this link](asdf)"
+        ]
     )
 
 
@@ -234,23 +236,23 @@ class Ui(BaseModel):
     class Config:
         extra = Extra.allow
 
-    workbench: None | (
-        dict[
+    workbench: Optional[
+        Dict[
             constr(
                 regex=r"^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$"
             ),
             Workbench1,
         ]
-    ) = None
-    slideshow: None | (
-        dict[
+    ] = None
+    slideshow: Optional[
+        Dict[
             constr(
                 regex=r"^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$"
             ),
             Slideshow,
         ]
-    ) = None
-    current_node_id: UUID | None = Field(None, alias="currentNodeId")
+    ] = None
+    current_node_id: Optional[UUID] = Field(None, alias="currentNodeId")
 
 
 class Owner(BaseModel):
@@ -291,7 +293,7 @@ class Locked(BaseModel):
     """
 
     value: bool = Field(..., description="True if the project is locked", title="Value")
-    owner: Owner | None = Field(
+    owner: Optional[Owner] = Field(
         None, description="If locked, the user that owns the lock", title="Owner"
     )
     status: Status = Field(..., description="The status of the project", title="Status")
@@ -353,10 +355,8 @@ class SimcoreProject(BaseModel):
         description="longer one-line description about the project",
         examples=["Dabbling in temporal transitions ..."],
     )
-    prj_owner: LowerCaseEmailStr = Field(
-        ..., alias="prjOwner", description="user email"
-    )
-    access_rights: dict[constr(regex=r"^\S+$"), AccessRights] = Field(
+    prj_owner: LowerCaseEmailStr = Field(..., alias="prjOwner", description="user email")
+    access_rights: Dict[constr(regex=r"^\S+$"), AccessRights] = Field(
         ...,
         alias="accessRights",
         description="object containing the GroupID as key and read/write/execution permissions as value",
@@ -382,26 +382,26 @@ class SimcoreProject(BaseModel):
         description="url of the latest screenshot of the project",
         examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
     )
-    workbench: dict[
+    workbench: Dict[
         constr(
             regex=r"^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$"
         ),
         Workbench,
     ]
-    ui: Ui | None = None
-    tags: list[int] | None = None
-    classifiers: list[str] | None = Field(
+    ui: Optional[Ui] = None
+    tags: Optional[List[int]] = None
+    classifiers: Optional[List[str]] = Field(
         None,
         description="Contains the reference to the project classifiers",
         examples=["some:id:to:a:classifier"],
     )
-    dev: dict[str, Any] | None = Field(
+    dev: Optional[Dict[str, Any]] = Field(
         None, description="object used for development purposes only"
     )
-    state: StateItem | None | None = Field(
+    state: Optional[Optional[StateItem]] = Field(
         None, description="Project state", title="State"
     )
-    quality: dict[str, Any] | None = Field(
+    quality: Optional[Dict[str, Any]] = Field(
         None,
         description="Object containing Quality Assessment related data",
         title="Quality",
