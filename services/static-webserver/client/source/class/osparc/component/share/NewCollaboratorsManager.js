@@ -69,6 +69,7 @@ qx.Class.define("osparc.component.share.NewCollaboratorsManager", {
     },
 
     __reloadCollaborators: function() {
+      console.log("__reloadCollaborators", this.__resourceData);
       osparc.store.Store.getInstance().getPotentialCollaborators()
         .then(potentialCollaborators => {
           this.__visibleCollaborators = potentialCollaborators;
