@@ -2,7 +2,7 @@
 
 """
 
-from typing import Optional, Protocol
+from typing import Any, Optional, Protocol
 
 import sqlalchemy as sa
 
@@ -23,7 +23,7 @@ class _DBConnection(Protocol):
 
 class _AiopgConnection(Protocol):
     # Prototype to account for aiopg-only (this protocol avoids import <-> installation)
-    async def scalar(self, *args, **kwargs):
+    async def scalar(self, *args, **kwargs) -> Any:
         ...
 
     async def execute(self, *args, **kwargs):
