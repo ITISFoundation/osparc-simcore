@@ -186,6 +186,10 @@ async def test_create_container_config(
             "2021-10-05T09:53:48.873236400Z [PROGRESS]1.000000\n",
             (LogType.PROGRESS, "2021-10-05T09:53:48.873236400Z", "1.00"),
         ),
+        (
+            "2021-10-05T09:53:48.873236400Z [PROGRESS]: 1% [ 10 / 624 ] Time Update, estimated remaining time 1 seconds @ 26.43 MCells/s",
+            (LogType.PROGRESS, "2021-10-05T09:53:48.873236400Z", "0.01"),
+        ),
     ],
 )
 async def test_parse_line(log_line: str, expected_parsing: tuple[LogType, str, str]):

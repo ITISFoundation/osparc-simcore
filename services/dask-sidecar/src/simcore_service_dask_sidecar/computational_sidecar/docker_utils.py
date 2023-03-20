@@ -131,7 +131,7 @@ _DOCKER_LOG_REGEXP: re.Pattern[str] = re.compile(
     r"^(?P<timestamp>\d+-\d+-\d+T\d+:\d+:\d+\.\d+[^\s]+) (?P<log>.+)$"
 )
 _PROGRESS_REGEXP: re.Pattern[str] = re.compile(
-    r"\[?progress[\]:]?\s*([0-1]?\.\d+|\d+(%)|\d+\s*(percent)|(\d+\/\d+))"
+    r"\[?progress\]?:?\s*([0-1]?\.\d+|\d+(%)|\d+\s*(percent)|(\d+\/\d+))"
 )
 DEFAULT_TIME_STAMP = "2000-01-01T00:00:00.000000000Z"
 
