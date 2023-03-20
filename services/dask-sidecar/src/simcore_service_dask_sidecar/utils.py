@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import uuid
-from pprint import pformat
 from typing import Any, Awaitable, Coroutine, Optional, cast
 
 import aiodocker
@@ -15,6 +14,22 @@ def _wrap_async_call(fct: Awaitable[Any]) -> Any:
     return asyncio.get_event_loop().run_until_complete(fct)
 
 
+def _nvidia_smi_docker_config(cmd: list[str]) -> dict[str, Any]:
+    return {
+        "Cmd": ["nvidia-smi"] + cmd,
+        "Image": "nvidia/cuda:10.0-base",
+        "AttachStdin": False,
+        "AttachStdout": False,
+        "AttachStderr": False,
+        "Tty": False,
+        "OpenStdin": False,
+        "HostConfig": {
+            "Init": True,
+            "AutoRemove": False,
+        },  # NOTE: The Init parameter shows a weird behavior: no exception thrown when the container fails
+    }
+
+
 def num_available_gpus() -> int:
     """Returns the number of available GPUs, 0 if not a gpu node"""
 
@@ -22,19 +37,7 @@ def num_available_gpus() -> int:
         num_gpus = 0
         container: Optional[DockerContainer] = None
         async with aiodocker.Docker() as docker:
-            spec_config = {
-                "Cmd": ["nvidia-smi", "--list-gpus"],
-                "Image": "nvidia/cuda:10.0-base",
-                "AttachStdin": False,
-                "AttachStdout": False,
-                "AttachStderr": False,
-                "Tty": False,
-                "OpenStdin": False,
-                "HostConfig": {
-                    "Init": True,
-                    "AutoRemove": False,
-                },  # NOTE: The Init parameter shows a weird behavior: no exception thrown when the container fails
-            }
+            spec_config = _nvidia_smi_docker_config(["--list-gpus"])
             try:
                 container = await docker.containers.run(
                     config=spec_config, name=f"sidecar_{uuid.uuid4()}_test_gpu"
@@ -51,14 +54,6 @@ def num_available_gpus() -> int:
                     len(container_logs)
                     if container_data.setdefault("StatusCode", 127) == 0
                     else 0
-                )
-                logger.debug(
-                    "testing for GPU presence with docker run %s %s completed with status code %s, found %d gpus:\nlogs:\n%s",
-                    spec_config["Image"],
-                    spec_config["Cmd"],
-                    container_data["StatusCode"],
-                    num_gpus,
-                    pformat(container_logs),
                 )
             except asyncio.TimeoutError as err:
                 logger.warning(
@@ -85,23 +80,13 @@ def video_memory() -> int:
         video_ram: ByteSize = ByteSize(0)
         container: Optional[DockerContainer] = None
         async with aiodocker.Docker() as docker:
-            spec_config = {
-                "Cmd": [
-                    "nvidia-smi",
+            spec_config = _nvidia_smi_docker_config(
+                [
                     "--query-gpu=memory.total",
                     "--format=csv,noheader",
-                ],
-                "Image": "nvidia/cuda:10.0-base",
-                "AttachStdin": False,
-                "AttachStdout": False,
-                "AttachStderr": False,
-                "Tty": False,
-                "OpenStdin": False,
-                "HostConfig": {
-                    "Init": True,
-                    "AutoRemove": False,
-                },  # NOTE: The Init parameter shows a weird behavior: no exception thrown when the container fails
-            }
+                ]
+            )
+
             try:
                 container = await docker.containers.run(
                     config=spec_config, name=f"sidecar_{uuid.uuid4()}_test_gpu"
@@ -121,14 +106,6 @@ def video_memory() -> int:
                             ByteSize, video_ram + parse_obj_as(ByteSize, line)
                         )
 
-                logger.debug(
-                    "testing for GPU VRAM with docker run %s %s completed with status code %s, found %d total vram:\nlogs:\n%s",
-                    spec_config["Image"],
-                    spec_config["Cmd"],
-                    container_data["StatusCode"],
-                    video_ram.human_readable(),
-                    pformat(container_logs),
-                )
             except asyncio.TimeoutError as err:
                 logger.warning(
                     "num_gpus timedout while check-run %s: %s", spec_config, err
