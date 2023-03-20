@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, cast
 
 import sqlalchemy as sa
 from pydantic.networks import EmailStr
@@ -21,7 +21,7 @@ class GroupsRepository(BaseRepository):
                 )
                 .where(user_to_groups.c.uid == user_id)
             ):
-                groups_in_db.append(GroupAtDB(**row))
+                groups_in_db.append(GroupAtDB.from_orm(row))
         return groups_in_db
 
     async def get_everyone_group(self) -> GroupAtDB:
@@ -32,26 +32,35 @@ class GroupsRepository(BaseRepository):
             row = result.first()
         if not row:
             raise RepositoryError(f"{GroupType.EVERYONE} groups was never initialized")
-        return GroupAtDB(**row)
+        return GroupAtDB.from_orm(row)
 
     async def get_user_gid_from_email(
         self, user_email: EmailStr
     ) -> Optional[PositiveInt]:
         async with self.db_engine.connect() as conn:
-            return await conn.scalar(
-                sa.select([users.c.primary_gid]).where(users.c.email == user_email)
+            return cast(
+                Optional[PositiveInt],
+                await conn.scalar(
+                    sa.select([users.c.primary_gid]).where(users.c.email == user_email)
+                ),
             )
 
     async def get_gid_from_affiliation(self, affiliation: str) -> Optional[PositiveInt]:
         async with self.db_engine.connect() as conn:
-            return await conn.scalar(
-                sa.select([groups.c.gid]).where(groups.c.name == affiliation)
+            return cast(
+                Optional[PositiveInt],
+                await conn.scalar(
+                    sa.select([groups.c.gid]).where(groups.c.name == affiliation)
+                ),
             )
 
     async def get_user_email_from_gid(self, gid: PositiveInt) -> Optional[EmailStr]:
         async with self.db_engine.connect() as conn:
-            return await conn.scalar(
-                sa.select([users.c.email]).where(users.c.primary_gid == gid)
+            return cast(
+                Optional[EmailStr],
+                await conn.scalar(
+                    sa.select([users.c.email]).where(users.c.primary_gid == gid)
+                ),
             )
 
     async def list_user_emails_from_gids(
