@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock
 import pytest
 from fastapi import FastAPI, status
 from httpx import HTTPError, Response
-from models_library.volumes import VolumeID
+from models_library.volumes import VolumeCategory
 from pydantic import AnyHttpUrl, parse_obj_as
 from pytest import LogCaptureFixture, MonkeyPatch
 from pytest_mock import MockerFixture
@@ -333,13 +333,13 @@ async def test_detach_container_from_network(
         )
 
 
-@pytest.mark.parametrize("volume_id", VolumeID)
+@pytest.mark.parametrize("volume_category", VolumeCategory)
 @pytest.mark.parametrize("requires_saving", [True, False])
 @pytest.mark.parametrize("was_saved", [True, False, None])
 async def test_update_volume_state(
     get_patched_client: Callable,
     dynamic_sidecar_endpoint: AnyHttpUrl,
-    volume_id: VolumeID,
+    volume_category: VolumeCategory,
     requires_saving: bool,
     was_saved: Optional[bool],
 ) -> None:
@@ -350,7 +350,7 @@ async def test_update_volume_state(
         assert (
             await client.update_volume_state(
                 dynamic_sidecar_endpoint,
-                volume_id=volume_id,
+                volume_category=volume_category,
                 requires_saving=requires_saving,
                 was_saved=was_saved,
             )

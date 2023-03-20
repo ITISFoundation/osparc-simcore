@@ -3,7 +3,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends
 from fastapi import Path as PathParam
 from fastapi import status
-from models_library.volumes import VolumeID
+from models_library.volumes import VolumeCategory
 from pydantic import BaseModel
 
 from ..modules.mounted_fs import MountedVolumes
@@ -25,12 +25,12 @@ class PatchVolumeItem(BaseModel):
 )
 async def patch_volume_state(
     item: PatchVolumeItem,
-    volume_id: VolumeID = PathParam(..., alias="id"),
+    volume_category: VolumeCategory = PathParam(..., alias="id"),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
 ) -> None:
     await set_volume_state(
         mounted_volumes,
-        volume_id,
+        volume_category,
         requires_saving=item.requires_saving,
         was_saved=item.was_saved,
     )

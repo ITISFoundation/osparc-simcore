@@ -7,7 +7,7 @@ from typing import Any, Callable, Optional
 import pytest
 from fastapi import FastAPI, status
 from httpx import Response
-from models_library.volumes import VolumeID
+from models_library.volumes import VolumeCategory
 from pydantic import AnyHttpUrl, parse_obj_as
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -245,14 +245,14 @@ async def test_post_containers_networks_detach(
     assert_responses(mock_response, response)
 
 
-@pytest.mark.parametrize("volume_id", VolumeID)
+@pytest.mark.parametrize("volume_category", VolumeCategory)
 @pytest.mark.parametrize("requires_saving", [True, False])
 @pytest.mark.parametrize("was_saved", [True, False, None])
 async def test_patch_volumes(
     thin_client: ThinDynamicSidecarClient,
     dynamic_sidecar_endpoint: AnyHttpUrl,
     mock_request: MockRequestType,
-    volume_id: str,
+    volume_category: str,
     requires_saving: bool,
     was_saved: Optional[bool],
 ) -> None:
@@ -266,7 +266,7 @@ async def test_patch_volumes(
 
     response = await thin_client.patch_volumes(
         dynamic_sidecar_endpoint,
-        volume_id=volume_id,
+        volume_category=volume_category,
         requires_saving=requires_saving,
         was_saved=was_saved,
     )

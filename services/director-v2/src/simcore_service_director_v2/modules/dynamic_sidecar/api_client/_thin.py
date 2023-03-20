@@ -4,7 +4,7 @@ from typing import Any, Optional
 
 from fastapi import FastAPI, status
 from httpx import Response, Timeout
-from models_library.volumes import VolumeID
+from models_library.volumes import VolumeCategory
 from pydantic import AnyHttpUrl
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 
@@ -232,11 +232,11 @@ class ThinDynamicSidecarClient(BaseThinClient):
     async def patch_volumes(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
-        volume_id: VolumeID,
+        volume_category: VolumeCategory,
         requires_saving: bool,
         was_saved: Optional[bool],
     ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, f"/volumes/{volume_id}")
+        url = self._get_url(dynamic_sidecar_endpoint, f"/volumes/{volume_category}")
         return await self.client.patch(
             url, json={"requires_saving": requires_saving, "was_saved": was_saved}
         )

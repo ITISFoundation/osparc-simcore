@@ -10,15 +10,26 @@ AGENT_FILE_NAME: Final[str] = ".agent"
 
 class VolumeState(BaseModel):
     requires_saving: bool = Field(
-        ..., description="if True volume must be saved before closing the sidecar"
+        ...,
+        description=(
+            "when True, the contents of the volume must be saved whe "
+            "closing the service"
+        ),
     )
     was_saved: Optional[bool] = Field(
-        None, description="if True volume was saved when the sidecar is closed, if None"
+        None,
+        description=(
+            "When `True`: the sidecar managed to save the contents of the volume. "
+            "When `False`: there was an issue and the contes was not saved, it is "
+            "up to the agent to save the content of the volume. "
+            "When `None`: if requires_saving is False, it makes more sense "
+            "to have this se to None since it will not be used"
+        ),
     )
 
     @root_validator
     @classmethod
-    def check_passwords_match(cls, values: dict) -> dict:
+    def enforce_use_cases(cls, values: dict) -> dict:
         requires_saving: bool = values["requires_saving"]
         was_saved: Optional[bool] = values["was_saved"]
 

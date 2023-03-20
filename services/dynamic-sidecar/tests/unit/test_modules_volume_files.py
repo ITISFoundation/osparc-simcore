@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 from faker import Faker
-from models_library.volumes import VolumeID
+from models_library.volumes import VolumeCategory
 from servicelib.volumes_utils import VolumeState, load_volume_state
 from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
 from simcore_service_dynamic_sidecar.modules.volume_files import (
@@ -48,10 +48,10 @@ async def test_create_agent_file_on_all_volumes(mounted_volumes: MountedVolumes)
 
     # mark as saved
     await set_volume_state(
-        mounted_volumes, VolumeID.OUTPUTS, requires_saving=True, was_saved=True
+        mounted_volumes, VolumeCategory.OUTPUTS, requires_saving=True, was_saved=True
     )
     await set_volume_state(
-        mounted_volumes, VolumeID.STATES, requires_saving=True, was_saved=True
+        mounted_volumes, VolumeCategory.STATES, requires_saving=True, was_saved=True
     )
 
     # ensure these paths required saving and were saved

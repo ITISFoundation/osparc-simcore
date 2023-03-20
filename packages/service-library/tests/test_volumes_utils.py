@@ -9,16 +9,18 @@ from servicelib.volumes_utils import VolumeState, load_volume_state, save_volume
 
 
 @pytest.fixture
-def agent_file_path(tmpdir: Path) -> Path:
-    return Path(tmpdir) / "fake_agent_file"
+def agent_file_path(tmp_path: Path) -> Path:
+    return tmp_path / "fake_agent_file"
 
 
 @pytest.mark.parametrize(
     "requires_saving, was_saved",
     [
-        pytest.param(True, False, id="requires_saving_but_not_saved"),
-        pytest.param(True, True, id="requires_saving_and_saved"),
-        pytest.param(False, None, id="does_not_require_saving_no_save_action"),
+        pytest.param(True, False, id="volume_needs_to_be_saved_by_the_agent"),
+        pytest.param(True, True, id="volume_was_saved_agent_does_not_backup_data"),
+        pytest.param(
+            False, None, id="volume_does_not_require_Saving_agent_does_not_backup_data"
+        ),
     ],
 )
 async def test_save_load_volume_state(

@@ -223,17 +223,14 @@ async def _start_dynamic_service(
         node_id=node_uuid,
     )
 
-    user_role: Optional[UserRole] = None
-    try:
-        user_role = await get_user_role(request.app, user_id)
-    except UserNotFoundError:
-        user_role = None
-
-    save_state = await ProjectDBAPI.get_from_app_context(request.app).has_permission(
-        user_id=user_id, project_uuid=f"{project_uuid}", permission="write"
-    )
-    if user_role is None or user_role <= UserRole.GUEST:
-        save_state = False
+    save_state = False
+    user_role: UserRole = await get_user_role(request.app, user_id)
+    if user_role > UserRole.GUEST:
+        save_state = await ProjectDBAPI.get_from_app_context(
+            request.app
+        ).has_permission(
+            user_id=user_id, project_uuid=f"{project_uuid}", permission="write"
+        )
 
     await director_v2_api.run_dynamic_service(
         app=request.app,

@@ -12,7 +12,7 @@ from models_library.projects_nodes_io import NodeIDStr
 from models_library.rabbitmq_messages import InstrumentationRabbitMessage
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
-from models_library.volumes import VolumeID
+from models_library.volumes import VolumeCategory
 from servicelib.fastapi.long_running_tasks.client import (
     ProgressCallback,
     TaskClientResultError,
@@ -135,7 +135,7 @@ async def service_save_state(
     )
     await dynamic_sidecar_client.update_volume_state(
         scheduler_data.endpoint,
-        volume_id=VolumeID.STATES,
+        volume_id=VolumeCategory.STATES,
         requires_saving=True,
         was_saved=True,
     )
@@ -153,7 +153,7 @@ async def service_push_outputs(
     )
     await dynamic_sidecar_client.update_volume_state(
         scheduler_data.endpoint,
-        volume_id=VolumeID.OUTPUTS,
+        volume_id=VolumeCategory.OUTPUTS,
         requires_saving=True,
         was_saved=True,
     )
@@ -430,12 +430,12 @@ async def prepare_services_environment(
         *(
             dynamic_sidecar_client.update_volume_state(
                 scheduler_data.endpoint,
-                volume_id=VolumeID.STATES,
+                volume_id=VolumeCategory.STATES,
                 **update_volume_state_params,
             ),
             dynamic_sidecar_client.update_volume_state(
                 scheduler_data.endpoint,
-                volume_id=VolumeID.OUTPUTS,
+                volume_id=VolumeCategory.OUTPUTS,
                 **update_volume_state_params,
             ),
         )
