@@ -1,0 +1,477 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "simcore node",
+  "description": "Description of a simcore node 'class' with input and output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "key",
+    "version",
+    "type",
+    "name",
+    "description",
+    "authors",
+    "contact",
+    "inputs",
+    "outputs"
+  ],
+  "properties": {
+    "key": {
+      "type": "string",
+      "description": "distinctive name for the node based on the docker registry path",
+      "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
+      "examples": [
+        "simcore/services/comp/itis/sleeper",
+        "simcore/services/dynamic/3dviewer"
+      ]
+    },
+    "integration-version": {
+      "type": "string",
+      "description": "integration version number",
+      "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+      "examples": [
+        "1.0.0"
+      ]
+    },
+    "version": {
+      "type": "string",
+      "description": "service version number",
+      "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+      "examples": [
+        "1.0.0",
+        "0.0.1"
+      ]
+    },
+    "type": {
+      "type": "string",
+      "description": "service type",
+      "enum": [
+        "frontend",
+        "computational",
+        "dynamic"
+      ],
+      "examples": [
+        "computational"
+      ]
+    },
+    "name": {
+      "type": "string",
+      "description": "short, human readable name for the node",
+      "examples": [
+        "Fast Counter"
+      ]
+    },
+    "thumbnail": {
+      "type": "string",
+      "description": "url to the thumbnail",
+      "examples": [
+        "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png"
+      ]
+    },
+    "badges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "image",
+          "url"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the subject",
+            "examples": [
+              "travis-ci",
+              "coverals.io",
+              "github.io"
+            ]
+          },
+          "image": {
+            "type": "string",
+            "description": "Url to the shield",
+            "examples": [
+              "https://travis-ci.org/ITISFoundation/osparc-simcore.svg?branch=master",
+              "https://coveralls.io/repos/github/ITISFoundation/osparc-simcore/badge.svg?branch=master",
+              "https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation"
+            ]
+          },
+          "url": {
+            "type": "string",
+            "description": "Link to status",
+            "examples": [
+              "https://travis-ci.org/ITISFoundation/osparc-simcore 'State of CI: build, test and pushing images'",
+              "https://coveralls.io/github/ITISFoundation/osparc-simcore?branch=master 'Test coverage'",
+              "https://itisfoundation.github.io/"
+            ]
+          }
+        }
+      }
+    },
+    "description": {
+      "type": "string",
+      "description": "human readable description of the purpose of the node",
+      "examples": [
+        "Our best node type",
+        "The mother of all nodes, makes your numbers shine!"
+      ]
+    },
+    "authors": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "email"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the author",
+            "examples": [
+              "Sun Bak",
+              "Delenn"
+            ]
+          },
+          "email": {
+            "description": "Email address",
+            "type": "string",
+            "format": "email",
+            "examples": [
+              "sun@sense.eight",
+              "deleen@minbar.bab"
+            ]
+          },
+          "affiliation": {
+            "description": "Affiliation of the author",
+            "type": "string",
+            "examples": [
+              "Sense8",
+              "Babylon 5"
+            ]
+          }
+        }
+      }
+    },
+    "contact": {
+      "type": "string",
+      "format": "email",
+      "description": "email to correspond to the authors about the node",
+      "examples": [
+        "lab@net.flix"
+      ]
+    },
+    "inputs": {
+      "type": "object",
+      "description": "definition of the inputs of this node",
+      "patternProperties": {
+        "^[-_a-zA-Z0-9]+$": {
+          "type": "object",
+          "description": "all the input configurable for this service",
+          "additionalProperties": false,
+          "required": [
+            "displayOrder",
+            "label",
+            "description",
+            "type"
+          ],
+          "properties": {
+            "displayOrder": {
+              "description": "DEPRECATED: new display order is taken from the item position. This property will be removed.",
+              "deprecated": true,
+              "type": "number"
+            },
+            "label": {
+              "type": "string",
+              "description": "short name for the property",
+              "examples": [
+                "Age"
+              ]
+            },
+            "description": {
+              "type": "string",
+              "description": "description of the property",
+              "examples": [
+                "Age in seconds since 1970"
+              ]
+            },
+            "type": {
+              "type": "string",
+              "pattern": "^(number|integer|boolean|string|ref_contentSchema|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
+              "description": "data type expected on this input glob matching for data type is allowed",
+              "examples": [
+                "number",
+                "boolean",
+                "data:*/*",
+                "data:text/*",
+                "data:[image/jpeg,image/png]",
+                "data:application/json",
+                "data:application/json;schema=https://my-schema/not/really/schema.json",
+                "data:application/vnd.ms-excel",
+                "data:text/plain",
+                "data:application/hdf5",
+                "data:application/edu.ucdavis@ceclancy.xyz"
+              ]
+            },
+            "contentSchema": {
+              "title": "Content Schema",
+              "description": "jsonschema of the content at this input/output. Required when type='ref_contentSchema'",
+              "type": "object"
+            },
+            "fileToKeyMap": {
+              "description": "Place the data associated with the named keys in files",
+              "type": "object",
+              "patternProperties": {
+                ".+": {
+                  "type": "string",
+                  "pattern": "^[-_a-zA-Z0-9]+$"
+                }
+              },
+              "examples": [
+                {
+                  "dir/input1.txt": "key_1",
+                  "dir33/input2.txt": "key2"
+                }
+              ]
+            },
+            "defaultValue": {
+              "description": "initial value for this input",
+              "type": [
+                "string",
+                "number",
+                "integer",
+                "boolean"
+              ],
+              "examples": [
+                "Dog",
+                true
+              ]
+            },
+            "unit": {
+              "title": "Unit",
+              "description": "Units of this input value, if a physical quantity",
+              "type": "string"
+            },
+            "widget": {
+              "description": "custom widget to use instead of the default one determined from the data-type",
+              "anyOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "type"
+                  ],
+                  "properties": {
+                    "type": {
+                      "description": "type of the property",
+                      "type": "string",
+                      "enum": [
+                        "TextArea"
+                      ]
+                    },
+                    "minHeight": {
+                      "description": "minimum Height of the textarea",
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "type",
+                    "structure"
+                  ],
+                  "properties": {
+                    "type": {
+                      "description": "type of the property",
+                      "type": "string",
+                      "enum": [
+                        "SelectBox"
+                      ]
+                    },
+                    "structure": {
+                      "type": "array",
+                      "minItems": 1,
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "key",
+                          "label"
+                        ],
+                        "properties": {
+                          "key": {
+                            "type": [
+                              "string",
+                              "boolean",
+                              "number"
+                            ]
+                          },
+                          "label": {
+                            "type": "string"
+                          }
+                        },
+                        "examples": [
+                          [
+                            {
+                              "key": "rat",
+                              "label": "The Rat"
+                            },
+                            {
+                              "key": "dog",
+                              "label": "Bello the Dog"
+                            }
+                          ]
+                        ]
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "outputs": {
+      "type": "object",
+      "description": "definition of the outputs of this node",
+      "patternProperties": {
+        "^[-_a-zA-Z0-9]+$": {
+          "type": "object",
+          "description": "all the output produced by this node",
+          "additionalProperties": false,
+          "required": [
+            "displayOrder",
+            "label",
+            "description",
+            "type"
+          ],
+          "properties": {
+            "displayOrder": {
+              "type": "number",
+              "description": "use this to numerically sort the properties for display",
+              "examples": [
+                1,
+                -0.2
+              ]
+            },
+            "label": {
+              "type": "string",
+              "description": "short name for the property",
+              "examples": [
+                "Age"
+              ]
+            },
+            "description": {
+              "type": "string",
+              "description": "description of the property",
+              "examples": [
+                "Age in seconds since 1970"
+              ]
+            },
+            "type": {
+              "type": "string",
+              "pattern": "^(number|integer|boolean|string|ref_contentSchema|data:[^/\\s,]+/[^/\\s,]+)$",
+              "description": "data type expected on this output",
+              "examples": [
+                "number",
+                "integer",
+                "boolean",
+                "string",
+                "data:application/json",
+                "data:application/vnd.ms-excel ",
+                "data:text/plain",
+                "data:application/hdf5"
+              ]
+            },
+            "contentSchema": {
+              "title": "Content Schema",
+              "description": "jsonschema of this input/output. Required when type='ref_contentSchema'",
+              "type": "object"
+            },
+            "fileToKeyMap": {
+              "description": "Place the data stored in the named files and store it in the locations pointed to by the respective output key.",
+              "type": "object",
+              "patternProperties": {
+                ".+": {
+                  "type": "string",
+                  "pattern": "^[-_a-zA-Z0-9]+$"
+                }
+              },
+              "examples": [
+                {
+                  "dir/input1.txt": "key_1",
+                  "dir33/input2.txt": "key2"
+                }
+              ]
+            },
+            "unit": {
+              "title": "Unit",
+              "description": "Units of the output value, if a physical quantity",
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "boot-options": {
+      "title": "Boot Options",
+      "description": "Service defined boot options. These get injected in the service as env variables.",
+      "type": "object",
+      "patternProperties": {
+        "^[_a-zA-Z0-9]+$": {
+          "title": "BootOptionMode",
+          "type": "object",
+          "properties": {
+            "label": {
+              "title": "Label",
+              "type": "string"
+            },
+            "description": {
+              "title": "Description",
+              "type": "string"
+            },
+            "default": {
+              "title": "Default",
+              "type": "string"
+            },
+            "items": {
+              "title": "Items",
+              "type": "object",
+              "additionalProperties": {
+                "title": "BootOptionItem",
+                "type": "object",
+                "properties": {
+                  "label": {
+                    "title": "Label",
+                    "type": "string"
+                  },
+                  "description": {
+                    "title": "Description",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "label",
+                  "description"
+                ]
+              }
+            }
+          },
+          "required": [
+            "label",
+            "description",
+            "default",
+            "items"
+          ]
+        }
+      }
+    }
+  }
+}

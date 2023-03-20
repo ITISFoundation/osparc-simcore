@@ -3,7 +3,7 @@
 objects = $(wildcard *-pydantic.json)
 outputs := $(objects:.json=-converted-clean.yaml)
 
-helper_files = project-v0.0.1-pydantic-converted.yaml node-meta-v0.0.1-pydantic-converted.yaml
+depreciated_files = node-meta-v0.0.1-converted.yaml
 
 TOOL_IMAGE_NAME := json-schema-to-openapi-schema
 
@@ -16,6 +16,8 @@ all: check $(outputs)
 		-v ${CURDIR}:/input \
 		-v ${CURDIR}:/output \
 		$(TOOL_IMAGE_NAME)
+
+	rm -f ${depreciated_files}
 
 .PRECIOUS: %-converted.yaml
 %-converted-clean.yaml:%-converted.yaml
