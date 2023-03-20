@@ -15,6 +15,7 @@ from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import TaskLogEvent
 from dask_task_models_library.container_tasks.io import TaskCancelEventName
 from simcore_service_dask_sidecar.dask_utils import (
+    _DEFAULT_MAX_RESOURCES,
     get_current_task_resources,
     is_current_task_aborted,
     monitor_task_abortion,
@@ -153,4 +154,6 @@ def test_task_resources(
 ):
     future = dask_client.submit(get_current_task_resources, resources=resources)
     received_resources = future.result(timeout=DASK_TESTING_TIMEOUT_S)
-    assert received_resources == resources
+    current_resources = _DEFAULT_MAX_RESOURCES
+    current_resources.update(resources)
+    assert received_resources == current_resources
