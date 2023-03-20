@@ -1,6 +1,7 @@
 import asyncio
 import contextlib
 import json
+import logging
 import re
 import socket
 from pathlib import Path
@@ -29,6 +30,7 @@ from packaging import version
 from pydantic import ByteSize
 from pydantic.networks import AnyUrl
 from servicelib.docker_utils import to_datetime
+from servicelib.logging_utils import log_context
 from settings_library.s3 import S3Settings
 
 from ..dask_utils import LogType, create_dask_worker_logger, publish_task_logs
@@ -94,22 +96,28 @@ async def managed_container(
 ) -> AsyncIterator[DockerContainer]:
     container = None
     try:
-        logger.debug("Creating container...")
-        container = await docker_client.containers.create(
-            config.dict(by_alias=True), name=name
-        )
-        logger.debug("container %s created", container.id)
-        yield container
+        with log_context(
+            logger, logging.DEBUG, msg=f"managing container {name} for {config.image}"
+        ):
+            container = await docker_client.containers.create(
+                config.dict(by_alias=True), name=name
+            )
+            yield container
     except asyncio.CancelledError:
         if container:
-            logger.warning("Stopping container %s", container.id)
+            logger.warning(
+                "Cancelling run of container %s, for %s", container.id, config.image
+            )
         raise
     finally:
         try:
             if container:
-                logger.debug("Removing container %s...", container.id)
-                await container.delete(remove=True, v=True, force=True)
-                logger.debug("container removed")
+                with log_context(
+                    logger,
+                    logging.DEBUG,
+                    msg=f"Removing container {name}:{container.id} for {config.image}",
+                ):
+                    await container.delete(remove=True, v=True, force=True)
             logger.info("Completed run of %s", config.image)
         except DockerError:
             logger.exception(
