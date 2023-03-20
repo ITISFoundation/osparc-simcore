@@ -895,12 +895,12 @@ qx.Class.define("osparc.data.model.Node", {
     // !---- Output Nodes -----
 
     canNodeStart: function() {
-      return this.isDynamic() && ["idle", "failed"].includes(this.getStatus());
+      return this.isDynamic() && ["idle", "failed"].includes(this.getStatus().getInteractive());
     },
 
     requestStartNode: function() {
       if (!this.canNodeStart()) {
-        return;
+        return false;
       }
       const params = {
         url: {
