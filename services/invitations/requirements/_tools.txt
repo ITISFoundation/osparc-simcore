@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_tools.txt --resolver=backtracking --strip-extras requirements/_tools.in
 #
-astroid==2.14.2
+astroid==2.15.0
     # via pylint
 black==23.1.0
     # via -r requirements/../../../requirements/devenv.txt
@@ -23,9 +23,9 @@ dill==0.3.6
     # via pylint
 distlib==0.3.6
     # via virtualenv
-filelock==3.9.0
+filelock==3.10.0
     # via virtualenv
-identify==2.5.18
+identify==2.5.21
     # via pre-commit
 isort==5.12.0
     # via
@@ -44,18 +44,18 @@ packaging==23.0
     #   -c requirements/_test.txt
     #   black
     #   build
-pathspec==0.11.0
+pathspec==0.11.1
     # via black
-pip-tools==6.12.2
+pip-tools==6.12.3
     # via -r requirements/../../../requirements/devenv.txt
-platformdirs==3.0.0
+platformdirs==3.1.1
     # via
     #   black
     #   pylint
     #   virtualenv
-pre-commit==3.1.1
+pre-commit==3.2.0
     # via -r requirements/../../../requirements/devenv.txt
-pylint==2.16.2
+pylint==2.17.0
     # via -r requirements/../../../requirements/devenv.txt
 pyproject-hooks==1.0.0
     # via build
@@ -73,17 +73,17 @@ tomli==2.0.1
     #   pyproject-hooks
 tomlkit==0.11.6
     # via pylint
-typing-extensions==4.4.0
+typing-extensions==4.5.0
     # via
     #   -c requirements/_base.txt
     #   astroid
     #   black
     #   pylint
-virtualenv==20.20.0
+virtualenv==20.21.0
     # via pre-commit
-watchdog==2.3.1
+watchdog==3.0.0
     # via -r requirements/_tools.in
-wheel==0.38.4
+wheel==0.40.0
     # via pip-tools
 wrapt==1.15.0
     # via astroid

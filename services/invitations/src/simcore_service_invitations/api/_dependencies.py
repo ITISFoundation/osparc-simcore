@@ -4,6 +4,7 @@ from typing import Any, Callable, Optional
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from starlette.datastructures import URL
 
 from ..core.settings import ApplicationSettings
 
@@ -17,8 +18,8 @@ logger = logging.getLogger(__name__)
 
 def get_reverse_url_mapper(request: Request) -> Callable:
     def _reverse_url_mapper(name: str, **path_params: Any) -> str:
-        url: str = request.url_for(name, **path_params)
-        return url
+        url: URL = request.url_for(name, **path_params)
+        return str(url)
 
     return _reverse_url_mapper
 
