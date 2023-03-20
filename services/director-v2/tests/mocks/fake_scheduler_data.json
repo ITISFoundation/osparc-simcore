@@ -1,71 +1,73 @@
 {
-    "paths_mapping": {
-        "inputs_path": "/home/jovyan/work/inputs",
-        "outputs_path": "/home/jovyan/work/outputs",
-        "state_paths": [
-            "/home/jovyan/work/workspace"
-        ],
-        "state_exclude": null
+  "paths_mapping": {
+    "inputs_path": "/home/jovyan/work/inputs",
+    "outputs_path": "/home/jovyan/work/outputs",
+    "state_paths": [
+      "/home/jovyan/work/workspace"
+    ],
+    "state_exclude": null
+  },
+  "compose_spec": "null",
+  "container_http_entry": null,
+  "restart_policy": "no-restart",
+  "key": "simcore/services/dynamic/jupyter-math",
+  "version": "2.0.4",
+  "user_id": 1,
+  "project_id": "c440556a-b4d9-11ec-9a17-02420a000016",
+  "node_uuid": "3e68d1f6-be3e-414e-a468-4a2bf415f756",
+  "service_name": "dy-sidecar_3e68d1f6-be3e-414e-a468-4a2bf415f756",
+  "hostname": "dy-sidecar_3e68d1f6-be3e-414e-a468-4a2bf415f756",
+  "port": 8000,
+  "dynamic_sidecar": {
+    "status": {
+      "current": "ok",
+      "info": ""
     },
-    "compose_spec": "null",
-    "container_http_entry": null,
-    "restart_policy": "no-restart",
-    "key": "simcore/services/dynamic/jupyter-math",
-    "version": "2.0.4",
-    "user_id": 1,
-    "project_id": "c440556a-b4d9-11ec-9a17-02420a000016",
-    "node_uuid": "3e68d1f6-be3e-414e-a468-4a2bf415f756",
-    "service_name": "dy-sidecar_3e68d1f6-be3e-414e-a468-4a2bf415f756",
-    "hostname": "dy-sidecar_3e68d1f6-be3e-414e-a468-4a2bf415f756",
-    "port": 8000,
-    "dynamic_sidecar": {
-        "status": {
-            "current": "ok",
-            "info": ""
-        },
-        "is_ready": true,
-        "was_compose_spec_submitted": true,
-        "containers_inspect": [
-            {
-                "status": "running",
-                "name": "/dy-sidecar-3e68d1f6-be3e-414e-a468-4a2bf415f756-0-container",
-                "id": "c2f5f363cfa1bd4d16beb2086d2b7573fd4ebfb4fcf72bc7cda235efaaf5540b",
-                "container_state": {}
-            }
-        ],
-        "was_dynamic_sidecar_started": true,
-        "were_containers_created": true,
-        "is_project_network_attached": true,
-        "is_service_environment_ready": true,
-        "service_removal_state": {
-            "can_remove": false,
-            "can_save": null,
-            "was_removed": false
-        },
-        "dynamic_sidecar_id": "sbig36r7lmciw0qvmbyjq8l87",
-        "dynamic_sidecar_network_id": "u6zunjtlawom4iimotk1hpe5j",
-        "swarm_network_id": "viqys7lieb0zjqoj00h0w5662",
-        "swarm_network_name": "master-simcore_interactive_services_subnet"
+    "is_ready": true,
+    "was_compose_spec_submitted": true,
+    "containers_inspect": [
+      {
+        "status": "running",
+        "name": "/dy-sidecar-3e68d1f6-be3e-414e-a468-4a2bf415f756-0-container",
+        "id": "c2f5f363cfa1bd4d16beb2086d2b7573fd4ebfb4fcf72bc7cda235efaaf5540b",
+        "container_state": {}
+      }
+    ],
+    "was_dynamic_sidecar_started": true,
+    "were_containers_created": true,
+    "is_project_network_attached": true,
+    "is_service_environment_ready": true,
+    "service_removal_state": {
+      "can_remove": false,
+      "can_save": null,
+      "was_removed": false
     },
-    "dynamic_sidecar_network_name": "dy-sidecar_3e68d1f6-be3e-414e-a468-4a2bf415f756",
-    "simcore_traefik_zone": "dy-sidecar_3e68d1f6-be3e-414e-a468-4a2bf415f756",
-    "service_port": "8888",
-    "service_resources": {
-        "container": {
-            "image": "simcore/services/dynamic/jupyter-math:2.0.5",
-            "resources": {
-                "CPU": {
-                    "limit": 4,
-                    "reservation": 0.1
-                },
-                "RAM": {
-                    "limit": 103079215104,
-                    "reservation": 536870912
-                }
-            }
+    "dynamic_sidecar_id": "sbig36r7lmciw0qvmbyjq8l87",
+    "dynamic_sidecar_network_id": "u6zunjtlawom4iimotk1hpe5j",
+    "swarm_network_id": "viqys7lieb0zjqoj00h0w5662",
+    "swarm_network_name": "master-simcore_interactive_services_subnet"
+  },
+  "dynamic_sidecar_network_name": "dy-sidecar_3e68d1f6-be3e-414e-a468-4a2bf415f756",
+  "simcore_traefik_zone": "dy-sidecar_3e68d1f6-be3e-414e-a468-4a2bf415f756",
+  "service_port": "8888",
+  "service_resources": {
+    "container": {
+      "image": "simcore/services/dynamic/jupyter-math:2.0.5",
+      "resources": {
+        "CPU": {
+          "limit": 4,
+          "reservation": 0.1
+        },
+        "RAM": {
+          "limit": 103079215104,
+          "reservation": 536870912
         }
-    },
-    "request_dns": "localhost",
-    "request_scheme": "http",
-    "proxy_service_name": "dy-proxy_3e68d1f6-be3e-414e-a468-4a2bf415f756"
+      }
+    }
+  },
+  "request_dns": "localhost",
+  "request_scheme": "http",
+  "proxy_service_name": "dy-proxy_3e68d1f6-be3e-414e-a468-4a2bf415f756",
+  "product": "osparc",
+  "request_simcore_user_agent": ""
 }
