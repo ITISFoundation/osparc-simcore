@@ -335,13 +335,14 @@ async def test_open_project(
         for service_uuid, service in dynamic_services.items():
             calls.append(
                 call(
-                    client.app,
+                    app=client.app,
                     project_id=user_project["uuid"],
                     service_key=service["key"],
                     service_uuid=service_uuid,
                     service_version=service["version"],
                     user_id=logged_user["id"],
                     request_scheme=request_scheme,
+                    request_simcore_user_agent="",
                     request_dns=request_dns,
                     product_name=osparc_product_name,
                     service_resources=ServiceResourcesDictHelpers.create_jsonable(
@@ -399,13 +400,14 @@ async def test_open_template_project_for_edition(
         for service_uuid, service in dynamic_services.items():
             calls.append(
                 call(
-                    client.app,
+                    app=client.app,
                     project_id=template_project["uuid"],
                     service_key=service["key"],
                     service_uuid=service_uuid,
                     service_version=service["version"],
                     user_id=logged_user["id"],
                     request_scheme=request_scheme,
+                    request_simcore_user_agent="",
                     request_dns=request_dns,
                     service_resources=ServiceResourcesDictHelpers.create_jsonable(
                         mock_service_resources
