@@ -73,7 +73,7 @@ SUPPORTED_TRAEFIK_LOG_LEVELS: set[str] = {"info", "debug", "warn", "error"}
 class PlacementConstraintStr(ConstrainedStr):
     strip_whitespace = True
     regex = re.compile(
-        r"^(?!-)(?![.])(?!.*--)(?!.*[.][.])[a-zA-Z0-9.-]*(?<!-)(?<![.])(!=|==){1}[a-zA-Z0-9_. -]*$"
+        r"^(?!-)(?![.])(?!.*--)(?!.*[.][.])[a-zA-Z0-9.-]*(?<!-)(?<![.])(!=|==)[a-zA-Z0-9_. -]*$"
     )
 
 
