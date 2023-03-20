@@ -19,9 +19,11 @@
  * The Error page
  *
  * -----------------------
- * |  oSparc error logo  |
+ * |    oSparc logo      |
+ * |       panda         |
  * |   - status code     |
- * |   - error msg       |
+ * |   - error msgs      |
+ * |   action buttons    |
  * -----------------------
  *
  */
@@ -30,9 +32,27 @@ qx.Class.define("osparc.Error", {
 
   construct: function() {
     this.base(arguments);
-    this._setLayout(new qx.ui.layout.HBox());
 
-    this.__buildLayout();
+    const layout = new qx.ui.layout.Grid(20, 20);
+    layout.setColumnFlex(0, 1);
+    layout.setColumnMinWidth(1, 400);
+    layout.setColumnFlex(2, 1);
+    layout.setRowFlex(this.self().POS.MESSAGES, 1);
+    this._setLayout(layout);
+
+    this._add(new qx.ui.core.Spacer(), {
+      column: 0,
+      row: 0
+    });
+    this._add(new qx.ui.core.Spacer(), {
+      column: 2,
+      row: 0
+    });
+
+    this.getChildControl("logo");
+    this.getChildControl("lying-panda");
+    this.getChildControl("code");
+    this.getChildControl("messages-layout");
   },
 
   properties: {
@@ -40,14 +60,14 @@ qx.Class.define("osparc.Error", {
       check: "String",
       init: "",
       nullable: true,
-      apply: "_applyCode"
+      event: "changeCode"
     },
 
     messages: {
       check: "Array",
       init: [],
       nullable: true,
-      apply: "_applyMessages"
+      apply: "__applyMessages"
     }
   },
 
@@ -94,51 +114,111 @@ qx.Class.define("osparc.Error", {
       "503": "Service Unavailable",
       "504": "Gateway Timeout",
       "505": "HTTP Version Not Supported"
+    },
+
+    POS: {
+      LOGO: 0,
+      PANDA: 1,
+      ERROR: 3,
+      MESSAGES: 4,
+      ACTIONS: 5
     }
   },
 
   members: {
-    __status: null,
-    __messages: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "logo": {
-          control = new osparc.ui.basic.Logo();
+        case "logo":
+          control = new osparc.ui.basic.Logo().set({
+            width: 130,
+            height: 55
+          });
+          this._add(control, {
+            column: 1,
+            row: this.self().POS.LOGO
+          });
           break;
-        }
-        case "lying-panda": {
+        case "lying-panda":
           control = new qx.ui.basic.Image().set({
             source: "osparc/lyingpanda.png",
             scale: true,
             alignX: "center",
-            width: 450,
-            height: 300
+            width: 300,
+            height: 200
+          });
+          this._add(control, {
+            column: 1,
+            row: this.self().POS.PANDA
           });
           break;
-        }
-        case "code": {
+        case "code":
           control = new qx.ui.basic.Label().set({
             font: "text-18",
             alignX: "center",
+            selectable: true,
             rich : true,
-            width: 300
+            width: 400
+          });
+          this.bind("code", control, "value", {
+            converter: code => {
+              const errorText = this.tr("Error: ");
+              if (code in this.self().FRIENDLY_HTTP_STATUS) {
+                return errorText + this.self().FRIENDLY_HTTP_STATUS[code];
+              }
+              return errorText + code;
+            }
+          });
+          this._add(control, {
+            column: 1,
+            row: this.self().POS.ERROR
           });
           break;
-        }
-        case "messages-layout": {
+        case "messages-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
             alignX: "center",
-            maxWidth: 300
+            maxWidth: 400
+          });
+          this._add(control, {
+            column: 1,
+            row: this.self().POS.MESSAGES
+          });
+          break;
+        case "actions-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(20)).set({
+            alignX: "center",
+            maxWidth: 400
+          });
+          break;
+        case "copy-to-clipboard": {
+          control = new qx.ui.form.Button().set({
+            icon: "@FontAwesome5Solid/copy/14",
+            label: this.tr("Copy to clipboard")
+          });
+          control.addListener("execute", () => this.__copyMessagesToClipboard(), this);
+          break;
+        }
+        case "support-email": {
+          control = new qx.ui.form.Button().set({
+            icon: "@FontAwesome5Solid/envelope/14",
+            label: this.tr("Support email")
+          });
+          control.addListener("execute", () => this.__supportEmail(), this);
+          const actionsLayout = this.getChildControl("actions-layout");
+          actionsLayout.add(control, {
+            flex: 1
           });
           break;
         }
-        case "message": {
-          control = new qx.ui.basic.Label().set({
-            font: "text-16",
-            rich : true,
-            width: 300
+        case "log-in-button": {
+          control = new qx.ui.form.Button().set({
+            icon: "@FontAwesome5Solid/copy/14",
+            label: this.tr("Log in")
+          });
+          control.addListener("execute", () => this.__logIn(), this);
+          const actionsLayout = this.getChildControl("actions-layout");
+          actionsLayout.add(control, {
+            flex: 1
           });
           break;
         }
@@ -146,51 +226,59 @@ qx.Class.define("osparc.Error", {
       return control || this.base(arguments, id);
     },
 
-    __buildLayout: function() {
-      const logo = this.getChildControl("logo");
-      const image = this.getChildControl("lying-panda");
-      const status = this.__status = this.getChildControl("code");
-      const message = this.__messages = this.getChildControl("messages-layout");
-
-      const errorWidget = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
-        alignY: "middle"
-      }));
-      errorWidget.add(new qx.ui.core.Widget(), {
-        flex: 1
+    __createMessage: function(text) {
+      const message = new qx.ui.basic.Label(text).set({
+        font: "text-16",
+        selectable: true,
+        rich: true,
+        wrap: true
       });
-      errorWidget.add(logo);
-      errorWidget.add(image);
-      errorWidget.add(status);
-      errorWidget.add(message);
-      errorWidget.add(new qx.ui.core.Widget(), {
-        flex: 1
-      });
-
-      this._add(new qx.ui.core.Widget(), {
-        flex: 1
-      });
-      this._add(errorWidget);
-      this._add(new qx.ui.core.Widget(), {
-        flex: 1
-      });
+      return message;
     },
 
-    _applyCode: function(status) {
-      if (status in this.self().FRIENDLY_HTTP_STATUS) {
-        this.__status.setValue("Error: " + this.self().FRIENDLY_HTTP_STATUS[status]);
-      }
-    },
-
-    _applyMessages: function(messages) {
-      this.__messages.removeAll();
+    __applyMessages: function(messages) {
+      const messagesLayout = this.getChildControl("messages-layout");
+      messagesLayout.removeAll();
       messages.forEach(msg => {
-        const message = this.getChildControl("message");
-        message.set({
-          value: msg.toString(),
-          allowGrowX: true
-        });
-        this.__messages.add(message);
+        const message = this.__createMessage(msg.toString());
+        messagesLayout.add(message);
       });
+
+      const actionsLayout = this.getChildControl("actions-layout");
+      messagesLayout.add(actionsLayout);
+
+      const copyToClipboard = this.getChildControl("copy-to-clipboard");
+      actionsLayout.add(copyToClipboard, {
+        flex: 1
+      });
+      const supportEmail = this.getChildControl("support-email");
+      actionsLayout.add(supportEmail, {
+        flex: 1
+      });
+      const logIn = this.getChildControl("log-in-button");
+      actionsLayout.add(logIn, {
+        flex: 1
+      });
+    },
+
+    __copyMessagesToClipboard: function() {
+      let text = "";
+      this.getMessages().forEach(msg => text+= msg);
+      osparc.utils.Utils.copyTextToClipboard(text);
+    },
+
+    __supportEmail: function() {
+      osparc.store.VendorInfo.getInstance().getSupportEmail()
+        .then(supportEmail => {
+          const giveEmailFeedbackWindow = new osparc.ui.window.Dialog("Support", null, qx.locale.Manager.tr("Please send us an email to:"));
+          const mailto = osparc.store.Support.getMailToLabel(supportEmail, "Access error");
+          giveEmailFeedbackWindow.addWidget(mailto);
+          giveEmailFeedbackWindow.open();
+        });
+    },
+
+    __logIn: function() {
+      window.location.reload();
     }
   }
 });
