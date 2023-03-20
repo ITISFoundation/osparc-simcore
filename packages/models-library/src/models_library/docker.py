@@ -38,6 +38,10 @@ class SimcoreServiceDockerLabelKeys(BaseModel):
     user_id: UserID = Field(..., alias="user_id")
     project_id: ProjectID = Field(..., alias="study_id")
     node_id: NodeID = Field(..., alias="uuid")
+
+    # NOTE: `simcore_user_agent` and `product_name` should become
+    # mandatory once below PR reaches production
+    # https://github.com/ITISFoundation/osparc-simcore/pull/3990
     product_name: Optional[ProductName] = None
     user_agent: Optional[str] = None
 
