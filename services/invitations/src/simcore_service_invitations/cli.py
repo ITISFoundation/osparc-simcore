@@ -129,7 +129,7 @@ def invite(
 
     invitation_data = InvitationInputs(
         issuer=issuer,
-        guest=email,  # type: ignore
+        guest=email,
         trial_account_days=trial_account_days,
     )
 
