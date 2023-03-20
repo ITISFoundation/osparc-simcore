@@ -453,6 +453,7 @@ async def test_send_computation_task(
         log_file_url: AnyUrl,
         command: list[str],
         s3_settings: Optional[S3Settings],
+        boot_mode: BootMode,
         expected_annotations,
     ) -> TaskOutputData:
         # get the task data
@@ -1090,6 +1091,7 @@ async def test_get_cluster_details(
         log_file_url: AnyUrl,
         command: list[str],
         s3_settings: Optional[S3Settings],
+        boot_mode: BootMode,
         expected_annotations,
     ) -> TaskOutputData:
         # get the task data
