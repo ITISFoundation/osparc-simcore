@@ -97,5 +97,6 @@
   },
   "request_dns": "localhost",
   "request_scheme": "http",
-  "proxy_service_name": "dy-proxy_dd2b8ceb-4408-4bfb-a953-46178836e12d"
+  "proxy_service_name": "dy-proxy_dd2b8ceb-4408-4bfb-a953-46178836e12d",
+  "request_simcore_user_agent": ""
 }

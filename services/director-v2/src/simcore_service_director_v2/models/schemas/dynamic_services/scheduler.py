@@ -408,6 +408,26 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         "If set to None, the current product is undefined. Mostly for backwards compatibility",
     )
 
+    @root_validator(pre=True)
+    @classmethod
+    def _ensure_legacy_format_compatibility(cls, values):
+        warnings.warn(
+            (
+                "Once https://github.com/ITISFoundation/osparc-simcore/pull/3990 "
+                "reaches production this entire root_validator function "
+                "can be safely removed. Please check "
+                "https://github.com/ITISFoundation/osparc-simcore/issues/3996"
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        request_simcore_user_agent: Optional[str] = values.get(
+            "request_simcore_user_agent"
+        )
+        if not request_simcore_user_agent:
+            values["request_simcore_user_agent"] = ""
+        return values
+
     @classmethod
     def from_http_request(
         # pylint: disable=too-many-arguments
@@ -421,7 +441,6 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         run_id: Optional[UUID] = None,
     ) -> "SchedulerData":
         # This constructor method sets current product
-        assert service.product_name is not None  # nosec
         names_helper = DynamicSidecarNamesHelper.make(service.node_uuid)
 
         obj_dict = dict(
