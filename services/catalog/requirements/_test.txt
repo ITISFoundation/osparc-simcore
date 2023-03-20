@@ -101,6 +101,10 @@ multidict==6.0.2
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
+mypy==1.1.1
+    # via sqlalchemy
+mypy-extensions==1.0.0
+    # via mypy
 packaging==21.3
     # via
     #   -c requirements/_base.txt
@@ -170,12 +174,20 @@ sniffio==1.2.0
     #   httpx
 sqlalchemy==1.4.37
     # via
-    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
     #   alembic
+sqlalchemy2-stubs==0.0.2a32
+    # via sqlalchemy
 tomli==2.0.1
     # via
     #   coverage
+    #   mypy
     #   pytest
+typing-extensions==4.3.0
+    # via
+    #   -c requirements/_base.txt
+    #   mypy
+    #   sqlalchemy2-stubs
 urllib3==1.26.9
     # via
     #   -c requirements/_base.txt

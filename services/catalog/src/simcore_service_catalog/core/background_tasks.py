@@ -13,9 +13,10 @@ import asyncio
 import logging
 from contextlib import suppress
 from pprint import pformat
-from typing import Final
+from typing import Any, Final, cast
 
 from fastapi import FastAPI
+from models_library.function_services_catalog.api import iter_service_docker_data
 from models_library.services import ServiceDockerData
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from packaging.version import Version
@@ -27,7 +28,6 @@ from ..db.repositories.groups import GroupsRepository
 from ..db.repositories.projects import ProjectsRepository
 from ..db.repositories.services import ServicesRepository
 from ..services import access_rights
-from ..services.function_services import iter_service_docker_data
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ async def _list_registry_services(
 ) -> ServiceDockerDataMap:
 
     client = get_director_api(app)
-    data = await client.get("/services")
+    data = cast(list[dict[str, Any]], await client.get("/services"))
     services: ServiceDockerDataMap = {
         (s.key, s.version): s for s in iter_service_docker_data()
     }
@@ -83,7 +83,10 @@ async def _create_services_in_db(
 
     services_repo = ServicesRepository(app.state.engine)
 
-    sorted_services = sorted(service_keys, key=lambda t: Version(t[1]))
+    def _by_version(t: tuple[ServiceKey, ServiceVersion]) -> Version:
+        return Version(t[1])
+
+    sorted_services = sorted(service_keys, key=_by_version)
 
     for service_key, service_version in sorted_services:
         service_metadata: ServiceDockerData = services_in_registry[

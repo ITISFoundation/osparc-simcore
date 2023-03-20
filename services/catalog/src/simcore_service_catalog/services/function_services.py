@@ -2,7 +2,7 @@
     Catalog of i/o metadata for functions implemented in the front-end
 """
 
-from typing import Any, Dict, Tuple
+from typing import Any, cast
 
 from fastapi import status
 from fastapi.applications import FastAPI
@@ -16,13 +16,13 @@ from models_library.services import ServiceDockerData
 assert is_function_service  # nosec
 
 
-def _as_dict(model_instance: ServiceDockerData) -> Dict[str, Any]:
+def _as_dict(model_instance: ServiceDockerData) -> dict[str, Any]:
     # FIXME: In order to convert to ServiceOut, now we have to convert back to front-end service because of alias
     # FIXME: set the same policy for f/e and director datasets!
-    return model_instance.dict(by_alias=True, exclude_unset=True)
+    return cast(dict[str, Any], model_instance.dict(by_alias=True, exclude_unset=True))
 
 
-def get_function_service(key, version) -> Dict[str, Any]:
+def get_function_service(key, version) -> dict[str, Any]:
     try:
         found = next(
             s
@@ -51,7 +51,7 @@ def setup_function_services(app: FastAPI):
     app.add_event_handler("startup", _on_startup)
 
 
-__all__: Tuple[str, ...] = (
+__all__: tuple[str, ...] = (
     "get_function_service",
     "is_function_service",
     "setup_function_services",
