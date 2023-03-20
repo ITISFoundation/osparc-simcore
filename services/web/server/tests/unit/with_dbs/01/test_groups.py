@@ -6,14 +6,15 @@
 
 import random
 from copy import deepcopy
-from typing import Callable
+from typing import Any, AsyncIterator, Callable
 
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from faker import Faker
 from pytest_simcore.helpers import utils_login
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
+from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict, log_client_in
 from pytest_simcore.helpers.utils_webserver_unit_with_db import standard_role_response
 from servicelib.aiohttp.application import create_safe_application
 from simcore_postgres_database.models.users import UserRole
@@ -25,6 +26,8 @@ from simcore_service_webserver.groups_api import (
     DEFAULT_GROUP_OWNER_ACCESS_RIGHTS,
     DEFAULT_GROUP_READ_ACCESS_RIGHTS,
     auto_add_user_to_groups,
+    create_user_group,
+    delete_user_group,
 )
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.login.storage import AsyncpgStorage
@@ -589,3 +592,54 @@ async def test_add_user_gets_added_to_group(
         )
         if not error:
             assert len(data["organizations"]) == (0 if "bad" in email else 1)
+
+
+@pytest.fixture
+async def group_where_logged_user_is_the_owner(
+    client: TestClient, logged_user: UserInfoDict
+) -> AsyncIterator[dict[str, Any]]:
+    group = await create_user_group(
+        app=client.app,
+        user_id=logged_user["id"],
+        new_group={
+            "gid": "6543",
+            "label": f"this is user {logged_user['id']} group",
+            "description": f"user {logged_user['email']} is the owner of that one",
+            "thumbnail": None,
+        },
+    )
+    yield group
+    await delete_user_group(client.app, logged_user["id"], group["gid"])
+
+
+@pytest.mark.acceptance_test(
+    "Fixes 🐛 https://github.com/ITISFoundation/osparc-issues/issues/812"
+)
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_adding_user_to_group_with_upper_case_email(
+    client: TestClient,
+    user_role: UserRole,
+    group_where_logged_user_is_the_owner: dict[str, str],
+    faker: Faker,
+):
+    url = client.app.router["add_group_user"].url_for(
+        gid=f"{group_where_logged_user_is_the_owner['gid']}"
+    )
+    email = faker.email()
+    # adding a user to group with the email in capital letters
+    # Tests 🐛 https://github.com/ITISFoundation/osparc-issues/issues/812
+    async with NewUser(
+        app=client.app,
+    ) as registered_user:
+        assert registered_user["email"]  # <--- this email is lower case
+
+        response = await client.post(
+            url,
+            json={
+                "email": registered_user["email"].upper()
+            },  # <--- email in upper case
+        )
+        data, error = await assert_status(response, web.HTTPNoContent)
+
+        assert not data
+        assert not error
