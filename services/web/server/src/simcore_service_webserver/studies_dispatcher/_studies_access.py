@@ -41,6 +41,7 @@ from ..utils_aiohttp import create_redirect_response
 from ._constants import (
     MSG_PROJECT_NOT_FOUND,
     MSG_PROJECT_NOT_PUBLISHED,
+    MSG_PUBLIC_PROJECT_NOT_PUBLISHED,
     MSG_UNEXPECTED_ERROR,
 )
 from .settings import StudiesDispatcherSettings, get_plugin_settings
@@ -62,12 +63,17 @@ def _compose_uuid(template_uuid, user_id, query="") -> str:
 
 
 async def _get_published_template_project(
-    app: web.Application, project_uuid: str
+    app: web.Application,
+    project_uuid: str,
+    *,
+    is_user_authenticated: bool,
 ) -> ProjectDict:
     """
     raises RedirectToFrontEndPageError
     """
     db = ProjectDBAPI.get_from_app_context(app)
+
+    only_public_projects = not is_user_authenticated
 
     try:
         prj, _ = await db.get_project(
@@ -75,8 +81,8 @@ async def _get_published_template_project(
             # NOTE: these are the conditions for a published study
             # 1. MUST be a template
             only_templates=True,
-            # 2. MUST be checked for publication
-            only_published=True,
+            # 2. If user is unauthenticated, then MUST be public
+            only_published=only_public_projects,
             # 3. MUST be shared with EVERYONE=1 in read mode, i.e.
             user_id=ANY_USER,  # any user
             check_permissions="read",  # any user has read access
@@ -94,11 +100,19 @@ async def _get_published_template_project(
             err.detailed_message(),
         )
 
-        raise RedirectToFrontEndPageError(
-            MSG_PROJECT_NOT_PUBLISHED.format(project_id=project_uuid),
-            error_code="PROJECT_NOT_PUBLISHED",
-            status_code=web.HTTPNotFound.status_code,
-        ) from err
+        if only_public_projects:
+            raise RedirectToFrontEndPageError(
+                MSG_PUBLIC_PROJECT_NOT_PUBLISHED.format(project_id=project_uuid),
+                error_code="PUBLIC_PROJECT_NOT_PUBLISHED",
+                status_code=web.HTTPNotFound.status_code,
+            ) from err
+
+        else:
+            raise RedirectToFrontEndPageError(
+                MSG_PROJECT_NOT_PUBLISHED.format(project_id=project_uuid),
+                error_code="PROJECT_NOT_PUBLISHED",
+                status_code=web.HTTPNotFound.status_code,
+            ) from err
 
 
 async def _create_temporary_user(request: web.Request):
@@ -316,17 +330,24 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
     project_id = request.match_info["id"]
     assert request.app.router[INDEX_RESOURCE_NAME]  # nosec
 
-    # Get published PROJECT referenced in link
-    template_project = await _get_published_template_project(request.app, project_id)
-
-    # Get or create a valid USER
+    # Checks user
     user = None
     is_anonymous_user = await is_anonymous(request)
     if not is_anonymous_user:
         # NOTE: covers valid cookie with unauthorized user (e.g. expired guest/banned)
         user = await get_authorized_user(request)
 
+    # Get published PROJECT referenced in link
+    template_project = await _get_published_template_project(
+        request.app,
+        project_id,
+        is_user_authenticated=bool(user),
+    )
+
+    # Get or create a valid USER
     if not user:
+        # NOTE: only published=1 are available for GUEST users
+        assert template_project["published"]  # nosec
         log.debug("Creating temporary user ...")
         user = await _create_temporary_user(request)
         is_anonymous_user = True
