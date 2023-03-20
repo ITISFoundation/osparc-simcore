@@ -343,6 +343,14 @@ qx.Class.define("osparc.utils.Services", {
       });
     },
 
+    addExtraTypeInfo: function(services) {
+      Object.values(services).forEach(serviceWVersion => {
+        Object.values(serviceWVersion).forEach(service => {
+          service["x-type"] = service["tpye"];
+        });
+      });
+    },
+
     removeFileToKeyMap: function(service) {
       [
         "inputs",
