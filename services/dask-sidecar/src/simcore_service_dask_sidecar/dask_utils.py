@@ -54,12 +54,11 @@ _DEFAULT_MAX_RESOURCES: Final[dict[str, float]] = {"CPU": 1, "RAM": 1024**3}
 
 
 def get_current_task_resources() -> dict[str, float]:
+    current_task_resources = _DEFAULT_MAX_RESOURCES
     if task := _get_current_task_state():
         if task_resources := task.resource_restrictions:
-            for key, value in _DEFAULT_MAX_RESOURCES.items():
-                task_resources[key] = task_resources.get(key, value)
-            return task_resources
-    return _DEFAULT_MAX_RESOURCES
+            current_task_resources.update(task_resources)
+    return current_task_resources
 
 
 @dataclass()
