@@ -233,6 +233,7 @@ class DaskClient:
                 project_id=project_id,
                 node_id=node_id,
             )
+            assert node_image.node_requirements  # nosec
             dask_resources = from_node_reqs_to_dask_resources(
                 node_image.node_requirements
             )
