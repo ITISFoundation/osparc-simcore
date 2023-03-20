@@ -6267,10 +6267,16 @@ paths:
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /viewers:
-    post:
+    get:
       tags:
         - sparc
       summary: List Viewers
+      description: |-
+        Lists all publically available viewers
+
+        Notice that this might contain multiple services for the same filetype
+
+        If file_type is provided, then it filters viewer for that filetype
       operationId: list_viewers
       parameters:
         - required: false
@@ -6331,10 +6337,18 @@ paths:
                   error:
                     title: Error
   /viewers/default:
-    post:
+    get:
       tags:
         - sparc
       summary: List Default Viewers
+      description: |-
+        Lists the default viewer for each supported filetype
+
+        This was interfaced as a subcollection of viewers because it is a very common use-case
+
+        Only publicaly available viewers
+
+        If file_type is provided, then it filters viewer for that filetype
       operationId: list_default_viewers
       parameters:
         - required: false
@@ -6349,7 +6363,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1viewers/post/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1viewers/get/responses/200/content/application~1json/schema'
   /view:
     get:
       tags:

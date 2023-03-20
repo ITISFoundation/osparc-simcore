@@ -27,7 +27,31 @@ TAGS: list[Union[str, Enum]] = [
 ]
 
 
-@app.post(
+# from pydantic import BaseModel
+
+
+# class ServiceGet(BaseModel):
+#     name_key: str
+#     version: str
+#     mimetypes: list[str] = Field(
+#         default_factory=list, description="Compatible mimetypes and ports"
+#     )
+
+#     # actions
+#     open_url: HttpUrl
+
+
+# @app.get(
+#     "/services",
+#     response_model=Envelope[list[ServiceGet]],
+#     tags=TAGS,
+#     operation_id="list_services",
+# )
+# async def list_services(file_type: Optional[str] = None):
+#     """Lists all publically available services"""
+
+
+@app.get(
     "/viewers",
     response_model=Envelope[list[Viewer]],
     tags=TAGS,
@@ -42,7 +66,7 @@ async def list_viewers(file_type: Optional[str] = None):
     """
 
 
-@app.post(
+@app.get(
     "/viewers/default",
     response_model=Envelope[list[Viewer]],
     tags=TAGS,
