@@ -163,7 +163,7 @@ def test_regression_service_has_no_reservations():
 USER_ID: UserID = 1
 PROJECT_ID: ProjectID = uuid4()
 NODE_ID: NodeID = uuid4()
-USER_AGENT: str = "python/test"
+SIMCORE_USER_AGENT: str = "a-puppet"
 PRODUCT_NAME: str = "osparc"
 
 
@@ -201,7 +201,7 @@ PRODUCT_NAME: str = "osparc"
                             f"user_id={USER_ID}",
                             f"study_id={PROJECT_ID}",
                             f"uuid={NODE_ID}",
-                            f"user_agent={USER_AGENT}",
+                            f"user_agent={SIMCORE_USER_AGENT}",
                             f"product_name={PRODUCT_NAME}",
                         ]
                     },
@@ -215,6 +215,6 @@ async def test_update_container_labels(
     service_spec: dict[str, Any], expected_result: dict[str, Any]
 ):
     docker_compose_specs._update_container_labels(
-        service_spec, USER_ID, PROJECT_ID, NODE_ID, USER_AGENT, PRODUCT_NAME
+        service_spec, USER_ID, PROJECT_ID, NODE_ID, SIMCORE_USER_AGENT, PRODUCT_NAME
     )
     assert service_spec == expected_result

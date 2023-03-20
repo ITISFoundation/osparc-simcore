@@ -18,6 +18,7 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from pydantic.types import NonNegativeFloat, PositiveInt
+from servicelib.aiohttp.monitoring import SIMCORE_USER_AGENT_HEADER
 from servicelib.logging_utils import log_decorator
 from servicelib.progress_bar import ProgressBarData
 from servicelib.rabbitmq import RabbitMQClient
@@ -84,7 +85,7 @@ async def run_dynamic_service(
     service_uuid: str,
     request_dns: str,
     request_scheme: str,
-    request_user_agent: str,
+    request_simcore_user_agent: str,
     service_resources: ServiceResourcesDict,
 ) -> DataType:
     """
@@ -108,7 +109,7 @@ async def run_dynamic_service(
     headers = {
         "X-Dynamic-Sidecar-Request-DNS": request_dns,
         "X-Dynamic-Sidecar-Request-Scheme": request_scheme,
-        "X-Dynamic-Sidecar-Request-User-Agent": request_user_agent,
+        SIMCORE_USER_AGENT_HEADER: request_simcore_user_agent,
     }
 
     settings: DirectorV2Settings = get_plugin_settings(app)

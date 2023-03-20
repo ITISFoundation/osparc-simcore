@@ -10,6 +10,7 @@ from typing import Any, Optional
 
 from aiohttp import ClientSession, web
 from servicelib.aiohttp.client_session import get_client_session
+from servicelib.aiohttp.monitoring import SIMCORE_USER_AGENT_HEADER
 from servicelib.utils import logged_gather
 from yarl import URL
 
@@ -59,7 +60,7 @@ async def start_service(
     service_uuid: str,
     request_dns: str,
     request_scheme: str,
-    request_user_agent: str,
+    request_simcore_user_agent: str,
 ) -> Optional[dict]:
     session, api_endpoint = _get_director_client(app)
 
@@ -75,7 +76,7 @@ async def start_service(
     headers = {
         "X-Dynamic-Sidecar-Request-DNS": request_dns,
         "X-Dynamic-Sidecar-Request-Scheme": request_scheme,
-        "X-Dynamic-Sidecar-Request-User-Agent": request_user_agent,
+        SIMCORE_USER_AGENT_HEADER: request_simcore_user_agent,
     }
 
     url = (api_endpoint / "running_interactive_services").with_query(params)

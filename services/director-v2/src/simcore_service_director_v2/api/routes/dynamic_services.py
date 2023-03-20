@@ -101,7 +101,7 @@ async def create_dynamic_service(
     service: DynamicServiceCreate,
     x_dynamic_sidecar_request_dns: str = Header(...),
     x_dynamic_sidecar_request_scheme: str = Header(...),
-    x_dynamic_sidecar_request_user_agent: str = Header(...),
+    x_simcore_user_agent: str = Header(...),
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     dynamic_services_settings: DynamicServicesSettings = Depends(
         get_dynamic_services_settings
@@ -141,7 +141,7 @@ async def create_dynamic_service(
             port=dynamic_services_settings.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_PORT,
             request_dns=x_dynamic_sidecar_request_dns,
             request_scheme=x_dynamic_sidecar_request_scheme,
-            request_user_agent=x_dynamic_sidecar_request_user_agent,
+            request_simcore_user_agent=x_simcore_user_agent,
         )
 
     return cast(DynamicServiceGet, await scheduler.get_stack_status(service.node_uuid))

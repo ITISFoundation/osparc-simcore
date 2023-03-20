@@ -14,7 +14,7 @@ from models_library.docker import (
 )
 from pydantic import ValidationError, parse_obj_as
 
-faker = Faker()
+_faker = Faker()
 
 
 @pytest.mark.parametrize(
@@ -110,19 +110,19 @@ def test_docker_generic_tag(image_name: str, valid: bool):
     [
         pytest.param(
             {
-                "user_id": faker.pyint(),
-                "project_id": faker.uuid4(),
-                "node_id": faker.uuid4(),
+                "user_id": _faker.pyint(),
+                "project_id": _faker.uuid4(),
+                "node_id": _faker.uuid4(),
             },
             id="parse_existing_service_labels",
         ),
         pytest.param(
             {
-                "user_id": faker.pyint(),
-                "project_id": faker.uuid4(),
-                "node_id": faker.uuid4(),
+                "user_id": _faker.pyint(),
+                "project_id": _faker.uuid4(),
+                "node_id": _faker.uuid4(),
                 "product": "test_p",
-                "user_agent": "test/python",
+                "simcore_user_agent": "a-test-puppet",
             },
             id="parse_new_service_labels",
         ),

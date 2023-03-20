@@ -155,7 +155,7 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
         port: PortInt,
         request_dns: str,
         request_scheme: str,
-        request_user_agent: str,
+        request_simcore_user_agent: str,
     ) -> None:
         """Invoked before the service is started"""
         scheduler_data = SchedulerData.from_http_request(
@@ -164,7 +164,7 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
             port=port,
             request_dns=request_dns,
             request_scheme=request_scheme,
-            request_user_agent=request_user_agent,
+            request_simcore_user_agent=request_simcore_user_agent,
         )
         await self._add_service(scheduler_data)
 
@@ -216,6 +216,7 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
         all_tracked_service_uuids = list(self._inverse_search_mapping.keys())
         if user_id is None and project_id is None:
             return all_tracked_service_uuids
+
         # let's filter
         def _is_scheduled(node_id: NodeID) -> bool:
             try:

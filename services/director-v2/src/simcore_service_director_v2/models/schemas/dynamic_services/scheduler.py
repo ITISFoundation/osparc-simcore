@@ -397,7 +397,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     request_scheme: str = Field(
         ..., description="used when configuring the CORS options on the proxy"
     )
-    request_user_agent: str = Field(
+    request_simcore_user_agent: str = Field(
         ..., description="used as label to filter out from the metrics"
     )
     proxy_service_name: str = Field(None, description="service name given to the proxy")
@@ -417,7 +417,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         port: PortInt,
         request_dns: str,
         request_scheme: str,
-        request_user_agent: str,
+        request_simcore_user_agent: str,
         run_id: Optional[UUID] = None,
     ) -> "SchedulerData":
         # This constructor method sets current product
@@ -444,7 +444,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             request_dns=request_dns,
             request_scheme=request_scheme,
             proxy_service_name=names_helper.proxy_service_name,
-            request_user_agent=request_user_agent,
+            request_simcore_user_agent=request_simcore_user_agent,
             dynamic_sidecar={},
         )
         if run_id:

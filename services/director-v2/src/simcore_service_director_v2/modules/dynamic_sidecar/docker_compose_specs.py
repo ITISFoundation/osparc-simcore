@@ -193,7 +193,7 @@ def _update_container_labels(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
-    user_agent: str,
+    simcore_user_agent: str,
     product_name: ProductName,
 ) -> None:
     for spec in service_spec["services"].values():
@@ -203,7 +203,7 @@ def _update_container_labels(
             user_id=user_id,
             study_id=project_id,
             uuid=node_id,
-            user_agent=user_agent,
+            simcore_user_agent=simcore_user_agent,
             product_name=product_name,
         )
         docker_labels = [f"{k}={v}" for k, v in label_keys.to_docker_labels().items()]
@@ -230,7 +230,7 @@ def assemble_spec(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
-    user_agent: str,
+    simcore_user_agent: str,
 ) -> str:
     """
     returns a docker-compose spec used by
@@ -295,7 +295,7 @@ def assemble_spec(
         project_id=project_id,
         node_id=node_id,
         product_name=product_name,
-        user_agent=user_agent,
+        simcore_user_agent=simcore_user_agent,
     )
 
     # TODO: will be used in next PR

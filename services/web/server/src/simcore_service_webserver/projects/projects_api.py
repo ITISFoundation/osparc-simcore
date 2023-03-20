@@ -40,6 +40,7 @@ from servicelib.aiohttp.application_keys import (
     APP_JSONSCHEMA_SPECS_KEY,
 )
 from servicelib.aiohttp.jsonschema_validation import validate_instance
+from servicelib.aiohttp.monitoring import SIMCORE_USER_AGENT_HEADER
 from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_context
 from servicelib.utils import fire_and_forget_task, logged_gather
@@ -233,7 +234,7 @@ async def _start_dynamic_service(
         service_uuid=f"{node_uuid}",
         request_dns=extract_dns_without_default_port(request.url),
         request_scheme=request.headers.get("X-Forwarded-Proto", request.url.scheme),
-        request_user_agent=request.headers.get("User-Agent", ""),
+        request_simcore_user_agent=request.headers.get(SIMCORE_USER_AGENT_HEADER, ""),
         service_resources=service_resources,
     )
 

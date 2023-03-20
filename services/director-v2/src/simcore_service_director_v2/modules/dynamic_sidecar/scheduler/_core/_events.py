@@ -481,7 +481,7 @@ class CreateUserServices(DynamicSchedulerEvent):
             user_id=scheduler_data.user_id,
             project_id=scheduler_data.project_id,
             node_id=scheduler_data.node_uuid,
-            user_agent=scheduler_data.request_user_agent,
+            simcore_user_agent=scheduler_data.request_simcore_user_agent,
         )
 
         logger.debug(

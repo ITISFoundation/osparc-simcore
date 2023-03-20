@@ -35,7 +35,7 @@ class SimcoreServiceDockerLabelKeys(BaseModel):
     # mandatory once below PR reaches production
     # https://github.com/ITISFoundation/osparc-simcore/pull/3990
     product_name: Optional[ProductName] = None
-    user_agent: Optional[str] = None
+    simcore_user_agent: Optional[str] = None
 
     def to_docker_labels(self) -> dict[str, str]:
         """returns a dictionary of strings as required by docker"""
