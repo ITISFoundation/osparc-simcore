@@ -524,7 +524,7 @@ def test_run_computational_sidecar_dask(
     worker_name = next(iter(dask_client.scheduler_info()["workers"]))
 
     output_data = future.result()
-    assert isinstance(output_data, dict)
+    assert isinstance(output_data, TaskOutputData)
 
     # check that the task produces expected logs
     worker_logs = [log for _, log in dask_client.get_worker_logs()[worker_name]]  # type: ignore
