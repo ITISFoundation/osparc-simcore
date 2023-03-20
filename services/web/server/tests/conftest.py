@@ -109,6 +109,7 @@ def fake_data_dir(tests_data_dir: Path) -> Path:
 
 @pytest.fixture
 def fake_project(tests_data_dir: Path) -> ProjectDict:
+    """fake data for a project in a response body of GET /project/{uuid} (see tests/data/fake-project.json)"""
     # TODO: rename as fake_project_data since it does not produce a BaseModel but its **data
     fpath = tests_data_dir / "fake-project.json"
     assert fpath.exists()

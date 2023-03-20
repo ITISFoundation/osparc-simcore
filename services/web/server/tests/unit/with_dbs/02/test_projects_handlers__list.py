@@ -5,7 +5,7 @@
 
 import asyncio
 from math import ceil
-from typing import Any, Awaitable, Callable, Optional, Union
+from typing import Any, Awaitable, Callable, Optional
 
 import pytest
 from aiohttp import web
@@ -133,7 +133,7 @@ async def test_list_projects_with_invalid_pagination_parameters(
     primary_group: dict[str, str],
     expected: ExpectedResponse,
     storage_subsystem_mock,
-    catalog_subsystem_mock: Callable[[Optional[Union[list[dict], dict]]], None],
+    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     director_v2_service_mock: aioresponses,
     project_db_cleaner,
     limit: int,
@@ -157,7 +157,7 @@ async def test_list_projects_with_pagination(
     primary_group: dict[str, str],
     expected: ExpectedResponse,
     storage_subsystem_mock,
-    catalog_subsystem_mock: Callable[[Optional[Union[list[dict], dict]]], None],
+    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     director_v2_service_mock: aioresponses,
     project_db_cleaner,
     limit: int,
