@@ -142,10 +142,16 @@ def get_tracemalloc_info(top=10) -> list[str]:
 def compose_support_error_msg(
     msg: str, error_code: ErrorCodeStr, support_email: str = "support"
 ) -> str:
-    return (
-        f"{msg.strip(' .').capitalize()} [{error_code}].\n"
-        f"Please contact {support_email} and attach the message above"
+    sentences = []
+    for line in msg.split("\n"):
+        if sentence := line.strip(" ."):
+            sentences.append(sentence[0].upper() + sentence[1:])
+
+    sentences.append(
+        f"For further information please copy this message and contact {support_email} [{error_code}]"
     )
+
+    return ". ".join(sentences)
 
 
 # -----------------------------------------------

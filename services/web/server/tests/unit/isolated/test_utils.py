@@ -5,13 +5,13 @@ import timeit
 import urllib.parse
 from contextlib import contextmanager
 from datetime import datetime
-from typing import Dict
 from urllib.parse import unquote_plus
 
 import pytest
 import yarl
 from simcore_service_webserver.utils import (
     DATETIME_FORMAT,
+    compose_support_error_msg,
     compute_sha1_on_small_dataset,
     now_str,
     to_datetime,
@@ -75,7 +75,7 @@ def test_yarl_url_compose_changed_with_latest_release():
 
 
 @pytest.mark.skip(reason="DEV-demo")
-async def test_compute_sha1_on_small_dataset(fake_project: Dict):
+async def test_compute_sha1_on_small_dataset(fake_project: dict):
     # Based on GitHK review https://github.com/ITISFoundation/osparc-simcore/pull/2556:
     #   From what I know, these having function tend to be a bit CPU intensive, based on the size of the dataset.
     #   Could we maybe have an async version of this function here, run it on an executor?
@@ -126,3 +126,17 @@ async def test_compute_sha1_on_small_dataset(fake_project: Dict):
 
     # For larger datasets, async solution definitvely scales better
     # but for smaller ones, the overhead is considerable
+
+
+@pytest.mark.testit
+def test_compose_support_error_msg():
+
+    msg = compose_support_error_msg(
+        "first sentence for Mr.X   \n  Second sentence.",
+        error_code="OEC:139641204989600",
+        support_email="support@email.com",
+    )
+    assert (
+        msg == "First sentence for Mr.X. Second sentence."
+        " For further information please copy this message and contact support@email.com [OEC:139641204989600]"
+    )
