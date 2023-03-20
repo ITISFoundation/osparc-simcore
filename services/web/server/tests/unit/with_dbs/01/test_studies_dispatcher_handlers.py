@@ -14,6 +14,7 @@ import sqlalchemy as sa
 from aiohttp import ClientResponse, ClientSession, web
 from aioresponses import aioresponses
 from models_library.projects_state import ProjectLocked, ProjectStatus
+from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserRole
 from simcore_service_webserver import catalog
@@ -259,7 +260,7 @@ async def test_api_list_supported_filetypes(client):
 
 
 @pytest.fixture
-async def catalog_subsystem_mock(monkeypatch):
+async def catalog_subsystem_mock(monkeypatch: MonkeyPatch) -> None:
 
     services_in_project = [
         {"key": "simcore/services/frontend/file-picker", "version": "1.0.0"}
@@ -324,7 +325,7 @@ async def assert_redirected_to_study(
 async def test_dispatch_viewer_anonymously(
     client,
     storage_subsystem_mock,
-    catalog_subsystem_mock,
+    catalog_subsystem_mock: None,
     mocks_on_projects_api,
     mocker,
 ):

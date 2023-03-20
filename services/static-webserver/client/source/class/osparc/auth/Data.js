@@ -83,6 +83,13 @@ qx.Class.define("osparc.auth.Data", {
       check: "String"
     },
 
+    role: {
+      check: ["anonymous", "guest", "user", "tester", "admin"],
+      init: null,
+      nullable: false,
+      event: "changeRole"
+    },
+
     expirationDate: {
       init: null,
       nullable: true,

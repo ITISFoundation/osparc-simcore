@@ -100,7 +100,8 @@ qx.Class.define("osparc.component.service.ServiceButtonList", {
 
     _filterTags: function(tags) {
       if (tags && tags.length) {
-        const type = this.getServiceModel().getType() || "";
+        // xtype is a tuned type by the frontend
+        const type = this.getServiceModel().getXType() || "";
         if (!tags.includes(osparc.utils.Utils.capitalize(type.trim()))) {
           return true;
         }

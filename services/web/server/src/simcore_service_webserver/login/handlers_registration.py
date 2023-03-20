@@ -153,7 +153,7 @@ async def register(request: web.Request):
 
     await check_other_registrations(email=registration.email, db=db, cfg=cfg)
 
-    expires_at = None  # = does not expire
+    expires_at: Optional[datetime] = None  # = does not expire
     if settings.LOGIN_REGISTRATION_INVITATION_REQUIRED:
         # Only requests with INVITATION can register user
         # to either a permanent or to a trial account
