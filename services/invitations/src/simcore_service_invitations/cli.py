@@ -5,7 +5,8 @@ from typing import Optional
 import rich
 import typer
 from cryptography.fernet import Fernet
-from pydantic import EmailStr, HttpUrl, SecretStr, ValidationError, parse_obj_as
+from models_library.emails import LowerCaseEmailStr
+from pydantic import HttpUrl, SecretStr, ValidationError, parse_obj_as
 from rich.console import Console
 from servicelib.utils_secrets import generate_password
 from settings_library.utils_cli import create_settings_command
@@ -111,7 +112,7 @@ def invite(
     ctx: typer.Context,
     email: str = typer.Argument(
         ...,
-        callback=lambda v: parse_obj_as(EmailStr, v),
+        callback=lambda v: parse_obj_as(LowerCaseEmailStr, v),
         help="Custom invitation for a given guest",
     ),
     issuer: str = typer.Option(

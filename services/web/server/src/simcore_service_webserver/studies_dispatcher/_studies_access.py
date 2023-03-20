@@ -70,7 +70,7 @@ async def create_temporary_user(request: web.Request):
 
     # TODO: avatar is an icon of the hero!
     random_uname = get_random_string(min_len=5)
-    email = random_uname + "@guest-at-osparc.io"
+    email = random_uname.lower() + "@guest-at-osparc.io"
     password = get_random_string(min_len=12)
 
     # GUEST_USER_RC_LOCK:

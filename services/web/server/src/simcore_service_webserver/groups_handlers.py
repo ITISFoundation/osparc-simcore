@@ -166,7 +166,7 @@ async def add_group_user(request: web.Request):
 
     new_user_id = new_user_in_group["uid"] if "uid" in new_user_in_group else None
     new_user_email = (
-        new_user_in_group["email"] if "email" in new_user_in_group else None
+        new_user_in_group["email"].lower() if "email" in new_user_in_group else None
     )
 
     await groups_api.add_user_in_group(
