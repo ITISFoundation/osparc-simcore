@@ -154,7 +154,7 @@ class ServiceResourcesDictHelpers:
                             "CPU": {"limit": 0.3, "reservation": 0.3},
                             "RAM": {"limit": 53687091232, "reservation": 53687091232},
                         },
-                        "boot_modes": [BootMode.GPU],
+                        "boot_modes": [BootMode.CPU],
                     },
                     "s4l-core": {
                         "image": "simcore/services/dynamic/s4l-core-dy:3.0.0",
@@ -174,7 +174,7 @@ class ServiceResourcesDictHelpers:
                                 "reservation": parse_obj_as(ByteSize, "2Gib"),
                             },
                         },
-                        "boot_modes": [BootMode.GPU],
+                        "boot_modes": [BootMode.CPU],
                     },
                 },
                 # compose spec with image outside the platform
