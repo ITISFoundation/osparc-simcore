@@ -143,6 +143,7 @@ class ServiceResourcesDictHelpers:
                                 "reservation": parse_obj_as(ByteSize, "2Gib"),
                             },
                         },
+                        "boot_modes": [BootMode.CPU],
                     },
                 },
                 # service with a compose spec
@@ -153,6 +154,7 @@ class ServiceResourcesDictHelpers:
                             "CPU": {"limit": 0.3, "reservation": 0.3},
                             "RAM": {"limit": 53687091232, "reservation": 53687091232},
                         },
+                        "boot_modes": [BootMode.GPU],
                     },
                     "s4l-core": {
                         "image": "simcore/services/dynamic/s4l-core-dy:3.0.0",
@@ -161,6 +163,7 @@ class ServiceResourcesDictHelpers:
                             "RAM": {"limit": 17179869184, "reservation": 536870912},
                             "VRAM": {"limit": 1, "reservation": 1},
                         },
+                        "boot_modes": [BootMode.GPU],
                     },
                     "sym-server": {
                         "image": "simcore/services/dynamic/sym-server:3.0.0",
@@ -171,6 +174,7 @@ class ServiceResourcesDictHelpers:
                                 "reservation": parse_obj_as(ByteSize, "2Gib"),
                             },
                         },
+                        "boot_modes": [BootMode.GPU],
                     },
                 },
                 # compose spec with image outside the platform
@@ -184,6 +188,7 @@ class ServiceResourcesDictHelpers:
                                 "reservation": parse_obj_as(ByteSize, "2Gib"),
                             },
                         },
+                        "boot_modes": [BootMode.CPU],
                     },
                     "proxy": {
                         "image": "traefik:v2.6.6",
@@ -194,6 +199,7 @@ class ServiceResourcesDictHelpers:
                                 "reservation": parse_obj_as(ByteSize, "2Gib"),
                             },
                         },
+                        "boot_modes": [BootMode.CPU],
                     },
                 },
             ]
