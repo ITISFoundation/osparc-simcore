@@ -69,7 +69,6 @@ qx.Class.define("osparc.component.share.NewCollaboratorsManager", {
     },
 
     __reloadCollaborators: function() {
-      console.log("__reloadCollaborators", this.__resourceData);
       let includeEveryone = false;
       if (this.__resourceData["resourceType"] === "service") {
         includeEveryone = true;
