@@ -249,3 +249,32 @@ async def test_managed_container_always_removes_container(
                 .delete(remove=True, v=True, force=True)
             ]
         )
+
+
+async def test_managed_container_with_broken_container_raises_docker_exception(
+    docker_registry: str,
+    service_key: str,
+    service_version: str,
+    command: list[str],
+    comp_volume_mount_point: str,
+    mocker: MockerFixture,
+):
+    container_config = await create_container_config(
+        docker_registry,
+        service_key,
+        service_version,
+        command,
+        comp_volume_mount_point,
+        boot_mode=BootMode.CPU,
+        task_max_resources={},
+    )
+    mocked_aiodocker = mocker.patch("aiodocker.Docker", autospec=True)
+    mocked_aiodocker.return_value.__aenter__.return_value.containers.create.return_value.delete.side_effect = aiodocker.DockerError(
+        "bad", {"message": "pytest fake bad message"}
+    )
+    async with aiodocker.Docker() as docker_client:
+        with pytest.raises(aiodocker.DockerError, match="pytest fake bad message"):
+            async with managed_container(
+                docker_client=docker_client, config=container_config
+            ) as container:
+                assert container is not None
