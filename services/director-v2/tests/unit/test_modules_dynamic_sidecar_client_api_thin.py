@@ -259,7 +259,7 @@ async def test_patch_volumes(
     mock_response = Response(status.HTTP_204_NO_CONTENT)
     mock_request(
         "PATCH",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/volumes/{volume_id}",
+        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/volumes/{volume_category}",
         mock_response,
         None,
     )

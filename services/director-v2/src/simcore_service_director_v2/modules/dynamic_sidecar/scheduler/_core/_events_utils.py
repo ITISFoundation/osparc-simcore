@@ -135,7 +135,7 @@ async def service_save_state(
     )
     await dynamic_sidecar_client.update_volume_state(
         scheduler_data.endpoint,
-        volume_id=VolumeCategory.STATES,
+        volume_category=VolumeCategory.STATES,
         requires_saving=True,
         was_saved=True,
     )
@@ -153,7 +153,7 @@ async def service_push_outputs(
     )
     await dynamic_sidecar_client.update_volume_state(
         scheduler_data.endpoint,
-        volume_id=VolumeCategory.OUTPUTS,
+        volume_category=VolumeCategory.OUTPUTS,
         requires_saving=True,
         was_saved=True,
     )
@@ -430,12 +430,12 @@ async def prepare_services_environment(
         *(
             dynamic_sidecar_client.update_volume_state(
                 scheduler_data.endpoint,
-                volume_id=VolumeCategory.STATES,
+                volume_category=VolumeCategory.STATES,
                 **update_volume_state_params,
             ),
             dynamic_sidecar_client.update_volume_state(
                 scheduler_data.endpoint,
-                volume_id=VolumeCategory.OUTPUTS,
+                volume_category=VolumeCategory.OUTPUTS,
                 **update_volume_state_params,
             ),
         )

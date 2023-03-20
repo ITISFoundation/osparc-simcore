@@ -410,7 +410,7 @@ class DynamicSidecarClient:
     ) -> None:
         await self._thin_client.patch_volumes(
             dynamic_sidecar_endpoint,
-            volume_id=volume_category,
+            volume_category=volume_category,
             requires_saving=requires_saving,
             was_saved=was_saved,
         )

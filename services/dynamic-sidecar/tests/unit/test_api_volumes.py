@@ -16,8 +16,8 @@ async def test_volumes_state_saved_ok(test_client: TestClient, volume_category: 
     mounted_volumes: MountedVolumes = test_client.application.state.mounted_volumes
 
     volumes_path_map: dict[str, list[Path]] = {
-        "states": list(mounted_volumes.disk_state_paths()),
-        "outputs": [mounted_volumes.disk_outputs_path],
+        VolumeCategory.STATES: list(mounted_volumes.disk_state_paths()),
+        VolumeCategory.OUTPUTS: [mounted_volumes.disk_outputs_path],
     }
 
     for path in volumes_path_map[volume_category]:
@@ -37,14 +37,16 @@ async def test_volumes_state_saved_ok(test_client: TestClient, volume_category: 
         )
 
 
-@pytest.mark.parametrize("invalid_volume_id", ["OUTPUTS", "outputS"])
+@pytest.mark.parametrize("invalid_volume_category", ["outputs", "outputS"])
 async def test_volumes_state_saved_error(
-    test_client: TestClient, invalid_volume_id: str
+    test_client: TestClient, invalid_volume_category: str
 ):
     response = await test_client.patch(
-        f"/{API_VTAG}/volumes/{invalid_volume_id}",
+        f"/{API_VTAG}/volumes/{invalid_volume_category}",
         json={"requires_saving": True, "was_saved": True},
     )
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
     json_response = response.json()
-    assert invalid_volume_id not in json_response["detail"][0]["ctx"]["enum_values"]
+    assert (
+        invalid_volume_category not in json_response["detail"][0]["ctx"]["enum_values"]
+    )
