@@ -26,15 +26,14 @@ async def get_project_inputs(project: ServiceDockerData):
 
 
 if __name__ == "__main__":
-    from _common import CURRENT_DIR, create_openapi_specs
+    from _common import CURRENT_DIR
 
     #  Generate OAS for the Project pydantic model via the FastAPI app
     #  NOTE: currently not used, as the generated OAS does not generate x-pattern properties
     #  it has problem with types ex. ServiceInputsDict = dict[ServicePortKey, ServiceInput], where key is a constrained string
-    create_openapi_specs(
-        app, CURRENT_DIR.parent / "../common/schemas/openapi-node-meta-generated.yaml"
-    )
-
+    # create_openapi_specs(
+    #     app, CURRENT_DIR.parent / "../common/schemas/openapi-node-meta-generated.yaml"
+    # )
     # Generate dereferenced json schema from the ServiceDockerData pydantic model and save it
     with open(
         CURRENT_DIR.parent / "../common/schemas/node-meta-v0.0.1-pydantic.json", "w"

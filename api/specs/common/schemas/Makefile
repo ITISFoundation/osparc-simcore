@@ -3,7 +3,7 @@
 objects = $(wildcard *-pydantic.json)
 outputs := $(objects:.json=-converted-clean.yaml)
 
-depreciated_files = project-v0.0.1-converted.yaml node-meta-v0.0.1-converted.yaml
+helper_files = project-v0.0.1-pydantic-converted.yaml node-meta-v0.0.1-pydantic-converted.yaml
 
 TOOL_IMAGE_NAME := json-schema-to-openapi-schema
 
@@ -17,12 +17,12 @@ all: check $(outputs)
 		-v ${CURDIR}:/output \
 		$(TOOL_IMAGE_NAME)
 
-	rm -f $(depreciated_files)
-
 .PRECIOUS: %-converted.yaml
 %-converted-clean.yaml:%-converted.yaml
 	# remove the "definition" key from %-converted.yaml
 	python scripts/remove_definitions.py $^ $@
+
+	rm -f $^
 
 # target: check – Checks whether tool is installed
 check:
