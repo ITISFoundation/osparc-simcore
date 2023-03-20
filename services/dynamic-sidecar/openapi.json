@@ -670,7 +670,7 @@
           {
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/VolumeID"
+              "$ref": "#/components/schemas/VolumeCategory"
             },
             "name": "id",
             "in": "path"
@@ -988,13 +988,13 @@
           }
         }
       },
-      "VolumeID": {
-        "title": "VolumeID",
+      "VolumeCategory": {
+        "title": "VolumeCategory",
         "enum": [
-          "outputs",
-          "inputs",
-          "states",
-          "shared_store"
+          "OUTPUTS",
+          "INPUTS",
+          "STATES",
+          "SHARED_STORE"
         ],
         "type": "string",
         "description": "An enumeration."
