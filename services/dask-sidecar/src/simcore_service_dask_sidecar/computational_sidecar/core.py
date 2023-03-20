@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from pprint import pformat
 from types import TracebackType
-from typing import Any, Coroutine, Optional, cast
+from typing import Coroutine, Optional, cast
 from uuid import uuid4
 
 from aiodocker import Docker
@@ -54,7 +54,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
     output_data_keys: TaskOutputDataSchema
     log_file_url: AnyUrl
     boot_mode: BootMode
-    task_max_resources: dict[str, Any]
+    task_max_resources: dict[str, float]
     task_publishers: TaskPublisher
     s3_settings: Optional[S3Settings]
 

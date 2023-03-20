@@ -3,7 +3,7 @@ import contextlib
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, AsyncIterator, Optional, cast
+from typing import AsyncIterator, Final, Optional
 
 import distributed
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
@@ -50,11 +50,16 @@ def is_current_task_aborted() -> bool:
     return False
 
 
-def get_current_task_resources() -> dict[str, Any]:
+_DEFAULT_MAX_RESOURCES: Final[dict[str, float]] = {"CPU": 1, "RAM": 1024**3}
+
+
+def get_current_task_resources() -> dict[str, float]:
     if task := _get_current_task_state():
         if task_resources := task.resource_restrictions:
-            return cast(dict[str, Any], task_resources)
-    return {}
+            for key, value in _DEFAULT_MAX_RESOURCES.items():
+                task_resources[key] = task_resources.get(key, value)
+            return task_resources
+    return _DEFAULT_MAX_RESOURCES
 
 
 @dataclass()
