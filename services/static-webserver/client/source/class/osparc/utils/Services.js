@@ -356,8 +356,6 @@ qx.Class.define("osparc.utils.Services", {
               service["xType"] = "iterator";
             } else if (osparc.data.model.Node.isProbe(service)) {
               service["xType"] = "probe";
-            } else {
-              console.error("Service X-Type mapping missing", service["key"]);
             }
           }
         });
