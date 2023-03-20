@@ -126,6 +126,7 @@ class AuthSession:
         data: Optional[JSON] = self._postprocess(resp)
         assert data  # nosec
         assert isinstance(data, dict)  # nosec
+
         # NOTE: /v0 is already included in the http client base_url
         status_url = data["status_href"].lstrip(f"/{self.vtag}")
         result_url = data["result_href"].lstrip(f"/{self.vtag}")

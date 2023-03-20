@@ -17,12 +17,14 @@ class FileMetaDataNotFoundError(DatabaseAccessError):
 
 class FileAccessRightError(DatabaseAccessError):
     code = "file.access_right_error"
-    msg_template: str = "Insufficient access rights to {access_right} {file_id}"
+    msg_template: str = "Insufficient access rights to {access_right} data {file_id}"
 
 
 class ProjectAccessRightError(DatabaseAccessError):
     code = "file.access_right_error"
-    msg_template: str = "Insufficient access rights to {access_right} {project_id}"
+    msg_template: str = (
+        "Insufficient access rights to {access_right} project {project_id}"
+    )
 
 
 class ProjectNotFoundError(DatabaseAccessError):

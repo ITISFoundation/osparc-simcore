@@ -8,6 +8,7 @@
 
 """
 import logging
+from datetime import datetime
 from typing import Optional
 
 import redis.asyncio as aioredis
@@ -21,6 +22,7 @@ from ..redis import get_redis_lock_manager_client
 from ..security_api import authorized_userid, encrypt_password, is_anonymous, remember
 from ..users_api import get_user
 from ..users_exceptions import UserNotFoundError
+from .settings import StudiesDispatcherSettings, get_plugin_settings
 
 log = logging.getLogger(__name__)
 
@@ -50,11 +52,12 @@ async def _get_authorized_user(request: web.Request) -> Optional[dict]:
 async def _create_temporary_user(request: web.Request):
     db: AsyncpgStorage = get_plugin_storage(request.app)
     redis_locks_client: aioredis.Redis = get_redis_lock_manager_client(request.app)
+    settings: StudiesDispatcherSettings = get_plugin_settings(app=request.app)
 
-    # TODO: avatar is an icon of the hero!
     random_user_name = get_random_string(min_len=5)
     email = random_user_name + "@guest-at-osparc.io"
     password = get_random_string(min_len=12)
+    expires_at = datetime.utcnow() + settings.STUDIES_GUEST_ACCOUNT_LIFETIME
 
     # GUEST_USER_RC_LOCK:
     #
@@ -96,6 +99,7 @@ async def _create_temporary_user(request: web.Request):
                 "status": ACTIVE,
                 "role": GUEST,
                 "created_ip": get_client_ip(request),
+                "expires_at": expires_at,
             }
         )
         user: dict = await get_user(request.app, usr["id"])

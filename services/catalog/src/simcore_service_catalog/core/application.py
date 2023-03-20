@@ -5,6 +5,7 @@ from typing import Callable, Optional
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.gzip import GZipMiddleware
+from models_library.basic_types import BootModeEnum
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from starlette import status
 from starlette.exceptions import HTTPException
@@ -25,7 +26,7 @@ from .events import (
     on_shutdown,
     on_startup,
 )
-from .settings import AppSettings, BootModeEnum
+from .settings import AppSettings
 
 logger = logging.getLogger(__name__)
 

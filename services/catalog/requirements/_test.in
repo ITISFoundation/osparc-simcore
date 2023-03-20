@@ -25,3 +25,4 @@ pytest-docker
 pytest-mock
 pytest-runner
 respx
+sqlalchemy[asyncio, mypy]
