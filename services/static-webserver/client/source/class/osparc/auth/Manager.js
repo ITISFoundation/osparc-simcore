@@ -255,7 +255,8 @@ qx.Class.define("osparc.auth.Manager", {
       authData.set({
         token: profile.login,
         userId: profile.id,
-        groupId: profile["groups"]["me"]["gid"]
+        groupId: profile["groups"]["me"]["gid"],
+        role: profile.role.toLowerCase()
       });
       this.updateProfile(profile);
       if ("organizations" in profile["groups"]) {
