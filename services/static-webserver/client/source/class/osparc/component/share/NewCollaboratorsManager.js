@@ -70,7 +70,13 @@ qx.Class.define("osparc.component.share.NewCollaboratorsManager", {
 
     __reloadCollaborators: function() {
       console.log("__reloadCollaborators", this.__resourceData);
-      osparc.store.Store.getInstance().getPotentialCollaborators()
+      let includeEveryone = false;
+      if (this.__resourceData["resourceType"] === "service") {
+        includeEveryone = true;
+      } else {
+        includeEveryone = osparc.data.Permissions.getInstance().canDo("study.everyone.share");
+      }
+      osparc.store.Store.getInstance().getPotentialCollaborators(includeEveryone)
         .then(potentialCollaborators => {
           this.__visibleCollaborators = potentialCollaborators;
           this.__addCollaborators();
