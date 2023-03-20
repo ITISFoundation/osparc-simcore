@@ -48,7 +48,7 @@ from ..core.errors import (
     ComputationalBackendTaskNotFoundError,
     ComputationalBackendTaskResultsNotReadyError,
 )
-from ..core.settings import ComputationalBackendSettings
+from ..core.settings import AppSettings, ComputationalBackendSettings
 from ..models.domains.comp_tasks import Image
 from ..models.schemas.clusters import ClusterDetails, Scheduler
 from ..utils.dask import (
@@ -304,12 +304,15 @@ class DaskClient:
             )
 
             try:
+                assert self.app.state  # nosec
+                assert self.app.state.settings  # nosec
+                settings: AppSettings = self.app.state.settings
                 task_future = self.backend.client.submit(
                     remote_fct,
                     docker_auth=DockerBasicAuth(
-                        server_address=self.app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY.resolved_registry_url,
-                        username=self.app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY.REGISTRY_USER,
-                        password=self.app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY.REGISTRY_PW,
+                        server_address=settings.DIRECTOR_V2_DOCKER_REGISTRY.resolved_registry_url,
+                        username=settings.DIRECTOR_V2_DOCKER_REGISTRY.REGISTRY_USER,
+                        password=settings.DIRECTOR_V2_DOCKER_REGISTRY.REGISTRY_PW,
                     ),
                     service_key=node_image.name,
                     service_version=node_image.tag,
