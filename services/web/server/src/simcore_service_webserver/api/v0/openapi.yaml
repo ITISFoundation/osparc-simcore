@@ -6387,13 +6387,6 @@ paths:
           in: query
         - required: true
           schema:
-            title: Viewer Version
-            pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
-            type: string
-          name: viewer_version
-          in: query
-        - required: true
-          schema:
             title: File Size
             exclusiveMinimum: true
             type: integer
@@ -6416,6 +6409,28 @@ paths:
             default: unknown
           name: file_name
           in: query
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: ServiceKeyVersion
+              required:
+                - key
+                - version
+              type: object
+              properties:
+                key:
+                  title: Key
+                  pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+                  type: string
+                  description: distinctive name for the node based on the docker registry path
+                version:
+                  title: Version
+                  pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
+                  type: string
+                  description: service version number
+              description: This pair uniquely identifies a services
+        required: true
       responses:
         '302':
           description: Opens osparc and starts viewer for selected data

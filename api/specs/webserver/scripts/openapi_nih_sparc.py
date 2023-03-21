@@ -13,11 +13,8 @@ from fastapi import FastAPI, status
 from fastapi.responses import RedirectResponse
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
-from pydantic import HttpUrl, PositiveInt, constr
-from simcore_service_webserver.studies_dispatcher.handlers_redirects import (
-    KEY_RE,
-    VERSION_RE,
-)
+from models_library.services import ServiceKey, ServiceKeyVersion, ServiceMetaData
+from pydantic import Field, HttpUrl, PositiveInt
 from simcore_service_webserver.studies_dispatcher.handlers_rest import Viewer
 
 app = FastAPI(redoc_url=None)
@@ -27,28 +24,33 @@ TAGS: list[Union[str, Enum]] = [
 ]
 
 
-# from pydantic import BaseModel
+#
+class ServiceGet(ServiceMetaData):
+    name_key: ServiceKey
+    version: ServiceKeyVersion = Field(
+        ..., description="Latest version of this service"
+    )
+
+    # extra properties
+    mimetypes: list[str] = Field(
+        default_factory=list, description="Compatible mimetypes and ports"
+    )
+
+    # actions
+    view_url: HttpUrl = Field(
+        ...,
+        description="Redirection to open a service in osparc (see /view)",
+    )
 
 
-# class ServiceGet(BaseModel):
-#     name_key: str
-#     version: str
-#     mimetypes: list[str] = Field(
-#         default_factory=list, description="Compatible mimetypes and ports"
-#     )
-
-#     # actions
-#     open_url: HttpUrl
-
-
-# @app.get(
-#     "/services",
-#     response_model=Envelope[list[ServiceGet]],
-#     tags=TAGS,
-#     operation_id="list_services",
-# )
-# async def list_services(file_type: Optional[str] = None):
-#     """Lists all publically available services"""
+@app.get(
+    "/services",
+    response_model=Envelope[list[ServiceGet]],
+    tags=TAGS,
+    operation_id="list_services",
+)
+async def list_services():
+    """Returns a list of all publically available services"""
 
 
 @app.get(
@@ -93,8 +95,8 @@ async def list_default_viewers(file_type: Optional[str] = None):
 )
 async def get_redirection_to_viewer(
     file_type: str,
-    viewer_key: constr(regex=KEY_RE),
-    viewer_version: constr(regex=VERSION_RE),
+    viewer_key: ServiceKey,
+    viewer_version: ServiceKeyVersion,
     file_size: PositiveInt,
     download_link: HttpUrl,
     file_name: Optional[str] = "unknown",

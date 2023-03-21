@@ -1,4 +1,18 @@
 paths:
+  /services:
+    get:
+      tags:
+      - nih-sparc
+      summary: List Services
+      description: Returns a list of all publically available services
+      operationId: list_services
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list___main__.ServiceGet__'
   /viewers:
     get:
       tags:
@@ -80,13 +94,6 @@ paths:
         in: query
       - required: true
         schema:
-          title: Viewer Version
-          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
-          type: string
-        name: viewer_version
-        in: query
-      - required: true
-        schema:
           title: File Size
           exclusiveMinimum: true
           type: integer
@@ -109,6 +116,12 @@ paths:
           default: unknown
         name: file_name
         in: query
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceKeyVersion'
+        required: true
       responses:
         '302':
           description: Opens osparc and starts viewer for selected data
@@ -132,6 +145,17 @@ paths:
           description: Opens osparc and opens a copy of publised study
 components:
   schemas:
+    Envelope_list___main__.ServiceGet__:
+      title: Envelope[list[__main__.ServiceGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceGet'
+        error:
+          title: Error
     Envelope_list_simcore_service_webserver.studies_dispatcher.handlers_rest.Viewer__:
       title: Envelope[list[simcore_service_webserver.studies_dispatcher.handlers_rest.Viewer]]
       type: object
@@ -143,36 +167,157 @@ components:
             $ref: '#/components/schemas/Viewer'
         error:
           title: Error
-    HTTPValidationError:
-      title: HTTPValidationError
-      type: object
-      properties:
-        detail:
-          title: Detail
-          type: array
-          items:
-            $ref: '#/components/schemas/ValidationError'
-    ValidationError:
-      title: ValidationError
+    ServiceGet:
+      title: ServiceGet
       required:
-      - loc
-      - msg
-      - type
+      - name_key
+      - version
+      - view_url
       type: object
       properties:
-        loc:
-          title: Location
+        name:
+          title: Name
+          type: string
+        thumbnail:
+          title: Thumbnail
+          maxLength: 2083
+          minLength: 1
+          type: string
+          format: uri
+        description:
+          title: Description
+          type: string
+        deprecated:
+          title: Deprecated
+          type: string
+          description: If filled with a date, then the service is to be deprecated
+            at that date (e.g. cannot start anymore)
+          format: date-time
+        classifiers:
+          title: Classifiers
           type: array
           items:
-            anyOf:
-            - type: string
-            - type: integer
-        msg:
-          title: Message
+            type: string
+        quality:
+          title: Quality
+          type: object
+          default: {}
+        name_key:
+          title: Name Key
+          pattern: ^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$
           type: string
-        type:
-          title: Error Type
+        version:
+          title: Version
+          allOf:
+          - $ref: '#/components/schemas/ServiceKeyVersion'
+          description: Latest version of this service
+        mimetypes:
+          title: Mimetypes
+          type: array
+          items:
+            type: string
+          description: Compatible mimetypes and ports
+        view_url:
+          title: View Url
+          maxLength: 2083
+          minLength: 1
           type: string
+          description: Redirection to open a service in osparc (see /view)
+          format: uri
+      example:
+        key: simcore/services/dynamic/sim4life
+        version: 1.0.9
+        name: sim4life
+        description: s4l web
+        thumbnail: http://thumbnailit.org/image
+        quality:
+          enabled: true
+          tsr_target:
+            r01:
+              level: 4
+              references: ''
+            r02:
+              level: 4
+              references: ''
+            r03:
+              level: 4
+              references: ''
+            r04:
+              level: 4
+              references: ''
+            r05:
+              level: 4
+              references: ''
+            r06:
+              level: 4
+              references: ''
+            r07:
+              level: 4
+              references: ''
+            r08:
+              level: 4
+              references: ''
+            r09:
+              level: 4
+              references: ''
+            r10:
+              level: 4
+              references: ''
+          annotations:
+            vandv: ''
+            limitations: ''
+            certificationLink: ''
+            certificationStatus: Uncertified
+          tsr_current:
+            r01:
+              level: 0
+              references: ''
+            r02:
+              level: 0
+              references: ''
+            r03:
+              level: 0
+              references: ''
+            r04:
+              level: 0
+              references: ''
+            r05:
+              level: 0
+              references: ''
+            r06:
+              level: 0
+              references: ''
+            r07:
+              level: 0
+              references: ''
+            r08:
+              level: 0
+              references: ''
+            r09:
+              level: 0
+              references: ''
+            r10:
+              level: 0
+              references: ''
+    ServiceKeyVersion:
+      title: ServiceKeyVersion
+      required:
+      - key
+      - version
+      type: object
+      properties:
+        key:
+          title: Key
+          pattern: ^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$
+          type: string
+          description: distinctive name for the node based on the docker registry
+            path
+        version:
+          title: Version
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
+          description: service version number
+      description: This pair uniquely identifies a services
     Viewer:
       title: Viewer
       required:
