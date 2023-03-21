@@ -5,7 +5,15 @@ from typing import Literal, Optional
 from aiohttp import web
 from aiohttp.web import RouteTableDef
 from models_library.emails import LowerCaseEmailStr
-from pydantic import BaseModel, Field, PositiveInt, SecretStr, root_validator, validator
+from pydantic import (
+    BaseModel,
+    EmailStr,
+    Field,
+    PositiveInt,
+    SecretStr,
+    root_validator,
+    validator,
+)
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.error_codes import create_error_code
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -55,6 +63,11 @@ from .utils import (
 from .utils_email import get_template_path, send_email_from_template
 
 log = logging.getLogger(__name__)
+
+
+def _get_user_name(email: str) -> str:
+    username = email.split("@")[0]
+    return username
 
 
 routes = RouteTableDef()
@@ -109,13 +122,6 @@ class RegisterBody(InputSchema):
     password: SecretStr
     confirm: Optional[SecretStr] = Field(None, description="Password confirmation")
     invitation: Optional[str] = Field(None, description="Invitation code")
-    username: str = Field(None, description="User name", hidden=True)
-
-    @root_validator(pre=True)
-    @classmethod
-    def _validate_user(cls, values):
-        values["username"] = values["email"].split("@")[0]
-        return values
 
     _password_confirm_match = validator("confirm", allow_reuse=True)(
         check_confirm_password_match
@@ -174,9 +180,10 @@ async def register(request: web.Request):
         if invitation.trial_account_days:
             expires_at = datetime.utcnow() + timedelta(invitation.trial_account_days)
 
+    username = _get_user_name(registration.email)
     user: dict = await db.create_user(
         {
-            "name": registration.username,
+            "name": username,
             "email": registration.email,
             "password_hash": encrypt_password(registration.password.get_secret_value()),
             "status": (
@@ -215,7 +222,7 @@ async def register(request: web.Request):
                 context={
                     "host": request.host,
                     "link": email_confirmation_url,  # SEE email_confirmation handler (action=REGISTRATION)
-                    "name": registration.username,
+                    "name": username,
                     "support_email": product.support_email,
                 },
             )
@@ -255,12 +262,17 @@ class RegisterPhoneBody(InputSchema):
     phone: str = Field(
         ..., description="Phone number E.164, needed on the deployments with 2FA"
     )
-    username: str = Field(None, description="User name", hidden=True)
+    _username: str = Field(None, description="User name")
+
+    @property
+    def username(self) -> str:
+        return self._username
 
     @root_validator(pre=True)
     @classmethod
     def _validate_user(cls, values):
-        values["username"] = values["email"].split("@")[0]
+        _validated_email = EmailStr.validate(values["email"])
+        values["username"] = _validated_email.split("@")[0]
         return values
 
 
@@ -332,7 +344,7 @@ async def register_phone(request: web.Request):
             twilo_auth=settings.LOGIN_TWILIO,
             twilio_messaging_sid=product.twilio_messaging_sid,
             twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
-            user_name=registration.username,
+            user_name=_get_user_name(registration.email),
         )
 
         message = MSG_2FA_CODE_SENT.format(
