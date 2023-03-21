@@ -13,7 +13,8 @@ from typing import Optional
 
 import redis.asyncio as aioredis
 from aiohttp import web
-from pydantic import BaseModel
+from models_library.emails import LowerCaseEmailStr
+from pydantic import BaseModel, parse_obj_as
 
 from ..garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
 from ..login.storage import AsyncpgStorage, get_plugin_storage
@@ -55,7 +56,7 @@ async def _create_temporary_user(request: web.Request):
     settings: StudiesDispatcherSettings = get_plugin_settings(app=request.app)
 
     random_user_name = get_random_string(min_len=5)
-    email = random_user_name.lower() + "@guest-at-osparc.io"
+    email = parse_obj_as(LowerCaseEmailStr, f"{random_user_name}@guest-at-osparc.io")
     password = get_random_string(min_len=12)
     expires_at = datetime.utcnow() + settings.STUDIES_GUEST_ACCOUNT_LIFETIME
 

@@ -5,6 +5,8 @@ from contextlib import suppress
 from typing import Optional
 
 from aiohttp import web
+from models_library.emails import LowerCaseEmailStr
+from pydantic import parse_obj_as
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
@@ -166,7 +168,9 @@ async def add_group_user(request: web.Request):
 
     new_user_id = new_user_in_group["uid"] if "uid" in new_user_in_group else None
     new_user_email = (
-        new_user_in_group["email"].lower() if "email" in new_user_in_group else None
+        parse_obj_as(LowerCaseEmailStr, new_user_in_group["email"])
+        if "email" in new_user_in_group
+        else None
     )
 
     await groups_api.add_user_in_group(

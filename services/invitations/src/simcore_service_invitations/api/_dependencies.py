@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 def get_reverse_url_mapper(request: Request) -> Callable:
     def _reverse_url_mapper(name: str, **path_params: Any) -> str:
         url: URL = request.url_for(name, **path_params)
-        return str(url)
+        return f"{url}"
 
     return _reverse_url_mapper
 
