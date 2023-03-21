@@ -23,7 +23,7 @@ from simcore_service_webserver.studies_dispatcher.handlers_rest import Viewer
 app = FastAPI(redoc_url=None)
 
 TAGS: list[Union[str, Enum]] = [
-    "sparc",
+    "nih-sparc",
 ]
 
 

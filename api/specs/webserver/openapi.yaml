@@ -31,11 +31,11 @@ tags:
   - name: cluster
   - name: configuration
   - name: maintenance
+  - name: nih-sparc
   - name: node
   - name: project
   - name: publication
   - name: repository
-  - name: sparc
   - name: storage
   - name: tag
   - name: tasks

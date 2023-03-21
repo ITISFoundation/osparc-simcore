@@ -2,7 +2,7 @@ paths:
   /viewers:
     get:
       tags:
-      - sparc
+      - nih-sparc
       summary: List Viewers
       description: 'Lists all publically available viewers
 
@@ -29,7 +29,7 @@ paths:
   /viewers/default:
     get:
       tags:
-      - sparc
+      - nih-sparc
       summary: List Default Viewers
       description: 'Lists the default viewer for each supported filetype
 
@@ -60,7 +60,7 @@ paths:
   /view:
     get:
       tags:
-      - sparc
+      - nih-sparc
       summary: Get Redirection To Viewer
       description: Opens a viewer in osparc for data in the NIH-sparc portal
       operationId: get_redirection_to_viewer
@@ -115,7 +115,7 @@ paths:
   /study/{study_id}:
     get:
       tags:
-      - sparc
+      - nih-sparc
       summary: Get Redirection To Study Page
       description: Opens a study published in osparc
       operationId: get_redirection_to_study_page
