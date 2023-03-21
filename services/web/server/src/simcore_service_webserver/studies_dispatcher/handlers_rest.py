@@ -56,7 +56,7 @@ class Viewer(BaseModel):
 routes = web.RouteTableDef()
 
 
-@routes.post(f"/{API_VTAG}/viewers", name="list_viewers")
+@routes.get(f"/{API_VTAG}/viewers", name="list_viewers")
 async def list_viewers(request: Request):
     # filter: file_type=*
     file_type: Optional[str] = request.query.get("file_type", None)
@@ -68,7 +68,7 @@ async def list_viewers(request: Request):
     return viewers
 
 
-@routes.post(f"/{API_VTAG}/viewers/default", name="list_default_viewers")
+@routes.get(f"/{API_VTAG}/viewers/default", name="list_default_viewers")
 async def list_default_viewers(request: Request):
     # filter: file_type=*
     file_type: Optional[str] = request.query.get("file_type", None)
