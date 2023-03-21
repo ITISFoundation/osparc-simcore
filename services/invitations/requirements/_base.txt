@@ -23,6 +23,8 @@ anyio==3.6.2
     #   httpcore
     #   starlette
     #   watchfiles
+arrow==1.2.3
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 async-timeout==4.0.2
     # via redis
 attrs==21.4.0
