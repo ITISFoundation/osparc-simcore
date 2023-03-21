@@ -126,6 +126,7 @@ async def delete_token(request: web.Request):
 async def _get_user_notifications(
     redis_client: aioredis.Redis, user_id: int
 ) -> list[UserNotification]:
+    """returns a list of notifications where the latest notification is at index 0"""
     return [
         UserNotification.parse_raw(x)
         for x in await redis_client.lrange(
