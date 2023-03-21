@@ -358,6 +358,7 @@ paths:
   # SPARC -------------------------------------------------------------------------
   /services:
     $ref: "./openapi-nih-sparc.yaml#/paths/~1services"
+
   /viewers:
     $ref: "./openapi-nih-sparc.yaml#/paths/~1viewers"
 
