@@ -17,11 +17,15 @@ show_error() {
 
 
 env_file=".env"
+project_directory=""
 # Parse command line arguments
-while getopts ":e:" opt; do
+while getopts ":e:p:" opt; do
   case $opt in
     e)
       env_file="$OPTARG"
+      ;;
+    p)
+      project_directory="$OPTARG"
       ;;
     \?)
       show_error "Invalid option: -$OPTARG"
@@ -64,6 +68,10 @@ docker \
 compose \
 --env-file ${env_file}"
 
+  if [ "project_directory" ]; then
+    docker_command+=" --project-directory ${project_directory}"
+  fi
+
   for compose_file_path in "$@"
   do
     docker_command+=" --file=${compose_file_path}"
@@ -91,6 +99,9 @@ docker-compose \
     do
       docker_command+=" --file=${compose_file_path} "
     done
+    if [ "project_directory" ]; then
+      docker_command+=" --project-directory ${project_directory}"
+    fi
     docker_command+=" \
 config \
 | sed --regexp-extended 's/cpus: ([0-9\\.]+)/cpus: \"\\1\"/'"
