@@ -50,7 +50,7 @@ class ServiceGet(ServiceMetaData):
     operation_id="list_services",
 )
 async def list_services():
-    """Returns a list of all publically available services"""
+    """Returns a list latest version of services"""
 
 
 @app.get(

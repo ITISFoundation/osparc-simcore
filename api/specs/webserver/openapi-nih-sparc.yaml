@@ -4,7 +4,7 @@ paths:
       tags:
       - nih-sparc
       summary: List Services
-      description: Returns a list of all publically available services
+      description: Returns a list latest version of services
       operationId: list_services
       responses:
         '200':
