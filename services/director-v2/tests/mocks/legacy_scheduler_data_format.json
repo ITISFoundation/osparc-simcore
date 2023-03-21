@@ -32,7 +32,20 @@
           "status": "running",
           "name": "/dy-sidecar-12fb3055-db35-4a34-a9c0-bff1267aa859-0-container",
           "id": "dddbc3c10cd074e4cce0fbb6c49258e82befa003c2714159aef6214750646dc8",
-          "container_state": {}
+          "container_state": {
+            "Status": "running",
+            "Running": null,
+            "Paused": null,
+            "Restarting": null,
+            "OOMKilled": null,
+            "Dead": null,
+            "Pid": null,
+            "ExitCode": null,
+            "Error": null,
+            "StartedAt": null,
+            "FinishedAt": null,
+            "Health": null
+          }
         }
       ],
       "was_dynamic_sidecar_started": true,
@@ -111,19 +124,58 @@
           "status": "running",
           "name": "/dy-sidecar-d14bf3ea-abcf-52f2-8146-fc244b70f307-0-rt-web-dy",
           "id": "eb076666d7da05ac69e60a211ff500d6b8d8dd6a823e0d0cc362d3421b6f37d7",
-          "container_state": {}
+          "container_state": {
+            "Status": "running",
+            "Running": null,
+            "Paused": null,
+            "Restarting": null,
+            "OOMKilled": null,
+            "Dead": null,
+            "Pid": null,
+            "ExitCode": null,
+            "Error": null,
+            "StartedAt": null,
+            "FinishedAt": null,
+            "Health": null
+          }
         },
         {
           "status": "running",
           "name": "/dy-sidecar-d14bf3ea-abcf-52f2-8146-fc244b70f307-1-s4l-core",
           "id": "3a0a443dd2732ae147b9e2d56f8ce44a72e7ca0b20886092c0b49d3cf5073dd9",
-          "container_state": {}
+          "container_state": {
+            "Status": "running",
+            "Running": null,
+            "Paused": null,
+            "Restarting": null,
+            "OOMKilled": null,
+            "Dead": null,
+            "Pid": null,
+            "ExitCode": null,
+            "Error": null,
+            "StartedAt": null,
+            "FinishedAt": null,
+            "Health": null
+          }
         },
         {
           "status": "running",
           "name": "/dy-sidecar-d14bf3ea-abcf-52f2-8146-fc244b70f307-2-sym-server",
           "id": "454858d71c4eed4e62723cf55dbdc72a97c41073a5b4cf6bbffd79a04df2f80a",
-          "container_state": {}
+          "container_state": {
+            "Status": "running",
+            "Running": null,
+            "Paused": null,
+            "Restarting": null,
+            "OOMKilled": null,
+            "Dead": null,
+            "Pid": null,
+            "ExitCode": null,
+            "Error": null,
+            "StartedAt": null,
+            "FinishedAt": null,
+            "Health": null
+          }
         }
       ],
       "was_dynamic_sidecar_started": true,
