@@ -309,10 +309,13 @@ def _handle_errors_with_error_page(handler: Handler):
                 f"{error_code}",
                 extra={"error_code": error_code},
             )
-            raise RedirectToFrontEndPageError(
-                MSG_UNEXPECTED_ERROR.format(hint=""),
-                error_code=error_code,
-                status_code=web.HTTPInternalServerError.status_code,
+            raise create_redirect_response(
+                request.app,
+                page="error",
+                message=compose_support_error_msg(
+                    msg=MSG_UNEXPECTED_ERROR.format(hint=""), error_code=error_code
+                ),
+                status_code=500,
             ) from err
 
     return wrapper
