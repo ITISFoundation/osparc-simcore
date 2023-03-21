@@ -2,6 +2,7 @@
 
 import json
 import logging
+from typing import Any
 
 import redis.asyncio as aioredis
 from aiohttp import web
@@ -152,13 +153,13 @@ async def post_user_notification(request: web.Request):
     redis_client = get_redis_user_notifications_client(request.app)
 
     # body includes the updated notification
-    json_notification = await request.json()
-    user_notification = UserNotification.create_from_request_data(json_notification)
+    notification_data: dict[str, Any] = await request.json()
+    user_notification = UserNotification.create_from_request_data(notification_data)
     key = get_notification_key(user_notification.user_id)
 
     # insert at the head of the list and discard extra notifications
     async with redis_client.pipeline(transaction=True) as pipe:
-        pipe.lpush(key, json.dumps(json_notification))
+        pipe.lpush(key, json.dumps(notification_data))
         pipe.ltrim(key, 0, MAX_NOTIFICATIONS_FOR_USER - 1)
         await pipe.execute()
 
@@ -182,7 +183,8 @@ async def update_user_notification(request: web.Request):
     ]
     for k, user_notification in enumerate(all_user_notifications):
         if notification_id == user_notification.id:
-            user_notification.update_from(data=await request.json())
+            patch_data: dict[str, Any] = await request.json()
+            user_notification.update_from(patch_data)
             await redis_client.lset(key, k, user_notification.json())
             return web.json_response(status=web.HTTPNoContent.status_code)
 
