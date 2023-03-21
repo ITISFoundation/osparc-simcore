@@ -55,7 +55,8 @@ def _compute_service_available_boot_modes(
     currently this uses the simcore.service.settings labels if available for backwards compatiblity.
     if MPI is found, then boot mode is set to MPI, if GPU is found then boot mode is set to GPU, else to CPU.
     In the future a dedicated label might be used, to add openMP for example. and to not abuse the resources of a service.
-    Also these will be used in a project to allow the user to choose among different boot modes"""
+    Also these will be used in a project to allow the user to choose among different boot modes
+    """
 
     resource_entries = filter(lambda entry: entry.name.lower() == "resources", settings)
     generic_resources = {}
@@ -160,7 +161,7 @@ def _get_service_settings(
 ) -> list[SimcoreServiceSettingLabelEntry]:
     service_settings = parse_raw_as(
         list[SimcoreServiceSettingLabelEntry],
-        labels.get(SIMCORE_SERVICE_SETTINGS_LABELS, ""),
+        labels.get(SIMCORE_SERVICE_SETTINGS_LABELS, "[]"),
     )
     logger.debug("received %s", f"{service_settings=}")
     return service_settings
