@@ -343,6 +343,25 @@ qx.Class.define("osparc.utils.Services", {
       });
     },
 
+    addExtraTypeInfo: function(services) {
+      Object.values(services).forEach(serviceWVersion => {
+        Object.values(serviceWVersion).forEach(service => {
+          service["xType"] = service["type"];
+          if (["backend", "frontend"].includes(service["xType"])) {
+            if (osparc.data.model.Node.isFilePicker(service)) {
+              service["xType"] = "file";
+            } else if (osparc.data.model.Node.isParameter(service)) {
+              service["xType"] = "parameter";
+            } else if (osparc.data.model.Node.isIterator(service)) {
+              service["xType"] = "iterator";
+            } else if (osparc.data.model.Node.isProbe(service)) {
+              service["xType"] = "probe";
+            }
+          }
+        });
+      });
+    },
+
     removeFileToKeyMap: function(service) {
       [
         "inputs",
