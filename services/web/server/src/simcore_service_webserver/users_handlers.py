@@ -181,7 +181,7 @@ async def update_user_notification(request: web.Request):
     ]
     for k, user_notification in enumerate(all_user_notifications):
         if notification_id == user_notification.id:
-            user_notification.patch_object(data=await request.json())
+            user_notification.update_from(data=await request.json())
             await redis_client.lset(key, k, user_notification.json())
             return web.json_response(status=web.HTTPNoContent.status_code)
 

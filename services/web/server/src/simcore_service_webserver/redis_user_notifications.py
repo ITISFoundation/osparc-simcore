@@ -30,7 +30,7 @@ class UserNotification(BaseModel):
     date: datetime
     read: bool
 
-    def patch_object(self, data: dict[str, Any]) -> None:
+    def update_from(self, data: dict[str, Any]) -> None:
         for k, v in data.items():
             self.__setattr__(k, v)
 

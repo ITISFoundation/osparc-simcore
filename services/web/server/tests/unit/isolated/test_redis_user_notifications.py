@@ -12,7 +12,7 @@ from simcore_service_webserver.redis_user_notifications import (
 
 
 @pytest.mark.parametrize("raw_data", UserNotification.Config.schema_extra["examples"])
-def test_user_notification(raw_data: dict[str.Any]) -> UserNotification:
+def test_user_notification(raw_data: dict[str, Any]) -> UserNotification:
     assert UserNotification.parse_obj(raw_data)
 
 
@@ -36,3 +36,12 @@ async def test_get_notification_key(user_id: UserID):
 )
 async def test_user_notification_crate_from_request_data(request_data: dict[str, Any]):
     assert UserNotification.create_from_request_data(request_data)
+
+
+async def test_user_notification_update_from():
+    user_notification = UserNotification.create_from_request_data(
+        UserNotification.Config.schema_extra["examples"][0]
+    )
+    assert user_notification.read is False
+    user_notification.update_from({"read": True})
+    assert user_notification.read is True
