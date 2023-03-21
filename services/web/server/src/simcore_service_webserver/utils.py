@@ -148,7 +148,7 @@ def compose_support_error_msg(
             sentences.append(sentence[0].upper() + sentence[1:])
 
     sentences.append(
-        f"For further information please copy this message and contact {support_email} [{error_code}]"
+        f"For more information please forward this message to {support_email} [{error_code}]"
     )
 
     return ". ".join(sentences)

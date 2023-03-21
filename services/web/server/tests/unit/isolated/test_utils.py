@@ -128,7 +128,6 @@ async def test_compute_sha1_on_small_dataset(fake_project: dict):
     # but for smaller ones, the overhead is considerable
 
 
-@pytest.mark.testit
 def test_compose_support_error_msg():
 
     msg = compose_support_error_msg(
@@ -138,5 +137,5 @@ def test_compose_support_error_msg():
     )
     assert (
         msg == "First sentence for Mr.X. Second sentence."
-        " For further information please copy this message and contact support@email.com [OEC:139641204989600]"
+        " For more information please forward this message to support@email.com [OEC:139641204989600]"
     )
