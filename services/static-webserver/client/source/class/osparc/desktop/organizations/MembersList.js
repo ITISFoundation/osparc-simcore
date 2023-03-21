@@ -269,7 +269,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
             osparc.store.Store.getInstance().reset("organizationMembers");
             this.__reloadOrgMembers();
 
-            // push 'new_organization' notification
+            // push 'NEW_ORGANIZATION' notification
             const params2 = {
               url: {
                 "gid": orgId

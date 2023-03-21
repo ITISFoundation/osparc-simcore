@@ -150,7 +150,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NotificationUpdate'
+              $ref: "#/components/schemas/NotificationUpdate"
       responses:
         "204":
           description: All good
@@ -177,9 +177,9 @@ components:
         category:
           type: string
           enum:
-            - new_organization
-            - study_shared
-            - template_shared
+            - NEW_ORGANIZATION
+            - STUDY_SHARED
+            - TEMPLATE_SHARED
           description: >-
             notification type, the frontend will use this to decorate the notification
           example: new_organization
@@ -187,20 +187,17 @@ components:
           type: string
           description: >-
             the frontend will use this information to trigger an action when the user click on it
-          example:
-            organization/123
+          example: organization/123
         title:
           type: string
           description: >-
             the notification title to show in the frontend
-          example:
-            New Organization
+          example: New Organization
         text:
           type: string
           description: >-
             the notification text to show in the frontend
-          example:
-            You are now part of Dummy Organization!
+          example: You are now part of Dummy Organization!
         date:
           type: string
           format: date-time
@@ -213,8 +210,8 @@ components:
         - $ref: "#/components/schemas/NotificationIn"
         - type: "object"
         - required:
-          - id
-          - read
+            - id
+            - read
           properties:
             id:
               type: string

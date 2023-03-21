@@ -30,6 +30,10 @@ class UserNotification(BaseModel):
     date: datetime
     read: bool
 
+    def patch_object(self, data: dict[str, Any]) -> None:
+        for k, v in data.items():
+            self.__setattr__(k, v)
+
     @validator("category", pre=True)
     @classmethod
     def category_to_upper(cls, value: str) -> str:
@@ -59,7 +63,7 @@ class UserNotification(BaseModel):
                 {
                     "id": "456",
                     "user_id": "1",
-                    "category": "study_shared",
+                    "category": "STUDY_SHARED",
                     "actionable_path": "study/27edd65c-b360-11ed-93d7-02420a000014",
                     "title": "Study shared",
                     "text": "A study was shared with you",
@@ -69,7 +73,7 @@ class UserNotification(BaseModel):
                 {
                     "id": "789",
                     "user_id": "1",
-                    "category": "template_shared",
+                    "category": "TEMPLATE_SHARED",
                     "actionable_path": "template/f60477b6-a07e-11ed-8d29-02420a00002d",
                     "title": "Template shared",
                     "text": "A template was shared with you",

@@ -118,13 +118,13 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
         converter: value => {
           let source = "";
           switch (value) {
-            case "new_organization":
+            case "NEW_ORGANIZATION":
               source = "@FontAwesome5Solid/users/14";
               break;
-            case "study_shared":
+            case "STUDY_SHARED":
               source = "@FontAwesome5Solid/file/14";
               break;
-            case "template_shared":
+            case "TEMPLATE_SHARED":
               source = "@FontAwesome5Solid/copy/14";
               break;
           }
@@ -187,8 +187,8 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
           orgsWindow.openOrganizationDetails(parseInt(orgId));
           break;
         }
-        case "template_shared":
-        case "study_shared": {
+        case "TEMPLATE_SHARED":
+        case "STUDY_SHARED": {
           const items = actionablePath.split("/");
           const studyId = items.pop();
           const params = {
@@ -200,7 +200,7 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
             .then(studyData => {
               if (studyData) {
                 const studyDataCopy = osparc.data.model.Study.deepCloneStudyObject(studyData);
-                studyDataCopy["resourceType"] = notification.getCategory() === "study_shared" ? "study" : "template";
+                studyDataCopy["resourceType"] = notification.getCategory() === "STUDY_SHARED" ? "study" : "template";
                 const moreOpts = new osparc.dashboard.ResourceMoreOptions(studyData);
                 const title = this.tr("Options");
                 osparc.ui.window.Window.popUpInWindow(

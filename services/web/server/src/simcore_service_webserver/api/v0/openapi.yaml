@@ -1281,9 +1281,9 @@ paths:
                 category:
                   type: string
                   enum:
-                    - new_organization
-                    - study_shared
-                    - template_shared
+                    - NEW_ORGANIZATION
+                    - STUDY_SHARED
+                    - TEMPLATE_SHARED
                   description: "notification type, the frontend will use this to decorate the notification"
                   example: new_organization
                 actionable_path:

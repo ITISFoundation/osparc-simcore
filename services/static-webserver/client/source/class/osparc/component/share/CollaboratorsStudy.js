@@ -140,7 +140,7 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
         })
         .finally(() => cb());
 
-      // push 'study_shared'/'template_shared' notification
+      // push 'STUDY_SHARED'/'TEMPLATE_SHARED' notification
       osparc.store.Store.getInstance().getPotentialCollaborators()
         .then(potentialCollaborators => {
           gids.forEach(gid => {

@@ -610,8 +610,8 @@ async def test_update_user_notification_at_correct_index(
             )
             assert str(url) == f"/v0/me/notifications/{notification.id}"
             assert notification.read is False
-            notification.read = True
-            resp = await client.patch(url, json=notification.json())
+
+            resp = await client.patch(url, json={"read": True})
             assert resp.status == web.HTTPNoContent.status_code
 
         notifications_after_update = await _get_stored_notifications()

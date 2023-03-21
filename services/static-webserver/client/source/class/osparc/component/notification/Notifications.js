@@ -28,7 +28,7 @@ qx.Class.define("osparc.component.notification.Notifications", {
     __newOrganizationObj: function(userId, orgId) {
       return {
         "user_id": userId.toString(),
-        "category": "new_organization",
+        "category": "NEW_ORGANIZATION",
         "actionable_path": "organization/"+orgId,
         "title": "New organization",
         "text": "You're now member of a new Organization",
@@ -39,7 +39,7 @@ qx.Class.define("osparc.component.notification.Notifications", {
     __newStudyObj: function(userId, studyId) {
       return {
         "user_id": userId.toString(),
-        "category": "study_shared",
+        "category": "STUDY_SHARED",
         "actionable_path": "study/"+studyId,
         "title": "Study shared",
         "text": "A study was shared with you",
@@ -50,7 +50,7 @@ qx.Class.define("osparc.component.notification.Notifications", {
     __newTemplateObj: function(userId, templateId) {
       return {
         "user_id": userId.toString(),
-        "category": "template_shared",
+        "category": "TEMPLATE_SHARED",
         "actionable_path": "template/"+templateId,
         "title": "Template shared",
         "text": "A template was shared with you",

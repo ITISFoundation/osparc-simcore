@@ -174,12 +174,6 @@ async def update_user_notification(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     notification_id = request.match_info["id"]
 
-    json_notification = await request.json()
-    incoming_notification = UserNotification.parse_raw(json_notification)
-
-    if notification_id != incoming_notification.id:
-        return web.json_response(status=web.HTTPNotFound.status_code)
-
     # NOTE: only the user's notifications can be patched
     key = get_notification_key(user_id)
     all_user_notifications: list[UserNotification] = [
@@ -187,7 +181,8 @@ async def update_user_notification(request: web.Request):
     ]
     for k, user_notification in enumerate(all_user_notifications):
         if notification_id == user_notification.id:
-            await redis_client.lset(key, k, incoming_notification.json())
+            user_notification.patch_object(data=await request.json())
+            await redis_client.lset(key, k, user_notification.json())
             return web.json_response(status=web.HTTPNoContent.status_code)
 
     return web.json_response(status=web.HTTPNotFound.status_code)
