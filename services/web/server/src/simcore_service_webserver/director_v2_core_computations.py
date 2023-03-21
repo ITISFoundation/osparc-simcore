@@ -97,7 +97,7 @@ def set_client(app: web.Application, obj: ComputationsApi):
 
 @log_decorator(logger=log)
 async def create_or_update_pipeline(
-    app: web.Application, user_id: UserID, project_id: ProjectID
+    app: web.Application, user_id: UserID, project_id: ProjectID, product_name: str
 ) -> Optional[DataType]:
     settings: DirectorV2Settings = get_plugin_settings(app)
 
@@ -105,6 +105,7 @@ async def create_or_update_pipeline(
     body = {
         "user_id": user_id,
         "project_id": f"{project_id}",
+        "product_name": product_name,
     }
     # request to director-v2
     try:
@@ -122,7 +123,6 @@ async def create_or_update_pipeline(
 async def is_pipeline_running(
     app: web.Application, user_id: PositiveInt, project_id: UUID
 ) -> Optional[bool]:
-
     # TODO: make it cheaper by /computations/{project_id}/state. First trial shows
     # that the efficiency gain is minimal but should be considered specially if the handler
     # gets heavier with time
