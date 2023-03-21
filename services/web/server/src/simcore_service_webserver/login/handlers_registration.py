@@ -5,15 +5,7 @@ from typing import Literal, Optional
 from aiohttp import web
 from aiohttp.web import RouteTableDef
 from models_library.emails import LowerCaseEmailStr
-from pydantic import (
-    BaseModel,
-    EmailStr,
-    Field,
-    PositiveInt,
-    SecretStr,
-    root_validator,
-    validator,
-)
+from pydantic import BaseModel, Field, PositiveInt, SecretStr, validator
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.error_codes import create_error_code
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -262,18 +254,6 @@ class RegisterPhoneBody(InputSchema):
     phone: str = Field(
         ..., description="Phone number E.164, needed on the deployments with 2FA"
     )
-    _username: str = Field(None, description="User name")
-
-    @property
-    def username(self) -> str:
-        return self._username
-
-    @root_validator(pre=True)
-    @classmethod
-    def _validate_user(cls, values):
-        _validated_email = EmailStr.validate(values["email"])
-        values["username"] = _validated_email.split("@")[0]
-        return values
 
 
 class _PageParams(BaseModel):
