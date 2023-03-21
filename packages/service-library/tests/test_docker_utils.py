@@ -21,6 +21,18 @@ NOW = datetime.now(tz=timezone.utc)
             "2020-10-09T12:28:14.771034099Z",
             datetime(2020, 10, 9, 12, 28, 14, 771034, tzinfo=timezone.utc),
         ),
+        (
+            "2020-10-09T12:28:14.123456099Z",
+            datetime(2020, 10, 9, 12, 28, 14, 123456, tzinfo=timezone.utc),
+        ),
+        (
+            "2020-10-09T12:28:14.12345Z",
+            datetime(2020, 10, 9, 12, 28, 14, 123450, tzinfo=timezone.utc),
+        ),
+        (
+            "2023-03-15 13:01:21.774501",
+            datetime(2023, 3, 15, 13, 1, 21, 774501, tzinfo=timezone.utc),
+        ),
         (f"{NOW}", NOW),
         (NOW.strftime("%Y-%m-%dT%H:%M:%S.%f"), NOW),
     ],
