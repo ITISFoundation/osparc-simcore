@@ -22,6 +22,10 @@ from models_library.projects_nodes import NodeID, NodeState
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.services import ServiceDockerData
+from models_library.services_resources import (
+    ServiceResourcesDict,
+    ServiceResourcesDictHelpers,
+)
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyHttpUrl, parse_obj_as
 from pytest_mock.plugin import MockerFixture
@@ -90,6 +94,15 @@ def fake_service_extras() -> ServiceExtras:
 
 
 @pytest.fixture
+def fake_service_resources() -> ServiceResourcesDict:
+    service_resources = parse_obj_as(
+        ServiceResourcesDict,
+        ServiceResourcesDictHelpers.Config.schema_extra["examples"][0],
+    )
+    return service_resources
+
+
+@pytest.fixture
 def mocked_director_service_fcts(
     minimal_app: FastAPI,
     fake_service_details: ServiceDockerData,
@@ -123,6 +136,7 @@ def mocked_catalog_service_fcts(
     minimal_app: FastAPI,
     fake_service_details: ServiceDockerData,
     fake_service_extras: ServiceExtras,
+    fake_service_resources: ServiceResourcesDict,
 ):
     # pylint: disable=not-context-manager
     with respx.mock(
@@ -132,7 +146,14 @@ def mocked_catalog_service_fcts(
     ) as respx_mock:
         respx_mock.get(
             re.compile(
-                r"services/(simcore)%2F(services)%2F(comp|dynamic|frontend)%2F.+/(.+)"
+                r"services/(simcore)%2F(services)%2F(comp|dynamic|frontend)%2F[^/]+/[^\.]+.[^\.]+.[^\/]+/resources"
+            ),
+            name="get_service_resources",
+        ).respond(json=jsonable_encoder(fake_service_resources, by_alias=True))
+
+        respx_mock.get(
+            re.compile(
+                r"services/(simcore)%2F(services)%2F(comp|dynamic|frontend)%2F[^/]+/[^\.]+.[^\.]+.[^\/]+"
             ),
             name="get_service",
         ).respond(json=fake_service_details.dict(by_alias=True))
