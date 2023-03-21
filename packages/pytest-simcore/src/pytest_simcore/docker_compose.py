@@ -132,6 +132,7 @@ def env_file_for_testing(
 @pytest.fixture(scope="module")
 def simcore_docker_compose(
     osparc_simcore_root_dir: Path,
+    osparc_simcore_scripts_dir: Path,
     env_file_for_testing: Path,
     temp_folder: Path,
 ) -> dict[str, Any]:
@@ -155,6 +156,7 @@ def simcore_docker_compose(
 
     compose_specs = run_docker_compose_config(
         project_dir=osparc_simcore_root_dir / "services",
+        scripts_dir=osparc_simcore_scripts_dir,
         docker_compose_paths=docker_compose_paths,
         env_file_path=env_file_for_testing,
         destination_path=temp_folder / "simcore_docker_compose.yml",
@@ -205,6 +207,7 @@ def inject_filestash_config_path(
 @pytest.fixture(scope="module")
 def ops_docker_compose(
     osparc_simcore_root_dir: Path,
+    osparc_simcore_scripts_dir: Path,
     env_file_for_testing: Path,
     temp_folder: Path,
     inject_filestash_config_path: None,
@@ -224,6 +227,7 @@ def ops_docker_compose(
 
     compose_specs = run_docker_compose_config(
         project_dir=osparc_simcore_root_dir / "services",
+        scripts_dir=osparc_simcore_scripts_dir,
         docker_compose_paths=docker_compose_path,
         env_file_path=env_file_for_testing,
         destination_path=temp_folder / "ops_docker_compose.yml",
