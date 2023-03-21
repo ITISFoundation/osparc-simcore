@@ -134,9 +134,9 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
-  /me/notifications/{nid}:
+  /me/notifications/{id}:
     parameters:
-      - name: nid
+      - name: id
         in: path
         required: true
         schema:
