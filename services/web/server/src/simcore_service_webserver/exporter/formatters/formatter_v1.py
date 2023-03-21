@@ -224,7 +224,7 @@ async def add_new_project(
     if _project_db["uuid"] != str(project.uuid):
         raise ExporterException("Project uuid dose nto match after validation")
 
-    await create_or_update_pipeline(app, user_id, project.uuid)
+    await create_or_update_pipeline(app, user_id, project.uuid, product_name)
 
 
 async def _fix_node_run_hashes_based_on_old_project(
