@@ -131,7 +131,7 @@ async def published_project(
     project_data = deepcopy(fake_project)
     project_data["name"] = "Published project"
     project_data["uuid"] = "e2e38eee-c569-4e55-b104-70d159e49c87"
-    project_data["published"] = True  # OPENED
+    project_data["published"] = True  # PUBLIC
     project_data["access_rights"] = {
         # everyone HAS read access
         "1": {"read": True, "write": False, "delete": False}
