@@ -68,7 +68,7 @@ docker \
 compose \
 --env-file ${env_file}"
 
-  if [ "project_directory" ]; then
+  if [ "$project_directory" ]; then
     docker_command+=" --project-directory ${project_directory}"
   fi
 
@@ -99,7 +99,7 @@ docker-compose \
     do
       docker_command+=" --file=${compose_file_path} "
     done
-    if [ "project_directory" ]; then
+    if [ "$project_directory" ]; then
       docker_command+=" --project-directory ${project_directory}"
     fi
     docker_command+=" \
