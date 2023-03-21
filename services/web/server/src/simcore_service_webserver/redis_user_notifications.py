@@ -1,3 +1,4 @@
+from copy import deepcopy
 from datetime import datetime
 from enum import auto
 from typing import Any, Final
@@ -43,9 +44,10 @@ class UserNotification(BaseModel):
     def create_from_request_data(
         cls, request_data: dict[str, Any]
     ) -> "UserNotification":
-        request_data["id"] = f"{uuid4()}"
-        request_data["read"] = False
-        return cls.parse_obj(request_data)
+        params = deepcopy(request_data)
+        params["id"] = f"{uuid4()}"
+        params["read"] = False
+        return cls.parse_obj(params)
 
     class Config:
         schema_extra = {

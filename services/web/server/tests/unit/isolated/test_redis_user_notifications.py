@@ -24,18 +24,47 @@ async def test_get_notification_key(user_id: UserID):
 @pytest.mark.parametrize(
     "request_data",
     [
-        {
-            "user_id": "1",
-            "category": NotificationCategory.NEW_ORGANIZATION,
-            "actionable_path": "organization/40",
-            "title": "New organization",
-            "text": "You're now member of a new Organization",
-            "date": "2023-02-23T16:23:13.122Z",
-        }
+        pytest.param(
+            {
+                "user_id": "1",
+                "category": NotificationCategory.NEW_ORGANIZATION,
+                "actionable_path": "organization/40",
+                "title": "New organization",
+                "text": "You're now member of a new Organization",
+                "date": "2023-02-23T16:23:13.122Z",
+            },
+            id="normal_usage",
+        ),
+        pytest.param(
+            {
+                "user_id": "1",
+                "category": NotificationCategory.NEW_ORGANIZATION,
+                "actionable_path": "organization/40",
+                "title": "New organization",
+                "text": "You're now member of a new Organization",
+                "date": "2023-02-23T16:23:13.122Z",
+                "read": True,
+            },
+            id="read_is_always_set_false",
+        ),
+        pytest.param(
+            {
+                "user_id": "1",
+                "category": NotificationCategory.NEW_ORGANIZATION,
+                "actionable_path": "organization/40",
+                "title": "New organization",
+                "text": "You're now member of a new Organization",
+                "date": "2023-02-23T16:23:13.122Z",
+                "id": "some_id",
+            },
+            id="a_new_id_is_alway_recreated",
+        ),
     ],
 )
 async def test_user_notification_crate_from_request_data(request_data: dict[str, Any]):
-    assert UserNotification.create_from_request_data(request_data)
+    user_notification = UserNotification.create_from_request_data(request_data)
+    assert user_notification.id != request_data.get("id", None)
+    assert user_notification.read is False
 
 
 async def test_user_notification_update_from():
