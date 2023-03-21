@@ -8,8 +8,10 @@ anyio==3.6.2
     # via
     #   -c requirements/_base.txt
     #   httpcore
-attrs==22.2.0
-    # via pytest
+attrs==21.4.0
+    # via
+    #   -c requirements/_base.txt
+    #   pytest
 certifi==2022.12.7
     # via
     #   -c requirements/_base.txt
