@@ -331,17 +331,12 @@ class BaseProjectDB:
                 sa.text(
                     f"jsonb_exists_any(projects.access_rights, {assemble_array_groups(user_groups)})"
                 ),
-                sa.case(
-                    [
-                        (
-                            only_published,
-                            projects.c.published == "true",
-                        )
-                    ],
-                    else_=True,
-                ),
             ),
         )
+
+        if only_published:
+            conditions &= projects.c.published == "true"
+
         query = select([projects]).where(conditions)
         if for_update:
             query = query.with_for_update()
