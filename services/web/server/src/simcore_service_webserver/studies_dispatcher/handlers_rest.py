@@ -56,6 +56,12 @@ class Viewer(BaseModel):
 routes = web.RouteTableDef()
 
 
+@routes.get(f"/{API_VTAG}/services", name="list_services")
+async def list_services():
+    """Returns a list latest version of services"""
+    raise NotImplementedError("Still not implemented")
+
+
 @routes.get(f"/{API_VTAG}/viewers", name="list_viewers")
 async def list_viewers(request: Request):
     # filter: file_type=*
