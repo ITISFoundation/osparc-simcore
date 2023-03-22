@@ -3,7 +3,8 @@ from typing import Final, Optional
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
-from pydantic import BaseModel, EmailStr, Field, PositiveInt, SecretStr
+from models_library.emails import LowerCaseEmailStr
+from pydantic import BaseModel, Field, PositiveInt, SecretStr
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.error_codes import create_error_code
 from servicelib.logging_utils import log_context
@@ -55,7 +56,7 @@ routes = RouteTableDef()
 
 
 class LoginBody(InputSchema):
-    email: EmailStr
+    email: LowerCaseEmailStr
     password: SecretStr
 
 
@@ -192,7 +193,7 @@ async def login(request: web.Request):
 
 
 class LoginTwoFactorAuthBody(InputSchema):
-    email: EmailStr
+    email: LowerCaseEmailStr
     code: SecretStr
 
 

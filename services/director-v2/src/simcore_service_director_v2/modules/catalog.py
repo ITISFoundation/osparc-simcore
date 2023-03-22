@@ -10,7 +10,6 @@ from models_library.users import UserID
 
 from ..core.settings import CatalogSettings
 from ..utils.client_decorators import handle_errors, handle_retry
-from ..utils.logging_utils import log_decorator
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +58,6 @@ class CatalogClient:
     async def request(self, method: str, tail_path: str, **kwargs) -> httpx.Response:
         return await self.client.request(method, tail_path, **kwargs)
 
-    @log_decorator(logger=logger)
     async def get_service(
         self,
         user_id: UserID,
@@ -67,7 +65,6 @@ class CatalogClient:
         service_version: ServiceVersion,
         product_name: str,
     ) -> dict[str, Any]:
-
         resp = await self.request(
             "GET",
             f"/services/{urllib.parse.quote( service_key, safe='')}/{service_version}",
@@ -79,11 +76,22 @@ class CatalogClient:
             return resp.json()
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
-    @log_decorator(logger=logger)
+    async def get_service_resources(
+        self, user_id: UserID, service_key: ServiceKey, service_version: ServiceVersion
+    ) -> dict[str, Any]:
+        resp = await self.request(
+            "GET",
+            f"/services/{urllib.parse.quote( service_key, safe='')}/{service_version}/resources",
+            params={"user_id": user_id},
+        )
+        resp.raise_for_status()
+        if resp.status_code == status.HTTP_200_OK:
+            return resp.json()
+        raise HTTPException(status_code=resp.status_code, detail=resp.content)
+
     async def get_service_specifications(
         self, user_id: UserID, service_key: ServiceKey, service_version: ServiceVersion
     ) -> dict[str, Any]:
-
         resp = await self.request(
             "GET",
             f"/services/{urllib.parse.quote( service_key, safe='')}/{service_version}/specifications",

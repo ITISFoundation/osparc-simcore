@@ -162,7 +162,7 @@ async def update_user_notification(request: web.Request):
     nid = request.match_info["nid"]
     notifs = await _get_user_notifications(redis_client, user_id)
     notif_idx = next((idx for (idx, n) in enumerate(notifs) if n["id"] == nid), None)
-    if notif_idx:
+    if notif_idx is not None:
         notif = notifs[notif_idx]
         # body includes a dict with the changes to make
         body = await request.json()

@@ -7,7 +7,7 @@
 import uuid as uuidlib
 from copy import deepcopy
 from math import ceil
-from typing import Any, Awaitable, Callable, Iterator, Optional, Union
+from typing import Any, Awaitable, Callable, Iterator, Optional
 
 import pytest
 import sqlalchemy as sa
@@ -174,7 +174,7 @@ async def test_list_projects(
     user_project: dict[str, Any],
     template_project: dict[str, Any],
     expected: type[web.HTTPException],
-    catalog_subsystem_mock: Callable[[Optional[Union[list[dict], dict]]], None],
+    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     director_v2_service_mock: aioresponses,
 ):
     catalog_subsystem_mock([user_project, template_project])
@@ -251,7 +251,7 @@ async def test_list_projects_with_innaccessible_services(
     user_project: dict[str, Any],
     template_project: dict[str, Any],
     expected: type[web.HTTPException],
-    catalog_subsystem_mock: Callable[[Optional[Union[list[dict], dict]]], None],
+    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     director_v2_service_mock: aioresponses,
     postgres_db: sa.engine.Engine,
     s4l_product_headers: dict[str, Any],
@@ -295,7 +295,7 @@ async def test_get_project(
     user_project,
     template_project,
     expected,
-    catalog_subsystem_mock,
+    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
 ):
     catalog_subsystem_mock([user_project, template_project])
 
@@ -359,7 +359,7 @@ async def test_new_project_from_other_study(
     user_project,
     expected,
     storage_subsystem_mock,
-    catalog_subsystem_mock,
+    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     project_db_cleaner,
     request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):
@@ -449,7 +449,7 @@ async def test_new_template_from_project(
     user_project: dict[str, Any],
     expected: ExpectedResponse,
     storage_subsystem_mock: MockedStorageSubsystem,
-    catalog_subsystem_mock: Callable,
+    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     project_db_cleaner: None,
     request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):

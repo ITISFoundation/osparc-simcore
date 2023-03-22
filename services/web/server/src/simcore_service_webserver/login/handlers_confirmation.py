@@ -3,7 +3,8 @@ from typing import Optional
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
-from pydantic import BaseModel, EmailStr, Field, SecretStr, parse_obj_as, validator
+from models_library.emails import LowerCaseEmailStr
+from pydantic import BaseModel, Field, SecretStr, parse_obj_as, validator
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -93,7 +94,9 @@ async def validate_confirmation_and_redirect(request: web.Request):
                 # update and consume confirmation token
                 await db.delete_confirmation_and_update_user(
                     user_id=user_id,
-                    updates={"email": parse_obj_as(EmailStr, confirmation["data"])},
+                    updates={
+                        "email": parse_obj_as(LowerCaseEmailStr, confirmation["data"])
+                    },
                     confirmation=confirmation,
                 )
 
@@ -133,7 +136,7 @@ async def validate_confirmation_and_redirect(request: web.Request):
 
 
 class PhoneConfirmationBody(InputSchema):
-    email: EmailStr
+    email: LowerCaseEmailStr
     phone: str = Field(
         ..., description="Phone number E.164, needed on the deployments with 2FA"
     )

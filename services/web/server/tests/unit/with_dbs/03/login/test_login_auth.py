@@ -9,6 +9,7 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from cryptography import fernet
+from faker import Faker
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import NewUser
 from servicelib.aiohttp.rest_responses import unwrap_envelope
@@ -118,6 +119,32 @@ async def test_login_successfully(client: TestClient):
     async with NewUser(app=client.app) as user:
         r = await client.post(
             f"{url}", json={"email": user["email"], "password": user["raw_password"]}
+        )
+    assert r.status == 200
+    data, error = unwrap_envelope(await r.json())
+
+    assert not error
+    assert data
+    assert MSG_LOGGED_IN in data["message"]
+
+
+async def test_login_successfully_with_email_containing_uppercase_letters(
+    client: TestClient,
+    faker: Faker,
+):
+
+    assert client.app
+    url = client.app.router["auth_login"].url_for()
+
+    # Testing auth with upper case email for user registered with lower case email
+    async with NewUser(app=client.app) as user:
+
+        r = await client.post(
+            f"{url}",
+            json={
+                "email": user["email"].upper(),  # <--- upper case email
+                "password": user["raw_password"],
+            },
         )
     assert r.status == 200
     data, error = unwrap_envelope(await r.json())
