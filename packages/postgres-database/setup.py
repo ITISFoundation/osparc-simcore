@@ -41,7 +41,7 @@ SETUP = dict(
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
-        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
     ],
     long_description=Path(CURRENT_DIR / "README.md").read_text(),
     license="MIT license",

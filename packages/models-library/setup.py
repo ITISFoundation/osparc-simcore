@@ -1,12 +1,11 @@
 import re
 import sys
 from pathlib import Path
-from typing import Set
 
 from setuptools import find_packages, setup
 
 
-def read_reqs(reqs_path: Path) -> Set[str]:
+def read_reqs(reqs_path: Path) -> set[str]:
     return {
         r
         for r in re.findall(
@@ -35,13 +34,13 @@ SETUP = dict(
     version=Path(CURRENT_DIR / "VERSION").read_text().strip(),
     author="Sylvain Anderegg (sanderegg)",
     description="Core service library for simcore pydantic models",
-    python_requires="~=3.9",
+    python_requires="~=3.10",
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
-        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
     ],
     long_description=Path(CURRENT_DIR / "README.md").read_text(),
     license="MIT license",

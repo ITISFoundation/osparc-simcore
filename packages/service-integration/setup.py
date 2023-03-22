@@ -60,11 +60,11 @@ SETUP = dict(
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
-        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Framework :: Pytest",
     ],
     long_description=Path(CURRENT_DIR / "README.md").read_text(),
-    python_requires=">=3.6",  # TODO: should we deal with ~=3.9??
+    python_requires=">=3.6",  # TODO: should we deal with ~=3.10??
     license="MIT license",
     install_requires=INSTALL_REQUIREMENTS,
     packages=find_packages(where="src"),

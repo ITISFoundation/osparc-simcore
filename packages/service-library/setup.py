@@ -1,12 +1,11 @@
 import re
 import sys
 from pathlib import Path
-from typing import Set
 
 from setuptools import find_packages, setup
 
 
-def read_reqs(reqs_path: Path) -> Set[str]:
+def read_reqs(reqs_path: Path) -> set[str]:
     return {
         r
         for r in re.findall(
@@ -36,7 +35,7 @@ SETUP = dict(
     author="Pedro Crespo-Valero (pcrespov)",
     description="Core service library for simcore (or servicelib)",
     license="MIT license",
-    python_requires="~=3.9",
+    python_requires="~=3.10",
     install_requires=tuple(PROD_REQUIREMENTS),
     packages=find_packages(where="src"),
     package_dir={"": "src"},
