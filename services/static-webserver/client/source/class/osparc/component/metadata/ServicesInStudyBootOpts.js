@@ -50,7 +50,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyBootOpts", {
     _populateHeader: function() {
       this.base(arguments);
 
-      this._add(new qx.ui.basic.Label(this.tr("Boot Mode")).set({
+      this._servicesGrid.add(new qx.ui.basic.Label(this.tr("Boot Mode")).set({
         font: "title-14",
         toolTipText: this.tr("Select boot type")
       }), {
@@ -98,7 +98,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyBootOpts", {
             const newBootModeId = e.getData()[0].bootModeId;
             this.__updateBootMode(nodeId, newBootModeId);
           }, this);
-          this._add(bootModeSB, {
+          this._servicesGrid.add(bootModeSB, {
             row: i,
             column: this.self().GRID_POS.BOOT_MODE
           });

@@ -14,7 +14,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
   construct: function(studyData) {
     this.base(arguments, studyData);
 
-    const grid = this._getLayout();
+    const grid = this._servicesGrid.getLayout();
     grid.setColumnAlign(this.self().GRID_POS.CURRENT_VERSION, "center", "middle");
     grid.setColumnAlign(this.self().GRID_POS.COMPATIBLE_VERSION, "center", "middle");
     grid.setColumnAlign(this.self().GRID_POS.LATEST_VERSION, "center", "middle");
@@ -95,14 +95,14 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
     _populateHeader: function() {
       this.base(arguments);
 
-      this._add(new qx.ui.basic.Label(this.tr("Current")).set({
+      this._servicesGrid.add(new qx.ui.basic.Label(this.tr("Current")).set({
         font: "title-14"
       }), {
         row: 0,
         column: this.self().GRID_POS.CURRENT_VERSION
       });
 
-      this._add(new qx.ui.basic.Label(this.tr("Compatible")).set({
+      this._servicesGrid.add(new qx.ui.basic.Label(this.tr("Compatible")).set({
         font: "title-14",
         toolTipText: this.tr("Latest compatible version")
       }), {
@@ -110,7 +110,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
         column: this.self().GRID_POS.COMPATIBLE_VERSION
       });
 
-      this._add(new qx.ui.basic.Label(this.tr("Latest")).set({
+      this._servicesGrid.add(new qx.ui.basic.Label(this.tr("Latest")).set({
         font: "title-14",
         toolTipText: this.tr("Latest available version")
       }), {
@@ -122,7 +122,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
         backgroundColor: "strong-main",
         visibility: "excluded"
       });
-      this._add(updateAllButton, {
+      this._servicesGrid.add(updateAllButton, {
         row: 0,
         column: this.self().GRID_POS.UPDATE_BUTTON
       });
@@ -154,7 +154,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
           font: "text-14"
         });
         this.self().colorVersionLabel(currentVersionLabel, nodeMetadata);
-        this._add(currentVersionLabel, {
+        this._servicesGrid.add(currentVersionLabel, {
           row: i,
           column: this.self().GRID_POS.CURRENT_VERSION
         });
@@ -163,7 +163,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
           font: "text-14"
         });
         this.self().colorVersionLabel(compatibleVersionLabel, latestCompatibleMetadata);
-        this._add(compatibleVersionLabel, {
+        this._servicesGrid.add(compatibleVersionLabel, {
           row: i,
           column: this.self().GRID_POS.COMPATIBLE_VERSION
         });
@@ -171,7 +171,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
         const latestVersionLabel = new qx.ui.basic.Label(latestMetadata["version"]).set({
           font: "text-14"
         });
-        this._add(latestVersionLabel, {
+        this._servicesGrid.add(latestVersionLabel, {
           row: i,
           column: this.self().GRID_POS.LATEST_VERSION
         });
@@ -194,7 +194,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
             });
           }
           updateButton.addListener("execute", () => this.__updateService(nodeId, latestCompatibleMetadata["version"], updateButton), this);
-          this._add(updateButton, {
+          this._servicesGrid.add(updateButton, {
             row: i,
             column: this.self().GRID_POS.UPDATE_BUTTON
           });
