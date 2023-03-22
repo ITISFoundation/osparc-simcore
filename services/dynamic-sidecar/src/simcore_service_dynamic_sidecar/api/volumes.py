@@ -21,7 +21,7 @@ class PutVolumeItem(BaseModel):
     summary="Updates the state of the volume",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def patch_volume_state(
+async def put_volume_state(
     item: PutVolumeItem,
     volume_category: VolumeCategory = PathParam(..., alias="id"),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),

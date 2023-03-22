@@ -665,7 +665,7 @@
           "volumes"
         ],
         "summary": "Updates the state of the volume",
-        "operationId": "patch_volume_state_v1_volumes__id__put",
+        "operationId": "put_volume_state_v1_volumes__id__put",
         "parameters": [
           {
             "required": true,
