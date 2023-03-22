@@ -20,6 +20,10 @@ from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx import MockRouter
+from servicelib.common_headers import (
+    X_DYNAMIC_SIDECAR_REQUEST_DNS,
+    X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
+)
 from simcore_service_director_v2.models.domains.dynamic_services import (
     DynamicServiceCreate,
     RetrieveDataOutEnveloped,
@@ -72,8 +76,8 @@ def minimal_config(
 @pytest.fixture(scope="session")
 def dynamic_sidecar_headers() -> dict[str, str]:
     return {
-        "X-Dynamic-Sidecar-Request-DNS": "",
-        "X-Dynamic-Sidecar-Request-Scheme": "",
+        X_DYNAMIC_SIDECAR_REQUEST_DNS: "",
+        X_DYNAMIC_SIDECAR_REQUEST_SCHEME: "",
     }
 
 

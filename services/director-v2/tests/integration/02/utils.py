@@ -18,6 +18,10 @@ from models_library.services_resources import (
 from models_library.users import UserID
 from pydantic import PositiveInt, parse_obj_as
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
+from servicelib.common_headers import (
+    X_DYNAMIC_SIDECAR_REQUEST_DNS,
+    X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
+)
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
@@ -265,7 +269,6 @@ async def assert_start_service(
     basepath: Optional[str],
     catalog_url: URL,
 ) -> None:
-
     service_resources: ServiceResourcesDict = await _get_service_resources(
         catalog_url=catalog_url,
         service_key=service_key,
@@ -284,8 +287,8 @@ async def assert_start_service(
         product_name=product_name,
     )
     headers = {
-        "x-dynamic-sidecar-request-dns": director_v2_client.base_url.host,
-        "x-dynamic-sidecar-request-scheme": director_v2_client.base_url.scheme,
+        X_DYNAMIC_SIDECAR_REQUEST_DNS: director_v2_client.base_url.host,
+        X_DYNAMIC_SIDECAR_REQUEST_DNS: director_v2_client.base_url.scheme,
     }
 
     result = await director_v2_client.post(
@@ -300,7 +303,6 @@ async def get_service_data(
     service_uuid: str,
     node_data: Node,
 ) -> dict[str, Any]:
-
     # result =
     response = await director_v2_client.get(
         f"/v2/dynamic_services/{service_uuid}", follow_redirects=False
@@ -358,8 +360,8 @@ async def assert_retrieve_service(
     director_v2_client: httpx.AsyncClient, service_uuid: str
 ) -> None:
     headers = {
-        "x-dynamic-sidecar-request-dns": director_v2_client.base_url.host,
-        "x-dynamic-sidecar-request-scheme": director_v2_client.base_url.scheme,
+        X_DYNAMIC_SIDECAR_REQUEST_DNS: director_v2_client.base_url.host,
+        X_DYNAMIC_SIDECAR_REQUEST_SCHEME: director_v2_client.base_url.scheme,
     }
 
     result = await director_v2_client.post(

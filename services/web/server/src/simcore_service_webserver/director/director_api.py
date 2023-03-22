@@ -11,6 +11,10 @@ from typing import Any, Optional
 from aiohttp import ClientSession, web
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.monitoring import SIMCORE_USER_AGENT_HEADER
+from servicelib.common_headers import (
+    X_DYNAMIC_SIDECAR_REQUEST_DNS,
+    X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
+)
 from servicelib.utils import logged_gather
 from yarl import URL
 
@@ -74,8 +78,8 @@ async def start_service(
     }
 
     headers = {
-        "X-Dynamic-Sidecar-Request-DNS": request_dns,
-        "X-Dynamic-Sidecar-Request-Scheme": request_scheme,
+        X_DYNAMIC_SIDECAR_REQUEST_DNS: request_dns,
+        X_DYNAMIC_SIDECAR_REQUEST_SCHEME: request_scheme,
         SIMCORE_USER_AGENT_HEADER: request_simcore_user_agent,
     }
 
