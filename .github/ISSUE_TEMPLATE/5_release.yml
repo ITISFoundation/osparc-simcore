@@ -22,10 +22,19 @@ body:
       placeholder: 7d9dcc313f9ced0bd1e6508363148841683b6d7c
     validations:
       required: true
+  - type: input
+    id: staging_release
+    attributes:
+      label: "Previous pre-release"
+      description: |
+        Link to pre-release to staging tha preceeds this release
+      value: https://github.com/ITISFoundation/osparc-simcore/releases/tag/staging_<sprint_name><version>
+    validations:
+      required: true
   - type: checkboxes
     attributes:
       label: Did the commit CI suceeded?
-      description: Check the CI of the selected commit in the [repo commits](https://github.com/ITISFoundation/osparc-simcore/commits/master)
+      description: Check the CI of the selected commit in the [repo commits](https://github.com/ITISFoundation/osparc-simcore/commits/master) to make sure the images are built and ready
       options:
         - label: The commit CI succeeded.
           required: true
