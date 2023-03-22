@@ -3,18 +3,22 @@
 NOTE: openapi section for these handlers was generated using
    services/web/server/tests/sandbox/viewers_openapi_generator.py
 """
+import logging
 from typing import Optional
 
 from aiohttp import web
 from aiohttp.web import Request
 from models_library.services import ServiceKey
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 from pydantic.networks import HttpUrl
 
 from .._meta import API_VTAG
 from ..utils_aiohttp import envelope_json_response
 from ._core import ViewerInfo, list_viewers_info
 from .handlers_redirects import compose_dispatcher_prefix_url
+
+logger = logging.getLogger(__name__)
+
 
 #
 # API Models
@@ -64,7 +68,7 @@ class ServiceGet(BaseModel):
 
     title: str = Field(..., description="Service name for display")
     description: str = Field(..., description="Long description of the service")
-    thumbnail: str = Field()
+    thumbnail: HttpUrl = Field()
 
     # extra properties
     file_extensions: list[str] = Field(
@@ -103,12 +107,18 @@ routes = web.RouteTableDef()
 async def list_services(request: Request):
     """Returns a list latest version of services"""
     assert request  # nosec
-
     # NOTE: this is temporary for testing
 
-    services = [
-        ServiceGet.parse_obj(ServiceGet.Config.schema_extra["example"]),
+    examples = [
+        ServiceGet.Config.schema_extra["example"],
     ]
+    services = []
+    for service in examples:
+        try:
+            services.append(ServiceGet.parse_obj(service))
+        except ValidationError as err:
+            logger.debug("Invalid %s: %s", f"{service=}", err)
+
     return envelope_json_response(services)
 
 
