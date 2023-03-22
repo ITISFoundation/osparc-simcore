@@ -1,0 +1,137 @@
+name: 🚀 Release to production (developers-only)
+description: Creates an issue to plan and log the release from staging to production
+title: "🚀 Release v<version>"
+labels: ["t:maintenance", "release"]
+assignees: ["pcrespov"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Release version
+      description: Release version as major.minor.0 .Check [Releases](https://github.com/ITISFoundation/osparc-simcore/releases)
+      placeholder: 1.2.0
+    validations:
+      required: true
+  - type: input
+    id: commit_sha
+    attributes:
+      label: Commit SHA
+      description: |
+        Selets the commit from which the release takes placeholder. Check [commits](https://github.com/ITISFoundation/osparc-simcore/commits/master)
+        IMPORTANT: make sure t (i.e. tests passed and images were built and pushed)
+      placeholder: 7d9dcc313f9ced0bd1e6508363148841683b6d7c
+    validations:
+      required: true
+  - type: checkboxes
+    attributes:
+      label: Did the commit CI suceeded?
+      description: Check the CI of the selected commit in the [repo commits](https://github.com/ITISFoundation/osparc-simcore/commits/master)
+      options:
+        - label: The commit CI succeeded.
+          required: true
+  - type: textarea
+    attributes:
+      label: Motivation
+      description: |
+        What is the motivation to release to production? Our current release policy recommends **at least one releast to production for every sprint**.
+        For the moment releases to production require maintenance and therefore interrupting users
+        - Explain what motivates this release?
+        - Which important changes we might pay attention to?
+        - How should we test them?
+        - Is there anything in particular we should monitor?
+      placeholder: |
+        - Regular sprint release
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: What Changed
+      description: |
+        List of commit messages in this release. Add a list of links to the corresponding PRs. This way we can trace the release of every single PR. TIP: use the autogenerate changelog feature during the draft release.
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: Devops check ⚠️ devops
+      description: |
+        Check the PRs marked with (⚠️ devops).
+        Determine and prepare necessary changes required in the environments configs.
+        Log any issues since this procedure should be taken also as an exercise in preparation for the release to production as well.
+      value: |
+        - [ ] Add changes (if any) and release tags in https://github.com/ITISFoundation/osparc-ops-environments/tags
+        - [ ] Add changes (if any) and release tags in osparc ops configurations
+        - [ ] ...
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: "Tests assessment: e2e testing check 🧪"
+      description: |
+        Check [e2e](https://git.speag.com/oSparc/e2e-testing/-/pipelines?page=1&scope=all&ref=master), [p2e](https://git.speag.com/oSparc/e2e-portal-testing/-/pipelines?page=1&scope=all&ref=staging) and [ops](https://git.speag.com/oSparc/e2e-ops/-/pipelines?page=1&scope=all&ref=master)
+
+        Keep an agenda of what has been reported on every daily
+      placeholder: |
+        - Mon. ...
+        - Tue. ...
+        - Wed. ...
+        - Thu. ...
+        - Fri. ...
+  - type: textarea
+    attributes:
+      label: "Test assessment: targeted-testing 🔍️"
+      description: |
+        Assessment carried out by the team on changelog **at least** on items marked with 🚨
+        List issues here!
+      placeholder: |
+        Target PRs:
+        - [x] #234
+  - type: textarea
+    attributes:
+      label: "Test assessment: user-testing 🧐"
+      description: |
+        Assessment performed together with a final user. The session is recorded and ``filesrv/osparc/DEVELOPERS/test-sessions``.
+        Create an issue for every bug/enhancement including the video timestap to follow up.
+        List issues here!
+      placeholder: |
+        Follow up issues:
+        - #234
+  - type: textarea
+    attributes:
+      label: Summary 📝
+      description: |
+        Preparation for the release
+        ** IMPORTANT**: Production releases must be announced at least 24h before!
+      value: |
+        - [ ] Prepare
+        ```cmd
+        make release-prod version=<M.m.o>  git_sha=<commit_sha>
+        ```
+        - [ ] Draft [release changelog](https://github.com/ITISFoundation/osparc-simcore/releases)
+        - [ ] Announce maintenance ( ** ANNOUNCE AT LEAST 24 HOURS BEFORE ** )
+        - redis ``{"start": "2023-03-06T13:00:00.000Z", "end": "2023-03-06T15:00:00.000Z", "reason": "Release <vX.X.0>"}``
+            - [ ] aws
+            - [ ] dalco
+            - [ ] tip
+        - status page
+            - [ ] osparc
+            - [ ] s4l
+        - mattermost channels
+            - [ ] maintenance
+            - [ ] power users
+  - type: textarea
+    attributes:
+      label: Releasing 🚀
+      value: |
+        - [ ] Maintenance page up.
+        - [ ] Release by publishing [draft](https://github.com/ITISFoundation/osparc-simcore/releases)
+        - [ ] Check Release CI
+        - [ ] Check deployed
+          - [ ] aws deploy
+          - [ ] dalco deploy
+          - [ ] tip deploy
+        - [ ] Delete announcement
+        - [ ] Check e2e runs
+        - [ ] Announce
+        ``` md
+        :tada: https://github.com/ITISFoundation/osparc-simcore/releases/tag/v<M.m.0>
+        ```
