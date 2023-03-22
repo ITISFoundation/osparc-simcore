@@ -149,9 +149,9 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
                     + "".join(
                         # pylint:disable = unexpected-keyword-arg, no-value-for-parameter
                         traceback.format_exception(
-                            etype=type(future._exception),
-                            value=future._exception,
-                            tb=future._exception.__traceback__,
+                            type(future._exception),
+                            future._exception,
+                            future._exception.__traceback__,
                         )
                     )
                     if future._exception.__traceback__
