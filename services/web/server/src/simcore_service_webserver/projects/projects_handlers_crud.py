@@ -146,6 +146,7 @@ async def create_projects(request: web.Request):
         request_context=req_ctx,
         query_params=query_params,
         predefined_project=predefined_project,
+        product_name=req_ctx.product_name,
         fire_and_forget=True,
     )
 
@@ -249,7 +250,8 @@ async def _create_projects(
     query_params: _ProjectCreateParams,
     request_context: RequestContext,
     predefined_project: Optional[ProjectDict],
-):
+    product_name: str,
+) -> None:
     """
 
     :raises web.HTTPBadRequest
@@ -313,7 +315,7 @@ async def _create_projects(
 
         # This is a new project and every new graph needs to be reflected in the pipeline tables
         await director_v2_api.create_or_update_pipeline(
-            app, request_context.user_id, new_project["uuid"]
+            app, request_context.user_id, new_project["uuid"], product_name
         )
 
         # Appends state
@@ -636,7 +638,10 @@ async def replace_project(request: web.Request):
             request.app, path_params.project_id
         )
         await director_v2_api.create_or_update_pipeline(
-            request.app, req_ctx.user_id, path_params.project_id
+            request.app,
+            req_ctx.user_id,
+            path_params.project_id,
+            product_name=req_ctx.product_name,
         )
         # Appends state
         new_project = await projects_api.add_project_states_for_user(

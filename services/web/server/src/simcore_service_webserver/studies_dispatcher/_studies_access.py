@@ -21,6 +21,8 @@ from uuid import UUID, uuid5
 import redis.asyncio as aioredis
 from aiohttp import web
 from aiohttp_session import get_session
+from models_library.emails import LowerCaseEmailStr
+from pydantic import parse_obj_as
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.error_codes import create_error_code
 from simcore_service_webserver.projects.project_models import ProjectDict
@@ -126,7 +128,7 @@ async def _create_temporary_user(request: web.Request):
 
     # Profile for temporary user
     random_uname = get_random_string(min_len=5)
-    email = random_uname + "@guest-at-osparc.io"
+    email = parse_obj_as(LowerCaseEmailStr, f"{random_uname}@guest-at-osparc.io")
     password = get_random_string(min_len=12)
     expires_at = datetime.utcnow() + settings.STUDIES_GUEST_ACCOUNT_LIFETIME
 

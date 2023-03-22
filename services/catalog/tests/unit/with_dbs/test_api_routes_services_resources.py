@@ -4,6 +4,7 @@
 
 import urllib.parse
 from copy import deepcopy
+from dataclasses import dataclass
 from random import choice, randint
 from typing import Any, Callable
 
@@ -12,7 +13,9 @@ import pytest
 import respx
 from faker import Faker
 from fastapi import FastAPI
+from models_library.docker import DockerGenericTag
 from models_library.services_resources import (
+    BootMode,
     ResourcesDict,
     ResourceValue,
     ServiceResourcesDict,
@@ -76,86 +79,104 @@ def _update_copy(dict_data: dict, update: dict) -> dict:
     return dict_data_copy
 
 
+@dataclass
+class _ServiceResourceParams:
+    simcore_service_label: dict[str, str]
+    expected_resources: ResourcesDict
+    expected_boot_modes: list[BootMode]
+
+
 @pytest.mark.parametrize(
-    "director_labels, expected_resources",
+    "params",
     [
         pytest.param(
-            {},
-            _DEFAULT_RESOURCES,
+            _ServiceResourceParams({}, _DEFAULT_RESOURCES, [BootMode.CPU]),
             id="nothing_defined_returns_default_resources",
         ),
         pytest.param(
-            {
-                "simcore.service.settings": '[ {"name": "Resources", "type": "Resources", "value": { "Limits": { "NanoCPUs": 4000000000, "MemoryBytes": 17179869184 } } } ]',
-            },
-            _update_copy(
-                _DEFAULT_RESOURCES,
+            _ServiceResourceParams(
                 {
-                    "CPU": ResourceValue(
-                        limit=4.0,
-                        reservation=_DEFAULT_RESOURCES["CPU"].reservation,
-                    ),
-                    "RAM": ResourceValue(
-                        limit=ByteSize(17179869184),
-                        reservation=_DEFAULT_RESOURCES["RAM"].reservation,
-                    ),
+                    "simcore.service.settings": '[ {"name": "Resources", "type": "Resources", "value": { "Limits": { "NanoCPUs": 4000000000, "MemoryBytes": 17179869184 } } } ]',
                 },
+                _update_copy(
+                    _DEFAULT_RESOURCES,
+                    {
+                        "CPU": ResourceValue(
+                            limit=4.0,
+                            reservation=_DEFAULT_RESOURCES["CPU"].reservation,
+                        ),
+                        "RAM": ResourceValue(
+                            limit=ByteSize(17179869184),
+                            reservation=_DEFAULT_RESOURCES["RAM"].reservation,
+                        ),
+                    },
+                ),
+                [BootMode.CPU],
             ),
             id="only_limits_defined_returns_default_reservations",
         ),
         pytest.param(
-            {
-                "simcore.service.settings": '[ {"name": "constraints", "type": "string", "value": [ "node.platform.os == linux" ]}, {"name": "Resources", "type": "Resources", "value": { "Limits": { "NanoCPUs": 4000000000, "MemoryBytes": 17179869184 }, "Reservations": { "NanoCPUs": 100000000, "MemoryBytes": 536870912, "GenericResources": [ { "DiscreteResourceSpec": { "Kind": "VRAM", "Value": 1 } }, { "NamedResourceSpec": { "Kind": "AIRAM", "Value": "some_string" } } ] } } } ]'
-            },
-            _update_copy(
-                _DEFAULT_RESOURCES,
+            _ServiceResourceParams(
                 {
-                    "CPU": ResourceValue(limit=4.0, reservation=0.1),
-                    "RAM": ResourceValue(
-                        limit=ByteSize(17179869184), reservation=ByteSize(536870912)
-                    ),
-                    "VRAM": ResourceValue(limit=1, reservation=1),
-                    "AIRAM": ResourceValue(limit=0, reservation="some_string"),
+                    "simcore.service.settings": '[ {"name": "constraints", "type": "string", "value": [ "node.platform.os == linux" ]}, {"name": "Resources", "type": "Resources", "value": { "Limits": { "NanoCPUs": 4000000000, "MemoryBytes": 17179869184 }, "Reservations": { "NanoCPUs": 100000000, "MemoryBytes": 536870912, "GenericResources": [ { "DiscreteResourceSpec": { "Kind": "VRAM", "Value": 1 } }, { "NamedResourceSpec": { "Kind": "AIRAM", "Value": "some_string" } } ] } } } ]'
                 },
+                _update_copy(
+                    _DEFAULT_RESOURCES,
+                    {
+                        "CPU": ResourceValue(limit=4.0, reservation=0.1),
+                        "RAM": ResourceValue(
+                            limit=ByteSize(17179869184), reservation=ByteSize(536870912)
+                        ),
+                        "VRAM": ResourceValue(limit=1, reservation=1),
+                        "AIRAM": ResourceValue(limit=0, reservation="some_string"),
+                    },
+                ),
+                [BootMode.GPU],
             ),
             id="everything_rightly_defined",
         ),
         pytest.param(
-            {
-                "simcore.service.settings": '[ {"name": "Resources", "type": "Resources", "value": { "Reservations": { "NanoCPUs": 100000000, "MemoryBytes": 536870912, "GenericResources": [  ] } } } ]'
-            },
-            _update_copy(
-                _DEFAULT_RESOURCES,
+            _ServiceResourceParams(
                 {
-                    "CPU": ResourceValue(
-                        limit=_DEFAULT_RESOURCES["CPU"].limit,
-                        reservation=0.1,
-                    ),
-                    "RAM": ResourceValue(
-                        limit=_DEFAULT_RESOURCES["RAM"].limit,
-                        reservation=ByteSize(536870912),
-                    ),
+                    "simcore.service.settings": '[ {"name": "Resources", "type": "Resources", "value": { "Reservations": { "NanoCPUs": 100000000, "MemoryBytes": 536870912, "GenericResources": [  ] } } } ]'
                 },
+                _update_copy(
+                    _DEFAULT_RESOURCES,
+                    {
+                        "CPU": ResourceValue(
+                            limit=_DEFAULT_RESOURCES["CPU"].limit,
+                            reservation=0.1,
+                        ),
+                        "RAM": ResourceValue(
+                            limit=_DEFAULT_RESOURCES["RAM"].limit,
+                            reservation=ByteSize(536870912),
+                        ),
+                    },
+                ),
+                [BootMode.CPU],
             ),
             id="no_limits_defined_returns_default_limits",
         ),
         pytest.param(
-            {
-                "simcore.service.settings": '[ {"name": "Resources", "type": "Resources", "value": { "Reservations": { "NanoCPUs": 10000000000, "MemoryBytes": 53687091232, "GenericResources": [ { "DiscreteResourceSpec": { "Kind": "VRAM", "Value": 1 } } ] } } } ]'
-            },
-            _update_copy(
-                _DEFAULT_RESOURCES,
+            _ServiceResourceParams(
                 {
-                    "CPU": ResourceValue(
-                        limit=10.0,
-                        reservation=10.0,
-                    ),
-                    "RAM": ResourceValue(
-                        limit=ByteSize(53687091232),
-                        reservation=ByteSize(53687091232),
-                    ),
-                    "VRAM": ResourceValue(limit=1, reservation=1),
+                    "simcore.service.settings": '[ {"name": "Resources", "type": "Resources", "value": { "Reservations": { "NanoCPUs": 10000000000, "MemoryBytes": 53687091232, "GenericResources": [ { "DiscreteResourceSpec": { "Kind": "VRAM", "Value": 1 } } ] } } } ]'
                 },
+                _update_copy(
+                    _DEFAULT_RESOURCES,
+                    {
+                        "CPU": ResourceValue(
+                            limit=10.0,
+                            reservation=10.0,
+                        ),
+                        "RAM": ResourceValue(
+                            limit=ByteSize(53687091232),
+                            reservation=ByteSize(53687091232),
+                        ),
+                        "VRAM": ResourceValue(limit=1, reservation=1),
+                    },
+                ),
+                [BootMode.GPU],
             ),
             id="no_limits_with_reservations_above_default_returns_same_as_reservation",
         ),
@@ -165,25 +186,24 @@ async def test_get_service_resources(
     mock_catalog_background_task,
     mock_director_service_labels: Route,
     client: TestClient,
-    director_labels: dict[str, Any],
-    expected_resources: ResourcesDict,
+    params: _ServiceResourceParams,
 ) -> None:
     service_key = f"simcore/services/{choice(['comp', 'dynamic'])}/jupyter-math"
     service_version = f"{randint(0,100)}.{randint(0,100)}.{randint(0,100)}"
-    mock_director_service_labels.respond(json={"data": director_labels})
+    mock_director_service_labels.respond(json={"data": params.simcore_service_label})
     url = URL(f"/v0/services/{service_key}/{service_version}/resources")
     response = client.get(f"{url}")
     assert response.status_code == 200, f"{response.text}"
     data = response.json()
     received_resources: ServiceResourcesDict = parse_obj_as(ServiceResourcesDict, data)
-    assert type(received_resources) == dict
+    assert isinstance(received_resources, dict)
 
     expected_service_resources = ServiceResourcesDictHelpers.create_from_single_service(
-        f"{service_key}:{service_version}",
-        expected_resources,
+        parse_obj_as(DockerGenericTag, f"{service_key}:{service_version}"),
+        params.expected_resources,
+        boot_modes=params.expected_boot_modes,
     )
-    assert type(expected_service_resources) == dict
-
+    assert isinstance(expected_service_resources, dict)
     assert received_resources == expected_service_resources
 
 
