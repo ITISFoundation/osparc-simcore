@@ -84,9 +84,9 @@ class ServiceGet(BaseModel):
                 "key": "simcore/services/dynamic/sim4life",
                 "title": "Sim4Life Mattermost",
                 "description": "It is also sim4life for the web",
-                "thumbnail": "https://www.hopkinsmedicine.org/-/media/images/health/1_-conditions/brain/brain-anatomy-teaser.ashx",
+                "thumbnail": "https://placeimg.com/640/480/nature",
                 "file_extensions": ["smash", "h5"],
-                "view_url": "http://host.org/view?file_type=CSV&viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=1.2.3",
+                "view_url": "https://osparc.io/view?file_type=CSV&viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=1.2.3",
             }
         }
 
