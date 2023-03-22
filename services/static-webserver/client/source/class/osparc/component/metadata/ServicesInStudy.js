@@ -122,10 +122,16 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
     },
 
     _populateLayout: function() {
-      this._servicesGrid.removeAll();
+      this._introText.removeAll();
+      this._populateIntroText();
 
+      this._servicesGrid.removeAll();
       this._populateHeader();
       this._populateRows();
+    },
+
+    _populateIntroText: function() {
+      throw new Error("Abstract method called!");
     },
 
     _populateHeader: function() {

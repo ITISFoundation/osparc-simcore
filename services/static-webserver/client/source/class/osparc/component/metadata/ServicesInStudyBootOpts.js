@@ -36,6 +36,13 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyBootOpts", {
   },
 
   members: {
+    _populateIntroText: function() {
+      const upToDate = new qx.ui.basic.Label(this.tr("All good")).set({
+        font: "text-14"
+      });
+      this._introText.add(upToDate);
+    },
+
     __updateBootMode: function(nodeId, newBootModeId) {
       if (!("bootOptions" in this._studyData["workbench"][nodeId])) {
         this._studyData["workbench"][nodeId]["bootOptions"] = {};

@@ -80,6 +80,13 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
   members: {
     __updateAllButton: null,
 
+    _populateIntroText: function() {
+      const upToDate = new qx.ui.basic.Label(this.tr("All services are up to date to their latest compatible version")).set({
+        font: "text-14"
+      });
+      this._introText.add(upToDate);
+    },
+
     __updateService: function(nodeId, newVersion, button) {
       this.setEnabled(false);
       this.self().updateService(this._studyData, nodeId, newVersion);
