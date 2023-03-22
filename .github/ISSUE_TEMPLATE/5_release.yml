@@ -1,6 +1,6 @@
 name: 🚀 Release to production (developers-only)
 description: Creates an issue to plan and log the release from staging to production
-title: "🚀 Release v<version>"
+title: "🚀 Release v<M.m.0>"
 labels: ["t:maintenance", "release"]
 assignees: ["pcrespov"]
 body:
@@ -45,18 +45,20 @@ body:
       required: true
   - type: textarea
     attributes:
-      label: What Changed
+      label: Changes
       description: |
-        List of commit messages in this release. Add a list of links to the corresponding PRs. This way we can trace the release of every single PR. TIP: use the autogenerate changelog feature during the draft release.
+        Changes introduced by this release.
+        List links to the PRs associated to every commit in the release. This will automatically create references between PRs and this release that will be very valuable for traceability.
+        TIP: use the autogenerate changelog feature during the draft release.
     validations:
       required: false
   - type: textarea
     attributes:
-      label: Devops check ⚠️ devops
+      label: "Devops check 👷"
       description: |
         Check the PRs marked with (⚠️ devops).
-        Determine and prepare necessary changes required in the environments configs.
-        Log any issues since this procedure should be taken also as an exercise in preparation for the release to production as well.
+        Determine and commit necessary changes required in the ``osparc-ops-*`` repos.
+        Log below completed steps and issues
       value: |
         - [ ] Add changes (if any) and release tags in https://github.com/ITISFoundation/osparc-ops-environments/tags
         - [ ] Add changes (if any) and release tags in osparc ops configurations
@@ -100,11 +102,11 @@ body:
       label: Summary 📝
       description: |
         Preparation for the release
-        ** IMPORTANT**: Production releases must be announced at least 24h before!
+        **IMPORTANT** MUST be announced at least 24h before!
       value: |
-        - [ ] Prepare
+        - [ ] Prepare release link
         ```cmd
-        make release-prod version=<M.m.o>  git_sha=<commit_sha>
+        make release-prod version=<M.m.0>  git_sha=<commit_sha>
         ```
         - [ ] Draft [release changelog](https://github.com/ITISFoundation/osparc-simcore/releases)
         - [ ] Announce maintenance ( ** ANNOUNCE AT LEAST 24 HOURS BEFORE ** )
@@ -124,7 +126,7 @@ body:
       value: |
         - [ ] Maintenance page up.
         - [ ] Release by publishing [draft](https://github.com/ITISFoundation/osparc-simcore/releases)
-        - [ ] Check Release CI
+        - [ ] Check release CI
         - [ ] Check deployed
           - [ ] aws deploy
           - [ ] dalco deploy
