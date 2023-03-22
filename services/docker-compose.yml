@@ -290,7 +290,6 @@ services:
     env_file:
       - ../.env
       - ../.env-wb-garbage-collector
-
     deploy:
       placement:
         constraints:
@@ -309,6 +308,7 @@ services:
         limits:
           cpus: "1.0"
           memory: 1024M
+
     networks:
       - default
     volumes:
