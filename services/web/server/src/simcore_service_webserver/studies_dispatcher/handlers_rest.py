@@ -14,6 +14,10 @@ from .._meta import API_VTAG
 from ._core import ViewerInfo, list_viewers_info
 from .handlers_redirects import compose_dispatcher_prefix_url
 
+#
+# API Models
+#
+
 
 class Viewer(BaseModel):
     """
@@ -53,11 +57,15 @@ class Viewer(BaseModel):
         )
 
 
+#
+# API Handlers
+#
+
 routes = web.RouteTableDef()
 
 
 @routes.get(f"/{API_VTAG}/services", name="list_services")
-async def list_services():
+async def list_services(request: Request):
     """Returns a list latest version of services"""
     raise NotImplementedError("Still not implemented")
 

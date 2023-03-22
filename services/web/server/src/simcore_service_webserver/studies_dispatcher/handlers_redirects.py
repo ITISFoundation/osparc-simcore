@@ -9,7 +9,14 @@ import aiohttp
 from aiohttp import web
 from aiohttp.client_exceptions import ClientError
 from models_library.services import KEY_RE, VERSION_RE
-from pydantic import BaseModel, HttpUrl, ValidationError, constr, validator
+from pydantic import (
+    BaseModel,
+    HttpUrl,
+    ValidationError,
+    constr,
+    parse_obj_as,
+    validator,
+)
 from pydantic.types import PositiveInt
 
 from ..products import get_product_name
@@ -87,7 +94,7 @@ class RedirectionQueryParams(ViewerQueryParams):
             ) from err
 
 
-def compose_dispatcher_prefix_url(request: web.Request, viewer: ViewerInfo) -> str:
+def compose_dispatcher_prefix_url(request: web.Request, viewer: ViewerInfo) -> HttpUrl:
     """This is denoted PREFIX URL because it needs to append extra query
     parameters added in RedirectionQueryParams
     """
@@ -95,7 +102,7 @@ def compose_dispatcher_prefix_url(request: web.Request, viewer: ViewerInfo) -> s
     absolute_url = request.url.join(
         request.app.router["get_redirection_to_viewer"].url_for().with_query(**params)
     )
-    return str(absolute_url)
+    return parse_obj_as(HttpUrl, absolute_url)
 
 
 async def get_redirection_to_viewer(request: web.Request):
