@@ -38,7 +38,7 @@ SETUP = dict(
     description="Interfaces with datcore storage",
     long_description=(CURRENT_DIR / "README.md").read_text(),
     license="MIT license",
-    python_requires="~=3.9",
+    python_requires="~=3.10",
     packages=find_packages(where="src"),
     package_dir={
         "": "src",
