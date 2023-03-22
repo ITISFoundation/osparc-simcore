@@ -29,6 +29,14 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
       UPDATE_BUTTON: Object.keys(osparc.component.metadata.ServicesInStudy.GRID_POS).length+3
     },
 
+    anyServiceDeprecated: function(studyData) {
+      return true;
+    },
+
+    anyServiceRetired: function(studyData) {
+      return false;
+    },
+
     updateService: function(studyData, nodeId, newVersion) {
       if (nodeId in studyData["workbench"]) {
         if (newVersion === undefined) {
@@ -81,10 +89,24 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
     __updateAllButton: null,
 
     _populateIntroText: function() {
-      const upToDate = new qx.ui.basic.Label(this.tr("All services are up to date to their latest compatible version")).set({
-        font: "text-14"
-      });
-      this._introText.add(upToDate);
+      if (this.self().anyServiceDeprecated(this._studyData)) {
+        const upToDate = new qx.ui.basic.Label(this.tr("Deprecated services are marked in yellow")).set({
+          font: "text-14"
+        });
+        this._introText.add(upToDate);
+      }
+      if (this.self().anyServiceRetired(this._studyData)) {
+        const upToDate = new qx.ui.basic.Label(this.tr("Deprecated services are marked in red")).set({
+          font: "text-14"
+        });
+        this._introText.add(upToDate);
+      }
+      if (this._introText.getChildren().length === 0) {
+        const upToDate = new qx.ui.basic.Label(this.tr("All services are up to date to their latest compatible version")).set({
+          font: "text-14"
+        });
+        this._introText.add(upToDate);
+      }
     },
 
     __updateService: function(nodeId, newVersion, button) {
