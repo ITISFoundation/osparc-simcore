@@ -37,10 +37,11 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyBootOpts", {
 
   members: {
     _populateIntroText: function() {
-      const upToDate = new qx.ui.basic.Label(this.tr("All good")).set({
+      const text = this.tr("Here you can select in which mode the services will be started:");
+      const introText = new qx.ui.basic.Label(text).set({
         font: "text-14"
       });
-      this._introText.add(upToDate);
+      this._introText.add(introText);
     },
 
     __updateBootMode: function(nodeId, newBootModeId) {
