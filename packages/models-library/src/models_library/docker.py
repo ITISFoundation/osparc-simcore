@@ -1,12 +1,12 @@
 import re
-from typing import Optional
+from typing import Any, Optional
 
 from models_library.generated_models.docker_rest_api import Task
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.users import UserID
-from pydantic import BaseModel, ConstrainedStr, Field
+from pydantic import BaseModel, ConstrainedStr, Field, root_validator
 
 from .basic_regex import DOCKER_GENERIC_TAG_KEY_RE, DOCKER_LABEL_KEY_REGEX
 
@@ -31,11 +31,21 @@ class SimcoreServiceDockerLabelKeys(BaseModel):
     project_id: ProjectID = Field(..., alias="study_id")
     node_id: NodeID = Field(..., alias="uuid")
 
-    # NOTE: `simcore_user_agent` and `product_name` should become
-    # mandatory once below PR reaches production
+    product_name: ProductName
+    simcore_user_agent: str
+
+    # NOTE: `simcore_user_agent` and `product_name` no longer required
+    # defaults after this PR reaches production. This can be removed
     # https://github.com/ITISFoundation/osparc-simcore/pull/3990
-    product_name: Optional[ProductName] = None
-    simcore_user_agent: Optional[str] = None
+    # related issue https://github.com/ITISFoundation/osparc-simcore/issues/3993
+    @root_validator(pre=True)
+    @classmethod
+    def check_owner_has_access_rights(cls, values: dict[str, Any]) -> dict[str, Any]:
+        if values.get("product_name", None) is None:
+            values["product_name"] = "opsarc"
+        if values.get("simcore_user_agent", None) is None:
+            values["simcore_user_agent"] = ""
+        return values
 
     def to_docker_labels(self) -> dict[str, str]:
         """returns a dictionary of strings as required by docker"""
