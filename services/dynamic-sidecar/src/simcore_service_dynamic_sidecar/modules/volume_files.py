@@ -9,12 +9,8 @@ from typing import Optional, Union
 import aiofiles
 from aiofiles import os as aiofiles_os
 from models_library.volumes import VolumeCategory
-from servicelib.volumes_utils import (
-    AGENT_FILE_NAME,
-    HIDDEN_FILE_NAME,
-    VolumeState,
-    save_volume_state,
-)
+from servicelib.file_constants import AGENT_FILE_NAME, HIDDEN_FILE_NAME
+from servicelib.volumes_utils import VolumeState, save_volume_state
 
 from .mounted_fs import MountedVolumes
 

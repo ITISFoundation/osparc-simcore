@@ -11,7 +11,11 @@ import pytest
 from aiodocker.volumes import DockerVolume
 from pydantic import HttpUrl
 from pytest import LogCaptureFixture
-from servicelib.volumes_utils import AGENT_FILE_NAME, HIDDEN_FILE_NAME
+from servicelib.file_constants import (
+    AGENT_FILE_NAME,
+    HIDDEN_FILE_NAME,
+    KEY_VALUE_FILE_NAME,
+)
 from simcore_service_agent.core.settings import ApplicationSettings
 from simcore_service_agent.modules.volumes_cleanup._s3 import (
     S3Provider,
@@ -78,7 +82,7 @@ def _create_data(folder: Path) -> None:
     for file in {  # pylint:disable=use-sequence-for-iteration
         AGENT_FILE_NAME,
         HIDDEN_FILE_NAME,
-        "key_values.json",
+        KEY_VALUE_FILE_NAME,
         "f1.txt",
         "f2.txt",
         "f3.txt",

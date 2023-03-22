@@ -2,7 +2,7 @@ from typing import Final, Optional
 
 from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import Field, NonNegativeInt, validator
-from servicelib.volumes_utils import AGENT_FILE_NAME, HIDDEN_FILE_NAME
+from servicelib.file_constants import AGENT_FILE_NAME, HIDDEN_FILE_NAME
 from settings_library.base import BaseCustomSettings
 from settings_library.r_clone import S3Provider
 from settings_library.utils_logging import MixinLoggingSettings

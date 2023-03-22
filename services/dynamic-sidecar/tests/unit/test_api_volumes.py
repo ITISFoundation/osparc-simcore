@@ -4,7 +4,8 @@ import pytest
 from fastapi import status
 from fastapi.testclient import TestClient
 from models_library.volumes import VolumeCategory
-from servicelib.volumes_utils import AGENT_FILE_NAME, VolumeState, load_volume_state
+from servicelib.file_constants import AGENT_FILE_NAME
+from servicelib.volumes_utils import VolumeState, load_volume_state
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
 

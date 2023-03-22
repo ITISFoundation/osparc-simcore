@@ -1,47 +1,41 @@
+from datetime import datetime
+
+# PC: this block should be imported via:
+# from models_library.utils.enums import StrAutoEnum
+# from models_library.utils.enums import StrAutoEnum
+from enum import Enum, auto, unique
 from pathlib import Path
-from typing import Final, Optional
 
 import aiofiles
-from pydantic import BaseModel, Field, root_validator
+import arrow
+from pydantic import BaseModel, Field
 
-HIDDEN_FILE_NAME: Final[str] = ".hidden_do_not_remove"
-AGENT_FILE_NAME: Final[str] = ".agent"
+###
+
+
+@unique
+class StrAutoEnum(str, Enum):
+    @staticmethod
+    def _generate_next_value_(name, start, count, last_values):
+        return name.upper()
+
+
+###
+
+
+class VolumeStatus(StrAutoEnum):
+    CONTENT_NEEDS_TO_BE_SAVED = auto()
+    CONTENT_WAS_SAVED = auto()
+    CONTENT_NO_SAVE_REQUIRED = auto()
 
 
 class VolumeState(BaseModel):
-    requires_saving: bool = Field(
-        ...,
-        description=(
-            "when True, the contents of the volume must be saved whe "
-            "closing the service"
-        ),
-    )
-    was_saved: Optional[bool] = Field(
-        None,
-        description=(
-            "When `True`: the sidecar managed to save the contents of the volume. "
-            "When `False`: there was an issue and the contes was not saved, it is "
-            "up to the agent to save the content of the volume. "
-            "When `None`: if requires_saving is False, it makes more sense "
-            "to have this se to None since it will not be used"
-        ),
-    )
+    status: VolumeStatus
+    last_changed: datetime = Field(default_factory=lambda: arrow.utcnow().datetime)
 
-    @root_validator
-    @classmethod
-    def enforce_use_cases(cls, values: dict) -> dict:
-        requires_saving: bool = values["requires_saving"]
-        was_saved: Optional[bool] = values["was_saved"]
-
-        # requires_saving is False was_saved MUST be None
-        if requires_saving is False and was_saved is not None:
-            raise ValueError(f"When {requires_saving=}, was_saved must be None")
-
-        # requires_saving is True was_saved cannot be None
-        if requires_saving is True and was_saved is None:
-            raise ValueError(f"When {requires_saving=}, was_saved must NOT be None")
-
-        return values
+    def __eq__(self, other: "VolumeState") -> bool:
+        # only include status for equality last_changed is not important
+        return self.status == other.status
 
 
 async def load_volume_state(agent_file_path: Path) -> VolumeState:
