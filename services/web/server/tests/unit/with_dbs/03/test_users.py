@@ -21,6 +21,7 @@ from models_library.generics import Envelope
 from psycopg2 import OperationalError
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_tokens import (
     create_token_in_db,
     delete_all_tokens_from_db,
@@ -91,7 +92,7 @@ def client(
 
 
 @pytest.fixture
-async def tokens_db(logged_user, client: TestClient):
+async def tokens_db(logged_user: UserInfoDict, client: TestClient):
     assert client.app
     engine = client.app[APP_DB_ENGINE_KEY]
     yield engine
@@ -99,7 +100,7 @@ async def tokens_db(logged_user, client: TestClient):
 
 
 @pytest.fixture
-async def fake_tokens(logged_user, tokens_db, faker: Faker):
+async def fake_tokens(logged_user: UserInfoDict, tokens_db, faker: Faker):
     all_tokens = []
 
     # TODO: automatically create data from oas!
@@ -134,7 +135,7 @@ PREFIX = f"/{API_VERSION}/me"
     ],
 )
 async def test_get_profile(
-    logged_user: dict,
+    logged_user: UserInfoDict,
     client: TestClient,
     user_role: UserRole,
     expected: type[web.HTTPException],
@@ -181,7 +182,7 @@ async def test_get_profile(
     ],
 )
 async def test_update_profile(
-    logged_user,
+    logged_user: UserInfoDict,
     client: TestClient,
     user_role,
     expected: type[web.HTTPException],
@@ -222,7 +223,7 @@ PREFIX = f"/{API_VERSION}/me/{RESOURCE_NAME}"
 )
 async def test_create_token(
     client: TestClient,
-    logged_user,
+    logged_user: UserInfoDict,
     tokens_db,
     expected: type[web.HTTPException],
 ):
@@ -256,7 +257,7 @@ async def test_create_token(
 )
 async def test_read_token(
     client: TestClient,
-    logged_user,
+    logged_user: UserInfoDict,
     tokens_db,
     fake_tokens,
     expected: type[web.HTTPException],
@@ -294,7 +295,7 @@ async def test_read_token(
 )
 async def test_update_token(
     client: TestClient,
-    logged_user,
+    logged_user: UserInfoDict,
     tokens_db,
     fake_tokens,
     expected: type[web.HTTPException],
@@ -333,7 +334,7 @@ async def test_update_token(
     ],
 )
 async def test_delete_token(
-    client: TestClient, logged_user, tokens_db, fake_tokens, expected
+    client: TestClient, logged_user: UserInfoDict, tokens_db, fake_tokens, expected
 ):
     assert client.app
 
@@ -371,7 +372,7 @@ def mock_failing_connection(mocker: Mock) -> MagicMock:
     ],
 )
 async def test_get_profile_with_failing_db_connection(
-    logged_user,
+    logged_user: UserInfoDict,
     client: TestClient,
     mock_failing_connection: MagicMock,
     expected: type[web.HTTPException],
@@ -407,7 +408,7 @@ async def notification_redis_client(client: TestClient) -> AsyncIterable[Redis]:
 
 @asynccontextmanager
 async def _create_notifications(
-    redis_client: Redis, logged_user: dict[str, Any], count: int
+    redis_client: Redis, logged_user: UserInfoDict, count: int
 ) -> AsyncIterable[list[UserNotification]]:
     user_id = logged_user["id"]
     notification_categories = tuple(NotificationCategory)
@@ -447,7 +448,7 @@ async def _create_notifications(
     ],
 )
 async def test_get_user_notifications(
-    logged_user: dict[str, Any],
+    logged_user: UserInfoDict,
     notification_redis_client: Redis,
     client: TestClient,
     notification_count: int,
@@ -499,7 +500,7 @@ async def test_get_user_notifications(
     ],
 )
 async def test_post_user_notification(
-    logged_user: dict[str, Any],
+    logged_user: UserInfoDict,
     notification_redis_client: Redis,
     client: TestClient,
     notification_dict: dict[str, Any],
@@ -532,7 +533,7 @@ async def test_post_user_notification(
     ],
 )
 async def test_post_user_notification_capped_list_length(
-    logged_user: dict[str, Any],
+    logged_user: UserInfoDict,
     notification_redis_client: Redis,
     client: TestClient,
     notification_count: int,
@@ -577,7 +578,7 @@ async def test_post_user_notification_capped_list_length(
     [1, MAX_NOTIFICATIONS_FOR_USER],
 )
 async def test_update_user_notification_at_correct_index(
-    logged_user: dict[str, Any],
+    logged_user: UserInfoDict,
     notification_redis_client: Redis,
     client: TestClient,
     notification_count: int,
