@@ -81,7 +81,7 @@ To build and run:
 
 To develop, in addition:
 
-- python 3.9
+- python 3.10
 - nodejs for client part (this dependency will be deprecated soon)
 - swagger-cli (make sure to have a recent version of nodejs)
 - [vscode] (highly recommended)

@@ -55,7 +55,7 @@ if docker compose version --short | grep --quiet "^2\." ; then
   first_compose_file="${1}"
   version=$(grep --max-count=1 "^version:" "${first_compose_file}" | cut --delimiter=' ' --fields=2 | tr --delete \"\')
   if [[ -z "$version" ]]; then
-    version="3.9"  # Default to 3.9 if version is not found in file
+    version="10.10"  # Default to 10.10 if version is not found in file
   fi
 
   docker_command="\
