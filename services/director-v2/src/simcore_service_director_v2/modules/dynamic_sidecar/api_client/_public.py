@@ -18,6 +18,7 @@ from servicelib.fastapi.long_running_tasks.client import (
     periodic_task_result,
 )
 from servicelib.utils import logged_gather
+from servicelib.volumes_utils import VolumeStatus
 from simcore_service_director_v2.core.settings import DynamicSidecarSettings
 
 from ....models.schemas.dynamic_services import SchedulerData
@@ -405,14 +406,12 @@ class DynamicSidecarClient:
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
         volume_category: VolumeCategory,
-        requires_saving: bool,
-        was_saved: Optional[bool],
+        volume_status: VolumeStatus,
     ) -> None:
-        await self._thin_client.patch_volumes(
+        await self._thin_client.put_volumes(
             dynamic_sidecar_endpoint,
             volume_category=volume_category,
-            requires_saving=requires_saving,
-            was_saved=was_saved,
+            status=volume_status,
         )
 
 

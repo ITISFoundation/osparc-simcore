@@ -14,6 +14,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx import MockRouter, Route
 from respx.types import SideEffectTypes
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
+from servicelib.volumes_utils import VolumeStatus
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._thin import (
     ThinDynamicSidecarClient,
@@ -246,29 +247,26 @@ async def test_post_containers_networks_detach(
 
 
 @pytest.mark.parametrize("volume_category", VolumeCategory)
-@pytest.mark.parametrize("requires_saving", [True, False])
-@pytest.mark.parametrize("was_saved", [True, False, None])
-async def test_patch_volumes(
+@pytest.mark.parametrize("volume_status", VolumeStatus)
+async def test_put_volumes(
     thin_client: ThinDynamicSidecarClient,
     dynamic_sidecar_endpoint: AnyHttpUrl,
     mock_request: MockRequestType,
     volume_category: str,
-    requires_saving: bool,
-    was_saved: Optional[bool],
+    volume_status: VolumeStatus,
 ) -> None:
     mock_response = Response(status.HTTP_204_NO_CONTENT)
     mock_request(
-        "PATCH",
+        "PUT",
         f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/volumes/{volume_category}",
         mock_response,
         None,
     )
 
-    response = await thin_client.patch_volumes(
+    response = await thin_client.put_volumes(
         dynamic_sidecar_endpoint,
         volume_category=volume_category,
-        requires_saving=requires_saving,
-        was_saved=was_saved,
+        volume_status=volume_status,
     )
     assert_responses(mock_response, response)
 

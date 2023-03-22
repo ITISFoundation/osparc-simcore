@@ -13,6 +13,7 @@ from pydantic import AnyHttpUrl, parse_obj_as
 from pytest import LogCaptureFixture, MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from servicelib.volumes_utils import VolumeStatus
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._errors import (
     ClientHttpError,
@@ -334,25 +335,22 @@ async def test_detach_container_from_network(
 
 
 @pytest.mark.parametrize("volume_category", VolumeCategory)
-@pytest.mark.parametrize("requires_saving", [True, False])
-@pytest.mark.parametrize("was_saved", [True, False, None])
+@pytest.mark.parametrize("volume_status", VolumeStatus)
 async def test_update_volume_state(
     get_patched_client: Callable,
     dynamic_sidecar_endpoint: AnyHttpUrl,
     volume_category: VolumeCategory,
-    requires_saving: bool,
-    was_saved: Optional[bool],
+    volume_status: VolumeStatus,
 ) -> None:
     with get_patched_client(
-        "patch_volumes",
+        "put_volumes",
         return_value=Response(status_code=status.HTTP_204_NO_CONTENT),
     ) as client:
         assert (
             await client.update_volume_state(
                 dynamic_sidecar_endpoint,
                 volume_category=volume_category,
-                requires_saving=requires_saving,
-                was_saved=was_saved,
+                volume_status=volume_status,
             )
             is None
         )

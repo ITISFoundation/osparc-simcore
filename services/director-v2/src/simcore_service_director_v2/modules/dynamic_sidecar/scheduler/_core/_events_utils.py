@@ -19,6 +19,7 @@ from servicelib.fastapi.long_running_tasks.client import (
 )
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from servicelib.utils import logged_gather
+from servicelib.volumes_utils import VolumeStatus
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
@@ -136,8 +137,7 @@ async def service_save_state(
     await dynamic_sidecar_client.update_volume_state(
         scheduler_data.endpoint,
         volume_category=VolumeCategory.STATES,
-        requires_saving=True,
-        was_saved=True,
+        volume_status=VolumeStatus.CONTENT_WAS_SAVED,
     )
 
 
@@ -154,8 +154,7 @@ async def service_push_outputs(
     await dynamic_sidecar_client.update_volume_state(
         scheduler_data.endpoint,
         volume_category=VolumeCategory.OUTPUTS,
-        requires_saving=True,
-        was_saved=True,
+        volume_status=VolumeStatus.CONTENT_WAS_SAVED,
     )
 
 
@@ -418,9 +417,9 @@ async def prepare_services_environment(
     # update if volume requires saving
     def _get_state_params(can_save: Optional[bool]) -> dict[str, Optional[bool]]:
         return (
-            {"requires_saving": True, "was_saved": False}
+            {"volume_status": VolumeStatus.CONTENT_WAS_SAVED}
             if can_save
-            else {"requires_saving": False, "was_saved": None}
+            else {"volume_status": VolumeStatus.CONTENT_NO_SAVE_REQUIRED}
         )
 
     update_volume_state_params = _get_state_params(
