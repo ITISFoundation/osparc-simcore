@@ -2,7 +2,8 @@ import logging
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
-from pydantic import EmailStr, SecretStr, validator
+from models_library.emails import LowerCaseEmailStr
+from pydantic import SecretStr, validator
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
@@ -128,7 +129,7 @@ async def submit_request_to_reset_password(request: web.Request):
 
 
 class ChangeEmailBody(InputSchema):
-    email: EmailStr
+    email: LowerCaseEmailStr
 
 
 @routes.post(f"/{API_VTAG}/auth/change-email", name="auth_change_email")

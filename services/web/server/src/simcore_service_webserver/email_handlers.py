@@ -2,7 +2,8 @@ import logging
 from typing import Any, Literal, Optional
 
 from aiohttp import web
-from pydantic import BaseModel, EmailStr, Field
+from models_library.emails import LowerCaseEmailStr
+from pydantic import BaseModel, Field
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 
 from ._meta import API_VTAG
@@ -26,8 +27,8 @@ logger = logging.getLogger(__name__)
 
 
 class TestEmail(BaseModel):
-    from_: Optional[EmailStr] = Field(None, description="Email sender")
-    to: EmailStr = Field(..., description="Email receiver")
+    from_: Optional[LowerCaseEmailStr] = Field(None, description="Email sender")
+    to: LowerCaseEmailStr = Field(..., description="Email receiver")
     template_name: Literal[
         "change_email_email.jinja2",
         "new_2fa_code.jinja2",

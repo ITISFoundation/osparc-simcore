@@ -6,6 +6,7 @@
 --constraint ./constraints.txt
 
 # intra-repo required dependencies
+--requirement ../../../packages/models-library/requirements/_base.in
 --requirement ../../../packages/settings-library/requirements/_base.in
 # service-library[fastapi]
 --requirement ../../../packages/service-library/requirements/_base.in
@@ -15,6 +16,5 @@
 cryptography~=39.0.0 # security
 fastapi
 packaging
-pydantic[email]
 typer[all]
 uvicorn[standard]
