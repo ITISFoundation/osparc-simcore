@@ -27,7 +27,7 @@ RUN pip install \
   pyupgrade
 
 ENTRYPOINT ["pyupgrade", \
-  "--py39-plus" ]
+  "--py310-plus" ]
 EOF
 }
 
