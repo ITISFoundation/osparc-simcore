@@ -15,7 +15,16 @@ class VolumeCategory(StrAutoEnum):
     when the volume is removed.
     """
 
+    # contains data relative to output ports
     OUTPUTS = auto()
+
+    # contains data relative to input ports
     INPUTS = auto()
+
+    # contains files which represent the state of the service
+    # usually the user's workspace
     STATES = auto()
+
+    # contains dynamic-sidecar data required to maintain state
+    # between restarts
     SHARED_STORE = auto()
