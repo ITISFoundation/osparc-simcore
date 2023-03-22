@@ -1,4 +1,5 @@
 import re
+import warnings
 from typing import Any, Optional
 
 from models_library.generated_models.docker_rest_api import Task
@@ -34,13 +35,19 @@ class SimcoreServiceDockerLabelKeys(BaseModel):
     product_name: ProductName
     simcore_user_agent: str
 
-    # NOTE: `simcore_user_agent` and `product_name` no longer required
-    # defaults after this PR reaches production. This can be removed
-    # https://github.com/ITISFoundation/osparc-simcore/pull/3990
-    # related issue https://github.com/ITISFoundation/osparc-simcore/issues/3993
     @root_validator(pre=True)
     @classmethod
-    def check_owner_has_access_rights(cls, values: dict[str, Any]) -> dict[str, Any]:
+    def ensure_defaults(cls, values: dict[str, Any]) -> dict[str, Any]:
+        warnings.warn(
+            (
+                "Once https://github.com/ITISFoundation/osparc-simcore/pull/3990 "
+                "reaches production this entire root_validator function "
+                "can be safely removed. Please check "
+                "https://github.com/ITISFoundation/osparc-simcore/issues/3996"
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
         if values.get("product_name", None) is None:
             values["product_name"] = "opsarc"
         if values.get("simcore_user_agent", None) is None:
