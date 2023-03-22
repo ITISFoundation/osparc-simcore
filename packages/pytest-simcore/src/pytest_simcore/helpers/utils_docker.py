@@ -98,6 +98,7 @@ def get_service_published_port(
 
 def run_docker_compose_config(
     docker_compose_paths: Union[list[Path], Path],
+    scripts_dir: Path,
     project_dir: Path,
     env_file_path: Path,
     destination_path: Optional[Path] = None,
@@ -131,26 +132,26 @@ def run_docker_compose_config(
     # SEE https://docs.docker.com/compose/reference/
 
     global_options = [
-        "--project-directory",
+        "-p",
         str(project_dir),  # Specify an alternate working directory
+    ]
+    # https://docs.docker.com/compose/environment-variables/#using-the---env-file--option
+    global_options += [
+        "-e",
+        str(env_file_path),  # Custom environment variables
     ]
 
     # Specify an alternate compose files
     #  - When you use multiple Compose files, all paths in the files are relative to the first configuration file specified with -f.
     #    You can use the --project-directory option to override this base path.
     for docker_compose_path in docker_compose_paths:
-        global_options += ["--file", os.path.relpath(docker_compose_path, project_dir)]
-
-    # https://docs.docker.com/compose/environment-variables/#using-the---env-file--option
-    global_options += [
-        "--env-file",
-        str(env_file_path),  # Custom environment variables
-    ]
+        global_options += [os.path.relpath(docker_compose_path, project_dir)]
 
     # SEE https://docs.docker.com/compose/reference/config/
-    cmd_options = []
+    docker_compose_path = scripts_dir / "docker" / "docker-compose-config.bash"
+    assert docker_compose_path.exists()
 
-    cmd = ["docker-compose"] + global_options + ["config"] + cmd_options
+    cmd = [f"{docker_compose_path}"] + global_options
     print(" ".join(cmd))
 
     process = subprocess.run(

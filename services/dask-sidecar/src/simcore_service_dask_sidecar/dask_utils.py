@@ -3,7 +3,7 @@ import contextlib
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, AsyncIterator, Optional, cast
+from typing import AsyncIterator, Final, Optional
 
 import distributed
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
@@ -16,8 +16,6 @@ from dask_task_models_library.container_tasks.events import (
 from dask_task_models_library.container_tasks.io import TaskCancelEventName
 from distributed.worker import get_worker
 from distributed.worker_state_machine import TaskState
-
-from .boot_mode import BootMode
 
 
 def create_dask_worker_logger(name: str) -> logging.Logger:
@@ -52,21 +50,15 @@ def is_current_task_aborted() -> bool:
     return False
 
 
-def get_current_task_boot_mode() -> BootMode:
-    task: Optional[TaskState] = _get_current_task_state()
-    if task and task.resource_restrictions:
-        if task.resource_restrictions.get("MPI", 0) > 0:
-            return BootMode.MPI
-        if task.resource_restrictions.get("GPU", 0) > 0:
-            return BootMode.GPU
-    return BootMode.CPU
+_DEFAULT_MAX_RESOURCES: Final[dict[str, float]] = {"CPU": 1, "RAM": 1024**3}
 
 
-def get_current_task_resources() -> dict[str, Any]:
+def get_current_task_resources() -> dict[str, float]:
+    current_task_resources = _DEFAULT_MAX_RESOURCES
     if task := _get_current_task_state():
         if task_resources := task.resource_restrictions:
-            return cast(dict[str, Any], task_resources)
-    return {}
+            current_task_resources.update(task_resources)
+    return current_task_resources
 
 
 @dataclass()

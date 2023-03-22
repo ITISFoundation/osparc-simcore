@@ -46,10 +46,14 @@ def cluster_id(faker: Faker) -> ClusterID:
 
 
 async def test_create_pipeline(
-    mocked_director_v2, client, user_id: UserID, project_id: ProjectID
+    mocked_director_v2,
+    client,
+    user_id: UserID,
+    project_id: ProjectID,
+    osparc_product_name: str,
 ):
     task_out = await director_v2_api.create_or_update_pipeline(
-        client.app, user_id, project_id
+        client.app, user_id, project_id, osparc_product_name
     )
     assert task_out
     assert isinstance(task_out, dict)

@@ -5,7 +5,7 @@
 import logging
 import urllib.parse
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Any, Optional, cast
 
 import httpx
 import yarl
@@ -13,7 +13,12 @@ from fastapi import FastAPI, HTTPException, Request, Response
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
-from models_library.services import ServiceDockerData, ServiceKeyVersion
+from models_library.services import (
+    ServiceDockerData,
+    ServiceKey,
+    ServiceKeyVersion,
+    ServiceVersion,
+)
 from models_library.users import UserID
 
 # Module's business logic ---------------------------------------------
@@ -105,14 +110,17 @@ class DirectorV0Client:
             "GET", f"/services/{urllib.parse.quote_plus(service.key)}/{service.version}"
         )
         if resp.status_code == status.HTTP_200_OK:
-            return ServiceDockerData.parse_obj(unenvelope_or_raise_error(resp)[0])
+            data = cast(list[dict[str, Any]], unenvelope_or_raise_error(resp))
+            return ServiceDockerData.parse_obj(data[0])
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     @log_decorator(logger=logger)
-    async def get_service_extras(self, service: ServiceKeyVersion) -> ServiceExtras:
+    async def get_service_extras(
+        self, service_key: ServiceKey, service_version: ServiceVersion
+    ) -> ServiceExtras:
         resp = await self.request(
             "GET",
-            f"/service_extras/{urllib.parse.quote_plus(service.key)}/{service.version}",
+            f"/service_extras/{urllib.parse.quote_plus(service_key)}/{service_version}",
         )
         if resp.status_code == status.HTTP_200_OK:
             return ServiceExtras.parse_obj(unenvelope_or_raise_error(resp))
@@ -145,7 +153,7 @@ class DirectorV0Client:
     @log_decorator(logger=logger)
     async def get_running_services(
         self, user_id: Optional[UserID] = None, project_id: Optional[ProjectID] = None
-    ) -> List[RunningDynamicServiceDetails]:
+    ) -> list[RunningDynamicServiceDetails]:
         query_params = {}
         if user_id is not None:
             query_params["user_id"] = f"{user_id}"
@@ -159,6 +167,6 @@ class DirectorV0Client:
         if resp.status_code == status.HTTP_200_OK:
             return [
                 RunningDynamicServiceDetails(**x)
-                for x in unenvelope_or_raise_error(resp)
+                for x in cast(list[dict[str, Any]], unenvelope_or_raise_error(resp))
             ]
         raise HTTPException(status_code=resp.status_code, detail=resp.content)

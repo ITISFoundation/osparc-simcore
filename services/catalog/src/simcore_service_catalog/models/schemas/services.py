@@ -1,9 +1,10 @@
 from typing import Optional
 
+from models_library.emails import LowerCaseEmailStr
 from models_library.services import ServiceDockerData, ServiceMetaData
 from models_library.services_access import ServiceAccessRights
 from models_library.services_resources import ServiceResourcesDict
-from pydantic import EmailStr, Extra
+from pydantic import Extra
 from pydantic.main import BaseModel
 
 
@@ -63,7 +64,7 @@ class ServiceUpdate(ServiceMetaData, ServiceAccessRights):
 class ServiceGet(
     ServiceDockerData, ServiceAccessRights, ServiceMetaData
 ):  # pylint: disable=too-many-ancestors
-    owner: Optional[EmailStr]
+    owner: Optional[LowerCaseEmailStr]
 
     class Config:
         allow_population_by_field_name = True

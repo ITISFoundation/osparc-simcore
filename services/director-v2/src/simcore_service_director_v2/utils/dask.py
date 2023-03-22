@@ -284,7 +284,6 @@ async def compute_service_log_file_upload_link(
     node_id: NodeID,
     file_link_type: FileLinkType,
 ) -> AnyUrl:
-
     value_links = await port_utils.get_upload_links_from_storage(
         user_id=user_id,
         project_id=f"{project_id}",
@@ -404,7 +403,9 @@ def from_node_reqs_to_dask_resources(
 ) -> dict[str, Union[int, float]]:
     """Dask resources are set such as {"CPU": X.X, "GPU": Y.Y, "RAM": INT}"""
     dask_resources = node_reqs.dict(
-        exclude_unset=True, by_alias=True, exclude_none=True
+        exclude_unset=True,
+        by_alias=True,
+        exclude_none=True,
     )
     logger.debug("transformed to dask resources: %s", dask_resources)
     return dask_resources
