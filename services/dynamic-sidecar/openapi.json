@@ -660,12 +660,12 @@
       }
     },
     "/v1/volumes/{id}": {
-      "patch": {
+      "put": {
         "tags": [
           "volumes"
         ],
         "summary": "Updates the state of the volume",
-        "operationId": "patch_volume_state_v1_volumes__id__patch",
+        "operationId": "patch_volume_state_v1_volumes__id__put",
         "parameters": [
           {
             "required": true,
@@ -680,7 +680,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PatchVolumeItem"
+                "$ref": "#/components/schemas/PutVolumeItem"
               }
             }
           },
@@ -812,20 +812,15 @@
           }
         }
       },
-      "PatchVolumeItem": {
-        "title": "PatchVolumeItem",
+      "PutVolumeItem": {
+        "title": "PutVolumeItem",
         "required": [
-          "requires_saving"
+          "status"
         ],
         "type": "object",
         "properties": {
-          "requires_saving": {
-            "title": "Requires Saving",
-            "type": "boolean"
-          },
-          "was_saved": {
-            "title": "Was Saved",
-            "type": "boolean"
+          "status": {
+            "$ref": "#/components/schemas/VolumeStatus"
           }
         }
       },
@@ -995,6 +990,16 @@
           "INPUTS",
           "STATES",
           "SHARED_STORE"
+        ],
+        "type": "string",
+        "description": "An enumeration."
+      },
+      "VolumeStatus": {
+        "title": "VolumeStatus",
+        "enum": [
+          "CONTENT_NEEDS_TO_BE_SAVED",
+          "CONTENT_WAS_SAVED",
+          "CONTENT_NO_SAVE_REQUIRED"
         ],
         "type": "string",
         "description": "An enumeration."

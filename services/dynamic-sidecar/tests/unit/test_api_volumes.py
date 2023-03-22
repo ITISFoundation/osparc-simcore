@@ -5,7 +5,7 @@ from fastapi import status
 from fastapi.testclient import TestClient
 from models_library.volumes import VolumeCategory
 from servicelib.file_constants import AGENT_FILE_NAME
-from servicelib.volumes_utils import VolumeState, load_volume_state
+from servicelib.volumes_utils import VolumeState, VolumeStatus, load_volume_state
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
 
@@ -23,18 +23,18 @@ async def test_volumes_state_saved_ok(test_client: TestClient, volume_category: 
 
     for path in volumes_path_map[volume_category]:
         assert await load_volume_state(path / AGENT_FILE_NAME) == VolumeState(
-            requires_saving=True, was_saved=False
+            status=VolumeStatus.CONTENT_NEEDS_TO_BE_SAVED
         )
 
-    response = await test_client.patch(
+    response = await test_client.put(
         f"/{API_VTAG}/volumes/{volume_category}",
-        json={"requires_saving": True, "was_saved": True},
+        json={"status": VolumeStatus.CONTENT_WAS_SAVED},
     )
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
 
     for path in volumes_path_map[volume_category]:
         assert await load_volume_state(path / AGENT_FILE_NAME) == VolumeState(
-            requires_saving=True, was_saved=True
+            status=VolumeStatus.CONTENT_WAS_SAVED
         )
 
 
@@ -42,9 +42,9 @@ async def test_volumes_state_saved_ok(test_client: TestClient, volume_category: 
 async def test_volumes_state_saved_error(
     test_client: TestClient, invalid_volume_category: str
 ):
-    response = await test_client.patch(
+    response = await test_client.put(
         f"/{API_VTAG}/volumes/{invalid_volume_category}",
-        json={"requires_saving": True, "was_saved": True},
+        json={"status": VolumeStatus.CONTENT_WAS_SAVED},
     )
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
     json_response = response.json()

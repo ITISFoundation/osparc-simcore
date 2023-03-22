@@ -4,13 +4,13 @@ import stat
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
-from typing import Optional, Union
+from typing import Union
 
 import aiofiles
 from aiofiles import os as aiofiles_os
 from models_library.volumes import VolumeCategory
 from servicelib.file_constants import AGENT_FILE_NAME, HIDDEN_FILE_NAME
-from servicelib.volumes_utils import VolumeState, save_volume_state
+from servicelib.volumes_utils import VolumeState, VolumeStatus, save_volume_state
 
 from .mounted_fs import MountedVolumes
 
@@ -107,7 +107,7 @@ async def create_agent_file_on_all_volumes(mounted_volumes: MountedVolumes) -> N
 
         await save_volume_state(
             agent_file_path=agent_file_path,
-            volume_state=VolumeState(requires_saving=False),
+            volume_state=VolumeState(status=VolumeStatus.CONTENT_NO_SAVE_REQUIRED),
         )
 
     # volumes which require saving
@@ -117,15 +117,14 @@ async def create_agent_file_on_all_volumes(mounted_volumes: MountedVolumes) -> N
 
         await save_volume_state(
             agent_file_path=agent_file_path,
-            volume_state=VolumeState(requires_saving=True, was_saved=False),
+            volume_state=VolumeState(status=VolumeStatus.CONTENT_NEEDS_TO_BE_SAVED),
         )
 
 
 async def set_volume_state(
     mounted_volumes: MountedVolumes,
     volume_category: VolumeCategory,
-    requires_saving: bool,
-    was_saved: Optional[bool],
+    status: VolumeStatus,
 ) -> None:
     volumes_local_paths = _MountedVolumesLocalPaths.from_mounted_volumes(
         mounted_volumes
@@ -136,7 +135,5 @@ async def set_volume_state(
     for volume_path in volume_paths:
         await save_volume_state(
             agent_file_path=volume_path / AGENT_FILE_NAME,
-            volume_state=VolumeState(
-                requires_saving=requires_saving, was_saved=was_saved
-            ),
+            volume_state=VolumeState(status=status),
         )
