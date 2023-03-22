@@ -15,6 +15,7 @@ from pydantic import AnyUrl, parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.rest_responses import create_data_response, unwrap_envelope
 from servicelib.aiohttp.rest_utils import extract_and_validate
+from servicelib.common_headers import X_FORWARDED_PROTO
 from servicelib.request_keys import RQT_USERID_KEY
 from yarl import URL
 
@@ -86,7 +87,7 @@ def _unresolve_storage_url(request: web.Request, storage_url: AnyUrl) -> AnyUrl:
     prefix = f"/{_get_storage_vtag(request.app)}"
     converted_url = request.url.with_path(
         f"/v0/storage{storage_url.path.removeprefix(prefix)}"
-    ).with_scheme(request.headers.get("X-Forwarded-Proto", request.url.scheme))
+    ).with_scheme(request.headers.get(X_FORWARDED_PROTO, request.url.scheme))
     return parse_obj_as(AnyUrl, f"{converted_url}")
 
 
