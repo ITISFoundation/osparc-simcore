@@ -46,7 +46,7 @@ SETUP = dict(
     description=DESCRIPTION,
     long_description=README,
     license="MIT license",
-    python_requires="~=3.9",
+    python_requires="~=3.10",
     packages=find_packages(where="src"),
     package_dir={
         "": "src",
