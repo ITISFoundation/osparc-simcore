@@ -15,12 +15,12 @@ from . import users_api
 from ._meta import API_VTAG
 from .login.decorators import RQT_USERID_KEY, login_required
 from .redis import get_redis_user_notifications_client
-from .redis_user_notifications import (
+from .security_decorators import permission_required
+from .user_notifications import (
     MAX_NOTIFICATIONS_FOR_USER,
     UserNotification,
     get_notification_key,
 )
-from .security_decorators import permission_required
 from .users_exceptions import TokenNotFoundError, UserNotFoundError
 from .users_models import ProfileGet, ProfileUpdate
 
