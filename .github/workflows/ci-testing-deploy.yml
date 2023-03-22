@@ -188,7 +188,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -230,7 +230,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -274,7 +274,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -316,7 +316,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -358,7 +358,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -400,7 +400,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -447,7 +447,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -486,7 +486,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -528,7 +528,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -573,7 +573,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -621,7 +621,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -674,7 +674,7 @@ jobs:
         # KEEP ubuntu 20.04, else no python 3.6
         python: [3.6]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -716,7 +716,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -764,7 +764,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -809,7 +809,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -853,7 +853,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -907,7 +907,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -952,7 +952,7 @@ jobs:
       matrix:
         node: [14]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -993,7 +993,7 @@ jobs:
       matrix:
         python: ["3.9", "3.10", "3.11"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1032,7 +1032,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1077,7 +1077,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1122,7 +1122,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1164,7 +1164,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1206,7 +1206,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1248,7 +1248,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1290,7 +1290,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1376,7 +1376,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1434,7 +1434,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1494,7 +1494,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1554,7 +1554,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1617,7 +1617,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1692,7 +1692,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1775,7 +1775,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1832,7 +1832,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1897,7 +1897,7 @@ jobs:
         python: ["3.9"]
         node: [14]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1973,7 +1973,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -2035,7 +2035,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-22.04]
-        docker_buildx: [v0.10.2]
+        docker_buildx: [v0.10.3]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
