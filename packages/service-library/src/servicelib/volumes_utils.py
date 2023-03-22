@@ -1,26 +1,12 @@
 from datetime import datetime
-
-# PC: this block should be imported via:
-# from models_library.utils.enums import StrAutoEnum
-# from models_library.utils.enums import StrAutoEnum
-from enum import Enum, auto, unique
+from enum import auto
 from pathlib import Path
 
 import aiofiles
 import arrow
 from pydantic import BaseModel, Field
 
-###
-
-
-@unique
-class StrAutoEnum(str, Enum):
-    @staticmethod
-    def _generate_next_value_(name, start, count, last_values):
-        return name.upper()
-
-
-###
+from .enum_utils import StrAutoEnum
 
 
 class VolumeStatus(StrAutoEnum):
