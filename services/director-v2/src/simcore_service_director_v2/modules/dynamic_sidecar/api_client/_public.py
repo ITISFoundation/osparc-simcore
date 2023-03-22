@@ -411,7 +411,7 @@ class DynamicSidecarClient:
         await self._thin_client.put_volumes(
             dynamic_sidecar_endpoint,
             volume_category=volume_category,
-            status=volume_status,
+            volume_status=volume_status,
         )
 
 
