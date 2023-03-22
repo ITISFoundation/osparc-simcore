@@ -18,10 +18,10 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from pydantic.types import NonNegativeFloat, PositiveInt
-from servicelib.aiohttp.monitoring import SIMCORE_USER_AGENT_HEADER
 from servicelib.common_headers import (
     X_DYNAMIC_SIDECAR_REQUEST_DNS,
     X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
+    X_SIMCORE_USER_AGENT,
 )
 from servicelib.logging_utils import log_decorator
 from servicelib.progress_bar import ProgressBarData
@@ -113,7 +113,7 @@ async def run_dynamic_service(
     headers = {
         X_DYNAMIC_SIDECAR_REQUEST_DNS: request_dns,
         X_DYNAMIC_SIDECAR_REQUEST_SCHEME: request_scheme,
-        SIMCORE_USER_AGENT_HEADER: request_simcore_user_agent,
+        X_SIMCORE_USER_AGENT: request_simcore_user_agent,
     }
 
     settings: DirectorV2Settings = get_plugin_settings(app)

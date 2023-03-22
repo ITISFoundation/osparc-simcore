@@ -21,6 +21,7 @@ from prometheus_client import (
 from prometheus_client.registry import CollectorRegistry
 from servicelib.aiohttp.typing_extension import Handler
 
+from ..common_headers import X_SIMCORE_USER_AGENT
 from ..logging_utils import log_catch
 
 log = logging.getLogger(__name__)
@@ -112,7 +113,6 @@ kPROCESS_COLLECTOR = f"{__name__}.collector_process"
 kPLATFORM_COLLECTOR = f"{__name__}.collector_platform"
 kGC_COLLECTOR = f"{__name__}.collector_gc"
 
-SIMCORE_USER_AGENT_HEADER: Final[str] = "X-Simcore-User-Agent"
 UNDEFINED_REGULAR_USER_AGENT: Final[str] = "undefined"
 
 
@@ -168,16 +168,12 @@ def middleware_factory(
                 app_name,
                 request.method,
                 canonical_endpoint,
-                request.headers.get(
-                    SIMCORE_USER_AGENT_HEADER, UNDEFINED_REGULAR_USER_AGENT
-                ),
+                request.headers.get(X_SIMCORE_USER_AGENT, UNDEFINED_REGULAR_USER_AGENT),
             ).track_inprogress(), response_summary.labels(
                 app_name,
                 request.method,
                 canonical_endpoint,
-                request.headers.get(
-                    SIMCORE_USER_AGENT_HEADER, UNDEFINED_REGULAR_USER_AGENT
-                ),
+                request.headers.get(X_SIMCORE_USER_AGENT, UNDEFINED_REGULAR_USER_AGENT),
             ).time():
                 resp = await handler(request)
 
@@ -213,9 +209,7 @@ def middleware_factory(
                 request.method,
                 canonical_endpoint,
                 resp.status,
-                request.headers.get(
-                    SIMCORE_USER_AGENT_HEADER, UNDEFINED_REGULAR_USER_AGENT
-                ),
+                request.headers.get(X_SIMCORE_USER_AGENT, UNDEFINED_REGULAR_USER_AGENT),
             ).inc()
 
             if exit_middleware_cb:

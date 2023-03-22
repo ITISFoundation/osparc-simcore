@@ -23,6 +23,7 @@ from respx import MockRouter
 from servicelib.common_headers import (
     X_DYNAMIC_SIDECAR_REQUEST_DNS,
     X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
+    X_SIMCORE_USER_AGENT,
 )
 from simcore_service_director_v2.models.domains.dynamic_services import (
     DynamicServiceCreate,
@@ -78,6 +79,7 @@ def dynamic_sidecar_headers() -> dict[str, str]:
     return {
         X_DYNAMIC_SIDECAR_REQUEST_DNS: "",
         X_DYNAMIC_SIDECAR_REQUEST_SCHEME: "",
+        X_SIMCORE_USER_AGENT: "",
     }
 
 
