@@ -3,7 +3,8 @@ from typing import Literal, Optional
 from uuid import UUID
 
 from models_library.basic_types import IdInt
-from pydantic import BaseModel, EmailStr, Field, validator
+from models_library.emails import LowerCaseEmailStr
+from pydantic import BaseModel, Field, validator
 from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.models.users import UserRole
 
@@ -62,7 +63,7 @@ class ProfileUpdate(_ProfileCommon):
 
 class ProfileGet(_ProfileCommon):
     id: IdInt
-    login: EmailStr
+    login: LowerCaseEmailStr
     role: Literal["Anonymous", "Guest", "User", "Tester", "Admin"]
     groups: Optional[AllUsersGroups] = None
     gravatar_id: Optional[str] = None
