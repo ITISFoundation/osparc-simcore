@@ -992,7 +992,7 @@
           "SHARED_STORE"
         ],
         "type": "string",
-        "description": "An enumeration."
+        "description": "These uniquely identify volumes which are mounted by\nthe dynamic-sidecar and user services.\n\nThis is primarily used to keep track of the status of\neach individual volume on the volumes.\n\nThe status is ingested by the agent and processed\nwhen the volume is removed."
       },
       "VolumeStatus": {
         "title": "VolumeStatus",
