@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-ARG PYTHON_VERSION="3.9.12"
+ARG PYTHON_VERSION="3.10.10"
 FROM --platform=${TARGETPLATFORM} python:${PYTHON_VERSION}-slim-buster as base
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
