@@ -8,7 +8,8 @@ from models_library.users import UserID
 from models_library.utils.enums import StrAutoEnum
 from pydantic import BaseModel, NonNegativeInt, validator
 
-MAX_NOTIFICATIONS_FOR_USER: Final[NonNegativeInt] = 10
+MAX_NOTIFICATIONS_FOR_USER_TO_SHOW: Final[NonNegativeInt] = 10
+MAX_NOTIFICATIONS_FOR_USER_TO_KEEP: Final[NonNegativeInt] = 100
 
 
 def get_notification_key(user_id: UserID) -> str:
@@ -53,9 +54,9 @@ class UserNotification(BaseModel):
         schema_extra = {
             "examples": [
                 {
-                    "id": "123",
+                    "id": "3fb96d89-ff5d-4d27-b5aa-d20d46e20eb8",
                     "user_id": "1",
-                    "category": "new_organization",
+                    "category": "NEW_ORGANIZATION",
                     "actionable_path": "organization/40",
                     "title": "New organization",
                     "text": "You're now member of a new Organization",
@@ -63,7 +64,7 @@ class UserNotification(BaseModel):
                     "read": True,
                 },
                 {
-                    "id": "456",
+                    "id": "ba64ffce-c58c-4382-aad6-96a7787251d6",
                     "user_id": "1",
                     "category": "STUDY_SHARED",
                     "actionable_path": "study/27edd65c-b360-11ed-93d7-02420a000014",
@@ -73,7 +74,7 @@ class UserNotification(BaseModel):
                     "read": False,
                 },
                 {
-                    "id": "789",
+                    "id": "390053c9-3931-40e1-839f-585268f6fd3c",
                     "user_id": "1",
                     "category": "TEMPLATE_SHARED",
                     "actionable_path": "template/f60477b6-a07e-11ed-8d29-02420a00002d",

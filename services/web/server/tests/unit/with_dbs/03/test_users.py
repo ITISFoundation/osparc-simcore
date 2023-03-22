@@ -43,7 +43,8 @@ from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.user_notifications import (
-    MAX_NOTIFICATIONS_FOR_USER,
+    MAX_NOTIFICATIONS_FOR_USER_TO_KEEP,
+    MAX_NOTIFICATIONS_FOR_USER_TO_SHOW,
     NotificationCategory,
     UserNotification,
     get_notification_key,
@@ -442,9 +443,9 @@ async def _create_notifications(
     "notification_count",
     [
         0,
-        MAX_NOTIFICATIONS_FOR_USER - 1,
-        MAX_NOTIFICATIONS_FOR_USER,
-        MAX_NOTIFICATIONS_FOR_USER + 1,
+        MAX_NOTIFICATIONS_FOR_USER_TO_SHOW - 1,
+        MAX_NOTIFICATIONS_FOR_USER_TO_SHOW,
+        MAX_NOTIFICATIONS_FOR_USER_TO_SHOW + 1,
     ],
 )
 async def test_get_user_notifications(
@@ -463,9 +464,9 @@ async def test_get_user_notifications(
         json_response = await response.json()
 
         result = parse_obj_as(list[UserNotification], json_response["data"])
-        assert len(result) <= MAX_NOTIFICATIONS_FOR_USER
+        assert len(result) <= MAX_NOTIFICATIONS_FOR_USER_TO_SHOW
         assert result == list(
-            reversed(created_notifications[:MAX_NOTIFICATIONS_FOR_USER])
+            reversed(created_notifications[:MAX_NOTIFICATIONS_FOR_USER_TO_SHOW])
         )
 
 
@@ -508,7 +509,7 @@ async def test_post_user_notification(
     url = client.app.router["post_user_notification"].url_for()
     assert str(url) == "/v0/me/notifications"
     resp = await client.post(url, json=notification_dict)
-    assert resp.status == web.HTTPNoContent.status_code
+    assert resp.status == web.HTTPNoContent.status_code, await resp.text()
 
     user_id = logged_user["id"]
     user_notifications = await _get_user_notifications(
@@ -526,10 +527,10 @@ async def test_post_user_notification(
     "notification_count",
     [
         0,
-        MAX_NOTIFICATIONS_FOR_USER - 1,
-        MAX_NOTIFICATIONS_FOR_USER,
-        MAX_NOTIFICATIONS_FOR_USER + 1,
-        MAX_NOTIFICATIONS_FOR_USER * 10,
+        MAX_NOTIFICATIONS_FOR_USER_TO_KEEP - 1,
+        MAX_NOTIFICATIONS_FOR_USER_TO_KEEP,
+        MAX_NOTIFICATIONS_FOR_USER_TO_KEEP + 1,
+        MAX_NOTIFICATIONS_FOR_USER_TO_KEEP * 10,
     ],
 )
 async def test_post_user_notification_capped_list_length(
@@ -569,13 +570,13 @@ async def test_post_user_notification_capped_list_length(
     user_notifications = await _get_user_notifications(
         notification_redis_client, user_id
     )
-    assert len(user_notifications) <= MAX_NOTIFICATIONS_FOR_USER
+    assert len(user_notifications) <= MAX_NOTIFICATIONS_FOR_USER_TO_KEEP
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 @pytest.mark.parametrize(
     "notification_count",
-    [1, MAX_NOTIFICATIONS_FOR_USER],
+    [1, MAX_NOTIFICATIONS_FOR_USER_TO_SHOW, MAX_NOTIFICATIONS_FOR_USER_TO_SHOW + 1],
 )
 async def test_update_user_notification_at_correct_index(
     logged_user: UserInfoDict,

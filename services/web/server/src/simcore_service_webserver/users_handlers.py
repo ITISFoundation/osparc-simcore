@@ -17,7 +17,8 @@ from .login.decorators import RQT_USERID_KEY, login_required
 from .redis import get_redis_user_notifications_client
 from .security_decorators import permission_required
 from .user_notifications import (
-    MAX_NOTIFICATIONS_FOR_USER,
+    MAX_NOTIFICATIONS_FOR_USER_TO_KEEP,
+    MAX_NOTIFICATIONS_FOR_USER_TO_SHOW,
     UserNotification,
     get_notification_key,
 )
@@ -128,12 +129,10 @@ async def _get_user_notifications(
     redis_client: aioredis.Redis, user_id: int
 ) -> list[UserNotification]:
     """returns a list of notifications where the latest notification is at index 0"""
-    return [
-        UserNotification.parse_raw(x)
-        for x in await redis_client.lrange(
-            get_notification_key(user_id), -1 * MAX_NOTIFICATIONS_FOR_USER, -1
-        )
-    ]
+    raw_notifications: list[str] = await redis_client.lrange(
+        get_notification_key(user_id), -1 * MAX_NOTIFICATIONS_FOR_USER_TO_SHOW, -1
+    )
+    return [UserNotification.parse_raw(x) for x in raw_notifications]
 
 
 class UserNotificationsGet(BaseModel):
@@ -159,8 +158,8 @@ async def post_user_notification(request: web.Request):
 
     # insert at the head of the list and discard extra notifications
     async with redis_client.pipeline(transaction=True) as pipe:
-        pipe.lpush(key, json.dumps(notification_data))
-        pipe.ltrim(key, 0, MAX_NOTIFICATIONS_FOR_USER - 1)
+        pipe.lpush(key, user_notification.json())
+        pipe.ltrim(key, 0, MAX_NOTIFICATIONS_FOR_USER_TO_KEEP - 1)
         await pipe.execute()
 
     return web.json_response(status=web.HTTPNoContent.status_code)

@@ -59,6 +59,30 @@ async def test_get_notification_key(user_id: UserID):
             },
             id="a_new_id_is_alway_recreated",
         ),
+        pytest.param(
+            {
+                "user_id": "1",
+                "category": "NEW_ORGANIZATION",
+                "actionable_path": "organization/40",
+                "title": "New organization",
+                "text": "You're now member of a new Organization",
+                "date": "2023-02-23T16:23:13.122Z",
+                "id": "some_id",
+            },
+            id="category_from_string",
+        ),
+        pytest.param(
+            {
+                "user_id": "1",
+                "category": "NEW_ORGANIZATION",
+                "actionable_path": "organization/40",
+                "title": "New organization",
+                "text": "You're now member of a new Organization",
+                "date": "2023-02-23T16:23:13.122Z",
+                "id": "some_id",
+            },
+            id="category_from_lower_case_string",
+        ),
     ],
 )
 async def test_user_notification_crate_from_request_data(request_data: dict[str, Any]):
