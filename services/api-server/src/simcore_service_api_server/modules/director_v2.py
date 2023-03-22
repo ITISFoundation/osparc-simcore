@@ -102,7 +102,10 @@ class DirectorV2Api(BaseServiceClientApi):
     #  ServiceUnabalabe: 503
 
     async def create_computation(
-        self, project_id: UUID, user_id: PositiveInt
+        self,
+        project_id: UUID,
+        user_id: PositiveInt,
+        product_name: str,
     ) -> ComputationTaskGet:
         resp = await self.client.post(
             "/v2/computations",
@@ -110,6 +113,7 @@ class DirectorV2Api(BaseServiceClientApi):
                 "user_id": user_id,
                 "project_id": str(project_id),
                 "start_pipeline": False,
+                "product_name": product_name,
             },
         )
 

@@ -51,7 +51,10 @@ async def create_docker_service(
     async def _creator(labels: dict[str, str]) -> dict[str, Any]:
         service = await async_docker_client.services.create(
             task_template={
-                "ContainerSpec": {"Image": "busybox", "Command": ["sleep", "10000"]}
+                "ContainerSpec": {
+                    "Image": "busybox:latest",
+                    "Command": ["sleep", "10000"],
+                }
             },
             name=faker.pystr(),
             labels=labels,

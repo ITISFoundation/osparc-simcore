@@ -47,6 +47,7 @@ from simcore_postgres_database.webserver_models import ProjectType
 
 from .. import catalog_client, director_v2_api, storage_api
 from ..application_settings import get_settings
+from ..products import get_product_name
 from ..resource_manager.websocket_manager import (
     PROJECT_ID_KEY,
     UserSessionID,
@@ -276,7 +277,7 @@ async def add_project_node(
     # also ensure the project is updated by director-v2 since services
     # are due to access comp_tasks at some point see [https://github.com/ITISFoundation/osparc-simcore/issues/3216]
     await director_v2_api.create_or_update_pipeline(
-        request.app, user_id, project["uuid"]
+        request.app, user_id, project["uuid"], product_name
     )
 
     if _is_node_dynamic(service_key):
@@ -352,7 +353,10 @@ async def delete_project_node(
         partial_workbench_data, user_id, f"{project_uuid}"
     )
     # also ensure the project is updated by director-v2 since services
-    await director_v2_api.create_or_update_pipeline(request.app, user_id, project_uuid)
+    product_name = get_product_name(request)
+    await director_v2_api.create_or_update_pipeline(
+        request.app, user_id, project_uuid, product_name
+    )
 
 
 async def update_project_linked_product(
@@ -591,7 +595,6 @@ async def try_open_project_for_user(
             await get_user_name(app, user_id),
             notify_users=False,
         ):
-
             with managed_resource(user_id, client_session_id, app) as rt:
                 # NOTE: if max_number_of_studies_per_user is set, the same
                 # project shall still be openable if the tab was closed
