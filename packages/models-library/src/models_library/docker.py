@@ -57,7 +57,7 @@ class SimcoreServiceDockerLabelKeys(BaseModel):
     def to_docker_labels(self) -> dict[str, str]:
         """returns a dictionary of strings as required by docker"""
         std_export = self.dict(by_alias=True)
-        return {k: f"{v}" for k, v in std_export.items()}
+        return {k: f"{v}" for k, v in sorted(std_export.items())}
 
     @classmethod
     def from_docker_task(cls, docker_task: Task) -> "SimcoreServiceDockerLabelKeys":

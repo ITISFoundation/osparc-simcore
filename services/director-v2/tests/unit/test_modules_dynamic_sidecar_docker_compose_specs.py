@@ -166,45 +166,29 @@ NODE_ID: NodeID = uuid4()
 SIMCORE_USER_AGENT: str = "a-puppet"
 PRODUCT_NAME: str = "osparc"
 
+EXPECTED_LABELS: list[str] = [
+    f"product_name={PRODUCT_NAME}",
+    f"simcore_user_agent={SIMCORE_USER_AGENT}",
+    f"study_id={PROJECT_ID}",
+    f"user_id={USER_ID}",
+    f"uuid={NODE_ID}",
+]
+
 
 @pytest.mark.parametrize(
     "service_spec, expected_result",
     [
         pytest.param(
             {"services": {"service-1": {}}},
-            {
-                "services": {
-                    "service-1": {
-                        "labels": [
-                            f"user_id={USER_ID}",
-                            f"study_id={PROJECT_ID}",
-                            f"uuid={NODE_ID}",
-                        ]
-                    }
-                }
-            },
+            {"services": {"service-1": {"labels": EXPECTED_LABELS}}},
             id="single_service",
         ),
         pytest.param(
             {"services": {"service-1": {}, "service-2": {}}},
             {
                 "services": {
-                    "service-1": {
-                        "labels": [
-                            f"user_id={USER_ID}",
-                            f"study_id={PROJECT_ID}",
-                            f"uuid={NODE_ID}",
-                        ]
-                    },
-                    "service-2": {
-                        "labels": [
-                            f"user_id={USER_ID}",
-                            f"study_id={PROJECT_ID}",
-                            f"uuid={NODE_ID}",
-                            f"user_agent={SIMCORE_USER_AGENT}",
-                            f"product_name={PRODUCT_NAME}",
-                        ]
-                    },
+                    "service-1": {"labels": EXPECTED_LABELS},
+                    "service-2": {"labels": EXPECTED_LABELS},
                 }
             },
             id="multiple_services",
