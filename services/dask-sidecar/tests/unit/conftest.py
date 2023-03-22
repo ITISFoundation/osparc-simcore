@@ -82,7 +82,7 @@ def dask_client(mock_service_envs: None) -> Iterable[distributed.Client]:
     with distributed.LocalCluster(
         worker_class=distributed.Worker,
         **{
-            "resources": {"CPU": 10, "GPU": 10, "MPI": 1},
+            "resources": {"CPU": 10, "GPU": 10},
             "preload": "simcore_service_dask_sidecar.tasks",
         },
     ) as cluster:

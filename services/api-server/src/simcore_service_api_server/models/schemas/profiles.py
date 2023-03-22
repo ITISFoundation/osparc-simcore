@@ -1,7 +1,8 @@
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr, Field
+from models_library.emails import LowerCaseEmailStr
+from pydantic import BaseModel, Field
 
 from ..domain.groups import Groups
 
@@ -26,7 +27,7 @@ class UserRoleEnum(str, Enum):
 
 
 class Profile(ProfileCommon):
-    login: EmailStr
+    login: LowerCaseEmailStr
     role: UserRoleEnum
     groups: Optional[Groups] = None
     gravatar_id: Optional[str] = Field(
