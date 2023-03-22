@@ -398,11 +398,12 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         ..., description="used when configuring the CORS options on the proxy"
     )
     request_simcore_user_agent: str = Field(
-        ..., description="used as label to filter out from the metrics"
+        ...,
+        description="used as label to filter out the metrics from the cAdvisor prometheus metrics",
     )
     proxy_service_name: str = Field(None, description="service name given to the proxy")
 
-    product_name: Optional[str] = Field(
+    product_name: str = Field(
         None,
         description="Current product upon which this service is scheduled. "
         "If set to None, the current product is undefined. Mostly for backwards compatibility",
