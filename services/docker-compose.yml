@@ -290,6 +290,7 @@ services:
     env_file:
       - ../.env
       - ../.env-wb-garbage-collector
+
     deploy:
       placement:
         constraints:
