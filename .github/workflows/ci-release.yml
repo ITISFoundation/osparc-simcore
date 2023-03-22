@@ -21,7 +21,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
+        python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.2]
         docker_compose: [1.29.1]
