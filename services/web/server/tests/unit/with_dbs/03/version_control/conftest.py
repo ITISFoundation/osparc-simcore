@@ -5,7 +5,7 @@
 import logging
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncIterator, Awaitable, Callable, Optional, Union
+from typing import Any, AsyncIterator, Awaitable, Callable
 from unittest import mock
 from uuid import UUID
 
@@ -55,16 +55,19 @@ def fake_project(faker: Faker) -> ProjectDict:
 
 
 @pytest.fixture
-async def catalog_subsystem_mock(
-    catalog_subsystem_mock: Callable[[Optional[Union[list[dict], dict]]], None],
-    fake_project,
+async def catalog_subsystem_mock_override(
+    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
+    fake_project: ProjectDict,
 ) -> None:
     catalog_subsystem_mock([fake_project])
 
 
 @pytest.fixture
 def app_cfg(
-    default_app_cfg, unused_tcp_port_factory, catalog_subsystem_mock, monkeypatch
+    default_app_cfg,
+    unused_tcp_port_factory,
+    catalog_subsystem_mock_override: None,
+    monkeypatch,
 ) -> dict[str, Any]:
     """App's configuration used for every test in this module
 

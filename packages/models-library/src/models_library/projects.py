@@ -7,9 +7,10 @@ from enum import Enum
 from typing import Any, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, constr, validator
+from pydantic import BaseModel, Extra, Field, HttpUrl, constr, validator
 
 from .basic_regex import DATE_RE, UUID_RE_BASE
+from .emails import LowerCaseEmailStr
 from .projects_access import AccessRights, GroupIDStr
 from .projects_nodes import Node
 from .projects_nodes_io import NodeIDStr
@@ -105,7 +106,9 @@ class Project(BaseProjectModel):
     # NOT for usage with DB!!
 
     # Ownership and Access  (SEE projects_access.py)
-    prj_owner: EmailStr = Field(..., description="user email", alias="prjOwner")
+    prj_owner: LowerCaseEmailStr = Field(
+        ..., description="user email", alias="prjOwner"
+    )
 
     # Timestamps   TODO: should we use datetime??
     creation_date: str = Field(

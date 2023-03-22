@@ -38,6 +38,7 @@ from models_library.clusters import ClusterID, NoAuthentication, SimpleAuthentic
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
+from models_library.services_resources import BootMode
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, SecretStr
 from pydantic.tools import parse_obj_as
@@ -260,7 +261,9 @@ def cpu_image(node_id: NodeID) -> ImageParams:
         name="simcore/services/comp/pytest/cpu_image",
         tag="1.5.5",
         node_requirements=NodeRequirements(
-            CPU=1, RAM=parse_obj_as(ByteSize, "128 MiB"), GPU=None, MPI=None
+            CPU=1,
+            RAM=parse_obj_as(ByteSize, "128 MiB"),
+            GPU=None,
         ),
     )  # type: ignore
     return ImageParams(
@@ -285,7 +288,9 @@ def gpu_image(node_id: NodeID) -> ImageParams:
         name="simcore/services/comp/pytest/gpu_image",
         tag="1.4.7",
         node_requirements=NodeRequirements(
-            CPU=1, GPU=1, RAM=parse_obj_as(ByteSize, "256 MiB"), MPI=None
+            CPU=1,
+            GPU=1,
+            RAM=parse_obj_as(ByteSize, "256 MiB"),
         ),
     )  # type: ignore
     return ImageParams(
@@ -306,41 +311,13 @@ def gpu_image(node_id: NodeID) -> ImageParams:
     )
 
 
-@pytest.fixture
-def mpi_image(node_id: NodeID) -> ImageParams:
-    image = Image(
-        name="simcore/services/comp/pytest/mpi_image",
-        tag="1.4.5123",
-        node_requirements=NodeRequirements(
-            CPU=2, RAM=parse_obj_as(ByteSize, "128 MiB"), MPI=1, GPU=None
-        ),
-    )  # type: ignore
-    return ImageParams(
-        image=image,
-        expected_annotations={
-            "resources": {
-                "CPU": 2.0,
-                "MPI": 1.0,
-                "RAM": 128 * 1024 * 1024,
-            },
-        },
-        expected_used_resources={
-            "CPU": 2.0,
-            "MPI": 1.0,
-            "RAM": 128 * 1024 * 1024.0,
-        },
-        fake_tasks={node_id: image},
-    )
-
-
-@pytest.fixture(params=[cpu_image.__name__, gpu_image.__name__, mpi_image.__name__])
+@pytest.fixture(params=[cpu_image.__name__, gpu_image.__name__])
 def image_params(
-    cpu_image: ImageParams, gpu_image: ImageParams, mpi_image: ImageParams, request
+    cpu_image: ImageParams, gpu_image: ImageParams, request
 ) -> ImageParams:
     return {
         "cpu_image": cpu_image,
         "gpu_image": gpu_image,
-        "mpi_image": mpi_image,
     }[request.param]
 
 
@@ -476,6 +453,7 @@ async def test_send_computation_task(
         log_file_url: AnyUrl,
         command: list[str],
         s3_settings: Optional[S3Settings],
+        boot_mode: BootMode,
         expected_annotations,
     ) -> TaskOutputData:
         # get the task data
@@ -568,6 +546,7 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
         log_file_url: AnyUrl,
         command: list[str],
         s3_settings: Optional[S3Settings],
+        boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
         # get the task data
         worker = get_worker()
@@ -646,6 +625,7 @@ async def test_abort_computation_tasks(
         log_file_url: AnyUrl,
         command: list[str],
         s3_settings: Optional[S3Settings],
+        boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
         # get the task data
         worker = get_worker()
@@ -728,6 +708,7 @@ async def test_failed_task_returns_exceptions(
         log_file_url: AnyUrl,
         command: list[str],
         s3_settings: Optional[S3Settings],
+        boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
 
         raise ValueError(
@@ -782,20 +763,21 @@ async def test_missing_resource_send_computation_task(
     mocked_storage_service_api: respx.MockRouter,
 ):
 
-    # remove the workers that can handle mpi
+    # remove the workers that can handle gpu
     scheduler_info = dask_client.backend.client.scheduler_info()
     assert scheduler_info
-    # find mpi workers
+    # find gpu workers
     workers_to_remove = [
         worker_key
         for worker_key, worker_info in scheduler_info["workers"].items()
-        if "MPI" in worker_info["resources"]
+        if "GPU" in worker_info["resources"]
     ]
     await dask_client.backend.client.retire_workers(workers=workers_to_remove)  # type: ignore
     await asyncio.sleep(5)  # a bit of time is needed so the cluster adapts
 
-    # now let's adapt the task so it needs mpi
-    image_params.image.node_requirements.mpi = 2
+    # now let's adapt the task so it needs gpu
+    assert image_params.image.node_requirements
+    image_params.image.node_requirements.gpu = 2
 
     with pytest.raises(MissingComputationalResourcesError):
         await dask_client.send_computation_tasks(
@@ -829,7 +811,6 @@ async def test_too_many_resources_send_computation_task(
         node_requirements=NodeRequirements(
             CPU=10000000000000000,
             RAM=parse_obj_as(ByteSize, "128 MiB"),
-            MPI=None,
             GPU=None,
         ),
     )  # type: ignore
@@ -950,6 +931,7 @@ async def test_get_tasks_status(
         log_file_url: AnyUrl,
         command: list[str],
         s3_settings: Optional[S3Settings],
+        boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
         # wait here until the client allows us to continue
         start_event = Event(_DASK_EVENT_NAME)
@@ -1029,6 +1011,7 @@ async def test_dask_sub_handlers(
         log_file_url: AnyUrl,
         command: list[str],
         s3_settings: Optional[S3Settings],
+        boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
 
         state_pub = distributed.Pub(TaskStateEvent.topic_name())
@@ -1108,6 +1091,7 @@ async def test_get_cluster_details(
         log_file_url: AnyUrl,
         command: list[str],
         s3_settings: Optional[S3Settings],
+        boot_mode: BootMode,
         expected_annotations,
     ) -> TaskOutputData:
         # get the task data

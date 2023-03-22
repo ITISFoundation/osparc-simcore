@@ -4,7 +4,7 @@ from models_library.basic_regex import UUID_RE
 from models_library.basic_types import PortInt
 from models_library.service_settings_labels import ContainerSpec
 from models_library.services import KEY_RE, VERSION_RE, ServiceDockerData
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from pydantic.types import ByteSize, NonNegativeInt
 
 from .dynamic_services import ServiceState
@@ -30,17 +30,21 @@ class NodeRequirements(BaseModel):
     )
     ram: ByteSize = Field(
         ...,
-        description="defines the required (maximum) amount of RAM for running the services in bytes",
+        description="defines the required (maximum) amount of RAM for running the services",
         alias="RAM",
     )
-    mpi: Optional[int] = Field(
-        None,
-        deprecated=True,
-        description="defines whether a MPI node is required for running the services",
-        alias="MPI",
-        le=1,
-        ge=0,
+    vram: Optional[ByteSize] = Field(
+        default=None,
+        description="defines the required (maximum) amount of VRAM for running the services",
+        alias="VRAM",
     )
+
+    @validator("vram", "gpu", always=True, pre=True)
+    @classmethod
+    def check_0_is_none(cls, v):
+        if v == 0:
+            v = None
+        return v
 
     class Config:
         schema_extra = {
@@ -50,7 +54,6 @@ class NodeRequirements(BaseModel):
                 {
                     "CPU": 1.0,
                     "RAM": 4194304,
-                    "MPI": 1,
                 },
             ]
         }

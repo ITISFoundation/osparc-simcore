@@ -234,7 +234,7 @@ async def test_get_service_extras(
 ):
     director_client: DirectorV0Client = minimal_app.state.director_v0_client
     service_extras: ServiceExtras = await director_client.get_service_extras(
-        mock_service_key_version
+        mock_service_key_version.key, mock_service_key_version.version
     )
     assert mocked_director_service_fcts["get_service_extras"].called
     assert fake_service_extras == service_extras
