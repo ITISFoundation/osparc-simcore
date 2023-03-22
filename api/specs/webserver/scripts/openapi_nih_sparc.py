@@ -13,34 +13,18 @@ from fastapi import FastAPI, status
 from fastapi.responses import RedirectResponse
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
-from models_library.services import ServiceKey, ServiceKeyVersion, ServiceMetaData
-from pydantic import Field, HttpUrl, PositiveInt
-from simcore_service_webserver.studies_dispatcher.handlers_rest import Viewer
+from models_library.services import ServiceKey, ServiceKeyVersion
+from pydantic import HttpUrl, PositiveInt
+from simcore_service_webserver.studies_dispatcher.handlers_rest import (
+    ServiceGet,
+    Viewer,
+)
 
 app = FastAPI(redoc_url=None)
 
 TAGS: list[Union[str, Enum]] = [
     "nih-sparc",
 ]
-
-
-#
-class ServiceGet(ServiceMetaData):
-    name_key: ServiceKey
-    version: ServiceKeyVersion = Field(
-        ..., description="Latest version of this service"
-    )
-
-    # extra properties
-    mimetypes: list[str] = Field(
-        default_factory=list, description="Compatible mimetypes and ports"
-    )
-
-    # actions
-    view_url: HttpUrl = Field(
-        ...,
-        description="Redirection to open a service in osparc (see /view)",
-    )
 
 
 @app.get(

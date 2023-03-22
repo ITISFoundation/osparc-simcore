@@ -6279,7 +6279,7 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[list[__main__.ServiceGet]]'
+                title: 'Envelope[list[simcore_service_webserver.studies_dispatcher.handlers_rest.ServiceGet]]'
                 type: object
                 properties:
                   data:
@@ -6288,52 +6288,35 @@ paths:
                     items:
                       title: ServiceGet
                       required:
-                        - name_key
-                        - version
+                        - key
+                        - title
+                        - description
+                        - thumbnail
                         - view_url
                       type: object
                       properties:
-                        name:
-                          title: Name
+                        key:
+                          title: Key
+                          pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                           type: string
-                        thumbnail:
-                          title: Thumbnail
-                          maxLength: 2083
-                          minLength: 1
+                          description: Service key ID
+                        title:
+                          title: Title
                           type: string
-                          format: uri
+                          description: Service name for display
                         description:
                           title: Description
                           type: string
-                        deprecated:
-                          title: Deprecated
+                          description: Long description of the service
+                        thumbnail:
+                          title: Thumbnail
                           type: string
-                          description: 'If filled with a date, then the service is to be deprecated at that date (e.g. cannot start anymore)'
-                          format: date-time
-                        classifiers:
-                          title: Classifiers
+                        file_extensions:
+                          title: File Extensions
                           type: array
                           items:
                             type: string
-                        quality:
-                          title: Quality
-                          type: object
-                          default: {}
-                        name_key:
-                          title: Name Key
-                          pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
-                          type: string
-                        version:
-                          title: Version
-                          allOf:
-                            - $ref: '#/paths/~1view/get/requestBody/content/application~1json/schema'
-                          description: Latest version of this service
-                        mimetypes:
-                          title: Mimetypes
-                          type: array
-                          items:
-                            type: string
-                          description: Compatible mimetypes and ports
+                          description: File extensions that this service can process
                         view_url:
                           title: View Url
                           maxLength: 2083
@@ -6343,79 +6326,13 @@ paths:
                           format: uri
                       example:
                         key: simcore/services/dynamic/sim4life
-                        version: 1.0.9
-                        name: sim4life
-                        description: s4l web
-                        thumbnail: 'http://thumbnailit.org/image'
-                        quality:
-                          enabled: true
-                          tsr_target:
-                            r01:
-                              level: 4
-                              references: ''
-                            r02:
-                              level: 4
-                              references: ''
-                            r03:
-                              level: 4
-                              references: ''
-                            r04:
-                              level: 4
-                              references: ''
-                            r05:
-                              level: 4
-                              references: ''
-                            r06:
-                              level: 4
-                              references: ''
-                            r07:
-                              level: 4
-                              references: ''
-                            r08:
-                              level: 4
-                              references: ''
-                            r09:
-                              level: 4
-                              references: ''
-                            r10:
-                              level: 4
-                              references: ''
-                          annotations:
-                            vandv: ''
-                            limitations: ''
-                            certificationLink: ''
-                            certificationStatus: Uncertified
-                          tsr_current:
-                            r01:
-                              level: 0
-                              references: ''
-                            r02:
-                              level: 0
-                              references: ''
-                            r03:
-                              level: 0
-                              references: ''
-                            r04:
-                              level: 0
-                              references: ''
-                            r05:
-                              level: 0
-                              references: ''
-                            r06:
-                              level: 0
-                              references: ''
-                            r07:
-                              level: 0
-                              references: ''
-                            r08:
-                              level: 0
-                              references: ''
-                            r09:
-                              level: 0
-                              references: ''
-                            r10:
-                              level: 0
-                              references: ''
+                        title: Sim4Life Mattermost
+                        description: It is also sim4life for the web
+                        thumbnail: 'https://www.hopkinsmedicine.org/-/media/images/health/1_-conditions/brain/brain-anatomy-teaser.ashx'
+                        file_extensions:
+                          - smash
+                          - h5
+                        view_url: 'http://host.org/view?file_type=CSV&viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=1.2.3'
                   error:
                     title: Error
   /viewers:

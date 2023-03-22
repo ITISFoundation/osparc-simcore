@@ -7,10 +7,12 @@ from typing import Optional
 
 from aiohttp import web
 from aiohttp.web import Request
+from models_library.services import ServiceKey
 from pydantic import BaseModel, Field
 from pydantic.networks import HttpUrl
 
 from .._meta import API_VTAG
+from ..utils_aiohttp import envelope_json_response
 from ._core import ViewerInfo, list_viewers_info
 from .handlers_redirects import compose_dispatcher_prefix_url
 
@@ -57,9 +59,42 @@ class Viewer(BaseModel):
         )
 
 
+class ServiceGet(BaseModel):
+    key: ServiceKey = Field(..., description="Service key ID")
+
+    title: str = Field(..., description="Service name for display")
+    description: str = Field(..., description="Long description of the service")
+    thumbnail: str = Field()
+
+    # extra properties
+    file_extensions: list[str] = Field(
+        default_factory=list,
+        description="File extensions that this service can process",
+    )
+
+    # actions
+    view_url: HttpUrl = Field(
+        ...,
+        description="Redirection to open a service in osparc (see /view)",
+    )
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "key": "simcore/services/dynamic/sim4life",
+                "title": "Sim4Life Mattermost",
+                "description": "It is also sim4life for the web",
+                "thumbnail": "https://www.hopkinsmedicine.org/-/media/images/health/1_-conditions/brain/brain-anatomy-teaser.ashx",
+                "file_extensions": ["smash", "h5"],
+                "view_url": "http://host.org/view?file_type=CSV&viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=1.2.3",
+            }
+        }
+
+
 #
 # API Handlers
 #
+
 
 routes = web.RouteTableDef()
 
@@ -67,7 +102,14 @@ routes = web.RouteTableDef()
 @routes.get(f"/{API_VTAG}/services", name="list_services")
 async def list_services(request: Request):
     """Returns a list latest version of services"""
-    raise NotImplementedError("Still not implemented")
+    assert request  # nosec
+
+    # NOTE: this is temporary for testing
+
+    services = [
+        ServiceGet.parse_obj(ServiceGet.Config.schema_extra["example"]),
+    ]
+    return envelope_json_response(services)
 
 
 @routes.get(f"/{API_VTAG}/viewers", name="list_viewers")
