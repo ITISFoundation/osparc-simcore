@@ -11,6 +11,13 @@ from sqlalchemy.sql import expression, func
 
 from .base import metadata
 
+#
+# services_meta_data table:
+#   Combines properties as
+#     - service identifier: key, version
+#     - overridable properties of the service metadata defined upon publication (injected in the image labels)
+#     - extra properties assigned during its lifetime (e.g. deprecated, quality, etc)
+
 services_meta_data = sa.Table(
     "services_meta_data",
     metadata,
@@ -83,7 +90,8 @@ services_meta_data = sa.Table(
         sa.DateTime(),
         nullable=True,
         server_default=null(),
-        doc="Timestamp with deprecation date",
+        doc="Timestamp when the service is retired."
+        "A fixed time before this date, service is marked as deprecated",
     ),
     sa.Column(
         "quality",
@@ -195,7 +203,7 @@ services_latest = sa.Table(
         "version",
         sa.String,
         nullable=False,
-        doc="MAJOR.MINOR.PATCH semantic versioning (see https://semver.org)",
+        doc="latest MAJOR.MINOR.PATCH semantic version of the service (key)",
     ),
     sa.ForeignKeyConstraint(
         ["key", "version"],
