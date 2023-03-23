@@ -84,6 +84,26 @@ def db_metadata():
 
 
 @pytest.fixture
+def pg_sa_engine(make_engine: Callable, db_metadata) -> Iterator[sa.engine.Engine]:
+    # NOTE: Using migration to upgrade/downgrade is not
+    # such a great idea since these tests are used while developing
+    # the tables, i.e. when no migration mechanism are in place
+    # Best is therefore to start from scratch and delete all at
+    # the end
+    sync_engine = make_engine(is_async=False)
+
+    # NOTE: ALL is deleted before
+    db_metadata.drop_all(sync_engine)
+    db_metadata.create_all(sync_engine)
+
+    yield sync_engine
+
+    # NOTE: ALL is deleted after
+    db_metadata.drop_all(sync_engine)
+    sync_engine.dispose()
+
+
+@pytest.fixture
 async def pg_engine(make_engine: Callable, db_metadata) -> AsyncIterator[Engine]:
     async_engine = await make_engine(is_async=True)
 
