@@ -62,6 +62,10 @@ def create_openapi_specs(
     for section in ("info", "openapi"):
         openapi.pop(section)
 
+    schemas = openapi["components"]["schemas"]
+    for section in ("HTTPValidationError", "ValidationError"):
+        schemas.pop(section)
+
     # Removes default response 422
     if drop_fastapi_default_422:
         for _, method_item in openapi.get("paths", {}).items():
