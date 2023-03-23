@@ -39,7 +39,8 @@ def test_it(faker: Faker, pg_sa_engine: sa.engine.Engine):
 
                 conn.execute(query)
 
-        subquery = sa.select(
+        # select query to find latest
+        latest_select_query = sa.select(
             services_meta_data.c.key,
             sa.text(
                 "array_to_string(MAX(string_to_array(version, '.')::int[]), '.') AS version"
@@ -47,33 +48,51 @@ def test_it(faker: Faker, pg_sa_engine: sa.engine.Engine):
             # sa.func.max( sa.func.string_to_array(services_meta_data.c.version, ".").cast(sa.ARRAY(sa.Integer)).alias("latest_version") )
         ).group_by(services_meta_data.c.key)
 
-        print(subquery)
+        print(latest_select_query)
         print(".")
 
+        # Insert from select query
         ins = services_latest.insert().from_select(
-            [services_latest.c.key, services_latest.c.version], subquery
+            [services_latest.c.key, services_latest.c.version], latest_select_query
         )
         print(ins)
 
-        result = conn.execute(ins)  # fills services_latest the first time
-        print(result)
+        # result = conn.execute(ins)  # fills services_latest the first time
+        # print(result)
 
-        values = conn.execute(subquery).fetchall()
+        values = conn.execute(latest_select_query).fetchall()
 
-        for row in values:
-            data = dict(row.items())
-            upsert_query = (
-                pg_insert(services_latest)
-                .values(**data)
-                .on_conflict_do_update(
-                    index_elements=[
-                        services_latest.c.key,
-                    ],
-                    set_=dict(version=data["version"]),
+        def _upsert_with_fetched_values():
+            for row in values:
+                data = dict(row.items())
+                upsert_query = (
+                    pg_insert(services_latest)
+                    .values(**data)
+                    .on_conflict_do_update(
+                        index_elements=[
+                            services_latest.c.key,
+                        ],
+                        set_=dict(version=data["version"]),
+                    )
                 )
-            )
 
-            conn.execute(upsert_query)
+                conn.execute(upsert_query)
+
+            latest_values = conn.execute(services_latest.select()).fetchall()
+            assert latest_values == values
+
+        # upsert from select of latest
+        stmt = pg_insert(services_latest).from_select(
+            [services_latest.c.key, services_latest.c.version], latest_select_query
+        )
+        upsert_query2 = stmt.on_conflict_do_update(
+            index_elements=[
+                services_latest.c.key,
+            ],
+            set_=dict(version=stmt.excluded.version),
+        )
+
+        conn.execute(upsert_query2)
 
         latest_values = conn.execute(services_latest.select()).fetchall()
         assert latest_values == values
