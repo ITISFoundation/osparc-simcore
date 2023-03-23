@@ -38,9 +38,17 @@ services_meta_data = sa.Table(
         nullable=True,
         doc="Identifier of the group that owns this service",
     ),
-    sa.Column("name", sa.String, nullable=False, doc="Display label"),
     sa.Column(
-        "description", sa.String, nullable=False, doc="Markdown-compatible description"
+        "name",
+        sa.String,
+        nullable=False,
+        doc="Display label",
+    ),
+    sa.Column(
+        "description",
+        sa.String,
+        nullable=False,
+        doc="Markdown-compatible description",
     ),
     sa.Column(
         "thumbnail",
@@ -86,6 +94,13 @@ services_meta_data = sa.Table(
     ),
     sa.PrimaryKeyConstraint("key", "version", name="services_meta_data_pk"),
 )
+
+
+#
+# services_access_rights table:
+#   Defines access rights (execute_access, write_access) on a service (key)
+#   for a given group (gid) on a product (project_name)
+#
 
 services_access_rights = sa.Table(
     "services_access_rights",
@@ -159,4 +174,34 @@ services_access_rights = sa.Table(
     sa.PrimaryKeyConstraint(
         "key", "version", "gid", "product_name", name="services_access_pk"
     ),
+)
+
+
+#
+# services_latest table:
+#   Keeps latest version of every service (key)
+#
+
+services_latest = sa.Table(
+    "services_latest",
+    metadata,
+    sa.Column(
+        "key",
+        sa.String,
+        nullable=False,
+        doc="Hierarchical identifier of the service e.g. simcore/services/dynamic/my-super-service",
+    ),
+    sa.Column(
+        "version",
+        sa.String,
+        nullable=False,
+        doc="MAJOR.MINOR.PATCH semantic versioning (see https://semver.org)",
+    ),
+    sa.ForeignKeyConstraint(
+        ["key", "version"],
+        ["services_meta_data.key", "services_meta_data.version"],
+        onupdate="CASCADE",
+        ondelete="CASCADE",
+    ),
+    sa.PrimaryKeyConstraint("key", name="services_latest_pk"),
 )
