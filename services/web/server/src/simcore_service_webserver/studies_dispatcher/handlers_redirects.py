@@ -95,7 +95,7 @@ def compose_dispatcher_prefix_url(request: web.Request, viewer: ViewerInfo) -> s
     absolute_url = request.url.join(
         request.app.router["get_redirection_to_viewer"].url_for().with_query(**params)
     )
-    return str(absolute_url)
+    return f"{absolute_url}"
 
 
 async def get_redirection_to_viewer(request: web.Request):
