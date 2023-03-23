@@ -41,6 +41,13 @@ export DOCKER_IMAGE_TAG
 log_info "pushing images ${DOCKER_IMAGE_TAG} to ${DOCKER_REGISTRY}"
 make push-version
 
+# re-tag images to ${TO_TAG_PREFIX}-{GIT_TAG}
+readonly GIT_COMMIT_SHA=$(git show-ref -s "${GIT_TAG}")
+DOCKER_IMAGE_TAG="${TO_TAG_PREFIX}-${GIT_TAG}"
+export DOCKER_IMAGE_TAG
+log_info "pushing images ${DOCKER_IMAGE_TAG} to ${DOCKER_REGISTRY}"
+make push-version
+
 # push latest image ${TO_TAG_PREFIX}-latest
 DOCKER_IMAGE_TAG="${TO_TAG_PREFIX}-latest"
 export DOCKER_IMAGE_TAG
