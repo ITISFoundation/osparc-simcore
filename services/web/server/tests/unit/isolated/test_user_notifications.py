@@ -17,7 +17,7 @@ def test_user_notification(raw_data: dict[str, Any]) -> UserNotification:
 
 
 @pytest.mark.parametrize("user_id", [10])
-async def test_get_notification_key(user_id: UserID):
+def test_get_notification_key(user_id: UserID):
     assert get_notification_key(user_id) == f"user_id={user_id}"
 
 
@@ -85,13 +85,13 @@ async def test_get_notification_key(user_id: UserID):
         ),
     ],
 )
-async def test_user_notification_crate_from_request_data(request_data: dict[str, Any]):
+def test_user_notification_crate_from_request_data(request_data: dict[str, Any]):
     user_notification = UserNotification.create_from_request_data(request_data)
     assert user_notification.id != request_data.get("id", None)
     assert user_notification.read is False
 
 
-async def test_user_notification_update_from():
+def test_user_notification_update_from():
     user_notification = UserNotification.create_from_request_data(
         UserNotification.Config.schema_extra["examples"][0]
     )

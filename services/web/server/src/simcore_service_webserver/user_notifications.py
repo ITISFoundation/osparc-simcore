@@ -23,6 +23,9 @@ class NotificationCategory(StrAutoEnum):
 
 
 class UserNotification(BaseModel):
+    # Ideally the `id` field, will be a UUID type in the future.
+    # Since there is no Redis data migration service, data type
+    # will not change to UUID nor Union[str, UUID]
     id: str
     user_id: UserID
     category: NotificationCategory
