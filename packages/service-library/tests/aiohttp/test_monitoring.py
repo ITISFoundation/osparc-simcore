@@ -11,11 +11,8 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from prometheus_client.parser import text_string_to_metric_families
-from servicelib.aiohttp.monitoring import (
-    SIMCORE_USER_AGENT_HEADER,
-    UNDEFINED_REGULAR_USER_AGENT,
-    setup_monitoring,
-)
+from servicelib.aiohttp.monitoring import UNDEFINED_REGULAR_USER_AGENT, setup_monitoring
+from servicelib.common_headers import X_SIMCORE_USER_AGENT
 
 
 @pytest.fixture
@@ -120,7 +117,7 @@ async def test_request_with_simcore_user_agent(client: TestClient, faker: Faker)
     faker_simcore_user_agent = faker.name()
     response = await client.get(
         "/monitored_request",
-        headers={SIMCORE_USER_AGENT_HEADER: faker_simcore_user_agent},
+        headers={X_SIMCORE_USER_AGENT: faker_simcore_user_agent},
     )
     assert response.status == web.HTTPOk.status_code
 
