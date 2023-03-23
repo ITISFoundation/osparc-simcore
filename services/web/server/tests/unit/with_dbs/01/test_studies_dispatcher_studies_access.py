@@ -317,7 +317,9 @@ async def test_access_study_anonymously(
 
     assert not _is_user_authenticated(client.session), "Is anonymous"
 
-    study_url = client.app.router["study"].url_for(id=published_project["uuid"])
+    study_url = client.app.router["get_redirection_to_study_page"].url_for(
+        id=published_project["uuid"]
+    )
 
     resp = await client.get(study_url)
 
@@ -365,7 +367,9 @@ async def test_access_study_by_logged_user(
     catalog_subsystem_mock([published_project])
     assert _is_user_authenticated(client.session), "Is already logged-in"
 
-    study_url = client.app.router["study"].url_for(id=published_project["uuid"])
+    study_url = client.app.router["get_redirection_to_study_page"].url_for(
+        id=published_project["uuid"]
+    )
     resp = await client.get(study_url)
     await _assert_redirected_to_study(resp, client.session)
 
@@ -395,7 +399,9 @@ async def test_access_cookie_of_expired_user(
     # emulates issue #1570
     app: web.Application = client.app
 
-    study_url = app.router["study"].url_for(id=published_project["uuid"])
+    study_url = app.router["get_redirection_to_study_page"].url_for(
+        id=published_project["uuid"]
+    )
     resp = await client.get(study_url)
 
     await _assert_redirected_to_study(resp, client.session)
@@ -470,7 +476,9 @@ async def test_guest_user_is_not_garbage_collected(
         # every guest uses different client to preserve it's own authorization/authentication cookies
         client: TestClient = await aiohttp_client(web_server)
         assert client.app
-        study_url = client.app.router["study"].url_for(id=published_project["uuid"])
+        study_url = client.app.router["get_redirection_to_study_page"].url_for(
+            id=published_project["uuid"]
+        )
 
         # clicks link to study
         resp = await client.get(f"{study_url}")
