@@ -62,7 +62,7 @@ else
   # CPU: number of CPUs available (= num of processing units - DASK_SIDECAR_NUM_NON_USABLE_CPUS)
   # GPU: number GPUs available (= num of GPUs if a nvidia-smi can be run inside a docker container)
   # RAM: amount of RAM available (= CPU/nproc * total virtual memory given by python psutil - DASK_SIDECAR_NON_USABLE_RAM)
-  # MPI: backwards-compatibility (deprecated if core_number = TARGET_MPI_NODE_CPU_COUNT set to 1)
+  # VRAM: amount of VRAM available (in bytes)
 
   # CPUs
   num_cpus=$(($(nproc) - ${DASK_SIDECAR_NUM_NON_USABLE_CPUS:-2}))
@@ -83,15 +83,10 @@ else
 
   # add the GPUs if there are any
   if [ "$num_gpus" -gt 0 ]; then
-    resources="$resources,GPU=$num_gpus"
+    total_vram=$(python -c "from simcore_service_dask_sidecar.utils import video_memory; print(video_memory());")
+    resources="$resources,GPU=$num_gpus,VRAM=$total_vram"
   fi
 
-  # add the MPI if possible
-  if [ ${TARGET_MPI_NODE_CPU_COUNT+x} ]; then
-    if [ "$(nproc)" -eq "${TARGET_MPI_NODE_CPU_COUNT}" ]; then
-      resources="$resources,MPI=1"
-    fi
-  fi
 
   #
   # DASK RESOURCES DEFINITION --------------------------------- END

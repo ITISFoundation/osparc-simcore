@@ -182,24 +182,12 @@ async def dask_spec_local_cluster(
                 },
             },
         },
-        "mpi-worker": {
+        "bigcpu-worker": {
             "cls": Worker,
             "options": {
                 "nthreads": 1,
                 "resources": {
                     "CPU": 8,
-                    "MPI": 1,
-                    "RAM": 768e9,
-                },
-            },
-        },
-        "gpu-mpi-worker": {
-            "cls": Worker,
-            "options": {
-                "nthreads": 1,
-                "resources": {
-                    "GPU": 1,
-                    "MPI": 1,
                     "RAM": 768e9,
                 },
             },
@@ -237,7 +225,7 @@ def local_dask_gateway_server_config(
     c.ClusterConfig.worker_cmd = [  # type: ignore
         "dask-worker",
         "--resources",
-        f"CPU=12,GPU=1,MPI=1,RAM={16e9}",
+        f"CPU=12,GPU=1,RAM={16e9}",
     ]
     # NOTE: This must be set such that the local unsafe backend creates a worker with enough cores/memory
     c.ClusterConfig.worker_cores = 12  # type: ignore

@@ -12,6 +12,7 @@ from typing import Iterator
 import pytest
 import sqlalchemy as sa
 from aiohttp import ClientResponse, ClientSession, web
+from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from models_library.projects_state import ProjectLocked, ProjectStatus
 from pytest import MonkeyPatch
@@ -20,6 +21,7 @@ from pytest_simcore.helpers.utils_login import UserRole
 from simcore_service_webserver import catalog
 from simcore_service_webserver.log import setup_logging
 from simcore_service_webserver.studies_dispatcher._core import ViewerInfo
+from simcore_service_webserver.studies_dispatcher.handlers_rest import ServiceGet
 from sqlalchemy.sql import text
 from yarl import URL
 
@@ -253,6 +255,18 @@ async def test_api_list_supported_filetypes(client):
             "file_type": "XLSX",
             "view_url": f"{base_url}/view?file_type=XLSX&viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=2.11.1",
         },
+    ]
+
+
+async def test_api_get_services(client: TestClient):
+
+    resp = await client.get("/v0/services")
+    data, _ = await assert_status(resp, web.HTTPOk)
+
+    service: dict = ServiceGet.Config.schema_extra["example"]
+    # base_url = _get_base_url(client)
+    assert data == [
+        service,
     ]
 
 

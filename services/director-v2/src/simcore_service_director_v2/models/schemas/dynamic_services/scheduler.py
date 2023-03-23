@@ -1,6 +1,5 @@
 import json
 import logging
-import warnings
 from enum import Enum
 from functools import cached_property
 from typing import Any, Mapping, Optional
@@ -17,15 +16,7 @@ from models_library.service_settings_labels import (
 )
 from models_library.services import RunID
 from models_library.services_resources import ServiceResourcesDict
-from pydantic import (
-    AnyHttpUrl,
-    BaseModel,
-    Extra,
-    Field,
-    constr,
-    parse_obj_as,
-    root_validator,
-)
+from pydantic import AnyHttpUrl, BaseModel, Extra, Field, constr, parse_obj_as
 from servicelib.error_codes import ErrorCodeStr
 from servicelib.exception_utils import DelayedExceptionHandler
 
@@ -115,24 +106,6 @@ class DockerContainerInspect(BaseModel):
             name=container["Name"],
             id=container["Id"],
         )
-
-    @root_validator(pre=True)
-    @classmethod
-    def _ensure_legacy_format_compatibility(cls, values):
-        warnings.warn(
-            (
-                "Once https://github.com/ITISFoundation/osparc-simcore/pull/3610 "
-                "reaches production this entire root_validator function "
-                "can be safely removed. Please check the "
-                "https://github.com/ITISFoundation/osparc-simcore/releases"
-            ),
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        status: Optional[str] = values.get("status")
-        if status:
-            values["container_state"] = {"Status": status}
-        return values
 
     class Config:
         keep_untouched = (cached_property,)

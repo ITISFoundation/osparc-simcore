@@ -145,7 +145,9 @@ async def create_job(
 
     # -> director2:   ComputationTaskOut = JobStatus
     # consistency check
-    task: ComputationTaskGet = await director2_api.create_computation(job.id, user_id)
+    task: ComputationTaskGet = await director2_api.create_computation(
+        job.id, user_id, product_name
+    )
     assert task.id == job.id  # nosec
 
     job_status: JobStatus = create_jobstatus_from_task(task)

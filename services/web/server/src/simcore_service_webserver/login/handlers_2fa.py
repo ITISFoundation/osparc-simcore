@@ -4,7 +4,8 @@ from typing import Any, Literal
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
-from pydantic import EmailStr, Field
+from models_library.emails import LowerCaseEmailStr
+from pydantic import Field
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.error_codes import create_error_code
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -56,7 +57,7 @@ routes = RouteTableDef()
 
 
 class Resend2faBody(InputSchema):
-    email: EmailStr = Field(..., description="User email (identifier)")
+    email: LowerCaseEmailStr = Field(..., description="User email (identifier)")
     via: Literal["SMS", "Email"] = "SMS"
 
 

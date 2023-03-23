@@ -1,7 +1,7 @@
 from typing import Optional, cast
 
 import sqlalchemy as sa
-from pydantic.networks import EmailStr
+from models_library.emails import LowerCaseEmailStr
 from pydantic.types import PositiveInt
 
 from ...models.domain.group import GroupAtDB
@@ -35,7 +35,7 @@ class GroupsRepository(BaseRepository):
         return GroupAtDB.from_orm(row)
 
     async def get_user_gid_from_email(
-        self, user_email: EmailStr
+        self, user_email: LowerCaseEmailStr
     ) -> Optional[PositiveInt]:
         async with self.db_engine.connect() as conn:
             return cast(
@@ -54,10 +54,12 @@ class GroupsRepository(BaseRepository):
                 ),
             )
 
-    async def get_user_email_from_gid(self, gid: PositiveInt) -> Optional[EmailStr]:
+    async def get_user_email_from_gid(
+        self, gid: PositiveInt
+    ) -> Optional[LowerCaseEmailStr]:
         async with self.db_engine.connect() as conn:
             return cast(
-                Optional[EmailStr],
+                Optional[LowerCaseEmailStr],
                 await conn.scalar(
                     sa.select([users.c.email]).where(users.c.primary_gid == gid)
                 ),
@@ -65,7 +67,7 @@ class GroupsRepository(BaseRepository):
 
     async def list_user_emails_from_gids(
         self, gids: set[PositiveInt]
-    ) -> dict[PositiveInt, Optional[EmailStr]]:
+    ) -> dict[PositiveInt, Optional[LowerCaseEmailStr]]:
         service_owners = {}
         async with self.db_engine.connect() as conn:
             async for row in await conn.stream(
@@ -74,6 +76,8 @@ class GroupsRepository(BaseRepository):
                 )
             ):
                 service_owners[row[users.c.primary_gid]] = (
-                    EmailStr(row[users.c.email]) if row[users.c.email] else None
+                    LowerCaseEmailStr(row[users.c.email])
+                    if row[users.c.email]
+                    else None
                 )
         return service_owners

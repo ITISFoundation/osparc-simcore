@@ -5,8 +5,9 @@ from operator import attrgetter
 from typing import Callable, Optional
 
 from fastapi import FastAPI
+from models_library.emails import LowerCaseEmailStr
 from models_library.services import ServiceDockerData, ServiceType
-from pydantic import EmailStr, Extra, ValidationError, parse_obj_as
+from pydantic import Extra, ValidationError, parse_obj_as
 from settings_library.catalog import CatalogSettings
 
 from ..models.schemas.solvers import (
@@ -41,7 +42,7 @@ class TruncatedCatalogServiceOut(ServiceDockerData):
     that asks only what is needed.
     """
 
-    owner: Optional[EmailStr]
+    owner: Optional[LowerCaseEmailStr]
 
     class Config:
         extra = Extra.ignore

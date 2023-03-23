@@ -1862,6 +1862,16 @@
           }
         }
       },
+      "BootMode": {
+        "title": "BootMode",
+        "enum": [
+          "CPU",
+          "GPU",
+          "MPI"
+        ],
+        "type": "string",
+        "description": "An enumeration."
+      },
       "BootOption": {
         "title": "BootOption",
         "required": [
@@ -2199,7 +2209,8 @@
         "title": "ComputationCreate",
         "required": [
           "user_id",
-          "project_id"
+          "project_id",
+          "product_name"
         ],
         "type": "object",
         "properties": {
@@ -2222,8 +2233,7 @@
           },
           "product_name": {
             "title": "Product Name",
-            "type": "string",
-            "description": "required if computation is started"
+            "type": "string"
           },
           "subgraph": {
             "title": "Subgraph",
@@ -2462,7 +2472,10 @@
                   "limit": 2147483648,
                   "reservation": 2147483648
                 }
-              }
+              },
+              "boot_modes": [
+                "CPU"
+              ]
             }
           }
         }
@@ -2490,7 +2503,7 @@
         "properties": {
           "image": {
             "title": "Image",
-            "pattern": "[\\w/-]+:[\\w.@]+",
+            "pattern": "^(?P<registry_host>(?:(?:(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z0-9-]+(?::\\d+)?)|[a-zA-Z0-9-]+:\\d+))?(?:/)?(?P<docker_image>(?:[a-z0-9][a-z0-9_.-]*/)*[a-z0-9-_]+[a-z0-9])(?::(?P<docker_tag>[\\w][\\w.-]{0,126}[\\w]))?(?P<docker_digest>\\@sha256:[a-fA-F0-9]{64})?$",
             "type": "string",
             "description": "Used by the frontend to provide a context for the users.Services with a docker-compose spec will have multiple entries.Using the `image:version` instead of the docker-compose spec is more helpful for the end user."
           },
@@ -2500,6 +2513,16 @@
             "additionalProperties": {
               "$ref": "#/components/schemas/ResourceValue"
             }
+          },
+          "boot_modes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BootMode"
+            },
+            "description": "describe how a service shall be booted, using CPU, MPI, openMP or GPU",
+            "default": [
+              "CPU"
+            ]
           }
         },
         "example": {
@@ -2640,15 +2663,12 @@
           "RAM": {
             "title": "Ram",
             "type": "integer",
-            "description": "defines the required (maximum) amount of RAM for running the services in bytes"
+            "description": "defines the required (maximum) amount of RAM for running the services"
           },
-          "MPI": {
-            "title": "Mpi",
-            "maximum": 1.0,
-            "minimum": 0.0,
+          "VRAM": {
+            "title": "Vram",
             "type": "integer",
-            "description": "defines whether a MPI node is required for running the services",
-            "deprecated": true
+            "description": "defines the required (maximum) amount of VRAM for running the services"
           }
         }
       },
@@ -3471,6 +3491,27 @@
         },
         "additionalProperties": false
       },
+      "TaskCounts": {
+        "title": "TaskCounts",
+        "type": "object",
+        "properties": {
+          "error": {
+            "title": "Error",
+            "type": "integer",
+            "default": 0
+          },
+          "memory": {
+            "title": "Memory",
+            "type": "integer",
+            "default": 0
+          },
+          "executing": {
+            "title": "Executing",
+            "type": "integer",
+            "default": 0
+          }
+        }
+      },
       "TaskLogFileGet": {
         "title": "TaskLogFileGet",
         "required": [
@@ -3631,10 +3672,7 @@
           "cpu",
           "memory",
           "num_fds",
-          "ready",
-          "executing",
-          "in_flight",
-          "in_memory"
+          "task_counts"
         ],
         "type": "object",
         "properties": {
@@ -3653,29 +3691,14 @@
             "type": "integer",
             "description": "consumed file descriptors"
           },
-          "ready": {
-            "title": "Ready",
-            "minimum": 0.0,
-            "type": "integer",
-            "description": "# tasks ready to run"
-          },
-          "executing": {
-            "title": "Executing",
-            "minimum": 0.0,
-            "type": "integer",
-            "description": "# tasks currently executing"
-          },
-          "in_flight": {
-            "title": "In Flight",
-            "minimum": 0.0,
-            "type": "integer",
-            "description": "# tasks waiting for data"
-          },
-          "in_memory": {
-            "title": "In Memory",
-            "minimum": 0.0,
-            "type": "integer",
-            "description": "# tasks in worker memory"
+          "task_counts": {
+            "title": "Task Counts",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TaskCounts"
+              }
+            ],
+            "description": "task details"
           }
         }
       },
