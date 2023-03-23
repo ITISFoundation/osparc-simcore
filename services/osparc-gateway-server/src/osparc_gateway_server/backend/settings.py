@@ -37,7 +37,7 @@ class AppSettings(BaseSettings):
     )
 
     COMPUTATION_SIDECAR_NUM_NON_USABLE_CPUS: NonNegativeInt = Field(
-        0, description="Number of CPUS the sidecar should not advertise/use"
+        2, description="Number of CPUS the sidecar should not advertise/use"
     )
 
     COMPUTATION_SIDECAR_NON_USABLE_RAM: NonNegativeInt = Field(
