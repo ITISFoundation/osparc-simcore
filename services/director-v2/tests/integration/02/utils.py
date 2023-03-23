@@ -21,6 +21,7 @@ from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from servicelib.common_headers import (
     X_DYNAMIC_SIDECAR_REQUEST_DNS,
     X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
+    X_SIMCORE_USER_AGENT,
 )
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.schemas.constants import (
@@ -288,7 +289,8 @@ async def assert_start_service(
     )
     headers = {
         X_DYNAMIC_SIDECAR_REQUEST_DNS: director_v2_client.base_url.host,
-        X_DYNAMIC_SIDECAR_REQUEST_DNS: director_v2_client.base_url.scheme,
+        X_DYNAMIC_SIDECAR_REQUEST_SCHEME: director_v2_client.base_url.scheme,
+        X_SIMCORE_USER_AGENT: "",
     }
 
     result = await director_v2_client.post(
@@ -362,6 +364,7 @@ async def assert_retrieve_service(
     headers = {
         X_DYNAMIC_SIDECAR_REQUEST_DNS: director_v2_client.base_url.host,
         X_DYNAMIC_SIDECAR_REQUEST_SCHEME: director_v2_client.base_url.scheme,
+        X_SIMCORE_USER_AGENT: "",
     }
 
     result = await director_v2_client.post(

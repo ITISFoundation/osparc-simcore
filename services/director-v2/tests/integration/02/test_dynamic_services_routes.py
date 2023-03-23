@@ -28,6 +28,7 @@ from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from servicelib.common_headers import (
     X_DYNAMIC_SIDECAR_REQUEST_DNS,
     X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
+    X_SIMCORE_USER_AGENT,
 )
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
@@ -286,6 +287,7 @@ async def test_start_status_stop(
         headers={
             X_DYNAMIC_SIDECAR_REQUEST_DNS: start_request_data["request_dns"],
             X_DYNAMIC_SIDECAR_REQUEST_SCHEME: start_request_data["request_scheme"],
+            X_SIMCORE_USER_AGENT: "",
         },
     )
     assert response.status_code == 201, response.text
