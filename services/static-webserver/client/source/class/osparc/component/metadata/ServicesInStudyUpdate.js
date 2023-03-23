@@ -171,6 +171,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
       const updatableServices = [];
       let i = 0;
       const workbench = this._studyData["workbench"];
+      let anyUpdatable = false;
       for (const nodeId in workbench) {
         i++;
         const node = workbench[nodeId];
@@ -233,10 +234,12 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
             row: i,
             column: this.self().GRID_POS.UPDATE_BUTTON
           });
+
+          anyUpdatable |= autoUpdatable;
         }
       }
 
-      if (osparc.data.Permissions.getInstance().canDo("study.service.update") && canIWriteStudy) {
+      if (osparc.data.Permissions.getInstance().canDo("study.service.update") && canIWriteStudy && anyUpdatable) {
         const updateAllButton = this.__updateAllButton;
         updateAllButton.show();
         updateAllButton.addListener("execute", () => this.__updateAllServices(updatableServices, updateAllButton), this);
