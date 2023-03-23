@@ -30,10 +30,16 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
     },
 
     anyServiceDeprecated: function(studyData) {
-      return true;
+      if ("workbench" in studyData) {
+        return osparc.utils.Study.isWorkbenchDeprecated(studyData["workbench"]);
+      }
+      return false;
     },
 
     anyServiceRetired: function(studyData) {
+      if ("workbench" in studyData) {
+        return osparc.utils.Study.isWorkbenchRetired(studyData["workbench"]);
+      }
       return false;
     },
 
