@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseSettings, Field, NonNegativeInt
+from pydantic import BaseSettings, Field, NonNegativeInt, PositiveInt
 
 
 class BootModeEnum(str, Enum):
@@ -42,6 +42,11 @@ class AppSettings(BaseSettings):
 
     COMPUTATION_SIDECAR_NON_USABLE_RAM: NonNegativeInt = Field(
         0, description="Amount of RAM in bytes, the sidecar should not advertise/use"
+    )
+
+    COMPUTATION_SIDECAR_DASK_NTHREADS: Optional[PositiveInt] = Field(
+        default=None,
+        description="Allows to override the default number of threads used by the dask-sidecars",
     )
 
     GATEWAY_WORKERS_NETWORK: str = Field(

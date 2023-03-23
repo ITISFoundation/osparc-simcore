@@ -214,6 +214,8 @@ async def start_service(
                 "DASK_SIDECAR_NON_USABLE_RAM": f"{settings.COMPUTATION_SIDECAR_NON_USABLE_RAM}",
             }
         )
+        if settings.COMPUTATION_SIDECAR_DASK_NTHREADS:
+            env["DASK_NTHREADS"] = f"{settings.COMPUTATION_SIDECAR_DASK_NTHREADS}"
 
         # find service parameters
         network_id = await get_network_id(
