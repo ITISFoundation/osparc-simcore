@@ -116,24 +116,6 @@ class DockerContainerInspect(BaseModel):
             id=container["Id"],
         )
 
-    @root_validator(pre=True)
-    @classmethod
-    def _ensure_legacy_format_compatibility(cls, values):
-        warnings.warn(
-            (
-                "Once https://github.com/ITISFoundation/osparc-simcore/pull/3610 "
-                "reaches production this entire root_validator function "
-                "can be safely removed. Please check the "
-                "https://github.com/ITISFoundation/osparc-simcore/releases"
-            ),
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        status: Optional[str] = values.get("status")
-        if status:
-            values["container_state"] = {"Status": status}
-        return values
-
     class Config:
         keep_untouched = (cached_property,)
         allow_mutation = False
@@ -397,13 +379,37 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     request_scheme: str = Field(
         ..., description="used when configuring the CORS options on the proxy"
     )
+    request_simcore_user_agent: str = Field(
+        ...,
+        description="used as label to filter out the metrics from the cAdvisor prometheus metrics",
+    )
     proxy_service_name: str = Field(None, description="service name given to the proxy")
 
-    product_name: Optional[str] = Field(
+    product_name: str = Field(
         None,
         description="Current product upon which this service is scheduled. "
         "If set to None, the current product is undefined. Mostly for backwards compatibility",
     )
+
+    @root_validator(pre=True)
+    @classmethod
+    def _ensure_legacy_format_compatibility(cls, values):
+        warnings.warn(
+            (
+                "Once https://github.com/ITISFoundation/osparc-simcore/pull/3990 "
+                "reaches production this entire root_validator function "
+                "can be safely removed. Please check "
+                "https://github.com/ITISFoundation/osparc-simcore/issues/3996"
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        request_simcore_user_agent: Optional[str] = values.get(
+            "request_simcore_user_agent"
+        )
+        if not request_simcore_user_agent:
+            values["request_simcore_user_agent"] = ""
+        return values
 
     @classmethod
     def from_http_request(
@@ -414,10 +420,10 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         port: PortInt,
         request_dns: str,
         request_scheme: str,
+        request_simcore_user_agent: str,
         run_id: Optional[UUID] = None,
     ) -> "SchedulerData":
         # This constructor method sets current product
-        assert service.product_name is not None  # nosec
         names_helper = DynamicSidecarNamesHelper.make(service.node_uuid)
 
         obj_dict = dict(
@@ -440,6 +446,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             request_dns=request_dns,
             request_scheme=request_scheme,
             proxy_service_name=names_helper.proxy_service_name,
+            request_simcore_user_agent=request_simcore_user_agent,
             dynamic_sidecar={},
         )
         if run_id:

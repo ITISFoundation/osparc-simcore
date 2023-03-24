@@ -1,15 +1,8 @@
 from contextlib import suppress
 from typing import Optional
 
-from pydantic import (
-    AnyUrl,
-    BaseModel,
-    EmailStr,
-    Field,
-    ValidationError,
-    parse_obj_as,
-    validator,
-)
+from models_library.emails import LowerCaseEmailStr
+from pydantic import AnyUrl, BaseModel, Field, ValidationError, parse_obj_as, validator
 
 #
 # GROUPS MODELS defined in OPENAPI specs
@@ -142,7 +135,7 @@ class AllUsersGroups(BaseModel):
 class GroupUser(GroupAccessRights):
     first_name: Optional[str] = Field(None, description="the user first name")
     last_name: Optional[str] = Field(None, description="the user last name")
-    login: Optional[EmailStr] = Field(None, description="the user login email")
+    login: Optional[LowerCaseEmailStr] = Field(None, description="the user login email")
     gravatar_id: Optional[str] = Field(None, description="the user gravatar id hash")
     id: Optional[str] = Field(None, description="the user id")
     gid: Optional[str] = Field(None, description="the user primary gid")

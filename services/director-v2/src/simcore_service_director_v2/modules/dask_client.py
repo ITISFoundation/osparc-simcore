@@ -31,6 +31,7 @@ from models_library.clusters import ClusterAuthentication, ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
+from models_library.services_resources import BootMode
 from models_library.users import UserID
 from pydantic import parse_obj_as
 from pydantic.networks import AnyUrl
@@ -47,7 +48,7 @@ from ..core.errors import (
     ComputationalBackendTaskNotFoundError,
     ComputationalBackendTaskResultsNotReadyError,
 )
-from ..core.settings import ComputationalBackendSettings
+from ..core.settings import AppSettings, ComputationalBackendSettings
 from ..models.domains.comp_tasks import Image
 from ..models.schemas.clusters import ClusterDetails, Scheduler
 from ..utils.dask import (
@@ -99,6 +100,7 @@ RemoteFct = Callable[
         LogFileUploadURL,
         Commands,
         Optional[S3Settings],
+        BootMode,
     ],
     TaskOutputData,
 ]
@@ -206,6 +208,7 @@ class DaskClient:
             log_file_url: AnyUrl,
             command: list[str],
             s3_settings: Optional[S3Settings],
+            boot_mode: BootMode,
         ) -> TaskOutputData:
             """This function is serialized by the Dask client and sent over to the Dask sidecar(s)
             Therefore, (screaming here) DO NOT MOVE THAT IMPORT ANYWHERE ELSE EVER!!"""
@@ -220,6 +223,7 @@ class DaskClient:
                 log_file_url,
                 command,
                 s3_settings,
+                boot_mode,
             )
 
         if remote_fct is None:
@@ -233,6 +237,7 @@ class DaskClient:
                 project_id=project_id,
                 node_id=node_id,
             )
+            assert node_image.node_requirements  # nosec
             dask_resources = from_node_reqs_to_dask_resources(
                 node_image.node_requirements
             )
@@ -299,12 +304,15 @@ class DaskClient:
             )
 
             try:
+                assert self.app.state  # nosec
+                assert self.app.state.settings  # nosec
+                settings: AppSettings = self.app.state.settings
                 task_future = self.backend.client.submit(
                     remote_fct,
                     docker_auth=DockerBasicAuth(
-                        server_address=self.app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY.resolved_registry_url,
-                        username=self.app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY.REGISTRY_USER,
-                        password=self.app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY.REGISTRY_PW,
+                        server_address=settings.DIRECTOR_V2_DOCKER_REGISTRY.resolved_registry_url,
+                        username=settings.DIRECTOR_V2_DOCKER_REGISTRY.REGISTRY_USER,
+                        password=settings.DIRECTOR_V2_DOCKER_REGISTRY.REGISTRY_PW,
                     ),
                     service_key=node_image.name,
                     service_version=node_image.tag,
@@ -313,6 +321,7 @@ class DaskClient:
                     log_file_url=log_file_url,
                     command=node_image.command,
                     s3_settings=s3_settings,
+                    boot_mode=node_image.boot_mode,
                     key=job_id,
                     resources=dask_resources,
                     retries=0,

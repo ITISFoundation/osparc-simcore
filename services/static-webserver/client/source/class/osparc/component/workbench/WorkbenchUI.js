@@ -478,6 +478,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
       nodeUI.addListener("dbltap", e => {
         this.fireDataEvent("nodeSelected", nodeUI.getNodeId());
+        if (nodeUI.getNode().canNodeStart()) {
+          nodeUI.getNode().requestStartNode();
+        }
         e.stopPropagation();
       }, this);
     },

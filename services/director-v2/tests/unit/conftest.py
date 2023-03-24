@@ -95,12 +95,18 @@ def request_scheme() -> str:
 
 
 @pytest.fixture
+def request_simcore_user_agent() -> str:
+    return "python/test"
+
+
+@pytest.fixture
 def scheduler_data_from_http_request(
     dynamic_service_create: DynamicServiceCreate,
     simcore_service_labels: SimcoreServiceLabels,
     dynamic_sidecar_port: int,
     request_dns: str,
     request_scheme: str,
+    request_simcore_user_agent: str,
     run_id: RunID,
 ) -> SchedulerData:
     return SchedulerData.from_http_request(
@@ -109,6 +115,7 @@ def scheduler_data_from_http_request(
         port=dynamic_sidecar_port,
         request_dns=request_dns,
         request_scheme=request_scheme,
+        request_simcore_user_agent=request_simcore_user_agent,
         run_id=run_id,
     )
 
@@ -182,24 +189,12 @@ async def dask_spec_local_cluster(
                 },
             },
         },
-        "mpi-worker": {
+        "bigcpu-worker": {
             "cls": Worker,
             "options": {
                 "nthreads": 1,
                 "resources": {
                     "CPU": 8,
-                    "MPI": 1,
-                    "RAM": 768e9,
-                },
-            },
-        },
-        "gpu-mpi-worker": {
-            "cls": Worker,
-            "options": {
-                "nthreads": 1,
-                "resources": {
-                    "GPU": 1,
-                    "MPI": 1,
                     "RAM": 768e9,
                 },
             },
@@ -237,7 +232,7 @@ def local_dask_gateway_server_config(
     c.ClusterConfig.worker_cmd = [  # type: ignore
         "dask-worker",
         "--resources",
-        f"CPU=12,GPU=1,MPI=1,RAM={16e9}",
+        f"CPU=12,GPU=1,RAM={16e9}",
     ]
     # NOTE: This must be set such that the local unsafe backend creates a worker with enough cores/memory
     c.ClusterConfig.worker_cores = 12  # type: ignore

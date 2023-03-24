@@ -13,7 +13,6 @@ from uuid import UUID
 from pydantic import (
     BaseModel,
     ConstrainedStr,
-    EmailStr,
     Extra,
     Field,
     HttpUrl,
@@ -26,6 +25,7 @@ from pydantic import (
 
 from .basic_regex import VERSION_RE
 from .boot_options import BootOption, BootOptions
+from .emails import LowerCaseEmailStr
 from .services_constants import FILENAME_RE, PROPERTY_TYPE_RE
 from .services_ui import Widget
 from .utils.json_schema import (
@@ -121,7 +121,7 @@ class Badge(BaseModel):
 
 class Author(BaseModel):
     name: str = Field(..., description="Name of the author", example="Jim Knopf")
-    email: EmailStr = Field(
+    email: LowerCaseEmailStr = Field(
         ...,
         examples=["sun@sense.eight", "deleen@minbar.bab"],
         description="Email address",
@@ -445,7 +445,7 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
     badges: Optional[list[Badge]] = Field(None)
 
     authors: list[Author] = Field(..., min_items=1)
-    contact: EmailStr = Field(
+    contact: LowerCaseEmailStr = Field(
         ...,
         description="email to correspond to the authors about the node",
         examples=["lab@net.flix"],

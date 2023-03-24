@@ -2,17 +2,12 @@ import logging
 
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
-from servicelib.aiohttp.rest_routing import (
-    iter_path_operations,
-    map_handlers_with_operations,
-)
 
-from .._constants import APP_OPENAPI_SPECS_KEY
 from ..login.decorators import login_required
 from ..products import setup_products
+from . import handlers_rest
 from ._studies_access import get_redirection_to_study_page
 from .handlers_redirects import get_redirection_to_viewer
-from .handlers_rest import rest_handler_functions
 from .settings import StudiesDispatcherSettings, get_plugin_settings
 
 logger = logging.getLogger(__name__)
@@ -29,7 +24,9 @@ def _setup_studies_access(app: web.Application, settings: StudiesDispatcherSetti
     # TODO: make sure that these routes are filtered properly in active middlewares
     app.router.add_routes(
         [
-            web.get(r"/study/{id}", study_handler, name="study"),
+            web.get(
+                r"/study/{id}", study_handler, name="get_redirection_to_study_page"
+            ),
         ]
     )
 
@@ -62,12 +59,6 @@ def setup_studies_dispatcher(app: web.Application) -> bool:
     )
 
     # Rest-API routes: maps handlers with routes tags with "viewer" based on OAS operation_id
-    specs = app[APP_OPENAPI_SPECS_KEY]
-    rest_routes = map_handlers_with_operations(
-        rest_handler_functions,
-        filter(lambda op: "viewer" in op.tags, iter_path_operations(specs)),
-        strict=True,
-    )
-    app.router.add_routes(rest_routes)
+    app.router.add_routes(handlers_rest.routes)
 
     return True

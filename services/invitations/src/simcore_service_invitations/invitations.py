@@ -6,9 +6,9 @@ from typing import Optional, cast
 from urllib import parse
 
 from cryptography.fernet import Fernet, InvalidToken
+from models_library.emails import LowerCaseEmailStr
 from pydantic import (
     BaseModel,
-    EmailStr,
     Field,
     HttpUrl,
     PositiveInt,
@@ -42,7 +42,7 @@ class InvitationInputs(BaseModel):
         min_length=1,
         max_length=30,
     )
-    guest: EmailStr = Field(
+    guest: LowerCaseEmailStr = Field(
         ...,
         description="Invitee's email. Note that the registration can ONLY be used with this email",
     )
