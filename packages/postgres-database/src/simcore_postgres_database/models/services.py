@@ -119,7 +119,12 @@ services_access_rights = sa.Table(
         nullable=False,
         doc="Service Key Identifier",
     ),
-    sa.Column("version", sa.String, nullable=False, doc="Service version"),
+    sa.Column(
+        "version",
+        sa.String,
+        nullable=False,
+        doc="Service version",
+    ),
     sa.Column(
         "gid",
         sa.BigInteger,
@@ -205,6 +210,9 @@ services_latest = sa.Table(
         nullable=False,
         doc="latest MAJOR.MINOR.PATCH semantic version of the service (key)",
     ),
+    #
+    #  NOTE: might want to drop some of the columns in service_meta_data coming from image tags and keep a record only for the latest service
+    #
     sa.ForeignKeyConstraint(
         ["key", "version"],
         ["services_meta_data.key", "services_meta_data.version"],
