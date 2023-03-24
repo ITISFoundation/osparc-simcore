@@ -14,7 +14,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
   construct: function(studyData) {
     this.base(arguments, studyData);
 
-    const grid = this._getLayout();
+    const grid = this._servicesGrid.getLayout();
     grid.setColumnAlign(this.self().GRID_POS.CURRENT_VERSION, "center", "middle");
     grid.setColumnAlign(this.self().GRID_POS.COMPATIBLE_VERSION, "center", "middle");
     grid.setColumnAlign(this.self().GRID_POS.LATEST_VERSION, "center", "middle");
@@ -27,6 +27,20 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
       COMPATIBLE_VERSION: Object.keys(osparc.component.metadata.ServicesInStudy.GRID_POS).length+1,
       LATEST_VERSION: Object.keys(osparc.component.metadata.ServicesInStudy.GRID_POS).length+2,
       UPDATE_BUTTON: Object.keys(osparc.component.metadata.ServicesInStudy.GRID_POS).length+3
+    },
+
+    anyServiceDeprecated: function(studyData) {
+      if ("workbench" in studyData) {
+        return osparc.utils.Study.isWorkbenchDeprecated(studyData["workbench"]);
+      }
+      return false;
+    },
+
+    anyServiceRetired: function(studyData) {
+      if ("workbench" in studyData) {
+        return osparc.utils.Study.isWorkbenchRetired(studyData["workbench"]);
+      }
+      return false;
     },
 
     updateService: function(studyData, nodeId, newVersion) {
@@ -80,6 +94,34 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
   members: {
     __updateAllButton: null,
 
+    _populateIntroText: function() {
+      if (this.self().anyServiceDeprecated(this._studyData)) {
+        const deprecatedText = this.tr("Services marked in yellow are deprecated, they will be retired soon. They can be updated by pressing the Update button.");
+        const deprecatedLabel = new qx.ui.basic.Label(deprecatedText).set({
+          font: "text-14",
+          rich: true
+        });
+        this._introText.add(deprecatedLabel);
+      }
+      if (this.self().anyServiceRetired(this._studyData)) {
+        let retiredText = this.tr("Services marked in red are retired: you cannot use them anymore.<br>If the Update button is disabled, they might require manual intervention to be updated:");
+        retiredText += this.tr("<br>- Open the study");
+        retiredText += this.tr("<br>- Click on the retired service, download the data");
+        retiredText += this.tr("<br>- Upload the data to an updated version");
+        const retiredLabel = new qx.ui.basic.Label(retiredText).set({
+          font: "text-14",
+          rich: true
+        });
+        this._introText.add(retiredLabel);
+      }
+      if (this._introText.getChildren().length === 0) {
+        const upToDateLabel = new qx.ui.basic.Label(this.tr("All services are up to date to their latest compatible version.")).set({
+          font: "text-14"
+        });
+        this._introText.add(upToDateLabel);
+      }
+    },
+
     __updateService: function(nodeId, newVersion, button) {
       this.setEnabled(false);
       this.self().updateService(this._studyData, nodeId, newVersion);
@@ -95,14 +137,14 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
     _populateHeader: function() {
       this.base(arguments);
 
-      this._add(new qx.ui.basic.Label(this.tr("Current")).set({
+      this._servicesGrid.add(new qx.ui.basic.Label(this.tr("Current")).set({
         font: "title-14"
       }), {
         row: 0,
         column: this.self().GRID_POS.CURRENT_VERSION
       });
 
-      this._add(new qx.ui.basic.Label(this.tr("Compatible")).set({
+      this._servicesGrid.add(new qx.ui.basic.Label(this.tr("Compatible")).set({
         font: "title-14",
         toolTipText: this.tr("Latest compatible version")
       }), {
@@ -110,7 +152,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
         column: this.self().GRID_POS.COMPATIBLE_VERSION
       });
 
-      this._add(new qx.ui.basic.Label(this.tr("Latest")).set({
+      this._servicesGrid.add(new qx.ui.basic.Label(this.tr("Latest")).set({
         font: "title-14",
         toolTipText: this.tr("Latest available version")
       }), {
@@ -122,7 +164,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
         backgroundColor: "strong-main",
         visibility: "excluded"
       });
-      this._add(updateAllButton, {
+      this._servicesGrid.add(updateAllButton, {
         row: 0,
         column: this.self().GRID_POS.UPDATE_BUTTON
       });
@@ -136,6 +178,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
       const updatableServices = [];
       let i = 0;
       const workbench = this._studyData["workbench"];
+      let anyUpdatable = false;
       for (const nodeId in workbench) {
         i++;
         const node = workbench[nodeId];
@@ -154,7 +197,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
           font: "text-14"
         });
         this.self().colorVersionLabel(currentVersionLabel, nodeMetadata);
-        this._add(currentVersionLabel, {
+        this._servicesGrid.add(currentVersionLabel, {
           row: i,
           column: this.self().GRID_POS.CURRENT_VERSION
         });
@@ -163,7 +206,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
           font: "text-14"
         });
         this.self().colorVersionLabel(compatibleVersionLabel, latestCompatibleMetadata);
-        this._add(compatibleVersionLabel, {
+        this._servicesGrid.add(compatibleVersionLabel, {
           row: i,
           column: this.self().GRID_POS.COMPATIBLE_VERSION
         });
@@ -171,7 +214,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
         const latestVersionLabel = new qx.ui.basic.Label(latestMetadata["version"]).set({
           font: "text-14"
         });
-        this._add(latestVersionLabel, {
+        this._servicesGrid.add(latestVersionLabel, {
           row: i,
           column: this.self().GRID_POS.LATEST_VERSION
         });
@@ -194,14 +237,16 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
             });
           }
           updateButton.addListener("execute", () => this.__updateService(nodeId, latestCompatibleMetadata["version"], updateButton), this);
-          this._add(updateButton, {
+          this._servicesGrid.add(updateButton, {
             row: i,
             column: this.self().GRID_POS.UPDATE_BUTTON
           });
+
+          anyUpdatable |= autoUpdatable;
         }
       }
 
-      if (osparc.data.Permissions.getInstance().canDo("study.service.update") && canIWriteStudy) {
+      if (osparc.data.Permissions.getInstance().canDo("study.service.update") && canIWriteStudy && anyUpdatable) {
         const updateAllButton = this.__updateAllButton;
         updateAllButton.show();
         updateAllButton.addListener("execute", () => this.__updateAllServices(updatableServices, updateAllButton), this);

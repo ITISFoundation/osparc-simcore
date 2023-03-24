@@ -36,6 +36,14 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyBootOpts", {
   },
 
   members: {
+    _populateIntroText: function() {
+      const text = this.tr("Here you can select in which mode the services will be started:");
+      const introText = new qx.ui.basic.Label(text).set({
+        font: "text-14"
+      });
+      this._introText.add(introText);
+    },
+
     __updateBootMode: function(nodeId, newBootModeId) {
       if (!("bootOptions" in this._studyData["workbench"][nodeId])) {
         this._studyData["workbench"][nodeId]["bootOptions"] = {};
@@ -50,7 +58,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyBootOpts", {
     _populateHeader: function() {
       this.base(arguments);
 
-      this._add(new qx.ui.basic.Label(this.tr("Boot Mode")).set({
+      this._servicesGrid.add(new qx.ui.basic.Label(this.tr("Boot Mode")).set({
         font: "title-14",
         toolTipText: this.tr("Select boot type")
       }), {
@@ -98,7 +106,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyBootOpts", {
             const newBootModeId = e.getData()[0].bootModeId;
             this.__updateBootMode(nodeId, newBootModeId);
           }, this);
-          this._add(bootModeSB, {
+          this._servicesGrid.add(bootModeSB, {
             row: i,
             column: this.self().GRID_POS.BOOT_MODE
           });
