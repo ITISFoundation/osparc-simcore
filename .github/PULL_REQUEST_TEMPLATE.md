@@ -5,6 +5,7 @@
   ✨    Introduce new features.
   ♻️    Refactor code.
   🚑️    Critical hotfix.
+  🎨    Enhance existing feature.
   ⚗️    Perform experiments.
   ⬆️    Upgrade dependencies.
   📝    Add or update documentation.
