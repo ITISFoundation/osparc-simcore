@@ -10,6 +10,7 @@ from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataA
 from packaging import version
 from simcore_service_catalog.db.repositories.services import ServicesRepository
 from simcore_service_catalog.utils.versioning import is_patch_release
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = [
     "postgres",
@@ -20,7 +21,7 @@ pytest_simcore_ops_services_selection = [
 
 
 @pytest.fixture
-def services_repo(sqlalchemy_async_engine):
+def services_repo(sqlalchemy_async_engine: AsyncEngine):
     repo = ServicesRepository(sqlalchemy_async_engine)
     return repo
 
@@ -40,7 +41,6 @@ async def fake_catalog_with_jupyterlab(
     service_catalog_faker: Callable,
     services_db_tables_injector: Callable,
 ) -> FakeCatalogInfo:
-
     target_product = products_names[-1]
 
     # injects fake data in db
@@ -225,7 +225,6 @@ async def test_list_service_releases_version_filtered(
     fake_catalog_with_jupyterlab: FakeCatalogInfo,
     services_repo: ServicesRepository,
 ):
-
     latest = await services_repo.get_latest_release(
         "simcore/services/dynamic/jupyterlab"
     )
@@ -249,3 +248,17 @@ async def test_list_service_releases_version_filtered(
     assert [
         s.version for s in expected_0_x_x
     ] == fake_catalog_with_jupyterlab.expected_0_x_x
+
+
+@pytest.mark.testit
+async def test_sync_service_latest(
+    services_repo: ServicesRepository, fake_catalog_with_jupyterlab: FakeCatalogInfo
+):
+    await services_repo.sync_services_latest()
+
+    latest = await services_repo.get_latest_release(
+        "simcore/services/dynamic/jupyterlab"
+    )
+
+    assert latest
+    assert latest.version == fake_catalog_with_jupyterlab.expected_latest
