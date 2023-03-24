@@ -3,6 +3,7 @@
   WIP: work in progress
   🐛    Fix a bug.
   ✨    Introduce new features.
+  🎨    Enhance existing feature.
   ♻️    Refactor code.
   🚑️    Critical hotfix.
   ⚗️    Perform experiments.
@@ -10,8 +11,8 @@
   📝    Add or update documentation.
   🔨    Add or update development scripts.
   🔒️    Fix security issues.
-  ⚠️    Changes in associated codebases: changes in ops configuration etc. required before deploying: Please link associated issue or PR
-  🗃️    Database table changed (relevant for devops)
+  ⚠️    Changes in ops configuration etc. required before deploying. Please link associated issue or PR.
+  🗃️    Database table changed (relevant for devops).
 
 
 or from https://gitmoji.dev/
