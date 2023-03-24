@@ -121,6 +121,11 @@ async def _create_services_in_database(
         )
 
 
+async def _update_services_latest_table(app: FastAPI):
+    services_repo = ServicesRepository(app.state.engine)
+    await services_repo.sync_services_latest()
+
+
 async def _ensure_registry_and_database_are_synced(app: FastAPI) -> None:
     """Ensures that the services listed in the database is in sync with the registry
 
@@ -146,6 +151,9 @@ async def _ensure_registry_and_database_are_synced(app: FastAPI) -> None:
         await _create_services_in_database(
             app, missing_services_in_db, services_in_registry
         )
+
+        # will account for new service updates
+        await _update_services_latest_table(app)
 
 
 async def _ensure_published_templates_accessible(
@@ -192,10 +200,14 @@ async def _ensure_published_templates_accessible(
 async def _sync_services_task(app: FastAPI) -> None:
     default_product: Final[str] = app.state.default_product_name
     engine: AsyncEngine = app.state.engine
+    first_run = True
 
     while app.state.registry_syncer_running:
         try:
             logger.debug("Syncing services between registry and database...")
+
+            if first_run:
+                await _update_services_latest_table(app)
 
             # check that the list of services is in sync with the registry
             await _ensure_registry_and_database_are_synced(app)
@@ -205,6 +217,7 @@ async def _sync_services_task(app: FastAPI) -> None:
             await _ensure_published_templates_accessible(engine, default_product)
 
             await asyncio.sleep(app.state.settings.CATALOG_BACKGROUND_TASK_REST_TIME)
+            first_run = False
 
         except asyncio.CancelledError:
             # task is stopped
