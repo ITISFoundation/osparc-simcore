@@ -96,22 +96,29 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
 
     _populateIntroText: function() {
       if (this.self().anyServiceDeprecated(this._studyData)) {
-        const upToDate = new qx.ui.basic.Label(this.tr("Deprecated services are marked in yellow")).set({
-          font: "text-14"
+        const deprecatedText = this.tr("Services marked in yellow are deprecated, they will be retired soon. They can be updated by pressing the Update button.");
+        const deprecatedLabel = new qx.ui.basic.Label(deprecatedText).set({
+          font: "text-14",
+          rich: true
         });
-        this._introText.add(upToDate);
+        this._introText.add(deprecatedLabel);
       }
       if (this.self().anyServiceRetired(this._studyData)) {
-        const upToDate = new qx.ui.basic.Label(this.tr("Deprecated services are marked in red")).set({
-          font: "text-14"
+        let retiredText = this.tr("Services marked in red are retired: you cannot use them anymore.<br>If the Update button is disabled, they might require manual intervention to be updated:");
+        retiredText += this.tr("<br>- Open the study");
+        retiredText += this.tr("<br>- Click on the retired service, download the data");
+        retiredText += this.tr("<br>- Upload the data to an updated version");
+        const retiredLabel = new qx.ui.basic.Label(retiredText).set({
+          font: "text-14",
+          rich: true
         });
-        this._introText.add(upToDate);
+        this._introText.add(retiredLabel);
       }
       if (this._introText.getChildren().length === 0) {
-        const upToDate = new qx.ui.basic.Label(this.tr("All services are up to date to their latest compatible version")).set({
+        const upToDateLabel = new qx.ui.basic.Label(this.tr("All services are up to date to their latest compatible version.")).set({
           font: "text-14"
         });
-        this._introText.add(upToDate);
+        this._introText.add(upToDateLabel);
       }
     },
 
