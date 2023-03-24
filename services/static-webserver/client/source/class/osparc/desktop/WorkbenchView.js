@@ -1082,24 +1082,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       outputFilesBtn.addListener("execute", () => osparc.component.node.BaseNodeView.openNodeDataManager(node));
       this.__outputsPage.add(outputFilesBtn);
 
+
       if (node.hasOutputs() && node.isDynamic() && (node.isDeprecated() || node.isRetired())) {
         this.__outputsPage.add(new qx.ui.core.Spacer(null, 20));
 
-        const chip = node.isDeprecated() ? osparc.utils.StatusUI.createServiceDeprecatedChip() : osparc.utils.StatusUI.createServiceRetiredChip();
-        this.__outputsPage.add(chip);
-
-        if (node.isDeprecated()) {
-          const deprecateDateLabel = new qx.ui.basic.Label(osparc.utils.Services.getDeprecationDateText(node.getMetaData())).set({
-            rich: true
-          });
-          this.__outputsPage.add(deprecateDateLabel);
-        }
-
-        const instructionsMsg = node.isDeprecated() ? osparc.utils.Services.DEPRECATED_DYNAMIC_INSTRUCTIONS : osparc.utils.Services.RETIRED_DYNAMIC_INSTRUCTIONS;
-        const instructionsLabel = new qx.ui.basic.Label(instructionsMsg).set({
-          rich: true
-        });
-        this.__outputsPage.add(instructionsLabel);
+        const lifeCycleView = new osparc.component.node.LifeCycleView(node);
+        this.__outputsPage.add(lifeCycleView);
 
         this.getChildControl("side-panel-right-tabs").setSelection([this.__outputsPage]);
       }
