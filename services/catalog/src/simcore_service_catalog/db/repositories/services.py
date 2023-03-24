@@ -439,7 +439,7 @@ class ServicesRepository(BaseRepository):
             return ServiceSpecifications.parse_obj(merged_specifications)
         return None  # mypy
 
-    async def sync_services_latest(self):
+    async def update_latest_versions_cache(self):
         # Select query for latest
         latest_select_subquery = sa.select(
             services_meta_data.c.key,

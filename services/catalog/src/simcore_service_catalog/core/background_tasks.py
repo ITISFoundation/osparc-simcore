@@ -121,9 +121,9 @@ async def _create_services_in_database(
         )
 
 
-async def _update_services_latest_table(app: FastAPI):
+async def update_latest_versions_cache(app: FastAPI):
     services_repo = ServicesRepository(app.state.engine)
-    await services_repo.sync_services_latest()
+    await services_repo.update_latest_versions_cache()
 
 
 async def _ensure_registry_and_database_are_synced(app: FastAPI) -> None:
@@ -153,7 +153,7 @@ async def _ensure_registry_and_database_are_synced(app: FastAPI) -> None:
         )
 
         # will account for new service updates
-        await _update_services_latest_table(app)
+        await update_latest_versions_cache(app)
 
 
 async def _ensure_published_templates_accessible(
@@ -207,7 +207,7 @@ async def _sync_services_task(app: FastAPI) -> None:
             logger.debug("Syncing services between registry and database...")
 
             if first_run:
-                await _update_services_latest_table(app)
+                await update_latest_versions_cache(app)
 
             # check that the list of services is in sync with the registry
             await _ensure_registry_and_database_are_synced(app)
