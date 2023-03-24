@@ -163,6 +163,7 @@ async def create_or_update_secret(
         # we must first delete it as only labels may be updated
         secret = secrets[0]
         await docker_client.secrets.delete(secret["ID"])
+    assert data  # nosec
     secret = await docker_client.secrets.create(
         name=docker_secret_name,
         data=data,
@@ -209,8 +210,12 @@ async def start_service(
                 "SIDECAR_COMP_SERVICES_SHARED_FOLDER": _SHARED_COMPUTATIONAL_FOLDER_IN_SIDECAR,
                 "SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME": settings.COMPUTATIONAL_SIDECAR_VOLUME_NAME,
                 "LOG_LEVEL": settings.COMPUTATIONAL_SIDECAR_LOG_LEVEL,
+                "DASK_SIDECAR_NUM_NON_USABLE_CPUS": f"{settings.COMPUTATION_SIDECAR_NUM_NON_USABLE_CPUS}",
+                "DASK_SIDECAR_NON_USABLE_RAM": f"{settings.COMPUTATION_SIDECAR_NON_USABLE_RAM}",
             }
         )
+        if settings.COMPUTATION_SIDECAR_DASK_NTHREADS:
+            env["DASK_NTHREADS"] = f"{settings.COMPUTATION_SIDECAR_DASK_NTHREADS}"
 
         # find service parameters
         network_id = await get_network_id(
