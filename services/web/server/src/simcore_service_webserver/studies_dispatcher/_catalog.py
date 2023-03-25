@@ -11,6 +11,7 @@ from simcore_postgres_database.models.services import (
 )
 
 from ..db import get_database_engine
+from .settings import StudiesDispatcherSettings, get_plugin_settings
 
 _EVERYONE_GROUP_ID = 1
 
@@ -29,6 +30,7 @@ async def list_latest_osparc_dynamic_services(
     app: web.Application,
 ) -> AsyncIterator[ServiceMetaData]:
     engine: Engine = get_database_engine(app)
+    settings: StudiesDispatcherSettings = get_plugin_settings(app)
 
     query = (
         sa.select(
@@ -66,5 +68,5 @@ async def list_latest_osparc_dynamic_services(
                 version=row.version,
                 title=row.name,
                 description=row.description,
-                thumbnail=row.thumbnail,
+                thumbnail=row.thumbnail or settings.STUDIES_DEFAULT_SERVICE_THUMBNAIL,
             )

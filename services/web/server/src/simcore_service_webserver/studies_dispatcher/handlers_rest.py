@@ -70,7 +70,7 @@ class ServiceGet(BaseModel):
 
     title: str = Field(..., description="Service name for display")
     description: str = Field(..., description="Long description of the service")
-    thumbnail: HttpUrl
+    thumbnail: HttpUrl = Field(..., description="Url to service thumbnail")
 
     # extra properties
     file_extensions: list[str] = Field(
@@ -85,18 +85,18 @@ class ServiceGet(BaseModel):
     )
 
     @classmethod
-    def create(cls, data: ServiceMetaData, request: web.Request):
+    def create(cls, meta: ServiceMetaData, request: web.Request):
         viewer = ViewerInfo(
-            key=data.key,
-            version=data.version,
+            key=meta.key,
+            version=meta.version,
             filetype="Undefined",
-            label=data.title,
+            label=meta.title,
             input_port_key="Undefined",
             is_guest_allowed=False,
         )
         return cls(
             view_url=compose_dispatcher_prefix_url(request, viewer),
-            **asdict(data),
+            **asdict(meta),
         )
 
     class Config:
@@ -105,7 +105,7 @@ class ServiceGet(BaseModel):
                 "key": "simcore/services/dynamic/sim4life",
                 "title": "Sim4Life Mattermost",
                 "description": "It is also sim4life for the web",
-                "thumbnail": "https://placeimg.com/640/480/nature",
+                "thumbnail": "https://via.placeholder.com/170x120.png",
                 "file_extensions": ["smash", "h5"],
                 "view_url": "https://osparc.io/view?file_type=CSV&viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=1.2.3",
             }

@@ -6,7 +6,7 @@ import logging
 import re
 import urllib.parse
 from pprint import pprint
-from typing import AsyncIterator, Iterator
+from typing import AsyncIterator
 
 import pytest
 import sqlalchemy as sa
@@ -47,7 +47,6 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
             "WEBSERVER_COMPUTATION": "0",
             "WEBSERVER_DIAGNOSTICS": "null",
             "WEBSERVER_DIRECTOR": "null",
-            "WEBSERVER_EMAIL": "null",
             "WEBSERVER_EXPORTER": "null",
             "WEBSERVER_GROUPS": "1",
             "WEBSERVER_META_MODELING": "null",
@@ -106,9 +105,24 @@ def postgres_db(postgres_db: sa.engine.Engine) -> sa.engine.Engine:
         "('simcore/services/dynamic/jupyter-octave-python-math',	'1.6.9',	'JupyterLab Math',	'input_1',	'PY',	0, '0'),"
         "('simcore/services/dynamic/jupyter-octave-python-math',	'1.6.9',	'JupyterLab Math',	'input_1',	'IPYNB',0, '0');"
     )
+    stmt_create_services_latest = text(
+        'INSERT INTO "services_latest" ("key", "version") VALUES'
+        "('simcore/services/dynamic/raw-graphs',	'2.11.1' ),"
+        "('simcore/services/dynamic/bio-formats-web',	'1.0.1'),"
+        "('simcore/services/dynamic/jupyter-octave-python-math',	'1.6.9');"
+    )
+
+    # NOTE: users default osparc project and everyone group (which should be by default already in tables)
+    stmt_create_services_access_rights = text(
+        ' INSERT INTO "services_access_rights" ("key", "version", "gid", "execute_access", "write_access", "created", "modified", "product_name") VALUES'
+        "('simcore/services/dynamic/raw-graphs',	'2.11.1',	1,	't',	'f',	'2022-05-23 08:44:45.418376',	'2022-05-23 08:44:45.418376',	'osparc'),"
+        "('simcore/services/dynamic/jupyter-octave-python-math',	'1.6.9',	1,	't',	'f',	'2022-05-23 08:44:45.418376',	'2022-05-23 08:44:45.418376',	'osparc');"
+    )
     with postgres_db.connect() as conn:
         conn.execute(stmt_create_services)
+        conn.execute(stmt_create_services_latest)
         conn.execute(stmt_create_services_consume_filetypes)
+        conn.execute(stmt_create_services_access_rights)
 
     return postgres_db
 
@@ -273,16 +287,19 @@ async def test_api_list_supported_filetypes(client: TestClient):
     ]
 
 
+@pytest.mark.testit
 async def test_api_get_services(client: TestClient):
+    assert client.app
 
-    resp = await client.get("/v0/services")
-    data, _ = await assert_status(resp, web.HTTPOk)
+    url = client.app.router["list_services"].url_for()
+    response = await client.get(f"{url}")
 
-    service: dict = ServiceGet.Config.schema_extra["example"]
-    # base_url = _get_base_url(client)
-    assert data == [
-        service,
-    ]
+    data, error = await assert_status(response, web.HTTPOk)
+
+    services = parse_obj_as(list[ServiceGet], data)
+    assert services
+
+    assert error is None
 
 
 # REDIRECT ROUTES --------------------------------------------------------------------------------
