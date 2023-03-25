@@ -3,7 +3,7 @@
 """
 import logging
 import urllib.parse
-from typing import Optional
+from typing import Optional, cast
 
 import aiohttp
 from aiohttp import web
@@ -87,7 +87,7 @@ class RedirectionQueryParams(ViewerQueryParams):
             ) from err
 
 
-def compose_dispatcher_prefix_url(request: web.Request, viewer: ViewerInfo) -> str:
+def compose_dispatcher_prefix_url(request: web.Request, viewer: ViewerInfo) -> HttpUrl:
     """This is denoted PREFIX URL because it needs to append extra query
     parameters added in RedirectionQueryParams
     """
@@ -95,7 +95,7 @@ def compose_dispatcher_prefix_url(request: web.Request, viewer: ViewerInfo) -> s
     absolute_url = request.url.join(
         request.app.router["get_redirection_to_viewer"].url_for().with_query(**params)
     )
-    return f"{absolute_url}"
+    return cast(HttpUrl, f"{absolute_url}")
 
 
 async def get_redirection_to_viewer(request: web.Request):
