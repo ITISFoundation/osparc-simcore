@@ -26,7 +26,7 @@ class ServiceMetaData:
     thumbnail: str
 
 
-async def list_latest_osparc_dynamic_services(
+async def list_latest_osparc_services(
     app: web.Application,
 ) -> AsyncIterator[ServiceMetaData]:
     engine: Engine = get_database_engine(app)
@@ -54,7 +54,10 @@ async def list_latest_osparc_dynamic_services(
             )
         )
         .where(
-            services_latest.c.key.like("simcore/services/dynamic/%%")
+            (
+                services_latest.c.key.like("simcore/services/dynamic/%%")
+                | (services_latest.c.key.like("simcore/services/comp/%%"))
+            )
             & (services_access_rights.c.gid == _EVERYONE_GROUP_ID)
             & (services_access_rights.c.execute_access == True)
             & (services_access_rights.c.product_name == "osparc")

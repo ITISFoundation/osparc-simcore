@@ -130,7 +130,7 @@ def postgres_db(postgres_db: sa.engine.Engine) -> sa.engine.Engine:
 @pytest.fixture
 def web_server(redis_service: RedisSettings, web_server: TestServer) -> TestServer:
     #
-    # Extends to start redis_service
+    # Extends web_server to start redis_service
     #
     print("Redis service started with settings: ", redis_service.json(indent=1))
     return web_server
