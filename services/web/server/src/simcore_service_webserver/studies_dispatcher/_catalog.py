@@ -4,6 +4,7 @@ from typing import AsyncIterator
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.engine import Engine
+from pydantic import PositiveInt
 from simcore_postgres_database.models.services import (
     services_access_rights,
     services_latest,
@@ -14,6 +15,7 @@ from ..db import get_database_engine
 from .settings import StudiesDispatcherSettings, get_plugin_settings
 
 _EVERYONE_GROUP_ID = 1
+LARGEST_PAGE_SIZE = 1000
 
 
 @dataclass
@@ -26,9 +28,15 @@ class ServiceMetaData:
     thumbnail: str
 
 
-async def list_latest_osparc_services(
+async def iter_latest_osparc_services(
     app: web.Application,
+    *,
+    page_number: PositiveInt = 1,  # 1-based
+    page_size: PositiveInt = LARGEST_PAGE_SIZE,
 ) -> AsyncIterator[ServiceMetaData]:
+    assert page_number >= 1  # nosec
+    assert ((page_number - 1) * page_size) >= 0  # nosec
+
     engine: Engine = get_database_engine(app)
     settings: StudiesDispatcherSettings = get_plugin_settings(app)
 
@@ -63,6 +71,9 @@ async def list_latest_osparc_services(
             & (services_access_rights.c.product_name == "osparc")
         )
     )
+
+    # pagination
+    query = query.limit(page_size).offset((page_number - 1) * page_size)
 
     async with engine.acquire() as conn:
         async for row in await conn.execute(query):
