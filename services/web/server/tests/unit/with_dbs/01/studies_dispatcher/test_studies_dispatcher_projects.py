@@ -15,8 +15,8 @@ from simcore_service_webserver.projects.projects_api import get_project_for_user
 from simcore_service_webserver.studies_dispatcher._projects import (
     UserInfo,
     ViewerInfo,
-    add_new_project,
-    create_viewer_project_model,
+    _add_new_project,
+    _create_viewer_project_model,
 )
 from simcore_service_webserver.users_api import get_user
 
@@ -56,7 +56,7 @@ async def test_add_new_project_from_model_instance(
             file_picker_id = NodeID("4c69c0ce-00e4-4bd5-9cf0-59b67b3a9343")
             viewer_id = NodeID("fc718e5a-bf07-4abe-b526-d9cafd34830c")
 
-            project: Project = create_viewer_project_model(
+            project: Project = _create_viewer_project_model(
                 project_id,
                 file_picker_id,
                 viewer_id,
@@ -65,7 +65,7 @@ async def test_add_new_project_from_model_instance(
                 viewer_info=viewer,
             )
 
-            await add_new_project(
+            await _add_new_project(
                 client.app, project, user, product_name=osparc_product_name
             )
 

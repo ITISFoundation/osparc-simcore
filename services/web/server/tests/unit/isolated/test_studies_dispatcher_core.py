@@ -23,7 +23,7 @@ from simcore_service_webserver.projects import projects_api
 from simcore_service_webserver.studies_dispatcher._projects import (
     UserInfo,
     ViewerInfo,
-    create_viewer_project_model,
+    _create_viewer_project_model,
 )
 from simcore_service_webserver.studies_dispatcher.handlers_redirects import (
     RedirectionQueryParams,
@@ -71,7 +71,7 @@ async def test_create_project_with_viewer(project_jsonschema, view):
 
     user = UserInfo(id=3, name="foo", primary_gid=33, email="foo@bar.com")
 
-    project = create_viewer_project_model(
+    project = _create_viewer_project_model(
         project_id=ProjectID("e3ee7dfc-25c3-11eb-9fae-02420a01b846"),
         file_picker_id=NodeID("4c69c0ce-00e4-4bd5-9cf0-59b67b3a9343"),
         viewer_id=NodeID("fc718e5a-bf07-4abe-b526-d9cafd34830c"),
