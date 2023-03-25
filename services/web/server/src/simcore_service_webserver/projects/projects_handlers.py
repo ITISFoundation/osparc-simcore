@@ -52,7 +52,7 @@ async def open_project(request: web.Request) -> web.Response:
         raise web.HTTPBadRequest(reason="Invalid request body") from exc
 
     try:
-        project_type = await projects_api.get_project_type(
+        project_type: ProjectType = await projects_api.get_project_type(
             request.app, path_params.project_id
         )
         user_role: UserRole = await users_api.get_user_role(
@@ -66,7 +66,7 @@ async def open_project(request: web.Request) -> web.Response:
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
-            include_state=True,
+            include_state=False,
             check_permissions="read|write"
             if project_type is ProjectType.TEMPLATE
             else "read",
@@ -97,6 +97,9 @@ async def open_project(request: web.Request) -> web.Response:
                 request, project, req_ctx.user_id, req_ctx.product_name
             )
 
+        # and let's update the project last change timestamp
+        await projects_api.update_project(request.app, project)
+
         # notify users that project is now opened
         project = await projects_api.add_project_states_for_user(
             user_id=req_ctx.user_id,
@@ -104,7 +107,6 @@ async def open_project(request: web.Request) -> web.Response:
             is_template=False,
             app=request.app,
         )
-
         await projects_api.notify_project_state_update(request.app, project)
 
         return web.json_response({"data": project}, dumps=json_dumps)

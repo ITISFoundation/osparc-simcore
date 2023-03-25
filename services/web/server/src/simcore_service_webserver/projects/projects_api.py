@@ -141,6 +141,19 @@ async def get_project_type(
 
 
 #
+# UPDATE project -----------------------------------------------------
+#
+
+
+async def update_project(app: web.Application, project):
+    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    assert db  # nosec
+    return await db.update_project_without_checking_permissions(
+        project, project["uuid"]
+    )
+
+
+#
 # DELETE project -----------------------------------------------------
 #
 
