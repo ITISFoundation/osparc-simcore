@@ -8,9 +8,10 @@ from typing import Optional, cast
 import aiohttp
 from aiohttp import web
 from aiohttp.client_exceptions import ClientError
-from models_library.services import KEY_RE, VERSION_RE
-from pydantic import BaseModel, HttpUrl, ValidationError, constr, validator
+from models_library.services import ServiceKey, ServiceVersion
+from pydantic import BaseModel, HttpUrl, ValidationError, validator
 from pydantic.types import PositiveInt
+from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 
 from ..products import get_product_name
 from ..utils_aiohttp import create_redirect_response
@@ -24,8 +25,8 @@ log = logging.getLogger(__name__)
 # HANDLERS --------------------------------
 class ViewerQueryParams(BaseModel):
     file_type: str
-    viewer_key: constr(regex=KEY_RE)  # type: ignore
-    viewer_version: constr(regex=VERSION_RE)  # type: ignore
+    viewer_key: ServiceKey
+    viewer_version: ServiceVersion
 
     @staticmethod
     def from_viewer(viewer: ViewerInfo) -> "ViewerQueryParams":
@@ -50,22 +51,12 @@ class RedirectionQueryParams(ViewerQueryParams):
     def unquote_url(cls, v):
         # NOTE: see test_url_quoting_and_validation
         # before any change here
-        w = urllib.parse.unquote(v)
-        if SPACE in w:
-            w = w.replace(SPACE, "%20")
-        return w
-
-    @classmethod
-    def from_request(cls, request: web.Request) -> "RedirectionQueryParams":
-        try:
-            obj = cls.parse_obj(dict(request.query))
-        except ValidationError as err:
-            raise web.HTTPBadRequest(
-                content_type="application/json",
-                body=err.json(),
-                reason=f"{len(err.errors())} invalid parameters in query",
-            )
-        return obj
+        if v:
+            w = urllib.parse.unquote(v)
+            if SPACE in w:
+                w = w.replace(SPACE, "%20")
+            return w
+        return v
 
     async def check_download_link(self):
         """Explicit validation of download link that performs a light fetch of url's head"""
@@ -101,14 +92,13 @@ def compose_dispatcher_prefix_url(request: web.Request, viewer: ViewerInfo) -> H
 async def get_redirection_to_viewer(request: web.Request):
     try:
         # query parameters in request parsed and validated
-        params: RedirectionQueryParams = RedirectionQueryParams.from_request(request)
+        params = parse_request_query_parameters_as(RedirectionQueryParams, request)
         log.debug("Requesting viewer %s", params)
 
         # TODO: Cannot check file_size from HEAD
         # removed await params.check_download_link()
         # Perhaps can check the header for GET while downloading and retreive file_size??
 
-        # pylint: disable=no-member
         viewer: ViewerInfo = await validate_requested_viewer(
             request.app,
             file_type=params.file_type,
@@ -165,6 +155,14 @@ async def get_redirection_to_viewer(request: web.Request):
             page="error",
             message=f"{err.reason}. Please reload this page to login/register.",
             status_code=err.status_code,
+        ) from err
+
+    except (web.HTTPUnprocessableEntity) as err:
+        raise create_redirect_response(
+            request.app,
+            page="error",
+            message=f"Invalid parameters in link: {err.reason}",
+            status_code=web.HTTPUnprocessableEntity.status_code,  # 422
         ) from err
 
     except (web.HTTPClientError) as err:

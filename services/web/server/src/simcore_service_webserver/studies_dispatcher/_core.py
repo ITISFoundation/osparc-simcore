@@ -2,7 +2,7 @@ import logging
 import uuid
 from collections import deque
 from functools import lru_cache
-from typing import List, Optional
+from typing import Optional
 
 from aiohttp import web
 from aiopg.sa.result import RowProxy
@@ -67,7 +67,7 @@ class ViewerInfo(BaseModel):
 
 async def list_viewers_info(
     app: web.Application, file_type: Optional[str] = None, *, only_default: bool = False
-) -> List[ViewerInfo]:
+) -> list[ViewerInfo]:
     #
     # TODO: These services MUST be shared with EVERYBODY! Setup check on startup and fill
     #       with !?
@@ -159,8 +159,8 @@ async def validate_requested_viewer(
 BASE_UUID = uuid.UUID("ca2144da-eabb-4daf-a1df-a3682050e25f")
 
 
-@lru_cache()
-def compose_uuid_from(*values) -> str:
-    composition = "/".join(map(str, values))
+@lru_cache
+def compose_uuid_from(*values) -> uuid.UUID:
+    composition: str = "/".join(map(str, values))
     new_uuid = uuid.uuid5(BASE_UUID, composition)
-    return str(new_uuid)
+    return new_uuid
