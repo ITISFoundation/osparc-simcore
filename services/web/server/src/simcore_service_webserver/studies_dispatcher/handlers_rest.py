@@ -4,6 +4,7 @@ NOTE: openapi section for these handlers was generated using
    services/web/server/tests/sandbox/viewers_openapi_generator.py
 """
 import logging
+from dataclasses import asdict
 from typing import Optional
 
 from aiohttp import web
@@ -14,6 +15,7 @@ from pydantic.networks import HttpUrl
 
 from .._meta import API_VTAG
 from ..utils_aiohttp import envelope_json_response
+from ._catalog import ServiceMetaData, list_latest_osparc_dynamic_services
 from ._core import ViewerInfo, list_viewers_info
 from .handlers_redirects import compose_dispatcher_prefix_url
 
@@ -68,7 +70,7 @@ class ServiceGet(BaseModel):
 
     title: str = Field(..., description="Service name for display")
     description: str = Field(..., description="Long description of the service")
-    thumbnail: HttpUrl = Field()
+    thumbnail: HttpUrl
 
     # extra properties
     file_extensions: list[str] = Field(
@@ -81,6 +83,21 @@ class ServiceGet(BaseModel):
         ...,
         description="Redirection to open a service in osparc (see /view)",
     )
+
+    @classmethod
+    def create(cls, data: ServiceMetaData, request: web.Request):
+        viewer = ViewerInfo(
+            key=data.key,
+            version=data.version,
+            filetype="Undefined",
+            label=data.title,
+            input_port_key="Undefined",
+            is_guest_allowed=False,
+        )
+        return cls(
+            view_url=compose_dispatcher_prefix_url(request, viewer),
+            **asdict(data),
+        )
 
     class Config:
         schema_extra = {
@@ -107,17 +124,13 @@ routes = web.RouteTableDef()
 async def list_services(request: Request):
     """Returns a list latest version of services"""
     assert request  # nosec
-    # NOTE: this is temporary for testing
-
-    examples = [
-        ServiceGet.Config.schema_extra["example"],
-    ]
     services = []
-    for service in examples:
+    async for service_data in list_latest_osparc_dynamic_services(request.app):
         try:
-            services.append(ServiceGet.parse_obj(service))
+            service = ServiceGet.create(service_data, request)
+            services.append(service)
         except ValidationError as err:
-            logger.debug("Invalid %s: %s", f"{service=}", err)
+            logger.debug("Invalid %s: %s", f"{service_data=}", err)
 
     return envelope_json_response(services)
 
