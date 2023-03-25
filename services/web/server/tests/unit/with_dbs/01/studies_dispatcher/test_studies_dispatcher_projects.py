@@ -1,20 +1,16 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
-
-import logging
-from copy import deepcopy
-from typing import Callable
 
 import pytest
-from models_library.projects import Project
-from pytest_simcore.helpers.utils_dict import ConfigDict
+from models_library.projects import Project, ProjectID
+from models_library.projects_nodes_io import NodeID
 from pytest_simcore.helpers.utils_login import NewUser
 from pytest_simcore.helpers.utils_projects import delete_all_projects
 from pytest_simcore.helpers.utils_services import list_fake_file_consumers
 from simcore_service_webserver.groups_api import auto_add_user_to_groups
-from simcore_service_webserver.log import setup_logging
 from simcore_service_webserver.projects.projects_api import get_project_for_user
 from simcore_service_webserver.studies_dispatcher._projects import (
     UserInfo,
@@ -23,64 +19,8 @@ from simcore_service_webserver.studies_dispatcher._projects import (
     create_viewer_project_model,
 )
 from simcore_service_webserver.users_api import get_user
-from yarl import URL
 
 FAKE_FILE_VIEWS = list_fake_file_consumers()
-
-
-@pytest.fixture
-def app_cfg(
-    default_app_cfg: ConfigDict, unused_tcp_port_factory: Callable, redis_service: URL
-):
-    """App's configuration used for every test in this module
-
-    NOTE: Overrides services/web/server/tests/unit/with_dbs/conftest.py::app_cfg to influence app setup
-    """
-    cfg = deepcopy(default_app_cfg)
-
-    cfg["main"]["port"] = unused_tcp_port_factory()
-    cfg["main"]["studies_access_enabled"] = True
-
-    exclude = {
-        "tracing",
-        "director",
-        "smtp",
-        "storage",
-        "activity",
-        "diagnostics",
-        "groups",
-        "tags",
-        "publications",
-        "catalog",
-        "computation",
-        "clusters",
-    }
-    include = {
-        "db",
-        "rest",
-        "projects",
-        "login",
-        "socketio",
-        "resource_manager",
-        "users",
-        "products",
-        "studies_dispatcher",
-    }
-
-    assert include.intersection(exclude) == set()
-
-    for section in include:
-        cfg[section]["enabled"] = True
-    for section in exclude:
-        cfg[section]["enabled"] = False
-
-    # NOTE: To see logs, use pytest -s --log-cli-level=DEBUG
-    setup_logging(level=logging.DEBUG)
-
-    # Enforces smallest GC in the background task
-    cfg["resource_manager"]["garbage_collection_interval_seconds"] = 1
-
-    return cfg
 
 
 @pytest.mark.parametrize(
@@ -112,9 +52,9 @@ async def test_add_new_project_from_model_instance(
                 email=user_db["email"],
             )
 
-            project_id = "e3ee7dfc-25c3-11eb-9fae-02420a01b846"
-            file_picker_id = "4c69c0ce-00e4-4bd5-9cf0-59b67b3a9343"
-            viewer_id = "fc718e5a-bf07-4abe-b526-d9cafd34830c"
+            project_id = ProjectID("e3ee7dfc-25c3-11eb-9fae-02420a01b846")
+            file_picker_id = NodeID("4c69c0ce-00e4-4bd5-9cf0-59b67b3a9343")
+            viewer_id = NodeID("fc718e5a-bf07-4abe-b526-d9cafd34830c")
 
             project: Project = create_viewer_project_model(
                 project_id,
@@ -139,7 +79,10 @@ async def test_add_new_project_from_model_instance(
                 user.id,
                 include_state=False,
             )
-            assert set(project_db["workbench"].keys()) == {file_picker_id, viewer_id}
+            assert set(project_db["workbench"].keys()) == {
+                f"{file_picker_id}",
+                f"{viewer_id}",
+            }
 
         finally:
             # tear-down: delete before user gets deleted
