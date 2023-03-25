@@ -442,4 +442,4 @@ async def test_viewer_redirect_with_client_errors(client: TestClient):
 
     message, status_code = assert_error_in_fragment(resp)
     print(message)
-    assert status_code == web.HTTPBadRequest.status_code
+    assert status_code == web.HTTPUnprocessableEntity.status_code
