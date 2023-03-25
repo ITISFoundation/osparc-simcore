@@ -13,6 +13,25 @@ from .rabbitmq_settings import RabbitSettings, get_plugin_settings
 log = logging.getLogger(__name__)
 
 
+async def _rabbitmq_client_cleanup_ctx(app: web.Application) -> AsyncIterator[None]:
+    settings: RabbitSettings = get_plugin_settings(app)
+    with log_context(
+        log, logging.INFO, msg=f"Check RabbitMQ backend is ready on {settings.dsn}"
+    ):
+        await wait_till_rabbitmq_responsive(f"{settings.dsn}")
+
+    with log_context(
+        log, logging.INFO, msg=f"Connect RabbitMQ client to {settings.dsn}"
+    ):
+        app[APP_RABBITMQ_CLIENT_KEY] = RabbitMQClient("webserver", settings)
+
+    yield
+
+    # cleanup
+    with log_context(log, logging.INFO, msg="Closing RabbitMQ client"):
+        await app[APP_RABBITMQ_CLIENT_KEY].close()
+
+
 @app_module_setup(
     __name__,
     ModuleCategory.ADDON,
@@ -20,26 +39,8 @@ log = logging.getLogger(__name__)
     logger=log,
     depends=[],
 )
-def setup_rabbitmq(app: web.Application) -> AsyncIterator[None]:
-    async def rabbitmq_client_cleanup_ctx(app: web.Application):
-        settings: RabbitSettings = get_plugin_settings(app)
-        with log_context(
-            log, logging.INFO, msg=f"Check RabbitMQ backend is ready on {settings.dsn}"
-        ):
-            await wait_till_rabbitmq_responsive(f"{settings.dsn}")
-
-        with log_context(
-            log, logging.INFO, msg=f"Connect RabbitMQ client to {settings.dsn}"
-        ):
-            app[APP_RABBITMQ_CLIENT_KEY] = RabbitMQClient("webserver", settings)
-
-        yield
-
-        # cleanup
-        with log_context(log, logging.INFO, msg="Closing RabbitMQ client"):
-            await app[APP_RABBITMQ_CLIENT_KEY].close()
-
-    app.cleanup_ctx.append(rabbitmq_client_cleanup_ctx)
+def setup_rabbitmq(app: web.Application):
+    app.cleanup_ctx.append(_rabbitmq_client_cleanup_ctx)
 
 
 def get_rabbitmq_client(app: web.Application) -> RabbitMQClient:
