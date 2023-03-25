@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 class ViewerQueryParams(BaseModel):
-    file_type: str
+    file_type: Optional[str]
     viewer_key: ServiceKey
     viewer_version: ServiceVersion
 
@@ -88,16 +88,30 @@ def compose_dispatcher_prefix_url(request: web.Request, viewer: ViewerInfo) -> H
     return cast(HttpUrl, f"{absolute_url}")
 
 
+def compose_service_dispatcher_prefix_url(
+    request: web.Request, service_key: str, service_version: str
+) -> HttpUrl:
+    params = ViewerQueryParams(
+        viewer_key=service_key, viewer_version=service_version, file_type=None  # type: ignore
+    ).dict(exclude_none=True)
+    absolute_url = request.url.join(
+        request.app.router["get_redirection_to_viewer"].url_for().with_query(**params)
+    )
+    return cast(HttpUrl, f"{absolute_url}")
+
+
 async def get_redirection_to_viewer(request: web.Request):
     try:
         # query parameters in request parsed and validated
         params = parse_request_query_parameters_as(RedirectionQueryParams, request)
         logger.debug("Requesting viewer %s", params)
 
+        if params.file_type is None:
+            raise NotImplementedError("Feature under development")
+
         # TODO: Cannot check file_size from HEAD
         # removed await params.check_download_link()
         # Perhaps can check the header for GET while downloading and retreive file_size??
-
         viewer: ViewerInfo = await validate_requested_viewer(
             request.app,
             file_type=params.file_type,
@@ -134,6 +148,7 @@ async def get_redirection_to_viewer(request: web.Request):
             file_size=params.file_size,
         )
         await ensure_authentication(user, request, response)
+
         logger.debug(
             "Response with redirect '%s' w/ auth cookie in headers %s)",
             response,

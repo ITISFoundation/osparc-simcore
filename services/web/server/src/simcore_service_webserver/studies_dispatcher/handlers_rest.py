@@ -17,7 +17,10 @@ from .._meta import API_VTAG
 from ..utils_aiohttp import envelope_json_response
 from ._catalog import ServiceMetaData, iter_latest_osparc_services
 from ._core import ViewerInfo, list_viewers_info
-from .handlers_redirects import compose_dispatcher_prefix_url
+from .handlers_redirects import (
+    compose_dispatcher_prefix_url,
+    compose_service_dispatcher_prefix_url,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -86,16 +89,10 @@ class ServiceGet(BaseModel):
 
     @classmethod
     def create(cls, meta: ServiceMetaData, request: web.Request):
-        viewer = ViewerInfo(
-            key=meta.key,
-            version=meta.version,
-            filetype="Undefined",
-            label=meta.title,
-            input_port_key="Undefined",
-            is_guest_allowed=False,
-        )
         return cls(
-            view_url=compose_dispatcher_prefix_url(request, viewer),
+            view_url=compose_service_dispatcher_prefix_url(
+                request, service_key=meta.key, service_version=meta.version
+            ),
             **asdict(meta),
         )
 
@@ -107,7 +104,7 @@ class ServiceGet(BaseModel):
                 "description": "It is also sim4life for the web",
                 "thumbnail": "https://via.placeholder.com/170x120.png",
                 "file_extensions": ["smash", "h5"],
-                "view_url": "https://osparc.io/view?file_type=CSV&viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=1.2.3",
+                "view_url": "https://host.com/view?viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=1.2.3",
             }
         }
 
