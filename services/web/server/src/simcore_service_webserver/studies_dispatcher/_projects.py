@@ -108,6 +108,26 @@ def generate_nodeids(project_id: ProjectID) -> tuple[NodeID, NodeID]:
     return file_picker_id, viewer_id
 
 
+def _create_file_picker(download_link: str):
+    output_id = "outFile"
+    node = Node(
+        key=_FILE_PICKER_KEY,
+        version=_FILE_PICKER_VERSION,
+        label="File Picker",
+        inputs={},
+        inputNodes=[],
+        outputs={
+            # NOTE: Empty label checked with @odeimaiz
+            output_id: DownloadLink(
+                downloadLink=parse_obj_as(AnyUrl, download_link),
+                label="",
+            )
+        },
+        progress=0,
+    )
+    return node, output_id
+
+
 def create_viewer_project_model(
     project_id: ProjectID,
     file_picker_id: NodeID,
@@ -122,21 +142,7 @@ def create_viewer_project_model(
 ) -> Project:
 
     file_picker_output_id = "outFile"
-    file_picker = Node(
-        key=_FILE_PICKER_KEY,
-        version=_FILE_PICKER_VERSION,
-        label="File Picker",
-        inputs={},
-        inputNodes=[],
-        outputs={
-            # NOTE: Empty label checked with @odeimaiz
-            file_picker_output_id: DownloadLink(
-                downloadLink=parse_obj_as(AnyUrl, download_link),
-                label="",
-            )
-        },
-        progress=0,
-    )
+    file_picker, file_picker_output_id = _create_file_picker(download_link)
 
     viewer_service = Node(
         key=viewer_info.key,
