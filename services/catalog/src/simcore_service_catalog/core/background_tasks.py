@@ -31,7 +31,7 @@ from ..services import access_rights
 
 logger = logging.getLogger(__name__)
 
-# NOTE: PC: I tried to unify with models_library.services but there is also inconsistent!
+# NOTE: by PC I tried to unify with models_library.services but there are other inconsistencies so I leave if for another time!
 ServiceKey = str
 ServiceVersion = str
 ServiceDockerDataMap = dict[tuple[ServiceKey, ServiceVersion], ServiceDockerData]

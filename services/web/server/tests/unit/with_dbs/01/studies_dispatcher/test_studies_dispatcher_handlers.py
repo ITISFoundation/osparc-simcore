@@ -233,7 +233,6 @@ async def test_api_list_supported_filetypes(client: TestClient):
     ]
 
 
-@pytest.mark.testit
 async def test_api_get_services(client: TestClient):
     assert client.app
 

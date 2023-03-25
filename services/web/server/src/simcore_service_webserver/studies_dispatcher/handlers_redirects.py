@@ -19,10 +19,9 @@ from ._core import StudyDispatcherError, ViewerInfo, validate_requested_viewer
 from ._projects import acquire_project_with_viewer
 from ._users import UserInfo, acquire_user, ensure_authentication
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
-# HANDLERS --------------------------------
 class ViewerQueryParams(BaseModel):
     file_type: str
     viewer_key: ServiceKey
@@ -68,7 +67,7 @@ class RedirectionQueryParams(ViewerQueryParams):
                 response.raise_for_status()
 
         except ClientError as err:
-            log.debug(
+            logger.debug(
                 "Invalid download link '%s'. If failed fetch check with %s",
                 self.download_link,
                 err,
@@ -93,7 +92,7 @@ async def get_redirection_to_viewer(request: web.Request):
     try:
         # query parameters in request parsed and validated
         params = parse_request_query_parameters_as(RedirectionQueryParams, request)
-        log.debug("Requesting viewer %s", params)
+        logger.debug("Requesting viewer %s", params)
 
         # TODO: Cannot check file_size from HEAD
         # removed await params.check_download_link()
@@ -106,13 +105,13 @@ async def get_redirection_to_viewer(request: web.Request):
             service_key=params.viewer_key,
             service_version=params.viewer_version,
         )
-        log.debug("Validated viewer %s", viewer)
+        logger.debug("Validated viewer %s", viewer)
 
         # Retrieve user or create a temporary guest
         user: UserInfo = await acquire_user(
             request, is_guest_allowed=viewer.is_guest_allowed
         )
-        log.debug("User acquired %s", user)
+        logger.debug("User acquired %s", user)
 
         # Generate one project per user + download_link + viewer
         project_id, viewer_id = await acquire_project_with_viewer(
@@ -122,7 +121,7 @@ async def get_redirection_to_viewer(request: web.Request):
             params.download_link,
             product_name=get_product_name(request),
         )
-        log.debug("Project acquired '%s'", project_id)
+        logger.debug("Project acquired '%s'", project_id)
 
         # Redirection and creation of cookies (for guests)
         # Produces  /#/view?project_id= & viewer_node_id
@@ -135,7 +134,7 @@ async def get_redirection_to_viewer(request: web.Request):
             file_size=params.file_size,
         )
         await ensure_authentication(user, request, response)
-        log.debug(
+        logger.debug(
             "Response with redirect '%s' w/ auth cookie in headers %s)",
             response,
             response.headers,
@@ -166,13 +165,13 @@ async def get_redirection_to_viewer(request: web.Request):
         ) from err
 
     except (web.HTTPClientError) as err:
-        log.exception("Client error with status code %d", err.status_code)
+        logger.exception("Client error with status code %d", err.status_code)
         raise create_redirect_response(
             request.app, page="error", message=err.reason, status_code=err.status_code
         ) from err
 
     except (ValidationError, web.HTTPServerError, Exception) as err:
-        log.exception("Fatal error while redirecting %s", request.query)
+        logger.exception("Fatal error while redirecting %s", request.query)
         raise create_redirect_response(
             request.app,
             page="error",
