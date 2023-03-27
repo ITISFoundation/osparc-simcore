@@ -231,7 +231,7 @@ async def test_create_and_delete_many_nodes_in_parallel(
 
         def num_services(self, *args, **kwargs) -> list[dict[str, Any]]:
             return [
-                {"service_uuid": service_uuid}
+                {"service_uuid": service_uuid, "service_state": "running"}
                 for service_uuid in self.running_services_uuids
             ]
 
@@ -293,6 +293,7 @@ async def test_create_and_delete_many_nodes_in_parallel(
     print("--> deleted all nodes concurrently")
 
 
+@pytest.mark.testit
 @pytest.mark.parametrize(*standard_user_role())
 async def test_create_node_does_not_start_dynamic_node_if_there_are_already_too_many_running(
     client: TestClient,
@@ -309,7 +310,8 @@ async def test_create_node_does_not_start_dynamic_node_if_there_are_already_too_
     )
     all_service_uuids = list(project["workbench"])
     mocked_director_v2_api["director_v2_api.list_dynamic_services"].return_value = [
-        {"service_uuid": service_uuid} for service_uuid in all_service_uuids
+        {"service_uuid": service_uuid, "service_state": "running"}
+        for service_uuid in all_service_uuids
     ]
     url = client.app.router["create_node"].url_for(project_id=project["uuid"])
     body = {
@@ -342,7 +344,7 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
 
         def num_services(self, *args, **kwargs) -> list[dict[str, Any]]:
             return [
-                {"service_uuid": service_uuid}
+                {"service_uuid": service_uuid, "service_state": "running"}
                 for service_uuid in self.running_services_uuids
             ]
 
@@ -407,7 +409,8 @@ async def test_create_node_does_start_dynamic_node_if_max_num_set_to_0(
     project = await user_project_with_num_dynamic_services(faker.pyint(min_value=3))
     all_service_uuids = list(project["workbench"])
     mocked_director_v2_api["director_v2_api.list_dynamic_services"].return_value = [
-        {"service_uuid": service_uuid} for service_uuid in all_service_uuids
+        {"service_uuid": service_uuid, "service_state": "running"}
+        for service_uuid in all_service_uuids
     ]
     url = client.app.router["create_node"].url_for(project_id=project["uuid"])
 
@@ -482,7 +485,8 @@ async def test_delete_node(
         if "/dynamic/" in service_data["key"] and dy_service_running
     ]
     mocked_director_v2_api["director_v2_api.list_dynamic_services"].return_value = [
-        {"service_uuid": service_uuid} for service_uuid in running_dy_services
+        {"service_uuid": service_uuid, "service_state": "running"}
+        for service_uuid in running_dy_services
     ]
     for node_id in user_project["workbench"]:
         url = client.app.router["delete_node"].url_for(
@@ -573,7 +577,8 @@ async def test_start_node_raises_if_dynamic_services_limit_attained(
     )
     all_service_uuids = list(project["workbench"])
     mocked_director_v2_api["director_v2_api.list_dynamic_services"].return_value = [
-        {"service_uuid": service_uuid} for service_uuid in all_service_uuids
+        {"service_uuid": service_uuid, "service_state": "running"}
+        for service_uuid in all_service_uuids
     ]
     # start the node, shall work as expected
     url = client.app.router["start_node"].url_for(
@@ -604,7 +609,8 @@ async def test_start_node_starts_dynamic_service_if_max_number_of_services_set_t
     project = await user_project_with_num_dynamic_services(faker.pyint(min_value=3))
     all_service_uuids = list(project["workbench"])
     mocked_director_v2_api["director_v2_api.list_dynamic_services"].return_value = [
-        {"service_uuid": service_uuid} for service_uuid in all_service_uuids
+        {"service_uuid": service_uuid, "service_state": "running"}
+        for service_uuid in all_service_uuids
     ]
     # start the node, shall work as expected
     url = client.app.router["start_node"].url_for(

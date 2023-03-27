@@ -480,7 +480,7 @@ async def test_open_project_with_small_amount_of_dynamic_services_starts_them_au
     all_service_uuids = list(project["workbench"])
     for num_service_already_running in range(num_of_dyn_services):
         mocked_director_v2_api["director_v2_api.list_dynamic_services"].return_value = [
-            {"service_uuid": all_service_uuids[service_id]}
+            {"service_uuid": all_service_uuids[service_id], "service_state": "running"}
             for service_id in range(num_service_already_running)
         ]
 
@@ -513,7 +513,7 @@ async def test_open_project_with_large_amount_of_dynamic_services_does_not_start
     all_service_uuids = list(project["workbench"])
     for num_service_already_running in range(max_amount_of_auto_started_dyn_services):
         mocked_director_v2_api["director_v2_api.list_dynamic_services"].return_value = [
-            {"service_uuid": all_service_uuids[service_id]}
+            {"service_uuid": all_service_uuids[service_id], "service_state": "running"}
             for service_id in range(num_service_already_running)
         ]
         url = client.app.router["open_project"].url_for(project_id=project["uuid"])
@@ -524,6 +524,7 @@ async def test_open_project_with_large_amount_of_dynamic_services_does_not_start
         ].assert_not_called()
 
 
+@pytest.mark.testit
 @pytest.mark.parametrize(*standard_user_role())
 async def test_open_project_with_large_amount_of_dynamic_services_starts_them_if_setting_disabled(
     disable_max_number_of_running_dynamic_nodes: dict[str, str],
@@ -544,7 +545,7 @@ async def test_open_project_with_large_amount_of_dynamic_services_starts_them_if
     all_service_uuids = list(project["workbench"])
     for num_service_already_running in range(num_of_dyn_services):
         mocked_director_v2_api["director_v2_api.list_dynamic_services"].return_value = [
-            {"service_uuid": all_service_uuids[service_id]}
+            {"service_uuid": all_service_uuids[service_id], "service_state": "running"}
             for service_id in range(num_service_already_running)
         ]
         url = client.app.router["open_project"].url_for(project_id=project["uuid"])
@@ -880,7 +881,7 @@ async def test_project_node_lifetime(
 
     # delete the node
     mocked_director_v2_api["director_v2_api.list_dynamic_services"].return_value = [
-        {"service_uuid": node_id}
+        {"service_uuid": node_id, "service_state": "running"}
     ]
     url = client.app.router["delete_node"].url_for(
         project_id=user_project["uuid"], node_id=node_id
