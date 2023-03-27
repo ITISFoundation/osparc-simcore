@@ -66,7 +66,7 @@ async def open_project(request: web.Request) -> web.Response:
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
-            include_state=False,
+            include_state=True,
             check_permissions="read|write"
             if project_type is ProjectType.TEMPLATE
             else "read",
@@ -98,6 +98,7 @@ async def open_project(request: web.Request) -> web.Response:
             )
 
         # and let's update the project last change timestamp
+        project.pop("state")
         await projects_api.update_project(request.app, project)
 
         # notify users that project is now opened
