@@ -275,10 +275,11 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       node.addListener("changeMarker", () => updateMarker());
       updateMarker();
 
-      const evaluateDeprecatedIcon = () => {
+      const evaluateLifeCycleIcon = () => {
         const deprecatedIcon = this.getChildControl("deprecated-icon");
-        deprecatedIcon.setVisibility(node.isDeprecated() ? "visible" : "excluded");
+        deprecatedIcon.exclude();
         if (node.isDeprecated()) {
+          deprecatedIcon.show();
           deprecatedIcon.set({
             textColor: osparc.utils.StatusUI.getColor("deprecated")
           });
@@ -298,15 +299,9 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
             maxWidth: 250
           });
           deprecatedIcon.setToolTip(toolTip);
-        }
-      };
-      evaluateDeprecatedIcon();
-
-      const evaluateRetiredIcon = () => {
-        const retiredIcon = this.getChildControl("deprecated-icon");
-        retiredIcon.setVisibility(node.isRetired() ? "visible" : "excluded");
-        if (node.isRetired()) {
-          retiredIcon.set({
+        } else if (node.isRetired()) {
+          deprecatedIcon.show();
+          deprecatedIcon.set({
             textColor: osparc.utils.StatusUI.getColor("retired")
           });
 
@@ -321,10 +316,11 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
             rich: true,
             maxWidth: 250
           });
-          retiredIcon.setToolTip(toolTip);
+          deprecatedIcon.setToolTip(toolTip);
         }
       };
-      evaluateRetiredIcon();
+      evaluateLifeCycleIcon();
+      this.getNode().addListener("changeVersion", () => evaluateLifeCycleIcon());
     },
 
     __applyType: function(type) {
