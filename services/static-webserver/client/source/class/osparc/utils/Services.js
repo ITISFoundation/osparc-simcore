@@ -238,6 +238,9 @@ qx.Class.define("osparc.utils.Services", {
     },
 
     getLatestCompatible: function(services, srcKey, srcVersion) {
+      if (services === null) {
+        services = osparc.utils.Services.servicesCached;
+      }
       const srcNode = this.getFromObject(services, srcKey, srcVersion);
       let versions = this.getVersions(services, srcKey, false);
       // only allow patch versions
