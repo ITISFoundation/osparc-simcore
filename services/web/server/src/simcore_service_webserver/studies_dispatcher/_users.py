@@ -117,7 +117,7 @@ async def acquire_user(request: web.Request, *, is_guest_allowed: bool) -> UserI
     Identifies request's user and if anonymous, it creates
     a temporary guest user that is authorized.
     """
-    user = {}
+    user = None
 
     # anonymous = no identity in request
     is_anonymous_user = await is_anonymous(request)
@@ -132,6 +132,8 @@ async def acquire_user(request: web.Request, *, is_guest_allowed: bool) -> UserI
 
     if not is_guest_allowed and (not user or user.get("role") == GUEST):
         raise web.HTTPUnauthorized(reason="Only available for registered users")
+
+    assert isinstance(user, dict)  # nosec
 
     return UserInfo(
         id=user["id"],
