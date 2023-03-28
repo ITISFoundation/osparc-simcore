@@ -40,13 +40,13 @@ async def _get_service_filetypes(conn: SAConnection) -> dict[ServiceKey, list[st
         services_consume_filetypes.c.service_key,
         sa.func.array_agg(
             sa.func.distinct(services_consume_filetypes.c.filetype)
-        ).label("file_extensions"),
+        ).label("list_of_file_types"),
     ).group_by(services_consume_filetypes.c.service_key)
 
     result = await conn.execute(query)
     rows = await result.fetchall()
 
-    return {row.service_key: row.file_extensions for row in rows}
+    return {row.service_key: row.list_of_file_types for row in rows}
 
 
 async def iter_latest_osparc_services(
