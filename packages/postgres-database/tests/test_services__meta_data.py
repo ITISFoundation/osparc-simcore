@@ -105,8 +105,9 @@ def services_fixture(faker: Faker, pg_sa_engine: sa.engine.Engine) -> ServicesFi
     )
 
 
-@pytest.mark.testit
-def test_it(services_fixture: ServicesFixture, pg_sa_engine: sa.engine.Engine):
+def test_trial_queries_for_service_metadata(
+    services_fixture: ServicesFixture, pg_sa_engine: sa.engine.Engine
+):
     with pg_sa_engine.connect() as conn:
         # Select query for latest
         latest_select_query = sa.select(
