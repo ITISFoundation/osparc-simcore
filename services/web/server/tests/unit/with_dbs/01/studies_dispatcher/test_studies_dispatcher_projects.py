@@ -67,13 +67,21 @@ def viewer_id(faker: Faker) -> NodeID:
     return NodeID(faker.uuid4())
 
 
+@pytest.fixture
+def viewer(view: dict[str, Any]) -> ViewerInfo:
+    view.setdefault("label", view.pop("display_name", "Undefined"))
+    viewer_ = ViewerInfo(**view)
+    assert viewer_.dict() == view
+    return viewer_
+
+
 @pytest.mark.parametrize("only_service", [True, False])
 @pytest.mark.parametrize(
     "view", FAKE_FILE_VIEWS, ids=[c["display_name"] for c in FAKE_FILE_VIEWS]
 )
 async def test_add_new_project_from_model_instance(
+    viewer: ViewerInfo,
     only_service: bool,
-    view: dict[str, Any],
     client: TestClient,
     mocker: MockerFixture,
     osparc_product_name: str,
@@ -82,10 +90,6 @@ async def test_add_new_project_from_model_instance(
     file_picker_id: NodeID,
     viewer_id: NodeID,
 ):
-    view["label"] = view.pop("display_name")
-    viewer = ViewerInfo(**view)
-    assert viewer.dict() == view
-
     mock_directorv2_api = mocker.patch(
         "simcore_service_webserver.director_v2_api.create_or_update_pipeline",
         return_value=None,
@@ -95,8 +99,8 @@ async def test_add_new_project_from_model_instance(
 
     if only_service:
         project = _create_project_with_service(
-            project_id,
-            viewer_id,
+            project_id=project_id,
+            service_id=viewer_id,
             owner=user,
             viewer_info=viewer,
         )
@@ -121,7 +125,14 @@ async def test_add_new_project_from_model_instance(
         user.id,
         include_state=False,
     )
-    assert set(project_db["workbench"].keys()) == {
+
+    expected_node_ids = {
         f"{file_picker_id}",
         f"{viewer_id}",
     }
+    if only_service:
+        expected_node_ids = {
+            f"{viewer_id}",
+        }
+
+    assert set(project_db["workbench"].keys()) == expected_node_ids

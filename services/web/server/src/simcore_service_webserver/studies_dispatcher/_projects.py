@@ -68,7 +68,7 @@ def _create_file_picker(download_link: str):
 
 def _create_project_with_service(
     project_id: ProjectID,
-    viewer_id: NodeID,
+    service_id: NodeID,
     owner: UserInfo,
     viewer_info: ViewerInfo,
     *,
@@ -102,12 +102,11 @@ def _create_project_with_service(
         creationDate=now_str(),
         lastChangeDate=now_str(),
         workbench={  # type: ignore
-            f"{viewer_id}": viewer_service,
+            f"{service_id}": viewer_service,
         },
         ui=StudyUI(
             workbench={  # type: ignore
-                f"{file_picker_id}": {"position": {"x": 305, "y": 229}},
-                f"{viewer_id}": {"position": {"x": 633, "y": 229}},
+                f"{service_id}": {"position": {"x": 633, "y": 229}},
             }
         ),
     )
