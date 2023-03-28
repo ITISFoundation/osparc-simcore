@@ -90,6 +90,7 @@ qx.Class.define("osparc.component.node.LifeCycleView", {
         });
         updateButton.addListener("execute", () => {
           node.setVersion(latestCompatibleMetadata["version"]);
+          setTimeout(() => node.getStatus().setInteractive("idle"), osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL);
           setTimeout(() => node.requestStartNode(), osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL*2);
         });
 
