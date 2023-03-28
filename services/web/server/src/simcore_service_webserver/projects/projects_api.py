@@ -207,7 +207,7 @@ async def _start_dynamic_service(
     project_active_running_nodes = [
         node
         for node in project_running_nodes
-        if node["service_state"] not in ["failed", "completed"]
+        if node["service_state"] in {"pending", "pulling", "starting", "running"}
     ]
 
     project_settings = get_settings(request.app).WEBSERVER_PROJECTS
