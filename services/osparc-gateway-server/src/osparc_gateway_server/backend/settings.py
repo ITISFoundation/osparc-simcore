@@ -22,7 +22,7 @@ class AppSettings(BaseSettings):
         ..., description="The computational sidecar image in use"
     )
     COMPUTATIONAL_SIDECAR_LOG_LEVEL: Optional[str] = Field(
-        "WARNING",
+        default="WARNING",
         description="The computational sidecar log level",
         env=[
             "COMPUTATIONAL_SIDECAR_LOG_LEVEL",
@@ -37,11 +37,12 @@ class AppSettings(BaseSettings):
     )
 
     COMPUTATION_SIDECAR_NUM_NON_USABLE_CPUS: NonNegativeInt = Field(
-        2, description="Number of CPUS the sidecar should not advertise/use"
+        default=2, description="Number of CPUS the sidecar should not advertise/use"
     )
 
     COMPUTATION_SIDECAR_NON_USABLE_RAM: NonNegativeInt = Field(
-        0, description="Amount of RAM in bytes, the sidecar should not advertise/use"
+        default=0,
+        description="Amount of RAM in bytes, the sidecar should not advertise/use",
     )
 
     COMPUTATION_SIDECAR_DASK_NTHREADS: Optional[PositiveInt] = Field(
