@@ -50,6 +50,7 @@ comp_runs = sa.Table(
             "clusters.id",
             name="fk_comp_runs_cluster_id_clusters",
             onupdate="CASCADE",
+            ondelete="SET NULL",
         ),
         nullable=True,
         doc="The cluster id on which the run entry is associated, if NULL or 0 uses the default",
