@@ -10,7 +10,7 @@ from typing import Optional
 from aiohttp import web
 from aiohttp.web import Request
 from models_library.services import ServiceKey
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, validator
 from pydantic.networks import HttpUrl
 
 from .._meta import API_VTAG
@@ -95,6 +95,13 @@ class ServiceGet(BaseModel):
             ),
             **asdict(meta),
         )
+
+    @validator("file_extensions")
+    @classmethod
+    def remove_dot_prefix_from_extension(cls, v):
+        if v:
+            return [ext.removeprefix(".") for ext in v]
+        return v
 
     class Config:
         schema_extra = {

@@ -3,12 +3,17 @@ from typing import AsyncIterator
 
 import sqlalchemy as sa
 from aiohttp import web
+from aiopg.sa.connection import SAConnection
 from aiopg.sa.engine import Engine
+from models_library.services import ServiceKey
 from pydantic import PositiveInt
 from simcore_postgres_database.models.services import (
     services_access_rights,
     services_latest,
     services_meta_data,
+)
+from simcore_postgres_database.models.services_consume_filetypes import (
+    services_consume_filetypes,
 )
 
 from ..db import get_database_engine
@@ -26,6 +31,21 @@ class ServiceMetaData:
     title: str  # alias for 'name'
     description: str
     thumbnail: str
+    file_extensions: list[str]
+
+
+async def _get_service_filetypes(conn: SAConnection) -> dict[ServiceKey, list[str]]:
+    query = sa.select(
+        services_consume_filetypes.c.service_key,
+        sa.func.array_agg(
+            sa.func.distinct(services_consume_filetypes.c.filetype)
+        ).label("file_extensions"),
+    ).group_by(services_consume_filetypes.c.service_key)
+
+    result = await conn.execute(query)
+    rows = await result.fetchall()
+
+    return {row.service_key: row.file_extensions for row in rows}
 
 
 async def iter_latest_osparc_services(
@@ -76,6 +96,8 @@ async def iter_latest_osparc_services(
     query = query.limit(page_size).offset((page_number - 1) * page_size)
 
     async with engine.acquire() as conn:
+        service_filetypes = await _get_service_filetypes(conn)
+
         async for row in await conn.execute(query):
             yield ServiceMetaData(
                 key=row.key,
@@ -83,4 +105,5 @@ async def iter_latest_osparc_services(
                 title=row.name,
                 description=row.description,
                 thumbnail=row.thumbnail or settings.STUDIES_DEFAULT_SERVICE_THUMBNAIL,
+                file_extensions=service_filetypes.get(row.key, []),
             )
