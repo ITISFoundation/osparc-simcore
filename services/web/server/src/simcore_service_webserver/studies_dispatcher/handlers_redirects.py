@@ -75,8 +75,6 @@ class RedirectionQueryParams(ViewerQueryParams):
         # A service only does not need file info
         # If some file-info then
         file_type = values.get("file_type")
-        ## file_size = values.get("file_size")
-        ## file_name = values.get("file_name")
         download_link = values.get("download_link")
 
         if file_type and not download_link:
