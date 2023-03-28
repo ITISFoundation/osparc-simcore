@@ -79,7 +79,6 @@ def _create_viewer_project_model(
     ),
 ) -> Project:
 
-    file_picker_output_id = "outFile"
     file_picker, file_picker_output_id = _create_file_picker(download_link)
 
     viewer_service = Node(
