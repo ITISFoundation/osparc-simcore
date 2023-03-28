@@ -1087,6 +1087,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__outputsPage.add(new qx.ui.core.Spacer(null, 20));
 
         const lifeCycleView = new osparc.component.node.LifeCycleView(node);
+        node.addListener("changeVersion", this.__populateSecondPanelNode(node));
         this.__outputsPage.add(lifeCycleView);
 
         this.getChildControl("side-panel-right-tabs").setSelection([this.__outputsPage]);

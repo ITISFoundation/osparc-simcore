@@ -84,7 +84,8 @@ qx.Class.define("osparc.data.model.Node", {
 
     version: {
       check: "String",
-      nullable: true
+      nullable: true,
+      event: "changeVersion"
     },
 
     nodeId: {
