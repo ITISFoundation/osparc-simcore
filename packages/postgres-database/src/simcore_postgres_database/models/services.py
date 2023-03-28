@@ -12,7 +12,6 @@ from sqlalchemy.sql import expression, func
 from .base import metadata
 
 #
-# services_meta_data table:
 #   Combines properties as
 #     - service identifier: key, version
 #     - overridable properties of the service metadata defined upon publication (injected in the image labels)
@@ -105,7 +104,6 @@ services_meta_data = sa.Table(
 
 
 #
-# services_access_rights table:
 #   Defines access rights (execute_access, write_access) on a service (key)
 #   for a given group (gid) on a product (project_name)
 #
@@ -190,10 +188,8 @@ services_access_rights = sa.Table(
 )
 
 
-#
-# services_latest table:
-#   Keeps latest version of every service (key)
-#
+# NOTE: this table will be removed and probably converted into a view of agregated results on services
+# SEE https://github.com/ITISFoundation/osparc-simcore/issues/4032
 
 services_latest = sa.Table(
     "services_latest",
