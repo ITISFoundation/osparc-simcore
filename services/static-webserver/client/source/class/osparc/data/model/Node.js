@@ -79,13 +79,15 @@ qx.Class.define("osparc.data.model.Node", {
 
     key: {
       check: "String",
-      nullable: true
+      nullable: true,
+      apply: "__applyNewMetaData"
     },
 
     version: {
       check: "String",
       nullable: true,
-      event: "changeVersion"
+      event: "changeVersion",
+      apply: "__applyNewMetaData"
     },
 
     nodeId: {
@@ -338,6 +340,10 @@ qx.Class.define("osparc.data.model.Node", {
 
     isRetired: function() {
       return osparc.data.model.Node.isRetired(this.getMetaData());
+    },
+
+    __applyNewMetaData: function() {
+      this.__metaData = osparc.utils.Services.getMetaData(this.getKey(), this.getVersion());
     },
 
     getMetaData: function() {
