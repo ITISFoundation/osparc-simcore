@@ -2,33 +2,38 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import logging
 import re
 import urllib.parse
-from copy import deepcopy
 from pprint import pprint
-from typing import Iterator
+from typing import AsyncIterator
 
 import pytest
 import sqlalchemy as sa
 from aiohttp import ClientResponse, ClientSession, web
-from aiohttp.test_utils import TestClient
+from aiohttp.test_utils import TestClient, TestServer
 from aioresponses import aioresponses
 from models_library.projects_state import ProjectLocked, ProjectStatus
+from pydantic import parse_obj_as
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserRole
+from settings_library.redis import RedisSettings
 from simcore_service_webserver import catalog
-from simcore_service_webserver.log import setup_logging
 from simcore_service_webserver.studies_dispatcher._core import ViewerInfo
 from simcore_service_webserver.studies_dispatcher.handlers_rest import ServiceGet
 from sqlalchemy.sql import text
 from yarl import URL
 
+#
+# FIXTURES OVERRIDES -----------------------------------------------------------------------------------------------
+#
+
 
 @pytest.fixture
-def inject_tables(postgres_db: sa.engine.Engine):
-
+def postgres_db(postgres_db: sa.engine.Engine) -> sa.engine.Engine:
+    #
+    # Extends postgres_db fixture (called with web_server) to inject tables and start redis
+    #
     stmt_create_services = text(
         'INSERT INTO "services_meta_data" ("key", "version", "owner", "name", "description", "thumbnail", "classifiers", "created", "modified", "quality") VALUES'
         "('simcore/services/dynamic/raw-graphs',	'2.11.1',	NULL,	'2D plot',	'2D plots powered by RAW Graphs',	NULL,	'{}',	'2021-03-02 16:08:28.655207',	'2021-03-02 16:08:28.655207',	'{}'),"
@@ -46,9 +51,42 @@ def inject_tables(postgres_db: sa.engine.Engine):
         "('simcore/services/dynamic/jupyter-octave-python-math',	'1.6.9',	'JupyterLab Math',	'input_1',	'PY',	0, '0'),"
         "('simcore/services/dynamic/jupyter-octave-python-math',	'1.6.9',	'JupyterLab Math',	'input_1',	'IPYNB',0, '0');"
     )
+    stmt_create_services_latest = text(
+        'INSERT INTO "services_latest" ("key", "version") VALUES'
+        "('simcore/services/dynamic/raw-graphs',	'2.11.1' ),"
+        "('simcore/services/dynamic/bio-formats-web',	'1.0.1'),"
+        "('simcore/services/dynamic/jupyter-octave-python-math',	'1.6.9');"
+    )
+
+    # NOTE: users default osparc project and everyone group (which should be by default already in tables)
+    stmt_create_services_access_rights = text(
+        ' INSERT INTO "services_access_rights" ("key", "version", "gid", "execute_access", "write_access", "created", "modified", "product_name") VALUES'
+        "('simcore/services/dynamic/raw-graphs',	'2.11.1',	1,	't',	'f',	'2022-05-23 08:44:45.418376',	'2022-05-23 08:44:45.418376',	'osparc'),"
+        "('simcore/services/dynamic/jupyter-octave-python-math',	'1.6.9',	1,	't',	'f',	'2022-05-23 08:44:45.418376',	'2022-05-23 08:44:45.418376',	'osparc');"
+    )
     with postgres_db.connect() as conn:
         conn.execute(stmt_create_services)
+        conn.execute(stmt_create_services_latest)
         conn.execute(stmt_create_services_consume_filetypes)
+        conn.execute(stmt_create_services_access_rights)
+
+    return postgres_db
+
+
+@pytest.fixture
+def web_server(redis_service: RedisSettings, web_server: TestServer) -> TestServer:
+    #
+    # Extends web_server to start redis_service
+    #
+    print("Redis service started with settings: ", redis_service.json(indent=1))
+    return web_server
+
+
+@pytest.fixture(autouse=True)
+async def director_v2_automock(
+    director_v2_service_mock: aioresponses,
+) -> AsyncIterator[aioresponses]:
+    yield director_v2_service_mock
 
 
 FAKE_VIEWS_LIST = [
@@ -111,82 +149,19 @@ FAKE_VIEWS_LIST = [
 ]
 
 
-@pytest.fixture
-def app_cfg(
-    default_app_cfg,
-    unused_tcp_port_factory,
-    redis_service: URL,
-    inject_tables,
-):
-    """App's configuration used for every test in this module
-
-    NOTE: Overrides services/web/server/tests/unit/with_dbs/conftest.py::app_cfg to influence app setup
-    """
-    cfg = deepcopy(default_app_cfg)
-
-    cfg["main"]["port"] = unused_tcp_port_factory()
-    cfg["main"]["studies_access_enabled"] = True
-
-    exclude = {
-        "tracing",
-        "director",
-        "smtp",
-        "storage",
-        "activity",
-        "diagnostics",
-        "groups",
-        "tags",
-        "publications",
-        "catalog",
-        "computation",
-        "clusters",
-    }
-    include = {
-        "db",
-        "rest",
-        "projects",
-        "login",
-        "socketio",
-        "resource_manager",
-        "users",
-        "products",
-        "studies_dispatcher",
-    }
-
-    assert include.intersection(exclude) == set()
-
-    for section in include:
-        cfg[section]["enabled"] = True
-    for section in exclude:
-        cfg[section]["enabled"] = False
-
-    # NOTE: To see logs, use pytest -s --log-cli-level=DEBUG
-    setup_logging(level=logging.DEBUG)
-
-    # Enforces smallest GC in the background task
-    cfg["resource_manager"]["garbage_collection_interval_seconds"] = 1
-
-    return cfg
-
-
-@pytest.fixture(autouse=True)
-async def director_v2_automock(
-    director_v2_service_mock: aioresponses,
-) -> Iterator[aioresponses]:
-    yield director_v2_service_mock
-
-
 # REST-API -----------------------------------------------------------------------------------------------
 #  Samples taken from trials on http://127.0.0.1:9081/dev/doc#/viewer/get_viewer_for_file
 #
 
 
-def _get_base_url(client) -> str:
+def _get_base_url(client: TestClient) -> str:
     s = client.server
-    return str(URL.build(scheme=s.scheme, host=s.host, port=s.port))
+    assert isinstance(s.scheme, str)
+    url = URL.build(scheme=s.scheme, host=s.host, port=s.port)
+    return f"{url}"
 
 
-async def test_api_get_viewer_for_file(client):
+async def test_api_get_viewer_for_file(client: TestClient):
 
     resp = await client.get("/v0/viewers/default?file_type=JPEG")
     data, _ = await assert_status(resp, web.HTTPOk)
@@ -201,14 +176,14 @@ async def test_api_get_viewer_for_file(client):
     ]
 
 
-async def test_api_get_viewer_for_unsupported_type(client):
+async def test_api_get_viewer_for_unsupported_type(client: TestClient):
     resp = await client.get("/v0/viewers/default?file_type=UNSUPPORTED_TYPE")
     data, error = await assert_status(resp, web.HTTPOk)
     assert data == []
     assert error is None
 
 
-async def test_api_list_supported_filetypes(client):
+async def test_api_list_supported_filetypes(client: TestClient):
 
     resp = await client.get("/v0/viewers/default")
     data, _ = await assert_status(resp, web.HTTPOk)
@@ -258,16 +233,19 @@ async def test_api_list_supported_filetypes(client):
     ]
 
 
+@pytest.mark.testit
 async def test_api_get_services(client: TestClient):
+    assert client.app
 
-    resp = await client.get("/v0/services")
-    data, _ = await assert_status(resp, web.HTTPOk)
+    url = client.app.router["list_services"].url_for()
+    response = await client.get(f"{url}")
 
-    service: dict = ServiceGet.Config.schema_extra["example"]
-    # base_url = _get_base_url(client)
-    assert data == [
-        service,
-    ]
+    data, error = await assert_status(response, web.HTTPOk)
+
+    services = parse_obj_as(list[ServiceGet], data)
+    assert services
+
+    assert error is None
 
 
 # REDIRECT ROUTES --------------------------------------------------------------------------------
@@ -419,7 +397,7 @@ def assert_error_in_fragment(resp: ClientResponse) -> tuple[str, int]:
     return message, status_code
 
 
-async def test_viewer_redirect_with_file_type_errors(client):
+async def test_viewer_redirect_with_file_type_errors(client: TestClient):
     redirect_url = (
         client.app.router["get_redirection_to_viewer"]
         .url_for()
@@ -444,7 +422,8 @@ async def test_viewer_redirect_with_file_type_errors(client):
     assert "type" in message.lower()
 
 
-async def test_viewer_redirect_with_client_errors(client):
+async def test_viewer_redirect_with_client_errors(client: TestClient):
+    assert client.app
     redirect_url = (
         client.app.router["get_redirection_to_viewer"]
         .url_for()
@@ -458,9 +437,9 @@ async def test_viewer_redirect_with_client_errors(client):
         )
     )
 
-    resp = await client.get(redirect_url)
+    resp = await client.get(f"{redirect_url}")
     assert resp.status == 200
 
     message, status_code = assert_error_in_fragment(resp)
     print(message)
-    assert status_code == web.HTTPBadRequest.status_code
+    assert status_code == web.HTTPUnprocessableEntity.status_code
