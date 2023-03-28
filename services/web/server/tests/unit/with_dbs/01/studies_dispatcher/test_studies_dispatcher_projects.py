@@ -17,6 +17,7 @@ from pytest_simcore.helpers.utils_projects import delete_all_projects
 from pytest_simcore.helpers.utils_services import list_fake_file_consumers
 from simcore_service_webserver.groups_api import auto_add_user_to_groups
 from simcore_service_webserver.projects.projects_api import get_project_for_user
+from simcore_service_webserver.studies_dispatcher._models import ServiceInfo
 from simcore_service_webserver.studies_dispatcher._projects import (
     UserInfo,
     ViewerInfo,
@@ -68,7 +69,7 @@ def viewer_id(faker: Faker) -> NodeID:
 
 
 @pytest.fixture
-def service_info(view: dict[str, Any]) -> ViewerInfo:
+def viewer_info(view: dict[str, Any]) -> ViewerInfo:
     view.setdefault("label", view.pop("display_name", "Undefined"))
     viewer_ = ViewerInfo(**view)
     assert viewer_.dict() == view
@@ -80,7 +81,7 @@ def service_info(view: dict[str, Any]) -> ViewerInfo:
     "view", FAKE_FILE_VIEWS, ids=[c["display_name"] for c in FAKE_FILE_VIEWS]
 )
 async def test_add_new_project_from_model_instance(
-    viewer: ViewerInfo,
+    viewer_info: ViewerInfo,
     only_service: bool,
     client: TestClient,
     mocker: MockerFixture,
@@ -102,7 +103,7 @@ async def test_add_new_project_from_model_instance(
             project_id=project_id,
             service_id=viewer_id,
             owner=user,
-            service_info=viewer,
+            service_info=ServiceInfo.parse_obj(viewer_info),
         )
     else:
         project = _create_project_with_filepicker_and_service(
@@ -111,7 +112,7 @@ async def test_add_new_project_from_model_instance(
             viewer_id,
             owner=user,
             download_link="http://httpbin.org/image/jpeg",
-            viewer_info=viewer,
+            viewer_info=viewer_info,
         )
 
     await _add_new_project(client.app, project, user, product_name=osparc_product_name)

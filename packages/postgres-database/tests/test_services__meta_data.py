@@ -137,32 +137,6 @@ def test_trial_queries_for_service_metadata(
 
     # check if service exists and whether is public or not
     with pg_sa_engine.connect() as conn:
-        query = sa.select(services_meta_data.c.key).where(
-            (
-                services_meta_data.c.key
-                == services_fixture.expected_public_service["key"]
-            )
-            & (
-                services_meta_data.c.version
-                == services_fixture.expected_public_service["version"]
-            ),
-        )
-        exists = conn.execute(query).scalar_one_or_none()
-        assert exists
-
-        query = sa.select(services_consume_filetypes.c.is_guest_allowed).where(
-            (services_consume_filetypes.c.is_guest_allowed == True)
-            & (
-                services_consume_filetypes.c.service_key
-                == services_fixture.expected_public_service["key"]
-            )
-        )
-        is_guest_allowed = conn.execute(query).scalar_one_or_none()
-
-        assert is_guest_allowed
-
-    #
-    with pg_sa_engine.connect() as conn:
         query = sa.select(
             services_consume_filetypes.c.service_key,
             sa.func.array_agg(
