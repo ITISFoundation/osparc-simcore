@@ -17,7 +17,7 @@ from simcore_postgres_database.models.services_consume_filetypes import (
 )
 
 from ..db import get_database_engine
-from ._errors import StudyDispatcherError
+from ._exceptions import StudyDispatcherError
 from .settings import StudiesDispatcherSettings, get_plugin_settings
 
 _EVERYONE_GROUP_ID = 1

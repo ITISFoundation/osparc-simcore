@@ -13,10 +13,10 @@ from simcore_postgres_database.models.services_consume_filetypes import (
 )
 
 from .._constants import APP_DB_ENGINE_KEY
-from ._errors import StudyDispatcherError
+from ._exceptions import StudyDispatcherError
 
 MEGABYTES = 1024 * 1024
-BASE_UUID = uuid.UUID("ca2144da-eabb-4daf-a1df-a3682050e25f")
+_BASE_UUID = uuid.UUID("ca2144da-eabb-4daf-a1df-a3682050e25f")
 
 
 logger = logging.getLogger(__name__)
@@ -67,7 +67,7 @@ class ViewerInfo(BaseModel):
 @lru_cache
 def compose_uuid_from(*values) -> uuid.UUID:
     composition: str = "/".join(map(str, values))
-    new_uuid = uuid.uuid5(BASE_UUID, composition)
+    new_uuid = uuid.uuid5(_BASE_UUID, composition)
     return new_uuid
 
 
