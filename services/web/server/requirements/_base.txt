@@ -52,6 +52,8 @@ alembic==1.8.1
     # via
     #   -r requirements/../../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
+arrow==1.2.3
+    # via -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 async-timeout==4.0.2
     # via
     #   aiohttp
@@ -185,6 +187,8 @@ pyparsing==3.0.9
     # via packaging
 pyrsistent==0.18.1
     # via jsonschema
+python-dateutil==2.8.2
+    # via arrow
 python-engineio==4.3.4
     # via python-socketio
 python-magic==0.4.25
@@ -212,6 +216,7 @@ six==1.16.0
     #   isodate
     #   jsonschema
     #   openapi-core
+    #   python-dateutil
 sqlalchemy==1.4.37
     # via
     #   -c requirements/../../../../packages/service-library/requirements/./../../../requirements/constraints.txt
