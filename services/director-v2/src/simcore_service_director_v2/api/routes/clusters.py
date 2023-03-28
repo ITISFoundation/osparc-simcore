@@ -191,7 +191,9 @@ async def get_cluster_details(
         logger.debug("found following %s", f"{cluster_details=!r}")
         return cluster_details
     except DaskClientAcquisisitonError as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{exc}")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"{exc}"
+        ) from exc
 
 
 @router.post(
