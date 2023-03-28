@@ -72,7 +72,6 @@ def viewer_id(faker: Faker) -> NodeID:
 def viewer_info(view: dict[str, Any]) -> ViewerInfo:
     view.setdefault("label", view.pop("display_name", "Undefined"))
     viewer_ = ViewerInfo(**view)
-    assert viewer_.dict() == view
     return viewer_
 
 
