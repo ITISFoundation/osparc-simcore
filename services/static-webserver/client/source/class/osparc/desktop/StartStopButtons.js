@@ -97,6 +97,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
         if ("executeListenerId" in stopButton) {
           stopButton.removeListenerById(stopButton.executeListenerId);
         }
+        node.attachVisibilityHandlerToStopButton(stopButton);
         node.attachHandlersToStopButton(stopButton);
       }
 

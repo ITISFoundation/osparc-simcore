@@ -117,6 +117,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         node.attachHandlersToStartButton(startButton);
 
         const stopButton = this.getChildControl("stop-button");
+        node.attachVisibilityHandlerToStopButton(stopButton);
         node.attachHandlersToStopButton(stopButton);
       }
 

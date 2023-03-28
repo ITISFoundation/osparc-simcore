@@ -230,6 +230,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           label: this.tr("Stop"),
           icon: "@FontAwesome5Solid/stop/10"
         });
+        node.attachVisibilityHandlerToStopButton(stopButton);
         node.attachHandlersToStopButton(stopButton);
         this._optionsMenu.addAt(stopButton, 1);
       }
