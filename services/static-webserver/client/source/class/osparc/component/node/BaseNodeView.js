@@ -381,7 +381,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       if (node.isDynamic()) {
         node.attachHandlersToStartButton(this.__nodeStartButton);
         node.attachVisibilityHandlerToStopButton(this.__nodeStopButton);
-        node.attachHandlersToStopButton(this.__nodeStopButton);
+        node.attachExecuteHandlerToStopButton(this.__nodeStopButton);
       }
 
       this.__preparingInputs = new osparc.component.widget.PreparingInputs(node.getStudy());

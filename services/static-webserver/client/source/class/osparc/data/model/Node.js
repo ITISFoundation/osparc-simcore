@@ -1405,7 +1405,7 @@ qx.Class.define("osparc.data.model.Node", {
       startButton.executeListenerId = executeListenerId;
     },
 
-    attachHandlersToStopButton: function(stopButton) {
+    attachExecuteHandlerToStopButton: function(stopButton) {
       const executeListenerId = stopButton.addListener("execute", this.requestStopNode, this);
       stopButton.executeListenerId = executeListenerId;
     },
