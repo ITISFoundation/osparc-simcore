@@ -316,7 +316,8 @@ async def assert_redirected_to_study(
 
 @pytest.fixture(params=["service_and_file", "service_only"])
 def redirect_url(request: FixtureRequest, client: TestClient) -> URL:
-
+    assert client.app
+    query = None
     if request.param == "service_and_file":
         query = dict(
             file_name="users.csv",
@@ -347,30 +348,31 @@ async def test_dispatch_study_anonymously(
     catalog_subsystem_mock: None,
     mocks_on_projects_api,
 ):
+    assert client.app
     mock_client_director_v2_func = mocker.patch(
         "simcore_service_webserver.director_v2_api.create_or_update_pipeline",
         return_value=None,
     )
 
-    resp = await client.get(redirect_url)
+    response = await client.get(f"{redirect_url}")
 
-    expected_prj_id = await assert_redirected_to_study(resp, client.session)
+    expected_prj_id = await assert_redirected_to_study(response, client.session)
 
     # has auto logged in as guest?
     me_url = client.app.router["get_my_profile"].url_for()
-    resp = await client.get(me_url)
+    response = await client.get(f"{me_url}")
 
-    data, _ = await assert_status(resp, web.HTTPOk)
+    data, _ = await assert_status(response, web.HTTPOk)
     assert data["login"].endswith("guest-at-osparc.io")
     assert data["gravatar_id"]
     assert data["role"].upper() == UserRole.GUEST.name
 
     # guest user only a copy of the template project
     url = client.app.router["list_projects"].url_for()
-    response = await client.get(url.with_query(type="user"))
+    response = await client.get(f'{url.with_query(type="user")}')
 
-    payload = await resp.json()
-    assert resp.status == 200, payload
+    payload = await response.json()
+    assert response.status == 200, payload
 
     projects, error = await assert_status(response, web.HTTPOk)
     assert not error
@@ -388,7 +390,9 @@ def assert_error_in_fragment(resp: ClientResponse) -> tuple[str, int]:
     # Expects fragment to indicate client where to find newly created project
     unquoted_fragment = urllib.parse.unquote_plus(resp.real_url.fragment)
     match = re.match(r"/error\?(.+)", unquoted_fragment)
-    assert match, f"Expected fragment as /#/view?message=..., got {unquoted_fragment}"
+    assert (
+        match
+    ), f"Expected error fragment as /#/error?message=..., got {unquoted_fragment}"
 
     query_s = match.group(1)
     # returns {'param1': ['value'], 'param2': ['value']}
@@ -403,6 +407,7 @@ def assert_error_in_fragment(resp: ClientResponse) -> tuple[str, int]:
 
 
 async def test_viewer_redirect_with_file_type_errors(client: TestClient):
+    assert client.app
     redirect_url = (
         client.app.router["get_redirection_to_viewer"]
         .url_for()
@@ -418,7 +423,7 @@ async def test_viewer_redirect_with_file_type_errors(client: TestClient):
         )
     )
 
-    resp = await client.get(redirect_url)
+    resp = await client.get(f"{redirect_url}")
     assert resp.status == 200
 
     message, status_code = assert_error_in_fragment(resp)
@@ -448,3 +453,30 @@ async def test_viewer_redirect_with_client_errors(client: TestClient):
     message, status_code = assert_error_in_fragment(resp)
     print(message)
     assert status_code == web.HTTPUnprocessableEntity.status_code
+
+
+@pytest.mark.parametrize(
+    "missing_parameter", ("file_type", "file_size", "download_link")
+)
+async def test_missing_file_param(client: TestClient, missing_parameter: str):
+    assert client.app
+
+    query = dict(
+        file_type="CSV",
+        file_size=1,
+        viewer_key="simcore/services/dynamic/raw-graphs",
+        viewer_version="2.11.1",
+        download_link=urllib.parse.quote(
+            "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/8987c95d0ca0090e14f3a5b52db724fa24114cf5/services/storage/tests/data/users.csv"
+        ),
+    ).pop(missing_parameter)
+
+    redirect_url = (
+        client.app.router["get_redirection_to_viewer"].url_for().with_query(query)
+    )
+
+    response = await client.get(f"{redirect_url}")
+    assert response.status == 200
+
+    message, status_code = assert_error_in_fragment(response)
+    assert status_code == web.HTTPUnprocessableEntity.status_code, f"Got {message=}"

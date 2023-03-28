@@ -6,18 +6,9 @@ import logging
 import urllib.parse
 from typing import Optional, cast
 
-import aiohttp
 from aiohttp import web
-from aiohttp.client_exceptions import ClientError
 from models_library.services import ServiceKey, ServiceVersion
-from pydantic import (
-    BaseModel,
-    Field,
-    HttpUrl,
-    ValidationError,
-    root_validator,
-    validator,
-)
+from pydantic import BaseModel, HttpUrl, ValidationError, root_validator, validator
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
@@ -38,7 +29,7 @@ _SPACE = " "
 
 
 class ViewerQueryParams(BaseModel):
-    file_type: Optional[str] = Field(default=None)
+    file_type: Optional[str] = None
     viewer_key: ServiceKey
     viewer_version: ServiceVersion
 
@@ -76,33 +67,12 @@ class RedirectionQueryParams(ViewerQueryParams):
         # If some file-info then
         file_type = values.get("file_type")
         download_link = values.get("download_link")
+        file_size = values.get("file_size")
 
-        if file_type and not download_link:
-            raise ValueError("download_link is missing since file_type was defined")
+        if file_type and download_link and file_size:
+            return values
 
-        if download_link and not file_type:
-            raise ValueError("file_type is missing since download_link was defined")
-
-        return values
-
-    async def check_download_link(self):
-        """Explicit validation of download link that performs a light fetch of url's head"""
-        #
-        # WARNING: Do not use this check with Amazon download links
-        #          since HEAD operation is forbidden!
-        try:
-            async with aiohttp.request("HEAD", self.download_link) as response:
-                response.raise_for_status()
-
-        except ClientError as err:
-            logger.debug(
-                "Invalid download link '%s'. If failed fetch check with %s",
-                self.download_link,
-                err,
-            )
-            raise web.HTTPBadRequest(
-                reason="The download link provided is invalid"
-            ) from err
+        raise ValueError("One or more file parameters missing")
 
 
 def compose_dispatcher_prefix_url(request: web.Request, viewer: ViewerInfo) -> HttpUrl:
@@ -120,7 +90,7 @@ def compose_service_dispatcher_prefix_url(
     request: web.Request, service_key: str, service_version: str
 ) -> HttpUrl:
     params = ViewerQueryParams(
-        viewer_key=service_key, viewer_version=service_version
+        viewer_key=service_key, viewer_version=service_version  # type: ignore
     ).dict(exclude_none=True, exclude_unset=True)
     absolute_url = request.url.join(
         request.app.router["get_redirection_to_viewer"].url_for().with_query(**params)
@@ -237,7 +207,7 @@ async def get_redirection_to_viewer(request: web.Request):
 
     else:
         valid_service = await validate_requested_service(
-            request.app,
+            app=request.app,
             service_key=params.viewer_key,
             service_version=params.viewer_version,
         )
@@ -254,8 +224,8 @@ async def get_redirection_to_viewer(request: web.Request):
             request.app,
             user,
             service_info=ServiceInfo(
-                key=valid_service.key,
-                version=valid_service.version,
+                key=valid_service.key,  # type: ignore
+                version=valid_service.version,  # type: ignore
                 label=valid_service.title,
             ),
             product_name=get_product_name(request),

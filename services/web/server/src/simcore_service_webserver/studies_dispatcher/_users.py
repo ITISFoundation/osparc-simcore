@@ -9,7 +9,6 @@
 """
 import logging
 from datetime import datetime
-from typing import Optional
 
 import redis.asyncio as aioredis
 from aiohttp import web
@@ -37,7 +36,7 @@ class UserInfo(BaseModel):
     is_guest: bool = True
 
 
-async def _get_authorized_user(request: web.Request) -> Optional[dict]:
+async def _get_authorized_user(request: web.Request) -> dict:
     # Returns valid user if it is identified (cookie) and logged in (valid cookie)?
     user_id = await authorized_userid(request)
     if user_id is not None:
@@ -45,9 +44,8 @@ async def _get_authorized_user(request: web.Request) -> Optional[dict]:
             user = await get_user(request.app, user_id)
             return user
         except UserNotFoundError:
-            return None
-
-    return None
+            return {}
+    return {}
 
 
 async def _create_temporary_user(request: web.Request):
@@ -119,7 +117,7 @@ async def acquire_user(request: web.Request, *, is_guest_allowed: bool) -> UserI
     Identifies request's user and if anonymous, it creates
     a temporary guest user that is authorized.
     """
-    user = None
+    user = {}
 
     # anonymous = no identity in request
     is_anonymous_user = await is_anonymous(request)

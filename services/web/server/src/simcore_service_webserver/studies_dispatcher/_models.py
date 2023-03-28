@@ -37,7 +37,6 @@ class ViewerInfo(ServiceInfo):
     Here a viewer denotes a service
       - that supports (i.e. can consume) a specific filetype and
       - that is available to everyone
-
     and therefore it can be dispatched to both guest and active users
     to visualize a file of that type
     """
