@@ -906,9 +906,6 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     requestStartNode: function() {
-      if (!this.canNodeStart()) {
-        return false;
-      }
       const params = {
         url: {
           studyId: this.getStudy().getUuid(),
