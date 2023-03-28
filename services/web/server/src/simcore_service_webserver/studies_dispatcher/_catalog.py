@@ -145,7 +145,7 @@ async def validate_requested_service(
         query = (
             sa.select(services_consume_filetypes.c.is_guest_allowed)
             .where(
-                (services_consume_filetypes.c.key == service_key)
+                (services_consume_filetypes.c.service_key == service_key)
                 & (services_consume_filetypes.c.is_guest_allowed == True)
             )
             .limit(1)
@@ -156,6 +156,6 @@ async def validate_requested_service(
         return ServiceValidated(
             key=service_key,
             version=service_version,
-            is_public=is_guest_allowed,
+            is_public=bool(is_guest_allowed),
             title=row.name or service_key.split("/")[-1],
         )

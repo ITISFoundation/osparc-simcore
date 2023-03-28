@@ -68,7 +68,7 @@ def viewer_id(faker: Faker) -> NodeID:
 
 
 @pytest.fixture
-def viewer(view: dict[str, Any]) -> ViewerInfo:
+def service_info(view: dict[str, Any]) -> ViewerInfo:
     view.setdefault("label", view.pop("display_name", "Undefined"))
     viewer_ = ViewerInfo(**view)
     assert viewer_.dict() == view
@@ -102,7 +102,7 @@ async def test_add_new_project_from_model_instance(
             project_id=project_id,
             service_id=viewer_id,
             owner=user,
-            viewer_info=viewer,
+            service_info=viewer,
         )
     else:
         project = _create_project_with_filepicker_and_service(

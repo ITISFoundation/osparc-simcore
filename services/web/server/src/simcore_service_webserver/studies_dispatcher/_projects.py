@@ -24,7 +24,8 @@ from ..projects.projects_exceptions import (
     ProjectNotFoundError,
 )
 from ..utils import now_str
-from ._core import ViewerInfo, compose_uuid_from
+from ._core import compose_uuid_from
+from ._models import ServiceInfo, ViewerInfo
 from ._users import UserInfo
 
 logger = logging.getLogger(__name__)
@@ -70,7 +71,7 @@ def _create_project_with_service(
     project_id: ProjectID,
     service_id: NodeID,
     owner: UserInfo,
-    viewer_info: ViewerInfo,
+    service_info: ServiceInfo,
     *,
     project_thumbnail: HttpUrl = cast(
         HttpUrl, "https://via.placeholder.com/170x120.png"
@@ -78,9 +79,9 @@ def _create_project_with_service(
 ) -> Project:
 
     viewer_service = Node(
-        key=viewer_info.key,
-        version=viewer_info.version,
-        label=viewer_info.label,
+        key=service_info.key,
+        version=service_info.version,
+        label=service_info.label,
         inputs=None,
     )
 
@@ -94,7 +95,7 @@ def _create_project_with_service(
     # Assambles project instance
     project = Project(
         uuid=project_id,
-        name=f"Viewer {viewer_info.title}",
+        name=f"Viewer {service_info.title}",
         description="Temporary study to visualize downloaded file",
         thumbnail=project_thumbnail,
         prjOwner=owner.email,  # type: ignore
@@ -264,12 +265,12 @@ async def acquire_project_with_viewer(
 async def acquire_project_with_service(
     app: web.Application,
     user: UserInfo,
-    viewer: ViewerInfo,
+    service_info: ServiceInfo,
     *,
     product_name: str,
 ) -> tuple[str, str]:
 
-    project_uid: ProjectID = compose_uuid_from(user.id, viewer.footprint)
+    project_uid: ProjectID = compose_uuid_from(user.id, service_info.footprint)
     _, viewer_id = _generate_nodeids(project_uid)
 
     try:
@@ -284,7 +285,7 @@ async def acquire_project_with_service(
             project_uid,
             viewer_id,
             user,
-            viewer,
+            service_info,
         )
 
         await _add_new_project(app, project, user, product_name=product_name)

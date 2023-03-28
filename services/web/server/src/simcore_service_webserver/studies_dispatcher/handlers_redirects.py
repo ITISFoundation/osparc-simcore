@@ -23,13 +23,9 @@ from servicelib.aiohttp.requests_validation import parse_request_query_parameter
 from ..products import get_product_name
 from ..utils_aiohttp import create_redirect_response
 from ._catalog import validate_requested_service
-from ._core import (
-    StudyDispatcherError,
-    ViewerInfo,
-    acquire_project_with_service,
-    validate_requested_viewer,
-)
-from ._projects import acquire_project_with_viewer
+from ._core import StudyDispatcherError, ViewerInfo, validate_requested_viewer
+from ._models import ServiceInfo
+from ._projects import acquire_project_with_service, acquire_project_with_viewer
 from ._users import UserInfo, acquire_user, ensure_authentication
 
 logger = logging.getLogger(__name__)
@@ -85,6 +81,8 @@ class RedirectionQueryParams(ViewerQueryParams):
 
         if download_link and not file_type:
             raise ValueError("file_type is missing since download_link was defined")
+
+        return values
 
     async def check_download_link(self):
         """Explicit validation of download link that performs a light fetch of url's head"""
@@ -175,6 +173,9 @@ async def get_redirection_to_viewer(request: web.Request):
                 file_size=params.file_size,
             )
 
+            # lastly, ensure auth if any
+            await ensure_authentication(user, request, response)
+
         else:
             valid_service = await validate_requested_service(
                 request.app,
@@ -193,7 +194,7 @@ async def get_redirection_to_viewer(request: web.Request):
             project_id, viewer_id = await acquire_project_with_service(
                 request.app,
                 user,
-                viewer=ViewerInfo(
+                service_info=ServiceInfo(
                     key=valid_service.key,
                     version=valid_service.version,
                     label=valid_service.title,
@@ -211,8 +212,8 @@ async def get_redirection_to_viewer(request: web.Request):
                 file_size=0,
             )
 
-        # lastly, ensure auth if any
-        await ensure_authentication(user, request, response)
+            # lastly, ensure auth if any
+            await ensure_authentication(user, request, response)
 
         logger.debug(
             "Response with redirect '%s' w/ auth cookie in headers %s)",

@@ -16,7 +16,8 @@ from pydantic.networks import HttpUrl
 from .._meta import API_VTAG
 from ..utils_aiohttp import envelope_json_response
 from ._catalog import ServiceMetaData, iter_latest_osparc_services
-from ._core import ViewerInfo, list_viewers_info
+from ._core import list_viewers_info
+from ._models import ViewerInfo
 from .handlers_redirects import (
     compose_dispatcher_prefix_url,
     compose_service_dispatcher_prefix_url,
