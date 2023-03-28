@@ -132,7 +132,7 @@ class DaskClient:
         )
         async for attempt in AsyncRetrying(
             reraise=True,
-            before_sleep=before_sleep_log(logger, logging.WARNING),
+            before_sleep=before_sleep_log(logger, logging.INFO),
             wait=wait_fixed(0.3),
             stop=stop_after_attempt(3),
         ):
@@ -432,6 +432,11 @@ class DaskClient:
             logger.warning("Unknown task cannot be unpublished: %s", f"{job_id=}")
 
     async def get_cluster_details(self) -> ClusterDetails:
+        check_scheduler_is_still_the_same(
+            self.backend.scheduler_id, self.backend.client
+        )
+        check_communication_with_scheduler_is_open(self.backend.client)
+        check_scheduler_status(self.backend.client)
         scheduler_info = self.backend.client.scheduler_info()
         scheduler_status = self.backend.client.status
         dashboard_link = self.backend.client.dashboard_link
