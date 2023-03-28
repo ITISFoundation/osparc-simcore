@@ -1,6 +1,7 @@
 """ Handles request to the viewers redirection entrypoints
 
 """
+import functools
 import logging
 import urllib.parse
 from typing import Optional, cast
@@ -19,10 +20,14 @@ from pydantic import (
 )
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
+from servicelib.aiohttp.typing_extension import Handler
+from servicelib.error_codes import create_error_code
 
 from ..products import get_product_name
+from ..utils import compose_support_error_msg
 from ..utils_aiohttp import create_redirect_response
 from ._catalog import validate_requested_service
+from ._constants import MSG_UNEXPECTED_ERROR
 from ._core import StudyDispatcherError, ViewerInfo, validate_requested_viewer
 from ._models import ServiceInfo
 from ._projects import acquire_project_with_service, acquire_project_with_viewer
@@ -127,137 +132,155 @@ def compose_service_dispatcher_prefix_url(
     return cast(HttpUrl, f"{absolute_url}")
 
 
-async def get_redirection_to_viewer(request: web.Request):
-    try:
-        # query parameters in request parsed and validated
-        params = parse_request_query_parameters_as(RedirectionQueryParams, request)
-        logger.debug("Requesting viewer %s", params)
+def _handle_errors_with_error_page(handler: Handler):
+    @functools.wraps(handler)
+    async def wrapper(request: web.Request) -> web.StreamResponse:
+        try:
+            return await handler(request)
 
-        if params.file_type and params.download_link:
-            # TODO: Cannot check file_size from HEAD
-            # removed await params.check_download_link()
-            # Perhaps can check the header for GET while downloading and retreive file_size??
-            viewer: ViewerInfo = await validate_requested_viewer(
+        except StudyDispatcherError as err:
+            raise create_redirect_response(
                 request.app,
-                file_type=params.file_type,
-                file_size=params.file_size,
-                service_key=params.viewer_key,
-                service_version=params.viewer_version,
-            )
-            logger.debug("Validated viewer %s", viewer)
+                page="error",
+                message=f"Sorry, we cannot view this file: {err.reason}",
+                status_code=web.HTTPUnprocessableEntity.status_code,  # 422
+            ) from err
 
-            # Retrieve user or create a temporary guest
-            user: UserInfo = await acquire_user(
-                request, is_guest_allowed=viewer.is_guest_allowed
-            )
-            logger.debug("User acquired %s", user)
-
-            # Generate one project per user + download_link + viewer
-            project_id, viewer_id = await acquire_project_with_viewer(
+        except web.HTTPUnauthorized as err:
+            raise create_redirect_response(
                 request.app,
-                user,
-                viewer,
-                params.download_link,
-                product_name=get_product_name(request),
-            )
-            logger.debug("Project acquired '%s'", project_id)
+                page="error",
+                message=f"{err.reason}. Please reload this page to login/register.",
+                status_code=err.status_code,
+            ) from err
 
-            # Redirection and creation of cookies (for guests)
-            # Produces  /#/view?project_id= & viewer_node_id
-            response = create_redirect_response(
+        except web.HTTPUnprocessableEntity as err:
+            raise create_redirect_response(
                 request.app,
-                page="view",
-                project_id=project_id,
-                viewer_node_id=viewer_id,
-                file_name=params.file_name or "unkwnown",
-                file_size=params.file_size,
-            )
+                page="error",
+                message=f"Invalid parameters in link: {err.reason}",
+                status_code=web.HTTPUnprocessableEntity.status_code,  # 422
+            ) from err
 
-            # lastly, ensure auth if any
-            await ensure_authentication(user, request, response)
-
-        else:
-            valid_service = await validate_requested_service(
+        except web.HTTPClientError as err:
+            logger.exception("Client error with status code %d", err.status_code)
+            raise create_redirect_response(
                 request.app,
-                service_key=params.viewer_key,
-                service_version=params.viewer_version,
+                page="error",
+                message=err.reason,
+                status_code=err.status_code,
+            ) from err
+
+        except (ValidationError, web.HTTPServerError, Exception) as err:
+            error_code = create_error_code(err)
+            logger.exception(
+                "Unexpected failure while dispatching study [%s]",
+                f"{error_code}",
+                extra={"error_code": error_code},
             )
-
-            logger.debug("Validated service %s", valid_service)
-
-            # Retrieve user or create a temporary guest
-            user: UserInfo = await acquire_user(
-                request, is_guest_allowed=valid_service.is_public
-            )
-            logger.debug("User acquired %s", user)
-
-            project_id, viewer_id = await acquire_project_with_service(
+            raise create_redirect_response(
                 request.app,
-                user,
-                service_info=ServiceInfo(
-                    key=valid_service.key,
-                    version=valid_service.version,
-                    label=valid_service.title,
+                page="error",
+                message=compose_support_error_msg(
+                    msg=MSG_UNEXPECTED_ERROR.format(hint=""), error_code=error_code
                 ),
-                product_name=get_product_name(request),
-            )
-            logger.debug("Project acquired '%s'", project_id)
+                status_code=500,
+            ) from err
 
-            response = create_redirect_response(
-                request.app,
-                page="view",
-                project_id=project_id,
-                viewer_node_id=viewer_id,
-                file_name="none",
-                file_size=0,
-            )
+    return wrapper
 
-            # lastly, ensure auth if any
-            await ensure_authentication(user, request, response)
 
-        logger.debug(
-            "Response with redirect '%s' w/ auth cookie in headers %s)",
-            response,
-            response.headers,
+@_handle_errors_with_error_page
+async def get_redirection_to_viewer(request: web.Request):
+    params = parse_request_query_parameters_as(RedirectionQueryParams, request)
+
+    logger.debug("Requesting viewer %s", params)
+
+    if params.file_type and params.download_link:
+        # TODO: Cannot check file_size from HEAD
+        # removed await params.check_download_link()
+        # Perhaps can check the header for GET while downloading and retreive file_size??
+        viewer: ViewerInfo = await validate_requested_viewer(
+            request.app,
+            file_type=params.file_type,
+            file_size=params.file_size,
+            service_key=params.viewer_key,
+            service_version=params.viewer_version,
+        )
+        logger.debug("Validated viewer %s", viewer)
+
+        # Retrieve user or create a temporary guest
+        user: UserInfo = await acquire_user(
+            request, is_guest_allowed=viewer.is_guest_allowed
+        )
+        logger.debug("User acquired %s", user)
+
+        # Generate one project per user + download_link + viewer
+        project_id, viewer_id = await acquire_project_with_viewer(
+            request.app,
+            user,
+            viewer,
+            params.download_link,
+            product_name=get_product_name(request),
+        )
+        logger.debug("Project acquired '%s'", project_id)
+
+        # Redirection and creation of cookies (for guests)
+        # Produces  /#/view?project_id= & viewer_node_id
+        response = create_redirect_response(
+            request.app,
+            page="view",
+            project_id=project_id,
+            viewer_node_id=viewer_id,
+            file_name=params.file_name or "unkwnown",
+            file_size=params.file_size,
         )
 
-    except StudyDispatcherError as err:
-        raise create_redirect_response(
-            request.app,
-            page="error",
-            message=f"Sorry, we cannot render this file: {err.reason}",
-            status_code=web.HTTPUnprocessableEntity.status_code,  # 422
-        ) from err
+        # lastly, ensure auth if any
+        await ensure_authentication(user, request, response)
 
-    except (web.HTTPUnauthorized) as err:
-        raise create_redirect_response(
+    else:
+        valid_service = await validate_requested_service(
             request.app,
-            page="error",
-            message=f"{err.reason}. Please reload this page to login/register.",
-            status_code=err.status_code,
-        ) from err
+            service_key=params.viewer_key,
+            service_version=params.viewer_version,
+        )
 
-    except (web.HTTPUnprocessableEntity) as err:
-        raise create_redirect_response(
+        logger.debug("Validated service %s", valid_service)
+
+        # Retrieve user or create a temporary guest
+        user: UserInfo = await acquire_user(
+            request, is_guest_allowed=valid_service.is_public
+        )
+        logger.debug("User acquired %s", user)
+
+        project_id, viewer_id = await acquire_project_with_service(
             request.app,
-            page="error",
-            message=f"Invalid parameters in link: {err.reason}",
-            status_code=web.HTTPUnprocessableEntity.status_code,  # 422
-        ) from err
+            user,
+            service_info=ServiceInfo(
+                key=valid_service.key,
+                version=valid_service.version,
+                label=valid_service.title,
+            ),
+            product_name=get_product_name(request),
+        )
+        logger.debug("Project acquired '%s'", project_id)
 
-    except (web.HTTPClientError) as err:
-        logger.exception("Client error with status code %d", err.status_code)
-        raise create_redirect_response(
-            request.app, page="error", message=err.reason, status_code=err.status_code
-        ) from err
-
-    except (ValidationError, web.HTTPServerError, Exception) as err:
-        logger.exception("Fatal error while redirecting %s", request.query)
-        raise create_redirect_response(
+        response = create_redirect_response(
             request.app,
-            page="error",
-            message="Something went wrong while processing your request.",
-            status_code=web.HTTPInternalServerError.status_code,
-        ) from err
+            page="view",
+            project_id=project_id,
+            viewer_node_id=viewer_id,
+            file_name="none",
+            file_size=0,
+        )
+
+        await ensure_authentication(user, request, response)
+
+    logger.debug(
+        "Response with redirect '%s' w/ auth cookie in headers %s)",
+        response,
+        response.headers,
+    )
 
     return response
