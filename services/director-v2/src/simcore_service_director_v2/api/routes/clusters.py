@@ -188,7 +188,7 @@ async def get_cluster_details(
             clusters_repo=clusters_repo,
             dask_clients_pool=dask_clients_pool,
         )
-        logger.debug("found followind %s", f"{cluster_details=!r}")
+        logger.debug("found following %s", f"{cluster_details=!r}")
         return cluster_details
     except DaskClientAcquisisitonError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{exc}")
