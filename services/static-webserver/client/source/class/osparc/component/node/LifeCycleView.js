@@ -58,44 +58,51 @@ qx.Class.define("osparc.component.node.LifeCycleView", {
         this._add(deprecateDateLabel);
       }
 
-      const instructionsMsg = node.isDeprecated() ? osparc.utils.Services.DEPRECATED_DYNAMIC_INSTRUCTIONS : osparc.utils.Services.RETIRED_DYNAMIC_INSTRUCTIONS;
-      const instructionsLabel = new qx.ui.basic.Label(instructionsMsg).set({
-        rich: true
-      });
-      this._add(instructionsLabel);
-
-
-      const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-
       const latestCompatibleMetadata = osparc.utils.Services.getLatestCompatible(null, node.getKey(), node.getVersion());
       const autoUpdatable = node.getVersion() !== latestCompatibleMetadata["version"];
+      if (autoUpdatable) {
+        const instructionsMsg = node.isDeprecated() ? osparc.utils.Services.DEPRECATED_AUTOUPDATABLE_INSTRUCTIONS : osparc.utils.Services.RETIRED_AUTOUPDATABLE_INSTRUCTIONS;
+        const instructionsLabel = new qx.ui.basic.Label(instructionsMsg).set({
+          rich: true
+        });
+        this._add(instructionsLabel);
 
-      const stopButton = new qx.ui.form.Button().set({
-        label: this.tr("Stop"),
-        icon: "@FontAwesome5Solid/stop/14",
-        enabled: false
-      });
-      node.getStatus().bind("interactive", stopButton, "enabled", {
-        converter: state => state === "ready"
-      });
-      node.attachExecuteHandlerToStopButton(stopButton);
-      buttonsLayout.add(stopButton);
+        const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
 
-      const updateButton = new osparc.ui.form.FetchButton().set({
-        label: this.tr("Update"),
-        icon: "@MaterialIcons/update/14",
-        backgroundColor: "strong-main"
-      });
-      stopButton.bind("enabled", updateButton, "enabled", {
-        converter: enabled => !enabled && autoUpdatable
-      });
-      updateButton.addListener("execute", () => {
-        node.setVersion(latestCompatibleMetadata["version"]);
-      });
+        const stopButton = new qx.ui.form.Button().set({
+          label: this.tr("Stop"),
+          icon: "@FontAwesome5Solid/stop/14",
+          enabled: false
+        });
+        node.getStatus().bind("interactive", stopButton, "enabled", {
+          converter: state => state === "ready"
+        });
+        node.attachExecuteHandlerToStopButton(stopButton);
+        buttonsLayout.add(stopButton);
 
-      buttonsLayout.add(updateButton);
+        const updateButton = new osparc.ui.form.FetchButton().set({
+          label: this.tr("Update"),
+          icon: "@MaterialIcons/update/14",
+          backgroundColor: "strong-main"
+        });
+        stopButton.bind("enabled", updateButton, "enabled", {
+          converter: enabled => !enabled && autoUpdatable
+        });
+        updateButton.addListener("execute", () => {
+          node.setVersion(latestCompatibleMetadata["version"]);
+          setTimeout(() => node.startInBackend(), osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL*2);
+        });
 
-      this._add(buttonsLayout);
+        buttonsLayout.add(updateButton);
+
+        this._add(buttonsLayout);
+      } else {
+        const instructionsMsg = node.isDeprecated() ? osparc.utils.Services.DEPRECATED_DYNAMIC_INSTRUCTIONS : osparc.utils.Services.RETIRED_DYNAMIC_INSTRUCTIONS;
+        const instructionsLabel = new qx.ui.basic.Label(instructionsMsg).set({
+          rich: true
+        });
+        this._add(instructionsLabel);
+      }
     }
   }
 });
