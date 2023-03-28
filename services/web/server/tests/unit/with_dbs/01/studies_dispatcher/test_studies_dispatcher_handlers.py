@@ -469,7 +469,8 @@ async def test_missing_file_param(client: TestClient, missing_parameter: str):
         download_link=urllib.parse.quote(
             "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/8987c95d0ca0090e14f3a5b52db724fa24114cf5/services/storage/tests/data/users.csv"
         ),
-    ).pop(missing_parameter)
+    )
+    query.pop(missing_parameter)
 
     redirect_url = (
         client.app.router["get_redirection_to_viewer"].url_for().with_query(query)
