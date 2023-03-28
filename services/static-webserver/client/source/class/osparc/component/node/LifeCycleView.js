@@ -78,6 +78,7 @@ qx.Class.define("osparc.component.node.LifeCycleView", {
       node.getStatus().bind("interactive", stopButton, "enabled", {
         converter: state => state === "ready"
       });
+      node.attachExecuteHandlerToStopButton(stopButton);
       buttonsLayout.add(stopButton);
 
       const updateButton = new osparc.ui.form.FetchButton().set({
@@ -87,6 +88,9 @@ qx.Class.define("osparc.component.node.LifeCycleView", {
       });
       stopButton.bind("enabled", updateButton, "enabled", {
         converter: enabled => !enabled && autoUpdatable
+      });
+      updateButton.addListener("execute", () => {
+        node.setVersion(latestCompatibleMetadata["version"]);
       });
 
       buttonsLayout.add(updateButton);
