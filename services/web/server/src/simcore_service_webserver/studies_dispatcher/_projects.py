@@ -68,7 +68,6 @@ def _create_file_picker(download_link: str):
 
 def _create_project_with_service(
     project_id: ProjectID,
-    file_picker_id: NodeID,
     viewer_id: NodeID,
     owner: UserInfo,
     viewer_info: ViewerInfo,
@@ -84,6 +83,8 @@ def _create_project_with_service(
         label=viewer_info.label,
         inputs=None,
     )
+
+    # TODO: common!
 
     # Access rights policy
     access_rights = AccessRights(read=True, write=True, delete=True)  # will keep a copy

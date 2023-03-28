@@ -4,7 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
-from typing import AsyncIterator
+from typing import Any, AsyncIterator
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -22,6 +22,7 @@ from simcore_service_webserver.studies_dispatcher._projects import (
     ViewerInfo,
     _add_new_project,
     _create_project_with_filepicker_and_service,
+    _create_project_with_service,
 )
 from simcore_service_webserver.users_api import get_user
 
@@ -66,11 +67,13 @@ def viewer_id(faker: Faker) -> NodeID:
     return NodeID(faker.uuid4())
 
 
+@pytest.mark.parametrize("only_service", [True, False])
 @pytest.mark.parametrize(
     "view", FAKE_FILE_VIEWS, ids=[c["display_name"] for c in FAKE_FILE_VIEWS]
 )
 async def test_add_new_project_from_model_instance(
-    view,
+    only_service: bool,
+    view: dict[str, Any],
     client: TestClient,
     mocker: MockerFixture,
     osparc_product_name: str,
@@ -88,14 +91,24 @@ async def test_add_new_project_from_model_instance(
         return_value=None,
     )
 
-    project: Project = _create_project_with_filepicker_and_service(
-        project_id,
-        file_picker_id,
-        viewer_id,
-        owner=user,
-        download_link="http://httpbin.org/image/jpeg",
-        viewer_info=viewer,
-    )
+    project: Project
+
+    if only_service:
+        project = _create_project_with_service(
+            project_id,
+            viewer_id,
+            owner=user,
+            viewer_info=viewer,
+        )
+    else:
+        project = _create_project_with_filepicker_and_service(
+            project_id,
+            file_picker_id,
+            viewer_id,
+            owner=user,
+            download_link="http://httpbin.org/image/jpeg",
+            viewer_info=viewer,
+        )
 
     await _add_new_project(client.app, project, user, product_name=osparc_product_name)
 
