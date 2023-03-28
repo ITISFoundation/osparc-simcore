@@ -187,6 +187,8 @@ def get_delete_project_task(
 # PROJECT NODES -----------------------------------------------------
 #
 
+PROJECT_ACTIVELY_RUNNING_NODE_STATES = {"pending", "pulling", "starting", "running"}
+
 
 async def _start_dynamic_service(
     request: web.Request,
@@ -204,16 +206,16 @@ async def _start_dynamic_service(
         request.app, user_id, f"{project_uuid}"
     )
 
-    project_active_running_nodes = [
+    project_actively_running_nodes = [
         node
         for node in project_running_nodes
-        if node["service_state"] in {"pending", "pulling", "starting", "running"}
+        if node["service_state"] in PROJECT_ACTIVELY_RUNNING_NODE_STATES
     ]
 
     project_settings = get_settings(request.app).WEBSERVER_PROJECTS
     assert project_settings  # nosec
     if project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES > 0 and (
-        len(project_active_running_nodes)
+        len(project_actively_running_nodes)
         >= project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
     ):
         raise ProjectStartsTooManyDynamicNodes(
