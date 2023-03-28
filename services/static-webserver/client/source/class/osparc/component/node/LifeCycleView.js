@@ -63,6 +63,35 @@ qx.Class.define("osparc.component.node.LifeCycleView", {
         rich: true
       });
       this._add(instructionsLabel);
+
+
+      const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+
+      const latestCompatibleMetadata = osparc.utils.Services.getLatestCompatible(null, node.getKey(), node.getVersion());
+      const autoUpdatable = node.getVersion() !== latestCompatibleMetadata["version"];
+
+      const stopButton = new qx.ui.form.Button().set({
+        label: this.tr("Stop"),
+        icon: "@FontAwesome5Solid/stop/14",
+        enabled: false
+      });
+      node.getStatus().bind("interactive", stopButton, "enabled", {
+        converter: state => state === "ready"
+      });
+      buttonsLayout.add(stopButton);
+
+      const updateButton = new osparc.ui.form.FetchButton().set({
+        label: this.tr("Update"),
+        icon: "@MaterialIcons/update/14",
+        backgroundColor: "strong-main"
+      });
+      stopButton.bind("enabled", updateButton, "enabled", {
+        converter: enabled => !enabled && autoUpdatable
+      });
+
+      buttonsLayout.add(updateButton);
+
+      this._add(buttonsLayout);
     }
   }
 });
