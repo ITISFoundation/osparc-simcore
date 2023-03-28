@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
+import random
 from typing import NamedTuple
 
 import pytest
@@ -17,6 +18,9 @@ from simcore_postgres_database.models.services import (
     services_access_rights,
     services_latest,
     services_meta_data,
+)
+from simcore_postgres_database.models.services_consume_filetypes import (
+    services_consume_filetypes,
 )
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
@@ -72,7 +76,7 @@ def services_fixture(faker: Faker, pg_sa_engine: sa.engine.Engine) -> ServicesFi
 
             num_versions = 4
             for _ in range(num_versions):
-                version = faker.numerify("##.##.###")
+                version = faker.numerify("%#.%#.%##")
                 if Version(expected_latest[key]) < Version(version):
                     expected_latest[key] = version
 
@@ -98,6 +102,20 @@ def services_fixture(faker: Faker, pg_sa_engine: sa.engine.Engine) -> ServicesFi
                     product_name=product_name,
                 )
 
+                # access rights
+                num_filetypes = random.randint(0, 4)
+                for i, filetype in enumerate(
+                    faker.uri_extension().removeprefix(".")
+                    for _ in range(num_filetypes)
+                ):
+                    query = services_consume_filetypes.insert().values(
+                        service_key=key,
+                        service_version=version,
+                        service_display_name=service_name,
+                        service_input_port=f"input_{i}",
+                        filetype=filetype,
+                    )
+
                 conn.execute(query)
     return ServicesFixture(
         expected_latest=expected_latest,
@@ -108,6 +126,39 @@ def services_fixture(faker: Faker, pg_sa_engine: sa.engine.Engine) -> ServicesFi
 def test_trial_queries_for_service_metadata(
     services_fixture: ServicesFixture, pg_sa_engine: sa.engine.Engine
 ):
+    #
+    with pg_sa_engine.connect() as conn:
+        stmt = sa.select(
+            services_consume_filetypes.c.service_key,
+            sa.func.array_agg(
+                sa.func.distinct(services_consume_filetypes.c.filetype)
+            ).label("file_extensions"),
+        ).group_by(services_consume_filetypes.c.service_key)
+
+        rows: list = conn.execute(stmt).fetchall()
+        print(rows)
+
+    with pg_sa_engine.connect() as conn:
+        stmt = (
+            sa.select(
+                services_consume_filetypes.c.service_key,
+                sa.text(
+                    "array_to_string(MAX(string_to_array(version, '.')::int[]), '.') AS latest_version"
+                ),
+                sa.func.array_agg(services_consume_filetypes.c.filetype),
+            )
+            .select_from(
+                services_meta_data.join(
+                    services_consume_filetypes,
+                    services_meta_data.c.key
+                    == services_consume_filetypes.c.service_key,
+                )
+            )
+            .group_by(services_consume_filetypes.c.service_key)
+        )
+
+        rows: list = conn.execute(stmt).fetchall()
+
     with pg_sa_engine.connect() as conn:
         # Select query for latest
         latest_select_query = sa.select(
@@ -167,8 +218,16 @@ def test_trial_queries_for_service_metadata(
         assert latest_values == rows
 
     # list latest services
+
     with pg_sa_engine.connect() as conn:
-        query = sa.select(services_meta_data, services_access_rights).select_from(
+        query = sa.select(
+            services_meta_data.c.key,
+            services_meta_data.c.version,
+            services_access_rights.c.gid,
+            services_access_rights.c.execute_access,
+            services_access_rights.c.write_access,
+            services_access_rights.c.product_name,
+        ).select_from(
             services_latest.join(
                 services_meta_data,
                 (services_meta_data.c.key == services_latest.c.key)
