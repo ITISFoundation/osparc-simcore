@@ -55,7 +55,7 @@ async def _list_services_in_registry(
 
         except ValidationError as exc:
             logger.warning(
-                "Skipping service %s:%s in catalog:\n%s",
+                "Skipping %s:%s from the catalog of services:\n%s",
                 service.get("key"),
                 service.get("version"),
                 exc,
