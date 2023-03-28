@@ -132,7 +132,7 @@ class DaskClient:
         )
         async for attempt in AsyncRetrying(
             reraise=True,
-            before_sleep=before_sleep_log(logger, logging.WARNING),
+            before_sleep=before_sleep_log(logger, logging.INFO),
             wait=wait_fixed(0.3),
             stop=stop_after_attempt(3),
         ):
