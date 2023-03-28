@@ -145,12 +145,12 @@ async def get_project_type(
 #
 
 
-async def update_project(app: web.Application, project: dict) -> bool:
+async def update_project_last_change_timestamp(
+    app: web.Application, project_uuid: ProjectID
+) -> bool:
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     assert db  # nosec
-    return await db.update_project_without_checking_permissions(
-        project, project["uuid"]
-    )
+    return await db.update_project_last_change_timestamp(project_uuid)
 
 
 #

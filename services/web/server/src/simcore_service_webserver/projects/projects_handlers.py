@@ -98,8 +98,9 @@ async def open_project(request: web.Request) -> web.Response:
             )
 
         # and let's update the project last change timestamp
-        project.pop("state")
-        await projects_api.update_project(request.app, project)
+        await projects_api.update_project_last_change_timestamp(
+            request.app, f"{path_params.project_id}"
+        )
 
         # notify users that project is now opened
         project = await projects_api.add_project_states_for_user(

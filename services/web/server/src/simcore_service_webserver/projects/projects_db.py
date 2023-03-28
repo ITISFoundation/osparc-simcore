@@ -462,6 +462,18 @@ class ProjectDBAPI(BaseProjectDB):
             )
             return result.rowcount == 1
 
+    async def update_project_last_change_timestamp(
+        self, project_uuid: ProjectIDStr
+    ) -> bool:
+        async with self.engine.acquire() as conn:
+            result = await conn.execute(
+                # pylint: disable=no-value-for-parameter
+                projects.update()
+                .values(**{"last_change_date": now_str()})
+                .where(projects.c.uuid == project_uuid)
+            )
+            return result.rowcount == 1
+
     async def delete_project(self, user_id: int, project_uuid: str):
         log.info(
             "Deleting project with %s for user with %s",
