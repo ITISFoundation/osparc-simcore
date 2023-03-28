@@ -67,7 +67,6 @@ async def test_create_project_with_viewer(project_jsonschema, view):
 
     view["label"] = view.pop("display_name")
     viewer = ViewerInfo(**view)
-    assert viewer.dict() == view
 
     user = UserInfo(id=3, name="foo", primary_gid=33, email="foo@bar.com")
 

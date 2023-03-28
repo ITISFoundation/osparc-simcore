@@ -3,7 +3,7 @@ import uuid
 
 from aiopg.sa.result import RowProxy
 from models_library.services import ServiceKey, ServiceVersion
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, HttpUrl
 
 MEGABYTES = 1024 * 1024
 _BASE_UUID = uuid.UUID("ca2144da-eabb-4daf-a1df-a3682050e25f")
@@ -17,6 +17,8 @@ class ServiceInfo(BaseModel):
     version: ServiceVersion
 
     label: str = Field(..., description="Display name")
+
+    thumbnail: HttpUrl = Field(default="https://via.placeholder.com/170x120.png")
 
     is_guest_allowed: bool = True
 

@@ -1,12 +1,13 @@
+from contextlib import suppress
 from dataclasses import dataclass
-from typing import AsyncIterator
+from typing import AsyncIterator, Optional
 
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.engine import Engine
 from models_library.services import ServiceKey, ServiceVersion
-from pydantic import PositiveInt
+from pydantic import HttpUrl, PositiveInt, ValidationError, parse_obj_as
 from simcore_postgres_database.models.services import (
     services_access_rights,
     services_latest,
@@ -116,6 +117,7 @@ class ServiceValidated:
     version: str
     title: str
     is_public: bool
+    thumbnail: Optional[HttpUrl]  # nullable
 
 
 async def validate_requested_service(
@@ -127,7 +129,13 @@ async def validate_requested_service(
     engine: Engine = get_database_engine(app)
 
     async with engine.acquire() as conn:
-        query = sa.select([services_meta_data.c.name, services_meta_data.c.key]).where(
+        query = sa.select(
+            [
+                services_meta_data.c.name,
+                services_meta_data.c.key,
+                services_meta_data.c.thumbnail,
+            ]
+        ).where(
             (services_meta_data.c.key == service_key)
             & (services_meta_data.c.version == service_version)
         )
@@ -153,9 +161,15 @@ async def validate_requested_service(
 
         is_guest_allowed = await conn.scalar(query)
 
+        thumbnail_or_none = None
+        if row.thumbnail is not None:
+            with suppress(ValidationError):
+                thumbnail_or_none = parse_obj_as(HttpUrl, row.thumbnail)
+
         return ServiceValidated(
             key=service_key,
             version=service_version,
             is_public=bool(is_guest_allowed),
             title=row.name or service_key.split("/")[-1],
+            thumbnail=thumbnail_or_none,
         )

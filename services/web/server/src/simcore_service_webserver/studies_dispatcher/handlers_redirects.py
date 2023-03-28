@@ -34,12 +34,13 @@ from ._projects import acquire_project_with_service, acquire_project_with_viewer
 from ._users import UserInfo, acquire_user, ensure_authentication
 
 logger = logging.getLogger(__name__)
+_SPACE = " "
 
 
 class ViewerQueryParams(BaseModel):
+    file_type: Optional[str] = Field(default=None)
     viewer_key: ServiceKey
     viewer_version: ServiceVersion
-    file_type: Optional[str] = Field(default=None)
 
     @staticmethod
     def from_viewer(viewer: ViewerInfo) -> "ViewerQueryParams":
@@ -49,9 +50,6 @@ class ViewerQueryParams(BaseModel):
             viewer_key=viewer.key,
             viewer_version=viewer.version,
         )
-
-
-SPACE = " "
 
 
 class RedirectionQueryParams(ViewerQueryParams):
@@ -66,8 +64,8 @@ class RedirectionQueryParams(ViewerQueryParams):
         # before any change here
         if v:
             w = urllib.parse.unquote(v)
-            if SPACE in w:
-                w = w.replace(SPACE, "%20")
+            if _SPACE in w:
+                w = w.replace(_SPACE, "%20")
             return w
         return v
 
@@ -125,7 +123,7 @@ def compose_service_dispatcher_prefix_url(
 ) -> HttpUrl:
     params = ViewerQueryParams(
         viewer_key=service_key, viewer_version=service_version
-    ).dict(exclude_none=True)
+    ).dict(exclude_none=True, exclude_unset=True)
     absolute_url = request.url.join(
         request.app.router["get_redirection_to_viewer"].url_for().with_query(**params)
     )
