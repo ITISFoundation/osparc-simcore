@@ -9,13 +9,26 @@ import aiohttp
 from aiohttp import web
 from aiohttp.client_exceptions import ClientError
 from models_library.services import ServiceKey, ServiceVersion
-from pydantic import BaseModel, HttpUrl, ValidationError, validator
+from pydantic import (
+    BaseModel,
+    Field,
+    HttpUrl,
+    ValidationError,
+    root_validator,
+    validator,
+)
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 
 from ..products import get_product_name
 from ..utils_aiohttp import create_redirect_response
-from ._core import StudyDispatcherError, ViewerInfo, validate_requested_viewer
+from ._catalog import validate_requested_service
+from ._core import (
+    StudyDispatcherError,
+    ViewerInfo,
+    acquire_project_with_service,
+    validate_requested_viewer,
+)
 from ._projects import acquire_project_with_viewer
 from ._users import UserInfo, acquire_user, ensure_authentication
 
@@ -23,9 +36,9 @@ logger = logging.getLogger(__name__)
 
 
 class ViewerQueryParams(BaseModel):
-    file_type: Optional[str]
     viewer_key: ServiceKey
     viewer_version: ServiceVersion
+    file_type: Optional[str] = Field(default=None)
 
     @staticmethod
     def from_viewer(viewer: ViewerInfo) -> "ViewerQueryParams":
@@ -41,9 +54,9 @@ SPACE = " "
 
 
 class RedirectionQueryParams(ViewerQueryParams):
-    file_name: Optional[str] = "unknown"
-    file_size: PositiveInt
-    download_link: HttpUrl
+    file_name: str = "unknown"
+    file_size: Optional[PositiveInt] = None
+    download_link: Optional[HttpUrl] = None
 
     @validator("download_link", pre=True)
     @classmethod
@@ -56,6 +69,22 @@ class RedirectionQueryParams(ViewerQueryParams):
                 w = w.replace(SPACE, "%20")
             return w
         return v
+
+    @root_validator
+    @classmethod
+    def file_params_required(cls, values):
+        # A service only does not need file info
+        # If some file-info then
+        file_type = values.get("file_type")
+        ## file_size = values.get("file_size")
+        ## file_name = values.get("file_name")
+        download_link = values.get("download_link")
+
+        if file_type and not download_link:
+            raise ValueError("download_link is missing since file_type was defined")
+
+        if download_link and not file_type:
+            raise ValueError("file_type is missing since download_link was defined")
 
     async def check_download_link(self):
         """Explicit validation of download link that performs a light fetch of url's head"""
@@ -92,7 +121,7 @@ def compose_service_dispatcher_prefix_url(
     request: web.Request, service_key: str, service_version: str
 ) -> HttpUrl:
     params = ViewerQueryParams(
-        viewer_key=service_key, viewer_version=service_version, file_type=None  # type: ignore
+        viewer_key=service_key, viewer_version=service_version
     ).dict(exclude_none=True)
     absolute_url = request.url.join(
         request.app.router["get_redirection_to_viewer"].url_for().with_query(**params)
@@ -106,47 +135,83 @@ async def get_redirection_to_viewer(request: web.Request):
         params = parse_request_query_parameters_as(RedirectionQueryParams, request)
         logger.debug("Requesting viewer %s", params)
 
-        if params.file_type is None:
-            raise NotImplementedError("Feature under development")
+        if params.file_type and params.download_link:
+            # TODO: Cannot check file_size from HEAD
+            # removed await params.check_download_link()
+            # Perhaps can check the header for GET while downloading and retreive file_size??
+            viewer: ViewerInfo = await validate_requested_viewer(
+                request.app,
+                file_type=params.file_type,
+                file_size=params.file_size,
+                service_key=params.viewer_key,
+                service_version=params.viewer_version,
+            )
+            logger.debug("Validated viewer %s", viewer)
 
-        # TODO: Cannot check file_size from HEAD
-        # removed await params.check_download_link()
-        # Perhaps can check the header for GET while downloading and retreive file_size??
-        viewer: ViewerInfo = await validate_requested_viewer(
-            request.app,
-            file_type=params.file_type,
-            file_size=params.file_size,
-            service_key=params.viewer_key,
-            service_version=params.viewer_version,
-        )
-        logger.debug("Validated viewer %s", viewer)
+            # Retrieve user or create a temporary guest
+            user: UserInfo = await acquire_user(
+                request, is_guest_allowed=viewer.is_guest_allowed
+            )
+            logger.debug("User acquired %s", user)
 
-        # Retrieve user or create a temporary guest
-        user: UserInfo = await acquire_user(
-            request, is_guest_allowed=viewer.is_guest_allowed
-        )
-        logger.debug("User acquired %s", user)
+            # Generate one project per user + download_link + viewer
+            project_id, viewer_id = await acquire_project_with_viewer(
+                request.app,
+                user,
+                viewer,
+                params.download_link,
+                product_name=get_product_name(request),
+            )
+            logger.debug("Project acquired '%s'", project_id)
 
-        # Generate one project per user + download_link + viewer
-        project_id, viewer_id = await acquire_project_with_viewer(
-            request.app,
-            user,
-            viewer,
-            params.download_link,
-            product_name=get_product_name(request),
-        )
-        logger.debug("Project acquired '%s'", project_id)
+            # Redirection and creation of cookies (for guests)
+            # Produces  /#/view?project_id= & viewer_node_id
+            response = create_redirect_response(
+                request.app,
+                page="view",
+                project_id=project_id,
+                viewer_node_id=viewer_id,
+                file_name=params.file_name or "unkwnown",
+                file_size=params.file_size,
+            )
 
-        # Redirection and creation of cookies (for guests)
-        # Produces  /#/view?project_id= & viewer_node_id
-        response = create_redirect_response(
-            request.app,
-            page="view",
-            project_id=project_id,
-            viewer_node_id=viewer_id,
-            file_name=params.file_name or "unkwnown",
-            file_size=params.file_size,
-        )
+        else:
+            valid_service = await validate_requested_service(
+                request.app,
+                service_key=params.viewer_key,
+                service_version=params.viewer_version,
+            )
+
+            logger.debug("Validated service %s", valid_service)
+
+            # Retrieve user or create a temporary guest
+            user: UserInfo = await acquire_user(
+                request, is_guest_allowed=valid_service.is_public
+            )
+            logger.debug("User acquired %s", user)
+
+            project_id, viewer_id = await acquire_project_with_service(
+                request.app,
+                user,
+                viewer=ViewerInfo(
+                    key=valid_service.key,
+                    version=valid_service.version,
+                    label=valid_service.title,
+                ),
+                product_name=get_product_name(request),
+            )
+            logger.debug("Project acquired '%s'", project_id)
+
+            response = create_redirect_response(
+                request.app,
+                page="view",
+                project_id=project_id,
+                viewer_node_id=viewer_id,
+                file_name="none",
+                file_size=0,
+            )
+
+        # lastly, ensure auth if any
         await ensure_authentication(user, request, response)
 
         logger.debug(

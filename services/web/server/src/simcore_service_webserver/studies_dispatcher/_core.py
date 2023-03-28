@@ -13,23 +13,13 @@ from simcore_postgres_database.models.services_consume_filetypes import (
 )
 
 from .._constants import APP_DB_ENGINE_KEY
+from ._errors import StudyDispatcherError
 
 MEGABYTES = 1024 * 1024
 BASE_UUID = uuid.UUID("ca2144da-eabb-4daf-a1df-a3682050e25f")
 
 
 logger = logging.getLogger(__name__)
-
-
-#
-# ERRORS
-#
-
-
-class StudyDispatcherError(Exception):
-    def __init__(self, reason):
-        super().__init__()
-        self.reason = reason
 
 
 class ViewerInfo(BaseModel):
@@ -47,6 +37,7 @@ class ViewerInfo(BaseModel):
 
     filetype: str = Field(..., description="Filetype associated to this viewer")
     input_port_key: str = Field(
+        ...,
         description="Name of the connection port, since it is service-dependent",
     )
 

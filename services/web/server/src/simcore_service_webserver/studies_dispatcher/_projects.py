@@ -259,3 +259,34 @@ async def acquire_project_with_viewer(
         await _add_new_project(app, project, user, product_name=product_name)
 
     return f"{project_uid}", f"{viewer_id}"
+
+
+async def acquire_project_with_service(
+    app: web.Application,
+    user: UserInfo,
+    viewer: ViewerInfo,
+    *,
+    product_name: str,
+) -> tuple[str, str]:
+
+    project_uid: ProjectID = compose_uuid_from(user.id, viewer.footprint)
+    _, viewer_id = _generate_nodeids(project_uid)
+
+    try:
+        await get_project_for_user(
+            app=app,
+            project_uuid=f"{project_uid}",
+            user_id=user.id,
+            include_state=False,
+        )
+    except (ProjectNotFoundError, ProjectInvalidRightsError):
+        project = _create_project_with_service(
+            project_uid,
+            viewer_id,
+            user,
+            viewer,
+        )
+
+        await _add_new_project(app, project, user, product_name=product_name)
+
+    return f"{project_uid}", f"{viewer_id}"

@@ -5,7 +5,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.engine import Engine
-from models_library.services import ServiceKey
+from models_library.services import ServiceKey, ServiceVersion
 from pydantic import PositiveInt
 from simcore_postgres_database.models.services import (
     services_access_rights,
@@ -17,6 +17,7 @@ from simcore_postgres_database.models.services_consume_filetypes import (
 )
 
 from ..db import get_database_engine
+from ._errors import StudyDispatcherError
 from .settings import StudiesDispatcherSettings, get_plugin_settings
 
 _EVERYONE_GROUP_ID = 1
@@ -107,3 +108,54 @@ async def iter_latest_osparc_services(
                 thumbnail=row.thumbnail or settings.STUDIES_DEFAULT_SERVICE_THUMBNAIL,
                 file_extensions=service_filetypes.get(row.key, []),
             )
+
+
+@dataclass
+class ServiceValidated:
+    key: str
+    version: str
+    title: str
+    is_public: bool
+
+
+async def validate_requested_service(
+    app: web.Application,
+    *,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+) -> ServiceValidated:
+    engine: Engine = get_database_engine(app)
+
+    async with engine.acquire() as conn:
+        query = sa.select([services_meta_data.c.name, services_meta_data.c.key]).where(
+            (services_meta_data.c.key == service_key)
+            & (services_meta_data.c.version == service_version)
+        )
+
+        result = await conn.execute(query)
+        row = await result.fetchone()
+
+        if row is None:
+            raise StudyDispatcherError(
+                f"Service {service_key}:{service_version} not found"
+            )
+
+        assert row.key == service_key  # nosec
+
+        query = (
+            sa.select(services_consume_filetypes.c.is_guest_allowed)
+            .where(
+                (services_consume_filetypes.c.key == service_key)
+                & (services_consume_filetypes.c.is_guest_allowed == True)
+            )
+            .limit(1)
+        )
+
+        is_guest_allowed = await conn.scalar(query)
+
+        return ServiceValidated(
+            key=service_key,
+            version=service_version,
+            is_public=is_guest_allowed,
+            title=row.name or service_key.split("/")[-1],
+        )
