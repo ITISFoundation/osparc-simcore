@@ -8,6 +8,7 @@ from typing import AsyncIterator
 
 import pytest
 from aiohttp.test_utils import TestClient
+from faker import Faker
 from models_library.projects import Project, ProjectID
 from models_library.projects_nodes_io import NodeID
 from pytest_mock import MockerFixture
@@ -50,6 +51,21 @@ async def user(client: TestClient) -> AsyncIterator[UserInfo]:
             await delete_all_projects(client.app)
 
 
+@pytest.fixture
+def project_id(faker: Faker) -> ProjectID:
+    return ProjectID(faker.uuid4())
+
+
+@pytest.fixture
+def file_picker_id(faker: Faker) -> NodeID:
+    return NodeID(faker.uuid4())
+
+
+@pytest.fixture
+def viewer_id(faker: Faker) -> NodeID:
+    return NodeID(faker.uuid4())
+
+
 @pytest.mark.parametrize(
     "view", FAKE_FILE_VIEWS, ids=[c["display_name"] for c in FAKE_FILE_VIEWS]
 )
@@ -59,6 +75,9 @@ async def test_add_new_project_from_model_instance(
     mocker: MockerFixture,
     osparc_product_name: str,
     user: UserInfo,
+    project_id: ProjectID,
+    file_picker_id: NodeID,
+    viewer_id: NodeID,
 ):
     view["label"] = view.pop("display_name")
     viewer = ViewerInfo(**view)
@@ -68,10 +87,6 @@ async def test_add_new_project_from_model_instance(
         "simcore_service_webserver.director_v2_api.create_or_update_pipeline",
         return_value=None,
     )
-
-    project_id = ProjectID("e3ee7dfc-25c3-11eb-9fae-02420a01b846")
-    file_picker_id = NodeID("4c69c0ce-00e4-4bd5-9cf0-59b67b3a9343")
-    viewer_id = NodeID("fc718e5a-bf07-4abe-b526-d9cafd34830c")
 
     project: Project = _create_project_with_filepicker_and_service(
         project_id,
