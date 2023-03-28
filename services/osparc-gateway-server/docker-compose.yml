@@ -1,7 +1,31 @@
 version: '3.9'
 services:
+  traefik:
+    image: "traefik:v2.9"
+    init: true
+    command:
+      # - "--log.level=DEBUG"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.swarmMode=true"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - public
+      - dask_net
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+
   osparc-gateway-server:
     image: ${DOCKER_REGISTRY:-itisfoundation}/osparc-gateway-server:${DOCKER_IMAGE_TAG:-latest}
+    init: true
     ports:
       - "8000:8000"
     volumes:
@@ -25,7 +49,15 @@ services:
       placement:
         constraints:
           - node.role == manager
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.gateway.rule=hostregexp(`{host:.+}`)
+        - traefik.http.routers.gateway.entrypoints=web
+        - traefik.http.routers.gateway.service=gateway
+        - traefik.http.services.gateway.loadbalancer.server.port=8000
 networks:
+  public:
+    name: ${SWARM_STACK_NAME:?swarm_stack_name_required}_dask_public
   dask_net:
     name: ${SWARM_STACK_NAME:?swarm_stack_name_required}_dask_net
 
