@@ -86,6 +86,13 @@ def _set_exception_handlers(app: FastAPI):
     )
 
 
+LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
+NOISY_LOGGERS = (
+    "aio_pika",
+    "aiormq",
+)
+
+
 def create_base_app(settings: Optional[AppSettings] = None) -> FastAPI:
     if settings is None:
         settings = AppSettings.create_from_envs()
@@ -94,6 +101,14 @@ def create_base_app(settings: Optional[AppSettings] = None) -> FastAPI:
     logging.basicConfig(level=settings.LOG_LEVEL.value)
     logging.root.setLevel(settings.LOG_LEVEL.value)
     logger.debug(settings.json(indent=2))
+
+    # keep mostly quiet noisy loggers
+    quiet_level: int = max(
+        min(logging.root.level + LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING
+    )
+
+    for name in NOISY_LOGGERS:
+        logging.getLogger(name).setLevel(quiet_level)
 
     app = FastAPI(
         debug=settings.SC_BOOT_MODE.is_devel_mode(),
