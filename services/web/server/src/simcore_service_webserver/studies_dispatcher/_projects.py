@@ -66,7 +66,55 @@ def _create_file_picker(download_link: str):
     return node, output_id
 
 
-def _create_viewer_project_model(
+def _create_project_with_service(
+    project_id: ProjectID,
+    file_picker_id: NodeID,
+    viewer_id: NodeID,
+    owner: UserInfo,
+    viewer_info: ViewerInfo,
+    *,
+    project_thumbnail: HttpUrl = cast(
+        HttpUrl, "https://via.placeholder.com/170x120.png"
+    ),
+) -> Project:
+
+    viewer_service = Node(
+        key=viewer_info.key,
+        version=viewer_info.version,
+        label=viewer_info.label,
+        inputs=None,
+    )
+
+    # Access rights policy
+    access_rights = AccessRights(read=True, write=True, delete=True)  # will keep a copy
+    if owner.is_guest:
+        access_rights.write = access_rights.delete = False
+
+    # Assambles project instance
+    project = Project(
+        uuid=project_id,
+        name=f"Viewer {viewer_info.title}",
+        description="Temporary study to visualize downloaded file",
+        thumbnail=project_thumbnail,
+        prjOwner=owner.email,  # type: ignore
+        accessRights={owner.primary_gid: access_rights},
+        creationDate=now_str(),
+        lastChangeDate=now_str(),
+        workbench={  # type: ignore
+            f"{viewer_id}": viewer_service,
+        },
+        ui=StudyUI(
+            workbench={  # type: ignore
+                f"{file_picker_id}": {"position": {"x": 305, "y": 229}},
+                f"{viewer_id}": {"position": {"x": 633, "y": 229}},
+            }
+        ),
+    )
+
+    return project
+
+
+def _create_project_with_filepicker_and_service(
     project_id: ProjectID,
     file_picker_id: NodeID,
     viewer_id: NodeID,
@@ -199,7 +247,7 @@ async def acquire_project_with_viewer(
 
     if not viewer_exists:
 
-        project = _create_viewer_project_model(
+        project = _create_project_with_filepicker_and_service(
             project_uid,
             file_picker_id,
             viewer_id,
