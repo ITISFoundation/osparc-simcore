@@ -272,6 +272,10 @@ qx.Class.define("osparc.data.model.Node", {
       return osparc.utils.Services.isRetired(metaData);
     },
 
+    hasBootOptions: function(metaData) {
+      return "boot-options" in metaData;
+    },
+
     getOutput: function(outputs, outputKey) {
       if (outputKey in outputs && "value" in outputs[outputKey]) {
         return outputs[outputKey]["value"];
