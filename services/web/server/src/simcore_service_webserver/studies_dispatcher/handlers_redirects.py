@@ -69,7 +69,11 @@ class RedirectionQueryParams(ViewerQueryParams):
         download_link = values.get("download_link")
         file_size = values.get("file_size")
 
-        if file_type and download_link and file_size:
+        file_params = (file_type, download_link, file_size)
+
+        if all(p is None for p in file_params) or all(
+            p is not None for p in file_params
+        ):
             return values
 
         raise ValueError("One or more file parameters missing")
