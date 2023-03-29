@@ -107,6 +107,10 @@ class SchedulerPublicInterface(ABC):
         """The service will be removed as soon as possible"""
 
     @abstractmethod
+    async def services_awaits_manual_interventions(self, node_uuid: NodeID) -> bool:
+        """returns True if services is waiting for manual intervention"""
+
+    @abstractmethod
     async def get_stack_status(self, node_uuid: NodeID) -> RunningDynamicServiceDetails:
         """Polled by the frontend for the status of the service"""
 

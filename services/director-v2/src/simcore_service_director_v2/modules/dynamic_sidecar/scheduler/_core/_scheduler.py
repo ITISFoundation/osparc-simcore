@@ -292,6 +292,16 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
 
         logger.debug("Service '%s' marked for removal from scheduler", service_name)
 
+    async def services_awaits_manual_interventions(self, node_uuid: NodeID) -> bool:
+        """returns True if services is waiting for manual intervention"""
+        scheduler_data: SchedulerData = self.get_scheduler_data(node_uuid)
+        return (
+            scheduler_data.dynamic_sidecar.status.current
+            == DynamicSidecarStatus.FAILING
+            and scheduler_data.dynamic_sidecar.wait_for_manual_intervention_after_error
+            is True
+        )
+
     async def remove_service_from_observation(self, node_uuid: NodeID) -> None:
         # TODO: this is used internally no need to be here exposed in the interface
         """

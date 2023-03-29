@@ -38,6 +38,9 @@ from simcore_service_director_v2.models.schemas.dynamic_services.scheduler impor
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     DynamicSidecarNotFoundError,
 )
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
+    DynamicSidecarsScheduler,
+)
 from starlette import status
 from starlette.testclient import TestClient
 
@@ -441,6 +444,60 @@ def test_delete_service(
             == f"/v0/running_interactive_services/{service['node_uuid']}"
         )
         assert redirect_url.params == QueryParams(can_save=exp_save_state)
+
+
+@pytest.fixture
+def dynamic_sidecar_scheduler(minimal_app: FastAPI) -> DynamicSidecarsScheduler:
+    return minimal_app.state.dynamic_sidecar_scheduler
+
+
+@pytest.mark.parametrize(
+    "service, service_labels, exp_status_code, is_legacy",
+    [
+        pytest.param(
+            *ServiceParams(
+                service=DynamicServiceCreate.Config.schema_extra["example"],
+                service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][1],
+                exp_status_code=status.HTTP_201_CREATED,
+                is_legacy=False,
+            )
+        ),
+    ],
+)
+def test_delete_service_waiting_for_manual_intervention(
+    minimal_config: None,
+    mocked_director_v0_service_api: MockRouter,
+    mocked_director_v2_scheduler: None,
+    client: TestClient,
+    dynamic_sidecar_headers: dict[str, str],
+    service: dict[str, Any],
+    exp_status_code: int,
+    is_legacy: bool,
+    dynamic_sidecar_scheduler: DynamicSidecarsScheduler,
+):
+    post_data = DynamicServiceCreate.parse_obj(service)
+
+    response = client.post(
+        "/v2/dynamic_services",
+        headers=dynamic_sidecar_headers,
+        json=json.loads(post_data.json()),
+    )
+    assert (
+        response.status_code == exp_status_code
+    ), f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
+
+    # mark service as failed an waiting for human interventions
+    node_uuid = UUID(service["node_uuid"])
+    scheduler_data = dynamic_sidecar_scheduler._scheduler.get_scheduler_data(  # pylint: disable=protected-access
+        node_uuid
+    )
+    scheduler_data.dynamic_sidecar.status.update_failing_status("failed")
+    scheduler_data.dynamic_sidecar.wait_for_manual_intervention_after_error = True
+
+    # check response
+    url = URL(f"/v2/dynamic_services/{node_uuid}")
+    stop_response = client.delete(str(url), allow_redirects=False)
+    assert stop_response.json()["code"] == "waiting_for_intervention"
 
 
 @pytest.mark.parametrize(
