@@ -26,7 +26,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyBootOpts", {
         for (const nodeId in studyData["workbench"]) {
           const node = studyData["workbench"][nodeId];
           const metadata = osparc.utils.Services.getMetaData(node["key"], node["version"]);
-          if (osparc.data.model.Node.hasBootOptions(metadata)) {
+          if (osparc.data.model.Node.hasBootModes(metadata)) {
             return true;
           }
         }
@@ -82,7 +82,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyBootOpts", {
         }
         const canIWrite = osparc.data.model.Study.canIWrite(this._studyData["accessRights"]);
 
-        if (canIWrite && osparc.data.model.Node.hasBootOptions(nodeMetaData)) {
+        if (canIWrite && osparc.data.model.Node.hasBootModes(nodeMetaData)) {
           const bootModesMD = nodeMetaData["boot-options"]["boot_mode"];
           const bootModeSB = new qx.ui.form.SelectBox();
           const sbItems = [];

@@ -1090,7 +1090,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__outputsPage.add(lifeCycleView);
       }
 
-      if (node.hasBootOptions()) {
+      if (node.hasBootModes()) {
         const bootOptionsView = new osparc.component.node.BootOptionsView(node);
         this.__outputsPage.add(bootOptionsView);
       }

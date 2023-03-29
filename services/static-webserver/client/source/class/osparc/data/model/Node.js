@@ -272,7 +272,7 @@ qx.Class.define("osparc.data.model.Node", {
       return osparc.utils.Services.isRetired(metaData);
     },
 
-    hasBootOptions: function(metaData) {
+    hasBootModes: function(metaData) {
       if ("boot-options" in metaData && "boot_mode" in metaData["boot-options"] && "items" in metaData["boot-options"]["boot_mode"]) {
         return Object.keys(metaData["boot-options"]["boot_mode"]["items"]).length;
       }
@@ -349,8 +349,8 @@ qx.Class.define("osparc.data.model.Node", {
       return osparc.data.model.Node.isRetired(this.getMetaData());
     },
 
-    hasBootOptions: function() {
-      return osparc.data.model.Node.hasBootOptions(this.getMetaData());
+    hasBootModes: function() {
+      return osparc.data.model.Node.hasBootModes(this.getMetaData());
     },
 
     __applyNewMetaData: function() {
