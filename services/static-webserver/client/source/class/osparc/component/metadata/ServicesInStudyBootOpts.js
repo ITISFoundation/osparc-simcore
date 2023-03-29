@@ -81,8 +81,8 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyBootOpts", {
           break;
         }
         const canIWrite = osparc.data.model.Study.canIWrite(this._studyData["accessRights"]);
-
-        if (canIWrite && osparc.data.model.Node.hasBootModes(nodeMetaData)) {
+        const hasBootModes = osparc.data.model.Node.hasBootModes(nodeMetaData);
+        if (canIWrite && hasBootModes) {
           const bootModeSB = osparc.data.model.Node.getBootModesSelectBox(nodeMetaData, workbench, nodeId);
           bootModeSB.addListener("changeSelection", e => {
             const newBootModeId = e.getData()[0].bootModeId;
