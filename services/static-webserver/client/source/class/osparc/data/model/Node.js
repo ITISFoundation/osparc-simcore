@@ -346,6 +346,10 @@ qx.Class.define("osparc.data.model.Node", {
       return osparc.data.model.Node.isRetired(this.getMetaData());
     },
 
+    hasBootOptions: function() {
+      return osparc.data.model.Node.hasBootOptions(this.getMetaData());
+    },
+
     __applyNewMetaData: function() {
       this.__metaData = osparc.utils.Services.getMetaData(this.getKey(), this.getVersion());
     },
