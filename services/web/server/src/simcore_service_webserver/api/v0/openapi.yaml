@@ -6313,6 +6313,7 @@ paths:
                           maxLength: 2083
                           minLength: 1
                           type: string
+                          description: Url to service thumbnail
                           format: uri
                         file_extensions:
                           title: File Extensions
@@ -6331,11 +6332,11 @@ paths:
                         key: simcore/services/dynamic/sim4life
                         title: Sim4Life Mattermost
                         description: It is also sim4life for the web
-                        thumbnail: 'https://placeimg.com/640/480/nature'
+                        thumbnail: 'https://via.placeholder.com/170x120.png'
                         file_extensions:
                           - smash
                           - h5
-                        view_url: 'https://osparc.io/view?file_type=CSV&viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=1.2.3'
+                        view_url: 'https://host.com/view?viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=1.2.3'
                   error:
                     title: Error
   /viewers:
