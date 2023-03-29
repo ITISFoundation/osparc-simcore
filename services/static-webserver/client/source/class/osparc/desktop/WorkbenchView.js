@@ -95,6 +95,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __infoPage: null,
     __settingsPage: null,
     __outputsPage: null,
+    __nodeOptionsPage: null,
     __workbenchPanel: null,
     __workbenchPanelPage: null,
     __workbenchUI: null,
@@ -400,6 +401,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       osparc.utils.Utils.setIdToWidget(outputsPage.getChildControl("button"), "outputsTabButton");
       outputsPage.exclude();
       tabViewSecondary.add(outputsPage);
+
+      const nodeOptionsPage = this.__nodeOptionsPage = this.__createTabPage("@FontAwesome5Solid/cogs", this.tr("Options"));
+      osparc.utils.Utils.setIdToWidget(nodeOptionsPage.getChildControl("button"), "nodeOptionsTabButton");
+      nodeOptionsPage.exclude();
+      tabViewSecondary.add(nodeOptionsPage);
 
       this.__addTopBarSpacer(topBar);
 
@@ -824,7 +830,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__studyOptionsPage,
         this.__infoPage,
         this.__settingsPage,
-        this.__outputsPage
+        this.__outputsPage,
+        this.__nodeOptionsPage
       ].forEach(page => {
         page.removeAll();
         page.getChildControl("button").exclude();
@@ -1082,22 +1089,22 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       outputFilesBtn.addListener("execute", () => osparc.component.node.BaseNodeView.openNodeDataManager(node));
       this.__outputsPage.add(outputFilesBtn);
 
-      this.__outputsPage.add(new qx.ui.core.Spacer(null, 20));
-
       if (node.isDynamic() && (node.isDeprecated() || node.isRetired())) {
+        this.__nodeOptionsPage.getChildControl("button").show();
         const lifeCycleView = new osparc.component.node.LifeCycleView(node);
         node.addListener("versionChanged", () => this.__populateSecondPanel(node));
-        this.__outputsPage.add(lifeCycleView);
+        this.__nodeOptionsPage.add(lifeCycleView);
       }
 
       if (node.hasBootModes()) {
+        this.__nodeOptionsPage.getChildControl("button").show();
         const bootOptionsView = new osparc.component.node.BootOptionsView(node);
         node.addListener("bootModeChanged", () => this.__populateSecondPanel(node));
-        this.__outputsPage.add(bootOptionsView);
+        this.__nodeOptionsPage.add(bootOptionsView);
       }
 
       if (node.hasOutputs() && node.isDynamic() && (node.isDeprecated() || node.isRetired())) {
-        this.getChildControl("side-panel-right-tabs").setSelection([this.__outputsPage]);
+        this.getChildControl("side-panel-right-tabs").setSelection([this.__nodeOptionsPage]);
       }
     },
 
