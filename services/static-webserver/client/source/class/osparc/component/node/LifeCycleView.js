@@ -46,6 +46,11 @@ qx.Class.define("osparc.component.node.LifeCycleView", {
 
     __populateLayout: function() {
       this._removeAll();
+
+      this._add(new qx.ui.basic.Label(this.tr("Update Service")).set({
+        font: "text-14"
+      }));
+
       const node = this.getNode();
 
       const chip = node.isDeprecated() ? osparc.utils.StatusUI.createServiceDeprecatedChip() : osparc.utils.StatusUI.createServiceRetiredChip();
