@@ -28,6 +28,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 class ServicesFixture(NamedTuple):
     expected_latest: dict
     num_services: int
+    expected_public_service: dict
 
 
 @pytest.fixture
@@ -67,6 +68,7 @@ def services_fixture(faker: Faker, pg_sa_engine: sa.engine.Engine) -> ServicesFi
 
         # fill w/ different versions
         num_services = 3
+        expected_public_service = {}
 
         for service_index in range(num_services):
             service_name = faker.name()
@@ -92,7 +94,7 @@ def services_fixture(faker: Faker, pg_sa_engine: sa.engine.Engine) -> ServicesFi
                 )
                 conn.execute(query)
 
-                # all
+                # services_access_rights = everyone
                 query = services_access_rights.insert().values(
                     key=key,
                     version=version,
@@ -102,50 +104,59 @@ def services_fixture(faker: Faker, pg_sa_engine: sa.engine.Engine) -> ServicesFi
                     product_name=product_name,
                 )
 
-                # access rights
+                # services_consume_filetypes
                 num_filetypes = random.randint(0, 4)
                 for i, filetype in enumerate(
                     faker.uri_extension().removeprefix(".")
                     for _ in range(num_filetypes)
                 ):
+                    is_public = random.choice([True, False])
                     query = services_consume_filetypes.insert().values(
                         service_key=key,
                         service_version=version,
                         service_display_name=service_name,
                         service_input_port=f"input_{i}",
                         filetype=filetype,
+                        is_guest_allowed=is_public,
                     )
+
+                    if is_public:
+                        expected_public_service = {"key": key, "version": version}
 
                 conn.execute(query)
     return ServicesFixture(
         expected_latest=expected_latest,
         num_services=num_services,
+        expected_public_service=expected_public_service,
     )
 
 
 def test_trial_queries_for_service_metadata(
     services_fixture: ServicesFixture, pg_sa_engine: sa.engine.Engine
 ):
-    #
+
+    # check if service exists and whether is public or not
     with pg_sa_engine.connect() as conn:
-        stmt = sa.select(
+        query = sa.select(
             services_consume_filetypes.c.service_key,
             sa.func.array_agg(
                 sa.func.distinct(services_consume_filetypes.c.filetype)
             ).label("file_extensions"),
         ).group_by(services_consume_filetypes.c.service_key)
 
-        rows: list = conn.execute(stmt).fetchall()
+        rows: list = conn.execute(query).fetchall()
         print(rows)
 
     with pg_sa_engine.connect() as conn:
-        stmt = (
+        query = (
             sa.select(
                 services_consume_filetypes.c.service_key,
                 sa.text(
                     "array_to_string(MAX(string_to_array(version, '.')::int[]), '.') AS latest_version"
                 ),
-                sa.func.array_agg(services_consume_filetypes.c.filetype),
+                sa.func.array_agg(
+                    sa.func.distinct(services_consume_filetypes.c.filetype)
+                ).label("file_extensions"),
             )
             .select_from(
                 services_meta_data.join(
@@ -157,7 +168,7 @@ def test_trial_queries_for_service_metadata(
             .group_by(services_consume_filetypes.c.service_key)
         )
 
-        rows: list = conn.execute(stmt).fetchall()
+        rows: list = conn.execute(query).fetchall()
 
     with pg_sa_engine.connect() as conn:
         # Select query for latest
@@ -254,8 +265,8 @@ def test_trial_queries_for_service_metadata(
             & (services_access_rights.c.execute_access == True)
         )
 
-        for n, stmt in enumerate([query1, query2, query3]):
+        for n, query in enumerate([query1, query2, query3]):
             print("query", n, "-----")
-            rows = conn.execute(stmt).fetchall()
+            rows = conn.execute(query).fetchall()
             assert len(rows) <= services_fixture.num_services
             print(rows)

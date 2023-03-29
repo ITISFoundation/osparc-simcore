@@ -4,7 +4,6 @@
 
 import re
 import urllib.parse
-from pprint import pprint
 from typing import AsyncIterator
 
 import pytest
@@ -14,7 +13,8 @@ from aiohttp.test_utils import TestClient, TestServer
 from aioresponses import aioresponses
 from models_library.projects_state import ProjectLocked, ProjectStatus
 from pydantic import parse_obj_as
-from pytest import MonkeyPatch
+from pytest import FixtureRequest, MonkeyPatch
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserRole
 from settings_library.redis import RedisSettings
@@ -314,22 +314,12 @@ async def assert_redirected_to_study(
     return redirected_project_id
 
 
-async def test_dispatch_viewer_anonymously(
-    client,
-    storage_subsystem_mock,
-    catalog_subsystem_mock: None,
-    mocks_on_projects_api,
-    mocker,
-):
-    mock_client_director_v2_func = mocker.patch(
-        "simcore_service_webserver.director_v2_api.create_or_update_pipeline",
-        return_value=None,
-    )
-
-    redirect_url = (
-        client.app.router["get_redirection_to_viewer"]
-        .url_for()
-        .with_query(
+@pytest.fixture(params=["service_and_file", "service_only"])
+def redirect_url(request: FixtureRequest, client: TestClient) -> URL:
+    assert client.app
+    query = None
+    if request.param == "service_and_file":
+        query = dict(
             file_name="users.csv",
             file_size=187,
             file_type="CSV",
@@ -339,37 +329,54 @@ async def test_dispatch_viewer_anonymously(
                 "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/8987c95d0ca0090e14f3a5b52db724fa24114cf5/services/storage/tests/data/users.csv"
             ),
         )
+    elif request.param == "service_only":
+        query = dict(
+            viewer_key="simcore/services/dynamic/raw-graphs",
+            viewer_version="2.11.1",
+        )
+
+    assert query
+    url = client.app.router["get_redirection_to_viewer"].url_for().with_query(query)
+    return url
+
+
+async def test_dispatch_study_anonymously(
+    client: TestClient,
+    redirect_url: URL,
+    mocker: MockerFixture,
+    storage_subsystem_mock,
+    catalog_subsystem_mock: None,
+    mocks_on_projects_api,
+):
+    assert client.app
+    mock_client_director_v2_func = mocker.patch(
+        "simcore_service_webserver.director_v2_api.create_or_update_pipeline",
+        return_value=None,
     )
 
-    resp = await client.get(redirect_url)
+    response = await client.get(f"{redirect_url}")
 
-    expected_prj_id = await assert_redirected_to_study(resp, client.session)
+    expected_prj_id = await assert_redirected_to_study(response, client.session)
 
     # has auto logged in as guest?
     me_url = client.app.router["get_my_profile"].url_for()
-    resp = await client.get(me_url)
+    response = await client.get(f"{me_url}")
 
-    data, _ = await assert_status(resp, web.HTTPOk)
+    data, _ = await assert_status(response, web.HTTPOk)
     assert data["login"].endswith("guest-at-osparc.io")
     assert data["gravatar_id"]
     assert data["role"].upper() == UserRole.GUEST.name
 
     # guest user only a copy of the template project
-    async def _get_user_projects():
-        from servicelib.aiohttp.rest_responses import unwrap_envelope
+    url = client.app.router["list_projects"].url_for()
+    response = await client.get(f'{url.with_query(type="user")}')
 
-        url = client.app.router["list_projects"].url_for()
-        resp = await client.get(url.with_query(type="user"))
+    payload = await response.json()
+    assert response.status == 200, payload
 
-        payload = await resp.json()
-        assert resp.status == 200, payload
+    projects, error = await assert_status(response, web.HTTPOk)
+    assert not error
 
-        projects, error = unwrap_envelope(payload)
-        assert not error, pprint(error)
-
-        return projects
-
-    projects = await _get_user_projects()
     assert len(projects) == 1
     guest_project = projects[0]
 
@@ -383,7 +390,9 @@ def assert_error_in_fragment(resp: ClientResponse) -> tuple[str, int]:
     # Expects fragment to indicate client where to find newly created project
     unquoted_fragment = urllib.parse.unquote_plus(resp.real_url.fragment)
     match = re.match(r"/error\?(.+)", unquoted_fragment)
-    assert match, f"Expected fragment as /#/view?message=..., got {unquoted_fragment}"
+    assert (
+        match
+    ), f"Expected error fragment as /#/error?message=..., got {unquoted_fragment}"
 
     query_s = match.group(1)
     # returns {'param1': ['value'], 'param2': ['value']}
@@ -398,6 +407,7 @@ def assert_error_in_fragment(resp: ClientResponse) -> tuple[str, int]:
 
 
 async def test_viewer_redirect_with_file_type_errors(client: TestClient):
+    assert client.app
     redirect_url = (
         client.app.router["get_redirection_to_viewer"]
         .url_for()
@@ -413,7 +423,7 @@ async def test_viewer_redirect_with_file_type_errors(client: TestClient):
         )
     )
 
-    resp = await client.get(redirect_url)
+    resp = await client.get(f"{redirect_url}")
     assert resp.status == 200
 
     message, status_code = assert_error_in_fragment(resp)
@@ -443,3 +453,31 @@ async def test_viewer_redirect_with_client_errors(client: TestClient):
     message, status_code = assert_error_in_fragment(resp)
     print(message)
     assert status_code == web.HTTPUnprocessableEntity.status_code
+
+
+@pytest.mark.parametrize(
+    "missing_parameter", ("file_type", "file_size", "download_link")
+)
+async def test_missing_file_param(client: TestClient, missing_parameter: str):
+    assert client.app
+
+    query = dict(
+        file_type="CSV",
+        file_size=1,
+        viewer_key="simcore/services/dynamic/raw-graphs",
+        viewer_version="2.11.1",
+        download_link=urllib.parse.quote(
+            "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/8987c95d0ca0090e14f3a5b52db724fa24114cf5/services/storage/tests/data/users.csv"
+        ),
+    )
+    query.pop(missing_parameter)
+
+    redirect_url = (
+        client.app.router["get_redirection_to_viewer"].url_for().with_query(query)
+    )
+
+    response = await client.get(f"{redirect_url}")
+    assert response.status == 200
+
+    message, status_code = assert_error_in_fragment(response)
+    assert status_code == web.HTTPUnprocessableEntity.status_code, f"Got {message=}"
