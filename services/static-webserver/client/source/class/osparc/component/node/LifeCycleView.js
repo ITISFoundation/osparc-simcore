@@ -28,6 +28,10 @@ qx.Class.define("osparc.component.node.LifeCycleView", {
     }
   },
 
+  events: {
+    "versionChanged": "qx.event.type.Event"
+  },
+
   properties: {
     node: {
       check: "osparc.data.model.Node",

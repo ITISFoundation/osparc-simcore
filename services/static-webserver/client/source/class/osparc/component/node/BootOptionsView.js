@@ -28,6 +28,10 @@ qx.Class.define("osparc.component.node.BootOptionsView", {
     }
   },
 
+  events: {
+    "bootModeChanged": "qx.event.type.Event"
+  },
+
   properties: {
     node: {
       check: "osparc.data.model.Node",
@@ -51,9 +55,15 @@ qx.Class.define("osparc.component.node.BootOptionsView", {
         font: "text-14"
       }));
 
+      const instructionsMsg = this.tr("Please Stop the Service and then change the Boot Mode");
+      const instructionsLabel = new qx.ui.basic.Label(instructionsMsg).set({
+        rich: true
+      });
+      this._add(instructionsLabel);
+
       const node = this.getNode();
 
-      const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
       const stopButton = new qx.ui.form.Button().set({
         label: this.tr("Stop"),
@@ -70,10 +80,20 @@ qx.Class.define("osparc.component.node.BootOptionsView", {
       const workbenchData = node.getWorkbench().serialize();
       const nodeId = node.getNodeId();
       const bootModeSB = osparc.data.model.Node.getBootModesSelectBox(nodeMetaData, workbenchData, nodeId);
+      node.getStatus().bind("interactive", bootModeSB, "enabled", {
+        converter: interactive => interactive === "idle"
+      });
       bootModeSB.addListener("changeSelection", e => {
+        buttonsLayout.setEnabled(false);
         const newBootModeId = e.getData()[0].bootModeId;
-        console.log("update me", newBootModeId);
-        // this.__updateBootMode(nodeId, newBootModeId);
+        node.setBootOptions({
+          "boot_mode": newBootModeId
+        });
+        setTimeout(() => {
+          buttonsLayout.setEnabled(true);
+          node.requestStartNode();
+          this.fireEvent("bootModeChanged");
+        }, osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL*2);
       }, this);
       buttonsLayout.add(bootModeSB);
 
