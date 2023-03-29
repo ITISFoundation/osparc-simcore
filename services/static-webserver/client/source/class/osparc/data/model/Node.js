@@ -279,6 +279,34 @@ qx.Class.define("osparc.data.model.Node", {
       return false;
     },
 
+    getBootModesSelectBox: function(nodeMetaData, workbench, nodeId) {
+      if (!osparc.data.model.Node.hasBootModes(nodeMetaData)) {
+        return null;
+      }
+
+      const bootModesMD = nodeMetaData["boot-options"]["boot_mode"];
+      const bootModeSB = new qx.ui.form.SelectBox();
+      const sbItems = [];
+      Object.entries(bootModesMD["items"]).forEach(([bootModeId, bootModeMD]) => {
+        const sbItem = new qx.ui.form.ListItem(bootModeMD["label"]);
+        sbItem.bootModeId = bootModeId;
+        bootModeSB.add(sbItem);
+        sbItems.push(sbItem);
+      });
+      let defaultBMId = null;
+      if (workbench && nodeId && "bootOptions" in workbench[nodeId] && "boot_mode" in workbench[nodeId]["bootOptions"]) {
+        defaultBMId = workbench[nodeId]["bootOptions"]["boot_mode"];
+      } else {
+        defaultBMId = bootModesMD["default"];
+      }
+      sbItems.forEach(sbItem => {
+        if (defaultBMId === sbItem.bootModeId) {
+          bootModeSB.setSelection([sbItem]);
+        }
+      });
+      return bootModeSB;
+    },
+
     getOutput: function(outputs, outputKey) {
       if (outputKey in outputs && "value" in outputs[outputKey]) {
         return outputs[outputKey]["value"];

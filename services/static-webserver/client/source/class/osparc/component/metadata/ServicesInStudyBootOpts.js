@@ -83,26 +83,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyBootOpts", {
         const canIWrite = osparc.data.model.Study.canIWrite(this._studyData["accessRights"]);
 
         if (canIWrite && osparc.data.model.Node.hasBootModes(nodeMetaData)) {
-          const bootModesMD = nodeMetaData["boot-options"]["boot_mode"];
-          const bootModeSB = new qx.ui.form.SelectBox();
-          const sbItems = [];
-          Object.entries(bootModesMD["items"]).forEach(([bootModeId, bootModeMD]) => {
-            const sbItem = new qx.ui.form.ListItem(bootModeMD["label"]);
-            sbItem.bootModeId = bootModeId;
-            bootModeSB.add(sbItem);
-            sbItems.push(sbItem);
-          });
-          let defaultBMId = null;
-          if ("bootOptions" in workbench[nodeId] && "boot_mode" in workbench[nodeId]["bootOptions"]) {
-            defaultBMId = workbench[nodeId]["bootOptions"]["boot_mode"];
-          } else {
-            defaultBMId = bootModesMD["default"];
-          }
-          sbItems.forEach(sbItem => {
-            if (defaultBMId === sbItem.bootModeId) {
-              bootModeSB.setSelection([sbItem]);
-            }
-          });
+          const bootModeSB = osparc.data.model.Node.getBootModesSelectBox(nodeMetaData, workbench, nodeId);
           bootModeSB.addListener("changeSelection", e => {
             const newBootModeId = e.getData()[0].bootModeId;
             this.__updateBootMode(nodeId, newBootModeId);

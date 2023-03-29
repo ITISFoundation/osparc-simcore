@@ -66,6 +66,17 @@ qx.Class.define("osparc.component.node.BootOptionsView", {
       node.attachExecuteHandlerToStopButton(stopButton);
       buttonsLayout.add(stopButton);
 
+      const nodeMetaData = node.getMetaData();
+      const workbenchData = node.getWorkbench().serialize();
+      const nodeId = node.getNodeId();
+      const bootModeSB = osparc.data.model.Node.getBootModesSelectBox(nodeMetaData, workbenchData, nodeId);
+      bootModeSB.addListener("changeSelection", e => {
+        const newBootModeId = e.getData()[0].bootModeId;
+        console.log("update me", newBootModeId);
+        // this.__updateBootMode(nodeId, newBootModeId);
+      }, this);
+      buttonsLayout.add(bootModeSB);
+
       this._add(buttonsLayout);
     }
   }
