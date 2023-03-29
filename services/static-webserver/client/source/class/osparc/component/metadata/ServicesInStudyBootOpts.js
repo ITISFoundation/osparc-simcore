@@ -81,7 +81,8 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyBootOpts", {
           break;
         }
         const canIWrite = osparc.data.model.Study.canIWrite(this._studyData["accessRights"]);
-        if (canIWrite && "boot-options" in nodeMetaData && "boot_mode" in nodeMetaData["boot-options"]) {
+
+        if (canIWrite && osparc.data.model.Node.hasBootOptions(nodeMetaData)) {
           const bootModesMD = nodeMetaData["boot-options"]["boot_mode"];
           const bootModeSB = new qx.ui.form.SelectBox();
           const sbItems = [];

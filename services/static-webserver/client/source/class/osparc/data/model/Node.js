@@ -273,9 +273,8 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     hasBootOptions: function(metaData) {
-      if ("boot-options" in metaData) {
-        console.log("boot-options", metaData["boot-options"]);
-        return true;
+      if ("boot-options" in metaData && "boot_mode" in metaData["boot-options"] && "items" in metaData["boot-options"]["boot_mode"]) {
+        return Object.keys(metaData["boot-options"]["boot_mode"]["items"]).length;
       }
       return false;
     },
