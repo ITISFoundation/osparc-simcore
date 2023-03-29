@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from aiohttp import web
-from pydantic import validator
+from pydantic import HttpUrl, validator
 from pydantic.fields import Field
 from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from settings_library.base import BaseCustomSettings
@@ -18,6 +18,11 @@ class StudiesDispatcherSettings(BaseCustomSettings):
         default=timedelta(minutes=15),
         description="Sets lifetime of a guest user until it is logged out "
         " and removed by the GC",
+    )
+
+    STUDIES_DEFAULT_SERVICE_THUMBNAIL: HttpUrl = Field(
+        default="https://via.placeholder.com/170x120.png",
+        description="Default servcie thumbnails in the service response",
     )
 
     @validator("STUDIES_GUEST_ACCOUNT_LIFETIME")

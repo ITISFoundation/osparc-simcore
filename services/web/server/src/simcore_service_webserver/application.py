@@ -46,7 +46,7 @@ from .tracing import setup_app_tracing
 from .users import setup_users
 from .version_control import setup_version_control
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def create_application() -> web.Application:
@@ -128,7 +128,7 @@ def create_application() -> web.Application:
     app.on_startup.append(welcome_banner)
     app.on_shutdown.append(finished_banner)
 
-    log.debug("Routes in app: \n %s", pformat(app.router.named_resources()))
+    logger.debug("Routes in app: \n %s", pformat(app.router.named_resources()))
 
     return app
 

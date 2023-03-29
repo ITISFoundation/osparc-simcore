@@ -147,11 +147,14 @@ class Project(BaseProjectModel):
 
     # Quality
     quality: dict[str, Any] = Field(
-        {}, description="stores the study quality assessment"
+        default_factory=dict,
+        description="stores the study quality assessment",
     )
 
     # Dev only
-    dev: Optional[dict] = Field(description="object used for development purposes only")
+    dev: Optional[dict] = Field(
+        default=None, description="object used for development purposes only"
+    )
 
     class Config:
         description = "Document that stores metadata, pipeline and UI setup of a study"

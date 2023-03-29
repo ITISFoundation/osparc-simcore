@@ -169,7 +169,6 @@ class CompTasksRepository(BaseRepository):
             ):
                 task_db = CompTaskAtDB.from_orm(row)
                 tasks.append(task_db)
-        logger.debug("found the tasks: %s", f"{tasks=}")
         return tasks
 
     async def check_task_exists(self, project_id: ProjectID, node_id: NodeID) -> bool:
