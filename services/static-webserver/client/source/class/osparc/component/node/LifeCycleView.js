@@ -98,9 +98,14 @@ qx.Class.define("osparc.component.node.LifeCycleView", {
           converter: enabled => !enabled && autoUpdatable
         });
         updateButton.addListener("execute", () => {
+          updateButton.setFetching(true);
           node.setVersion(latestCompatibleMetadata["version"]);
           setTimeout(() => node.getStatus().setInteractive("idle"), osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL);
-          setTimeout(() => node.requestStartNode(), osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL*2);
+          setTimeout(() => {
+            updateButton.setFetching(false);
+            node.requestStartNode();
+            this.fireEvent("versionChanged");
+          }, osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL*2);
         });
 
         buttonsLayout.add(updateButton);

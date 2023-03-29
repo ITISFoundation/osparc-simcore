@@ -1086,12 +1086,13 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       if (node.isDynamic() && (node.isDeprecated() || node.isRetired())) {
         const lifeCycleView = new osparc.component.node.LifeCycleView(node);
-        node.addListener("changeVersion", () => this.__populateSecondPanel(node));
+        node.addListener("versionChanged", () => this.__populateSecondPanel(node));
         this.__outputsPage.add(lifeCycleView);
       }
 
       if (node.hasBootModes()) {
         const bootOptionsView = new osparc.component.node.BootOptionsView(node);
+        node.addListener("bootModeChanged", () => this.__populateSecondPanel(node));
         this.__outputsPage.add(bootOptionsView);
       }
 
