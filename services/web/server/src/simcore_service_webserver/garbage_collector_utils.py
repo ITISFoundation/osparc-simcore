@@ -187,7 +187,7 @@ def log_context(log: Callable, message: str):
 
         yield
 
-        log("%s [DONE w/ SUCCESS]", message)
+        log("%s [DONE]", message)
 
     except Exception as e:  # pylint: disable=broad-except
         log("%s [DONE w/ ERROR %s]", message, type(e))
