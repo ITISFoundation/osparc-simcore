@@ -374,8 +374,16 @@ async def _remove_single_service_if_orphan(
             if user_role is None or user_role <= UserRole.GUEST:
                 save_state = False
             # -------------------------------------------
+            from .director_v2_exceptions import DirectorServiceError
 
-            await director_v2_api.stop_dynamic_service(app, service_uuid, save_state)
+            try:
+                await director_v2_api.stop_dynamic_service(
+                    app, service_uuid, save_state
+                )
+            except DirectorServiceError as e:
+                # service is waiting for manual intervention
+                if "waiting_for_intervention" not in f"{e}":
+                    raise e
 
         except (ServiceNotFoundError, DirectorException) as err:
             logger.warning("Error while stopping service: %s", err)
@@ -576,7 +584,7 @@ async def remove_guest_user_with_all_its_resources(
         ProjectDeleteError,
     ) as error:
         logger.warning(
-            "Failed to delete user %s and its resources: %s",
+            "Failed to delete guest user %s and its resources: %s",
             f"{user_id=}",
             f"{error}",
         )
