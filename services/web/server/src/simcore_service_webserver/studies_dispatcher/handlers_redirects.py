@@ -42,6 +42,15 @@ class ViewerQueryParams(BaseModel):
             viewer_version=viewer.version,
         )
 
+    @validator("file_type")
+    @classmethod
+    def ensure_extension_upper_and_dotless(cls, v):
+        # NOTE: see filetype constraint-check
+        if v and isinstance(v, str):
+            w = urllib.parse.unquote(v)
+            return w.upper().lstrip(".")
+        return v
+
 
 class RedirectionQueryParams(ViewerQueryParams):
     file_name: str = "unknown"
