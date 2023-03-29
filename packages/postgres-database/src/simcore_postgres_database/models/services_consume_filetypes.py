@@ -52,7 +52,7 @@ services_consume_filetypes = sa.Table(
             name="ck_filetype_is_upper",
         ),
         nullable=False,
-        doc="A filetype supported by this service, e.g. CSV, Excel, ect."
+        doc="An extension supported by this service, e.g. CSV, VTK, etc."
         "The filetype identifiers are not well defined, so we avoided using enums"
         "Temptative list in https://en.wikipedia.org/wiki/List_of_file_formats",
     ),

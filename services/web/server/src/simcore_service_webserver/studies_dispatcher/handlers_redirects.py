@@ -87,6 +87,20 @@ class RedirectionQueryParams(ViewerQueryParams):
 
         raise ValueError("One or more file parameters missing")
 
+    class Config:
+        schema_extra = {
+            "examples": [
+                {
+                    "viewer_key": "simcore/services/comp/foo",
+                    "viewer_version": "1.2.3",
+                    "file_type": "lowerUPPER",
+                    "file_name": "filename",
+                    "file_size": "12",
+                    "download_link": "https://download.io/file123",
+                }
+            ]
+        }
+
 
 def compose_dispatcher_prefix_url(request: web.Request, viewer: ViewerInfo) -> HttpUrl:
     """This is denoted PREFIX URL because it needs to append extra query
