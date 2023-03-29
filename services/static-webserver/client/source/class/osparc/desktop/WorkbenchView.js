@@ -1082,14 +1082,20 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       outputFilesBtn.addListener("execute", () => osparc.component.node.BaseNodeView.openNodeDataManager(node));
       this.__outputsPage.add(outputFilesBtn);
 
+      this.__outputsPage.add(new qx.ui.core.Spacer(null, 20));
 
-      if (node.hasOutputs() && node.isDynamic() && (node.isDeprecated() || node.isRetired())) {
-        this.__outputsPage.add(new qx.ui.core.Spacer(null, 20));
-
+      if (node.isDynamic() && (node.isDeprecated() || node.isRetired())) {
         const lifeCycleView = new osparc.component.node.LifeCycleView(node);
         node.addListener("changeVersion", () => this.__populateSecondPanel(node));
         this.__outputsPage.add(lifeCycleView);
+      }
 
+      if (node.hasBootOptions()) {
+        const bootOptionsView = new osparc.component.node.BootOptionsView(node);
+        this.__outputsPage.add(bootOptionsView);
+      }
+
+      if (node.hasOutputs() && node.isDynamic() && (node.isDeprecated() || node.isRetired())) {
         this.getChildControl("side-panel-right-tabs").setSelection([this.__outputsPage]);
       }
     },
