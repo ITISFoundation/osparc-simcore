@@ -71,7 +71,7 @@ class DownloadLink(BaseModel):
     """I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)"""
 
     download_link: AnyUrl = Field(..., alias="downloadLink")
-    label: Optional[str] = None
+    label: Optional[str] = Field(default=None, description="Display name")
 
     class Config:
         extra = Extra.forbid

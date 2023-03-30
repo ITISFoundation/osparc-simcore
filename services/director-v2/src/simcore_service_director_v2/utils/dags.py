@@ -12,7 +12,6 @@ from models_library.utils.nodes import compute_node_hash
 from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
 
 from .computations import NodeClass, to_node_class
-from .logging_utils import log_decorator
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +45,6 @@ def create_complete_dag(workbench: Workbench) -> nx.DiGraph:
     return dag_graph
 
 
-@log_decorator(logger=logger)
 def create_complete_dag_from_tasks(tasks: list[CompTaskAtDB]) -> nx.DiGraph:
     dag_graph = nx.DiGraph()
     for task in tasks:
@@ -131,7 +129,6 @@ def node_needs_computation(
     )
 
 
-@log_decorator(logger=logger)
 async def _set_computational_nodes_states(complete_dag: nx.DiGraph) -> None:
     nodes_data_view: nx.classes.reportviews.NodeDataView = complete_dag.nodes.data()
     for node in nx.topological_sort(complete_dag):
@@ -139,7 +136,6 @@ async def _set_computational_nodes_states(complete_dag: nx.DiGraph) -> None:
             await compute_node_states(nodes_data_view, node)
 
 
-@log_decorator(logger=logger)
 async def create_minimal_computational_graph_based_on_selection(
     complete_dag: nx.DiGraph, selected_nodes: list[NodeID], force_restart: bool
 ) -> nx.DiGraph:
@@ -182,7 +178,6 @@ async def create_minimal_computational_graph_based_on_selection(
     return complete_dag.subgraph(minimal_nodes_selection)
 
 
-@log_decorator(logger=logger)
 async def compute_pipeline_details(
     complete_dag: nx.DiGraph, pipeline_dag: nx.DiGraph, comp_tasks: list[CompTaskAtDB]
 ) -> PipelineDetails:

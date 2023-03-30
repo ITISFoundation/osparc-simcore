@@ -79,12 +79,15 @@ qx.Class.define("osparc.data.model.Node", {
 
     key: {
       check: "String",
-      nullable: true
+      nullable: true,
+      apply: "__applyNewMetaData"
     },
 
     version: {
       check: "String",
-      nullable: true
+      nullable: true,
+      event: "changeVersion",
+      apply: "__applyNewMetaData"
     },
 
     nodeId: {
@@ -269,6 +272,41 @@ qx.Class.define("osparc.data.model.Node", {
       return osparc.utils.Services.isRetired(metaData);
     },
 
+    hasBootModes: function(metaData) {
+      if ("boot-options" in metaData && "boot_mode" in metaData["boot-options"] && "items" in metaData["boot-options"]["boot_mode"]) {
+        return Object.keys(metaData["boot-options"]["boot_mode"]["items"]).length;
+      }
+      return false;
+    },
+
+    getBootModesSelectBox: function(nodeMetaData, workbench, nodeId) {
+      if (!osparc.data.model.Node.hasBootModes(nodeMetaData)) {
+        return null;
+      }
+
+      const bootModesMD = nodeMetaData["boot-options"]["boot_mode"];
+      const bootModeSB = new qx.ui.form.SelectBox();
+      const sbItems = [];
+      Object.entries(bootModesMD["items"]).forEach(([bootModeId, bootModeMD]) => {
+        const sbItem = new qx.ui.form.ListItem(bootModeMD["label"]);
+        sbItem.bootModeId = bootModeId;
+        bootModeSB.add(sbItem);
+        sbItems.push(sbItem);
+      });
+      let defaultBMId = null;
+      if (workbench && nodeId && "bootOptions" in workbench[nodeId] && "boot_mode" in workbench[nodeId]["bootOptions"]) {
+        defaultBMId = workbench[nodeId]["bootOptions"]["boot_mode"];
+      } else {
+        defaultBMId = bootModesMD["default"];
+      }
+      sbItems.forEach(sbItem => {
+        if (defaultBMId === sbItem.bootModeId) {
+          bootModeSB.setSelection([sbItem]);
+        }
+      });
+      return bootModeSB;
+    },
+
     getOutput: function(outputs, outputKey) {
       if (outputKey in outputs && "value" in outputs[outputKey]) {
         return outputs[outputKey]["value"];
@@ -337,6 +375,14 @@ qx.Class.define("osparc.data.model.Node", {
 
     isRetired: function() {
       return osparc.data.model.Node.isRetired(this.getMetaData());
+    },
+
+    hasBootModes: function() {
+      return osparc.data.model.Node.hasBootModes(this.getMetaData());
+    },
+
+    __applyNewMetaData: function() {
+      this.__metaData = osparc.utils.Services.getMetaData(this.getKey(), this.getVersion());
     },
 
     getMetaData: function() {
@@ -1405,12 +1451,15 @@ qx.Class.define("osparc.data.model.Node", {
       startButton.executeListenerId = executeListenerId;
     },
 
-    attachHandlersToStopButton: function(stopButton) {
+    attachExecuteHandlerToStopButton: function(stopButton) {
+      const executeListenerId = stopButton.addListener("execute", this.requestStopNode, this);
+      stopButton.executeListenerId = executeListenerId;
+    },
+
+    attachVisibilityHandlerToStopButton: function(stopButton) {
       this.getStatus().bind("interactive", stopButton, "visibility", {
         converter: state => (state === "ready") ? "visible" : "excluded"
       });
-      const executeListenerId = stopButton.addListener("execute", this.requestStopNode, this);
-      stopButton.executeListenerId = executeListenerId;
     },
 
     removeNode: function() {

@@ -40,6 +40,7 @@ from servicelib.aiohttp.application_keys import (
     APP_JSONSCHEMA_SPECS_KEY,
 )
 from servicelib.aiohttp.jsonschema_validation import validate_instance
+from servicelib.common_headers import X_FORWARDED_PROTO, X_SIMCORE_USER_AGENT
 from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_context
 from servicelib.utils import fire_and_forget_task, logged_gather
@@ -225,7 +226,7 @@ async def _start_dynamic_service(
     )
 
     await director_v2_api.run_dynamic_service(
-        request.app,
+        app=request.app,
         product_name=product_name,
         project_id=f"{project_uuid}",
         user_id=user_id,
@@ -233,7 +234,8 @@ async def _start_dynamic_service(
         service_version=service_version,
         service_uuid=f"{node_uuid}",
         request_dns=extract_dns_without_default_port(request.url),
-        request_scheme=request.headers.get("X-Forwarded-Proto", request.url.scheme),
+        request_scheme=request.headers.get(X_FORWARDED_PROTO, request.url.scheme),
+        request_simcore_user_agent=request.headers.get(X_SIMCORE_USER_AGENT, ""),
         service_resources=service_resources,
     )
 
