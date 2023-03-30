@@ -46,9 +46,8 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
     updateService: function(studyData, nodeId, newVersion) {
       if (nodeId in studyData["workbench"]) {
         if (newVersion === undefined) {
-          const services = osparc.utils.Services.servicesCached;
           const node = studyData["workbench"][nodeId];
-          newVersion = osparc.utils.Services.getLatestCompatible(services, node["key"], node["version"]);
+          newVersion = osparc.utils.Services.getLatestCompatible(null, node["key"], node["version"]);
         }
         for (const id in studyData["workbench"]) {
           if (id === nodeId) {
@@ -64,8 +63,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
           continue;
         }
         const node = studyData["workbench"][nodeId];
-        const services = osparc.utils.Services.servicesCached;
-        const latestCompatibleMetadata = osparc.utils.Services.getLatestCompatible(services, node["key"], node["version"]);
+        const latestCompatibleMetadata = osparc.utils.Services.getLatestCompatible(null, node["key"], node["version"]);
         if (latestCompatibleMetadata["version"] !== node["version"]) {
           this.self().updateService(studyData, nodeId, latestCompatibleMetadata["version"]);
         }
