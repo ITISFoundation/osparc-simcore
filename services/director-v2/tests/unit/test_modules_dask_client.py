@@ -8,7 +8,7 @@ import asyncio
 import functools
 import traceback
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Awaitable, Callable, Optional
+from typing import Any, AsyncIterator, Awaitable, Callable
 from unittest import mock
 from uuid import uuid4
 
@@ -66,7 +66,7 @@ from yarl import URL
 _ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS = 20
 
 
-async def _assert_wait_for_cb_call(mocked_fct, timeout: Optional[int] = None):
+async def _assert_wait_for_cb_call(mocked_fct, timeout: int | None = None):
     async for attempt in AsyncRetrying(
         stop=stop_after_delay(timeout or 10),
         wait=wait_random(0, 1),
@@ -86,7 +86,7 @@ async def _assert_wait_for_task_status(
     job_id: str,
     dask_client: DaskClient,
     expected_status: RunningState,
-    timeout: Optional[int] = None,
+    timeout: int | None = None,
 ):
     async for attempt in AsyncRetrying(
         reraise=True,
@@ -424,9 +424,7 @@ async def test_dask_does_report_any_non_base_exception_derived_error(
     assert isinstance(task_exception, exc)
     task_traceback = await future.traceback(timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS)  # type: ignore
     assert task_traceback
-    trace = traceback.format_exception(
-        type(task_exception), value=task_exception, tb=task_traceback
-    )
+    trace = traceback.format_exception(task_exception)
     assert trace
 
 
@@ -452,7 +450,7 @@ async def test_send_computation_task(
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
         command: list[str],
-        s3_settings: Optional[S3Settings],
+        s3_settings: S3Settings | None,
         boot_mode: BootMode,
         expected_annotations,
     ) -> TaskOutputData:
@@ -545,7 +543,7 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
         command: list[str],
-        s3_settings: Optional[S3Settings],
+        s3_settings: S3Settings | None,
         boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
         # get the task data
@@ -624,7 +622,7 @@ async def test_abort_computation_tasks(
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
         command: list[str],
-        s3_settings: Optional[S3Settings],
+        s3_settings: S3Settings | None,
         boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
         # get the task data
@@ -707,7 +705,7 @@ async def test_failed_task_returns_exceptions(
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
         command: list[str],
-        s3_settings: Optional[S3Settings],
+        s3_settings: S3Settings | None,
         boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
 
@@ -930,7 +928,7 @@ async def test_get_tasks_status(
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
         command: list[str],
-        s3_settings: Optional[S3Settings],
+        s3_settings: S3Settings | None,
         boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
         # wait here until the client allows us to continue
@@ -1010,7 +1008,7 @@ async def test_dask_sub_handlers(
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
         command: list[str],
-        s3_settings: Optional[S3Settings],
+        s3_settings: S3Settings | None,
         boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
 
@@ -1090,7 +1088,7 @@ async def test_get_cluster_details(
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
         command: list[str],
-        s3_settings: Optional[S3Settings],
+        s3_settings: S3Settings | None,
         boot_mode: BootMode,
         expected_annotations,
     ) -> TaskOutputData:
@@ -1128,7 +1126,7 @@ async def test_get_cluster_details(
 
     # check we have one worker using the resources
     # one of the workers should now get the job and use the resources
-    worker_with_the_task: Optional[AnyUrl] = None
+    worker_with_the_task: AnyUrl | None = None
     async for attempt in AsyncRetrying(reraise=True, stop=stop_after_delay(10)):
         with attempt:
             cluster_details = await dask_client.get_cluster_details()
