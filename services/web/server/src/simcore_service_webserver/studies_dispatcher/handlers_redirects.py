@@ -8,6 +8,7 @@ from typing import cast
 
 from aiohttp import web
 from models_library.services import ServiceKey, ServiceVersion
+from models_library.utils.pydantic_tools_extension import parse_obj_or_none
 from pydantic import BaseModel, HttpUrl, ValidationError, root_validator, validator
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
@@ -20,8 +21,12 @@ from ..utils_aiohttp import create_redirect_response
 from ._catalog import validate_requested_service
 from ._constants import MSG_UNEXPECTED_ERROR
 from ._core import StudyDispatcherError, ViewerInfo, validate_requested_viewer
-from ._models import ServiceInfo
-from ._projects import acquire_project_with_service, acquire_project_with_viewer
+from ._models import FileParams, ServiceInfo, ServiceParams
+from ._projects import (
+    acquire_project_with_file,
+    acquire_project_with_service,
+    acquire_project_with_viewer,
+)
 from ._users import UserInfo, acquire_user, ensure_authentication
 
 logger = logging.getLogger(__name__)
@@ -100,6 +105,18 @@ class RedirectionQueryParams(ViewerQueryParams):
                 }
             ]
         }
+
+    def file_params(self) -> bool:
+        return (
+            parse_obj_or_none(FileParams, self) is not None
+            and parse_obj_or_none(ServiceParams, self) is None
+        )
+
+    def is_service_only(self) -> bool:
+        return (
+            parse_obj_or_none(FileParams, self) is None
+            and parse_obj_or_none(ServiceParams, self) is not None
+        )
 
 
 def compose_dispatcher_prefix_url(request: web.Request, viewer: ViewerInfo) -> HttpUrl:
@@ -186,10 +203,12 @@ def _handle_errors_with_error_page(handler: Handler):
 @_handle_errors_with_error_page
 async def get_redirection_to_viewer(request: web.Request):
     params = parse_request_query_parameters_as(RedirectionQueryParams, request)
-
     logger.debug("Requesting viewer %s", params)
 
-    if params.file_type and params.download_link:
+    file_params = parse_obj_or_none(FileParams, params)
+    service_params = parse_obj_or_none(ServiceParams, params)
+
+    if file_params and service_params:
         # TODO: Cannot check file_size from HEAD
         # removed await params.check_download_link()
         # Perhaps can check the header for GET while downloading and retreive file_size??
@@ -232,7 +251,7 @@ async def get_redirection_to_viewer(request: web.Request):
         # lastly, ensure auth if any
         await ensure_authentication(user, request, response)
 
-    else:
+    elif service_params:
         valid_service = await validate_requested_service(
             app=request.app,
             service_key=params.viewer_key,
@@ -250,11 +269,6 @@ async def get_redirection_to_viewer(request: web.Request):
         project_id, viewer_id = await acquire_project_with_service(
             request.app,
             user,
-            service_info=ServiceInfo(
-                key=valid_service.key,  # type: ignore
-                version=valid_service.version,  # type: ignore
-                label=valid_service.title,
-            ),
             product_name=get_product_name(request),
         )
         logger.debug("Project acquired '%s'", project_id)
@@ -269,6 +283,22 @@ async def get_redirection_to_viewer(request: web.Request):
         )
 
         await ensure_authentication(user, request, response)
+
+    elif file_params:
+        # Retrieve user or create a temporary guest
+        user: UserInfo = await acquire_user(request, is_guest_allowed=False)
+
+        project_id, file_picker_id = await acquire_project_with_file(
+            request.app,
+            user,
+            service_info=ServiceInfo(
+                key=valid_service.key,  # type: ignore
+                version=valid_service.version,  # type: ignore
+                label=valid_service.title,
+            ),
+            product_name=get_product_name(request),
+        )
+        logger.debug("Project acquired '%s'", project_id)
 
     logger.debug(
         "Response with redirect '%s' w/ auth cookie in headers %s)",

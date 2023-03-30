@@ -64,9 +64,18 @@ class ServiceParams(BaseModel):
     viewer_key: ServiceKey
     viewer_version: ServiceVersion
 
+    @property
+    def footprint(self) -> str:
+        return f"{self.viewer_key}:{self.viewer_version}"
+
 
 class FileParams(BaseModel):
     file_type: str
     file_name: str = "unknown"
     file_size: PositiveInt
     download_link: HttpUrl
+
+    @property
+    def footprint(self) -> str:
+        # FIXME
+        return f"{self.file_name}.{self.file_type}:{self.file_size}"
