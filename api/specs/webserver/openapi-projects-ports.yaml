@@ -130,15 +130,6 @@ components:
             $ref: '#/components/schemas/ProjectMetadataPortGet'
         error:
           title: Error
-    HTTPValidationError:
-      title: HTTPValidationError
-      type: object
-      properties:
-        detail:
-          title: Detail
-          type: array
-          items:
-            $ref: '#/components/schemas/ValidationError'
     ProjectInputGet:
       title: ProjectInputGet
       required:
@@ -217,25 +208,4 @@ components:
           description: Value assigned to this i/o port
         label:
           title: Label
-          type: string
-    ValidationError:
-      title: ValidationError
-      required:
-      - loc
-      - msg
-      - type
-      type: object
-      properties:
-        loc:
-          title: Location
-          type: array
-          items:
-            anyOf:
-            - type: string
-            - type: integer
-        msg:
-          title: Message
-          type: string
-        type:
-          title: Error Type
           type: string

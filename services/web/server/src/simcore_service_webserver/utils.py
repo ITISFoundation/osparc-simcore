@@ -161,9 +161,7 @@ def compose_support_error_msg(
 
 
 def get_traceback_string(exception: BaseException) -> str:
-    return "".join(
-        traceback.format_exception(type(exception), exception, exception.__traceback__)
-    )
+    return "".join(traceback.format_exception(exception))
 
 
 # -----------------------------------------------

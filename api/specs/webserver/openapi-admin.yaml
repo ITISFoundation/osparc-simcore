@@ -38,15 +38,6 @@ components:
           - $ref: '#/components/schemas/TestPassed'
         error:
           title: Error
-    HTTPValidationError:
-      title: HTTPValidationError
-      type: object
-      properties:
-        detail:
-          title: Detail
-          type: array
-          items:
-            $ref: '#/components/schemas/ValidationError'
     TestEmail:
       title: TestEmail
       required:
@@ -112,24 +103,3 @@ components:
         info:
           title: Info
           type: object
-    ValidationError:
-      title: ValidationError
-      required:
-      - loc
-      - msg
-      - type
-      type: object
-      properties:
-        loc:
-          title: Location
-          type: array
-          items:
-            anyOf:
-            - type: string
-            - type: integer
-        msg:
-          title: Message
-          type: string
-        type:
-          title: Error Type
-          type: string

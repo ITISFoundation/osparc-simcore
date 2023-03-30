@@ -34,25 +34,25 @@ fi
 #
 
 if [ ${DASK_START_AS_SCHEDULER+x} ]; then
-  scheduler_version=$(dask-scheduler --version)
+  scheduler_version=$(dask scheduler --version)
   mkdir --parents /home/scu/.config/dask
   dask_logging=$(printf "logging:\n  distributed: %s\n  distributed.scheduler: %s" "${LOG_LEVEL:-warning}" "${LOG_LEVEL:-warning}")
   echo "$dask_logging" >> /home/scu/.config/dask/distributed.yaml
 
-  echo "$INFO" "Starting as dask-scheduler:${scheduler_version}..."
+  echo "$INFO" "Starting as dask scheduler:${scheduler_version}..."
   if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
     exec watchmedo auto-restart \
         --recursive \
         --pattern="*.py;*/src/*" \
         --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" \
         --ignore-directories -- \
-      dask-scheduler
+      dask scheduler
   else
-    exec dask-scheduler
+    exec dask scheduler
   fi
 
 else
-  DASK_WORKER_VERSION=$(dask-worker --version)
+  DASK_WORKER_VERSION=$(dask worker --version)
   DASK_SCHEDULER_URL=${DASK_SCHEDULER_URL:="tcp://${DASK_SCHEDULER_HOST}:8786"}
 
   #
@@ -103,7 +103,7 @@ else
   echo "$INFO" "Worker resources set as: $resources"
   if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
     exec watchmedo auto-restart --recursive --pattern="*.py;*/src/*" --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" --ignore-directories -- \
-      dask-worker "${DASK_SCHEDULER_URL}" \
+      dask worker "${DASK_SCHEDULER_URL}" \
       --local-directory /tmp/dask-sidecar \
       --preload simcore_service_dask_sidecar.tasks \
       --nworkers ${DASK_NPROCS} \
@@ -113,7 +113,7 @@ else
       --resources "$resources" \
       --name "${DASK_WORKER_NAME}"
   else
-    exec dask-worker "${DASK_SCHEDULER_URL}" \
+    exec dask worker "${DASK_SCHEDULER_URL}" \
       --local-directory /tmp/dask-sidecar \
       --preload simcore_service_dask_sidecar.tasks \
       --nworkers ${DASK_NPROCS} \

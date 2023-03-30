@@ -444,7 +444,7 @@ async def service_catalog_faker(
 
 
 @pytest.fixture
-def mock_catalog_background_task(mocker: MockerFixture):
+def mock_catalog_background_task(mocker: MockerFixture) -> None:
     """patch the setup of the background task so we can call it manually"""
     mocker.patch(
         "simcore_service_catalog.core.events.start_registry_sync_task",

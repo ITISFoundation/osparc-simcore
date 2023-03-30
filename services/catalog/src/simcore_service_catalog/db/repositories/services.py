@@ -11,6 +11,7 @@ from models_library.users import GroupID
 from psycopg2.errors import ForeignKeyViolation
 from pydantic import ValidationError
 from simcore_postgres_database.models.groups import GroupType
+from simcore_postgres_database.models.services import services_latest
 from simcore_service_catalog.models.domain.service_specifications import (
     ServiceSpecificationsAtDB,
 )
@@ -150,8 +151,23 @@ class ServicesRepository(BaseRepository):
 
     async def get_latest_release(self, key: str) -> Optional[ServiceMetaDataAtDB]:
         """Returns last release or None if service was never released"""
-        releases = await self.list_service_releases(key, limit_count=1)
-        return releases[0] if releases else None
+        query = (
+            sa.select(services_meta_data)
+            .select_from(
+                services_latest.join(
+                    services_meta_data,
+                    (services_meta_data.c.key == services_latest.c.key)
+                    & (services_meta_data.c.version == services_latest.c.version),
+                )
+            )
+            .where(services_latest.c.key == key)
+        )
+        async with self.db_engine.connect() as conn:
+            result = await conn.execute(query)
+            row = result.first()
+        if row:
+            return ServiceMetaDataAtDB.from_orm(row)
+        return None  # mypy
 
     async def get_service(
         self,
@@ -200,7 +216,6 @@ class ServicesRepository(BaseRepository):
         new_service: ServiceMetaDataAtDB,
         new_service_access_rights: list[ServiceAccessRightsAtDB],
     ) -> ServiceMetaDataAtDB:
-
         for access_rights in new_service_access_rights:
             if (
                 access_rights.key != new_service.key
@@ -423,6 +438,31 @@ class ServicesRepository(BaseRepository):
         ):
             return ServiceSpecifications.parse_obj(merged_specifications)
         return None  # mypy
+
+    async def update_latest_versions_cache(self):
+        # Select query for latest
+        latest_select_subquery = sa.select(
+            services_meta_data.c.key,
+            sa.text(
+                "array_to_string(MAX(string_to_array(version, '.')::int[]), '.') AS version"
+            ),
+        ).group_by(services_meta_data.c.key)
+
+        insert_query = pg_insert(services_latest).from_select(
+            [services_latest.c.key, services_latest.c.version],
+            latest_select_subquery,
+        )
+        upsert_query = insert_query.on_conflict_do_update(
+            index_elements=[
+                services_latest.c.key,
+            ],
+            set_=dict(version=insert_query.excluded.version),
+        )
+
+        async with self.db_engine.begin() as conn:
+            result = await conn.execute(upsert_query)
+
+        assert result  # nosec
 
 
 def _is_newer(

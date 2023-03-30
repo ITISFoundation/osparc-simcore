@@ -90,6 +90,7 @@ async def observed_service(
         dynamic_sidecar_port,
         request_dns,
         request_scheme,
+        request_simcore_user_agent="",
     )
     # pylint:disable=protected-access
     return dynamic_sidecar_scheduler._scheduler.get_scheduler_data(
