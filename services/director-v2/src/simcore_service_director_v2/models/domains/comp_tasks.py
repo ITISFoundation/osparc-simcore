@@ -13,7 +13,8 @@ from models_library.services import (
     ServiceOutput,
     ServicePortKey,
 )
-from pydantic import BaseModel, Extra, Field, validator
+from models_library.services_resources import BootMode
+from pydantic import BaseModel, ByteSize, Extra, Field, parse_obj_as, validator
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.comp_tasks import NodeClass, StateType
 
@@ -31,9 +32,10 @@ class Image(BaseModel):
     requires_mpi: Optional[bool] = Field(
         None, deprecated=True, description="Use instead node_requirements"
     )
-    node_requirements: NodeRequirements = Field(
+    node_requirements: Optional[NodeRequirements] = Field(
         None, description="the requirements for the service to run on a node"
     )
+    boot_mode: BootMode = BootMode.CPU
     command: list[str] = Field(
         default=[
             "run",
@@ -52,8 +54,7 @@ class Image(BaseModel):
             v = NodeRequirements(
                 CPU=1.0,
                 GPU=1 if values.get("requires_gpu") else 0,
-                RAM="128 MiB",
-                MPI=1 if values.get("requires_mpi") else 0,
+                RAM=parse_obj_as(ByteSize, "128 MiB"),
             )
         return v
 

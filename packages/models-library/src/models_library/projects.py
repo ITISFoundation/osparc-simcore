@@ -7,11 +7,12 @@ from enum import Enum
 from typing import Any, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Extra, Field, constr, validator
+from pydantic import BaseModel, Extra, Field, constr, validator
 
 from .basic_regex import DATE_RE, UUID_RE_BASE
+from .emails import LowerCaseEmailStr
 from .projects_access import AccessRights, GroupIDStr
-from .projects_nodes import Node, HttpUrlWithCustomMinLength
+from .projects_nodes import HttpUrlWithCustomMinLength, Node
 from .projects_nodes_io import NodeIDStr
 from .projects_state import ProjectState
 from .projects_ui import StudyUI
@@ -105,7 +106,9 @@ class Project(BaseProjectModel):
     # NOT for usage with DB!!
 
     # Ownership and Access  (SEE projects_access.py)
-    prj_owner: EmailStr = Field(..., description="user email", alias="prjOwner")
+    prj_owner: LowerCaseEmailStr = Field(
+        ..., description="user email", alias="prjOwner"
+    )
 
     # Timestamps   TODO: should we use datetime??
     creation_date: str = Field(
@@ -144,11 +147,14 @@ class Project(BaseProjectModel):
 
     # Quality
     quality: dict[str, Any] = Field(
-        {}, description="stores the study quality assessment"
+        default_factory=dict,
+        description="stores the study quality assessment",
     )
 
     # Dev only
-    dev: Optional[dict] = Field(description="object used for development purposes only")
+    dev: Optional[dict] = Field(
+        default=None, description="object used for development purposes only"
+    )
 
     class Config:
         description = "Document that stores metadata, pipeline and UI setup of a study"

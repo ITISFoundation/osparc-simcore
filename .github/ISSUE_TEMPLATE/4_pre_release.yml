@@ -59,6 +59,13 @@ body:
       placeholder: |
         - Weekly release to staging (Tuesday)
     validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: What Changed
+      description: |
+        List of commit messages in this release. Add a list of links to the corresponding PRs. This way we can trace the release of every single PR. TIP: use the autogenerate changelog feature during the draft release.
+    validations:
       required: false
   - type: textarea
     attributes:
@@ -67,6 +74,10 @@ body:
         Check the PRs marked with (⚠️ devops).
         Determine and prepare necessary changes required in the environments configs.
         Log any issues since this procedure should be taken also as an exercise in preparation for the release to production as well.
+      value: |
+        - [ ] Add changes (if any) and release tags in https://github.com/ITISFoundation/osparc-ops-environments/tags
+        - [ ] Add changes (if any) and release tags in osparc ops configurations
+        - [ ] ...
     validations:
       required: false
   - type: textarea

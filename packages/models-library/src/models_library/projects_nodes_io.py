@@ -71,7 +71,7 @@ class DownloadLink(BaseModel):
     """I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)"""
 
     download_link: AnyUrl = Field(..., alias="downloadLink")
-    label: Optional[str] = None
+    label: Optional[str] = Field(default=None, description="Display name")
 
     class Config:
         extra = Extra.forbid
@@ -148,10 +148,10 @@ class SimCoreFileLink(BaseFileLink):
         schema_extra = {
             "examples": [
                 {
-                "store": 0,
-                "path": "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
-                "eTag": "859fda0cb82fc4acb4686510a172d9a9-1",
-                "label": "input.txt",
+                    "store": 0,
+                    "path": "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
+                    "eTag": "859fda0cb82fc4acb4686510a172d9a9-1",
+                    "label": "input.txt",
                 },
                 # legacy: store as string (SEE incident https://git.speag.com/oSparc/e2e-testing/-/issues/1)
                 {

@@ -339,17 +339,19 @@ qx.Class.define("osparc.store.Store", {
           })
           .catch(err => console.error("getServices failed", err))
           .finally(() => {
+            let servicesObj = {};
             if (includeRetired) {
-              const servicesObj = osparc.utils.Services.convertArrayToObject(allServices);
-              osparc.utils.Services.addTSRInfo(servicesObj);
-              osparc.utils.Services.servicesCached = servicesObj;
-              resolve(servicesObj);
+              servicesObj = osparc.utils.Services.convertArrayToObject(allServices);
             } else {
               const nonDepServices = allServices.filter(service => !(osparc.utils.Services.isRetired(service) || osparc.utils.Services.isDeprecated(service)));
-              const servicesObj = osparc.utils.Services.convertArrayToObject(nonDepServices);
-              osparc.utils.Services.addTSRInfo(servicesObj);
-              resolve(servicesObj);
+              servicesObj = osparc.utils.Services.convertArrayToObject(nonDepServices);
             }
+            osparc.utils.Services.addTSRInfo(servicesObj);
+            osparc.utils.Services.addExtraTypeInfo(servicesObj);
+            if (includeRetired) {
+              osparc.utils.Services.servicesCached = servicesObj;
+            }
+            resolve(servicesObj);
           });
       });
     },
@@ -498,12 +500,13 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
-    getPotentialCollaborators: function() {
+    getPotentialCollaborators: function(includeGlobalEveryone = false) {
       return new Promise((resolve, reject) => {
         const promises = [];
         promises.push(this.getGroupsOrganizations());
         promises.push(this.getVisibleMembers());
         promises.push(this.getProductEveryone());
+        promises.push(this.getGroupEveryone());
         Promise.all(promises)
           .then(values => {
             const orgs = values[0]; // array
@@ -523,6 +526,11 @@ qx.Class.define("osparc.store.Store", {
             if (productEveryone && productEveryone["accessRights"]["read"]) {
               productEveryone["collabType"] = 0;
               potentialCollaborators[productEveryone["gid"]] = productEveryone;
+            }
+            const groupEveryone = values[3];
+            if (includeGlobalEveryone && groupEveryone) {
+              groupEveryone["collabType"] = 0;
+              potentialCollaborators[groupEveryone["gid"]] = groupEveryone;
             }
             resolve(potentialCollaborators);
           })

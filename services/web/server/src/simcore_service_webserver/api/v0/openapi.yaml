@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: osparc-simcore web API
-  version: 0.16.0
+  version: 0.17.1
   description: API designed for the front-end app
   contact:
     name: IT'IS Foundation
@@ -24,31 +24,22 @@ servers:
           - v0
         default: v0
 tags:
+  - name: activity
   - name: admin
   - name: authentication
-  - name: user
-  - name: project
-  - name: cluster
   - name: catalog
-  - name: storage
-  - name: activity
-  - name: tag
-  - name: tasks
-    description: |
-      Asynchronously running tasks
-  - name: node
-    description: |
-      The simcore frontend provides a bunch of custom ui elements for nodes to interact with users.
-      The frontend uses these api calls to query the nodes about the gui elemets they want to use, and it
-      defines the protocol for the frontend to interact with the node.
+  - name: cluster
   - name: configuration
   - name: maintenance
+  - name: nih-sparc
+  - name: node
+  - name: project
   - name: publication
-    description: |
-      oSPARC users can make publications. Starting from submission of new service candidates, but this could
-      end up accepting other types of publications.
-  - name: viewer
   - name: repository
+  - name: storage
+  - name: tag
+  - name: tasks
+  - name: user
 paths:
   '/email:test':
     post:
@@ -1281,9 +1272,9 @@ paths:
                 category:
                   type: string
                   enum:
-                    - new_organization
-                    - study_shared
-                    - template_shared
+                    - NEW_ORGANIZATION
+                    - STUDY_SHARED
+                    - TEMPLATE_SHARED
                   description: 'notification type, the frontend will use this to decorate the notification'
                   example: new_organization
                 actionable_path:
@@ -1307,13 +1298,13 @@ paths:
           description: Notification registered
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/me/notifications/{nid}':
+  '/me/notifications/{id}':
     parameters:
-      - name: nid
+      - name: id
         in: path
         required: true
         schema:
-          type: integer
+          type: string
     patch:
       tags:
         - user
@@ -6495,85 +6486,265 @@ paths:
           description: Retrieve the task result and returns directly its HTTP code
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
+  /services:
+    get:
+      tags:
+        - nih-sparc
+      summary: List Services
+      description: Returns a list latest version of services
+      operationId: list_services
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: 'Envelope[list[simcore_service_webserver.studies_dispatcher.handlers_rest.ServiceGet]]'
+                type: object
+                properties:
+                  data:
+                    title: Data
+                    type: array
+                    items:
+                      title: ServiceGet
+                      required:
+                        - key
+                        - title
+                        - description
+                        - thumbnail
+                        - view_url
+                      type: object
+                      properties:
+                        key:
+                          title: Key
+                          pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+                          type: string
+                          description: Service key ID
+                        title:
+                          title: Title
+                          type: string
+                          description: Service name for display
+                        description:
+                          title: Description
+                          type: string
+                          description: Long description of the service
+                        thumbnail:
+                          title: Thumbnail
+                          maxLength: 2083
+                          minLength: 1
+                          type: string
+                          description: Url to service thumbnail
+                          format: uri
+                        file_extensions:
+                          title: File Extensions
+                          type: array
+                          items:
+                            type: string
+                          description: File extensions that this service can process
+                        view_url:
+                          title: View Url
+                          maxLength: 2083
+                          minLength: 1
+                          type: string
+                          description: Redirection to open a service in osparc (see /view)
+                          format: uri
+                      example:
+                        key: simcore/services/dynamic/sim4life
+                        title: Sim4Life Mattermost
+                        description: It is also sim4life for the web
+                        thumbnail: 'https://via.placeholder.com/170x120.png'
+                        file_extensions:
+                          - smash
+                          - h5
+                        view_url: 'https://host.com/view?viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=1.2.3'
+                  error:
+                    title: Error
   /viewers:
     get:
+      tags:
+        - nih-sparc
+      summary: List Viewers
+      description: |-
+        Lists all publically available viewers
+
+        Notice that this might contain multiple services for the same filetype
+
+        If file_type is provided, then it filters viewer for that filetype
       operationId: list_viewers
       parameters:
-        - in: query
-          name: file_type
-          required: false
+        - required: false
           schema:
             title: File Type
-            description: Filters list to viewers supporting that filetype
             type: string
+          name: file_type
+          in: query
       responses:
         '200':
+          description: Successful Response
           content:
             application/json:
               schema:
+                title: 'Envelope[list[simcore_service_webserver.studies_dispatcher.handlers_rest.Viewer]]'
+                type: object
                 properties:
                   data:
-                    items:
-                      $ref: '#/paths/~1viewers~1default/get/responses/200/content/application~1json/schema/properties/data'
+                    title: Data
                     type: array
-                required:
-                  - data
-                title: ViewerListEnveloped
-                type: object
-          description: Successful Response
-      summary: Lists viewers
-      description: Lists all publicaly available viewers. Notice that this might contain multiple services for the same filetype
-      tags:
-        - viewer
+                    items:
+                      title: Viewer
+                      required:
+                        - title
+                        - file_type
+                        - view_url
+                      type: object
+                      properties:
+                        title:
+                          title: Title
+                          type: string
+                          description: Short formatted label with name and version of the viewer
+                        file_type:
+                          title: File Type
+                          type: string
+                          description: Identifier for the file type
+                        view_url:
+                          title: View Url
+                          maxLength: 2083
+                          minLength: 1
+                          type: string
+                          description: 'Base url to execute viewer. Needs appending file_size,[file_name] and download_link as query parameters'
+                          format: uri
+                      description: |-
+                        API model for a viewer resource
+
+                        A viewer is a service with an associated filetype.
+                        You can think of it as a tuple (filetype, service)
+
+                        The service could consume other filetypes BUT at this
+                        interface this is represented in yet another viewer resource
+
+                        For instance, the same service can be in two different viewer resources
+                          - viewer1=(JPEG, RawGraph service)
+                          - viewer2=(CSV, RawGraph service)
+
+                        A viewer can be dispatched using the view_url and appending the
+                  error:
+                    title: Error
   /viewers/default:
     get:
+      tags:
+        - nih-sparc
+      summary: List Default Viewers
+      description: |-
+        Lists the default viewer for each supported filetype
+
+        This was interfaced as a subcollection of viewers because it is a very common use-case
+
+        Only publicaly available viewers
+
+        If file_type is provided, then it filters viewer for that filetype
       operationId: list_default_viewers
       parameters:
-        - in: query
-          name: file_type
-          required: false
+        - required: false
           schema:
             title: File Type
-            description: Filters list to viewers supporting that filetype
             type: string
+          name: file_type
+          in: query
       responses:
         '200':
+          description: Successful Response
           content:
             application/json:
               schema:
-                properties:
-                  data:
-                    properties:
-                      file_type:
-                        title: File Type
-                        type: string
-                        description: Identifier for the file type
-                      view_url:
-                        description: 'Base url to execute viewer. Needs appending file_size,[file_name] and download_link as query parameters'
-                        format: uri
-                        maxLength: 2083
-                        minLength: 1
-                        title: Redirection Url
-                        type: string
-                      title:
-                        description: Short formatted label with name and version of the viewer
-                        title: Viewer Title
-                        type: string
-                    required:
-                      - file_type
-                      - viewer_title
-                      - view_url
-                    title: Viewer
-                    type: object
-                required:
-                  - data
-                title: ViewerEnveloped
-                type: object
-          description: Successful Response
-      summary: List Default Viewers
-      description: Lists a default viewer for each supported filetype. Only publicaly available viewers.
+                $ref: '#/paths/~1viewers/get/responses/200/content/application~1json/schema'
+  /view:
+    get:
       tags:
-        - viewer
+        - nih-sparc
+      summary: Get Redirection To Viewer
+      description: Opens a viewer in osparc for data in the NIH-sparc portal
+      operationId: get_redirection_to_viewer
+      parameters:
+        - required: true
+          schema:
+            title: File Type
+            type: string
+          name: file_type
+          in: query
+        - required: true
+          schema:
+            title: Viewer Key
+            pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+            type: string
+          name: viewer_key
+          in: query
+        - required: true
+          schema:
+            title: File Size
+            exclusiveMinimum: true
+            type: integer
+            minimum: 0
+          name: file_size
+          in: query
+        - required: true
+          schema:
+            title: Download Link
+            maxLength: 2083
+            minLength: 1
+            type: string
+            format: uri
+          name: download_link
+          in: query
+        - required: false
+          schema:
+            title: File Name
+            type: string
+            default: unknown
+          name: file_name
+          in: query
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: ServiceKeyVersion
+              required:
+                - key
+                - version
+              type: object
+              properties:
+                key:
+                  title: Key
+                  pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+                  type: string
+                  description: distinctive name for the node based on the docker registry path
+                version:
+                  title: Version
+                  pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
+                  type: string
+                  description: service version number
+              description: This pair uniquely identifies a services
+        required: true
+      responses:
+        '302':
+          description: Opens osparc and starts viewer for selected data
+  '/study/{study_id}':
+    get:
+      tags:
+        - nih-sparc
+      summary: Get Redirection To Study Page
+      description: Opens a study published in osparc
+      operationId: get_redirection_to_study_page
+      parameters:
+        - required: true
+          schema:
+            title: Study Id
+            type: string
+            format: uuid
+          name: study_id
+          in: path
+      responses:
+        '302':
+          description: Opens osparc and opens a copy of publised study
 components:
   responses:
     DefaultErrorResponse:

@@ -182,7 +182,9 @@ qx.Class.define("osparc.Application", {
                 msg
               ]
             });
-            this.__loadView(errorPage);
+            this.__loadView(errorPage, {
+              top: "10%"
+            });
           }
           break;
         }

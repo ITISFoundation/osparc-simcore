@@ -26,7 +26,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyBootOpts", {
         for (const nodeId in studyData["workbench"]) {
           const node = studyData["workbench"][nodeId];
           const metadata = osparc.utils.Services.getMetaData(node["key"], node["version"]);
-          if (metadata && "boot-options" in metadata) {
+          if (osparc.data.model.Node.hasBootModes(metadata)) {
             return true;
           }
         }
@@ -36,6 +36,14 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyBootOpts", {
   },
 
   members: {
+    _populateIntroText: function() {
+      const text = this.tr("Here you can select in which mode the services will be started:");
+      const introText = new qx.ui.basic.Label(text).set({
+        font: "text-14"
+      });
+      this._introText.add(introText);
+    },
+
     __updateBootMode: function(nodeId, newBootModeId) {
       if (!("bootOptions" in this._studyData["workbench"][nodeId])) {
         this._studyData["workbench"][nodeId]["bootOptions"] = {};
@@ -50,7 +58,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyBootOpts", {
     _populateHeader: function() {
       this.base(arguments);
 
-      this._add(new qx.ui.basic.Label(this.tr("Boot Mode")).set({
+      this._servicesGrid.add(new qx.ui.basic.Label(this.tr("Boot Mode")).set({
         font: "title-14",
         toolTipText: this.tr("Select boot type")
       }), {
@@ -73,32 +81,14 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyBootOpts", {
           break;
         }
         const canIWrite = osparc.data.model.Study.canIWrite(this._studyData["accessRights"]);
-        if (canIWrite && "boot-options" in nodeMetaData && "boot_mode" in nodeMetaData["boot-options"]) {
-          const bootModesMD = nodeMetaData["boot-options"]["boot_mode"];
-          const bootModeSB = new qx.ui.form.SelectBox();
-          const sbItems = [];
-          Object.entries(bootModesMD["items"]).forEach(([bootModeId, bootModeMD]) => {
-            const sbItem = new qx.ui.form.ListItem(bootModeMD["label"]);
-            sbItem.bootModeId = bootModeId;
-            bootModeSB.add(sbItem);
-            sbItems.push(sbItem);
-          });
-          let defaultBMId = null;
-          if ("bootOptions" in workbench[nodeId] && "boot_mode" in workbench[nodeId]["bootOptions"]) {
-            defaultBMId = workbench[nodeId]["bootOptions"]["boot_mode"];
-          } else {
-            defaultBMId = bootModesMD["default"];
-          }
-          sbItems.forEach(sbItem => {
-            if (defaultBMId === sbItem.bootModeId) {
-              bootModeSB.setSelection([sbItem]);
-            }
-          });
+        const hasBootModes = osparc.data.model.Node.hasBootModes(nodeMetaData);
+        if (canIWrite && hasBootModes) {
+          const bootModeSB = osparc.data.model.Node.getBootModesSelectBox(nodeMetaData, workbench, nodeId);
           bootModeSB.addListener("changeSelection", e => {
             const newBootModeId = e.getData()[0].bootModeId;
             this.__updateBootMode(nodeId, newBootModeId);
           }, this);
-          this._add(bootModeSB, {
+          this._servicesGrid.add(bootModeSB, {
             row: i,
             column: this.self().GRID_POS.BOOT_MODE
           });

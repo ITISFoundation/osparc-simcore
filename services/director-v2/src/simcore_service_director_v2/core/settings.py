@@ -3,6 +3,7 @@
 
 
 import logging
+import re
 from enum import Enum, auto
 from functools import cached_property
 from pathlib import Path
@@ -27,10 +28,10 @@ from models_library.utils.enums import StrAutoEnum
 from pydantic import (
     AnyHttpUrl,
     AnyUrl,
+    ConstrainedStr,
     Field,
     PositiveFloat,
     PositiveInt,
-    constr,
     validator,
 )
 from settings_library.base import BaseCustomSettings
@@ -68,10 +69,12 @@ ORG_LABELS_TO_SCHEMA_LABELS: dict[str, str] = {
 
 SUPPORTED_TRAEFIK_LOG_LEVELS: set[str] = {"info", "debug", "warn", "error"}
 
-PlacementConstraintStr = constr(
-    strip_whitespace=True,
-    regex=r"^(?!-)(?![.])(?!.*--)(?!.*[.][.])[a-zA-Z0-9.-]*(?<!-)(?<![.])(!=|==){1}[a-zA-Z0-9_. -]*$",
-)
+
+class PlacementConstraintStr(ConstrainedStr):
+    strip_whitespace = True
+    regex = re.compile(
+        r"^(?!-)(?![.])(?!.*--)(?!.*[.][.])[a-zA-Z0-9.-]*(?<!-)(?<![.])(!=|==)[a-zA-Z0-9_. -]*$"
+    )
 
 
 class VFSCacheMode(str, Enum):

@@ -34,25 +34,25 @@ fi
 #
 
 if [ ${DASK_START_AS_SCHEDULER+x} ]; then
-  scheduler_version=$(dask-scheduler --version)
+  scheduler_version=$(dask scheduler --version)
   mkdir --parents /home/scu/.config/dask
   dask_logging=$(printf "logging:\n  distributed: %s\n  distributed.scheduler: %s" "${LOG_LEVEL:-warning}" "${LOG_LEVEL:-warning}")
   echo "$dask_logging" >> /home/scu/.config/dask/distributed.yaml
 
-  echo "$INFO" "Starting as dask-scheduler:${scheduler_version}..."
+  echo "$INFO" "Starting as dask scheduler:${scheduler_version}..."
   if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
     exec watchmedo auto-restart \
         --recursive \
         --pattern="*.py;*/src/*" \
         --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" \
         --ignore-directories -- \
-      dask-scheduler
+      dask scheduler
   else
-    exec dask-scheduler
+    exec dask scheduler
   fi
 
 else
-  DASK_WORKER_VERSION=$(dask-worker --version)
+  DASK_WORKER_VERSION=$(dask worker --version)
   DASK_SCHEDULER_URL=${DASK_SCHEDULER_URL:="tcp://${DASK_SCHEDULER_HOST}:8786"}
 
   #
@@ -62,7 +62,7 @@ else
   # CPU: number of CPUs available (= num of processing units - DASK_SIDECAR_NUM_NON_USABLE_CPUS)
   # GPU: number GPUs available (= num of GPUs if a nvidia-smi can be run inside a docker container)
   # RAM: amount of RAM available (= CPU/nproc * total virtual memory given by python psutil - DASK_SIDECAR_NON_USABLE_RAM)
-  # MPI: backwards-compatibility (deprecated if core_number = TARGET_MPI_NODE_CPU_COUNT set to 1)
+  # VRAM: amount of VRAM available (in bytes)
 
   # CPUs
   num_cpus=$(($(nproc) - ${DASK_SIDECAR_NUM_NON_USABLE_CPUS:-2}))
@@ -83,15 +83,10 @@ else
 
   # add the GPUs if there are any
   if [ "$num_gpus" -gt 0 ]; then
-    resources="$resources,GPU=$num_gpus"
+    total_vram=$(python -c "from simcore_service_dask_sidecar.utils import video_memory; print(video_memory());")
+    resources="$resources,GPU=$num_gpus,VRAM=$total_vram"
   fi
 
-  # add the MPI if possible
-  if [ ${TARGET_MPI_NODE_CPU_COUNT+x} ]; then
-    if [ "$(nproc)" -eq "${TARGET_MPI_NODE_CPU_COUNT}" ]; then
-      resources="$resources,MPI=1"
-    fi
-  fi
 
   #
   # DASK RESOURCES DEFINITION --------------------------------- END
@@ -108,7 +103,7 @@ else
   echo "$INFO" "Worker resources set as: $resources"
   if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
     exec watchmedo auto-restart --recursive --pattern="*.py;*/src/*" --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" --ignore-directories -- \
-      dask-worker "${DASK_SCHEDULER_URL}" \
+      dask worker "${DASK_SCHEDULER_URL}" \
       --local-directory /tmp/dask-sidecar \
       --preload simcore_service_dask_sidecar.tasks \
       --nworkers ${DASK_NPROCS} \
@@ -118,7 +113,7 @@ else
       --resources "$resources" \
       --name "${DASK_WORKER_NAME}"
   else
-    exec dask-worker "${DASK_SCHEDULER_URL}" \
+    exec dask worker "${DASK_SCHEDULER_URL}" \
       --local-directory /tmp/dask-sidecar \
       --preload simcore_service_dask_sidecar.tasks \
       --nworkers ${DASK_NPROCS} \

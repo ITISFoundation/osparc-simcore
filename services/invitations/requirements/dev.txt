@@ -15,6 +15,7 @@
 --editable ../../packages/pytest-simcore
 --editable ../../packages/service-library[fastapi]
 --editable ../../packages/settings-library
+--editable ../../packages/models-library
 
 # installs current package
 --editable .

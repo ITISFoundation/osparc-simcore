@@ -1,7 +1,9 @@
 import logging
-from typing import Any, Final, Union
+from enum import auto
+from typing import Any, Final, Optional, Union
 
 from models_library.docker import DockerGenericTag
+from models_library.utils.enums import StrAutoEnum
 from pydantic import (
     BaseModel,
     ByteSize,
@@ -58,6 +60,12 @@ class ResourceValue(BaseModel):
 ResourcesDict = dict[ResourceName, ResourceValue]
 
 
+class BootMode(StrAutoEnum):
+    CPU = auto()
+    GPU = auto()
+    MPI = auto()
+
+
 class ImageResources(BaseModel):
     image: DockerGenericTag = Field(
         ...,
@@ -69,6 +77,10 @@ class ImageResources(BaseModel):
         ),
     )
     resources: ResourcesDict
+    boot_modes: list[BootMode] = Field(
+        default=[BootMode.CPU],
+        description="describe how a service shall be booted, using CPU, MPI, openMP or GPU",
+    )
 
     class Config:
         schema_extra = {
@@ -96,13 +108,17 @@ class ServiceResourcesDictHelpers:
     def create_from_single_service(
         image: DockerGenericTag,
         resources: ResourcesDict,
+        boot_modes: Optional[list[BootMode]] = None,
     ) -> ServiceResourcesDict:
+        if boot_modes is None:
+            boot_modes = [BootMode.CPU]
         return parse_obj_as(
             ServiceResourcesDict,
             {
                 DEFAULT_SINGLE_SERVICE_NAME: {
                     "image": image,
                     "resources": resources,
+                    "boot_modes": boot_modes,
                 }
             },
         )
@@ -127,6 +143,7 @@ class ServiceResourcesDictHelpers:
                                 "reservation": parse_obj_as(ByteSize, "2Gib"),
                             },
                         },
+                        "boot_modes": [BootMode.CPU],
                     },
                 },
                 # service with a compose spec
@@ -137,6 +154,7 @@ class ServiceResourcesDictHelpers:
                             "CPU": {"limit": 0.3, "reservation": 0.3},
                             "RAM": {"limit": 53687091232, "reservation": 53687091232},
                         },
+                        "boot_modes": [BootMode.CPU],
                     },
                     "s4l-core": {
                         "image": "simcore/services/dynamic/s4l-core-dy:3.0.0",
@@ -145,6 +163,7 @@ class ServiceResourcesDictHelpers:
                             "RAM": {"limit": 17179869184, "reservation": 536870912},
                             "VRAM": {"limit": 1, "reservation": 1},
                         },
+                        "boot_modes": [BootMode.GPU],
                     },
                     "sym-server": {
                         "image": "simcore/services/dynamic/sym-server:3.0.0",
@@ -155,6 +174,7 @@ class ServiceResourcesDictHelpers:
                                 "reservation": parse_obj_as(ByteSize, "2Gib"),
                             },
                         },
+                        "boot_modes": [BootMode.CPU],
                     },
                 },
                 # compose spec with image outside the platform
@@ -168,6 +188,7 @@ class ServiceResourcesDictHelpers:
                                 "reservation": parse_obj_as(ByteSize, "2Gib"),
                             },
                         },
+                        "boot_modes": [BootMode.CPU],
                     },
                     "proxy": {
                         "image": "traefik:v2.6.6",
@@ -178,6 +199,7 @@ class ServiceResourcesDictHelpers:
                                 "reservation": parse_obj_as(ByteSize, "2Gib"),
                             },
                         },
+                        "boot_modes": [BootMode.CPU],
                     },
                 },
             ]

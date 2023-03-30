@@ -1,9 +1,10 @@
-from typing import Dict, Optional
+from typing import Optional
 
 from models_library.basic_regex import VERSION_RE
+from models_library.emails import LowerCaseEmailStr
 from models_library.projects_nodes import Node
 from models_library.services import SERVICE_KEY_RE
-from pydantic import BaseModel, EmailStr, Field, Json
+from pydantic import BaseModel, Field, Json
 
 
 class DAGBase(BaseModel):
@@ -15,16 +16,16 @@ class DAGBase(BaseModel):
     version: str = Field(..., regex=VERSION_RE, example="1.0.0")
     name: str
     description: Optional[str]
-    contact: Optional[EmailStr]
+    contact: Optional[LowerCaseEmailStr]
 
 
 class DAGAtDB(DAGBase):
     id: int
-    workbench: Json[Dict[str, Node]]  # pylint: disable=unsubscriptable-object
+    workbench: Json[dict[str, Node]]  # pylint: disable=unsubscriptable-object
 
     class Config:
         orm_mode = True
 
 
 class DAGData(DAGAtDB):
-    workbench: Optional[Dict[str, Node]]
+    workbench: Optional[dict[str, Node]]

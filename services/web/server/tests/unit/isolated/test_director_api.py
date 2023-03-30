@@ -131,7 +131,6 @@ def mock_director_service(
     project_id: str,
     project_nodes: list[tuple[str, ...]],
 ):
-
     # helpers
     def fake_registry_service_model(**overrides):
         return model_fake_factory(registry_service_model_schema, **overrides)
@@ -157,7 +156,6 @@ def mock_director_service(
     # Mocks director's service API  api/specs/director/openapi.yaml
     #
     with aioresponses() as mock:
-
         # GET /running_interactive_services -------------------------------------------------
         url_pattern = (
             r"^http://[a-z\-_]*director:[0-9]+/v0/running_interactive_services\?.*$"
@@ -335,7 +333,6 @@ async def test_director_workflow(
     project_id: str,
     project_nodes: list[tuple[str, ...]],
 ):
-
     app = app_mock
 
     # After app's setup, the director config should be in place
@@ -354,7 +351,6 @@ async def test_director_workflow(
     assert not running_services
 
     for service_key, service_version, service_uuid in project_nodes:
-
         # service is in registry
         service = await get_service_by_key_version(app, service_key, service_version)
         assert service
@@ -375,6 +371,7 @@ async def test_director_workflow(
             service_uuid,
             "localhost",
             "http",
+            "test",
         )
 
         # now is running

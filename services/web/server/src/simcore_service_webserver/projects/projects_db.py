@@ -35,8 +35,9 @@ from ..db_models import study_tags
 from ..utils import now_str
 from .project_models import ProjectDict
 from .projects_db_utils import (
+    ANY_USER_ID_SENTINEL,
     BaseProjectDB,
-    Permission,
+    PermissionStr,
     ProjectAccessRights,
     assemble_array_groups,
     check_project_permissions,
@@ -55,7 +56,7 @@ from .projects_utils import find_changed_node_keys
 log = logging.getLogger(__name__)
 
 APP_PROJECT_DBAPI = __name__ + ".ProjectDBAPI"
-
+ANY_USER = ANY_USER_ID_SENTINEL
 
 # pylint: disable=too-many-public-methods
 # NOTE: https://github.com/ITISFoundation/osparc-simcore/issues/3516
@@ -316,7 +317,7 @@ class ProjectDBAPI(BaseProjectDB):
         *,
         only_published: bool = False,
         only_templates: bool = False,
-        check_permissions: Permission = "read",
+        check_permissions: PermissionStr = "read",
     ) -> tuple[ProjectDict, ProjectType]:
         """Returns all projects *owned* by the user
 
@@ -325,6 +326,7 @@ class ProjectDBAPI(BaseProjectDB):
             - Notice that a user can have access to a project where he/she has read access
 
         :raises ProjectNotFoundError: project is not assigned to user
+        raises ProjectInvalidRightsError: if user has no access rights to do check_permissions
         """
         async with self.engine.acquire() as conn:
             project = await self._get_project(
@@ -634,7 +636,7 @@ class ProjectDBAPI(BaseProjectDB):
     #
 
     async def has_permission(
-        self, user_id: UserID, project_uuid: str, permission: Permission
+        self, user_id: UserID, project_uuid: str, permission: PermissionStr
     ) -> bool:
         """
         NOTE: this function should never raise
