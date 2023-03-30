@@ -116,7 +116,7 @@ def services_fixture(faker: Faker, pg_sa_engine: sa.engine.Engine) -> ServicesFi
                         service_version=version,
                         service_display_name=service_name,
                         service_input_port=f"input_{i}",
-                        filetype=filetype,
+                        filetype=filetype.upper(),
                         is_guest_allowed=is_public,
                     )
 
@@ -134,7 +134,6 @@ def services_fixture(faker: Faker, pg_sa_engine: sa.engine.Engine) -> ServicesFi
 def test_trial_queries_for_service_metadata(
     services_fixture: ServicesFixture, pg_sa_engine: sa.engine.Engine
 ):
-
     # check if service exists and whether is public or not
     with pg_sa_engine.connect() as conn:
         query = sa.select(

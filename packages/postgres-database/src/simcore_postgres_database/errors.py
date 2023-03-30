@@ -28,7 +28,12 @@ from psycopg2 import (
     OperationalError,
     ProgrammingError,
 )
-from psycopg2.errors import ForeignKeyViolation, NotNullViolation, UniqueViolation
+from psycopg2.errors import (
+    CheckViolation,
+    ForeignKeyViolation,
+    NotNullViolation,
+    UniqueViolation,
+)
 
 assert issubclass(UniqueViolation, IntegrityError)  # nosec
 
@@ -44,6 +49,7 @@ assert issubclass(UniqueViolation, IntegrityError)  # nosec
 
 
 __all__: tuple[str, ...] = (
+    "CheckViolation",
     "DatabaseError",
     "DataError",
     "DBAPIError",
