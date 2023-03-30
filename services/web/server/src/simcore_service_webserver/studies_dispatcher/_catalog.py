@@ -10,12 +10,12 @@ from models_library.services import ServiceKey, ServiceVersion
 from pydantic import HttpUrl, PositiveInt, ValidationError, parse_obj_as
 from simcore_postgres_database.models.services import (
     services_access_rights,
-    services_latest,
     services_meta_data,
 )
 from simcore_postgres_database.models.services_consume_filetypes import (
     services_consume_filetypes,
 )
+from sqlalchemy.dialects.postgresql import ARRAY, INTEGER
 
 from ..db import get_database_engine
 from ._exceptions import StudyDispatcherError
@@ -62,6 +62,21 @@ async def iter_latest_osparc_services(
     engine: Engine = get_database_engine(app)
     settings: StudiesDispatcherSettings = get_plugin_settings(app)
 
+    # Select query for latest version of the service
+    latest_view = (
+        sa.select(
+            services_meta_data.c.key,
+            sa.func.array_to_string(
+                sa.func.max(
+                    sa.func.string_to_array(services_meta_data.c.version, ".").cast(
+                        ARRAY(INTEGER)
+                    )
+                ),
+                ".",
+            ).label("latest"),
+        ).group_by(services_meta_data.c.key)
+    ).alias("latest_view")
+
     query = (
         sa.select(
             [
@@ -73,10 +88,10 @@ async def iter_latest_osparc_services(
             ]
         )
         .select_from(
-            services_latest.join(
+            latest_view.join(
                 services_meta_data,
-                (services_meta_data.c.key == services_latest.c.key)
-                & (services_meta_data.c.version == services_latest.c.version),
+                (services_meta_data.c.key == latest_view.c.key)
+                & (services_meta_data.c.version == latest_view.c.latest),
             ).join(
                 services_access_rights,
                 (services_meta_data.c.key == services_access_rights.c.key)
@@ -85,8 +100,8 @@ async def iter_latest_osparc_services(
         )
         .where(
             (
-                services_latest.c.key.like("simcore/services/dynamic/%%")
-                | (services_latest.c.key.like("simcore/services/comp/%%"))
+                services_meta_data.c.key.like("simcore/services/dynamic/%%")
+                | (services_meta_data.c.key.like("simcore/services/comp/%%"))
             )
             & (services_access_rights.c.gid == _EVERYONE_GROUP_ID)
             & (services_access_rights.c.execute_access == True)

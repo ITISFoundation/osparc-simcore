@@ -248,7 +248,7 @@ def test_model_examples(
     assert model
 
 
-async def test_api_get_services(client: TestClient):
+async def test_api_list_services(client: TestClient):
     assert client.app
 
     url = client.app.router["list_services"].url_for()
