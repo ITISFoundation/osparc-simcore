@@ -212,7 +212,7 @@ qx.Class.define("osparc.Error", {
         }
         case "log-in-button": {
           control = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/copy/14",
+            icon: "@FontAwesome5Solid/sign-in-alt/14",
             label: this.tr("Log in")
           });
           control.addListener("execute", () => this.__logIn(), this);
