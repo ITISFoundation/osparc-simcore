@@ -235,7 +235,6 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
         f"{module_base}._task.DynamicSidecarsScheduler.get_stack_status",
         side_effect=get_stack_status,
     )
-
     # MOCKING remove_service
     def remove_service(node_uuid: NodeID, can_save: Optional[bool]) -> None:
         if exp_status_code == status.HTTP_307_TEMPORARY_REDIRECT:
@@ -249,6 +248,11 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
     mocker.patch(
         f"{module_base}._core._scheduler.Scheduler._discover_running_services",
         return_value=None,
+    )
+
+    mocker.patch(
+        f"{module_base}._core._scheduler.Scheduler.service_awaits_manual_interventions",
+        return_value=False,
     )
 
 
