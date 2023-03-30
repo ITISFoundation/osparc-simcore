@@ -17,6 +17,7 @@ from simcore_postgres_database.models.users import UserRole
 
 from . import director_v2_api, users_exceptions
 from .director.director_exceptions import DirectorException, ServiceNotFoundError
+from .director_v2_exceptions import DirectorServiceError
 from .garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
 from .garbage_collector_utils import (
     get_new_project_owner_gid,
@@ -374,7 +375,6 @@ async def _remove_single_service_if_orphan(
             if user_role is None or user_role <= UserRole.GUEST:
                 save_state = False
             # -------------------------------------------
-            from .director_v2_exceptions import DirectorServiceError
 
             try:
                 await director_v2_api.stop_dynamic_service(
