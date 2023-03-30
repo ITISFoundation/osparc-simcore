@@ -1,8 +1,29 @@
 import logging
+from typing import Optional
+
+from fastapi import FastAPI
+from models_library.projects_nodes_io import NodeID
+from servicelib.fastapi.long_running_tasks.client import ProgressCallback
 
 from .....models.schemas.dynamic_services import DynamicSidecarStatus, SchedulerData
+from ...api_client import DynamicSidecarClient, get_dynamic_sidecar_client
+from ._events_utils import service_push_outputs
 
 logger = logging.getLogger(__name__)
+
+
+async def push_service_outputs(
+    app: FastAPI,
+    node_uuid: NodeID,
+    progress_callback: Optional[ProgressCallback] = None,
+) -> None:
+    dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(app)
+    await service_push_outputs(
+        app=app,
+        node_uuid=node_uuid,
+        dynamic_sidecar_client=dynamic_sidecar_client,
+        progress_callback=progress_callback,
+    )
 
 
 async def service_awaits_manual_interventions(scheduler_data: SchedulerData) -> bool:

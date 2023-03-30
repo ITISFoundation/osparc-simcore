@@ -57,7 +57,6 @@ from ...errors import (
 from .._abc import SchedulerPublicInterface
 from . import _scheduler_utils
 from ._events_utils import (
-    service_push_outputs,
     service_remove_containers,
     service_remove_sidecar_proxy_docker_networks_and_volumes,
     service_save_state,
@@ -100,14 +99,8 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
         node_uuid: NodeID,
         progress_callback: Optional[ProgressCallback] = None,
     ) -> None:
-        dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-            self.app
-        )
-        await service_push_outputs(
-            app=self.app,
-            node_uuid=node_uuid,
-            dynamic_sidecar_client=dynamic_sidecar_client,
-            progress_callback=progress_callback,
+        await _scheduler_utils.push_service_outputs(
+            self.app, node_uuid, progress_callback
         )
 
     async def remove_service_containers(
