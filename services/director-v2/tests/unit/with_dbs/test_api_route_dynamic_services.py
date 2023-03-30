@@ -236,22 +236,29 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
         side_effect=get_stack_status,
     )
     # MOCKING remove_service
-    def remove_service(node_uuid: NodeID, can_save: Optional[bool]) -> None:
+    def remove_service(
+        node_uuid: NodeID,
+        can_save: Optional[bool],
+        skip_observation_recreation: bool = False,
+    ) -> None:
         if exp_status_code == status.HTTP_307_TEMPORARY_REDIRECT:
             raise DynamicSidecarNotFoundError(node_uuid)
 
     mocker.patch(
         f"{module_base}._task.DynamicSidecarsScheduler.mark_service_for_removal",
+        autospec=True,
         side_effect=remove_service,
     )
 
     mocker.patch(
         f"{module_base}._core._scheduler.Scheduler._discover_running_services",
+        autospec=True,
         return_value=None,
     )
 
     mocker.patch(
         f"{module_base}._core._scheduler.Scheduler.service_awaits_manual_interventions",
+        autospec=True,
         return_value=False,
     )
 
