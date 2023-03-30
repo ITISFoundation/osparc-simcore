@@ -131,6 +131,112 @@ def services_fixture(faker: Faker, pg_sa_engine: sa.engine.Engine) -> ServicesFi
     )
 
 
+def test_it1():
+
+    Base = sa.orm.declarative_base()
+    metadata = Base.metadata
+
+    company_id = 1
+
+    t_folders = sa.Table(
+        "t_folders",
+        metadata,
+        sa.Column("id", sa.Integer, primary_key=True),
+        sa.Column("company_id", sa.Integer),
+    )
+
+    t_milestones = sa.Table(
+        "t_milestones",
+        metadata,
+        sa.Column("folder_id", sa.Integer),
+        sa.Column("is_done", sa.Boolean),
+        sa.Column("value", sa.Float),
+    )
+
+    t_folders_members = sa.Table(
+        "t_folders_members",
+        metadata,
+        sa.Column("id", sa.Integer, primary_key=True),
+        sa.Column("folder_id", sa.Integer),
+        sa.Column("user_id", sa.Integer),
+    )
+
+    f = t_folders.c
+    m = t_milestones.c
+    members_t = t_folders_members
+
+    f1 = (
+        sa.select([f.id, sa.func.max(m.value).label("value")])
+        .select_from(t_folders.join(t_milestones, f.id == m.folder_id))
+        .where(
+            sa.and_(
+                f.company_id == company_id,
+                m.is_done.is_(False),
+            )
+        )
+        .group_by(f.id)
+    ).alias("f1")
+
+    f2 = sa.select([f1.c.id, f1.c.value, members_t.c.id]).select_from(
+        f1.join(members_t, members_t.c.folder_id == f1.c.id)
+    )
+
+    print(f2)
+
+
+@pytest.mark.testit
+def test_it(services_fixture: ServicesFixture, pg_sa_engine: sa.engine.Engine):
+    # lts = (
+    #     sa.select(
+    #         services_meta_data.c.key,
+    #         sa.text(
+    #             "array_to_string(MAX(string_to_array(version, '.')::int[]), '.') AS latest"
+    #         ),
+    #     ).group_by(services_meta_data.c.key)
+    # ).alias("lts")
+
+    # stmt = sa.select([lts.c.key, lts.c.latest, services_meta_data.c.name]).select_from(
+    #     lts.join(
+    #         services_meta_data,
+    #         (services_meta_data.c.key == lts.c.key)
+    #         & (services_meta_data.c.version == lts.c.latest),
+    #     )
+    # )
+
+    from sqlalchemy.dialects.postgresql import ARRAY, INTEGER
+
+    assert issubclass(INTEGER, sa.Integer)
+
+    lts = (
+        sa.select(
+            services_meta_data.c.key,
+            sa.func.array_to_string(
+                sa.func.max(
+                    sa.func.string_to_array(services_meta_data.c.version, ".").cast(
+                        ARRAY(INTEGER)
+                    )
+                ),
+                ".",
+            ).label("latest"),
+        ).group_by(services_meta_data.c.key)
+    ).alias("lts")
+
+    stmt = sa.select([lts.c.key, lts.c.latest, services_meta_data.c.name]).select_from(
+        lts.join(
+            services_meta_data,
+            (services_meta_data.c.key == lts.c.key)
+            & (services_meta_data.c.version == lts.c.latest),
+        )
+    )
+    print(stmt)
+
+    with pg_sa_engine.connect() as conn:
+
+        # rows: list = conn.execute(services_latest).fetchall()
+        rows: list = conn.execute(stmt).fetchall()
+        print(rows)
+
+
 def test_trial_queries_for_service_metadata(
     services_fixture: ServicesFixture, pg_sa_engine: sa.engine.Engine
 ):
