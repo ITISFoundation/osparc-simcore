@@ -61,6 +61,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     __resourceData: null,
     __serviceVersionLayout: null,
     __serviceVersionSelector: null,
+    __infoPage: null,
     __permissionsPage: null,
     __classifiersPage: null,
     __qualityPage: null,
@@ -215,7 +216,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const title = this.tr("Information");
       const icon = "@FontAwesome5Solid/info";
       const resourceData = this.__resourceData;
-      const infoCard = osparc.utils.Resources.isService(resourceData) ? new osparc.info.ServiceLarge(resourceData, null, false) : new osparc.info.StudyLarge(resourceData, false);
+      const infoCard = this.__infoPage = osparc.utils.Resources.isService(resourceData) ? new osparc.info.ServiceLarge(resourceData, null, false) : new osparc.info.StudyLarge(resourceData, false);
       infoCard.addListener("openAccessRights", () => this.openAccessRights());
       infoCard.addListener("openClassifiers", () => this.openClassifiers());
       infoCard.addListener("openQuality", () => this.openQuality());
@@ -262,6 +263,10 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       }
 
       return page;
+    },
+
+    getInfoPage: function() {
+      return this.__infoPage;
     },
 
     __getPermissionsPage: function() {
