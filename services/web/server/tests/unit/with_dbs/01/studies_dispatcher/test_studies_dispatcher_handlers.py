@@ -4,19 +4,22 @@
 
 import re
 import urllib.parse
-from typing import AsyncIterator
+from typing import Any, AsyncIterator
 
 import pytest
+import simcore_service_webserver.studies_dispatcher.handlers_redirects
 import sqlalchemy as sa
 from aiohttp import ClientResponse, ClientSession, web
 from aiohttp.test_utils import TestClient, TestServer
 from aioresponses import aioresponses
 from models_library.projects_state import ProjectLocked, ProjectStatus
-from pydantic import parse_obj_as
+from pydantic import BaseModel, parse_obj_as
 from pytest import FixtureRequest, MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserRole
+from pytest_simcore.pydantic_models import iter_model_examples_in_module
+from servicelib.json_serialization import json_dumps
 from settings_library.redis import RedisSettings
 from simcore_service_webserver import catalog
 from simcore_service_webserver.studies_dispatcher._core import ViewerInfo
@@ -162,7 +165,6 @@ def _get_base_url(client: TestClient) -> str:
 
 
 async def test_api_get_viewer_for_file(client: TestClient):
-
     resp = await client.get("/v0/viewers/default?file_type=JPEG")
     data, _ = await assert_status(resp, web.HTTPOk)
 
@@ -184,7 +186,6 @@ async def test_api_get_viewer_for_unsupported_type(client: TestClient):
 
 
 async def test_api_list_supported_filetypes(client: TestClient):
-
     resp = await client.get("/v0/viewers/default")
     data, _ = await assert_status(resp, web.HTTPOk)
 
@@ -233,7 +234,20 @@ async def test_api_list_supported_filetypes(client: TestClient):
     ]
 
 
-@pytest.mark.testit
+@pytest.mark.parametrize(
+    "model_cls, example_name, example_data",
+    iter_model_examples_in_module(
+        simcore_service_webserver.studies_dispatcher.handlers_redirects
+    ),
+)
+def test_model_examples(
+    model_cls: type[BaseModel], example_name: int, example_data: Any
+):
+    print(example_name, ":", json_dumps(example_data))
+    model = model_cls.parse_obj(example_data)
+    assert model
+
+
 async def test_api_get_services(client: TestClient):
     assert client.app
 
@@ -253,7 +267,6 @@ async def test_api_get_services(client: TestClient):
 
 @pytest.fixture
 async def catalog_subsystem_mock(monkeypatch: MonkeyPatch) -> None:
-
     services_in_project = [
         {"key": "simcore/services/frontend/file-picker", "version": "1.0.0"}
     ] + [{"key": s.key, "version": s.version} for s in FAKE_VIEWS_LIST]
