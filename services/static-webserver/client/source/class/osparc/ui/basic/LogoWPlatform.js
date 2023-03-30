@@ -65,8 +65,10 @@ qx.Class.define("osparc.ui.basic.LogoWPlatform", {
               }
               control.setValue(platformName);
             });
-
-          this._add(control);
+          control.bind("value", this, "paddingTop", {
+            converter: value => value ? 3 : 7
+          });
+          this.setPaddingTop(7);
           break;
         }
       }
