@@ -199,7 +199,7 @@ async def stop_dynamic_service(
 
         return RedirectResponse(str(redirection_url))
 
-    if await scheduler.services_awaits_manual_interventions(node_uuid):
+    if await scheduler.service_awaits_manual_interventions(node_uuid):
         return JSONResponse(
             {
                 "code": "waiting_for_intervention",

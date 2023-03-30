@@ -102,8 +102,8 @@ class DynamicSidecarsScheduler(SchedulerInternalsInterface, SchedulerPublicInter
             node_uuid, can_save, skip_observation_recreation
         )
 
-    async def services_awaits_manual_interventions(self, node_uuid: NodeID) -> bool:
-        return await self._scheduler.services_awaits_manual_interventions(node_uuid)
+    async def service_awaits_manual_interventions(self, node_uuid: NodeID) -> bool:
+        return await self._scheduler.service_awaits_manual_interventions(node_uuid)
 
     async def get_stack_status(self, node_uuid: NodeID) -> RunningDynamicServiceDetails:
         return await self._scheduler.get_stack_status(node_uuid)

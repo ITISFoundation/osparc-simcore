@@ -107,7 +107,7 @@ class SchedulerPublicInterface(ABC):
         """The service will be removed as soon as possible"""
 
     @abstractmethod
-    async def services_awaits_manual_interventions(self, node_uuid: NodeID) -> bool:
+    async def service_awaits_manual_interventions(self, node_uuid: NodeID) -> bool:
         """returns True if services is waiting for manual intervention"""
 
     @abstractmethod
