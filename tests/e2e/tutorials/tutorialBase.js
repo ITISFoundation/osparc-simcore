@@ -803,7 +803,7 @@ class TutorialBase {
       await this.takeLoggerScreenshot();
     }
     this.__failed = failed;
-    this.__reason_failed = reason
+    this.__reasonFailed = reason
   }
 }
 
