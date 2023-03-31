@@ -103,7 +103,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     filterSharedWith: function(checks, sharedWith) {
-      // return: has to be hidden?
       if (sharedWith && sharedWith !== "show-all") {
         const myGroupId = osparc.auth.Data.getInstance().getGroupId();
         if (checks && myGroupId in checks) {
@@ -114,7 +113,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
           } else if (sharedWith === "shared-with-me") {
             return totalAccess;
           }
-          // It should never get here
           return false;
         }
         return true;
