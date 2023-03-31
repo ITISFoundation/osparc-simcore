@@ -12,7 +12,7 @@ from models_library.rabbitmq_messages import (
 from pytest_mock import MockerFixture
 from simcore_service_webserver import computation_subscribe
 
-faker = Faker()
+_faker = Faker()
 
 
 @pytest.fixture
@@ -35,9 +35,9 @@ def mock_send_messages(mocker: MockerFixture) -> dict:
         pytest.param(
             ProgressRabbitMessageNode(
                 **{
-                    "project_id": faker.uuid4(cast_to=None),
-                    "user_id": faker.uuid4(cast_to=None),
-                    "node_id": faker.uuid4(cast_to=None),
+                    "project_id": _faker.uuid4(cast_to=None),
+                    "user_id": _faker.uuid4(cast_to=None),
+                    "node_id": _faker.uuid4(cast_to=None),
                     "progress_type": ProgressType.SERVICE_OUTPUTS_PULLING,
                     "progress": 0.4,
                 }
@@ -48,8 +48,8 @@ def mock_send_messages(mocker: MockerFixture) -> dict:
         pytest.param(
             ProgressRabbitMessageProject(
                 **{
-                    "project_id": faker.uuid4(cast_to=None),
-                    "user_id": faker.uuid4(cast_to=None),
+                    "project_id": _faker.uuid4(cast_to=None),
+                    "user_id": _faker.uuid4(cast_to=None),
                     "progress_type": ProgressType.PROJECT_CLOSING,
                     "progress": 0.4,
                 }
