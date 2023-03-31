@@ -101,6 +101,10 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       this.__addTags(tagsButton);
       menu.add(tagsButton);
 
+      const sharedWithButton = new qx.ui.menu.Button(this.tr("Shared with"), "@FontAwesome5Solid/share-alt/12");
+      this.__addSharedWith(sharedWithButton);
+      menu.add(sharedWithButton);
+
       const classifiersButton = new qx.ui.menu.Button(this.tr("Classifiers"), "@FontAwesome5Solid/search/12");
       osparc.utils.Utils.setIdToWidget(classifiersButton, "searchBarFilter-classifiers");
       this.__addClassifiers(classifiersButton);
@@ -166,6 +170,32 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       }
     },
 
+    __addSharedWith: function(menuButton) {
+      const options = [{
+        id: "show-all",
+        label: this.tr("Show All")
+      }, {
+        id: "my-studies",
+        label: this.tr("My studies")
+      }, {
+        id: "shared-with-me",
+        label: this.tr("Shared with me")
+      }];
+      const sharedWithMenu = new qx.ui.menu.Menu();
+      const sharedWithRadioGroup = new qx.ui.form.RadioGroup();
+      options.forEach((option, idx) => {
+        const sharedWithButton = new qx.ui.menu.RadioButton(option.label);
+        sharedWithMenu.add(sharedWithButton);
+        sharedWithButton.addListener("execute", () => this.__addChip("shared-with", option.id, option.label), this);
+        sharedWithRadioGroup.add(sharedWithButton);
+        // preselect show-all
+        if (idx === 0) {
+          sharedWithRadioGroup.setSelection([sharedWithButton]);
+        }
+      });
+      menuButton.setMenu(sharedWithMenu);
+    },
+
     __addClassifiers: function(menuButton) {
       const classifiers = osparc.store.Store.getInstance().getClassifiers();
       menuButton.setVisibility(classifiers.length ? "visible" : "excluded");
@@ -178,28 +208,6 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         });
         menuButton.setMenu(classifiersMenu);
       }
-    },
-
-    __createChip: function(chipType, chipId, chipLabel) {
-      const chipButton = new qx.ui.form.Button().set({
-        label: osparc.utils.Utils.capitalize(chipType) + " = '" + chipLabel + "'",
-        icon: "@MaterialIcons/close/12",
-        iconPosition: "right",
-        paddingRight: 6,
-        paddingLeft: 6,
-        alignY: "middle",
-        toolTipText: chipLabel,
-        maxHeight: 26,
-        maxWidth: 180,
-        backgroundColor: "background-main-1"
-      });
-      chipButton.type = chipType;
-      chipButton.id = chipId;
-      chipButton.getContentElement().setStyles({
-        "border-radius": "6px"
-      });
-      chipButton.addListener("execute", () => this.__removeChip(chipType, chipId), this);
-      return chipButton;
     },
 
     addTagActiveFilter: function(tag) {
@@ -215,6 +223,28 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       const chip = this.__createChip(type, id, label);
       activeFilter.add(chip);
       this.__filter();
+    },
+
+    __createChip: function(chipType, chipId, chipLabel) {
+      const chipButton = new qx.ui.form.Button().set({
+        label: osparc.utils.Utils.capitalize(chipType) + " = '" + chipLabel + "'",
+        icon: "@MaterialIcons/close/12",
+        iconPosition: "right",
+        paddingRight: 6,
+        paddingLeft: 6,
+        alignY: "middle",
+        toolTipText: chipLabel,
+        maxHeight: 26,
+        maxWidth: 200,
+        backgroundColor: "background-main-1"
+      });
+      chipButton.type = chipType;
+      chipButton.id = chipId;
+      chipButton.getContentElement().setStyles({
+        "border-radius": "6px"
+      });
+      chipButton.addListener("execute", () => this.__removeChip(chipType, chipId), this);
+      return chipButton;
     },
 
     __removeChip: function(type, id) {
@@ -236,12 +266,20 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       const filterData = {
         tags: [],
         classifiers: [],
+        sharedWith: null,
         text: this.getChildControl("text-field").getValue() ? this.getChildControl("text-field").getValue() : ""
       };
       this.getChildControl("active-filters").getChildren().forEach(chip => {
         switch (chip.type) {
           case "tag":
             filterData.tags.push(chip.id);
+            break;
+          case "shared-with":
+            if (chip.id === "show-all") {
+              filterData.sharedWith = null;
+            } else {
+              filterData.sharedWith = chip.id;
+            }
             break;
           case "classifier":
             filterData.classifiers.push(chip.id);
