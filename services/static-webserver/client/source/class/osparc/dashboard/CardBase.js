@@ -107,10 +107,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
       if (sharedWith && sharedWith !== "show-all") {
         const myGroupId = osparc.auth.Data.getInstance().getGroupId();
         if (checks && myGroupId in checks) {
+          const myAccessRights = checks[myGroupId];
+          const totalAccess = "delete" in myAccessRights ? myAccessRights["delete"] : myAccessRights["write_access"];
           if (sharedWith === "my-studies") {
-            return !checks[myGroupId]["delete"];
+            return !totalAccess;
           } else if (sharedWith === "shared-with-me") {
-            return checks[myGroupId]["delete"];
+            return totalAccess;
           }
           // It should never get here
           return false;
