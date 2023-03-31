@@ -19,6 +19,8 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
   extend: osparc.component.filter.UIFilter,
 
   construct: function(resourceType) {
+    this.__resourceType = resourceType;
+
     this.base(arguments, "searchBarFilter-"+resourceType, "searchBarFilter");
 
     this._setLayout(new qx.ui.layout.HBox(5));
@@ -40,6 +42,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
   },
 
   members: {
+    __resourceType: null,
     __filtersMenu: null,
 
     _createChildControlImpl: function(id) {
@@ -176,7 +179,9 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         label: this.tr("Show All")
       }, {
         id: "my-studies",
-        label: this.tr("My studies")
+        label: this.tr("My ") + osparc.utils.Utils.resourceTypeToAlias(this.__resourceType, {
+          plural: true
+        })
       }, {
         id: "shared-with-me",
         label: this.tr("Shared with me")
