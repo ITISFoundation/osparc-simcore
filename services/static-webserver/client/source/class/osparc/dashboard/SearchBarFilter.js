@@ -255,7 +255,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         alignY: "middle",
         toolTipText: chipLabel,
         maxHeight: 26,
-        maxWidth: 200,
+        maxWidth: 210,
         backgroundColor: "background-main-1"
       });
       chipButton.type = chipType;
