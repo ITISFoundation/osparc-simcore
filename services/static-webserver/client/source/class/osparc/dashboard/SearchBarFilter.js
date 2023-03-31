@@ -41,6 +41,23 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     this.__attachEventHandlers();
   },
 
+  statics: {
+    getSharedWithOptions: function(resourceType) {
+      return [{
+        id: "show-all",
+        label: qx.locale.Manager.tr("Show all")
+      }, {
+        id: "my-studies",
+        label: qx.locale.Manager.tr("My ") + osparc.utils.Utils.resourceTypeToAlias(resourceType, {
+          plural: true
+        })
+      }, {
+        id: "shared-with-me",
+        label: qx.locale.Manager.tr("Shared with me")
+      }];
+    }
+  },
+
   members: {
     __resourceType: null,
     __filtersMenu: null,
@@ -174,18 +191,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     },
 
     __addSharedWith: function(menuButton) {
-      const options = [{
-        id: "show-all",
-        label: this.tr("Show All")
-      }, {
-        id: "my-studies",
-        label: this.tr("My ") + osparc.utils.Utils.resourceTypeToAlias(this.__resourceType, {
-          plural: true
-        })
-      }, {
-        id: "shared-with-me",
-        label: this.tr("Shared with me")
-      }];
+      const options = this.self().getSharedWithOptions(this.__resourceType);
       const sharedWithMenu = new qx.ui.menu.Menu();
       const sharedWithRadioGroup = new qx.ui.form.RadioGroup();
       options.forEach((option, idx) => {
