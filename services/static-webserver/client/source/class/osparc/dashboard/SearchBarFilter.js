@@ -186,7 +186,14 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       options.forEach((option, idx) => {
         const sharedWithButton = new qx.ui.menu.RadioButton(option.label);
         sharedWithMenu.add(sharedWithButton);
-        sharedWithButton.addListener("execute", () => this.__addChip("shared-with", option.id, option.label), this);
+        sharedWithButton.addListener("execute", () => {
+          this.__removeChips("shared-with");
+          if (option.id === "show-all") {
+            this.__filter();
+          } else {
+            this.__addChip("shared-with", option.id, option.label);
+          }
+        }, this);
         sharedWithRadioGroup.add(sharedWithButton);
         // preselect show-all
         if (idx === 0) {
@@ -256,8 +263,20 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       }
     },
 
+    __removeChips: function(type) {
+      const activeFilter = this.getChildControl("active-filters");
+      if (type) {
+        const chipsFounds = activeFilter.getChildren().filter(chip => chip.type === type);
+        for (let i=chipsFounds.length-1; i>=0; i--) {
+          activeFilter.remove(chipsFounds[i]);
+        }
+      } else {
+        activeFilter.removeAll();
+      }
+    },
+
     __resetFilters: function() {
-      this.getChildControl("active-filters").removeAll();
+      this.__removeChips();
       this.getChildControl("text-field").resetValue();
       this.__filter();
     },
