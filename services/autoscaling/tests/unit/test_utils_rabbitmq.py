@@ -13,7 +13,7 @@ from models_library.docker import DockerLabelKey, SimcoreServiceDockerLabelKeys
 from models_library.generated_models.docker_rest_api import Service, Task
 from models_library.rabbitmq_messages import (
     LoggerRabbitMessage,
-    ProgressRabbitMessage,
+    ProgressRabbitMessageNode,
     ProgressType,
 )
 from pydantic import parse_obj_as
@@ -144,7 +144,7 @@ async def test_post_task_progress_message(
 ):
     mocked_message_handler = mocker.AsyncMock(return_value=True)
     await rabbit_client.subscribe(
-        ProgressRabbitMessage.get_channel_name(), mocked_message_handler
+        ProgressRabbitMessageNode.get_channel_name(), mocked_message_handler
     )
 
     service_with_labels = await create_service(
@@ -166,10 +166,10 @@ async def test_post_task_progress_message(
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             print(
-                f"--> checking for message in rabbit exchange {ProgressRabbitMessage.get_channel_name()}, {attempt.retry_state.retry_object.statistics}"
+                f"--> checking for message in rabbit exchange {ProgressRabbitMessageNode.get_channel_name()}, {attempt.retry_state.retry_object.statistics}"
             )
             mocked_message_handler.assert_called_once_with(
-                ProgressRabbitMessage(
+                ProgressRabbitMessageNode(
                     node_id=osparc_docker_label_keys.node_id,
                     project_id=osparc_docker_label_keys.project_id,
                     user_id=osparc_docker_label_keys.user_id,

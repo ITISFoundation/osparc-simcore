@@ -728,6 +728,7 @@
           "solvers"
         ],
         "summary": "Start Job",
+        "description": "Starts job job_id created with the solver solver_key:version\n\nNew in *version 0.4.3*: cluster_id",
         "operationId": "start_job",
         "parameters": [
           {
@@ -759,6 +760,16 @@
             },
             "name": "job_id",
             "in": "path"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "Cluster Id",
+              "minimum": 0.0,
+              "type": "integer"
+            },
+            "name": "cluster_id",
+            "in": "query"
           }
         ],
         "responses": {

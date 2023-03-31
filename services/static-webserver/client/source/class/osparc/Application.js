@@ -72,7 +72,10 @@ qx.Class.define("osparc.Application", {
       // from osparc. unfortunately it is not possible
       // to provide our own message here
       window.addEventListener("beforeunload", e => {
-        if (webSocket.isConnected()) {
+        const downloadLinkTracker = osparc.DownloadLinkTracker.getInstance();
+        // The downloadLinkTracker uses an external link for downloading files.
+        // When it starts (click), triggers an unload event. This condition avoids the false positive
+        if (!downloadLinkTracker.isDownloading() && webSocket.isConnected()) {
           // Cancel the event as stated by the standard.
           e.preventDefault();
           // Chrome requires returnValue to be set.
@@ -181,7 +184,9 @@ qx.Class.define("osparc.Application", {
                 msg
               ]
             });
-            this.__loadView(errorPage);
+            this.__loadView(errorPage, {
+              top: "10%"
+            });
           }
           break;
         }
@@ -249,11 +254,11 @@ qx.Class.define("osparc.Application", {
       if (!osparc.CookiePolicy.areCookiesAccepted()) {
         const cookiePolicy = new osparc.CookiePolicy();
         let title = this.tr("Privacy Policy");
-        let height = 155;
+        let height = 160;
         if (osparc.product.Utils.showLicenseExtra()) {
           // "tis" and "s4llite" include the license terms
           title = this.tr("Privacy Policy and License Terms");
-          height = 200;
+          height = 210;
         }
         const win = osparc.ui.window.Window.popUpInWindow(cookiePolicy, title, 400, height).set({
           clickAwayClose: false,

@@ -231,8 +231,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         studyId: node.getStudy().getUuid()
       });
       const title = this.tr("Service information");
-      const width = 600;
-      const height = 700;
+      const width = osparc.info.CardLarge.WIDTH;
+      const height = osparc.info.CardLarge.HEIGHT;
       osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height);
     },
 
@@ -380,7 +380,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
       if (node.isDynamic()) {
         node.attachHandlersToStartButton(this.__nodeStartButton);
-        node.attachHandlersToStopButton(this.__nodeStopButton);
+        node.attachVisibilityHandlerToStopButton(this.__nodeStopButton);
+        node.attachExecuteHandlerToStopButton(this.__nodeStopButton);
       }
 
       this.__preparingInputs = new osparc.component.widget.PreparingInputs(node.getStudy());

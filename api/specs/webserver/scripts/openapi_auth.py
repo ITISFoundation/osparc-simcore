@@ -32,6 +32,8 @@ from simcore_service_webserver.login.handlers_confirmation import (
     ResetPasswordConfirmation,
 )
 from simcore_service_webserver.login.handlers_registration import (
+    InvitationCheck,
+    InvitationInfo,
     RegisterBody,
     RegisterPhoneBody,
     RegisterPhoneNextPage,
@@ -42,6 +44,16 @@ app = FastAPI(redoc_url=None)
 TAGS: list[Union[str, Enum]] = [
     "authentication",
 ]
+
+
+@app.post(
+    "/auth/register/invitations:check",
+    response_model=Envelope[InvitationInfo],
+    tags=TAGS,
+    operation_id="auth_check_registration_invitation",
+)
+async def check_registration_invitation(check: InvitationCheck):
+    """Check invitation and returns associated email or None"""
 
 
 @app.post(

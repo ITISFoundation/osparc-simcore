@@ -18,7 +18,6 @@ from pydantic import (
     validator,
 )
 
-from .basic_regex import VERSION_RE
 from .basic_types import EnvVarKey
 from .projects_access import AccessEnum
 from .projects_nodes_io import (
@@ -30,7 +29,7 @@ from .projects_nodes_io import (
 )
 from .projects_nodes_ui import Position
 from .projects_state import RunningState
-from .services import PROPERTY_KEY_RE, SERVICE_KEY_RE
+from .services import PROPERTY_KEY_RE, ServiceKey, ServiceVersion
 
 # NOTE: WARNING the order here matters
 
@@ -100,37 +99,35 @@ class NodeState(BaseModel):
 
 
 class Node(BaseModel):
-    key: str = Field(
+    key: ServiceKey = Field(
         ...,
         description="distinctive name for the node based on the docker registry path",
-        regex=SERVICE_KEY_RE,
         examples=[
             "simcore/services/comp/itis/sleeper",
             "simcore/services/dynamic/3dviewer",
             "simcore/services/frontend/file-picker",
         ],
     )
-    version: str = Field(
+    version: ServiceVersion = Field(
         ...,
         description="semantic version number of the node",
-        regex=VERSION_RE,
         examples=["1.0.0", "0.0.1"],
     )
     label: str = Field(
         ..., description="The short name of the node", examples=["JupyterLab"]
     )
     progress: Optional[float] = Field(
-        None, ge=0, le=100, description="the node progress value"
+        default=None, ge=0, le=100, description="the node progress value"
     )
     thumbnail: Optional[HttpUrl] = Field(
-        None,
+        default=None,
         description="url of the latest screenshot of the node",
         examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
     )
 
     # RUN HASH
     run_hash: Optional[str] = Field(
-        None,
+        default=None,
         description="the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated",
         alias="runHash",
     )
@@ -140,12 +137,14 @@ class Node(BaseModel):
         default_factory=dict, description="values of input properties"
     )
     inputs_units: Optional[dict[InputID, UnitStr]] = Field(
-        None,
+        default=None,
         description="Overrides default unit (if any) defined in the service for each port",
         alias="inputsUnits",
     )
     input_access: Optional[dict[InputID, AccessEnum]] = Field(
-        None, description="map with key - access level pairs", alias="inputAccess"
+        default=None,
+        description="map with key - access level pairs",
+        alias="inputAccess",
     )
     input_nodes: Optional[list[NodeID]] = Field(
         default_factory=list,
@@ -157,20 +156,22 @@ class Node(BaseModel):
     outputs: Optional[OutputsDict] = Field(
         default_factory=dict, description="values of output properties"
     )
-    output_node: Optional[bool] = Field(None, deprecated=True, alias="outputNode")
+    output_node: Optional[bool] = Field(
+        default=None, deprecated=True, alias="outputNode"
+    )
     output_nodes: Optional[list[NodeID]] = Field(
-        None,
+        default=None,
         description="Used in group-nodes. Node IDs of those connected to the output",
         alias="outputNodes",
     )
 
     parent: Optional[NodeID] = Field(
-        None,
+        default=None,
         description="Parent's (group-nodes') node ID s. Used to group",
     )
 
     position: Optional[Position] = Field(
-        None,
+        default=None,
         deprecated=True,
         description="Use projects_ui.WorkbenchUI.position instead",
     )
@@ -180,7 +181,7 @@ class Node(BaseModel):
     )
 
     boot_options: Optional[dict[EnvVarKey, str]] = Field(
-        None,
+        default=None,
         alias="bootOptions",
         description=(
             "Some services provide alternative parameters to be injected at boot time. "

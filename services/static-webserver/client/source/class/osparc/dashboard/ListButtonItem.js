@@ -121,11 +121,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           });
           break;
         case "empty-workbench":
-          control = new qx.ui.basic.Image().set({
-            alignY: "middle",
-            source: "@FontAwesome5Solid/times-circle/14",
-            toolTipText: this.tr("Empty")
-          });
+          control = this._getEmptyWorkbenchIcon();
           this._add(control, {
             row: 0,
             column: osparc.dashboard.ListButtonBase.POS.UPDATES
@@ -209,6 +205,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             alignY: "middle",
             font: "text-12"
           });
+          tagUI.addListener("tap", () => this.fireDataEvent("tagClicked", tag));
           tagsContainer.add(tagUI);
         });
       }

@@ -2,6 +2,7 @@
 # pylint: disable=protected-access
 
 
+from copy import deepcopy
 from typing import Any
 from uuid import uuid4
 
@@ -145,9 +146,33 @@ async def test_inject_resource_limits_and_reservations(
             assert f"{MEM_RESOURCE_LIMIT_KEY}={memory.limit}" in spec["environment"]
 
 
+def test_regression_service_has_no_reservations():
+    service_spec: dict[str, Any] = {
+        "version": "3.7",
+        "services": {DEFAULT_SINGLE_SERVICE_NAME: {}},
+    }
+    service_resources: ServiceResourcesDict = parse_obj_as(ServiceResourcesDict, {})
+
+    spec_before = deepcopy(service_spec)
+    docker_compose_specs._update_resource_limits_and_reservations(
+        service_spec=service_spec, service_resources=service_resources
+    )
+    assert spec_before == service_spec
+
+
 USER_ID: UserID = 1
 PROJECT_ID: ProjectID = uuid4()
 NODE_ID: NodeID = uuid4()
+SIMCORE_USER_AGENT: str = "a-puppet"
+PRODUCT_NAME: str = "osparc"
+
+EXPECTED_LABELS: list[str] = [
+    f"product_name={PRODUCT_NAME}",
+    f"simcore_user_agent={SIMCORE_USER_AGENT}",
+    f"study_id={PROJECT_ID}",
+    f"user_id={USER_ID}",
+    f"uuid={NODE_ID}",
+]
 
 
 @pytest.mark.parametrize(
@@ -155,37 +180,15 @@ NODE_ID: NodeID = uuid4()
     [
         pytest.param(
             {"services": {"service-1": {}}},
-            {
-                "services": {
-                    "service-1": {
-                        "labels": [
-                            f"user_id={USER_ID}",
-                            f"study_id={PROJECT_ID}",
-                            f"uuid={NODE_ID}",
-                        ]
-                    }
-                }
-            },
+            {"services": {"service-1": {"labels": EXPECTED_LABELS}}},
             id="single_service",
         ),
         pytest.param(
             {"services": {"service-1": {}, "service-2": {}}},
             {
                 "services": {
-                    "service-1": {
-                        "labels": [
-                            f"user_id={USER_ID}",
-                            f"study_id={PROJECT_ID}",
-                            f"uuid={NODE_ID}",
-                        ]
-                    },
-                    "service-2": {
-                        "labels": [
-                            f"user_id={USER_ID}",
-                            f"study_id={PROJECT_ID}",
-                            f"uuid={NODE_ID}",
-                        ]
-                    },
+                    "service-1": {"labels": EXPECTED_LABELS},
+                    "service-2": {"labels": EXPECTED_LABELS},
                 }
             },
             id="multiple_services",
@@ -196,6 +199,6 @@ async def test_update_container_labels(
     service_spec: dict[str, Any], expected_result: dict[str, Any]
 ):
     docker_compose_specs._update_container_labels(
-        service_spec, USER_ID, PROJECT_ID, NODE_ID
+        service_spec, USER_ID, PROJECT_ID, NODE_ID, SIMCORE_USER_AGENT, PRODUCT_NAME
     )
     assert service_spec == expected_result

@@ -22,7 +22,7 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from pydantic import parse_obj_as
-from pytest_mock.plugin import MockerFixture
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects

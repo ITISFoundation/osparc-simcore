@@ -128,7 +128,7 @@ projects = sa.Table(
         sa.Boolean,
         nullable=False,
         default=False,
-        doc="If true, the project is publicaly accessible via the studies dispatcher",
+        doc="If true, the project is publicaly accessible via the studies dispatcher (i.e. no registration required)",
     ),
     sa.Column(
         "hidden",

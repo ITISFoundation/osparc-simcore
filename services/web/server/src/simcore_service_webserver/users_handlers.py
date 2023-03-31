@@ -2,15 +2,26 @@
 
 import json
 import logging
+from typing import Any
 
+import redis.asyncio as aioredis
 from aiohttp import web
 from models_library.generics import Envelope
+from pydantic import BaseModel
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from . import users_api
+from ._meta import API_VTAG
 from .login.decorators import RQT_USERID_KEY, login_required
+from .redis import get_redis_user_notifications_client
 from .security_decorators import permission_required
+from .user_notifications import (
+    MAX_NOTIFICATIONS_FOR_USER_TO_KEEP,
+    MAX_NOTIFICATIONS_FOR_USER_TO_SHOW,
+    UserNotification,
+    get_notification_key,
+)
 from .users_exceptions import TokenNotFoundError, UserNotFoundError
 from .users_models import ProfileGet, ProfileUpdate
 
@@ -109,3 +120,71 @@ async def delete_token(request: web.Request):
         raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
     except TokenNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Token for {service_id} not found") from exc
+
+
+# me/notifications -----------------------------------------------------------
+
+
+async def _get_user_notifications(
+    redis_client: aioredis.Redis, user_id: int
+) -> list[UserNotification]:
+    """returns a list of notifications where the latest notification is at index 0"""
+    raw_notifications: list[str] = await redis_client.lrange(
+        get_notification_key(user_id), -1 * MAX_NOTIFICATIONS_FOR_USER_TO_SHOW, -1
+    )
+    return [UserNotification.parse_raw(x) for x in raw_notifications]
+
+
+class UserNotificationsGet(BaseModel):
+    data: list[UserNotification]
+
+
+@login_required
+async def get_user_notifications(request: web.Request):
+    redis_client = get_redis_user_notifications_client(request.app)
+    user_id = request[RQT_USERID_KEY]
+    notifications = await _get_user_notifications(redis_client, user_id)
+    return web.json_response(text=UserNotificationsGet(data=notifications).json())
+
+
+@login_required
+async def post_user_notification(request: web.Request):
+    redis_client = get_redis_user_notifications_client(request.app)
+
+    # body includes the updated notification
+    notification_data: dict[str, Any] = await request.json()
+    user_notification = UserNotification.create_from_request_data(notification_data)
+    key = get_notification_key(user_notification.user_id)
+
+    # insert at the head of the list and discard extra notifications
+    async with redis_client.pipeline(transaction=True) as pipe:
+        pipe.lpush(key, user_notification.json())
+        pipe.ltrim(key, 0, MAX_NOTIFICATIONS_FOR_USER_TO_KEEP - 1)
+        await pipe.execute()
+
+    return web.json_response(status=web.HTTPNoContent.status_code)
+
+
+routes = web.RouteTableDef()
+
+
+@routes.patch(f"/{API_VTAG}/notifications/{{id}}", name="update_user_notification")
+@login_required
+async def update_user_notification(request: web.Request):
+    redis_client = get_redis_user_notifications_client(request.app)
+    user_id = request[RQT_USERID_KEY]
+    notification_id = request.match_info["id"]
+
+    # NOTE: only the user's notifications can be patched
+    key = get_notification_key(user_id)
+    all_user_notifications: list[UserNotification] = [
+        UserNotification.parse_raw(x) for x in await redis_client.lrange(key, 0, -1)
+    ]
+    for k, user_notification in enumerate(all_user_notifications):
+        if notification_id == user_notification.id:
+            patch_data: dict[str, Any] = await request.json()
+            user_notification.update_from(patch_data)
+            await redis_client.lset(key, k, user_notification.json())
+            return web.json_response(status=web.HTTPNoContent.status_code)
+
+    return web.json_response(status=web.HTTPNotFound.status_code)

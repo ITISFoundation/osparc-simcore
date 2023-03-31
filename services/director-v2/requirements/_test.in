@@ -14,7 +14,6 @@ aioboto3
 alembic # migration due to pytest_simcore.postgres_service2
 asgi_lifespan
 async-asgi-testclient # replacement for fastapi.testclient.TestClient [see b) below]
-bokeh
 codecov
 coveralls
 dask-gateway-server[local]

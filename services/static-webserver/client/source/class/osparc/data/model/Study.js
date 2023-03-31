@@ -483,6 +483,7 @@ qx.Class.define("osparc.data.model.Study", {
 
     stopStudy: function() {
       this.__stopRequestingStatus();
+      this.__stopFileUploads();
       this.__removeIFrames();
     },
 
@@ -490,6 +491,15 @@ qx.Class.define("osparc.data.model.Study", {
       const nodes = this.getWorkbench().getNodes(true);
       for (const node of Object.values(nodes)) {
         node.stopRequestingStatus();
+      }
+    },
+
+    __stopFileUploads: function() {
+      const nodes = this.getWorkbench().getNodes(true);
+      for (const node of Object.values(nodes)) {
+        if (node.isFilePicker()) {
+          node.requestFileUploadAbort();
+        }
       }
     },
 

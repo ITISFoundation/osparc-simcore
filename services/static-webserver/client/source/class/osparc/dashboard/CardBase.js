@@ -39,7 +39,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
     "updateStudy": "qx.event.type.Data",
     "updateTemplate": "qx.event.type.Data",
     "updateService": "qx.event.type.Data",
-    "publishTemplate": "qx.event.type.Data"
+    "publishTemplate": "qx.event.type.Data",
+    "tagClicked": "qx.event.type.Data",
+    "emptyStudyClicked": "qx.event.type.Data"
   },
 
   statics: {
@@ -583,7 +585,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
       const resourceData = this.getResourceData();
       const moreOpts = new osparc.dashboard.ResourceMoreOptions(resourceData);
       const title = this.tr("Options");
-      const win = osparc.ui.window.Window.popUpInWindow(moreOpts, title, 700, 660);
+      const win = osparc.ui.window.Window.popUpInWindow(
+        moreOpts,
+        title,
+        osparc.dashboard.ResourceMoreOptions.WIDTH,
+        osparc.dashboard.ResourceMoreOptions.HEIGHT
+      );
       [
         "updateStudy",
         "updateTemplate",
@@ -712,6 +719,26 @@ qx.Class.define("osparc.dashboard.CardBase", {
       const hint = new osparc.ui.hint.Hint(shareIcon, hintText);
       shareIcon.addListener("mouseover", () => hint.show(), this);
       shareIcon.addListener("mouseout", () => hint.exclude(), this);
+    },
+
+    _getEmptyWorkbenchIcon: function() {
+      let toolTipText = this.tr("Empty") + " ";
+      if (this.isResourceType("study")) {
+        toolTipText += osparc.product.Utils.getStudyAlias();
+      } else if (this.isResourceType("template")) {
+        toolTipText += osparc.product.Utils.getTemplateAlias();
+      }
+      const control = new qx.ui.basic.Image().set({
+        source: "@FontAwesome5Solid/times-circle/14",
+        alignY: "bottom",
+        toolTipText
+      });
+      control.addListener("tap", e => {
+        e.stopPropagation();
+        this.setValue(false);
+        this.fireDataEvent("emptyStudyClicked", this.getUuid());
+      }, this);
+      return control;
     },
 
     /**

@@ -6,7 +6,7 @@ import urllib.parse
 from collections import deque
 from contextlib import suppress
 from datetime import datetime
-from typing import Any, Optional, Protocol
+from typing import Any, Protocol
 from uuid import uuid4
 
 from pydantic import PositiveFloat
@@ -137,7 +137,7 @@ class TasksManager:
         managed_tasks_ids = list(self._tasks_groups[task_name].keys())
         return len(managed_tasks_ids) > 0
 
-    def list_tasks(self, with_task_context: Optional[TaskContext]) -> list[TrackedTask]:
+    def list_tasks(self, with_task_context: TaskContext | None) -> list[TrackedTask]:
         tasks = []
         for task_group in self._tasks_groups.values():
             if not with_task_context:
@@ -178,7 +178,7 @@ class TasksManager:
         return tracked_task
 
     def _get_tracked_task(
-        self, task_id: TaskId, with_task_context: Optional[TaskContext]
+        self, task_id: TaskId, with_task_context: TaskContext | None
     ) -> TrackedTask:
         for tasks in self._tasks_groups.values():
             if task_id in tasks:
@@ -191,7 +191,7 @@ class TasksManager:
         raise TaskNotFoundError(task_id=task_id)
 
     def get_task_status(
-        self, task_id: TaskId, with_task_context: Optional[TaskContext]
+        self, task_id: TaskId, with_task_context: TaskContext | None
     ) -> TaskStatus:
         """
         returns: the status of the task, along with updates
@@ -214,7 +214,7 @@ class TasksManager:
         )
 
     def get_task_result(
-        self, task_id: TaskId, with_task_context: Optional[TaskContext]
+        self, task_id: TaskId, with_task_context: TaskContext | None
     ) -> Any:
         """
         returns: the result of the task
@@ -264,7 +264,7 @@ class TasksManager:
         return TaskResult(result=tracked_task.task.result(), error=None)
 
     async def cancel_task(
-        self, task_id: TaskId, with_task_context: Optional[TaskContext]
+        self, task_id: TaskId, with_task_context: TaskContext | None
     ) -> None:
         """
         cancels the task
@@ -300,11 +300,7 @@ class TasksManager:
                 task, task_id, reraise_errors=reraise_errors
             )
         except Exception as e:  # pylint:disable=broad-except
-
-            formatted_traceback = "".join(
-                # pylint: disable=protected-access,no-value-for-parameter,unexpected-keyword-arg
-                traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__)
-            )
+            formatted_traceback = "".join(traceback.format_exception(e))
             raise TaskExceptionError(
                 task_id=task_id, exception=e, traceback=formatted_traceback
             ) from e
@@ -312,7 +308,7 @@ class TasksManager:
     async def remove_task(
         self,
         task_id: TaskId,
-        with_task_context: Optional[TaskContext],
+        with_task_context: TaskContext | None,
         *,
         reraise_errors: bool = True,
     ) -> None:
@@ -364,8 +360,8 @@ def start_task(
     task: TaskProtocol,
     *,
     unique: bool = False,
-    task_context: Optional[TaskContext] = None,
-    task_name: Optional[str] = None,
+    task_context: TaskContext | None = None,
+    task_name: str | None = None,
     fire_and_forget: bool = False,
     **task_kwargs,
 ) -> TaskId:
@@ -406,7 +402,9 @@ def start_task(
     if unique and tasks_manager.is_task_running(task_name):
         managed_tasks_ids = list(tasks_manager.get_task_group(task_name).keys())
         assert len(managed_tasks_ids) == 1  # nosec
-        managed_task = tasks_manager.get_task_group(task_name)[managed_tasks_ids[0]]
+        managed_task: TrackedTask = tasks_manager.get_task_group(task_name)[
+            managed_tasks_ids[0]
+        ]
         raise TaskAlreadyRunningError(task_name=task_name, managed_task=managed_task)
 
     task_progress = TaskProgress.create()

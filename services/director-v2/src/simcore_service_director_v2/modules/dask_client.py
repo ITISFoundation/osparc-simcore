@@ -31,6 +31,7 @@ from models_library.clusters import ClusterAuthentication, ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
+from models_library.services_resources import BootMode
 from models_library.users import UserID
 from pydantic import parse_obj_as
 from pydantic.networks import AnyUrl
@@ -47,7 +48,7 @@ from ..core.errors import (
     ComputationalBackendTaskNotFoundError,
     ComputationalBackendTaskResultsNotReadyError,
 )
-from ..core.settings import ComputationalBackendSettings
+from ..core.settings import AppSettings, ComputationalBackendSettings
 from ..models.domains.comp_tasks import Image
 from ..models.schemas.clusters import ClusterDetails, Scheduler
 from ..utils.dask import (
@@ -99,6 +100,7 @@ RemoteFct = Callable[
         LogFileUploadURL,
         Commands,
         Optional[S3Settings],
+        BootMode,
     ],
     TaskOutputData,
 ]
@@ -130,7 +132,7 @@ class DaskClient:
         )
         async for attempt in AsyncRetrying(
             reraise=True,
-            before_sleep=before_sleep_log(logger, logging.WARNING),
+            before_sleep=before_sleep_log(logger, logging.INFO),
             wait=wait_fixed(0.3),
             stop=stop_after_attempt(3),
         ):
@@ -192,7 +194,7 @@ class DaskClient:
         cluster_id: ClusterID,
         tasks: dict[NodeID, Image],
         callback: UserCallbackInSepThread,
-        remote_fct: Optional[RemoteFct] = None,
+        remote_fct: RemoteFct | None = None,
     ) -> list[tuple[NodeID, str]]:
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
         function that runs container will be started."""
@@ -205,7 +207,8 @@ class DaskClient:
             output_data_keys: TaskOutputDataSchema,
             log_file_url: AnyUrl,
             command: list[str],
-            s3_settings: Optional[S3Settings],
+            s3_settings: S3Settings | None,
+            boot_mode: BootMode,
         ) -> TaskOutputData:
             """This function is serialized by the Dask client and sent over to the Dask sidecar(s)
             Therefore, (screaming here) DO NOT MOVE THAT IMPORT ANYWHERE ELSE EVER!!"""
@@ -220,6 +223,7 @@ class DaskClient:
                 log_file_url,
                 command,
                 s3_settings,
+                boot_mode,
             )
 
         if remote_fct is None:
@@ -233,6 +237,7 @@ class DaskClient:
                 project_id=project_id,
                 node_id=node_id,
             )
+            assert node_image.node_requirements  # nosec
             dask_resources = from_node_reqs_to_dask_resources(
                 node_image.node_requirements
             )
@@ -299,12 +304,15 @@ class DaskClient:
             )
 
             try:
+                assert self.app.state  # nosec
+                assert self.app.state.settings  # nosec
+                settings: AppSettings = self.app.state.settings
                 task_future = self.backend.client.submit(
                     remote_fct,
                     docker_auth=DockerBasicAuth(
-                        server_address=self.app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY.resolved_registry_url,
-                        username=self.app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY.REGISTRY_USER,
-                        password=self.app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY.REGISTRY_PW,
+                        server_address=settings.DIRECTOR_V2_DOCKER_REGISTRY.resolved_registry_url,
+                        username=settings.DIRECTOR_V2_DOCKER_REGISTRY.REGISTRY_USER,
+                        password=settings.DIRECTOR_V2_DOCKER_REGISTRY.REGISTRY_PW,
                     ),
                     service_key=node_image.name,
                     service_version=node_image.tag,
@@ -313,6 +321,7 @@ class DaskClient:
                     log_file_url=log_file_url,
                     command=node_image.command,
                     s3_settings=s3_settings,
+                    boot_mode=node_image.boot_mode,
                     key=job_id,
                     resources=dask_resources,
                     retries=0,
@@ -367,11 +376,7 @@ class DaskClient:
                         "Task  %s completed in error:\n%s\nTrace:\n%s",
                         job_id,
                         exception,
-                        "".join(
-                            traceback.format_exception(
-                                exception.__class__, exception, exception.__traceback__
-                            )
-                        ),
+                        "".join(traceback.format_exception(exception)),
                     )
                     running_states.append(RunningState.FAILED)
             else:
@@ -395,7 +400,7 @@ class DaskClient:
             # NOTE: It seems there is a bug in the pubsub system in dask
             # Event are more robust to connections/disconnections
             cancel_event = await distributed.Event(
-                name=TaskCancelEventName.format(job_id)
+                name=TaskCancelEventName.format(job_id), client=self.backend.client
             )
             await cancel_event.set()  # type: ignore
             await task_future.cancel()  # type: ignore
@@ -423,6 +428,11 @@ class DaskClient:
             logger.warning("Unknown task cannot be unpublished: %s", f"{job_id=}")
 
     async def get_cluster_details(self) -> ClusterDetails:
+        check_scheduler_is_still_the_same(
+            self.backend.scheduler_id, self.backend.client
+        )
+        check_communication_with_scheduler_is_open(self.backend.client)
+        check_scheduler_status(self.backend.client)
         scheduler_info = self.backend.client.scheduler_info()
         scheduler_status = self.backend.client.status
         dashboard_link = self.backend.client.dashboard_link
@@ -438,7 +448,9 @@ class DaskClient:
 
         used_resources_per_worker: dict[
             str, dict[str, Any]
-        ] = await self.backend.client.run_on_scheduler(_get_worker_used_resources)
+        ] = await self.backend.client.run_on_scheduler(
+            _get_worker_used_resources
+        )  # type: ignore
 
         for k, v in used_resources_per_worker.items():
             scheduler_info.get("workers", {}).get(k, {}).update(used_resources=v)

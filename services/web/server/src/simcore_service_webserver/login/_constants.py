@@ -50,6 +50,9 @@ MSG_USER_EXPIRED: Final[
 MSG_WRONG_2FA_CODE: Final[str] = "Invalid code (wrong or expired)"
 MSG_WRONG_PASSWORD: Final[str] = "Wrong password"
 
+MSG_INVITATIONS_CONTACT_SUFFIX: Final[
+    str
+] = "Please contact our support team to get a new invitation."
 
 # Login Accepted Response Codes:
 #  - These string codes are used to identify next step in the login (e.g. login_2fa or register_phone?)

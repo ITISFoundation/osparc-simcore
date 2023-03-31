@@ -47,7 +47,6 @@ qx.Class.define("osparc.MaintenanceTracker", {
 
   members: {
     __checkInternval: null,
-    __lastNotification: null,
     __lastRibbonMessage: null,
     __logoutTimer: null,
 
@@ -88,6 +87,7 @@ qx.Class.define("osparc.MaintenanceTracker", {
           text += " - " + osparc.utils.Utils.formatDateAndTime(this.getEnd());
         }
       }
+      text += " (local time)";
       if (this.getReason()) {
         text += ": " + this.getReason();
       }
@@ -119,29 +119,11 @@ qx.Class.define("osparc.MaintenanceTracker", {
 
     __scheduleStart: function() {
       if (this.getStart() === null) {
-        this.__removeNotification();
         this.__removeRibbonMessage();
         this.__removeScheduledLogout();
       } else {
-        this.__addNotification();
         this.__scheduleRibbonMessage();
         this.__scheduleLogout();
-      }
-    },
-
-    __addNotification: function() {
-      this.__removeNotification();
-
-      const text = this.__getText();
-      const notification = new osparc.component.notification.Notification(text);
-      const notificationUI = this.__lastNotification = new osparc.component.notification.NotificationUI(notification.getFullText(true));
-      osparc.component.notification.Notifications.getInstance().addNotification(notificationUI);
-    },
-
-    __removeNotification: function() {
-      if (this.__lastNotification) {
-        osparc.component.notification.Notifications.getInstance().removeNotification(this.__lastNotification);
-        this.__lastNotification = null;
       }
     },
 
@@ -155,8 +137,8 @@ qx.Class.define("osparc.MaintenanceTracker", {
       const messageToRibbon = closable => {
         this.__removeRibbonMessage();
         const text = this.__getText();
-        const notification = new osparc.component.notification.Notification(text, "maintenance", closable);
-        osparc.component.notification.NotificationsRibbon.getInstance().addNotification(notification);
+        const notification = new osparc.component.notification.RibbonNotification(text, "maintenance", closable);
+        osparc.component.notification.RibbonNotifications.getInstance().addNotification(notification);
         this.__lastRibbonMessage = notification;
       };
       if (diffClosable < 0) {
@@ -173,7 +155,7 @@ qx.Class.define("osparc.MaintenanceTracker", {
 
     __removeRibbonMessage: function() {
       if (this.__lastRibbonMessage) {
-        osparc.component.notification.NotificationsRibbon.getInstance().removeNotification(this.__lastRibbonMessage);
+        osparc.component.notification.RibbonNotifications.getInstance().removeNotification(this.__lastRibbonMessage);
         this.__lastRibbonMessage = null;
       }
     },

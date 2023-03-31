@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 from itertools import chain
-from typing import Any, Iterable, Optional
+from typing import Any, Iterable, Optional, cast
 
 import packaging.version
 import sqlalchemy as sa
@@ -11,6 +11,7 @@ from models_library.users import GroupID
 from psycopg2.errors import ForeignKeyViolation
 from pydantic import ValidationError
 from simcore_postgres_database.models.groups import GroupType
+from simcore_postgres_database.models.services import services_latest
 from simcore_service_catalog.models.domain.service_specifications import (
     ServiceSpecificationsAtDB,
 )
@@ -97,7 +98,7 @@ class ServicesRepository(BaseRepository):
                     product_name,
                 )
             ):
-                services_in_db.append(ServiceMetaDataAtDB(**row))
+                services_in_db.append(ServiceMetaDataAtDB.from_orm(row))
         return services_in_db
 
     async def list_service_releases(
@@ -139,17 +140,34 @@ class ServicesRepository(BaseRepository):
         releases = []
         async with self.db_engine.connect() as conn:
             async for row in await conn.stream(query):
-                releases.append(ServiceMetaDataAtDB(**row))
+                releases.append(ServiceMetaDataAtDB.from_orm(row))
 
         # Now sort naturally from latest first: (This is lame, the sorting should be done in the db)
-        return sorted(
-            releases, key=lambda x: packaging.version.parse(x.version), reverse=True
-        )
+        def _by_version(x: ServiceMetaDataAtDB) -> packaging.version.Version:
+            return cast(packaging.version.Version, packaging.version.parse(x.version))
+
+        releases_sorted = sorted(releases, key=_by_version, reverse=True)
+        return releases_sorted
 
     async def get_latest_release(self, key: str) -> Optional[ServiceMetaDataAtDB]:
         """Returns last release or None if service was never released"""
-        releases = await self.list_service_releases(key, limit_count=1)
-        return releases[0] if releases else None
+        query = (
+            sa.select(services_meta_data)
+            .select_from(
+                services_latest.join(
+                    services_meta_data,
+                    (services_meta_data.c.key == services_latest.c.key)
+                    & (services_meta_data.c.version == services_latest.c.version),
+                )
+            )
+            .where(services_latest.c.key == key)
+        )
+        async with self.db_engine.connect() as conn:
+            result = await conn.execute(query)
+            row = result.first()
+        if row:
+            return ServiceMetaDataAtDB.from_orm(row)
+        return None  # mypy
 
     async def get_service(
         self,
@@ -190,14 +208,14 @@ class ServicesRepository(BaseRepository):
             result = await conn.execute(query)
             row = result.first()
         if row:
-            return ServiceMetaDataAtDB(**row)
+            return ServiceMetaDataAtDB.from_orm(row)
+        return None  # mypy
 
     async def create_service(
         self,
         new_service: ServiceMetaDataAtDB,
         new_service_access_rights: list[ServiceAccessRightsAtDB],
     ) -> ServiceMetaDataAtDB:
-
         for access_rights in new_service_access_rights:
             if (
                 access_rights.key != new_service.key
@@ -216,7 +234,7 @@ class ServicesRepository(BaseRepository):
             )
             row = result.first()
             assert row  # nosec
-            created_service = ServiceMetaDataAtDB(**row)
+            created_service = ServiceMetaDataAtDB.from_orm(row)
 
             for access_rights in new_service_access_rights:
                 insert_stmt = pg_insert(services_access_rights).values(
@@ -242,7 +260,7 @@ class ServicesRepository(BaseRepository):
             )
             row = result.first()
             assert row  # nosec
-        updated_service = ServiceMetaDataAtDB(**row)
+        updated_service = ServiceMetaDataAtDB.from_orm(row)
         return updated_service
 
     async def get_service_access_rights(
@@ -265,7 +283,7 @@ class ServicesRepository(BaseRepository):
 
         async with self.db_engine.connect() as conn:
             async for row in await conn.stream(query):
-                services_in_db.append(ServiceAccessRightsAtDB(**row))
+                services_in_db.append(ServiceAccessRightsAtDB.from_orm(row))
         return services_in_db
 
     async def list_services_access_rights(
@@ -294,7 +312,7 @@ class ServicesRepository(BaseRepository):
                         row[services_access_rights.c.key],
                         row[services_access_rights.c.version],
                     )
-                ].append(ServiceAccessRightsAtDB(**row))
+                ].append(ServiceAccessRightsAtDB.from_orm(row))
         return service_to_access_rights
 
     async def upsert_service_access_rights(
@@ -348,7 +366,7 @@ class ServicesRepository(BaseRepository):
         self,
         key: ServiceKey,
         version: ServiceVersion,
-        groups: tuple[GroupAtDB],
+        groups: tuple[GroupAtDB, ...],
         allow_use_latest_service_version: bool = False,
     ) -> Optional[ServiceSpecifications]:
         """returns the service specifications for service 'key:version' and for 'groups'
@@ -360,11 +378,10 @@ class ServicesRepository(BaseRepository):
             "getting specifications from db for %s", f"{key}:{version} for {groups=}"
         )
         gid_to_group_map = {group.gid: group for group in groups}
-        group_specs = {
-            GroupType.EVERYONE: None,
-            GroupType.PRIMARY: None,
-            GroupType.STANDARD: {},
-        }
+
+        everyone_specs = None
+        primary_specs = None
+        teams_specs: dict[GroupID, ServiceSpecificationsAtDB] = {}
 
         queried_version = packaging.version.parse(version)
         # we should instead use semver enabled postgres [https://pgxn.org/dist/semver/doc/semver.html]
@@ -396,14 +413,18 @@ class ServicesRepository(BaseRepository):
                     # filter by group type
                     group = gid_to_group_map[row.gid]
                     if (group.group_type == GroupType.STANDARD) and _is_newer(
-                        group_specs[group.group_type].get(db_service_spec.gid),
+                        teams_specs.get(db_service_spec.gid),
                         db_service_spec,
                     ):
-                        group_specs[group.group_type][
-                            db_service_spec.gid
-                        ] = db_service_spec
-                    elif _is_newer(group_specs[group.group_type], db_service_spec):
-                        group_specs[group.group_type] = db_service_spec
+                        teams_specs[db_service_spec.gid] = db_service_spec
+                    elif (group.group_type == GroupType.EVERYONE) and _is_newer(
+                        everyone_specs, db_service_spec
+                    ):
+                        everyone_specs = db_service_spec
+                    elif (group.group_type == GroupType.PRIMARY) and _is_newer(
+                        primary_specs, db_service_spec
+                    ):
+                        primary_specs = db_service_spec
 
                 except ValidationError as exc:
                     logger.warning(
@@ -413,11 +434,35 @@ class ServicesRepository(BaseRepository):
                     )
 
         if merged_specifications := _merge_specs(
-            group_specs[GroupType.EVERYONE],
-            group_specs[GroupType.STANDARD],
-            group_specs[GroupType.PRIMARY],
+            everyone_specs, teams_specs, primary_specs
         ):
             return ServiceSpecifications.parse_obj(merged_specifications)
+        return None  # mypy
+
+    async def update_latest_versions_cache(self):
+        # Select query for latest
+        latest_select_subquery = sa.select(
+            services_meta_data.c.key,
+            sa.text(
+                "array_to_string(MAX(string_to_array(version, '.')::int[]), '.') AS version"
+            ),
+        ).group_by(services_meta_data.c.key)
+
+        insert_query = pg_insert(services_latest).from_select(
+            [services_latest.c.key, services_latest.c.version],
+            latest_select_subquery,
+        )
+        upsert_query = insert_query.on_conflict_do_update(
+            index_elements=[
+                services_latest.c.key,
+            ],
+            set_=dict(version=insert_query.excluded.version),
+        )
+
+        async with self.db_engine.begin() as conn:
+            result = await conn.execute(upsert_query)
+
+        assert result  # nosec
 
 
 def _is_newer(

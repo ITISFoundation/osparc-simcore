@@ -17,6 +17,7 @@ from .redis_constants import (
     APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY,
     APP_CLIENT_REDIS_SCHEDULED_MAINTENANCE_CLIENT_KEY,
     APP_CLIENT_REDIS_VALIDATION_CODE_CLIENT_KEY,
+    APP_CLIENT_REDIS_USER_NOTIFICATIONS_CLIENT_KEY,
 )
 
 log = logging.getLogger(__name__)
@@ -71,6 +72,7 @@ async def setup_redis_client(app: web.Application):
         APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY: redis_settings.dsn_locks,
         APP_CLIENT_REDIS_VALIDATION_CODE_CLIENT_KEY: redis_settings.dsn_validation_codes,
         APP_CLIENT_REDIS_SCHEDULED_MAINTENANCE_CLIENT_KEY: redis_settings.dsn_scheduled_maintenance,
+        APP_CLIENT_REDIS_USER_NOTIFICATIONS_CLIENT_KEY: redis_settings.dsn_user_notifications,
     }
 
     for app_key, dsn in REDIS_DSN_MAP.items():
@@ -104,6 +106,10 @@ def get_redis_validation_code_client(app: web.Application) -> aioredis.Redis:
 
 def get_redis_scheduled_maintenance_client(app: web.Application) -> aioredis.Redis:
     return _get_redis_client(app, APP_CLIENT_REDIS_SCHEDULED_MAINTENANCE_CLIENT_KEY)
+
+
+def get_redis_user_notifications_client(app: web.Application) -> aioredis.Redis:
+    return _get_redis_client(app, APP_CLIENT_REDIS_USER_NOTIFICATIONS_CLIENT_KEY)
 
 
 # PLUGIN SETUP --------------------------------------------------------------------------

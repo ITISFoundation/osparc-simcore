@@ -4,14 +4,15 @@ from copy import deepcopy
 from typing import Any, Final, Optional, cast
 
 import yaml
-from aiocache import cached
 from fastapi import APIRouter, Depends, HTTPException, status
-from models_library.docker import DockerImageKey, DockerImageVersion
+from models_library.docker import DockerGenericTag
 from models_library.service_settings_labels import (
     ComposeSpecLabel,
     SimcoreServiceSettingLabelEntry,
 )
+from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import (
+    BootMode,
     ImageResources,
     ResourcesDict,
     ServiceResourcesDict,
@@ -23,32 +24,75 @@ from pydantic import parse_obj_as, parse_raw_as
 from ...db.repositories.services import ServicesRepository
 from ...models.domain.group import GroupAtDB
 from ...models.schemas.constants import (
-    DIRECTOR_CACHING_TTL,
     RESPONSE_MODEL_POLICY,
     SIMCORE_SERVICE_SETTINGS_LABELS,
 )
+from ...services.director import DirectorApi
 from ...services.function_services import is_function_service
 from ...utils.service_resources import (
     merge_service_resources_with_user_specs,
     parse_generic_resource,
 )
 from ..dependencies.database import get_repository
-from ..dependencies.director import DirectorApi, get_director_api
+from ..dependencies.director import get_director_api
 from ..dependencies.services import get_default_service_resources
 from ..dependencies.user_groups import list_user_groups
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-SIMCORE_SERVICE_SETTINGS_LABELS: Final[str] = "simcore.service.settings"
 SIMCORE_SERVICE_COMPOSE_SPEC_LABEL: Final[str] = "simcore.service.compose-spec"
+_DEPRECATED_RESOURCES: Final[list[str]] = ["MPI"]
+_BOOT_MODE_TO_RESOURCE_NAME_MAP: Final[dict[str, str]] = {"MPI": "MPI", "GPU": "VRAM"}
 
 
-def _from_service_settings(
+def _compute_service_available_boot_modes(
+    settings: list[SimcoreServiceSettingLabelEntry],
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+) -> list[BootMode]:
+    """returns the service boot-modes.
+    currently this uses the simcore.service.settings labels if available for backwards compatiblity.
+    if MPI is found, then boot mode is set to MPI, if GPU is found then boot mode is set to GPU, else to CPU.
+    In the future a dedicated label might be used, to add openMP for example. and to not abuse the resources of a service.
+    Also these will be used in a project to allow the user to choose among different boot modes
+    """
+
+    resource_entries = filter(lambda entry: entry.name.lower() == "resources", settings)
+    generic_resources = {}
+    for entry in resource_entries:
+        if not isinstance(entry.value, dict):
+            logger.warning(
+                "resource %s for %s got invalid type",
+                f"{entry.dict()!r}",
+                f"{service_key}:{service_version}",
+            )
+            continue
+        generic_resources |= parse_generic_resource(
+            entry.value.get("Reservations", {}).get("GenericResources", []),
+        )
+    # currently these are unique boot modes
+    for mode in BootMode:
+        if (
+            _BOOT_MODE_TO_RESOURCE_NAME_MAP.get(mode.value, mode.value)
+            in generic_resources
+        ):
+            return [mode]
+
+    return [BootMode.CPU]
+
+
+def _remove_deprecated_resources(resources: ResourcesDict) -> ResourcesDict:
+    for res_name in _DEPRECATED_RESOURCES:
+        resources.pop(res_name, None)
+    return resources
+
+
+def _resources_from_settings(
     settings: list[SimcoreServiceSettingLabelEntry],
     default_service_resources: ResourcesDict,
-    service_key: DockerImageKey,
-    service_version: DockerImageVersion,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
 ) -> ResourcesDict:
     # filter resource entries
     resource_entries = filter(lambda entry: entry.name.lower() == "resources", settings)
@@ -83,11 +127,11 @@ def _from_service_settings(
             entry.value.get("Reservations", {}).get("GenericResources", []),
         )
 
-    return service_resources
+    return _remove_deprecated_resources(service_resources)
 
 
 async def _get_service_labels(
-    director_client: DirectorApi, key: DockerImageKey, version: DockerImageVersion
+    director_client: DirectorApi, key: ServiceKey, version: ServiceVersion
 ) -> Optional[dict[str, Any]]:
     try:
         service_labels = cast(
@@ -117,7 +161,7 @@ def _get_service_settings(
 ) -> list[SimcoreServiceSettingLabelEntry]:
     service_settings = parse_raw_as(
         list[SimcoreServiceSettingLabelEntry],
-        labels.get(SIMCORE_SERVICE_SETTINGS_LABELS, ""),
+        labels.get(SIMCORE_SERVICE_SETTINGS_LABELS, "[]"),
     )
     logger.debug("received %s", f"{service_settings=}")
     return service_settings
@@ -128,19 +172,15 @@ def _get_service_settings(
     response_model=ServiceResourcesDict,
     **RESPONSE_MODEL_POLICY,
 )
-@cached(
-    ttl=DIRECTOR_CACHING_TTL,
-    key_builder=lambda f, *args, **kwargs: f"{f.__name__}_{kwargs.get('user_id', 'default')}_{kwargs['service_key']}_{kwargs['service_version']}",
-)
 async def get_service_resources(
-    service_key: DockerImageKey,
-    service_version: DockerImageVersion,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
     director_client: DirectorApi = Depends(get_director_api),
     default_service_resources: ResourcesDict = Depends(get_default_service_resources),
     services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
     user_groups: list[GroupAtDB] = Depends(list_user_groups),
 ) -> ServiceResourcesDict:
-    image_version = f"{service_key}:{service_version}"
+    image_version = parse_obj_as(DockerGenericTag, f"{service_key}:{service_version}")
     if is_function_service(service_key):
         return ServiceResourcesDictHelpers.create_from_single_service(
             image_version, default_service_resources
@@ -164,9 +204,13 @@ async def get_service_resources(
     if service_spec is None:
         # no compose specifications -> single service
         service_settings = _get_service_settings(service_labels)
-        service_resources = _from_service_settings(
+        service_resources = _resources_from_settings(
             service_settings, default_service_resources, service_key, service_version
         )
+        service_boot_modes = _compute_service_available_boot_modes(
+            service_settings, service_key, service_version
+        )
+
         user_specific_service_specs = await services_repo.get_service_specifications(
             service_key,
             service_version,
@@ -179,7 +223,7 @@ async def get_service_resources(
             )
 
         return ServiceResourcesDictHelpers.create_from_single_service(
-            image_version, service_resources
+            image_version, service_resources, service_boot_modes
         )
 
     # compose specifications available, potentially multiple services
@@ -205,13 +249,17 @@ async def get_service_resources(
 
         if not spec_service_labels:
             spec_service_resources: ResourcesDict = default_service_resources
+            service_boot_modes = [BootMode.CPU]
         else:
             spec_service_settings = _get_service_settings(spec_service_labels)
-            spec_service_resources: ResourcesDict = _from_service_settings(
+            spec_service_resources: ResourcesDict = _resources_from_settings(
                 spec_service_settings,
                 default_service_resources,
                 service_key,
                 service_version,
+            )
+            service_boot_modes = _compute_service_available_boot_modes(
+                spec_service_settings, service_key, service_version
             )
             user_specific_service_specs = (
                 await services_repo.get_service_specifications(
@@ -227,7 +275,11 @@ async def get_service_resources(
                 )
 
         service_to_resources[spec_key] = ImageResources.parse_obj(
-            {"image": image, "resources": spec_service_resources}
+            {
+                "image": image,
+                "resources": spec_service_resources,
+                "boot_modes": service_boot_modes,
+            }
         )
 
     return service_to_resources

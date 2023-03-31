@@ -21,7 +21,9 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
   construct: function() {
     this.base(arguments);
 
-    const userEmail = osparc.auth.Data.getInstance().getEmail() || "bizzy@itis.ethz.ch";
+    const authData = osparc.auth.Data.getInstance();
+
+    const userEmail = authData.getEmail() || "bizzy@itis.ethz.ch";
     const menu = new qx.ui.menu.Menu().set({
       font: "text-14"
     });
@@ -31,7 +33,18 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       label: "bizzy",
       menu
     });
-    osparc.auth.Data.getInstance().bind("firstName", this, "label");
+    authData.bind("firstName", this, "label");
+    authData.bind("role", this, "label", {
+      converter: role => {
+        if (role === "anonymous") {
+          return "Anonymous";
+        }
+        if (role === "guest") {
+          return "Guest";
+        }
+        return authData.getFirstName();
+      }
+    });
     osparc.utils.Utils.setIdToWidget(this, "userMenuMainBtn");
 
     this.getChildControl("icon").getContentElement().setStyles({
@@ -61,13 +74,16 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
   },
 
   members: {
-    __serverStatics: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
         case "theme-switcher":
           control = new osparc.ui.switch.ThemeSwitcherMenuBtn();
+          this.getMenu().add(control);
+          break;
+        case "register":
+          control = new qx.ui.menu.Button(this.tr("Register"));
+          control.addListener("execute", () => window.open(window.location.href, "_blank"));
           this.getMenu().add(control);
           break;
         case "preferences":
@@ -78,11 +94,8 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           break;
         case "organizations":
           control = new qx.ui.menu.Button(this.tr("Organizations"));
-          osparc.desktop.preferences.PreferencesWindow.evaluateOrganizationsButton(control);
-          control.addListener("execute", () => {
-            const preferences = osparc.navigation.UserMenuButton.openPreferences();
-            preferences.openOrganizations();
-          }, this);
+          osparc.desktop.organizations.OrganizationsWindow.evaluateOrganizationsButton(control);
+          control.addListener("execute", () => osparc.desktop.organizations.OrganizationsWindow.openWindow(), this);
           this.getMenu().add(control);
           break;
         case "clusters":
@@ -144,10 +157,17 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       return control || this.base(arguments, id);
     },
 
-    populateSimpleMenu: function() {
-      this.getChildControl("preferences");
-      this.getChildControl("organizations");
-      this.getChildControl("clusters");
+    populateMenu: function() {
+      this.getMenu().removeAll();
+
+      const authData = osparc.auth.Data.getInstance();
+      if (["anonymous", "guest"].includes(authData.getRole())) {
+        this.getChildControl("register");
+      } else {
+        this.getChildControl("preferences");
+        this.getChildControl("organizations");
+        this.getChildControl("clusters");
+      }
       if (osparc.product.tutorial.Utils.getTutorial()) {
         this.getMenu().addSeparator();
         this.getChildControl("quick-start");
@@ -162,20 +182,28 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       this.getChildControl("logout");
     },
 
-    populateExtendedMenu: function() {
+    populateMenuCompact: function() {
+      this.getMenu().removeAll();
       osparc.data.Resources.get("statics")
-        .then(statics => {
-          this.__serverStatics = statics;
-          this.getChildControl("theme-switcher");
-          this.getChildControl("preferences");
-          this.getChildControl("organizations");
-          this.getChildControl("clusters");
-          this.getMenu().addSeparator();
-          this.__addManualsToMenu();
-          this.__addFeedbacksToMenu();
-          if (osparc.product.tutorial.Utils.getTutorial()) {
-            this.getChildControl("quick-start");
+        .then(async () => {
+          const authData = osparc.auth.Data.getInstance();
+          if (["anonymous", "guest"].includes(authData.getRole())) {
+            this.getChildControl("register");
+          } else {
+            this.getChildControl("preferences");
+            this.getChildControl("organizations");
+            this.getChildControl("clusters");
           }
+          this.getMenu().addSeparator();
+
+          // this part gets injected
+          this.__addQuickStartToMenu();
+          await this.__addManualsToMenu();
+          this.getMenu().addSeparator();
+          await this.__addFeedbacksToMenu();
+          this.getMenu().addSeparator();
+          this.getChildControl("theme-switcher");
+
           this.getMenu().addSeparator();
           this.getChildControl("about");
           if (!osparc.product.Utils.isProduct("osparc")) {
@@ -187,14 +215,19 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
         });
     },
 
-    __addManualsToMenu: function() {
+    __addQuickStartToMenu: function() {
       const menu = this.getMenu();
-      osparc.store.Support.addManualButtonsToMenu(menu);
+      osparc.store.Support.addQuickStartToMenu(menu);
     },
 
-    __addFeedbacksToMenu: function() {
+    __addManualsToMenu: async function() {
       const menu = this.getMenu();
-      osparc.store.Support.addSupportButtonsToMenu(menu);
+      await osparc.store.Support.addManualButtonsToMenu(menu);
+    },
+
+    __addFeedbacksToMenu: async function() {
+      const menu = this.getMenu();
+      await osparc.store.Support.addSupportButtonsToMenu(menu);
     }
   }
 });

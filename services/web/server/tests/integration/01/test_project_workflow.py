@@ -13,7 +13,7 @@
 
 import asyncio
 from copy import deepcopy
-from typing import Awaitable, Callable, Optional, Union
+from typing import Awaitable, Callable
 from uuid import uuid4
 
 import pytest
@@ -142,10 +142,12 @@ async def storage_subsystem_mock(mocker):
 
 
 @pytest.fixture
-async def catalog_subsystem_mock(monkeypatch):
+async def catalog_subsystem_mock(
+    monkeypatch: pytest.MonkeyPatch,
+) -> Callable[[list[ProjectDict]], None]:
     services_in_project = []
 
-    def creator(projects: Optional[Union[list[dict], dict]] = None) -> None:
+    def _creator(projects: list[ProjectDict]) -> None:
         for proj in projects:
             services_in_project.extend(
                 [
@@ -161,7 +163,7 @@ async def catalog_subsystem_mock(monkeypatch):
         catalog, "get_services_for_user_in_product", mocked_get_services_for_user
     )
 
-    return creator
+    return _creator
 
 
 # Tests CRUD operations --------------------------------------------
@@ -210,7 +212,7 @@ async def test_workflow(
     docker_registry: str,
     simcore_services_ready,
     fake_project: ProjectDict,
-    catalog_subsystem_mock,
+    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     client,
     logged_user,
     primary_group: dict[str, str],

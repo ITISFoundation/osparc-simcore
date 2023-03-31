@@ -5,22 +5,34 @@
 """
 
 import logging
+from contextlib import AsyncExitStack
+from functools import partial
 from typing import Optional
 
 from aiohttp import web
 from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeIDStr
+from models_library.rabbitmq_messages import ProgressRabbitMessageProject, ProgressType
 from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
-from pydantic.types import PositiveInt
+from pydantic.types import NonNegativeFloat, PositiveInt
+from servicelib.common_headers import (
+    X_DYNAMIC_SIDECAR_REQUEST_DNS,
+    X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
+    X_SIMCORE_USER_AGENT,
+)
 from servicelib.logging_utils import log_decorator
+from servicelib.progress_bar import ProgressBarData
+from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 from yarl import URL
 
 from .director_v2_core_base import DataType, request_director_v2
 from .director_v2_exceptions import DirectorServiceError
 from .director_v2_settings import DirectorV2Settings, get_plugin_settings
+from .rabbitmq import get_rabbitmq_client
 
 log = logging.getLogger(__name__)
 
@@ -67,6 +79,7 @@ async def get_dynamic_service(app: web.Application, node_uuid: str) -> DataType:
 
 @log_decorator(logger=log)
 async def run_dynamic_service(
+    *,
     app: web.Application,
     product_name: str,
     user_id: PositiveInt,
@@ -76,6 +89,7 @@ async def run_dynamic_service(
     service_uuid: str,
     request_dns: str,
     request_scheme: str,
+    request_simcore_user_agent: str,
     service_resources: ServiceResourcesDict,
 ) -> DataType:
     """
@@ -97,8 +111,9 @@ async def run_dynamic_service(
     }
 
     headers = {
-        "X-Dynamic-Sidecar-Request-DNS": request_dns,
-        "X-Dynamic-Sidecar-Request-Scheme": request_scheme,
+        X_DYNAMIC_SIDECAR_REQUEST_DNS: request_dns,
+        X_DYNAMIC_SIDECAR_REQUEST_SCHEME: request_scheme,
+        X_SIMCORE_USER_AGENT: request_simcore_user_agent,
     }
 
     settings: DirectorV2Settings = get_plugin_settings(app)
@@ -117,7 +132,10 @@ async def run_dynamic_service(
 
 @log_decorator(logger=log)
 async def stop_dynamic_service(
-    app: web.Application, service_uuid: str, save_state: bool = True
+    app: web.Application,
+    service_uuid: NodeIDStr,
+    save_state: bool = True,
+    progress: Optional[ProgressBarData] = None,
 ) -> None:
     """
     Stopping a service can take a lot of time
@@ -125,22 +143,45 @@ async def stop_dynamic_service(
     this will allow to sava bigger datasets from the services
     """
     settings: DirectorV2Settings = get_plugin_settings(app)
-    await request_director_v2(
-        app,
-        "DELETE",
-        url=(settings.base_url / f"dynamic_services/{service_uuid}").update_query(
-            can_save="true" if save_state else "false",
-        ),
-        expected_status=web.HTTPNoContent,
-        timeout=settings.DIRECTOR_V2_STOP_SERVICE_TIMEOUT,
+
+    async with AsyncExitStack() as stack:
+        if progress:
+            await stack.enter_async_context(progress)
+
+        await request_director_v2(
+            app,
+            "DELETE",
+            url=(settings.base_url / f"dynamic_services/{service_uuid}").update_query(
+                can_save="true" if save_state else "false",
+            ),
+            expected_status=web.HTTPNoContent,
+            timeout=settings.DIRECTOR_V2_STOP_SERVICE_TIMEOUT,
+        )
+
+
+async def _post_progress_message(
+    rabbitmq_client: RabbitMQClient,
+    user_id: PositiveInt,
+    project_id: str,
+    progress_value: NonNegativeFloat,
+) -> None:
+    progress_message = ProgressRabbitMessageProject(
+        user_id=user_id,
+        project_id=project_id,
+        progress_type=ProgressType.PROJECT_CLOSING,
+        progress=progress_value,
+    )
+
+    await rabbitmq_client.publish(
+        ProgressRabbitMessageProject.get_channel_name(), progress_message.json()
     )
 
 
 @log_decorator(logger=log)
 async def stop_dynamic_services_in_project(
     app: web.Application,
-    user_id: Optional[PositiveInt] = None,
-    project_id: Optional[str] = None,
+    user_id: PositiveInt,
+    project_id: str,
     save_state: bool = True,
 ) -> None:
     """Stops all dynamic services of either project_id or user_id in concurrently"""
@@ -148,13 +189,30 @@ async def stop_dynamic_services_in_project(
         app, user_id=user_id, project_id=project_id
     )
 
-    services_to_stop = [
-        stop_dynamic_service(
-            app=app, service_uuid=service["service_uuid"], save_state=save_state
+    async with AsyncExitStack() as stack:
+        progress_bar = await stack.enter_async_context(
+            ProgressBarData(
+                steps=len(running_dynamic_services),
+                progress_report_cb=partial(
+                    _post_progress_message,
+                    get_rabbitmq_client(app),
+                    user_id,
+                    project_id,
+                ),
+            )
         )
-        for service in running_dynamic_services
-    ]
-    await logged_gather(*services_to_stop)
+
+        services_to_stop = [
+            stop_dynamic_service(
+                app=app,
+                service_uuid=service["service_uuid"],
+                save_state=save_state,
+                progress=progress_bar.sub_progress(1),
+            )
+            for service in running_dynamic_services
+        ]
+
+        await logged_gather(*services_to_stop)
 
 
 # NOTE: ANE https://github.com/ITISFoundation/osparc-simcore/issues/3191

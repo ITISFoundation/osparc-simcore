@@ -237,7 +237,7 @@ async def test_share_project(
     expected: ExpectedResponse,
     storage_subsystem_mock,
     mocked_director_v2_api: dict[str, mock.Mock],
-    catalog_subsystem_mock,
+    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     share_rights: dict,
     project_db_cleaner,
     request_create_project: Callable[..., Awaitable[ProjectDict]],
@@ -335,13 +335,14 @@ async def test_open_project(
         for service_uuid, service in dynamic_services.items():
             calls.append(
                 call(
-                    client.app,
+                    app=client.app,
                     project_id=user_project["uuid"],
                     service_key=service["key"],
                     service_uuid=service_uuid,
                     service_version=service["version"],
                     user_id=logged_user["id"],
                     request_scheme=request_scheme,
+                    request_simcore_user_agent="",
                     request_dns=request_dns,
                     product_name=osparc_product_name,
                     service_resources=ServiceResourcesDictHelpers.create_jsonable(
@@ -399,13 +400,14 @@ async def test_open_template_project_for_edition(
         for service_uuid, service in dynamic_services.items():
             calls.append(
                 call(
-                    client.app,
+                    app=client.app,
                     project_id=template_project["uuid"],
                     service_key=service["key"],
                     service_uuid=service_uuid,
                     service_version=service["version"],
                     user_id=logged_user["id"],
                     request_scheme=request_scheme,
+                    request_simcore_user_agent="",
                     request_dns=request_dns,
                     service_resources=ServiceResourcesDictHelpers.create_jsonable(
                         mock_service_resources
@@ -636,6 +638,8 @@ async def test_close_project(
     expected,
     mocked_director_v2_api: dict[str, mock.Mock],
     fake_services,
+    mock_rabbitmq: None,
+    mock_progress_bar: Any,
 ):
     # POST /v0/projects/{project_id}:close
     fake_dynamic_services = fake_services(number_services=5)
@@ -682,6 +686,7 @@ async def test_close_project(
                 app=client.server.app,
                 service_uuid=service["service_uuid"],
                 save_state=True,
+                progress=mock_progress_bar.sub_progress(1),
             )
             for service in fake_dynamic_services
         ]

@@ -13,7 +13,7 @@ from models_library.service_settings_labels import (
     NATRule,
     _PortRange,
 )
-from orderedset import OrderedSet
+from ordered_set import OrderedSet
 from pydantic import NonNegativeInt
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_compose_egress_config import (
     _get_egress_proxy_dns_port_rules,

@@ -1,5 +1,5 @@
 from pprint import pformat
-from typing import Any, Dict, Type
+from typing import Any
 
 import pytest
 from faker import Faker
@@ -21,7 +21,7 @@ from simcore_service_director_v2.models.schemas.clusters import (
     [ClusterCreate, ClusterPatch],
 )
 def test_clusters_model_examples(
-    model_cls: Type[BaseModel], model_cls_examples: Dict[str, Dict[str, Any]]
+    model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
 ):
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))
@@ -36,7 +36,7 @@ def test_clusters_model_examples(
     ],
 )
 def test_cluster_creation_brings_default_thumbail(
-    model_cls: Type[BaseModel], model_cls_examples: Dict[str, Dict[str, Any]]
+    model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
 ):
     for example in model_cls_examples.values():
         if "thumbnail" in example:
@@ -71,10 +71,7 @@ def test_worker_constructor_corrects_negative_used_resources(faker: Faker):
                 "cpu": faker.pyfloat(min_value=0),
                 "memory": faker.pyint(min_value=0),
                 "num_fds": faker.pyint(),
-                "ready": faker.pyint(min_value=0),
-                "executing": faker.pyint(min_value=0),
-                "in_flight": faker.pyint(min_value=0),
-                "in_memory": faker.pyint(min_value=0),
+                "task_counts": {},
             },
         ),
     )

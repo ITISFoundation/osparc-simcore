@@ -29,6 +29,7 @@ from .meta_modeling import setup_meta_modeling
 from .products import setup_products
 from .projects.plugin import setup_projects
 from .publications import setup_publications
+from .rabbitmq import setup_rabbitmq
 from .redis import setup_redis
 from .remote_debug import setup_remote_debugging
 from .resource_manager.plugin import setup_resource_manager
@@ -45,7 +46,7 @@ from .tracing import setup_app_tracing
 from .users import setup_users
 from .version_control import setup_version_control
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def create_application() -> web.Application:
@@ -69,6 +70,7 @@ def create_application() -> web.Application:
     setup_session(app)
     setup_security(app)
     setup_rest(app)
+    setup_rabbitmq(app)
 
     # front-end products
     setup_products(app)
@@ -126,7 +128,7 @@ def create_application() -> web.Application:
     app.on_startup.append(welcome_banner)
     app.on_shutdown.append(finished_banner)
 
-    log.debug("Routes in app: \n %s", pformat(app.router.named_resources()))
+    logger.debug("Routes in app: \n %s", pformat(app.router.named_resources()))
 
     return app
 

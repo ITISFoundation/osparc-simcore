@@ -65,6 +65,7 @@ jobs:
       dynamic-sidecar: ${{ steps.filter.outputs.dynamic-sidecar }}
       invitations: ${{ steps.filter.outputs.invitations }}
       migration: ${{ steps.filter.outputs.migration }}
+      osparc-gateway-server: ${{ steps.filter.outputs.osparc-gateway-server }}
       static-webserver: ${{ steps.filter.outputs.static-webserver }}
       storage: ${{ steps.filter.outputs.storage }}
       webserver: ${{ steps.filter.outputs.webserver }}
@@ -154,6 +155,10 @@ jobs:
               - 'packages/**'
               - 'services/migration/**'
               - 'services/docker-compose*'
+            osparc-gateway-server:
+              - 'packages/**'
+              - 'services/osparc-gateway-server/**'
+              - 'services/docker-compose*'
             static-webserver:
               - 'services/static-webserver/**'
               - 'services/docker-compose*'
@@ -181,9 +186,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -223,9 +228,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -267,9 +272,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -309,9 +314,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -351,9 +356,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -393,9 +398,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -440,9 +445,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -479,9 +484,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -521,9 +526,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -566,9 +571,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -614,9 +619,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -666,9 +671,10 @@ jobs:
     strategy:
       matrix:
         # KEEP 3.6 Development of this service is frozen
+        # KEEP ubuntu 20.04, else no python 3.6
         python: [3.6]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -708,9 +714,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -756,9 +762,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -801,9 +807,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -837,6 +843,60 @@ jobs:
         with:
           flags: unittests #optional
 
+  unit-test-osparc-gateway-server:
+    needs: changes
+    if: ${{ needs.changes.outputs.osparc-gateway-server == 'true' || github.event_name == 'push' }}
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] osparc-gateway-server"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker-container
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: setup python environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/osparc-gateway-server/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - name: install
+        run: |
+          make devenv
+          source .venv/bin/activate && \
+          pushd services/osparc-gateway-server && \
+          make install-ci
+      - name: typecheck
+        run: |
+          source .venv/bin/activate && \
+          pushd services/osparc-gateway-server && \
+          make mypy
+      - name: test
+        run: |
+          source .venv/bin/activate && \
+          pushd services/osparc-gateway-server && \
+          make test-ci-unit
+      - uses: codecov/codecov-action@v3.1.1
+        with:
+          flags: unittests #optional
+
   unit-test-dynamic-sidecar:
     needs: changes
     if: ${{ needs.changes.outputs.dynamic-sidecar == 'true' || github.event_name == 'push' }}
@@ -845,9 +905,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -891,8 +951,8 @@ jobs:
     strategy:
       matrix:
         node: [14]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -931,9 +991,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9", "3.10", "3.11"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10", "3.11"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -970,9 +1030,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1015,9 +1075,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1060,9 +1120,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1102,9 +1162,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1144,9 +1204,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1186,9 +1246,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1228,9 +1288,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1282,6 +1342,7 @@ jobs:
         unit-test-dynamic-sidecar,
         unit-test-frontend,
         unit-test-models-library,
+        unit-test-osparc-gateway-server,
         unit-test-postgres-database,
         unit-test-python-linting,
         unit-test-service-integration,
@@ -1313,9 +1374,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1371,9 +1432,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1431,9 +1492,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1491,9 +1552,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1546,6 +1607,81 @@ jobs:
         with:
           flags: integrationtests #optional
 
+  integration-test-osparc-gateway-server:
+    needs: [changes, build-test-images]
+    if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.osparc-gateway-server == 'true' || github.event_name == 'push' }}
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
+    name: "[int] osparc-gateway-server"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker-container
+
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: setup python environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/osparc-gateway-server/requirements/ci.txt"
+      - name: expose github runtime for buildx
+        uses: crazy-max/ghaction-github-runtime@v2
+      - name: download docker images
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+          path: /${{ runner.temp }}/build
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - name: install
+        run: |
+          make devenv && \
+          source .venv/bin/activate && \
+          pushd services/osparc-gateway-server && \
+          make install-ci
+      - name: integration-test
+        run: |
+          source .venv/bin/activate && \
+          pushd services/osparc-gateway-server && \
+          make test-ci-integration
+      - name: system-test
+        run: |
+          source .venv/bin/activate && \
+          pushd services/osparc-gateway-server && \
+          make test-system
+      - name: upload failed tests logs
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ github.job }}_docker_logs
+          path: ./services/director-v2/test_failures
+      - name: cleanup
+        if: always()
+        run: |
+          pushd services/osparc-gateway-server && \
+          make down
+      - uses: codecov/codecov-action@v3.1.1
+        with:
+          flags: integrationtests #optional
+
   integration-test-simcore-sdk:
     needs: [changes, build-test-images]
     if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.simcore-sdk == 'true' || github.event_name == 'push' }}
@@ -1554,9 +1690,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1613,6 +1749,7 @@ jobs:
       [
         integration-test-director-v2-01,
         integration-test-director-v2-02,
+        integration-test-osparc-gateway-server,
         integration-test-simcore-sdk,
         integration-test-webserver-01,
         integration-test-webserver-02,
@@ -1636,9 +1773,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1693,9 +1830,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1732,6 +1869,13 @@ jobs:
         run: ./ci/github/system-testing/swarm-deploy.bash install
       - name: test
         run: ./ci/github/system-testing/swarm-deploy.bash test
+      - name: dump services setting schemas
+        run: export DOCKER_REGISTRY=local; export DOCKER_IMAGE_TAG=production; make settings-schema.json
+      - name: upload services settings schemas
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ github.job }}_services_settings_schemas
+          path: ./services/**/settings-schema.json
       - name: upload failed tests logs
         if: failure()
         uses: actions/upload-artifact@v3
@@ -1750,10 +1894,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
+        python: ["3.10"]
         node: [14]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1827,9 +1971,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1889,9 +2033,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1

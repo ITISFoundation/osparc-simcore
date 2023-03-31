@@ -1,7 +1,6 @@
 #
 # NOTE: - this requirements listing is intended to be used e.g. in a director2
 #       - it is here to ensure compatibility of the dask ecosystem
-#       - this is a subset of _dask-complete.txt
 #
 
 # Ensures compatibility with dask scheduler/worker
@@ -9,5 +8,5 @@
 
 # SEE https://github.com/dask/dask/blob/main/setup.py#L12 for extra reqs
 dask[distributed]
-blosc # compression
-lz4 # compression
+blosc # for compression
+lz4 # for compression

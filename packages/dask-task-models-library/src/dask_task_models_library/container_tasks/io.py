@@ -61,11 +61,11 @@ class FilePortSchema(PortSchema):
 class FileUrl(BaseModel):
     url: AnyUrl
     file_mapping: Optional[str] = Field(
-        None,
+        default=None,
         description="Local file relpath name (if given), otherwise it takes the url filename",
     )
     file_mime_type: Optional[str] = Field(
-        None, description="the file MIME type", regex=MIME_TYPE_RE
+        default=None, description="the file MIME type", regex=MIME_TYPE_RE
     )
 
     class Config:

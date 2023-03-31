@@ -40,9 +40,6 @@ def setup(
             stale_task_detect_timeout_s=stale_task_detect_timeout_s,
         )
 
-        # add error handlers
-        app.add_exception_handler(BaseLongRunningError, base_long_running_error_handler)
-
     async def on_shutdown() -> None:
         if app.state.long_running_task_manager:
             task_manager: TasksManager = app.state.long_running_task_manager
@@ -50,3 +47,7 @@ def setup(
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
+
+    # add error handlers
+    # NOTE: Exception handler can not be added during the on_startup script, otherwise not working correctly
+    app.add_exception_handler(BaseLongRunningError, base_long_running_error_handler)

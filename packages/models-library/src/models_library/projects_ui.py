@@ -53,7 +53,7 @@ class Annotation(BaseModel):
 class StudyUI(BaseModel):
     workbench: Optional[dict[NodeIDStr, WorkbenchUI]] = None
     slideshow: Optional[dict[NodeIDStr, Slideshow]] = None
-    current_node_id: Optional[NodeID] = Field(None, alias="currentNodeId")
+    current_node_id: Optional[NodeID] = Field(default=None, alias="currentNodeId")
     annotations: Optional[dict[NodeIDStr, Annotation]] = None
 
     class Config:

@@ -6,6 +6,7 @@ from uuid import UUID
 from fastapi import FastAPI
 from fastapi.exceptions import HTTPException
 from httpx import HTTPStatusError, codes
+from models_library.clusters import ClusterID
 from models_library.projects_nodes import NodeID
 from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
@@ -56,7 +57,6 @@ DownloadLink = AnyUrl
 @contextmanager
 def handle_errors_context(project_id: UUID):
     try:
-
         yield
 
     # except ValidationError
@@ -102,7 +102,10 @@ class DirectorV2Api(BaseServiceClientApi):
     #  ServiceUnabalabe: 503
 
     async def create_computation(
-        self, project_id: UUID, user_id: PositiveInt
+        self,
+        project_id: UUID,
+        user_id: PositiveInt,
+        product_name: str,
     ) -> ComputationTaskGet:
         resp = await self.client.post(
             "/v2/computations",
@@ -110,6 +113,7 @@ class DirectorV2Api(BaseServiceClientApi):
                 "user_id": user_id,
                 "project_id": str(project_id),
                 "start_pipeline": False,
+                "product_name": product_name,
             },
         )
 
@@ -118,10 +122,17 @@ class DirectorV2Api(BaseServiceClientApi):
         return computation_task
 
     async def start_computation(
-        self, project_id: UUID, user_id: PositiveInt, product_name: str
+        self,
+        project_id: UUID,
+        user_id: PositiveInt,
+        product_name: str,
+        cluster_id: Optional[ClusterID] = None,
     ) -> ComputationTaskGet:
-
         with handle_errors_context(project_id):
+            extras = {}
+            if cluster_id is not None:
+                extras["cluster_id"] = cluster_id
+
             resp = await self.client.post(
                 "/v2/computations",
                 json={
@@ -129,6 +140,7 @@ class DirectorV2Api(BaseServiceClientApi):
                     "project_id": str(project_id),
                     "start_pipeline": True,
                     "product_name": product_name,
+                    **extras,
                 },
             )
             resp.raise_for_status()

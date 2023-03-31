@@ -24,10 +24,13 @@ class RabbitMessageBase(BaseModel):
         return cls.__fields__["channel_name"].default
 
 
-class NodeMessageBase(BaseModel):
-    node_id: NodeID
+class ProjectMessageBase(BaseModel):
     user_id: UserID
     project_id: ProjectID
+
+
+class NodeMessageBase(ProjectMessageBase):
+    node_id: NodeID
 
 
 class LoggerRabbitMessage(RabbitMessageBase, NodeMessageBase):
@@ -54,13 +57,23 @@ class ProgressType(StrAutoEnum):
     SERVICE_STATE_PUSHING = auto()
     SERVICE_OUTPUTS_PUSHING = auto()
 
+    PROJECT_CLOSING = auto()
 
-class ProgressRabbitMessage(RabbitMessageBase, NodeMessageBase):
+
+class ProgressMessageMixin(RabbitMessageBase):
     channel_name: Literal["simcore.services.progress"] = "simcore.services.progress"
     progress_type: ProgressType = (
         ProgressType.COMPUTATION_RUNNING
     )  # NOTE: backwards compatible
     progress: NonNegativeFloat
+
+
+class ProgressRabbitMessageNode(ProgressMessageMixin, NodeMessageBase):
+    ...
+
+
+class ProgressRabbitMessageProject(ProgressMessageMixin, ProjectMessageBase):
+    ...
 
 
 class InstrumentationRabbitMessage(RabbitMessageBase, NodeMessageBase):

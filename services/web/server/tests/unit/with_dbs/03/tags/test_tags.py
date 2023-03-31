@@ -27,6 +27,7 @@ from simcore_service_webserver import tags_handlers
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db import get_database_engine
 from simcore_service_webserver.db_models import UserRole
+from simcore_service_webserver.projects.project_models import ProjectDict
 
 
 @pytest.mark.parametrize(
@@ -64,7 +65,7 @@ async def test_tags_to_studies(
     user_project,
     expected: type[web.HTTPException],
     fake_tags: dict[str, Any],
-    catalog_subsystem_mock: Callable,
+    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
 ):
     catalog_subsystem_mock([user_project])
     assert client.app

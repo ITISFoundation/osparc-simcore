@@ -19,7 +19,7 @@ qx.Class.define("osparc.ui.window.Dialog", {
    */
   construct: function(caption, icon, message) {
     this.base(arguments, caption, icon);
-    this.getChildControl("captionbar").setPadding(10);
+
     this.set({
       autoDestroy: true,
       layout: new qx.ui.layout.VBox(15),

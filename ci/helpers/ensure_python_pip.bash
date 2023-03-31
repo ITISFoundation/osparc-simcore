@@ -11,7 +11,7 @@ set -o pipefail # don't hide errors within pipes
 IFS=$'\n\t'
 
 # Pin pip version to a compatible release https://www.python.org/dev/peps/pep-0440/#compatible-release
-PIP_VERSION=22.0
+PIP_VERSION=23.0
 
 echo "INFO:" "$(python --version)" "@" "$(command -v python)"
 

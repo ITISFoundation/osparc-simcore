@@ -442,6 +442,27 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
+       * NOTIFICATIONS
+       */
+      "notifications": {
+        useCache: false,
+        idField: "notification",
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/me/notifications"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/me/notifications"
+          },
+          patch: {
+            method: "PATCH",
+            url: statics.API + "/me/notifications/{notificationId}"
+          }
+        }
+      },
+      /*
        * ORGANIZATIONS
        */
       "organizations": {
@@ -582,6 +603,10 @@ qx.Class.define("osparc.data.Resources", {
           postRegister: {
             method: "POST",
             url: statics.API + "/auth/register"
+          },
+          checkInvitation: {
+            method: "POST",
+            url: statics.API + "/auth/register/invitations:check"
           },
           verifyPhoneNumber: {
             method: "POST",

@@ -18,7 +18,7 @@ from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import (
     InstrumentationRabbitMessage,
     LoggerRabbitMessage,
-    ProgressRabbitMessage,
+    ProgressRabbitMessageNode,
 )
 from models_library.users import UserID
 from simcore_postgres_database.models.comp_tasks import NodeClass
@@ -236,7 +236,7 @@ class DaskScheduler(BaseCompScheduler):
         task_progress_event = TaskProgressEvent.parse_raw(event)
         logger.debug("received task progress update: %s", task_progress_event)
         *_, user_id, project_id, node_id = parse_dask_job_id(task_progress_event.job_id)
-        message = ProgressRabbitMessage(
+        message = ProgressRabbitMessageNode(
             user_id=user_id,
             project_id=project_id,
             node_id=node_id,

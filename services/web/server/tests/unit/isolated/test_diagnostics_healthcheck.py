@@ -94,7 +94,10 @@ def client(
 
     @routes.get("/error")
     async def unexpected_error(request: web.Request):
-        raise Exception("boom shall produce 500")  # pylint: disable=broad-exception-raised
+        raise Exception(  # pylint: disable=broad-exception-raised
+            "boom shall produce 500"
+        )
+
     @routes.get(r"/fail")
     async def expected_failure(request: web.Request):
         raise web.HTTPServiceUnavailable()

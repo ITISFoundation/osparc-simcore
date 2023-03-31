@@ -291,7 +291,6 @@ async function deleteFirstStudy(page, studyName) {
   const firstChildId = '[osparc-test-id="' + studyCardId + '"]';
   const studyCardStyle = await utils.getStyle(page, firstChildId);
   if (studyCardStyle.cursor === "not-allowed") {
-    console.log("Andrei you were wrong");
     return false;
   }
   await utils.waitAndClick(page, firstChildId + ' > [osparc-test-id="studyItemMenuButton"]');

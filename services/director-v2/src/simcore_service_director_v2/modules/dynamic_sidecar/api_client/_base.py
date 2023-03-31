@@ -127,7 +127,15 @@ class BaseThinClient:
     ) -> None:
         self.request_timeout: int = request_timeout
 
-        client_args: dict[str, Any] = {}
+        client_args: dict[str, Any] = {
+            # NOTE: the default httpx pool limit configurations look good
+            # https://www.python-httpx.org/advanced/#pool-limit-configuration
+            # instruct the remote uvicorn web server to close the connections
+            # https://www.uvicorn.org/server-behavior/#http-headers
+            "headers": {
+                "Connection": "Close",
+            }
+        }
         if base_url:
             client_args["base_url"] = base_url
         if timeout:

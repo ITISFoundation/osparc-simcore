@@ -6,7 +6,7 @@ set -o pipefail
 IFS=$'\n\t'
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-PYTHON_VERSION=3.9.12
+PYTHON_VERSION=3.10.10
 IMAGE_NAME="local/pydeps-devkit:${PYTHON_VERSION}"
 WORKDIR="$(pwd)"
 

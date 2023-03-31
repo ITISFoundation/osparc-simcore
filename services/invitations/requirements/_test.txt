@@ -8,8 +8,10 @@ anyio==3.6.2
     # via
     #   -c requirements/_base.txt
     #   httpcore
-attrs==22.2.0
-    # via pytest
+attrs==21.4.0
+    # via
+    #   -c requirements/_base.txt
+    #   pytest
 certifi==2022.12.7
     # via
     #   -c requirements/_base.txt
@@ -32,7 +34,7 @@ docopt==0.6.2
     # via coveralls
 exceptiongroup==1.1.0
     # via pytest
-faker==17.0.0
+faker==17.4.0
     # via -r requirements/_test.in
 h11==0.14.0
     # via
@@ -74,7 +76,9 @@ pytest-runner==6.0.0
 pytest-sugar==0.9.6
     # via -r requirements/_test.in
 python-dateutil==2.8.2
-    # via faker
+    # via
+    #   -c requirements/_base.txt
+    #   faker
 python-dotenv==0.21.0
     # via -r requirements/_test.in
 requests==2.28.2

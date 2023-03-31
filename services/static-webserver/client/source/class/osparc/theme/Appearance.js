@@ -452,7 +452,7 @@ qx.Theme.define("osparc.theme.Appearance", {
     "strong-button": {
       include: "material-button",
       style: state => ({
-        decorator: state.hovered ? "strong-bordered-button" : "no-border",
+        decorator: state.hovered || state.focused ? "strong-bordered-button" : "no-border",
         backgroundColor: "strong-main",
         textColor: "#d2d8dc" // dark theme's text color
       })
@@ -462,8 +462,8 @@ qx.Theme.define("osparc.theme.Appearance", {
       include: "material-button",
       style: state => ({
         decorator: "bordered-button",
-        backgroundColor: state.hovered ? "danger-red" : null,
-        textColor: state.hovered ? "#d2d8dc" : "danger-red" // dark theme's text color
+        backgroundColor: state.hovered || state.focused ? "danger-red" : null,
+        textColor: state.hovered || state.focused ? "#d2d8dc" : "danger-red" // dark theme's text color
       })
     },
 

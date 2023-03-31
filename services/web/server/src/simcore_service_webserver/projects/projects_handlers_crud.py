@@ -46,11 +46,13 @@ from ..storage_api import (
 )
 from ..users_api import get_user_name
 from . import projects_api
+from .project_lock import get_project_locked_state
 from .project_models import ProjectDict, ProjectTypeAPI
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .projects_exceptions import (
     ProjectDeleteError,
     ProjectInvalidRightsError,
+    ProjectLockError,
     ProjectNotFoundError,
 )
 from .projects_nodes_utils import update_frontend_outputs
@@ -144,6 +146,7 @@ async def create_projects(request: web.Request):
         request_context=req_ctx,
         query_params=query_params,
         predefined_project=predefined_project,
+        product_name=req_ctx.product_name,
         fire_and_forget=True,
     )
 
@@ -247,7 +250,8 @@ async def _create_projects(
     query_params: _ProjectCreateParams,
     request_context: RequestContext,
     predefined_project: Optional[ProjectDict],
-):
+    product_name: str,
+) -> None:
     """
 
     :raises web.HTTPBadRequest
@@ -311,7 +315,7 @@ async def _create_projects(
 
         # This is a new project and every new graph needs to be reflected in the pipeline tables
         await director_v2_api.create_or_update_pipeline(
-            app, request_context.user_id, new_project["uuid"]
+            app, request_context.user_id, new_project["uuid"], product_name
         )
 
         # Appends state
@@ -634,7 +638,10 @@ async def replace_project(request: web.Request):
             request.app, path_params.project_id
         )
         await director_v2_api.create_or_update_pipeline(
-            request.app, req_ctx.user_id, path_params.project_id
+            request.app,
+            req_ctx.user_id,
+            path_params.project_id,
+            product_name=req_ctx.product_name,
         )
         # Appends state
         new_project = await projects_api.add_project_states_for_user(
@@ -704,6 +711,14 @@ async def delete_project(request: web.Request):
             raise web.HTTPForbidden(
                 reason=f"Project is open by {other_user_names}. "
                 "It cannot be deleted until the project is closed."
+            )
+
+        project_locked_state: Optional[ProjectLockError]
+        if project_locked_state := await get_project_locked_state(
+            app=request.app, project_uuid=path_params.project_id
+        ):
+            raise web.HTTPConflict(
+                reason=f"Project {path_params.project_id} is locked: {project_locked_state=}"
             )
 
         await projects_api.submit_delete_project_task(

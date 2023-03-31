@@ -32,6 +32,9 @@ class RedisSettings(BaseCustomSettings):
     REDIS_SCHEDULED_MAINTENANCE_DB: int = Field(
         default=3, description="This redis table is used for handling scheduled maintenance"
     )
+    REDIS_USER_NOTIFICATIONS_DB: int = Field(
+        default=4, description="This redis table is used for handling the notifications that have to be sent to the user"
+    )
 
     def _build_redis_dsn(self, db_index: int):
         return RedisDsn.build(
@@ -60,3 +63,7 @@ class RedisSettings(BaseCustomSettings):
     @cached_property
     def dsn_scheduled_maintenance(self) -> str:
         return self._build_redis_dsn(self.REDIS_SCHEDULED_MAINTENANCE_DB)
+
+    @cached_property
+    def dsn_user_notifications(self) -> str:
+        return self._build_redis_dsn(self.REDIS_USER_NOTIFICATIONS_DB)

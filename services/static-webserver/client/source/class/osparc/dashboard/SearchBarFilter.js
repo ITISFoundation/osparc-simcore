@@ -160,7 +160,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           const tagButton = new qx.ui.menu.Button(tag.name, "@FontAwesome5Solid/tag/12");
           tagButton.getChildControl("icon").setTextColor(tag.color);
           tagsMenu.add(tagButton);
-          tagButton.addListener("execute", () => this.__addChip("tag", tag.name, tag.name), this);
+          tagButton.addListener("execute", () => this.addTagActiveFilter(tag), this);
         });
         menuButton.setMenu(tagsMenu);
       }
@@ -200,6 +200,10 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       });
       chipButton.addListener("execute", () => this.__removeChip(chipType, chipId), this);
       return chipButton;
+    },
+
+    addTagActiveFilter: function(tag) {
+      this.__addChip("tag", tag.name, tag.name);
     },
 
     __addChip: function(type, id, label) {

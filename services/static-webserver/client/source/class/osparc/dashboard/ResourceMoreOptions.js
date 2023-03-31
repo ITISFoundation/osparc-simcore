@@ -43,6 +43,20 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     "openService": "qx.event.type.Data"
   },
 
+  statics: {
+    WIDTH: 700,
+    HEIGHT: 660
+  },
+
+  properties: {
+    showOpenButton: {
+      check: "Boolean",
+      init: true,
+      nullable: false,
+      event: "changeShowOpenButton"
+    }
+  },
+
   members: {
     __resourceData: null,
     __serviceVersionLayout: null,
@@ -234,6 +248,9 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
           appearance: "strong-button",
           allowGrowX: false,
           alignX: "right"
+        });
+        this.bind("showOpenButton", openServiceButton, "visibility", {
+          converter: show => show ? "visible" : "excluded"
         });
         openServiceButton.addListener("execute", () => {
           this.fireDataEvent("openService", {

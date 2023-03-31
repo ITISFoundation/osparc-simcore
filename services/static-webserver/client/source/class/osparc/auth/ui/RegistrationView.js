@@ -67,12 +67,18 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
       this.add(pass2);
 
       const urlFragment = osparc.utils.Utils.parseURLFragment();
-      const token = urlFragment.params ? urlFragment.params.invitation || null : null;
-      const invitation = new qx.ui.form.TextField().set({
-        visibility: "excluded",
-        value: token
-      });
-      this.add(invitation);
+      const invitationToken = urlFragment.params ? urlFragment.params.invitation || null : null;
+      if (invitationToken) {
+        osparc.auth.Manager.getInstance().checkInvitation(invitationToken)
+          .then(data => {
+            if (data && data.email) {
+              email.set({
+                value: data.email,
+                enabled: false
+              });
+            }
+          });
+      }
 
       // validation
       validator.add(email, qx.util.Validate.email());
@@ -105,7 +111,7 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
             email: email.getValue(),
             password: pass1.getValue(),
             confirm: pass2.getValue(),
-            invitation: invitation.getValue() ? invitation.getValue() : ""
+            invitation: invitationToken ? invitationToken : ""
           });
         }
       }, this);
