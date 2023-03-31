@@ -529,7 +529,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       const groupOptions = new qx.ui.form.RadioGroup();
 
-      const options = this.self().getSharedWithOptions(this.__resourceType);
+      const options = osparc.dashboard.SearchBarFilter.getSharedWithOptions(this.__resourceType);
       options.forEach((option, idx) => {
         const button = new qx.ui.menu.RadioButton(option.label);
         sharedWithMenu.add(button);
