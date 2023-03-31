@@ -1,7 +1,7 @@
 """set cluster id to null
 
 Revision ID: 9b97b12cfe47
-Revises: 84d3h35e5791
+Revises: 9014ae5fd6e5
 Create Date: 2023-03-28 10:20:20.670233+00:00
 
 """
@@ -9,7 +9,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "9b97b12cfe47"
-down_revision = "84d3h35e5791"
+down_revision = "9014ae5fd6e5"
 branch_labels = None
 depends_on = None
 
