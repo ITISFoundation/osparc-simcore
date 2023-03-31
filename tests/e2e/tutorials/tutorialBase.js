@@ -30,7 +30,7 @@ class TutorialBase {
     this.__interval = null;
 
     this.__failed = false;
-    this.__reason_failed = null;
+    this.__reasonFailed = null;
 
     this.startScreenshooter()
   }
