@@ -795,7 +795,7 @@ class TutorialBase {
   }
 
   getTutorialFailedReason() {
-    return this.__reason_failed;
+    return this.__reasonFailed;
   }
 
   async setTutorialFailed(failed, loggerScreenshot = true, reason = "") {
