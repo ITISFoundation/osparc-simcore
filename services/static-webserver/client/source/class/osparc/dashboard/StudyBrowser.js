@@ -487,6 +487,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         flex: 1
       });
 
+      this.__addShowSharedWithButton();
       this._addViewModeButton();
 
 
@@ -517,6 +518,40 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.addListener("changeVisibility", () => this._moreResourcesRequired());
 
       return this._resourcesContainer;
+    },
+
+    __addShowSharedWithButton: function() {
+      const sharedWithMenu = new qx.ui.menu.Menu().set({
+        font: "text-14"
+      });
+      const sharedWithButton = new qx.ui.form.MenuButton(this.tr("Share with"), "@FontAwesome5Solid/chevron-down/10", sharedWithMenu);
+      osparc.utils.Utils.setIdToWidget(sharedWithButton, "sharedWithButton");
+
+      const groupOptions = new qx.ui.form.RadioGroup();
+
+      const showAll = new qx.ui.menu.RadioButton(this.tr("Show all"));
+      showAll.addListener("execute", () => this.__filterSharedWith("show-all"));
+      sharedWithMenu.add(showAll);
+      groupOptions.add(showAll);
+
+      const myStudiesOnly = new qx.ui.menu.RadioButton(this.tr("My studies"));
+      myStudiesOnly.addListener("execute", () => this.__filterSharedWith("my-studies"));
+      sharedWithMenu.add(myStudiesOnly);
+      groupOptions.add(myStudiesOnly);
+
+      const sharedWithMe = new qx.ui.menu.RadioButton(this.tr("Shared with me"));
+      sharedWithMe.addListener("execute", () => this.__filterSharedWith("shared-with-me"));
+      sharedWithMenu.add(sharedWithMe);
+      groupOptions.add(sharedWithMe);
+
+      this._secondaryBar.add(sharedWithButton);
+    },
+
+    /**
+      * @param {String} sharedWithMode ["show-all", "my-studies", "shared-with-me"]
+      */
+    __filterSharedWith: function(sharedWithMode) {
+      console.log("__filterSharedWith", sharedWithMode);
     },
 
     __createLoadMoreButton: function() {
