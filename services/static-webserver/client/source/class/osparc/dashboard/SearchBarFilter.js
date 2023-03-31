@@ -195,20 +195,13 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       const sharedWithMenu = new qx.ui.menu.Menu();
       const sharedWithRadioGroup = new qx.ui.form.RadioGroup();
       options.forEach((option, idx) => {
-        const sharedWithButton = new qx.ui.menu.RadioButton(option.label);
-        sharedWithMenu.add(sharedWithButton);
-        sharedWithButton.addListener("execute", () => {
-          this.__removeChips("shared-with");
-          if (option.id === "show-all") {
-            this.__filter();
-          } else {
-            this.__addChip("shared-with", option.id, option.label);
-          }
-        }, this);
-        sharedWithRadioGroup.add(sharedWithButton);
+        const button = new qx.ui.menu.RadioButton(option.label);
+        sharedWithMenu.add(button);
+        button.addListener("execute", () => this.setSharedWithActiveFilter(option.id, option.label), this);
+        sharedWithRadioGroup.add(button);
         // preselect show-all
         if (idx === 0) {
-          sharedWithRadioGroup.setSelection([sharedWithButton]);
+          sharedWithRadioGroup.setSelection([button]);
         }
       });
       menuButton.setMenu(sharedWithMenu);
@@ -230,6 +223,15 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
 
     addTagActiveFilter: function(tag) {
       this.__addChip("tag", tag.name, tag.name);
+    },
+
+    setSharedWithActiveFilter: function(optionId, optionLabel) {
+      this.__removeChips("shared-with");
+      if (optionId === "show-all") {
+        this.__filter();
+      } else {
+        this.__addChip("shared-with", optionId, optionLabel);
+      }
     },
 
     __addChip: function(type, id, label) {

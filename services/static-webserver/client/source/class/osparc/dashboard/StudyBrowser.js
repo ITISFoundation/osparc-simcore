@@ -529,29 +529,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       const groupOptions = new qx.ui.form.RadioGroup();
 
-      const showAll = new qx.ui.menu.RadioButton(this.tr("Show all"));
-      showAll.addListener("execute", () => this.__filterSharedWith("show-all"));
-      sharedWithMenu.add(showAll);
-      groupOptions.add(showAll);
-
-      const myStudiesOnly = new qx.ui.menu.RadioButton(this.tr("My studies"));
-      myStudiesOnly.addListener("execute", () => this.__filterSharedWith("my-studies"));
-      sharedWithMenu.add(myStudiesOnly);
-      groupOptions.add(myStudiesOnly);
-
-      const sharedWithMe = new qx.ui.menu.RadioButton(this.tr("Shared with me"));
-      sharedWithMe.addListener("execute", () => this.__filterSharedWith("shared-with-me"));
-      sharedWithMenu.add(sharedWithMe);
-      groupOptions.add(sharedWithMe);
+      const options = this.self().getSharedWithOptions(this.__resourceType);
+      options.forEach((option, idx) => {
+        const button = new qx.ui.menu.RadioButton(option.label);
+        sharedWithMenu.add(button);
+        button.addListener("execute", () => this._searchBarFilter.setSharedWithActiveFilter(option.id, option.label), this);
+        groupOptions.add(button);
+        // preselect show-all
+        if (idx === 0) {
+          groupOptions.setSelection([button]);
+        }
+      });
 
       this._secondaryBar.add(sharedWithButton);
-    },
-
-    /**
-      * @param {String} sharedWithMode ["show-all", "my-studies", "shared-with-me"]
-      */
-    __filterSharedWith: function(sharedWithMode) {
-      console.log("__filterSharedWith", sharedWithMode);
     },
 
     __createLoadMoreButton: function() {
