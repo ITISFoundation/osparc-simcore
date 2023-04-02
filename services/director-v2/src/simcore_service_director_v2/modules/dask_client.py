@@ -132,7 +132,7 @@ class DaskClient:
         )
         async for attempt in AsyncRetrying(
             reraise=True,
-            before_sleep=before_sleep_log(logger, logging.WARNING),
+            before_sleep=before_sleep_log(logger, logging.INFO),
             wait=wait_fixed(0.3),
             stop=stop_after_attempt(3),
         ):
@@ -194,7 +194,7 @@ class DaskClient:
         cluster_id: ClusterID,
         tasks: dict[NodeID, Image],
         callback: UserCallbackInSepThread,
-        remote_fct: Optional[RemoteFct] = None,
+        remote_fct: RemoteFct | None = None,
     ) -> list[tuple[NodeID, str]]:
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
         function that runs container will be started."""
@@ -207,7 +207,7 @@ class DaskClient:
             output_data_keys: TaskOutputDataSchema,
             log_file_url: AnyUrl,
             command: list[str],
-            s3_settings: Optional[S3Settings],
+            s3_settings: S3Settings | None,
             boot_mode: BootMode,
         ) -> TaskOutputData:
             """This function is serialized by the Dask client and sent over to the Dask sidecar(s)
@@ -376,11 +376,7 @@ class DaskClient:
                         "Task  %s completed in error:\n%s\nTrace:\n%s",
                         job_id,
                         exception,
-                        "".join(
-                            traceback.format_exception(
-                                exception.__class__, exception, exception.__traceback__
-                            )
-                        ),
+                        "".join(traceback.format_exception(exception)),
                     )
                     running_states.append(RunningState.FAILED)
             else:
@@ -432,6 +428,11 @@ class DaskClient:
             logger.warning("Unknown task cannot be unpublished: %s", f"{job_id=}")
 
     async def get_cluster_details(self) -> ClusterDetails:
+        check_scheduler_is_still_the_same(
+            self.backend.scheduler_id, self.backend.client
+        )
+        check_communication_with_scheduler_is_open(self.backend.client)
+        check_scheduler_status(self.backend.client)
         scheduler_info = self.backend.client.scheduler_info()
         scheduler_status = self.backend.client.status
         dashboard_link = self.backend.client.dashboard_link

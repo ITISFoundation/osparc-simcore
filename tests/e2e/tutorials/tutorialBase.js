@@ -30,6 +30,7 @@ class TutorialBase {
     this.__interval = null;
 
     this.__failed = false;
+    this.__reasonFailed = null;
 
     this.startScreenshooter()
   }
@@ -793,11 +794,16 @@ class TutorialBase {
     return this.__failed;
   }
 
-  async setTutorialFailed(failed, loggerScreenshot = true) {
+  getTutorialFailedReason() {
+    return this.__reasonFailed;
+  }
+
+  async setTutorialFailed(failed, loggerScreenshot = true, reason = "") {
     if (failed && loggerScreenshot) {
       await this.takeLoggerScreenshot();
     }
     this.__failed = failed;
+    this.__reasonFailed = reason
   }
 }
 

@@ -5,7 +5,6 @@
 
 
 import asyncio
-import logging
 import re
 import urllib.parse
 from copy import deepcopy
@@ -19,73 +18,18 @@ from aiohttp import ClientResponse, ClientSession, web
 from aiohttp.test_utils import TestClient, TestServer
 from faker import Faker
 from models_library.projects_state import ProjectLocked, ProjectStatus
-from pytest import MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
-from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict, UserRole
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
 from servicelib.aiohttp.long_running_tasks.client import LRTask
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.aiohttp.rest_responses import unwrap_envelope
-from simcore_service_webserver.log import setup_logging
 from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.projects.projects_api import submit_delete_project_task
 from simcore_service_webserver.users_api import delete_user, get_user_role
-
-
-@pytest.fixture
-def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
-    envs_plugins = setenvs_from_dict(
-        monkeypatch,
-        {
-            "WEBSERVER_ACTIVITY": "null",
-            "WEBSERVER_CATALOG": "null",
-            "WEBSERVER_CLUSTERS": "null",
-            "WEBSERVER_COMPUTATION": "0",
-            "WEBSERVER_DIAGNOSTICS": "null",
-            "WEBSERVER_DIRECTOR": "null",
-            # "WEBSERVER_DIRECTOR_V2": MOCKED
-            "WEBSERVER_EXPORTER": "null",
-            # Enforces smallest GC in the background task
-            # "WEBSERVER_GARBAGE_COLLECTOR": "null",
-            # cfg["resource_manager"]["garbage_collection_interval_seconds"] = 1
-            # "GARBAGE_COLLECTOR_INTERVAL_S": "1",
-            "WEBSERVER_GROUPS": "1",
-            "WEBSERVER_META_MODELING": "null",
-            "WEBSERVER_PRODUCTS": "1",
-            "WEBSERVER_PUBLICATIONS": "0",
-            "WEBSERVER_RABBITMQ": "null",
-            "WEBSERVER_REMOTE_DEBUG": "0",
-            # "WEBSERVER_STORAGE":  MOCKED
-            "WEBSERVER_SOCKETIO": "0",
-            "WEBSERVER_TAGS": "1",
-            "WEBSERVER_TRACING": "null",
-            "WEBSERVER_USERS": "1",
-            "WEBSERVER_VERSION_CONTROL": "0",
-        },
-    )
-
-    monkeypatch.delenv("WEBSERVER_STUDIES_DISPATCHER", raising=False)
-    app_environment.pop("WEBSERVER_STUDIES_DISPATCHER", None)
-
-    monkeypatch.delenv(
-        "WEBSERVER_STUDIES_ACCESS_ENABLED", raising=False
-    )  # legacy for STUDIES_ACCESS_ANONYMOUS_ALLOWED
-    envs_studies_dispatcher = setenvs_from_dict(
-        monkeypatch,
-        {
-            "STUDIES_ACCESS_ANONYMOUS_ALLOWED": "1",
-        },
-    )
-
-    # NOTE: To see logs, use pytest -s --log-cli-level=DEBUG
-    setup_logging(level=logging.DEBUG)
-
-    return {**app_environment, **envs_plugins, **envs_studies_dispatcher}
 
 
 async def _get_user_projects(client):

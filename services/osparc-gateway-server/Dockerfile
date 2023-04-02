@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-ARG PYTHON_VERSION="3.9.12"
+ARG PYTHON_VERSION="3.10.10"
 FROM python:${PYTHON_VERSION}-slim-bullseye as base
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
