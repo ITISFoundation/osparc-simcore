@@ -103,7 +103,7 @@ async def progress_message_parser(app: web.Application, data: bytes) -> bool:
         },
     }
     if is_type_message_node:
-        message["node_id"] = rabbit_message.node_id
+        message["data"]["node_id"] = rabbit_message.node_id
     await send_messages(app, f"{rabbit_message.user_id}", [message])
     return True
 
