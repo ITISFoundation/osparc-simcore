@@ -8,7 +8,7 @@ import logging
 import uuid as uuidlib
 from collections import deque
 from contextlib import AsyncExitStack
-from typing import Any, Optional
+from typing import Any
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -100,7 +100,7 @@ class ProjectDBAPI(BaseProjectDB):
     async def insert_project(
         self,
         project: dict[str, Any],
-        user_id: Optional[int],
+        user_id: int | None,
         *,
         product_name: str,
         force_project_uuid: bool = False,
@@ -222,7 +222,7 @@ class ProjectDBAPI(BaseProjectDB):
         self,
         project_uuid: ProjectID,
         product_name: str,
-        conn: Optional[SAConnection] = None,
+        conn: SAConnection | None = None,
     ) -> None:
         async with AsyncExitStack() as stack:
             if not conn:
@@ -239,12 +239,12 @@ class ProjectDBAPI(BaseProjectDB):
         user_id: PositiveInt,
         *,
         product_name: str,
-        filter_by_project_type: Optional[ProjectType] = None,
-        filter_by_services: Optional[list[dict]] = None,
-        only_published: Optional[bool] = False,
-        include_hidden: Optional[bool] = False,
-        offset: Optional[int] = 0,
-        limit: Optional[int] = None,
+        filter_by_project_type: ProjectType | None = None,
+        filter_by_services: list[dict] | None = None,
+        only_published: bool | None = False,
+        include_hidden: bool | None = False,
+        offset: int | None = 0,
+        limit: int | None = None,
     ) -> tuple[list[dict[str, Any]], list[ProjectType], int]:
         async with self.engine.acquire() as conn:
             user_groups: list[RowProxy] = await self._list_user_groups(conn, user_id)
@@ -443,7 +443,7 @@ class ProjectDBAPI(BaseProjectDB):
         project_data: dict,
         project_uuid: ProjectIDStr,
         *,
-        hidden: Optional[bool] = None,
+        hidden: bool | None = None,
     ) -> bool:
         """The garbage collector needs to alter the row without passing through the
         permissions layer."""
@@ -464,12 +464,14 @@ class ProjectDBAPI(BaseProjectDB):
 
     async def update_project_last_change_timestamp(self, project_uuid: ProjectIDStr):
         async with self.engine.acquire() as conn:
-            await conn.execute(
+            result = await conn.execute(
                 # pylint: disable=no-value-for-parameter
                 projects.update()
                 .values(last_change_date=now_str())
-                .where(projects.c.uuid == project_uuid)
+                .where(projects.c.uuid == f"{project_uuid}")
             )
+            if result.rowcount == 0:
+                raise ProjectNotFoundError(project_uuid=project_uuid)
 
     async def delete_project(self, user_id: int, project_uuid: str):
         log.info(
@@ -502,7 +504,7 @@ class ProjectDBAPI(BaseProjectDB):
         partial_workbench_data: dict[str, Any],
         user_id: int,
         project_uuid: str,
-        product_name: Optional[str] = None,
+        product_name: str | None = None,
     ) -> tuple[ProjectDict, dict[str, Any]]:
         """patches an EXISTING project from a user
         new_project_data only contains the entries to modify
