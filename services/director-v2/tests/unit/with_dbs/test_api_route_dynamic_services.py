@@ -497,7 +497,7 @@ def test_delete_service_waiting_for_manual_intervention(
         response.status_code == exp_status_code
     ), f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
 
-    # mark service as failed an waiting for human interventions
+    # mark service as failed and waiting for human intervention
     node_uuid = UUID(service["node_uuid"])
     scheduler_data = dynamic_sidecar_scheduler._scheduler.get_scheduler_data(  # pylint: disable=protected-access
         node_uuid
