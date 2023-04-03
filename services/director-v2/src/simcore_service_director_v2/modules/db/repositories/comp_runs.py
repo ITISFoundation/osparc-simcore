@@ -87,7 +87,7 @@ class CompRunsRepository(BaseRepository):
                         sa.select([comp_runs.c.iteration])
                         .where(
                             (comp_runs.c.user_id == user_id)
-                            & (comp_runs.c.project_uuid == str(project_id))
+                            & (comp_runs.c.project_uuid == f"{project_id}")
                         )
                         .order_by(desc(comp_runs.c.iteration))
                     )
