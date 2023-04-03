@@ -4,13 +4,11 @@
 # pylint: disable=too-many-arguments
 
 
-import random
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 import pytest
 import sqlalchemy as sa
 from faker import Faker
-from packaging.version import Version
 from pytest_simcore.helpers.rawdata_fakers import random_group
 from simcore_postgres_database.models.groups import GroupType, groups
 from simcore_postgres_database.models.products import products
@@ -22,26 +20,131 @@ from simcore_postgres_database.models.services import (
 from simcore_postgres_database.models.services_consume_filetypes import (
     services_consume_filetypes,
 )
+from sqlalchemy.dialects.postgresql import ARRAY, INTEGER
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 
+class RandomServiceFactory:
+    def __init__(self, faker: Faker):
+        self._faker = faker
+        self._cache = {}  # meta
+
+    def random_service_meta_data(self, **overrides) -> dict[str, Any]:
+        #
+        # NOTE: if overrides keys are wrong it will fail later as
+        #      `sqlalchemy.exc.CompileError: Unconsumed column names: product_name`
+        #
+        name_suffix = self._faker.name().lower().replace(" ", "")
+        version = self._faker.numerify("%#.%#.#")
+        owner_gid = 1  # everybody
+
+        row = dict(
+            key=f"simcore/service/dynamic/{name_suffix}",
+            version=version,
+            owner=owner_gid,
+            name=f"service {name_suffix}",
+            description=self._faker.sentence(),
+            thumbnail=self._faker.image_url(120, 120),
+            classifiers=self._faker.random_elements(
+                elements=("RRID:SCR_018997", "RRID:SCR_019001", "RRID:Addgene_44362"),
+                unique=True,
+            ),
+            quality={},
+        )
+        row.update(overrides)
+
+        self._cache = row
+
+        return row
+
+    def random_service_access_rights(self, **overrides) -> dict[str, Any]:
+        default_value = self._get_service_meta_data()
+        row = dict(
+            key=default_value["key"],
+            version=default_value["version"],
+            gid=default_value["owner"],
+            execute_access=True,
+            write_access=True,
+            product_name="osparc",
+        )
+        row.update(overrides)
+
+        return row
+
+    def random_service_consume_filetypes(
+        self, port_index: int = 1, **overrides
+    ) -> dict[str, Any]:
+        default_value = self._get_service_meta_data()
+
+        row = dict(
+            service_key=default_value["key"],
+            service_version=default_value["version"],
+            service_display_name=default_value["name"],
+            service_input_port=f"input_{port_index}",
+            filetype=self._faker.uri_extension().removeprefix(".").upper(),
+            is_guest_allowed=bool(port_index % 2),
+        )
+
+        row.update(overrides)
+        return row
+
+    def _get_service_meta_data(self):
+        if not self._cache:
+            raise ValueError("Run first random_service_meta_data(*)")
+        return self._cache
+
+    def reset(self):
+        self._cache = {}
+
+
+class ServiceInserted(NamedTuple):
+    metadata: dict[str, Any]
+    access: list[dict[str, Any]]
+    filetypes: list[dict[str, Any]]
+
+
+def execute_insert_service(
+    conn,
+    meta_data_values: dict[str, Any],
+    access_rights_values: list[dict[str, Any]],
+    filetypes_values: list[dict[str, Any]],
+) -> ServiceInserted:
+    query = services_meta_data.insert().values(**meta_data_values)
+    conn.execute(query)
+
+    for values in access_rights_values:
+        query = services_access_rights.insert().values(**values)
+        conn.execute(query)
+
+    for values in filetypes_values:
+        query = services_consume_filetypes.insert().values(**values)
+        conn.execute(query)
+
+    inserted = ServiceInserted(
+        metadata=meta_data_values,
+        access=access_rights_values,
+        filetypes=filetypes_values,
+    )
+    print(inserted)
+    return inserted
+
+
+ServiceKeyStr = str
+ServiceVersionStr = str
+
+
 class ServicesFixture(NamedTuple):
-    expected_latest: dict
+    expected_latest: set[tuple[ServiceKeyStr, ServiceVersionStr]]
     num_services: int
-    expected_public_service: dict
 
 
 @pytest.fixture
 def services_fixture(faker: Faker, pg_sa_engine: sa.engine.Engine) -> ServicesFixture:
-    # fake metadata from image
-    # emulate background
-    #  - inject to database
-    #  - create permissions
-
-    expected_latest = {}
+    expected_latest = set()
+    num_services = 0
 
     with pg_sa_engine.connect() as conn:
-        # need PRODUCT
+        # PRODUCT
         product_name = conn.execute(
             products.insert()
             .values(
@@ -54,157 +157,81 @@ def services_fixture(faker: Faker, pg_sa_engine: sa.engine.Engine) -> ServicesFi
             .returning(products.c.name)
         ).scalar()
 
-        # need GROUPS
+        # GROUPS
         product_gid = conn.execute(
             groups.insert()
             .values(**random_group(type=GroupType.STANDARD, name="osparc group"))
             .returning(groups.c.gid)
         ).scalar()
+
         everyone_gid = conn.execute(
             sa.select(groups.c.gid).where(groups.c.type == GroupType.EVERYONE)
         ).scalar()
 
         assert product_gid != everyone_gid
 
-        # fill w/ different versions
-        num_services = 3
-        expected_public_service = {}
-
-        for service_index in range(num_services):
-            service_name = faker.name()
-            key = f"simcore/services/dynamic/{service_name.lower().replace(' ','')}"
-
-            expected_latest[key] = "0.0.0"
-
-            num_versions = 4
-            for _ in range(num_versions):
-                version = faker.numerify("%#.%#.%##")
-                if Version(expected_latest[key]) < Version(version):
-                    expected_latest[key] = version
-
-                query = services_meta_data.insert().values(
-                    key=key,
+        # SERVICE /one
+        service_factory = RandomServiceFactory(faker=faker)
+        service_latest = "10.2.33"
+        for version in ("1.0.0", "10.1.0", service_latest, "10.2.2"):
+            service = execute_insert_service(
+                conn,
+                service_factory.random_service_meta_data(
+                    key="simcore/service/dynamic/one",
                     version=version,
-                    name=service_name,
-                    description=faker.sentence(),
-                    thumbnail=faker.image_url(120, 120),
-                    classifiers=faker.random_choices(elements=("osparc", "nih", "foo"))
-                    if service_index % 2
-                    else [],
+                    owner=everyone_gid,
+                ),
+                [
+                    service_factory.random_service_access_rights(
+                        product_name=product_name
+                    )
+                ],
+                [
+                    service_factory.random_service_consume_filetypes(
+                        port_index=1,
+                    )
+                ],
+            )
+
+            num_services += 1
+
+            if version == service_latest:
+                expected_latest.add(
+                    (service.metadata["key"], service.metadata["version"])
                 )
-                conn.execute(query)
 
-                # services_access_rights = everyone
-                query = services_access_rights.insert().values(
-                    key=key,
-                    version=version,
-                    gid=everyone_gid,
+        # SERVICE /two
+        service = execute_insert_service(
+            conn,
+            service_factory.random_service_meta_data(
+                key="simcore/service/dynamic/two",
+                version="1.2.3",
+                owner=product_gid,
+            ),
+            [
+                service_factory.random_service_access_rights(
+                    product_name=product_name,
                     execute_access=True,
                     write_access=False,
-                    product_name=product_name,
                 )
+            ],
+            [
+                service_factory.random_service_consume_filetypes(port_index=1),
+                service_factory.random_service_consume_filetypes(port_index=2),
+            ],
+        )
+        num_services += 1
+        expected_latest.add((service.metadata["key"], service.metadata["version"]))
 
-                # services_consume_filetypes
-                num_filetypes = random.randint(0, 4)
-                for i, filetype in enumerate(
-                    faker.uri_extension().removeprefix(".")
-                    for _ in range(num_filetypes)
-                ):
-                    is_public = random.choice([True, False])
-                    query = services_consume_filetypes.insert().values(
-                        service_key=key,
-                        service_version=version,
-                        service_display_name=service_name,
-                        service_input_port=f"input_{i}",
-                        filetype=filetype.upper(),
-                        is_guest_allowed=is_public,
-                    )
-
-                    if is_public:
-                        expected_public_service = {"key": key, "version": version}
-
-                conn.execute(query)
     return ServicesFixture(
         expected_latest=expected_latest,
         num_services=num_services,
-        expected_public_service=expected_public_service,
     )
 
 
-def test_it1():
-
-    Base = sa.orm.declarative_base()
-    metadata = Base.metadata
-
-    company_id = 1
-
-    t_folders = sa.Table(
-        "t_folders",
-        metadata,
-        sa.Column("id", sa.Integer, primary_key=True),
-        sa.Column("company_id", sa.Integer),
-    )
-
-    t_milestones = sa.Table(
-        "t_milestones",
-        metadata,
-        sa.Column("folder_id", sa.Integer),
-        sa.Column("is_done", sa.Boolean),
-        sa.Column("value", sa.Float),
-    )
-
-    t_folders_members = sa.Table(
-        "t_folders_members",
-        metadata,
-        sa.Column("id", sa.Integer, primary_key=True),
-        sa.Column("folder_id", sa.Integer),
-        sa.Column("user_id", sa.Integer),
-    )
-
-    f = t_folders.c
-    m = t_milestones.c
-    members_t = t_folders_members
-
-    f1 = (
-        sa.select([f.id, sa.func.max(m.value).label("value")])
-        .select_from(t_folders.join(t_milestones, f.id == m.folder_id))
-        .where(
-            sa.and_(
-                f.company_id == company_id,
-                m.is_done.is_(False),
-            )
-        )
-        .group_by(f.id)
-    ).alias("f1")
-
-    f2 = sa.select([f1.c.id, f1.c.value, members_t.c.id]).select_from(
-        f1.join(members_t, members_t.c.folder_id == f1.c.id)
-    )
-
-    print(f2)
-
-
-@pytest.mark.testit
-def test_it(services_fixture: ServicesFixture, pg_sa_engine: sa.engine.Engine):
-    # lts = (
-    #     sa.select(
-    #         services_meta_data.c.key,
-    #         sa.text(
-    #             "array_to_string(MAX(string_to_array(version, '.')::int[]), '.') AS latest"
-    #         ),
-    #     ).group_by(services_meta_data.c.key)
-    # ).alias("lts")
-
-    # stmt = sa.select([lts.c.key, lts.c.latest, services_meta_data.c.name]).select_from(
-    #     lts.join(
-    #         services_meta_data,
-    #         (services_meta_data.c.key == lts.c.key)
-    #         & (services_meta_data.c.version == lts.c.latest),
-    #     )
-    # )
-
-    from sqlalchemy.dialects.postgresql import ARRAY, INTEGER
-
+def test_select_latest_services(
+    services_fixture: ServicesFixture, pg_sa_engine: sa.engine.Engine
+):
     assert issubclass(INTEGER, sa.Integer)
 
     lts = (
@@ -231,10 +258,10 @@ def test_it(services_fixture: ServicesFixture, pg_sa_engine: sa.engine.Engine):
     print(stmt)
 
     with pg_sa_engine.connect() as conn:
-
-        # rows: list = conn.execute(services_latest).fetchall()
-        rows: list = conn.execute(stmt).fetchall()
-        print(rows)
+        latest_services: list = conn.execute(stmt).fetchall()
+        assert {
+            (s.key, s.latest) for s in latest_services
+        } == services_fixture.expected_latest
 
 
 def test_trial_queries_for_service_metadata(
@@ -375,3 +402,55 @@ def test_trial_queries_for_service_metadata(
             rows = conn.execute(query).fetchall()
             assert len(rows) <= services_fixture.num_services
             print(rows)
+
+
+def test_it1():
+    Base = sa.orm.declarative_base()
+    metadata = Base.metadata
+
+    company_id = 1
+
+    t_folders = sa.Table(
+        "t_folders",
+        metadata,
+        sa.Column("id", sa.Integer, primary_key=True),
+        sa.Column("company_id", sa.Integer),
+    )
+
+    t_milestones = sa.Table(
+        "t_milestones",
+        metadata,
+        sa.Column("folder_id", sa.Integer),
+        sa.Column("is_done", sa.Boolean),
+        sa.Column("value", sa.Float),
+    )
+
+    t_folders_members = sa.Table(
+        "t_folders_members",
+        metadata,
+        sa.Column("id", sa.Integer, primary_key=True),
+        sa.Column("folder_id", sa.Integer),
+        sa.Column("user_id", sa.Integer),
+    )
+
+    f = t_folders.c
+    m = t_milestones.c
+    members_t = t_folders_members
+
+    f1 = (
+        sa.select([f.id, sa.func.max(m.value).label("value")])
+        .select_from(t_folders.join(t_milestones, f.id == m.folder_id))
+        .where(
+            sa.and_(
+                f.company_id == company_id,
+                m.is_done.is_(False),
+            )
+        )
+        .group_by(f.id)
+    ).alias("f1")
+
+    f2 = sa.select([f1.c.id, f1.c.value, members_t.c.id]).select_from(
+        f1.join(members_t, members_t.c.folder_id == f1.c.id)
+    )
+
+    print(f2)
