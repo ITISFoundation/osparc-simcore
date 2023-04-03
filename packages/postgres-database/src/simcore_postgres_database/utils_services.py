@@ -5,7 +5,9 @@ from sqlalchemy.dialects.postgresql import ARRAY, INTEGER
 from .models.services import services_meta_data
 
 
-def create_select_latest_services_query() -> sqlalchemy.sql.Select:
+def create_select_latest_services_query(
+    column_version_label: str = "latest",
+) -> sqlalchemy.sql.Select:
     """
     Returns select query of service_meta_data table with columns 'key' and 'latest' (=version)
     """
@@ -20,7 +22,7 @@ def create_select_latest_services_query() -> sqlalchemy.sql.Select:
                 )
             ),
             ".",
-        ).label("latest"),
+        ).label(column_version_label),
     ).group_by(services_meta_data.c.key)
 
     return select_latest_services
