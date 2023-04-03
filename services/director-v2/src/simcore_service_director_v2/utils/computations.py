@@ -119,7 +119,9 @@ async def find_deprecated_tasks(
         )
     )
     service_key_version_to_details = {
-        ServiceKeyVersion(key=details["key"], version=details["version"]): details
+        ServiceKeyVersion.construct(
+            key=details["key"], version=details["version"]
+        ): details
         for details in services_details
     }
     today = datetime.utcnow()

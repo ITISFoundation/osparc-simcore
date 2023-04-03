@@ -107,7 +107,7 @@ async def _generate_tasks_list_from_project(
     list_comp_tasks = []
 
     unique_service_key_versions = {
-        ServiceKeyVersion(key=node.key, version=node.version)
+        ServiceKeyVersion.construct(key=node.key, version=node.version)
         for node in project.workbench.values()
     }
     key_version_to_node_infos = {
@@ -119,7 +119,9 @@ async def _generate_tasks_list_from_project(
 
     for internal_id, node_id in enumerate(project.workbench, 1):
         node: Node = project.workbench[node_id]
-        node_key_version = ServiceKeyVersion(key=node.key, version=node.version)
+        node_key_version = ServiceKeyVersion.construct(
+            key=node.key, version=node.version
+        )
         node_details, node_resources, node_extras = key_version_to_node_infos.get(
             node_key_version,
             (
