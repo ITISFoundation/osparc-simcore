@@ -7,7 +7,7 @@ import asyncio
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from random import choice
-from typing import Any, Awaitable, Callable
+from typing import Any, Awaitable, Callable, Final
 from unittest import mock
 from uuid import uuid4
 
@@ -16,6 +16,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from pydantic import NonNegativeFloat, NonNegativeInt
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
@@ -336,17 +337,22 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
     # create a starting project with no dy-services
     project = await user_project_with_num_dynamic_services(0)
 
+    SERVICE_IS_RUNNING_AFTER_S: Final[NonNegativeFloat] = 0.1
+
     @dataclass
     class _RunninServices:
         running_services_uuids: list[str] = field(default_factory=list)
 
-        def num_services(self, *args, **kwargs) -> list[dict[str, Any]]:
+        async def num_services(self, *args, **kwargs) -> list[dict[str, Any]]:
             return [
                 {"service_uuid": service_uuid}
                 for service_uuid in self.running_services_uuids
             ]
 
-        def inc_running_services(self, *args, **kwargs):
+        async def inc_running_services(self, *args, **kwargs):
+            # simulate delay when service is starting
+            # reproduces real world conditions and makes test to fail
+            await asyncio.sleep(SERVICE_IS_RUNNING_AFTER_S)
             self.running_services_uuids.append(kwargs["service_uuid"])
 
     # let's count the started services
@@ -365,7 +371,7 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
         "service_key": f"simcore/services/dynamic/{faker.pystr()}",
         "service_version": faker.numerify("%.#.#"),
     }
-    NUM_DY_SERVICES = 250
+    NUM_DY_SERVICES: Final[NonNegativeInt] = 20
     responses = await asyncio.gather(
         *(client.post(f"{url}", json=body) for _ in range(NUM_DY_SERVICES))
     )
