@@ -9,7 +9,7 @@ def create_select_latest_services_query() -> sqlalchemy.sql.Select:
     """
     Returns select query of service_meta_data table with columns 'key' and 'latest' (=version)
     """
-    assert issubclass(INTEGER, sa.Integer)
+    assert issubclass(INTEGER, sa.Integer)  # nosec
 
     select_latest_services = sa.select(
         services_meta_data.c.key,
