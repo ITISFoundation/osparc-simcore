@@ -1,15 +1,22 @@
 import contextlib
 import datetime
+import json
 import logging
 from dataclasses import dataclass, field
 from typing import AsyncIterator, Final, Optional, Union
 
 import redis.asyncio as aioredis
 import redis.exceptions
+from pydantic import NonNegativeFloat
 from pydantic.errors import PydanticErrorMixin
 from redis.asyncio.lock import Lock
 from redis.asyncio.retry import Retry
 from redis.backoff import ExponentialBackoff
+from settings_library.redis import RedisDatabase, RedisSettings
+from tenacity._asyncio import AsyncRetrying
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
 from .background_task import periodic_task
 from .logging_utils import log_catch
@@ -17,11 +24,14 @@ from .logging_utils import log_catch
 _DEFAULT_LOCK_TTL: Final[datetime.timedelta] = datetime.timedelta(seconds=10)
 _AUTO_EXTEND_LOCK_RATIO: Final[float] = 0.6
 
+_MINUTE: Final[NonNegativeFloat] = 60
+_WAIT_SECS: Final[NonNegativeFloat] = 2
+
 logger = logging.getLogger(__name__)
 
 
-class AlreadyLockedError(PydanticErrorMixin, RuntimeError):
-    msg_template: str = "Lock {lock.name} is already locked!"
+class CouldNotAcquireLockError(PydanticErrorMixin, RuntimeError):
+    msg_template: str = "Lock {lock.name} could not be acquired!"
 
 
 @dataclass
@@ -48,7 +58,25 @@ class RedisClientSDK:
             decode_responses=True,
         )
 
-    async def close(self) -> None:
+    async def setup(self) -> None:
+        async for attempt in AsyncRetrying(
+            stop=stop_after_delay(1 * _MINUTE),
+            wait=wait_fixed(_WAIT_SECS),
+            before_sleep=before_sleep_log(logger, logging.WARNING),
+            reraise=True,
+        ):
+            with attempt:
+                if not await self._client.ping():
+                    await self._client.close(close_connection_pool=True)
+                    raise ConnectionError(f"Connection to {self.redis_dsn!r} failed")
+                logger.info(
+                    "Connection to %s succeeded with %s [%s]",
+                    f"redis at {self.redis_dsn=}",
+                    f"{self._client=}",
+                    json.dumps(attempt.retry_state.retry_object.statistics),
+                )
+
+    async def shutdown(self) -> None:
         await self._client.close(close_connection_pool=True)
 
     async def ping(self) -> bool:
@@ -62,18 +90,26 @@ class RedisClientSDK:
         self,
         lock_key: str,
         lock_value: Optional[Union[bytes, str]] = None,
+        *,
+        blocking: bool = False,
+        blocking_timeout_s: NonNegativeFloat = 5,
     ) -> AsyncIterator[Lock]:
         ttl_lock = None
         try:
 
             async def _auto_extend_lock(lock: Lock) -> None:
-                await lock.reacquire()
+                with contextlib.suppress(redis.exceptions.LockError):
+                    await lock.reacquire()
 
             ttl_lock = self._client.lock(
                 lock_key, timeout=_DEFAULT_LOCK_TTL.total_seconds()
             )
-            if not await ttl_lock.acquire(blocking=False, token=lock_value):
-                raise AlreadyLockedError(lock=ttl_lock)
+
+            if not await ttl_lock.acquire(
+                blocking=blocking, token=lock_value, blocking_timeout=blocking_timeout_s
+            ):
+                raise CouldNotAcquireLockError(lock=ttl_lock)
+
             async with periodic_task(
                 _auto_extend_lock,
                 interval=_AUTO_EXTEND_LOCK_RATIO * _DEFAULT_LOCK_TTL,
@@ -85,11 +121,35 @@ class RedisClientSDK:
         finally:
             if ttl_lock:
                 with log_catch(logger, reraise=False):
-                    await ttl_lock.release()
-
-    async def is_locked(self, lock_name: str) -> bool:
-        lock = self._client.lock(lock_name)
-        return await lock.locked()
+                    with contextlib.suppress(redis.exceptions.LockError):
+                        await ttl_lock.release()
 
     async def lock_value(self, lock_name: str) -> Optional[str]:
         return await self._client.get(lock_name)
+
+
+@dataclass
+class RedisClientsManager:
+    """
+    Manages the lifetime of redis client sdk connections
+    """
+
+    databases: set[RedisDatabase]
+    redis_settings: RedisSettings
+
+    _client_sdks: dict[RedisDatabase:RedisClientSDK] = field(default_factory=dict)
+
+    async def setup(self) -> None:
+        for db in self.databases:
+            self._client_sdks[db] = client_sdk = RedisClientSDK(
+                redis_dsn=self.redis_settings.build_redis_dsn(db)
+            )
+            await client_sdk.setup()
+
+    async def shutdown(self) -> None:
+        client_sdk: RedisClientSDK
+        for client_sdk in self._client_sdks.values():
+            await client_sdk.shutdown()
+
+    def client(self, database: RedisDatabase) -> RedisClientSDK:
+        return self._client_sdks[database]
