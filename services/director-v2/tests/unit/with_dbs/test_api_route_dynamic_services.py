@@ -218,6 +218,16 @@ def mocked_director_v0_service_api(
 
 
 @pytest.fixture
+def mocked_service_awaits_manual_interventions(mocker: MockerFixture) -> None:
+    module_base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler"
+    mocker.patch(
+        f"{module_base}._core._scheduler.Scheduler.service_awaits_manual_interventions",
+        autospec=True,
+        return_value=False,
+    )
+
+
+@pytest.fixture
 def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) -> None:
     """because the monitor is disabled some functionality needs to be mocked"""
 
@@ -236,11 +246,7 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
         side_effect=get_stack_status,
     )
     # MOCKING remove_service
-    def remove_service(
-        node_uuid: NodeID,
-        can_save: Optional[bool],
-        skip_observation_recreation: bool = False,
-    ) -> None:
+    def remove_service(node_uuid: NodeID, *ars: Any, **kwargs: Any) -> None:
         if exp_status_code == status.HTTP_307_TEMPORARY_REDIRECT:
             raise DynamicSidecarNotFoundError(node_uuid)
 
@@ -254,12 +260,6 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
         f"{module_base}._core._scheduler.Scheduler._discover_running_services",
         autospec=True,
         return_value=None,
-    )
-
-    mocker.patch(
-        f"{module_base}._core._scheduler.Scheduler.service_awaits_manual_interventions",
-        autospec=True,
-        return_value=False,
     )
 
 
@@ -430,6 +430,7 @@ def test_get_service_status(
 def test_delete_service(
     mocked_director_v0_service_api: MockRouter,
     mocked_director_v2_scheduler: None,
+    mocked_service_awaits_manual_interventions: None,
     client: TestClient,
     service: dict[str, Any],
     exp_status_code: int,
@@ -508,7 +509,7 @@ def test_delete_service_waiting_for_manual_intervention(
     # check response
     url = URL(f"/v2/dynamic_services/{node_uuid}")
     stop_response = client.delete(str(url), allow_redirects=False)
-    assert stop_response.json()["code"] == "waiting_for_intervention"
+    assert stop_response.json()["errors"][0] == "waiting_for_intervention"
 
 
 @pytest.mark.parametrize(
