@@ -84,6 +84,18 @@ qx.Class.define("osparc.utils.Utils", {
       }
     },
 
+    resourceTypeToAlias: function(resourceType, options) {
+      switch (resourceType) {
+        case "study":
+          return osparc.product.Utils.getStudyAlias(options);
+        case "template":
+          return osparc.product.Utils.getTemplateAlias(options);
+        case "service":
+          return osparc.product.Utils.getServiceAlias(options);
+      }
+      return resourceType;
+    },
+
     hardRefresh: function() {
       // https://stackoverflow.com/questions/5721704/window-location-reload-with-clear-cache
       // No cigar. Tried:
