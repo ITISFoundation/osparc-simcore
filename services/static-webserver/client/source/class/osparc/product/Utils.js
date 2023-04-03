@@ -74,6 +74,21 @@ qx.Class.define("osparc.product.Utils", {
       return alias;
     },
 
+    getServiceAlias: function(options = {}) {
+      let alias = qx.locale.Manager.tr("service");
+      if (options.plural) {
+        alias = qx.locale.Manager.tr("services");
+      }
+
+      if (options.firstUpperCase) {
+        alias = osparc.utils.Utils.capitalize(alias);
+      } else if (options.allUpperCase) {
+        alias = alias.toUpperCase();
+      }
+
+      return alias;
+    },
+
     getLogoPath: function() {
       let logosPath = null;
       const colorManager = qx.theme.manager.Color.getInstance();
