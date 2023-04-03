@@ -10,7 +10,7 @@ from models_library.service_settings_labels import (
     NATRule,
     SimcoreServiceLabels,
 )
-from orderedset import OrderedSet
+from ordered_set import OrderedSet
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 
 from ...core.settings import DynamicSidecarEgressSettings
