@@ -5,6 +5,7 @@
 # pylint:disable=too-many-arguments
 # pylint: disable=reimported
 import asyncio
+import datetime
 import functools
 import traceback
 from dataclasses import dataclass
@@ -34,6 +35,7 @@ from distributed import Event, Scheduler
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
 from fastapi.applications import FastAPI
+from models_library.api_schemas_storage import LinkType
 from models_library.clusters import ClusterID, NoAuthentication, SimpleAuthentication
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -45,6 +47,7 @@ from pydantic.tools import parse_obj_as
 from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from servicelib.background_task import periodic_task
 from settings_library.s3 import S3Settings
 from simcore_sdk.node_ports_v2 import FileLinkType
 from simcore_service_director_v2.core.errors import (
@@ -200,7 +203,8 @@ async def create_dask_client_from_gateway(
         assert client.backend.gateway
         assert client.backend.gateway_cluster
 
-        scheduler_infos = client.backend.client.scheduler_info()  # type: ignore
+        scheduler_infos = client.backend.client.scheduler_info()
+        assert scheduler_infos
         print(f"--> Connected to gateway {client.backend.gateway=}")
         print(f"--> Cluster {client.backend.gateway_cluster=}")
         print(f"--> Client {client=}")
@@ -1163,3 +1167,30 @@ async def test_get_cluster_details(
     ].used_resources
 
     assert all(res == 0.0 for res in currently_used_resources.values())
+
+
+@pytest.mark.skip(reason="manual testing")
+@pytest.mark.parametrize("tasks_file_link_type", [LinkType.S3], indirect=True)
+async def test_get_cluster_details_robust_to_worker_disappearing(
+    create_dask_client_from_gateway: Callable[[], Awaitable[DaskClient]]
+):
+    """When running a high number of comp. services in a gateway,
+    one could observe an issue where getting the cluster used resources
+    would fail sometimes and generate a big amount of errors in the logs
+    due to dask worker disappearing or not completely ready.
+    This test kind of simulates this."""
+    dask_client = await create_dask_client_from_gateway()
+    await dask_client.get_cluster_details()
+
+    async def _scale_up_and_down():
+        assert dask_client.backend.gateway_cluster
+        await dask_client.backend.gateway_cluster.scale(40)
+        await asyncio.sleep(1)
+        await dask_client.backend.gateway_cluster.scale(1)
+
+    async with periodic_task(
+        _scale_up_and_down, interval=datetime.timedelta(seconds=1), task_name="pytest"
+    ):
+        for n in range(900):
+            await dask_client.get_cluster_details()
+            await asyncio.sleep(0.1)
