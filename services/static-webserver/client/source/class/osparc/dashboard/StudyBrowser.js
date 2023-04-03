@@ -487,6 +487,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         flex: 1
       });
 
+      this.__addShowSharedWithButton();
       this._addViewModeButton();
 
 
@@ -517,6 +518,30 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.addListener("changeVisibility", () => this._moreResourcesRequired());
 
       return this._resourcesContainer;
+    },
+
+    __addShowSharedWithButton: function() {
+      const sharedWithMenu = new qx.ui.menu.Menu().set({
+        font: "text-14"
+      });
+      const sharedWithButton = new qx.ui.form.MenuButton(this.tr("Share with"), "@FontAwesome5Solid/chevron-down/10", sharedWithMenu);
+      osparc.utils.Utils.setIdToWidget(sharedWithButton, "sharedWithButton");
+
+      const groupOptions = new qx.ui.form.RadioGroup();
+
+      const options = osparc.dashboard.SearchBarFilter.getSharedWithOptions("study");
+      options.forEach((option, idx) => {
+        const button = new qx.ui.menu.RadioButton(option.label);
+        sharedWithMenu.add(button);
+        button.addListener("execute", () => this._searchBarFilter.setSharedWithActiveFilter(option.id, option.label), this);
+        groupOptions.add(button);
+        // preselect show-all
+        if (idx === 0) {
+          groupOptions.setSelection([button]);
+        }
+      });
+
+      this._secondaryBar.add(sharedWithButton);
     },
 
     __createLoadMoreButton: function() {

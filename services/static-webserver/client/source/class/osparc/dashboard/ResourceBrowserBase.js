@@ -80,7 +80,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     _resourcesList: null,
     _topBar: null,
     _secondaryBar: null,
-    __searchBarFilter: null,
+    _searchBarFilter: null,
     __viewMenuButton: null,
     _resourcesContainer: null,
     _loadingResourcesBtn: null,
@@ -134,7 +134,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       resourcesContainer.addListener("updateTemplate", e => this._updateTemplateData(e.getData()));
       resourcesContainer.addListener("updateService", e => this._updateServiceData(e.getData()));
       resourcesContainer.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));
-      resourcesContainer.addListener("tagClicked", e => this.__searchBarFilter.addTagActiveFilter(e.getData()));
+      resourcesContainer.addListener("tagClicked", e => this._searchBarFilter.addTagActiveFilter(e.getData()));
       resourcesContainer.addListener("emptyStudyClicked", e => this._deleteResourceRequested(e.getData()));
       this._add(resourcesContainer);
     },
@@ -145,7 +145,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         alignY: "middle"
       });
 
-      const searchBarFilter = this.__searchBarFilter = new osparc.dashboard.SearchBarFilter(this._resourceType);
+      const searchBarFilter = this._searchBarFilter = new osparc.dashboard.SearchBarFilter(this._resourceType);
       const textField = searchBarFilter.getChildControl("text-field");
       osparc.utils.Utils.setIdToWidget(textField, "searchBarFilter-textField-"+this._resourceType);
       topBar.add(searchBarFilter, {
