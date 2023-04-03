@@ -7,6 +7,7 @@
 
 import json
 import re
+import urllib.parse
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Callable
@@ -16,7 +17,7 @@ import pytest
 import respx
 from faker import Faker
 from fastapi import FastAPI
-from models_library.clusters import DEFAULT_CLUSTER_ID
+from models_library.clusters import DEFAULT_CLUSTER_ID, Cluster, ClusterID
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import NodeID, NodeState
 from models_library.projects_pipeline import PipelineDetails
@@ -135,9 +136,29 @@ def mocked_director_service_fcts(
 def mocked_catalog_service_fcts(
     minimal_app: FastAPI,
     fake_service_details: ServiceDockerData,
-    fake_service_extras: ServiceExtras,
     fake_service_resources: ServiceResourcesDict,
 ):
+    def _mocked_service_resources(request) -> httpx.Response:
+        return httpx.Response(
+            200, json=jsonable_encoder(fake_service_resources, by_alias=True)
+        )
+
+    def _mocked_services_details(
+        request, service_key: str, service_version: str
+    ) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json=jsonable_encoder(
+                fake_service_details.copy(
+                    update={
+                        "key": urllib.parse.unquote(service_key),
+                        "version": service_version,
+                    }
+                ),
+                by_alias=True,
+            ),
+        )
+
     # pylint: disable=not-context-manager
     with respx.mock(
         base_url=minimal_app.state.settings.DIRECTOR_V2_CATALOG.api_base_url,
@@ -149,14 +170,13 @@ def mocked_catalog_service_fcts(
                 r"services/(simcore)%2F(services)%2F(comp|dynamic|frontend)%2F[^/]+/[^\.]+.[^\.]+.[^\/]+/resources"
             ),
             name="get_service_resources",
-        ).respond(json=jsonable_encoder(fake_service_resources, by_alias=True))
-
+        ).mock(side_effect=_mocked_service_resources)
         respx_mock.get(
             re.compile(
-                r"services/(simcore)%2F(services)%2F(comp|dynamic|frontend)%2F[^/]+/[^\.]+.[^\.]+.[^\/]+"
+                r"services/(?P<service_key>simcore%2Fservices%2F(comp|dynamic|frontend)%2F[^/]+)/(?P<service_version>[^\.]+.[^\.]+.[^/\?]+).*"
             ),
             name="get_service",
-        ).respond(json=fake_service_details.dict(by_alias=True))
+        ).mock(side_effect=_mocked_services_details)
 
         yield respx_mock
 
@@ -167,6 +187,25 @@ def mocked_catalog_service_fcts_deprecated(
     fake_service_details: ServiceDockerData,
     fake_service_extras: ServiceExtras,
 ):
+    def _mocked_services_details(
+        request, service_key: str, service_version: str
+    ) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json=jsonable_encoder(
+                fake_service_details.copy(
+                    update={
+                        "key": urllib.parse.unquote(service_key),
+                        "version": service_version,
+                        "deprecated": (
+                            datetime.utcnow() - timedelta(days=1)
+                        ).isoformat(),
+                    }
+                ),
+                by_alias=True,
+            ),
+        )
+
     # pylint: disable=not-context-manager
     with respx.mock(
         base_url=minimal_app.state.settings.DIRECTOR_V2_CATALOG.api_base_url,
@@ -175,16 +214,10 @@ def mocked_catalog_service_fcts_deprecated(
     ) as respx_mock:
         respx_mock.get(
             re.compile(
-                r"services/(simcore)%2F(services)%2F(comp|dynamic|frontend)%2F.+/(.+)"
+                r"services/(?P<service_key>simcore%2Fservices%2F(comp|dynamic|frontend)%2F[^/]+)/(?P<service_version>[^\.]+.[^\.]+.[^/\?]+).*"
             ),
             name="get_service",
-        ).respond(
-            json=fake_service_details.copy(
-                update={
-                    "deprecated": (datetime.utcnow() - timedelta(days=1)).isoformat()
-                }
-            ).dict(by_alias=True)
-        )
+        ).mock(side_effect=_mocked_services_details)
 
         yield respx_mock
 
@@ -295,6 +328,77 @@ async def test_start_computation_with_deprecated_services_raises_406(
         ),
     )
     assert response.status_code == status.HTTP_406_NOT_ACCEPTABLE, response.text
+
+
+@pytest.fixture
+def unusable_cluster(
+    registered_user: Callable[..., dict[str, Any]],
+    cluster: Callable[..., Cluster],
+) -> ClusterID:
+    user = registered_user()
+    created_cluster = cluster(user)
+    return created_cluster.id
+
+
+async def test_start_computation_with_forbidden_cluster_raises_403(
+    minimal_configuration: None,
+    mocked_director_service_fcts,
+    mocked_catalog_service_fcts,
+    product_name: str,
+    fake_workbench_without_outputs: dict[str, Any],
+    registered_user: Callable[..., dict[str, Any]],
+    project: Callable[..., ProjectAtDB],
+    async_client: httpx.AsyncClient,
+    unusable_cluster: ClusterID,
+):
+    user = registered_user()
+    proj = project(user, workbench=fake_workbench_without_outputs)
+    create_computation_url = httpx.URL("/v2/computations")
+    response = await async_client.post(
+        create_computation_url,
+        json=jsonable_encoder(
+            ComputationCreate(
+                user_id=user["id"],
+                project_id=proj.uuid,
+                start_pipeline=True,
+                product_name=product_name,
+                cluster_id=unusable_cluster,
+            )
+        ),
+    )
+    assert response.status_code == status.HTTP_403_FORBIDDEN, response.text
+    assert f"cluster {unusable_cluster}" in response.text
+
+
+async def test_start_computation_with_unknown_cluster_raises_406(
+    minimal_configuration: None,
+    mocked_director_service_fcts,
+    mocked_catalog_service_fcts,
+    product_name: str,
+    fake_workbench_without_outputs: dict[str, Any],
+    registered_user: Callable[..., dict[str, Any]],
+    project: Callable[..., ProjectAtDB],
+    async_client: httpx.AsyncClient,
+    faker: Faker,
+):
+    user = registered_user()
+    proj = project(user, workbench=fake_workbench_without_outputs)
+    create_computation_url = httpx.URL("/v2/computations")
+    unknown_cluster_id = faker.pyint(1, 10000)
+    response = await async_client.post(
+        create_computation_url,
+        json=jsonable_encoder(
+            ComputationCreate(
+                user_id=user["id"],
+                project_id=proj.uuid,
+                start_pipeline=True,
+                product_name=product_name,
+                cluster_id=unknown_cluster_id,
+            )
+        ),
+    )
+    assert response.status_code == status.HTTP_406_NOT_ACCEPTABLE, response.text
+    assert f"cluster {unknown_cluster_id}" in response.text
 
 
 async def test_get_computation_from_empty_project(
