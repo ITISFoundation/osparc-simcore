@@ -390,7 +390,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       }
 
       const title = this.tr("Tags");
-      const icon = "@FontAwesome5Solid/tag";
+      const icon = "@FontAwesome5Solid/tags";
       const tagManager = this.__tagsPage = new osparc.component.form.tag.TagManager(resourceData).set({
         liveUpdate: false
       });
