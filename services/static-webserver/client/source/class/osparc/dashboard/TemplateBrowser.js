@@ -272,6 +272,11 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         menu.add(shareButton);
       }
 
+      const tagsButton = this._getTagsMenuButton(card);
+      if (tagsButton) {
+        menu.add(tagsButton);
+      }
+
       const moreInfoButton = this._getMoreOptionsMenuButton(studyData);
       if (moreInfoButton) {
         menu.add(moreInfoButton);

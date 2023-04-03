@@ -747,6 +747,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (shareButton) {
           menu.add(shareButton);
         }
+
+        const tagsButton = this._getTagsMenuButton(card);
+        if (tagsButton) {
+          menu.add(tagsButton);
+        }
       }
 
       const duplicateStudyButton = this.__getDuplicateMenuButton(studyData);

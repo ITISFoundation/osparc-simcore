@@ -62,6 +62,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     __serviceVersionLayout: null,
     __serviceVersionSelector: null,
     __permissionsPage: null,
+    __tagsPage: null,
     __classifiersPage: null,
     __qualityPage: null,
     __servicesUpdatePage: null,
@@ -74,6 +75,10 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
     openAccessRights: function() {
       this.__openPage(this.__permissionsPage);
+    },
+
+    openTags: function() {
+      this.__openPage(this.__tagsPage);
     },
 
     openClassifiers: function() {
@@ -386,7 +391,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
       const title = this.tr("Tags");
       const icon = "@FontAwesome5Solid/tag";
-      const tagManager = new osparc.component.form.tag.TagManager(resourceData).set({
+      const tagManager = this.__tagsPage = new osparc.component.form.tag.TagManager(resourceData).set({
         liveUpdate: false
       });
       tagManager.addListener("updateTags", e => {
