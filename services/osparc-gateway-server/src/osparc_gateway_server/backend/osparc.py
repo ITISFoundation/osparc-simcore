@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from importlib.metadata import version
-from typing import Any, AsyncGenerator, Union
+from typing import Any, AsyncGenerator
 
 import osparc_gateway_server
 from aiodocker import Docker
@@ -206,9 +206,7 @@ class OsparcBackend(DBBackendBase):
                 f"{worker=}",
             )
 
-    async def _check_service_status(
-        self, cluster_service: Union[Worker, Cluster]
-    ) -> bool:
+    async def _check_service_status(self, cluster_service: Worker | Cluster) -> bool:
         assert isinstance(self.log, logging.Logger)  # nosec
         self.log.debug("--> checking status: %s", f"{cluster_service=}")
         assert cluster_service.state  # nosec
@@ -240,9 +238,9 @@ class OsparcBackend(DBBackendBase):
         return ok
 
     async def on_cluster_heartbeat(self, cluster_name, msg) -> None:
-        assert isinstance(self.log, logging.Logger)  # nosec
         # pylint: disable=no-else-continue, unused-variable, too-many-branches
         # pylint: disable=too-many-statements
+        assert isinstance(self.log, logging.Logger)  # nosec
 
         # HACK: we override the base class heartbeat in order to
         # dynamically allow for more or less workers depending on the
