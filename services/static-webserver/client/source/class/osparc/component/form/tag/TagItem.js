@@ -10,18 +10,21 @@
  */
 qx.Class.define("osparc.component.form.tag.TagItem", {
   extend: qx.ui.core.Widget,
+
   construct: function() {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.HBox(5));
     this.__validationManager = new qx.ui.form.validation.Manager();
     this.__renderLayout();
   },
+
   statics: {
     modes: {
       DISPLAY: "display",
       EDIT: "edit"
     }
   },
+
   properties: {
     id: {
       check: "Integer"
@@ -59,10 +62,13 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
       refine: true
     }
   },
+
   events: {
+    "tagSaved": "qx.event.type.Event",
     "cancelNewTag": "qx.event.type.Event",
     "deleteTag": "qx.event.type.Event"
   },
+
   members: {
     __tag: null,
     __description: null,
@@ -263,6 +269,7 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
             .then(tag => this.set(tag))
             .catch(console.error)
             .finally(() => {
+              this.fireEvent("tagSaved");
               this.setMode(this.self().modes.DISPLAY);
               saveButton.setFetching(false);
             });
