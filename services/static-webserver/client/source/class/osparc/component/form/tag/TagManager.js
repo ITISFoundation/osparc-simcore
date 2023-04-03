@@ -10,30 +10,19 @@
  * Tag manager server to manage one resource's related tags.
  */
 qx.Class.define("osparc.component.form.tag.TagManager", {
-  extend: osparc.ui.window.SingletonWindow,
-  construct: function(studyData, attachment, resourceName, resourceId) {
-    this.base(arguments, "tagManager", this.tr("Apply Tags"));
-    this.set({
-      layout: new qx.ui.layout.VBox(),
-      allowMinimize: false,
-      allowMaximize: false,
-      showMinimize: false,
-      showMaximize: false,
-      autoDestroy: true,
-      movable: false,
-      resizable: false,
-      modal: true,
-      width: 262,
-      clickAwayClose: true
-    });
-    this.__attachment = attachment;
-    this.__resourceName = resourceName;
-    this.__resourceId = resourceId;
+  extend: qx.ui.core.Widget,
+
+  construct: function(studyData) {
+    this.base(arguments);
+
+    this._setLayout(new qx.ui.layout.VBox());
+
     this.__studyData = studyData;
+    this.__resourceId = studyData["uuid"];
     this.__selectedTags = new qx.data.Array(studyData["tags"]);
+
     this.__renderLayout();
     this.__attachEventHandlers();
-    this.open();
   },
 
   events: {
@@ -49,6 +38,24 @@ qx.Class.define("osparc.component.form.tag.TagManager", {
     }
   },
 
+  statics: {
+    popUpInWindow: function(tagManager, title) {
+      if (!title) {
+        title = qx.locale.Manager.tr("Apply Tags");
+      }
+      return osparc.ui.window.Window.popUpInWindow(tagManager, title, 280, null).set({
+        allowMinimize: false,
+        allowMaximize: false,
+        showMinimize: false,
+        showMaximize: false,
+        clickAwayClose: true,
+        movable: true,
+        resizable: true,
+        showClose: true
+      });
+    }
+  },
+
   members: {
     __studyData: null,
     __attachment: null,
@@ -61,10 +68,10 @@ qx.Class.define("osparc.component.form.tag.TagManager", {
         allowStretchX: true,
         margin: [0, 10, 5, 10]
       });
-      this.add(filter);
+      this._add(filter);
 
       const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-      this.add(buttonContainer, {
+      this._add(buttonContainer, {
         flex: 1
       });
       osparc.store.Store.getInstance().getTags().forEach(tag => buttonContainer.add(this.__tagButton(tag)));
@@ -91,33 +98,7 @@ qx.Class.define("osparc.component.form.tag.TagManager", {
       this.bind("liveUpdate", buttons, "visibility", {
         converter: value => value ? "excluded" : "visible"
       });
-      this.add(buttons);
-    },
-
-    /**
-     * If the attachment (element close to which the TagManager is being rendered) is already on the DOM,
-     * this function calculates where the TagManager should render, taking into account the window edges.
-     */
-    __updatePosition: function() {
-      if (this.__attachment && this.__attachment.getContentElement().getDomElement()) {
-        const location = qx.bom.element.Location.get(this.__attachment.getContentElement().getDomElement());
-        const freeDistances = osparc.utils.Utils.getFreeDistanceToWindowEdges(this.__attachment);
-        let position = {
-          top: location.bottom,
-          left: location.right
-        };
-        if (this.getWidth() > freeDistances.right) {
-          position.left = location.left - this.getWidth();
-          if (this.getHeight() > freeDistances.bottom) {
-            position.top = location.top - (this.getHeight() || this.getSizeHint().height);
-          }
-        } else if (this.getHeight() > freeDistances.bottom) {
-          position.top = location.top - this.getHeight();
-        }
-        this.moveTo(position.left, position.top);
-      } else {
-        this.center();
-      }
+      this._add(buttons);
     },
 
     __tagButton: function(tag) {
@@ -208,9 +189,6 @@ qx.Class.define("osparc.component.form.tag.TagManager", {
     },
 
     __attachEventHandlers: function() {
-      this.addListener("appear", () => {
-        this.__updatePosition();
-      });
       this.__selectedTags.addListener("change", evt => {
         this.fireDataEvent("changeSelected", {
           ...evt.getData(),
