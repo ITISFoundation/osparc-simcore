@@ -3,7 +3,7 @@
 
 import logging
 from collections import deque
-from typing import Callable, Optional, Union
+from typing import Callable
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
@@ -62,7 +62,7 @@ def _compose_job_resource_name(solver_key, solver_version, job_id) -> str:
 )
 async def list_jobs(
     solver_key: SolverKeyId,
-    version: str,
+    version: VersionStr,
     user_id: PositiveInt = Depends(get_current_user_id),
     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     webserver_api: AuthSession = Depends(get_webserver_session),
@@ -97,7 +97,7 @@ async def list_jobs(
 )
 async def create_job(
     solver_key: SolverKeyId,
-    version: str,
+    version: VersionStr,
     inputs: JobInputs,
     user_id: PositiveInt = Depends(get_current_user_id),
     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
@@ -186,7 +186,7 @@ async def start_job(
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: UUID,
-    cluster_id: Optional[ClusterID] = None,
+    cluster_id: ClusterID | None = None,
     user_id: PositiveInt = Depends(get_current_user_id),
     director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
     product_name: str = Depends(get_product_name),
@@ -269,7 +269,7 @@ async def get_job_outputs(
     assert len(node_ids) == 1  # nosec
 
     outputs: dict[
-        str, Union[float, int, bool, BaseFileLink, str, None]
+        str, float | int | bool | BaseFileLink | str | None
     ] = await get_solver_output_results(
         user_id=user_id,
         project_uuid=job_id,

@@ -1,11 +1,12 @@
+import re
 import urllib.parse
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 
 import packaging.version
 from models_library.basic_regex import PUBLIC_VARIABLE_NAME_RE
 from models_library.services import COMPUTATIONAL_SERVICE_KEY_RE, ServiceDockerData
 from packaging.version import LegacyVersion, Version
-from pydantic import BaseModel, Extra, Field, HttpUrl, constr
+from pydantic import BaseModel, ConstrainedStr, Extra, Field, HttpUrl
 
 from ..api_resources import compose_resource_name
 from ..basic_types import VersionStr
@@ -28,11 +29,10 @@ LATEST_VERSION = "latest"
 #
 SOLVER_RESOURCE_NAME_RE = r"^solvers/([^\s/]+)/releases/([\d\.]+)$"
 
-SolverKeyId = constr(
-    strip_whitespace=True,
-    regex=COMPUTATIONAL_SERVICE_KEY_RE,
-    # TODO: should we use here a less restrictive regex that does not impose simcore/comp/?? this should be catalog responsibility
-)
+
+class SolverKeyId(ConstrainedStr):
+    strip_whitespace = True
+    regex = re.compile(COMPUTATIONAL_SERVICE_KEY_RE)
 
 
 class Solver(BaseModel):
@@ -49,13 +49,13 @@ class Solver(BaseModel):
 
     # Human readables Identifiers
     title: str = Field(..., description="Human readable name")
-    description: Optional[str]
+    description: str | None
     maintainer: str
     # TODO: consider released: Optional[datetime]   required?
     # TODO: consider version_aliases: list[str] = []  # remaining tags
 
     # Get links to other resources
-    url: Optional[HttpUrl] = Field(..., description="Link to get this resource")
+    url: HttpUrl | None = Field(..., description="Link to get this resource")
 
     class Config:
         extra = Extra.ignore
@@ -86,7 +86,7 @@ class Solver(BaseModel):
         )
 
     @property
-    def pep404_version(self) -> Union[Version, LegacyVersion]:
+    def pep404_version(self) -> Version | LegacyVersion:
         """Rich version type that can be used e.g. to compare"""
         return packaging.version.parse(self.version)
 
@@ -118,7 +118,7 @@ class SolverPort(BaseModel):
         title="Key name",
     )
     kind: PortKindStr
-    content_schema: Optional[dict[str, Any]] = Field(
+    content_schema: dict[str, Any] | None = Field(
         None,
         description="jsonschema for the port's value. SEE https://json-schema.org",
     )

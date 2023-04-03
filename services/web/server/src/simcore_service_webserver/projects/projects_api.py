@@ -141,6 +141,19 @@ async def get_project_type(
 
 
 #
+# UPDATE project -----------------------------------------------------
+#
+
+
+async def update_project_last_change_timestamp(
+    app: web.Application, project_uuid: ProjectID
+):
+    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    assert db  # nosec
+    await db.update_project_last_change_timestamp(project_uuid)
+
+
+#
 # DELETE project -----------------------------------------------------
 #
 
