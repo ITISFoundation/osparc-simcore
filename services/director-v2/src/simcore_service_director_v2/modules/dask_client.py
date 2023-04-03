@@ -13,6 +13,7 @@ import json
 import logging
 import traceback
 from collections import deque
+from copy import deepcopy
 from dataclasses import dataclass, field
 from http.client import HTTPException
 from typing import Any, Callable, Deque, Final, Optional
@@ -442,22 +443,32 @@ class DaskClient:
             dask_scheduler: distributed.Scheduler,
         ) -> dict[str, dict]:
             used_resources = {}
-            for worker_name in dask_scheduler.workers:
-                if worker := dask_scheduler.workers.get(worker_name):
-                    used_resources[worker_name] = worker.used_resources
+            for worker_name, worker_state in dask_scheduler.workers.items():
+                used_resources[worker_name] = worker_state.used_resources
             return used_resources
 
         with log_catch(logger, reraise=False):
-            # this runs on the dask-scheduler and may raise
-            # let's be cautious
+            # NOTE: this runs directly on the dask-scheduler and may rise exceptions
             used_resources_per_worker: dict[
                 str, dict[str, Any]
             ] = await self.backend.client.run_on_scheduler(
                 _get_worker_used_resources
             )  # type: ignore
 
-            for k, v in used_resources_per_worker.items():
-                scheduler_info.get("workers", {}).get(k, {}).update(used_resources=v)
+            # let's update the scheduler info, with default to 0s since sometimes
+            # workers are destroyed/created without us knowing right away
+            for worker_name, worker_info in scheduler_info.get("workers", {}).items():
+                used_resources: dict[str, float] = deepcopy(
+                    worker_info.get("resources", {})
+                )
+                # reset default values
+                for res_name in used_resources:
+                    used_resources[res_name] = 0
+                # if the scheduler has info, let's override them
+                used_resources = used_resources_per_worker.get(
+                    worker_name, used_resources
+                )
+                worker_info.update(used_resources=used_resources)
 
         assert dashboard_link  # nosec
         return ClusterDetails(
