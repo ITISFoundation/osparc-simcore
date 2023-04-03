@@ -322,7 +322,9 @@ async def get_job_output_logfile(
     )
 
     # if more than one node? should rezip all of them??
-    assert len(logs_urls) <= 1, "Current version only supports one node per solver"
+    assert (
+        len(logs_urls) <= 1
+    ), "Current version only supports one node per solver"  # nosec
     for presigned_download_link in logs_urls.values():
         logger.info(
             "Redirecting '%s' to %s ...",
