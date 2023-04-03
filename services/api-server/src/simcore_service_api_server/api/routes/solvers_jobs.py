@@ -18,12 +18,7 @@ from ...models.schemas.files import File
 from ...models.schemas.jobs import ArgumentType, Job, JobInputs, JobOutputs, JobStatus
 from ...models.schemas.solvers import Solver, SolverKeyId, VersionStr
 from ...modules.catalog import CatalogApi
-from ...modules.director_v2 import (
-    ComputationTaskGet,
-    DirectorV2Api,
-    DownloadLink,
-    NodeName,
-)
+from ...modules.director_v2 import DirectorV2Api, DownloadLink, NodeName
 from ...modules.storage import StorageApi, to_file_api_model
 from ...utils.solver_job_models_converters import (
     create_job_from_project,
@@ -102,7 +97,6 @@ async def create_job(
     user_id: PositiveInt = Depends(get_current_user_id),
     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     webserver_api: AuthSession = Depends(get_webserver_session),
-    director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
     url_for: Callable = Depends(get_reverse_url_mapper),
     product_name: str = Depends(get_product_name),
 ):
@@ -142,16 +136,6 @@ async def create_job(
     assert job.id == pre_job.id  # nosec
     assert job.name == pre_job.name  # nosec
     assert job.name == _compose_job_resource_name(solver_key, version, job.id)  # nosec
-
-    # -> director2:   ComputationTaskOut = JobStatus
-    # consistency check
-    task: ComputationTaskGet = await director2_api.create_computation(
-        job.id, user_id, product_name
-    )
-    assert task.id == job.id  # nosec
-
-    job_status: JobStatus = create_jobstatus_from_task(task)
-    assert job.id == job_status.job_id  # nosec
 
     return job
 
