@@ -150,6 +150,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         this.__getPermissionsPage,
         this.__getClassifiersPage,
         this.__getQualityPage,
+        this.__getTagsPage,
         this.__getServicesUpdatePage,
         this.__getServicesBootOptionsPage,
         this.__getSaveAsTemplatePage
@@ -371,6 +372,29 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         return page;
       }
       return null;
+    },
+
+    __getTagsPage: function() {
+      const id = "Tags";
+      const resourceData = this.__resourceData;
+      if (osparc.utils.Resources.isTemplate(resourceData) && !osparc.data.model.Study.canIWrite(resourceData["accessRights"])) {
+        return null;
+      }
+      if (osparc.utils.Resources.isService(resourceData) && !osparc.utils.Services.canIWrite(resourceData["accessRights"])) {
+        return null;
+      }
+
+      const title = this.tr("Tags");
+      const icon = "@FontAwesome5Solid/tag";
+      const tagManager = new osparc.component.form.tag.TagManager(resourceData).set({
+        liveUpdate: false
+      });
+      tagManager.addListener("updateTags", e => {
+        const updatedData = e.getData();
+        this.fireDataEvent("updateStudy", updatedData);
+      }, this);
+      const page = this.__tagManagerPage = this.__createPage(title, tagManager, icon, id);
+      return page;
     },
 
     __getServicesUpdatePage: function() {
