@@ -391,9 +391,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
       const title = this.tr("Tags");
       const icon = "@FontAwesome5Solid/tags";
-      const tagManager = new osparc.component.form.tag.TagManager(resourceData).set({
-        liveUpdate: false
-      });
+      const tagManager = new osparc.component.form.tag.TagManager(resourceData);
       tagManager.addListener("updateTags", e => {
         const updatedData = e.getData();
         tagManager.setStudydata(updatedData);

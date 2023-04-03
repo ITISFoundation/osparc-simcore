@@ -307,9 +307,7 @@ qx.Class.define("osparc.info.StudyLarge", {
     },
 
     __openTagsEditor: function() {
-      const tagManager = new osparc.component.form.tag.TagManager(this.getStudy().serialize()).set({
-        liveUpdate: false
-      });
+      const tagManager = new osparc.component.form.tag.TagManager(this.getStudy().serialize());
       const win = osparc.component.form.tag.TagManager.popUpInWindow(tagManager);
       tagManager.addListener("updateTags", e => {
         win.close();

@@ -33,7 +33,7 @@ qx.Class.define("osparc.component.form.tag.TagManager", {
     liveUpdate: {
       check: "Boolean",
       event: "changeLiveUpdate",
-      init: true
+      init: false
     }
   },
 
