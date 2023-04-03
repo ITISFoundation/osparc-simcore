@@ -469,6 +469,7 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
     class Config:
         description = "Description of a simcore node 'class' with input and output"
         extra = Extra.forbid
+        frozen = False  # it inherits from ServiceKeyVersion.
 
         schema_extra = {
             "examples": [
