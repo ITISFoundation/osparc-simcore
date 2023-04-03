@@ -159,7 +159,7 @@ class ServicesRepository(BaseRepository):
                 services_latest.join(
                     services_meta_data,
                     (services_meta_data.c.key == services_latest.c.key)
-                    & (services_meta_data.c.version == services_latest.c.version),
+                    & (services_meta_data.c.version == services_latest.c.latest),
                 )
             )
             .where(services_latest.c.key == key)

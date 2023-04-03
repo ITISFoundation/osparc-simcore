@@ -303,7 +303,7 @@ def test_trial_queries_for_service_metadata(
             services_latest.join(
                 services_meta_data,
                 (services_meta_data.c.key == services_latest.c.key)
-                & (services_meta_data.c.version == services_latest.c.version),
+                & (services_meta_data.c.version == services_latest.c.latest),
             ).join(
                 services_access_rights,
                 (services_meta_data.c.key == services_access_rights.c.key)
