@@ -14,7 +14,6 @@ from simcore_postgres_database.models.groups import GroupType, groups
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.services import (
     services_access_rights,
-    services_latest,
     services_meta_data,
 )
 from simcore_postgres_database.models.services_consume_filetypes import (
@@ -22,7 +21,6 @@ from simcore_postgres_database.models.services_consume_filetypes import (
 )
 from simcore_postgres_database.utils_services import create_select_latest_services_query
 from sqlalchemy.dialects.postgresql import INTEGER
-from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 
 class RandomServiceFactory:
@@ -244,7 +242,6 @@ def test_select_latest_services(
             & (services_meta_data.c.version == lts.c.latest),
         )
     )
-    print(stmt)
 
     with pg_sa_engine.connect() as conn:
         latest_services: list = conn.execute(stmt).fetchall()
@@ -291,65 +288,8 @@ def test_trial_queries_for_service_metadata(
 
         rows: list = conn.execute(query).fetchall()
 
-    with pg_sa_engine.connect() as conn:
-        # Select query for latest
-        latest_select_query = sa.select(
-            services_meta_data.c.key,
-            sa.text(
-                "array_to_string(MAX(string_to_array(version, '.')::int[]), '.') AS version"
-            ),
-            # sa.func.max( sa.func.string_to_array(services_meta_data.c.version, ".").cast(sa.ARRAY(sa.Integer)).alias("latest_version") )
-        ).group_by(services_meta_data.c.key)
-
-        print(latest_select_query)
-        rows: list = conn.execute(latest_select_query).fetchall()
-
-        assert len(rows) == services_fixture.num_services
-        assert set(services_fixture.expected_latest.items()) == set(rows)
-
-        # Insert from select query (kept for reference)
-        def _insert_latest():
-            ins = services_latest.insert().from_select(
-                [services_latest.c.key, services_latest.c.version], latest_select_query
-            )
-            print(ins)
-
-            result = conn.execute(ins)  # fills services_latest the first time
-            print(result)
-
-        # Upsert from fetched value (alternative 1 - kept for reference)
-        def _upsert_with_fetched_values():
-            for row in rows:
-                data = dict(row.items())
-                upsert_query = (
-                    pg_insert(services_latest)
-                    .values(**data)
-                    .on_conflict_do_update(
-                        index_elements=[
-                            services_latest.c.key,
-                        ],
-                        set_=dict(version=data["version"]),
-                    )
-                )
-
-                conn.execute(upsert_query)
-
-        # Upsert from subquery (alternative 2)
-        query = pg_insert(services_latest).from_select(
-            [services_latest.c.key, services_latest.c.version], latest_select_query
-        )
-        upsert_query = query.on_conflict_do_update(
-            index_elements=[
-                services_latest.c.key,
-            ],
-            set_=dict(version=query.excluded.version),
-        )
-        conn.execute(upsert_query)
-
-        latest_values = conn.execute(services_latest.select()).fetchall()
-        assert latest_values == rows
-
     # list latest services
+    services_latest = create_select_latest_services_query().alias("services_latest")
 
     with pg_sa_engine.connect() as conn:
         query = sa.select(
@@ -391,55 +331,3 @@ def test_trial_queries_for_service_metadata(
             rows = conn.execute(query).fetchall()
             assert len(rows) <= services_fixture.num_services
             print(rows)
-
-
-def test_it1():
-    Base = sa.orm.declarative_base()
-    metadata = Base.metadata
-
-    company_id = 1
-
-    t_folders = sa.Table(
-        "t_folders",
-        metadata,
-        sa.Column("id", sa.Integer, primary_key=True),
-        sa.Column("company_id", sa.Integer),
-    )
-
-    t_milestones = sa.Table(
-        "t_milestones",
-        metadata,
-        sa.Column("folder_id", sa.Integer),
-        sa.Column("is_done", sa.Boolean),
-        sa.Column("value", sa.Float),
-    )
-
-    t_folders_members = sa.Table(
-        "t_folders_members",
-        metadata,
-        sa.Column("id", sa.Integer, primary_key=True),
-        sa.Column("folder_id", sa.Integer),
-        sa.Column("user_id", sa.Integer),
-    )
-
-    f = t_folders.c
-    m = t_milestones.c
-    members_t = t_folders_members
-
-    f1 = (
-        sa.select([f.id, sa.func.max(m.value).label("value")])
-        .select_from(t_folders.join(t_milestones, f.id == m.folder_id))
-        .where(
-            sa.and_(
-                f.company_id == company_id,
-                m.is_done.is_(False),
-            )
-        )
-        .group_by(f.id)
-    ).alias("f1")
-
-    f2 = sa.select([f1.c.id, f1.c.value, members_t.c.id]).select_from(
-        f1.join(members_t, members_t.c.folder_id == f1.c.id)
-    )
-
-    print(f2)
