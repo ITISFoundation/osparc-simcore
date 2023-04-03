@@ -1,4 +1,9 @@
-from models_library.basic_regex import VERSION_RE
-from pydantic import constr
+import re
 
-VersionStr = constr(strip_whitespace=True, regex=VERSION_RE)  # as M.m.p
+from models_library.basic_regex import VERSION_RE
+from pydantic import ConstrainedStr
+
+
+class VersionStr(ConstrainedStr):
+    strip_whitespace = True
+    regex = re.compile(VERSION_RE)
