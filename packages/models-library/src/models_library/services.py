@@ -7,9 +7,10 @@ NOTE: to dump json-schema from CLI use
 import re
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional, Union
+from typing import Any
 from uuid import UUID
 
+from attr import frozen
 from pydantic import (
     BaseModel,
     ConstrainedStr,
@@ -60,9 +61,15 @@ FileName = constr(regex=FILENAME_RE)
 class ServiceKey(ConstrainedStr):
     regex = re.compile(SERVICE_KEY_RE)
 
+    class Config:
+        frozen = True
+
 
 class ServiceVersion(ConstrainedStr):
     regex = re.compile(VERSION_RE)
+
+    class Config:
+        frozen = True
 
 
 RunID = UUID
@@ -126,7 +133,7 @@ class Author(BaseModel):
         examples=["sun@sense.eight", "deleen@minbar.bab"],
         description="Email address",
     )
-    affiliation: Optional[str] = Field(
+    affiliation: str | None = Field(
         None, examples=["Sense8", "Babylon 5"], description="Affiliation of the author"
     )
 
@@ -142,7 +149,7 @@ class BaseServiceIOModel(BaseModel):
     ## management
 
     ### human readable descriptors
-    display_order: Optional[float] = Field(
+    display_order: float | None = Field(
         None,
         alias="displayOrder",
         deprecated=True,
@@ -177,14 +184,14 @@ class BaseServiceIOModel(BaseModel):
         regex=PROPERTY_TYPE_RE,
     )
 
-    content_schema: Optional[dict[str, Any]] = Field(
+    content_schema: dict[str, Any] | None = Field(
         None,
         description="jsonschema of this input/output. Required when type='ref_contentSchema'",
         alias="contentSchema",
     )
 
     # value
-    file_to_key_map: Optional[dict[FileName, ServicePortKey]] = Field(
+    file_to_key_map: dict[FileName, ServicePortKey] | None = Field(
         None,
         alias="fileToKeyMap",
         description="Place the data associated with the named keys in files",
@@ -192,7 +199,7 @@ class BaseServiceIOModel(BaseModel):
     )
 
     # TODO: should deprecate since content_schema include units
-    unit: Optional[str] = Field(
+    unit: str | None = Field(
         None,
         description="Units, when it refers to a physical quantity",
     )
@@ -249,11 +256,11 @@ class ServiceInput(BaseServiceIOModel):
     """
 
     # TODO: should deprecate since content_schema include defaults as well
-    default_value: Optional[Union[StrictBool, StrictInt, StrictFloat, str]] = Field(
+    default_value: StrictBool | StrictInt | StrictFloat | str | None = Field(
         None, alias="defaultValue", examples=["Dog", True]
     )
 
-    widget: Optional[Widget] = Field(
+    widget: Widget | None = Field(
         None,
         description="custom widget to use instead of the default one determined from the data-type",
     )
@@ -323,7 +330,7 @@ class ServiceInput(BaseServiceIOModel):
 
 
 class ServiceOutput(BaseServiceIOModel):
-    widget: Optional[Widget] = Field(
+    widget: Widget | None = Field(
         None,
         description="custom widget to use instead of the default one determined from the data-type",
         deprecated=True,
@@ -370,21 +377,17 @@ class ServiceOutput(BaseServiceIOModel):
 class ServiceKeyVersion(BaseModel):
     """This pair uniquely identifies a services"""
 
-    key: str = Field(
+    key: ServiceKey = Field(
         ...,
         description="distinctive name for the node based on the docker registry path",
-        regex=KEY_RE,
-        examples=[
-            "simcore/services/comp/itis/sleeper",
-            "simcore/services/dynamic/3dviewer",
-        ],
     )
-    version: str = Field(
+    version: ServiceVersion = Field(
         ...,
         description="service version number",
-        regex=VERSION_RE,
-        examples=["1.0.0", "0.0.1"],
     )
+
+    class Config:
+        frozen = True
 
 
 class _BaseServiceCommonDataModel(BaseModel):
@@ -393,7 +396,7 @@ class _BaseServiceCommonDataModel(BaseModel):
         description="short, human readable name for the node",
         example="Fast Counter",
     )
-    thumbnail: Optional[HttpUrl] = Field(
+    thumbnail: HttpUrl | None = Field(
         None,
         description="url to the thumbnail",
         examples=[
@@ -428,7 +431,7 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
     This is one to one with node-meta-v0.0.1.json
     """
 
-    integration_version: Optional[str] = Field(
+    integration_version: str | None = Field(
         None,
         alias="integration-version",
         description="integration version number",
@@ -442,7 +445,7 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
         examples=["computational"],
     )
 
-    badges: Optional[list[Badge]] = Field(None)
+    badges: list[Badge] | None = Field(None)
 
     authors: list[Author] = Field(..., min_items=1)
     contact: LowerCaseEmailStr = Field(
@@ -450,14 +453,14 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
         description="email to correspond to the authors about the node",
         examples=["lab@net.flix"],
     )
-    inputs: Optional[ServiceInputsDict] = Field(
+    inputs: ServiceInputsDict | None = Field(
         ..., description="definition of the inputs of this node"
     )
-    outputs: Optional[ServiceOutputsDict] = Field(
+    outputs: ServiceOutputsDict | None = Field(
         ..., description="definition of the outputs of this node"
     )
 
-    boot_options: Optional[BootOptions] = Field(
+    boot_options: BootOptions | None = Field(
         None,
         alias="boot-options",
         description="Service defined boot options. These get injected in the service as env variables.",
@@ -567,16 +570,16 @@ class ServiceMetaData(_BaseServiceCommonDataModel):
     #        it should be implemented with a different model e.g. ServiceMetaDataUpdate
     #
 
-    name: Optional[str]
-    thumbnail: Optional[HttpUrl]
-    description: Optional[str]
-    deprecated: Optional[datetime] = Field(
+    name: str | None
+    thumbnail: HttpUrl | None
+    description: str | None
+    deprecated: datetime | None = Field(
         default=None,
         description="If filled with a date, then the service is to be deprecated at that date (e.g. cannot start anymore)",
     )
 
     # user-defined metatada
-    classifiers: Optional[list[str]]
+    classifiers: list[str] | None
     quality: dict[str, Any] = {}
 
     class Config:
