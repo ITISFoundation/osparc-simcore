@@ -35,6 +35,7 @@ from models_library.services_resources import BootMode
 from models_library.users import UserID
 from pydantic import parse_obj_as
 from pydantic.networks import AnyUrl
+from servicelib.logging_utils import log_catch
 from settings_library.s3 import S3Settings
 from simcore_sdk.node_ports_v2 import FileLinkType
 from simcore_service_director_v2.modules.storage import StorageClient
@@ -442,18 +443,21 @@ class DaskClient:
         ) -> dict[str, dict]:
             used_resources = {}
             for worker_name in dask_scheduler.workers:
-                worker = dask_scheduler.workers[worker_name]
-                used_resources[worker_name] = worker.used_resources
+                if worker := dask_scheduler.workers.get(worker_name):
+                    used_resources[worker_name] = worker.used_resources
             return used_resources
 
-        used_resources_per_worker: dict[
-            str, dict[str, Any]
-        ] = await self.backend.client.run_on_scheduler(
-            _get_worker_used_resources
-        )  # type: ignore
+        with log_catch(logger, reraise=False):
+            # this runs on the dask-scheduler and may raise
+            # let's be cautious
+            used_resources_per_worker: dict[
+                str, dict[str, Any]
+            ] = await self.backend.client.run_on_scheduler(
+                _get_worker_used_resources
+            )  # type: ignore
 
-        for k, v in used_resources_per_worker.items():
-            scheduler_info.get("workers", {}).get(k, {}).update(used_resources=v)
+            for k, v in used_resources_per_worker.items():
+                scheduler_info.get("workers", {}).get(k, {}).update(used_resources=v)
 
         assert dashboard_link  # nosec
         return ClusterDetails(
