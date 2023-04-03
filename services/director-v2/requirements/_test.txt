@@ -48,6 +48,8 @@ attrs==21.4.0
     #   aiohttp
     #   pytest
     #   pytest-docker
+bokeh==2.4.3
+    # via dask
 boto3==1.24.59
     # via aiobotocore
 botocore==1.27.59
@@ -69,6 +71,16 @@ charset-normalizer==2.0.12
     #   -c requirements/_base.txt
     #   aiohttp
     #   requests
+click==8.1.3
+    # via
+    #   -c requirements/_base.txt
+    #   dask
+    #   distributed
+cloudpickle==2.2.1
+    # via
+    #   -c requirements/_base.txt
+    #   dask
+    #   distributed
 codecov==2.1.12
     # via -r requirements/_test.in
 colorlog==6.7.0
@@ -84,10 +96,18 @@ cryptography==39.0.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   dask-gateway-server
+dask==2023.3.0
+    # via
+    #   -r requirements/_test.in
+    #   distributed
 dask-gateway-server==2023.1.1
     # via -r requirements/_test.in
 dill==0.3.6
     # via pylint
+distributed==2023.3.0
+    # via
+    #   -c requirements/_base.txt
+    #   dask
 docker==6.0.1
     # via -r requirements/_test.in
 docopt==0.6.2
@@ -105,6 +125,10 @@ frozenlist==1.3.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
+fsspec==2023.3.0
+    # via
+    #   -c requirements/_base.txt
+    #   dask
 greenlet==1.1.2
     # via
     #   -c requirements/_base.txt
@@ -113,6 +137,10 @@ h11==0.12.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
+heapdict==1.0.1
+    # via
+    #   -c requirements/_base.txt
+    #   zict
 httpcore==0.15.0
     # via
     #   -c requirements/_base.txt
@@ -134,12 +162,23 @@ iniconfig==2.0.0
     # via pytest
 isort==5.12.0
     # via pylint
+jinja2==3.1.2
+    # via
+    #   -c requirements/_base.txt
+    #   bokeh
+    #   dask
+    #   distributed
 jmespath==1.0.1
     # via
     #   boto3
     #   botocore
 lazy-object-proxy==1.9.0
     # via astroid
+locket==1.0.0
+    # via
+    #   -c requirements/_base.txt
+    #   distributed
+    #   partd
 mako==1.2.2
     # via
     #   -c requirements/_base.txt
@@ -147,32 +186,52 @@ mako==1.2.2
 markupsafe==2.1.2
     # via
     #   -c requirements/_base.txt
+    #   jinja2
     #   mako
 mccabe==0.7.0
     # via pylint
 minio==7.0.4
     # via -r requirements/_test.in
+msgpack==1.0.5
+    # via
+    #   -c requirements/_base.txt
+    #   distributed
 multidict==6.0.2
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   async-asgi-testclient
     #   yarl
+numpy==1.24.2
+    # via bokeh
 packaging==23.0
     # via
     #   -c requirements/_base.txt
+    #   bokeh
+    #   dask
+    #   distributed
     #   docker
     #   pytest
 pamqp==3.2.1
     # via
     #   -c requirements/_base.txt
     #   aiormq
+partd==1.3.0
+    # via
+    #   -c requirements/_base.txt
+    #   dask
+pillow==9.5.0
+    # via bokeh
 platformdirs==3.0.0
     # via pylint
 pluggy==1.0.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
+psutil==5.9.4
+    # via
+    #   -c requirements/_base.txt
+    #   distributed
 pycparser==2.21
     # via cffi
 pylint==2.16.2
@@ -208,6 +267,12 @@ python-dateutil==2.8.2
     #   -c requirements/_base.txt
     #   botocore
     #   faker
+pyyaml==5.4.1
+    # via
+    #   -c requirements/_base.txt
+    #   bokeh
+    #   dask
+    #   distributed
 requests==2.27.1
     # via
     #   -c requirements/_base.txt
@@ -234,11 +299,19 @@ sniffio==1.2.0
     #   asgi-lifespan
     #   httpcore
     #   httpx
+sortedcontainers==2.4.0
+    # via
+    #   -c requirements/_base.txt
+    #   distributed
 sqlalchemy==1.4.37
     # via
     #   -c requirements/_base.txt
     #   alembic
     #   dask-gateway-server
+tblib==1.7.0
+    # via
+    #   -c requirements/_base.txt
+    #   distributed
 tomli==2.0.1
     # via
     #   coverage
@@ -246,16 +319,29 @@ tomli==2.0.1
     #   pytest
 tomlkit==0.11.6
     # via pylint
+toolz==0.12.0
+    # via
+    #   -c requirements/_base.txt
+    #   dask
+    #   distributed
+    #   partd
+tornado==6.2
+    # via
+    #   -c requirements/_base.txt
+    #   bokeh
+    #   distributed
 traitlets==5.9.0
     # via dask-gateway-server
 typing-extensions==4.3.0
     # via
     #   -c requirements/_base.txt
     #   astroid
+    #   bokeh
 urllib3==1.26.14
     # via
     #   -c requirements/_base.txt
     #   botocore
+    #   distributed
     #   docker
     #   minio
     #   requests
@@ -271,3 +357,7 @@ yarl==1.7.2
     #   aio-pika
     #   aiohttp
     #   aiormq
+zict==2.2.0
+    # via
+    #   -c requirements/_base.txt
+    #   distributed
