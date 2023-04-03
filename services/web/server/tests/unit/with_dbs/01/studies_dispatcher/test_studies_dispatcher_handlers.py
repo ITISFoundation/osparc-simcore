@@ -253,13 +253,13 @@ async def test_api_list_services(client: TestClient):
     assert services
 
     # latest versions of services with everyone + ospar-product (see stmt_create_services_access_rights)
-    print(services[0].json(indent=1))
     assert services[0].key == "simcore/services/dynamic/raw-graphs"
     assert services[0].file_extensions == ["CSV", "JSON", "TSV", "XLSX"]
+    assert "2.11.1" in services[0].view_url.query
 
-    print(services[1].json(indent=1))
     assert services[1].key == "simcore/services/dynamic/jupyter-octave-python-math"
     assert services[1].file_extensions == ["IPYNB", "PY"]
+    assert "1.6.9" in services[1].view_url.query
 
     assert error is None
 
