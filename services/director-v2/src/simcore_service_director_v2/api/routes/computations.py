@@ -16,7 +16,7 @@ Therefore,
 
 import contextlib
 import logging
-from typing import Any, Optional
+from typing import Any
 
 import networkx as nx
 from fastapi import APIRouter, Depends, HTTPException
@@ -36,6 +36,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random
 
 from ...core.errors import (
+    ClusterNotFoundError,
     ComputationalRunNotFoundError,
     ProjectNotFoundError,
     SchedulerError,
@@ -199,7 +200,7 @@ async def create_computation(
         pipeline_state = get_pipeline_state_from_task_states(filtered_tasks)
 
         # get run details if any
-        last_run: Optional[CompRunsAtDB] = None
+        last_run: CompRunsAtDB | None = None
         with contextlib.suppress(ComputationalRunNotFoundError):
             last_run = await comp_runs_repo.get(
                 user_id=computation.user_id, project_id=computation.project_id
@@ -228,6 +229,10 @@ async def create_computation(
 
     except ProjectNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
+    except ClusterNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_406_NOT_ACCEPTABLE, detail=f"{e}"
+        ) from e
 
 
 @router.get(
@@ -276,7 +281,7 @@ async def get_computation(
     )
 
     # get run details if any
-    last_run: Optional[CompRunsAtDB] = None
+    last_run: CompRunsAtDB | None = None
     with contextlib.suppress(ComputationalRunNotFoundError):
         last_run = await comp_runs_repo.get(user_id=user_id, project_id=project_id)
 
@@ -341,7 +346,7 @@ async def stop_computation(
             await scheduler.stop_pipeline(computation_stop.user_id, project_id)
 
         # get run details if any
-        last_run: Optional[CompRunsAtDB] = None
+        last_run: CompRunsAtDB | None = None
         with contextlib.suppress(ComputationalRunNotFoundError):
             last_run = await comp_runs_repo.get(
                 user_id=computation_stop.user_id, project_id=project_id
