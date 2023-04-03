@@ -20,7 +20,8 @@ from simcore_postgres_database.models.services import (
 from simcore_postgres_database.models.services_consume_filetypes import (
     services_consume_filetypes,
 )
-from sqlalchemy.dialects.postgresql import ARRAY, INTEGER
+from simcore_postgres_database.utils_services import create_select_latest_services_query
+from sqlalchemy.dialects.postgresql import INTEGER
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 
@@ -234,19 +235,7 @@ def test_select_latest_services(
 ):
     assert issubclass(INTEGER, sa.Integer)
 
-    lts = (
-        sa.select(
-            services_meta_data.c.key,
-            sa.func.array_to_string(
-                sa.func.max(
-                    sa.func.string_to_array(services_meta_data.c.version, ".").cast(
-                        ARRAY(INTEGER)
-                    )
-                ),
-                ".",
-            ).label("latest"),
-        ).group_by(services_meta_data.c.key)
-    ).alias("lts")
+    lts = create_select_latest_services_query().alias("lts")
 
     stmt = sa.select([lts.c.key, lts.c.latest, services_meta_data.c.name]).select_from(
         lts.join(
