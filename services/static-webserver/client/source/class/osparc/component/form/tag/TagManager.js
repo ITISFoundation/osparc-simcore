@@ -91,9 +91,7 @@ qx.Class.define("osparc.component.form.tag.TagManager", {
       }));
       const saveButton = new osparc.ui.form.FetchButton(this.tr("Save"));
       osparc.utils.Utils.setIdToWidget(saveButton, "saveTagsBtn");
-      saveButton.addListener("execute", e => {
-        this.__save(saveButton);
-      }, this);
+      saveButton.addListener("execute", () => this.__save(saveButton), this);
       buttons.add(saveButton);
       this.bind("liveUpdate", buttons, "visibility", {
         converter: value => value ? "excluded" : "visible"
