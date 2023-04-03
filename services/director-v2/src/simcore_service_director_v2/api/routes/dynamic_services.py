@@ -3,8 +3,8 @@ import logging
 from typing import Coroutine, Optional, Union, cast
 
 import httpx
-from fastapi import APIRouter, Depends, Header, Request
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi.responses import RedirectResponse
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
@@ -171,7 +171,8 @@ async def get_dynamic_sidecar_status(
 
 @router.delete(
     "/{node_uuid}",
-    responses={status.HTTP_204_NO_CONTENT: {"model": None}},
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
     summary="stops previously spawned dynamic-sidecar",
 )
 @cancel_on_disconnect
@@ -200,13 +201,7 @@ async def stop_dynamic_service(
         return RedirectResponse(str(redirection_url))
 
     if await scheduler.service_awaits_manual_interventions(node_uuid):
-        return JSONResponse(
-            {
-                "code": "waiting_for_intervention",
-                "error": f"Service {node_uuid} waiting for manual intervention",
-            },
-            status_code=status.HTTP_400_BAD_REQUEST,
-        )
+        raise HTTPException(status.HTTP_409_CONFLICT, detail="waiting_for_intervention")
 
     # Service was marked for removal, the scheduler will
     # take care of stopping cleaning up all allocated resources:
