@@ -1,6 +1,7 @@
 import logging
 from collections import deque
 from datetime import datetime
+from typing import Any
 
 import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
@@ -90,7 +91,6 @@ class CompRunsRepository(BaseRepository):
                         )
                         .order_by(desc(comp_runs.c.iteration))
                     )
-                    assert last_iteration  # nosec
                     iteration = (last_iteration or 0) + 1
 
                 result = await conn.execute(
@@ -126,7 +126,7 @@ class CompRunsRepository(BaseRepository):
                 .values(**values)
                 .returning(literal_column("*"))
             )
-            row: RowProxy = await result.first()
+            row = await result.first()
             return CompRunsAtDB.from_orm(row) if row else None
 
     async def set_run_result(
@@ -137,7 +137,7 @@ class CompRunsRepository(BaseRepository):
         result_state: RunningState,
         final_state: bool | None = False,
     ) -> CompRunsAtDB | None:
-        values = {"result": RUNNING_STATE_TO_DB[result_state]}
+        values: dict[str, Any] = {"result": RUNNING_STATE_TO_DB[result_state]}
         if final_state:
             values.update({"ended": datetime.utcnow()})
         return await self.update(
