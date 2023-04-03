@@ -23,6 +23,8 @@ anyio==3.6.2
     #   httpcore
     #   starlette
     #   watchfiles
+arrow==1.2.3
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 async-timeout==4.0.2
     # via redis
 attrs==21.4.0
@@ -92,6 +94,7 @@ pycparser==2.21
     # via cffi
 pydantic==1.10.2
     # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   fastapi
 pygments==2.14.0
@@ -102,6 +105,8 @@ pyinstrument==4.4.0
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 pyrsistent==0.19.3
     # via jsonschema
+python-dateutil==2.8.2
+    # via arrow
 python-dotenv==0.21.0
     # via uvicorn
 pyyaml==5.4.1
@@ -122,6 +127,7 @@ shellingham==1.5.0.post1
 six==1.16.0
     # via
     #   jsonschema
+    #   python-dateutil
     #   thrift
 sniffio==1.3.0
     # via

@@ -1,14 +1,13 @@
 from datetime import datetime
 
-_DOCKER_TIMESTAMP_LENGTH = len("2020-10-09T12:28:14.771034")
+import arrow
 
 
 def to_datetime(docker_timestamp: str) -> datetime:
-    # datetime_str is typically '2020-10-09T12:28:14.771034099Z'
-    #  - The T separates the date portion from the time-of-day portion
-    #  - The Z on the end means UTC, that is, an offset-from-UTC
-    # The 099 before the Z is not clear, therefore we will truncate the last part
-    # NOTE: must be in UNIX Timestamp format
-    return datetime.strptime(
-        docker_timestamp[:_DOCKER_TIMESTAMP_LENGTH], "%Y-%m-%dT%H:%M:%S.%f"
-    )
+    # docker follows RFC3339Nano timestamp which is based on ISO 8601
+    # https://medium.easyread.co/understanding-about-rfc-3339-for-datetime-formatting-in-software-engineering-940aa5d5f68a
+    ## This is acceptable in ISO 8601 and RFC 3339 (with T)
+    # 2019-10-12T07:20:50.52Z
+    # This is only accepted in RFC 3339 (without T)
+    # 2019-10-12 07:20:50.52Z
+    return arrow.get(docker_timestamp).datetime

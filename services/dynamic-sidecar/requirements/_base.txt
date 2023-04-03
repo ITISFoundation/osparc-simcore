@@ -40,6 +40,8 @@ anyio==3.6.1
     # via
     #   httpcore
     #   starlette
+arrow==1.2.3
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 asgiref==3.5.2
     # via uvicorn
 async-timeout==4.0.2
@@ -73,7 +75,9 @@ click==8.1.3
     #   typer
     #   uvicorn
 cryptography==39.0.1
-    # via paramiko
+    # via
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   paramiko
 distro==1.5.0
     # via docker-compose
 dnspython==2.1.0
@@ -174,6 +178,8 @@ pyparsing==3.0.9
     # via packaging
 pyrsistent==0.18.1
     # via jsonschema
+python-dateutil==2.8.2
+    # via arrow
 python-dotenv==0.20.0
     # via docker-compose
 python-magic==0.4.25
@@ -200,6 +206,7 @@ six==1.16.0
     #   jsonschema
     #   paramiko
     #   pynacl
+    #   python-dateutil
     #   thrift
     #   websocket-client
 sniffio==1.2.0

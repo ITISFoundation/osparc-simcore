@@ -7,6 +7,7 @@
 aiodebug
 aiofiles
 aio-pika
+arrow # date/time
 redis
 pydantic
 pyinstrument

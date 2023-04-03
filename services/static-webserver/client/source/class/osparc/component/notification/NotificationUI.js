@@ -180,7 +180,7 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
       const actionablePath = notification.getActionablePath();
       const category = notification.getCategory();
       switch (category) {
-        case "new_organization": {
+        case "NEW_ORGANIZATION": {
           const items = actionablePath.split("/");
           const orgId = items.pop();
           const orgsWindow = osparc.desktop.organizations.OrganizationsWindow.openWindow();
