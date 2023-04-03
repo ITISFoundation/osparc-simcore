@@ -1,6 +1,6 @@
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import AsyncIterator, Optional
+from typing import AsyncIterator
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -15,7 +15,7 @@ from simcore_postgres_database.models.services import (
 from simcore_postgres_database.models.services_consume_filetypes import (
     services_consume_filetypes,
 )
-from sqlalchemy.dialects.postgresql import ARRAY, INTEGER
+from simcore_postgres_database.utils_services import create_select_latest_services_query
 
 from ..db import get_database_engine
 from ._exceptions import StudyDispatcherError
@@ -63,19 +63,7 @@ async def iter_latest_osparc_services(
     settings: StudiesDispatcherSettings = get_plugin_settings(app)
 
     # Select query for latest version of the service
-    latest_view = (
-        sa.select(
-            services_meta_data.c.key,
-            sa.func.array_to_string(
-                sa.func.max(
-                    sa.func.string_to_array(services_meta_data.c.version, ".").cast(
-                        ARRAY(INTEGER)
-                    )
-                ),
-                ".",
-            ).label("latest"),
-        ).group_by(services_meta_data.c.key)
-    ).alias("latest_view")
+    latest_view = create_select_latest_services_query().alias("latest_view")
 
     query = (
         sa.select(
@@ -132,7 +120,7 @@ class ServiceValidated:
     version: str
     title: str
     is_public: bool
-    thumbnail: Optional[HttpUrl]  # nullable
+    thumbnail: HttpUrl | None  # nullable
 
 
 async def validate_requested_service(
