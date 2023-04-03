@@ -85,8 +85,10 @@ qx.Class.define("osparc.component.form.tag.TagManager", {
         const newItem = new osparc.component.form.tag.TagItem().set({
           mode: osparc.component.form.tag.TagItem.modes.EDIT
         });
+        newItem.addListener("tagSaved", () => this.__repopulateTags(), this);
         newItem.addListener("cancelNewTag", e => tagsContainer.remove(e.getTarget()), this);
         newItem.addListener("deleteTag", e => tagsContainer.remove(e.getTarget()), this);
+        this.__repopulateTags();
         tagsContainer.add(newItem);
       });
       this._add(addTagButton);
@@ -112,10 +114,10 @@ qx.Class.define("osparc.component.form.tag.TagManager", {
       this.__resourceId = studyData["uuid"];
       this.__selectedTags.removeAll();
       this.__selectedTags.append(studyData["tags"]);
-      this.__populateTags();
+      this.__repopulateTags();
     },
 
-    __populateTags: function() {
+    __repopulateTags: function() {
       this.__tagsContainer.removeAll();
       const tags = osparc.store.Store.getInstance().getTags();
       tags.forEach(tag => this.__tagsContainer.add(this.__tagButton(tag)));
