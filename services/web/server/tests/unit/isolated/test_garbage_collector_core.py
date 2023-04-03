@@ -122,7 +122,7 @@ async def test_remove_single_service_if_orphan_service_is_waiting_manual_interve
 
     aioresponses_mocker.delete(
         re.compile(r"^http://[a-z\-_]*director-v2:[0-9]+/v2/dynamic_services.*$"),
-        status=web.HTTPBadRequest.status_code,
+        status=web.HTTPConflict.status_code,
         payload={"code": "waiting_for_intervention"},
         repeat=True,
     )
