@@ -102,10 +102,13 @@ qx.Class.define("osparc.info.StudyLarge", {
 
       if (this.getStudy().getTags().length || this.__canIWrite()) {
         const tags = this.__createTags();
-        const editInTitle = this.__createViewWithEdit(tags.getChildren()[0], this.__openTagsEditor);
+        const editInTitle = this.__createViewWithEdit(tags.getChildren()[0], null);
         tags.addAt(editInTitle, 0);
         if (this.__canIWrite()) {
-          osparc.utils.Utils.setIdToWidget(editInTitle.getChildren()[1], "editStudyEditTagsBtn");
+          const editButton = editInTitle.getChildren()[1];
+          editButton.setIcon("@FontAwesome5Solid/eye/12");
+          editButton.addListener("execute", () => this.fireEvent("openTags"), this);
+          osparc.utils.Utils.setIdToWidget(editButton, "editStudyEditTagsBtn");
         }
         this._add(tags);
       }
@@ -125,7 +128,9 @@ qx.Class.define("osparc.info.StudyLarge", {
       layout.add(view);
       if (this.__canIWrite()) {
         const editBtn = osparc.utils.Utils.getEditButton();
-        editBtn.addListener("execute", () => cb.call(this), this);
+        if (cb) {
+          editBtn.addListener("execute", () => cb.call(this), this);
+        }
         layout.add(editBtn);
       }
 

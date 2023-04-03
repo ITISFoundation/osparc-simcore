@@ -225,6 +225,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       infoCard.addListener("openAccessRights", () => this.openAccessRights());
       infoCard.addListener("openClassifiers", () => this.openClassifiers());
       infoCard.addListener("openQuality", () => this.openQuality());
+      infoCard.addListener("openTags", () => this.openTags());
       infoCard.addListener("updateStudy", e => {
         const updatedData = e.getData();
         if (osparc.utils.Resources.isStudy(resourceData)) {
