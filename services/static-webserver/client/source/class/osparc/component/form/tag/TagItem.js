@@ -242,10 +242,14 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
     __tagItemEditButtons: function() {
       const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
       const saveButton = new osparc.ui.form.FetchButton(null, "@FontAwesome5Solid/check/12").set({
-        appearance: "link-button"
+        appearance: "link-button",
+        paddingTop: 15, // avoid buddy text
+        alignY: "middle"
       });
       const cancelButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/times/12").set({
-        appearance: "link-button"
+        appearance: "link-button",
+        paddingTop: 15, // avoid buddy text
+        alignY: "middle"
       });
       buttonContainer.add(saveButton);
       buttonContainer.add(cancelButton);
