@@ -54,12 +54,6 @@ def postgres_db(postgres_db: sa.engine.Engine) -> sa.engine.Engine:
         "('simcore/services/dynamic/jupyter-octave-python-math',	'1.6.9',	'JupyterLab Math',	'input_1',	'PY',	0, '0'),"
         "('simcore/services/dynamic/jupyter-octave-python-math',	'1.6.9',	'JupyterLab Math',	'input_1',	'IPYNB',0, '0');"
     )
-    stmt_create_services_latest = text(
-        'INSERT INTO "services_latest" ("key", "version") VALUES'
-        "('simcore/services/dynamic/raw-graphs',	'2.11.1' ),"
-        "('simcore/services/dynamic/bio-formats-web',	'1.0.1'),"
-        "('simcore/services/dynamic/jupyter-octave-python-math',	'1.6.9');"
-    )
 
     # NOTE: users default osparc project and everyone group (which should be by default already in tables)
     stmt_create_services_access_rights = text(
@@ -69,7 +63,6 @@ def postgres_db(postgres_db: sa.engine.Engine) -> sa.engine.Engine:
     )
     with postgres_db.connect() as conn:
         conn.execute(stmt_create_services)
-        conn.execute(stmt_create_services_latest)
         conn.execute(stmt_create_services_consume_filetypes)
         conn.execute(stmt_create_services_access_rights)
 
@@ -258,6 +251,15 @@ async def test_api_list_services(client: TestClient):
 
     services = parse_obj_as(list[ServiceGet], data)
     assert services
+
+    # latest versions of services with everyone + ospar-product (see stmt_create_services_access_rights)
+    print(services[0].json(indent=1))
+    assert services[0].key == "simcore/services/dynamic/raw-graphs"
+    assert services[0].file_extensions == ["CSV", "JSON", "TSV", "XLSX"]
+
+    print(services[1].json(indent=1))
+    assert services[1].key == "simcore/services/dynamic/jupyter-octave-python-math"
+    assert services[1].file_extensions == ["IPYNB", "PY"]
 
     assert error is None
 
