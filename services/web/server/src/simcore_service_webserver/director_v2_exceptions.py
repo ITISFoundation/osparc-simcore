@@ -38,3 +38,7 @@ class ClusterDefinedPingError(DirectorServiceError):
     """Cluster ping failed"""
 
     msg_template = "Connection to cluster {cluster_id!r} failed, received {reason!r}"
+
+
+class ServiceWaitingForManualIntervention(DirectorServiceError):
+    msg_template = "Service {service_uuid} is waiting for user manual intervention"

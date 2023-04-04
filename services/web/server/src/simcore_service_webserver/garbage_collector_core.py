@@ -5,24 +5,21 @@
 import asyncio
 import logging
 from itertools import chain
-from typing import Any, Optional
+from typing import Any
 
 import asyncpg.exceptions
 from aiohttp import web
 from redis.asyncio import Redis
-from servicelib.logging_utils import log_decorator
+from servicelib.logging_utils import log_context, log_decorator
 from servicelib.utils import logged_gather
 from simcore_postgres_database.errors import DatabaseError
 from simcore_postgres_database.models.users import UserRole
 
 from . import director_v2_api, users_exceptions
 from .director.director_exceptions import DirectorException, ServiceNotFoundError
+from .director_v2_exceptions import ServiceWaitingForManualIntervention
 from .garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
-from .garbage_collector_utils import (
-    get_new_project_owner_gid,
-    log_context,
-    replace_current_owner,
-)
+from .garbage_collector_utils import get_new_project_owner_gid, replace_current_owner
 from .projects.projects_api import (
     get_project_for_user,
     get_workbench_node_ids_from_project_uuid,
@@ -72,17 +69,21 @@ async def collect_garbage(app: web.Application):
     """
     registry: RedisResourceRegistry = get_registry(app)
 
-    with log_context(logger.info, "Step 1: Removes disconnected user resources"):
+    with log_context(
+        logger, logging.INFO, "Step 1: Removes disconnected user resources"
+    ):
         # Triggers signal to close possible pending opened projects
         # Removes disconnected GUEST users after they finished their sessions
         await remove_disconnected_user_resources(registry, app)
 
-    with log_context(logger.info, "Step 2: Removes users manually marked for removal"):
+    with log_context(
+        logger, logging.INFO, "Step 2: Removes users manually marked for removal"
+    ):
         # if a user was manually marked as GUEST it needs to be
         # removed together with all the associated projects
         await remove_users_manually_marked_as_guests(registry, app)
 
-    with log_context(logger.info, "Step 3: Removes orphaned services"):
+    with log_context(logger, logging.INFO, "Step 3: Removes orphaned services"):
         # For various reasons, some services remain pending after
         # the projects are closed or the user was disconencted.
         # This will close and remove all these services from
@@ -360,7 +361,7 @@ async def _remove_single_service_if_orphan(
 
             user_id = int(interactive_service.get("user_id", -1))
 
-            user_role: Optional[UserRole] = None
+            user_role: UserRole | None = None
             try:
                 user_role = await get_user_role(app, user_id)
             except (UserNotFoundError, ValueError):
@@ -375,7 +376,12 @@ async def _remove_single_service_if_orphan(
                 save_state = False
             # -------------------------------------------
 
-            await director_v2_api.stop_dynamic_service(app, service_uuid, save_state)
+            try:
+                await director_v2_api.stop_dynamic_service(
+                    app, service_uuid, save_state
+                )
+            except ServiceWaitingForManualIntervention:
+                pass
 
         except (ServiceNotFoundError, DirectorException) as err:
             logger.warning("Error while stopping service: %s", err)
@@ -576,7 +582,7 @@ async def remove_guest_user_with_all_its_resources(
         ProjectDeleteError,
     ) as error:
         logger.warning(
-            "Failed to delete user %s and its resources: %s",
+            "Failed to delete guest user %s and its resources: %s",
             f"{user_id=}",
             f"{error}",
         )

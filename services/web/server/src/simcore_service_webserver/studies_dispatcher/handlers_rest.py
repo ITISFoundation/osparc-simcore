@@ -5,7 +5,6 @@ NOTE: openapi section for these handlers was generated using
 """
 import logging
 from dataclasses import asdict
-from typing import Optional
 
 from aiohttp import web
 from aiohttp.web import Request
@@ -14,8 +13,9 @@ from pydantic import BaseModel, Field, ValidationError, validator
 from pydantic.networks import HttpUrl
 
 from .._meta import API_VTAG
+from ..products import get_product_name
 from ..utils_aiohttp import envelope_json_response
-from ._catalog import ServiceMetaData, iter_latest_osparc_services
+from ._catalog import ServiceMetaData, iter_latest_product_services
 from ._core import list_viewers_info
 from ._models import ViewerInfo
 from .handlers_redirects import (
@@ -128,9 +128,12 @@ routes = web.RouteTableDef()
 @routes.get(f"/{API_VTAG}/services", name="list_services")
 async def list_services(request: Request):
     """Returns a list latest version of services"""
-    assert request  # nosec
+    product_name = get_product_name(request)
+
     services = []
-    async for service_data in iter_latest_osparc_services(request.app):
+    async for service_data in iter_latest_product_services(
+        request.app, product_name=product_name
+    ):
         try:
             service = ServiceGet.create(service_data, request)
             services.append(service)
@@ -143,7 +146,7 @@ async def list_services(request: Request):
 @routes.get(f"/{API_VTAG}/viewers", name="list_viewers")
 async def list_viewers(request: Request):
     # filter: file_type=*
-    file_type: Optional[str] = request.query.get("file_type", None)
+    file_type: str | None = request.query.get("file_type", None)
 
     viewers = [
         Viewer.create(request, viewer).dict()
@@ -155,7 +158,7 @@ async def list_viewers(request: Request):
 @routes.get(f"/{API_VTAG}/viewers/default", name="list_default_viewers")
 async def list_default_viewers(request: Request):
     # filter: file_type=*
-    file_type: Optional[str] = request.query.get("file_type", None)
+    file_type: str | None = request.query.get("file_type", None)
 
     viewers = [
         Viewer.create(request, viewer).dict()
