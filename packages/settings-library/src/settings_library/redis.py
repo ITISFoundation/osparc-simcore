@@ -61,9 +61,5 @@ class RedisSettings(BaseCustomSettings):
         )
 
     @cached_property
-    def dsn_scheduled_maintenance(self) -> str:
-        return self.build_redis_dsn(self.REDIS_SCHEDULED_MAINTENANCE_DB)
-
-    @cached_property
     def dsn_user_notifications(self) -> str:
         return self.build_redis_dsn(self.REDIS_USER_NOTIFICATIONS_DB)
