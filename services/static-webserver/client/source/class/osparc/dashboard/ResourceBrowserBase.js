@@ -72,6 +72,15 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       return (card instanceof osparc.dashboard.GridButtonItem || card instanceof osparc.dashboard.ListButtonItem);
     },
 
+    createToolbarRadioButton: function(label, icon, toolTipText) {
+      return new qx.ui.toolbar.RadioButton().set({
+        label,
+        icon,
+        toolTipText,
+        margin: 0
+      });
+    },
+
     PAGINATED_STUDIES: 10
   },
 
@@ -79,7 +88,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     _resourceType: null,
     _resourcesList: null,
     _topBar: null,
-    _secondaryBar: null,
+    _toolbar: null,
     _searchBarFilter: null,
     __viewModeLayout: null,
     _resourcesContainer: null,
@@ -118,13 +127,13 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       const topBar = this.__createTopBar();
       this._add(topBar);
 
-      const secondaryBar = this._secondaryBar = new qx.ui.toolbar.ToolBar().set({
+      const toolbar = this._toolbar = new qx.ui.toolbar.ToolBar().set({
         backgroundColor: "transparent",
         spacing: 10,
         paddingRight: 8,
         alignY: "middle"
       });
-      this._add(secondaryBar);
+      this._add(toolbar);
 
       this.__viewModeLayout = new qx.ui.toolbar.Part();
 
@@ -140,7 +149,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
     __createTopBar: function() {
       const topBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
-        paddingRight: 8,
+        paddingRight: 22,
         alignY: "middle"
       });
 
@@ -198,34 +207,27 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       groupByMenu.add(groupByShared);
       groupOptions.add(groupByShared);
 
-      this._secondaryBar.add(groupByButton);
-    },
-
-    _getToolbarButton: function(label, icon, toolTipText) {
-      return new qx.ui.toolbar.Button().set({
-        margin: 0,
-        label,
-        icon,
-        toolTipText
-      });
+      this._toolbar.add(groupByButton);
     },
 
     _addViewModeButton: function() {
-      const gridBtn = this._getToolbarButton(null, "@FontAwesome5Solid/th/14", this.tr("Grid view"));
+      const gridBtn = this.self().createToolbarRadioButton(null, "@FontAwesome5Solid/th/14", this.tr("Grid view"));
       gridBtn.addListener("execute", () => this._viewByChanged("grid"));
 
-      const listBtn = this._getToolbarButton(null, "@FontAwesome5Solid/bars/14", this.tr("List view"));
+      const listBtn = this.self().createToolbarRadioButton(null, "@FontAwesome5Solid/bars/14", this.tr("List view"));
       listBtn.addListener("execute", () => this._viewByChanged("list"));
 
       const viewModeLayout = this.__viewModeLayout;
+      const radioGroup = new qx.ui.form.RadioGroup();
       [
         gridBtn,
         listBtn
       ].forEach(btn => {
         viewModeLayout.add(btn);
+        radioGroup.add(btn);
       });
 
-      this._secondaryBar.add(viewModeLayout);
+      this._toolbar.add(viewModeLayout);
     },
 
     /**

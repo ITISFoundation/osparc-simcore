@@ -470,7 +470,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
 
       const importStudyButton = this.__createImportButton();
-      this._secondaryBar.add(importStudyButton);
+      this._toolbar.add(importStudyButton);
       importStudyButton.exclude();
       osparc.utils.DisabledPlugins.isImportDisabled()
         .then(isDisabled => {
@@ -478,12 +478,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
 
       const selectStudiesButton = this.__createSelectButton();
-      this._secondaryBar.add(selectStudiesButton);
+      this._toolbar.add(selectStudiesButton);
 
       const studiesDeleteButton = this.__createDeleteButton(false);
-      this._secondaryBar.add(studiesDeleteButton);
+      this._toolbar.add(studiesDeleteButton);
 
-      this._secondaryBar.add(new qx.ui.core.Spacer(), {
+      this._toolbar.add(new qx.ui.core.Spacer(), {
         flex: 1
       });
 
@@ -541,7 +541,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
       });
 
-      this._secondaryBar.add(sharedWithButton);
+      this._toolbar.add(sharedWithButton);
     },
 
     __createLoadMoreButton: function() {
