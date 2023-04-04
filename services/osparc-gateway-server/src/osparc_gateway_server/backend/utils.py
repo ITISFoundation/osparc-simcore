@@ -373,9 +373,12 @@ async def get_next_empty_node_hostname(
                     .get("Placement", {})
                     .get("Constraints", [])
                 ):
-                    if len(service_constraints) > 1:
+                    service_placement = list(
+                        filter(lambda x: "node.hostname" in x, service_constraints)
+                    )
+                    if len(service_placement) > 1:
                         continue
-                    service_placement = service_constraints[0]
+                    service_placement = service_placement[0]
                     used_docker_node_ids.add(service_placement.split("==")[1])
                 else:
                     continue
