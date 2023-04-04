@@ -50,9 +50,10 @@ async def _get_service_filetypes(conn: SAConnection) -> dict[ServiceKey, list[st
     return {row.service_key: row.list_of_file_types for row in rows}
 
 
-async def iter_latest_osparc_services(
+async def iter_latest_product_services(
     app: web.Application,
     *,
+    product_name: str,
     page_number: PositiveInt = 1,  # 1-based
     page_size: PositiveInt = LARGEST_PAGE_SIZE,
 ) -> AsyncIterator[ServiceMetaData]:
@@ -93,7 +94,7 @@ async def iter_latest_osparc_services(
             )
             & (services_access_rights.c.gid == _EVERYONE_GROUP_ID)
             & (services_access_rights.c.execute_access == True)
-            & (services_access_rights.c.product_name == "osparc")
+            & (services_access_rights.c.product_name == product_name)
         )
     )
 
