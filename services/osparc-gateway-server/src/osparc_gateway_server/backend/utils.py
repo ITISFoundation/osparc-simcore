@@ -4,7 +4,7 @@ import logging
 from collections import deque
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncGenerator, Final, NamedTuple
+from typing import Any, AsyncGenerator, Final, Mapping, NamedTuple
 
 import aiodocker
 from aiodocker import Docker
@@ -347,6 +347,34 @@ async def get_cluster_information(docker_client: Docker) -> ClusterInformation:
     return cluster_information
 
 
+def _find_service_node_assignment(service_tasks: list[Mapping[str, Any]]) -> str | None:
+    for task in service_tasks:
+        if task["Status"]["State"] in ("new", "pending"):
+            # some task is not running yet. that is a bit weird
+            if (
+                service_constraints := task.get("Spec", {})
+                .get("Placement", {})
+                .get("Constraints", [])
+            ):
+                service_placement = list(
+                    filter(lambda x: "node.hostname" in x, service_constraints)
+                )
+                if len(service_placement) > 1:
+                    continue
+                service_placement = service_placement[0]
+                return service_placement.split("==")[1]
+            else:
+                continue
+        if task["Status"]["State"] in (
+            "assigned",
+            "preparing",
+            "starting",
+            "running",
+        ):
+            return task["NodeID"]
+    return None
+
+
 async def get_next_empty_node_hostname(
     docker_client: Docker, cluster: Cluster
 ) -> Hostname:
@@ -363,32 +391,9 @@ async def get_next_empty_node_hostname(
         service_tasks = await docker_client.tasks.list(
             filters={"service": service["ID"]}
         )
-        if not service_tasks:
-            continue
-        for task in service_tasks:
-            if task["Status"]["State"] in ("new", "pending"):
-                # some task is not running yet. that is a bit weird
-                if (
-                    service_constraints := task.get("Spec", {})
-                    .get("Placement", {})
-                    .get("Constraints", [])
-                ):
-                    service_placement = list(
-                        filter(lambda x: "node.hostname" in x, service_constraints)
-                    )
-                    if len(service_placement) > 1:
-                        continue
-                    service_placement = service_placement[0]
-                    used_docker_node_ids.add(service_placement.split("==")[1])
-                else:
-                    continue
-            if task["Status"]["State"] in (
-                "assigned",
-                "preparing",
-                "starting",
-                "running",
-            ):
-                used_docker_node_ids.add(task["NodeID"])
+        if assigned_node := _find_service_node_assignment(service_tasks):
+            used_docker_node_ids.add(assigned_node)
+
     cluster_nodes.rotate(current_count)
     for node in cluster_nodes:
         if node["ID"] in used_docker_node_ids:
