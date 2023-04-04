@@ -7,6 +7,7 @@ from simcore_service_director_v2.models.schemas.dynamic_services import (
     SchedulerData,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._scheduler_utils import (
+    LOG_MSG_MANUAL_INTERVENTION,
     service_awaits_manual_interventions,
 )
 
@@ -27,4 +28,4 @@ async def test_service_awaits_manual_interventions_logs_once(
         await service_awaits_manual_interventions(scheduler_data_manual_intervention)
 
     # message is only logged once
-    assert caplog.text.count("Service waiting for manual intervention") == 1
+    assert caplog.text.count(LOG_MSG_MANUAL_INTERVENTION) == 1

@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import Final
 
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
@@ -11,11 +11,15 @@ from ._events_utils import service_push_outputs
 
 logger = logging.getLogger(__name__)
 
+# NOTE: take care in changing this message, part of it is used by
+# graylog and it will break the notifications
+LOG_MSG_MANUAL_INTERVENTION: Final[str] = "Service waiting for manual intervention"
+
 
 async def push_service_outputs(
     app: FastAPI,
     node_uuid: NodeID,
-    progress_callback: Optional[ProgressCallback] = None,
+    progress_callback: ProgressCallback | None = None,
 ) -> None:
     dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(app)
     await service_push_outputs(
@@ -37,7 +41,5 @@ async def service_awaits_manual_interventions(scheduler_data: SchedulerData) -> 
         and not scheduler_data.dynamic_sidecar.wait_for_manual_intervention_logged
     ):
         scheduler_data.dynamic_sidecar.wait_for_manual_intervention_logged = True
-        logger.warning(
-            "Service waiting for manual intervention %s", scheduler_data.node_uuid
-        )
+        logger.warning(" %s %s", LOG_MSG_MANUAL_INTERVENTION, scheduler_data.node_uuid)
     return service_awaits_intervention
