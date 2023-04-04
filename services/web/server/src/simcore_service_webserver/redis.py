@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 import redis.asyncio as aioredis
 from aiohttp import web
@@ -19,7 +18,7 @@ APP_REDIS_CLIENTS_MANAGER = f"{__name__}.redis_clients_manager"
 
 
 def get_plugin_settings(app: web.Application) -> RedisSettings:
-    settings: Optional[RedisSettings] = app[APP_SETTINGS_KEY].WEBSERVER_REDIS
+    settings: RedisSettings | None = app[APP_SETTINGS_KEY].WEBSERVER_REDIS
     assert settings, "setup_settings not called?"  # nosec
     assert isinstance(settings, RedisSettings)  # nosec
     return settings
@@ -52,9 +51,8 @@ async def setup_redis_client(app: web.Application):
 
 def _get_redis_client(app: web.Application, database: RedisDatabase) -> RedisClientSDK:
     redis_client: RedisClientsManager = app[APP_REDIS_CLIENTS_MANAGER]
-    assert (
-        redis_client is not None
-    ), f"redis plugin was not init for {APP_REDIS_CLIENTS_MANAGER}"  # nosec
+    if redis_client is None:
+        raise RuntimeError(f"redis plugin was not init for {APP_REDIS_CLIENTS_MANAGER}")
     return redis_client.client(database)
 
 
