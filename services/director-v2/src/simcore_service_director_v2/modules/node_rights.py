@@ -76,7 +76,7 @@ class NodeRightsManager:
     """
 
     app: FastAPI
-    redis: RedisClientSDK
+    redis_client_sdk: RedisClientSDK
     is_enabled: bool
     lock_timeout_s: PositiveFloat
     concurrent_resource_slots: PositiveInt
@@ -102,7 +102,7 @@ class NodeRightsManager:
                 "RedisLockManager client is not available. Please check the configuration."
             )
         node_rights_manager: NodeRightsManager = app.state.node_rights_manager
-        await node_rights_manager.redis.setup()
+        await node_rights_manager.redis_client_sdk.setup()
         return node_rights_manager
 
     @classmethod
@@ -127,11 +127,13 @@ class NodeRightsManager:
         """
 
         node_slots_key = self._get_key(docker_node_id, resource_name)
-        slots: bytes | None = await self.redis.redis.get(node_slots_key)
+        slots: bytes | None = await self.redis_client_sdk.redis.get(node_slots_key)
         if slots is not None:
             return int(slots)
 
-        await self.redis.redis.set(node_slots_key, self.concurrent_resource_slots)
+        await self.redis_client_sdk.redis.set(
+            node_slots_key, self.concurrent_resource_slots
+        )
         return self.concurrent_resource_slots
 
     @staticmethod
@@ -193,7 +195,7 @@ class NodeRightsManager:
         for slot in range(slots):
             node_lock_name = self._get_lock_name(docker_node_id, resource_name, slot)
 
-            lock = self.redis.redis.lock(
+            lock = self.redis_client_sdk.redis.lock(
                 name=node_lock_name, timeout=self.lock_timeout_s
             )
             lock_acquired = await lock.acquire(blocking=False)
@@ -227,4 +229,4 @@ class NodeRightsManager:
             await self._release_extend_lock(extend_lock)
 
     async def close(self) -> None:
-        await self.redis.shutdown()
+        await self.redis_client_sdk.shutdown()
