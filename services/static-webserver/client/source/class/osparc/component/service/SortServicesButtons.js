@@ -11,7 +11,7 @@
      MIT: https://opensource.org/licenses/MIT
 
    Authors:
-     * Odei Maiz (ignapas)
+     * Odei Maiz (odeimaiz)
 
 ************************************************************************ */
 
@@ -55,8 +55,9 @@ qx.Class.define("osparc.component.service.SortServicesButtons", {
       nameAsc,
       nameDesc
     ].forEach((btn, idx) => {
-      btn.addListener("execute", () => this.__updateSortBy(btn));
       sortByMenu.add(btn);
+
+      btn.addListener("execute", () => this.__buttonExecuted(btn));
 
       if (idx === 0) {
         btn.execute();
@@ -76,15 +77,16 @@ qx.Class.define("osparc.component.service.SortServicesButtons", {
   },
 
   members: {
-    __updateSortBy: function(btn) {
-      const data = {
-        "sort": btn["sortBy"],
-        "order": btn["orderBy"]
-      };
+    __buttonExecuted: function(btn) {
       this.set({
         label: btn.getLabel(),
         icon: btn.getIcon()
       });
+
+      const data = {
+        "sort": btn["sortBy"],
+        "order": btn["orderBy"]
+      };
       this.fireDataEvent("sortBy", data);
     }
   }
