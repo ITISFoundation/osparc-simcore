@@ -223,6 +223,9 @@ class DynamicSidecar(BaseModel):
             "important data might be lost. awaits for manual intervention."
         ),
     )
+    wait_for_manual_intervention_logged: bool = Field(
+        False, description="True if a relative message was logged"
+    )
     were_state_and_outputs_saved: bool = Field(
         False,
         description="set True if the dy-sidecar saves the state and uploads the outputs",
