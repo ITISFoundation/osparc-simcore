@@ -30,7 +30,10 @@ from servicelib.utils import logged_gather
 from yarl import URL
 
 from .director_v2_core_base import DataType, request_director_v2
-from .director_v2_exceptions import DirectorServiceError
+from .director_v2_exceptions import (
+    DirectorServiceError,
+    ServiceWaitingForManualIntervention,
+)
 from .director_v2_settings import DirectorV2Settings, get_plugin_settings
 from .rabbitmq import get_rabbitmq_client
 
@@ -156,6 +159,12 @@ async def stop_dynamic_service(
             ),
             expected_status=web.HTTPNoContent,
             timeout=settings.DIRECTOR_V2_STOP_SERVICE_TIMEOUT,
+            on_error={
+                web.HTTPConflict.status_code: (
+                    ServiceWaitingForManualIntervention,
+                    {"service_uuid": service_uuid},
+                )
+            },
         )
 
 

@@ -815,6 +815,15 @@
             },
             "name": "x-dynamic-sidecar-request-scheme",
             "in": "header"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "X-Simcore-User-Agent",
+              "type": "string"
+            },
+            "name": "x-simcore-user-agent",
+            "in": "header"
           }
         ],
         "requestBody": {
@@ -922,16 +931,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
           "204": {
-            "description": "No Content"
+            "description": "Successful Response"
           },
           "422": {
             "description": "Validation Error",
