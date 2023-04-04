@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import Optional
 
 from models_library.basic_types import PortInt
 from models_library.projects import ProjectID
@@ -37,7 +36,7 @@ class SchedulerPublicInterface(ABC):
 
     @abstractmethod
     async def push_service_outputs(
-        self, node_uuid: NodeID, progress_callback: Optional[ProgressCallback] = None
+        self, node_uuid: NodeID, progress_callback: ProgressCallback | None = None
     ) -> None:
         """
         Push service outputs.
@@ -46,7 +45,7 @@ class SchedulerPublicInterface(ABC):
 
     @abstractmethod
     async def remove_service_containers(
-        self, node_uuid: NodeID, progress_callback: Optional[ProgressCallback] = None
+        self, node_uuid: NodeID, progress_callback: ProgressCallback | None = None
     ) -> None:
         """
         Removes all started service containers.
@@ -64,7 +63,7 @@ class SchedulerPublicInterface(ABC):
 
     @abstractmethod
     async def save_service_state(
-        self, node_uuid: NodeID, progress_callback: Optional[ProgressCallback] = None
+        self, node_uuid: NodeID, progress_callback: ProgressCallback | None = None
     ) -> None:
         """
         Saves the state of the service.
@@ -92,8 +91,8 @@ class SchedulerPublicInterface(ABC):
     def list_services(
         self,
         *,
-        user_id: Optional[UserID] = None,
-        project_id: Optional[ProjectID] = None,
+        user_id: UserID | None = None,
+        project_id: ProjectID | None = None,
     ) -> list[NodeID]:
         """Returns the list of tracked service UUIDs"""
 
@@ -101,14 +100,18 @@ class SchedulerPublicInterface(ABC):
     async def mark_service_for_removal(
         self,
         node_uuid: NodeID,
-        can_save: Optional[bool],
+        can_save: bool | None,
         skip_observation_recreation: bool = False,
     ) -> None:
         """The service will be removed as soon as possible"""
 
     @abstractmethod
-    async def service_awaits_manual_interventions(self, node_uuid: NodeID) -> bool:
-        """returns True if services is waiting for manual intervention"""
+    async def is_service_awaiting_manual_intervention(self, node_uuid: NodeID) -> bool:
+        """
+        returns True if services is waiting for manual intervention
+        A service will wait for manual intervention if there was an issue while saving
+        it's state or it's outputs.
+        """
 
     @abstractmethod
     async def get_stack_status(self, node_uuid: NodeID) -> RunningDynamicServiceDetails:

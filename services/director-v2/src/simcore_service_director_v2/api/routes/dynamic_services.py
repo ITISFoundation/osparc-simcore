@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Coroutine, Optional, Union, cast
+from typing import Coroutine, cast
 
 import httpx
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
@@ -65,8 +65,8 @@ logger = logging.getLogger(__name__)
     ),
 )
 async def list_tracked_dynamic_services(
-    user_id: Optional[UserID] = None,
-    project_id: Optional[ProjectID] = None,
+    user_id: UserID | None = None,
+    project_id: ProjectID | None = None,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
 ) -> list[DynamicServiceGet]:
@@ -107,7 +107,7 @@ async def create_dynamic_service(
         get_dynamic_services_settings
     ),
     scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
-) -> Union[DynamicServiceGet, RedirectResponse]:
+) -> DynamicServiceGet | RedirectResponse:
     simcore_service_labels: SimcoreServiceLabels = (
         await director_v0_client.get_service_labels(
             service=ServiceKeyVersion(key=service.key, version=service.version)
@@ -156,7 +156,7 @@ async def get_dynamic_sidecar_status(
     node_uuid: NodeID,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
-) -> Union[DynamicServiceGet, RedirectResponse]:
+) -> DynamicServiceGet | RedirectResponse:
     try:
         return cast(DynamicServiceGet, await scheduler.get_stack_status(node_uuid))
     except DynamicSidecarNotFoundError:
@@ -179,13 +179,13 @@ async def get_dynamic_sidecar_status(
 async def stop_dynamic_service(
     request: Request,
     node_uuid: NodeID,
-    can_save: Optional[bool] = True,
+    can_save: bool | None = True,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
     dynamic_services_settings: DynamicServicesSettings = Depends(
         get_dynamic_services_settings
     ),
-) -> Union[NoContentResponse, RedirectResponse]:
+) -> NoContentResponse | RedirectResponse:
     assert request  # nosec
 
     try:
@@ -200,7 +200,7 @@ async def stop_dynamic_service(
 
         return RedirectResponse(str(redirection_url))
 
-    if await scheduler.service_awaits_manual_interventions(node_uuid):
+    if await scheduler.is_service_awaiting_manual_intervention(node_uuid):
         raise HTTPException(status.HTTP_409_CONFLICT, detail="waiting_for_intervention")
 
     # Service was marked for removal, the scheduler will
