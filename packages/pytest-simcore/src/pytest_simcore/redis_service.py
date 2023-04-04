@@ -3,12 +3,12 @@
 # pylint:disable=redefined-outer-name
 
 import logging
-from typing import AsyncIterator, Union
+from typing import AsyncIterator
 
 import pytest
 import tenacity
 from redis.asyncio import Redis, from_url
-from settings_library.redis import RedisSettings
+from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -34,7 +34,7 @@ async def redis_settings(
     )
     # test runner is running on the host computer
     settings = RedisSettings(REDIS_HOST=get_localhost_ip(), REDIS_PORT=int(port))
-    await wait_till_redis_responsive(settings.dsn_resources)
+    await wait_till_redis_responsive(settings.build_redis_dsn(RedisDatabase.RESOURCES))
 
     return settings
 
@@ -59,7 +59,9 @@ async def redis_client(
 ) -> AsyncIterator[Redis]:
     """Creates a redis client to communicate with a redis service ready"""
     client = from_url(
-        redis_settings.dsn_resources, encoding="utf-8", decode_responses=True
+        redis_settings.build_redis_dsn(RedisDatabase.RESOURCES),
+        encoding="utf-8",
+        decode_responses=True,
     )
 
     yield client
@@ -87,7 +89,7 @@ async def redis_locks_client(
     before_sleep=before_sleep_log(log, logging.INFO),
     reraise=True,
 )
-async def wait_till_redis_responsive(redis_url: Union[URL, str]) -> None:
+async def wait_till_redis_responsive(redis_url: URL | str) -> None:
     client = from_url(f"{redis_url}", encoding="utf-8", decode_responses=True)
 
     try:

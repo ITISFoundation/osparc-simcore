@@ -1,6 +1,5 @@
 from enum import Enum
 from functools import cached_property
-from typing import Optional
 
 from pydantic import Field
 from pydantic.networks import RedisDsn
@@ -24,8 +23,8 @@ class RedisSettings(BaseCustomSettings):
     REDIS_PORT: PortInt = 6789
 
     # auth
-    REDIS_USER: Optional[str] = None
-    REDIS_PASSWORD: Optional[SecretStr] = None
+    REDIS_USER: str | None = None
+    REDIS_PASSWORD: SecretStr | None = None
 
     # NOTE: i would like to remove these since the enum should suffice
     # redis databases (db)
@@ -60,10 +59,6 @@ class RedisSettings(BaseCustomSettings):
             port=f"{self.REDIS_PORT}",
             path=f"/{db_index}",
         )
-
-    @cached_property
-    def dsn_resources(self) -> str:
-        return self.build_redis_dsn(self.REDIS_RESOURCES_DB)
 
     @cached_property
     def dsn_locks(self) -> str:

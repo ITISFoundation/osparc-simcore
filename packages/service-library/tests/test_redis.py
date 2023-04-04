@@ -45,9 +45,10 @@ async def _is_locked(redis_client_sdk: RedisClientSDK, lock_name: str) -> bool:
 async def redis_client_sdk(
     redis_service: RedisSettings,
 ) -> AsyncIterator[RedisClientSDK]:
-    client = RedisClientSDK(redis_service.dsn_resources)
+    redis_resources_dns = redis_service.build_redis_dsn(RedisDatabase.RESOURCES)
+    client = RedisClientSDK(redis_resources_dns)
     assert client
-    assert client.redis_dsn == redis_service.dsn_resources
+    assert client.redis_dsn == redis_resources_dns
     await client.setup()
 
     yield client
@@ -241,7 +242,9 @@ async def test_redis_client_sdks_manager(redis_service: RedisSettings):
 async def test_redis_client_sdk_lost_connection(
     redis_service: RedisSettings, docker_client: docker.client.DockerClient
 ):
-    redis_client_sdk = RedisClientSDK(redis_service.dsn_resources)
+    redis_client_sdk = RedisClientSDK(
+        redis_service.build_redis_dsn(RedisDatabase.RESOURCES)
+    )
 
     await redis_client_sdk.setup()
 
