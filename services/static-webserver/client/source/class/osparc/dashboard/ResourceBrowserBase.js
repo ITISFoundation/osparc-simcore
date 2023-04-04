@@ -121,7 +121,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       const secondaryBar = this._secondaryBar = new qx.ui.toolbar.ToolBar().set({
         backgroundColor: "transparent",
         spacing: 10,
-        maxHeight: 25,
         paddingRight: 8,
         alignY: "middle"
       });
