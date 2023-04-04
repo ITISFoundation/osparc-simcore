@@ -81,7 +81,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     _topBar: null,
     _secondaryBar: null,
     _searchBarFilter: null,
-    __viewMenuButton: null,
+    __viewModeLayout: null,
     _resourcesContainer: null,
     _loadingResourcesBtn: null,
 
@@ -118,16 +118,16 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       const topBar = this.__createTopBar();
       this._add(topBar);
 
-      const secondaryBar = this._secondaryBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
+      const secondaryBar = this._secondaryBar = new qx.ui.toolbar.ToolBar().set({
+        backgroundColor: "transparent",
+        spacing: 10,
+        maxHeight: 25,
         paddingRight: 8,
         alignY: "middle"
       });
       this._add(secondaryBar);
 
-      const viewByMenu = new qx.ui.menu.Menu().set({
-        font: "text-14"
-      });
-      this.__viewMenuButton = new qx.ui.form.MenuButton(this.tr("View"), "@FontAwesome5Solid/chevron-down/10", viewByMenu);
+      this.__viewModeLayout = new qx.ui.toolbar.Part();
 
       const resourcesContainer = this._resourcesContainer = new osparc.dashboard.ResourceContainerManager();
       resourcesContainer.addListener("updateStudy", e => this._updateStudyData(e.getData()));
@@ -158,7 +158,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     _groupByChanged: function(groupBy) {
       // if cards are grouped they need to be in grid mode
       this._resourcesContainer.setMode("grid");
-      this.__viewMenuButton.setVisibility(groupBy ? "excluded" : "visible");
+      this.__viewModeLayout.setVisibility(groupBy ? "excluded" : "visible");
       this._resourcesContainer.setGroupBy(groupBy);
       this._reloadCards();
     },
@@ -202,24 +202,31 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       this._secondaryBar.add(groupByButton);
     },
 
-    _addViewModeButton: function() {
-      const viewByMenu = this.__viewMenuButton.getMenu();
+    _getToolbarButton: function(label, icon, toolTipText) {
+      return new qx.ui.toolbar.Button().set({
+        margin: 0,
+        label,
+        icon,
+        toolTipText
+      });
+    },
 
-      const gridBtn = new qx.ui.menu.RadioButton(this.tr("Grid"));
+    _addViewModeButton: function() {
+      const gridBtn = this._getToolbarButton(null, "@FontAwesome5Solid/th/14", this.tr("Grid view"));
       gridBtn.addListener("execute", () => this._viewByChanged("grid"));
-      const listBtn = new qx.ui.menu.RadioButton(this.tr("List"));
+
+      const listBtn = this._getToolbarButton(null, "@FontAwesome5Solid/bars/14", this.tr("List view"));
       listBtn.addListener("execute", () => this._viewByChanged("list"));
 
-      const groupOptions = new qx.ui.form.RadioGroup();
+      const viewModeLayout = this.__viewModeLayout;
       [
         gridBtn,
         listBtn
       ].forEach(btn => {
-        viewByMenu.add(btn);
-        groupOptions.add(btn);
+        viewModeLayout.add(btn);
       });
 
-      this._secondaryBar.add(this.__viewMenuButton);
+      this._secondaryBar.add(viewModeLayout);
     },
 
     /**
