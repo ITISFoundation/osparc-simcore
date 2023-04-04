@@ -171,7 +171,9 @@ class _ProjectListParams(BaseModel):
 async def list_projects(request: web.Request):
     """
 
-    :raises web.HTTPBadRequest
+    Raises:
+        web.HTTPUnprocessableEntity: (422) if validation of request parameters fail
+
     """
 
     db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
@@ -242,6 +244,12 @@ class _ProjectActiveParams(BaseModel):
 @login_required
 @permission_required("project.read")
 async def get_active_project(request: web.Request) -> web.Response:
+    """
+
+    Raises:
+        web.HTTPUnprocessableEntity: (422) if validation of request parameters fail
+        web.HTTPNotFound: If active project is not found
+    """
     req_ctx = RequestContext.parse_obj(request)
     query_params = parse_request_query_parameters_as(_ProjectActiveParams, request)
 
@@ -271,10 +279,13 @@ async def get_active_project(request: web.Request) -> web.Response:
 @login_required
 @permission_required("project.read")
 async def get_project(request: web.Request):
-    """Returns all projects accessible to a user (not necesarly owned)
+    """
 
-
-    :raises web.HTTPBadRequest
+    Raises:
+        web.HTTPUnprocessableEntity: (422) if validation of request parameters fail
+        web.HTTPNotFound: User has no access to at least one service in project
+        web.HTTPForbidden: User has no access rights to get this project
+        web.HTTPNotFound: This project was not found
     """
 
     req_ctx = RequestContext.parse_obj(request)
@@ -333,21 +344,26 @@ async def get_project(request: web.Request):
 @permission_required("project.update")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
 async def replace_project(request: web.Request):
-    """Implements PUT /projects
-
-     In a PUT request, the enclosed entity is considered to be a modified version of
-     the resource stored on the origin server, and the client is requesting that the
-     stored version be replaced.
-
-     With PATCH, however, the enclosed entity contains a set of instructions describing how a
-     resource currently residing on the origin server should be modified to produce a new version.
-
-     Also, another difference is that when you want to update a resource with PUT request, you have to send
-     the full payload as the request whereas with PATCH, you only send the parameters which you want to update.
-
-    :raises web.HTTPNotFound: cannot find project id in repository
-    :raises web.HTTPBadRequest
     """
+    In a PUT request, the enclosed entity is considered to be a modified version of
+    the resource stored on the origin server, and the client is requesting that the
+    stored version be replaced.
+
+    With PATCH, however, the enclosed entity contains a set of instructions describing how a
+    resource currently residing on the origin server should be modified to produce a new version.
+
+    Also, another difference is that when you want to update a resource with PUT request, you have to send
+    the full payload as the request whereas with PATCH, you only send the parameters which you want to update.
+
+    Raises:
+       web.HTTPUnprocessableEntity: (422) if validation of request parameters fail
+       web.HTTPBadRequest: invalid body encoding
+       web.HTTPConflict: Cannot replace while pipeline is running
+       web.HTTPBadRequest: jsonschema validatio error
+       web.HTTPForbidden: Not enough access rights to replace this project
+       web.HTTPNotFound: This project was not found
+    """
+
     db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
@@ -449,7 +465,7 @@ async def replace_project(request: web.Request):
 
     except ProjectInvalidRightsError as exc:
         raise web.HTTPForbidden(
-            reason="You do not have sufficient rights to save the project"
+            reason="You do not have sufficient rights to replace the project"
         ) from exc
 
     except ProjectNotFoundError as exc:
@@ -469,9 +485,17 @@ async def replace_project(request: web.Request):
 async def delete_project(request: web.Request):
     """
 
-    :raises web.HTTPNotFound
-    :raises web.HTTPBadRequest
+    Raises:
+        web.HTTPUnprocessableEntity: (422) if validation of request parameters fail
+        web.HTTPForbidden: Still open in a different tab
+        web.HTTPForbidden: Still open by another user
+        web.HTTPConflict: Project is locked
+        web.HTTPForbidden: Not enough access rights to delete this project
+        web.HTTPNotFound: This project was not found
+        web.HTTPConflict: Somethine went wrong while deleting
+        web.HTTPNoContent: Sucess
     """
+
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
