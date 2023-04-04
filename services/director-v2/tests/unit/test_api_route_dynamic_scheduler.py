@@ -91,6 +91,7 @@ async def observed_service(
         dynamic_sidecar_port,
         request_dns,
         request_scheme,
+        "",
         can_save,
     )
     # pylint:disable=protected-access

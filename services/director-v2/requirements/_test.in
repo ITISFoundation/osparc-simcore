@@ -17,6 +17,7 @@ async-asgi-testclient # replacement for fastapi.testclient.TestClient [see b) be
 codecov
 coveralls
 dask-gateway-server[local]
+dask[distributed,diagnostics]
 docker
 Faker
 flaky

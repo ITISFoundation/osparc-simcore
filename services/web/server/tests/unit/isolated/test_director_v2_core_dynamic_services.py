@@ -5,12 +5,15 @@ from typing import Iterable
 from unittest.mock import MagicMock
 
 import pytest
-from aiohttp.web import Application, HTTPNoContent
+from aiohttp.web import Application, HTTPConflict, HTTPNoContent
 from faker import Faker
 from pytest_mock.plugin import MockerFixture
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver import director_v2_core_dynamic_services
 from simcore_service_webserver.application_settings import setup_settings
+from simcore_service_webserver.director_v2_exceptions import (
+    ServiceWaitingForManualIntervention,
+)
 from yarl import URL
 
 
@@ -49,4 +52,10 @@ async def test_stop_dynamic_service_signature(
         ),
         expected_status=HTTPNoContent,
         timeout=3610,
+        on_error={
+            HTTPConflict.status_code: (
+                ServiceWaitingForManualIntervention,
+                {"service_uuid": node_uuid},
+            )
+        },
     )

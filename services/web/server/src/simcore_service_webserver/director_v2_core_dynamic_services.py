@@ -7,7 +7,6 @@
 import logging
 from contextlib import AsyncExitStack
 from functools import partial
-from typing import Optional
 
 from aiohttp import web
 from models_library.projects import ProjectID
@@ -18,6 +17,11 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from pydantic.types import NonNegativeFloat, PositiveInt
+from servicelib.common_headers import (
+    X_DYNAMIC_SIDECAR_REQUEST_DNS,
+    X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
+    X_SIMCORE_USER_AGENT,
+)
 from servicelib.logging_utils import log_decorator
 from servicelib.progress_bar import ProgressBarData
 from servicelib.rabbitmq import RabbitMQClient
@@ -25,7 +29,10 @@ from servicelib.utils import logged_gather
 from yarl import URL
 
 from .director_v2_core_base import DataType, request_director_v2
-from .director_v2_exceptions import DirectorServiceError
+from .director_v2_exceptions import (
+    DirectorServiceError,
+    ServiceWaitingForManualIntervention,
+)
 from .director_v2_settings import DirectorV2Settings, get_plugin_settings
 from .rabbitmq import get_rabbitmq_client
 
@@ -35,8 +42,8 @@ log = logging.getLogger(__name__)
 @log_decorator(logger=log)
 async def list_dynamic_services(
     app: web.Application,
-    user_id: Optional[PositiveInt] = None,
-    project_id: Optional[str] = None,
+    user_id: PositiveInt | None = None,
+    project_id: str | None = None,
 ) -> list[DataType]:
     params = {}
     if user_id:
@@ -85,6 +92,7 @@ async def run_dynamic_service(
     service_uuid: str,
     request_dns: str,
     request_scheme: str,
+    request_simcore_user_agent: str,
     service_resources: ServiceResourcesDict,
 ) -> DataType:
     """
@@ -107,8 +115,9 @@ async def run_dynamic_service(
     }
 
     headers = {
-        "X-Dynamic-Sidecar-Request-DNS": request_dns,
-        "X-Dynamic-Sidecar-Request-Scheme": request_scheme,
+        X_DYNAMIC_SIDECAR_REQUEST_DNS: request_dns,
+        X_DYNAMIC_SIDECAR_REQUEST_SCHEME: request_scheme,
+        X_SIMCORE_USER_AGENT: request_simcore_user_agent,
     }
 
     settings: DirectorV2Settings = get_plugin_settings(app)
@@ -130,7 +139,7 @@ async def stop_dynamic_service(
     app: web.Application,
     service_uuid: NodeIDStr,
     save_state: bool = True,
-    progress: Optional[ProgressBarData] = None,
+    progress: ProgressBarData | None = None,
 ) -> None:
     """
     Stopping a service can take a lot of time
@@ -151,6 +160,12 @@ async def stop_dynamic_service(
             ),
             expected_status=web.HTTPNoContent,
             timeout=settings.DIRECTOR_V2_STOP_SERVICE_TIMEOUT,
+            on_error={
+                web.HTTPConflict.status_code: (
+                    ServiceWaitingForManualIntervention,
+                    {"service_uuid": service_uuid},
+                )
+            },
         )
 
 

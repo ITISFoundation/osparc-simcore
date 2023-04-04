@@ -35,8 +35,9 @@ qx.Class.define("osparc.DownloadLinkTracker", {
       downloadAnchorNode.setAttribute("osparc", "downloadFile");
       this.setDownloading(true);
       downloadAnchorNode.click();
-      this.setDownloading(false);
       downloadAnchorNode.remove();
+      // This is needed to make it work in Firefox
+      setTimeout(() => this.setDownloading(false), 100);
     }
   }
 });

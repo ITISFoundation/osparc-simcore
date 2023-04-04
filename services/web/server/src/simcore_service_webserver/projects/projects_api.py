@@ -15,7 +15,7 @@ from collections import defaultdict
 from contextlib import suppress
 from datetime import datetime
 from pprint import pformat
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
 from aiohttp import web
@@ -40,6 +40,7 @@ from servicelib.aiohttp.application_keys import (
     APP_JSONSCHEMA_SPECS_KEY,
 )
 from servicelib.aiohttp.jsonschema_validation import validate_instance
+from servicelib.common_headers import X_FORWARDED_PROTO, X_SIMCORE_USER_AGENT
 from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_context
 from servicelib.utils import fire_and_forget_task, logged_gather
@@ -104,7 +105,7 @@ async def get_project_for_user(
     project_uuid: str,
     user_id: UserID,
     *,
-    include_state: Optional[bool] = False,
+    include_state: bool | None = False,
     check_permissions: str = "read",
 ) -> dict:
     """Returns a VALID project accessible to user
@@ -137,6 +138,19 @@ async def get_project_type(
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     assert db  # nosec
     return await db.get_project_type(project_uuid)
+
+
+#
+# UPDATE project -----------------------------------------------------
+#
+
+
+async def update_project_last_change_timestamp(
+    app: web.Application, project_uuid: ProjectID
+):
+    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    assert db  # nosec
+    await db.update_project_last_change_timestamp(project_uuid)
 
 
 #
@@ -173,7 +187,7 @@ async def submit_delete_project_task(
 
 def get_delete_project_task(
     project_uuid: ProjectID, user_id: UserID
-) -> Optional[asyncio.Task]:
+) -> asyncio.Task | None:
     if tasks := _delete.get_scheduled_tasks(project_uuid, user_id):
         assert len(tasks) == 1, f"{tasks=}"  # nosec
         task = tasks[0]
@@ -243,7 +257,8 @@ async def _start_dynamic_service(
         service_version=service_version,
         service_uuid=f"{node_uuid}",
         request_dns=extract_dns_without_default_port(request.url),
-        request_scheme=request.headers.get("X-Forwarded-Proto", request.url.scheme),
+        request_scheme=request.headers.get(X_FORWARDED_PROTO, request.url.scheme),
+        request_simcore_user_agent=request.headers.get(X_SIMCORE_USER_AGENT, ""),
         service_resources=service_resources,
     )
 
@@ -255,7 +270,7 @@ async def add_project_node(
     product_name: str,
     service_key: str,
     service_version: str,
-    service_id: Optional[str],
+    service_id: str | None,
 ) -> str:
     log.debug(
         "starting node %s:%s in project %s for user %s",
@@ -412,7 +427,7 @@ async def update_project_node_state(
 
 async def update_project_node_progress(
     app: web.Application, user_id: int, project_id: str, node_id: str, progress: float
-) -> Optional[dict]:
+) -> dict | None:
     log.debug(
         "updating node %s progress in project %s for user %s with %s",
         node_id,
@@ -440,8 +455,8 @@ async def update_project_node_outputs(
     user_id: int,
     project_id: str,
     node_id: str,
-    new_outputs: Optional[dict],
-    new_run_hash: Optional[str],
+    new_outputs: dict | None,
+    new_run_hash: str | None,
 ) -> tuple[dict, list[str]]:
     """
     Updates outputs of a given node in a project with 'data'
@@ -594,7 +609,7 @@ async def try_open_project_for_user(
     project_uuid: str,
     client_session_id: str,
     app: web.Application,
-    max_number_of_studies_per_user: Optional[int],
+    max_number_of_studies_per_user: int | None,
 ) -> bool:
     try:
         async with lock_with_notification(
@@ -728,7 +743,7 @@ async def _get_project_lock_state(
         f"{project_uuid=}",
         f"{user_id=}",
     )
-    prj_locked_state: Optional[ProjectLocked] = await get_project_locked_state(
+    prj_locked_state: ProjectLocked | None = await get_project_locked_state(
         app, project_uuid
     )
     if prj_locked_state:
@@ -974,7 +989,7 @@ async def remove_project_dynamic_services(
     project_uuid: str,
     app: web.Application,
     notify_users: bool = True,
-    user_name: Optional[UserNameDict] = None,
+    user_name: UserNameDict | None = None,
 ) -> None:
     """
 
@@ -992,7 +1007,7 @@ async def remove_project_dynamic_services(
 
     user_name_data: UserNameDict = user_name or await get_user_name(app, user_id)
 
-    user_role: Optional[UserRole] = None
+    user_role: UserRole | None = None
     try:
         user_role = await get_user_role(app, user_id)
     except UserNotFoundError:
@@ -1032,7 +1047,7 @@ async def remove_project_dynamic_services(
 async def notify_project_state_update(
     app: web.Application,
     project: dict,
-    notify_only_user: Optional[int] = None,
+    notify_only_user: int | None = None,
 ) -> None:
     messages: list[SocketMessageDict] = [
         {
@@ -1060,7 +1075,7 @@ async def notify_project_node_update(
     app: web.Application,
     project: dict,
     node_id: str,
-    errors: Optional[list[ErrorDict]],
+    errors: list[ErrorDict] | None,
 ) -> None:
     rooms_to_notify = [
         f"{gid}" for gid, rights in project["accessRights"].items() if rights["read"]

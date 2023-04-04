@@ -1,8 +1,9 @@
 import json
 import logging
+import warnings
 from enum import Enum
 from functools import cached_property
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping
 from uuid import UUID, uuid4
 
 from models_library.basic_types import PortInt
@@ -16,7 +17,15 @@ from models_library.service_settings_labels import (
 )
 from models_library.services import RunID
 from models_library.services_resources import ServiceResourcesDict
-from pydantic import AnyHttpUrl, BaseModel, Extra, Field, constr, parse_obj_as
+from pydantic import (
+    AnyHttpUrl,
+    BaseModel,
+    Extra,
+    Field,
+    constr,
+    parse_obj_as,
+    root_validator,
+)
 from servicelib.error_codes import ErrorCodeStr
 from servicelib.exception_utils import DelayedExceptionHandler
 
@@ -69,7 +78,7 @@ class Status(BaseModel):
         self._update(DynamicSidecarStatus.OK, info)
 
     def update_failing_status(
-        self, user_msg: str, error_code: Optional[ErrorCodeStr] = None
+        self, user_msg: str, error_code: ErrorCodeStr | None = None
     ) -> None:
         next_info = f"{user_msg}"
         if error_code:
@@ -117,7 +126,7 @@ class ServiceRemovalState(BaseModel):
         False,
         description="when True, marks the service as ready to be removed",
     )
-    can_save: Optional[bool] = Field(
+    can_save: bool | None = Field(
         None,
         description="when True, saves the internal state and upload outputs of the service",
     )
@@ -129,7 +138,7 @@ class ServiceRemovalState(BaseModel):
         ),
     )
 
-    def mark_to_remove(self, can_save: Optional[bool]) -> None:
+    def mark_to_remove(self, can_save: bool | None) -> None:
         self.can_remove = True
         self.can_save = can_save
 
@@ -214,6 +223,9 @@ class DynamicSidecar(BaseModel):
             "important data might be lost. awaits for manual intervention."
         ),
     )
+    wait_for_manual_intervention_logged: bool = Field(
+        False, description="True if a relative message was logged"
+    )
     were_state_and_outputs_saved: bool = Field(
         False,
         description="set True if the dy-sidecar saves the state and uploads the outputs",
@@ -221,20 +233,20 @@ class DynamicSidecar(BaseModel):
 
     # below had already been validated and
     # used only to start the proxy
-    dynamic_sidecar_id: Optional[ServiceId] = Field(
+    dynamic_sidecar_id: ServiceId | None = Field(
         None, description="returned by the docker engine; used for starting the proxy"
     )
-    dynamic_sidecar_network_id: Optional[NetworkId] = Field(
+    dynamic_sidecar_network_id: NetworkId | None = Field(
         None, description="returned by the docker engine; used for starting the proxy"
     )
-    swarm_network_id: Optional[NetworkId] = Field(
+    swarm_network_id: NetworkId | None = Field(
         None, description="returned by the docker engine; used for starting the proxy"
     )
-    swarm_network_name: Optional[str] = Field(
+    swarm_network_name: str | None = Field(
         None, description="used for starting the proxy"
     )
 
-    docker_node_id: Optional[str] = Field(
+    docker_node_id: str | None = Field(
         None,
         description=(
             "contains node id of the docker node where all services "
@@ -370,13 +382,37 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     request_scheme: str = Field(
         ..., description="used when configuring the CORS options on the proxy"
     )
+    request_simcore_user_agent: str = Field(
+        ...,
+        description="used as label to filter out the metrics from the cAdvisor prometheus metrics",
+    )
     proxy_service_name: str = Field(None, description="service name given to the proxy")
 
-    product_name: Optional[str] = Field(
+    product_name: str = Field(
         None,
         description="Current product upon which this service is scheduled. "
         "If set to None, the current product is undefined. Mostly for backwards compatibility",
     )
+
+    @root_validator(pre=True)
+    @classmethod
+    def _ensure_legacy_format_compatibility(cls, values):
+        warnings.warn(
+            (
+                "Once https://github.com/ITISFoundation/osparc-simcore/pull/3990 "
+                "reaches production this entire root_validator function "
+                "can be safely removed. Please check "
+                "https://github.com/ITISFoundation/osparc-simcore/issues/3996"
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        request_simcore_user_agent: str | None = values.get(
+            "request_simcore_user_agent"
+        )
+        if not request_simcore_user_agent:
+            values["request_simcore_user_agent"] = ""
+        return values
 
     @classmethod
     def from_http_request(
@@ -387,11 +423,11 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         port: PortInt,
         request_dns: str,
         request_scheme: str,
+        request_simcore_user_agent: str,
         can_save: bool,
-        run_id: Optional[UUID] = None,
+        run_id: UUID | None = None,
     ) -> "SchedulerData":
         # This constructor method sets current product
-        assert service.product_name is not None  # nosec
         names_helper = DynamicSidecarNamesHelper.make(service.node_uuid)
 
         obj_dict = dict(
@@ -414,6 +450,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             request_dns=request_dns,
             request_scheme=request_scheme,
             proxy_service_name=names_helper.proxy_service_name,
+            request_simcore_user_agent=request_simcore_user_agent,
             dynamic_sidecar={"service_removal_state": {"can_save": can_save}},
         )
         if run_id:

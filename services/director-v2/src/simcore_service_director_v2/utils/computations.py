@@ -107,7 +107,7 @@ async def find_deprecated_tasks(
     catalog_client: CatalogClient,
 ) -> list[ServiceKeyVersion]:
 
-    task_services = await logged_gather(
+    services_details = await logged_gather(
         *(
             catalog_client.get_service(
                 user_id=user_id,
@@ -115,9 +115,15 @@ async def find_deprecated_tasks(
                 service_version=key_version.version,
                 product_name=product_name,
             )
-            for key_version in task_key_versions
+            for key_version in set(task_key_versions)
         )
     )
+    service_key_version_to_details = {
+        ServiceKeyVersion.construct(
+            key=details["key"], version=details["version"]
+        ): details
+        for details in services_details
+    }
     today = datetime.utcnow()
 
     def _is_service_deprecated(service: dict[str, Any]) -> bool:
@@ -128,8 +134,8 @@ async def find_deprecated_tasks(
 
     deprecated_tasks = [
         task
-        for task, service in zip(task_key_versions, task_services)
-        if _is_service_deprecated(service)
+        for task in task_key_versions
+        if _is_service_deprecated(service_key_version_to_details[task])
     ]
 
     return deprecated_tasks

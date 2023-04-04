@@ -35,6 +35,8 @@ alembic==1.9.4
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   -r requirements/_test.in
+arrow==1.2.3
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 async-timeout==4.0.2
     # via
     #   aiohttp
@@ -160,6 +162,8 @@ pytest-runner==6.0.0
     # via -r requirements/_test.in
 pytest-sugar==0.9.6
     # via -r requirements/_test.in
+python-dateutil==2.8.2
+    # via arrow
 python-dotenv==1.0.0
     # via -r requirements/_test.in
 pyyaml==5.4.1
@@ -178,6 +182,7 @@ six==1.16.0
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   jsonschema
+    #   python-dateutil
     #   websocket-client
 sqlalchemy==1.4.46
     # via

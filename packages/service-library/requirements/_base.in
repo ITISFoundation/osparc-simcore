@@ -4,10 +4,11 @@
 --constraint ../../../requirements/constraints.txt
 --constraint ./constraints.txt
 
+
 aio-pika
 aiodebug
 aiofiles
-arrow
+arrow # date/time
 pydantic
 pyinstrument
 pyyaml

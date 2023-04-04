@@ -9,7 +9,7 @@ import json
 import time
 from copy import deepcopy
 from datetime import datetime, timedelta
-from typing import Any, Awaitable, Callable, Iterator, Optional, Union
+from typing import Any, Awaitable, Callable, Iterator
 from unittest import mock
 from unittest.mock import call
 
@@ -79,7 +79,7 @@ def assert_replaced(current_project, update_data):
 async def _list_projects(
     client,
     expected: type[web.HTTPException],
-    query_parameters: Optional[dict] = None,
+    query_parameters: dict | None = None,
 ) -> list[dict[str, Any]]:
     # GET /v0/projects
     url = client.app.router["list_projects"].url_for()
@@ -112,8 +112,8 @@ async def _connect_websocket(
     check_connection: bool,
     client,
     client_id: str,
-    events: Optional[dict[str, Callable]] = None,
-) -> Optional[socketio.AsyncClient]:
+    events: dict[str, Callable] | None = None,
+) -> socketio.AsyncClient | None:
     try:
         sio = await socketio_client_factory(client_id, client)
         assert sio.sid
@@ -130,7 +130,7 @@ async def _open_project(
     client,
     client_id: str,
     project: dict,
-    expected: Union[type[web.HTTPException], list[type[web.HTTPException]]],
+    expected: type[web.HTTPException] | list[type[web.HTTPException]],
 ) -> tuple[dict, dict]:
     url = client.app.router["open_project"].url_for(project_id=project["uuid"])
     resp = await client.post(url, json=client_id)
@@ -343,6 +343,7 @@ async def test_open_project(
                     service_version=service["version"],
                     user_id=logged_user["id"],
                     request_scheme=request_scheme,
+                    request_simcore_user_agent="",
                     request_dns=request_dns,
                     product_name=osparc_product_name,
                     save_state=user_role > UserRole.GUEST,
@@ -409,6 +410,7 @@ async def test_open_template_project_for_edition(
                     service_version=service["version"],
                     user_id=logged_user["id"],
                     request_scheme=request_scheme,
+                    request_simcore_user_agent="",
                     request_dns=request_dns,
                     service_resources=ServiceResourcesDictHelpers.create_jsonable(
                         mock_service_resources
@@ -752,6 +754,11 @@ async def test_get_active_project(
     if resp.status == web.HTTPOk.status_code:
         assert not error
         assert ProjectState(**data.pop("state")).locked.value
+
+        user_project_last_change_date = user_project.pop("lastChangeDate")
+        data_last_change_date = data.pop("lastChangeDate")
+        assert user_project_last_change_date < data_last_change_date
+
         assert data == user_project
 
     # login with socket using client session id2

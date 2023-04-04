@@ -13,6 +13,7 @@ import json
 import logging
 import traceback
 from collections import deque
+from copy import deepcopy
 from dataclasses import dataclass, field
 from http.client import HTTPException
 from typing import Any, Callable, Deque, Final, Optional
@@ -35,6 +36,7 @@ from models_library.services_resources import BootMode
 from models_library.users import UserID
 from pydantic import parse_obj_as
 from pydantic.networks import AnyUrl
+from servicelib.logging_utils import log_catch
 from settings_library.s3 import S3Settings
 from simcore_sdk.node_ports_v2 import FileLinkType
 from simcore_service_director_v2.modules.storage import StorageClient
@@ -132,7 +134,7 @@ class DaskClient:
         )
         async for attempt in AsyncRetrying(
             reraise=True,
-            before_sleep=before_sleep_log(logger, logging.WARNING),
+            before_sleep=before_sleep_log(logger, logging.INFO),
             wait=wait_fixed(0.3),
             stop=stop_after_attempt(3),
         ):
@@ -194,7 +196,7 @@ class DaskClient:
         cluster_id: ClusterID,
         tasks: dict[NodeID, Image],
         callback: UserCallbackInSepThread,
-        remote_fct: Optional[RemoteFct] = None,
+        remote_fct: RemoteFct | None = None,
     ) -> list[tuple[NodeID, str]]:
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
         function that runs container will be started."""
@@ -207,7 +209,7 @@ class DaskClient:
             output_data_keys: TaskOutputDataSchema,
             log_file_url: AnyUrl,
             command: list[str],
-            s3_settings: Optional[S3Settings],
+            s3_settings: S3Settings | None,
             boot_mode: BootMode,
         ) -> TaskOutputData:
             """This function is serialized by the Dask client and sent over to the Dask sidecar(s)
@@ -376,11 +378,7 @@ class DaskClient:
                         "Task  %s completed in error:\n%s\nTrace:\n%s",
                         job_id,
                         exception,
-                        "".join(
-                            traceback.format_exception(
-                                exception.__class__, exception, exception.__traceback__
-                            )
-                        ),
+                        "".join(traceback.format_exception(exception)),
                     )
                     running_states.append(RunningState.FAILED)
             else:
@@ -432,6 +430,11 @@ class DaskClient:
             logger.warning("Unknown task cannot be unpublished: %s", f"{job_id=}")
 
     async def get_cluster_details(self) -> ClusterDetails:
+        check_scheduler_is_still_the_same(
+            self.backend.scheduler_id, self.backend.client
+        )
+        check_communication_with_scheduler_is_open(self.backend.client)
+        check_scheduler_status(self.backend.client)
         scheduler_info = self.backend.client.scheduler_info()
         scheduler_status = self.backend.client.status
         dashboard_link = self.backend.client.dashboard_link
@@ -440,19 +443,32 @@ class DaskClient:
             dask_scheduler: distributed.Scheduler,
         ) -> dict[str, dict]:
             used_resources = {}
-            for worker_name in dask_scheduler.workers:
-                worker = dask_scheduler.workers[worker_name]
-                used_resources[worker_name] = worker.used_resources
+            for worker_name, worker_state in dask_scheduler.workers.items():
+                used_resources[worker_name] = worker_state.used_resources
             return used_resources
 
-        used_resources_per_worker: dict[
-            str, dict[str, Any]
-        ] = await self.backend.client.run_on_scheduler(
-            _get_worker_used_resources
-        )  # type: ignore
+        with log_catch(logger, reraise=False):
+            # NOTE: this runs directly on the dask-scheduler and may rise exceptions
+            used_resources_per_worker: dict[
+                str, dict[str, Any]
+            ] = await self.backend.client.run_on_scheduler(
+                _get_worker_used_resources
+            )  # type: ignore
 
-        for k, v in used_resources_per_worker.items():
-            scheduler_info.get("workers", {}).get(k, {}).update(used_resources=v)
+            # let's update the scheduler info, with default to 0s since sometimes
+            # workers are destroyed/created without us knowing right away
+            for worker_name, worker_info in scheduler_info.get("workers", {}).items():
+                used_resources: dict[str, float] = deepcopy(
+                    worker_info.get("resources", {})
+                )
+                # reset default values
+                for res_name in used_resources:
+                    used_resources[res_name] = 0
+                # if the scheduler has info, let's override them
+                used_resources = used_resources_per_worker.get(
+                    worker_name, used_resources
+                )
+                worker_info.update(used_resources=used_resources)
 
         assert dashboard_link  # nosec
         return ClusterDetails(
