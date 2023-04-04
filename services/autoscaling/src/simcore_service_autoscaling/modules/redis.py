@@ -32,8 +32,9 @@ def setup(app: FastAPI) -> None:
                     raise RedisNotConnectedError(dsn=redis_locks_dsn)
 
     async def on_shutdown() -> None:
-        if app.state.redis:
-            await app.state.redis.close()
+        redis_client_sdk: None | RedisClientSDK = app.state.redis
+        if redis_client_sdk:
+            await redis_client_sdk.shutdown()
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
