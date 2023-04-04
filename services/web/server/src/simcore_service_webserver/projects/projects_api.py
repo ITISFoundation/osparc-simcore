@@ -217,8 +217,7 @@ def _enforce_running_services_limit(
     project_settings = get_settings(app).WEBSERVER_PROJECTS
     assert project_settings  # nosec
     if project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES > 0 and (
-        number_of_services
-        >= project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES - 1
+        number_of_services >= project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
     ):
         raise ProjectStartsTooManyDynamicNodes(
             user_id=user_id, project_uuid=project_uuid
