@@ -7,7 +7,7 @@ import logging
 import os
 import urllib.parse
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Iterator, NamedTuple, Optional
+from typing import Any, AsyncIterator, Iterator, NamedTuple
 from uuid import UUID
 
 import pytest
@@ -139,7 +139,7 @@ async def mock_retrieve_features(
     is_legacy: bool,
     scheduler_data_from_http_request: SchedulerData,
     mocker: MockerFixture,
-) -> AsyncIterator[Optional[MockRouter]]:
+) -> AsyncIterator[MockRouter | None]:
     # pylint: disable=not-context-manager
     with respx.mock(
         assert_all_called=False,
@@ -221,7 +221,7 @@ def mocked_director_v0_service_api(
 def mocked_service_awaits_manual_interventions(mocker: MockerFixture) -> None:
     module_base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler"
     mocker.patch(
-        f"{module_base}._core._scheduler.Scheduler.service_awaits_manual_interventions",
+        f"{module_base}._core._scheduler.Scheduler.is_service_awaiting_manual_intervention",
         autospec=True,
         return_value=False,
     )
@@ -428,6 +428,7 @@ def test_get_service_status(
     "can_save, exp_save_state", [(None, True), (True, True), (False, False)]
 )
 def test_delete_service(
+    docker_swarm: None,
     mocked_director_v0_service_api: MockRouter,
     mocked_director_v2_scheduler: None,
     mocked_service_awaits_manual_interventions: None,
@@ -435,7 +436,7 @@ def test_delete_service(
     service: dict[str, Any],
     exp_status_code: int,
     is_legacy: bool,
-    can_save: Optional[bool],
+    can_save: bool | None,
     exp_save_state: bool,
 ):
     url = URL(f"/v2/dynamic_services/{service['node_uuid']}")
@@ -546,7 +547,7 @@ def test_delete_service_waiting_for_manual_intervention(
 )
 def test_retrieve(
     minimal_config: None,
-    mock_retrieve_features: Optional[MockRouter],
+    mock_retrieve_features: MockRouter | None,
     mocked_director_v0_service_api: MockRouter,
     mocked_director_v2_scheduler: None,
     client: TestClient,
