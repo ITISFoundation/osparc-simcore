@@ -52,8 +52,7 @@ qx.Class.define("osparc.dashboard.SharedWithMenuButton", {
 
     __buttonExecuted: function(btn) {
       this.set({
-        label: btn.getLabel(),
-        icon: btn.getIcon()
+        label: btn.getLabel()
       });
 
       const data = {
