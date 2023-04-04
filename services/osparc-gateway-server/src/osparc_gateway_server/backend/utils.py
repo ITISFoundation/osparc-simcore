@@ -4,7 +4,7 @@ import logging
 from collections import deque
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncGenerator, Final, Mapping, NamedTuple
+from typing import Any, AsyncGenerator, Final, Mapping, NamedTuple, cast
 
 import aiodocker
 from aiodocker import Docker
@@ -354,21 +354,21 @@ def _find_service_node_assignment(service_tasks: list[Mapping[str, Any]]) -> str
             service_constraints = (
                 task.get("Spec", {}).get("Placement", {}).get("Constraints", [])
             )
-            service_placement = list(
+            filtered_service_constraints = list(
                 filter(lambda x: "node.hostname" in x, service_constraints)
             )
-            if len(service_placement) > 1:
+            if len(filtered_service_constraints) > 1:
                 continue
-            service_placement = service_placement[0]
+            service_placement: str = filtered_service_constraints[0]
             return service_placement.split("==")[1]
 
-        elif task["Status"]["State"] in (
+        if task["Status"]["State"] in (
             "assigned",
             "preparing",
             "starting",
             "running",
         ):
-            return task["NodeID"]
+            return cast(str, task["NodeID"])  # mypy
     return None
 
 
