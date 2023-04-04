@@ -29,7 +29,7 @@ class RedisSettings(BaseCustomSettings):
     REDIS_USER: str | None = None
     REDIS_PASSWORD: SecretStr | None = None
 
-    def build_redis_dsn(self, db_index: int):
+    def build_redis_dsn(self, db_index: RedisDatabase):
         return RedisDsn.build(
             scheme="redis",
             user=self.REDIS_USER or None,
