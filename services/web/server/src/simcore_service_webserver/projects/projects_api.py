@@ -271,20 +271,20 @@ async def _start_dynamic_service(
             user_id=user_id,
             project_uuid=project_uuid,
         )
-    await director_v2_api.run_dynamic_service(
-        app=request.app,
-        product_name=product_name,
-        project_id=f"{project_uuid}",
-        user_id=user_id,
-        service_key=service_key,
-        service_version=service_version,
-        service_uuid=f"{node_uuid}",
-        request_dns=extract_dns_without_default_port(request.url),
-        request_scheme=request.headers.get(X_FORWARDED_PROTO, request.url.scheme),
-        request_simcore_user_agent=request.headers.get(X_SIMCORE_USER_AGENT, ""),
-        service_resources=service_resources,
-    )
-    # NOTE: [point B] is here
+        await director_v2_api.run_dynamic_service(
+            app=request.app,
+            product_name=product_name,
+            project_id=f"{project_uuid}",
+            user_id=user_id,
+            service_key=service_key,
+            service_version=service_version,
+            service_uuid=f"{node_uuid}",
+            request_dns=extract_dns_without_default_port(request.url),
+            request_scheme=request.headers.get(X_FORWARDED_PROTO, request.url.scheme),
+            request_simcore_user_agent=request.headers.get(X_SIMCORE_USER_AGENT, ""),
+            service_resources=service_resources,
+        )
+        # NOTE: [point B] is here
 
 
 async def add_project_node(
