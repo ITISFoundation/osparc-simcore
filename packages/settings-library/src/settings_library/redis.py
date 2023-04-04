@@ -1,5 +1,4 @@
 from enum import Enum
-from functools import cached_property
 
 from pydantic import Field
 from pydantic.networks import RedisDsn
@@ -59,7 +58,3 @@ class RedisSettings(BaseCustomSettings):
             port=f"{self.REDIS_PORT}",
             path=f"/{db_index}",
         )
-
-    @cached_property
-    def dsn_user_notifications(self) -> str:
-        return self.build_redis_dsn(self.REDIS_USER_NOTIFICATIONS_DB)
