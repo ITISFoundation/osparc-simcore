@@ -63,7 +63,7 @@ async def iter_latest_osparc_services(
     settings: StudiesDispatcherSettings = get_plugin_settings(app)
 
     # Select query for latest version of the service
-    latest_view = create_select_latest_services_query().alias("latest_view")
+    latest_services = create_select_latest_services_query().alias("latest_services")
 
     query = (
         sa.select(
@@ -76,10 +76,10 @@ async def iter_latest_osparc_services(
             ]
         )
         .select_from(
-            latest_view.join(
+            latest_services.join(
                 services_meta_data,
-                (services_meta_data.c.key == latest_view.c.key)
-                & (services_meta_data.c.version == latest_view.c.latest),
+                (services_meta_data.c.key == latest_services.c.key)
+                & (services_meta_data.c.version == latest_services.c.latest),
             ).join(
                 services_access_rights,
                 (services_meta_data.c.key == services_access_rights.c.key)
