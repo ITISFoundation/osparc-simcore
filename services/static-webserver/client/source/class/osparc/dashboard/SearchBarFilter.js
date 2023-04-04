@@ -60,6 +60,10 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     }
   },
 
+  events: {
+    "filterChanged": "qx.event.type.Data"
+  },
+
   members: {
     __resourceType: null,
     __filtersMenu: null,
@@ -321,6 +325,11 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
             break;
         }
       });
+      this.__filterChange(filterData);
+    },
+
+    __filterChange: function(filterData) {
+      this.fireDataEvent("filterChanged", filterData);
       this._filterChange(filterData);
     }
   }

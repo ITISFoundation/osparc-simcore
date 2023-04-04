@@ -28,6 +28,7 @@ qx.Class.define("osparc.dashboard.SharedWithMenuButton", {
     });
     this.setMenu(sharedWithMenu);
 
+    this.__resourceType = resource;
     const options = osparc.dashboard.SearchBarFilter.getSharedWithOptions(resource);
     options.forEach((option, idx) => {
       const btn = new qx.ui.menu.Button(option.label);
@@ -48,7 +49,21 @@ qx.Class.define("osparc.dashboard.SharedWithMenuButton", {
   },
 
   members: {
-    __buttons: null,
+    __resourceType: null,
+
+    filterChanged: function(filterData) {
+      const options = osparc.dashboard.SearchBarFilter.getSharedWithOptions(this.__resourceType);
+      const found = options.find(option => option.id === filterData.sharedWith);
+      if (found) {
+        this.set({
+          label: found.label
+        });
+      } else {
+        this.set({
+          label: options[0].label
+        });
+      }
+    },
 
     __buttonExecuted: function(btn) {
       this.set({
