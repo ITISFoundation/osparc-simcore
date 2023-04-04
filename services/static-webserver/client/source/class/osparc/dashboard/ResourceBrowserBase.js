@@ -72,7 +72,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       return (card instanceof osparc.dashboard.GridButtonItem || card instanceof osparc.dashboard.ListButtonItem);
     },
 
-    createToolbarRadioButton: function(label, icon, toolTipText) {
+    createToolbarRadioButton: function(label, icon, toolTipText, pos) {
       const rButton = new qx.ui.toolbar.RadioButton().set({
         label,
         icon,
@@ -85,6 +85,11 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       rButton.getContentElement().setStyles({
         "border-radius": "0px"
       });
+      if (pos === "left") {
+        osparc.utils.Utils.addBorderLeftRadius(rButton);
+      } else if (pos === "right") {
+        osparc.utils.Utils.addBorderRightRadius(rButton);
+      }
       return rButton;
     },
 
@@ -218,13 +223,11 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _addViewModeButton: function() {
-      const gridBtn = this.self().createToolbarRadioButton(null, "@FontAwesome5Solid/th/14", this.tr("Grid view"));
+      const gridBtn = this.self().createToolbarRadioButton(null, "@FontAwesome5Solid/th/14", this.tr("Grid view"), "left");
       gridBtn.addListener("execute", () => this._viewByChanged("grid"));
-      osparc.utils.Utils.addBorderLeftRadius(gridBtn);
 
-      const listBtn = this.self().createToolbarRadioButton(null, "@FontAwesome5Solid/bars/14", this.tr("List view"));
+      const listBtn = this.self().createToolbarRadioButton(null, "@FontAwesome5Solid/bars/14", this.tr("List view"), "right");
       listBtn.addListener("execute", () => this._viewByChanged("list"));
-      osparc.utils.Utils.addBorderRightRadius(listBtn);
 
       const viewModeLayout = this.__viewModeLayout;
       const radioGroup = new qx.ui.form.RadioGroup();
