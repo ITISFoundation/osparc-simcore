@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 
 import re
+from typing import Final
 from unittest.mock import AsyncMock
 
 import pytest
@@ -14,6 +15,8 @@ from simcore_service_webserver.garbage_collector_core import (
     remove_orphaned_services,
 )
 from yarl import URL
+
+MODULE_GC_CORE: Final[str] = "simcore_service_webserver.garbage_collector_core"
 
 
 @pytest.fixture
@@ -34,7 +37,7 @@ def mock_get_workbench_node_ids_from_project_uuid(
     mocker: MockerFixture, faker: Faker
 ) -> None:
     mocker.patch(
-        "simcore_service_webserver.garbage_collector_core.get_workbench_node_ids_from_project_uuid",
+        f"{MODULE_GC_CORE}.get_workbench_node_ids_from_project_uuid",
         return_value={faker.uuid4(), faker.uuid4(), faker.uuid4()},
     )
 
@@ -42,7 +45,7 @@ def mock_get_workbench_node_ids_from_project_uuid(
 @pytest.fixture
 def mock_list_dynamic_services(mocker: MockerFixture):
     mocker.patch(
-        "simcore_service_webserver.garbage_collector_core.director_v2_api.list_dynamic_services",
+        f"{MODULE_GC_CORE}.director_v2_api.list_dynamic_services",
         autospec=True,
     )
 
@@ -61,18 +64,19 @@ async def test_regression_project_id_recovered_from_the_wrong_data_structure(
 ):
     # tests that KeyError is not raised
 
-    base_module = "simcore_service_webserver.garbage_collector_core"
     mocker.patch(
-        f"{base_module}.is_node_id_present_in_any_project_workbench",
+        f"{MODULE_GC_CORE}.is_node_id_present_in_any_project_workbench",
         autospec=True,
         return_value=True,
     )
     mocker.patch(
-        f"{base_module}.ProjectDBAPI.get_from_app_context",
+        f"{MODULE_GC_CORE}.ProjectDBAPI.get_from_app_context",
         autospec=True,
         return_value=AsyncMock(),
     )
-    mocker.patch(f"{base_module}.director_v2_api.stop_dynamic_service", autospec=True)
+    mocker.patch(
+        f"{MODULE_GC_CORE}.director_v2_api.stop_dynamic_service", autospec=True
+    )
 
     await _remove_single_service_if_orphan(
         app=AsyncMock(),
@@ -92,14 +96,13 @@ async def test_remove_single_service_if_orphan_service_is_waiting_manual_interve
     aioresponses_mocker: AioResponsesMock,
 ):
 
-    base_module = "simcore_service_webserver.garbage_collector_core"
     mocker.patch(
-        f"{base_module}.is_node_id_present_in_any_project_workbench",
+        f"{MODULE_GC_CORE}.is_node_id_present_in_any_project_workbench",
         autospec=True,
         return_value=True,
     )
     mocker.patch(
-        f"{base_module}.ProjectDBAPI.get_from_app_context",
+        f"{MODULE_GC_CORE}.ProjectDBAPI.get_from_app_context",
         autospec=True,
         return_value=AsyncMock(),
     )
