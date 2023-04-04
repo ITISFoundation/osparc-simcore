@@ -218,16 +218,6 @@ def mocked_director_v0_service_api(
 
 
 @pytest.fixture
-def mocked_service_awaits_manual_interventions(mocker: MockerFixture) -> None:
-    module_base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler"
-    mocker.patch(
-        f"{module_base}._core._scheduler.Scheduler.is_service_awaiting_manual_intervention",
-        autospec=True,
-        return_value=False,
-    )
-
-
-@pytest.fixture
 def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) -> None:
     """because the monitor is disabled some functionality needs to be mocked"""
 
