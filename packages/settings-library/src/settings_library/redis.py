@@ -61,10 +61,6 @@ class RedisSettings(BaseCustomSettings):
         )
 
     @cached_property
-    def dsn_locks(self) -> str:
-        return self.build_redis_dsn(self.REDIS_LOCKS_DB)
-
-    @cached_property
     def dsn_validation_codes(self) -> str:
         return self.build_redis_dsn(self.REDIS_VALIDATION_CODES_DB)
 

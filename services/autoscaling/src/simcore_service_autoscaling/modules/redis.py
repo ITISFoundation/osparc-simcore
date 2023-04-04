@@ -3,7 +3,7 @@ from typing import cast
 
 from fastapi import FastAPI
 from servicelib.redis import RedisClientSDK
-from settings_library.redis import RedisSettings
+from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
@@ -18,7 +18,8 @@ def setup(app: FastAPI) -> None:
     async def on_startup() -> None:
         app.state.redis = None
         settings: RedisSettings = app.state.settings.AUTOSCALING_REDIS
-        app.state.redis = client = RedisClientSDK(settings.dsn_locks)
+        redis_locks_dsn = settings.build_redis_dsn(RedisDatabase.LOCKS)
+        app.state.redis = client = RedisClientSDK(redis_locks_dsn)
         async for attempt in AsyncRetrying(
             reraise=True,
             stop=stop_after_delay(120),
@@ -28,7 +29,7 @@ def setup(app: FastAPI) -> None:
             with attempt:
                 connected = await client.ping()
                 if not connected:
-                    raise RedisNotConnectedError(dsn=settings.dsn_locks)
+                    raise RedisNotConnectedError(dsn=redis_locks_dsn)
 
     async def on_shutdown() -> None:
         if app.state.redis:

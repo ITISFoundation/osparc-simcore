@@ -75,7 +75,11 @@ async def redis_locks_client(
     redis_settings: RedisSettings,
 ) -> AsyncIterator[Redis]:
     """Creates a redis client to communicate with a redis service ready"""
-    client = from_url(redis_settings.dsn_locks, encoding="utf-8", decode_responses=True)
+    client = from_url(
+        redis_settings.build_redis_dsn(RedisDatabase.LOCKS),
+        encoding="utf-8",
+        decode_responses=True,
+    )
 
     yield client
 
