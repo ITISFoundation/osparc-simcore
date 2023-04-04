@@ -11,6 +11,7 @@ This OAS are the source of truth
 
 from enum import Enum
 
+from _common import CURRENT_DIR, assert_signature_against_model, create_openapi_specs
 from fastapi import FastAPI, Query, status
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
@@ -112,8 +113,10 @@ async def list_projects(
         default=False, description="includes projects marked as hidden in the listing"
     ),
 ):
-    assert _ProjectListParams
-    # TODO: assert signature(list_projects) == fields(_ProjectListParams)
+    ...
+
+
+assert_signature_against_model(list_projects, _ProjectListParams)
 
 
 @app.get(
@@ -123,7 +126,10 @@ async def list_projects(
     operation_id="get_active_project",
 )
 async def get_active_project():
-    assert _ProjectActiveParams
+    ...
+
+
+assert_signature_against_model(get_active_project, _ProjectActiveParams)
 
 
 @app.get(
@@ -133,7 +139,10 @@ async def get_active_project():
     operation_id="get_project",
 )
 async def get_project(project_id: ProjectID):
-    assert ProjectPathParams
+    ...
+
+
+assert_signature_against_model(get_project, ProjectPathParams)
 
 
 @app.put(
@@ -143,7 +152,10 @@ async def get_project(project_id: ProjectID):
     operation_id="replace_project",
 )
 async def replace_project(project_id: ProjectID, replace: ProjectReplace):
-    assert ProjectPathParams
+    ...
+
+
+assert_signature_against_model(replace_project, ProjectPathParams)
 
 
 @app.patch(
@@ -153,7 +165,10 @@ async def replace_project(project_id: ProjectID, replace: ProjectReplace):
     operation_id="update_project",
 )
 async def update_project(project_id: ProjectID, update: ProjectUpdate):
-    assert ProjectPathParams
+    ...
+
+
+assert_signature_against_model(update_project, ProjectPathParams)
 
 
 @app.delete(
@@ -163,10 +178,12 @@ async def update_project(project_id: ProjectID, update: ProjectUpdate):
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_project(project_id: ProjectID):
-    assert ProjectPathParams
+    ...
+
+
+assert_signature_against_model(delete_project, ProjectPathParams)
 
 
 if __name__ == "__main__":
-    from _common import CURRENT_DIR, create_openapi_specs
 
     create_openapi_specs(app, CURRENT_DIR.parent / "openapi-projects-crud.yaml")
