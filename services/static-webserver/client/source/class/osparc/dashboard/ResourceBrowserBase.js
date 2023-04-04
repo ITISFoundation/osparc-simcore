@@ -73,12 +73,19 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     createToolbarRadioButton: function(label, icon, toolTipText) {
-      return new qx.ui.toolbar.RadioButton().set({
+      const rButton = new qx.ui.toolbar.RadioButton().set({
         label,
         icon,
         toolTipText,
+        padding: 5,
+        paddingLeft: 8,
+        paddingRight: 8,
         margin: 0
       });
+      rButton.getContentElement().setStyles({
+        "border-radius": "0px"
+      });
+      return rButton;
     },
 
     PAGINATED_STUDIES: 10
@@ -213,9 +220,11 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     _addViewModeButton: function() {
       const gridBtn = this.self().createToolbarRadioButton(null, "@FontAwesome5Solid/th/14", this.tr("Grid view"));
       gridBtn.addListener("execute", () => this._viewByChanged("grid"));
+      osparc.utils.Utils.addBorderLeftRadius(gridBtn);
 
       const listBtn = this.self().createToolbarRadioButton(null, "@FontAwesome5Solid/bars/14", this.tr("List view"));
       listBtn.addListener("execute", () => this._viewByChanged("list"));
+      osparc.utils.Utils.addBorderRightRadius(listBtn);
 
       const viewModeLayout = this.__viewModeLayout;
       const radioGroup = new qx.ui.form.RadioGroup();
