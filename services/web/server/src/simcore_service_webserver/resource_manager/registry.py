@@ -14,13 +14,13 @@
 """
 
 import logging
-from typing import TypedDict, Union
+from typing import TypedDict
 
 import redis.asyncio as aioredis
 from aiohttp import web
 from models_library.basic_types import UUIDStr
 
-from ..redis import get_redis_client
+from ..redis import get_redis_resources_client
 from ._constants import APP_CLIENT_SOCKET_REGISTRY_KEY
 
 log = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ RESOURCE_SUFFIX = "resources"
 class RegistryKeyPrefixDict(TypedDict):
     """Parts of the redis key w/o suffix"""
 
-    user_id: Union[str, int]
+    user_id: str | int
     client_session_id: str
 
 
@@ -76,7 +76,7 @@ class RedisResourceRegistry:
 
     @property
     def client(self) -> aioredis.Redis:
-        client = get_redis_client(self.app)
+        client = get_redis_resources_client(self.app)
         return client
 
     async def set_resource(

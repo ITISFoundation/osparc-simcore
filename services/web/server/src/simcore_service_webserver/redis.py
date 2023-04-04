@@ -56,7 +56,7 @@ def _get_redis_client(app: web.Application, database: RedisDatabase) -> RedisCli
     return redis_client.client(database)
 
 
-def get_redis_client(app: web.Application) -> aioredis.Redis:
+def get_redis_resources_client(app: web.Application) -> aioredis.Redis:
     return _get_redis_client(app, RedisDatabase.RESOURCES).redis
 
 
