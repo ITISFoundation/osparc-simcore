@@ -110,11 +110,11 @@ class _ProjectCreateParams(BaseModel):
         extra = Extra.forbid
 
 
-@routes.post(f"/{VTAG}/projects", name="create_projects")
+@routes.post(f"/{VTAG}/projects", name="create_project")
 @login_required
 @permission_required("project.create")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
-async def create_projects(request: web.Request):
+async def create_project(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
     query_params = parse_request_query_parameters_as(_ProjectCreateParams, request)
     predefined_project = await request.json() if request.can_read_body else None
@@ -123,7 +123,7 @@ async def create_projects(request: web.Request):
 
     return await start_long_running_task(
         request,
-        _create_utils.create_projects,
+        _create_utils.create_project,
         fire_and_forget=True,
         task_context=jsonable_encoder(req_ctx),
         # arguments

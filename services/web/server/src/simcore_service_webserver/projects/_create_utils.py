@@ -132,7 +132,7 @@ async def _copy_files_from_source_project(
                 await long_running_task.result()
 
 
-async def create_projects(
+async def create_project(
     task_progress: TaskProgress,
     app: web.Application,
     new_project_was_hidden_before_data_was_copied: bool,
