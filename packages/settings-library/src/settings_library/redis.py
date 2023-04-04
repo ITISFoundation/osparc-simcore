@@ -8,15 +8,10 @@ from .basic_types import PortInt
 
 
 class RedisDatabase(int, Enum):
-    # typical redis DB have 16 'tables', for convenience we use this table for user resources
     RESOURCES = 0
-    # This redis table is used to put locks
     LOCKS = 1
-    # This redis table is used to store SMS validation codes
     VALIDATION_CODES = 2
-    # This redis table is used for handling scheduled maintenance
     SCHEDULED_MAINTENANCE = 3
-    # This redis table is used for handling the notifications that have to be sent to the user
     USER_NOTIFICATIONS = 4
 
 
