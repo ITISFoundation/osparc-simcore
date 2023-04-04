@@ -67,7 +67,7 @@ from ..socketio.events import (
 )
 from ..users_api import UserRole, get_user_name, get_user_role
 from ..users_exceptions import UserNotFoundError
-from . import _delete, _nodes_utils
+from . import _delete_utils, _nodes_utils
 from .project_lock import (
     UserNameDict,
     get_project_locked_state,
@@ -182,12 +182,12 @@ async def submit_delete_project_task(
     raises ProjectInvalidRightsError
     raises ProjectNotFoundError
     """
-    await _delete.mark_project_as_deleted(app, project_uuid, user_id)
+    await _delete_utils.mark_project_as_deleted(app, project_uuid, user_id)
 
     # Ensures ONE delete task per (project,user) pair
     task = get_delete_project_task(project_uuid, user_id)
     if not task:
-        task = _delete.schedule_task(
+        task = _delete_utils.schedule_task(
             app,
             project_uuid,
             user_id,
@@ -201,7 +201,7 @@ async def submit_delete_project_task(
 def get_delete_project_task(
     project_uuid: ProjectID, user_id: UserID
 ) -> asyncio.Task | None:
-    if tasks := _delete.get_scheduled_tasks(project_uuid, user_id):
+    if tasks := _delete_utils.get_scheduled_tasks(project_uuid, user_id):
         assert len(tasks) == 1, f"{tasks=}"  # nosec
         task = tasks[0]
         return task
