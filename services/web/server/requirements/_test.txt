@@ -17,8 +17,6 @@ aiosignal==1.2.0
     #   aiohttp
 alembic==1.8.1
     # via -r requirements/_test.in
-astroid==2.14.2
-    # via pylint
 async-timeout==4.0.2
     # via
     #   -c requirements/_base.txt
@@ -53,8 +51,6 @@ coverage==6.5.0
     #   pytest-cov
 coveralls==3.3.1
     # via -r requirements/_test.in
-dill==0.3.6
-    # via pylint
 docker==6.0.1
     # via -r requirements/_test.in
 docopt==0.6.2
@@ -89,17 +85,11 @@ idna==3.3
     #   yarl
 iniconfig==2.0.0
     # via pytest
-isort==5.12.0
-    # via pylint
 jsonschema==3.2.0
     # via
     #   -r requirements/_test.in
     #   openapi-schema-validator
     #   openapi-spec-validator
-lazy-object-proxy==1.7.1
-    # via
-    #   -c requirements/_base.txt
-    #   astroid
 mako==1.2.2
     # via
     #   -c requirements/_base.txt
@@ -108,13 +98,15 @@ markupsafe==2.1.1
     # via
     #   -c requirements/_base.txt
     #   mako
-mccabe==0.7.0
-    # via pylint
 multidict==6.0.2
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
+mypy==1.1.1
+    # via sqlalchemy
+mypy-extensions==1.0.0
+    # via mypy
 openapi-schema-validator==0.2.3
     # via
     #   -c requirements/_base.txt
@@ -127,16 +119,10 @@ packaging==21.3
     #   docker
     #   pytest
     #   pytest-sugar
-platformdirs==3.0.0
-    # via pylint
 pluggy==1.0.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-ptvsd==4.3.2
-    # via -r requirements/_test.in
-pylint==2.16.2
-    # via -r requirements/_test.in
 pyparsing==3.0.9
     # via
     #   -c requirements/_base.txt
@@ -203,7 +189,11 @@ six==1.16.0
 sortedcontainers==2.4.0
     # via hypothesis
 sqlalchemy==1.4.47
-    # via alembic
+    # via
+    #   -r requirements/_test.in
+    #   alembic
+sqlalchemy2-stubs==0.0.2a32
+    # via sqlalchemy
 tenacity==8.0.1
     # via -r requirements/_test.in
 termcolor==2.2.0
@@ -211,14 +201,13 @@ termcolor==2.2.0
 tomli==2.0.1
     # via
     #   coverage
-    #   pylint
+    #   mypy
     #   pytest
-tomlkit==0.11.6
-    # via pylint
 typing-extensions==4.3.0
     # via
     #   -c requirements/_base.txt
-    #   astroid
+    #   mypy
+    #   sqlalchemy2-stubs
 urllib3==1.26.11
     # via
     #   -c requirements/_base.txt
@@ -228,8 +217,6 @@ websocket-client==1.5.1
     # via docker
 websockets==10.4
     # via -r requirements/_test.in
-wrapt==1.15.0
-    # via astroid
 yarl==1.5.1
     # via
     #   -c requirements/_base.txt
