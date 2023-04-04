@@ -45,17 +45,23 @@ def minimal_config(monkeypatch):
 @pytest.fixture()
 async def create_docker_service(
     docker_swarm, async_docker_client: aiodocker.Docker, faker: Faker
-) -> AsyncIterator[Callable[[dict[str, str]], Awaitable[dict[str, Any]]]]:
+) -> AsyncIterator[
+    Callable[[dict[str, str], dict[str, Any]], Awaitable[dict[str, Any]]]
+]:
     created_services = []
 
-    async def _creator(labels: dict[str, str]) -> dict[str, Any]:
+    async def _creator(
+        labels: dict[str, str], override_task_template: dict[str, Any]
+    ) -> dict[str, Any]:
+        task_template = {
+            "ContainerSpec": {
+                "Image": "busybox:latest",
+                "Command": ["sleep", "10000"],
+            }
+        }
+        task_template.update(override_task_template)
         service = await async_docker_client.services.create(
-            task_template={
-                "ContainerSpec": {
-                    "Image": "busybox:latest",
-                    "Command": ["sleep", "10000"],
-                }
-            },
+            task_template=task_template,
             name=faker.pystr(),
             labels=labels,
         )
@@ -76,10 +82,12 @@ async def create_docker_service(
 @pytest.fixture
 def create_running_service(
     async_docker_client: aiodocker.Docker,
-    create_docker_service: Callable[[dict[str, str]], Awaitable[dict[str, Any]]],
+    create_docker_service: Callable[
+        [dict[str, str], dict[str, Any]], Awaitable[dict[str, Any]]
+    ],
 ) -> Callable[[dict[str, str]], Awaitable[dict[str, Any]]]:
     async def _creator(labels: dict[str, str]) -> dict[str, Any]:
-        service = await create_docker_service(labels)
+        service = await create_docker_service(labels, {})
         async for attempt in AsyncRetrying(
             reraise=True, wait=wait_fixed(1), stop=stop_after_delay(60)
         ):
@@ -394,10 +402,10 @@ async def test_get_empty_node_hostname_rotates_host_names(
 
 
 async def test_get_empty_node_hostname_correctly_checks_services_labels(
-    docker_swarm,
+    docker_swarm: None,
     async_docker_client: aiodocker.Docker,
     fake_cluster: Cluster,
-    create_running_service,
+    create_running_service: Callable[[dict[str, str]], Awaitable[dict[str, Any]]],
 ):
     hostname = await get_next_empty_node_hostname(async_docker_client, fake_cluster)
     assert socket.gethostname() == hostname
@@ -413,13 +421,40 @@ async def test_get_empty_node_hostname_correctly_checks_services_labels(
         # only one of the required label
         {"type": "worker"},
     ]
-    await asyncio.gather(*[create_running_service(labels=l) for l in invalid_labels])
+    await asyncio.gather(*[create_running_service(l) for l in invalid_labels])
     # these services have not the correct labels, so the host is still available
     hostname = await get_next_empty_node_hostname(async_docker_client, fake_cluster)
     assert socket.gethostname() == hostname
 
+
+async def test_get_empty_node_hostname_raises_no_host_found_if_a_service_is_already_running(
+    docker_swarm: None,
+    async_docker_client: aiodocker.Docker,
+    fake_cluster: Cluster,
+    create_running_service: Callable[[dict[str, str]], Awaitable[dict[str, Any]]],
+):
     # now create a service with the required labels
     required_labels = {"cluster_id": fake_cluster.id, "type": "worker"}
-    await create_running_service(labels=required_labels)
+    await create_running_service(required_labels)
     with pytest.raises(NoHostFoundError):
         await get_next_empty_node_hostname(async_docker_client, fake_cluster)
+
+
+async def test_get_empty_node_hostname_returns_constraint_if_available(
+    docker_swarm: None,
+    async_docker_client: aiodocker.Docker,
+    fake_cluster: Cluster,
+    create_docker_service: Callable[
+        [dict[str, str], dict[str, Any]], Awaitable[dict[str, Any]]
+    ],
+):
+    # now create a service with the required labels but that is pending
+    required_labels = {"cluster_id": fake_cluster.id, "type": "worker"}
+    await create_docker_service(
+        required_labels,
+        {
+            "Placement": {"Constraints": ["node.hostname==pytest"]},
+            "Resources": {"Reservations": {"NanoCPUs": int(500 * 10e9)}},
+        },
+    )
+    await get_next_empty_node_hostname(async_docker_client, fake_cluster)

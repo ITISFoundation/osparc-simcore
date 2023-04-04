@@ -4,14 +4,14 @@ import logging
 from collections import deque
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncGenerator, Final, NamedTuple, Optional
+from typing import Any, AsyncGenerator, Final, NamedTuple
 
 import aiodocker
 from aiodocker import Docker
 from dask_gateway_server.backends.db_base import Cluster, DBBackendBase
 from yarl import URL
 
-from .errors import NoHostFoundError, NoServiceTasksError, TaskNotAssignedError
+from .errors import NoHostFoundError
 from .models import ClusterInformation, Hostname, cluster_information_from_docker_nodes
 from .settings import AppSettings
 
@@ -68,9 +68,9 @@ def create_service_config(
     service_name: str,
     network_id: str,
     service_secrets: list[DockerSecret],
-    cmd: Optional[list[str]],
+    cmd: list[str] | None,
     labels: dict[str, str],
-    placement: Optional[dict[str, Any]],
+    placement: dict[str, Any] | None,
     **service_kwargs,
 ) -> dict[str, Any]:
     env = deepcopy(service_env)
@@ -145,8 +145,8 @@ async def create_or_update_secret(
     target_file_name: str,
     cluster: Cluster,
     *,
-    file_path: Optional[Path] = None,
-    secret_data: Optional[str] = None,
+    file_path: Path | None = None,
+    secret_data: str | None = None,
 ) -> DockerSecret:
     if file_path is None and secret_data is None:
         raise ValueError(
@@ -191,10 +191,10 @@ async def start_service(
     service_name: str,
     base_env: dict[str, str],
     cluster_secrets: list[DockerSecret],
-    cmd: Optional[list[str]],
+    cmd: list[str] | None,
     labels: dict[str, str],
     gateway_api_url: str,
-    placement: Optional[dict[str, Any]] = None,
+    placement: dict[str, Any] | None = None,
     **service_kwargs,
 ) -> AsyncGenerator[dict[str, Any], None]:
     service_parameters = {}
@@ -364,10 +364,21 @@ async def get_next_empty_node_hostname(
             filters={"service": service["ID"]}
         )
         if not service_tasks:
-            raise NoServiceTasksError(f"service {service} has no tasks attached")
+            continue
         for task in service_tasks:
             if task["Status"]["State"] in ("new", "pending"):
-                raise TaskNotAssignedError(f"task {task} is not assigned to a host yet")
+                # some task is not running yet. that is a bit weird
+                if (
+                    service_constraints := task.get("Spec", {})
+                    .get("Placement", {})
+                    .get("Constraints", [])
+                ):
+                    if len(service_constraints) > 1:
+                        continue
+                    service_placement = service_constraints[0]
+                    used_docker_node_ids.add(service_placement.split("==")[1])
+                else:
+                    continue
             if task["Status"]["State"] in (
                 "assigned",
                 "preparing",
