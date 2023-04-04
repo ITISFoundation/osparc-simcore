@@ -351,21 +351,18 @@ def _find_service_node_assignment(service_tasks: list[Mapping[str, Any]]) -> str
     for task in service_tasks:
         if task["Status"]["State"] in ("new", "pending"):
             # some task is not running yet. that is a bit weird
-            if (
-                service_constraints := task.get("Spec", {})
-                .get("Placement", {})
-                .get("Constraints", [])
-            ):
-                service_placement = list(
-                    filter(lambda x: "node.hostname" in x, service_constraints)
-                )
-                if len(service_placement) > 1:
-                    continue
-                service_placement = service_placement[0]
-                return service_placement.split("==")[1]
-            else:
+            service_constraints = (
+                task.get("Spec", {}).get("Placement", {}).get("Constraints", [])
+            )
+            service_placement = list(
+                filter(lambda x: "node.hostname" in x, service_constraints)
+            )
+            if len(service_placement) > 1:
                 continue
-        if task["Status"]["State"] in (
+            service_placement = service_placement[0]
+            return service_placement.split("==")[1]
+
+        elif task["Status"]["State"] in (
             "assigned",
             "preparing",
             "starting",
