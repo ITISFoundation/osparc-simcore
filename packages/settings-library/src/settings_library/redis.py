@@ -1,6 +1,5 @@
 from enum import Enum
 
-from pydantic import Field
 from pydantic.networks import RedisDsn
 from pydantic.types import SecretStr
 
@@ -9,10 +8,15 @@ from .basic_types import PortInt
 
 
 class RedisDatabase(int, Enum):
+    # typical redis DB have 16 'tables', for convenience we use this table for user resources
     RESOURCES = 0
+    # This redis table is used to put locks
     LOCKS = 1
+    # This redis table is used to store SMS validation codes
     VALIDATION_CODES = 2
+    # This redis table is used for handling scheduled maintenance
     SCHEDULED_MAINTENANCE = 3
+    # This redis table is used for handling the notifications that have to be sent to the user
     USER_NOTIFICATIONS = 4
 
 
@@ -24,28 +28,6 @@ class RedisSettings(BaseCustomSettings):
     # auth
     REDIS_USER: str | None = None
     REDIS_PASSWORD: SecretStr | None = None
-
-    # NOTE: i would like to remove these since the enum should suffice
-    # redis databases (db)
-    REDIS_RESOURCES_DB: RedisDatabase = Field(
-        default=RedisDatabase.RESOURCES,
-        description="typical redis DB have 16 'tables', for convenience we use this table for user resources",
-    )
-    REDIS_LOCKS_DB: RedisDatabase = Field(
-        default=RedisDatabase.LOCKS, description="This redis table is used to put locks"
-    )
-    REDIS_VALIDATION_CODES_DB: RedisDatabase = Field(
-        default=RedisDatabase.VALIDATION_CODES,
-        description="This redis table is used to store SMS validation codes",
-    )
-    REDIS_SCHEDULED_MAINTENANCE_DB: RedisDatabase = Field(
-        default=RedisDatabase.SCHEDULED_MAINTENANCE,
-        description="This redis table is used for handling scheduled maintenance",
-    )
-    REDIS_USER_NOTIFICATIONS_DB: RedisDatabase = Field(
-        default=RedisDatabase.USER_NOTIFICATIONS,
-        description="This redis table is used for handling the notifications that have to be sent to the user",
-    )
 
     def build_redis_dsn(self, db_index: int):
         return RedisDsn.build(
