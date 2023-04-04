@@ -94,9 +94,8 @@ six==1.16.0
     # via
     #   jsonschema
     #   python-dateutil
-sqlalchemy==1.4.46
+sqlalchemy==1.4.47
     # via
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiopg
     #   alembic

@@ -174,7 +174,7 @@ sniffio==1.2.0
     #   anyio
     #   httpcore
     #   httpx
-sqlalchemy==1.4.37
+sqlalchemy==1.4.47
     # via
     #   -r requirements/_test.in
     #   alembic

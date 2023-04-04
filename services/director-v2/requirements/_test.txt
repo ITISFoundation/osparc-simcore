@@ -303,9 +303,8 @@ sortedcontainers==2.4.0
     # via
     #   -c requirements/_base.txt
     #   distributed
-sqlalchemy==1.4.37
+sqlalchemy==1.4.47
     # via
-    #   -c requirements/_base.txt
     #   alembic
     #   dask-gateway-server
 tblib==1.7.0
