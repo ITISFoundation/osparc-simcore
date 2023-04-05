@@ -192,13 +192,13 @@ paths:
   # PROJECT SERVICES -----------------------------------------------------------------
 
   /projects:
-    $ref: "./openapi-projects.yaml#/paths/~1projects"
+    $ref: "./openapi-projects-crud.yaml#/paths/~1projects"
 
   /projects/active:
-    $ref: "./openapi-projects.yaml#/paths/~1projects~1active"
+    $ref: "./openapi-projects-crud.yaml#/paths/~1projects~1active"
 
   /projects/{project_id}:
-    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}"
+    $ref: "./openapi-projects-crud.yaml#/paths/~1projects~1{project_id}"
 
   /projects/{project_id}:open:
     $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1open"

@@ -2332,52 +2332,134 @@ paths:
     get:
       tags:
         - project
-      summary: List all projects
+      summary: List Projects
       operationId: list_projects
       parameters:
-        - name: type
-          in: query
-          schema:
-            type: string
-            default: all
-            enum:
-              - template
-              - user
-              - all
-        - name: show_hidden
-          in: query
-          schema:
-            type: boolean
-            default: false
-          description: includes projects marked as hidden in the listing
-        - name: offset
-          in: query
-          schema:
-            type: integer
-            minimum: 0
-            default: 0
+        - description: maximum number of items to return (pagination)
           required: false
-          description: index to the first item to return
-        - name: limit
-          in: query
           schema:
-            type: integer
-            default: 20
+            title: Limit
+            exclusiveMaximum: true
             minimum: 1
+            type: integer
+            description: maximum number of items to return (pagination)
+            default: 20
             maximum: 50
+          name: limit
+          in: query
+        - description: index to the first item to return (pagination)
           required: false
-          description: maximum number of items to return
+          schema:
+            title: Offset
+            minimum: 0
+            type: integer
+            description: index to the first item to return (pagination)
+            default: 0
+          name: offset
+          in: query
+        - required: false
+          schema:
+            allOf:
+              - title: ProjectTypeAPI
+                enum:
+                  - all
+                  - template
+                  - user
+                type: string
+                description: An enumeration.
+            default: all
+          name: type
+          in: query
+        - description: includes projects marked as hidden in the listing
+          required: false
+          schema:
+            title: Show Hidden
+            type: boolean
+            description: includes projects marked as hidden in the listing
+            default: false
+          name: show_hidden
+          in: query
       responses:
         "200":
           description: list of projects
           content:
             application/json:
               schema:
-                type: object
+                title: 'Page[ProjectListItem]'
                 required:
+                  - _meta
+                  - _links
                   - data
+                type: object
                 properties:
+                  _meta:
+                    title: PageMetaInfoLimitOffset
+                    required:
+                      - total
+                      - count
+                    type: object
+                    properties:
+                      limit:
+                        title: Limit
+                        exclusiveMinimum: true
+                        type: integer
+                        default: 20
+                        minimum: 0
+                      total:
+                        title: Total
+                        minimum: 0
+                        type: integer
+                      offset:
+                        title: Offset
+                        minimum: 0
+                        type: integer
+                        default: 0
+                      count:
+                        title: Count
+                        minimum: 0
+                        type: integer
+                    additionalProperties: false
+                  _links:
+                    title: PageLinks
+                    required:
+                      - self
+                      - first
+                      - last
+                    type: object
+                    properties:
+                      self:
+                        title: Self
+                        maxLength: 65536
+                        minLength: 1
+                        type: string
+                        format: uri
+                      first:
+                        title: First
+                        maxLength: 65536
+                        minLength: 1
+                        type: string
+                        format: uri
+                      prev:
+                        title: Prev
+                        maxLength: 65536
+                        minLength: 1
+                        type: string
+                        format: uri
+                      next:
+                        title: Next
+                        maxLength: 65536
+                        minLength: 1
+                        type: string
+                        format: uri
+                      last:
+                        title: Last
+                        maxLength: 65536
+                        minLength: 1
+                        type: string
+                        format: uri
+                    additionalProperties: false
                   data:
+                    title: Data
                     type: array
                     items:
                       $ref: "#/paths/~1projects~1active/get/responses/200/content/application~1json/schema/properties/data"
@@ -2389,32 +2471,46 @@ paths:
     post:
       tags:
         - project
-      summary: Create new project
-      operationId: create_projects
+      summary: Create Project
+      operationId: create_project
       parameters:
-        - name: from_study
-          in: query
+        - description: 'Option to create a project from existing template or study: from_study={study_uuid}'
+          required: false
           schema:
+            title: From Study
             type: string
           description: "Option to create a project from existing template or study: from_study={study_uuid}"
         - name: as_template
           in: query
+        - description: 'Option to create a template from existing project: as_template=true'
+          required: false
           schema:
+            title: As Template
             type: boolean
+            description: 'Option to create a template from existing project: as_template=true'
             default: false
           description: "Option to create a template from existing project: as_template=true"
         - name: copy_data
           in: query
+        - description: 'Option to copy data when creating from an existing template or as a template, defaults to True'
+          required: false
           schema:
+            title: Copy Data
             type: boolean
+            description: 'Option to copy data when creating from an existing template or as a template, defaults to True'
             default: true
           description: "Option to copy data when creating from an existing template or as a template, defaults to True"
         - name: hidden
           in: query
+        - description: Enables/disables hidden flag. Hidden projects are by default unlisted
+          required: false
           schema:
+            title: Hidden
             type: boolean
+            description: Enables/disables hidden flag. Hidden projects are by default unlisted
             default: false
-          description: Enables/disables hidden flag. Hidden projects are by default unlisted.
+          name: hidden
+          in: query
       requestBody:
         content:
           application/json:
@@ -4227,29 +4323,42 @@ paths:
                 - accessRights
               title: osparc-simcore project
               type: object
+              properties: {}
+        required: true
       responses:
         "202":
           description: project created
           content:
             application/json:
               schema:
+                title: 'Envelope[TaskGet]'
                 type: object
-                required:
-                  - data
                 properties:
                   data:
+                    title: TaskGet
+                    required:
+                      - task_id
+                      - task_name
+                      - status_href
+                      - result_href
+                      - abort_href
                     type: object
                     properties:
                       task_id:
+                        title: Task Id
+                        type: string
+                      task_name:
+                        title: Task Name
                         type: string
                       status_href:
+                        title: Status Href
                         type: string
                       result_href:
+                        title: Result Href
                         type: string
-                    required:
-                      - task_id
-                      - status_href
-                      - result_href
+                      abort_href:
+                        title: Abort Href
+                        type: string
                   error:
                     nullable: true
                     default: null
@@ -4269,17 +4378,23 @@ paths:
     get:
       tags:
         - project
-      summary: Gets active project
+      summary: Get Active Project
       operationId: get_active_project
+      parameters:
+        - required: true
+          schema:
+            title: Client Session Id
+            type: string
+          name: client_session_id
+          in: query
       responses:
         "200":
           description: returns active project
           content:
             application/json:
               schema:
+                title: 'Envelope[ProjectGet]'
                 type: object
-                required:
-                  - data
                 properties:
                   data:
                     allOf:
@@ -4303,8 +4418,16 @@ paths:
     get:
       tags:
         - project
-      summary: Gets given project
+      summary: Get Project
       operationId: get_project
+      parameters:
+        - required: true
+          schema:
+            title: Project Id
+            type: string
+            format: uuid
+          name: project_id
+          in: path
       responses:
         "200":
           description: got detailed project
@@ -4317,14 +4440,17 @@ paths:
     put:
       tags:
         - project
-      summary: Enclosed entity replaces given project
+      summary: Replace Project
+      description: Replaces (i.e. full update) a project resource
       operationId: replace_project
       parameters:
-        - name: run
-          in: query
-          required: false
+        - required: true
           schema:
-            type: boolean
+            title: Project Id
+            type: string
+            format: uuid
+          name: project_id
+          in: path
       requestBody:
         content:
           application/json:
@@ -4342,8 +4468,16 @@ paths:
     delete:
       tags:
         - project
-      summary: Delete given project
+      summary: Delete Project
       operationId: delete_project
+      parameters:
+        - required: true
+          schema:
+            title: Project Id
+            type: string
+            format: uuid
+          name: project_id
+          in: path
       responses:
         "204":
           description: project has been successfully deleted
