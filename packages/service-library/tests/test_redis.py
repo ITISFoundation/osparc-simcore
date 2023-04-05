@@ -11,11 +11,14 @@ from typing import AsyncIterator, Final
 import docker
 import pytest
 from faker import Faker
+from pytest_mock import MockerFixture
 from redis.exceptions import LockError, LockNotOwnedError
+from servicelib import redis as servicelib_redis
 from servicelib.redis import (
     CouldNotAcquireLockError,
     RedisClientSDK,
     RedisClientsManager,
+    _get_lock_renew_interval,
 )
 from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity._asyncio import AsyncRetrying
@@ -55,6 +58,13 @@ async def redis_client_sdk(
 @pytest.fixture
 def lock_timeout() -> datetime.timedelta:
     return datetime.timedelta(seconds=1)
+
+
+@pytest.fixture
+def mock_default_lock_ttl(mocker: MockerFixture) -> None:
+    mocker.patch.object(
+        servicelib_redis, "_DEFAULT_LOCK_TTL", datetime.timedelta(seconds=0.25)
+    )
 
 
 async def test_redis_key_encode_decode(redis_client_sdk: RedisClientSDK, faker: Faker):
@@ -185,11 +195,9 @@ async def test_lock_context_with_data(redis_client_sdk: RedisClientSDK, faker: F
 
 
 async def test_lock_acquired_in_parallel_to_update_same_resource(
-    redis_client_sdk: RedisClientSDK, faker: Faker
+    mock_default_lock_ttl: None, redis_client_sdk: RedisClientSDK, faker: Faker
 ):
-
-    RC_COUNTER_SLEEP: Final[float] = 0.1
-    PARALLEL_INCREASE_OPERATIONS: Final[int] = 250
+    INCREASE_OPERATIONS: Final[int] = 50
     INCREASE_BY: Final[int] = 10
 
     class RaceConditionCounter:
@@ -199,22 +207,26 @@ async def test_lock_acquired_in_parallel_to_update_same_resource(
         async def race_condition_increase(self, by: int) -> None:
             current_value = self.value
             current_value += by
-            await asyncio.sleep(RC_COUNTER_SLEEP)
+            # most likely situation which creates issues
+            await asyncio.sleep(_get_lock_renew_interval().total_seconds())
             self.value = current_value
 
     counter = RaceConditionCounter()
-    lock_name = faker.pystr()
+    lock_name: str = faker.pystr()
+    time_for_all_inc_counter_calls_to_finish_s: float = (
+        servicelib_redis._DEFAULT_LOCK_TTL.total_seconds() * INCREASE_OPERATIONS * 10
+    )
 
     async def _inc_counter() -> None:
         async with redis_client_sdk.lock_context(
             lock_key=lock_name,
             blocking=True,
-            blocking_timeout_s=RC_COUNTER_SLEEP * PARALLEL_INCREASE_OPERATIONS * 10,
+            blocking_timeout_s=time_for_all_inc_counter_calls_to_finish_s,
         ):
             await counter.race_condition_increase(INCREASE_BY)
 
-    await asyncio.gather(*(_inc_counter() for _ in range(PARALLEL_INCREASE_OPERATIONS)))
-    assert counter.value == INCREASE_BY * PARALLEL_INCREASE_OPERATIONS
+    await asyncio.gather(*(_inc_counter() for _ in range(INCREASE_OPERATIONS)))
+    assert counter.value == INCREASE_BY * INCREASE_OPERATIONS
 
 
 async def test_redis_client_sdks_manager(redis_service: RedisSettings):
