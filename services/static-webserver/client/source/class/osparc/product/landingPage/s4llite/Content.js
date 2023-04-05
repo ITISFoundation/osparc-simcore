@@ -41,6 +41,9 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
 
       const content3 = this.__createContent3();
       this._add(content3);
+
+      const content4 = this.__createContent4();
+      this._add(content4);
     },
 
     __createContent1: function() {
@@ -222,7 +225,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         value: this.tr("Access, run and share simulations in the cloud from any browser"),
         font: "text-24",
         textAlign: "center",
-        width: 340,
+        width: 360,
         rich: true,
         wrap: true
       });
@@ -268,6 +271,87 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         }
       }, 5000);
       contentLayout.add(tabs);
+
+      return contentLayout;
+    },
+
+    __createStep: function(imageSrc, title, text) {
+      const stepLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
+        alignX: "center",
+        alignY: "middle"
+      }));
+      const image = new qx.ui.basic.Image(imageSrc).set({
+        width: 325,
+        height: 230,
+        scale: true
+      });
+      stepLayout.add(image);
+      const labelTitle = new qx.ui.basic.Label(title).set({
+        font: "text-20",
+        alignText: "center",
+        width: 200,
+        rich: true,
+        wrap: true
+      });
+      stepLayout.add(labelTitle);
+      const labelText = new qx.ui.basic.Label(text).set({
+        font: "text-16",
+        alignText: "center",
+        width: 200,
+        rich: true,
+        wrap: true
+      });
+      stepLayout.add(labelText);
+      return stepLayout;
+    },
+
+    __createContent4: function() {
+      const contentLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
+        alignX: "center",
+        alignY: "middle"
+      }));
+
+      const text1 = new qx.ui.basic.Label().set({
+        value: this.tr("HOW IT WORKS"),
+        font: "text-18",
+        textAlign: "center",
+        width: 360,
+        rich: true,
+        wrap: true
+      });
+      contentLayout.add(text1);
+
+      const text2 = new qx.ui.basic.Label().set({
+        value: this.tr("Well separated contexts, we have three tabs/buttons, my friend"),
+        font: "text-24",
+        textAlign: "center",
+        width: 360,
+        rich: true,
+        wrap: true
+      });
+      contentLayout.add(text2);
+
+      const stepsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(20).set({
+        alignX: "center",
+        alignY: "middle"
+      }));
+      [{
+        image: "https://www.simscale.com/wp-content/uploads/2023/01/step-1-cad-import.png",
+        title: "Modeling",
+        text: "Upload, import CAD models or build your own model with our amazing tools"
+      }, {
+        image: "https://www.simscale.com/wp-content/uploads/2023/01/step-2-simulation-setup.png",
+        title: "Simulation",
+        text: "Define physics and run simulation in the cloud"
+      }, {
+        image: "https://www.simscale.com/wp-content/uploads/2023/01/step-3-design-decision.png",
+        title: "Post Processing",
+        text: "Review results and make better design decisions earlier, we also have a PP Calc"
+      }].forEach(tab => {
+        const tabPage = this.__createStep(tab.image, tab.title, tab.text);
+        stepsLayout.add(tabPage);
+      });
+      contentLayout.add(stepsLayout);
 
       return contentLayout;
     }
