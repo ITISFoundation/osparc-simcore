@@ -520,7 +520,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     SWARM_STACK_NAME: str = Field("undefined-please-check", env="SWARM_STACK_NAME")
 
     NODE_SCHEMA_LOCATION: str = Field(
-        f"{API_ROOT}/{API_VTAG}/schemas/node-meta-v0.0.1.json",
+        f"{API_ROOT}/{API_VTAG}/schemas/node-meta-v0.0.1-pydantic.json",
         description="used when in devel mode vs release mode",
     )
 
