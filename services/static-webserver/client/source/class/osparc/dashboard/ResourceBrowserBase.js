@@ -348,6 +348,18 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       const shareButton = new qx.ui.menu.Button(this.tr("Share..."));
       shareButton.addListener("tap", () => card.openAccessRights(), this);
       return shareButton;
+    },
+
+    _getTagsMenuButton: function(card) {
+      const resourceData = card.getResourceData();
+      const isCurrentUserOwner = osparc.data.model.Study.canIWrite(resourceData["accessRights"]);
+      if (!isCurrentUserOwner) {
+        return null;
+      }
+
+      const tagsButton = new qx.ui.menu.Button(this.tr("Tags..."));
+      tagsButton.addListener("tap", () => card.openTags(), this);
+      return tagsButton;
     }
   }
 });

@@ -818,6 +818,8 @@ qx.Class.define("osparc.data.Resources", {
           }
           if (endpoint.includes("delete")) {
             this.__removeCached(resource, deleteId);
+          } else if (useCache && endpointDef.method === "POST" && options.pollTask !== true) {
+            this.__addCached(resource, data);
           } else if (useCache && endpointDef.method === "GET") {
             if (endpoint.includes("getPage")) {
               this.__addCached(resource, data);
@@ -970,7 +972,7 @@ qx.Class.define("osparc.data.Resources", {
     },
 
     /**
-     * Stores the cached version of a resource, or a collection of them.
+     * Add the given data to the cached version of a resource, or a collection of them.
      * @param {String} resource Name of the resource as defined in the static property 'resources'.
      * @param {*} data Resource or collection of resources to be addded to the cache.
      */

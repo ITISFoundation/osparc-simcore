@@ -55,11 +55,15 @@ qx.Class.define("osparc.component.task.TasksButton", {
         }
         case "number":
           control = new qx.ui.basic.Label().set({
+            backgroundColor: "background-main-1",
             font: "text-12"
           });
+          control.getContentElement().setStyles({
+            "border-radius": "4px"
+          });
           this._add(control, {
-            bottom: 3,
-            right: 0
+            bottom: 8,
+            right: 4
           });
           break;
       }
