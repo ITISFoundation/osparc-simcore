@@ -33,20 +33,12 @@
       "title": "Key",
       "description": "distinctive name for the node based on the docker registry path",
       "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
-      "examples": [
-        "simcore/services/comp/itis/sleeper",
-        "simcore/services/dynamic/3dviewer"
-      ],
       "type": "string"
     },
     "version": {
       "title": "Version",
       "description": "service version number",
       "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
-      "examples": [
-        "1.0.0",
-        "0.0.1"
-      ],
       "type": "string"
     },
     "integration-version": {
@@ -840,7 +832,7 @@
       "type": "computational",
       "integration-version": "1.0.0",
       "version": "1.7.0",
-      "description": "oSparc Python Runner",
+      "description": "oSparc Python Runner with boot options",
       "contact": "smith@company.com",
       "authors": [
         {
