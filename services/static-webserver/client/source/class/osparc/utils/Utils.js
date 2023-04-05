@@ -359,6 +359,20 @@ qx.Class.define("osparc.utils.Utils", {
       widget.getContentElement().setStyle("border", "1px solid transparent");
     },
 
+    addBorderLeftRadius: function(widget) {
+      widget.getContentElement().setStyles({
+        "border-top-left-radius": "4px",
+        "border-bottom-left-radius": "4px"
+      });
+    },
+
+    addBorderRightRadius: function(widget) {
+      widget.getContentElement().setStyles({
+        "border-top-right-radius": "4px",
+        "border-bottom-right-radius": "4px"
+      });
+    },
+
     __setStyleToIFrame: function(domEl) {
       if (domEl && domEl.contentDocument && domEl.contentDocument.documentElement) {
         const iframeDocument = domEl.contentDocument.documentElement;
