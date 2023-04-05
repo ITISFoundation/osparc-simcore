@@ -51,8 +51,6 @@ async def setup_redis_client(app: web.Application):
 
 def _get_redis_client(app: web.Application, database: RedisDatabase) -> RedisClientSDK:
     redis_client: RedisClientsManager = app[APP_REDIS_CLIENTS_MANAGER]
-    if redis_client is None:
-        raise RuntimeError(f"redis plugin was not init for {APP_REDIS_CLIENTS_MANAGER}")
     return redis_client.client(database)
 
 
