@@ -304,7 +304,7 @@ qx.Class.define("osparc.Application", {
       switch (qx.core.Environment.get("product.name")) {
         case "s4l":
         case "s4llite":
-          view = new osparc.auth.LoginPageS4L();
+          view = new osparc.product.landingPage.s4llite.Page();
           this.__loadView(view);
           break;
         case "tis":
@@ -382,7 +382,7 @@ qx.Class.define("osparc.Application", {
       }
       doc.add(view, options);
       this.__current = view;
-      if (!(view instanceof osparc.desktop.MainPage)) {
+      if (!(view instanceof osparc.desktop.MainPage || view instanceof osparc.product.landingPage.s4llite.Page)) {
         this.__themeSwitcher = new osparc.ui.switch.ThemeSwitcherFormBtn().set({
           backgroundColor: "transparent"
         });
