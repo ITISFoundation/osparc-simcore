@@ -38,6 +38,9 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
 
       const content2 = this.__createContent2();
       this._add(content2);
+
+      const content3 = this.__createContent3();
+      this._add(content3);
     },
 
     __createContent1: function() {
@@ -175,6 +178,96 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         usersLayout.add(image);
       });
       contentLayout.add(usersLayout);
+
+      return contentLayout;
+    },
+
+    __createtabPage: function(title, imageSrc, text) {
+      const page = new qx.ui.tabview.Page(title);
+      page.setLayout(new qx.ui.layout.HBox(10));
+      page.set({
+        allowGrowX: false
+      });
+      const tabButton = page.getChildControl("button");
+      tabButton.set({
+        alignX: "right"
+      });
+      tabButton.getChildControl("label").set({
+        font: "text-16",
+        width: 160
+      });
+      const image = new qx.ui.basic.Image(imageSrc).set({
+        width: 600,
+        height: 350,
+        scale: true
+      });
+      page.add(image);
+      const label = new qx.ui.basic.Label(text).set({
+        font: "text-16",
+        width: 200,
+        rich: true,
+        wrap: true,
+        alignY: "middle"
+      });
+      page.add(label);
+      return page;
+    },
+
+    __createContent3: function() {
+      const contentLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
+        alignX: "center",
+        alignY: "middle"
+      }));
+
+      const text1 = new qx.ui.basic.Label().set({
+        value: this.tr("Access, run and share simulations in the cloud from any browser"),
+        font: "text-18",
+        alignX: "center",
+        width: 260,
+        rich: true,
+        wrap: true
+      });
+      contentLayout.add(text1);
+
+      const tabs = new qx.ui.tabview.TabView().set({
+        contentPadding: 20,
+        barPosition: "left",
+        alignX: "center"
+      });
+      [{
+        title: "Cloud-Native",
+        image: "https://www.simscale.com/wp-content/uploads/2022/11/e-motor-cooling-simulation-with-webside-laptop-and-computer-1.png",
+        text: "No VPN, No remote desktop. True SaaS with instant access anywhere & anytime from a browser without any special hardware."
+      }, {
+        title: "One Platform, broad Physics",
+        image: "https://www.simscale.com/wp-content/uploads/2022/11/multiple-physics-simulations-laptop.gif",
+        text: "No disconnected tools used in silos. A single platform with broad physics capabilities for both rough early- and detailed late-stage simulations."
+      }, {
+        title: "Real-time Collaboration",
+        image: "https://www.simscale.com/wp-content/uploads/2022/11/e-motor-cooling-simulation-with-users-laptop.png",
+        text: "Google-Docs-style collaboration built-in, enabling unparalleled in-app support as well as sharing simulations with colleagues."
+      }, {
+        title: "Any Scale",
+        image: "https://www.simscale.com/wp-content/uploads/2022/12/e-motor-cooling-simulation-with-simulation-runs-laptop.png",
+        text: "Practically no limits to simulation size, number of parallel simulations and storage. From one-off runs to programmatic design space exploration."
+      }, {
+        title: "Cost-effective",
+        image: "https://www.simscale.com/wp-content/uploads/2022/11/pricing-page-laptop-1.png",
+        text: "Capex-free, low ‘total cost of ownership’. Economically viable from a single user to 100s of seats. "
+      }].forEach(tab => {
+        const tabPage = this.__createtabPage(tab.title, tab.image, tab.text);
+        tabs.add(tabPage);
+      });
+      let i = 0;
+      const children = tabs.getChildren();
+      setInterval(() => {
+        tabs.setSelection([children[i]]);
+        i++;
+        if (i === children.size) {
+          i = 0;
+        }
+      }, 3000);
+      contentLayout.add(tabs);
 
       return contentLayout;
     }
