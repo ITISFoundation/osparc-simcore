@@ -818,7 +818,7 @@ qx.Class.define("osparc.data.Resources", {
           }
           if (endpoint.includes("delete")) {
             this.__removeCached(resource, deleteId);
-          } else if (useCache && endpointDef.method === "POST") {
+          } else if (useCache && endpointDef.method === "POST" && options.pollTask !== true) {
             this.__addCached(resource, data);
           } else if (useCache && endpointDef.method === "GET") {
             if (endpoint.includes("getPage")) {
