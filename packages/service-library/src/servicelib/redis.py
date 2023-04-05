@@ -12,6 +12,7 @@ from pydantic.errors import PydanticErrorMixin
 from redis.asyncio.lock import Lock
 from redis.asyncio.retry import Retry
 from redis.backoff import ExponentialBackoff
+from servicelib.utils import logged_gather
 from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -149,7 +150,7 @@ class RedisClientsManager:
     databases: set[RedisDatabase]
     settings: RedisSettings
 
-    _client_sdks: dict[RedisDatabase:RedisClientSDK] = field(default_factory=dict)
+    _client_sdks: dict[RedisDatabase, RedisClientSDK] = field(default_factory=dict)
 
     async def setup(self) -> None:
         for db in self.databases:
@@ -159,9 +160,7 @@ class RedisClientsManager:
             await client_sdk.setup()
 
     async def shutdown(self) -> None:
-        client_sdk: RedisClientSDK
-        for client_sdk in self._client_sdks.values():
-            await client_sdk.shutdown()
+        await logged_gather(*(c.shutdown() for c in self._client_sdks.values()))
 
     def client(self, database: RedisDatabase) -> RedisClientSDK:
         return self._client_sdks[database]
