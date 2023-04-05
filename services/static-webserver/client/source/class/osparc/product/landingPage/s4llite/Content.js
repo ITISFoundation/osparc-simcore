@@ -182,19 +182,18 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       return contentLayout;
     },
 
-    __createtabPage: function(title, imageSrc, text) {
+    __createTabPage: function(title, imageSrc, text) {
       const page = new qx.ui.tabview.Page(title);
       page.setLayout(new qx.ui.layout.HBox(10));
-      page.set({
-        allowGrowX: false
-      });
       const tabButton = page.getChildControl("button");
       tabButton.set({
         alignX: "right"
       });
       tabButton.getChildControl("label").set({
         font: "text-16",
-        width: 160
+        textAlign: "right",
+        alignX: "right",
+        width: 220
       });
       const image = new qx.ui.basic.Image(imageSrc).set({
         width: 600,
@@ -222,8 +221,8 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       const text1 = new qx.ui.basic.Label().set({
         value: this.tr("Access, run and share simulations in the cloud from any browser"),
         font: "text-18",
-        alignX: "center",
-        width: 260,
+        textAlign: "center",
+        width: 280,
         rich: true,
         wrap: true
       });
@@ -232,6 +231,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       const tabs = new qx.ui.tabview.TabView().set({
         contentPadding: 20,
         barPosition: "left",
+        allowGrowX: false,
         alignX: "center"
       });
       [{
@@ -255,7 +255,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         image: "https://www.simscale.com/wp-content/uploads/2022/11/pricing-page-laptop-1.png",
         text: "Capex-free, low ‘total cost of ownership’. Economically viable from a single user to 100s of seats. "
       }].forEach(tab => {
-        const tabPage = this.__createtabPage(tab.title, tab.image, tab.text);
+        const tabPage = this.__createTabPage(tab.title, tab.image, tab.text);
         tabs.add(tabPage);
       });
       let i = 0;
@@ -266,7 +266,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         if (i === children.size) {
           i = 0;
         }
-      }, 3000);
+      }, 5000);
       contentLayout.add(tabs);
 
       return contentLayout;
