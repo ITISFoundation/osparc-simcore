@@ -147,14 +147,14 @@ class RedisClientsManager:
     """
 
     databases: set[RedisDatabase]
-    redis_settings: RedisSettings
+    settings: RedisSettings
 
     _client_sdks: dict[RedisDatabase:RedisClientSDK] = field(default_factory=dict)
 
     async def setup(self) -> None:
         for db in self.databases:
             self._client_sdks[db] = client_sdk = RedisClientSDK(
-                redis_dsn=self.redis_settings.build_redis_dsn(db)
+                redis_dsn=self.settings.build_redis_dsn(db)
             )
             await client_sdk.setup()
 

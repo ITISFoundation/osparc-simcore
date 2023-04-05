@@ -39,7 +39,7 @@ async def setup_redis_client(app: web.Application):
             RedisDatabase.SCHEDULED_MAINTENANCE,
             RedisDatabase.USER_NOTIFICATIONS,
         },
-        redis_settings=redis_settings,
+        settings=redis_settings,
     )
 
     await manager.setup()

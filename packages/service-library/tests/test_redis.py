@@ -231,9 +231,7 @@ async def test_lock_acquired_in_parallel_to_update_same_resource(
 
 async def test_redis_client_sdks_manager(redis_service: RedisSettings):
     all_redis_databases: set[int] = set(RedisDatabase)
-    manager = RedisClientsManager(
-        databases=all_redis_databases, redis_settings=redis_service
-    )
+    manager = RedisClientsManager(databases=all_redis_databases, settings=redis_service)
 
     await manager.setup()
 
