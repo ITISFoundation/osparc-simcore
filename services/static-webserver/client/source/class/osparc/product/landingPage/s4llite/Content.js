@@ -59,7 +59,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
 
       const text1 = new qx.ui.basic.Label().set({
         value: this.tr("Revolutionary simulation platform, combining computable human phantoms with the most powerful physics solvers and the most advanced tissue models"),
-        font: "text-20",
+        font: "text-24",
         rich: true,
         wrap: true
       });
@@ -220,9 +220,9 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
 
       const text1 = new qx.ui.basic.Label().set({
         value: this.tr("Access, run and share simulations in the cloud from any browser"),
-        font: "text-18",
+        font: "text-24",
         textAlign: "center",
-        width: 280,
+        width: 340,
         rich: true,
         wrap: true
       });
