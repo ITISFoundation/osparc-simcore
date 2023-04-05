@@ -29,7 +29,7 @@ async def _periodic_scheduled_task(
             with log_context(
                 logger,
                 logging.DEBUG,
-                msg=f"Run {task_name}, {attempt.retry_state.attempt_number=}",
+                msg=f"{attempt.retry_state.attempt_number} repeat of '{task_name}'",
             ), log_catch(logger):
                 await task(**task_kwargs)
 
@@ -96,8 +96,4 @@ async def periodic_task(
         yield asyncio_task
     finally:
         if asyncio_task is not None:
-            # NOTE: this stopping is shielded to prevent the cancellation to propagate
-            # into the stopping procedure
-            await asyncio.shield(
-                stop_periodic_task(asyncio_task, timeout=_DEFAULT_STOP_TIMEOUT_S)
-            )
+            await stop_periodic_task(asyncio_task, timeout=_DEFAULT_STOP_TIMEOUT_S)
