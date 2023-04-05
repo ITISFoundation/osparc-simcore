@@ -371,7 +371,7 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
         "service_key": f"simcore/services/dynamic/{faker.pystr()}",
         "service_version": faker.numerify("%.#.#"),
     }
-    NUM_DY_SERVICES: Final[NonNegativeInt] = 20
+    NUM_DY_SERVICES: Final[NonNegativeInt] = 250
     responses = await asyncio.gather(
         *(client.post(f"{url}", json=body) for _ in range(NUM_DY_SERVICES))
     )
