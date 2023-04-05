@@ -6,7 +6,7 @@
 from copy import deepcopy
 from dataclasses import dataclass
 from http import HTTPStatus
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 import pytest
 
@@ -17,11 +17,12 @@ class HttpApiCallCapture:
     Captures relevant information of a call to the http api
     """
 
+    name: str
     description: str
     method: Literal["GET", "PUT", "POST", "PATCH"]
     path: str
-    request_payload: Optional[dict[str, Any]]
-    response_body: Optional[dict[str, Any]]
+    request_payload: dict[str, Any] | None
+    response_body: dict[str, Any] | None
     status_code: HTTPStatus = HTTPStatus.OK
 
     def __str__(self) -> str:
@@ -39,6 +40,7 @@ class HttpApiCallCapture:
 #
 
 NEW_PROJECT = HttpApiCallCapture(
+    name="NEW_PROJECT",
     description="Press 'New Project'",
     method="POST",
     path="/v0/projects",
@@ -77,6 +79,7 @@ NEW_PROJECT = HttpApiCallCapture(
 
 
 GET_PROJECT = HttpApiCallCapture(
+    name="GET_PROJECT",
     description="Received newly created project",
     method="GET",
     path="/v0/projects/18f1938c-567d-11ec-b2f3-02420a000010",
@@ -107,6 +110,7 @@ GET_PROJECT = HttpApiCallCapture(
 
 
 OPEN_PROJECT = HttpApiCallCapture(
+    name="OPEN_PROJECT",
     description="Open newly created project, i.e. project becomes active and dy-services are started",
     method="POST",
     path="/v0/projects/18f1938c-567d-11ec-b2f3-02420a000010:open",
@@ -145,6 +149,7 @@ OPEN_PROJECT = HttpApiCallCapture(
 
 
 REPLACE_PROJECT = HttpApiCallCapture(
+    name="REPLACE_PROJECT",
     description="Saving periodically the project after modification (autosave)",
     method="PUT",
     path="/v0/projects/18f1938c-567d-11ec-b2f3-02420a000010",
@@ -271,6 +276,7 @@ REPLACE_PROJECT = HttpApiCallCapture(
 
 
 REPLACE_PROJECT_ON_MODIFIED = HttpApiCallCapture(
+    name="REPLACE_PROJECT_ON_MODIFIED",
     description="After the user adds an iterator 1:3 and two sleepers, the project is saved",
     method="PUT",
     path="/v0/projects/18f1938c-567d-11ec-b2f3-02420a000010",
@@ -523,6 +529,7 @@ REPLACE_PROJECT_ON_MODIFIED = HttpApiCallCapture(
 
 
 RUN_PROJECT = HttpApiCallCapture(
+    name="RUN_PROJECT",
     description="User press run button",
     method="POST",
     path="/computations/18f1938c-567d-11ec-b2f3-02420a000010:start",
@@ -538,6 +545,7 @@ RUN_PROJECT = HttpApiCallCapture(
 
 
 CLOSE_PROJECT = HttpApiCallCapture(
+    name="CLOSE_PROJECT",
     description="Back to the dashboard, project closes",
     method="POST",
     path="/v0/projects/18f1938c-567d-11ec-b2f3-02420a000010:close",
@@ -549,6 +557,7 @@ CLOSE_PROJECT = HttpApiCallCapture(
 
 
 LIST_PROJECTS = HttpApiCallCapture(
+    name="LIST_PROJECTS",
     description="Open browser in ashboard and user gets all projects",
     method="POST",
     path="/v0/projects?type=user&offset=0&limit=10",
