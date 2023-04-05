@@ -5,7 +5,7 @@
 
 import functools
 import logging
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from aiohttp import web
 from models_library.projects import ProjectID
@@ -23,7 +23,7 @@ from servicelib.json_serialization import json_dumps
 from .._meta import api_version_prefix as VTAG
 from ..login.decorators import login_required
 from ..security_decorators import permission_required
-from . import _ports, projects_api
+from . import _ports_utils, projects_api
 from .project_models import ProjectDict
 from .projects_db import ProjectDBAPI
 from .projects_exceptions import (
@@ -136,7 +136,7 @@ async def get_project_inputs(request: web.Request) -> web.Response:
     workbench = await _get_validated_workbench_model(
         app=request.app, project_id=path_params.project_id, user_id=req_ctx.user_id
     )
-    inputs: dict[NodeID, Any] = _ports.get_project_inputs(workbench)
+    inputs: dict[NodeID, Any] = _ports_utils.get_project_inputs(workbench)
 
     return _web_json_response_enveloped(
         data={
@@ -163,7 +163,7 @@ async def update_project_inputs(request: web.Request) -> web.Response:
     workbench = await _get_validated_workbench_model(
         app=request.app, project_id=path_params.project_id, user_id=req_ctx.user_id
     )
-    current_inputs: dict[NodeID, Any] = _ports.get_project_inputs(workbench)
+    current_inputs: dict[NodeID, Any] = _ports_utils.get_project_inputs(workbench)
 
     # build workbench patch
     partial_workbench_data = {}
@@ -186,7 +186,7 @@ async def update_project_inputs(request: web.Request) -> web.Response:
     )
 
     workbench = parse_obj_as(dict[NodeID, Node], updated_project["workbench"])
-    inputs: dict[NodeID, Any] = _ports.get_project_inputs(workbench)
+    inputs: dict[NodeID, Any] = _ports_utils.get_project_inputs(workbench)
 
     return _web_json_response_enveloped(
         data={
@@ -216,7 +216,7 @@ async def get_project_outputs(request: web.Request) -> web.Response:
     workbench = await _get_validated_workbench_model(
         app=request.app, project_id=path_params.project_id, user_id=req_ctx.user_id
     )
-    outputs: dict[NodeID, Any] = _ports.get_project_outputs(workbench)
+    outputs: dict[NodeID, Any] = _ports_utils.get_project_outputs(workbench)
 
     return _web_json_response_enveloped(
         data={
@@ -239,7 +239,7 @@ class ProjectMetadataPortGet(BaseModel):
         description="Project port's unique identifer. Same as the UUID of the associated port node",
     )
     kind: Literal["input", "output"]
-    content_schema: Optional[JsonSchemaDict] = Field(
+    content_schema: JsonSchemaDict | None = Field(
         None,
         description="jsonschema for the port's value. SEE https://json-schema.org/understanding-json-schema/",
     )
@@ -269,6 +269,6 @@ async def list_project_metadata_ports(request: web.Request) -> web.Response:
                 kind=port.kind,
                 content_schema=port.get_schema(),
             )
-            for port in _ports.iter_project_ports(workbench)
+            for port in _ports_utils.iter_project_ports(workbench)
         ]
     )

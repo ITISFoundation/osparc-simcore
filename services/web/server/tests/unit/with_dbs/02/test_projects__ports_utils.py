@@ -10,7 +10,7 @@ import pytest
 from models_library.projects_nodes import Node, NodeID
 from models_library.utils.json_schema import jsonschema_validate_schema
 from pydantic import parse_obj_as
-from simcore_service_webserver.projects._ports import (
+from simcore_service_webserver.projects._ports_utils import (
     InvalidInputValue,
     get_project_inputs,
     get_project_outputs,
