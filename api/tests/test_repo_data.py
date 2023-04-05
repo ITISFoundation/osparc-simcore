@@ -15,7 +15,7 @@ from utils import current_repo_dir
 
 SYNCED_VERSIONS_SUFFIX = [
     ".json",  # json-schema specs file
-    "-converted.yaml",  # equivalent openapi specs file (see scripts/json-schema-to-openapi-schema)
+    "-converted-clean.yaml",  # equivalent openapi specs file (see scripts/json-schema-to-openapi-schema)
 ]
 
 # Add here paths to files containing project's data that can be validated with projects schema
