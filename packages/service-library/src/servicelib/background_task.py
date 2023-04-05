@@ -2,7 +2,8 @@ import asyncio
 import contextlib
 import datetime
 import logging
-from typing import AsyncIterator, Awaitable, Callable, Final, Optional
+from contextlib import suppress
+from typing import AsyncIterator, Awaitable, Callable, Final
 
 from servicelib.logging_utils import log_catch, log_context
 from tenacity import TryAgain
@@ -21,7 +22,7 @@ async def _periodic_scheduled_task(
     interval: datetime.timedelta,
     task_name: str,
     **task_kwargs,
-):
+) -> None:
     # NOTE: This retries forever unless cancelled
     async for attempt in AsyncRetrying(wait=wait_fixed(interval.total_seconds())):
         with attempt:
@@ -35,7 +36,7 @@ async def _periodic_scheduled_task(
             raise TryAgain()
 
 
-async def start_periodic_task(
+def start_periodic_task(
     task: Callable[..., Awaitable[None]],
     *,
     interval: datetime.timedelta,
@@ -56,8 +57,12 @@ async def start_periodic_task(
         )
 
 
+async def _await_task(task: asyncio.Task) -> None:
+    await task
+
+
 async def stop_periodic_task(
-    asyncio_task: asyncio.Task, *, timeout: Optional[float] = None
+    asyncio_task: asyncio.Task, *, timeout: float | None = None
 ) -> None:
     with log_context(
         logger,
@@ -65,12 +70,14 @@ async def stop_periodic_task(
         msg=f"cancel periodic background task '{asyncio_task.get_name()}'",
     ):
         asyncio_task.cancel()
-        _, pending = await asyncio.wait((asyncio_task,), timeout=timeout)
-        if pending:
-            logger.warning(
-                "periodic background task '%s' did not cancel properly and timed-out!",
-                f"{asyncio_task.get_name()}",
-            )
+        with suppress(asyncio.CancelledError):
+            try:
+                await asyncio.wait_for(_await_task(asyncio_task), timeout=timeout)
+            except asyncio.TimeoutError:
+                logger.warning(
+                    "periodic background task '%s' did not cancel properly and timed-out!",
+                    f"{asyncio_task.get_name()}",
+                )
 
 
 @contextlib.asynccontextmanager
@@ -81,9 +88,9 @@ async def periodic_task(
     task_name: str,
     **kwargs,
 ) -> AsyncIterator[asyncio.Task]:
-    asyncio_task = None
+    asyncio_task: asyncio.Task | None = None
     try:
-        asyncio_task = await start_periodic_task(
+        asyncio_task = start_periodic_task(
             task, interval=interval, task_name=task_name, **kwargs
         )
         yield asyncio_task
