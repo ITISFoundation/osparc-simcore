@@ -6,7 +6,7 @@
 
 import asyncio
 import datetime
-from typing import AsyncIterator
+from typing import AsyncIterator, Final
 
 import docker
 import pytest
@@ -27,18 +27,13 @@ pytest_simcore_core_services_selection = [
 ]
 
 pytest_simcore_ops_services_selection = [
-    "redis-commander",
+    # "redis-commander",
 ]
-
-# UTILS
 
 
 async def _is_locked(redis_client_sdk: RedisClientSDK, lock_name: str) -> bool:
     lock = redis_client_sdk.redis.lock(lock_name)
     return await lock.locked()
-
-
-# FIXTURES
 
 
 @pytest.fixture
@@ -60,9 +55,6 @@ async def redis_client_sdk(
 @pytest.fixture
 def lock_timeout() -> datetime.timedelta:
     return datetime.timedelta(seconds=1)
-
-
-# TESTS
 
 
 async def test_redis_key_encode_decode(redis_client_sdk: RedisClientSDK, faker: Faker):
@@ -192,29 +184,32 @@ async def test_lock_context_with_data(redis_client_sdk: RedisClientSDK, faker: F
     assert await redis_client_sdk.lock_value(lock_name) is None
 
 
-class RaceConditionCounter:
-    def __init__(self):
-        self.value: int = 0
-
-    async def race_condition_increase(self, by: int) -> None:
-        current_value = self.value
-        current_value += by
-        await asyncio.sleep(0.1)
-        self.value = current_value
-
-
 async def test_lock_acquired_in_parallel_to_update_same_resource(
     redis_client_sdk: RedisClientSDK, faker: Faker
 ):
-    PARALLEL_INCREASE_OPERATIONS = 250
-    INCREASE_BY = 10
+
+    RC_COUNTER_SLEEP: Final[float] = 0.1
+    PARALLEL_INCREASE_OPERATIONS: Final[int] = 250
+    INCREASE_BY: Final[int] = 10
+
+    class RaceConditionCounter:
+        def __init__(self):
+            self.value: int = 0
+
+        async def race_condition_increase(self, by: int) -> None:
+            current_value = self.value
+            current_value += by
+            await asyncio.sleep(RC_COUNTER_SLEEP)
+            self.value = current_value
 
     counter = RaceConditionCounter()
     lock_name = faker.pystr()
 
     async def _inc_counter() -> None:
         async with redis_client_sdk.lock_context(
-            lock_key=lock_name, blocking=True, blocking_timeout_s=60
+            lock_key=lock_name,
+            blocking=True,
+            blocking_timeout_s=RC_COUNTER_SLEEP * PARALLEL_INCREASE_OPERATIONS * 10,
         ):
             await counter.race_condition_increase(INCREASE_BY)
 
