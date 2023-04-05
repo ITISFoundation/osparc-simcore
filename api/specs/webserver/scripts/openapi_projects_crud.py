@@ -16,8 +16,16 @@ from fastapi import FastAPI, Query, status
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Page
-from pydantic import BaseModel, NonNegativeInt
+from pydantic import NonNegativeInt
 from servicelib.aiohttp.long_running_tasks.server import TaskGet
+from simcore_service_webserver.projects.oas_schemas import (
+    ProjectCreate,
+    ProjectGet,
+    ProjectListItem,
+    ProjectReplace,
+    ProjectUpdate,
+    TaskGet,
+)
 from simcore_service_webserver.projects.projects_handlers_crud import (
     ProjectPathParams,
     ProjectTypeAPI,
@@ -31,31 +39,6 @@ app = FastAPI(redoc_url=None)
 TAGS: list[str | Enum] = [
     "project",
 ]
-
-
-#
-# API Schema Models
-#
-
-
-class ProjectCreate(BaseModel):
-    pass
-
-
-class ProjectGet(BaseModel):
-    pass
-
-
-class ProjectListItem(BaseModel):
-    pass
-
-
-class ProjectReplace(BaseModel):
-    pass
-
-
-class ProjectUpdate(BaseModel):
-    pass
 
 
 #
@@ -160,12 +143,12 @@ async def replace_project(project_id: ProjectID, replace: ProjectReplace):
 assert_signature_against_model(replace_project, ProjectPathParams)
 
 
-@app.patch(
-    "/projects/{project_id}",
-    response_model=Envelope[ProjectGet],
-    tags=TAGS,
-    operation_id="update_project",
-)
+# @app.patch(
+#     "/projects/{project_id}",
+#     response_model=Envelope[ProjectGet],
+#     tags=TAGS,
+#     operation_id="update_project",
+# )
 async def update_project(project_id: ProjectID, update: ProjectUpdate):
     """Partial update of a project resource"""
 
