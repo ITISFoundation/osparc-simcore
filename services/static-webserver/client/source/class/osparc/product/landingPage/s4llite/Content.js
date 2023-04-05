@@ -44,6 +44,9 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
 
       const content4 = this.__createContent4();
       this._add(content4);
+
+      const content5 = this.__createContent5();
+      this._add(content5);
     },
 
     __createContent1: function() {
@@ -266,7 +269,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       setInterval(() => {
         tabs.setSelection([children[i]]);
         i++;
-        if (i === children.size) {
+        if (i === children.length) {
           i = 0;
         }
       }, 5000);
@@ -352,6 +355,51 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         stepsLayout.add(tabPage);
       });
       contentLayout.add(stepsLayout);
+
+      return contentLayout;
+    },
+
+    __createContent5: function() {
+      const contentLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
+        alignX: "center",
+        alignY: "middle"
+      }));
+
+      const text1 = new qx.ui.basic.Label().set({
+        value: this.tr("Our partners"),
+        font: "text-16",
+        width: 160,
+        rich: true,
+        wrap: true
+      });
+      contentLayout.add(text1);
+
+      const partnersLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(30).set({
+        alignX: "center",
+        alignY: "middle"
+      }));
+
+      [{
+        link: "https://speag.swiss/",
+        avatar: "https://speag.swiss/resources/themes/speag/images/logo.png"
+      }, {
+        link: "https://itis.swiss/",
+        avatar: "https://itis.swiss/resources/themes/itis/images/logo.png"
+      }, {
+        link: "https://zmt.swiss/",
+        avatar: "https://zmt.swiss/resources/themes/zmt/images/zmt_logo_white.svg"
+      }].forEach(partner => {
+        const image = new qx.ui.basic.Image().set({
+          source: partner.avatar,
+          scale: true,
+          maxWidth: 200,
+          // maxHeight: size,
+          cursor: "pointer"
+        });
+        image.addListener("tap", () => window.open(partner.link, "_blank"));
+        partnersLayout.add(image);
+      });
+      contentLayout.add(partnersLayout);
 
       return contentLayout;
     }
