@@ -10,30 +10,18 @@
  * Tag manager server to manage one resource's related tags.
  */
 qx.Class.define("osparc.component.form.tag.TagManager", {
-  extend: osparc.ui.window.SingletonWindow,
-  construct: function(studyData, attachment, resourceName, resourceId) {
-    this.base(arguments, "tagManager", this.tr("Apply Tags"));
-    this.set({
-      layout: new qx.ui.layout.VBox(),
-      allowMinimize: false,
-      allowMaximize: false,
-      showMinimize: false,
-      showMaximize: false,
-      autoDestroy: true,
-      movable: false,
-      resizable: false,
-      modal: true,
-      width: 262,
-      clickAwayClose: true
-    });
-    this.__attachment = attachment;
-    this.__resourceName = resourceName;
-    this.__resourceId = resourceId;
-    this.__studyData = studyData;
-    this.__selectedTags = new qx.data.Array(studyData["tags"]);
+  extend: qx.ui.core.Widget,
+
+  construct: function(studyData) {
+    this.base(arguments);
+
+    this._setLayout(new qx.ui.layout.VBox());
+
+    this.__selectedTags = new qx.data.Array();
     this.__renderLayout();
     this.__attachEventHandlers();
-    this.open();
+
+    this.setStudydata(studyData);
   },
 
   events: {
@@ -45,79 +33,94 @@ qx.Class.define("osparc.component.form.tag.TagManager", {
     liveUpdate: {
       check: "Boolean",
       event: "changeLiveUpdate",
-      init: true
+      init: false
+    }
+  },
+
+  statics: {
+    popUpInWindow: function(tagManager, title) {
+      if (!title) {
+        title = qx.locale.Manager.tr("Apply Tags");
+      }
+      return osparc.ui.window.Window.popUpInWindow(tagManager, title, 280, null).set({
+        allowMinimize: false,
+        allowMaximize: false,
+        showMinimize: false,
+        showMaximize: false,
+        clickAwayClose: true,
+        movable: true,
+        resizable: true,
+        showClose: true
+      });
     }
   },
 
   members: {
     __studyData: null,
-    __attachment: null,
-    __resourceName: null,
     __resourceId: null,
     __selectedTags: null,
+    __tagsContainer: null,
+    __addTagButton: null,
 
     __renderLayout: function() {
       const filter = new osparc.component.filter.TextFilter("name", "studyBrowserTagManager").set({
         allowStretchX: true,
         margin: [0, 10, 5, 10]
       });
-      this.add(filter);
+      this._add(filter);
 
-      const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-      this.add(buttonContainer, {
+      const tagsContainer = this.__tagsContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      this._add(tagsContainer, {
         flex: 1
       });
-      osparc.store.Store.getInstance().getTags().forEach(tag => buttonContainer.add(this.__tagButton(tag)));
-      if (buttonContainer.getChildren().length === 0) {
-        buttonContainer.add(new qx.ui.basic.Label().set({
-          value: this.tr("Add your first tag in Preferences/Tags"),
-          font: "title-16",
-          textColor: "service-window-hint",
-          rich: true,
-          padding: 10,
-          textAlign: "center"
-        }));
-      }
+
+      const addTagButton = this.__addTagButton = new qx.ui.form.Button().set({
+        appearance: "strong-button",
+        label: this.tr("New Tag"),
+        icon: "@FontAwesome5Solid/plus/14",
+        alignX: "center",
+        allowGrowX: false
+      });
+      addTagButton.addListener("execute", () => {
+        const newItem = new osparc.component.form.tag.TagItem().set({
+          mode: osparc.component.form.tag.TagItem.modes.EDIT
+        });
+        newItem.addListener("tagSaved", () => this.__repopulateTags(), this);
+        newItem.addListener("cancelNewTag", e => tagsContainer.remove(e.getTarget()), this);
+        newItem.addListener("deleteTag", e => tagsContainer.remove(e.getTarget()), this);
+        this.__repopulateTags();
+        tagsContainer.add(newItem);
+      });
+      this._add(addTagButton);
 
       const buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
         alignX: "right"
       }));
       const saveButton = new osparc.ui.form.FetchButton(this.tr("Save"));
+      saveButton.set({
+        appearance: "strong-button"
+      });
       osparc.utils.Utils.setIdToWidget(saveButton, "saveTagsBtn");
-      saveButton.addListener("execute", e => {
-        this.__save(saveButton);
-      }, this);
+      saveButton.addListener("execute", () => this.__save(saveButton), this);
       buttons.add(saveButton);
       this.bind("liveUpdate", buttons, "visibility", {
         converter: value => value ? "excluded" : "visible"
       });
-      this.add(buttons);
+      this._add(buttons);
     },
 
-    /**
-     * If the attachment (element close to which the TagManager is being rendered) is already on the DOM,
-     * this function calculates where the TagManager should render, taking into account the window edges.
-     */
-    __updatePosition: function() {
-      if (this.__attachment && this.__attachment.getContentElement().getDomElement()) {
-        const location = qx.bom.element.Location.get(this.__attachment.getContentElement().getDomElement());
-        const freeDistances = osparc.utils.Utils.getFreeDistanceToWindowEdges(this.__attachment);
-        let position = {
-          top: location.bottom,
-          left: location.right
-        };
-        if (this.getWidth() > freeDistances.right) {
-          position.left = location.left - this.getWidth();
-          if (this.getHeight() > freeDistances.bottom) {
-            position.top = location.top - (this.getHeight() || this.getSizeHint().height);
-          }
-        } else if (this.getHeight() > freeDistances.bottom) {
-          position.top = location.top - this.getHeight();
-        }
-        this.moveTo(position.left, position.top);
-      } else {
-        this.center();
-      }
+    setStudydata: function(studyData) {
+      this.__studyData = studyData;
+      this.__resourceId = studyData["uuid"];
+      this.__selectedTags.removeAll();
+      this.__selectedTags.append(studyData["tags"]);
+      this.__repopulateTags();
+    },
+
+    __repopulateTags: function() {
+      this.__tagsContainer.removeAll();
+      const tags = osparc.store.Store.getInstance().getTags();
+      tags.forEach(tag => this.__tagsContainer.add(this.__tagButton(tag)));
     },
 
     __tagButton: function(tag) {
@@ -208,9 +211,6 @@ qx.Class.define("osparc.component.form.tag.TagManager", {
     },
 
     __attachEventHandlers: function() {
-      this.addListener("appear", () => {
-        this.__updatePosition();
-      });
       this.__selectedTags.addListener("change", evt => {
         this.fireDataEvent("changeSelected", {
           ...evt.getData(),

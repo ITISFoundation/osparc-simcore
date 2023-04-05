@@ -739,6 +739,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (shareButton) {
           menu.add(shareButton);
         }
+
+        const tagsButton = this._getTagsMenuButton(card);
+        if (tagsButton) {
+          menu.add(tagsButton);
+        }
       }
 
       const duplicateStudyButton = this.__getDuplicateMenuButton(studyData);
@@ -875,7 +880,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           "studyId": studyData["uuid"]
         }
       };
-      const fetchPromise = osparc.data.Resources.fetch("studies", "duplicate", params);
+      const fetchPromise = osparc.data.Resources.fetch("studies", "duplicate", params, null, {"pollTask": true});
       const interval = 1000;
       const pollTasks = osparc.data.PollTasks.getInstance();
       pollTasks.createPollingTask(fetchPromise, interval)
