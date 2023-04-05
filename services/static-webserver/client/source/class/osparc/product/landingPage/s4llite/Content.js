@@ -225,7 +225,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         value: this.tr("Access, run and share simulations in the cloud from any browser"),
         font: "text-24",
         textAlign: "center",
-        width: 360,
+        width: 380,
         rich: true,
         wrap: true
       });
@@ -276,7 +276,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
     },
 
     __createStep: function(imageSrc, title, text) {
-      const stepLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
+      const stepLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(15).set({
         alignX: "center",
         alignY: "middle"
       }));
@@ -288,7 +288,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       stepLayout.add(image);
       const labelTitle = new qx.ui.basic.Label(title).set({
         font: "text-20",
-        alignText: "center",
+        textAlign: "center",
         width: 200,
         rich: true,
         wrap: true
@@ -296,7 +296,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       stepLayout.add(labelTitle);
       const labelText = new qx.ui.basic.Label(text).set({
         font: "text-16",
-        alignText: "center",
+        textAlign: "center",
         width: 200,
         rich: true,
         wrap: true
@@ -331,7 +331,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       });
       contentLayout.add(text2);
 
-      const stepsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(20).set({
+      const stepsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(30).set({
         alignX: "center",
         alignY: "middle"
       }));
@@ -346,7 +346,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       }, {
         image: "https://www.simscale.com/wp-content/uploads/2023/01/step-3-design-decision.png",
         title: "Post Processing",
-        text: "Review results and make better design decisions earlier, we also have a PP Calc"
+        text: "We also have a PP Calc"
       }].forEach(tab => {
         const tabPage = this.__createStep(tab.image, tab.title, tab.text);
         stepsLayout.add(tabPage);
