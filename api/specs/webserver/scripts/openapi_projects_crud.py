@@ -17,6 +17,7 @@ from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Page
 from pydantic import BaseModel, NonNegativeInt
+from servicelib.aiohttp.long_running_tasks.server import TaskGet
 from simcore_service_webserver.projects.projects_handlers_crud import (
     ProjectPathParams,
     ProjectTypeAPI,
@@ -64,7 +65,8 @@ class ProjectUpdate(BaseModel):
 
 @app.post(
     "/projects",
-    response_model=Envelope[ProjectGet],
+    # TODO: Envelope[TaskGet[ProjectGet]] ?? so TaskGet holds the future type
+    response_model=Envelope[TaskGet],
     status_code=status.HTTP_201_CREATED,
     tags=TAGS,
     operation_id="create_project",
@@ -125,7 +127,7 @@ assert_signature_against_model(list_projects, _ProjectListParams)
     tags=TAGS,
     operation_id="get_active_project",
 )
-async def get_active_project():
+async def get_active_project(client_session_id: str):
     ...
 
 
@@ -152,7 +154,7 @@ assert_signature_against_model(get_project, ProjectPathParams)
     operation_id="replace_project",
 )
 async def replace_project(project_id: ProjectID, replace: ProjectReplace):
-    ...
+    """Replaces (i.e. full update) a project resource"""
 
 
 assert_signature_against_model(replace_project, ProjectPathParams)
@@ -165,7 +167,7 @@ assert_signature_against_model(replace_project, ProjectPathParams)
     operation_id="update_project",
 )
 async def update_project(project_id: ProjectID, update: ProjectUpdate):
-    ...
+    """Partial update of a project resource"""
 
 
 assert_signature_against_model(update_project, ProjectPathParams)

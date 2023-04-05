@@ -1,14 +1,16 @@
 """ Common utils for OAS script generators
 """
 
+import inspect
 import sys
 from pathlib import Path
-from typing import Callable
+from typing import Callable, NamedTuple
 
 import yaml
 from fastapi import FastAPI
 from models_library.basic_types import LogLevel
 from pydantic import BaseModel, Field
+from pydantic.fields import FieldInfo
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -83,5 +85,28 @@ def create_openapi_specs(
     print("Saved OAS to", file_path)
 
 
-def assert_signature_against_model(func: Callable, arguments: type[BaseModel]):
-    raise NotImplementedError()
+class ParamSpec(NamedTuple):
+    name: str
+    annotated_type: type
+    field_info: FieldInfo
+
+
+def assert_signature_against_model(func: Callable, model_cls: type[BaseModel]):
+
+    sig = inspect.signature(func)
+
+    # query, path and body parameters
+    specs_params = [
+        ParamSpec(param.name, param.annotation, param.default)
+        for param in sig.parameters.values()
+    ]
+
+    # query and path parameters
+    implemented_params = [
+        ParamSpec(field.name, field.type_, field.field_info)
+        for field in model_cls.__fields__.values()
+    ]
+
+    assert {p.name for p in implemented_params}.issubset(  # nosec
+        {p.name for p in specs_params}
+    ), f"Entrypoint {func} does not implement OAS"
