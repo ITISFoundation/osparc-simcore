@@ -470,7 +470,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
 
       const importStudyButton = this.__createImportButton();
-      this._secondaryBar.add(importStudyButton);
+      this._toolbar.add(importStudyButton);
       importStudyButton.exclude();
       osparc.utils.DisabledPlugins.isImportDisabled()
         .then(isDisabled => {
@@ -478,12 +478,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
 
       const selectStudiesButton = this.__createSelectButton();
-      this._secondaryBar.add(selectStudiesButton);
+      this._toolbar.add(selectStudiesButton);
 
       const studiesDeleteButton = this.__createDeleteButton(false);
-      this._secondaryBar.add(studiesDeleteButton);
+      this._toolbar.add(studiesDeleteButton);
 
-      this._secondaryBar.add(new qx.ui.core.Spacer(), {
+      this._toolbar.add(new qx.ui.core.Spacer(), {
         flex: 1
       });
 
@@ -521,27 +521,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __addShowSharedWithButton: function() {
-      const sharedWithMenu = new qx.ui.menu.Menu().set({
-        font: "text-14"
-      });
-      const sharedWithButton = new qx.ui.form.MenuButton(this.tr("Share with"), "@FontAwesome5Solid/chevron-down/10", sharedWithMenu);
+      const sharedWithButton = new osparc.dashboard.SharedWithMenuButton("study");
       osparc.utils.Utils.setIdToWidget(sharedWithButton, "sharedWithButton");
 
-      const groupOptions = new qx.ui.form.RadioGroup();
+      sharedWithButton.addListener("sharedWith", e => {
+        const option = e.getData();
+        this._searchBarFilter.setSharedWithActiveFilter(option.id, option.label);
+      }, this);
+      this._searchBarFilter.addListener("filterChanged", e => {
+        const filterData = e.getData();
+        sharedWithButton.filterChanged(filterData);
+      }, this);
 
-      const options = osparc.dashboard.SearchBarFilter.getSharedWithOptions("study");
-      options.forEach((option, idx) => {
-        const button = new qx.ui.menu.RadioButton(option.label);
-        sharedWithMenu.add(button);
-        button.addListener("execute", () => this._searchBarFilter.setSharedWithActiveFilter(option.id, option.label), this);
-        groupOptions.add(button);
-        // preselect show-all
-        if (idx === 0) {
-          groupOptions.setSelection([button]);
-        }
-      });
-
-      this._secondaryBar.add(sharedWithButton);
+      this._toolbar.add(sharedWithButton);
     },
 
     __createLoadMoreButton: function() {
