@@ -387,13 +387,13 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         avatar: "https://itis.swiss/resources/themes/itis/images/logo.png"
       }, {
         link: "https://zmt.swiss/",
-        avatar: "https://zmt.swiss/resources/themes/zmt/images/zmt_logo_white.svg"
+        avatar: "https://d2jx2rerrg6sh3.cloudfront.net/image-handler/picture/2019/10/logo-ZMT-3.png"
       }].forEach(partner => {
         const image = new qx.ui.basic.Image().set({
           source: partner.avatar,
           scale: true,
           maxWidth: 200,
-          // maxHeight: size,
+          maxHeight: 50,
           cursor: "pointer"
         });
         image.addListener("tap", () => window.open(partner.link, "_blank"));
