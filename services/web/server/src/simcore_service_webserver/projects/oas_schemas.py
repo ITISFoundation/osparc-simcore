@@ -1,4 +1,7 @@
-""" projects's rest API schema models
+""" rest API schema models for projects
+
+
+SEE rationale in https://fastapi.tiangolo.com/tutorial/extra-models/#multiple-models
 
 """
 
@@ -18,6 +21,10 @@ class ProjectGet(BaseOutputSchemaModel):
     pass
 
 
+# TODO: TaskGet[Envelope[TaskProjectGet]] i.e. should include future?
+TaskProjectGet = TaskGet
+
+
 class ProjectListItem(BaseOutputSchemaModel):
     pass
 
@@ -30,7 +37,11 @@ class ProjectUpdate(BaseInputSchemaModel):
     pass
 
 
-assert TaskGet  # nosec
-
-
-__all__: tuple[str, ...] = "TaskGet"
+__all__: tuple[str, ...] = (
+    "ProjectCreate",
+    "ProjectGet",
+    "ProjectListItem",
+    "ProjectReplace",
+    "ProjectUpdate",
+    "TaskProjectGet",
+)

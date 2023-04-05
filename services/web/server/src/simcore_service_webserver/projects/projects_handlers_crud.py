@@ -474,6 +474,18 @@ async def replace_project(request: web.Request):
     return web.json_response({"data": new_project}, dumps=json_dumps)
 
 
+@routes.patch(f"/{VTAG}/projects/{{project_id}}", name="update_project")
+@login_required
+@permission_required("project.update")
+@permission_required("services.pipeline.*")
+async def update_project(request: web.Request):
+    db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
+    req_ctx = RequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(ProjectPathParams, request)
+
+    raise NotImplementedError()
+
+
 #
 # - Delete https://google.aip.dev/135
 #
