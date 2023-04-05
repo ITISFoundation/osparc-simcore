@@ -233,31 +233,20 @@ async def _start_dynamic_service(
     user_id: UserID,
     project_uuid: ProjectID,
     node_uuid: NodeID,
-):
+) -> None:
     if not _is_node_dynamic(service_key):
         return
 
     # this is a dynamic node, let's gather its resources and start it
-    service_resources: ServiceResourcesDict = await get_project_node_resources(
-        request.app,
-        user_id=user_id,
-        project={
-            "workbench": {
-                f"{node_uuid}": {"key": service_key, "version": service_version}
-            }
-        },
-        node_id=node_uuid,
-    )
 
-    # NOTE: locking for as little as possible to avoid extra delays since this is
-    # using a global distributed lock
     lock_key = _get_service_start_lock_key(user_id, project_uuid)
     client_sdk = get_redis_lock_manager_client_sdk(request.app)
+    project_settings = get_settings(request.app).WEBSERVER_PROJECTS
 
     async with client_sdk.lock_context(
         lock_key,
         blocking=True,
-        blocking_timeout_s=60 * 5,  # TODO: move this to somewhere more meaningful
+        blocking_timeout_s=project_settings.PROJECTS_DYNAMIC_SERVICES_REDIS_LOCK_TIMEOUT_S,
     ):
         # NOTE: between [point A] and [point B] there should be no code additions
         # NOTE: [point A] is here
@@ -269,6 +258,16 @@ async def _start_dynamic_service(
             number_of_services=len(project_running_nodes),
             user_id=user_id,
             project_uuid=project_uuid,
+        )
+        service_resources: ServiceResourcesDict = await get_project_node_resources(
+            request.app,
+            user_id=user_id,
+            project={
+                "workbench": {
+                    f"{node_uuid}": {"key": service_key, "version": service_version}
+                }
+            },
+            node_id=node_uuid,
         )
         await director_v2_api.run_dynamic_service(
             app=request.app,
