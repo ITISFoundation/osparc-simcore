@@ -1,6 +1,6 @@
 import json
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from aiohttp import web
 from aiopg.sa.result import RowProxy
@@ -20,7 +20,7 @@ class ProjectTypeAPI(str, Enum):
     user = "user"
 
     @classmethod
-    def to_project_type_db(cls, api_type: "ProjectTypeAPI") -> Optional[ProjectType]:
+    def to_project_type_db(cls, api_type: "ProjectTypeAPI") -> ProjectType | None:
         return {
             ProjectTypeAPI.all: None,
             ProjectTypeAPI.template: ProjectType.TEMPLATE,
@@ -41,6 +41,10 @@ def setup_projects_model_schema(app: web.Application):
         project_schema["properties"]["workbench"].pop("patternProperties")
         project_schema["properties"]["ui"]["properties"]["workbench"].pop(
             "patternProperties"
+        )
+        project_schema["properties"]["workbench"].pop("additionalProperties")
+        project_schema["properties"]["ui"]["properties"]["workbench"].pop(
+            "additionalProperties"
         )
 
     if app.get(APP_JSONSCHEMA_SPECS_KEY) is None:
