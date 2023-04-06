@@ -115,6 +115,9 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
 
       const contentTestimonials = this.__createContentTestimonials();
       this._add(contentTestimonials);
+
+      const contentTemplates = this.__createContentTemplates();
+      this._add(contentTemplates);
     },
 
     __createContentTryItOut: function() {
@@ -620,6 +623,74 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       });
       contentLayout.add(usersLayout);
 
+      return contentLayout;
+    },
+
+    __createContentTemplates: function() {
+      const contentLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(30).set({
+        alignX: "center",
+        alignY: "middle"
+      }));
+
+      const createTemplateCard = (image, title, link) => {
+        const grid = new qx.ui.layout.Grid(10, 10);
+        grid.setColumnAlign(0, "center", "bottom");
+        const templateCard = new qx.ui.container.Composite(grid).set({
+          allowGrowX: false
+        });
+        const testimonyImage = new qx.ui.basic.Image(image).set({
+          scale: true,
+          maxWidth: 200,
+          maxHeight: 160
+        });
+        templateCard.add(testimonyImage, {
+          row: 0,
+          column: 0
+        });
+        const testimonyLabel = new qx.ui.basic.Label(title).set({
+          font: "text-18",
+          width: 200,
+          rich: true,
+          wrap: true,
+          textAlign: "center"
+        });
+        templateCard.add(testimonyLabel, {
+          row: 1,
+          column: 0
+        });
+        const tryItOutButton = new qx.ui.form.Button().set({
+          appearance: "strong-button",
+          label: this.tr("Try it out"),
+          font: "text-18",
+          center: true,
+          padding: 10,
+          allowGrowX: false,
+          width: 160
+        });
+        tryItOutButton.addListener("tap", () => window.open(link, "_blank"));
+        templateCard.add(tryItOutButton, {
+          row: 2,
+          column: 0
+        });
+        return templateCard;
+      };
+      [{
+        image: "https://github.com/KZzizzle/osparc_images/blob/master/catmap.JPG?raw=true",
+        title: "CNN Trainer",
+        link: "https://osparc.io/study/b31f2b80-996e-11eb-9a48-02420a0b0129"
+      }, {
+        image: "https://github.com/KZzizzle/osparc_images/blob/master/SPARC_Report%20(1).png?raw=true",
+        title: "SPARC Sample Report",
+        link: "https://osparc.io/study/733ddc42-c7a3-11eb-8a4e-02420a0b01de"
+      }, {
+        image: "https://drive.google.com/uc?id=1w8zGcZlpODX8vYu0_eIJ_HQnds-T8MI9",
+        title: "SPARC Metadata Editor",
+        link: "https://osparc.io/study/6e0dfe20-1bab-11ed-b162-02420a0b0093"
+      }, {
+        image: "https://assets.discover.pennsieve.io/dataset-assets/84/1/banner.jpg",
+        title: "Neurofauna Rat",
+        link: "https://osparc.io/study/13b9ed12-e7aa-11ea-9b21-02420a0b001d"
+      }].forEach(template => contentLayout.add(createTemplateCard(template.image, template.title, template.link)));
       return contentLayout;
     }
   }
