@@ -112,6 +112,9 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
 
       const contentPhysics = this.__createContentPhysics();
       this._add(contentPhysics);
+
+      const contentTestimonials = this.__createContentTestimonials();
+      this._add(contentTestimonials);
     },
 
     __createContentTryItOut: function() {
@@ -435,9 +438,8 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       });
       contentLayout.add(text2);
 
-      const layout = new qx.ui.layout.Grid(20, 10);
-
-      const stepsGrid = new qx.ui.container.Composite(layout).set({
+      const grid = new qx.ui.layout.Grid(20, 10);
+      const gridLayout = new qx.ui.container.Composite(grid).set({
         allowGrowX: false
       });
       [{
@@ -461,19 +463,19 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         title: "Acoustics",
         text: "Sim4Life offers a novel full-wave Acoustics Solver (P-ACOUSTICS) based on the linear pressure wave equation (LAPWE), extended and optimized for heterogeneous, lossy materials for the modeling of the propagation of pressure waves through highly inhomogeneous media like tissue and bone."
       }].forEach((physics, idx) => {
-        layout.setColumnAlign(idx, "center", "top");
-        layout.setRowAlign(0, "center", "middle"); // image
+        grid.setColumnAlign(idx, "center", "top");
+        grid.setRowAlign(0, "center", "middle"); // image
 
         const verticalCard = this.self().createVerticalCard(physics.image, physics.title, physics.text);
         const text = verticalCard.getChildren()[2];
         text.set({
           height: 230
         });
-        stepsGrid.add(text, {
+        gridLayout.add(text, {
           row: 2,
           column: idx
         });
-        stepsGrid.add(verticalCard.getChildren()[1], {
+        gridLayout.add(verticalCard.getChildren()[1], {
           row: 1,
           column: idx
         });
@@ -485,12 +487,138 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         image.getContentElement().setStyles({
           "border-radius": "8px"
         });
-        stepsGrid.add(image, {
+        gridLayout.add(image, {
           row: 0,
           column: idx
         });
       });
-      contentLayout.add(stepsGrid);
+      contentLayout.add(gridLayout);
+
+      return contentLayout;
+    },
+
+    __createContentTestimonials: function() {
+      const contentLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
+        alignX: "center",
+        alignY: "middle"
+      }));
+
+      const grid = new qx.ui.layout.Grid(20, 20);
+      grid.setColumnAlign(0, "center", "bottom");
+      const testimonyGrid = new qx.ui.container.Composite(grid).set({
+        allowGrowX: false
+      });
+      const testimonyImage = new qx.ui.basic.Image().set({
+        scale: true,
+        maxWidth: 200,
+        maxHeight: 50
+      });
+      testimonyGrid.add(testimonyImage, {
+        row: 0,
+        column: 0
+      });
+      const testimonyLabel = new qx.ui.basic.Label().set({
+        font: "text-18",
+        width: 300,
+        rich: true,
+        wrap: true,
+        textAlign: "center"
+      });
+      testimonyGrid.add(testimonyLabel, {
+        row: 1,
+        column: 0
+      });
+      const testimoneerName = new qx.ui.basic.Label().set({
+        font: "text-16",
+        width: 300,
+        rich: true,
+        wrap: true,
+        textAlign: "center"
+      });
+      testimonyGrid.add(testimoneerName, {
+        row: 2,
+        column: 0
+      });
+      const testimoneerPosition = new qx.ui.basic.Label().set({
+        font: "text-14",
+        width: 300,
+        rich: true,
+        wrap: true,
+        textAlign: "center"
+      });
+      testimonyGrid.add(testimoneerPosition, {
+        row: 3,
+        column: 0
+      });
+      contentLayout.add(testimonyGrid);
+
+      const usersLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+        alignX: "center",
+        alignY: "middle"
+      }));
+
+      const imageSelected = image => {
+        image.getContentElement().setStyles({
+          "border-width": "2px",
+          "border-radius": "16px",
+          "border-style": "double",
+          "border-color": qx.theme.manager.Color.getInstance().resolve("strong")
+        });
+      };
+      const imageUnselected = image => {
+        image.getContentElement().setStyles({
+          "border-width": "0px",
+          "border-radius": "16px"
+        });
+      };
+      const images = [];
+      const size = 48;
+      [{
+        user: "https://media.licdn.com/dms/image/C5603AQHs0nDSqMOHUg/profile-displayphoto-shrink_800_800/0/1583841526403?e=2147483647&v=beta&t=cCyNaotxPTOCWDG9DZm3YJntF92OTgqlCL5T9kZzBfs",
+        testimoneerCompany: "https://itis.swiss/resources/themes/itis/images/logo.png",
+        testimony: "Thank you guys for your help these past 2 weeks! What an adventure :). Looking forward to the next one!",
+        testimoneerName: "Taylor Newton",
+        testimoneerPosition: "Descendant of Brook and Isaac"
+      }, {
+        user: "https://media.licdn.com/dms/image/C4E03AQEPdUlmt0gOZg/profile-displayphoto-shrink_800_800/0/1516647993074?e=2147483647&v=beta&t=Ri3GONAT3ViT2TyzOVvMBRRpEQOiUusnalPMGl4tES8",
+        testimoneerCompany: "https://mms.businesswire.com/media/20221108005198/en/1628061/5/9001608_00_logo-ndd.jpg",
+        testimony: "Uh oh, I think the study you seek has been deleted from AWS production!",
+        testimoneerName: "Katie Zhuang",
+        testimoneerPosition: "Technical Product Manager"
+      }].forEach((user, idx) => {
+        const image = new qx.ui.basic.Image().set({
+          source: user.user,
+          scale: true,
+          maxWidth: size,
+          maxHeight: size,
+          cursor: "pointer"
+        });
+        images.push(image);
+        image.addListener("tap", () => {
+          testimonyImage.setSource(user.testimoneerCompany);
+          testimonyLabel.setValue(user.testimony);
+          testimoneerName.setValue(user.testimoneerName);
+          testimoneerPosition.setValue(user.testimoneerPosition);
+        });
+        image.getContentElement().setStyles({
+          "border-radius": "16px"
+        });
+        if (idx === 0) {
+          testimonyImage.setSource(user.testimoneerCompany);
+          testimonyLabel.setValue(user.testimony);
+          testimoneerName.setValue(user.testimoneerName);
+          testimoneerPosition.setValue(user.testimoneerPosition);
+          imageSelected(image);
+        }
+        usersLayout.add(image);
+      });
+      images.forEach(image => {
+        image.addListener("tap", () => {
+          images.forEach(img => imageUnselected(img));
+          imageSelected(image);
+        });
+      });
+      contentLayout.add(usersLayout);
 
       return contentLayout;
     }
