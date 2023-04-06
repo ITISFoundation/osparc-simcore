@@ -130,7 +130,7 @@ qx.Class.define("osparc.Application", {
                 const studyId = urlFragment.nav[1];
                 this.__loadMainPage(studyId);
               })
-              .catch(() => this.__loadLoginPage(osparc.utils.Utils.isInZ43()));
+              .catch(() => this.__loadLoginPage(osparc.utils.Utils.isMaster()));
           }
           break;
         }
@@ -294,7 +294,7 @@ qx.Class.define("osparc.Application", {
               this.__loadMainPage();
             }
           })
-          .catch(() => this.__loadLoginPage(osparc.utils.Utils.isInZ43()));
+          .catch(() => this.__loadLoginPage(osparc.utils.Utils.isMaster()));
       }
     },
 
