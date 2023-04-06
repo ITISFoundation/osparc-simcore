@@ -348,7 +348,7 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     isMaster: function() {
-      return window.location.hostname.includes("speag") || window.location.hostname.includes("master");
+      return window.location.hostname.includes("master.speag");
     },
 
     addBorder: function(widget, width = 1, color = "transparent") {
