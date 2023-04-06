@@ -31,25 +31,90 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
     this.buildLayout();
   },
 
-  members: {
-    buildLayout: function() {
-      const content1 = this.__createContent1();
-      this._add(content1);
-
-      const content2 = this.__createContent2();
-      this._add(content2);
-
-      const content3 = this.__createContent3();
-      this._add(content3);
-
-      const content4 = this.__createContent4();
-      this._add(content4);
-
-      const content5 = this.__createContent5();
-      this._add(content5);
+  statics: {
+    createTabPage: function(title, imageSrc, text) {
+      const page = new qx.ui.tabview.Page(title);
+      page.setLayout(new qx.ui.layout.HBox(10));
+      const tabButton = page.getChildControl("button");
+      tabButton.set({
+        alignX: "right"
+      });
+      tabButton.getChildControl("label").set({
+        font: "text-16",
+        textAlign: "right",
+        alignX: "right",
+        width: 220
+      });
+      const image = new qx.ui.basic.Image(imageSrc).set({
+        width: 600,
+        height: 350,
+        scale: true
+      });
+      page.add(image);
+      const label = new qx.ui.basic.Label(text).set({
+        font: "text-16",
+        width: 200,
+        rich: true,
+        wrap: true,
+        alignY: "middle"
+      });
+      page.add(label);
+      return page;
     },
 
-    __createContent1: function() {
+    createVerticalCard: function(imageSrc, title, text) {
+      const stepLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(15).set({
+        alignX: "center",
+        alignY: "middle"
+      }));
+      const image = new qx.ui.basic.Image(imageSrc).set({
+        width: 325,
+        height: 230,
+        scale: true
+      });
+      stepLayout.add(image);
+      const labelTitle = new qx.ui.basic.Label(title).set({
+        font: "text-20",
+        textAlign: "center",
+        width: 220,
+        rich: true,
+        wrap: true
+      });
+      stepLayout.add(labelTitle);
+      const labelText = new qx.ui.basic.Label(text).set({
+        font: "text-16",
+        textAlign: "center",
+        width: 220,
+        rich: true,
+        wrap: true
+      });
+      stepLayout.add(labelText);
+      return stepLayout;
+    }
+  },
+
+  members: {
+    buildLayout: function() {
+      const contentTryItOut = this.__createContentTryItOut();
+      this._add(contentTryItOut);
+
+      const contentUsers = this.__createContentUsers();
+      this._add(contentUsers);
+
+      const contentTabbedLaptop = this.__createContentTabbedLaptop();
+      this._add(contentTabbedLaptop);
+
+      const content3Tabs = this.__createContent3Tabs();
+      this._add(content3Tabs);
+
+      const contentPartners = this.__createContentPartners();
+      this._add(contentPartners);
+
+      const contentPhysics = this.__createContentPhysics();
+      this._add(contentPhysics);
+    },
+
+    __createContentTryItOut: function() {
       const contentLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(50).set({
         alignX: "center",
         alignY: "middle"
@@ -111,7 +176,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       return contentLayout;
     },
 
-    __createContent2: function() {
+    __createContentUsers: function() {
       const contentLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
         alignX: "center",
         alignY: "middle"
@@ -188,37 +253,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       return contentLayout;
     },
 
-    __createTabPage: function(title, imageSrc, text) {
-      const page = new qx.ui.tabview.Page(title);
-      page.setLayout(new qx.ui.layout.HBox(10));
-      const tabButton = page.getChildControl("button");
-      tabButton.set({
-        alignX: "right"
-      });
-      tabButton.getChildControl("label").set({
-        font: "text-16",
-        textAlign: "right",
-        alignX: "right",
-        width: 220
-      });
-      const image = new qx.ui.basic.Image(imageSrc).set({
-        width: 600,
-        height: 350,
-        scale: true
-      });
-      page.add(image);
-      const label = new qx.ui.basic.Label(text).set({
-        font: "text-16",
-        width: 200,
-        rich: true,
-        wrap: true,
-        alignY: "middle"
-      });
-      page.add(label);
-      return page;
-    },
-
-    __createContent3: function() {
+    __createContentTabbedLaptop: function() {
       const contentLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
         alignX: "center",
         alignY: "middle"
@@ -261,7 +296,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         image: "https://www.simscale.com/wp-content/uploads/2022/11/pricing-page-laptop-1.png",
         text: "Capex-free, low ‘total cost of ownership’. Economically viable from a single user to 100s of seats. "
       }].forEach(tab => {
-        const tabPage = this.__createTabPage(tab.title, tab.image, tab.text);
+        const tabPage = this.self().createTabPage(tab.title, tab.image, tab.text);
         tabs.add(tabPage);
       });
       let i = 0;
@@ -278,37 +313,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       return contentLayout;
     },
 
-    __createStep: function(imageSrc, title, text) {
-      const stepLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(15).set({
-        alignX: "center",
-        alignY: "middle"
-      }));
-      const image = new qx.ui.basic.Image(imageSrc).set({
-        width: 325,
-        height: 230,
-        scale: true
-      });
-      stepLayout.add(image);
-      const labelTitle = new qx.ui.basic.Label(title).set({
-        font: "text-20",
-        textAlign: "center",
-        width: 200,
-        rich: true,
-        wrap: true
-      });
-      stepLayout.add(labelTitle);
-      const labelText = new qx.ui.basic.Label(text).set({
-        font: "text-16",
-        textAlign: "center",
-        width: 200,
-        rich: true,
-        wrap: true
-      });
-      stepLayout.add(labelText);
-      return stepLayout;
-    },
-
-    __createContent4: function() {
+    __createContent3Tabs: function() {
       const contentLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
         alignX: "center",
         alignY: "middle"
@@ -351,15 +356,15 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         title: "Post Processing",
         text: "We also have a PP Calc"
       }].forEach(tab => {
-        const tabPage = this.__createStep(tab.image, tab.title, tab.text);
-        stepsLayout.add(tabPage);
+        const verticalCard = this.self().createVerticalCard(tab.image, tab.title, tab.text);
+        stepsLayout.add(verticalCard);
       });
       contentLayout.add(stepsLayout);
 
       return contentLayout;
     },
 
-    __createContent5: function() {
+    __createContentPartners: function() {
       const contentLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
         alignX: "center",
         alignY: "middle"
@@ -374,7 +379,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       });
       contentLayout.add(text1);
 
-      const partnersLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(30).set({
+      const partnersLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(50).set({
         alignX: "center",
         alignY: "middle"
       }));
@@ -400,6 +405,85 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         partnersLayout.add(image);
       });
       contentLayout.add(partnersLayout);
+
+      return contentLayout;
+    },
+
+    __createContentPhysics: function() {
+      const contentLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
+        alignX: "center",
+        alignY: "middle"
+      }));
+
+      const text1 = new qx.ui.basic.Label().set({
+        value: this.tr("AVAILABLE PHYSICS"),
+        font: "text-18",
+        textAlign: "center",
+        width: 360,
+        rich: true,
+        wrap: true
+      });
+      contentLayout.add(text1);
+
+      const text2 = new qx.ui.basic.Label().set({
+        value: this.tr("A broad range of physics based on best-of-breed simulation solvers"),
+        font: "text-24",
+        textAlign: "center",
+        width: 450,
+        rich: true,
+        wrap: true
+      });
+      contentLayout.add(text2);
+
+      const layout = new qx.ui.layout.Grid(20, 10);
+
+      const stepsGrid = new qx.ui.container.Composite(layout);
+      [{
+        image: "https://zmt.swiss/assets/images/sim4life/physics_models/EM01b.jpg",
+        title: "EM Full Wave",
+        text: "The Electromagnetics Full Wave Solvers (P-EM-FDTD) enable accelerated full-wave, large-scale EM modeling (> billion voxels) with Yee discretization on geometrically adaptive, inhomogeneous, rectilinear meshes with conformal sub-cell correction and thin layer models, with support for dispersive materials."
+      }, {
+        image: "https://zmt.swiss/assets/images/sim4life/physics_models/EM02b.jpg",
+        title: "Quasi-Static EM",
+        text: "The Quasi-Static Electromagnetic Solvers (P-EM-QS) enable the efficient modeling of static and quasi-static EM regimes by applying the finite element method on graded voxel meshes."
+      }, {
+        image: "https://zmt.swiss/assets/images/sim4life/physics_models/thermo01b.jpg",
+        title: "Thermodynamics",
+        text: "The Thermodynamic Solvers (P-THERMAL) enable the modeling of heat transfer in living tissue using advanced perfusion and thermoregulation models."
+      }, {
+        image: "https://zmt.swiss/assets/images/sim4life/tissue_models/vagusnerve.png",
+        title: "Neuronal Models",
+        text: "The Neuronal Tissue Models (T-NEURO) enable the dynamic modeling of EM-induced neuronal activation, inhibition, and synchronization using either complex, multi-compartmental representations of axons, neurons, and neuronal networks with varying channel dynamics, or generic models."
+      }, {
+        image: "https://zmt.swiss/assets/images/sim4life/physics_models/acoustics01B.jpg",
+        title: "Acoustics",
+        text: "Sim4Life offers a novel full-wave Acoustics Solver (P-ACOUSTICS) based on the linear pressure wave equation (LAPWE), extended and optimized for heterogeneous, lossy materials for the modeling of the propagation of pressure waves through highly inhomogeneous media like tissue and bone."
+      }].forEach((physics, idx) => {
+        layout.setColumnAlign(0, "center", "top");
+
+        const verticalCard = this.self().createVerticalCard(physics.image, physics.title, physics.text);
+        stepsGrid.add(verticalCard.getChildren()[2], {
+          row: 2,
+          column: idx
+        });
+        stepsGrid.add(verticalCard.getChildren()[1], {
+          row: 1,
+          column: idx
+        });
+        const image = verticalCard.getChildren()[0];
+        image.set({
+          width: 260,
+          height: 180
+        });
+        image.getContentElement().setStyles({
+          "border-radius": "8px"
+        });
+        stepsGrid.add(image, {
+          row: 0,
+          column: idx
+        });
+      });
+      contentLayout.add(stepsGrid);
 
       return contentLayout;
     }
