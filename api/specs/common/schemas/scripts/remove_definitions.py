@@ -1,3 +1,4 @@
+import argparse
 import logging
 import sys
 from pathlib import Path
@@ -12,11 +13,17 @@ schemas_dir = current_dir.parent
 
 
 if __name__ == "__main__":
-    source_file_name = sys.argv[1]
-    target_file_name = sys.argv[2]
 
-    file_source_path = schemas_dir / source_file_name
-    file_target_path = schemas_dir / target_file_name
+    parser = argparse.ArgumentParser(
+        "Remove Definitions",
+        description="prunes 'definitions' from json-schemas in 'source_file_name' and dumps it into 'target_file_name'",
+    )
+    parser.add_argument("source_file_name", type=str)
+    parser.add_argument("target_file_name", type=str)
+    args = parser.parse_args()
+
+    file_source_path: Path = schemas_dir / args.source_file_name
+    file_target_path: Path = schemas_dir / args.target_file_name
 
     try:
         data = yaml.safe_load(file_source_path.read_text())
