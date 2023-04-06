@@ -130,7 +130,7 @@ qx.Class.define("osparc.Application", {
                 const studyId = urlFragment.nav[1];
                 this.__loadMainPage(studyId);
               })
-              .catch(() => this.__loadLoginPage());
+              .catch(() => this.__loadLoginPage(osparc.utils.Utils.isInZ43()));
           }
           break;
         }
@@ -294,21 +294,22 @@ qx.Class.define("osparc.Application", {
               this.__loadMainPage();
             }
           })
-          .catch(() => this.__loadLoginPage());
+          .catch(() => this.__loadLoginPage(osparc.utils.Utils.isInZ43()));
       }
     },
 
-    __loadLoginPage: function() {
+    __loadLoginPage: function(landingPage = false) {
       this.__disconnectWebSocket();
       let view = null;
       switch (qx.core.Environment.get("product.name")) {
         case "s4l":
         case "s4llite":
-          view = new osparc.product.landingPage.s4llite.Page();
-          view.addListener("loginPressed", () => {
-            const loginView = new osparc.auth.LoginPageS4L();
-            this.__loadView(loginView);
-          });
+          if (landingPage) {
+            view = new osparc.product.landingPage.s4llite.Page();
+            view.addListener("loginPressed", () => this.__loadLoginPage(false));
+          } else {
+            view = new osparc.auth.LoginPageS4L();
+          }
           this.__loadView(view);
           break;
         case "tis":
