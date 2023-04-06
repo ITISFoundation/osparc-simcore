@@ -22,12 +22,12 @@ since we are aware that future releases of pydantic will address part of the fea
 Usage of these tools are demonstrated in packages/models-library/tests/test_utils_pydantic_models_factory.py
 """
 import json
+import typing
 import warnings
-from typing import Dict, Iterable, Optional, Set, Tuple, Type
+from typing import Iterable, Optional
 
-from pydantic import BaseModel, create_model, validator
+from pydantic import BaseModel, Field, create_model, validator
 from pydantic.fields import ModelField, Undefined
-from pydantic.main import BaseConfig
 
 warnings.warn(
     "This is still a concept under development. "
@@ -38,7 +38,7 @@ warnings.warn(
 )
 
 
-def collect_fields_attrs(model_cls: Type[BaseModel]) -> Dict[str, Dict[str, str]]:
+def collect_fields_attrs(model_cls: type[BaseModel]) -> dict[str, dict[str, str]]:
     """
 
     >>> class MyModel(BaseModel):
@@ -100,33 +100,37 @@ def collect_fields_attrs(model_cls: Type[BaseModel]) -> Dict[str, Dict[str, str]
 
 def _eval_selection(
     model_fields: Iterable[ModelField],
-    include: Optional[Set[str]],
-    exclude: Optional[Set[str]],
+    include: set[str] | None,
+    exclude: set[str] | None,
     exclude_optionals: bool,
-) -> Set[str]:
+) -> set[str]:
     # TODO: use dict for deep include/exclude! SEE https://pydantic-docs.helpmanual.io/usage/exporting_models/
 
     if include is None:
-        include = set(f.name for f in model_fields)
+        include = {f.name for f in model_fields}
     if exclude is None:
         exclude = set()
     if exclude_optionals:
-        exclude = exclude.union(
-            set(f.name for f in model_fields if f.required == False)
-        )
+        exclude = exclude.union({f.name for f in model_fields if f.required == False})
 
     selection = include - exclude
     return selection
 
 
+def has_optional(t: type):
+    origin = typing.get_origin(t)
+    args = typing.get_args(t)
+    return origin is not None and origin is typing.Union and type(None) in args
+
+
 def _extract_field_definitions(
-    model_cls: Type[BaseModel],
+    model_cls: type[BaseModel],
     *,
-    include: Optional[Set[str]],
-    exclude: Optional[Set[str]],
+    include: set[str] | None,
+    exclude: set[str] | None,
     exclude_optionals: bool,
     set_all_optional: bool,
-) -> Dict[str, Tuple]:
+) -> dict[str, tuple]:
     """
     Returns field_definitions: fields of the model in the format
         `<name>=(<type>, <default default>)` or `<name>=<default value>`,
@@ -148,28 +152,58 @@ def _extract_field_definitions(
 
     for field in model_cls.__fields__.values():
         if field.name in field_names:
-            field_definitions[field.name] = (
-                # <type>
-                field.type_ if field.type_ == field.outer_type_ else field.outer_type_,
-                # <default value>
-                field.default
-                or field.default_factory
-                or (None if set_all_optional or not field.required else Undefined),
+            annotation = (
+                field.type_ if field.type_ == field.outer_type_ else field.outer_type_
             )
+            if set_all_optional and not has_optional:
+                annotation = Optional[annotation]
+
+            field_info = Field(
+                default=(
+                    field.default
+                    or field.default_factory
+                    or (None if set_all_optional or not field.required else Undefined)
+                ),
+                default_factory=field.default_factory,
+                alias=field.alias,
+                title=field.title,
+                description=field.description,
+                exclude=field.exclude,
+                include=field.include,
+                const=field.const,
+                gt=field.gt,
+                ge=field.ge,
+                lt=field.lt,
+                le=field.le,
+                multiple_of=field.multiple_of,
+                max_digits=field.max_digits,
+                decimal_places=field.decimal_places,
+                min_items=field.min_items,
+                max_items=field.max_items,
+                unique_items=field.unique_items,
+                min_length=field.min_length,
+                max_length=field.max_length,
+                allow_mutation=field.allow_mutation,
+                regex=field.regex,
+                discriminator=field.discriminator,
+                repr=field.repr,
+                **field.extras,
+            )
+            field_definitions[field.name] = (annotation, field_info)
     return field_definitions
 
 
 def copy_model(
-    reference_cls: Type[BaseModel],
+    reference_cls: type[BaseModel],
     *,
     name: str = None,
-    include: Optional[Set[str]] = None,
-    exclude: Optional[Set[str]] = None,
+    include: set[str] | None = None,
+    exclude: set[str] | None = None,
     exclude_optionals: bool = False,
     as_update_model: bool = False,
     skip_validators: bool = False,
-    __config__: Type[BaseConfig] = None,
-) -> Type[BaseModel]:
+    __base__: None | type[BaseModel] | tuple[type[BaseModel], ...] = None,
+) -> type[BaseModel]:
     """
     Creates a clone of `reference_cls` with a different name and a subset of fields
 
@@ -190,7 +224,7 @@ def copy_model(
 
     # VALIDATORS
 
-    validators_funs: Dict[str, classmethod] = {}
+    validators_funs: dict[str, classmethod] = {}
     # A dict of method names and @validator class methods
     # SEE example in https://pydantic-docs.helpmanual.io/usage/models/#dynamic-model-creation
     if not skip_validators and reference_cls != BaseModel:
@@ -202,8 +236,7 @@ def copy_model(
 
     new_model_cls = create_model(
         name,
-        __config__=__config__,
-        __base__=BaseModel,
+        __base__=__base__,
         __module__=reference_cls.__module__,
         __validators__=validators_funs,
         **fields_definitions,
