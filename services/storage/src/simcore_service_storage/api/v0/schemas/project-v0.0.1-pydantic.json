@@ -321,6 +321,7 @@
                         },
                         "label": {
                           "title": "Label",
+                          "description": "Display name",
                           "type": "string"
                         }
                       },
@@ -546,6 +547,7 @@
                         },
                         "label": {
                           "title": "Label",
+                          "description": "Display name",
                           "type": "string"
                         }
                       },
@@ -1093,7 +1095,6 @@
     "quality": {
       "title": "Quality",
       "description": "stores the study quality assessment",
-      "default": {},
       "type": "object"
     },
     "dev": {
@@ -1288,6 +1289,7 @@
         },
         "label": {
           "title": "Label",
+          "description": "Display name",
           "type": "string"
         }
       },
@@ -1677,6 +1679,7 @@
                     },
                     "label": {
                       "title": "Label",
+                      "description": "Display name",
                       "type": "string"
                     }
                   },
@@ -1902,6 +1905,7 @@
                     },
                     "label": {
                       "title": "Label",
+                      "description": "Display name",
                       "type": "string"
                     }
                   },
