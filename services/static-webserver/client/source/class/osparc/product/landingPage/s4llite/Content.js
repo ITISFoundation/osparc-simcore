@@ -37,13 +37,16 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       page.setLayout(new qx.ui.layout.HBox(10));
       const tabButton = page.getChildControl("button");
       tabButton.set({
+        padding: 10,
+        paddingTop: 20,
+        paddingBottom: 20,
         alignX: "right"
       });
       tabButton.getChildControl("label").set({
         font: "text-16",
         textAlign: "right",
         alignX: "right",
-        width: 220
+        width: 240
       });
       const image = new qx.ui.basic.Image(imageSrc).set({
         width: 600,
