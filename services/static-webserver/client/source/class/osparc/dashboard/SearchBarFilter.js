@@ -45,7 +45,9 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     getSharedWithOptions: function(resourceType) {
       return [{
         id: "show-all",
-        label: qx.locale.Manager.tr("Show all")
+        label: qx.locale.Manager.tr("All ") + osparc.utils.Utils.resourceTypeToAlias(resourceType, {
+          plural: true
+        })
       }, {
         id: "my-studies",
         label: qx.locale.Manager.tr("My ") + osparc.utils.Utils.resourceTypeToAlias(resourceType, {
@@ -56,6 +58,10 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         label: qx.locale.Manager.tr("Shared with me")
       }];
     }
+  },
+
+  events: {
+    "filterChanged": "qx.event.type.Data"
   },
 
   members: {
@@ -69,6 +75,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           control = new qx.ui.basic.Image("@FontAwesome5Solid/search/16").set({
             backgroundColor: "transparent",
             alignY: "middle",
+            paddingLeft: 6,
             opacity: 0.5
           });
           this._add(control);
@@ -93,7 +100,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           control = new qx.ui.toolbar.Button(null, "@MaterialIcons/close/12").set({
             backgroundColor: "transparent",
             paddingLeft: 0,
-            paddingRight: 0,
+            paddingRight: 2,
             alignY: "middle",
             opacity: 0.7
           });
@@ -318,6 +325,11 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
             break;
         }
       });
+      this.__filterChange(filterData);
+    },
+
+    __filterChange: function(filterData) {
+      this.fireDataEvent("filterChanged", filterData);
       this._filterChange(filterData);
     }
   }

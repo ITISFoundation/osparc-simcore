@@ -166,10 +166,10 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
 
       const updateAllButton = this.__createUpdateAllButton();
       if (updateAllButton) {
-        this._secondaryBar.add(updateAllButton);
+        this._toolbar.add(updateAllButton);
       }
 
-      this._secondaryBar.add(new qx.ui.core.Spacer(), {
+      this._toolbar.add(new qx.ui.core.Spacer(), {
         flex: 1
       });
       this._addGroupByButton();
@@ -270,6 +270,11 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       const shareButton = this._getShareMenuButton(card);
       if (shareButton) {
         menu.add(shareButton);
+      }
+
+      const tagsButton = this._getTagsMenuButton(card);
+      if (tagsButton) {
+        menu.add(tagsButton);
       }
 
       const moreInfoButton = this._getMoreOptionsMenuButton(studyData);
