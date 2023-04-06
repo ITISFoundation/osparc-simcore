@@ -26,9 +26,9 @@ qx.Class.define("osparc.product.landingPage.s4llite.Footer", {
     }));
 
     this.set({
-      padding: 50,
-      paddingLeft: 200,
-      paddingRight: 200,
+      padding: 30,
+      paddingLeft: 250,
+      paddingRight: 250,
       backgroundColor: "background-main-2"
     });
 
@@ -49,10 +49,13 @@ qx.Class.define("osparc.product.landingPage.s4llite.Footer", {
     },
 
     __createSocialNetworks: function() {
-      const socialNetworksLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+      const socialNetworksLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
 
       const createSociaNetworkIcon = (image, link) => {
         const sociaNetworkIcon = new qx.ui.basic.Image(image).set({
+          maxWidth: 28,
+          maxHeight: 28,
+          scale: true,
           alignY: "middle",
           cursor: "pointer"
         });
@@ -60,13 +63,13 @@ qx.Class.define("osparc.product.landingPage.s4llite.Footer", {
         return sociaNetworkIcon;
       };
       [{
-        image: "@FontAwesome5Solid/facebook/28",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/2021_Facebook_icon.svg/2048px-2021_Facebook_icon.svg.png",
         link: "https://www.facebook.com/itisfoundation/"
       }, {
-        image: "@FontAwesome5Solid/youtube/28",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/YouTube_full-color_icon_%282017%29.svg/2560px-YouTube_full-color_icon_%282017%29.svg.png",
         link: "https://www.youtube.com/@zurichmedtechag2809"
       }, {
-        image: "@FontAwesome5Solid/linked/28",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/LinkedIn_icon.svg/2048px-LinkedIn_icon.svg.png",
         link: "https://ch.linkedin.com/company/itis-foundation"
       }].forEach(template => socialNetworksLayout.add(createSociaNetworkIcon(template.image, template.link)));
 
