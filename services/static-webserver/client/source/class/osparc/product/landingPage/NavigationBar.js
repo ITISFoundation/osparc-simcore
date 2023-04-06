@@ -35,6 +35,10 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
     this.buildLayout();
   },
 
+  events: {
+    "loginPressed": "qx.event.type.Event"
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
@@ -156,7 +160,7 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
         icon: "@FontAwesome5Solid/edit/14",
         appearance: "strong-button"
       });
-      loginButton.addListener("execute", () => window.open(window.location.href, "_blank"));
+      loginButton.addListener("execute", () => this.fireEvent("loginPressed"));
       return loginButton;
     }
   }

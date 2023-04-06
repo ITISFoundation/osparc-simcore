@@ -305,6 +305,10 @@ qx.Class.define("osparc.Application", {
         case "s4l":
         case "s4llite":
           view = new osparc.product.landingPage.s4llite.Page();
+          view.addListener("loginPressed", () => {
+            const loginView = new osparc.auth.LoginPageS4L();
+            this.__loadView(loginView);
+          });
           this.__loadView(view);
           break;
         case "tis":
