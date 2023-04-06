@@ -640,8 +640,8 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         });
         const testimonyImage = new qx.ui.basic.Image(image).set({
           scale: true,
-          maxWidth: 200,
-          maxHeight: 160
+          maxWidth: 190,
+          maxHeight: 150
         });
         templateCard.add(testimonyImage, {
           row: 0,
@@ -649,7 +649,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         });
         const testimonyLabel = new qx.ui.basic.Label(title).set({
           font: "text-18",
-          width: 200,
+          width: 190,
           rich: true,
           wrap: true,
           textAlign: "center"
@@ -665,7 +665,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
           center: true,
           padding: 10,
           allowGrowX: false,
-          width: 160
+          width: 150
         });
         tryItOutButton.addListener("tap", () => window.open(link, "_blank"));
         templateCard.add(tryItOutButton, {
