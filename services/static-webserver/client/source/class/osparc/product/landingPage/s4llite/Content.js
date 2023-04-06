@@ -437,7 +437,9 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
 
       const layout = new qx.ui.layout.Grid(20, 10);
 
-      const stepsGrid = new qx.ui.container.Composite(layout);
+      const stepsGrid = new qx.ui.container.Composite(layout).set({
+        allowGrowX: false
+      });
       [{
         image: "https://zmt.swiss/assets/images/sim4life/physics_models/EM01b.jpg",
         title: "EM Full Wave",
@@ -459,10 +461,15 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         title: "Acoustics",
         text: "Sim4Life offers a novel full-wave Acoustics Solver (P-ACOUSTICS) based on the linear pressure wave equation (LAPWE), extended and optimized for heterogeneous, lossy materials for the modeling of the propagation of pressure waves through highly inhomogeneous media like tissue and bone."
       }].forEach((physics, idx) => {
-        layout.setColumnAlign(0, "center", "top");
+        layout.setColumnAlign(idx, "center", "top");
+        layout.setRowAlign(0, "center", "middle"); // image
 
         const verticalCard = this.self().createVerticalCard(physics.image, physics.title, physics.text);
-        stepsGrid.add(verticalCard.getChildren()[2], {
+        const text = verticalCard.getChildren()[2];
+        text.set({
+          height: 230
+        });
+        stepsGrid.add(text, {
           row: 2,
           column: idx
         });
@@ -472,7 +479,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         });
         const image = verticalCard.getChildren()[0];
         image.set({
-          width: 260,
+          width: 240,
           height: 180
         });
         image.getContentElement().setStyles({
