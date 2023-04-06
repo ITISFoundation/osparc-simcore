@@ -118,6 +118,9 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
 
       const contentTemplates = this.__createContentTemplates();
       this._add(contentTemplates);
+
+      const contentCreateAccount = this.__createContentCreateAccount();
+      this._add(contentCreateAccount);
     },
 
     __createContentTryItOut: function() {
@@ -667,6 +670,9 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
           allowGrowX: false,
           width: 150
         });
+        tryItOutButton.getContentElement().setStyles({
+          "border-radius": "8px"
+        });
         tryItOutButton.addListener("tap", () => window.open(link, "_blank"));
         templateCard.add(tryItOutButton, {
           row: 2,
@@ -692,6 +698,60 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         link: "https://osparc.io/study/13b9ed12-e7aa-11ea-9b21-02420a0b001d"
       }].forEach(template => contentLayout.add(createTemplateCard(template.image, template.title, template.link)));
       return contentLayout;
+    },
+
+    __createContentCreateAccount: function() {
+      const createAccountLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(15).set({
+        alignX: "center",
+        alignY: "middle"
+      }));
+
+      let message = qx.locale.Manager.tr("Registration is currently only available with an invitation.");
+      message += "<br>";
+      Promise.all([
+        osparc.store.VendorInfo.getInstance().getVendor(),
+        osparc.store.StaticInfo.getInstance().getDisplayName()
+      ])
+        .then(values => {
+          const createAccountLabel = new qx.ui.basic.Label().set({
+            font: "text-18",
+            width: 450,
+            rich: true,
+            wrap: true,
+            textAlign: "center"
+          });
+          createAccountLayout.add(createAccountLabel);
+          const requestAccountButton = new qx.ui.form.Button().set({
+            appearance: "strong-button",
+            label: this.tr("Request account"),
+            font: "text-18",
+            center: true,
+            padding: 20,
+            allowGrowX: false,
+            width: 180
+          });
+          requestAccountButton.getContentElement().setStyles({
+            "border-radius": "8px"
+          });
+          createAccountLayout.add(requestAccountButton);
+          const vendor = values[0];
+          const displayName = values[1];
+          if ("invitation_url" in vendor) {
+            message += qx.locale.Manager.tr("Please request access to ") + displayName + ":";
+            message += "<br>";
+            createAccountLabel.setValue(message);
+            requestAccountButton.addListener("tap", () => window.open(vendor["invitation_url"], "_blank"));
+          } else {
+            message += qx.locale.Manager.tr("Please contact:");
+            createAccountLabel.setValue(message);
+            osparc.store.VendorInfo.getInstance().getSupportEmail()
+              .then(supportEmail => {
+                const mailto = this.getMailToLabel(supportEmail, "Request Account " + displayName);
+                requestAccountButton.addListener("tap", () => window.open(mailto, "_blank"));
+              });
+          }
+        });
+      return createAccountLayout;
     }
   }
 });
