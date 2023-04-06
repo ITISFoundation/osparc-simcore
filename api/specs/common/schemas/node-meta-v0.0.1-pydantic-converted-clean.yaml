@@ -390,7 +390,6 @@ properties:
     type: string
   key:
     description: distinctive name for the node based on the docker registry path
-    example: simcore/services/comp/itis/sleeper
     pattern: ^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$
     title: Key
     type: string
@@ -571,7 +570,6 @@ properties:
     example: computational
   version:
     description: service version number
-    example: 1.0.0
     pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
     title: Version
     type: string

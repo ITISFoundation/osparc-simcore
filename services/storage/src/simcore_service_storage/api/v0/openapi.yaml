@@ -1226,7 +1226,6 @@ components:
           title: Prjowner
           type: string
         quality:
-          default: {}
           description: stores the study quality assessment
           title: Quality
           type: object
@@ -1627,6 +1626,7 @@ components:
                               title: Downloadlink
                               type: string
                             label:
+                              description: Display name
                               title: Label
                               type: string
                           required:
@@ -1781,6 +1781,7 @@ components:
                               title: Downloadlink
                               type: string
                             label:
+                              description: Display name
                               title: Label
                               type: string
                           required:
