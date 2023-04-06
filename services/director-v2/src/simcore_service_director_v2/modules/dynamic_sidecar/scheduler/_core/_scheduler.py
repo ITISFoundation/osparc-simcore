@@ -287,7 +287,7 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
 
     async def is_service_awaiting_manual_intervention(self, node_uuid: NodeID) -> bool:
         """returns True if services is waiting for manual intervention"""
-        return _scheduler_utils.service_awaits_manual_interventions(
+        return await _scheduler_utils.service_awaits_manual_interventions(
             self.get_scheduler_data(node_uuid)
         )
 
