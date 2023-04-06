@@ -503,7 +503,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         alignY: "middle"
       }));
 
-      const grid = new qx.ui.layout.Grid(20, 20);
+      const grid = new qx.ui.layout.Grid(10, 10);
       grid.setColumnAlign(0, "center", "bottom");
       const testimonyGrid = new qx.ui.container.Composite(grid).set({
         allowGrowX: false
@@ -562,7 +562,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
           "border-width": "2px",
           "border-radius": "16px",
           "border-style": "double",
-          "border-color": qx.theme.manager.Color.getInstance().resolve("strong")
+          "border-color": qx.theme.manager.Color.getInstance().resolve("strong-main")
         });
       };
       const imageUnselected = image => {
