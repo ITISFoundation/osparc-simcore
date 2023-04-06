@@ -1,13 +1,14 @@
 """
     Models a study's project document
 """
+import re
 from copy import deepcopy
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Extra, Field, constr, validator
+from pydantic import BaseModel, ConstrainedStr, Extra, Field, constr, validator
 
 from .basic_regex import DATE_RE, UUID_RE_BASE
 from .emails import LowerCaseEmailStr
@@ -55,7 +56,7 @@ class BaseProjectModel(BaseModel):
         description="longer one-line description about the project",
         examples=["Dabbling in temporal transitions ..."],
     )
-    thumbnail: Optional[HttpUrlWithCustomMinLength] = Field(
+    thumbnail: HttpUrlWithCustomMinLength | None = Field(
         ...,
         description="url of the project thumbnail",
         examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
@@ -82,9 +83,9 @@ class ProjectAtDB(BaseProjectModel):
 
     project_type: ProjectType = Field(..., alias="type", description="The project type")
 
-    prj_owner: Optional[int] = Field(..., description="The project owner id")
+    prj_owner: int | None = Field(..., description="The project owner id")
 
-    published: Optional[bool] = Field(
+    published: bool | None = Field(
         False, description="Defines if a study is available publicly"
     )
 
@@ -101,6 +102,14 @@ class ProjectAtDB(BaseProjectModel):
         allow_population_by_field_name = True
 
 
+class DateTimeStr(ConstrainedStr):
+    # TODO: should we use datetime??
+    regex = re.compile(DATE_RE)
+
+    class Config:
+        frozen = True
+
+
 class Project(BaseProjectModel):
     # NOTE: This is the pydantic pendant of project-v0.0.1.json used in the API of the webserver/webclient
     # NOT for usage with DB!!
@@ -110,17 +119,15 @@ class Project(BaseProjectModel):
         ..., description="user email", alias="prjOwner"
     )
 
-    # Timestamps   TODO: should we use datetime??
-    creation_date: str = Field(
+    # Timestamps
+    creation_date: DateTimeStr = Field(
         ...,
-        regex=DATE_RE,
         description="project creation date",
         examples=["2018-07-01T11:13:43Z"],
         alias="creationDate",
     )
-    last_change_date: str = Field(
+    last_change_date: DateTimeStr = Field(
         ...,
-        regex=DATE_RE,
         description="last save date",
         examples=["2018-07-01T11:13:43Z"],
         alias="lastChangeDate",
@@ -132,18 +139,18 @@ class Project(BaseProjectModel):
     )
 
     # Classification
-    tags: Optional[list[int]] = []
-    classifiers: Optional[list[ClassifierID]] = Field(
+    tags: list[int] | None = []
+    classifiers: list[ClassifierID] | None = Field(
         default_factory=list,
         description="Contains the reference to the project classifiers",
         examples=["some:id:to:a:classifier"],
     )
 
     # Project state (SEE projects_state.py)
-    state: Optional[ProjectState] = None
+    state: ProjectState | None = None
 
     # UI front-end setup (SEE projects_ui.py)
-    ui: Optional[StudyUI] = None
+    ui: StudyUI | None = None
 
     # Quality
     quality: dict[str, Any] = Field(
@@ -152,7 +159,7 @@ class Project(BaseProjectModel):
     )
 
     # Dev only
-    dev: Optional[dict] = Field(
+    dev: dict | None = Field(
         default=None, description="object used for development purposes only"
     )
 
