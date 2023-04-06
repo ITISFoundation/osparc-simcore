@@ -25,7 +25,7 @@ from .logging_utils import log_catch
 _DEFAULT_LOCK_TTL: datetime.timedelta = datetime.timedelta(seconds=10)
 
 _MINUTE: Final[NonNegativeFloat] = 60
-_WAIT_SECS: Final[NonNegativeFloat] = 2
+_WAIT_SECS: Final[NonNegativeFloat] = 1
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +71,7 @@ class RedisClientSDK:
         ):
             with attempt:
                 if not await self._client.ping():
-                    await self._client.close(close_connection_pool=True)
+                    await self.shutdown()
                     raise ConnectionError(f"Connection to {self.redis_dsn!r} failed")
                 logger.info(
                     "Connection to %s succeeded with %s [%s]",
