@@ -14,8 +14,9 @@ from pydantic import BaseModel, Field, ValidationError, validator
 from pydantic.networks import HttpUrl
 
 from .._meta import API_VTAG
+from ..products import get_product_name
 from ..utils_aiohttp import envelope_json_response
-from ._catalog import ServiceMetaData, iter_latest_osparc_services
+from ._catalog import ServiceMetaData, iter_latest_product_services
 from ._core import list_viewers_info
 from ._models import ViewerInfo
 from .handlers_redirects import (
@@ -128,9 +129,12 @@ routes = web.RouteTableDef()
 @routes.get(f"/{API_VTAG}/services", name="list_services")
 async def list_services(request: Request):
     """Returns a list latest version of services"""
-    assert request  # nosec
+    product_name = get_product_name(request)
+
     services = []
-    async for service_data in iter_latest_osparc_services(request.app):
+    async for service_data in iter_latest_product_services(
+        request.app, product_name=product_name
+    ):
         try:
             service = ServiceGet.create(service_data, request)
             services.append(service)
