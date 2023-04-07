@@ -5,78 +5,26 @@ from functools import lru_cache
 from typing import Optional
 
 from aiohttp import web
-from aiopg.sa.result import RowProxy
-from models_library.services import ServiceKey, ServiceVersion
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import ValidationError
 from simcore_postgres_database.models.services_consume_filetypes import (
     services_consume_filetypes,
 )
 
 from .._constants import APP_DB_ENGINE_KEY
+from ._exceptions import StudyDispatcherError
+from ._models import ViewerInfo
 
 MEGABYTES = 1024 * 1024
-BASE_UUID = uuid.UUID("ca2144da-eabb-4daf-a1df-a3682050e25f")
+_BASE_UUID = uuid.UUID("ca2144da-eabb-4daf-a1df-a3682050e25f")
 
 
 logger = logging.getLogger(__name__)
 
 
-#
-# ERRORS
-#
-
-
-class StudyDispatcherError(Exception):
-    def __init__(self, reason):
-        super().__init__()
-        self.reason = reason
-
-
-class ViewerInfo(BaseModel):
-    """Here a viewer denotes a service
-      - that supports (i.e. can consume) a specific filetype and
-      - that is available to everyone
-    and therefore it can be dispatched to both guest and active users
-    to visualize a file of that type
-    """
-
-    key: ServiceKey
-    version: ServiceVersion
-
-    label: str = Field(..., description="Display name")
-
-    filetype: str = Field(..., description="Filetype associated to this viewer")
-    input_port_key: str = Field(
-        description="Name of the connection port, since it is service-dependent",
-    )
-
-    is_guest_allowed: bool = True
-
-    @property
-    def footprint(self) -> str:
-        return f"{self.key}:{self.version}"
-
-    @property
-    def title(self) -> str:
-        """human readable title"""
-        return f"{self.label.capitalize()} v{self.version}"
-
-    @classmethod
-    def create_from_db(cls, row: RowProxy) -> "ViewerInfo":
-        return cls(
-            key=row["service_key"],
-            version=row["service_version"],
-            filetype=row["filetype"],
-            label=row["service_display_name"] or row["service_key"].split("/")[-1],
-            input_port_key=row["service_input_port"],
-            is_guest_allowed=row["is_guest_allowed"],
-        )
-
-
 @lru_cache
 def compose_uuid_from(*values) -> uuid.UUID:
     composition: str = "/".join(map(str, values))
-    new_uuid = uuid.uuid5(BASE_UUID, composition)
+    new_uuid = uuid.uuid5(_BASE_UUID, composition)
     return new_uuid
 
 
