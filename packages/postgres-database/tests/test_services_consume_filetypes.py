@@ -22,9 +22,7 @@ from simcore_postgres_database.models.services_consume_filetypes import (
 @pytest.fixture
 def make_table():
     async def _make(conn):
-
         for service in FAKE_FILE_CONSUMER_SERVICES:
-
             await conn.execute(
                 services_meta_data.insert().values(
                     key=service["key"],
@@ -105,7 +103,7 @@ async def test_get_supported_filetypes(conn):
 
     result: ResultProxy = await conn.execute(stmt)
     rows: list[RowProxy] = await result.fetchall()
-    assert [v for row in rows for v in row.values()] == ["DCM", "S4LCacheData"]
+    assert [v for row in rows for v in row.values()] == ["DCM", "S4LCACHEDATA"]
 
 
 async def test_list_supported_filetypes(conn):
