@@ -4,18 +4,23 @@ NOTE: openapi section for these handlers was generated using
    services/web/server/tests/sandbox/viewers_openapi_generator.py
 """
 import logging
+from dataclasses import asdict
 from typing import Optional
 
 from aiohttp import web
 from aiohttp.web import Request
 from models_library.services import ServiceKey
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, validator
 from pydantic.networks import HttpUrl
 
 from .._meta import API_VTAG
 from ..utils_aiohttp import envelope_json_response
+from ._catalog import ServiceMetaData, iter_latest_osparc_services
 from ._core import ViewerInfo, list_viewers_info
-from .handlers_redirects import compose_dispatcher_prefix_url
+from .handlers_redirects import (
+    compose_dispatcher_prefix_url,
+    compose_service_dispatcher_prefix_url,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +73,7 @@ class ServiceGet(BaseModel):
 
     title: str = Field(..., description="Service name for display")
     description: str = Field(..., description="Long description of the service")
-    thumbnail: HttpUrl = Field()
+    thumbnail: HttpUrl = Field(..., description="Url to service thumbnail")
 
     # extra properties
     file_extensions: list[str] = Field(
@@ -82,15 +87,31 @@ class ServiceGet(BaseModel):
         description="Redirection to open a service in osparc (see /view)",
     )
 
+    @classmethod
+    def create(cls, meta: ServiceMetaData, request: web.Request):
+        return cls(
+            view_url=compose_service_dispatcher_prefix_url(
+                request, service_key=meta.key, service_version=meta.version
+            ),
+            **asdict(meta),
+        )
+
+    @validator("file_extensions")
+    @classmethod
+    def remove_dot_prefix_from_extension(cls, v):
+        if v:
+            return [ext.removeprefix(".") for ext in v]
+        return v
+
     class Config:
         schema_extra = {
             "example": {
                 "key": "simcore/services/dynamic/sim4life",
                 "title": "Sim4Life Mattermost",
                 "description": "It is also sim4life for the web",
-                "thumbnail": "https://placeimg.com/640/480/nature",
+                "thumbnail": "https://via.placeholder.com/170x120.png",
                 "file_extensions": ["smash", "h5"],
-                "view_url": "https://osparc.io/view?file_type=CSV&viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=1.2.3",
+                "view_url": "https://host.com/view?viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=1.2.3",
             }
         }
 
@@ -107,17 +128,13 @@ routes = web.RouteTableDef()
 async def list_services(request: Request):
     """Returns a list latest version of services"""
     assert request  # nosec
-    # NOTE: this is temporary for testing
-
-    examples = [
-        ServiceGet.Config.schema_extra["example"],
-    ]
     services = []
-    for service in examples:
+    async for service_data in iter_latest_osparc_services(request.app):
         try:
-            services.append(ServiceGet.parse_obj(service))
+            service = ServiceGet.create(service_data, request)
+            services.append(service)
         except ValidationError as err:
-            logger.debug("Invalid %s: %s", f"{service=}", err)
+            logger.debug("Invalid %s: %s", f"{service_data=}", err)
 
     return envelope_json_response(services)
 

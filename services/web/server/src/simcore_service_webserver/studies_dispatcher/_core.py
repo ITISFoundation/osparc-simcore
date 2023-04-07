@@ -2,12 +2,12 @@ import logging
 import uuid
 from collections import deque
 from functools import lru_cache
-from typing import List, Optional
+from typing import Optional
 
 from aiohttp import web
 from aiopg.sa.result import RowProxy
-from models_library.services import KEY_RE, VERSION_RE
-from pydantic import BaseModel, Field, ValidationError, constr
+from models_library.services import ServiceKey, ServiceVersion
+from pydantic import BaseModel, Field, ValidationError
 from simcore_postgres_database.models.services_consume_filetypes import (
     services_consume_filetypes,
 )
@@ -15,11 +15,17 @@ from simcore_postgres_database.models.services_consume_filetypes import (
 from .._constants import APP_DB_ENGINE_KEY
 
 MEGABYTES = 1024 * 1024
+BASE_UUID = uuid.UUID("ca2144da-eabb-4daf-a1df-a3682050e25f")
 
-log = logging.getLogger(__name__)
+
+logger = logging.getLogger(__name__)
 
 
-# VIEWERS  -----------------------------------------------------------------------------
+#
+# ERRORS
+#
+
+
 class StudyDispatcherError(Exception):
     def __init__(self, reason):
         super().__init__()
@@ -34,14 +40,16 @@ class ViewerInfo(BaseModel):
     to visualize a file of that type
     """
 
-    key: constr(regex=KEY_RE)  # type: ignore
-    version: constr(regex=VERSION_RE)  # type: ignore
-    filetype: str = Field(..., description="Filetype associated to this viewer")
+    key: ServiceKey
+    version: ServiceVersion
 
     label: str = Field(..., description="Display name")
+
+    filetype: str = Field(..., description="Filetype associated to this viewer")
     input_port_key: str = Field(
         description="Name of the connection port, since it is service-dependent",
     )
+
     is_guest_allowed: bool = True
 
     @property
@@ -65,9 +73,16 @@ class ViewerInfo(BaseModel):
         )
 
 
+@lru_cache
+def compose_uuid_from(*values) -> uuid.UUID:
+    composition: str = "/".join(map(str, values))
+    new_uuid = uuid.uuid5(BASE_UUID, composition)
+    return new_uuid
+
+
 async def list_viewers_info(
     app: web.Application, file_type: Optional[str] = None, *, only_default: bool = False
-) -> List[ViewerInfo]:
+) -> list[ViewerInfo]:
     #
     # TODO: These services MUST be shared with EVERYBODY! Setup check on startup and fill
     #       with !?
@@ -86,7 +101,7 @@ async def list_viewers_info(
         if file_type and only_default:
             stmt = stmt.limit(1)
 
-        log.debug("Listing viewers:\n%s", stmt)
+        logger.debug("Listing viewers:\n%s", stmt)
 
         listed_filetype = set()
         async for row in await conn.execute(stmt):
@@ -100,7 +115,7 @@ async def list_viewers_info(
                 consumers.append(consumer)
 
             except ValidationError as err:
-                log.warning("Review invalid service metadata %s: %s", row, err)
+                logger.warning("Review invalid service metadata %s: %s", row, err)
 
     return list(consumers)
 
@@ -153,14 +168,3 @@ async def validate_requested_viewer(
     raise StudyDispatcherError(
         f"None of the registered viewers can open file type '{file_type}'"
     )
-
-
-# UTILITIES ---------------------------------------------------------------
-BASE_UUID = uuid.UUID("ca2144da-eabb-4daf-a1df-a3682050e25f")
-
-
-@lru_cache()
-def compose_uuid_from(*values) -> str:
-    composition = "/".join(map(str, values))
-    new_uuid = uuid.uuid5(BASE_UUID, composition)
-    return str(new_uuid)
