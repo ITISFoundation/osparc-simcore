@@ -48,6 +48,7 @@ from simcore_postgres_database.webserver_models import ProjectType
 
 from .. import catalog_client, director_v2_api, storage_api
 from ..application_settings import get_settings
+from ..director_v2_core_base import DataType
 from ..products import get_product_name
 from ..resource_manager.websocket_manager import (
     PROJECT_ID_KEY,
@@ -199,6 +200,8 @@ def get_delete_project_task(
 # PROJECT NODES -----------------------------------------------------
 #
 
+PROJECT_ACTIVELY_RUNNING_NODE_STATES = {"pending", "pulling", "starting", "running"}
+
 
 async def _start_dynamic_service(
     request: web.Request,
@@ -212,14 +215,20 @@ async def _start_dynamic_service(
 ):
     if not _is_node_dynamic(service_key):
         return
-    project_running_nodes = await director_v2_api.list_dynamic_services(
+    project_running_nodes: list[DataType] = await director_v2_api.list_dynamic_services(
         request.app, user_id, f"{project_uuid}"
     )
+
+    project_actively_running_nodes = [
+        node
+        for node in project_running_nodes
+        if node["service_state"] in PROJECT_ACTIVELY_RUNNING_NODE_STATES
+    ]
 
     project_settings = get_settings(request.app).WEBSERVER_PROJECTS
     assert project_settings  # nosec
     if project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES > 0 and (
-        len(project_running_nodes)
+        len(project_actively_running_nodes)
         >= project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
     ):
         raise ProjectStartsTooManyDynamicNodes(
