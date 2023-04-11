@@ -7,7 +7,7 @@ from collections import deque
 from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Awaitable, Callable, Optional, Union
+from typing import Any, Awaitable, Callable
 
 from aiohttp import web
 from aiopg.sa import Engine
@@ -116,7 +116,7 @@ class SimcoreS3DataManager(BaseDataManager):
     async def list_files(
         self, user_id: UserID, uuid_filter: str = ""
     ) -> list[FileMetaData]:
-        data: deque[FileMetaData] = deque()
+        data: list[FileMetaData] = []
         accesible_projects_ids = []
         async with self.engine.acquire() as conn, conn.begin():
             accesible_projects_ids = await get_readable_project_ids(conn, user_id)
@@ -143,7 +143,7 @@ class SimcoreS3DataManager(BaseDataManager):
                     data.append(convert_db_to_model(updated_fmd))
 
             # now parse the project to search for node/project names
-            prj_names_mapping: dict[Union[ProjectID, NodeID], str] = {}
+            prj_names_mapping: dict[ProjectID | NodeID, str] = {}
             async for proj_data in db_projects.list_valid_projects_in(
                 conn, accesible_projects_ids
             ):
@@ -156,7 +156,7 @@ class SimcoreS3DataManager(BaseDataManager):
         #        with information from the projects table!
         # also all this stuff with projects should be done in the client code not here
         # NOTE: sorry for all the FIXMEs here, but this will need further refactoring
-        clean_data = deque()
+        clean_data = []
         for d in data:
             if d.project_id not in prj_names_mapping:
                 continue
@@ -171,7 +171,7 @@ class SimcoreS3DataManager(BaseDataManager):
 
     async def get_file(self, user_id: UserID, file_id: StorageFileID) -> FileMetaData:
         async with self.engine.acquire() as conn, conn.begin():
-            can: Optional[AccessRights] = await get_file_access_rights(
+            can: AccessRights | None = await get_file_access_rights(
                 conn, int(user_id), file_id
             )
             if can.read:
@@ -194,7 +194,7 @@ class SimcoreS3DataManager(BaseDataManager):
         file_size_bytes: ByteSize,
     ) -> UploadLinks:
         async with self.engine.acquire() as conn, conn.begin() as transaction:
-            can: Optional[AccessRights] = await get_file_access_rights(
+            can: AccessRights | None = await get_file_access_rights(
                 conn, user_id, file_id
             )
             if not can.write:
@@ -270,7 +270,7 @@ class SimcoreS3DataManager(BaseDataManager):
         file_id: StorageFileID,
     ) -> None:
         async with self.engine.acquire() as conn, conn.begin():
-            can: Optional[AccessRights] = await get_file_access_rights(
+            can: AccessRights | None = await get_file_access_rights(
                 conn, int(user_id), file_id
             )
             if not can.delete or not can.write:
@@ -302,7 +302,7 @@ class SimcoreS3DataManager(BaseDataManager):
         uploaded_parts: list[UploadedPart],
     ) -> FileMetaData:
         async with self.engine.acquire() as conn:
-            can: Optional[AccessRights] = await get_file_access_rights(
+            can: AccessRights | None = await get_file_access_rights(
                 conn, int(user_id), file_id
             )
             if not can.write:
@@ -335,9 +335,9 @@ class SimcoreS3DataManager(BaseDataManager):
 
     async def create_file_download_link(
         self, user_id: UserID, file_id: StorageFileID, link_type: LinkType
-    ) -> str:
+    ) -> AnyUrl:
         async with self.engine.acquire() as conn:
-            can: Optional[AccessRights] = await get_file_access_rights(
+            can: AccessRights | None = await get_file_access_rights(
                 conn, user_id, file_id
             )
             if not can.read:
@@ -365,11 +365,11 @@ class SimcoreS3DataManager(BaseDataManager):
                 self.settings.STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS,
             )
 
-        return f"{link}"
+        return link
 
     async def delete_file(self, user_id: UserID, file_id: StorageFileID):
         async with self.engine.acquire() as conn, conn.begin():
-            can: Optional[AccessRights] = await get_file_access_rights(
+            can: AccessRights | None = await get_file_access_rights(
                 conn, user_id, file_id
             )
             if not can.delete:
@@ -385,10 +385,10 @@ class SimcoreS3DataManager(BaseDataManager):
                 await db_file_meta_data.delete(conn, [file.file_id])
 
     async def delete_project_simcore_s3(
-        self, user_id: UserID, project_id: ProjectID, node_id: Optional[NodeID] = None
+        self, user_id: UserID, project_id: ProjectID, node_id: NodeID | None = None
     ) -> None:
         async with self.engine.acquire() as conn, conn.begin():
-            can: Optional[AccessRights] = await get_project_access_rights(
+            can: AccessRights | None = await get_project_access_rights(
                 conn, user_id, project_id
             )
             if not can.delete:
@@ -411,7 +411,7 @@ class SimcoreS3DataManager(BaseDataManager):
         src_project: dict[str, Any],
         dst_project: dict[str, Any],
         node_mapping: dict[NodeID, NodeID],
-        task_progress: Optional[TaskProgress] = None,
+        task_progress: TaskProgress | None = None,
     ) -> None:
         src_project_uuid: ProjectID = ProjectID(src_project["uuid"])
         dst_project_uuid: ProjectID = ProjectID(dst_project["uuid"])
@@ -819,7 +819,7 @@ class SimcoreS3DataManager(BaseDataManager):
         conn: SAConnection,
         user_id: UserID,
         file_id: StorageFileID,
-        upload_id: Optional[UploadID],
+        upload_id: UploadID | None,
     ) -> FileMetaDataAtDB:
         now = datetime.datetime.utcnow()
         upload_expiration_date = now + datetime.timedelta(
