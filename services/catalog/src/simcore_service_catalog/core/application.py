@@ -11,7 +11,7 @@ from starlette import status
 from starlette.exceptions import HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from .._meta import API_VERSION, API_VTAG, APP_NAME, SUMMARY
+from .._meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY
 from ..api.errors.http_error import (
     http_error_handler,
     make_http_error_handler_for_exception,
@@ -42,7 +42,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     app = FastAPI(
         debug=settings.SC_BOOT_MODE
         in [BootModeEnum.DEBUG, BootModeEnum.DEVELOPMENT, BootModeEnum.LOCAL],
-        title=APP_NAME,
+        title=PROJECT_NAME,
         description=SUMMARY,
         version=API_VERSION,
         openapi_url=f"/api/{API_VTAG}/openapi.json",
