@@ -1,22 +1,33 @@
-""" Package Metadata
+""" Application's metadata
 
 """
-import pkg_resources
+from typing import Final
 
-_current_distribution = pkg_resources.get_distribution("simcore_service_catalog")
+from packaging.version import Version
+from servicelib.utils_meta import PackageInfo
 
-PROJECT_NAME: str = _current_distribution.project_name
-
-API_VERSION: str = _current_distribution.version
-MAJOR, MINOR, PATCH = _current_distribution.version.split(".")
-API_VTAG: str = f"v{MAJOR}"
-
-__version__ = _current_distribution.version
+info: Final = PackageInfo(package_name="simcore-service-catalog")
+__version__: Final[str] = info.__version__
 
 
-try:
-    metadata = _current_distribution.get_metadata_lines("METADATA")
-except FileNotFoundError:
-    metadata = _current_distribution.get_metadata_lines("PKG-INFO")
+PROJECT_NAME: Final[str] = info.project_name
+VERSION: Final[Version] = info.version
+API_VERSION: Final[str] = info.__version__
+API_VTAG: Final[str] = info.api_prefix_path_tag
+SUMMARY: Final[str] = info.get_summary()
 
-SUMMARY: str = next(x.split(":") for x in metadata if x.startswith("Summary:"))[-1]
+
+# NOTE: https://patorjk.com/software/taag/#p=display&h=0&f=Ogre&t=Catalog
+APP_STARTED_BANNER_MSG = r"""
+   ___         _           _
+  / __\  __ _ | |_   __ _ | |  ___    __ _
+ / /    / _` || __| / _` || | / _ \  / _` |
+/ /___ | (_| || |_ | (_| || || (_) || (_| |
+\____/  \__,_| \__| \__,_||_| \___/  \__, |
+                                     |___/     {}
+""".format(
+    f"v{__version__}"
+)
+
+
+APP_FINISHED_BANNER_MSG = info.get_finished_banner()
