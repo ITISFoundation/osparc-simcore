@@ -12,6 +12,8 @@ class AppDataMixin:
     of the derived class
     """
 
+    state_attr_name: str | None = None
+
     @classmethod
     def create_once(cls, app: FastAPI, **data):
         """Creates a single instance in app"""
@@ -33,12 +35,7 @@ class AppDataMixin:
     def get_instance(cls, app: FastAPI):
         """Gets single instance in app if any, otherwise returns None"""
         assert issubclass(cls, AppDataMixin), "AppDataMixin must be inherited!"
-
-        try:
-            obj = getattr(app.state, cls.state_attr_name)
-        except AttributeError:
-            # not in app.state or state_attr_name undefined
-            return None
+        obj = getattr(app.state, cls.state_attr_name)
         return obj
 
     @classmethod
