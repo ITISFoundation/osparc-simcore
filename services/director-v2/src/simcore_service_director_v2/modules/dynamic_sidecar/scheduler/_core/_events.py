@@ -1,7 +1,7 @@
 # pylint: disable=relative-beyond-top-level
 
 import logging
-from typing import Any, Final, Optional, cast
+from typing import Any, Final, cast
 from uuid import uuid4
 
 from fastapi import FastAPI
@@ -137,7 +137,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         )
 
         node_uuid_str = NodeIDStr(scheduler_data.node_uuid)
-        node: Optional[Node] = project.workbench.get(node_uuid_str)
+        node: Node | None = project.workbench.get(node_uuid_str)
         boot_options = (
             node.boot_options
             if node is not None and node.boot_options is not None
@@ -299,7 +299,7 @@ class UpdateHealth(DynamicSchedulerEvent):
     @classmethod
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
         scheduler_data.dynamic_sidecar.is_ready = (
-            await get_dynamic_sidecar_service_health(app, scheduler_data)
+            await get_dynamic_sidecar_service_health(app, scheduler_data.endpoint)
         )
 
 

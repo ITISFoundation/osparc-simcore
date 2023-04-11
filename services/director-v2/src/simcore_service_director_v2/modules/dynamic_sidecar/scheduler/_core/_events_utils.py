@@ -3,7 +3,7 @@
 import json
 import logging
 from collections import deque
-from typing import Any, Deque, Final, Optional, cast
+from typing import Any, Deque, Final, cast
 
 from fastapi import FastAPI
 from models_library.projects_networks import ProjectsNetworks
@@ -70,7 +70,7 @@ def get_director_v0_client(app: FastAPI) -> DirectorV0Client:
 
 
 def parse_containers_inspect(
-    containers_inspect: Optional[dict[str, Any]]
+    containers_inspect: dict[str, Any] | None
 ) -> list[DockerContainerInspect]:
     results: Deque[DockerContainerInspect] = deque()
 
@@ -103,7 +103,7 @@ async def service_remove_containers(
     app: FastAPI,
     node_uuid: NodeID,
     dynamic_sidecar_client: DynamicSidecarClient,
-    progress_callback: Optional[ProgressCallback] = None,
+    progress_callback: ProgressCallback | None = None,
 ) -> None:
     scheduler_data: SchedulerData = _get_scheduler_data(app, node_uuid)
 
@@ -126,7 +126,7 @@ async def service_save_state(
     app: FastAPI,
     node_uuid: NodeID,
     dynamic_sidecar_client: DynamicSidecarClient,
-    progress_callback: Optional[ProgressCallback] = None,
+    progress_callback: ProgressCallback | None = None,
 ) -> None:
     scheduler_data: SchedulerData = _get_scheduler_data(app, node_uuid)
     await dynamic_sidecar_client.save_service_state(
@@ -138,7 +138,7 @@ async def service_push_outputs(
     app: FastAPI,
     node_uuid: NodeID,
     dynamic_sidecar_client: DynamicSidecarClient,
-    progress_callback: Optional[ProgressCallback] = None,
+    progress_callback: ProgressCallback | None = None,
 ) -> None:
     scheduler_data: SchedulerData = _get_scheduler_data(app, node_uuid)
     await dynamic_sidecar_client.push_service_output_ports(
@@ -151,7 +151,7 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
     app: FastAPI,
     node_uuid: NodeID,
     dynamic_sidecar_settings: DynamicSidecarSettings,
-    set_were_state_and_outputs_saved: Optional[bool] = None,
+    set_were_state_and_outputs_saved: bool | None = None,
 ) -> None:
     scheduler_data: SchedulerData = _get_scheduler_data(app, node_uuid)
 
@@ -386,7 +386,7 @@ async def wait_for_sidecar_api(app: FastAPI, scheduler_data: SchedulerData) -> N
     ):
         with attempt:
             if not await get_dynamic_sidecar_service_health(
-                app, scheduler_data, with_retry=False
+                app, scheduler_data.endpoint, with_retry=False
             ):
                 raise TryAgain()
             scheduler_data.dynamic_sidecar.is_healthy = True
