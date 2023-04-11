@@ -53,10 +53,14 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         height: 350,
         scale: true
       });
+      image.getContentElement().setStyles({
+        "border-radius": "8px"
+      });
       page.add(image);
       const label = new qx.ui.basic.Label(text).set({
         font: "text-16",
         width: 200,
+        height: 200,
         rich: true,
         wrap: true,
         alignY: "middle"
@@ -75,6 +79,9 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         height: 230,
         scale: true
       });
+      image.getContentElement().setStyles({
+        "border-radius": "8px"
+      });
       stepLayout.add(image);
       const labelTitle = new qx.ui.basic.Label(title).set({
         font: "text-20",
@@ -87,7 +94,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       const labelText = new qx.ui.basic.Label(text).set({
         font: "text-16",
         textAlign: "center",
-        width: 220,
+        width: 225,
         rich: true,
         wrap: true
       });
@@ -104,10 +111,10 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       const contentUsers = this.__createContentUsers();
       this._add(contentUsers);
 
-      const contentTabbedLaptop = this.__createContentTabbedLaptop();
+      const contentTabbedLaptop = this.__createContentTabbedLeft();
       this._add(contentTabbedLaptop);
 
-      const content3Tabs = this.__createContent3Tabs();
+      const content3Tabs = this.__createContentSteps();
       this._add(content3Tabs);
 
       const contentPartners = this.__createContentPartners();
@@ -141,7 +148,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       });
 
       const text1 = new qx.ui.basic.Label().set({
-        value: this.tr("Revolutionary simulation platform, combining computable human phantoms with the most powerful physics solvers and the most advanced tissue models"),
+        value: this.tr("Preview the impossible: a native implementation of the most advanced simulation platform Sim4Life in the cloud"),
         font: "text-24",
         rich: true,
         wrap: true
@@ -149,7 +156,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       leftLayout.add(text1);
 
       const text2 = new qx.ui.basic.Label().set({
-        value: this.tr("Directly analyzing biological real-world phenomena and complex technical devices in a validated biological and anatomical environment, it also offers leading performance with all the features expected from a multiphysics CAE/TCAD platform."),
+        value: this.tr("Access it without sacrificing performance and explore the many advantages. More information will be released soon so stay tuned! Until then, experience the student version <i>S4L<sup>lite</sup></i>."),
         font: "text-16",
         rich: true,
         wrap: true
@@ -168,6 +175,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       tryItOutButton.getContentElement().setStyles({
         "border-radius": "8px"
       });
+      tryItOutButton.addListener("tap", () => window.open("https://s4l-lite-master.speag.com/study/6d627670-d872-11ed-bf2e-02420a000d72", "_blank"));
       leftLayout.add(tryItOutButton);
 
       contentLayout.add(leftLayout, {
@@ -265,14 +273,14 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       return contentLayout;
     },
 
-    __createContentTabbedLaptop: function() {
+    __createContentTabbedLeft: function() {
       const contentLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
         alignX: "center",
         alignY: "middle"
       }));
 
       const text1 = new qx.ui.basic.Label().set({
-        value: this.tr("Access, run and share simulations in the cloud from any browser"),
+        value: this.tr("Some features, images and texts taken from the sim4life section"),
         font: "text-24",
         textAlign: "center",
         width: 380,
@@ -288,25 +296,21 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         alignX: "center"
       });
       [{
-        title: "Cloud-Native",
-        image: "https://www.simscale.com/wp-content/uploads/2022/11/e-motor-cooling-simulation-with-webside-laptop-and-computer-1.png",
-        text: "No VPN, No remote desktop. True SaaS with instant access anywhere & anytime from a browser without any special hardware."
+        title: "Computable Human Phantoms",
+        image: "https://zmt.swiss/assets/images/sim4life/vipnews.png",
+        text: "Sim4Life natively supports the Virtual Population ViP 3.x/4.0 models that include integrated posing and morphing tools."
       }, {
-        title: "One Platform, broad Physics",
-        image: "https://www.simscale.com/wp-content/uploads/2022/11/multiple-physics-simulations-laptop.gif",
-        text: "No disconnected tools used in silos. A single platform with broad physics capabilities for both rough early- and detailed late-stage simulations."
+        title: "Physics Solvers",
+        image: "https://zmt.swiss/assets/images/sim4life/physics_models/EM01__ResizedImageWzQyMCwyNTFd.jpg",
+        text: "The powerful Sim4Life solvers are specifically developed for computationally complex problems."
       }, {
-        title: "Real-time Collaboration",
-        image: "https://www.simscale.com/wp-content/uploads/2022/11/e-motor-cooling-simulation-with-users-laptop.png",
-        text: "Google-Docs-style collaboration built-in, enabling unparalleled in-app support as well as sharing simulations with colleagues."
+        title: "Tissue Models",
+        image: "https://zmt.swiss/assets/images/sim4life/tissue_models/_resampled/ResizedImageWzQyMCwyNTBd/neuro01.jpg",
+        text: "The integrated tissue models enable the modeling and analysis of physiological processes."
       }, {
-        title: "Any Scale",
-        image: "https://www.simscale.com/wp-content/uploads/2022/12/e-motor-cooling-simulation-with-simulation-runs-laptop.png",
-        text: "Practically no limits to simulation size, number of parallel simulations and storage. From one-off runs to programmatic design space exploration."
-      }, {
-        title: "Cost-effective",
-        image: "https://www.simscale.com/wp-content/uploads/2022/11/pricing-page-laptop-1.png",
-        text: "Capex-free, low ‘total cost of ownership’. Economically viable from a single user to 100s of seats. "
+        title: "Framework",
+        image: "https://zmt.swiss/assets/images/sim4life/framework/_resampled/ResizedImageWzQyMCwyNTBd/postpro01.jpg",
+        text: "The Sim4Life Framework efficiently facilitates all steps in complex multiphysics modeling, from defining the problem, discretizing, simulating, and analyzing to visualizing the results, with clarity and flexibility."
       }].forEach(tab => {
         const tabPage = this.self().createTabPage(tab.title, tab.image, tab.text);
         tabs.add(tabPage);
@@ -325,7 +329,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       return contentLayout;
     },
 
-    __createContent3Tabs: function() {
+    __createContentSteps: function() {
       const contentLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
         alignX: "center",
         alignY: "middle"
@@ -342,7 +346,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       contentLayout.add(text1);
 
       const text2 = new qx.ui.basic.Label().set({
-        value: this.tr("Well separated contexts, we have three tabs/buttons, my friend"),
+        value: this.tr("Well separated contexts, we had three tabs now we have buttons"),
         font: "text-24",
         textAlign: "center",
         width: 360,
@@ -356,17 +360,17 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         alignY: "middle"
       }));
       [{
-        image: "https://www.simscale.com/wp-content/uploads/2023/01/step-1-cad-import.png",
+        image: "https://zmt.swiss/assets/images/sim4life/modules/MRI/bcage.png",
         title: "Modeling",
-        text: "Upload, import CAD models or build your own model with our amazing tools"
+        text: "Use our Virtual poupualtion, upload CAD models or build your own model with our amazing tools."
       }, {
-        image: "https://www.simscale.com/wp-content/uploads/2023/01/step-2-simulation-setup.png",
+        image: "https://zmt.swiss/assets/images/sim4life/framework/NewUnstructuredMesh.png",
         title: "Simulation",
-        text: "Define physics and run simulation in the cloud"
+        text: "Simulators, gridders, voxelers and solvers"
       }, {
-        image: "https://www.simscale.com/wp-content/uploads/2023/01/step-3-design-decision.png",
+        image: "https://zmt.swiss/assets/images/sim4life/framework/postpromain.jpg",
         title: "Post Processing",
-        text: "We also have a PP Calc"
+        text: "Analiyze simulation results and imaging data through advanced visualization and analysis capabilities."
       }].forEach(tab => {
         const verticalCard = this.self().createVerticalCard(tab.image, tab.title, tab.text);
         stepsLayout.add(verticalCard);
@@ -492,9 +496,6 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         image.set({
           width: 240,
           height: 180
-        });
-        image.getContentElement().setStyles({
-          "border-radius": "8px"
         });
         gridLayout.add(image, {
           row: 0,
