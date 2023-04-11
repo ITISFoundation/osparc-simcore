@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import Union
 
 from aiohttp import web
 from prometheus_client import Counter
@@ -26,22 +25,19 @@ from prometheus_client.registry import CollectorRegistry
 kSERVICE_STARTED = f"{__name__}.services_started"
 kSERVICE_STOPPED = f"{__name__}.services_stopped"
 
-SERVICE_STARTED_LABELS: list[str] = [
-    "service_key",
-    "service_tag",
-]
+SERVICE_STARTED_LABELS: list[str] = ["service_key", "service_tag", "simcore_user_agent"]
 
 SERVICE_STOPPED_LABELS: list[str] = [
     "service_key",
     "service_tag",
     "result",
+    "simcore_user_agent",
 ]
 
 
 def add_instrumentation(
     app: web.Application, reg: CollectorRegistry, app_name: str
 ) -> None:
-
     app[kSERVICE_STARTED] = Counter(
         name="services_started_total",
         documentation="Counts the services started",
@@ -83,7 +79,7 @@ def service_stopped(
     app: web.Application,
     service_key: str,
     service_tag: str,
-    result: Union[ServiceResult, str],
+    result: ServiceResult | str,
 ) -> None:
     app[kSERVICE_STOPPED].labels(
         service_key=service_key,
