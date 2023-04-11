@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import cast
+from typing import NoReturn, cast
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
@@ -37,8 +37,8 @@ log = logging.getLogger(__name__)
 routes = RouteTableDef()
 
 
-@routes.post(f"/{api_vtag}/simcore-s3:access", name="get_or_create_temporary_s3_access")  # type: ignore
-async def get_or_create_temporary_s3_access(request: web.Request):
+@routes.post(f"/{api_vtag}/simcore-s3:access", name="get_or_create_temporary_s3_access")
+async def get_or_create_temporary_s3_access(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
     log.debug(
         "received call to get_or_create_temporary_s3_access with %s",
@@ -48,7 +48,7 @@ async def get_or_create_temporary_s3_access(request: web.Request):
     s3_settings: S3Settings = await sts.get_or_create_temporary_token_for_user(
         request.app, query_params.user_id
     )
-    return {"data": s3_settings.dict()}
+    return web.json_response({"data": s3_settings.dict()})
 
 
 async def _copy_folders_from_project(
@@ -74,8 +74,8 @@ async def _copy_folders_from_project(
     )
 
 
-@routes.post(f"/{api_vtag}/simcore-s3/folders", name="copy_folders_from_project")  # type: ignore
-async def copy_folders_from_project(request: web.Request):
+@routes.post(f"/{api_vtag}/simcore-s3/folders", name="copy_folders_from_project")
+async def copy_folders_from_project(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
     body = await parse_request_body_as(FoldersBody, request)
     log.debug(
@@ -92,8 +92,10 @@ async def copy_folders_from_project(request: web.Request):
     )
 
 
-@routes.delete(f"/{api_vtag}/simcore-s3/folders/{{folder_id}}", name="delete_folders_of_project")  # type: ignore
-async def delete_folders_of_project(request: web.Request):
+@routes.delete(
+    f"/{api_vtag}/simcore-s3/folders/{{folder_id}}", name="delete_folders_of_project"
+)
+async def delete_folders_of_project(request: web.Request) -> NoReturn:
     query_params = parse_request_query_parameters_as(DeleteFolderQueryParams, request)
     path_params = parse_request_path_parameters_as(SimcoreS3FoldersParams, request)
     log.debug(
@@ -114,8 +116,10 @@ async def delete_folders_of_project(request: web.Request):
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
-@routes.post(f"/{api_vtag}/simcore-s3/files/metadata:search", name="search_files_starting_with")  # type: ignore
-async def search_files_starting_with(request: web.Request):
+@routes.post(
+    f"/{api_vtag}/simcore-s3/files/metadata:search", name="search_files_starting_with"
+)
+async def search_files_starting_with(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(SearchFilesQueryParams, request)
     log.debug(
         "received call to search_files_starting_with with %s",
@@ -131,4 +135,6 @@ async def search_files_starting_with(request: web.Request):
     )
     log.debug("Found %d files starting with '%s'", len(data), query_params.startswith)
 
-    return [jsonable_encoder(FileMetaDataGet.from_orm(d)) for d in data]
+    return web.json_response(
+        [jsonable_encoder(FileMetaDataGet.from_orm(d)) for d in data]
+    )
