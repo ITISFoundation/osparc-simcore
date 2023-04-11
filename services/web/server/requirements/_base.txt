@@ -37,7 +37,9 @@ aiohttp-session==2.11.0
 aiohttp-swagger==1.0.16
     # via -r requirements/_base.in
 aiopg==1.4.0
-    # via -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
+    # via
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
+    #   -r requirements/_base.in
 aiormq==6.4.2
     # via aio-pika
 aiosignal==1.2.0
@@ -59,7 +61,7 @@ async-timeout==4.0.2
     #   aiohttp
     #   aiopg
     #   redis
-asyncpg==0.25.0
+asyncpg==0.27.0
     # via -r requirements/_base.in
 attrs==21.4.0
     # via

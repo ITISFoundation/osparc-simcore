@@ -34,7 +34,9 @@ aiohttp-swagger==1.0.16
 aioitertools==0.10.0
     # via aiobotocore
 aiopg==1.4.0
-    # via -r requirements/../../../packages/service-library/requirements/_aiohttp.in
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_aiohttp.in
+    #   -r requirements/_base.in
 aiormq==6.4.2
     # via aio-pika
 aiosignal==1.2.0
