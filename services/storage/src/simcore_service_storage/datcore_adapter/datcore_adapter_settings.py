@@ -1,4 +1,5 @@
 from functools import cached_property
+from typing import cast
 
 from models_library.basic_types import PortInt, VersionTag
 from pydantic import AnyHttpUrl, Field
@@ -15,9 +16,12 @@ class DatcoreAdapterSettings(BaseCustomSettings):
 
     @cached_property
     def endpoint(self) -> str:
-        return AnyHttpUrl.build(
-            scheme="http",
-            host=self.DATCORE_ADAPTER_HOST,
-            port=f"{self.DATCORE_ADAPTER_PORT}",
-            path=f"/{self.DATCORE_ADAPTER_VTAG}",
+        return cast(
+            str,  # mypy
+            AnyHttpUrl.build(
+                scheme="http",
+                host=self.DATCORE_ADAPTER_HOST,
+                port=f"{self.DATCORE_ADAPTER_PORT}",
+                path=f"/{self.DATCORE_ADAPTER_VTAG}",
+            ),
         )
