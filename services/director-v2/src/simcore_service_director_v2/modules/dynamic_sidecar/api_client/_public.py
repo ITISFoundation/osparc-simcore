@@ -413,7 +413,8 @@ async def shutdown(app: FastAPI) -> None:
             *(
                 x._thin_client.close()  # pylint: disable=protected-access
                 for x in app.state.dynamic_sidecar_api_clients.values()
-            )
+            ),
+            reraise=False,
         )
 
 
@@ -428,10 +429,8 @@ def get_dynamic_sidecar_client(
     return app.state.dynamic_sidecar_api_clients[str_node_id]
 
 
-def remove_dynamic_sidecar_client(app: FastAPI, node_id: str | NodeID) -> None:
-    str_node_id = f"{node_id}"
-
-    app.state.dynamic_sidecar_api_clients.pop(str_node_id, None)
+def remove_dynamic_sidecar_client(app: FastAPI, node_id: NodeID) -> None:
+    app.state.dynamic_sidecar_api_clients.pop(f"{node_id}", None)
 
 
 async def get_dynamic_sidecar_service_health(
