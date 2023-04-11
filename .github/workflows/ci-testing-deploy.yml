@@ -384,6 +384,8 @@ jobs:
         run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/storage.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/storage.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/storage.bash test
       - uses: codecov/codecov-action@v3.1.1
