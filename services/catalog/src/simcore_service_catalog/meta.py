@@ -5,7 +5,7 @@ import pkg_resources
 
 _current_distribution = pkg_resources.get_distribution("simcore_service_catalog")
 
-PROJECT_NAME: str = _current_distribution.project_name
+APP_NAME: str = _current_distribution.project_name
 
 API_VERSION: str = _current_distribution.version
 MAJOR, MINOR, PATCH = _current_distribution.version.split(".")

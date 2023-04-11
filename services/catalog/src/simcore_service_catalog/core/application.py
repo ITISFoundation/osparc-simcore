@@ -18,7 +18,7 @@ from ..api.errors.http_error import (
 from ..api.errors.validation_error import http422_error_handler
 from ..api.root import router as api_router
 from ..api.routes.health import router as health_router
-from ..meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY
+from ..meta import API_VERSION, API_VTAG, APP_NAME, SUMMARY
 from ..services.function_services import setup_function_services
 from .events import (
     create_start_app_handler,
@@ -42,7 +42,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     app = FastAPI(
         debug=settings.SC_BOOT_MODE
         in [BootModeEnum.DEBUG, BootModeEnum.DEVELOPMENT, BootModeEnum.LOCAL],
-        title=PROJECT_NAME,
+        title=APP_NAME,
         description=SUMMARY,
         version=API_VERSION,
         openapi_url=f"/api/{API_VTAG}/openapi.json",
