@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import Callable, Optional
+from typing import Callable
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -26,14 +26,14 @@ from .events import (
     on_shutdown,
     on_startup,
 )
-from .settings import AppSettings
+from .settings import ApplicationSettings
 
 logger = logging.getLogger(__name__)
 
 
-def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
+def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     if settings is None:
-        settings = AppSettings.create_from_envs()
+        settings = ApplicationSettings.create_from_envs()
     assert settings  # nosec
     logging.basicConfig(level=settings.CATALOG_LOG_LEVEL.value)
     logging.root.setLevel(settings.CATALOG_LOG_LEVEL.value)
