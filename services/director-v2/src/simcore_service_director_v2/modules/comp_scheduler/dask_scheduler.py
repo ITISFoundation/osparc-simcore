@@ -21,6 +21,7 @@ from models_library.rabbitmq_messages import (
     ProgressRabbitMessageNode,
 )
 from models_library.users import UserID
+from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_service_director_v2.core.errors import TaskSchedulingError
 
@@ -198,6 +199,9 @@ class DaskScheduler(BaseCompScheduler):
                 service_key=service_key,
                 service_tag=service_version,
                 result=task_final_state,
+                simcore_user_agent=result.job_tags.get(
+                    "simcore_user_agent", UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+                ),
             )
             await self.rabbitmq_client.publish(message.channel_name, message.json())
 
@@ -225,6 +229,9 @@ class DaskScheduler(BaseCompScheduler):
                 service_type=NodeClass.COMPUTATIONAL.value,
                 service_key=service_key,
                 service_tag=service_version,
+                simcore_user_agent=task_state_event.job_tags.get(
+                    "simcore_user_agent", UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+                ),
             )
             await self.rabbitmq_client.publish(message.channel_name, message.json())
 
