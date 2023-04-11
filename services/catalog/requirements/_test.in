@@ -4,9 +4,11 @@
 #
 --constraint ../../../requirements/constraints.txt
 --constraint constraints.txt
+
 # Adds base AS CONSTRAINT specs, not requirement.
 #  - Resulting _text.txt is a frozen list of EXTRA packages for testing, besides _base.txt
 #
+
 --constraint _base.txt
 
 alembic # migration due to pytest_simcore.postgres_service
@@ -25,4 +27,4 @@ pytest-docker
 pytest-mock
 pytest-runner
 respx
-sqlalchemy[asyncio, mypy]
+sqlalchemy[mypy] # adds Mypy / Pep-484 Support for ORM Mappings SEE https://docs.sqlalchemy.org/en/20/orm/extensions/mypy.html
