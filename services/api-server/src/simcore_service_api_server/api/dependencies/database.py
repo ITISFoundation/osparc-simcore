@@ -37,3 +37,10 @@ def get_repository(repo_type: type[BaseRepository]) -> Callable:
         yield repo_type(db_engine=engine)
 
     return _get_repo
+
+
+__all__: tuple[str, ...] = (
+    "Engine",
+    "get_db_engine",
+    "get_repository",
+)

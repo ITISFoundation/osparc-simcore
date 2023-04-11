@@ -5,7 +5,8 @@ from pydantic import ValidationError
 from starlette import status
 
 from ...models.schemas.profiles import Profile, ProfileUpdate
-from ..dependencies.webserver import AuthSession, get_webserver_session
+from ...modules.webserver import AuthSession
+from ..dependencies.webserver import get_webserver_session
 
 logger = logging.getLogger(__name__)
 
@@ -22,11 +23,12 @@ async def get_my_profile(
     data = await client.get("/me")
 
     # FIXME: temporary patch until web-API is reviewed
-    data["role"] = data["role"].upper()
+
     try:
+        data["role"] = data["role"].upper()  # type: ignore
         profile = Profile.parse_obj(data)
-    except ValidationError as err:
-        logger.exception("webserver invalid response")
+    except (ValidationError, KeyError) as err:
+        logger.error("webserver invalid response %s", data, exc_info=True)
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err
 
     return profile
@@ -44,5 +46,5 @@ async def update_my_profile(
 
     await client.put("/me", body=profile_update.dict())
 
-    profile = await get_my_profile(client)
+    profile: Profile = await get_my_profile(client)
     return profile

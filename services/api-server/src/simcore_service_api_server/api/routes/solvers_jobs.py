@@ -13,10 +13,11 @@ from models_library.clusters import ClusterID
 from models_library.projects_nodes_io import BaseFileLink
 from pydantic.types import PositiveInt
 
+from ...models.basic_types import VersionStr
 from ...models.domain.projects import NewProjectIn, Project
 from ...models.schemas.files import File
 from ...models.schemas.jobs import ArgumentType, Job, JobInputs, JobOutputs, JobStatus
-from ...models.schemas.solvers import Solver, SolverKeyId, VersionStr
+from ...models.schemas.solvers import Solver, SolverKeyId
 from ...modules.catalog import CatalogApi
 from ...modules.director_v2 import DirectorV2Api, DownloadLink, NodeName
 from ...modules.storage import StorageApi, to_file_api_model
