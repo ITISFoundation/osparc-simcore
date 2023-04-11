@@ -7,7 +7,7 @@ from collections import deque
 from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Awaitable, Callable
+from typing import Any, Awaitable, Callable, cast
 
 from aiohttp import web
 from aiopg.sa import Engine
@@ -354,9 +354,12 @@ class SimcoreS3DataManager(BaseDataManager):
                 # try lazy update
                 fmd = await self._update_database_from_storage(conn, fmd)
 
-        link = parse_obj_as(
+        link = cast(  # mypy
             AnyUrl,
-            f"s3://{self.simcore_bucket_name}/{urllib.parse.quote(fmd.object_name)}",
+            parse_obj_as(
+                AnyUrl,
+                f"s3://{self.simcore_bucket_name}/{urllib.parse.quote(fmd.object_name)}",
+            ),
         )
         if link_type == LinkType.PRESIGNED:
             link = await get_s3_client(self.app).create_single_presigned_download_link(

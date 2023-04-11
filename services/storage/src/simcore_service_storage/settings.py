@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import cast
 
 from pydantic import Field, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
@@ -12,7 +12,6 @@ from .datcore_adapter.datcore_adapter_settings import DatcoreAdapterSettings
 
 
 class Settings(BaseCustomSettings, MixinLoggingSettings):
-
     STORAGE_HOST: str = "0.0.0.0"  # nosec
     STORAGE_PORT: PortInt = 8080
 
@@ -27,18 +26,18 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
 
     STORAGE_MONITORING_ENABLED: bool = False
 
-    BF_API_KEY: Optional[str] = Field(
+    BF_API_KEY: str | None = Field(
         None, description="Pennsieve API key ONLY for testing purposes"
     )
-    BF_API_SECRET: Optional[str] = Field(
+    BF_API_SECRET: str | None = Field(
         None, description="Pennsieve API secret ONLY for testing purposes"
     )
 
-    STORAGE_POSTGRES: Optional[PostgresSettings] = Field(auto_default_from_env=True)
+    STORAGE_POSTGRES: PostgresSettings | None = Field(auto_default_from_env=True)
 
-    STORAGE_S3: Optional[S3Settings] = Field(auto_default_from_env=True)
+    STORAGE_S3: S3Settings | None = Field(auto_default_from_env=True)
 
-    STORAGE_TRACING: Optional[TracingSettings] = Field(auto_default_from_env=True)
+    STORAGE_TRACING: TracingSettings | None = Field(auto_default_from_env=True)
 
     DATCORE_ADAPTER: DatcoreAdapterSettings = Field(auto_default_from_env=True)
 
@@ -50,7 +49,7 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
         3600, description="Default expiration time in seconds for presigned links"
     )
 
-    STORAGE_CLEANER_INTERVAL_S: Optional[int] = Field(
+    STORAGE_CLEANER_INTERVAL_S: int | None = Field(
         30,
         description="Interval in seconds when task cleaning pending uploads runs. setting to NULL disables the cleaner.",
     )
@@ -63,4 +62,4 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
     @validator("LOG_LEVEL")
     @classmethod
     def _validate_loglevel(cls, value) -> str:
-        return cls.validate_log_level(value)
+        return cast(str, cls.validate_log_level(value))  # mypy

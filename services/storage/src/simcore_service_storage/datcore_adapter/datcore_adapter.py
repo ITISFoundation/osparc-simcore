@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from math import ceil
-from typing import Any, Callable, Optional, Union, cast
+from typing import Any, Callable, TypeVar, cast
 
 import aiohttp
 from aiohttp import web
@@ -41,10 +41,10 @@ async def _request(
     method: str,
     path: str,
     *,
-    json: Optional[dict[str, Any]] = None,
-    params: Optional[dict[str, Any]] = None,
+    json: dict[str, Any] | None = None,
+    params: dict[str, Any] | None = None,
     **request_kwargs,
-) -> Union[dict[str, Any], list[dict[str, Any]]]:
+) -> dict[str, Any] | list[dict[str, Any]]:
     datcore_adapter_settings = app[APP_CONFIG_KEY].DATCORE_ADAPTER
     url = datcore_adapter_settings.endpoint + path
     session: ClientSession = get_client_session(app)
@@ -64,7 +64,15 @@ async def _request(
             params=params,
             **request_kwargs,
         ) as response:
-            return await response.json()
+            response_data = await response.json()
+            assert isinstance(
+                response_data,
+                (
+                    dict,
+                    list,
+                ),
+            )  # nosec
+            return response_data
 
     except aiohttp.ClientResponseError as exc:
         raise _DatcoreAdapterResponseError(status=exc.status, reason=f"{exc}") from exc
@@ -78,17 +86,19 @@ async def _request(
         raise DatcoreAdapterClientError(f"unexpected client error: {exc}") from exc
 
 
+_T = TypeVar("_T")
+
+
 async def _retrieve_all_pages(
     app: web.Application,
     api_key: str,
     api_secret: str,
     method: str,
     path: str,
-    return_type: type,
-    return_type_creator: Callable,
-):
+    return_type_creator: Callable[..., _T],
+) -> list[_T]:
     page = 1
-    objs: list[return_type] = []
+    objs = []
     while (
         response := cast(
             dict[str, Any],
@@ -210,7 +220,6 @@ async def list_datasets(
         api_secret,
         "GET",
         "/datasets",
-        DatasetMetaData,
         lambda d: DatasetMetaData(dataset_id=d["id"], display_name=d["display_name"]),
     )
 
@@ -224,7 +233,7 @@ async def get_file_download_presigned_link(
         dict[str, Any],
         await _request(app, api_key, api_secret, "GET", f"/files/{file_id}"),
     )
-    return parse_obj_as(AnyUrl, file_download_data["link"])
+    return cast(AnyUrl, parse_obj_as(AnyUrl, file_download_data["link"]))  # mypy
 
 
 async def delete_file(
