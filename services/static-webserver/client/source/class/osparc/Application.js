@@ -130,7 +130,14 @@ qx.Class.define("osparc.Application", {
                 const studyId = urlFragment.nav[1];
                 this.__loadMainPage(studyId);
               })
-              .catch(() => this.__loadLoginPage(osparc.utils.Utils.isInZ43()));
+              .catch(() => {
+                osparc.store.VendorInfo.getInstance().getVendor()
+                  .then(vendor => {
+                    const landingPage = "landing_page" in vendor ? vendor["landing_page"] : false;
+                    this.__loadLoginPage(landingPage);
+                  })
+                  .catch(() => this.__loadLoginPage(false));
+              });
           }
           break;
         }
@@ -294,7 +301,14 @@ qx.Class.define("osparc.Application", {
               this.__loadMainPage();
             }
           })
-          .catch(() => this.__loadLoginPage(osparc.utils.Utils.isInZ43()));
+          .catch(() => {
+            osparc.store.VendorInfo.getInstance().getVendor()
+              .then(vendor => {
+                const landingPage = "landing_page" in vendor ? vendor["landing_page"] : false;
+                this.__loadLoginPage(landingPage);
+              })
+              .catch(() => this.__loadLoginPage(false));
+          });
       }
     },
 
