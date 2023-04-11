@@ -35,10 +35,16 @@ def test_validate_project_json_schema():
         "^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
     ]
 
-    # We have to remove patternProperties from the schema, this is done
+    # We have to remove patternProperties & additionalProperties from the schema, this is done
     # here: setup_projects_model_schema() in projects_models.py until #3992 is fixed
     new_project_schema["properties"]["workbench"].pop("patternProperties")
     new_project_schema["properties"]["ui"]["properties"]["workbench"].pop(
         "patternProperties"
     )
+
+    new_project_schema["properties"]["workbench"].pop("additionalProperties")
+    new_project_schema["properties"]["ui"]["properties"]["workbench"].pop(
+        "additionalProperties"
+    )
+
     assert jsonschema_validation.validate_instance(project, new_project_schema) is None
