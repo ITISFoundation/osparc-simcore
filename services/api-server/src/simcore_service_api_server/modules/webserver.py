@@ -46,7 +46,7 @@ class AuthSession:
     session_cookies: dict | None = None
 
     @classmethod
-    def create(cls, app: FastAPI, session_cookies: dict):
+    def create(cls, app: FastAPI, session_cookies: dict) -> "AuthSession":
         return cls(
             client=app.state.webserver_client,
             vtag=app.state.settings.API_SERVER_WEBSERVER.WEBSERVER_VTAG,
