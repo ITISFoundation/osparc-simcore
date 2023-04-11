@@ -28,11 +28,11 @@ from pydantic.types import ConstrainedStr
 #
 
 
-RELATIVE_RESOURCE_NAME_RE = r"^([^\s/]+/?)+$"
+_RELATIVE_RESOURCE_NAME_RE = r"^([^\s/]+/?)+$"
 
 
 class RelativeResourceName(ConstrainedStr):
-    regex = re.compile(RELATIVE_RESOURCE_NAME_RE)
+    regex = re.compile(_RELATIVE_RESOURCE_NAME_RE)
 
     class Config:
         frozen = True
