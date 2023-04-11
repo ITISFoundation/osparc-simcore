@@ -19,7 +19,7 @@ class AppDataMixin:
         """Creates a single instance in app"""
 
         obj = cls.get_instance(app)
-        if not obj:
+        if obj is None:
             assert issubclass(cls, AppDataMixin), "AppDataMixin must be inherited!"
             cls.state_attr_name = f"unique_{cls.__name__.lower()}"
 
@@ -38,8 +38,9 @@ class AppDataMixin:
 
         if cls.state_attr_name is None:
             return None
+        assert isinstance(cls.state_attr_name, str)  # nosec
 
-        obj = getattr(app.state, cls.state_attr_name)
+        obj = getattr(app.state, cls.state_attr_name, None)
         return obj
 
     @classmethod
@@ -47,6 +48,6 @@ class AppDataMixin:
         assert issubclass(cls, AppDataMixin), "AppDataMixin must be inherited!"
 
         obj = cls.get_instance(app)
-        if obj:
+        if obj and cls.state_attr_name:
             delattr(app.state, cls.state_attr_name)
         return obj
