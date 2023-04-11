@@ -103,6 +103,7 @@ settings-schema.json: ## [container] dumps json-shcema of this service settings
 		${APP_CLI_NAME} settings --as-json-schema \
 		| sed --expression='1,/{/ {/{/!d}' \
 		> $@
+	# Dumped '$(CURDIR)/$@'
 
 # NOTE: settings CLI prints some logs in the header from the boot and entrypoint scripts. We
 # use strema editor expression (sed --expression) to trim them:
