@@ -299,7 +299,7 @@ class UpdateHealth(DynamicSchedulerEvent):
     @classmethod
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
         scheduler_data.dynamic_sidecar.is_ready = (
-            await get_dynamic_sidecar_service_health(app, scheduler_data.endpoint)
+            await get_dynamic_sidecar_service_health(app, scheduler_data)
         )
 
 
@@ -320,7 +320,9 @@ class GetStatus(DynamicSchedulerEvent):
 
     @classmethod
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
-        dynamic_sidecar_client = get_dynamic_sidecar_client(app)
+        dynamic_sidecar_client = get_dynamic_sidecar_client(
+            app, scheduler_data.node_uuid
+        )
         dynamic_sidecar_endpoint = scheduler_data.endpoint
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
@@ -425,7 +427,9 @@ class CreateUserServices(DynamicSchedulerEvent):
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
-        dynamic_sidecar_client = get_dynamic_sidecar_client(app)
+        dynamic_sidecar_client = get_dynamic_sidecar_client(
+            app, scheduler_data.node_uuid
+        )
         dynamic_sidecar_endpoint = scheduler_data.endpoint
 
         # check values have been set by previous step

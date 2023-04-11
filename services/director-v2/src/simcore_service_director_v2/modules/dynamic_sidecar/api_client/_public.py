@@ -7,6 +7,7 @@ from fastapi import FastAPI, status
 from httpx import AsyncClient
 from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkAlias
+from models_library.projects_nodes_io import NodeID
 from pydantic import AnyHttpUrl, PositiveFloat
 from servicelib.fastapi.long_running_tasks.client import (
     Client,
@@ -16,9 +17,11 @@ from servicelib.fastapi.long_running_tasks.client import (
     TaskId,
     periodic_task_result,
 )
+from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
 from simcore_service_director_v2.core.settings import DynamicSidecarSettings
 
+from ....models.schemas.dynamic_services import SchedulerData
 from ....modules.dynamic_sidecar.docker_api import get_or_create_networks_ids
 from ....utils.logging_utils import log_decorator
 from ..errors import EntrypointContainerNotFoundError
@@ -400,29 +403,42 @@ class DynamicSidecarClient:
 
 
 async def setup(app: FastAPI) -> None:
-    logger.debug("dynamic-sidecar api client setup")
-    app.state.dynamic_sidecar_api_client = DynamicSidecarClient(app)
+    with log_context(logger, logging.DEBUG, "dynamic-sidecar api client setup"):
+        app.state.dynamic_sidecar_api_clients: dict[str, DynamicSidecarClient] = {}
 
 
 async def shutdown(app: FastAPI) -> None:
-    logger.debug("dynamic-sidecar api client closing...")
-    client: DynamicSidecarClient | None
-    if client := app.state.dynamic_sidecar_api_client:
-        await client._thin_client.close()  # pylint: disable=protected-access
+    with log_context(logger, logging.DEBUG, "dynamic-sidecar api client closing..."):
+        client: DynamicSidecarClient | None
+        if client := app.state.dynamic_sidecar_api_clients:
+            await client._thin_client.close()  # pylint: disable=protected-access
 
 
-def get_dynamic_sidecar_client(app: FastAPI) -> DynamicSidecarClient:
-    assert app.state.dynamic_sidecar_api_client  # nosec
-    return app.state.dynamic_sidecar_api_client
+def get_dynamic_sidecar_client(
+    app: FastAPI, node_id: str | NodeID
+) -> DynamicSidecarClient:
+    str_node_id = f"{node_id}"
+    assert app.state.dynamic_sidecar_api_clients  # nosec
+    if str_node_id not in app.state.dynamic_sidecar_api_clients:
+        app.state.dynamic_sidecar_api_clients[str_node_id] = DynamicSidecarClient(app)
+
+    return app.state.dynamic_sidecar_api_clients[str_node_id]
+
+
+def remove_dynamic_sidecar_client(app: FastAPI, node_id: str | NodeID) -> None:
+    str_node_id = f"{node_id}"
+
+    assert app.state.dynamic_sidecar_api_clients  # nosec
+    app.state.dynamic_sidecar_api_clients.pop(str_node_id, None)
 
 
 async def get_dynamic_sidecar_service_health(
-    app: FastAPI, dynamic_sidecar_endpoint: AnyHttpUrl, *, with_retry: bool = True
+    app: FastAPI, scheduler_data: SchedulerData, *, with_retry: bool = True
 ) -> bool:
-    api_client = get_dynamic_sidecar_client(app)
+    api_client = get_dynamic_sidecar_client(app, scheduler_data.node_uuid)
 
     # update service health
     is_healthy = await api_client.is_healthy(
-        dynamic_sidecar_endpoint, with_retry=with_retry
+        scheduler_data.endpoint, with_retry=with_retry
     )
     return is_healthy

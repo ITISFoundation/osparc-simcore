@@ -21,7 +21,9 @@ async def push_service_outputs(
     node_uuid: NodeID,
     progress_callback: ProgressCallback | None = None,
 ) -> None:
-    dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(app)
+    dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
+        app, node_uuid
+    )
     await service_push_outputs(
         app=app,
         node_uuid=node_uuid,
