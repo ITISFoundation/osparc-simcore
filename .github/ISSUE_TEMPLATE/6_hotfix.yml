@@ -47,8 +47,6 @@ body:
         - Which important changes we might pay attention to?
         - How should we test them?
         - Is there anything in particular we should monitor?
-      placeholder: |
-        - Regular sprint release
     validations:
       required: true
   - type: textarea
@@ -57,11 +55,11 @@ body:
       value: |
         - [] create hotfix branch [``hotfix_v1_51_x``](https://github.com/ITISFoundation/osparc-simcore/tree/hotfix_v1_51_x) directly in *upstream* repo. **Do not delete hotfix branches** at least until next *full* release takes place.
         - [] prepare hotfix by applying patches/cherry-picks (see *what changed* section)
-        - [] test hotfix in local deployment @pcrespov 
+        - [] test hotfix in local deployment @pcrespov
         - [] push and [check whether CI passed](https://github.com/ITISFoundation/osparc-simcore/actions)
         - [] check [images in dockerhub](https://registry.hub.docker.com/u/itisfoundation)
     validations:
-      required: false    
+      required: false
   - type: textarea
     attributes:
       label: Changes
@@ -78,13 +76,13 @@ body:
         - ``make release-hotfix version=1.51.1 git_sha=8d9a27ebb3e64956e6a41f31839748b3f6a27074``
         - [ ] Draft [release notes](https://github.com/ITISFoundation/osparc-simcore/releases) 🚀
         - [ ] No need for maintenance announcement?: Target update of ``service``
-        - [ ] Deploy hot-fix. 
+        - [ ] Deploy hot-fix.
           - [ ] ``autodeployer`` OFF in aws-prod, dalco-prod, ti
           - [ ] [release](https://github.com/ITISFoundation/osparc-simcore/releases) 🚀 !!!!
           - [ ] aws-prod (updated target service)
           - [ ] dalco-prod (updated target service)
           - [ ] ti (updated target service)
-        - [ ] Test and Monitor. Revert back if needed! 
+        - [ ] Test and Monitor. Revert back if needed!
         - [ ] Announce hot-fix
         ``` md
         :tada: https://github.com/ITISFoundation/osparc-simcore/releases/tag/v<M.m.0>
