@@ -3,8 +3,8 @@ import logging
 import typer
 from settings_library.utils_cli import create_settings_command
 
+from ._meta import APP_NAME
 from .core.settings import ApplicationSettings
-from .meta import APP_NAME
 
 log = logging.getLogger(__name__)
 
