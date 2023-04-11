@@ -409,9 +409,12 @@ async def setup(app: FastAPI) -> None:
 
 async def shutdown(app: FastAPI) -> None:
     with log_context(logger, logging.DEBUG, "dynamic-sidecar api client closing..."):
-        client: DynamicSidecarClient | None
-        if client := app.state.dynamic_sidecar_api_clients:
-            await client._thin_client.close()  # pylint: disable=protected-access
+        await logged_gather(
+            *(
+                x._thin_client.close()  # pylint: disable=protected-access
+                for x in app.state.dynamic_sidecar_api_clients.values()
+            )
+        )
 
 
 def get_dynamic_sidecar_client(
