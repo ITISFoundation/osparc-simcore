@@ -27,7 +27,9 @@ exceptiongroup==1.1.0
 faker==17.4.0
     # via -r requirements/_test.in
 greenlet==2.0.2
-    # via sqlalchemy
+    # via
+    #   -c requirements/_base.txt
+    #   sqlalchemy
 idna==2.10
     # via
     #   -c requirements/_base.txt
