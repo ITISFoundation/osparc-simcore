@@ -100,6 +100,25 @@ qx.Class.define("osparc.Panddy", {
       }
 
       this.getChildControl("bubble-text").setValue(steps[idx].message);
+    },
+
+    __highlightWidget: function(widget) {
+      const thisDom = widget.getContentElement().getDomElement();
+      const thisZIndex = parseInt(thisDom.style.zIndex);
+      const modalFrame = qx.dom.Hierarchy.getSiblings(thisDom).find(el =>
+        // Hack: Qx inserts the modalFrame as a sibling of the window with a -1 zIndex
+        parseInt(el.style.zIndex) === thisZIndex - 1
+      );
+      if (modalFrame) {
+        modalFrame.addEventListener("click", () => {
+          if (this.isModal() && this.isClickAwayClose() &&
+            parseInt(modalFrame.style.zIndex) === parseInt(thisDom.style.zIndex) - 1) {
+            this.close();
+          }
+        });
+        modalFrame.style.backgroundColor = "black";
+        modalFrame.style.opacity = 0.4;
+      }
     }
   }
 });
