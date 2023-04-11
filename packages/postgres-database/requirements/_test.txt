@@ -73,9 +73,8 @@ packaging==23.0
     #   pytest
 pluggy==1.0.0
     # via pytest
-psycopg2-binary==2.9.5
+psycopg2-binary==2.9.6
     # via
-    #   -c requirements/_base.txt
     #   aiopg
     #   sqlalchemy
 pytest==7.2.1

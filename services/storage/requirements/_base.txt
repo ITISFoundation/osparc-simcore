@@ -130,7 +130,7 @@ pamqp==3.2.1
     # via aiormq
 prometheus-client==0.14.1
     # via -r requirements/../../../packages/service-library/requirements/_aiohttp.in
-psycopg2-binary==2.9.3
+psycopg2-binary==2.9.6
     # via
     #   aiopg
     #   sqlalchemy
@@ -170,6 +170,7 @@ six==1.16.0
     #   python-dateutil
 sqlalchemy==1.4.47
     # via
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiopg
     #   alembic

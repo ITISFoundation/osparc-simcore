@@ -127,7 +127,7 @@ pint==0.20.1
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 pluggy==1.0.0
     # via pytest
-psycopg2-binary==2.9.5
+psycopg2-binary==2.9.6
     # via
     #   aiopg
     #   sqlalchemy
@@ -188,6 +188,7 @@ six==1.16.0
     #   websocket-client
 sqlalchemy==1.4.47
     # via
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   aiopg
     #   alembic

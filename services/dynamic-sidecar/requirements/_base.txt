@@ -159,7 +159,7 @@ pint==0.19.2
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 psutil==5.9.1
     # via -r requirements/_base.in
-psycopg2-binary==2.9.3
+psycopg2-binary==2.9.6
     # via
     #   aiopg
     #   sqlalchemy
@@ -218,6 +218,7 @@ sniffio==1.2.0
     #   httpx
 sqlalchemy==1.4.47
     # via
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiopg
     #   alembic

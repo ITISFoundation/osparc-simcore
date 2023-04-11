@@ -59,7 +59,7 @@ openapi-spec-validator==0.4.0
     #   openapi-core
 prometheus-client==0.16.0
     # via -r requirements/_aiohttp.in
-psycopg2-binary==2.9.5
+psycopg2-binary==2.9.6
     # via
     #   aiopg
     #   sqlalchemy
@@ -75,7 +75,9 @@ six==1.16.0
     #   jsonschema
     #   openapi-core
 sqlalchemy==1.4.47
-    # via aiopg
+    # via
+    #   -c requirements/./../../../requirements/constraints.txt
+    #   aiopg
 strict-rfc3339==0.7
     # via openapi-core
 werkzeug==2.2.3
