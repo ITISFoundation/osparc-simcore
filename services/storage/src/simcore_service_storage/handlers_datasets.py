@@ -44,8 +44,11 @@ async def get_datasets_metadata(request: web.Request) -> web.Response:
     )
 
 
-@routes.get(f"/{api_vtag}/locations/{{location_id}}/datasets/{{dataset_id}}/metadata", name="get_files_metadata_dataset")  # type: ignore
-async def get_files_metadata_dataset(request: web.Request):
+@routes.get(
+    f"/{api_vtag}/locations/{{location_id}}/datasets/{{dataset_id}}/metadata",
+    name="get_files_metadata_dataset",
+)
+async def get_files_metadata_dataset(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
     path_params = parse_request_path_parameters_as(
         FilesMetadataDatasetPathParams, request
