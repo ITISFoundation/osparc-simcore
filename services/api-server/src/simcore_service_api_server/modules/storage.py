@@ -6,7 +6,6 @@ from uuid import UUID
 
 from fastapi import FastAPI
 from models_library.api_schemas_storage import FileMetaDataArray
-from models_library.api_schemas_storage import FileMetaDataGet
 from models_library.api_schemas_storage import FileMetaDataGet as StorageFileMetaData
 from models_library.api_schemas_storage import FileUploadSchema, PresignedLink
 from models_library.generics import Envelope
@@ -67,7 +66,7 @@ class StorageApi(BaseServiceClientApi):
         resp.raise_for_status()
 
         files_metadata = FileMetaDataArray(__root__=resp.json()["data"] or [])
-        files: list[FileMetaDataGet] = files_metadata.__root__
+        files: list[StorageFileMetaData] = files_metadata.__root__
         return files
 
     async def search_files(
@@ -84,7 +83,7 @@ class StorageApi(BaseServiceClientApi):
             },
         )
         files_metadata = FileMetaDataArray(__root__=resp.json()["data"] or [])
-        files: list[FileMetaDataGet] = files_metadata.__root__
+        files: list[StorageFileMetaData] = files_metadata.__root__
         return files
 
     async def get_download_link(
