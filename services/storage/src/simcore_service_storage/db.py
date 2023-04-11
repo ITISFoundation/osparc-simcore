@@ -30,7 +30,7 @@ async def _ensure_pg_ready(dsn: DataSourceName, min_size: int, max_size: int) ->
         await close_engine(engine)
         raise
 
-    return engine  # type: ignore # tenacity rules guarantee exit with exc
+    return engine  # tenacity rules guarantee exit with exc
 
 
 async def postgres_cleanup_ctx(app: web.Application):
@@ -44,7 +44,7 @@ async def postgres_cleanup_ctx(app: web.Application):
         password=pg_cfg.POSTGRES_PASSWORD.get_secret_value(),
         host=pg_cfg.POSTGRES_HOST,
         port=pg_cfg.POSTGRES_PORT,
-    )  # type: ignore
+    )
 
     log.info("Creating pg engine for %s", dsn)
 
