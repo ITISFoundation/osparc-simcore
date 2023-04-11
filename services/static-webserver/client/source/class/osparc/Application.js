@@ -99,7 +99,7 @@ qx.Class.define("osparc.Application", {
 
       this.__startupChecks();
 
-      this.__loadPanddy();
+      this.__startPanddy();
     },
 
     __initRouting: function() {
@@ -362,13 +362,14 @@ qx.Class.define("osparc.Application", {
       this.__loadView(new osparc.viewer.MainPage(studyId, viewerNodeId));
     },
 
-    __loadPanddy: function() {
+    __startPanddy: function() {
       const panddy = osparc.Panddy.getInstance();
       const doc = this.getRoot();
       doc.add(panddy, {
         bottom: 10,
         right: 10
       });
+      setTimeout(() => panddy.start(), 2000);
     },
 
     __loadView: function(view, opts, clearUrl=true) {

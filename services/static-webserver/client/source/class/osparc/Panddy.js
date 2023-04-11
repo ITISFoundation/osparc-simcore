@@ -23,15 +23,13 @@ qx.Class.define("osparc.Panddy", {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.Canvas());
-    this.getChildControl("panddy");
-
-    setTimeout(() => {
-      this.getChildControl("bubble-text").setValue(osparc.Panddy.INTRO_TEXT);
-    }, 2000);
   },
 
   statics: {
-    INTRO_TEXT: qx.locale.Manager.tr("Hey there!<br>This is Panddy. I'm here to give you hints on how to use oSPARC.")
+    MINIMAL_STEPS: [{
+      target: null,
+      message: qx.locale.Manager.tr("Hey there!<br>This is Panddy. I'm here to give you hints on how to use oSPARC.")
+    }]
   },
 
   members: {
@@ -70,6 +68,30 @@ qx.Class.define("osparc.Panddy", {
           break;
       }
       return control || this.base(arguments, id);
+    },
+
+    start: function() {
+      this.getChildControl("panddy").show();
+      this.getChildControl("bubble-text").show();
+
+      this.__toStep(0);
+    },
+
+    stop: function() {
+      this.getChildControl("panddy").exclude();
+      this.getChildControl("bubble-text").exclude();
+    },
+
+    __toStep: function(idx = 0) {
+      let steps = this.self().MINIMAL_STEPS;
+      if (this.isPropertyInitialized("steps")) {
+        steps = this.getSteps();
+      }
+      if (idx >= steps.length) {
+        idx = 0;
+      }
+
+      this.getChildControl("bubble-text").setValue(steps[idx].message);
     }
   }
 });
