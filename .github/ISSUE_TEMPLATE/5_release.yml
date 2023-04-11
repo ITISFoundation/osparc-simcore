@@ -27,7 +27,7 @@ body:
     attributes:
       label: "Previous pre-release"
       description: |
-        Link to pre-release to staging tha preceeds this release
+        Link to pre-release to staging that preceeds this release
       value: https://github.com/ITISFoundation/osparc-simcore/releases/tag/staging_<sprint_name><version>
     validations:
       required: true
@@ -70,7 +70,7 @@ body:
         Log below completed steps and issues
       value: |
         - [ ] Add changes (if any) and release tags in https://github.com/ITISFoundation/osparc-ops-environments/tags
-        - [ ] Add changes (if any) and release tags in osparc ops configurations
+        - [ ] Add changes (if any) and release tags in **osparc-ops-deployment-configuration** (osparc.io & speag.com)
         - [ ] ...
     validations:
       required: false
@@ -123,7 +123,7 @@ body:
             - [ ] aws
             - [ ] dalco
             - [ ] tip
-        - status page
+        - status page (https://manage.statuspage.io/)
             - [ ] osparc
             - [ ] s4l
         - mattermost channels
