@@ -125,7 +125,7 @@ fsspec==2023.3.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
-greenlet==1.1.2
+greenlet==2.0.2
     # via sqlalchemy
 h11==0.12.0
     # via

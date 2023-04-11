@@ -26,10 +26,8 @@ exceptiongroup==1.1.0
     # via pytest
 faker==17.4.0
     # via -r requirements/_test.in
-greenlet==1.1.2
-    # via
-    #   -c requirements/_base.txt
-    #   sqlalchemy
+greenlet==2.0.2
+    # via sqlalchemy
 idna==2.10
     # via
     #   -c requirements/_base.txt

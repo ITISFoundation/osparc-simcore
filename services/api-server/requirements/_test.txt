@@ -100,10 +100,8 @@ flask-cors==3.0.10
     # via moto
 graphql-core==3.2.3
     # via moto
-greenlet==1.1.2
-    # via
-    #   -c requirements/_base.txt
-    #   sqlalchemy
+greenlet==2.0.2
+    # via sqlalchemy
 h11==0.12.0
     # via
     #   -c requirements/_base.txt

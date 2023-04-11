@@ -77,9 +77,7 @@ fsspec==2023.3.0
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
     #   dask
 greenlet==2.0.2
-    # via
-    #   -c requirements/_base.txt
-    #   sqlalchemy
+    # via sqlalchemy
 heapdict==1.0.1
     # via
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
