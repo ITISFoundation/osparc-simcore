@@ -95,7 +95,9 @@ async def get_file_metadata(request: web.Request) -> web.Response:
         # NOTE: This is what happens Larry... data must be an empty {} or else some old
         # dynamic services will FAIL (sic)
         # TODO: once all legacy services are gone, remove the try except, it will default to 404
-        return web.json_response({"error": "No result found", "data": {}})
+        return web.json_response(
+            {"error": "No result found", "data": {}}, dumps=json_dumps
+        )
 
     if request.headers.get("User-Agent") == "OpenAPI-Generator/0.1.0/python":
         # LEGACY compatiblity with API v0.1.0
@@ -119,7 +121,8 @@ async def get_file_metadata(request: web.Request) -> web.Response:
                     "user_name": None,
                 },
                 "error": None,
-            }
+            },
+            dumps=json_dumps,
         )
 
     return jsonable_encoder(FileMetaDataGet.from_orm(data))
@@ -139,7 +142,7 @@ async def download_file(request: web.Request) -> web.Response:
     link = await dsm.create_file_download_link(
         query_params.user_id, path_params.file_id, query_params.link_type
     )
-    return web.json_response({"link": link})
+    return web.json_response({"data": {"link": link}}, dumps=json_dumps)
 
 
 @routes.put(
@@ -188,7 +191,8 @@ async def upload_file(request: web.Request) -> web.Response:
         # return v1 response
         assert len(links.urls) == 1  # nosec
         return web.json_response(
-            {"link": jsonable_encoder(links.urls[0], by_alias=True)}
+            {"data": {"link": jsonable_encoder(links.urls[0], by_alias=True)}},
+            dumps=json_dumps,
         )
 
     # v2 response
@@ -227,7 +231,7 @@ async def upload_file(request: web.Request) -> web.Response:
     f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}:abort",
     name="abort_upload_file",
 )
-async def abort_upload_file(request: web.Request):
+async def abort_upload_file(request: web.Request) -> NoReturn:
     query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
     path_params = parse_request_path_parameters_as(FilePathParams, request)
     log.debug(
@@ -244,7 +248,7 @@ async def abort_upload_file(request: web.Request):
     f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}:complete",
     name="complete_upload_file",
 )
-async def complete_upload_file(request: web.Request):
+async def complete_upload_file(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
     path_params = parse_request_path_parameters_as(FilePathParams, request)
     body = await parse_request_body_as(FileUploadCompletionBody, request)
@@ -282,6 +286,7 @@ async def complete_upload_file(request: web.Request):
     return web.json_response(
         status=web.HTTPAccepted.status_code,
         data={"data": jsonable_encoder(response, by_alias=True)},
+        dumps=json_dumps,
     )
 
 
@@ -289,7 +294,7 @@ async def complete_upload_file(request: web.Request):
     f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}:complete/futures/{{future_id}}",
     name="is_completed_upload_file",
 )
-async def is_completed_upload_file(request: web.Request):
+async def is_completed_upload_file(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
     path_params = parse_request_path_parameters_as(
         FilePathIsUploadCompletedParams, request
