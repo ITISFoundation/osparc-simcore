@@ -129,6 +129,12 @@ class TutorialBase {
       }
       setTimeout(waitForFlash, 0)
 
+      // In case there is landing page, go to the log in page
+      const id = '[osparc-test-id=toLogInPage]';
+      await page.waitForSelector(id, {
+        timeout: 2000
+      });
+
       const needsRegister = await this.registerIfNeeded();
       if (!needsRegister) {
         await this.login();

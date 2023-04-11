@@ -160,6 +160,7 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
         icon: "@FontAwesome5Solid/edit/14",
         appearance: "strong-button"
       });
+      osparc.utils.Utils.setIdToWidget(loginButton, "toLogInPage");
       loginButton.addListener("execute", () => this.fireEvent("loginPressed"));
       return loginButton;
     }
