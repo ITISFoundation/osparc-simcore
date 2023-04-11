@@ -74,7 +74,9 @@ tomli==2.0.1
 tomlkit==0.11.6
     # via pylint
 typing-extensions==4.5.0
-    # via astroid
+    # via
+    #   -c requirements/_test.txt
+    #   astroid
 virtualenv==20.20.0
     # via pre-commit
 wheel==0.38.4
