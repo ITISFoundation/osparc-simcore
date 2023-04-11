@@ -32,6 +32,14 @@ qx.Class.define("osparc.Panddy", {
     }]
   },
 
+  properties: {
+    steps: {
+      check: "Array",
+      init: [],
+      nullable: true
+    }
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       const pandiSize = 80;
@@ -84,7 +92,7 @@ qx.Class.define("osparc.Panddy", {
 
     __toStep: function(idx = 0) {
       let steps = this.self().MINIMAL_STEPS;
-      if (this.isPropertyInitialized("steps")) {
+      if (this.isPropertyInitialized("steps") && this.getSteps() && this.getSteps().length) {
         steps = this.getSteps();
       }
       if (idx >= steps.length) {
