@@ -41,7 +41,7 @@ router = APIRouter()
 def _compose_job_resource_name(solver_key, solver_version, job_id) -> str:
     """Creates a unique resource name for solver's jobs"""
     return Job.compose_resource_name(
-        parent_name=Solver.compose_resource_name(solver_key, solver_version),
+        parent_name=Solver.compose_resource_name(solver_key, solver_version),  # type: ignore
         job_id=job_id,
     )
 

@@ -69,3 +69,10 @@ def get_webserver_session(
     session = AuthSession.create(app, session_cookies)
     assert isinstance(session, AuthSession)  # nosec
     return session
+
+
+__all__: tuple[str, ...] = (
+    "AuthSession",
+    "get_session_cookie",
+    "get_webserver_session",
+)
