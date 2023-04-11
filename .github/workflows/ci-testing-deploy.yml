@@ -387,6 +387,7 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/storage.bash typecheck
       - name: test
+        if: always()
         run: ./ci/github/unit-testing/storage.bash test
       - uses: codecov/codecov-action@v3.1.1
         with:
@@ -846,6 +847,7 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/dask-sidecar.bash typecheck
       - name: test
+        if: always()
         run: ./ci/github/unit-testing/dask-sidecar.bash test
       - uses: codecov/codecov-action@v3.1.1
         with:
@@ -897,6 +899,7 @@ jobs:
           pushd services/osparc-gateway-server && \
           make mypy
       - name: test
+        if: always()
         run: |
           source .venv/bin/activate && \
           pushd services/osparc-gateway-server && \
