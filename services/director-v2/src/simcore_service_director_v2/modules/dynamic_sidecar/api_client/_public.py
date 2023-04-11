@@ -418,7 +418,7 @@ def get_dynamic_sidecar_client(
     app: FastAPI, node_id: str | NodeID
 ) -> DynamicSidecarClient:
     str_node_id = f"{node_id}"
-    assert app.state.dynamic_sidecar_api_clients  # nosec
+
     if str_node_id not in app.state.dynamic_sidecar_api_clients:
         app.state.dynamic_sidecar_api_clients[str_node_id] = DynamicSidecarClient(app)
 
@@ -428,7 +428,6 @@ def get_dynamic_sidecar_client(
 def remove_dynamic_sidecar_client(app: FastAPI, node_id: str | NodeID) -> None:
     str_node_id = f"{node_id}"
 
-    assert app.state.dynamic_sidecar_api_clients  # nosec
     app.state.dynamic_sidecar_api_clients.pop(str_node_id, None)
 
 
