@@ -76,7 +76,7 @@ body:
         Log any issues since this procedure should be taken also as an exercise in preparation for the release to production as well.
       value: |
         - [ ] Add changes (if any) and release tags in https://github.com/ITISFoundation/osparc-ops-environments/tags
-        - [ ] Add changes (if any) and release tags in osparc ops configurations
+        - [ ] Add changes (if any) and release tags in **osparc-ops-deployment-configuration** (osparc.io & speag.com)
         - [ ] ...
     validations:
       required: false
