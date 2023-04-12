@@ -27,12 +27,14 @@ qx.Class.define("osparc.panddy.Panddy", {
     this.set({
       zIndex: 100000
     });
+
+    this.__currentIdx = 0;
   },
 
   statics: {
     INTRO_STEPS: [{
       target: null,
-      message: qx.locale.Manager.tr("Grüezi!<br>This is Panddy. I'm here to give you hints on how to use oSPARC.")
+      message: qx.locale.Manager.tr("Grüezi! This is Panddy. I'm here to give you hints on how to use oSPARC.")
     }]
   },
 
@@ -45,6 +47,9 @@ qx.Class.define("osparc.panddy.Panddy", {
   },
 
   members: {
+    __currentStep: null,
+    __currentIdx: null,
+
     _createChildControlImpl: function(id) {
       const pandiSize = 80;
       let control;
@@ -53,48 +58,39 @@ qx.Class.define("osparc.panddy.Panddy", {
           control = new qx.ui.basic.Image("osparc/panda.gif").set({
             width: pandiSize,
             height: pandiSize,
-            scale: true,
-            cursor: "pointer"
+            scale: true
           });
-          control.addListener("tap", () => this.stop(), this);
           this._add(control, {
             bottom: 0,
             right: 0
           });
           break;
         }
-        case "bubble-text":
-          control = new qx.ui.basic.Label().set({
-            font: "text-14",
-            backgroundColor: "c05",
-            padding: 10,
-            rich: true,
-            maxWidth: 300
-          });
-          control.getContentElement().setStyles({
-            "border-radius": "8px"
-          });
-          this._add(control, {
-            bottom: pandiSize-20,
-            right: pandiSize-20
-          });
-          break;
       }
       return control || this.base(arguments, id);
     },
 
+    __createStep: function(element, text) {
+      const stepWidget = new osparc.panddy.Step(element, text).set({
+        maxWidth: 300
+      });
+      stepWidget.addListener("closePressed", () => this.stop(), this);
+      stepWidget.addListener("nextPressed", () => this.__toStep(this.__currentIdx+1), this);
+      return stepWidget;
+    },
+
     start: function() {
       this.getChildControl("panddy").show();
-      this.getChildControl("bubble-text").show();
 
       this.__toStep(0);
-
-      osparc.product.panddy.Utils.getSteps();
     },
 
     stop: function() {
       this.getChildControl("panddy").exclude();
-      this.getChildControl("bubble-text").exclude();
+      if (this.__currentStep) {
+        this.__currentStep.exclude();
+        this.__currentStep = null;
+      }
     },
 
     __toStep: function(idx = 0) {
@@ -106,7 +102,26 @@ qx.Class.define("osparc.panddy.Panddy", {
         idx = 0;
       }
 
-      this.getChildControl("bubble-text").setValue(steps[idx].message);
+      this.__currentIdx = idx;
+      const step = steps[idx];
+      if (this.__currentStep) {
+        this.__currentStep.exclude();
+        this.__currentStep = null;
+      }
+      const stepWidget = this.__currentStep = this.__createStep();
+      if (step.target) {
+        const domEl = document.querySelector(`[osparc-test-id=${step.target}]`);
+        const el = qx.ui.core.Widget.getWidgetByElement(domEl);
+        stepWidget.setElement(el);
+      } else {
+        const el = this.getChildControl("panddy");
+        stepWidget.setElement(el);
+        stepWidget.setOrientation(osparc.ui.basic.FloatingHelper.ORIENTATION.LEFT);
+      }
+      if (step.message) {
+        stepWidget.setText(step.message);
+      }
+      stepWidget.show();
     },
 
     __highlightWidget: function(widget) {
