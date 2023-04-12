@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.Panddy", {
+qx.Class.define("osparc.panddy.Panddy", {
   extend: qx.ui.core.Widget,
   type: "singleton",
 

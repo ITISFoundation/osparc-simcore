@@ -382,7 +382,7 @@ qx.Class.define("osparc.Application", {
     },
 
     __startPanddy: function() {
-      const panddy = osparc.Panddy.getInstance();
+      const panddy = osparc.panddy.Panddy.getInstance();
       const doc = this.getRoot();
       doc.add(panddy, {
         bottom: 10,

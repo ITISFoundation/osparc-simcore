@@ -48,7 +48,7 @@ qx.Class.define("osparc.store.Support", {
         const steps = osparc.product.panddy.Utils.getSteps();
         const panddyButton = new qx.ui.menu.Button(qx.locale.Manager.tr("Panddy"));
         panddyButton.addListener("execute", () => {
-          const panddy = osparc.Panddy.getInstance();
+          const panddy = osparc.panddy.Panddy.getInstance();
           panddy.setSteps(steps);
           panddy.start();
         });
