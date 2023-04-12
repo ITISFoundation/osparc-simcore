@@ -17,4 +17,5 @@ pytest-mock
 pytest-runner
 pytest-sugar
 pytest-xdist
+requests
 respx
