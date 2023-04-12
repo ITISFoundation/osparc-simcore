@@ -12,7 +12,7 @@
 
 
 coverage
-coveralls
+
 faker
 httpx
 pytest

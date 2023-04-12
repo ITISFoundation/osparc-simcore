@@ -14,7 +14,7 @@ asgi-lifespan
 
 
 coverage
-coveralls
+
 deepdiff
 docker
 faker

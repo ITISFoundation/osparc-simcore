@@ -18,7 +18,7 @@ pytest-simcore @  git+https://github.com/ITISFoundation/osparc-simcore.git@79f86
 aioresponses
 
 coverage==4.5.1 # TODO: Downgraded because of a bug https://github.com/nedbat/coveragepy/issues/716
-coveralls
+
 docker
 openapi-spec-validator~=0.2  # TODO: this library is limiting jsonschema<3
 ptvsd

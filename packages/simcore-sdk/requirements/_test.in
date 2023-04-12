@@ -13,7 +13,7 @@ aioresponses
 alembic
 click
 coverage
-coveralls
+
 docker
 faker
 flaky

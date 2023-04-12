@@ -11,7 +11,7 @@ simcore-service-storage-sdk @ git+https://github.com/ITISFoundation/osparc-simco
 aioresponses
 
 coverage
-coveralls
+
 docker
 faker
 moto[server]

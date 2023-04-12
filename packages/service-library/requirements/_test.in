@@ -13,7 +13,7 @@
 # testing
 asgi_lifespan
 coverage
-coveralls
+
 docker
 faker
 flaky

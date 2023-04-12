@@ -10,7 +10,7 @@
 --constraint ../../dask-sidecar/requirements/_dask-distributed.txt
 
 coverage
-coveralls
+
 dask-gateway
 debugpy
 docker

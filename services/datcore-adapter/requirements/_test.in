@@ -8,7 +8,7 @@
 asgi_lifespan
 
 coverage
-coveralls
+
 faker
 pytest
 pytest-asyncio

@@ -14,7 +14,7 @@ alembic
 asgi_lifespan
 click
 
-coveralls
+
 docker
 faker
 types-boto3
