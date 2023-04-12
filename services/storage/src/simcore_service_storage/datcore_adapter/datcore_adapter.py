@@ -65,13 +65,7 @@ async def _request(
             **request_kwargs,
         ) as response:
             response_data = await response.json()
-            assert isinstance(
-                response_data,
-                (
-                    dict,
-                    list,
-                ),
-            )  # nosec
+            assert isinstance(response_data, (dict, list))  # nosec
             return response_data
 
     except aiohttp.ClientResponseError as exc:
