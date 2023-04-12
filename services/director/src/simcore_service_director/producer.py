@@ -141,6 +141,7 @@ async def _create_docker_service_params(
     project_id: str,
     node_base_path: str,
     internal_network_id: Optional[str],
+    request_simcore_user_agent: str,
 ) -> Dict:
     # pylint: disable=too-many-statements
     service_parameters_labels = await _read_service_settings(
@@ -168,6 +169,7 @@ async def _create_docker_service_params(
             "study_id": project_id,
             "node_id": node_uuid,
             "swarm_stack_name": config.SWARM_STACK_NAME,
+            "simcore_user_agent": request_simcore_user_agent,
         },
         "Mounts": [],
     }
@@ -703,6 +705,7 @@ async def _start_docker_service(
     node_uuid: str,
     node_base_path: str,
     internal_network_id: Optional[str],
+    request_simcore_user_agent: str,
 ) -> Dict:  # pylint: disable=R0913
     service_parameters = await _create_docker_service_params(
         app,
@@ -715,6 +718,7 @@ async def _start_docker_service(
         project_id,
         node_base_path,
         internal_network_id,
+        request_simcore_user_agent,
     )
     log.debug(
         "Starting docker service %s:%s using parameters %s",
@@ -795,6 +799,7 @@ async def _create_node(
     list_of_services: List[Dict],
     node_uuid: str,
     node_base_path: str,
+    request_simcore_user_agent: str,
 ) -> List[Dict]:  # pylint: disable=R0913, R0915
     log.debug(
         "Creating %s docker services for node %s and base path %s for user %s",
@@ -827,6 +832,7 @@ async def _create_node(
             node_uuid,
             node_base_path,
             inter_docker_network_id,
+            request_simcore_user_agent,
         )
         containers_meta_data.append(service_meta_data)
 
@@ -867,6 +873,7 @@ async def start_service(
     service_tag: str,
     node_uuid: str,
     node_base_path: str,
+    request_simcore_user_agent: str
 ) -> Dict:
     # pylint: disable=C0103
     log.debug(
@@ -897,6 +904,7 @@ async def start_service(
             list_of_services_to_start,
             node_uuid,
             node_base_path,
+            request_simcore_user_agent,
         )
         node_details = containers_meta_data[0]
         if config.MONITORING_ENABLED:

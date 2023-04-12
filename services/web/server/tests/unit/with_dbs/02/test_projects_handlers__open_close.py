@@ -750,6 +750,11 @@ async def test_get_active_project(
     if resp.status == web.HTTPOk.status_code:
         assert not error
         assert ProjectState(**data.pop("state")).locked.value
+
+        user_project_last_change_date = user_project.pop("lastChangeDate")
+        data_last_change_date = data.pop("lastChangeDate")
+        assert user_project_last_change_date < data_last_change_date
+
         assert data == user_project
 
     # login with socket using client session id2

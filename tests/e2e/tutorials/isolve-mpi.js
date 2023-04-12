@@ -40,15 +40,12 @@ async function runTutorial() {
     // check logs
     const mustHave = "Running MPI version 3.1 on 2 processes";
     const found = await tutorial.findLogMessage(mustHave);
-    if (found) {
-      console.log("Running MPI version 3.1 on 2 processes");
-    }
-    else {
-      throw "MPI not working";
+    if (!found) {
+      throw `log message '${mustHave}' is missing from logger!`;
     }
   }
   catch(err) {
-    await tutorial.setTutorialFailed(true);
+    await tutorial.setTutorialFailed(true, err);
     console.log('Tutorial error: ' + err);
   }
   finally {
@@ -56,12 +53,12 @@ async function runTutorial() {
   }
 
   if (tutorial.getTutorialFailed()) {
-    throw "Tutorial Failed";
+    throw tutorial.getTutorialFailedReason();
   }
 }
 
 runTutorial()
   .catch(error => {
-    console.log('Puppeteer error: ' + error);
+    console.log(`[ERROR] Tutorial failed: '${error}'`);
     process.exit(1);
   });

@@ -1,4 +1,4 @@
-FROM python:3.9.12-buster
+FROM python:3.10.10-buster
 
 RUN curl https://rclone.org/install.sh | bash && \
   rclone --version

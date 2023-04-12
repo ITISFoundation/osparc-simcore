@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 
 
 def encrypt_password(password: str) -> str:
-    return passlib.hash.sha256_crypt.hash(password, rounds=1000)
+    return passlib.hash.sha256_crypt.using(rounds=1000).hash(password)
 
 
 def check_password(password: str, password_hash: str) -> bool:

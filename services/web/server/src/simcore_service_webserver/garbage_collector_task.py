@@ -8,10 +8,10 @@ import asyncio
 import logging
 
 from aiohttp import web
+from servicelib.logging_utils import log_context
 
 from .garbage_collector_core import collect_garbage
 from .garbage_collector_settings import GarbageCollectorSettings, get_plugin_settings
-from .garbage_collector_utils import log_context
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ async def collect_garbage_periodically(app: web.Application):
     while True:
         try:
             while True:
-                with log_context(logger.info, "Garbage collect cycle"):
+                with log_context(logger, logging.INFO, "Garbage collect cycle"):
                     await collect_garbage(app)
 
                     if app[GC_TASK_CONFIG].get("force_stop", False):

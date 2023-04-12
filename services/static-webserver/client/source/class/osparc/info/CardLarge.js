@@ -33,7 +33,8 @@ qx.Class.define("osparc.info.CardLarge", {
   events: {
     "openAccessRights": "qx.event.type.Event",
     "openClassifiers": "qx.event.type.Event",
-    "openQuality": "qx.event.type.Event"
+    "openQuality": "qx.event.type.Event",
+    "openTags": "qx.event.type.Event"
   },
 
   properties: {

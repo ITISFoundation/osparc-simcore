@@ -14,21 +14,12 @@
 --requirement ../../../packages/service-library/requirements/_fastapi.in
 
 
-# fastapi and extensions
-fastapi[all]
 
-# data models
-pydantic[dotenv]
-
-# database
-asyncpg
-sqlalchemy[asyncio]
-
-# web client
-httpx
-
-# other
 aiocache[redis,msgpack]
-tenacity
+asyncpg # database
+fastapi[all] # fastapi and extensions
+httpx # web client
 packaging
+pydantic[dotenv] # data models
 pyyaml
+tenacity

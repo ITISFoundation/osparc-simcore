@@ -130,7 +130,14 @@ qx.Class.define("osparc.Application", {
                 const studyId = urlFragment.nav[1];
                 this.__loadMainPage(studyId);
               })
-              .catch(() => this.__loadLoginPage());
+              .catch(() => {
+                osparc.store.VendorInfo.getInstance().getVendor()
+                  .then(vendor => {
+                    const landingPage = "has_landing_page" in vendor ? vendor["has_landing_page"] : false;
+                    this.__loadLoginPage(landingPage);
+                  })
+                  .catch(() => this.__loadLoginPage(false));
+              });
           }
           break;
         }
@@ -294,17 +301,29 @@ qx.Class.define("osparc.Application", {
               this.__loadMainPage();
             }
           })
-          .catch(() => this.__loadLoginPage());
+          .catch(() => {
+            osparc.store.VendorInfo.getInstance().getVendor()
+              .then(vendor => {
+                const landingPage = "has_landing_page" in vendor ? vendor["has_landing_page"] : false;
+                this.__loadLoginPage(landingPage);
+              })
+              .catch(() => this.__loadLoginPage(false));
+          });
       }
     },
 
-    __loadLoginPage: function() {
+    __loadLoginPage: function(landingPage = false) {
       this.__disconnectWebSocket();
       let view = null;
       switch (qx.core.Environment.get("product.name")) {
         case "s4l":
         case "s4llite":
-          view = new osparc.auth.LoginPageS4L();
+          if (landingPage) {
+            view = new osparc.product.landingPage.s4llite.Page();
+            view.addListener("loginPressed", () => this.__loadLoginPage(false));
+          } else {
+            view = new osparc.auth.LoginPageS4L();
+          }
           this.__loadView(view);
           break;
         case "tis":
@@ -382,7 +401,7 @@ qx.Class.define("osparc.Application", {
       }
       doc.add(view, options);
       this.__current = view;
-      if (!(view instanceof osparc.desktop.MainPage)) {
+      if (!(view instanceof osparc.desktop.MainPage || view instanceof osparc.product.landingPage.s4llite.Page)) {
         this.__themeSwitcher = new osparc.ui.switch.ThemeSwitcherFormBtn().set({
           backgroundColor: "transparent"
         });

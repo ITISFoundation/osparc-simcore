@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: osparc-simcore web API
-  version: 0.17.0
+  version: 0.17.1
   description: API designed for the front-end app
   contact:
     name: IT'IS Foundation
@@ -2419,550 +2419,1814 @@ paths:
         content:
           application/json:
             schema:
-              title: simcore project
-              description: Description of a simcore project
-              type: object
               additionalProperties: false
-              required:
-                - uuid
-                - name
-                - description
-                - prjOwner
-                - accessRights
-                - creationDate
-                - lastChangeDate
-                - thumbnail
-                - workbench
               properties:
-                uuid:
-                  type: string
-                  format: uuid
-                  description: project unique identifier
-                  example: 07640335-a91f-468c-ab69-a374fa82078d
-                name:
-                  type: string
-                  description: project name
-                  example: Temporal Distortion Simulator
-                description:
-                  type: string
-                  description: longer one-line description about the project
-                  example: Dabbling in temporal transitions ...
-                prjOwner:
-                  type: string
-                  format: email
-                  description: user email
                 accessRights:
-                  type: object
+                  additionalProperties:
+                    additionalProperties: false
+                    properties:
+                      delete:
+                        description: gives deletion rights
+                        title: Delete
+                        type: boolean
+                      read:
+                        description: gives read access
+                        title: Read
+                        type: boolean
+                      write:
+                        description: gives write access
+                        title: Write
+                        type: boolean
+                    required:
+                      - read
+                      - write
+                      - delete
+                    title: AccessRights
+                    type: object
                   description: object containing the GroupID as key and read/write/execution permissions as value
+                  title: Accessrights
+                  type: object
                   x-patternProperties:
                     ^\S+$:
-                      type: object
-                      description: the group id
                       additionalProperties: false
+                      properties:
+                        delete:
+                          description: gives deletion rights
+                          title: Delete
+                          type: boolean
+                        read:
+                          description: gives read access
+                          title: Read
+                          type: boolean
+                        write:
+                          description: gives write access
+                          title: Write
+                          type: boolean
                       required:
                         - read
                         - write
                         - delete
-                      properties:
-                        read:
-                          type: boolean
-                          description: gives read access
-                        write:
-                          type: boolean
-                          description: gives write access
-                        delete:
-                          type: boolean
-                          description: gives deletion rights
-                  additionalProperties: true
-                creationDate:
-                  type: string
-                  description: project creation date
-                  pattern: '\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z'
-                  example: '2018-07-01T11:13:43Z'
-                lastChangeDate:
-                  type: string
-                  description: last save date
-                  pattern: '\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z'
-                  example: '2018-07-01T11:13:43Z'
-                thumbnail:
-                  type: string
-                  minLength: 0
-                  maxLength: 2083
-                  format: uri
-                  description: url of the latest screenshot of the project
-                  example: 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
-                workbench:
-                  type: object
-                  x-patternProperties:
-                    '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
+                      title: AccessRights
                       type: object
-                      additionalProperties: false
-                      required:
-                        - key
-                        - version
-                        - label
-                      properties:
-                        key:
-                          type: string
-                          description: distinctive name for the node based on the docker registry path
-                          pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
-                          example:
-                            - simcore/services/comp/sleeper
-                            - simcore/services/dynamic/3dviewer
-                            - simcore/services/frontend/file-picker
-                        version:
-                          type: string
-                          description: semantic version number of the node
-                          pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
-                          example:
-                            - 1.0.0
-                            - 0.0.1
-                        label:
-                          type: string
-                          description: The short name of the node
-                          example:
-                            - JupyterLab
-                        progress:
-                          type: number
-                          maximum: 100
-                          minimum: 0
-                          description: the node progress value
-                        thumbnail:
-                          minLength: 0
-                          maxLength: 2083
-                          format: uri
-                          type: string
-                          description: url of the latest screenshot of the node
-                          example:
-                            - 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
-                        runHash:
-                          description: the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated
-                          type:
-                            - string
-                            - 'null'
-                          example:
-                            - a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2
-                        inputs:
-                          type: object
-                          description: values of input properties
-                          patternProperties:
-                            '^[-_a-zA-Z0-9]+$':
-                              oneOf:
-                                - type:
-                                    - integer
-                                    - boolean
-                                    - string
-                                    - number
-                                    - 'null'
-                                - type: object
-                                  additionalProperties: false
-                                  required:
-                                    - nodeUuid
-                                    - output
-                                  properties:
-                                    nodeUuid:
-                                      type: string
-                                      format: uuid
-                                    output:
-                                      type: string
-                                      pattern: '^[-_a-zA-Z0-9]+$'
-                                - type: object
-                                  additionalProperties: false
-                                  required:
-                                    - store
-                                    - path
-                                  properties:
-                                    store:
-                                      type:
-                                        - string
-                                        - integer
-                                    dataset:
-                                      type: string
-                                    path:
-                                      type: string
-                                    label:
-                                      type: string
-                                    eTag:
-                                      type: string
-                                - type: object
-                                  additionalProperties: false
-                                  required:
-                                    - downloadLink
-                                  properties:
-                                    downloadLink:
-                                      minLength: 1
-                                      maxLength: 65536
-                                      type: string
-                                      format: uri
-                                    label:
-                                      type: string
-                                - type: array
-                                  items: {}
-                        inputsUnits:
-                          type: object
-                          description: values of input unit
-                          patternProperties:
-                            '^[-_a-zA-Z0-9]+$':
-                              type: string
-                              example:
-                                - kilo-meter
-                                - milli-second
-                                - micro-gram
-                                - kelvin
-                        inputAccess:
-                          description: map with key - access level pairs
-                          type: object
-                          patternProperties:
-                            '^[-_a-zA-Z0-9]+$':
-                              type: string
-                              enum:
-                                - Invisible
-                                - ReadOnly
-                                - ReadAndWrite
-                              default: ReadAndWrite
-                              example:
-                                - ReadOnly
-                        inputNodes:
-                          type: array
-                          items:
-                            type: string
-                            format: uuid
-                          description: node IDs of where the node is connected to
-                          example:
-                            - nodeUuid1
-                            - nodeUuid2
-                        outputs:
-                          default: {}
-                          type: object
-                          patternProperties:
-                            '^[-_a-zA-Z0-9]+$':
-                              oneOf:
-                                - type:
-                                    - integer
-                                    - boolean
-                                    - string
-                                    - number
-                                    - 'null'
-                                - type: object
-                                  additionalProperties: false
-                                  required:
-                                    - store
-                                    - path
-                                  properties:
-                                    store:
-                                      type:
-                                        - string
-                                        - integer
-                                    dataset:
-                                      type: string
-                                    path:
-                                      type: string
-                                    label:
-                                      type: string
-                                    eTag:
-                                      type: string
-                                - type: object
-                                  additionalProperties: false
-                                  required:
-                                    - downloadLink
-                                  properties:
-                                    downloadLink:
-                                      minLength: 1
-                                      maxLength: 65536
-                                      type: string
-                                      format: uri
-                                    label:
-                                      type: string
-                                - type: array
-                                  items: {}
-                        outputNode:
-                          type: boolean
-                          deprecated: true
-                        outputNodes:
-                          type: array
-                          items:
-                            type: string
-                            format: uuid
-                          description: Used in group-nodes. Node IDs of those connected to the output
-                          example:
-                            - nodeUuid1
-                            - nodeUuid2
-                        parent:
-                          type:
-                            - 'null'
-                            - string
-                          format: uuid
-                          description: Parent's (group-nodes') node ID s.
-                          example:
-                            - nodeUuid1
-                            - nodeUuid2
-                        position:
-                          type: object
-                          additionalProperties: false
-                          required:
-                            - x
-                            - 'y'
-                          properties:
-                            x:
-                              type: integer
-                              description: The x position
-                              example:
-                                - '12'
-                            'y':
-                              type: integer
-                              description: The y position
-                              example:
-                                - '15'
-                          deprecated: true
-                        state:
-                          title: NodeState
-                          type: object
-                          properties:
-                            modified:
-                              title: Modified
-                              description: true if the node's outputs need to be re-computed
-                              default: true
-                              type: boolean
-                            dependencies:
-                              title: Dependencies
-                              description: contains the node inputs dependencies if they need to be computed first
-                              type: array
-                              uniqueItems: true
-                              items:
-                                type: string
-                                format: uuid
-                            currentStatus:
-                              description: the node's current state
-                              default: NOT_STARTED
-                              example:
-                                - RUNNING
-                                - FAILED
-                              enum:
-                                - UNKNOWN
-                                - PUBLISHED
-                                - NOT_STARTED
-                                - PENDING
-                                - STARTED
-                                - RETRY
-                                - SUCCESS
-                                - FAILED
-                                - ABORTED
-                              type: string
-                          additionalProperties: false
-                        bootOptions:
-                          title: Boot Options
-                          description: 'Some services provide alternative parameters to be injected at boot time. The user selection should be stored here, and it will overwrite the services''s defaults.'
-                          type: object
-                          patternProperties:
-                            '[a-zA-Z][a-azA-Z0-9_]*':
-                              type: string
-                  additionalProperties: true
-                ui:
-                  type: object
-                  additionalProperties: true
-                  properties:
-                    workbench:
-                      type: object
-                      x-patternProperties:
-                        '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
-                          type: object
-                          additionalProperties: false
-                          required:
-                            - position
-                          properties:
-                            position:
-                              type: object
-                              additionalProperties: false
-                              required:
-                                - x
-                                - 'y'
-                              properties:
-                                x:
-                                  type: integer
-                                  description: The x position
-                                  example:
-                                    - '12'
-                                'y':
-                                  type: integer
-                                  description: The y position
-                                  example:
-                                    - '15'
-                            marker:
-                              type: object
-                              additionalProperties: false
-                              required:
-                                - color
-                              properties:
-                                color:
-                                  type: string
-                                  description: Marker's color
-                                  example:
-                                    - '#FF0000'
-                                    - '#0000FF'
-                      additionalProperties: true
-                    slideshow:
-                      type: object
-                      x-patternProperties:
-                        '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
-                          type: object
-                          additionalProperties: false
-                          required:
-                            - position
-                          properties:
-                            position:
-                              type: integer
-                              description: Slide's position
-                              example:
-                                - 0
-                                - 2
-                            instructions:
-                              type:
-                                - string
-                                - 'null'
-                              description: Instructions about what to do in this step
-                              example:
-                                - This is a **sleeper**
-                                - 'Please, select the config file defined [in this link](asdf)'
-                      additionalProperties: true
-                    currentNodeId:
-                      type: string
-                      format: uuid
-                    annotations:
-                      type: object
-                      x-patternProperties:
-                        '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
-                          type: object
-                          additionalProperties: false
-                          required:
-                            - type
-                            - color
-                            - attributes
-                          properties:
-                            type:
-                              type: string
-                              description: Annotation type
-                              example:
-                                - rect
-                                - text
-                            color:
-                              type: string
-                              description: Annotation's color
-                              example:
-                                - '#FF0000'
-                                - '#0000FF'
-                            attributes:
-                              type: object
-                              description: svg attributes
-                      additionalProperties: true
-                tags:
-                  type: array
-                  items:
-                    type: integer
                 classifiers:
-                  type: array
                   description: Contains the reference to the project classifiers
+                  example: 'some:id:to:a:classifier'
                   items:
                     type: string
-                  example: 'some:id:to:a:classifier'
+                  title: Classifiers
+                  type: array
+                creationDate:
+                  description: project creation date
+                  example: '2018-07-01T11:13:43Z'
+                  pattern: '\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z'
+                  title: Creationdate
+                  type: string
+                description:
+                  description: longer one-line description about the project
+                  example: Dabbling in temporal transitions ...
+                  title: Description
+                  type: string
                 dev:
-                  type: object
                   description: object used for development purposes only
+                  title: Dev
+                  type: object
+                lastChangeDate:
+                  description: last save date
+                  example: '2018-07-01T11:13:43Z'
+                  pattern: '\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z'
+                  title: Lastchangedate
+                  type: string
+                name:
+                  description: project name
+                  example: Temporal Distortion Simulator
+                  title: Name
+                  type: string
+                prjOwner:
+                  description: user email
+                  format: email
+                  title: Prjowner
+                  type: string
+                quality:
+                  description: stores the study quality assessment
+                  title: Quality
+                  type: object
                 state:
-                  title: State
-                  description: Project state
                   anyOf:
                     - nullable: true
-                    - title: ProjectState
-                      type: object
-                      additionalProperties: false
+                    - additionalProperties: false
                       properties:
                         locked:
-                          title: Locked
-                          description: The project lock state
                           allOf:
-                            - title: ProjectLocked
-                              type: object
-                              additionalProperties: false
+                            - additionalProperties: false
+                              example:
+                                status: CLOSED
+                                value: false
                               properties:
-                                value:
-                                  title: Value
-                                  description: True if the project is locked
-                                  type: boolean
                                 owner:
-                                  title: Owner
-                                  description: 'If locked, the user that owns the lock'
                                   allOf:
-                                    - title: Owner
-                                      type: object
-                                      additionalProperties: false
+                                    - additionalProperties: false
                                       properties:
-                                        user_id:
-                                          title: User Id
-                                          type: integer
-                                          description: Owner's identifier when registered in the user's database table
-                                          example:
-                                            - 2
                                         first_name:
-                                          title: First Name
                                           description: Owner first name
-                                          example:
-                                            - John
+                                          example: John
+                                          title: First Name
                                           type: string
                                         last_name:
-                                          title: Last Name
                                           description: Owner last name
-                                          example:
-                                            - Smith
+                                          example: Smith
+                                          title: Last Name
                                           type: string
+                                        user_id:
+                                          description: Owner's identifier when registered in the user's database table
+                                          example: 2
+                                          title: User Id
+                                          type: integer
                                       required:
                                         - user_id
                                         - first_name
                                         - last_name
+                                      title: Owner
+                                      type: object
+                                  description: 'If locked, the user that owns the lock'
+                                  title: Owner
                                 status:
-                                  title: Status
+                                  allOf:
+                                    - description: An enumeration.
+                                      enum:
+                                        - CLOSED
+                                        - CLOSING
+                                        - CLONING
+                                        - EXPORTING
+                                        - OPENING
+                                        - OPENED
+                                      title: ProjectStatus
+                                      type: string
                                   description: The status of the project
-                                  enum:
-                                    - CLOSED
-                                    - CLOSING
-                                    - CLONING
-                                    - OPENING
-                                    - EXPORTING
-                                    - OPENED
-                                  type: string
+                                value:
+                                  description: True if the project is locked
+                                  title: Value
+                                  type: boolean
                               required:
                                 - value
                                 - status
-                        state:
-                          title: State
-                          description: The project running state
-                          allOf:
-                            - title: ProjectRunningState
+                              title: ProjectLocked
                               type: object
-                              additionalProperties: false
+                          description: The project lock state
+                          title: Locked
+                        state:
+                          allOf:
+                            - additionalProperties: false
                               properties:
                                 value:
-                                  title: RunningState
-                                  description: An enumeration.
-                                  enum:
-                                    - UNKNOWN
-                                    - NOT_STARTED
-                                    - PUBLISHED
-                                    - PENDING
-                                    - STARTED
-                                    - RETRY
-                                    - SUCCESS
-                                    - FAILED
-                                    - ABORTED
-                                  type: string
+                                  allOf:
+                                    - description: |-
+                                        State of execution of a project's computational workflow
+
+                                        SEE StateType for task state
+                                      enum:
+                                        - UNKNOWN
+                                        - PUBLISHED
+                                        - NOT_STARTED
+                                        - PENDING
+                                        - STARTED
+                                        - RETRY
+                                        - SUCCESS
+                                        - FAILED
+                                        - ABORTED
+                                      title: RunningState
+                                      type: string
+                                  description: The running state of the project
+                                  example: STARTED
                               required:
                                 - value
+                              title: ProjectRunningState
+                              type: object
+                          description: The project running state
+                          title: State
                       required:
                         - locked
                         - state
-                quality:
+                      title: ProjectState
+                      type: object
+                tags:
+                  default: []
+                  items:
+                    type: integer
+                  title: Tags
+                  type: array
+                thumbnail:
+                  description: url of the project thumbnail
+                  example: 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
+                  format: uri
+                  maxLength: 2083
+                  minLength: 0
+                  title: Thumbnail
+                  type: string
+                ui:
+                  properties:
+                    annotations:
+                      additionalProperties:
+                        additionalProperties: false
+                        example:
+                          attributes:
+                            height: 26
+                            width: 117
+                            x: 415
+                            'y': 100
+                          color: '#FF0000'
+                          type: rect
+                        properties:
+                          attributes:
+                            description: svg attributes
+                            title: Attributes
+                            type: object
+                          color:
+                            format: color
+                            title: Color
+                            type: string
+                          type:
+                            enum:
+                              - rect
+                              - text
+                            title: Type
+                            type: string
+                        required:
+                          - type
+                          - color
+                          - attributes
+                        title: Annotation
+                        type: object
+                      title: Annotations
+                      type: object
+                      x-patternProperties:
+                        '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$':
+                          additionalProperties: false
+                          example:
+                            - attributes:
+                                height: 26
+                                width: 117
+                                x: 415
+                                'y': 100
+                              color: '#FF0000'
+                              type: rect
+                            - attributes:
+                                text: Hey!
+                                x: 415
+                                'y': 100
+                              color: '#0000FF'
+                              type: text
+                          properties:
+                            attributes:
+                              description: svg attributes
+                              title: Attributes
+                              type: object
+                            color:
+                              format: color
+                              title: Color
+                              type: string
+                            type:
+                              enum:
+                                - rect
+                                - text
+                              title: Type
+                              type: string
+                          required:
+                            - type
+                            - color
+                            - attributes
+                          title: Annotation
+                          type: object
+                    currentNodeId:
+                      format: uuid
+                      title: Currentnodeid
+                      type: string
+                    slideshow:
+                      additionalProperties:
+                        properties:
+                          instructions:
+                            title: Instructions
+                            type: string
+                          position:
+                            title: Position
+                            type: integer
+                        required:
+                          - position
+                        title: Slideshow
+                        type: object
+                      title: Slideshow
+                      type: object
+                      x-patternProperties:
+                        '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$':
+                          properties:
+                            instructions:
+                              title: Instructions
+                              type: string
+                            position:
+                              title: Position
+                              type: integer
+                          required:
+                            - position
+                          title: Slideshow
+                          type: object
+                    workbench:
+                      additionalProperties:
+                        additionalProperties: false
+                        properties:
+                          marker:
+                            additionalProperties: false
+                            properties:
+                              color:
+                                format: color
+                                title: Color
+                                type: string
+                            required:
+                              - color
+                            title: Marker
+                            type: object
+                          position:
+                            allOf:
+                              - additionalProperties: false
+                                properties:
+                                  x:
+                                    description: The x position
+                                    example:
+                                      - '12'
+                                    title: X
+                                    type: integer
+                                  'y':
+                                    description: The y position
+                                    example:
+                                      - '15'
+                                    title: 'Y'
+                                    type: integer
+                                required:
+                                  - x
+                                  - 'y'
+                                title: Position
+                                type: object
+                            description: The node position in the workbench
+                            title: Position
+                        required:
+                          - position
+                        title: WorkbenchUI
+                        type: object
+                      title: Workbench
+                      type: object
+                      x-patternProperties:
+                        '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$':
+                          additionalProperties: false
+                          properties:
+                            marker:
+                              additionalProperties: false
+                              properties:
+                                color:
+                                  format: color
+                                  title: Color
+                                  type: string
+                              required:
+                                - color
+                              title: Marker
+                              type: object
+                            position:
+                              allOf:
+                                - additionalProperties: false
+                                  properties:
+                                    x:
+                                      description: The x position
+                                      example:
+                                        - '12'
+                                      title: X
+                                      type: integer
+                                    'y':
+                                      description: The y position
+                                      example:
+                                        - '15'
+                                      title: 'Y'
+                                      type: integer
+                                  required:
+                                    - x
+                                    - 'y'
+                                  title: Position
+                                  type: object
+                              description: The node position in the workbench
+                              title: Position
+                          required:
+                            - position
+                          title: WorkbenchUI
+                          type: object
+                  title: StudyUI
                   type: object
-                  title: Quality
-                  description: Object containing Quality Assessment related data
+                uuid:
+                  description: project unique identifier
+                  example: 07640335-a91f-468c-ab69-a374fa82078d
+                  format: uuid
+                  title: Uuid
+                  type: string
+                workbench:
+                  additionalProperties:
+                    additionalProperties: false
+                    properties:
+                      bootOptions:
+                        additionalProperties:
+                          type: string
+                        description: 'Some services provide alternative parameters to be injected at boot time. The user selection should be stored here, and it will overwrite the services''s defaults.'
+                        title: Bootoptions
+                        type: object
+                        x-patternProperties:
+                          '[a-zA-Z][a-azA-Z0-9_]*':
+                            type: string
+                      inputAccess:
+                        additionalProperties:
+                          description: An enumeration.
+                          enum:
+                            - ReadAndWrite
+                            - Invisible
+                            - ReadOnly
+                          title: AccessEnum
+                          type: string
+                        description: map with key - access level pairs
+                        type: object
+                        x-patternProperties:
+                          '^[-_a-zA-Z0-9]+$':
+                            description: An enumeration.
+                            enum:
+                              - ReadAndWrite
+                              - Invisible
+                              - ReadOnly
+                            title: AccessEnum
+                            type: string
+                      inputNodes:
+                        description: node IDs of where the node is connected to
+                        items:
+                          format: uuid
+                          type: string
+                        title: Inputnodes
+                        type: array
+                      inputs:
+                        additionalProperties:
+                          anyOf:
+                            - type: boolean
+                            - type: integer
+                            - type: number
+                            - format: json-string
+                              type: string
+                            - type: string
+                            - additionalProperties: false
+                              description: I/O port type to reference to an output port of another node in the same project
+                              example:
+                                nodeUuid: da5068e0-8a8d-4fb9-9516-56e5ddaef15b
+                                output: out_2
+                              properties:
+                                nodeUuid:
+                                  description: The node to get the port output from
+                                  format: uuid
+                                  title: Nodeuuid
+                                  type: string
+                                output:
+                                  description: The port key in the node given by nodeUuid
+                                  pattern: '^[-_a-zA-Z0-9]+$'
+                                  title: Output
+                                  type: string
+                              required:
+                                - nodeUuid
+                                - output
+                              title: PortLink
+                              type: object
+                            - additionalProperties: false
+                              description: I/O port type to hold a link to a file in simcore S3 storage
+                              example:
+                                eTag: 859fda0cb82fc4acb4686510a172d9a9-1
+                                label: input.txt
+                                path: 94453a6a-c8d4-52b3-a22d-ccbf81f8d636/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt
+                                store: 0
+                              properties:
+                                dataset:
+                                  deprecated: true
+                                  title: Dataset
+                                  type: string
+                                eTag:
+                                  description: Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).
+                                  title: Etag
+                                  type: string
+                                label:
+                                  description: The real file name
+                                  title: Label
+                                  type: string
+                                path:
+                                  anyOf:
+                                    - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
+                                      type: string
+                                    - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
+                                      type: string
+                                  description: The path to the file in the storage provider domain
+                                  title: Path
+                                store:
+                                  description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+                                  title: Store
+                                  type: integer
+                              required:
+                                - store
+                                - path
+                              title: SimCoreFileLink
+                              type: object
+                            - additionalProperties: false
+                              description: I/O port type to hold a link to a file in DATCORE storage
+                              example:
+                                dataset: 'N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4'
+                                label: initial_WTstates
+                                path: 'N:package:32df09ba-e8d6-46da-bd54-f696157de6ce'
+                                store: 1
+                              properties:
+                                dataset:
+                                  description: Unique identifier to access the dataset on datcore (REQUIRED for datcore)
+                                  title: Dataset
+                                  type: string
+                                eTag:
+                                  description: Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).
+                                  title: Etag
+                                  type: string
+                                label:
+                                  description: The real file name
+                                  title: Label
+                                  type: string
+                                path:
+                                  anyOf:
+                                    - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
+                                      type: string
+                                    - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
+                                      type: string
+                                  description: The path to the file in the storage provider domain
+                                  title: Path
+                                store:
+                                  description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+                                  title: Store
+                                  type: integer
+                              required:
+                                - store
+                                - path
+                                - label
+                                - dataset
+                              title: DatCoreFileLink
+                              type: object
+                            - additionalProperties: false
+                              description: 'I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)'
+                              example:
+                                downloadLink: 'https://fakeimg.pl/250x100/'
+                              properties:
+                                downloadLink:
+                                  format: uri
+                                  maxLength: 65536
+                                  minLength: 1
+                                  title: Downloadlink
+                                  type: string
+                                label:
+                                  description: Display name
+                                  title: Label
+                                  type: string
+                              required:
+                                - downloadLink
+                              title: DownloadLink
+                              type: object
+                            - items: {}
+                              type: array
+                            - type: object
+                        description: values of input properties
+                        title: Inputs
+                        type: object
+                        x-patternProperties:
+                          '^[-_a-zA-Z0-9]+$':
+                            anyOf:
+                              - type: boolean
+                              - type: integer
+                              - type: number
+                              - format: json-string
+                                type: string
+                              - type: string
+                              - additionalProperties: false
+                                description: I/O port type to reference to an output port of another node in the same project
+                                example:
+                                  - nodeUuid: da5068e0-8a8d-4fb9-9516-56e5ddaef15b
+                                    output: out_2
+                                properties:
+                                  nodeUuid:
+                                    description: The node to get the port output from
+                                    format: uuid
+                                    title: Nodeuuid
+                                    type: string
+                                  output:
+                                    description: The port key in the node given by nodeUuid
+                                    pattern: '^[-_a-zA-Z0-9]+$'
+                                    title: Output
+                                    type: string
+                                required:
+                                  - nodeUuid
+                                  - output
+                                title: PortLink
+                                type: object
+                              - additionalProperties: false
+                                description: I/O port type to hold a link to a file in simcore S3 storage
+                                example:
+                                  - eTag: 859fda0cb82fc4acb4686510a172d9a9-1
+                                    label: input.txt
+                                    path: 94453a6a-c8d4-52b3-a22d-ccbf81f8d636/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt
+                                    store: 0
+                                  - eTag: f7e4c7076761a42a871e978c8691c676
+                                    path: 50339632-ee1d-11ec-a0c2-02420a0194e4/23b1522f-225f-5a4c-9158-c4c19a70d4a8/output.h5
+                                    store: '0'
+                                  - path: api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt
+                                    store: 0
+                                  - path: 94453a6a-c8d4-52b3-a22d-ccbf81f8d636/d4442ca4-23fd-5b6b-ba6d-0b75f711c109/y_1D.txt
+                                    store: 0
+                                properties:
+                                  dataset:
+                                    deprecated: true
+                                    title: Dataset
+                                    type: string
+                                  eTag:
+                                    description: Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).
+                                    title: Etag
+                                    type: string
+                                  label:
+                                    description: The real file name
+                                    title: Label
+                                    type: string
+                                  path:
+                                    anyOf:
+                                      - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
+                                        type: string
+                                      - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
+                                        type: string
+                                    description: The path to the file in the storage provider domain
+                                    title: Path
+                                  store:
+                                    description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+                                    title: Store
+                                    type: integer
+                                required:
+                                  - store
+                                  - path
+                                title: SimCoreFileLink
+                                type: object
+                              - additionalProperties: false
+                                description: I/O port type to hold a link to a file in DATCORE storage
+                                example:
+                                  - dataset: 'N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4'
+                                    label: initial_WTstates
+                                    path: 'N:package:32df09ba-e8d6-46da-bd54-f696157de6ce'
+                                    store: 1
+                                  - dataset: 'N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4'
+                                    label: initial_WTstates
+                                    path: 'N:package:32df09ba-e8d6-46da-bd54-f696157de6ce'
+                                    store: 1
+                                properties:
+                                  dataset:
+                                    description: Unique identifier to access the dataset on datcore (REQUIRED for datcore)
+                                    title: Dataset
+                                    type: string
+                                  eTag:
+                                    description: Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).
+                                    title: Etag
+                                    type: string
+                                  label:
+                                    description: The real file name
+                                    title: Label
+                                    type: string
+                                  path:
+                                    anyOf:
+                                      - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
+                                        type: string
+                                      - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
+                                        type: string
+                                    description: The path to the file in the storage provider domain
+                                    title: Path
+                                  store:
+                                    description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+                                    title: Store
+                                    type: integer
+                                required:
+                                  - store
+                                  - path
+                                  - label
+                                  - dataset
+                                title: DatCoreFileLink
+                                type: object
+                              - additionalProperties: false
+                                description: 'I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)'
+                                example:
+                                  - downloadLink: 'https://fakeimg.pl/250x100/'
+                                properties:
+                                  downloadLink:
+                                    format: uri
+                                    maxLength: 65536
+                                    minLength: 1
+                                    title: Downloadlink
+                                    type: string
+                                  label:
+                                    description: Display name
+                                    title: Label
+                                    type: string
+                                required:
+                                  - downloadLink
+                                title: DownloadLink
+                                type: object
+                              - items: {}
+                                type: array
+                              - type: object
+                      inputsUnits:
+                        additionalProperties:
+                          type: string
+                        description: Overrides default unit (if any) defined in the service for each port
+                        title: Inputsunits
+                        type: object
+                        x-patternProperties:
+                          '^[-_a-zA-Z0-9]+$':
+                            type: string
+                      key:
+                        description: distinctive name for the node based on the docker registry path
+                        example: simcore/services/comp/itis/sleeper
+                        pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+                        title: Key
+                        type: string
+                      label:
+                        description: The short name of the node
+                        example: JupyterLab
+                        title: Label
+                        type: string
+                      outputNode:
+                        deprecated: true
+                        title: Outputnode
+                        type: boolean
+                      outputNodes:
+                        description: Used in group-nodes. Node IDs of those connected to the output
+                        items:
+                          format: uuid
+                          type: string
+                        title: Outputnodes
+                        type: array
+                      outputs:
+                        additionalProperties:
+                          anyOf:
+                            - type: boolean
+                            - type: integer
+                            - type: number
+                            - format: json-string
+                              type: string
+                            - type: string
+                            - additionalProperties: false
+                              description: I/O port type to hold a link to a file in simcore S3 storage
+                              example:
+                                eTag: 859fda0cb82fc4acb4686510a172d9a9-1
+                                label: input.txt
+                                path: 94453a6a-c8d4-52b3-a22d-ccbf81f8d636/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt
+                                store: 0
+                              properties:
+                                dataset:
+                                  deprecated: true
+                                  title: Dataset
+                                  type: string
+                                eTag:
+                                  description: Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).
+                                  title: Etag
+                                  type: string
+                                label:
+                                  description: The real file name
+                                  title: Label
+                                  type: string
+                                path:
+                                  anyOf:
+                                    - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
+                                      type: string
+                                    - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
+                                      type: string
+                                  description: The path to the file in the storage provider domain
+                                  title: Path
+                                store:
+                                  description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+                                  title: Store
+                                  type: integer
+                              required:
+                                - store
+                                - path
+                              title: SimCoreFileLink
+                              type: object
+                            - additionalProperties: false
+                              description: I/O port type to hold a link to a file in DATCORE storage
+                              example:
+                                dataset: 'N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4'
+                                label: initial_WTstates
+                                path: 'N:package:32df09ba-e8d6-46da-bd54-f696157de6ce'
+                                store: 1
+                              properties:
+                                dataset:
+                                  description: Unique identifier to access the dataset on datcore (REQUIRED for datcore)
+                                  title: Dataset
+                                  type: string
+                                eTag:
+                                  description: Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).
+                                  title: Etag
+                                  type: string
+                                label:
+                                  description: The real file name
+                                  title: Label
+                                  type: string
+                                path:
+                                  anyOf:
+                                    - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
+                                      type: string
+                                    - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
+                                      type: string
+                                  description: The path to the file in the storage provider domain
+                                  title: Path
+                                store:
+                                  description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+                                  title: Store
+                                  type: integer
+                              required:
+                                - store
+                                - path
+                                - label
+                                - dataset
+                              title: DatCoreFileLink
+                              type: object
+                            - additionalProperties: false
+                              description: 'I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)'
+                              example:
+                                downloadLink: 'https://fakeimg.pl/250x100/'
+                              properties:
+                                downloadLink:
+                                  format: uri
+                                  maxLength: 65536
+                                  minLength: 1
+                                  title: Downloadlink
+                                  type: string
+                                label:
+                                  description: Display name
+                                  title: Label
+                                  type: string
+                              required:
+                                - downloadLink
+                              title: DownloadLink
+                              type: object
+                            - items: {}
+                              type: array
+                            - type: object
+                        description: values of output properties
+                        title: Outputs
+                        type: object
+                        x-patternProperties:
+                          '^[-_a-zA-Z0-9]+$':
+                            anyOf:
+                              - type: boolean
+                              - type: integer
+                              - type: number
+                              - format: json-string
+                                type: string
+                              - type: string
+                              - additionalProperties: false
+                                description: I/O port type to hold a link to a file in simcore S3 storage
+                                example:
+                                  - eTag: 859fda0cb82fc4acb4686510a172d9a9-1
+                                    label: input.txt
+                                    path: 94453a6a-c8d4-52b3-a22d-ccbf81f8d636/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt
+                                    store: 0
+                                  - eTag: f7e4c7076761a42a871e978c8691c676
+                                    path: 50339632-ee1d-11ec-a0c2-02420a0194e4/23b1522f-225f-5a4c-9158-c4c19a70d4a8/output.h5
+                                    store: '0'
+                                  - path: api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt
+                                    store: 0
+                                  - path: 94453a6a-c8d4-52b3-a22d-ccbf81f8d636/d4442ca4-23fd-5b6b-ba6d-0b75f711c109/y_1D.txt
+                                    store: 0
+                                properties:
+                                  dataset:
+                                    deprecated: true
+                                    title: Dataset
+                                    type: string
+                                  eTag:
+                                    description: Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).
+                                    title: Etag
+                                    type: string
+                                  label:
+                                    description: The real file name
+                                    title: Label
+                                    type: string
+                                  path:
+                                    anyOf:
+                                      - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
+                                        type: string
+                                      - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
+                                        type: string
+                                    description: The path to the file in the storage provider domain
+                                    title: Path
+                                  store:
+                                    description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+                                    title: Store
+                                    type: integer
+                                required:
+                                  - store
+                                  - path
+                                title: SimCoreFileLink
+                                type: object
+                              - additionalProperties: false
+                                description: I/O port type to hold a link to a file in DATCORE storage
+                                example:
+                                  - dataset: 'N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4'
+                                    label: initial_WTstates
+                                    path: 'N:package:32df09ba-e8d6-46da-bd54-f696157de6ce'
+                                    store: 1
+                                  - dataset: 'N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4'
+                                    label: initial_WTstates
+                                    path: 'N:package:32df09ba-e8d6-46da-bd54-f696157de6ce'
+                                    store: 1
+                                properties:
+                                  dataset:
+                                    description: Unique identifier to access the dataset on datcore (REQUIRED for datcore)
+                                    title: Dataset
+                                    type: string
+                                  eTag:
+                                    description: Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).
+                                    title: Etag
+                                    type: string
+                                  label:
+                                    description: The real file name
+                                    title: Label
+                                    type: string
+                                  path:
+                                    anyOf:
+                                      - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
+                                        type: string
+                                      - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
+                                        type: string
+                                    description: The path to the file in the storage provider domain
+                                    title: Path
+                                  store:
+                                    description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+                                    title: Store
+                                    type: integer
+                                required:
+                                  - store
+                                  - path
+                                  - label
+                                  - dataset
+                                title: DatCoreFileLink
+                                type: object
+                              - additionalProperties: false
+                                description: 'I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)'
+                                example:
+                                  - downloadLink: 'https://fakeimg.pl/250x100/'
+                                properties:
+                                  downloadLink:
+                                    format: uri
+                                    maxLength: 65536
+                                    minLength: 1
+                                    title: Downloadlink
+                                    type: string
+                                  label:
+                                    description: Display name
+                                    title: Label
+                                    type: string
+                                required:
+                                  - downloadLink
+                                title: DownloadLink
+                                type: object
+                              - items: {}
+                                type: array
+                              - type: object
+                      parent:
+                        anyOf:
+                          - nullable: true
+                          - description: Parent's (group-nodes') node ID s. Used to group
+                            format: uuid
+                            title: Parent
+                            type: string
+                      position:
+                        allOf:
+                          - additionalProperties: false
+                            properties:
+                              x:
+                                description: The x position
+                                example:
+                                  - '12'
+                                title: X
+                                type: integer
+                              'y':
+                                description: The y position
+                                example:
+                                  - '15'
+                                title: 'Y'
+                                type: integer
+                            required:
+                              - x
+                              - 'y'
+                            title: Position
+                            type: object
+                        deprecated: true
+                        description: Use projects_ui.WorkbenchUI.position instead
+                        title: Position
+                      progress:
+                        description: the node progress value
+                        maximum: 100
+                        minimum: 0
+                        title: Progress
+                        type: number
+                      runHash:
+                        anyOf:
+                          - nullable: true
+                          - description: the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated
+                            title: Runhash
+                            type: string
+                      state:
+                        allOf:
+                          - additionalProperties: false
+                            example:
+                              currentStatus: NOT_STARTED
+                              dependencies: []
+                              modified: true
+                            properties:
+                              currentStatus:
+                                allOf:
+                                  - description: |-
+                                      State of execution of a project's computational workflow
+
+                                      SEE StateType for task state
+                                    enum:
+                                      - UNKNOWN
+                                      - PUBLISHED
+                                      - NOT_STARTED
+                                      - PENDING
+                                      - STARTED
+                                      - RETRY
+                                      - SUCCESS
+                                      - FAILED
+                                      - ABORTED
+                                    title: RunningState
+                                    type: string
+                                default: NOT_STARTED
+                                description: the node's current state
+                              dependencies:
+                                description: contains the node inputs dependencies if they need to be computed first
+                                items:
+                                  format: uuid
+                                  type: string
+                                title: Dependencies
+                                type: array
+                                uniqueItems: true
+                              modified:
+                                default: true
+                                description: true if the node's outputs need to be re-computed
+                                title: Modified
+                                type: boolean
+                            title: NodeState
+                            type: object
+                        description: The node's state object
+                        title: State
+                      thumbnail:
+                        description: url of the latest screenshot of the node
+                        example: 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
+                        format: uri
+                        maxLength: 2083
+                        minLength: 0
+                        title: Thumbnail
+                        type: string
+                      version:
+                        description: semantic version number of the node
+                        example: 1.0.0
+                        pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
+                        title: Version
+                        type: string
+                    required:
+                      - key
+                      - version
+                      - label
+                    title: Node
+                    type: object
+                  description: Project's pipeline
+                  title: Workbench
+                  type: object
+                  x-patternProperties:
+                    '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$':
+                      additionalProperties: false
+                      properties:
+                        bootOptions:
+                          additionalProperties:
+                            type: string
+                          description: 'Some services provide alternative parameters to be injected at boot time. The user selection should be stored here, and it will overwrite the services''s defaults.'
+                          patternProperties:
+                            '[a-zA-Z][a-azA-Z0-9_]*':
+                              type: string
+                          title: Bootoptions
+                          type: object
+                        inputAccess:
+                          additionalProperties:
+                            description: An enumeration.
+                            enum:
+                              - ReadAndWrite
+                              - Invisible
+                              - ReadOnly
+                            title: AccessEnum
+                            type: string
+                          description: map with key - access level pairs
+                          patternProperties:
+                            '^[-_a-zA-Z0-9]+$':
+                              description: An enumeration.
+                              enum:
+                                - ReadAndWrite
+                                - Invisible
+                                - ReadOnly
+                              title: AccessEnum
+                              type: string
+                          type: object
+                        inputNodes:
+                          description: node IDs of where the node is connected to
+                          items:
+                            format: uuid
+                            type: string
+                          title: Inputnodes
+                          type: array
+                        inputs:
+                          additionalProperties:
+                            anyOf:
+                              - type: boolean
+                              - type: integer
+                              - type: number
+                              - format: json-string
+                                type: string
+                              - type: string
+                              - additionalProperties: false
+                                description: I/O port type to reference to an output port of another node in the same project
+                                example:
+                                  - nodeUuid: da5068e0-8a8d-4fb9-9516-56e5ddaef15b
+                                    output: out_2
+                                properties:
+                                  nodeUuid:
+                                    description: The node to get the port output from
+                                    format: uuid
+                                    title: Nodeuuid
+                                    type: string
+                                  output:
+                                    description: The port key in the node given by nodeUuid
+                                    pattern: '^[-_a-zA-Z0-9]+$'
+                                    title: Output
+                                    type: string
+                                required:
+                                  - nodeUuid
+                                  - output
+                                title: PortLink
+                                type: object
+                              - additionalProperties: false
+                                description: I/O port type to hold a link to a file in simcore S3 storage
+                                example:
+                                  - eTag: 859fda0cb82fc4acb4686510a172d9a9-1
+                                    label: input.txt
+                                    path: 94453a6a-c8d4-52b3-a22d-ccbf81f8d636/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt
+                                    store: 0
+                                  - eTag: f7e4c7076761a42a871e978c8691c676
+                                    path: 50339632-ee1d-11ec-a0c2-02420a0194e4/23b1522f-225f-5a4c-9158-c4c19a70d4a8/output.h5
+                                    store: '0'
+                                  - path: api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt
+                                    store: 0
+                                  - path: 94453a6a-c8d4-52b3-a22d-ccbf81f8d636/d4442ca4-23fd-5b6b-ba6d-0b75f711c109/y_1D.txt
+                                    store: 0
+                                properties:
+                                  dataset:
+                                    deprecated: true
+                                    title: Dataset
+                                    type: string
+                                  eTag:
+                                    description: Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).
+                                    title: Etag
+                                    type: string
+                                  label:
+                                    description: The real file name
+                                    title: Label
+                                    type: string
+                                  path:
+                                    anyOf:
+                                      - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
+                                        type: string
+                                      - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
+                                        type: string
+                                    description: The path to the file in the storage provider domain
+                                    title: Path
+                                  store:
+                                    description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+                                    title: Store
+                                    type: integer
+                                required:
+                                  - store
+                                  - path
+                                title: SimCoreFileLink
+                                type: object
+                              - additionalProperties: false
+                                description: I/O port type to hold a link to a file in DATCORE storage
+                                example:
+                                  - dataset: 'N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4'
+                                    label: initial_WTstates
+                                    path: 'N:package:32df09ba-e8d6-46da-bd54-f696157de6ce'
+                                    store: 1
+                                  - dataset: 'N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4'
+                                    label: initial_WTstates
+                                    path: 'N:package:32df09ba-e8d6-46da-bd54-f696157de6ce'
+                                    store: 1
+                                properties:
+                                  dataset:
+                                    description: Unique identifier to access the dataset on datcore (REQUIRED for datcore)
+                                    title: Dataset
+                                    type: string
+                                  eTag:
+                                    description: Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).
+                                    title: Etag
+                                    type: string
+                                  label:
+                                    description: The real file name
+                                    title: Label
+                                    type: string
+                                  path:
+                                    anyOf:
+                                      - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
+                                        type: string
+                                      - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
+                                        type: string
+                                    description: The path to the file in the storage provider domain
+                                    title: Path
+                                  store:
+                                    description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+                                    title: Store
+                                    type: integer
+                                required:
+                                  - store
+                                  - path
+                                  - label
+                                  - dataset
+                                title: DatCoreFileLink
+                                type: object
+                              - additionalProperties: false
+                                description: 'I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)'
+                                example:
+                                  - downloadLink: 'https://fakeimg.pl/250x100/'
+                                properties:
+                                  downloadLink:
+                                    format: uri
+                                    maxLength: 65536
+                                    minLength: 1
+                                    title: Downloadlink
+                                    type: string
+                                  label:
+                                    description: Display name
+                                    title: Label
+                                    type: string
+                                required:
+                                  - downloadLink
+                                title: DownloadLink
+                                type: object
+                              - items: {}
+                                type: array
+                              - type: object
+                          description: values of input properties
+                          patternProperties:
+                            '^[-_a-zA-Z0-9]+$':
+                              anyOf:
+                                - type: boolean
+                                - type: integer
+                                - type: number
+                                - format: json-string
+                                  type: string
+                                - type: string
+                                - additionalProperties: false
+                                  description: I/O port type to reference to an output port of another node in the same project
+                                  example:
+                                    - nodeUuid: da5068e0-8a8d-4fb9-9516-56e5ddaef15b
+                                      output: out_2
+                                  properties:
+                                    nodeUuid:
+                                      description: The node to get the port output from
+                                      format: uuid
+                                      title: Nodeuuid
+                                      type: string
+                                    output:
+                                      description: The port key in the node given by nodeUuid
+                                      pattern: '^[-_a-zA-Z0-9]+$'
+                                      title: Output
+                                      type: string
+                                  required:
+                                    - nodeUuid
+                                    - output
+                                  title: PortLink
+                                  type: object
+                                - additionalProperties: false
+                                  description: I/O port type to hold a link to a file in simcore S3 storage
+                                  example:
+                                    - eTag: 859fda0cb82fc4acb4686510a172d9a9-1
+                                      label: input.txt
+                                      path: 94453a6a-c8d4-52b3-a22d-ccbf81f8d636/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt
+                                      store: 0
+                                    - eTag: f7e4c7076761a42a871e978c8691c676
+                                      path: 50339632-ee1d-11ec-a0c2-02420a0194e4/23b1522f-225f-5a4c-9158-c4c19a70d4a8/output.h5
+                                      store: '0'
+                                    - path: api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt
+                                      store: 0
+                                    - path: 94453a6a-c8d4-52b3-a22d-ccbf81f8d636/d4442ca4-23fd-5b6b-ba6d-0b75f711c109/y_1D.txt
+                                      store: 0
+                                  properties:
+                                    dataset:
+                                      deprecated: true
+                                      title: Dataset
+                                      type: string
+                                    eTag:
+                                      description: Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).
+                                      title: Etag
+                                      type: string
+                                    label:
+                                      description: The real file name
+                                      title: Label
+                                      type: string
+                                    path:
+                                      anyOf:
+                                        - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
+                                          type: string
+                                        - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
+                                          type: string
+                                      description: The path to the file in the storage provider domain
+                                      title: Path
+                                    store:
+                                      description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+                                      title: Store
+                                      type: integer
+                                  required:
+                                    - store
+                                    - path
+                                  title: SimCoreFileLink
+                                  type: object
+                                - additionalProperties: false
+                                  description: I/O port type to hold a link to a file in DATCORE storage
+                                  example:
+                                    - dataset: 'N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4'
+                                      label: initial_WTstates
+                                      path: 'N:package:32df09ba-e8d6-46da-bd54-f696157de6ce'
+                                      store: 1
+                                    - dataset: 'N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4'
+                                      label: initial_WTstates
+                                      path: 'N:package:32df09ba-e8d6-46da-bd54-f696157de6ce'
+                                      store: 1
+                                  properties:
+                                    dataset:
+                                      description: Unique identifier to access the dataset on datcore (REQUIRED for datcore)
+                                      title: Dataset
+                                      type: string
+                                    eTag:
+                                      description: Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).
+                                      title: Etag
+                                      type: string
+                                    label:
+                                      description: The real file name
+                                      title: Label
+                                      type: string
+                                    path:
+                                      anyOf:
+                                        - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
+                                          type: string
+                                        - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
+                                          type: string
+                                      description: The path to the file in the storage provider domain
+                                      title: Path
+                                    store:
+                                      description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+                                      title: Store
+                                      type: integer
+                                  required:
+                                    - store
+                                    - path
+                                    - label
+                                    - dataset
+                                  title: DatCoreFileLink
+                                  type: object
+                                - additionalProperties: false
+                                  description: 'I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)'
+                                  example:
+                                    - downloadLink: 'https://fakeimg.pl/250x100/'
+                                  properties:
+                                    downloadLink:
+                                      format: uri
+                                      maxLength: 65536
+                                      minLength: 1
+                                      title: Downloadlink
+                                      type: string
+                                    label:
+                                      description: Display name
+                                      title: Label
+                                      type: string
+                                  required:
+                                    - downloadLink
+                                  title: DownloadLink
+                                  type: object
+                                - items: {}
+                                  type: array
+                                - type: object
+                          title: Inputs
+                          type: object
+                        inputsUnits:
+                          additionalProperties:
+                            type: string
+                          description: Overrides default unit (if any) defined in the service for each port
+                          patternProperties:
+                            '^[-_a-zA-Z0-9]+$':
+                              type: string
+                          title: Inputsunits
+                          type: object
+                        key:
+                          description: distinctive name for the node based on the docker registry path
+                          example:
+                            - simcore/services/comp/itis/sleeper
+                            - simcore/services/dynamic/3dviewer
+                            - simcore/services/frontend/file-picker
+                          pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+                          title: Key
+                          type: string
+                        label:
+                          description: The short name of the node
+                          example:
+                            - JupyterLab
+                          title: Label
+                          type: string
+                        outputNode:
+                          deprecated: true
+                          title: Outputnode
+                          type: boolean
+                        outputNodes:
+                          description: Used in group-nodes. Node IDs of those connected to the output
+                          items:
+                            format: uuid
+                            type: string
+                          title: Outputnodes
+                          type: array
+                        outputs:
+                          additionalProperties:
+                            anyOf:
+                              - type: boolean
+                              - type: integer
+                              - type: number
+                              - format: json-string
+                                type: string
+                              - type: string
+                              - additionalProperties: false
+                                description: I/O port type to hold a link to a file in simcore S3 storage
+                                example:
+                                  - eTag: 859fda0cb82fc4acb4686510a172d9a9-1
+                                    label: input.txt
+                                    path: 94453a6a-c8d4-52b3-a22d-ccbf81f8d636/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt
+                                    store: 0
+                                  - eTag: f7e4c7076761a42a871e978c8691c676
+                                    path: 50339632-ee1d-11ec-a0c2-02420a0194e4/23b1522f-225f-5a4c-9158-c4c19a70d4a8/output.h5
+                                    store: '0'
+                                  - path: api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt
+                                    store: 0
+                                  - path: 94453a6a-c8d4-52b3-a22d-ccbf81f8d636/d4442ca4-23fd-5b6b-ba6d-0b75f711c109/y_1D.txt
+                                    store: 0
+                                properties:
+                                  dataset:
+                                    deprecated: true
+                                    title: Dataset
+                                    type: string
+                                  eTag:
+                                    description: Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).
+                                    title: Etag
+                                    type: string
+                                  label:
+                                    description: The real file name
+                                    title: Label
+                                    type: string
+                                  path:
+                                    anyOf:
+                                      - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
+                                        type: string
+                                      - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
+                                        type: string
+                                    description: The path to the file in the storage provider domain
+                                    title: Path
+                                  store:
+                                    description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+                                    title: Store
+                                    type: integer
+                                required:
+                                  - store
+                                  - path
+                                title: SimCoreFileLink
+                                type: object
+                              - additionalProperties: false
+                                description: I/O port type to hold a link to a file in DATCORE storage
+                                example:
+                                  - dataset: 'N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4'
+                                    label: initial_WTstates
+                                    path: 'N:package:32df09ba-e8d6-46da-bd54-f696157de6ce'
+                                    store: 1
+                                  - dataset: 'N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4'
+                                    label: initial_WTstates
+                                    path: 'N:package:32df09ba-e8d6-46da-bd54-f696157de6ce'
+                                    store: 1
+                                properties:
+                                  dataset:
+                                    description: Unique identifier to access the dataset on datcore (REQUIRED for datcore)
+                                    title: Dataset
+                                    type: string
+                                  eTag:
+                                    description: Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).
+                                    title: Etag
+                                    type: string
+                                  label:
+                                    description: The real file name
+                                    title: Label
+                                    type: string
+                                  path:
+                                    anyOf:
+                                      - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
+                                        type: string
+                                      - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
+                                        type: string
+                                    description: The path to the file in the storage provider domain
+                                    title: Path
+                                  store:
+                                    description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+                                    title: Store
+                                    type: integer
+                                required:
+                                  - store
+                                  - path
+                                  - label
+                                  - dataset
+                                title: DatCoreFileLink
+                                type: object
+                              - additionalProperties: false
+                                description: 'I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)'
+                                example:
+                                  - downloadLink: 'https://fakeimg.pl/250x100/'
+                                properties:
+                                  downloadLink:
+                                    format: uri
+                                    maxLength: 65536
+                                    minLength: 1
+                                    title: Downloadlink
+                                    type: string
+                                  label:
+                                    description: Display name
+                                    title: Label
+                                    type: string
+                                required:
+                                  - downloadLink
+                                title: DownloadLink
+                                type: object
+                              - items: {}
+                                type: array
+                              - type: object
+                          description: values of output properties
+                          patternProperties:
+                            '^[-_a-zA-Z0-9]+$':
+                              anyOf:
+                                - type: boolean
+                                - type: integer
+                                - type: number
+                                - format: json-string
+                                  type: string
+                                - type: string
+                                - additionalProperties: false
+                                  description: I/O port type to hold a link to a file in simcore S3 storage
+                                  example:
+                                    - eTag: 859fda0cb82fc4acb4686510a172d9a9-1
+                                      label: input.txt
+                                      path: 94453a6a-c8d4-52b3-a22d-ccbf81f8d636/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt
+                                      store: 0
+                                    - eTag: f7e4c7076761a42a871e978c8691c676
+                                      path: 50339632-ee1d-11ec-a0c2-02420a0194e4/23b1522f-225f-5a4c-9158-c4c19a70d4a8/output.h5
+                                      store: '0'
+                                    - path: api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt
+                                      store: 0
+                                    - path: 94453a6a-c8d4-52b3-a22d-ccbf81f8d636/d4442ca4-23fd-5b6b-ba6d-0b75f711c109/y_1D.txt
+                                      store: 0
+                                  properties:
+                                    dataset:
+                                      deprecated: true
+                                      title: Dataset
+                                      type: string
+                                    eTag:
+                                      description: Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).
+                                      title: Etag
+                                      type: string
+                                    label:
+                                      description: The real file name
+                                      title: Label
+                                      type: string
+                                    path:
+                                      anyOf:
+                                        - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
+                                          type: string
+                                        - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
+                                          type: string
+                                      description: The path to the file in the storage provider domain
+                                      title: Path
+                                    store:
+                                      description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+                                      title: Store
+                                      type: integer
+                                  required:
+                                    - store
+                                    - path
+                                  title: SimCoreFileLink
+                                  type: object
+                                - additionalProperties: false
+                                  description: I/O port type to hold a link to a file in DATCORE storage
+                                  example:
+                                    - dataset: 'N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4'
+                                      label: initial_WTstates
+                                      path: 'N:package:32df09ba-e8d6-46da-bd54-f696157de6ce'
+                                      store: 1
+                                    - dataset: 'N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4'
+                                      label: initial_WTstates
+                                      path: 'N:package:32df09ba-e8d6-46da-bd54-f696157de6ce'
+                                      store: 1
+                                  properties:
+                                    dataset:
+                                      description: Unique identifier to access the dataset on datcore (REQUIRED for datcore)
+                                      title: Dataset
+                                      type: string
+                                    eTag:
+                                      description: Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).
+                                      title: Etag
+                                      type: string
+                                    label:
+                                      description: The real file name
+                                      title: Label
+                                      type: string
+                                    path:
+                                      anyOf:
+                                        - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
+                                          type: string
+                                        - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
+                                          type: string
+                                      description: The path to the file in the storage provider domain
+                                      title: Path
+                                    store:
+                                      description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+                                      title: Store
+                                      type: integer
+                                  required:
+                                    - store
+                                    - path
+                                    - label
+                                    - dataset
+                                  title: DatCoreFileLink
+                                  type: object
+                                - additionalProperties: false
+                                  description: 'I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)'
+                                  example:
+                                    - downloadLink: 'https://fakeimg.pl/250x100/'
+                                  properties:
+                                    downloadLink:
+                                      format: uri
+                                      maxLength: 65536
+                                      minLength: 1
+                                      title: Downloadlink
+                                      type: string
+                                    label:
+                                      description: Display name
+                                      title: Label
+                                      type: string
+                                  required:
+                                    - downloadLink
+                                  title: DownloadLink
+                                  type: object
+                                - items: {}
+                                  type: array
+                                - type: object
+                          title: Outputs
+                          type: object
+                        parent:
+                          anyOf:
+                            - type: 'null'
+                            - description: Parent's (group-nodes') node ID s. Used to group
+                              format: uuid
+                              title: Parent
+                              type: string
+                        position:
+                          allOf:
+                            - additionalProperties: false
+                              properties:
+                                x:
+                                  description: The x position
+                                  example:
+                                    - '12'
+                                  title: X
+                                  type: integer
+                                'y':
+                                  description: The y position
+                                  example:
+                                    - '15'
+                                  title: 'Y'
+                                  type: integer
+                              required:
+                                - x
+                                - 'y'
+                              title: Position
+                              type: object
+                          deprecated: true
+                          description: Use projects_ui.WorkbenchUI.position instead
+                          title: Position
+                        progress:
+                          description: the node progress value
+                          maximum: 100
+                          minimum: 0
+                          title: Progress
+                          type: number
+                        runHash:
+                          anyOf:
+                            - type: 'null'
+                            - description: the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated
+                              title: Runhash
+                              type: string
+                        state:
+                          allOf:
+                            - additionalProperties: false
+                              example:
+                                - currentStatus: NOT_STARTED
+                                  dependencies: []
+                                  modified: true
+                                - currentStatus: ABORTED
+                                  dependencies:
+                                    - 42838344-03de-4ce2-8d93-589a5dcdfd05
+                                  modified: true
+                                - currentStatus: SUCCESS
+                                  dependencies: []
+                                  modified: false
+                              properties:
+                                currentStatus:
+                                  allOf:
+                                    - description: |-
+                                        State of execution of a project's computational workflow
+
+                                        SEE StateType for task state
+                                      enum:
+                                        - UNKNOWN
+                                        - PUBLISHED
+                                        - NOT_STARTED
+                                        - PENDING
+                                        - STARTED
+                                        - RETRY
+                                        - SUCCESS
+                                        - FAILED
+                                        - ABORTED
+                                      title: RunningState
+                                      type: string
+                                  default: NOT_STARTED
+                                  description: the node's current state
+                                dependencies:
+                                  description: contains the node inputs dependencies if they need to be computed first
+                                  items:
+                                    format: uuid
+                                    type: string
+                                  title: Dependencies
+                                  type: array
+                                  uniqueItems: true
+                                modified:
+                                  default: true
+                                  description: true if the node's outputs need to be re-computed
+                                  title: Modified
+                                  type: boolean
+                              title: NodeState
+                              type: object
+                          description: The node's state object
+                          title: State
+                        thumbnail:
+                          description: url of the latest screenshot of the node
+                          example:
+                            - 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
+                          format: uri
+                          maxLength: 2083
+                          minLength: 0
+                          title: Thumbnail
+                          type: string
+                        version:
+                          description: semantic version number of the node
+                          example:
+                            - 1.0.0
+                            - 0.0.1
+                          pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
+                          title: Version
+                          type: string
+                      required:
+                        - key
+                        - version
+                        - label
+                      title: Node
+                      type: object
+              required:
+                - uuid
+                - name
+                - description
+                - thumbnail
+                - creationDate
+                - lastChangeDate
+                - workbench
+                - prjOwner
+                - accessRights
+              title: osparc-simcore project
+              type: object
       responses:
         '202':
           description: project created
@@ -6313,6 +7577,7 @@ paths:
                           maxLength: 2083
                           minLength: 1
                           type: string
+                          description: Url to service thumbnail
                           format: uri
                         file_extensions:
                           title: File Extensions
@@ -6331,11 +7596,11 @@ paths:
                         key: simcore/services/dynamic/sim4life
                         title: Sim4Life Mattermost
                         description: It is also sim4life for the web
-                        thumbnail: 'https://placeimg.com/640/480/nature'
+                        thumbnail: 'https://via.placeholder.com/170x120.png'
                         file_extensions:
                           - smash
                           - h5
-                        view_url: 'https://osparc.io/view?file_type=CSV&viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=1.2.3'
+                        view_url: 'https://host.com/view?viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=1.2.3'
                   error:
                     title: Error
   /viewers:

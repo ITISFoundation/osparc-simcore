@@ -27,7 +27,7 @@ FAKE_FILE_CONSUMER_SERVICES = [
         "key": "simcore/services/dynamic/sim4life",
         "version": "2.0.0",
         "display_name": "Sim4Life",
-        "consumes": ["DCM", "S4LCacheData"],
+        "consumes": ["DCM", "S4LCACHEDATA"],
     },
     # another service with multiple format support (preferred for CSV)
     {

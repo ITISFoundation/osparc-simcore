@@ -20,8 +20,6 @@ flaky
 hypothesis
 jsonschema
 openapi-spec-validator
-ptvsd
-pylint
 pytest
 pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
 pytest-cov
@@ -34,5 +32,6 @@ pytest-sugar
 pytest-xdist
 python-dotenv
 redis
+sqlalchemy[mypy] # adds Mypy / Pep-484 Support for ORM Mappings SEE https://docs.sqlalchemy.org/en/20/orm/extensions/mypy.html
 tenacity
 websockets

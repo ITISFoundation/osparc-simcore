@@ -164,6 +164,7 @@ class Product(BaseModel):
                         "license_url": "https://acme.com/license",
                         "name": "ACME",
                         "copyright": "© ACME correcaminos",
+                        "has_landing_page": False,
                     },
                     "issues": [
                         {

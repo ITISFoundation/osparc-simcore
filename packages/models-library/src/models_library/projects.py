@@ -7,12 +7,12 @@ from enum import Enum
 from typing import Any, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Extra, Field, HttpUrl, constr, validator
+from pydantic import BaseModel, Extra, Field, constr, validator
 
 from .basic_regex import DATE_RE, UUID_RE_BASE
 from .emails import LowerCaseEmailStr
 from .projects_access import AccessRights, GroupIDStr
-from .projects_nodes import Node
+from .projects_nodes import HttpUrlWithCustomMinLength, Node
 from .projects_nodes_io import NodeIDStr
 from .projects_state import ProjectState
 from .projects_ui import StudyUI
@@ -55,7 +55,7 @@ class BaseProjectModel(BaseModel):
         description="longer one-line description about the project",
         examples=["Dabbling in temporal transitions ..."],
     )
-    thumbnail: Optional[HttpUrl] = Field(
+    thumbnail: Optional[HttpUrlWithCustomMinLength] = Field(
         ...,
         description="url of the project thumbnail",
         examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
@@ -147,11 +147,14 @@ class Project(BaseProjectModel):
 
     # Quality
     quality: dict[str, Any] = Field(
-        {}, description="stores the study quality assessment"
+        default_factory=dict,
+        description="stores the study quality assessment",
     )
 
     # Dev only
-    dev: Optional[dict] = Field(description="object used for development purposes only")
+    dev: Optional[dict] = Field(
+        default=None, description="object used for development purposes only"
+    )
 
     class Config:
         description = "Document that stores metadata, pipeline and UI setup of a study"

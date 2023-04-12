@@ -11,6 +11,12 @@ from sqlalchemy.sql import expression, func
 
 from .base import metadata
 
+#
+#   Combines properties as
+#     - service identifier: key, version
+#     - overridable properties of the service metadata defined upon publication (injected in the image labels)
+#     - extra properties assigned during its lifetime (e.g. deprecated, quality, etc)
+
 services_meta_data = sa.Table(
     "services_meta_data",
     metadata,
@@ -38,9 +44,17 @@ services_meta_data = sa.Table(
         nullable=True,
         doc="Identifier of the group that owns this service",
     ),
-    sa.Column("name", sa.String, nullable=False, doc="Display label"),
     sa.Column(
-        "description", sa.String, nullable=False, doc="Markdown-compatible description"
+        "name",
+        sa.String,
+        nullable=False,
+        doc="Display label",
+    ),
+    sa.Column(
+        "description",
+        sa.String,
+        nullable=False,
+        doc="Markdown-compatible description",
     ),
     sa.Column(
         "thumbnail",
@@ -75,7 +89,8 @@ services_meta_data = sa.Table(
         sa.DateTime(),
         nullable=True,
         server_default=null(),
-        doc="Timestamp with deprecation date",
+        doc="Timestamp when the service is retired."
+        "A fixed time before this date, service is marked as deprecated",
     ),
     sa.Column(
         "quality",
@@ -87,6 +102,12 @@ services_meta_data = sa.Table(
     sa.PrimaryKeyConstraint("key", "version", name="services_meta_data_pk"),
 )
 
+
+#
+#   Defines access rights (execute_access, write_access) on a service (key)
+#   for a given group (gid) on a product (project_name)
+#
+
 services_access_rights = sa.Table(
     "services_access_rights",
     metadata,
@@ -96,7 +117,12 @@ services_access_rights = sa.Table(
         nullable=False,
         doc="Service Key Identifier",
     ),
-    sa.Column("version", sa.String, nullable=False, doc="Service version"),
+    sa.Column(
+        "version",
+        sa.String,
+        nullable=False,
+        doc="Service version",
+    ),
     sa.Column(
         "gid",
         sa.BigInteger,

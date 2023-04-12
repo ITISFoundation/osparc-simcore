@@ -30,6 +30,7 @@ class TutorialBase {
     this.__interval = null;
 
     this.__failed = false;
+    this.__reasonFailed = null;
 
     this.startScreenshooter()
   }
@@ -127,6 +128,9 @@ class TutorialBase {
         }).catch(() => { })
       }
       setTimeout(waitForFlash, 0)
+
+      // In case there is landing page, go to the log in page
+      await auto.ignoreNewRelease(this.__page);
 
       const needsRegister = await this.registerIfNeeded();
       if (!needsRegister) {
@@ -674,7 +678,7 @@ class TutorialBase {
     await this.waitAndClick('mode-button-postro', s4lIframe);
     await this.takeScreenshot("Postpro");
     const algorithmTrees = await utils.getChildrenElementsBySelector(s4lIframe, '[osparc-test-id="tree-algorithm');
-    if (algorithmTrees.length !== 1) {
+    if (algorithmTrees.length < 1) {
       throw("Post Pro tree missing");
     }
 
@@ -793,11 +797,16 @@ class TutorialBase {
     return this.__failed;
   }
 
-  async setTutorialFailed(failed, loggerScreenshot = true) {
+  getTutorialFailedReason() {
+    return this.__reasonFailed;
+  }
+
+  async setTutorialFailed(failed, loggerScreenshot = true, reason = "") {
     if (failed && loggerScreenshot) {
       await this.takeLoggerScreenshot();
     }
     this.__failed = failed;
+    this.__reasonFailed = reason
   }
 }
 

@@ -494,7 +494,7 @@ async def _assert_port_values(
 
     # files
 
-    async def _int_value_port(port: Port) -> Optional[int]:
+    async def _int_value_port(port: Port) -> int | None:
         file_path = cast(Optional[Path], await port.get())
         if file_path is None:
             return None
@@ -846,6 +846,7 @@ async def test_nodeports_integration(
     minimal_configuration: None,
     cleanup_services_and_networks: None,
     projects_networks_db: None,
+    mocked_service_awaits_manual_interventions: None,
     initialized_app: FastAPI,
     update_project_workbench_with_comp_tasks: Callable,
     async_client: httpx.AsyncClient,
