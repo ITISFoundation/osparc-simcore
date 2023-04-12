@@ -121,14 +121,13 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
 
       const hintContainer = this.getChildControl("hint-container");
       const caret = this.getChildControl("caret");
-
       caret.getContentElement().removeClass("hint-top");
       caret.getContentElement().removeClass("hint-right");
       caret.getContentElement().removeClass("hint-bottom");
       caret.getContentElement().removeClass("hint-left");
       switch (this.getOrientation()) {
         case this.self().ORIENTATION.TOP:
-        case this.self().ORIENTATION.LEFT:
+        case this.self().ORIENTATION.LEFT: {
           caret.getContentElement().addClass(this.getOrientation() === this.self().ORIENTATION.LEFT ? "hint-left" : "hint-top");
           this._setLayout(this.getOrientation() === this.self().ORIENTATION.LEFT ? new qx.ui.layout.HBox() : new qx.ui.layout.VBox());
           this._add(hintContainer, {
@@ -136,8 +135,9 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
           });
           this._add(caret);
           break;
+        }
         case this.self().ORIENTATION.RIGHT:
-        case this.self().ORIENTATION.BOTTOM:
+        case this.self().ORIENTATION.BOTTOM: {
           caret.getContentElement().addClass(this.getOrientation() === this.self().ORIENTATION.RIGHT ? "hint-right" : "hint-bottom");
           this._setLayout(this.getOrientation() === this.self().ORIENTATION.RIGHT ? new qx.ui.layout.HBox() : new qx.ui.layout.VBox());
           this._add(caret);
@@ -145,6 +145,7 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
             flex: 1
           });
           break;
+        }
       }
       switch (this.getOrientation()) {
         case this.self().ORIENTATION.RIGHT:
