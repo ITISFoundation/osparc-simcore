@@ -37,11 +37,11 @@ def setup_projects_model_schema(app: web.Application):
         # This is a temporary patch, until the bug is fixed.
         # https://github.com/ITISFoundation/osparc-simcore/issues/3992
         # Tested in test_validate_project_json_schema()
-        project_schema["properties"]["workbench"].pop("patternProperties")
+        project_schema["properties"]["workbench"].pop("patternProperties", None)
         project_schema["properties"]["ui"]["properties"]["workbench"].pop(
             "patternProperties", None
         )
-        project_schema["properties"]["workbench"].pop("additionalProperties")
+        project_schema["properties"]["workbench"].pop("additionalProperties", None)
         project_schema["properties"]["ui"]["properties"]["workbench"].pop(
             "additionalProperties", None
         )
