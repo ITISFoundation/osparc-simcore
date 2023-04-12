@@ -33,6 +33,34 @@ qx.Class.define("osparc.ui.hint.Hint", {
       return control || this.base(arguments, id);
     },
 
+    attachShowHideHandlers: function() {
+      if (this.getElement()) {
+        const element = this.getElement();
+
+        const showHint = () => this.show();
+        const hideHint = () => this.exclude();
+        const tapListener = e => {
+          // Make hint "modal" when parent element is clicked
+          if (osparc.utils.Utils.isMouseOnElement(this, e)) {
+            return;
+          }
+          hideHint();
+          document.removeEventListener("mousedown", tapListener);
+          element.addListener("mouseover", showHint);
+          element.addListener("mouseout", hideHint);
+        };
+
+        element.addListener("mouseover", showHint);
+        element.addListener("mouseout", hideHint);
+        element.addListener("tap", () => {
+          showHint();
+          document.addEventListener("mousedown", tapListener);
+          element.removeListener("mouseover", showHint);
+          element.removeListener("mouseout", hideHint);
+        }, this);
+      }
+    },
+
     getLabel: function() {
       return this.getChildControl("label");
     },
