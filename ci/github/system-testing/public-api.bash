@@ -28,7 +28,6 @@ test() {
   # add too much overhead (e.g. low log-level etc)
   pytest \
     --color=yes \
-    --cov-report=term-missing \
     --keep-docker-up \
     --durations=5 \
     -v \

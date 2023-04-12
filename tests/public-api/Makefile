@@ -37,7 +37,6 @@ test-dev: ## runs tests with --keep-docker-up, --pdb and --ff
 	--color=yes \
 	--failed-first \
 	--durations=10 \
-	--cov-report=xml \
 	--asyncio-mode=auto \
 	--pdb \
 	$(CURDIR)
@@ -49,5 +48,4 @@ test-ci: ## runs ci tests (i.e. w/o debug tools and with code coverage)
 	-vv \
 	--color=yes \
 	--durations=10 \
-	--cov-report=term-missing \
 	$(CURDIR)
