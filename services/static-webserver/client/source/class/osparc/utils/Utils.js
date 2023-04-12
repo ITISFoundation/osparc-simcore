@@ -344,7 +344,11 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     isInZ43: function() {
-      return window.location.hostname.includes("speag");
+      return window.location.hostname.includes("speag") || window.location.port === "9081";
+    },
+
+    isMaster: function() {
+      return window.location.hostname.includes("master.speag");
     },
 
     addBorder: function(widget, width = 1, color = "transparent") {
