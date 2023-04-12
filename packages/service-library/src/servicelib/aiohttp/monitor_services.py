@@ -67,10 +67,12 @@ def service_started(
     app: web.Application,
     service_key: str,
     service_tag: str,
+    simcore_user_agent: str,
 ) -> None:
     app[kSERVICE_STARTED].labels(
         service_key=service_key,
         service_tag=service_tag,
+        simcore_user_agent=simcore_user_agent,
     ).inc()
 
 
@@ -79,10 +81,12 @@ def service_stopped(
     app: web.Application,
     service_key: str,
     service_tag: str,
+    simcore_user_agent: str,
     result: ServiceResult | str,
 ) -> None:
     app[kSERVICE_STOPPED].labels(
         service_key=service_key,
         service_tag=service_tag,
+        simcore_user_agent=simcore_user_agent,
         result=result.name if isinstance(result, ServiceResult) else result,
     ).inc()
