@@ -10,7 +10,7 @@ from pytest_simcore.simcore_webserver_projects_rest_api import (
     REPLACE_PROJECT_ON_MODIFIED,
     HttpApiCallCapture,
 )
-from simcore_service_webserver.projects.oas_schemas import (
+from simcore_service_webserver.projects._rest_schemas import (
     ProjectCreate,
     ProjectGet,
     ProjectListItem,

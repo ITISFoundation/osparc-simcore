@@ -22,7 +22,7 @@ from models_library.projects import ProjectID
 from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Page
 from pydantic import NonNegativeInt
 from servicelib.aiohttp.long_running_tasks.server import TaskGet
-from simcore_service_webserver.projects.oas_schemas import (
+from simcore_service_webserver.projects._rest_schemas import (
     ProjectCreate,
     ProjectGet,
     ProjectListItem,

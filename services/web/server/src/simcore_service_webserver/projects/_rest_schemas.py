@@ -6,9 +6,8 @@ SEE rationale in https://fastapi.tiangolo.com/tutorial/extra-models/#multiple-mo
 """
 
 import uuid
-from typing import Any
+from typing import Any, TypeAlias
 
-from models_library.base_oas_schemas import BaseInputSchemaModel, BaseOutputSchemaModel
 from models_library.emails import LowerCaseEmailStr
 from models_library.projects import ClassifierID, DateTimeStr, NodesDict, ProjectID
 from models_library.projects_access import AccessRights, GroupIDStr
@@ -17,7 +16,8 @@ from models_library.projects_state import ProjectState
 from models_library.projects_ui import StudyUI
 from pydantic import Field
 from servicelib.aiohttp.long_running_tasks.server import TaskGet
-from simcore_service_catalog.services import access_rights
+
+from ..rest_schemas_base import InputSchema, OutputSchema
 
 # TODO: review creation  policies with OM (e.g. NO uuid!)
 # ProjectCreate = copy_model(
@@ -37,7 +37,7 @@ from simcore_service_catalog.services import access_rights
 # )
 
 
-class ProjectCreate(BaseOutputSchemaModel):
+class ProjectCreate(OutputSchema):
     uuid: ProjectID
     name: str
     description: str
@@ -72,7 +72,7 @@ class ProjectCreate(BaseOutputSchemaModel):
 # )
 
 
-class ProjectGet(BaseOutputSchemaModel):
+class ProjectGet(OutputSchema):
     uuid: ProjectID
     name: str
     description: str
@@ -95,11 +95,12 @@ class ProjectGet(BaseOutputSchemaModel):
 
 
 # TODO: TaskGet[Envelope[TaskProjectGet]] i.e. should include future?
-TaskProjectGet = TaskGet
+TaskProjectGet: TypeAlias = TaskGet
 
 
 # TODO: review with OM. with option to get it lighter??
-ProjectListItem = ProjectGet
+class ProjectListItem(ProjectGet):
+    ...
 
 
 # ProjectReplace = copy_model(
@@ -123,7 +124,7 @@ ProjectListItem = ProjectGet
 # )
 
 
-class ProjectReplace(BaseInputSchemaModel):
+class ProjectReplace(InputSchema):
     uuid: ProjectID
     name: str
     description: str
@@ -165,7 +166,7 @@ class ProjectReplace(BaseInputSchemaModel):
 # )
 
 
-class ProjectUpdate(BaseInputSchemaModel):
+class ProjectUpdate(InputSchema):
     name: str = None  # type: ignore
     description: str = None  # type: ignore
     thumbnail: HttpUrlWithCustomMinLength | None = None

@@ -2,11 +2,13 @@
     Models Node as a central element in a project's pipeline
 """
 
+import re
 from copy import deepcopy
-from typing import Any, Optional, Union
+from typing import Any, TypeAlias, Union
 
 from pydantic import (
     BaseModel,
+    ConstrainedStr,
     Extra,
     Field,
     HttpUrl,
@@ -14,7 +16,6 @@ from pydantic import (
     StrictBool,
     StrictFloat,
     StrictInt,
-    constr,
     validator,
 )
 
@@ -55,10 +56,20 @@ OutputTypes = Union[
     Union[list[Any], dict[str, Any]],  # arrays | object
 ]
 
-InputID = OutputID = constr(regex=PROPERTY_KEY_RE)
-InputsDict = dict[InputID, InputTypes]
-OutputsDict = dict[OutputID, OutputTypes]
-UnitStr = constr(strip_whitespace=True)
+
+class KeyIDStr(ConstrainedStr):
+    regex = re.compile(PROPERTY_KEY_RE)
+
+
+InputID: TypeAlias = KeyIDStr
+OutputID: TypeAlias = KeyIDStr
+
+InputsDict: TypeAlias = dict[InputID, InputTypes]
+OutputsDict: TypeAlias = dict[OutputID, OutputTypes]
+
+
+class UnitStr(ConstrainedStr):
+    strip_whitespace = True
 
 
 class NodeState(BaseModel):
@@ -121,71 +132,69 @@ class Node(BaseModel):
     label: str = Field(
         ..., description="The short name of the node", examples=["JupyterLab"]
     )
-    progress: Optional[float] = Field(
+    progress: float | None = Field(
         default=None, ge=0, le=100, description="the node progress value"
     )
-    thumbnail: Optional[HttpUrlWithCustomMinLength] = Field(
+    thumbnail: HttpUrlWithCustomMinLength | None = Field(
         default=None,
         description="url of the latest screenshot of the node",
         examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
     )
 
     # RUN HASH
-    run_hash: Optional[str] = Field(
+    run_hash: str | None = Field(
         default=None,
         description="the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated",
         alias="runHash",
     )
 
     # INPUT PORTS ---
-    inputs: Optional[InputsDict] = Field(
+    inputs: InputsDict | None = Field(
         default_factory=dict, description="values of input properties"
     )
-    inputs_units: Optional[dict[InputID, UnitStr]] = Field(
+    inputs_units: dict[InputID, UnitStr] | None = Field(
         default=None,
         description="Overrides default unit (if any) defined in the service for each port",
         alias="inputsUnits",
     )
-    input_access: Optional[dict[InputID, AccessEnum]] = Field(
+    input_access: dict[InputID, AccessEnum] | None = Field(
         default=None,
         description="map with key - access level pairs",
         alias="inputAccess",
     )
-    input_nodes: Optional[list[NodeID]] = Field(
+    input_nodes: list[NodeID] | None = Field(
         default_factory=list,
         description="node IDs of where the node is connected to",
         alias="inputNodes",
     )
 
     # OUTPUT PORTS ---
-    outputs: Optional[OutputsDict] = Field(
+    outputs: OutputsDict | None = Field(
         default_factory=dict, description="values of output properties"
     )
-    output_node: Optional[bool] = Field(
-        default=None, deprecated=True, alias="outputNode"
-    )
-    output_nodes: Optional[list[NodeID]] = Field(
+    output_node: bool | None = Field(default=None, deprecated=True, alias="outputNode")
+    output_nodes: list[NodeID] | None = Field(
         default=None,
         description="Used in group-nodes. Node IDs of those connected to the output",
         alias="outputNodes",
     )
 
-    parent: Optional[NodeID] = Field(
+    parent: NodeID | None = Field(
         default=None,
         description="Parent's (group-nodes') node ID s. Used to group",
     )
 
-    position: Optional[Position] = Field(
+    position: Position | None = Field(
         default=None,
         deprecated=True,
         description="Use projects_ui.WorkbenchUI.position instead",
     )
 
-    state: Optional[NodeState] = Field(
+    state: NodeState | None = Field(
         default_factory=NodeState, description="The node's state object"
     )
 
-    boot_options: Optional[dict[EnvVarKey, str]] = Field(
+    boot_options: dict[EnvVarKey, str] | None = Field(
         default=None,
         alias="bootOptions",
         description=(
