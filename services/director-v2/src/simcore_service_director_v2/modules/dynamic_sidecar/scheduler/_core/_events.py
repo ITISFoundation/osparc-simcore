@@ -1,7 +1,7 @@
 # pylint: disable=relative-beyond-top-level
 
 import logging
-from typing import Any, Final, Optional, cast
+from typing import Any, Final, cast
 from uuid import uuid4
 
 from fastapi import FastAPI
@@ -137,7 +137,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         )
 
         node_uuid_str = NodeIDStr(scheduler_data.node_uuid)
-        node: Optional[Node] = project.workbench.get(node_uuid_str)
+        node: Node | None = project.workbench.get(node_uuid_str)
         boot_options = (
             node.boot_options
             if node is not None and node.boot_options is not None
@@ -320,7 +320,9 @@ class GetStatus(DynamicSchedulerEvent):
 
     @classmethod
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
-        dynamic_sidecar_client = get_dynamic_sidecar_client(app)
+        dynamic_sidecar_client = get_dynamic_sidecar_client(
+            app, scheduler_data.node_uuid
+        )
         dynamic_sidecar_endpoint = scheduler_data.endpoint
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
@@ -425,7 +427,9 @@ class CreateUserServices(DynamicSchedulerEvent):
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
-        dynamic_sidecar_client = get_dynamic_sidecar_client(app)
+        dynamic_sidecar_client = get_dynamic_sidecar_client(
+            app, scheduler_data.node_uuid
+        )
         dynamic_sidecar_endpoint = scheduler_data.endpoint
 
         # check values have been set by previous step
