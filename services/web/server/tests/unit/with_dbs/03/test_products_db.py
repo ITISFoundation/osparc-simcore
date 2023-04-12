@@ -88,7 +88,7 @@ async def product_repository(
                 url="https://acme.com",
                 license_url="http://docs.acme.app/#/license-terms",
                 invitation_url="http://docs.acme.app/#/how-to-request-invitation",
-                landing_page=False,
+                has_landing_page=False,
             ),
             "issues": [
                 IssueTracker(

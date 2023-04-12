@@ -133,7 +133,7 @@ qx.Class.define("osparc.Application", {
               .catch(() => {
                 osparc.store.VendorInfo.getInstance().getVendor()
                   .then(vendor => {
-                    const landingPage = "landing_page" in vendor ? vendor["landing_page"] : false;
+                    const landingPage = "has_landing_page" in vendor ? vendor["has_landing_page"] : false;
                     this.__loadLoginPage(landingPage);
                   })
                   .catch(() => this.__loadLoginPage(false));
@@ -304,7 +304,7 @@ qx.Class.define("osparc.Application", {
           .catch(() => {
             osparc.store.VendorInfo.getInstance().getVendor()
               .then(vendor => {
-                const landingPage = "landing_page" in vendor ? vendor["landing_page"] : false;
+                const landingPage = "has_landing_page" in vendor ? vendor["has_landing_page"] : false;
                 this.__loadLoginPage(landingPage);
               })
               .catch(() => this.__loadLoginPage(false));
