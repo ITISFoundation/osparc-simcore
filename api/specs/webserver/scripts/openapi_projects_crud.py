@@ -23,7 +23,8 @@ from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Pag
 from pydantic import NonNegativeInt
 from servicelib.aiohttp.long_running_tasks.server import TaskGet
 from simcore_service_webserver.projects._rest_schemas import (
-    ProjectCreate,
+    ProjectCopyOverride,
+    ProjectCreateNew,
     ProjectGet,
     ProjectListItem,
     ProjectReplace,
@@ -54,12 +55,13 @@ TAGS: list[str | Enum] = [
     "/projects",
     # TODO: Envelope[TaskGet[ProjectGet]] ?? so TaskGet holds the future type
     response_model=Envelope[TaskGet],
+    summary="Creates a new project or copies an existing one",
     status_code=status.HTTP_201_CREATED,
     tags=TAGS,
     operation_id="create_project",
 )
 async def create_project(
-    create: ProjectCreate,
+    create: ProjectCreateNew | ProjectCopyOverride,
     from_study: ProjectID
     | None = Query(
         None,
@@ -78,7 +80,10 @@ async def create_project(
         description="Enables/disables hidden flag. Hidden projects are by default unlisted",
     ),
 ):
-    assert _ProjectCreateParams
+    ...
+
+
+assert_handler_signature_against_model(create_project, _ProjectCreateParams)
 
 
 @app.get(
@@ -147,12 +152,12 @@ async def replace_project(project_id: ProjectID, replace: ProjectReplace):
 assert_handler_signature_against_model(replace_project, ProjectPathParams)
 
 
-# @app.patch(
-#     "/projects/{project_id}",
-#     response_model=Envelope[ProjectGet],
-#     tags=TAGS,
-#     operation_id="update_project",
-# )
+@app.patch(
+    "/projects/{project_id}",
+    response_model=Envelope[ProjectGet],
+    tags=TAGS,
+    operation_id="update_project",
+)
 async def update_project(project_id: ProjectID, update: ProjectUpdate):
     """Partial update of a project resource"""
 
