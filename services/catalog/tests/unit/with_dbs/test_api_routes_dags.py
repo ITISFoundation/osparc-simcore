@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 from fastapi import FastAPI
 from respx.router import MockRouter
-from simcore_service_catalog.meta import API_VERSION
+from simcore_service_catalog._meta import API_VERSION
 from simcore_service_catalog.models.schemas.meta import Meta
 from starlette.testclient import TestClient
 

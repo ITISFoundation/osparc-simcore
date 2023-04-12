@@ -1,6 +1,6 @@
 import logging
 from functools import cached_property
-from typing import Final, Optional
+from typing import Final
 
 from models_library.basic_types import BootModeEnum, BuildTargetEnum, LogLevel
 from models_library.services_resources import ResourcesDict
@@ -43,10 +43,10 @@ _DEFAULT_SERVICE_SPECIFICATIONS: Final[
 ] = ServiceSpecifications.parse_obj({})
 
 
-class AppSettings(BaseCustomSettings, MixinLoggingSettings):
+class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     # docker environs
-    SC_BOOT_MODE: Optional[BootModeEnum]
-    SC_BOOT_TARGET: Optional[BuildTargetEnum]
+    SC_BOOT_MODE: BootModeEnum | None
+    SC_BOOT_TARGET: BuildTargetEnum | None
 
     CATALOG_LOG_LEVEL: LogLevel = Field(
         LogLevel.INFO.value,
@@ -57,19 +57,19 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
         description="Enables development features. WARNING: make sure it is disabled in production .env file!",
     )
 
-    CATALOG_POSTGRES: Optional[PostgresSettings] = Field(auto_default_from_env=True)
+    CATALOG_POSTGRES: PostgresSettings | None = Field(auto_default_from_env=True)
 
-    CATALOG_CLIENT_REQUEST: Optional[ClientRequestSettings] = Field(
+    CATALOG_CLIENT_REQUEST: ClientRequestSettings | None = Field(
         auto_default_from_env=True
     )
 
-    CATALOG_DIRECTOR: Optional[DirectorSettings] = Field(auto_default_from_env=True)
+    CATALOG_DIRECTOR: DirectorSettings | None = Field(auto_default_from_env=True)
 
     # BACKGROUND TASK
     CATALOG_BACKGROUND_TASK_REST_TIME: PositiveInt = 60
     CATALOG_BACKGROUND_TASK_WAIT_AFTER_FAILURE: PositiveInt = 5  # secs
 
-    CATALOG_TRACING: Optional[TracingSettings] = None
+    CATALOG_TRACING: TracingSettings | None = None
 
     CATALOG_SERVICES_DEFAULT_RESOURCES: ResourcesDict = _DEFAULT_RESOURCES
     CATALOG_SERVICES_DEFAULT_SPECIFICATIONS: ServiceSpecifications = (
