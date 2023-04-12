@@ -11,7 +11,7 @@
 aioresponses
 alembic
 click
-codecov
+
 coverage
 coveralls
 docker

@@ -11,7 +11,7 @@
 --constraint _base.txt
 
 aioboto3
-codecov
+
 coverage
 coveralls
 faker
