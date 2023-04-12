@@ -6,5 +6,5 @@
 
 
 alembic
-sqlalchemy[postgresql_psycopg2binary]
+sqlalchemy[postgresql_psycopg2binary,asyncio] # SEE extras in https://github.com/sqlalchemy/sqlalchemy/blob/main/setup.cfg#L43
 yarl
