@@ -13,7 +13,7 @@
 
 alembic # migration due to pytest_simcore.postgres_service
 click
-codecov
+
 coveralls
 docker
 Faker

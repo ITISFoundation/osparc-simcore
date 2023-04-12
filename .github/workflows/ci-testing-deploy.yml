@@ -981,10 +981,6 @@ jobs:
         run: ./ci/github/unit-testing/frontend.bash install
       - name: test
         run: ./ci/github/unit-testing/frontend.bash test
-    # no coverage here??
-    # - uses: codecov/codecov-action@v3.1.1
-    #   with:
-    #     flags: unittests #optional
 
   unit-test-python-linting:
     needs: changes
