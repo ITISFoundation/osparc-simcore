@@ -29,6 +29,15 @@ async function closeQuickStart(page) {
     .catch(() => console.log("Quick Start window not found"));
 }
 
+async function toLogInPage(page) {
+  const id = '[osparc-test-id=toLogInPage]';
+  await page.waitForSelector(id, {
+    timeout: 2000
+  })
+    .then(() => page.click(id))
+    .catch(() => console.log("toLogInPage button not found"));
+}
+
 async function register(page, user, pass) {
   await utils.waitAndClick(page, '[osparc-test-id="loginCreateAccountBtn"]');
 
@@ -377,6 +386,7 @@ module.exports = {
   acceptCookies,
   ignoreNewRelease,
   closeQuickStart,
+  toLogInPage,
   register,
   logIn,
   logOut,
