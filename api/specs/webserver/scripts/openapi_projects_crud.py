@@ -53,7 +53,6 @@ TAGS: list[str | Enum] = [
 
 @app.post(
     "/projects",
-    # TODO: Envelope[TaskGet[ProjectGet]] ?? so TaskGet holds the future type
     response_model=Envelope[TaskGet],
     summary="Creates a new project or copies an existing one",
     status_code=status.HTTP_201_CREATED,
