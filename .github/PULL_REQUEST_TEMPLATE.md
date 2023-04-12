@@ -11,7 +11,8 @@
   📝    Add or update documentation.
   🔨    Add or update development scripts.
   🔒️    Fix security issues.
-  ⚠️    Changes in ops configuration etc. required before deploying. Please link associated issue or PR.
+  ⚠️    Changes in ops configuration etc. are required before deploying. 
+        [ Please add a link to the associated ops-issue or PR, such as in https://github.com/ITISFoundation/ or https://git.speag.com/oSparc/osparc-infra ]
   🗃️    Database table changed (relevant for devops).
 
 
