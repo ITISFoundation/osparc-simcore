@@ -3,7 +3,7 @@ from copy import deepcopy
 from typing import Any
 
 import networkx as nx
-from models_library.projects import Workbench
+from models_library.projects import NodesDict
 from models_library.projects_nodes import NodeID, NodeState
 from models_library.projects_nodes_io import PortLink
 from models_library.projects_pipeline import PipelineDetails
@@ -23,7 +23,7 @@ def _is_node_computational(node_key: str) -> bool:
         return False
 
 
-def create_complete_dag(workbench: Workbench) -> nx.DiGraph:
+def create_complete_dag(workbench: NodesDict) -> nx.DiGraph:
     """creates a complete graph out of the project workbench"""
     dag_graph = nx.DiGraph()
     for node_id, node in workbench.items():

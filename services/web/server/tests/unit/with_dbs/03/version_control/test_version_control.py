@@ -5,7 +5,7 @@
 from typing import Any
 
 import pytest
-from models_library.projects import Workbench
+from models_library.projects import NodesDict
 from openapi_core.schema.specs.models import Spec as OpenApiSpecs
 from pydantic import BaseModel
 from simcore_service_webserver._meta import API_VTAG as VX
@@ -36,7 +36,7 @@ def test_route_against_openapi_specs(route, openapi_specs: OpenApiSpecs):
 
 
 class WorkbenchModel(BaseModel):
-    __root__: Workbench
+    __root__: NodesDict
 
     class Config:
         allow_population_by_field_name = True

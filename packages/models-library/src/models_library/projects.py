@@ -5,10 +5,10 @@ import re
 from copy import deepcopy
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import Any, TypeAlias
 from uuid import UUID
 
-from pydantic import BaseModel, ConstrainedStr, Extra, Field, constr, validator
+from pydantic import BaseModel, ConstrainedStr, Extra, Field, validator
 
 from .basic_regex import DATE_RE, UUID_RE_BASE
 from .emails import LowerCaseEmailStr
@@ -18,13 +18,25 @@ from .projects_nodes_io import NodeIDStr
 from .projects_state import ProjectState
 from .projects_ui import StudyUI
 
-ProjectID = UUID
-ProjectIDStr = constr(regex=UUID_RE_BASE)
+ProjectID: TypeAlias = UUID
+ClassifierID: TypeAlias = str
 
-ClassifierID = str
+NodesDict: TypeAlias = dict[NodeIDStr, Node]
 
-# TODO: for some reason class Workbench(BaseModel): __root__= does not work as I thought ... investigate!
-Workbench = dict[NodeIDStr, Node]
+
+class ProjectIDStr(ConstrainedStr):
+    regex = re.compile(UUID_RE_BASE)
+
+    class Config:
+        frozen = True
+
+
+class DateTimeStr(ConstrainedStr):
+    # TODO: should we use datetime??
+    regex = re.compile(DATE_RE)
+
+    class Config:
+        frozen = True
 
 
 # NOTE: careful this is in sync with packages/postgres-database/src/simcore_postgres_database/models/projects.py!!!
@@ -66,7 +78,7 @@ class BaseProjectModel(BaseModel):
     last_change_date: datetime = Field(...)
 
     # Pipeline of nodes (SEE projects_nodes.py)
-    workbench: Workbench = Field(..., description="Project's pipeline")
+    workbench: NodesDict = Field(..., description="Project's pipeline")
 
     @validator("thumbnail", always=True, pre=True)
     @classmethod
@@ -100,14 +112,6 @@ class ProjectAtDB(BaseProjectModel):
         orm_mode = True
         use_enum_values = True
         allow_population_by_field_name = True
-
-
-class DateTimeStr(ConstrainedStr):
-    # TODO: should we use datetime??
-    regex = re.compile(DATE_RE)
-
-    class Config:
-        frozen = True
 
 
 class Project(BaseProjectModel):

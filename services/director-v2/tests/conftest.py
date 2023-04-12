@@ -16,7 +16,7 @@ import pytest
 import simcore_service_director_v2
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
-from models_library.projects import Node, Workbench
+from models_library.projects import Node, NodesDict
 from pytest import MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -214,7 +214,7 @@ def minimal_app(client: TestClient) -> ASGI3App:
 
 
 @pytest.fixture
-def fake_workbench(fake_workbench_file: Path) -> Workbench:
+def fake_workbench(fake_workbench_file: Path) -> NodesDict:
     workbench_dict = json.loads(fake_workbench_file.read_text())
     workbench = {}
     for node_id, node_data in workbench_dict.items():
