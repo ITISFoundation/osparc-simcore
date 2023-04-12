@@ -205,7 +205,7 @@ def _get_service_start_lock_key(user_id: UserID, project_uuid: ProjectID) -> str
     return f"lock_service_start_limit.{user_id}.{project_uuid}"
 
 
-def _enforce_running_services_limit(
+def _check_num_service_per_projects_limit(
     app: web.Application,
     number_of_services: int,
     user_id: UserID,
@@ -248,12 +248,10 @@ async def _start_dynamic_service(
         blocking=True,
         blocking_timeout_s=project_settings.PROJECTS_DYNAMIC_SERVICES_REDIS_LOCK_TIMEOUT_S,
     ):
-        # NOTE: between [point A] and [point B] there should be no code additions
-        # NOTE: [point A] is here
         project_running_nodes = await director_v2_api.list_dynamic_services(
             request.app, user_id, f"{project_uuid}"
         )
-        _enforce_running_services_limit(
+        _check_num_service_per_projects_limit(
             app=request.app,
             number_of_services=len(project_running_nodes),
             user_id=user_id,
@@ -282,7 +280,6 @@ async def _start_dynamic_service(
             request_simcore_user_agent=request.headers.get(X_SIMCORE_USER_AGENT, ""),
             service_resources=service_resources,
         )
-        # NOTE: [point B] is here
 
 
 async def add_project_node(
