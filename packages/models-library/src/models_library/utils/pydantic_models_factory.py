@@ -148,48 +148,56 @@ def _extract_field_definitions(
     )
     field_definitions = {}
 
-    field: ModelField
+    model_field: ModelField
 
-    for field in model_cls.__fields__.values():
-        if field.name in field_names:
+    for model_field in model_cls.__fields__.values():
+        if model_field.name in field_names:
             annotation = (
-                field.type_ if field.type_ == field.outer_type_ else field.outer_type_
+                model_field.type_
+                if model_field.type_ == model_field.outer_type_
+                else model_field.outer_type_
             )
             if set_all_optional and not has_optional:
                 annotation = Optional[annotation]
 
             field_info = Field(
                 default=(
-                    field.default
-                    or field.default_factory
-                    or (None if set_all_optional or not field.required else Undefined)
+                    model_field.default
+                    or model_field.default_factory
+                    or (
+                        None
+                        if set_all_optional or not model_field.required
+                        else Undefined
+                    )
                 ),
-                default_factory=field.default_factory,
-                alias=field.alias,
-                title=field.title,
-                description=field.description,
-                exclude=field.exclude,
-                include=field.include,
-                const=field.const,
-                gt=field.gt,
-                ge=field.ge,
-                lt=field.lt,
-                le=field.le,
-                multiple_of=field.multiple_of,
-                max_digits=field.max_digits,
-                decimal_places=field.decimal_places,
-                min_items=field.min_items,
-                max_items=field.max_items,
-                unique_items=field.unique_items,
-                min_length=field.min_length,
-                max_length=field.max_length,
-                allow_mutation=field.allow_mutation,
-                regex=field.regex,
-                discriminator=field.discriminator,
-                repr=field.repr,
-                **field.extras,
+                default_factory=model_field.default_factory,
+                alias=None
+                if model_field.alias == model_field.name
+                else model_field.alias,
+                title=model_field.field_info.title,
+                description=model_field.field_info.description,
+                exclude=model_field.field_info.exclude,
+                include=model_field.field_info.include,
+                const=model_field.field_info.const,
+                gt=model_field.field_info.gt,
+                ge=model_field.field_info.ge,
+                lt=model_field.field_info.lt,
+                le=model_field.field_info.le,
+                multiple_of=model_field.field_info.multiple_of,
+                max_digits=model_field.field_info.max_digits,
+                decimal_places=model_field.field_info.decimal_places,
+                min_items=model_field.field_info.min_items,
+                max_items=model_field.field_info.max_items,
+                unique_items=model_field.field_info.unique_items,
+                min_length=model_field.field_info.min_length,
+                max_length=model_field.field_info.max_length,
+                allow_mutation=model_field.field_info.allow_mutation,
+                regex=model_field.field_info.regex,
+                discriminator=model_field.field_info.discriminator,
+                repr=model_field.field_info.repr,
+                **model_field.field_info.extra,
             )
-            field_definitions[field.name] = (annotation, field_info)
+            field_definitions[model_field.name] = (annotation, field_info)
     return field_definitions
 
 

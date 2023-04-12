@@ -4,7 +4,7 @@
 # pylint: disable=unused-variable
 
 import json
-from typing import Callable, Optional
+from typing import Callable
 
 import pytest
 from faker import Faker
@@ -21,7 +21,6 @@ from yarl import URL
 
 
 def assert_same_fields(model_cls, reference_model_cls):
-
     got_fields = collect_fields_attrs(model_cls)
     expected_fields = collect_fields_attrs(reference_model_cls)
 
@@ -76,6 +75,7 @@ def _validators_factory() -> Callable:
 
 
 create_validator_for = _validators_factory()
+
 
 #
 # NOTE: Rationale of this test-suite
@@ -132,10 +132,10 @@ class UserCreate(BaseModel):
 class UserUpdate(BaseModel):
     """in -> Model for body of PATCH /users/{id}"""
 
-    display_name: Optional[str]
-    username: Optional[str]
-    password: Optional[str]
-    password2: Optional[str]
+    display_name: str | None
+    username: str | None
+    password: str | None
+    password2: str | None
 
     # parses json-body from Update request
     _name_must_contain_space = create_validator_for("display_name")
