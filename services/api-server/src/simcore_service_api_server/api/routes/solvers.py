@@ -9,7 +9,8 @@ from pydantic.errors import PydanticValueError
 from servicelib.error_codes import create_error_code
 
 from ...core.settings import BasicSettings
-from ...models.schemas.solvers import Solver, SolverKeyId, SolverPort, VersionStr
+from ...models.basic_types import VersionStr
+from ...models.schemas.solvers import Solver, SolverKeyId, SolverPort
 from ...modules.catalog import CatalogApi
 from ..dependencies.application import get_product_name, get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id

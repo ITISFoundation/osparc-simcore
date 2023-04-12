@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import AnyHttpUrl, BaseModel, Field
 
 from ..basic_types import VersionStr
@@ -8,11 +6,11 @@ from ..basic_types import VersionStr
 class Meta(BaseModel):
     name: str
     version: VersionStr
-    released: Optional[dict[str, VersionStr]] = Field(
+    released: dict[str, VersionStr] | None = Field(
         None, description="Maps every route's path tag with a released version"
     )
-    docs_url: AnyHttpUrl = "https://docs.osparc.io"
-    docs_dev_url: AnyHttpUrl = "https://api.osparc.io/dev/docs"
+    docs_url: AnyHttpUrl = Field(default="https://docs.osparc.io")
+    docs_dev_url: AnyHttpUrl = Field(default="https://api.osparc.io/dev/docs")
 
     class Config:
         schema_extra = {
