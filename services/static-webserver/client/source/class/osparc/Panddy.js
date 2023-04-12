@@ -26,9 +26,9 @@ qx.Class.define("osparc.Panddy", {
   },
 
   statics: {
-    MINIMAL_STEPS: [{
+    INTRO_STEPS: [{
       target: null,
-      message: qx.locale.Manager.tr("Hey there!<br>This is Panddy. I'm here to give you hints on how to use oSPARC.")
+      message: qx.locale.Manager.tr("Grüezi!<br>This is Panddy. I'm here to give you hints on how to use oSPARC.")
     }]
   },
 
@@ -52,12 +52,29 @@ qx.Class.define("osparc.Panddy", {
             scale: true,
             cursor: "pointer"
           });
+          osparc.utils.Utils.setIdToWidget(control, "panddy-image");
           this._add(control, {
             bottom: 0,
             right: 0
           });
           break;
         }
+        case "bubble-hint":
+          control = new qx.ui.basic.Label().set({
+            font: "text-14",
+            backgroundColor: "c05",
+            padding: 10,
+            rich: true,
+            maxWidth: 300
+          });
+          control.getContentElement().setStyles({
+            "border-radius": "8px"
+          });
+          this._add(control, {
+            bottom: pandiSize-20,
+            right: pandiSize-20
+          });
+          break;
         case "bubble-text":
           control = new qx.ui.basic.Label().set({
             font: "text-14",
@@ -91,7 +108,7 @@ qx.Class.define("osparc.Panddy", {
     },
 
     __toStep: function(idx = 0) {
-      let steps = this.self().MINIMAL_STEPS;
+      let steps = this.self().INTRO_STEPS;
       if (this.isPropertyInitialized("steps") && this.getSteps() && this.getSteps().length) {
         steps = this.getSteps();
       }
