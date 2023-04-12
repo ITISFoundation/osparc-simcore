@@ -11,7 +11,11 @@ This OAS are the source of truth
 
 from enum import Enum
 
-from _common import CURRENT_DIR, assert_signature_against_model, create_openapi_specs
+from _common import (
+    CURRENT_DIR,
+    assert_handler_signature_against_model,
+    create_openapi_specs,
+)
 from fastapi import FastAPI, Query, status
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
@@ -101,7 +105,7 @@ async def list_projects(
     ...
 
 
-assert_signature_against_model(list_projects, _ProjectListParams)
+assert_handler_signature_against_model(list_projects, _ProjectListParams)
 
 
 @app.get(
@@ -114,7 +118,7 @@ async def get_active_project(client_session_id: str):
     ...
 
 
-assert_signature_against_model(get_active_project, _ProjectActiveParams)
+assert_handler_signature_against_model(get_active_project, _ProjectActiveParams)
 
 
 @app.get(
@@ -127,7 +131,7 @@ async def get_project(project_id: ProjectID):
     ...
 
 
-assert_signature_against_model(get_project, ProjectPathParams)
+assert_handler_signature_against_model(get_project, ProjectPathParams)
 
 
 @app.put(
@@ -140,7 +144,7 @@ async def replace_project(project_id: ProjectID, replace: ProjectReplace):
     """Replaces (i.e. full update) a project resource"""
 
 
-assert_signature_against_model(replace_project, ProjectPathParams)
+assert_handler_signature_against_model(replace_project, ProjectPathParams)
 
 
 # @app.patch(
@@ -153,7 +157,7 @@ async def update_project(project_id: ProjectID, update: ProjectUpdate):
     """Partial update of a project resource"""
 
 
-assert_signature_against_model(update_project, ProjectPathParams)
+assert_handler_signature_against_model(update_project, ProjectPathParams)
 
 
 @app.delete(
@@ -166,7 +170,7 @@ async def delete_project(project_id: ProjectID):
     ...
 
 
-assert_signature_against_model(delete_project, ProjectPathParams)
+assert_handler_signature_against_model(delete_project, ProjectPathParams)
 
 
 if __name__ == "__main__":

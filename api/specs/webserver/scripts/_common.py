@@ -91,9 +91,11 @@ class ParamSpec(NamedTuple):
     field_info: FieldInfo
 
 
-def assert_signature_against_model(func: Callable, model_cls: type[BaseModel]):
+def assert_handler_signature_against_model(
+    handler: Callable, model_cls: type[BaseModel]
+):
 
-    sig = inspect.signature(func)
+    sig = inspect.signature(handler)
 
     # query, path and body parameters
     specs_params = [
@@ -109,4 +111,4 @@ def assert_signature_against_model(func: Callable, model_cls: type[BaseModel]):
 
     assert {p.name for p in implemented_params}.issubset(  # nosec
         {p.name for p in specs_params}
-    ), f"Entrypoint {func} does not implement OAS"
+    ), f"Entrypoint {handler} does not implement OAS"
