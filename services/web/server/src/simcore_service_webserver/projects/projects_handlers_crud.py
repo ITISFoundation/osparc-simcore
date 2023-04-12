@@ -41,7 +41,7 @@ from ..security_api import check_permission
 from ..security_decorators import permission_required
 from ..users_api import get_user_name
 from . import _create_utils, projects_api
-from ._rest_schemas import ProjectUpdate
+from ._rest_schemas import ProjectCopyOverride, ProjectCreateNew, ProjectUpdate
 from .project_lock import get_project_locked_state
 from .project_models import ProjectDict, ProjectTypeAPI
 from .projects_db import ProjectDBAPI
@@ -62,9 +62,6 @@ from .projects_utils import (
 # the working copy and redirect to the appropriate project entrypoint. Nonetheless, the
 # response needs to refer to the uuid of the request and this is passed through this request key
 RQ_REQUESTED_REPO_PROJECT_UUID_KEY = f"{__name__}.RQT_REQUESTED_REPO_PROJECT_UUID_KEY"
-
-
-# TODO: validate these against api/specs/webserver/v0/components/schemas/project-v0.0.1.json
 
 
 log = logging.getLogger(__name__)
@@ -119,13 +116,16 @@ class _ProjectCreateParams(BaseModel):
 async def create_project(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
     query_params = parse_request_query_parameters_as(_ProjectCreateParams, request)
-    predefined_project = await request.json() if request.can_read_body else None
+    project_create = await parse_request_body_as(
+        ProjectCreateNew | ProjectCopyOverride, request
+    )
+
     if query_params.as_template:  # create template from
         await check_permission(request, "project.template.create")
 
     return await start_long_running_task(
         request,
-        _create_utils.create_project,
+        task=_create_utils.create_project,
         fire_and_forget=True,
         task_context=jsonable_encoder(req_ctx),
         # arguments
@@ -136,10 +136,10 @@ async def create_project(request: web.Request):
         copy_data=query_params.copy_data,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
-        predefined_project=predefined_project,
         simcore_user_agent=request.headers.get(
             X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
         ),
+        predefined_project=project_create.dict(exclude_unset=True),
     )
 
 
@@ -484,7 +484,7 @@ async def update_project(request: web.Request):
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
-    project_update = parse_request_body_as(ProjectUpdate, request)
+    project_update = await parse_request_body_as(ProjectUpdate, request)
 
     assert db  # nosec
     assert req_ctx  # nosec
