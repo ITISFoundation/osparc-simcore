@@ -49,8 +49,10 @@ def test_create_project_schemas(api_call: HttpApiCallCapture):
 )
 def test_list_project_schemas(api_call: HttpApiCallCapture):
 
-    request_payload = parse_obj_as(Page[ProjectListItem], api_call.request_payload)
-    assert request_payload
+    assert api_call.request_payload is None
+
+    response_body = parse_obj_as(Page[ProjectListItem], api_call.response_body)
+    assert response_body
 
 
 @pytest.mark.parametrize(
