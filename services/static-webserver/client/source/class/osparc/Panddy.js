@@ -23,6 +23,10 @@ qx.Class.define("osparc.Panddy", {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.Canvas());
+
+    this.set({
+      zIndex: 100000
+    });
   },
 
   statics: {
@@ -52,29 +56,13 @@ qx.Class.define("osparc.Panddy", {
             scale: true,
             cursor: "pointer"
           });
-          osparc.utils.Utils.setIdToWidget(control, "panddy-image");
+          control.addListener("tap", () => this.stop(), this);
           this._add(control, {
             bottom: 0,
             right: 0
           });
           break;
         }
-        case "bubble-hint":
-          control = new qx.ui.basic.Label().set({
-            font: "text-14",
-            backgroundColor: "c05",
-            padding: 10,
-            rich: true,
-            maxWidth: 300
-          });
-          control.getContentElement().setStyles({
-            "border-radius": "8px"
-          });
-          this._add(control, {
-            bottom: pandiSize-20,
-            right: pandiSize-20
-          });
-          break;
         case "bubble-text":
           control = new qx.ui.basic.Label().set({
             font: "text-14",
@@ -100,6 +88,8 @@ qx.Class.define("osparc.Panddy", {
       this.getChildControl("bubble-text").show();
 
       this.__toStep(0);
+
+      osparc.product.panddy.Utils.getSteps();
     },
 
     stop: function() {
