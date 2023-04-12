@@ -1,6 +1,7 @@
-from enum import Enum
+from enum import auto
 
 from models_library.emails import LowerCaseEmailStr
+from models_library.utils.enums import StrAutoEnum
 from pydantic import BaseModel, Field, validator
 
 from ..domain.groups import Groups
@@ -15,14 +16,12 @@ class ProfileUpdate(ProfileCommon):
     pass
 
 
-# from simcore_postgres_database.models.users import UserRole
-class UserRoleEnum(str, Enum):
-    # TODO: build from UserRole! or assert Role == UserRole
-    ANONYMOUS = "ANONYMOUS"
-    GUEST = "GUEST"
-    USER = "USER"
-    TESTER = "TESTER"
-    ADMIN = "ADMIN"
+class UserRoleEnum(StrAutoEnum):
+    ANONYMOUS = auto()
+    GUEST = auto()
+    USER = auto()
+    TESTER = auto()
+    ADMIN = auto()
 
 
 class Profile(ProfileCommon):
@@ -35,7 +34,7 @@ class Profile(ProfileCommon):
         max_length=40,
     )
 
-    @validator("role")
+    @validator("role", pre=True)
     @classmethod
     def enforce_role_upper(cls, v):
         if v:
