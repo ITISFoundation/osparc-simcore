@@ -218,6 +218,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
     __addQuickStartToMenu: function() {
       const menu = this.getMenu();
       osparc.store.Support.addQuickStartToMenu(menu);
+      osparc.store.Support.addPanddyToMenu(menu);
     },
 
     __addManualsToMenu: async function() {

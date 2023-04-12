@@ -43,6 +43,19 @@ qx.Class.define("osparc.store.Support", {
       }
     },
 
+    addPanddyToMenu: function(menu) {
+      if (osparc.product.panddy.Utils.hasPanddy()) {
+        const steps = osparc.product.panddy.Utils.getSteps();
+        const panddyButton = new qx.ui.menu.Button(qx.locale.Manager.tr("Panddy"));
+        panddyButton.addListener("execute", () => {
+          const panddy = osparc.Panddy.getInstance();
+          panddy.setSteps(steps);
+          panddy.start();
+        });
+        menu.add(panddyButton);
+      }
+    },
+
     addManualButtonsToMenu: function(menu, menuButton) {
       return new Promise(resolve => {
         osparc.store.Support.getManuals()
