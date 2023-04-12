@@ -23,7 +23,7 @@ from ..storage_api import (
 from ..users_api import get_user_name
 from . import projects_api
 from .project_models import ProjectDict
-from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
+from .projects_db import ProjectDBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from .projects_utils import NodesMap, clone_project_document, default_copy_project_name
 
@@ -100,7 +100,7 @@ async def _copy_files_from_source_project(
     user_id: UserID,
     task_progress: TaskProgress,
 ):
-    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
     needs_lock_source_project: bool = (
         await db.get_project_type(parse_obj_as(ProjectID, source_project["uuid"]))
         != ProjectTypeDB.TEMPLATE
@@ -165,7 +165,7 @@ async def create_project(
 
     """
 
-    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
 
     new_project = {}
     copy_file_coro = None
@@ -189,7 +189,7 @@ async def create_project(
                     if non_null_value := predefined_project.get(key):
                         new_project[key] = non_null_value
             else:
-                # TODO: take skeleton and fill instead
+                # FIXME: this can change ALL for a new project!
                 new_project = predefined_project
             await projects_api.validate_project(app, new_project)
 
