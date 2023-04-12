@@ -43,7 +43,6 @@ def test_list_project_schemas(api_call: HttpApiCallCapture):
     assert request_payload
 
 
-@pytest.mark.testit
 @pytest.mark.parametrize(
     "api_call",
     (GET_PROJECT,),
