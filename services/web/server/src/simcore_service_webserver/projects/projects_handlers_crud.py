@@ -18,6 +18,7 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import BaseModel, Extra, Field, NonNegativeInt
 from servicelib.aiohttp.long_running_tasks.server import start_long_running_task
 from servicelib.aiohttp.requests_validation import (
+    parse_request_body_as,
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
@@ -40,9 +41,10 @@ from ..security_api import check_permission
 from ..security_decorators import permission_required
 from ..users_api import get_user_name
 from . import _create_utils, projects_api
+from ._rest_schemas import ProjectUpdate
 from .project_lock import get_project_locked_state
 from .project_models import ProjectDict, ProjectTypeAPI
-from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
+from .projects_db import ProjectDBAPI
 from .projects_exceptions import (
     ProjectDeleteError,
     ProjectInvalidRightsError,
@@ -176,7 +178,7 @@ async def list_projects(request: web.Request):
 
     """
 
-    db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
+    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
     req_ctx = RequestContext.parse_obj(request)
     query_params = parse_request_query_parameters_as(_ProjectListParams, request)
 
@@ -364,7 +366,7 @@ async def replace_project(request: web.Request):
        web.HTTPNotFound: This project was not found
     """
 
-    db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
+    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
@@ -479,9 +481,15 @@ async def replace_project(request: web.Request):
 @permission_required("project.update")
 @permission_required("services.pipeline.*")
 async def update_project(request: web.Request):
-    db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
+    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
+    project_update = parse_request_body_as(ProjectUpdate, request)
+
+    assert db  # nosec
+    assert req_ctx  # nosec
+    assert path_params  # nosec
+    assert project_update  # nosec
 
     raise NotImplementedError()
 
