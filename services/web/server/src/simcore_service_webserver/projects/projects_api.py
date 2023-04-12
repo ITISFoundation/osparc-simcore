@@ -246,7 +246,7 @@ async def _start_dynamic_service(
     async with client_sdk.lock_context(
         lock_key,
         blocking=True,
-        blocking_timeout_s=project_settings.PROJECTS_DYNAMIC_SERVICES_REDIS_LOCK_TIMEOUT_S,
+        blocking_timeout_s=project_settings.total_project_dynamic_nodes_creation_interval,
     ):
         project_running_nodes = await director_v2_api.list_dynamic_services(
             request.app, user_id, f"{project_uuid}"
