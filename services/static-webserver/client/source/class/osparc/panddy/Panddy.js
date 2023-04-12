@@ -72,7 +72,7 @@ qx.Class.define("osparc.panddy.Panddy", {
 
     __createStep: function(element, text) {
       const stepWidget = new osparc.panddy.Step(element, text).set({
-        maxWidth: 300
+        maxWidth: 400
       });
       stepWidget.addListener("closePressed", () => this.stop(), this);
       stepWidget.addListener("nextPressed", () => this.__toStep(this.__currentIdx+1), this);
@@ -111,36 +111,26 @@ qx.Class.define("osparc.panddy.Panddy", {
       const stepWidget = this.__currentStep = this.__createStep();
       if (step.target) {
         const domEl = document.querySelector(`[osparc-test-id=${step.target}]`);
-        const el = qx.ui.core.Widget.getWidgetByElement(domEl);
-        stepWidget.setElement(el);
+        const widget = qx.ui.core.Widget.getWidgetByElement(domEl);
+        if (step.action === "execute") {
+          widget.execute();
+        }
+        stepWidget.setElement(widget);
       } else {
-        const el = this.getChildControl("panddy");
-        stepWidget.setElement(el);
+        const widget = this.getChildControl("panddy");
+        stepWidget.setElement(widget);
         stepWidget.setOrientation(osparc.ui.basic.FloatingHelper.ORIENTATION.LEFT);
       }
       if (step.message) {
         stepWidget.setText(step.message);
       }
-      stepWidget.show();
-    },
-
-    __highlightWidget: function(widget) {
-      const thisDom = widget.getContentElement().getDomElement();
-      const thisZIndex = parseInt(thisDom.style.zIndex);
-      const modalFrame = qx.dom.Hierarchy.getSiblings(thisDom).find(el =>
-        // Hack: Qx inserts the modalFrame as a sibling of the window with a -1 zIndex
-        parseInt(el.style.zIndex) === thisZIndex - 1
-      );
-      if (modalFrame) {
-        modalFrame.addEventListener("click", () => {
-          if (this.isModal() && this.isClickAwayClose() &&
-            parseInt(modalFrame.style.zIndex) === parseInt(thisDom.style.zIndex) - 1) {
-            this.close();
-          }
+      if (steps.length > 1) {
+        stepWidget.set({
+          stepIndex: idx+1,
+          nSteps: steps.length
         });
-        modalFrame.style.backgroundColor = "black";
-        modalFrame.style.opacity = 0.4;
       }
+      stepWidget.show();
     }
   }
 });
