@@ -129,6 +129,9 @@ class TutorialBase {
       }
       setTimeout(waitForFlash, 0)
 
+      // In case there is landing page, go to the log in page
+      await auto.ignoreNewRelease(this.__page);
+
       const needsRegister = await this.registerIfNeeded();
       if (!needsRegister) {
         await this.login();

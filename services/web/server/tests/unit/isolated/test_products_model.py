@@ -48,6 +48,7 @@ def test_product_to_static():
             "name": "ACME",
             "url": "https://acme.com",
             "license_url": "https://acme.com/license",
+            "has_landing_page": False,
         },
         "issues": [
             {
