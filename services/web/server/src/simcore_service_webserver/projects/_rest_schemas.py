@@ -18,8 +18,6 @@ from servicelib.aiohttp.long_running_tasks.server import TaskGet
 
 from ..rest_schemas_base import InputSchema, OutputSchema
 
-# TODO: review creation  policies with OM (e.g. NO uuid!)
-
 
 def empty_str_to_none(value: Any):
     if isinstance(value, str) and value.strip() == "":
@@ -35,7 +33,6 @@ class ProjectCreateNew(InputSchema):
     tags: list[int] | None = []
     classifiers: list[ClassifierID] | None = Field(default_factory=list)
     ui: StudyUI | None = None
-    quality: dict[str, Any] = Field(default_factory=dict)
 
     _empty_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
         empty_str_to_none
@@ -48,7 +45,6 @@ class ProjectCopyOverride(InputSchema):
     description: str
     thumbnail: HttpUrlWithCustomMinLength | None
     prj_owner: LowerCaseEmailStr
-    access_rights: dict[GroupIDStr, AccessRights]
 
     _empty_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
         empty_str_to_none
@@ -70,18 +66,15 @@ class ProjectGet(OutputSchema):
     state: ProjectState | None = None
     ui: StudyUI | None = None
     quality: dict[str, Any] = Field(default_factory=dict)
-    dev: dict | None = None
 
     _empty_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
         empty_str_to_none
     )
 
 
-# TODO: TaskGet[Envelope[TaskProjectGet]] i.e. should include future?
 TaskProjectGet: TypeAlias = TaskGet
 
 
-# TODO: review with OM. with option to get it lighter??
 class ProjectListItem(ProjectGet):
     ...
 
@@ -103,14 +96,18 @@ class ProjectReplace(InputSchema):
     quality: dict[str, Any] = Field(
         default_factory=dict,
     )
-    dev: dict | None = None
 
     _empty_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
         empty_str_to_none
     )
 
 
+NOT_REQUIRED = Field(default=None)
+
+
 class ProjectUpdate(InputSchema):
+    name: str = NOT_REQUIRED
+    description: str = NOT_REQUIRED
     name: str = Field(default=None)
     description: str = Field(default=None)
     thumbnail: HttpUrlWithCustomMinLength | None = None
@@ -120,7 +117,6 @@ class ProjectUpdate(InputSchema):
     classifiers: list[ClassifierID] | None = Field(default_factory=list)
     ui: StudyUI | None = None
     quality: dict[str, Any] = Field(default_factory=dict)
-    dev: dict | None = None
 
     _empty_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
         empty_str_to_none
