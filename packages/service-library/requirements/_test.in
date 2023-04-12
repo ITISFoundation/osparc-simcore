@@ -11,9 +11,9 @@
 --constraint _fastapi.txt
 
 # testing
+
 asgi_lifespan
 coverage
-
 docker
 faker
 flaky

@@ -9,7 +9,6 @@
 --constraint _base.txt
 
 coverage
-
 faker
 pint
 pytest

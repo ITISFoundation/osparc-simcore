@@ -11,9 +11,7 @@
 aioresponses
 alembic
 click
-
 coverage
-
 docker
 Faker
 flaky
@@ -21,7 +19,7 @@ hypothesis
 jsonschema
 openapi-spec-validator
 pytest
-pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
+pytest-aiohttp
 pytest-cov
 pytest-docker
 pytest-icdiff

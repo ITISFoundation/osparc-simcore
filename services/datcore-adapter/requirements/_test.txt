@@ -19,18 +19,10 @@ certifi==2022.12.7
     #   -c requirements/_base.txt
     #   httpcore
     #   httpx
-    #   requests
-charset-normalizer==3.0.1
-    # via requests
-coverage==6.5.0
+coverage==7.2.3
     # via
     #   -r requirements/_test.in
-    #   coveralls
     #   pytest-cov
-coveralls==3.3.1
-    # via -r requirements/_test.in
-docopt==0.6.2
-    # via coveralls
 exceptiongroup==1.1.0
     # via pytest
 execnet==1.9.0
@@ -55,7 +47,6 @@ idna==3.4
     # via
     #   -c requirements/_base.txt
     #   anyio
-    #   requests
     #   rfc3986
 iniconfig==2.0.0
     # via pytest
@@ -97,8 +88,6 @@ python-dateutil==2.8.2
     # via
     #   -c requirements/_base.txt
     #   faker
-requests==2.28.2
-    # via coveralls
 respx==0.20.1
     # via -r requirements/_test.in
 rfc3986==1.5.0
@@ -122,7 +111,3 @@ tomli==2.0.1
     # via
     #   coverage
     #   pytest
-urllib3==1.26.12
-    # via
-    #   -c requirements/_base.txt
-    #   requests

@@ -65,7 +65,7 @@ click==8.1.3
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   -r requirements/_test.in
     #   typer
-coverage==7.2.1
+coverage==7.2.3
     # via
     #   -r requirements/_test.in
     #   pytest-cov

@@ -7,8 +7,8 @@
 #
 --constraint _base.txt
 
-coverage
 
+coverage
 docker
 faker
 minio

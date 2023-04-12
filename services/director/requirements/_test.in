@@ -14,11 +14,10 @@
 # FROZEN as well (DO NOT CHANGE anything in pytest-simcore, it will have no effect in the director package)
 pytest-simcore @  git+https://github.com/ITISFoundation/osparc-simcore.git@79f866219bf650c5eeb4fcdf8f017319087c92c7#egg=pytest-simcore&subdirectory=packages/pytest-simcore
 
+
 # testing
 aioresponses
-
 coverage==4.5.1 # TODO: Downgraded because of a bug https://github.com/nedbat/coveragepy/issues/716
-
 docker
 openapi-spec-validator~=0.2  # TODO: this library is limiting jsonschema<3
 ptvsd
