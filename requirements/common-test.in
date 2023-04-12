@@ -1,0 +1,10 @@
+#
+# Basic testing libraries
+#
+
+coverage         # test coverage
+pytest           # main tool
+pytest-cov       # test coverage
+pytest-icdiff    # enhances tests logs
+pytest-instafail # enhances tests logs
+pytest-sugar     # enhances tests logs
