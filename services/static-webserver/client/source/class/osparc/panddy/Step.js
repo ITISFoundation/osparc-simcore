@@ -85,7 +85,7 @@ qx.Class.define("osparc.panddy.Step", {
         case "title":
           control = new qx.ui.basic.Label().set({
             rich: true,
-            font: "text-18"
+            font: "text-16"
           });
           this.bind("title", control, "value");
           this.add(control);
@@ -93,7 +93,7 @@ qx.Class.define("osparc.panddy.Step", {
         case "message":
           control = new qx.ui.basic.Label().set({
             rich: true,
-            font: "text-16"
+            font: "text-14"
           });
           this.bind("text", control, "value");
           this.add(control);
@@ -150,8 +150,8 @@ qx.Class.define("osparc.panddy.Step", {
       const stepLabel = this.getChildControl("step-label");
       stepLabel.setValue(this.tr("Step: ") + this.getStepIndex() + "/" + this.getNSteps());
 
+      const nextButton = this.getChildControl("next-button");
       if (this.getStepIndex() === this.getNSteps()) {
-        const nextButton = this.getChildControl("next-button");
         nextButton.setLabel(this.tr("End"));
         nextButton.addListener("execute", () => this.fireEvent("closePressed"), this);
       }
