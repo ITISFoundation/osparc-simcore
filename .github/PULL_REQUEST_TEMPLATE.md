@@ -12,7 +12,7 @@
   🔨    Add or update development scripts.
   🔒️    Fix security issues.
   ⚠️    Changes in ops configuration etc. are required before deploying. 
-        [ Please add a link to the associated ops-issue or PR, such as in https://github.com/ITISFoundation/ or https://git.speag.com/oSparc/osparc-infra ]
+        [ Please add a link to the associated ops-issue or PR, such as in https://github.com/ITISFoundation/osparc-ops-environments or https://git.speag.com/oSparc/osparc-infra ]
   🗃️    Database table changed (relevant for devops).
 
 
