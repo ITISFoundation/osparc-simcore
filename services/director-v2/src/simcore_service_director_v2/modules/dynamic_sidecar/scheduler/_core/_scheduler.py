@@ -19,7 +19,6 @@ import logging
 from asyncio import sleep
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import Optional, Union
 
 from models_library.basic_types import PortInt
 from models_library.projects import ProjectID
@@ -55,8 +54,8 @@ from ...errors import (
     DynamicSidecarNotFoundError,
 )
 from .._abc import SchedulerPublicInterface
+from . import _scheduler_utils
 from ._events_utils import (
-    service_push_outputs,
     service_remove_containers,
     service_remove_sidecar_proxy_docker_networks_and_volumes,
     service_save_state,
@@ -97,23 +96,17 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
     async def push_service_outputs(
         self,
         node_uuid: NodeID,
-        progress_callback: Optional[ProgressCallback] = None,
+        progress_callback: ProgressCallback | None = None,
     ) -> None:
-        dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-            self.app
-        )
-        await service_push_outputs(
-            app=self.app,
-            node_uuid=node_uuid,
-            dynamic_sidecar_client=dynamic_sidecar_client,
-            progress_callback=progress_callback,
+        await _scheduler_utils.push_service_outputs(
+            self.app, node_uuid, progress_callback
         )
 
     async def remove_service_containers(
-        self, node_uuid: NodeID, progress_callback: Optional[ProgressCallback] = None
+        self, node_uuid: NodeID, progress_callback: ProgressCallback | None = None
     ) -> None:
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-            self.app
+            self.app, node_uuid
         )
         await service_remove_containers(
             app=self.app,
@@ -136,10 +129,10 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
         )
 
     async def save_service_state(
-        self, node_uuid: NodeID, progress_callback: Optional[ProgressCallback] = None
+        self, node_uuid: NodeID, progress_callback: ProgressCallback | None = None
     ) -> None:
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-            self.app
+            self.app, node_uuid
         )
         await service_save_state(
             app=self.app,
@@ -205,8 +198,8 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
     def list_services(
         self,
         *,
-        user_id: Optional[UserID] = None,
-        project_id: Optional[ProjectID] = None,
+        user_id: UserID | None = None,
+        project_id: ProjectID | None = None,
     ) -> list[NodeID]:
         """
         Returns the list of tracked service UUIDs
@@ -239,7 +232,7 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
     async def mark_service_for_removal(
         self,
         node_uuid: NodeID,
-        can_save: Optional[bool],
+        can_save: bool | None,
         skip_observation_recreation: bool = False,
     ) -> None:
         """Marks service for removal, causing RemoveMarkedService to trigger"""
@@ -257,9 +250,9 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
 
             # cancel current observation task
             if service_name in self._service_observation_task:
-                service_task: Optional[
-                    Union[asyncio.Task, object]
-                ] = self._service_observation_task[service_name]
+                service_task: None | (
+                    asyncio.Task | object
+                ) = self._service_observation_task[service_name]
                 if isinstance(service_task, asyncio.Task):
                     service_task.cancel()
 
@@ -291,6 +284,12 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
             )
 
         logger.debug("Service '%s' marked for removal from scheduler", service_name)
+
+    async def is_service_awaiting_manual_intervention(self, node_uuid: NodeID) -> bool:
+        """returns True if services is waiting for manual intervention"""
+        return await _scheduler_utils.service_awaits_manual_interventions(
+            self.get_scheduler_data(node_uuid)
+        )
 
     async def remove_service_from_observation(self, node_uuid: NodeID) -> None:
         # TODO: this is used internally no need to be here exposed in the interface
@@ -407,7 +406,7 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
         scheduler_data: SchedulerData = self._to_observe[service_name]
         dynamic_sidecar_endpoint: AnyHttpUrl = scheduler_data.endpoint
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-            self.app
+            self.app, node_uuid
         )
 
         transferred_bytes = await dynamic_sidecar_client.pull_service_input_ports(
@@ -430,7 +429,7 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
         scheduler_data = self._to_observe[service_name]
 
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-            self.app
+            self.app, node_id
         )
 
         await dynamic_sidecar_client.attach_service_containers_to_project_network(
@@ -451,7 +450,7 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
         scheduler_data = self._to_observe[service_name]
 
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-            self.app
+            self.app, node_id
         )
 
         await dynamic_sidecar_client.detach_service_containers_from_project_network(
@@ -469,7 +468,7 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
         scheduler_data: SchedulerData = self._to_observe[service_name]
 
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-            self.app
+            self.app, node_uuid
         )
 
         await dynamic_sidecar_client.restart_containers(scheduler_data.endpoint)

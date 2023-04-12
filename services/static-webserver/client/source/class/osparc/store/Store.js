@@ -198,7 +198,7 @@ qx.Class.define("osparc.store.Store", {
         return;
       }
       const stored = this.get(resource);
-      if (Array.isArray(stored) && Array.isArray(data)) {
+      if (Array.isArray(stored)) {
         this.set(resource, stored.concat(data));
       } else {
         this.set(resource, data);

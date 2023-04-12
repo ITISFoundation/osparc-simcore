@@ -102,6 +102,24 @@ qx.Class.define("osparc.dashboard.CardBase", {
       return false;
     },
 
+    filterSharedWith: function(checks, sharedWith) {
+      if (sharedWith && sharedWith !== "show-all") {
+        const myGroupId = osparc.auth.Data.getInstance().getGroupId();
+        if (checks && myGroupId in checks) {
+          const myAccessRights = checks[myGroupId];
+          const totalAccess = "delete" in myAccessRights ? myAccessRights["delete"] : myAccessRights["write_access"];
+          if (sharedWith === "my-studies") {
+            return !totalAccess;
+          } else if (sharedWith === "shared-with-me") {
+            return totalAccess;
+          }
+          return false;
+        }
+        return true;
+      }
+      return false;
+    },
+
     filterClassifiers: function(checks, classifiers) {
       if (classifiers && classifiers.length) {
         const includesAll = classifiers.every(classifier => checks.includes(classifier));
@@ -610,6 +628,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
       moreOpts.openAccessRights();
     },
 
+    openTags: function() {
+      const moreOpts = this.__openMoreOptions();
+      moreOpts.openTags();
+    },
+
     __openQualityEditor: function() {
       const moreOpts = this.__openMoreOptions();
       moreOpts.openQuality();
@@ -781,6 +804,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
       return this.self().filterTags(checks, tags);
     },
 
+    _filterSharedWith: function(sharedWith) {
+      const checks = this.getAccessRights();
+      return this.self().filterSharedWith(checks, sharedWith);
+    },
+
     _filterClassifiers: function(classifiers) {
       const checks = this.getClassifiers();
       return this.self().filterClassifiers(checks, classifiers);
@@ -796,6 +824,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
         return true;
       }
       if (this._filterTags(data.tags)) {
+        return true;
+      }
+      if (this._filterSharedWith(data.sharedWith)) {
         return true;
       }
       if (this._filterClassifiers(data.classifiers)) {
@@ -814,6 +845,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
         return true;
       }
       if (data.tags && data.tags.length) {
+        return true;
+      }
+      if (data.sharedWith) {
         return true;
       }
       if (data.classifiers && data.classifiers.length) {

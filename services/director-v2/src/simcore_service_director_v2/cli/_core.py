@@ -2,7 +2,7 @@ import asyncio
 import sys
 from contextlib import asynccontextmanager
 from enum import Enum
-from typing import AsyncIterator, Optional
+from typing import AsyncIterator
 
 import typer
 from fastapi import FastAPI, status
@@ -91,8 +91,6 @@ async def async_project_save_state(project_id: ProjectID, save_attempts: int) ->
         project_at_db = await projects_repository.get_project(project_id)
 
         typer.echo(f"Saving project '{project_at_db.uuid}' - '{project_at_db.name}'")
-
-        dynamic_sidecar_client = api_client.get_dynamic_sidecar_client(app)
         nodes_failed_to_save: list[NodeIDStr] = []
         for node_uuid, node_content in project_at_db.workbench.items():
             # onl dynamic-sidecars are used
@@ -106,7 +104,7 @@ async def async_project_save_state(project_id: ProjectID, save_attempts: int) ->
             try:
                 await _save_node_state(
                     app,
-                    dynamic_sidecar_client,
+                    api_client.get_dynamic_sidecar_client(app, node_uuid),
                     save_attempts,
                     node_uuid,
                     node_content.label,
@@ -146,7 +144,7 @@ class RenderData(BaseModel):
 
 async def _get_dy_service_state(
     client: AsyncClient, node_uuid: NodeIDStr
-) -> Optional[DynamicServiceGet]:
+) -> DynamicServiceGet | None:
     try:
         result = await client.get(
             f"http://localhost:8000/v2/dynamic_services/{node_uuid}",  # NOSONAR

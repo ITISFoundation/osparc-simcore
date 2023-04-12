@@ -470,7 +470,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
 
       const importStudyButton = this.__createImportButton();
-      this._secondaryBar.add(importStudyButton);
+      this._toolbar.add(importStudyButton);
       importStudyButton.exclude();
       osparc.utils.DisabledPlugins.isImportDisabled()
         .then(isDisabled => {
@@ -478,15 +478,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
 
       const selectStudiesButton = this.__createSelectButton();
-      this._secondaryBar.add(selectStudiesButton);
+      this._toolbar.add(selectStudiesButton);
 
       const studiesDeleteButton = this.__createDeleteButton(false);
-      this._secondaryBar.add(studiesDeleteButton);
+      this._toolbar.add(studiesDeleteButton);
 
-      this._secondaryBar.add(new qx.ui.core.Spacer(), {
+      this._toolbar.add(new qx.ui.core.Spacer(), {
         flex: 1
       });
 
+      this.__addShowSharedWithButton();
       this._addViewModeButton();
 
 
@@ -517,6 +518,22 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.addListener("changeVisibility", () => this._moreResourcesRequired());
 
       return this._resourcesContainer;
+    },
+
+    __addShowSharedWithButton: function() {
+      const sharedWithButton = new osparc.dashboard.SharedWithMenuButton("study");
+      osparc.utils.Utils.setIdToWidget(sharedWithButton, "sharedWithButton");
+
+      sharedWithButton.addListener("sharedWith", e => {
+        const option = e.getData();
+        this._searchBarFilter.setSharedWithActiveFilter(option.id, option.label);
+      }, this);
+      this._searchBarFilter.addListener("filterChanged", e => {
+        const filterData = e.getData();
+        sharedWithButton.filterChanged(filterData);
+      }, this);
+
+      this._toolbar.add(sharedWithButton);
     },
 
     __createLoadMoreButton: function() {
@@ -722,6 +739,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (shareButton) {
           menu.add(shareButton);
         }
+
+        const tagsButton = this._getTagsMenuButton(card);
+        if (tagsButton) {
+          menu.add(tagsButton);
+        }
       }
 
       const duplicateStudyButton = this.__getDuplicateMenuButton(studyData);
@@ -858,7 +880,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           "studyId": studyData["uuid"]
         }
       };
-      const fetchPromise = osparc.data.Resources.fetch("studies", "duplicate", params);
+      const fetchPromise = osparc.data.Resources.fetch("studies", "duplicate", params, null, {"pollTask": true});
       const interval = 1000;
       const pollTasks = osparc.data.PollTasks.getInstance();
       pollTasks.createPollingTask(fetchPromise, interval)

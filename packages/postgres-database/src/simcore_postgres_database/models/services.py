@@ -186,34 +186,3 @@ services_access_rights = sa.Table(
         "key", "version", "gid", "product_name", name="services_access_pk"
     ),
 )
-
-
-# NOTE: this table will be removed and probably converted into a view of agregated results on services
-# SEE https://github.com/ITISFoundation/osparc-simcore/issues/4032
-
-services_latest = sa.Table(
-    "services_latest",
-    metadata,
-    sa.Column(
-        "key",
-        sa.String,
-        nullable=False,
-        doc="Hierarchical identifier of the service e.g. simcore/services/dynamic/my-super-service",
-    ),
-    sa.Column(
-        "version",
-        sa.String,
-        nullable=False,
-        doc="latest MAJOR.MINOR.PATCH semantic version of the service (key)",
-    ),
-    #
-    #  NOTE: might want to drop some of the columns in service_meta_data coming from image tags and keep a record only for the latest service
-    #
-    sa.ForeignKeyConstraint(
-        ["key", "version"],
-        ["services_meta_data.key", "services_meta_data.version"],
-        onupdate="CASCADE",
-        ondelete="CASCADE",
-    ),
-    sa.PrimaryKeyConstraint("key", name="services_latest_pk"),
-)

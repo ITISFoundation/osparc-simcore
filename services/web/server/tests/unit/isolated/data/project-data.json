@@ -1,0 +1,64 @@
+{
+  "uuid": "e7cbead8-f2ff-476f-999c-d68eb4011918",
+  "name": "solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.1.1/jobs/e7cbead8-f2ff-476f-999c-d68eb4011918",
+  "description": "Study associated to solver job:\n{\n  \"id\": \"e7cbead8-f2ff-476f-999c-d68eb4011918\",\n  \"name\": \"solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.1.1/jobs/e7cbead8-f2ff-476f-999c-d68eb4011918\",\n  \"inputs_checksum\": \"ab779fef37c800b6c012f1dcb0ea7c091036ba65faf2384460ab4a83a5dd948a\",\n  \"created_at\": \"2023-03-19T06:55:13.455581\"\n}",
+  "thumbnail": "https://2xx2gy2ovf3r21jclkjio3x8-wpengine.netdna-ssl.com/wp-content/uploads/2018/12/API-Examples.jpg",
+  "creationDate": "2023-03-19T06:55:13.456Z",
+  "lastChangeDate": "2023-03-19T06:55:13.456Z",
+  "workbench": {
+    "6eb83026-f82b-5d95-96b0-b50daeee38ec": {
+      "key": "simcore/services/comp/itis/sleeper",
+      "version": "2.1.1",
+      "label": "sleeper",
+      "progress": null,
+      "thumbnail": null,
+      "runHash": null,
+      "inputs": {
+        "input_1": {
+          "store": 0,
+          "path": "api/7cab36a7-1efa-3541-920d-d1ba4806e2dc/file-with-number.txt",
+          "label": "file-with-number.txt",
+          "eTag": "c81e728d9d4c2f636f067f89cc14862c",
+          "dataset": null
+        },
+        "input_2": 0.0,
+        "input_3": 0.0,
+        "input_4": 0.0
+      },
+      "inputsUnits": {},
+      "inputAccess": null,
+      "inputNodes": [],
+      "outputs": {},
+      "outputNode": null,
+      "outputNodes": null,
+      "parent": null,
+      "position": null,
+      "state": {
+        "modified": true,
+        "dependencies": [],
+        "currentStatus": "NOT_STARTED"
+      },
+      "bootOptions": null
+    }
+  },
+  "prjOwner": "api-placeholder@osparc.io",
+  "accessRights": {},
+  "tags": [],
+  "classifiers": [],
+  "ui": {
+    "workbench": {
+      "6eb83026-f82b-5d95-96b0-b50daeee38ec": {
+        "position": {
+          "x": 633,
+          "y": 229
+        },
+        "marker": null
+      }
+    },
+    "slideshow": {},
+    "currentNodeId": "6eb83026-f82b-5d95-96b0-b50daeee38ec",
+    "annotations": {}
+  },
+  "quality": {},
+  "dev": {}
+}
