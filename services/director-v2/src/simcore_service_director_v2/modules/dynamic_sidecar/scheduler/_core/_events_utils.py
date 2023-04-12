@@ -43,6 +43,7 @@ from ...api_client import (
     DynamicSidecarClient,
     get_dynamic_sidecar_client,
     get_dynamic_sidecar_service_health,
+    remove_dynamic_sidecar_client,
 )
 from ...docker_api import (
     get_projects_networks_containers,
@@ -234,7 +235,9 @@ async def attempt_pod_removal_and_data_saving(
     )
 
     async def _remove_containers_save_state_and_outputs() -> None:
-        dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(app)
+        dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
+            app, scheduler_data.node_uuid
+        )
 
         await service_remove_containers(
             app, scheduler_data.node_uuid, dynamic_sidecar_client
@@ -258,8 +261,6 @@ async def attempt_pod_removal_and_data_saving(
             )
 
         if can_really_save and scheduler_data.dynamic_sidecar.were_containers_created:
-            dynamic_sidecar_client = get_dynamic_sidecar_client(app)
-
             logger.info("Calling into dynamic-sidecar to save: state and output ports")
             try:
                 tasks = [
@@ -323,6 +324,9 @@ async def attempt_pod_removal_and_data_saving(
         TaskProgress.create(), app, scheduler_data.node_uuid, dynamic_sidecar_settings
     )
 
+    # remove sidecar's api client
+    remove_dynamic_sidecar_client(app, scheduler_data.node_uuid)
+
     # instrumentation
     message = InstrumentationRabbitMessage(
         metrics="service_stopped",
@@ -341,7 +345,7 @@ async def attempt_pod_removal_and_data_saving(
 async def attach_project_networks(app: FastAPI, scheduler_data: SchedulerData) -> None:
     logger.debug("Attaching project networks for %s", scheduler_data.service_name)
 
-    dynamic_sidecar_client = get_dynamic_sidecar_client(app)
+    dynamic_sidecar_client = get_dynamic_sidecar_client(app, scheduler_data.node_uuid)
     dynamic_sidecar_endpoint = scheduler_data.endpoint
 
     projects_networks_repository: ProjectsNetworksRepository = cast(
@@ -396,7 +400,7 @@ async def prepare_services_environment(
     app: FastAPI, scheduler_data: SchedulerData
 ) -> None:
     app_settings: AppSettings = app.state.settings
-    dynamic_sidecar_client = get_dynamic_sidecar_client(app)
+    dynamic_sidecar_client = get_dynamic_sidecar_client(app, scheduler_data.node_uuid)
     dynamic_sidecar_endpoint = scheduler_data.endpoint
     dynamic_sidecar_settings: DynamicSidecarSettings = (
         app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
