@@ -13,7 +13,7 @@ from models_library.projects_access import AccessRights, GroupIDStr
 from models_library.projects_nodes import HttpUrlWithCustomMinLength
 from models_library.projects_state import ProjectState
 from models_library.projects_ui import StudyUI
-from pydantic import Field
+from pydantic import Field, validator
 from servicelib.aiohttp.long_running_tasks.server import TaskGet
 
 from ..rest_schemas_base import InputSchema, OutputSchema
@@ -21,20 +21,25 @@ from ..rest_schemas_base import InputSchema, OutputSchema
 # TODO: review creation  policies with OM (e.g. NO uuid!)
 
 
-class ProjectCreate(InputSchema):
-    uuid: ProjectID
+def empty_str_to_none(value: Any):
+    if isinstance(value, str) and value.strip() == "":
+        return None
+    return value
+
+
+class ProjectCreateNew(InputSchema):
     name: str
     description: str
     thumbnail: HttpUrlWithCustomMinLength | None
     workbench: NodesDict
-    prj_owner: LowerCaseEmailStr
-    access_rights: dict[GroupIDStr, AccessRights]
     tags: list[int] | None = []
     classifiers: list[ClassifierID] | None = Field(default_factory=list)
-    state: ProjectState | None = None
     ui: StudyUI | None = None
     quality: dict[str, Any] = Field(default_factory=dict)
-    dev: dict | None = None
+
+    _empty_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
+        empty_str_to_none
+    )
 
 
 # NOTE: based on OVERRIDABLE_DOCUMENT_KEYS
@@ -44,6 +49,10 @@ class ProjectCopyOverride(InputSchema):
     thumbnail: HttpUrlWithCustomMinLength | None
     prj_owner: LowerCaseEmailStr
     access_rights: dict[GroupIDStr, AccessRights]
+
+    _empty_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
+        empty_str_to_none
+    )
 
 
 class ProjectGet(OutputSchema):
@@ -62,6 +71,10 @@ class ProjectGet(OutputSchema):
     ui: StudyUI | None = None
     quality: dict[str, Any] = Field(default_factory=dict)
     dev: dict | None = None
+
+    _empty_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
+        empty_str_to_none
+    )
 
 
 # TODO: TaskGet[Envelope[TaskProjectGet]] i.e. should include future?
@@ -92,6 +105,10 @@ class ProjectReplace(InputSchema):
     )
     dev: dict | None = None
 
+    _empty_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
+        empty_str_to_none
+    )
+
 
 class ProjectUpdate(InputSchema):
     name: str = Field(default=None)
@@ -105,9 +122,13 @@ class ProjectUpdate(InputSchema):
     quality: dict[str, Any] = Field(default_factory=dict)
     dev: dict | None = None
 
+    _empty_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
+        empty_str_to_none
+    )
+
 
 __all__: tuple[str, ...] = (
-    "ProjectCreate",
+    "ProjectCreateNew",
     "ProjectCopyOverride",
     "ProjectGet",
     "ProjectListItem",

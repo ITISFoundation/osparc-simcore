@@ -1,8 +1,15 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
+
+
 import pytest
 from models_library.generics import Envelope
 from models_library.rest_pagination import Page
 from pydantic import parse_obj_as
 from pytest_simcore.simcore_webserver_projects_rest_api import (
+    CREATE_PROJECT_W_SERVICE,
     GET_PROJECT,
     LIST_PROJECTS,
     NEW_PROJECT,
@@ -11,24 +18,27 @@ from pytest_simcore.simcore_webserver_projects_rest_api import (
     HttpApiCallCapture,
 )
 from simcore_service_webserver.projects._rest_schemas import (
-    ProjectCreate,
+    ProjectCreateNew,
     ProjectGet,
     ProjectListItem,
     ProjectReplace,
+    TaskProjectGet,
 )
 
 
 @pytest.mark.parametrize(
     "api_call",
-    (NEW_PROJECT,),
+    (NEW_PROJECT, CREATE_PROJECT_W_SERVICE),
     ids=lambda c: c.name,
 )
 def test_create_project_schemas(api_call: HttpApiCallCapture):
 
-    request_payload = ProjectCreate.parse_obj(api_call.request_payload)
+    request_payload = ProjectCreateNew.parse_obj(api_call.request_payload)
     assert request_payload
 
-    response_body = parse_obj_as(Envelope[ProjectGet], api_call.response_body)
+    response_body = parse_obj_as(
+        Envelope[ProjectGet] | Envelope[TaskProjectGet], api_call.response_body
+    )
     assert response_body
 
 

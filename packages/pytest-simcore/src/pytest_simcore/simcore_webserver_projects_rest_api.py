@@ -39,6 +39,7 @@ class HttpApiCallCapture:
 # This data can be obtained using the  browser's developer tools
 #
 
+
 NEW_PROJECT = HttpApiCallCapture(
     name="NEW_PROJECT",
     description="Press 'New Project'",
@@ -711,6 +712,48 @@ SESSION_WORKFLOW = (
     RUN_PROJECT,
     CLOSE_PROJECT,
     LIST_PROJECTS,
+)
+
+
+CREATE_PROJECT_W_SERVICE = HttpApiCallCapture(
+    name="CREATE_PROJECT_W_SERVICE",
+    description="Click 'Sleepr serveice' ",
+    method="POST",
+    path="/v0/projects",
+    request_payload={
+        "uuid": "",
+        "name": "sleeper",
+        "description": "",
+        "prjOwner": "",
+        "accessRights": {},
+        "creationDate": "2023-04-12T17:47:22.551Z",
+        "lastChangeDate": "2023-04-12T17:47:22.551Z",
+        "thumbnail": "https://raw.githubusercontent.com/ITISFoundation/osparc-assets/main/assets/TheSoftWatches.jpg",
+        "workbench": {
+            "5ecf6ef9-7600-4ac2-abe5-c3a2cc714e32": {
+                "key": "simcore/services/comp/itis/sleeper",
+                "version": "2.1.4",
+                "label": "sleeper",
+            }
+        },
+        "ui": {
+            "workbench": {
+                "5ecf6ef9-7600-4ac2-abe5-c3a2cc714e32": {
+                    "position": {"x": 250, "y": 100}
+                }
+            }
+        },
+    },
+    response_body={
+        "data": {
+            "task_id": "POST%20%2Fv0%2Fprojects.c81eb383-d5b7-4284-be34-36477530ac2e",
+            "task_name": "POST /v0/projects",
+            "status_href": "/v0/tasks/POST%2520%252Fv0%252Fprojects.c81eb383-d5b7-4284-be34-36477530ac2e",
+            "result_href": "/v0/tasks/POST%2520%252Fv0%252Fprojects.c81eb383-d5b7-4284-be34-36477530ac2e/result",
+            "abort_href": "/v0/tasks/POST%2520%252Fv0%252Fprojects.c81eb383-d5b7-4284-be34-36477530ac2e",
+        }
+    },
+    status_code=HTTPStatus.ACCEPTED,  # 202
 )
 
 
