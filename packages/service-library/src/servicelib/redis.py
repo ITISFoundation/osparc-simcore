@@ -104,10 +104,12 @@ class RedisClientSDK:
         blocking_timeout_s: NonNegativeFloat = 5,
     ) -> AsyncIterator[Lock]:
         """
-        Tries to acquire the lock, if locked raises CouldNotAcquireLockError
+        Tries to acquire the lock and returns it when succeeds.
+
+        If already locked raises `CouldNotAcquireLockError`.
 
         When `blocking` is True, waits `blocking_timeout_s` for the lock to be
-        acquired, otherwise raises `CouldNotAcquireLockError`
+        acquired. Otherwise raises `CouldNotAcquireLockError`.
         """
 
         ttl_lock = None
@@ -123,10 +125,9 @@ class RedisClientSDK:
             if not await ttl_lock.acquire(
                 blocking=blocking, token=lock_value, blocking_timeout=blocking_timeout_s
             ):
-                # NOTE: a lot of things can go wrong when trying to acquire the lock:
-                # - the lock can be already in use
-                # - redis can be temporarily unavailable
-                # - networking can be slow
+                # NOTE: acquisition fails because
+                # 1. the lock was already acquired by some other entity
+                # 2. timeouts out while waiting for lock to be free (another entity holds the lock)
                 raise CouldNotAcquireLockError(lock=ttl_lock)
 
             async with periodic_task(
