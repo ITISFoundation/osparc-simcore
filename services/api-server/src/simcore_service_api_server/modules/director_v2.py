@@ -75,7 +75,8 @@ def handle_errors_context(project_id: UUID):
             raise err
 
         # server errors are logged and re-raised as 503
-        assert codes.is_server_error(err.response.status_code)
+        assert codes.is_server_error(err.response.status_code)  # nosec
+
         logger.exception(
             "director-v2 service failed: %s. Re-rasing as service unavailable (503)",
             msg,

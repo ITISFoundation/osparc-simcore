@@ -20,7 +20,7 @@ class AppDataMixin:
 
         obj = cls.get_instance(app)
         if obj is None:
-            assert issubclass(cls, AppDataMixin), "AppDataMixin must be inherited!"
+            assert issubclass(cls, AppDataMixin)  # nosec
             cls.state_attr_name = f"unique_{cls.__name__.lower()}"
 
             # creates dataclass instance
@@ -34,7 +34,7 @@ class AppDataMixin:
     @classmethod
     def get_instance(cls, app: FastAPI):
         """Gets single instance in app if any, otherwise returns None"""
-        assert issubclass(cls, AppDataMixin), "AppDataMixin must be inherited!"
+        assert issubclass(cls, AppDataMixin)  # nosec
 
         if cls.state_attr_name is None:
             return None
@@ -45,7 +45,7 @@ class AppDataMixin:
 
     @classmethod
     def pop_instance(cls, app: FastAPI):
-        assert issubclass(cls, AppDataMixin), "AppDataMixin must be inherited!"
+        assert issubclass(cls, AppDataMixin)  # nosec
 
         obj = cls.get_instance(app)
         if obj and cls.state_attr_name:
