@@ -12,7 +12,7 @@
 
 asgi-lifespan
 
-codecov
+
 coverage
 coveralls
 deepdiff
