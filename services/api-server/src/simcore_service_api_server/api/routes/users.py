@@ -1,8 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Security
-from pydantic import ValidationError
-from starlette import status
+from fastapi import APIRouter, Depends, Security
 
 from ...models.schemas.profiles import Profile, ProfileUpdate
 from ...modules.webserver import AuthSession
@@ -21,15 +19,7 @@ async def get_my_profile(
     client: AuthSession = Depends(get_webserver_session),
 ) -> Profile:
     data = await client.get("/me")
-
-    # FIXME: temporary patch until web-API is reviewed
-
-    try:
-        data["role"] = data["role"].upper()  # type: ignore
-        profile = Profile.parse_obj(data)
-    except (ValidationError, KeyError) as err:
-        logger.error("webserver invalid response %s", data, exc_info=True)
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err
+    profile = Profile.parse_obj(data)
 
     return profile
 

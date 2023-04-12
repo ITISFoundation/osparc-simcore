@@ -1,15 +1,14 @@
 from enum import Enum
-from typing import Optional
 
 from models_library.emails import LowerCaseEmailStr
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 
 from ..domain.groups import Groups
 
 
 class ProfileCommon(BaseModel):
-    first_name: Optional[str] = Field(None, example="James")
-    last_name: Optional[str] = Field(None, example="Maxwell")
+    first_name: str | None = Field(None, example="James")
+    last_name: str | None = Field(None, example="Maxwell")
 
 
 class ProfileUpdate(ProfileCommon):
@@ -29,12 +28,19 @@ class UserRoleEnum(str, Enum):
 class Profile(ProfileCommon):
     login: LowerCaseEmailStr
     role: UserRoleEnum
-    groups: Optional[Groups] = None
-    gravatar_id: Optional[str] = Field(
+    groups: Groups | None = None
+    gravatar_id: str | None = Field(
         None,
         description="md5 hash value of email to retrieve an avatar image from https://www.gravatar.com",
         max_length=40,
     )
+
+    @validator("role")
+    @classmethod
+    def enforce_role_upper(cls, v):
+        if v:
+            return v.upper()
+        return v
 
     class Config:
         schema_extra = {
