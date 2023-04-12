@@ -1,10 +1,11 @@
 #
 # Basic testing libraries
 #
+# Code coverage: https://app.codecov.io/gh/ITISFoundation/osparc-simcore
 
-coverage         # test coverage
-pytest           # main tool
-pytest-cov       # test coverage
-pytest-icdiff    # enhances tests logs
-pytest-instafail # enhances tests logs
-pytest-sugar     # enhances tests logs
+coverage         # Measures code coverage during test execution
+pytest           # Framework makes it easy to write small tests, yet scales to support complex functional testing for applications and libraries
+pytest-cov       # Produces coverage reports
+pytest-icdiff    # Better diffs in pytest assertion error messages using ICDiff
+pytest-instafail # Shows failures and errors instantly instead of waiting until the end of test session
+pytest-sugar     # Shows failures and errors instantly, adding a progress bar, improving the test results, and making the output look better
