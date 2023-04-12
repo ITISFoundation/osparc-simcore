@@ -3,7 +3,7 @@ import contextlib
 import datetime
 import logging
 from contextlib import suppress
-from typing import AsyncIterator, Awaitable, Callable, Final
+from typing import AsyncIterator, Awaitable, Callable, Final, NoReturn
 
 from servicelib.logging_utils import log_catch, log_context
 from tenacity import TryAgain
@@ -22,14 +22,14 @@ async def _periodic_scheduled_task(
     interval: datetime.timedelta,
     task_name: str,
     **task_kwargs,
-) -> None:
+) -> NoReturn:
     # NOTE: This retries forever unless cancelled
     async for attempt in AsyncRetrying(wait=wait_fixed(interval.total_seconds())):
         with attempt:
             with log_context(
                 logger,
                 logging.DEBUG,
-                msg=f"{attempt.retry_state.attempt_number} repeat of '{task_name}'",
+                msg=f"iteration {attempt.retry_state.attempt_number} of '{task_name}'",
             ), log_catch(logger):
                 await task(**task_kwargs)
 
@@ -57,10 +57,6 @@ def start_periodic_task(
         )
 
 
-async def _await_task(task: asyncio.Task) -> None:
-    await task
-
-
 async def stop_periodic_task(
     asyncio_task: asyncio.Task, *, timeout: float | None = None
 ) -> None:
@@ -72,7 +68,7 @@ async def stop_periodic_task(
         asyncio_task.cancel()
         with suppress(asyncio.CancelledError):
             try:
-                await asyncio.wait_for(_await_task(asyncio_task), timeout=timeout)
+                await asyncio.wait_for(asyncio_task, timeout=timeout)
             except asyncio.TimeoutError:
                 logger.warning(
                     "periodic background task '%s' did not cancel properly and timed-out!",
