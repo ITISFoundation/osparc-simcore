@@ -1,6 +1,5 @@
 import contextlib
 import datetime
-import json
 import logging
 from dataclasses import dataclass, field
 from typing import AsyncIterator, Final
@@ -14,7 +13,7 @@ from redis.asyncio.retry import Retry
 from redis.backoff import ExponentialBackoff
 from servicelib.utils import logged_gather
 from settings_library.redis import RedisDatabase, RedisSettings
-from tenacity._asyncio import AsyncRetrying
+from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -34,8 +33,16 @@ def _get_lock_renew_interval() -> datetime.timedelta:
     return _DEFAULT_LOCK_TTL * 0.6
 
 
-class CouldNotAcquireLockError(PydanticErrorMixin, RuntimeError):
+class BaseRedisError(PydanticErrorMixin, RuntimeError):
+    ...
+
+
+class CouldNotAcquireLockError(BaseRedisError):
     msg_template: str = "Lock {lock.name} could not be acquired!"
+
+
+class CouldNotConnectToRedisError(BaseRedisError):
+    msg_template: str = "Connection to '{dsn}' failed"
 
 
 @dataclass
@@ -49,10 +56,10 @@ class RedisClientSDK:
 
     def __post_init__(self):
         # Run 3 retries with exponential backoff strategy source: https://redis.readthedocs.io/en/stable/backoff.html
-        retry = Retry(ExponentialBackoff(cap=0.512, base=0.008), retries=3)
+        tenacity_retry = Retry(ExponentialBackoff(cap=0.512, base=0.008), retries=3)
         self._client = aioredis.from_url(
             self.redis_dsn,
-            retry=retry,
+            retry=tenacity_retry,
             retry_on_error=[
                 redis.exceptions.BusyLoadingError,
                 redis.exceptions.ConnectionError,
@@ -62,23 +69,21 @@ class RedisClientSDK:
             decode_responses=True,
         )
 
+    @retry(
+        stop=stop_after_delay(1 * _MINUTE),
+        wait=wait_fixed(_WAIT_SECS),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+        reraise=True,
+    )
     async def setup(self) -> None:
-        async for attempt in AsyncRetrying(
-            stop=stop_after_delay(1 * _MINUTE),
-            wait=wait_fixed(_WAIT_SECS),
-            before_sleep=before_sleep_log(logger, logging.WARNING),
-            reraise=True,
-        ):
-            with attempt:
-                if not await self._client.ping():
-                    await self.shutdown()
-                    raise ConnectionError(f"Connection to {self.redis_dsn!r} failed")
-                logger.info(
-                    "Connection to %s succeeded with %s [%s]",
-                    f"redis at {self.redis_dsn=}",
-                    f"{self._client=}",
-                    json.dumps(attempt.retry_state.retry_object.statistics),
-                )
+        if not await self._client.ping():
+            await self.shutdown()
+            raise CouldNotConnectToRedisError(dsn=self.redis_dsn)
+        logger.info(
+            "Connection to %s succeeded with %s",
+            f"redis at {self.redis_dsn=}",
+            f"{self._client=}",
+        )
 
     async def shutdown(self) -> None:
         await self._client.close(close_connection_pool=True)
