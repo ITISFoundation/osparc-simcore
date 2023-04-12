@@ -51,7 +51,7 @@ qx.Class.define("osparc.panddy.Panddy", {
     __currentIdx: null,
 
     _createChildControlImpl: function(id) {
-      const pandiSize = 80;
+      const pandiSize = 100;
       let control;
       switch (id) {
         case "panddy": {
