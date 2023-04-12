@@ -2471,7 +2471,7 @@ paths:
     post:
       tags:
         - project
-      summary: Create Project
+      summary: Creates a new project or copies an existing one
       operationId: create_project
       parameters:
         - description: 'Option to create a project from existing template or study: from_study={study_uuid}'
@@ -2515,32 +2515,13 @@ paths:
         content:
           application/json:
             schema:
-              additionalProperties: false
-              properties:
-                accessRights:
-                  additionalProperties:
-                    additionalProperties: false
-                    properties:
-                      delete:
-                        description: gives deletion rights
-                        title: Delete
-                        type: boolean
-                      read:
-                        description: gives read access
-                        title: Read
-                        type: boolean
-                      write:
-                        description: gives write access
-                        title: Write
-                        type: boolean
-                    required:
-                      - read
-                      - write
-                      - delete
-                    title: AccessRights
-                    type: object
-                  description: object containing the GroupID as key and read/write/execution permissions as value
-                  title: Accessrights
+              title: Create
+              anyOf:
+                - title: ProjectCreateNew
+                  required:
+                    - name
+                    - description
+                    - workbench
                   type: object
                   x-patternProperties:
                     ^\S+$:
