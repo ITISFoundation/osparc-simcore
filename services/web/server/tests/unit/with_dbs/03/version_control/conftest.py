@@ -26,10 +26,9 @@ from simcore_service_webserver._meta import API_VTAG as VX
 from simcore_service_webserver.db import APP_DB_ENGINE_KEY
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.log import setup_logging
+from simcore_service_webserver.projects.project_models import ProjectDict
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
-
-ProjectDict = dict[str, Any]
 
 
 @pytest.fixture

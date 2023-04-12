@@ -1,6 +1,6 @@
 import json
 from enum import Enum
-from typing import Any
+from typing import Any, TypeAlias
 
 from aiohttp import web
 from aiopg.sa.result import RowProxy
@@ -9,9 +9,8 @@ from simcore_postgres_database.models.projects import ProjectType
 from .._constants import APP_JSONSCHEMA_SPECS_KEY
 from .._resources import resources
 
-# TODO: extend
-ProjectDict = dict[str, Any]
-ProjectProxy = RowProxy
+ProjectDict: TypeAlias = dict[str, Any]
+ProjectProxy: TypeAlias = RowProxy
 
 
 class ProjectTypeAPI(str, Enum):

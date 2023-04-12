@@ -2,17 +2,15 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import Any
 
 import pytest
 from models_library.projects import NodesDict
 from openapi_core.schema.specs.models import Spec as OpenApiSpecs
 from pydantic import BaseModel
 from simcore_service_webserver._meta import API_VTAG as VX
+from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.version_control.db import compute_workbench_checksum
 from simcore_service_webserver.version_control.plugin import _rest_handlers
-
-ProjectDict = dict[str, Any]
 
 
 @pytest.mark.parametrize(
