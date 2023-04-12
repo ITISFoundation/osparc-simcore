@@ -139,7 +139,9 @@ async def create_project(request: web.Request):
         simcore_user_agent=request.headers.get(
             X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
         ),
-        predefined_project=project_create.dict(exclude_unset=True),
+        predefined_project=project_create.dict(
+            exclude_unset=True, by_alias=True, exclude_none=True
+        ),
     )
 
 

@@ -132,6 +132,19 @@ async def _copy_files_from_source_project(
                 await long_running_task.result()
 
 
+async def _compose_project_data(
+    app: web.Application, new_project: ProjectDict, predefined_project: ProjectDict
+) -> ProjectDict:
+    if new_project:  # creates from a copy, just override fields
+        for key in OVERRIDABLE_DOCUMENT_KEYS:
+            if non_null_value := predefined_project.get(key):
+                new_project[key] = non_null_value
+    else:
+        new_project = predefined_project
+    await projects_api.validate_project(app, new_project)
+    return new_project
+
+
 async def create_project(
     task_progress: TaskProgress,
     app: web.Application,
@@ -184,14 +197,9 @@ async def create_project(
 
         if predefined_project:
             # 2. overrides with optional body and re-validate
-            if new_project:
-                for key in OVERRIDABLE_DOCUMENT_KEYS:
-                    if non_null_value := predefined_project.get(key):
-                        new_project[key] = non_null_value
-            else:
-                # FIXME: this can change ALL for a new project!
-                new_project = predefined_project
-            await projects_api.validate_project(app, new_project)
+            new_project = await _compose_project_data(
+                app, new_project, predefined_project
+            )
 
         # 3. save new project in DB
         new_project = await db.insert_project(
@@ -242,14 +250,14 @@ async def create_project(
         raise web.HTTPNotFound(reason=f"Project {exc.project_uuid} not found") from exc
     except ProjectInvalidRightsError as exc:
         raise web.HTTPUnauthorized from exc
+
     except asyncio.CancelledError:
         log.warning(
             "cancelled creation of project for '%s', cleaning up",
             f"{user_id=}",
         )
-        # FIXME: If cancelled during shutdown, cancellation of all_tasks will produce "new tasks"!
-        if prj_uuid := new_project.get("uuid"):
+        if project_uuid := new_project.get("uuid"):
             await projects_api.submit_delete_project_task(
-                app, prj_uuid, user_id, simcore_user_agent
+                app, project_uuid, user_id, simcore_user_agent
             )
         raise

@@ -32,7 +32,6 @@ class ProjectIDStr(ConstrainedStr):
 
 
 class DateTimeStr(ConstrainedStr):
-    # TODO: should we use datetime??
     regex = re.compile(DATE_RE)
 
     class Config:
