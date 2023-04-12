@@ -44,7 +44,9 @@ mccabe==0.7.0
     #   -c requirements/_test.txt
     #   pylint
 mypy-extensions==1.0.0
-    # via black
+    # via
+    #   -c requirements/_test.txt
+    #   black
 nodeenv==1.7.0
     # via pre-commit
 packaging==23.0

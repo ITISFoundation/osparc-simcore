@@ -61,6 +61,7 @@ async def run_services(
                 service_version,
                 service_uuid,
                 service_basepath,
+                "",
             )
             assert "published_port" in started_service
             if service_description["type"] == "dynamic":
@@ -338,7 +339,6 @@ async def test_get_service_key_version_from_docker_service(
     )
     assert service_key == fake_service.expected_key
     assert service_tag == fake_service.expected_tag
-
 
 
 @pytest.mark.parametrize(

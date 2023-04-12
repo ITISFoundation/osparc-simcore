@@ -100,7 +100,7 @@ flask-cors==3.0.10
     # via moto
 graphql-core==3.2.3
     # via moto
-greenlet==1.1.2
+greenlet==2.0.2
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
@@ -169,6 +169,10 @@ markupsafe==2.1.1
     #   moto
 moto==4.0.1
     # via -r requirements/_test.in
+mypy==1.1.1
+    # via sqlalchemy
+mypy-extensions==1.0.0
+    # via mypy
 networkx==2.8.8
     # via cfn-lint
 openapi-schema-validator==0.2.3
@@ -277,10 +281,12 @@ sniffio==1.2.0
     #   asgi-lifespan
     #   httpcore
     #   httpx
-sqlalchemy==1.4.37
+sqlalchemy==1.4.47
     # via
-    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
     #   alembic
+sqlalchemy2-stubs==0.0.2a32
+    # via sqlalchemy
 sshpubkeys==3.3.1
     # via moto
 toml==0.10.2
@@ -288,6 +294,7 @@ toml==0.10.2
 tomli==2.0.1
     # via
     #   coverage
+    #   mypy
     #   pytest
 types-awscrt==0.16.10
     # via
@@ -303,6 +310,8 @@ typing-extensions==4.3.0
     # via
     #   -c requirements/_base.txt
     #   boto3-stubs
+    #   mypy
+    #   sqlalchemy2-stubs
 urllib3==1.26.9
     # via
     #   -c requirements/_base.txt

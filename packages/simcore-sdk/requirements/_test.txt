@@ -284,7 +284,7 @@ six==1.16.0
     #   jsonschema
     #   junit-xml
     #   python-dateutil
-sqlalchemy==1.4.46
+sqlalchemy==1.4.47
     # via
     #   -c requirements/_base.txt
     #   alembic

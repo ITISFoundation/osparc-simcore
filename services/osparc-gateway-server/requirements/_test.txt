@@ -76,6 +76,10 @@ fsspec==2023.3.0
     # via
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
     #   dask
+greenlet==2.0.2
+    # via
+    #   -c requirements/_base.txt
+    #   sqlalchemy
 heapdict==1.0.1
     # via
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
@@ -111,6 +115,10 @@ multidict==6.0.4
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
+mypy==1.1.1
+    # via sqlalchemy
+mypy-extensions==1.0.0
+    # via mypy
 packaging==23.0
     # via
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
@@ -170,6 +178,10 @@ sortedcontainers==2.4.0
     # via
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
+sqlalchemy==1.4.47
+    # via -r requirements/_test.in
+sqlalchemy2-stubs==0.0.2a32
+    # via sqlalchemy
 tblib==1.7.0
     # via
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
@@ -181,6 +193,7 @@ termcolor==2.2.0
 tomli==2.0.1
     # via
     #   coverage
+    #   mypy
     #   pytest
 toolz==0.12.0
     # via
@@ -193,6 +206,11 @@ tornado==6.2
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
     #   dask-gateway
     #   distributed
+typing-extensions==4.5.0
+    # via
+    #   -c requirements/_base.txt
+    #   mypy
+    #   sqlalchemy2-stubs
 urllib3==1.26.14
     # via
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
