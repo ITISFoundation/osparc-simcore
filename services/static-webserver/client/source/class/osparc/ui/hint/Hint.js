@@ -24,10 +24,8 @@ qx.Class.define("osparc.ui.hint.Hint", {
     const hintCssUri = qx.util.ResourceManager.getInstance().toUri("hint/hint.css");
     qx.module.Css.includeStylesheet(hintCssUri);
 
-    this.__createWidget();
-    this.__caret.getContentElement().addClass("hint");
-    this.__root = qx.core.Init.getApplication().getRoot();
-    this.__root.add(this);
+    this._buildWidget();
+    qx.core.Init.getApplication().getRoot().add(this);
 
     if (element) {
       if (element.getContentElement().getDomElement() == null) {
@@ -38,14 +36,12 @@ qx.Class.define("osparc.ui.hint.Hint", {
     }
 
     this.setLayout(new qx.ui.layout.Basic());
+    const label = this.getChildControl("label");
+    this.add(label);
     if (text === undefined) {
       text = "";
     }
-    const label = this.__label = new qx.ui.basic.Label(text).set({
-      rich: true,
-      maxWidth: 200
-    });
-    this.add(label);
+    label.setValue(text);
   },
 
   statics: {
@@ -78,10 +74,30 @@ qx.Class.define("osparc.ui.hint.Hint", {
   },
 
   members: {
-    __hintContainer: null,
-    __label: null,
-    __caret: null,
-    __root: null,
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "hint-container":
+          control = new qx.ui.container.Composite().set({
+            appearance: "hint",
+            backgroundColor: "node-selected-background"
+          });
+          break;
+        case "caret":
+          control = new qx.ui.container.Composite().set({
+            backgroundColor: "transparent"
+          });
+          control.getContentElement().addClass("hint");
+          break;
+        case "label":
+          control = new qx.ui.basic.Label().set({
+            rich: true,
+            maxWidth: 200
+          });
+          break;
+      }
+      return control || this.base(arguments, id);
+    },
 
     attachShowHideHandlers: function() {
       if (this.getElement()) {
@@ -111,35 +127,32 @@ qx.Class.define("osparc.ui.hint.Hint", {
       }
     },
 
-    __createWidget: function() {
-      this.__hintContainer = this.__hintContainer || new qx.ui.container.Composite().set({
-        appearance: "hint",
-        backgroundColor: "node-selected-background"
-      });
-      this.__caret = this.__caret || new qx.ui.container.Composite().set({
-        backgroundColor: "transparent"
-      });
+    _buildWidget: function() {
       this._removeAll();
-      this.__caret.getContentElement().removeClass("hint-top");
-      this.__caret.getContentElement().removeClass("hint-right");
-      this.__caret.getContentElement().removeClass("hint-bottom");
-      this.__caret.getContentElement().removeClass("hint-left");
+
+      const hintContainer = this.getChildControl("hint-container");
+      const caret = this.getChildControl("caret");
+
+      caret.getContentElement().removeClass("hint-top");
+      caret.getContentElement().removeClass("hint-right");
+      caret.getContentElement().removeClass("hint-bottom");
+      caret.getContentElement().removeClass("hint-left");
       switch (this.getOrientation()) {
         case this.self().orientation.TOP:
         case this.self().orientation.LEFT:
-          this.__caret.getContentElement().addClass(this.getOrientation() === this.self().orientation.LEFT ? "hint-left" : "hint-top");
+          caret.getContentElement().addClass(this.getOrientation() === this.self().orientation.LEFT ? "hint-left" : "hint-top");
           this._setLayout(this.getOrientation() === this.self().orientation.LEFT ? new qx.ui.layout.HBox() : new qx.ui.layout.VBox());
-          this._add(this.__hintContainer, {
+          this._add(hintContainer, {
             flex: 1
           });
-          this._add(this.__caret);
+          this._add(caret);
           break;
         case this.self().orientation.RIGHT:
         case this.self().orientation.BOTTOM:
-          this.__caret.getContentElement().addClass(this.getOrientation() === this.self().orientation.RIGHT ? "hint-right" : "hint-bottom");
+          caret.getContentElement().addClass(this.getOrientation() === this.self().orientation.RIGHT ? "hint-right" : "hint-bottom");
           this._setLayout(this.getOrientation() === this.self().orientation.RIGHT ? new qx.ui.layout.HBox() : new qx.ui.layout.VBox());
-          this._add(this.__caret);
-          this._add(this.__hintContainer, {
+          this._add(caret);
+          this._add(hintContainer, {
             flex: 1
           });
           break;
@@ -147,32 +160,27 @@ qx.Class.define("osparc.ui.hint.Hint", {
       switch (this.getOrientation()) {
         case this.self().orientation.RIGHT:
         case this.self().orientation.LEFT:
-          this.__caret.setHeight(0);
-          this.__caret.setWidth(5);
+          caret.setHeight(0);
+          caret.setWidth(5);
           break;
         case this.self().orientation.TOP:
         case this.self().orientation.BOTTOM:
-          this.__caret.setWidth(0);
-          this.__caret.setHeight(5);
+          caret.setWidth(0);
+          caret.setHeight(5);
           break;
       }
     },
 
     getLabel: function() {
-      return this.__label;
+      return this.getChildControl("label");
     },
 
     getText: function() {
-      if (this.__label) {
-        return this.__label.getValue();
-      }
-      return null;
+      return this.getChildControl("label").getValue();
     },
 
     setText: function(text) {
-      if (this.__label) {
-        this.__label.setValue(text);
-      }
+      this.getChildControl("label").setValue(text);
     },
 
     __updatePosition: function() {
@@ -216,13 +224,13 @@ qx.Class.define("osparc.ui.hint.Hint", {
     },
 
     _applyOrientation: function() {
-      this.__createWidget();
+      this._buildWidget();
       this.__updatePosition();
     },
 
     // overwritten
     getChildrenContainer: function() {
-      return this.__hintContainer;
+      return this.getChildControl("hint-container");
     },
 
     _applyElement: function(element, oldElement) {
@@ -248,7 +256,7 @@ qx.Class.define("osparc.ui.hint.Hint", {
 
     __addListeners: function(events, skipThis = false) {
       let widget = skipThis ? this.getElement().getLayoutParent() : this.getElement();
-      while (widget && widget !== this.__root) {
+      while (widget && widget !== qx.core.Init.getApplication().getRoot()) {
         events.forEach(e => {
           if (qx.util.OOUtil.supportsEvent(widget, e)) {
             widget.addListener(e, this.__elementVisibilityHandler, this);
@@ -260,7 +268,7 @@ qx.Class.define("osparc.ui.hint.Hint", {
 
     __removeListeners: function(events, skipThis = false) {
       let widget = skipThis ? this.getElement().getLayoutParent() : this.getElement();
-      while (widget && widget !== this.__root) {
+      while (widget && widget !== qx.core.Init.getApplication().getRoot()) {
         events.forEach(e => {
           if (qx.util.OOUtil.supportsEvent(widget, e)) {
             widget.removeListener(e, this.__elementVisibilityHandler);
