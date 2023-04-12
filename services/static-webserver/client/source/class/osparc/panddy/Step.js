@@ -18,29 +18,29 @@
 qx.Class.define("osparc.panddy.Step", {
   extend: osparc.ui.basic.FloatingHelper,
 
-  construct: function(element, text) {
+  construct: function(element, title, message) {
     this.base(arguments, element);
 
-    this.setLayout(new qx.ui.layout.VBox(10));
+    this.setLayout(new qx.ui.layout.VBox(8));
 
     const hintContainer = this.getChildControl("hint-container");
-    hintContainer.setPadding(10);
+    hintContainer.setPadding(15);
     hintContainer.getContentElement().setStyles({
       "border-radius": "8px"
     });
 
-    const closeButton = this.getChildControl("close-button");
-    this.add(closeButton);
+    this.getChildControl("title");
+    this.getChildControl("message");
+    this.getChildControl("skip-button");
+    this.getChildControl("step-label");
 
-    const message = this.getChildControl("message");
-    this.add(message);
-    if (text === undefined) {
-      text = "";
+    if (title) {
+      this.setTitle(title);
     }
-    message.setValue(text);
 
-    const nextButton = this.getChildControl("next-button");
-    this.add(nextButton);
+    if (message) {
+      this.setMessage(message);
+    }
   },
 
   events: {
@@ -49,6 +49,13 @@ qx.Class.define("osparc.panddy.Step", {
   },
 
   properties: {
+    title: {
+      check: "String",
+      init: "",
+      nullable: true,
+      event: "changeTitle"
+    },
+
     text: {
       check: "String",
       init: "",
@@ -75,13 +82,13 @@ qx.Class.define("osparc.panddy.Step", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "close-button":
-          control = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/times/16",
-            allowGrowX: false,
-            alignX: "right"
+        case "title":
+          control = new qx.ui.basic.Label().set({
+            rich: true,
+            font: "text-18"
           });
-          control.addListener("execute", () => this.fireEvent("closePressed"), this);
+          this.bind("title", control, "value");
+          this.add(control);
           break;
         case "message":
           control = new qx.ui.basic.Label().set({
@@ -89,28 +96,65 @@ qx.Class.define("osparc.panddy.Step", {
             font: "text-16"
           });
           this.bind("text", control, "value");
+          this.add(control);
           break;
-        case "next-button":
+        case "bottom-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+            alignX: "center"
+          }));
+          this.add(control);
+          break;
+        case "skip-button": {
           control = new qx.ui.form.Button().set({
+            label: this.tr("Skip"),
+            allowGrowX: false,
+            alignX: "left"
+          });
+          control.addListener("execute", () => this.fireEvent("closePressed"), this);
+          const bottomLayout = this.getChildControl("bottom-layout");
+          bottomLayout.add(control);
+          break;
+        }
+        case "step-label": {
+          control = new qx.ui.basic.Label().set({
+            alignX: "center",
+            alignY: "middle",
+            textAlign: "center",
+            allowGrowX: true
+          });
+          const bottomLayout = this.getChildControl("bottom-layout");
+          bottomLayout.add(control, {
+            flex: 1
+          });
+          break;
+        }
+        case "next-button": {
+          control = new qx.ui.form.Button().set({
+            label: this.tr("Next"),
             icon: "@FontAwesome5Solid/arrow-right/16",
             iconPosition: "right",
             appearance: "strong-button",
-            font: "text-16",
             allowGrowX: false,
             alignX: "right"
           });
-          control.exclude();
           control.addListener("tap", () => this.fireEvent("nextPressed"), this);
+          const bottomLayout = this.getChildControl("bottom-layout");
+          bottomLayout.add(control);
           break;
+        }
       }
       return control || this.base(arguments, id);
     },
 
     __updateNextButton: function() {
-      this.getChildControl("next-button").set({
-        label: this.getStepIndex() + "/" + this.getNSteps(),
-        visibility: "visible"
-      });
+      const stepLabel = this.getChildControl("step-label");
+      stepLabel.setValue(this.tr("Step: ") + this.getStepIndex() + "/" + this.getNSteps());
+
+      if (this.getStepIndex() === this.getNSteps()) {
+        const nextButton = this.getChildControl("next-button");
+        nextButton.setLabel(this.tr("End"));
+        nextButton.addListener("execute", () => this.fireEvent("closePressed"), this);
+      }
     }
   }
 });

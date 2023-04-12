@@ -34,7 +34,8 @@ qx.Class.define("osparc.panddy.Panddy", {
   statics: {
     INTRO_STEPS: [{
       target: null,
-      message: qx.locale.Manager.tr("Grüezi! This is Panddy. I'm here to give you hints on how to use oSPARC.")
+      title: qx.locale.Manager.tr("Grüezi!"),
+      message: qx.locale.Manager.tr("This is Panddy. I'm here to give you hints on how to use oSPARC.")
     }]
   },
 
@@ -118,8 +119,16 @@ qx.Class.define("osparc.panddy.Panddy", {
         stepWidget.setElement(widget);
       } else {
         const widget = this.getChildControl("panddy");
-        stepWidget.setElement(widget);
-        stepWidget.setOrientation(osparc.ui.basic.FloatingHelper.ORIENTATION.LEFT);
+        if (widget) {
+          stepWidget.setElement(widget);
+          stepWidget.setOrientation(osparc.ui.basic.FloatingHelper.ORIENTATION.LEFT);
+        } else {
+          stepWidget.setElement(widget);
+          stepWidget.setOrientation(osparc.ui.basic.FloatingHelper.ORIENTATION.LEFT);
+        }
+      }
+      if (step.title) {
+        stepWidget.setTitle(step.title);
       }
       if (step.message) {
         stepWidget.setText(step.message);
