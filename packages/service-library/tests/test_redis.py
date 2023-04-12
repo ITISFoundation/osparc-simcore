@@ -174,10 +174,21 @@ async def test_lock_context_with_already_locked_lock_raises(
     async with redis_client_sdk.lock_context(lock_name) as lock:
         assert await _is_locked(redis_client_sdk, lock_name) is True
 
+        assert isinstance(lock.name, str)
+
+        # case where gives up immediately to acquire lock without waiting
         with pytest.raises(CouldNotAcquireLockError):
-            assert isinstance(lock.name, str)
-            async with redis_client_sdk.lock_context(lock.name):
+            async with redis_client_sdk.lock_context(lock.name, blocking=False):
                 ...
+
+        # case when lock waits up to blocking_timeout_s before giving up on
+        # lock acquisition
+        with pytest.raises(CouldNotAcquireLockError):
+            async with redis_client_sdk.lock_context(
+                lock.name, blocking=True, blocking_timeout_s=0.1
+            ):
+                ...
+
         assert await lock.locked() is True
     assert await _is_locked(redis_client_sdk, lock_name) is False
 
