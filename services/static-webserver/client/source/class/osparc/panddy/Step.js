@@ -24,6 +24,7 @@ qx.Class.define("osparc.panddy.Step", {
     this.setLayout(new qx.ui.layout.VBox(10));
 
     const hintContainer = this.getChildControl("hint-container");
+    hintContainer.setPadding(10);
     hintContainer.getContentElement().setStyles({
       "border-radius": "8px"
     });
@@ -47,6 +48,29 @@ qx.Class.define("osparc.panddy.Step", {
     "nextPressed": "qx.event.type.Event"
   },
 
+  properties: {
+    text: {
+      check: "String",
+      init: "",
+      nullable: true,
+      event: "changeText"
+    },
+
+    stepIndex: {
+      check: "Integer",
+      nullable: true,
+      init: 0,
+      apply: "__updateNextButton"
+    },
+
+    nSteps: {
+      check: "Integer",
+      nullable: true,
+      init: 0,
+      apply: "__updateNextButton"
+    }
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
@@ -64,10 +88,10 @@ qx.Class.define("osparc.panddy.Step", {
             rich: true,
             font: "text-16"
           });
+          this.bind("text", control, "value");
           break;
         case "next-button":
           control = new qx.ui.form.Button().set({
-            label: "1/4",
             icon: "@FontAwesome5Solid/arrow-right/16",
             iconPosition: "right",
             appearance: "strong-button",
@@ -75,14 +99,18 @@ qx.Class.define("osparc.panddy.Step", {
             allowGrowX: false,
             alignX: "right"
           });
+          control.exclude();
           control.addListener("tap", () => this.fireEvent("nextPressed"), this);
           break;
       }
       return control || this.base(arguments, id);
     },
 
-    setText: function(text) {
-      this.getChildControl("message").setValue(text);
+    __updateNextButton: function() {
+      this.getChildControl("next-button").set({
+        label: this.getStepIndex() + "/" + this.getNSteps(),
+        visibility: "visible"
+      });
     }
   }
 });
