@@ -19,5 +19,14 @@ qx.Class.define("osparc.product.panddy.osparc.Sequence", {
   type: "static",
 
   statics: {
+    getSteps: function() {
+      return [{
+        target: "studiesTabBtn",
+        message: "These are your studies"
+      }, {
+        target: "templatesTabBtn",
+        message: "These are the templates you have access to"
+      }];
+    }
   }
 });
