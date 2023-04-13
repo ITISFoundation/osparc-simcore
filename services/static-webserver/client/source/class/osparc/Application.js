@@ -99,7 +99,9 @@ qx.Class.define("osparc.Application", {
 
       this.__startupChecks();
 
-      this.__startPanddy();
+      if (osparc.product.panddy.Utils.hasPanddy()) {
+        this.__startPanddy();
+      }
     },
 
     __initRouting: function() {

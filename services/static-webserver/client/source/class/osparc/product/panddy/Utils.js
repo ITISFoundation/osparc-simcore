@@ -20,18 +20,18 @@ qx.Class.define("osparc.product.panddy.Utils", {
 
   statics: {
     SEQUENCES: {
-      "osparc": {
-        getSequences: () => osparc.product.panddy.osparc.Sequences.getSequences()
-      },
       "s4llite": {
-        getSequences: () => osparc.product.panddy.osparc.Sequences.getSequences()
+        getSequences: () => osparc.product.panddy.s4llite.Sequences.getSequences()
       }
     },
 
     hasPanddy: function() {
-      const sequences = this.SEQUENCES;
-      const pName = osparc.product.Utils.getProductName();
-      return Object.keys(sequences).includes(pName);
+      if (osparc.utils.Utils.isDevelEnv()) {
+        const sequences = this.SEQUENCES;
+        const pName = osparc.product.Utils.getProductName();
+        return Object.keys(sequences).includes(pName);
+      }
+      return false;
     },
 
     getSequences: function() {

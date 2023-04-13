@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.product.panddy.osparc.Sequences", {
+qx.Class.define("osparc.product.panddy.s4llite.Sequences", {
   type: "static",
 
   statics: {
