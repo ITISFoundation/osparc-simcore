@@ -22,7 +22,7 @@ from .background_task import periodic_task
 from .logging_utils import log_catch
 
 _DEFAULT_LOCK_TTL: datetime.timedelta = datetime.timedelta(seconds=10)
-
+_AUTO_EXTEND_LOCK_RATIO: Final[float] = 0.6
 _MINUTE: Final[NonNegativeFloat] = 60
 _WAIT_SECS: Final[NonNegativeFloat] = 1
 
@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 def _get_lock_renew_interval() -> datetime.timedelta:
-    return _DEFAULT_LOCK_TTL * 0.6
+    return _DEFAULT_LOCK_TTL * _AUTO_EXTEND_LOCK_RATIO
 
 
 class BaseRedisError(PydanticErrorMixin, RuntimeError):
