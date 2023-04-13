@@ -18,8 +18,6 @@ from .version_control_db import CommitLog, VersionControlRepository
 from .version_control_errors import CleanRequiredError
 from .version_control_models import Checkpoint, RefID, WorkbenchView
 
-CFG = {"arbitrary_types_allowed": True}
-
 log = logging.getLogger(__name__)
 
 
@@ -150,10 +148,14 @@ async def get_workbench(
 #
 # All above with validated arguments
 #
-list_repos_safe = validate_arguments(list_repos, config=CFG)
-list_checkpoints_safe = validate_arguments(list_checkpoints, config=CFG)
-create_checkpoint_safe = validate_arguments(create_checkpoint, config=CFG)
-get_checkpoint_safe = validate_arguments(get_checkpoint, config=CFG)
-update_checkpoint_safe = validate_arguments(update_checkpoint, config=CFG)
-checkout_checkpoint_safe = validate_arguments(checkout_checkpoint, config=CFG)
-get_workbench_safe = validate_arguments(get_workbench, config=CFG)
+
+_CONFIG = {"arbitrary_types_allowed": True}
+
+
+list_repos_safe = validate_arguments(list_repos, config=_CONFIG)  # type: ignore
+list_checkpoints_safe = validate_arguments(list_checkpoints, config=_CONFIG)  # type: ignore
+create_checkpoint_safe = validate_arguments(create_checkpoint, config=_CONFIG)  # type: ignore
+get_checkpoint_safe = validate_arguments(get_checkpoint, config=_CONFIG)  # type: ignore
+update_checkpoint_safe = validate_arguments(update_checkpoint, config=_CONFIG)  # type: ignore
+checkout_checkpoint_safe = validate_arguments(checkout_checkpoint, config=_CONFIG)  # type: ignore
+get_workbench_safe = validate_arguments(get_workbench, config=_CONFIG)  # type: ignore
