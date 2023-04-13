@@ -27,6 +27,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
     const menu = new qx.ui.menu.Menu().set({
       font: "text-14"
     });
+    osparc.utils.Utils.setIdToWidget(menu, "userMenuMenu");
     this.set({
       font: "text-14",
       icon: osparc.utils.Avatar.getUrl(userEmail, 32),
@@ -45,7 +46,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
         return authData.getFirstName();
       }
     });
-    osparc.utils.Utils.setIdToWidget(this, "userMenuMainBtn");
+    osparc.utils.Utils.setIdToWidget(this, "userMenuBtn");
 
     this.getChildControl("icon").getContentElement().setStyles({
       "border-radius": "16px"

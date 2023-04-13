@@ -51,7 +51,7 @@ async function register(page, user, pass) {
 
 async function logIn(page, user, pass) {
   // user might be already logged in
-  const elementExists = await page.$('[osparc-test-id="userMenuMainBtn"]');
+  const elementExists = await page.$('[osparc-test-id="userMenuBtn"]');
   if (elementExists !== null) {
     return;
   }
@@ -72,7 +72,7 @@ async function logIn(page, user, pass) {
 async function logOut(page) {
   console.log("Logging out");
 
-  await utils.waitAndClick(page, '[osparc-test-id="userMenuMainBtn"]');
+  await utils.waitAndClick(page, '[osparc-test-id="userMenuBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="userMenuLogoutBtn"]');
   await page.waitForSelector('[osparc-test-id="loginSubmitBtn"]');
 }
@@ -80,7 +80,7 @@ async function logOut(page) {
 async function dashboardAbout(page) {
   console.log("Showing About");
 
-  await utils.waitAndClick(page, '[osparc-test-id="userMenuMainBtn"]');
+  await utils.waitAndClick(page, '[osparc-test-id="userMenuBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="userMenuAboutBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="aboutWindowCloseBtn"]');
 }
@@ -88,7 +88,7 @@ async function dashboardAbout(page) {
 async function dashboardPreferences(page) {
   console.log("Navigating through Preferences");
 
-  await utils.waitAndClick(page, '[osparc-test-id="userMenuMainBtn"]');
+  await utils.waitAndClick(page, '[osparc-test-id="userMenuBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="userMenuPreferencesBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="preferencesProfileTabBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="preferencesSecurityTabBtn"]');

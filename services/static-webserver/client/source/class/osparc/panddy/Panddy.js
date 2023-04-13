@@ -32,14 +32,24 @@ qx.Class.define("osparc.panddy.Panddy", {
   },
 
   statics: {
-    INTRO_STEPS: [{
+    INTRO_SEQUENCE: [{
       target: null,
       title: qx.locale.Manager.tr("Grüezi!"),
       message: qx.locale.Manager.tr("This is Panddy. I'm here to give you hints on how to use oSPARC.")
+    }, {
+      target: "userMenuBtn",
+      action: "execute",
+      message: qx.locale.Manager.tr("You can always find me in the User Menu.")
     }]
   },
 
   properties: {
+    sequences: {
+      check: "Array",
+      init: [],
+      nullable: true
+    },
+
     steps: {
       check: "Array",
       init: [],
@@ -52,7 +62,7 @@ qx.Class.define("osparc.panddy.Panddy", {
     __currentIdx: null,
 
     _createChildControlImpl: function(id) {
-      const pandiSize = 100;
+      const pandiSize = 120;
       let control;
       switch (id) {
         case "panddy": {
@@ -81,9 +91,8 @@ qx.Class.define("osparc.panddy.Panddy", {
     },
 
     start: function() {
-      this.getChildControl("panddy").show();
-
-      this.__toStep(0);
+      this.getChildControl("panddy");
+      setTimeout(() => this.__toStep(0), 2000);
     },
 
     stop: function() {
@@ -95,7 +104,7 @@ qx.Class.define("osparc.panddy.Panddy", {
     },
 
     __toStep: function(idx = 0) {
-      let steps = this.self().INTRO_STEPS;
+      let steps = this.self().INTRO_SEQUENCE;
       if (this.isPropertyInitialized("steps") && this.getSteps() && this.getSteps().length) {
         steps = this.getSteps();
       }
