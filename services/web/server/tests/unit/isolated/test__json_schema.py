@@ -37,14 +37,14 @@ def test_validate_project_json_schema():
 
     # We have to remove patternProperties & additionalProperties from the schema, this is done
     # here: setup_projects_model_schema() in projects_models.py until #3992 is fixed
-    new_project_schema["properties"]["workbench"].pop("patternProperties")
+    new_project_schema["properties"]["workbench"].pop("patternProperties", None)
     new_project_schema["properties"]["ui"]["properties"]["workbench"].pop(
-        "patternProperties"
+        "patternProperties", None
     )
 
-    new_project_schema["properties"]["workbench"].pop("additionalProperties")
+    new_project_schema["properties"]["workbench"].pop("additionalProperties", None)
     new_project_schema["properties"]["ui"]["properties"]["workbench"].pop(
-        "additionalProperties"
+        "additionalProperties", None
     )
 
     assert jsonschema_validation.validate_instance(project, new_project_schema) is None

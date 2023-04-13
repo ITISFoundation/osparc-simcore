@@ -1,6 +1,3 @@
-# from datetime import datetime
-# from typing import Optional
-
 from models_library.projects import AccessRights, Node, Project, StudyUI
 from models_library.projects_nodes import InputTypes, OutputTypes
 from models_library.projects_nodes_io import SimCoreFileLink
@@ -25,11 +22,13 @@ class NewProjectIn(Project):
         json_dumps = json_dumps
 
 
-__all__ = [
+# nopycln: file
+__all__: tuple[str, ...] = (
     "AccessRights",
-    "Node",
-    "StudyUI",
     "InputTypes",
+    "Node",
     "OutputTypes",
+    "Project",
     "SimCoreFileLink",
-]
+    "StudyUI",
+)

@@ -10,7 +10,7 @@
 #
 --constraint _base.txt
 
-codecov
+
 coverage
 coveralls
 faker

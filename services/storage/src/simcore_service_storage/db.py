@@ -1,11 +1,12 @@
 import logging
-from typing import Any, Optional
+from typing import Any, cast
 
 from aiohttp import web
 from aiopg.sa import Engine
 from servicelib.aiohttp.aiopg_utils import DataSourceName, is_pg_responsive
 from servicelib.common_aiopg_utils import create_pg_engine
 from servicelib.retry_policies import PostgresRetryPolicyUponInitialization
+from settings_library.postgres import PostgresSettings
 from simcore_postgres_database.utils_aiopg import (
     close_engine,
     get_pg_engine_stateinfo,
@@ -14,14 +15,12 @@ from simcore_postgres_database.utils_aiopg import (
 from tenacity import retry
 
 from .constants import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
-from .settings import PostgresSettings
 
 log = logging.getLogger(__name__)
 
 
 @retry(**PostgresRetryPolicyUponInitialization(log).kwargs)
 async def _ensure_pg_ready(dsn: DataSourceName, min_size: int, max_size: int) -> Engine:
-
     log.info("Creating pg engine for %s", dsn)
 
     engine = await create_pg_engine(dsn, minsize=min_size, maxsize=max_size)
@@ -31,7 +30,7 @@ async def _ensure_pg_ready(dsn: DataSourceName, min_size: int, max_size: int) ->
         await close_engine(engine)
         raise
 
-    return engine  # type: ignore # tenacity rules guarantee exit with exc
+    return engine  # tenacity rules guarantee exit with exc
 
 
 async def postgres_cleanup_ctx(app: web.Application):
@@ -45,7 +44,7 @@ async def postgres_cleanup_ctx(app: web.Application):
         password=pg_cfg.POSTGRES_PASSWORD.get_secret_value(),
         host=pg_cfg.POSTGRES_HOST,
         port=pg_cfg.POSTGRES_PORT,
-    )  # type: ignore
+    )
 
     log.info("Creating pg engine for %s", dsn)
 
@@ -79,9 +78,9 @@ async def is_service_responsive(app: web.Application):
 
 
 def get_engine_state(app: web.Application) -> dict[str, Any]:
-    engine: Optional[Engine] = app.get(APP_DB_ENGINE_KEY)
+    engine: Engine | None = app.get(APP_DB_ENGINE_KEY)
     if engine:
-        return get_pg_engine_stateinfo(engine)
+        return cast(dict[str, Any], get_pg_engine_stateinfo(engine))  # mypy
     return {}
 
 
