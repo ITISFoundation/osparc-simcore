@@ -348,9 +348,6 @@ class DaskClient:
                 raise
         return list_of_node_id_to_job_id
 
-    async def get_task_status(self, job_id: str) -> RunningState:
-        return (await self.get_tasks_status(job_ids=[job_id]))[0]
-
     async def get_tasks_status(self, job_ids: list[str]) -> list[RunningState]:
         check_scheduler_is_still_the_same(
             self.backend.scheduler_id, self.backend.client

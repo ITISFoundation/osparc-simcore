@@ -102,7 +102,7 @@ async def _assert_wait_for_task_status(
                 f"waiting for task to be {expected_status=}, "
                 f"Attempt={attempt.retry_state.attempt_number}"
             )
-            current_task_status = await dask_client.get_task_status(job_id)
+            current_task_status = (await dask_client.get_tasks_status([job_id]))[0]
             assert isinstance(current_task_status, RunningState)
             print(f"{current_task_status=} vs {expected_status=}")
             assert current_task_status == expected_status
