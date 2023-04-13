@@ -178,6 +178,7 @@ qx.Class.define("osparc.panddy.Panddy", {
       stepWidget.addListener("nextPressed", () => this.__toStepCheck(this.__currentIdx+1), this);
       return stepWidget;
     },
+
     __toStep: async function(steps, idx) {
       const step = steps[idx];
       const stepWidget = this.__currentBuble = this.__createStep();
