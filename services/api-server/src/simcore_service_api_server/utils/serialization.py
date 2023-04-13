@@ -1,11 +1,11 @@
 import json
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 import orjson
 
 
 def json_dumps(
-    v, *, default: Optional[Callable[[Any], Any]] = None, indent: Optional[int] = None
+    v, *, default: Callable[[Any], Any] | None = None, indent: int | None = None
 ) -> str:
     # SEE https://github.com/ijl/orjson
     # - orjson.dumps returns *bytes*, to match standard json.dumps we need to decode
@@ -16,7 +16,8 @@ def json_dumps(
     if indent:
         return json.dumps(v, default=default, indent=indent)
 
-    return orjson.dumps(v, default=default).decode()
+    decoded: str = orjson.dumps(v, default=default).decode()
+    return decoded
 
 
 json_loads = orjson.loads

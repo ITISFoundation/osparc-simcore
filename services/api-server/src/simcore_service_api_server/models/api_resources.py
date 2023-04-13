@@ -1,7 +1,9 @@
+import re
 import urllib.parse
 from typing import Any
 
-from pydantic import BaseModel, Field, constr
+from pydantic import BaseModel, Field
+from pydantic.types import ConstrainedStr
 
 # RESOURCE NAMES https://cloud.google.com/apis/design/resource_names
 #
@@ -26,8 +28,16 @@ from pydantic import BaseModel, Field, constr
 #
 
 
-RELATIVE_RESOURCE_NAME_RE = r"^([^\s/]+/?)+$"
-RelativeResourceName = constr(regex=RELATIVE_RESOURCE_NAME_RE)
+_RELATIVE_RESOURCE_NAME_RE = r"^([^\s/]+/?)+$"
+
+
+class RelativeResourceName(ConstrainedStr):
+    regex = re.compile(_RELATIVE_RESOURCE_NAME_RE)
+
+    class Config:
+        frozen = True
+
+
 # NOTE: we quote parts in a single resource_name and unquote when split
 
 
@@ -39,7 +49,7 @@ def parse_last_resource_id(resource_name: RelativeResourceName) -> str:
 
 def compose_resource_name(*collection_or_resource_ids) -> RelativeResourceName:
     quoted_parts = [
-        urllib.parse.quote_plus(str(_id).lstrip("/"))
+        urllib.parse.quote_plus(f"{_id}".lstrip("/"))
         for _id in collection_or_resource_ids
     ]
     return RelativeResourceName("/".join(quoted_parts))

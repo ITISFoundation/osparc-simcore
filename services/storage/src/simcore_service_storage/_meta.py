@@ -14,9 +14,6 @@ app_name: str = __name__.split(".")[0]
 api_version: str = __version__
 api_vtag: str = f"v{version.major}"
 
-# legacy
-api_version_prefix: str = api_vtag
-
 
 ## https://patorjk.com/software/taag/#p=display&f=Standard&t=Storage
 WELCOME_MSG = r"""
@@ -25,7 +22,7 @@ WELCOME_MSG = r"""
  \___ \| __/ _ \| '__/ _` |/ _` |/ _ \
   ___) | || (_) | | | (_| | (_| |  __/
  |____/ \__\___/|_|  \__,_|\__, |\___|
-                           |___/          {0}
+                           |___/          {}
 
 """.format(
     f"v{__version__}"

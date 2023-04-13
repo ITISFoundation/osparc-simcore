@@ -3,6 +3,7 @@ import logging
 from aiopg.sa import Engine, create_engine
 from fastapi import FastAPI
 from servicelib.retry_policies import PostgresRetryPolicyUponInitialization
+from settings_library.postgres import PostgresSettings
 from simcore_postgres_database.utils_aiopg import (
     close_engine,
     get_pg_engine_info,
@@ -11,7 +12,6 @@ from simcore_postgres_database.utils_aiopg import (
 from tenacity import retry
 
 from .._meta import PROJECT_NAME
-from ..core.settings import PostgresSettings
 
 logger = logging.getLogger(__name__)
 

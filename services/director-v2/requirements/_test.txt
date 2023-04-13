@@ -81,13 +81,10 @@ cloudpickle==2.2.1
     #   -c requirements/_base.txt
     #   dask
     #   distributed
-codecov==2.1.12
-    # via -r requirements/_test.in
 colorlog==6.7.0
     # via dask-gateway-server
 coverage==6.5.0
     # via
-    #   codecov
     #   coveralls
     #   pytest-cov
 coveralls==3.3.1
@@ -281,7 +278,6 @@ requests==2.27.1
     # via
     #   -c requirements/_base.txt
     #   async-asgi-testclient
-    #   codecov
     #   coveralls
     #   docker
 respx==0.20.1

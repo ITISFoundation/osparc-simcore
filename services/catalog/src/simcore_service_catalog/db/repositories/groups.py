@@ -36,7 +36,7 @@ class GroupsRepository(BaseRepository):
 
     async def get_user_gid_from_email(
         self, user_email: LowerCaseEmailStr
-    ) -> Optional[PositiveInt]:
+    ) -> PositiveInt | None:
         async with self.db_engine.connect() as conn:
             return cast(
                 Optional[PositiveInt],
@@ -45,7 +45,7 @@ class GroupsRepository(BaseRepository):
                 ),
             )
 
-    async def get_gid_from_affiliation(self, affiliation: str) -> Optional[PositiveInt]:
+    async def get_gid_from_affiliation(self, affiliation: str) -> PositiveInt | None:
         async with self.db_engine.connect() as conn:
             return cast(
                 Optional[PositiveInt],
@@ -56,18 +56,16 @@ class GroupsRepository(BaseRepository):
 
     async def get_user_email_from_gid(
         self, gid: PositiveInt
-    ) -> Optional[LowerCaseEmailStr]:
+    ) -> LowerCaseEmailStr | None:
         async with self.db_engine.connect() as conn:
-            return cast(
-                Optional[LowerCaseEmailStr],
-                await conn.scalar(
-                    sa.select([users.c.email]).where(users.c.primary_gid == gid)
-                ),
+            email = await conn.scalar(
+                sa.select([users.c.email]).where(users.c.primary_gid == gid)
             )
+            return cast(LowerCaseEmailStr, f"{email}") if email else None
 
     async def list_user_emails_from_gids(
         self, gids: set[PositiveInt]
-    ) -> dict[PositiveInt, Optional[LowerCaseEmailStr]]:
+    ) -> dict[PositiveInt, LowerCaseEmailStr | None]:
         service_owners = {}
         async with self.db_engine.connect() as conn:
             async for row in await conn.stream(

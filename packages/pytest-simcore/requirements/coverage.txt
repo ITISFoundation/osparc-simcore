@@ -4,4 +4,3 @@
 pytest-cov
 coveralls
 coverage
-codecov
