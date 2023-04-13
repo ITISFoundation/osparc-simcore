@@ -246,8 +246,10 @@ async def create_project(
 
     except JsonSchemaValidationError as exc:
         raise web.HTTPBadRequest(reason="Invalid project data") from exc
+
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Project {exc.project_uuid} not found") from exc
+
     except ProjectInvalidRightsError as exc:
         raise web.HTTPUnauthorized from exc
 
