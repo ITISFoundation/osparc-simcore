@@ -54,7 +54,7 @@ async def list_checkpoints(
 
     checkpoints = [Checkpoint.from_commit_log(commit, tags) for commit, tags in logs]
     assert len(checkpoints) <= limit if limit else True  # nosec
-    assert total_number_of_commits > 0
+    assert total_number_of_commits > 0  # nosec
 
     return checkpoints, total_number_of_commits
 
