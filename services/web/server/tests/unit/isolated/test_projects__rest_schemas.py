@@ -9,7 +9,9 @@ from models_library.generics import Envelope
 from models_library.rest_pagination import Page
 from pydantic import parse_obj_as
 from pytest_simcore.simcore_webserver_projects_rest_api import (
-    CREATE_PROJECT_W_SERVICE,
+    CREATE_FROM_SERVICE,
+    CREATE_FROM_TEMPLATE,
+    CREATE_FROM_TEMPLATE__TASK_RESULT,
     GET_PROJECT,
     LIST_PROJECTS,
     NEW_PROJECT,
@@ -28,7 +30,7 @@ from simcore_service_webserver.projects._rest_schemas import (
 
 @pytest.mark.parametrize(
     "api_call",
-    (NEW_PROJECT, CREATE_PROJECT_W_SERVICE),
+    (NEW_PROJECT, CREATE_FROM_SERVICE, CREATE_FROM_TEMPLATE),
     ids=lambda c: c.name,
 )
 def test_create_project_schemas(api_call: HttpApiCallCapture):
@@ -57,7 +59,7 @@ def test_list_project_schemas(api_call: HttpApiCallCapture):
 
 @pytest.mark.parametrize(
     "api_call",
-    (GET_PROJECT,),
+    (GET_PROJECT, CREATE_FROM_TEMPLATE__TASK_RESULT),
     ids=lambda c: c.name,
 )
 def test_get_project_schemas(api_call: HttpApiCallCapture):
