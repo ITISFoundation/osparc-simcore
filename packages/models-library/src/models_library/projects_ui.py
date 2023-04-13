@@ -2,9 +2,9 @@
     Models Front-end UI
 """
 
-from typing import Literal, Optional, TypedDict
+from typing import Any, Literal, TypedDict
 
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, Extra, Field, validator
 from pydantic.color import Color
 
 from .projects_nodes_io import NodeID, NodeIDStr
@@ -13,7 +13,7 @@ from .projects_nodes_ui import Marker, Position
 
 class WorkbenchUI(BaseModel):
     position: Position = Field(..., description="The node position in the workbench")
-    marker: Optional[Marker] = None
+    marker: Marker | None = None
 
     class Config:
         extra = Extra.forbid
@@ -24,7 +24,7 @@ class _SlideshowRequired(TypedDict):
 
 
 class Slideshow(_SlideshowRequired, total=False):
-    instructions: Optional[str]  # "Instructions about what to do in this step"
+    instructions: str | None  # "Instructions about what to do in this step"
 
 
 class Annotation(BaseModel):
@@ -51,10 +51,17 @@ class Annotation(BaseModel):
 
 
 class StudyUI(BaseModel):
-    workbench: Optional[dict[NodeIDStr, WorkbenchUI]] = None
-    slideshow: Optional[dict[NodeIDStr, Slideshow]] = None
-    current_node_id: Optional[NodeID] = Field(default=None, alias="currentNodeId")
-    annotations: Optional[dict[NodeIDStr, Annotation]] = None
+    workbench: dict[NodeIDStr, WorkbenchUI] | None = None
+    slideshow: dict[NodeIDStr, Slideshow] | None = None
+    current_node_id: NodeID | None = Field(default=None, alias="currentNodeId")
+    annotations: dict[NodeIDStr, Annotation] | None = None
 
     class Config:
         extra = Extra.allow
+
+    @validator("*", pre=True)
+    @classmethod
+    def empty_str_to_none(cls, value: Any):
+        if isinstance(value, str) and value.strip() == "":
+            return None
+        return value
