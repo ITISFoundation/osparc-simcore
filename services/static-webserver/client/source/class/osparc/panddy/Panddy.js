@@ -170,13 +170,16 @@ qx.Class.define("osparc.panddy.Panddy", {
     __toStep: function(steps, idx) {
       const step = steps[idx];
       const stepWidget = this.__currentStep = this.__createStep();
+      let targetWidget = null;
       if (step.target) {
         const domEl = document.querySelector(`[${step.target}]`);
-        const widget = qx.ui.core.Widget.getWidgetByElement(domEl);
+        targetWidget = qx.ui.core.Widget.getWidgetByElement(domEl);
+      }
+      if (targetWidget) {
         if (step.action === "execute") {
-          widget.execute();
+          targetWidget.execute();
         }
-        stepWidget.setElement(widget);
+        stepWidget.setElement(targetWidget);
       } else {
         const panddy = this.getChildControl("panddy");
         stepWidget.setElement(panddy);
@@ -195,6 +198,10 @@ qx.Class.define("osparc.panddy.Panddy", {
         });
       }
       stepWidget.show();
+      setTimeout(() => {
+        stepWidget.exclude();
+        stepWidget.show();
+      }, 50); // Hacky: Execute async and give some time for the relevant properties to be set
     }
   }
 });
