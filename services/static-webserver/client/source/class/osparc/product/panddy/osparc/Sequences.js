@@ -25,6 +25,11 @@ qx.Class.define("osparc.product.panddy.osparc.Sequences", {
         name: "Dashboard",
         description: "Introduction to Dashboard tabs",
         steps: this.__getDashboardSteps()
+      }, {
+        id: "studies",
+        name: "Studies",
+        description: "Introduction to Studies",
+        steps: this.__getStudiesSteps()
       }];
     },
 
@@ -49,6 +54,14 @@ qx.Class.define("osparc.product.panddy.osparc.Sequences", {
         action: "execute",
         title: "Data",
         message: "This is the section where you can access all the data you produced or you have access to."
+      }];
+    },
+
+    __getStudiesSteps: function() {
+      return [{
+        target: "osparc-test-id=startS4LButton",
+        title: "Studies",
+        message: "Click here if you want to create a new Project."
       }];
     }
   }
