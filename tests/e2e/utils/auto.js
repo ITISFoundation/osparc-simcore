@@ -74,7 +74,6 @@ async function logOut(page) {
 
   await utils.waitAndClick(page, '[osparc-test-id="userMenuBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="userMenuLogoutBtn"]');
-  await page.waitForSelector('[osparc-test-id="loginSubmitBtn"]');
 }
 
 async function dashboardAbout(page) {
