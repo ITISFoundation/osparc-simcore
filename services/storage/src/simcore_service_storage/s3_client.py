@@ -5,7 +5,7 @@ import urllib.parse
 from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Optional, cast
+from typing import Callable, cast
 
 import aioboto3
 from aiobotocore.session import ClientCreatorContext
@@ -19,6 +19,7 @@ from servicelib.utils import logged_gather
 from settings_library.s3 import S3Settings
 from simcore_service_storage.constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
 from types_aiobotocore_s3 import S3Client
+from types_aiobotocore_s3.type_defs import ObjectTypeDef
 
 from .models import ETag, MultiPartUploadLinks, S3BucketName, UploadID
 from .s3_utils import compute_num_file_chunks, s3_exception_handler
@@ -32,6 +33,19 @@ class S3MetaData:
     last_modified: datetime.datetime
     e_tag: ETag
     size: int
+
+    @staticmethod
+    def from_botocore_object(obj: ObjectTypeDef) -> "S3MetaData":
+        assert "Key" in obj  # nosec
+        assert "LastModified" in obj  # nosec
+        assert "ETag" in obj  # nosec
+        assert "Size" in obj  # nosec
+        return S3MetaData(
+            file_id=SimcoreS3FileID(obj["Key"]),
+            last_modified=obj["LastModified"],
+            e_tag=json.loads(obj["ETag"]),
+            size=obj["Size"],
+        )
 
 
 @dataclass
@@ -96,7 +110,7 @@ class StorageS3Client:
             Params={"Bucket": bucket, "Key": file_id},
             ExpiresIn=expiration_secs,
         )
-        return parse_obj_as(AnyUrl, generated_link)
+        return cast(AnyUrl, parse_obj_as(AnyUrl, generated_link))  # mypy
 
     @s3_exception_handler(log)
     async def create_single_presigned_upload_link(
@@ -109,7 +123,7 @@ class StorageS3Client:
             Params={"Bucket": bucket, "Key": file_id},
             ExpiresIn=expiration_secs,
         )
-        return parse_obj_as(AnyUrl, generated_link)
+        return cast(AnyUrl, parse_obj_as(AnyUrl, generated_link))  # mypy
 
     @s3_exception_handler(log)
     async def create_multipart_upload_links(
@@ -213,7 +227,7 @@ class StorageS3Client:
         self,
         bucket: S3BucketName,
         project_id: ProjectID,
-        node_id: Optional[NodeID] = None,
+        node_id: NodeID | None = None,
     ) -> None:
         # NOTE: the / at the end of the Prefix is VERY important,
         # makes the listing several order of magnitudes faster
@@ -248,7 +262,7 @@ class StorageS3Client:
         bucket: S3BucketName,
         src_file: SimcoreS3FileID,
         dst_file: SimcoreS3FileID,
-        bytes_transfered_cb: Optional[Callable[[int], None]],
+        bytes_transfered_cb: Callable[[int], None] | None,
     ) -> None:
         """copy a file in S3 using aioboto3 transfer manager (e.g. works >5Gb and creates multiple threads)
 
@@ -273,12 +287,7 @@ class StorageS3Client:
         # NOTE: adding a / at the end of a folder improves speed by several orders of magnitudes
         response = await self.client.list_objects_v2(Bucket=bucket, Prefix=prefix)
         return [
-            S3MetaData(
-                file_id=entry["Key"],  # type: ignore
-                last_modified=entry["LastModified"],  # type: ignore
-                e_tag=json.loads(entry["ETag"]),  # type: ignore
-                size=entry["Size"],  # type: ignore
-            )
+            S3MetaData.from_botocore_object(entry)
             for entry in response.get("Contents", [])
             if all(k in entry for k in ("Key", "LastModified", "ETag", "Size"))
         ]
@@ -289,7 +298,7 @@ class StorageS3Client:
         bucket: S3BucketName,
         file: Path,
         file_id: SimcoreS3FileID,
-        bytes_transfered_cb: Optional[Callable[[int], None]],
+        bytes_transfered_cb: Callable[[int], None] | None,
     ) -> None:
         """upload a file using aioboto3 transfer manager (e.g. works >5Gb and create multiple threads)
 
@@ -308,7 +317,9 @@ class StorageS3Client:
 
     @staticmethod
     def compute_s3_url(bucket: S3BucketName, file_id: SimcoreS3FileID) -> AnyUrl:
-        return parse_obj_as(AnyUrl, f"s3://{bucket}/{urllib.parse.quote(file_id)}")
+        return cast(  # mypy
+            AnyUrl, parse_obj_as(AnyUrl, f"s3://{bucket}/{urllib.parse.quote(file_id)}")
+        )
 
     @staticmethod
     def is_multipart(file_size: ByteSize) -> bool:

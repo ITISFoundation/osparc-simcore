@@ -1,7 +1,7 @@
 import logging
 import urllib.parse
 from pathlib import Path
-from typing import Optional, Union
+from typing import cast
 
 import aiofiles
 from aiohttp import ClientSession
@@ -16,12 +16,15 @@ logger = logging.getLogger(__name__)
 
 
 def convert_db_to_model(x: FileMetaDataAtDB) -> FileMetaData:
-    return FileMetaData.parse_obj(
-        x.dict()
-        | {
-            "file_uuid": x.file_id,
-            "file_name": x.file_id.split("/")[-1],
-        }
+    return cast(  # mypy
+        FileMetaData,
+        FileMetaData.parse_obj(
+            x.dict()
+            | {
+                "file_uuid": x.file_id,
+                "file_name": x.file_id.split("/")[-1],
+            }
+        ),
     )
 
 
@@ -56,7 +59,7 @@ async def download_to_file_or_raise(
     return total_size
 
 
-def is_file_entry_valid(file_metadata: Union[FileMetaData, FileMetaDataAtDB]) -> bool:
+def is_file_entry_valid(file_metadata: FileMetaData | FileMetaDataAtDB) -> bool:
     return (
         file_metadata.entity_tag is not None
         and file_metadata.file_size > 0
@@ -69,7 +72,7 @@ def create_upload_completion_task_name(user_id: UserID, file_id: StorageFileID) 
     return f"upload_complete_task_{user_id}_{urllib.parse.quote(file_id, safe='')}"
 
 
-def is_valid_managed_multipart_upload(upload_id: Optional[UploadID]) -> bool:
+def is_valid_managed_multipart_upload(upload_id: UploadID | None) -> bool:
     """the upload ID is valid (created by storage service) AND internally managed by storage (e.g. PRESIGNED multipart upload)
 
     :type upload_id: Optional[UploadID]
