@@ -88,6 +88,9 @@ qx.Class.define("osparc.panddy.Step", {
             font: "text-16"
           });
           this.bind("title", control, "value");
+          this.bind("title", control, "visibility", {
+            converter: title => title ? "visible" : "excluded"
+          });
           this.add(control);
           break;
         case "message":
@@ -96,6 +99,9 @@ qx.Class.define("osparc.panddy.Step", {
             font: "text-14"
           });
           this.bind("text", control, "value");
+          this.bind("text", control, "visibility", {
+            converter: text => text ? "visible" : "excluded"
+          });
           this.add(control);
           break;
         case "bottom-layout":

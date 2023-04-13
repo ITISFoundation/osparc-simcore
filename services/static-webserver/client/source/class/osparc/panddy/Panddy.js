@@ -73,15 +73,17 @@ qx.Class.define("osparc.panddy.Panddy", {
     __currentIdx: null,
 
     _createChildControlImpl: function(id) {
-      const pandiSize = 120;
+      const pandiSize = 140;
       let control;
       switch (id) {
         case "panddy": {
           control = new qx.ui.basic.Image("osparc/panda.gif").set({
             width: pandiSize,
             height: pandiSize,
-            scale: true
+            scale: true,
+            cursor: "pointer"
           });
+          control.addListener("tap", () => this.stop());
           this._add(control, {
             bottom: 0,
             right: 0
@@ -93,7 +95,7 @@ qx.Class.define("osparc.panddy.Panddy", {
     },
 
     start: function() {
-      this.getChildControl("panddy");
+      this.getChildControl("panddy").show();
       setTimeout(() => this.__toSequences(), 200);
     },
 
