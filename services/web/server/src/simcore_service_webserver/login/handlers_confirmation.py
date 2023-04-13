@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
@@ -70,7 +69,7 @@ async def validate_confirmation_and_redirect(request: web.Request):
 
     path_params = parse_request_path_parameters_as(_PathParam, request)
 
-    confirmation: Optional[ConfirmationTokenDict] = await validate_confirmation_code(
+    confirmation: ConfirmationTokenDict | None = await validate_confirmation_code(
         path_params.code.get_secret_value(), db=db, cfg=cfg
     )
 
@@ -156,7 +155,6 @@ async def phone_confirmation(request: web.Request):
     )
 
     db: AsyncpgStorage = get_plugin_storage(request.app)
-    product: Product = get_current_product(request)
 
     if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(

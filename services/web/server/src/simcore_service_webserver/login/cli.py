@@ -1,6 +1,5 @@
 import sys
 from datetime import datetime
-from typing import Optional
 
 import typer
 from simcore_postgres_database.models.confirmations import ConfirmationAction
@@ -13,7 +12,7 @@ from .utils import get_random_string
 def invitations(
     base_url: str,
     issuer_email: str,
-    trial_days: Optional[int] = None,
+    trial_days: int | None = None,
     user_id: int = 1,
     num_codes: int = 15,
     code_length: int = 30,
@@ -35,7 +34,7 @@ def invitations(
             origin=URL(base_url),
         )
         typer.secho(f"{i:2d}. {url}")
-
+    # Missing keys ("user_id", "created_at", "data") for TypedDict "ConfirmationTokenDict"
     #
     # NOTE: An obvious improvement would be to inject the invitations directly from here
     #       into the database but for that I would add an authentication first. Could

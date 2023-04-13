@@ -5,6 +5,7 @@
 
 import logging
 from pprint import pformat
+from typing import cast
 
 from aiohttp import web
 from servicelib.aiohttp import openapi
@@ -58,4 +59,4 @@ def create_routes(validated_specs: openapi.Spec) -> list[web.RouteDef]:
 
     log.debug("Mapped auth routes: %s", "\n".join([pformat(r) for r in routes]))
 
-    return routes
+    return cast(list[web.RouteDef], routes)

@@ -7,7 +7,7 @@
 import logging
 from contextlib import contextmanager
 from datetime import datetime
-from typing import Iterator, Literal, Optional
+from typing import Iterator, Literal, cast
 
 from aiohttp import web
 from models_library.basic_types import IdInt
@@ -22,6 +22,7 @@ from pydantic import (
     validator,
 )
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from simcore_postgres_database.models.confirmations import ConfirmationAction
 from yarl import URL
 
 from ..invitations import (
@@ -32,14 +33,13 @@ from ..invitations import (
     validate_invitation_url,
 )
 from ._confirmation import (
-    ConfirmationAction,
     get_expiration_date,
     is_confirmation_expired,
     validate_confirmation_code,
 )
 from ._constants import MSG_EMAIL_EXISTS, MSG_INVITATIONS_CONTACT_SUFFIX
 from .settings import LoginOptions
-from .storage import AsyncpgStorage, ConfirmationTokenDict
+from .storage import AsyncpgStorage, BaseConfirmationTokenDict, ConfirmationTokenDict
 from .utils import CONFIRMATION_PENDING
 
 log = logging.getLogger(__name__)
@@ -51,14 +51,14 @@ class ConfirmationTokenInfoDict(ConfirmationTokenDict):
 
 
 class InvitationData(BaseModel):
-    issuer: Optional[str] = Field(
+    issuer: str | None = Field(
         None,
         description="Who has issued this invitation? (e.g. an email or a uid)",
     )
-    guest: Optional[str] = Field(
+    guest: str | None = Field(
         None, description="Reference tag for this invitation", deprecated=True
     )
-    trial_account_days: Optional[PositiveInt] = Field(
+    trial_account_days: PositiveInt | None = Field(
         None,
         description="If set, this invitation will activate a trial account."
         "Sets the number of days from creation until the account expires",
@@ -77,7 +77,7 @@ class _InvitationValidator(BaseModel):
         return ConfirmationAction(v)
 
 
-ACTION_TO_DATA_TYPE: dict[ConfirmationAction, Optional[type]] = {
+ACTION_TO_DATA_TYPE: dict[ConfirmationAction, type | None] = {
     ConfirmationAction.INVITATION: InvitationData,
     ConfirmationAction.REGISTRATION: None,
 }
@@ -131,9 +131,9 @@ async def create_invitation_token(
     db: AsyncpgStorage,
     *,
     user_id: IdInt,
-    user_email: Optional[LowerCaseEmailStr] = None,
-    tag: Optional[str] = None,
-    trial_days: Optional[PositiveInt] = None,
+    user_email: LowerCaseEmailStr | None = None,
+    tag: str | None = None,
+    trial_days: PositiveInt | None = None,
 ) -> ConfirmationTokenDict:
     """Creates an invitation token for a guest to register in the platform and returns
 
@@ -167,7 +167,7 @@ def _invitations_request_context(invitation_code: str) -> Iterator[URL]:
     """
     try:
         url = get_invitation_url(
-            confirmation=ConfirmationTokenDict(
+            confirmation=BaseConfirmationTokenDict(
                 code=invitation_code, action=ConfirmationAction.INVITATION.name
             ),
             origin=URL("https://dummyhost.com:8000"),
@@ -237,7 +237,7 @@ async def check_and_consume_invitation(
     if confirmation_token := await validate_confirmation_code(invitation_code, db, cfg):
         try:
             invitation = _InvitationValidator.parse_obj(confirmation_token)
-            return invitation.data
+            return cast(InvitationData, invitation.data)
 
         except ValidationError as err:
             log.warning(
@@ -262,7 +262,7 @@ async def check_and_consume_invitation(
 
 
 def get_invitation_url(
-    confirmation: ConfirmationTokenDict, origin: Optional[URL] = None
+    confirmation: BaseConfirmationTokenDict, origin: URL | None = None
 ) -> URL:
     """Creates a URL to invite a user for registration
 
@@ -303,4 +303,4 @@ def get_confirmation_info(
     if confirmation["action"] == ConfirmationAction.INVITATION.name:
         info["url"] = f"{get_invitation_url(confirmation)}"
 
-    return info
+    return cast(ConfirmationTokenInfoDict, info)

@@ -1,24 +1,19 @@
 import asyncio
 import json
 import logging
-from typing import Optional
 
 import asyncpg
 from aiohttp import web
 from pydantic import ValidationError
+from servicelib.aiohttp.application_keys import APP_OPENAPI_SPECS_KEY, APP_SETTINGS_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
+from settings_library.email import SMTPSettings
+from settings_library.postgres import PostgresSettings
 
-from .._constants import (
-    APP_OPENAPI_SPECS_KEY,
-    APP_PUBLIC_CONFIG_PER_PRODUCT,
-    APP_SETTINGS_KEY,
-    INDEX_RESOURCE_NAME,
-)
+from .._constants import APP_PUBLIC_CONFIG_PER_PRODUCT, INDEX_RESOURCE_NAME
 from ..db import setup_db
-from ..db_settings import PostgresSettings
 from ..db_settings import get_plugin_settings as get_db_plugin_settings
 from ..email import setup_email
-from ..email_settings import SMTPSettings
 from ..email_settings import get_plugin_settings as get_email_plugin_settings
 from ..invitations import setup_invitations
 from ..products import ProductName, list_products, setup_products
@@ -83,7 +78,7 @@ async def _resolve_login_settings_per_product(app: web.Application):
     for the login plugin. Note that product settings override app settings.
     """
     # app plugin settings
-    app_login_settings: Optional[LoginSettings]
+    app_login_settings: LoginSettings | None
     login_settings_per_product: dict[ProductName, LoginSettingsForProduct] = {}
 
     if app_login_settings := app[APP_SETTINGS_KEY].WEBSERVER_LOGIN:

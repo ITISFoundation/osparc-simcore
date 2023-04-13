@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from aiohttp import web
 from models_library.clusters import ClusterID
@@ -11,13 +11,14 @@ from pydantic.types import NonNegativeInt
 from servicelib.aiohttp.rest_responses import create_error_response, get_http_error
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from servicelib.request_keys import RQT_USERID_KEY
 
 from ._constants import RQ_PRODUCT_KEY
 from ._meta import api_version_prefix as VTAG
 from .director_v2_abc import get_project_run_policy
 from .director_v2_core_computations import ComputationsApi
 from .director_v2_exceptions import DirectorServiceError
-from .login.decorators import RQT_USERID_KEY, login_required
+from .login.decorators import login_required
 from .security_decorators import permission_required
 from .version_control_db import CommitID
 
@@ -156,7 +157,7 @@ async def stop_computation(request: web.Request) -> web.Response:
 
 
 class ComputationTaskGet(BaseModel):
-    cluster_id: Optional[ClusterID]
+    cluster_id: ClusterID | None
 
 
 @routes.get(f"/{VTAG}/computations/{{project_id}}")

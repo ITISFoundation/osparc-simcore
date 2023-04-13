@@ -9,7 +9,7 @@ Currently includes two parts:
 
 import asyncio
 import logging
-from typing import Optional
+from typing import Optional, cast
 
 from aiohttp import web
 from pydantic import BaseModel, Field
@@ -28,7 +28,7 @@ log = logging.getLogger(__name__)
 def _get_human_readable_first_name(user_name: str) -> str:
     full_name = UserNameConverter.get_full_name(user_name)
     first_name = full_name.first_name.strip()[:20]  # security strip
-    return first_name.capitalize()
+    return cast(str, first_name.capitalize())
 
 
 class ValidationCode(BaseModel):
@@ -51,7 +51,7 @@ async def _do_create_2fa_code(
 ) -> str:
     hash_key, code = user_email, generate_passcode()
     await redis_client.set(hash_key, value=code, ex=expiration_seconds)
-    return code
+    return cast(str, code)
 
 
 async def create_2fa_code(
@@ -64,15 +64,16 @@ async def create_2fa_code(
         user_email=user_email,
         expiration_seconds=expiration_in_seconds,
     )
-    return code
+    return cast(str, code)
 
 
 @log_decorator(log, level=logging.DEBUG)
-async def get_2fa_code(app: web.Application, user_email: str) -> Optional[str]:
+async def get_2fa_code(app: web.Application, user_email: str) -> str | None:
     """Returns 2FA code for user or None if it does not exist (e.g. expired or never set)"""
     redis_client = get_redis_validation_code_client(app)
     hash_key = user_email
-    return await redis_client.get(hash_key)
+    hash_value = await redis_client.get(hash_key)
+    return cast(Optional[str], hash_value)
 
 
 @log_decorator(log, level=logging.DEBUG)
