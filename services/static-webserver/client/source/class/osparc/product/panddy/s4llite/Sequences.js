@@ -21,18 +21,18 @@ qx.Class.define("osparc.product.panddy.s4llite.Sequences", {
   statics: {
     getSequences: function() {
       return [{
-        name: "Dashboard",
         requiredTarget: "osparc-test-id=dashboard",
+        name: "Dashboard",
         description: "Introduction to Dashboard tabs",
         steps: this.__getDashboardSteps()
       }, {
-        name: "Projects",
         requiredTarget: "osparc-test-id=dashboard",
+        name: "Projects",
         description: "Introduction to Studies",
         steps: this.__getStudiesSteps()
       }, {
+        requiredTarget: "osparc-test-id=mode-button-modeling",
         name: "<i>S4L<sup>lite</sup></i>",
-        requiredTarget: "osparc-test-id=dashboard",
         description: "Introduction to Studies",
         steps: this.__getS4LLiteSteps()
       }];
@@ -70,20 +70,8 @@ qx.Class.define("osparc.product.panddy.s4llite.Sequences", {
 
     __getS4LLiteSteps: function() {
       return [{
-        preStep: {
-          target: "osparc-test-id=studiesTabBtn",
-          action: "execute"
-        },
-        target: "osparc-test-id=startS4LButton",
-        title: "New Project",
-        message: "Click first on the Start <i>S4L<sup>lite</sup></i>."
-      }, {
         title: "Welcome to The Rocket",
-        message: "It will take a few seconds to start a new Project",
-        waitFor: {
-          target: "osparc-test-id=tree-model",
-          timeout: 90000
-        }
+        message: "This is a Proof of Concept"
       }, {
         target: "osparc-test-id=mode-button-modeling",
         action: "execute",

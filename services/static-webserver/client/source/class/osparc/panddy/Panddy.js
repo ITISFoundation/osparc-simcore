@@ -178,19 +178,6 @@ qx.Class.define("osparc.panddy.Panddy", {
       stepWidget.addListener("nextPressed", () => this.__toStepCheck(this.__currentIdx+1), this);
       return stepWidget;
     },
-
-    __waitForElement: async function(selector, timeout=15000) {
-      const start = Date.now();
-      while (Date.now() - start < timeout) {
-        const el = document.querySelector(`[${selector}]`);
-        if (el) {
-          return el;
-        }
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-      return null;
-    },
-
     __toStep: async function(steps, idx) {
       const step = steps[idx];
       const stepWidget = this.__currentBuble = this.__createStep();
@@ -227,16 +214,6 @@ qx.Class.define("osparc.panddy.Panddy", {
       stepWidget.show();
       // eslint-disable-next-line no-underscore-dangle
       setTimeout(() => stepWidget.__updatePosition(), 10); // Hacky: Execute async and give some time for the relevant properties to be set
-
-      if (step.waitFor) {
-        stepWidget.getChildControl("next-button").setEnabled(false);
-        const el = await this.__waitForElement(step.waitFor.target, step.waitFor.timeout);
-        if (el) {
-          stepWidget.getChildControl("next-button").setEnabled(true);
-        } else {
-          this.stop();
-        }
-      }
     }
   }
 });
