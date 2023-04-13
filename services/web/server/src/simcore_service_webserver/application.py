@@ -44,7 +44,7 @@ from .studies_dispatcher.plugin import setup_studies_dispatcher
 from .tags import setup_tags
 from .tracing import setup_app_tracing
 from .users import setup_users
-from .version_control import setup_version_control
+from .version_control.plugin import setup_version_control
 
 logger = logging.getLogger(__name__)
 

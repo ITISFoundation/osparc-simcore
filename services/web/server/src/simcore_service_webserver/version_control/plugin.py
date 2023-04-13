@@ -8,8 +8,8 @@ import logging
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from . import version_control_handlers
-from ._constants import APP_SETTINGS_KEY
+from .. import version_control_handlers
+from .._constants import APP_SETTINGS_KEY
 
 log = logging.getLogger(__name__)
 
