@@ -70,5 +70,8 @@
   ],
   "isort.args": [
     "--settings-path=${workspaceFolder}/.isort.cfg"
-  ]
+  ],
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.importFormat": "relative",
+  "python.analysis.typeCheckingMode": "basic"
 }
