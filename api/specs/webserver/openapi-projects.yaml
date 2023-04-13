@@ -177,6 +177,12 @@ paths:
         required: true
         schema:
           type: string
+      - name: num_auto_start_services
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
     post:
       tags:
         - project

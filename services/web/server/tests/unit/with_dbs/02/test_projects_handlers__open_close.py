@@ -495,6 +495,46 @@ async def test_open_project_with_small_amount_of_dynamic_services_starts_them_au
 
 
 @pytest.mark.parametrize(*standard_user_role())
+async def test_open_project_with_num_auto_start_services_query_overrides_behavior(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
+    client_session_id_factory: Callable,
+    expected: ExpectedResponse,
+    mocked_director_v2_api: dict[str, mock.Mock],
+    mock_catalog_api: dict[str, mock.Mock],
+    max_amount_of_auto_started_dyn_services: int,
+    faker: Faker,
+):
+    assert client.app
+    num_of_dyn_services = max_amount_of_auto_started_dyn_services or faker.pyint(
+        min_value=3, max_value=250
+    )
+    project = await user_project_with_num_dynamic_services(num_of_dyn_services)
+    all_service_uuids = list(project["workbench"])
+    NUM_AUTO_START_SERVICE = 0
+    for num_service_already_running in range(num_of_dyn_services):
+        mocked_director_v2_api["director_v2_api.list_dynamic_services"].return_value = [
+            {"service_uuid": all_service_uuids[service_id]}
+            for service_id in range(num_service_already_running)
+        ]
+
+        url = (
+            client.app.router["open_project"]
+            .url_for(project_id=project["uuid"])
+            .with_query(num_auto_start_services=NUM_AUTO_START_SERVICE)
+        )
+
+        resp = await client.post(f"{url}", json=client_session_id_factory())
+        await assert_status(resp, expected.ok)
+        assert (
+            mocked_director_v2_api["director_v2_api.run_dynamic_service"].call_count
+            == NUM_AUTO_START_SERVICE
+        )
+        mocked_director_v2_api["director_v2_api.run_dynamic_service"].reset_mock()
+
+
+@pytest.mark.parametrize(*standard_user_role())
 async def test_open_project_with_large_amount_of_dynamic_services_does_not_start_them_automatically(
     client: TestClient,
     logged_user: UserInfoDict,
