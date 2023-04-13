@@ -14,9 +14,9 @@ from uuid import UUID
 from aiopg.sa.result import RowProxy
 from pydantic import NonNegativeInt, PositiveInt, validate_arguments
 
-from .version_control_db import CommitLog, VersionControlRepository
+from .version_control_db import VersionControlRepository
 from .version_control_errors import CleanRequiredError
-from .version_control_models import Checkpoint, RefID, WorkbenchView
+from .version_control_models import Checkpoint, CommitLog, RefID, WorkbenchView
 
 log = logging.getLogger(__name__)
 
