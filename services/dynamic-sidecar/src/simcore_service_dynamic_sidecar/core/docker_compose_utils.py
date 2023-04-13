@@ -7,7 +7,6 @@ run sequentially by this service
 """
 import logging
 from copy import deepcopy
-from typing import Optional
 
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import ProgressType
@@ -32,7 +31,7 @@ def _docker_compose_options_from_settings(settings: ApplicationSettings) -> str:
     return " ".join(options)
 
 
-def _increase_timeout(docker_command_timeout: Optional[int]) -> Optional[int]:
+def _increase_timeout(docker_command_timeout: int | None) -> int | None:
     if docker_command_timeout is None:
         return None
     # NOTE: ensuring process has enough time to end
@@ -44,7 +43,7 @@ async def _write_file_and_spawn_process(
     yaml_content: str,
     *,
     command: str,
-    process_termination_timeout: Optional[int],
+    process_termination_timeout: int | None,
 ) -> CommandResult:
     """The command which accepts {file_path} as an argument for string formatting
 
@@ -111,7 +110,7 @@ async def docker_compose_pull(app: FastAPI, compose_spec_yaml: str) -> None:
         )
 
     async def _log_cb(msg: str) -> None:
-        await post_sidecar_log_message(app, msg)
+        await post_sidecar_log_message(app, msg, log_level=logging.INFO)
 
     await pull_images(list_of_images, registry_settings, _progress_cb, _log_cb)
 

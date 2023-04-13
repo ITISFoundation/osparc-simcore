@@ -253,7 +253,7 @@ class DaskScheduler(BaseCompScheduler):
             project_id=project_id,
             node_id=node_id,
             messages=[task_log_event.log],
-            log_level=logging.INFO,
+            log_level=task_log_event.log_level,
         )
 
         await self.rabbitmq_client.publish(message.channel_name, message.json())
