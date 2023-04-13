@@ -40,7 +40,7 @@ qx.Class.define("osparc.panddy.Panddy", {
       steps: [{
         target: null,
         title: qx.locale.Manager.tr("Grüezi!"),
-        message: qx.locale.Manager.tr("This is Panddy. I'm here to give you hints on how to use oSPARC.")
+        message: qx.locale.Manager.tr("This is Panddy. I'm here to give you hints on how to use the application.")
       }, {
         preStep: {
           target: "osparc-test-id=userMenuBtn",

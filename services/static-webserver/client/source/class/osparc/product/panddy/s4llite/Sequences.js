@@ -30,6 +30,11 @@ qx.Class.define("osparc.product.panddy.s4llite.Sequences", {
         name: "Studies",
         description: "Introduction to Studies",
         steps: this.__getStudiesSteps()
+      }, {
+        id: "s4llite",
+        name: "S4L <sup>lite</sup>",
+        description: "Introduction to Studies",
+        steps: this.__getS4LLiteSteps()
       }];
     },
 
@@ -37,23 +42,13 @@ qx.Class.define("osparc.product.panddy.s4llite.Sequences", {
       return [{
         target: "osparc-test-id=studiesTabBtn",
         action: "execute",
-        title: "Studies",
-        message: "These are your Studies."
+        title: "Projects",
+        message: "Existing projects can be accessed and managed, and new projects can be created. Each project is represented by a card."
       }, {
         target: "osparc-test-id=templatesTabBtn",
         action: "execute",
-        title: "Templates",
-        message: "These are the Templates you have access to. If you click on any of the cards listed below, we will create a copy of it so that you can edit it."
-      }, {
-        target: "osparc-test-id=servicesTabBtn",
-        action: "execute",
-        title: "Services",
-        message: "These are the Services you have access to. Some are computational and others are dynamic. The Computational ones can be run for number crunching and the dynamic ones require user interaction."
-      }, {
-        target: "osparc-test-id=dataTabBtn",
-        action: "execute",
-        title: "Data",
-        message: "This is the section where you can access all the data you produced or you have access to."
+        title: "Tutorials",
+        message: "A set of pre-built tutorial projects with results is available to all users. When a tutorial is selected, a copy is automatically created and added to the user’s Projects tab. This new copy is editable."
       }];
     },
 
@@ -64,8 +59,24 @@ qx.Class.define("osparc.product.panddy.s4llite.Sequences", {
           action: "execute"
         },
         target: "osparc-test-id=startS4LButton",
-        title: "New Project",
+        title: "Starting a New Project",
         message: "Click here if you want to create a new Project."
+      }, {
+        target: "osparc-test-id=searchBarFilter-textField-study",
+        title: "Project Filter and Search",
+        message: "Type here the text of the Project you want to search.<br>Pro tip: click on the field to open filtering options"
+      }];
+    },
+
+    __getS4LLiteSteps: function() {
+      return [{
+        preStep: {
+          target: "osparc-test-id=studiesTabBtn",
+          action: "execute"
+        },
+        target: "osparc-test-id=startS4LButton",
+        title: "New Project",
+        message: "Click first on the Start <i>S4L <sup>lite</sup></i>."
       }, {
         target: "osparc-test-id=searchBarFilter-textField-study",
         title: "Filter Projects",

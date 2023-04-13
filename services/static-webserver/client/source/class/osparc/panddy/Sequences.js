@@ -75,6 +75,7 @@ qx.Class.define("osparc.panddy.Sequences", {
         icon: "@FontAwesome5Solid/arrow-right/14",
         iconPosition: "right",
         alignX: "left",
+        rich: true,
         toolTipText: sequence.description
       });
       seqButton.addListener("execute", () => this.fireDataEvent("sequenceSelected", sequence), this);
