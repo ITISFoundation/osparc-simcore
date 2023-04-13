@@ -125,7 +125,10 @@ qx.Class.define("osparc.panddy.Panddy", {
         const sequences = this.getSequences();
         const seqsWidget = new osparc.panddy.Sequences(panddy, sequences);
         seqsWidget.setOrientation(osparc.ui.basic.FloatingHelper.ORIENTATION.LEFT);
-        seqsWidget.addListener("sequenceSelected", e => this.__selectSequence(e.getData()));
+        seqsWidget.addListener("sequenceSelected", e => {
+          seqsWidget.exclude();
+          this.__selectSequence(e.getData());
+        });
         seqsWidget.show();
       }, 200);
     },

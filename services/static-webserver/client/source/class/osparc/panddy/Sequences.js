@@ -56,13 +56,13 @@ qx.Class.define("osparc.panddy.Sequences", {
       switch (id) {
         case "title":
           control = new qx.ui.basic.Label().set({
-            value: this.tr("Tutorials"),
-            font: "text-16"
+            value: this.tr("Tutorials:"),
+            font: "text-14"
           });
           this.add(control);
           break;
         case "sequences-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
           this.add(control);
           break;
       }
@@ -72,9 +72,13 @@ qx.Class.define("osparc.panddy.Sequences", {
     __getSequenceButton: function(sequence) {
       const seqButton = new qx.ui.form.Button().set({
         label: sequence.name,
+        icon: "@FontAwesome5Solid/arrow-right/14",
+        iconPosition: "right",
+        alignX: "left",
         toolTipText: sequence.description
       });
-      seqButton.addListener("execute", () => this.fireDataEvent(sequence), this);
+      seqButton.addListener("execute", () => this.fireDataEvent("sequenceSelected", sequence), this);
+      return seqButton;
     },
 
     __applySequences: function(seqs) {

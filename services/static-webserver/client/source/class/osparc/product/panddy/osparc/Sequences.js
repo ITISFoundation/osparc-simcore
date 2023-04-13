@@ -59,9 +59,17 @@ qx.Class.define("osparc.product.panddy.osparc.Sequences", {
 
     __getStudiesSteps: function() {
       return [{
+        preStep: {
+          target: "osparc-test-id=studiesTabBtn",
+          action: "execute"
+        },
         target: "osparc-test-id=startS4LButton",
-        title: "Studies",
+        title: "New Project",
         message: "Click here if you want to create a new Project."
+      }, {
+        target: "searchBarFilter-textField-study",
+        title: "Filter project",
+        message: "Type here the text of the Porject you look for.<br>Pro tip: click on the field to open filtering options"
       }];
     }
   }
