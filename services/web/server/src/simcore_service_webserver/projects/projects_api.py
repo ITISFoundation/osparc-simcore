@@ -260,7 +260,7 @@ async def _start_dynamic_service(
         service_uuid=f"{node_uuid}",
         request_dns=extract_dns_without_default_port(request.url),
         request_scheme=request.headers.get(X_FORWARDED_PROTO, request.url.scheme),
-        request_simcore_user_agent=request.headers.get(
+        simcore_user_agent=request.headers.get(
             X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
         ),
         service_resources=service_resources,

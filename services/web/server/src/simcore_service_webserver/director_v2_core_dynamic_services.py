@@ -78,7 +78,6 @@ async def get_dynamic_service(app: web.Application, node_uuid: str) -> DataType:
     return service_state
 
 
-@log_decorator(logger=log)
 async def run_dynamic_service(
     *,
     app: web.Application,
@@ -90,7 +89,7 @@ async def run_dynamic_service(
     service_uuid: str,
     request_dns: str,
     request_scheme: str,
-    request_simcore_user_agent: str,
+    simcore_user_agent: str,
     service_resources: ServiceResourcesDict,
 ) -> DataType:
     """
@@ -114,7 +113,7 @@ async def run_dynamic_service(
     headers = {
         X_DYNAMIC_SIDECAR_REQUEST_DNS: request_dns,
         X_DYNAMIC_SIDECAR_REQUEST_SCHEME: request_scheme,
-        X_SIMCORE_USER_AGENT: request_simcore_user_agent,
+        X_SIMCORE_USER_AGENT: simcore_user_agent,
     }
 
     settings: DirectorV2Settings = get_plugin_settings(app)
