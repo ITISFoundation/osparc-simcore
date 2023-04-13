@@ -9,7 +9,7 @@ import json
 import time
 from copy import deepcopy
 from datetime import datetime, timedelta
-from typing import Any, Awaitable, Callable, Iterator, Optional, Union
+from typing import Any, Awaitable, Callable, Iterator
 from unittest import mock
 from unittest.mock import call
 
@@ -40,6 +40,7 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     standard_role_response,
 )
 from servicelib.aiohttp.web_exceptions_extension import HTTPLocked
+from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.products import products
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects.project_models import ProjectDict
@@ -79,7 +80,7 @@ def assert_replaced(current_project, update_data):
 async def _list_projects(
     client,
     expected: type[web.HTTPException],
-    query_parameters: Optional[dict] = None,
+    query_parameters: dict | None = None,
 ) -> list[dict[str, Any]]:
     # GET /v0/projects
     url = client.app.router["list_projects"].url_for()
@@ -112,8 +113,8 @@ async def _connect_websocket(
     check_connection: bool,
     client,
     client_id: str,
-    events: Optional[dict[str, Callable]] = None,
-) -> Optional[socketio.AsyncClient]:
+    events: dict[str, Callable] | None = None,
+) -> socketio.AsyncClient | None:
     try:
         sio = await socketio_client_factory(client_id, client)
         assert sio.sid
@@ -130,7 +131,7 @@ async def _open_project(
     client,
     client_id: str,
     project: dict,
-    expected: Union[type[web.HTTPException], list[type[web.HTTPException]]],
+    expected: type[web.HTTPException] | list[type[web.HTTPException]],
 ) -> tuple[dict, dict]:
     url = client.app.router["open_project"].url_for(project_id=project["uuid"])
     resp = await client.post(url, json=client_id)
@@ -342,7 +343,7 @@ async def test_open_project(
                     service_version=service["version"],
                     user_id=logged_user["id"],
                     request_scheme=request_scheme,
-                    request_simcore_user_agent="",
+                    simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                     request_dns=request_dns,
                     product_name=osparc_product_name,
                     service_resources=ServiceResourcesDictHelpers.create_jsonable(
@@ -407,7 +408,7 @@ async def test_open_template_project_for_edition(
                     service_version=service["version"],
                     user_id=logged_user["id"],
                     request_scheme=request_scheme,
-                    request_simcore_user_agent="",
+                    simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                     request_dns=request_dns,
                     service_resources=ServiceResourcesDictHelpers.create_jsonable(
                         mock_service_resources
@@ -685,6 +686,7 @@ async def test_close_project(
             call(
                 app=client.server.app,
                 service_uuid=service["service_uuid"],
+                simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                 save_state=True,
                 progress=mock_progress_bar.sub_progress(1),
             )

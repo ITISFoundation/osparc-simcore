@@ -9,7 +9,9 @@ from typing import Any
 
 import asyncpg.exceptions
 from aiohttp import web
+from models_library.projects import ProjectID
 from redis.asyncio import Redis
+from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_utils import log_context, log_decorator
 from servicelib.utils import logged_gather
 from simcore_postgres_database.errors import DatabaseError
@@ -196,6 +198,7 @@ async def remove_disconnected_user_resources(
                             user_id=int(dead_key["user_id"]),
                             project_uuid=resource_value,
                             app=app,
+                            simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                             user_name={
                                 "first_name": "garbage",
                                 "last_name": "collector",
@@ -321,7 +324,10 @@ async def _remove_single_service_if_orphan(
         )
         try:
             await director_v2_api.stop_dynamic_service(
-                app, service_uuid, save_state=False
+                app,
+                service_uuid,
+                simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                save_state=False,
             )
         except (ServiceNotFoundError, DirectorException) as err:
             logger.warning("Error while stopping service: %s", err)
@@ -378,7 +384,10 @@ async def _remove_single_service_if_orphan(
 
             try:
                 await director_v2_api.stop_dynamic_service(
-                    app, service_uuid, save_state
+                    app,
+                    service_uuid,
+                    UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                    save_state,
                 )
             except ServiceWaitingForManualIntervention:
                 pass
@@ -518,7 +527,12 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
                     f"{project_uuid=}",
                     f"{user_id=}",
                 )
-                task = await submit_delete_project_task(app, project_uuid, user_id)
+                task = await submit_delete_project_task(
+                    app,
+                    ProjectID(project_uuid),
+                    user_id,
+                    UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                )
                 assert task  # nosec
                 delete_tasks.append(task)
 

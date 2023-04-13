@@ -5,7 +5,7 @@
 import asyncio
 import logging
 import time
-from typing import Awaitable, Callable, Final, Optional
+from typing import Awaitable, Callable
 
 import prometheus_client
 from aiohttp import web
@@ -21,7 +21,10 @@ from prometheus_client import (
 from prometheus_client.registry import CollectorRegistry
 from servicelib.aiohttp.typing_extension import Handler
 
-from ..common_headers import X_SIMCORE_USER_AGENT
+from ..common_headers import (
+    UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+    X_SIMCORE_USER_AGENT,
+)
 from ..logging_utils import log_catch
 
 log = logging.getLogger(__name__)
@@ -113,8 +116,6 @@ kPROCESS_COLLECTOR = f"{__name__}.collector_process"
 kPLATFORM_COLLECTOR = f"{__name__}.collector_platform"
 kGC_COLLECTOR = f"{__name__}.collector_gc"
 
-UNDEFINED_REGULAR_USER_AGENT: Final[str] = "undefined"
-
 
 def get_collector_registry(app: web.Application) -> CollectorRegistry:
     return app[kCOLLECTOR_REGISTRY]
@@ -138,8 +139,8 @@ ExitMiddlewareCB = Callable[[web.Request, web.StreamResponse], Awaitable[None]]
 
 def middleware_factory(
     app_name: str,
-    enter_middleware_cb: Optional[EnterMiddlewareCB],
-    exit_middleware_cb: Optional[ExitMiddlewareCB],
+    enter_middleware_cb: EnterMiddlewareCB | None,
+    exit_middleware_cb: ExitMiddlewareCB | None,
 ):
     @web.middleware
     async def middleware_handler(request: web.Request, handler: Handler):
@@ -168,12 +169,16 @@ def middleware_factory(
                 app_name,
                 request.method,
                 canonical_endpoint,
-                request.headers.get(X_SIMCORE_USER_AGENT, UNDEFINED_REGULAR_USER_AGENT),
+                request.headers.get(
+                    X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+                ),
             ).track_inprogress(), response_summary.labels(
                 app_name,
                 request.method,
                 canonical_endpoint,
-                request.headers.get(X_SIMCORE_USER_AGENT, UNDEFINED_REGULAR_USER_AGENT),
+                request.headers.get(
+                    X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+                ),
             ).time():
                 resp = await handler(request)
 
@@ -209,7 +214,9 @@ def middleware_factory(
                 request.method,
                 canonical_endpoint,
                 resp.status,
-                request.headers.get(X_SIMCORE_USER_AGENT, UNDEFINED_REGULAR_USER_AGENT),
+                request.headers.get(
+                    X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+                ),
             ).inc()
 
             if exit_middleware_cb:
@@ -242,8 +249,8 @@ def setup_monitoring(
     app: web.Application,
     app_name: str,
     *,
-    enter_middleware_cb: Optional[EnterMiddlewareCB] = None,
-    exit_middleware_cb: Optional[ExitMiddlewareCB] = None,
+    enter_middleware_cb: EnterMiddlewareCB | None = None,
+    exit_middleware_cb: ExitMiddlewareCB | None = None,
     **app_info_kwargs,
 ):
     # app-scope registry

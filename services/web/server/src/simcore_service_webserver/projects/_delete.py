@@ -7,7 +7,7 @@ NOTE: this entire module is protected within the `projects` package
 
 import asyncio
 import logging
-from typing import Optional, Protocol
+from typing import Protocol
 
 from aiohttp import web
 from models_library.projects import ProjectID
@@ -37,8 +37,9 @@ class RemoveProjectServicesCallable(Protocol):
         user_id: int,
         project_uuid: str,
         app: web.Application,
+        simcore_user_agent: str,
         notify_users: bool = True,
-        user_name: Optional[UserNameDict] = None,
+        user_name: UserNameDict | None = None,
     ) -> None:
         ...
 
@@ -68,6 +69,7 @@ async def delete_project(
     app: web.Application,
     project_uuid: ProjectID,
     user_id: UserID,
+    simcore_user_agent,
     # TODO: this function was tmp added here to avoid refactoring all projects_api in a single PR
     remove_project_dynamic_services: RemoveProjectServicesCallable,
 ) -> None:
@@ -91,7 +93,7 @@ async def delete_project(
         # stops dynamic services
         # - raises ProjectNotFoundError, UserNotFoundError, ProjectLockError
         await remove_project_dynamic_services(
-            user_id, f"{project_uuid}", app, notify_users=False
+            user_id, f"{project_uuid}", app, simcore_user_agent, notify_users=False
         )
 
         # stops computational services
@@ -119,6 +121,7 @@ def schedule_task(
     app: web.Application,
     project_uuid: ProjectID,
     user_id: UserID,
+    simcore_user_agent: str,
     remove_project_dynamic_services: RemoveProjectServicesCallable,
     logger: logging.Logger,
 ) -> asyncio.Task:
@@ -161,7 +164,13 @@ def schedule_task(
     # ------
 
     task = asyncio.create_task(
-        delete_project(app, project_uuid, user_id, remove_project_dynamic_services),
+        delete_project(
+            app,
+            project_uuid,
+            user_id,
+            simcore_user_agent,
+            remove_project_dynamic_services,
+        ),
         name=DELETE_PROJECT_TASK_NAME.format(project_uuid, user_id),
     )
 
