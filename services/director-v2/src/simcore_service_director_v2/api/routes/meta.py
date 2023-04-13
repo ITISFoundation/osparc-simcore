@@ -1,8 +1,7 @@
 from fastapi import APIRouter
-from pydantic import parse_obj_as
 
 from ...meta import API_VERSION, API_VTAG
-from ...models.schemas.meta import Meta, VersionStr
+from ...models.schemas.meta import Meta
 
 router = APIRouter()
 
@@ -12,5 +11,5 @@ async def get_service_metadata():
     return Meta(
         name=__name__.split(".")[0],
         version=API_VERSION,
-        released={API_VTAG: API_VERSION, "v0": parse_obj_as(VersionStr, "0.1.0")},
+        released={API_VTAG: API_VERSION, "v0": "0.1.0"},
     )
