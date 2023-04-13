@@ -68,8 +68,7 @@ qx.Class.define("osparc.panddy.Panddy", {
   },
 
   members: {
-    __currentSequence: null,
-    __currentStep: null,
+    __currentBuble: null,
     __currentIdx: null,
 
     _createChildControlImpl: function(id) {
@@ -101,9 +100,13 @@ qx.Class.define("osparc.panddy.Panddy", {
 
     stop: function() {
       this.getChildControl("panddy").exclude();
-      if (this.__currentStep) {
-        this.__currentStep.exclude();
-        this.__currentStep = null;
+      this.__removeCurrentBuble();
+    },
+
+    __removeCurrentBuble: function() {
+      if (this.__currentBuble) {
+        qx.core.Init.getApplication().getRoot().remove(this.__currentBuble);
+        this.__currentBuble = null;
       }
     },
 
@@ -146,13 +149,9 @@ qx.Class.define("osparc.panddy.Panddy", {
         idx = 0;
       }
 
+      this.__removeCurrentBuble();
       this.__currentIdx = idx;
       const step = steps[idx];
-      if (this.__currentStep) {
-        this.__currentStep.exclude();
-        this.__currentStep = null;
-      }
-
       if (step.preStep) {
         const preStep = step.preStep;
         if (preStep.target) {
@@ -183,7 +182,7 @@ qx.Class.define("osparc.panddy.Panddy", {
 
     __toStep: function(steps, idx) {
       const step = steps[idx];
-      const stepWidget = this.__currentStep = this.__createStep();
+      const stepWidget = this.__currentBuble = this.__createStep();
       let targetWidget = null;
       if (step.target) {
         const domEl = document.querySelector(`[${step.target}]`);
