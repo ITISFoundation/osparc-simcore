@@ -45,6 +45,13 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
       RIGHT: 1,
       BOTTOM: 2,
       LEFT: 3
+    },
+
+    textToOrientation: function(text) {
+      if (Object.keys(osparc.ui.basic.FloatingHelper.ORIENTATION).includes(text.toUpperCase())) {
+        return osparc.ui.basic.FloatingHelper.ORIENTATION[text.toUpperCase()];
+      }
+      return null;
     }
   },
 

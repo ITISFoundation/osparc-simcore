@@ -44,9 +44,10 @@ qx.Class.define("osparc.panddy.Panddy", {
       }, {
         preStep: {
           target: "osparc-test-id=userMenuBtn",
-          action: "execute"
+          action: "open"
         },
         target: "osparc-test-id=userMenuMenu",
+        orientation: "left",
         message: qx.locale.Manager.tr("You can always find me in the User Menu.")
       }]
     }]
@@ -93,7 +94,7 @@ qx.Class.define("osparc.panddy.Panddy", {
 
     start: function() {
       this.getChildControl("panddy");
-      setTimeout(() => this.__toSequences(), 500);
+      setTimeout(() => this.__toSequences(), 200);
     },
 
     stop: function() {
@@ -124,7 +125,7 @@ qx.Class.define("osparc.panddy.Panddy", {
         seqsWidget.setOrientation(osparc.ui.basic.FloatingHelper.ORIENTATION.LEFT);
         seqsWidget.addListener("sequenceSelected", e => this.__selectSequence(e.getData()));
         seqsWidget.show();
-      }, 500);
+      }, 200);
     },
 
     __selectSequence: function(sequence) {
@@ -152,10 +153,10 @@ qx.Class.define("osparc.panddy.Panddy", {
         if (preStep.target) {
           const domEl = document.querySelector(`[${preStep.target}]`);
           const widget = qx.ui.core.Widget.getWidgetByElement(domEl);
-          if (widget && preStep.action === "execute") {
-            widget.execute();
+          if (widget && preStep.action) {
+            widget[preStep.action]();
           }
-          setTimeout(() => this.__toStep(steps, idx), 1000);
+          setTimeout(() => this.__toStep(steps, idx), 200);
         }
       } else {
         this.__toStep(steps, idx);
@@ -180,10 +181,13 @@ qx.Class.define("osparc.panddy.Panddy", {
         targetWidget = qx.ui.core.Widget.getWidgetByElement(domEl);
       }
       if (targetWidget) {
-        if (step.action === "execute") {
-          targetWidget.execute();
+        if (step.action) {
+          targetWidget[step.action]();
         }
         stepWidget.setElement(targetWidget);
+        if (step.orientation) {
+          stepWidget.setOrientation(osparc.ui.basic.FloatingHelper.textToOrientation(step.orientation));
+        }
       } else {
         const panddy = this.getChildControl("panddy");
         stepWidget.setElement(panddy);
