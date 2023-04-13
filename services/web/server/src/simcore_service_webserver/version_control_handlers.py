@@ -15,6 +15,15 @@ from .utils_aiohttp import (
     get_routes_view,
     rename_routes_as_handler_function,
 )
+from .version_control.version_control_core import (
+    checkout_checkpoint_safe,
+    create_checkpoint_safe,
+    get_checkpoint_safe,
+    get_workbench_safe,
+    list_checkpoints_safe,
+    list_repos_safe,
+    update_checkpoint_safe,
+)
 from .version_control.version_control_models import (
     Checkpoint,
     CheckpointAnnotations,
@@ -24,15 +33,6 @@ from .version_control.version_control_models import (
     RepoApiModel,
     WorkbenchView,
     WorkbenchViewApiModel,
-)
-from .version_control_core import (
-    checkout_checkpoint_safe,
-    create_checkpoint_safe,
-    get_checkpoint_safe,
-    get_workbench_safe,
-    list_checkpoints_safe,
-    list_repos_safe,
-    update_checkpoint_safe,
 )
 from .version_control_db import HEAD, VersionControlRepository
 from .version_control_handlers_base import handle_request_errors
