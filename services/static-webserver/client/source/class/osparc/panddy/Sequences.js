@@ -78,6 +78,10 @@ qx.Class.define("osparc.panddy.Sequences", {
         rich: true,
         toolTipText: sequence.description
       });
+      if (sequence.requiredTarget) {
+        const domEl = document.querySelector(`[${sequence.requiredTarget}]`);
+        seqButton.setEnabled(Boolean(domEl));
+      }
       seqButton.addListener("execute", () => this.fireDataEvent("sequenceSelected", sequence), this);
       return seqButton;
     },

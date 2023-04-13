@@ -37,6 +37,8 @@ qx.Class.define("osparc.dashboard.Dashboard", {
   construct: function() {
     this.base(arguments);
 
+    osparc.utils.Utils.setIdToWidget(this, "dashboard");
+
     this.set({
       contentPaddingTop: 15,
       contentPaddingLeft: 0,

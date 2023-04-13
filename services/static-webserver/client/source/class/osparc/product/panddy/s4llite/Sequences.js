@@ -23,16 +23,19 @@ qx.Class.define("osparc.product.panddy.s4llite.Sequences", {
       return [{
         id: "dashboard",
         name: "Dashboard",
+        requiredTarget: "osparc-test-id=dashboard",
         description: "Introduction to Dashboard tabs",
         steps: this.__getDashboardSteps()
       }, {
         id: "studies",
         name: "Projects",
+        requiredTarget: "osparc-test-id=dashboard",
         description: "Introduction to Studies",
         steps: this.__getStudiesSteps()
       }, {
         id: "s4llite",
         name: "<i>S4L<sup>lite</sup></i>",
+        requiredTarget: "osparc-test-id=dashboard",
         description: "Introduction to Studies",
         steps: this.__getS4LLiteSteps()
       }];
@@ -90,12 +93,12 @@ qx.Class.define("osparc.product.panddy.s4llite.Sequences", {
         title: "Modeling",
         message: "This is the first step in the pipeline. Use our Virtual Population, upload CAD models or build your own model."
       }, {
-        target: "osparc-test-id=mode-button-modeling",
+        target: "osparc-test-id=mode-button-simulation",
         action: "execute",
         title: "Simulation",
         message: "Simulators, gridders, voxelers and solvers. As you can see, the context chanded so did the avaialble tools."
       }, {
-        target: "osparc-test-id=mode-button-modeling",
+        target: "osparc-test-id=mode-button-postro",
         action: "execute",
         title: "Post Processing",
         message: "Analyze simulation results and imaging data through advanced visualization and analysis capabilities."
