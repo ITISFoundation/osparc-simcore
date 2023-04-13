@@ -67,9 +67,9 @@ qx.Class.define("osparc.product.panddy.osparc.Sequences", {
         title: "New Project",
         message: "Click here if you want to create a new Project."
       }, {
-        target: "searchBarFilter-textField-study",
-        title: "Filter project",
-        message: "Type here the text of the Porject you look for.<br>Pro tip: click on the field to open filtering options"
+        target: "osparc-test-id=searchBarFilter-textField-study",
+        title: "Filter Projects",
+        message: "Type here the text of the Project you want to search.<br>Pro tip: click on the field to open filtering options"
       }];
     }
   }

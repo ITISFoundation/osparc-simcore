@@ -157,7 +157,7 @@ qx.Class.define("osparc.panddy.Step", {
             alignX: "right",
             visibility: "excluded"
           });
-          control.addListener("tap", () => this.fireEvent("closePressed"), this);
+          control.addListener("execute", () => this.fireEvent("closePressed"), this);
           const bottomLayout = this.getChildControl("bottom-layout");
           bottomLayout.add(control);
           break;
