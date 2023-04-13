@@ -22,7 +22,6 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from pytest_mock import MockerFixture
-from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_projects import NewProject
 from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
