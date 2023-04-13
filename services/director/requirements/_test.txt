@@ -67,8 +67,6 @@ coverage==4.5.1
     #   -r requirements/_test.in
     #   coveralls
     #   pytest-cov
-coveralls==2.1.2
-    # via -r requirements/_test.in
 dataclasses==0.7
     # via
     #   -r requirements/_base.txt

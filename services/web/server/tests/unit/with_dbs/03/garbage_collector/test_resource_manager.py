@@ -28,6 +28,7 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSub
 from redis.asyncio import Redis
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.application_setup import is_setup_completed
+from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_service_webserver import garbage_collector_core
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.application_settings import setup_settings
@@ -107,7 +108,6 @@ def client(
     mock_rabbitmq: None,
     mock_progress_bar: Any,
 ) -> TestClient:
-
     cfg = deepcopy(app_cfg)
     assert cfg["rest"]["version"] == API_VTAG
     assert cfg["rest"]["enabled"]
@@ -220,7 +220,6 @@ async def test_anonymous_websocket_connection(
     security_cookie_factory: Callable,
     mocker,
 ):
-
     sio = socketio.AsyncClient(
         ssl_verify=False
     )  # enginio 3.10.0 introduced ssl verification
@@ -500,6 +499,7 @@ async def test_interactive_services_removed_after_logout(
             ].assert_awaited_with(
                 app=client.app,
                 service_uuid=service["service_uuid"],
+                simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                 save_state=expected_save_state,
                 progress=mock_progress_bar.sub_progress(1),
             )
@@ -527,7 +527,6 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     open_project: Callable,
     mock_progress_bar: Any,
 ):
-
     # login - logged_user fixture
     # create empty study - empty_user_project fixture
     # create dynamic service - create_dynamic_service_mock fixture
@@ -611,6 +610,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     calls = [
         call(
             app=client.server.app,
+            simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
             service_uuid=service["service_uuid"],
             progress=mock_progress_bar.sub_progress(1),
@@ -704,6 +704,7 @@ async def test_interactive_services_removed_per_project(
         call(
             app=client.server.app,
             service_uuid=service1["service_uuid"],
+            simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
             progress=mock_progress_bar.sub_progress(1),
         )
@@ -730,12 +731,14 @@ async def test_interactive_services_removed_per_project(
         call(
             app=client.server.app,
             service_uuid=service2["service_uuid"],
+            simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
             progress=mock_progress_bar.sub_progress(1),
         ),
         call(
             app=client.server.app,
             service_uuid=service3["service_uuid"],
+            simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
             progress=mock_progress_bar.sub_progress(1),
         ),
@@ -852,6 +855,7 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
     calls = [
         call(
             app=client.server.app,
+            simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
             service_uuid=service["service_uuid"],
             progress=mock_progress_bar.sub_progress(1),
@@ -891,6 +895,7 @@ async def test_regression_removing_unexisting_user(
         app=client.app,
         project_uuid=empty_user_project["uuid"],
         user_id=logged_user["id"],
+        simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     )
     await delete_task
     # remove user
@@ -901,6 +906,7 @@ async def test_regression_removing_unexisting_user(
             user_id=logged_user["id"],
             project_uuid=empty_user_project["uuid"],
             app=client.app,
+            simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
         )
     with pytest.raises(ProjectNotFoundError):
         await remove_project_dynamic_services(
@@ -908,6 +914,7 @@ async def test_regression_removing_unexisting_user(
             project_uuid=empty_user_project["uuid"],
             app=client.app,
             user_name={"first_name": "my name is", "last_name": "pytest"},
+            simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
         )
     # since the call to delete is happening as fire and forget task, let's wait until it is done
     async for attempt in AsyncRetrying(**_TENACITY_ASSERT_RETRY):

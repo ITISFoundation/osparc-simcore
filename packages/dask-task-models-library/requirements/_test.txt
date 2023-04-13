@@ -17,21 +17,12 @@ attrs==22.2.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   pytest
-certifi==2022.12.7
-    # via requests
 charset-normalizer==3.0.1
-    # via
-    #   aiohttp
-    #   requests
-coverage==6.5.0
+    # via aiohttp
+coverage==7.2.3
     # via
     #   -r requirements/_test.in
-    #   coveralls
     #   pytest-cov
-coveralls==3.3.1
-    # via -r requirements/_test.in
-docopt==0.6.2
-    # via coveralls
 exceptiongroup==1.1.0
     # via pytest
 faker==17.4.0
@@ -45,7 +36,6 @@ icdiff==2.0.6
 idna==3.4
     # via
     #   -c requirements/_base.txt
-    #   requests
     #   yarl
 iniconfig==2.0.0
     # via pytest
@@ -94,8 +84,6 @@ python-dateutil==2.8.2
     # via faker
 pyyaml==6.0
     # via -r requirements/_test.in
-requests==2.28.2
-    # via coveralls
 six==1.16.0
     # via python-dateutil
 termcolor==2.2.0
@@ -104,9 +92,5 @@ tomli==2.0.1
     # via
     #   coverage
     #   pytest
-urllib3==1.26.14
-    # via
-    #   -c requirements/_base.txt
-    #   requests
 yarl==1.8.2
     # via aiohttp
