@@ -1,32 +1,32 @@
 from datetime import datetime
-from typing import Any, Union
+from typing import Any, TypeAlias, Union
 
 from aiopg.sa.result import RowProxy
 from models_library.basic_types import SHA1Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node
-from pydantic import BaseModel, PositiveInt, StrictBool, StrictFloat, StrictInt
+from pydantic import BaseModel, Field, PositiveInt, StrictBool, StrictFloat, StrictInt
 from pydantic.networks import HttpUrl
 
-BuiltinTypes = Union[StrictBool, StrictInt, StrictFloat, str]
+BuiltinTypes: TypeAlias = Union[StrictBool, StrictInt, StrictFloat, str]
 
 # alias for readability
 # SEE https://pydantic-docs.helpmanual.io/usage/models/#orm-mode-aka-arbitrary-class-instances
 
-BranchProxy = RowProxy
-CommitProxy = RowProxy
-RepoProxy = RowProxy
-TagProxy = RowProxy
-CommitLog = tuple[CommitProxy, list[TagProxy]]
+BranchProxy: TypeAlias = RowProxy
+CommitProxy: TypeAlias = RowProxy
+RepoProxy: TypeAlias = RowProxy
+TagProxy: TypeAlias = RowProxy
+CommitLog: TypeAlias = tuple[CommitProxy, list[TagProxy]]
 
 
 HEAD = f"{__file__}/ref/HEAD"
 
-CommitID = int
-BranchID = int
-RefID = Union[CommitID, str]
+CommitID: TypeAlias = int
+BranchID: TypeAlias = int
+RefID: TypeAlias = Union[CommitID, str]
 
-CheckpointID = PositiveInt
+CheckpointID: TypeAlias = PositiveInt
 
 
 class Checkpoint(BaseModel):
@@ -38,7 +38,7 @@ class Checkpoint(BaseModel):
     # branches: Tuple[str, ...] = tuple()
 
     message: str | None = None
-    parents_ids: tuple[PositiveInt, ...] = None  # type: ignore
+    parents_ids: tuple[PositiveInt, ...] = Field(default=None)
 
     @classmethod
     def from_commit_log(cls, commit: RowProxy, tags: list[RowProxy]) -> "Checkpoint":
