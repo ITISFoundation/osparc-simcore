@@ -49,7 +49,3 @@ def handle_request_errors(handler: Handler) -> Handler:
             ) from err
 
     return wrapped
-
-
-# FIXME: access rights using same approach as in access_layer.py in storage.
-# A user can only check snapshots (subresource) of its project (parent resource)

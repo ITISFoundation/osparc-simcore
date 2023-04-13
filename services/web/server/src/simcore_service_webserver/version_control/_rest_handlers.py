@@ -41,10 +41,6 @@ from .models import (
 logger = logging.getLogger(__name__)
 
 
-# FIXME: access rights using same approach as in access_layer.py in storage.
-# A user can only check snapshots (subresource) of its project (parent resource)
-
-
 @validate_arguments
 def _normalize_refid(ref_id: RefID) -> RefID:
     if ref_id == "HEAD":
@@ -61,7 +57,6 @@ routes = web.RouteTableDef()
 @permission_required("project.read")
 @handle_request_errors
 async def _list_repos_handler(request: web.Request):
-    # FIXME: check access to non owned projects user_id = request[RQT_USERID_KEY]
     url_for = create_url_for_function(request)
     vc_repo = VersionControlRepository(request)
 

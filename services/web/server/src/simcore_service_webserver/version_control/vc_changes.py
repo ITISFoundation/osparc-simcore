@@ -22,11 +22,7 @@ from ..utils import compute_sha1_on_small_dataset
 
 def compute_workbench_checksum(workbench: dict[str, Any]) -> SHA1Str:
     #
-    # UI is NOT accounted in the checksum
-    # TODO: review other fields to mask?
-    # TODO: search for async def compute_node_hash
-    #
-    # - Add options with include/exclude fields (e.g. to avoid status)
+    # NOTE that UI is NOT accounted in the checksum
     #
     normalized = {
         str(k): (Node(**v) if not isinstance(v, Node) else v)
@@ -61,7 +57,6 @@ def _eval_checksum(repo, project: ProjectProxy) -> SHA1Str:
     if is_invalid:
         # invalid -> recompute
         checksum = compute_workbench_checksum(project.workbench)
-        # TODO: cache
     assert checksum  # nosec
     return checksum
 

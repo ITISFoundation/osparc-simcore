@@ -43,8 +43,6 @@ class VersionControlRepository(BaseRepository):
     db layer to access multiple tables within projects_version_control
     """
 
-    # FIXME: optimize all db queries
-
     class ReposOrm(BaseOrm[int]):
         def __init__(self, connection: SAConnection):
             super().__init__(
@@ -191,7 +189,6 @@ class VersionControlRepository(BaseRepository):
         insert_stmt = pg_insert(projects_vc_snapshots).values(
             checksum=project_checksum,
             content={
-                # FIXME: empty status produces a set() that sqlalchemy cannot serialize. Quick fix
                 "workbench": json.loads(json_dumps(project.workbench)),
                 "ui": json.loads(json_dumps(project.ui)),
             },
@@ -266,8 +263,6 @@ class VersionControlRepository(BaseRepository):
             raise InvalidParameterError(name="tag", reason="is a reserved word")
 
         async with self.engine.acquire() as conn:
-            # FIXME: get head commit in one execution
-
             # get head branch
             branch = await self._get_head_branch(repo_id, conn)
             if not branch:
@@ -357,7 +352,6 @@ class VersionControlRepository(BaseRepository):
             commits, total_count = await commits_orm.fetch_page(
                 offset=offset,
                 limit=limit,
-                # TODO: sortby should have
                 sort_by=sa.desc(commits_orm.columns["created"]),
             )
 
@@ -542,11 +536,9 @@ class VersionControlRepository(BaseRepository):
                     repo_id, commit_id, conn
                 )
 
-                # FIXME: in general this is wrong. For the moment,
-                # all wcopies except for the repo's main workcopy (i.e. repo.project_uuid) are READ-ONLY
-                #
+                # NOTE: For the moment, all wcopies except for the repo's main workcopy
+                # (i.e. repo.project_uuid) are READ-ONLY
                 if workcopy_project_id != repo.project_uuid:
-                    # FIXME: not aligned with content ...
                     if project := (
                         await self.ProjectsOrm(conn)
                         .set_filter(uuid=workcopy_project_id)

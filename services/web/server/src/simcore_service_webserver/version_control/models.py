@@ -34,9 +34,6 @@ class Checkpoint(BaseModel):
     checksum: SHA1Str
     created_at: datetime
     tags: tuple[str, ...]
-    # TODO: so front-end can proper break tree branches
-    # branches: Tuple[str, ...] = tuple()
-
     message: str | None = None
     parents_ids: tuple[PositiveInt, ...] = Field(default=None)
 
@@ -58,7 +55,7 @@ class WorkbenchView(BaseModel):
     class Config:
         orm_mode = True
 
-    # FIXME: Tmp replacing UUIDS by str due to a problem serializing to json UUID keys
+    # NOTE: Tmp replacing UUIDS by str due to a problem serializing to json UUID keys
     # in the response https://github.com/samuelcolvin/pydantic/issues/2096#issuecomment-814860206
     workbench: dict[str, Node]
     ui: dict[str, Any] = {}
