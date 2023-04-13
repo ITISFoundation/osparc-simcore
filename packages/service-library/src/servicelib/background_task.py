@@ -3,7 +3,7 @@ import contextlib
 import datetime
 import logging
 from contextlib import suppress
-from typing import AsyncIterator, Awaitable, Callable, Final, NoReturn
+from typing import AsyncIterator, Awaitable, Callable, Final
 
 from servicelib.logging_utils import log_catch, log_context
 from tenacity import TryAgain
@@ -22,7 +22,7 @@ async def _periodic_scheduled_task(
     interval: datetime.timedelta,
     task_name: str,
     **task_kwargs,
-) -> NoReturn:
+) -> None:
     # NOTE: This retries forever unless cancelled
     async for attempt in AsyncRetrying(wait=wait_fixed(interval.total_seconds())):
         with attempt:
