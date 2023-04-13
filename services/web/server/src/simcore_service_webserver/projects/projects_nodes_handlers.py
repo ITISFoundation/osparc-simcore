@@ -4,7 +4,6 @@
 
 import json
 import logging
-from typing import Optional, Union
 
 from aiohttp import web
 from models_library.projects_nodes import NodeID
@@ -18,6 +17,10 @@ from servicelib.aiohttp.long_running_tasks.server import (
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
+)
+from servicelib.common_headers import (
+    UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+    X_SIMCORE_USER_AGENT,
 )
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -51,7 +54,7 @@ routes = web.RouteTableDef()
 class _CreateNodeBody(BaseModel):
     service_key: ServiceKey
     service_version: ServiceVersion
-    service_id: Optional[str] = None
+    service_id: str | None = None
 
 
 @routes.post(f"/{VTAG}/projects/{{project_id}}/nodes")
@@ -131,7 +134,7 @@ async def get_node(request: web.Request) -> web.Response:
             )
 
         # NOTE: for legacy services a redirect to director-v0 is made
-        service_data: Union[dict, list] = await director_v2_api.get_dynamic_service(
+        service_data: dict | list = await director_v2_api.get_dynamic_service(
             app=request.app, node_uuid=f"{path_params.node_id}"
         )
 
@@ -286,6 +289,9 @@ async def stop_node(request: web.Request) -> web.Response:
         path_params=path_params,
         app=request.app,
         service_uuid=f"{path_params.node_id}",
+        simcore_user_agent=request.headers.get(
+            X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+        ),
         save_state=save_state,
         fire_and_forget=True,
     )
