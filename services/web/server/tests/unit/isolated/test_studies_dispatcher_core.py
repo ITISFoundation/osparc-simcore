@@ -6,7 +6,7 @@
 
 import json
 import urllib.parse
-from pathlib import Path
+from typing import Any
 from urllib.parse import parse_qs
 
 import pytest
@@ -28,11 +28,6 @@ from simcore_service_webserver.studies_dispatcher.handlers_redirects import (
     RedirectionQueryParams,
 )
 from yarl import URL
-
-
-@pytest.fixture
-def project_jsonschema(project_schema_file: Path) -> dict:
-    return json.loads(project_schema_file.read_text())
 
 
 def test_download_link_validators():
@@ -62,7 +57,7 @@ def test_download_link_validators():
 
 
 @pytest.mark.parametrize("view", list_fake_file_consumers())
-async def test_create_project_with_viewer(project_jsonschema, view):
+async def test_create_project_with_viewer(project_jsonschema: dict[str, Any], view):
 
     view["label"] = view.pop("display_name")
     viewer = ViewerInfo(**view)
