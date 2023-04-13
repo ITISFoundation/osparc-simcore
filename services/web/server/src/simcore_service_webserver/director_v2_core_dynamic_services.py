@@ -7,7 +7,6 @@
 import logging
 from contextlib import AsyncExitStack
 from functools import partial
-from typing import Optional
 
 from aiohttp import web
 from models_library.projects import ProjectID
@@ -40,11 +39,10 @@ from .rabbitmq import get_rabbitmq_client
 log = logging.getLogger(__name__)
 
 
-@log_decorator(logger=log)
 async def list_dynamic_services(
     app: web.Application,
-    user_id: Optional[PositiveInt] = None,
-    project_id: Optional[str] = None,
+    user_id: PositiveInt | None = None,
+    project_id: str | None = None,
 ) -> list[DataType]:
     params = {}
     if user_id:
@@ -80,7 +78,6 @@ async def get_dynamic_service(app: web.Application, node_uuid: str) -> DataType:
     return service_state
 
 
-@log_decorator(logger=log)
 async def run_dynamic_service(
     *,
     app: web.Application,
@@ -92,7 +89,7 @@ async def run_dynamic_service(
     service_uuid: str,
     request_dns: str,
     request_scheme: str,
-    request_simcore_user_agent: str,
+    simcore_user_agent: str,
     service_resources: ServiceResourcesDict,
 ) -> DataType:
     """
@@ -116,7 +113,7 @@ async def run_dynamic_service(
     headers = {
         X_DYNAMIC_SIDECAR_REQUEST_DNS: request_dns,
         X_DYNAMIC_SIDECAR_REQUEST_SCHEME: request_scheme,
-        X_SIMCORE_USER_AGENT: request_simcore_user_agent,
+        X_SIMCORE_USER_AGENT: simcore_user_agent,
     }
 
     settings: DirectorV2Settings = get_plugin_settings(app)
@@ -133,18 +130,21 @@ async def run_dynamic_service(
     return started_service
 
 
-@log_decorator(logger=log)
 async def stop_dynamic_service(
     app: web.Application,
     service_uuid: NodeIDStr,
+    simcore_user_agent: str,
     save_state: bool = True,
-    progress: Optional[ProgressBarData] = None,
+    progress: ProgressBarData | None = None,
 ) -> None:
     """
     Stopping a service can take a lot of time
     bumping the stop command timeout to 1 hour
     this will allow to sava bigger datasets from the services
     """
+    headers = {
+        X_SIMCORE_USER_AGENT: simcore_user_agent,
+    }
     settings: DirectorV2Settings = get_plugin_settings(app)
 
     async with AsyncExitStack() as stack:
@@ -157,6 +157,7 @@ async def stop_dynamic_service(
             url=(settings.base_url / f"dynamic_services/{service_uuid}").update_query(
                 can_save="true" if save_state else "false",
             ),
+            headers=headers,
             expected_status=web.HTTPNoContent,
             timeout=settings.DIRECTOR_V2_STOP_SERVICE_TIMEOUT,
             on_error={
@@ -176,7 +177,7 @@ async def _post_progress_message(
 ) -> None:
     progress_message = ProgressRabbitMessageProject(
         user_id=user_id,
-        project_id=project_id,
+        project_id=ProjectID(project_id),
         progress_type=ProgressType.PROJECT_CLOSING,
         progress=progress_value,
     )
@@ -186,11 +187,11 @@ async def _post_progress_message(
     )
 
 
-@log_decorator(logger=log)
 async def stop_dynamic_services_in_project(
     app: web.Application,
     user_id: PositiveInt,
     project_id: str,
+    simcore_user_agent: str,
     save_state: bool = True,
 ) -> None:
     """Stops all dynamic services of either project_id or user_id in concurrently"""
@@ -215,6 +216,7 @@ async def stop_dynamic_services_in_project(
             stop_dynamic_service(
                 app=app,
                 service_uuid=service["service_uuid"],
+                simcore_user_agent=simcore_user_agent,
                 save_state=save_state,
                 progress=progress_bar.sub_progress(1),
             )

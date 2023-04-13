@@ -12,6 +12,10 @@ from aiohttp import web
 from models_library.projects_state import ProjectState
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 from servicelib.aiohttp.web_exceptions_extension import HTTPLocked
+from servicelib.common_headers import (
+    UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+    X_SIMCORE_USER_AGENT,
+)
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserRole
@@ -99,7 +103,7 @@ async def open_project(request: web.Request) -> web.Response:
 
         # and let's update the project last change timestamp
         await projects_api.update_project_last_change_timestamp(
-            request.app, f"{path_params.project_id}"
+            request.app, path_params.project_id
         )
 
         # notify users that project is now opened
@@ -125,6 +129,9 @@ async def open_project(request: web.Request) -> web.Response:
             project_uuid=f"{path_params.project_id}",
             client_session_id=client_session_id,
             app=request.app,
+            simcore_user_agent=request.headers.get(
+                X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+            ),
         )
         raise web.HTTPServiceUnavailable(
             reason="Unexpected error while starting services."
@@ -146,7 +153,6 @@ async def open_project(request: web.Request) -> web.Response:
 @login_required
 @permission_required("project.close")
 async def close_project(request: web.Request) -> web.Response:
-
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
@@ -169,6 +175,9 @@ async def close_project(request: web.Request) -> web.Response:
             f"{path_params.project_id}",
             client_session_id,
             request.app,
+            simcore_user_agent=request.headers.get(
+                X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+            ),
         )
         raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
     except ProjectNotFoundError as exc:
