@@ -82,7 +82,7 @@ qx.Class.define("osparc.product.panddy.s4llite.Sequences", {
         message: "It will take a few seconds to start a new Project",
         waitFor: {
           target: "osparc-test-id=tree-model",
-          timeout: 30
+          timeout: 90000
         }
       }, {
         target: "osparc-test-id=mode-button-modeling",

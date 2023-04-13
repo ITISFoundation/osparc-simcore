@@ -154,8 +154,8 @@ qx.Class.define("osparc.panddy.Panddy", {
       if (step.preStep) {
         const preStep = step.preStep;
         if (preStep.target) {
-          const domEl = document.querySelector(`[${preStep.target}]`);
-          const widget = qx.ui.core.Widget.getWidgetByElement(domEl);
+          const el = document.querySelector(`[${preStep.target}]`);
+          const widget = qx.ui.core.Widget.getWidgetByElement(el);
           if (widget && preStep.action) {
             widget[preStep.action]();
           }
@@ -179,13 +179,25 @@ qx.Class.define("osparc.panddy.Panddy", {
       return stepWidget;
     },
 
-    __toStep: function(steps, idx) {
+    __waitForElement: async function(selector, timeout=15000) {
+      const start = Date.now();
+      while (Date.now() - start < timeout) {
+        const el = document.querySelector(`[${selector}]`);
+        if (el) {
+          return el;
+        }
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      return null;
+    },
+
+    __toStep: async function(steps, idx) {
       const step = steps[idx];
       const stepWidget = this.__currentBuble = this.__createStep();
       let targetWidget = null;
       if (step.target) {
-        const domEl = document.querySelector(`[${step.target}]`);
-        targetWidget = qx.ui.core.Widget.getWidgetByElement(domEl);
+        const el = document.querySelector(`[${step.target}]`);
+        targetWidget = qx.ui.core.Widget.getWidgetByElement(el);
       }
       if (targetWidget) {
         if (step.action) {
@@ -215,6 +227,16 @@ qx.Class.define("osparc.panddy.Panddy", {
       stepWidget.show();
       // eslint-disable-next-line no-underscore-dangle
       setTimeout(() => stepWidget.__updatePosition(), 10); // Hacky: Execute async and give some time for the relevant properties to be set
+
+      if (step.waitFor) {
+        stepWidget.getChildControl("next-button").setEnabled(false);
+        const el = await this.__waitForElement(step.waitFor.target, step.waitFor.timeout);
+        if (el) {
+          stepWidget.getChildControl("next-button").setEnabled(true);
+        } else {
+          this.stop();
+        }
+      }
     }
   }
 });
