@@ -129,7 +129,7 @@ async def storage_subsystem_mock(mocker: MockerFixture):
         )
 
     mock = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers_crud.copy_data_folders_from_project",
+        "simcore_service_webserver.projects._create_utils.copy_data_folders_from_project",
         autospec=True,
         side_effect=_mock_copy_data_from_project,
     )
