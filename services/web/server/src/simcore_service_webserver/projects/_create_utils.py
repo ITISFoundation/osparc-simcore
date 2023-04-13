@@ -136,13 +136,14 @@ async def _compose_project_data(
     new_project: ProjectDict, predefined_project: ProjectDict
 ) -> ProjectDict:
     if new_project:  # creates from a copy, just override fields
+        # when predefined_project is ProjectCopyOverride
         for key in OVERRIDABLE_DOCUMENT_KEYS:
             if non_null_value := predefined_project.get(key):
                 new_project[key] = non_null_value
     else:
+        # when predefined_project is ProjectCreateNew
         new_project = predefined_project
 
-    await projects_api.validate_project(new_project)
     return new_project
 
 
