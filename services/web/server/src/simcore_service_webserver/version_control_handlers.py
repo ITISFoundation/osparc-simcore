@@ -15,6 +15,16 @@ from .utils_aiohttp import (
     get_routes_view,
     rename_routes_as_handler_function,
 )
+from .version_control.version_control_models import (
+    Checkpoint,
+    CheckpointAnnotations,
+    CheckpointApiModel,
+    CheckpointNew,
+    RefID,
+    RepoApiModel,
+    WorkbenchView,
+    WorkbenchViewApiModel,
+)
 from .version_control_core import (
     checkout_checkpoint_safe,
     create_checkpoint_safe,
@@ -26,16 +36,6 @@ from .version_control_core import (
 )
 from .version_control_db import HEAD, VersionControlRepository
 from .version_control_handlers_base import handle_request_errors
-from .version_control_models import (
-    Checkpoint,
-    CheckpointAnnotations,
-    CheckpointApiModel,
-    CheckpointNew,
-    RefID,
-    RepoApiModel,
-    WorkbenchView,
-    WorkbenchViewApiModel,
-)
 
 logger = logging.getLogger(__name__)
 

@@ -24,15 +24,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from .db_base_repository import BaseRepository
 from .projects.project_models import ProjectProxy
-from .version_control.version_control_tags import parse_workcopy_project_tag_name
-from .version_control_changes import compute_workbench_checksum
-from .version_control_errors import (
-    CleanRequiredError,
-    InvalidParameterError,
-    NoCommitError,
-    NotFoundError,
-)
-from .version_control_models import (
+from .version_control.version_control_models import (
     HEAD,
     CommitID,
     CommitLog,
@@ -41,6 +33,14 @@ from .version_control_models import (
     RepoProxy,
     SHA1Str,
     TagProxy,
+)
+from .version_control.version_control_tags import parse_workcopy_project_tag_name
+from .version_control_changes import compute_workbench_checksum
+from .version_control_errors import (
+    CleanRequiredError,
+    InvalidParameterError,
+    NoCommitError,
+    NotFoundError,
 )
 
 log = logging.getLogger(__name__)

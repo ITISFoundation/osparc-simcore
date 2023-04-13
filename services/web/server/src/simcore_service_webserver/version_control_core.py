@@ -9,15 +9,14 @@
     more fine grained concepts as tags and commits directly
 """
 import logging
-from typing import List, Optional, Tuple
 from uuid import UUID
 
 from aiopg.sa.result import RowProxy
 from pydantic import NonNegativeInt, PositiveInt, validate_arguments
 
+from .version_control.version_control_models import Checkpoint, RefID, WorkbenchView
 from .version_control_db import CommitLog, VersionControlRepository
 from .version_control_errors import CleanRequiredError
-from .version_control_models import Checkpoint, RefID, WorkbenchView
 
 CFG = {"arbitrary_types_allowed": True}
 
@@ -28,8 +27,8 @@ async def list_repos(
     vc_repo: VersionControlRepository,
     *,
     offset: NonNegativeInt = 0,
-    limit: Optional[PositiveInt] = None,
-) -> Tuple[List[RowProxy], PositiveInt]:
+    limit: PositiveInt | None = None,
+) -> tuple[list[RowProxy], PositiveInt]:
 
     # NOTE: this layer does NOT add much .. why not use vc_repo directly?
     repos_rows, total_number_of_repos = await vc_repo.list_repos(offset, limit)
@@ -43,14 +42,14 @@ async def list_checkpoints(
     project_uuid: UUID,
     *,
     offset: NonNegativeInt = 0,
-    limit: Optional[PositiveInt] = None,
-) -> Tuple[List[Checkpoint], PositiveInt]:
+    limit: PositiveInt | None = None,
+) -> tuple[list[Checkpoint], PositiveInt]:
 
     repo_id = await vc_repo.get_repo_id(project_uuid)
     if not repo_id:
         return [], 0
 
-    logs: List[CommitLog]
+    logs: list[CommitLog]
     logs, total_number_of_commits = await vc_repo.log(
         repo_id, offset=offset, limit=limit
     )
@@ -67,7 +66,7 @@ async def create_checkpoint(
     project_uuid: UUID,
     *,
     tag: str,
-    message: Optional[str] = None,
+    message: str | None = None,
 ) -> Checkpoint:
     repo_id = await vc_repo.get_repo_id(project_uuid)
     if repo_id is None:
@@ -98,8 +97,8 @@ async def update_checkpoint(
     project_uuid: UUID,
     ref_id: RefID,
     *,
-    message: Optional[str] = None,
-    tag: Optional[str] = None,
+    message: str | None = None,
+    tag: str | None = None,
 ) -> Checkpoint:
 
     repo_id, commit_id = await vc_repo.as_repo_and_commit_ids(project_uuid, ref_id)
