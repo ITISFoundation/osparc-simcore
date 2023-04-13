@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import urllib.parse
-from typing import cast
+from typing import NoReturn, cast
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
@@ -23,6 +23,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
+from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 # Exclusive for simcore-s3 storage -----------------------
@@ -51,8 +52,10 @@ routes = RouteTableDef()
 UPLOAD_TASKS_KEY = f"{__name__}.upload_tasks"
 
 
-@routes.get(f"/{api_vtag}/locations/{{location_id}}/files/metadata", name="get_files_metadata")  # type: ignore
-async def get_files_metadata(request: web.Request):
+@routes.get(
+    f"/{api_vtag}/locations/{{location_id}}/files/metadata", name="get_files_metadata"
+)
+async def get_files_metadata(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(FilesMetadataQueryParams, request)
     path_params = parse_request_path_parameters_as(LocationPathParams, request)
     log.debug(
@@ -64,14 +67,17 @@ async def get_files_metadata(request: web.Request):
         user_id=query_params.user_id,
         uuid_filter=query_params.uuid_filter,
     )
-    return [jsonable_encoder(FileMetaDataGet.from_orm(d)) for d in data]
+    return web.json_response(
+        {"data": [jsonable_encoder(FileMetaDataGet.from_orm(d)) for d in data]},
+        dumps=json_dumps,
+    )
 
 
 @routes.get(
     f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}/metadata",
     name="get_file_metadata",
-)  # type: ignore
-async def get_file_metadata(request: web.Request):
+)
+async def get_file_metadata(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
     path_params = parse_request_path_parameters_as(FilePathParams, request)
     log.debug(
@@ -89,36 +95,43 @@ async def get_file_metadata(request: web.Request):
         # NOTE: This is what happens Larry... data must be an empty {} or else some old
         # dynamic services will FAIL (sic)
         # TODO: once all legacy services are gone, remove the try except, it will default to 404
-        return {"error": "No result found", "data": {}}
+        return web.json_response(
+            {"error": "No result found", "data": {}}, dumps=json_dumps
+        )
 
     if request.headers.get("User-Agent") == "OpenAPI-Generator/0.1.0/python":
         # LEGACY compatiblity with API v0.1.0
         # SEE models used in sdk in:
         # https://github.com/ITISFoundation/osparc-simcore/blob/cfdf4f86d844ebb362f4f39e9c6571d561b72897/services/storage/client-sdk/python/simcore_service_storage_sdk/models/file_meta_data_enveloped.py#L34
         # https://github.com/ITISFoundation/osparc-simcore/blob/cfdf4f86d844ebb362f4f39e9c6571d561b72897/services/storage/client-sdk/python/simcore_service_storage_sdk/models/file_meta_data_type.py#L34
-        return {
-            "data": {
-                "file_uuid": data.file_uuid,
-                "location_id": data.location_id,
-                "location": data.location,
-                "bucket_name": data.bucket_name,
-                "object_name": data.object_name,
-                "project_id": data.project_id,
-                "project_name": data.project_name,
-                "node_id": data.node_id,
-                "node_name": data.node_name,
-                "file_name": data.file_name,
-                "user_id": data.user_id,
-                "user_name": None,
+        return web.json_response(
+            {
+                "data": {
+                    "file_uuid": data.file_uuid,
+                    "location_id": data.location_id,
+                    "location": data.location,
+                    "bucket_name": data.bucket_name,
+                    "object_name": data.object_name,
+                    "project_id": data.project_id,
+                    "project_name": data.project_name,
+                    "node_id": data.node_id,
+                    "node_name": data.node_name,
+                    "file_name": data.file_name,
+                    "user_id": data.user_id,
+                    "user_name": None,
+                },
+                "error": None,
             },
-            "error": None,
-        }
+            dumps=json_dumps,
+        )
 
     return jsonable_encoder(FileMetaDataGet.from_orm(data))
 
 
-@routes.get(f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}", name="download_file")  # type: ignore
-async def download_file(request: web.Request):
+@routes.get(
+    f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}", name="download_file"
+)
+async def download_file(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(FileDownloadQueryParams, request)
     path_params = parse_request_path_parameters_as(FilePathParams, request)
     log.debug(
@@ -129,11 +142,13 @@ async def download_file(request: web.Request):
     link = await dsm.create_file_download_link(
         query_params.user_id, path_params.file_id, query_params.link_type
     )
-    return {"link": link}
+    return web.json_response({"data": {"link": link}}, dumps=json_dumps)
 
 
-@routes.put(f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}", name="upload_file")  # type: ignore
-async def upload_file(request: web.Request):
+@routes.put(
+    f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}", name="upload_file"
+)
+async def upload_file(request: web.Request) -> web.Response:
     """creates upload file links:
 
     This function covers v1 and v2 versions of the handler.
@@ -175,7 +190,10 @@ async def upload_file(request: web.Request):
     if query_params.file_size is None:
         # return v1 response
         assert len(links.urls) == 1  # nosec
-        return {"link": jsonable_encoder(links.urls[0], by_alias=True)}
+        return web.json_response(
+            {"data": {"link": jsonable_encoder(links.urls[0], by_alias=True)}},
+            dumps=json_dumps,
+        )
 
     # v2 response
     abort_url = request.url.join(
@@ -209,8 +227,11 @@ async def upload_file(request: web.Request):
     return jsonable_encoder(response, by_alias=True)
 
 
-@routes.post(f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}:abort", name="abort_upload_file")  # type: ignore
-async def abort_upload_file(request: web.Request):
+@routes.post(
+    f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}:abort",
+    name="abort_upload_file",
+)
+async def abort_upload_file(request: web.Request) -> NoReturn:
     query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
     path_params = parse_request_path_parameters_as(FilePathParams, request)
     log.debug(
@@ -223,8 +244,11 @@ async def abort_upload_file(request: web.Request):
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
-@routes.post(f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}:complete", name="complete_upload_file")  # type: ignore
-async def complete_upload_file(request: web.Request):
+@routes.post(
+    f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}:complete",
+    name="complete_upload_file",
+)
+async def complete_upload_file(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
     path_params = parse_request_path_parameters_as(FilePathParams, request)
     body = await parse_request_body_as(FileUploadCompletionBody, request)
@@ -262,11 +286,15 @@ async def complete_upload_file(request: web.Request):
     return web.json_response(
         status=web.HTTPAccepted.status_code,
         data={"data": jsonable_encoder(response, by_alias=True)},
+        dumps=json_dumps,
     )
 
 
-@routes.post(f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}:complete/futures/{{future_id}}", name="is_completed_upload_file")  # type: ignore
-async def is_completed_upload_file(request: web.Request):
+@routes.post(
+    f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}:complete/futures/{{future_id}}",
+    name="is_completed_upload_file",
+)
+async def is_completed_upload_file(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
     path_params = parse_request_path_parameters_as(
         FilePathIsUploadCompletedParams, request
@@ -314,8 +342,10 @@ async def is_completed_upload_file(request: web.Request):
     )
 
 
-@routes.delete(f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}", name="delete_file")  # type: ignore
-async def delete_file(request: web.Request):
+@routes.delete(
+    f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}", name="delete_file"
+)
+async def delete_file(request: web.Request) -> NoReturn:
     query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
     path_params = parse_request_path_parameters_as(FilePathParams, request)
     log.debug(
@@ -328,7 +358,7 @@ async def delete_file(request: web.Request):
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
-@routes.post(f"/{api_vtag}/files/{{file_id}}:soft-copy", name="copy_as_soft_link")  # type: ignore
+@routes.post(f"/{api_vtag}/files/{{file_id}}:soft-copy", name="copy_as_soft_link")
 async def copy_as_soft_link(request: web.Request):
     query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
     path_params = parse_request_path_parameters_as(CopyAsSoftLinkParams, request)

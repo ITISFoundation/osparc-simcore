@@ -5,9 +5,10 @@
 """
 import logging
 
-from aiohttp.web import Request, RouteTableDef
+from aiohttp import web
 from models_library.api_schemas_storage import HealthCheck, S3BucketName
 from models_library.app_diagnostics import AppStatusCheck
+from servicelib.json_serialization import json_dumps
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_service_storage.constants import APP_CONFIG_KEY
 
@@ -20,22 +21,27 @@ from .settings import Settings
 
 log = logging.getLogger(__name__)
 
-routes = RouteTableDef()
+routes = web.RouteTableDef()
 
 
-@routes.get(f"/{api_version_prefix}/", name="health_check")  # type: ignore
-async def get_health(_request: Request):
-    return HealthCheck.parse_obj(
+@routes.get(f"/{api_version_prefix}/", name="health_check")
+async def get_health(_request: web.Request) -> web.Response:
+    return web.json_response(
         {
-            "name": app_name,
-            "version": api_version,
-            "api_version": api_version,
-        }
-    ).dict(**RESPONSE_MODEL_POLICY)
+            "data": HealthCheck.parse_obj(
+                {
+                    "name": app_name,
+                    "version": api_version,
+                    "api_version": api_version,
+                }
+            ).dict(**RESPONSE_MODEL_POLICY)
+        },
+        dumps=json_dumps,
+    )
 
 
-@routes.get(f"/{api_version_prefix}/status", name="get_status")  # type: ignore
-async def get_status(request: Request):
+@routes.get(f"/{api_version_prefix}/status", name="get_status")
+async def get_status(request: web.Request) -> web.Response:
     # NOTE: all calls here must NOT raise
     assert request.app  # nosec
     app_settings: Settings = request.app[APP_CONFIG_KEY]
@@ -71,4 +77,6 @@ async def get_status(request: Request):
         }
     )
 
-    return status.dict(exclude_unset=True)
+    return web.json_response(
+        {"data": status.dict(exclude_unset=True)}, dumps=json_dumps
+    )
