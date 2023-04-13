@@ -30,6 +30,7 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 from pydantic import ByteSize, parse_obj_as
 from pytest import MonkeyPatch
+from pytest_mock import MockerFixture
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_dict import ConfigDict
@@ -271,7 +272,7 @@ def disable_static_webserver(monkeypatch: MonkeyPatch) -> Callable:
 
 
 @pytest.fixture
-async def storage_subsystem_mock(mocker: MonkeyPatch) -> MockedStorageSubsystem:
+async def storage_subsystem_mock(mocker: MockerFixture) -> MockedStorageSubsystem:
     """
     Patches client calls to storage service
 
@@ -302,7 +303,7 @@ async def storage_subsystem_mock(mocker: MonkeyPatch) -> MockedStorageSubsystem:
 
     async_mock = mocker.AsyncMock(return_value="")
     mock1 = mocker.patch(
-        "simcore_service_webserver.projects._delete.delete_data_folders_of_project",
+        "simcore_service_webserver.projects._delete_utils.delete_data_folders_of_project",
         autospec=True,
         side_effect=async_mock,
     )
