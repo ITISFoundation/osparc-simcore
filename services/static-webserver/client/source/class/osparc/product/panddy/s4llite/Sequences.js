@@ -21,19 +21,16 @@ qx.Class.define("osparc.product.panddy.s4llite.Sequences", {
   statics: {
     getSequences: function() {
       return [{
-        id: "dashboard",
         name: "Dashboard",
         requiredTarget: "osparc-test-id=dashboard",
         description: "Introduction to Dashboard tabs",
         steps: this.__getDashboardSteps()
       }, {
-        id: "studies",
         name: "Projects",
         requiredTarget: "osparc-test-id=dashboard",
         description: "Introduction to Studies",
         steps: this.__getStudiesSteps()
       }, {
-        id: "s4llite",
         name: "<i>S4L<sup>lite</sup></i>",
         requiredTarget: "osparc-test-id=dashboard",
         description: "Introduction to Studies",

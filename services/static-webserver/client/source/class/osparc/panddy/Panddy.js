@@ -34,7 +34,6 @@ qx.Class.define("osparc.panddy.Panddy", {
 
   statics: {
     INTRO_SEQUENCES: [{
-      id: "panddyIntro",
       name: "Panddy intro",
       description: "Introduction to Panddy",
       steps: [{
