@@ -408,7 +408,7 @@ async def test_open_template_project_for_edition(
                     service_version=service["version"],
                     user_id=logged_user["id"],
                     request_scheme=request_scheme,
-                    request_simcore_user_agent="",
+                    simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                     request_dns=request_dns,
                     service_resources=ServiceResourcesDictHelpers.create_jsonable(
                         mock_service_resources
@@ -686,6 +686,7 @@ async def test_close_project(
             call(
                 app=client.server.app,
                 service_uuid=service["service_uuid"],
+                simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                 save_state=True,
                 progress=mock_progress_bar.sub_progress(1),
             )
