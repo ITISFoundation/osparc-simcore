@@ -10,12 +10,12 @@ from models_library.projects import ProjectIDStr
 from models_library.utils.fastapi_encoders import jsonable_encoder
 
 from .projects.project_models import ProjectDict
-from .version_control.version_control_models import CommitID, TagProxy
-from .version_control.version_control_tags import compose_workcopy_project_tag_name
-from .version_control_changes import (
+from .version_control.version_control_changes import (
     compute_workbench_checksum,
     eval_workcopy_project_id,
 )
+from .version_control.version_control_models import CommitID, TagProxy
+from .version_control.version_control_tags import compose_workcopy_project_tag_name
 from .version_control_db import VersionControlRepository
 from .version_control_errors import UserUndefined
 
