@@ -1,10 +1,7 @@
 import datetime
-from typing import Final
 
 from pydantic import ByteSize, Field, NonNegativeFloat, NonNegativeInt, parse_obj_as
 from settings_library.base import BaseCustomSettings
-
-_MINUTE: Final[int] = 60
 
 
 class ProjectsSettings(BaseCustomSettings):
