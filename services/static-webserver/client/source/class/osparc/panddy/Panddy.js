@@ -178,14 +178,9 @@ qx.Class.define("osparc.panddy.Panddy", {
         }
         stepWidget.setElement(widget);
       } else {
-        const widget = this.getChildControl("panddy");
-        if (widget) {
-          stepWidget.setElement(widget);
-          stepWidget.setOrientation(osparc.ui.basic.FloatingHelper.ORIENTATION.LEFT);
-        } else {
-          stepWidget.setElement(widget);
-          stepWidget.setOrientation(osparc.ui.basic.FloatingHelper.ORIENTATION.LEFT);
-        }
+        const panddy = this.getChildControl("panddy");
+        stepWidget.setElement(panddy);
+        stepWidget.setOrientation(osparc.ui.basic.FloatingHelper.ORIENTATION.LEFT);
       }
       if (step.title) {
         stepWidget.setTitle(step.title);
