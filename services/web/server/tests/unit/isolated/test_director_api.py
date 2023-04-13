@@ -16,6 +16,7 @@ from typing import Any, Callable
 import pytest
 import yaml
 from aioresponses.core import CallbackResult, aioresponses
+from models_library.services import ServiceDockerData
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.director.director_api import (
@@ -61,14 +62,7 @@ def running_service_model_schema(osparc_simcore_root_dir: Path) -> dict:
 
 @pytest.fixture(scope="session")
 def registry_service_model_schema(osparc_simcore_root_dir: Path) -> dict:
-    # SEE: https://github.com/ITISFoundation/osparc-simcore/tree/master/api/specs/common/schemas/services.yaml#L11
-    #      https://github.com/ITISFoundation/osparc-simcore/tree/master/api/specs/common/schemas/node-meta-v0.0.1.json
-    schema = json.loads(
-        (
-            osparc_simcore_root_dir
-            / "api/specs/common/schemas/node-meta-v0.0.1-pydantic.json"
-        ).read_text()
-    )
+    schema = ServiceDockerData.schema()
 
     # Check dump manually in https://json-schema-faker.js.org/
     print(json.dumps(schema))

@@ -47,7 +47,6 @@ from settings_library.utils_service import DEFAULT_FASTAPI_PORT
 from simcore_postgres_database.models.clusters import ClusterType
 from simcore_sdk.node_ports_v2 import FileLinkType
 
-from ..meta import API_VTAG
 from ..models.schemas.constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE
 
 logger = logging.getLogger(__name__)
@@ -528,11 +527,6 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     EXTRA_HOSTS_SUFFIX: str = Field("undefined", env="EXTRA_HOSTS_SUFFIX")
     PUBLISHED_HOSTS_NAME: str = Field("", env="PUBLISHED_HOSTS_NAME")
     SWARM_STACK_NAME: str = Field("undefined-please-check", env="SWARM_STACK_NAME")
-
-    NODE_SCHEMA_LOCATION: str = Field(
-        f"{API_ROOT}/{API_VTAG}/schemas/node-meta-v0.0.1-pydantic.json",
-        description="used when in devel mode vs release mode",
-    )
 
     SIMCORE_SERVICES_NETWORK_NAME: str | None = Field(
         None,
