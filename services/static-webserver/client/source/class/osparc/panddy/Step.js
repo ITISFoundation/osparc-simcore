@@ -142,6 +142,20 @@ qx.Class.define("osparc.panddy.Step", {
           bottomLayout.add(control);
           break;
         }
+        case "end-button": {
+          control = new qx.ui.form.Button().set({
+            label: this.tr("End"),
+            iconPosition: "right",
+            appearance: "strong-button",
+            allowGrowX: false,
+            alignX: "right",
+            visibility: "excluded"
+          });
+          control.addListener("tap", () => this.fireEvent("closePressed"), this);
+          const bottomLayout = this.getChildControl("bottom-layout");
+          bottomLayout.add(control);
+          break;
+        }
       }
       return control || this.base(arguments, id);
     },
@@ -152,8 +166,8 @@ qx.Class.define("osparc.panddy.Step", {
 
       const nextButton = this.getChildControl("next-button");
       if (this.getStepIndex() === this.getNSteps()) {
-        nextButton.setLabel(this.tr("End"));
-        nextButton.addListener("execute", () => this.fireEvent("closePressed"), this);
+        nextButton.exclude();
+        this.getChildControl("end-button").show();
       }
     }
   }
