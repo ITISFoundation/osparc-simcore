@@ -499,6 +499,7 @@ async def test_interactive_services_removed_after_logout(
             ].assert_awaited_with(
                 app=client.app,
                 service_uuid=service["service_uuid"],
+                simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                 save_state=expected_save_state,
                 progress=mock_progress_bar.sub_progress(1),
             )
@@ -609,6 +610,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     calls = [
         call(
             app=client.server.app,
+            simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
             service_uuid=service["service_uuid"],
             progress=mock_progress_bar.sub_progress(1),
@@ -702,6 +704,7 @@ async def test_interactive_services_removed_per_project(
         call(
             app=client.server.app,
             service_uuid=service1["service_uuid"],
+            simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
             progress=mock_progress_bar.sub_progress(1),
         )
@@ -728,12 +731,14 @@ async def test_interactive_services_removed_per_project(
         call(
             app=client.server.app,
             service_uuid=service2["service_uuid"],
+            simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
             progress=mock_progress_bar.sub_progress(1),
         ),
         call(
             app=client.server.app,
             service_uuid=service3["service_uuid"],
+            simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
             progress=mock_progress_bar.sub_progress(1),
         ),
@@ -850,6 +855,7 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
     calls = [
         call(
             app=client.server.app,
+            simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
             service_uuid=service["service_uuid"],
             progress=mock_progress_bar.sub_progress(1),
