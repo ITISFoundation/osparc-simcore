@@ -7,8 +7,13 @@ from unittest.mock import MagicMock
 import pytest
 from aiohttp.web import Application, HTTPConflict, HTTPNoContent
 from faker import Faker
+from models_library.projects_nodes_io import NodeIDStr
 from pytest_mock.plugin import MockerFixture
 from servicelib.aiohttp.application import create_safe_application
+from servicelib.common_headers import (
+    UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+    X_SIMCORE_USER_AGENT,
+)
 from simcore_service_webserver import director_v2_core_dynamic_services
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.director_v2_exceptions import (
@@ -42,7 +47,10 @@ async def test_stop_dynamic_service_signature(
     can_save: bool,
 ):
     await director_v2_core_dynamic_services.stop_dynamic_service(
-        app, node_uuid, save_state=can_save
+        app,
+        NodeIDStr(node_uuid),
+        UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+        save_state=can_save,
     )
     mocked_director_v2_request.assert_called_with(
         app,
@@ -51,6 +59,7 @@ async def test_stop_dynamic_service_signature(
             f"http://director-v2:8000/v2/dynamic_services/{node_uuid}?can_save={f'{can_save}'.lower()}"
         ),
         expected_status=HTTPNoContent,
+        headers={X_SIMCORE_USER_AGENT: UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE},
         timeout=3610,
         on_error={
             HTTPConflict.status_code: (
