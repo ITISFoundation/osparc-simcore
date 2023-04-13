@@ -7,6 +7,7 @@ from uuid import UUID
 import sqlalchemy as sa
 from aiopg.sa import SAConnection
 from aiopg.sa.result import RowProxy
+from models_library.basic_types import SHA1Str
 from models_library.projects import ProjectIDStr
 from pydantic.types import NonNegativeInt, PositiveInt
 from servicelib.json_serialization import json_dumps
@@ -38,7 +39,6 @@ from .version_control_models import (
     CommitProxy,
     RefID,
     RepoProxy,
-    SHA1Str,
     TagProxy,
 )
 from .version_control_tags import parse_workcopy_project_tag_name
@@ -126,6 +126,7 @@ class VersionControlRepository(BaseRepository):
                 .fetch("id name head_commit_id")
             )
             return branch
+        return None
 
     async def _get_HEAD_commit(
         self, repo_id: int, conn: SAConnection
@@ -135,6 +136,7 @@ class VersionControlRepository(BaseRepository):
                 await self.CommitsOrm(conn).set_filter(id=branch.head_commit_id).fetch()
             )
             return commit
+        return None
 
     async def _fetch_workcopy_project_id(
         self, repo_id: int, commit_id: int, conn: SAConnection
@@ -230,7 +232,7 @@ class VersionControlRepository(BaseRepository):
         async with self.engine.acquire() as conn:
             repo_orm = self.ReposOrm(conn).set_filter(project_uuid=str(project_uuid))
             repo = await repo_orm.fetch("id")
-            return repo.id if repo else None
+            return int(repo.id) if repo else None
 
     async def init_repo(self, project_uuid: UUID) -> int:
         async with self.engine.acquire() as conn:
@@ -524,7 +526,8 @@ class VersionControlRepository(BaseRepository):
                     .set_filter(checksum=commit.snapshot_checksum)
                     .fetch("content")
                 ):
-                    return snapshot.content
+                    content: dict[str, Any] = snapshot.content
+                    return content
 
         raise NotFoundError(name="snapshot for commit", value=(repo_id, commit_id))
 
