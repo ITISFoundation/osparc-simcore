@@ -25,13 +25,13 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from ..db_base_repository import BaseRepository
 from ..projects.project_models import ProjectProxy
-from .version_control_changes import compute_workbench_checksum
-from .version_control_errors import (
+from .errors import (
     CleanRequiredError,
     InvalidParameterError,
     NoCommitError,
     NotFoundError,
 )
+from .version_control_changes import compute_workbench_checksum
 from .version_control_models import (
     HEAD,
     CommitID,
