@@ -8,17 +8,17 @@ info:
     email: support@simcore.io
   license:
     name: MIT
-    url: 'https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE'
+    url: "https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE"
 servers:
   - description: API server
     url: /v0
   - description: Development server
-    url: 'http://{host}:{port}/{basePath}'
+    url: "http://{host}:{port}/{basePath}"
     variables:
       host:
         default: localhost
       port:
-        default: '8001'
+        default: "8001"
       basePath:
         enum:
           - v0
@@ -41,7 +41,7 @@ tags:
   - name: tasks
   - name: user
 paths:
-  '/email:test':
+  "/email:test":
     post:
       tags:
         - admin
@@ -64,7 +64,7 @@ paths:
               type: object
               properties:
                 from_:
-                  title: 'From '
+                  title: "From "
                   type: string
                   description: Email sender
                   format: email
@@ -90,12 +90,12 @@ paths:
                   default: {}
         required: true
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                title: 'Envelope[Union[TestFailed, TestPassed]]'
+                title: "Envelope[Union[TestFailed, TestPassed]]"
                 type: object
                 properties:
                   data:
@@ -142,7 +142,7 @@ paths:
       summary: readiness probe for
       operationId: healthcheck_readiness_probe
       responses:
-        '200':
+        "200":
           description: Service information
           content:
             application/json:
@@ -171,7 +171,7 @@ paths:
                     nullable: true
                     default: null
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
   /health:
     get:
       tags:
@@ -179,14 +179,14 @@ paths:
       summary: liveliness probe
       operationId: healthcheck_liveness_probe
       responses:
-        '200':
+        "200":
           description: Service information
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1/get/responses/200/content/application~1json/schema'
+                $ref: "#/paths/~1/get/responses/200/content/application~1json/schema"
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
   /status:
     get:
       tags:
@@ -194,7 +194,7 @@ paths:
       summary: checks status of self and connected services
       operationId: get_app_status
       responses:
-        '200':
+        "200":
           description: returns app status check
   /status/diagnostics:
     get:
@@ -202,9 +202,9 @@ paths:
         - maintenance
       operationId: get_app_diagnostics
       responses:
-        '200':
+        "200":
           description: returns app diagnostics report
-  '/status/{service_name}':
+  "/status/{service_name}":
     get:
       tags:
         - maintenance
@@ -216,7 +216,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: returns status of connected service
   /config:
     get:
@@ -225,7 +225,7 @@ paths:
       tags:
         - configuration
       responses:
-        '200':
+        "200":
           description: configuration details
           content:
             application/json:
@@ -245,8 +245,8 @@ paths:
                     nullable: true
                     default: null
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/auth/register/invitations:check':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/auth/register/invitations:check":
     post:
       tags:
         - authentication
@@ -269,12 +269,12 @@ paths:
               additionalProperties: false
         required: true
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                title: 'Envelope[InvitationInfo]'
+                title: "Envelope[InvitationInfo]"
                 type: object
                 properties:
                   data:
@@ -328,13 +328,13 @@ paths:
               additionalProperties: false
         required: true
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema'
-  '/auth/two_factor:resend':
+                $ref: "#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema"
+  "/auth/two_factor:resend":
     post:
       tags:
         - authentication
@@ -365,18 +365,18 @@ paths:
               additionalProperties: false
         required: true
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema'
-        '401':
+                $ref: "#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema"
+        "401":
           description: unauthorized reset due to invalid token code
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/401/content/application~1json/schema'
+                $ref: "#/paths/~1auth~1login/post/responses/401/content/application~1json/schema"
   /auth/verify-phone-number:
     post:
       tags:
@@ -401,16 +401,16 @@ paths:
                 phone:
                   title: Phone
                   type: string
-                  description: 'Phone number E.164, needed on the deployments with 2FA'
+                  description: "Phone number E.164, needed on the deployments with 2FA"
               additionalProperties: false
         required: true
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                title: 'Envelope[RegisterPhoneNextPage]'
+                title: "Envelope[RegisterPhoneNextPage]"
                 type: object
                 properties:
                   data:
@@ -482,7 +482,7 @@ paths:
                 phone:
                   title: Phone
                   type: string
-                  description: 'Phone number E.164, needed on the deployments with 2FA'
+                  description: "Phone number E.164, needed on the deployments with 2FA"
                 code:
                   title: Code
                   type: string
@@ -491,12 +491,12 @@ paths:
               additionalProperties: false
         required: true
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema'
+                $ref: "#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema"
   /auth/login:
     post:
       tags:
@@ -526,12 +526,12 @@ paths:
               additionalProperties: false
         required: true
       responses:
-        '201':
+        "201":
           description: Successful Response
           content:
             application/json:
               schema:
-                title: 'Envelope[LoginNextPage]'
+                title: "Envelope[LoginNextPage]"
                 type: object
                 properties:
                   data:
@@ -579,12 +579,12 @@ paths:
                       using a path+query in the fragment of the URL
                   error:
                     title: Error
-        '401':
+        "401":
           description: unauthorized reset due to invalid token code
           content:
             application/json:
               schema:
-                title: 'Envelope[Error]'
+                title: "Envelope[Error]"
                 type: object
                 properties:
                   data:
@@ -595,7 +595,7 @@ paths:
                         title: Logs
                         type: array
                         items:
-                          $ref: '#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema/properties/data'
+                          $ref: "#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema/properties/data"
                         description: log messages
                       errors:
                         title: Errors
@@ -659,18 +659,18 @@ paths:
               additionalProperties: false
         required: true
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema'
-        '401':
+                $ref: "#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema"
+        "401":
           description: unauthorized reset due to invalid token code
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/401/content/application~1json/schema'
+                $ref: "#/paths/~1auth~1login/post/responses/401/content/application~1json/schema"
   /auth/logout:
     post:
       tags:
@@ -692,12 +692,12 @@ paths:
               additionalProperties: false
         required: true
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                title: 'Envelope[Log]'
+                title: "Envelope[Log]"
                 type: object
                 properties:
                   data:
@@ -721,13 +721,13 @@ paths:
                       message:
                         title: Message
                         type: string
-                        description: 'log message. If logger is USER, then it MUST be human readable'
+                        description: "log message. If logger is USER, then it MUST be human readable"
                       logger:
                         title: Logger
                         type: string
                         description: name of the logger receiving this message
                     example:
-                      message: 'Hi there, Mr user'
+                      message: "Hi there, Mr user"
                       level: INFO
                       logger: user-logger
                   error:
@@ -754,19 +754,19 @@ paths:
               additionalProperties: false
         required: true
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema'
-        '503':
+                $ref: "#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema"
+        "503":
           description: Service Unavailable
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/401/content/application~1json/schema'
-  '/auth/reset-password/{code}':
+                $ref: "#/paths/~1auth~1login/post/responses/401/content/application~1json/schema"
+  "/auth/reset-password/{code}":
     post:
       tags:
         - authentication
@@ -803,18 +803,18 @@ paths:
               additionalProperties: false
         required: true
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema'
-        '401':
+                $ref: "#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema"
+        "401":
           description: unauthorized reset due to invalid token code
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/401/content/application~1json/schema'
+                $ref: "#/paths/~1auth~1login/post/responses/401/content/application~1json/schema"
   /auth/change-email:
     post:
       tags:
@@ -838,24 +838,24 @@ paths:
               additionalProperties: false
         required: true
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema'
-        '401':
+                $ref: "#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema"
+        "401":
           description: unauthorized user. Login required
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/401/content/application~1json/schema'
-        '503':
+                $ref: "#/paths/~1auth~1login/post/responses/401/content/application~1json/schema"
+        "503":
           description: unable to send confirmation email
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/401/content/application~1json/schema'
+                $ref: "#/paths/~1auth~1login/post/responses/401/content/application~1json/schema"
   /auth/change-password:
     post:
       tags:
@@ -892,31 +892,31 @@ paths:
               additionalProperties: false
         required: true
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema'
-        '401':
+                $ref: "#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema"
+        "401":
           description: unauthorized user. Login required
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/401/content/application~1json/schema'
-        '409':
+                $ref: "#/paths/~1auth~1login/post/responses/401/content/application~1json/schema"
+        "409":
           description: mismatch between new and confirmation passwords
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/401/content/application~1json/schema'
-        '422':
+                $ref: "#/paths/~1auth~1login/post/responses/401/content/application~1json/schema"
+        "422":
           description: current password is invalid
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/401/content/application~1json/schema'
-  '/auth/confirmation/{code}':
+                $ref: "#/paths/~1auth~1login/post/responses/401/content/application~1json/schema"
+  "/auth/confirmation/{code}":
     get:
       tags:
         - authentication
@@ -931,12 +931,12 @@ paths:
           name: code
           in: path
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema'
+                $ref: "#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema"
         3XX:
           description: redirection to specific ui application page
   /auth/api-keys:
@@ -954,7 +954,7 @@ paths:
           name: code
           in: query
       responses:
-        '200':
+        "200":
           description: returns the display names of API keys
           content:
             application/json:
@@ -963,11 +963,11 @@ paths:
                 type: array
                 items:
                   type: string
-        '400':
+        "400":
           description: key name requested is invalid
-        '401':
+        "401":
           description: requires login to  list keys
-        '403':
+        "403":
           description: not enough permissions to list keys
     post:
       tags:
@@ -991,11 +991,11 @@ paths:
                 expiration:
                   title: Expiration
                   type: number
-                  description: 'Time delta from creation time to expiration. If None, then it does not expire.'
+                  description: "Time delta from creation time to expiration. If None, then it does not expire."
                   format: time-delta
         required: true
       responses:
-        '200':
+        "200":
           description: Authorization granted returning API key
           content:
             application/json:
@@ -1017,11 +1017,11 @@ paths:
                   api_secret:
                     title: Api Secret
                     type: string
-        '400':
+        "400":
           description: key name requested is invalid
-        '401':
+        "401":
           description: requires login to  list keys
-        '403':
+        "403":
           description: not enough permissions to list keys
     delete:
       tags:
@@ -1033,14 +1033,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/paths/~1auth~1api-keys/post/requestBody/content/application~1json/schema'
+              $ref: "#/paths/~1auth~1api-keys/post/requestBody/content/application~1json/schema"
         required: true
       responses:
-        '204':
+        "204":
           description: api key successfully deleted
-        '401':
+        "401":
           description: requires login to  delete a key
-        '403':
+        "403":
           description: not enough permissions to delete a key
   /me:
     get:
@@ -1048,7 +1048,7 @@ paths:
       tags:
         - user
       responses:
-        '200':
+        "200":
           description: current user profile
           content:
             application/json:
@@ -1059,7 +1059,7 @@ paths:
                 properties:
                   data:
                     allOf:
-                      - $ref: '#/paths/~1me/put/requestBody/content/application~1json/schema/allOf/0'
+                      - $ref: "#/paths/~1me/put/requestBody/content/application~1json/schema/allOf/0"
                       - type: object
                         properties:
                           id:
@@ -1070,18 +1070,18 @@ paths:
                           role:
                             type: string
                           groups:
-                            $ref: '#/paths/~1groups/get/responses/200/content/application~1json/schema/properties/data'
+                            $ref: "#/paths/~1groups/get/responses/200/content/application~1json/schema/properties/data"
                           gravatar_id:
                             type: string
                           expirationDate:
                             type: string
                             format: date
-                            description: 'If user has a trial account, it sets the expiration date, otherwise None'
+                            description: "If user has a trial account, it sets the expiration date, otherwise None"
                   error:
                     nullable: true
                     default: null
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
     put:
       operationId: update_my_profile
       tags:
@@ -1101,10 +1101,10 @@ paths:
                     first_name: Pedro
                     last_name: Crespo
       responses:
-        '204':
+        "204":
           description: updated profile
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
   /me/tokens:
     get:
       summary: List tokens
@@ -1112,7 +1112,7 @@ paths:
       tags:
         - user
       responses:
-        '200':
+        "200":
           description: list of tokens
           content:
             application/json:
@@ -1124,12 +1124,12 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/paths/~1me~1tokens/post/requestBody/content/application~1json/schema/properties/data'
+                      $ref: "#/paths/~1me~1tokens/post/requestBody/content/application~1json/schema/properties/data"
                   error:
                     nullable: true
                     default: null
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
     post:
       summary: Create tokens
       operationId: create_tokens
@@ -1164,15 +1164,15 @@ paths:
                   nullable: true
                   default: null
       responses:
-        '201':
+        "201":
           description: token created
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1me~1tokens/post/requestBody/content/application~1json/schema'
+                $ref: "#/paths/~1me~1tokens/post/requestBody/content/application~1json/schema"
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/me/tokens/{service}':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/me/tokens/{service}":
     parameters:
       - name: service
         in: path
@@ -1185,19 +1185,19 @@ paths:
       tags:
         - user
       responses:
-        '200':
+        "200":
           description: got detailed token
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1me~1tokens/post/requestBody/content/application~1json/schema'
+                $ref: "#/paths/~1me~1tokens/post/requestBody/content/application~1json/schema"
     put:
       summary: Updates token
       operationId: update_token
       tags:
         - user
       responses:
-        '204':
+        "204":
           description: token has been successfully updated
     delete:
       summary: Delete token
@@ -1205,7 +1205,7 @@ paths:
       tags:
         - user
       responses:
-        '204':
+        "204":
           description: token has been successfully deleted
   /me/notifications:
     get:
@@ -1214,7 +1214,7 @@ paths:
       summary: List of Notifications for the specific user
       operationId: get_user_notifications
       responses:
-        '200':
+        "200":
           description: List of Notifications
           content:
             application/json:
@@ -1227,7 +1227,7 @@ paths:
                     type: array
                     items:
                       allOf:
-                        - $ref: '#/paths/~1me~1notifications/post/requestBody/content/application~1json/schema'
+                        - $ref: "#/paths/~1me~1notifications/post/requestBody/content/application~1json/schema"
                         - type: object
                         - required:
                             - id
@@ -1236,7 +1236,7 @@ paths:
                             id:
                               type: string
                               description: notification id
-                              example: '123'
+                              example: "123"
                             read:
                               type: boolean
                               description: wether the notification has been read
@@ -1244,7 +1244,7 @@ paths:
                     nullable: true
                     default: null
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
     post:
       tags:
         - user
@@ -1268,14 +1268,14 @@ paths:
                 user_id:
                   type: string
                   description: the user that will receive the notification
-                  example: '123'
+                  example: "123"
                 category:
                   type: string
                   enum:
                     - NEW_ORGANIZATION
                     - STUDY_SHARED
                     - TEMPLATE_SHARED
-                  description: 'notification type, the frontend will use this to decorate the notification'
+                  description: "notification type, the frontend will use this to decorate the notification"
                   example: new_organization
                 actionable_path:
                   type: string
@@ -1294,11 +1294,11 @@ paths:
                   format: date-time
                   description: when it was created
       responses:
-        '204':
+        "204":
           description: Notification registered
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/me/notifications/{id}':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/me/notifications/{id}":
     parameters:
       - name: id
         in: path
@@ -1322,10 +1322,10 @@ paths:
                   type: boolean
                   description: notification has been read
       responses:
-        '204':
+        "204":
           description: All good
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
   /groups:
     get:
       summary: List my groups
@@ -1333,7 +1333,7 @@ paths:
       tags:
         - group
       responses:
-        '200':
+        "200":
           description: list of the groups I belonged to
           content:
             application/json:
@@ -1346,20 +1346,20 @@ paths:
                     type: object
                     properties:
                       me:
-                        $ref: '#/paths/~1groups/post/requestBody/content/application~1json/schema'
+                        $ref: "#/paths/~1groups/post/requestBody/content/application~1json/schema"
                       organizations:
                         type: array
                         items:
-                          $ref: '#/paths/~1groups/post/requestBody/content/application~1json/schema'
+                          $ref: "#/paths/~1groups/post/requestBody/content/application~1json/schema"
                       all:
-                        $ref: '#/paths/~1groups/post/requestBody/content/application~1json/schema'
+                        $ref: "#/paths/~1groups/post/requestBody/content/application~1json/schema"
                       product:
-                        $ref: '#/paths/~1groups/post/requestBody/content/application~1json/schema'
+                        $ref: "#/paths/~1groups/post/requestBody/content/application~1json/schema"
                   error:
                     nullable: true
                     default: null
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
     post:
       summary: Create a new group
       operationId: create_group
@@ -1387,27 +1387,27 @@ paths:
                   type: string
                   format: uri
                 accessRights:
-                  $ref: '#/paths/~1groups~1%7Bgid%7D~1users~1%7Buid%7D/patch/requestBody/content/application~1json/schema/properties/accessRights'
+                  $ref: "#/paths/~1groups~1%7Bgid%7D~1users~1%7Buid%7D/patch/requestBody/content/application~1json/schema/properties/accessRights"
               required:
                 - gid
                 - label
                 - description
                 - accessRights
               example:
-                - gid: '27'
+                - gid: "27"
                   label: A user
                   description: A very special user
-                  thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
-                - gid: '1'
+                  thumbnail: "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png"
+                - gid: "1"
                   label: ITIS Foundation
                   description: The Foundation for Research on Information Technologies in Society
-                  thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
-                - gid: '0'
+                  thumbnail: "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png"
+                - gid: "0"
                   label: All
                   description: Open to all users
-                  thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
+                  thumbnail: "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png"
       responses:
-        '201':
+        "201":
           description: group created
           content:
             application/json:
@@ -1417,13 +1417,13 @@ paths:
                   - data
                 properties:
                   data:
-                    $ref: '#/paths/~1groups/post/requestBody/content/application~1json/schema'
+                    $ref: "#/paths/~1groups/post/requestBody/content/application~1json/schema"
                   error:
                     nullable: true
                     default: null
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/groups/{gid}':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/groups/{gid}":
     parameters:
       - name: gid
         in: path
@@ -1436,14 +1436,14 @@ paths:
       summary: Gets one group details
       operationId: get_group
       responses:
-        '200':
+        "200":
           description: got group
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1groups/post/responses/201/content/application~1json/schema'
+                $ref: "#/paths/~1groups/post/responses/201/content/application~1json/schema"
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
     patch:
       summary: Update one group
       operationId: update_group
@@ -1455,27 +1455,27 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/paths/~1groups/post/requestBody/content/application~1json/schema'
+              $ref: "#/paths/~1groups/post/requestBody/content/application~1json/schema"
       responses:
-        '200':
+        "200":
           description: the modified group
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1groups/post/responses/201/content/application~1json/schema'
+                $ref: "#/paths/~1groups/post/responses/201/content/application~1json/schema"
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
     delete:
       tags:
         - group
       summary: Deletes one group
       operationId: delete_group
       responses:
-        '204':
+        "204":
           description: group has been successfully deleted
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/groups/{gid}/users':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/groups/{gid}/users":
     parameters:
       - name: gid
         in: path
@@ -1488,7 +1488,7 @@ paths:
       summary: Gets list of users in group
       operationId: get_group_users
       responses:
-        '200':
+        "200":
           description: got list of users and their respective rights
           content:
             application/json:
@@ -1500,12 +1500,12 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/paths/~1groups~1%7Bgid%7D~1users~1%7Buid%7D/get/responses/200/content/application~1json/schema/properties/data'
+                      $ref: "#/paths/~1groups~1%7Bgid%7D~1users~1%7Buid%7D/get/responses/200/content/application~1json/schema/properties/data"
                   error:
                     nullable: true
                     default: null
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
     post:
       tags:
         - group
@@ -1534,11 +1534,11 @@ paths:
                       format: email
                       description: the user email
       responses:
-        '204':
+        "204":
           description: user successfully added
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/groups/{gid}/users/{uid}':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/groups/{gid}/users/{uid}":
     parameters:
       - name: gid
         in: path
@@ -1556,7 +1556,7 @@ paths:
       summary: Gets specific user in group
       operationId: get_group_user
       responses:
-        '200':
+        "200":
           description: got user
           content:
             application/json:
@@ -1594,14 +1594,14 @@ paths:
                           last_name: Smith
                           login: mr.smith@matrix.com
                           gravatar_id: a1af5c6ecc38e81f29695f01d6ceb540
-                          id: '1'
-                          gid: '3'
-                      - $ref: '#/paths/~1groups~1%7Bgid%7D~1users~1%7Buid%7D/patch/requestBody/content/application~1json/schema/properties/accessRights'
+                          id: "1"
+                          gid: "3"
+                      - $ref: "#/paths/~1groups~1%7Bgid%7D~1users~1%7Buid%7D/patch/requestBody/content/application~1json/schema/properties/accessRights"
                   error:
                     nullable: true
                     default: null
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
     patch:
       tags:
         - group
@@ -1642,25 +1642,25 @@ paths:
               required:
                 - accessRights
       responses:
-        '200':
+        "200":
           description: modified user
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1groups~1%7Bgid%7D~1users~1%7Buid%7D/get/responses/200/content/application~1json/schema'
+                $ref: "#/paths/~1groups~1%7Bgid%7D~1users~1%7Buid%7D/get/responses/200/content/application~1json/schema"
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
     delete:
       tags:
         - group
       summary: Delete specific user in group
       operationId: delete_group_user
       responses:
-        '204':
+        "204":
           description: successfully removed user
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/groups/{gid}/classifiers':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/groups/{gid}/classifiers":
     get:
       parameters:
         - name: gid
@@ -1682,11 +1682,11 @@ paths:
       summary: Gets classifiers bundle for this group
       operationId: get_group_classifiers
       responses:
-        '200':
+        "200":
           description: got a bundle with all information about classifiers
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/groups/sparc/classifiers/scicrunch-resources/{rrid}':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/groups/sparc/classifiers/scicrunch-resources/{rrid}":
     parameters:
       - name: rrid
         in: path
@@ -1696,32 +1696,32 @@ paths:
     get:
       tags:
         - group
-      summary: 'Returns information on a valid RRID (https://www.force11.org/group/resource-identification-initiative)'
+      summary: "Returns information on a valid RRID (https://www.force11.org/group/resource-identification-initiative)"
       operationId: get_scicrunch_resource
       responses:
-        '200':
+        "200":
           description: Got information of a valid RRID
-        '400':
+        "400":
           description: Invalid RRID
-        '503':
+        "503":
           description: scircrunch.org service is not reachable
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
     post:
       tags:
         - group
       summary: Adds new RRID to classifiers
       operationId: add_scicrunch_resource
       responses:
-        '200':
+        "200":
           description: Got information of a valid RRID
-        '400':
+        "400":
           description: Invalid RRID
-        '503':
+        "503":
           description: scircrunch.org service is not reachable
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/groups/sparc/classifiers/scicrunch-resources:search':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/groups/sparc/classifiers/scicrunch-resources:search":
     get:
       parameters:
         - name: guess_name
@@ -1734,12 +1734,12 @@ paths:
       summary: Returns a list of related resource provided a search name
       operationId: search_scicrunch_resources
       responses:
-        '200':
+        "200":
           description: Got information of a valid RRID
-        '503':
+        "503":
           description: scircrunch.org service is not reachable
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
   /storage/locations:
     get:
       summary: Get available storage locations
@@ -1747,7 +1747,7 @@ paths:
         - storage
       operationId: get_storage_locations
       responses:
-        '200':
+        "200":
           description: List of availabe storage locations
           content:
             application/json:
@@ -1764,8 +1764,8 @@ paths:
                     filename: simcore.s3
                     id: 0
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/storage/locations/{location_id}:sync':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/storage/locations/{location_id}:sync":
     post:
       summary: Manually triggers the synchronisation of the file meta data table in the database
       tags:
@@ -1790,8 +1790,8 @@ paths:
             type: boolean
             default: false
       responses:
-        '200':
-          description: 'An object containing added, changed and removed paths'
+        "200":
+          description: "An object containing added, changed and removed paths"
           content:
             application/json:
               schema:
@@ -1817,8 +1817,8 @@ paths:
                     nullable: true
                     default: null
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/storage/locations/{location_id}/files/metadata':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/storage/locations/{location_id}/files/metadata":
     get:
       summary: Get list of file meta data
       tags:
@@ -1831,17 +1831,17 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: list of file meta-datas
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/paths/~1storage~1locations~1%7Blocation_id%7D~1files~1%7Bfile_id%7D~1metadata/get/responses/200/content/application~1json/schema'
+                  $ref: "#/paths/~1storage~1locations~1%7Blocation_id%7D~1files~1%7Bfile_id%7D~1metadata/get/responses/200/content/application~1json/schema"
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/storage/locations/{location_id}/files/{file_id}':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/storage/locations/{location_id}/files/{file_id}":
     get:
       summary: Returns download link for requested file
       tags:
@@ -1859,7 +1859,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Returns presigned link
           content:
             application/json:
@@ -1894,7 +1894,7 @@ paths:
             format: int64
             minimum: 0
       responses:
-        '200':
+        "200":
           description: Return upload object
           content:
             application/json:
@@ -1962,9 +1962,9 @@ paths:
           schema:
             type: string
       responses:
-        '204':
-          description: ''
-  '/storage/locations/{location_id}/files/{file_id}:complete':
+        "204":
+          description: ""
+  "/storage/locations/{location_id}/files/{file_id}:complete":
     post:
       summary: Asks the server to complete the upload
       operationId: complete_upload_file
@@ -2001,7 +2001,7 @@ paths:
                       e_tag:
                         type: string
       responses:
-        '202':
+        "202":
           description: Completion of upload is accepted
           content:
             application/json:
@@ -2035,8 +2035,8 @@ paths:
                 path.future_id: $response.body.data.links.state
                 query.user_id: $request.query.user_id
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/storage/locations/{location_id}/files/{file_id}:abort':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/storage/locations/{location_id}/files/{file_id}:abort":
     post:
       summary: Asks the server to abort the upload and revert to the last valid version if any
       operationId: abort_upload_file
@@ -2052,12 +2052,12 @@ paths:
           schema:
             type: string
       responses:
-        '204':
+        "204":
           description: Abort OK
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/storage/locations/{location_id}/files/{file_id}:complete/futures/{future_id}':
-    post:
+          $ref: "#/components/responses/DefaultErrorResponse"
+  ? "/storage/locations/{location_id}/files/{file_id}:complete/futures/{future_id}"
+  : post:
       summary: Check for upload completion
       operationId: is_completed_upload_file
       parameters:
@@ -2077,7 +2077,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: returns state of upload completion
           content:
             application/json:
@@ -2104,8 +2104,8 @@ paths:
                     nullable: true
                     default: null
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/storage/locations/{location_id}/files/{file_id}/metadata':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/storage/locations/{location_id}/files/{file_id}/metadata":
     get:
       summary: Get File Metadata
       tags:
@@ -2123,7 +2123,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Returns file metadata
           content:
             application/json:
@@ -2152,16 +2152,16 @@ paths:
                     type: string
                 example:
                   file_uuid: simcore-testing/105/1000/3
-                  location_id: '0'
+                  location_id: "0"
                   project_name: futurology
                   node_name: alpha
                   file_name: example.txt
-                  file_id: 'N:package:e263da07-2d89-45a6-8b0f-61061b913873'
-                  created_at: '2019-06-19T12:29:03.308611Z'
-                  last_modified: '2019-06-19T12:29:03.78852Z'
+                  file_id: "N:package:e263da07-2d89-45a6-8b0f-61061b913873"
+                  created_at: "2019-06-19T12:29:03.308611Z"
+                  last_modified: "2019-06-19T12:29:03.78852Z"
                   file_size: 73
                   entity_tag: a87ff679a2f3e71d9181a67b7542122c
-  '/storage/locations/{location_id}/datasets/{dataset_id}/metadata':
+  "/storage/locations/{location_id}/datasets/{dataset_id}/metadata":
     get:
       summary: Get Files Metadata
       tags:
@@ -2179,15 +2179,15 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: list of file meta-datas
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1storage~1locations~1%7Blocation_id%7D~1files~1metadata/get/responses/200/content/application~1json/schema'
+                $ref: "#/paths/~1storage~1locations~1%7Blocation_id%7D~1files~1metadata/get/responses/200/content/application~1json/schema"
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/storage/locations/{location_id}/datasets':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/storage/locations/{location_id}/datasets":
     get:
       summary: Get datasets metadata
       tags:
@@ -2200,7 +2200,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: list of dataset meta-datas
           content:
             application/json:
@@ -2214,11 +2214,11 @@ paths:
                     display_name:
                       type: string
                   example:
-                    dataset_uuid: 'N:id-aaaa'
+                    dataset_uuid: "N:id-aaaa"
                     display_name: simcore-testing
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/computations/{project_id}':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/computations/{project_id}":
     get:
       description: Returns the last computation data
       tags:
@@ -2233,7 +2233,7 @@ paths:
             type: string
             example: 123e4567-e89b-12d3-a456-426655440000
       responses:
-        '200':
+        "200":
           description: Succesffully retrieved computation
           content:
             application/json:
@@ -2255,15 +2255,15 @@ paths:
                     nullable: true
                     default: null
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/computations/{project_id}:start':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/computations/{project_id}:start":
     post:
       description: Starts the pipeline(s) of a given (meta) project
       tags:
         - computations
       operationId: start_computation
       parameters:
-        - $ref: '#/paths/~1computations~1%7Bproject_id%7D/get/parameters/0'
+        - $ref: "#/paths/~1computations~1%7Bproject_id%7D/get/parameters/0"
       requestBody:
         required: false
         content:
@@ -2277,7 +2277,7 @@ paths:
                   description: if true will force re-running all dependent nodes
                 cluster_id:
                   type: integer
-                  description: 'the computation shall use the cluster described by its id, 0 is the default cluster'
+                  description: "the computation shall use the cluster described by its id, 0 is the default cluster"
                   default: 0
                   minimum: 0
                 subgraph:
@@ -2288,7 +2288,7 @@ paths:
                     type: string
                     format: uuid
       responses:
-        '201':
+        "201":
           description: Successfully started the pipeline
           content:
             application/json:
@@ -2314,20 +2314,20 @@ paths:
                     nullable: true
                     default: null
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/computations/{project_id}:stop':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/computations/{project_id}:stop":
     post:
       description: Stops (all) pipeline(s) of a given (meta) project
       tags:
         - computations
       operationId: stop_computation
       parameters:
-        - $ref: '#/paths/~1computations~1%7Bproject_id%7D/get/parameters/0'
+        - $ref: "#/paths/~1computations~1%7Bproject_id%7D/get/parameters/0"
       responses:
-        '204':
+        "204":
           description: Succesffully stopped the pipeline
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
   /projects:
     get:
       tags:
@@ -2368,7 +2368,7 @@ paths:
           required: false
           description: maximum number of items to return
       responses:
-        '200':
+        "200":
           description: list of projects
           content:
             application/json:
@@ -2380,12 +2380,12 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/paths/~1projects~1active/get/responses/200/content/application~1json/schema/properties/data'
+                      $ref: "#/paths/~1projects~1active/get/responses/200/content/application~1json/schema/properties/data"
                   error:
                     nullable: true
                     default: null
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
     post:
       tags:
         - project
@@ -2396,19 +2396,19 @@ paths:
           in: query
           schema:
             type: string
-          description: 'Option to create a project from existing template or study: from_study={study_uuid}'
+          description: "Option to create a project from existing template or study: from_study={study_uuid}"
         - name: as_template
           in: query
           schema:
             type: boolean
             default: false
-          description: 'Option to create a template from existing project: as_template=true'
+          description: "Option to create a template from existing project: as_template=true"
         - name: copy_data
           in: query
           schema:
             type: boolean
             default: true
-          description: 'Option to copy data when creating from an existing template or as a template, defaults to True'
+          description: "Option to copy data when creating from an existing template or as a template, defaults to True"
         - name: hidden
           in: query
           schema:
@@ -2470,14 +2470,14 @@ paths:
                       type: object
                 classifiers:
                   description: Contains the reference to the project classifiers
-                  example: 'some:id:to:a:classifier'
+                  example: "some:id:to:a:classifier"
                   items:
                     type: string
                   title: Classifiers
                   type: array
                 creationDate:
                   description: project creation date
-                  example: '2018-07-01T11:13:43Z'
+                  example: "2018-07-01T11:13:43Z"
                   pattern: '\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z'
                   title: Creationdate
                   type: string
@@ -2492,7 +2492,7 @@ paths:
                   type: object
                 lastChangeDate:
                   description: last save date
-                  example: '2018-07-01T11:13:43Z'
+                  example: "2018-07-01T11:13:43Z"
                   pattern: '\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z'
                   title: Lastchangedate
                   type: string
@@ -2547,7 +2547,7 @@ paths:
                                         - last_name
                                       title: Owner
                                       type: object
-                                  description: 'If locked, the user that owns the lock'
+                                  description: "If locked, the user that owns the lock"
                                   title: Owner
                                 status:
                                   allOf:
@@ -2616,7 +2616,7 @@ paths:
                   type: array
                 thumbnail:
                   description: url of the project thumbnail
-                  example: 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
+                  example: "https://placeimg.com/171/96/tech/grayscale/?0.jpg"
                   format: uri
                   maxLength: 2083
                   minLength: 0
@@ -2632,8 +2632,8 @@ paths:
                             height: 26
                             width: 117
                             x: 415
-                            'y': 100
-                          color: '#FF0000'
+                            "y": 100
+                          color: "#FF0000"
                           type: rect
                         properties:
                           attributes:
@@ -2659,21 +2659,21 @@ paths:
                       title: Annotations
                       type: object
                       x-patternProperties:
-                        '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$':
-                          additionalProperties: false
+                        ? "^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+                        : additionalProperties: false
                           example:
                             - attributes:
                                 height: 26
                                 width: 117
                                 x: 415
-                                'y': 100
-                              color: '#FF0000'
+                                "y": 100
+                              color: "#FF0000"
                               type: rect
                             - attributes:
                                 text: Hey!
                                 x: 415
-                                'y': 100
-                              color: '#0000FF'
+                                "y": 100
+                              color: "#0000FF"
                               type: text
                           properties:
                             attributes:
@@ -2716,8 +2716,8 @@ paths:
                       title: Slideshow
                       type: object
                       x-patternProperties:
-                        '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$':
-                          properties:
+                        ? "^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+                        : properties:
                             instructions:
                               title: Instructions
                               type: string
@@ -2750,18 +2750,18 @@ paths:
                                   x:
                                     description: The x position
                                     example:
-                                      - '12'
+                                      - "12"
                                     title: X
                                     type: integer
-                                  'y':
+                                  "y":
                                     description: The y position
                                     example:
-                                      - '15'
-                                    title: 'Y'
+                                      - "15"
+                                    title: "Y"
                                     type: integer
                                 required:
                                   - x
-                                  - 'y'
+                                  - "y"
                                 title: Position
                                 type: object
                             description: The node position in the workbench
@@ -2773,8 +2773,8 @@ paths:
                       title: Workbench
                       type: object
                       x-patternProperties:
-                        '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$':
-                          additionalProperties: false
+                        ? "^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+                        : additionalProperties: false
                           properties:
                             marker:
                               additionalProperties: false
@@ -2794,18 +2794,18 @@ paths:
                                     x:
                                       description: The x position
                                       example:
-                                        - '12'
+                                        - "12"
                                       title: X
                                       type: integer
-                                    'y':
+                                    "y":
                                       description: The y position
                                       example:
-                                        - '15'
-                                      title: 'Y'
+                                        - "15"
+                                      title: "Y"
                                       type: integer
                                   required:
                                     - x
-                                    - 'y'
+                                    - "y"
                                   title: Position
                                   type: object
                               description: The node position in the workbench
@@ -2829,11 +2829,11 @@ paths:
                       bootOptions:
                         additionalProperties:
                           type: string
-                        description: 'Some services provide alternative parameters to be injected at boot time. The user selection should be stored here, and it will overwrite the services''s defaults.'
+                        description: "Some services provide alternative parameters to be injected at boot time. The user selection should be stored here, and it will overwrite the services's defaults."
                         title: Bootoptions
                         type: object
                         x-patternProperties:
-                          '[a-zA-Z][a-azA-Z0-9_]*':
+                          "[a-zA-Z][a-azA-Z0-9_]*":
                             type: string
                       inputAccess:
                         additionalProperties:
@@ -2847,7 +2847,7 @@ paths:
                         description: map with key - access level pairs
                         type: object
                         x-patternProperties:
-                          '^[-_a-zA-Z0-9]+$':
+                          "^[-_a-zA-Z0-9]+$":
                             description: An enumeration.
                             enum:
                               - ReadAndWrite
@@ -2884,7 +2884,7 @@ paths:
                                   type: string
                                 output:
                                   description: The port key in the node given by nodeUuid
-                                  pattern: '^[-_a-zA-Z0-9]+$'
+                                  pattern: "^[-_a-zA-Z0-9]+$"
                                   title: Output
                                   type: string
                               required:
@@ -2916,12 +2916,12 @@ paths:
                                   anyOf:
                                     - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
                                       type: string
-                                    - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
+                                    - pattern: "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
                                       type: string
                                   description: The path to the file in the storage provider domain
                                   title: Path
                                 store:
-                                  description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+                                  description: "The store identifier: 0 for simcore S3, 1 for datcore"
                                   title: Store
                                   type: integer
                               required:
@@ -2932,9 +2932,9 @@ paths:
                             - additionalProperties: false
                               description: I/O port type to hold a link to a file in DATCORE storage
                               example:
-                                dataset: 'N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4'
+                                dataset: "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4"
                                 label: initial_WTstates
-                                path: 'N:package:32df09ba-e8d6-46da-bd54-f696157de6ce'
+                                path: "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce"
                                 store: 1
                               properties:
                                 dataset:
@@ -2953,12 +2953,12 @@ paths:
                                   anyOf:
                                     - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
                                       type: string
-                                    - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
+                                    - pattern: "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
                                       type: string
                                   description: The path to the file in the storage provider domain
                                   title: Path
                                 store:
-                                  description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+                                  description: "The store identifier: 0 for simcore S3, 1 for datcore"
                                   title: Store
                                   type: integer
                               required:
@@ -2969,9 +2969,9 @@ paths:
                               title: DatCoreFileLink
                               type: object
                             - additionalProperties: false
-                              description: 'I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)'
+                              description: "I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)"
                               example:
-                                downloadLink: 'https://fakeimg.pl/250x100/'
+                                downloadLink: "https://fakeimg.pl/250x100/"
                               properties:
                                 downloadLink:
                                   format: uri
@@ -2994,7 +2994,7 @@ paths:
                         title: Inputs
                         type: object
                         x-patternProperties:
-                          '^[-_a-zA-Z0-9]+$':
+                          "^[-_a-zA-Z0-9]+$":
                             anyOf:
                               - type: boolean
                               - type: integer
@@ -3015,7 +3015,7 @@ paths:
                                     type: string
                                   output:
                                     description: The port key in the node given by nodeUuid
-                                    pattern: '^[-_a-zA-Z0-9]+$'
+                                    pattern: "^[-_a-zA-Z0-9]+$"
                                     title: Output
                                     type: string
                                 required:
@@ -3032,7 +3032,7 @@ paths:
                                     store: 0
                                   - eTag: f7e4c7076761a42a871e978c8691c676
                                     path: 50339632-ee1d-11ec-a0c2-02420a0194e4/23b1522f-225f-5a4c-9158-c4c19a70d4a8/output.h5
-                                    store: '0'
+                                    store: "0"
                                   - path: api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt
                                     store: 0
                                   - path: 94453a6a-c8d4-52b3-a22d-ccbf81f8d636/d4442ca4-23fd-5b6b-ba6d-0b75f711c109/y_1D.txt
@@ -3054,12 +3054,12 @@ paths:
                                     anyOf:
                                       - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
                                         type: string
-                                      - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
+                                      - pattern: "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
                                         type: string
                                     description: The path to the file in the storage provider domain
                                     title: Path
                                   store:
-                                    description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+                                    description: "The store identifier: 0 for simcore S3, 1 for datcore"
                                     title: Store
                                     type: integer
                                 required:
@@ -3070,13 +3070,13 @@ paths:
                               - additionalProperties: false
                                 description: I/O port type to hold a link to a file in DATCORE storage
                                 example:
-                                  - dataset: 'N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4'
+                                  - dataset: "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4"
                                     label: initial_WTstates
-                                    path: 'N:package:32df09ba-e8d6-46da-bd54-f696157de6ce'
+                                    path: "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce"
                                     store: 1
-                                  - dataset: 'N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4'
+                                  - dataset: "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4"
                                     label: initial_WTstates
-                                    path: 'N:package:32df09ba-e8d6-46da-bd54-f696157de6ce'
+                                    path: "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce"
                                     store: 1
                                 properties:
                                   dataset:
@@ -3095,12 +3095,12 @@ paths:
                                     anyOf:
                                       - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
                                         type: string
-                                      - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
+                                      - pattern: "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
                                         type: string
                                     description: The path to the file in the storage provider domain
                                     title: Path
                                   store:
-                                    description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+                                    description: "The store identifier: 0 for simcore S3, 1 for datcore"
                                     title: Store
                                     type: integer
                                 required:
@@ -3111,9 +3111,9 @@ paths:
                                 title: DatCoreFileLink
                                 type: object
                               - additionalProperties: false
-                                description: 'I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)'
+                                description: "I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)"
                                 example:
-                                  - downloadLink: 'https://fakeimg.pl/250x100/'
+                                  - downloadLink: "https://fakeimg.pl/250x100/"
                                 properties:
                                   downloadLink:
                                     format: uri
@@ -3139,7 +3139,7 @@ paths:
                         title: Inputsunits
                         type: object
                         x-patternProperties:
-                          '^[-_a-zA-Z0-9]+$':
+                          "^[-_a-zA-Z0-9]+$":
                             type: string
                       key:
                         description: distinctive name for the node based on the docker registry path
@@ -3196,12 +3196,12 @@ paths:
                                   anyOf:
                                     - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
                                       type: string
-                                    - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
+                                    - pattern: "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
                                       type: string
                                   description: The path to the file in the storage provider domain
                                   title: Path
                                 store:
-                                  description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+                                  description: "The store identifier: 0 for simcore S3, 1 for datcore"
                                   title: Store
                                   type: integer
                               required:
@@ -3212,9 +3212,9 @@ paths:
                             - additionalProperties: false
                               description: I/O port type to hold a link to a file in DATCORE storage
                               example:
-                                dataset: 'N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4'
+                                dataset: "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4"
                                 label: initial_WTstates
-                                path: 'N:package:32df09ba-e8d6-46da-bd54-f696157de6ce'
+                                path: "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce"
                                 store: 1
                               properties:
                                 dataset:
@@ -3233,12 +3233,12 @@ paths:
                                   anyOf:
                                     - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
                                       type: string
-                                    - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
+                                    - pattern: "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
                                       type: string
                                   description: The path to the file in the storage provider domain
                                   title: Path
                                 store:
-                                  description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+                                  description: "The store identifier: 0 for simcore S3, 1 for datcore"
                                   title: Store
                                   type: integer
                               required:
@@ -3249,9 +3249,9 @@ paths:
                               title: DatCoreFileLink
                               type: object
                             - additionalProperties: false
-                              description: 'I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)'
+                              description: "I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)"
                               example:
-                                downloadLink: 'https://fakeimg.pl/250x100/'
+                                downloadLink: "https://fakeimg.pl/250x100/"
                               properties:
                                 downloadLink:
                                   format: uri
@@ -3274,7 +3274,7 @@ paths:
                         title: Outputs
                         type: object
                         x-patternProperties:
-                          '^[-_a-zA-Z0-9]+$':
+                          "^[-_a-zA-Z0-9]+$":
                             anyOf:
                               - type: boolean
                               - type: integer
@@ -3291,7 +3291,7 @@ paths:
                                     store: 0
                                   - eTag: f7e4c7076761a42a871e978c8691c676
                                     path: 50339632-ee1d-11ec-a0c2-02420a0194e4/23b1522f-225f-5a4c-9158-c4c19a70d4a8/output.h5
-                                    store: '0'
+                                    store: "0"
                                   - path: api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt
                                     store: 0
                                   - path: 94453a6a-c8d4-52b3-a22d-ccbf81f8d636/d4442ca4-23fd-5b6b-ba6d-0b75f711c109/y_1D.txt
@@ -3313,12 +3313,12 @@ paths:
                                     anyOf:
                                       - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
                                         type: string
-                                      - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
+                                      - pattern: "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
                                         type: string
                                     description: The path to the file in the storage provider domain
                                     title: Path
                                   store:
-                                    description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+                                    description: "The store identifier: 0 for simcore S3, 1 for datcore"
                                     title: Store
                                     type: integer
                                 required:
@@ -3329,13 +3329,13 @@ paths:
                               - additionalProperties: false
                                 description: I/O port type to hold a link to a file in DATCORE storage
                                 example:
-                                  - dataset: 'N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4'
+                                  - dataset: "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4"
                                     label: initial_WTstates
-                                    path: 'N:package:32df09ba-e8d6-46da-bd54-f696157de6ce'
+                                    path: "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce"
                                     store: 1
-                                  - dataset: 'N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4'
+                                  - dataset: "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4"
                                     label: initial_WTstates
-                                    path: 'N:package:32df09ba-e8d6-46da-bd54-f696157de6ce'
+                                    path: "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce"
                                     store: 1
                                 properties:
                                   dataset:
@@ -3354,12 +3354,12 @@ paths:
                                     anyOf:
                                       - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
                                         type: string
-                                      - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
+                                      - pattern: "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
                                         type: string
                                     description: The path to the file in the storage provider domain
                                     title: Path
                                   store:
-                                    description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+                                    description: "The store identifier: 0 for simcore S3, 1 for datcore"
                                     title: Store
                                     type: integer
                                 required:
@@ -3370,9 +3370,9 @@ paths:
                                 title: DatCoreFileLink
                                 type: object
                               - additionalProperties: false
-                                description: 'I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)'
+                                description: "I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)"
                                 example:
-                                  - downloadLink: 'https://fakeimg.pl/250x100/'
+                                  - downloadLink: "https://fakeimg.pl/250x100/"
                                 properties:
                                   downloadLink:
                                     format: uri
@@ -3405,18 +3405,18 @@ paths:
                               x:
                                 description: The x position
                                 example:
-                                  - '12'
+                                  - "12"
                                 title: X
                                 type: integer
-                              'y':
+                              "y":
                                 description: The y position
                                 example:
-                                  - '15'
-                                title: 'Y'
+                                  - "15"
+                                title: "Y"
                                 type: integer
                             required:
                               - x
-                              - 'y'
+                              - "y"
                             title: Position
                             type: object
                         deprecated: true
@@ -3481,7 +3481,7 @@ paths:
                         title: State
                       thumbnail:
                         description: url of the latest screenshot of the node
-                        example: 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
+                        example: "https://placeimg.com/171/96/tech/grayscale/?0.jpg"
                         format: uri
                         maxLength: 2083
                         minLength: 0
@@ -3503,15 +3503,15 @@ paths:
                   title: Workbench
                   type: object
                   x-patternProperties:
-                    '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$':
-                      additionalProperties: false
+                    ? "^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+                    : additionalProperties: false
                       properties:
                         bootOptions:
                           additionalProperties:
                             type: string
-                          description: 'Some services provide alternative parameters to be injected at boot time. The user selection should be stored here, and it will overwrite the services''s defaults.'
+                          description: "Some services provide alternative parameters to be injected at boot time. The user selection should be stored here, and it will overwrite the services's defaults."
                           patternProperties:
-                            '[a-zA-Z][a-azA-Z0-9_]*':
+                            "[a-zA-Z][a-azA-Z0-9_]*":
                               type: string
                           title: Bootoptions
                           type: object
@@ -3526,7 +3526,7 @@ paths:
                             type: string
                           description: map with key - access level pairs
                           patternProperties:
-                            '^[-_a-zA-Z0-9]+$':
+                            "^[-_a-zA-Z0-9]+$":
                               description: An enumeration.
                               enum:
                                 - ReadAndWrite
@@ -3564,7 +3564,7 @@ paths:
                                     type: string
                                   output:
                                     description: The port key in the node given by nodeUuid
-                                    pattern: '^[-_a-zA-Z0-9]+$'
+                                    pattern: "^[-_a-zA-Z0-9]+$"
                                     title: Output
                                     type: string
                                 required:
@@ -3581,7 +3581,7 @@ paths:
                                     store: 0
                                   - eTag: f7e4c7076761a42a871e978c8691c676
                                     path: 50339632-ee1d-11ec-a0c2-02420a0194e4/23b1522f-225f-5a4c-9158-c4c19a70d4a8/output.h5
-                                    store: '0'
+                                    store: "0"
                                   - path: api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt
                                     store: 0
                                   - path: 94453a6a-c8d4-52b3-a22d-ccbf81f8d636/d4442ca4-23fd-5b6b-ba6d-0b75f711c109/y_1D.txt
@@ -3603,12 +3603,12 @@ paths:
                                     anyOf:
                                       - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
                                         type: string
-                                      - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
+                                      - pattern: "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
                                         type: string
                                     description: The path to the file in the storage provider domain
                                     title: Path
                                   store:
-                                    description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+                                    description: "The store identifier: 0 for simcore S3, 1 for datcore"
                                     title: Store
                                     type: integer
                                 required:
@@ -3619,13 +3619,13 @@ paths:
                               - additionalProperties: false
                                 description: I/O port type to hold a link to a file in DATCORE storage
                                 example:
-                                  - dataset: 'N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4'
+                                  - dataset: "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4"
                                     label: initial_WTstates
-                                    path: 'N:package:32df09ba-e8d6-46da-bd54-f696157de6ce'
+                                    path: "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce"
                                     store: 1
-                                  - dataset: 'N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4'
+                                  - dataset: "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4"
                                     label: initial_WTstates
-                                    path: 'N:package:32df09ba-e8d6-46da-bd54-f696157de6ce'
+                                    path: "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce"
                                     store: 1
                                 properties:
                                   dataset:
@@ -3644,12 +3644,12 @@ paths:
                                     anyOf:
                                       - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
                                         type: string
-                                      - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
+                                      - pattern: "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
                                         type: string
                                     description: The path to the file in the storage provider domain
                                     title: Path
                                   store:
-                                    description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+                                    description: "The store identifier: 0 for simcore S3, 1 for datcore"
                                     title: Store
                                     type: integer
                                 required:
@@ -3660,9 +3660,9 @@ paths:
                                 title: DatCoreFileLink
                                 type: object
                               - additionalProperties: false
-                                description: 'I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)'
+                                description: "I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)"
                                 example:
-                                  - downloadLink: 'https://fakeimg.pl/250x100/'
+                                  - downloadLink: "https://fakeimg.pl/250x100/"
                                 properties:
                                   downloadLink:
                                     format: uri
@@ -3683,7 +3683,7 @@ paths:
                               - type: object
                           description: values of input properties
                           patternProperties:
-                            '^[-_a-zA-Z0-9]+$':
+                            "^[-_a-zA-Z0-9]+$":
                               anyOf:
                                 - type: boolean
                                 - type: integer
@@ -3704,7 +3704,7 @@ paths:
                                       type: string
                                     output:
                                       description: The port key in the node given by nodeUuid
-                                      pattern: '^[-_a-zA-Z0-9]+$'
+                                      pattern: "^[-_a-zA-Z0-9]+$"
                                       title: Output
                                       type: string
                                   required:
@@ -3721,7 +3721,7 @@ paths:
                                       store: 0
                                     - eTag: f7e4c7076761a42a871e978c8691c676
                                       path: 50339632-ee1d-11ec-a0c2-02420a0194e4/23b1522f-225f-5a4c-9158-c4c19a70d4a8/output.h5
-                                      store: '0'
+                                      store: "0"
                                     - path: api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt
                                       store: 0
                                     - path: 94453a6a-c8d4-52b3-a22d-ccbf81f8d636/d4442ca4-23fd-5b6b-ba6d-0b75f711c109/y_1D.txt
@@ -3743,12 +3743,12 @@ paths:
                                       anyOf:
                                         - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
                                           type: string
-                                        - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
+                                        - pattern: "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
                                           type: string
                                       description: The path to the file in the storage provider domain
                                       title: Path
                                     store:
-                                      description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+                                      description: "The store identifier: 0 for simcore S3, 1 for datcore"
                                       title: Store
                                       type: integer
                                   required:
@@ -3759,13 +3759,13 @@ paths:
                                 - additionalProperties: false
                                   description: I/O port type to hold a link to a file in DATCORE storage
                                   example:
-                                    - dataset: 'N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4'
+                                    - dataset: "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4"
                                       label: initial_WTstates
-                                      path: 'N:package:32df09ba-e8d6-46da-bd54-f696157de6ce'
+                                      path: "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce"
                                       store: 1
-                                    - dataset: 'N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4'
+                                    - dataset: "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4"
                                       label: initial_WTstates
-                                      path: 'N:package:32df09ba-e8d6-46da-bd54-f696157de6ce'
+                                      path: "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce"
                                       store: 1
                                   properties:
                                     dataset:
@@ -3784,12 +3784,12 @@ paths:
                                       anyOf:
                                         - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
                                           type: string
-                                        - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
+                                        - pattern: "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
                                           type: string
                                       description: The path to the file in the storage provider domain
                                       title: Path
                                     store:
-                                      description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+                                      description: "The store identifier: 0 for simcore S3, 1 for datcore"
                                       title: Store
                                       type: integer
                                   required:
@@ -3800,9 +3800,9 @@ paths:
                                   title: DatCoreFileLink
                                   type: object
                                 - additionalProperties: false
-                                  description: 'I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)'
+                                  description: "I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)"
                                   example:
-                                    - downloadLink: 'https://fakeimg.pl/250x100/'
+                                    - downloadLink: "https://fakeimg.pl/250x100/"
                                   properties:
                                     downloadLink:
                                       format: uri
@@ -3828,7 +3828,7 @@ paths:
                             type: string
                           description: Overrides default unit (if any) defined in the service for each port
                           patternProperties:
-                            '^[-_a-zA-Z0-9]+$':
+                            "^[-_a-zA-Z0-9]+$":
                               type: string
                           title: Inputsunits
                           type: object
@@ -3876,7 +3876,7 @@ paths:
                                     store: 0
                                   - eTag: f7e4c7076761a42a871e978c8691c676
                                     path: 50339632-ee1d-11ec-a0c2-02420a0194e4/23b1522f-225f-5a4c-9158-c4c19a70d4a8/output.h5
-                                    store: '0'
+                                    store: "0"
                                   - path: api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt
                                     store: 0
                                   - path: 94453a6a-c8d4-52b3-a22d-ccbf81f8d636/d4442ca4-23fd-5b6b-ba6d-0b75f711c109/y_1D.txt
@@ -3898,12 +3898,12 @@ paths:
                                     anyOf:
                                       - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
                                         type: string
-                                      - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
+                                      - pattern: "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
                                         type: string
                                     description: The path to the file in the storage provider domain
                                     title: Path
                                   store:
-                                    description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+                                    description: "The store identifier: 0 for simcore S3, 1 for datcore"
                                     title: Store
                                     type: integer
                                 required:
@@ -3914,13 +3914,13 @@ paths:
                               - additionalProperties: false
                                 description: I/O port type to hold a link to a file in DATCORE storage
                                 example:
-                                  - dataset: 'N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4'
+                                  - dataset: "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4"
                                     label: initial_WTstates
-                                    path: 'N:package:32df09ba-e8d6-46da-bd54-f696157de6ce'
+                                    path: "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce"
                                     store: 1
-                                  - dataset: 'N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4'
+                                  - dataset: "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4"
                                     label: initial_WTstates
-                                    path: 'N:package:32df09ba-e8d6-46da-bd54-f696157de6ce'
+                                    path: "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce"
                                     store: 1
                                 properties:
                                   dataset:
@@ -3939,12 +3939,12 @@ paths:
                                     anyOf:
                                       - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
                                         type: string
-                                      - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
+                                      - pattern: "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
                                         type: string
                                     description: The path to the file in the storage provider domain
                                     title: Path
                                   store:
-                                    description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+                                    description: "The store identifier: 0 for simcore S3, 1 for datcore"
                                     title: Store
                                     type: integer
                                 required:
@@ -3955,9 +3955,9 @@ paths:
                                 title: DatCoreFileLink
                                 type: object
                               - additionalProperties: false
-                                description: 'I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)'
+                                description: "I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)"
                                 example:
-                                  - downloadLink: 'https://fakeimg.pl/250x100/'
+                                  - downloadLink: "https://fakeimg.pl/250x100/"
                                 properties:
                                   downloadLink:
                                     format: uri
@@ -3978,7 +3978,7 @@ paths:
                               - type: object
                           description: values of output properties
                           patternProperties:
-                            '^[-_a-zA-Z0-9]+$':
+                            "^[-_a-zA-Z0-9]+$":
                               anyOf:
                                 - type: boolean
                                 - type: integer
@@ -3995,7 +3995,7 @@ paths:
                                       store: 0
                                     - eTag: f7e4c7076761a42a871e978c8691c676
                                       path: 50339632-ee1d-11ec-a0c2-02420a0194e4/23b1522f-225f-5a4c-9158-c4c19a70d4a8/output.h5
-                                      store: '0'
+                                      store: "0"
                                     - path: api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt
                                       store: 0
                                     - path: 94453a6a-c8d4-52b3-a22d-ccbf81f8d636/d4442ca4-23fd-5b6b-ba6d-0b75f711c109/y_1D.txt
@@ -4017,12 +4017,12 @@ paths:
                                       anyOf:
                                         - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
                                           type: string
-                                        - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
+                                        - pattern: "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
                                           type: string
                                       description: The path to the file in the storage provider domain
                                       title: Path
                                     store:
-                                      description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+                                      description: "The store identifier: 0 for simcore S3, 1 for datcore"
                                       title: Store
                                       type: integer
                                   required:
@@ -4033,13 +4033,13 @@ paths:
                                 - additionalProperties: false
                                   description: I/O port type to hold a link to a file in DATCORE storage
                                   example:
-                                    - dataset: 'N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4'
+                                    - dataset: "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4"
                                       label: initial_WTstates
-                                      path: 'N:package:32df09ba-e8d6-46da-bd54-f696157de6ce'
+                                      path: "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce"
                                       store: 1
-                                    - dataset: 'N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4'
+                                    - dataset: "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4"
                                       label: initial_WTstates
-                                      path: 'N:package:32df09ba-e8d6-46da-bd54-f696157de6ce'
+                                      path: "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce"
                                       store: 1
                                   properties:
                                     dataset:
@@ -4058,12 +4058,12 @@ paths:
                                       anyOf:
                                         - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
                                           type: string
-                                        - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
+                                        - pattern: "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
                                           type: string
                                       description: The path to the file in the storage provider domain
                                       title: Path
                                     store:
-                                      description: 'The store identifier: 0 for simcore S3, 1 for datcore'
+                                      description: "The store identifier: 0 for simcore S3, 1 for datcore"
                                       title: Store
                                       type: integer
                                   required:
@@ -4074,9 +4074,9 @@ paths:
                                   title: DatCoreFileLink
                                   type: object
                                 - additionalProperties: false
-                                  description: 'I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)'
+                                  description: "I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)"
                                   example:
-                                    - downloadLink: 'https://fakeimg.pl/250x100/'
+                                    - downloadLink: "https://fakeimg.pl/250x100/"
                                   properties:
                                     downloadLink:
                                       format: uri
@@ -4099,7 +4099,7 @@ paths:
                           type: object
                         parent:
                           anyOf:
-                            - type: 'null'
+                            - type: "null"
                             - description: Parent's (group-nodes') node ID s. Used to group
                               format: uuid
                               title: Parent
@@ -4111,18 +4111,18 @@ paths:
                                 x:
                                   description: The x position
                                   example:
-                                    - '12'
+                                    - "12"
                                   title: X
                                   type: integer
-                                'y':
+                                "y":
                                   description: The y position
                                   example:
-                                    - '15'
-                                  title: 'Y'
+                                    - "15"
+                                  title: "Y"
                                   type: integer
                               required:
                                 - x
-                                - 'y'
+                                - "y"
                               title: Position
                               type: object
                           deprecated: true
@@ -4136,7 +4136,7 @@ paths:
                           type: number
                         runHash:
                           anyOf:
-                            - type: 'null'
+                            - type: "null"
                             - description: the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated
                               title: Runhash
                               type: string
@@ -4195,7 +4195,7 @@ paths:
                         thumbnail:
                           description: url of the latest screenshot of the node
                           example:
-                            - 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
+                            - "https://placeimg.com/171/96/tech/grayscale/?0.jpg"
                           format: uri
                           maxLength: 2083
                           minLength: 0
@@ -4228,7 +4228,7 @@ paths:
               title: osparc-simcore project
               type: object
       responses:
-        '202':
+        "202":
           description: project created
           content:
             application/json:
@@ -4264,7 +4264,7 @@ paths:
               parameters:
                 task_id: $response.body#/data/task_id
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
   /projects/active:
     get:
       tags:
@@ -4272,7 +4272,7 @@ paths:
       summary: Gets active project
       operationId: get_active_project
       responses:
-        '200':
+        "200":
           description: returns active project
           content:
             application/json:
@@ -4283,17 +4283,17 @@ paths:
                 properties:
                   data:
                     allOf:
-                      - $ref: '#/paths/~1projects/post/requestBody/content/application~1json/schema'
+                      - $ref: "#/paths/~1projects/post/requestBody/content/application~1json/schema"
                       - type: object
                         properties:
                           state:
-                            $ref: '#/paths/~1projects~1%7Bproject_id%7D~1state/get/responses/200/content/application~1json/schema/properties/data'
+                            $ref: "#/paths/~1projects~1%7Bproject_id%7D~1state/get/responses/200/content/application~1json/schema/properties/data"
                   error:
                     nullable: true
                     default: null
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_id}':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/projects/{project_id}":
     parameters:
       - name: project_id
         in: path
@@ -4306,14 +4306,14 @@ paths:
       summary: Gets given project
       operationId: get_project
       responses:
-        '200':
+        "200":
           description: got detailed project
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1active/get/responses/200/content/application~1json/schema'
+                $ref: "#/paths/~1projects~1active/get/responses/200/content/application~1json/schema"
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
     put:
       tags:
         - project
@@ -4329,25 +4329,25 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/paths/~1projects/post/requestBody/content/application~1json/schema'
+              $ref: "#/paths/~1projects/post/requestBody/content/application~1json/schema"
       responses:
-        '200':
+        "200":
           description: got detailed project
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1active/get/responses/200/content/application~1json/schema'
+                $ref: "#/paths/~1projects~1active/get/responses/200/content/application~1json/schema"
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
     delete:
       tags:
         - project
       summary: Delete given project
       operationId: delete_project
       responses:
-        '204':
+        "204":
           description: project has been successfully deleted
-  '/projects/{project_id}:open':
+  "/projects/{project_id}:open":
     parameters:
       - name: project_id
         in: path
@@ -4368,15 +4368,15 @@ paths:
               type: string
               example: 5ac57685-c40f-448f-8711-70be1936fd63
       responses:
-        '200':
+        "200":
           description: project successfuly opened
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1active/get/responses/200/content/application~1json/schema'
+                $ref: "#/paths/~1projects~1active/get/responses/200/content/application~1json/schema"
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_id}/state':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/projects/{project_id}/state":
     parameters:
       - name: project_id
         in: path
@@ -4389,7 +4389,7 @@ paths:
       summary: returns the state of a project
       operationId: get_project_state
       responses:
-        '200':
+        "200":
           description: returns the project current state
           content:
             application/json:
@@ -4426,8 +4426,8 @@ paths:
                     nullable: true
                     default: null
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_id}:xport':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/projects/{project_id}:xport":
     parameters:
       - name: project_id
         in: path
@@ -4440,7 +4440,7 @@ paths:
       summary: creates an archive of the project and downloads it
       operationId: export_project
       responses:
-        '200':
+        "200":
           description: creates an archive from a project file
           content:
             application/zip:
@@ -4448,8 +4448,8 @@ paths:
                 type: string
                 format: binary
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_id}:duplicate':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/projects/{project_id}:duplicate":
     parameters:
       - name: project_id
         in: path
@@ -4462,7 +4462,7 @@ paths:
       summary: duplicates an existing project
       operationId: duplicate_project
       responses:
-        '200':
+        "200":
           description: project was duplicated correctly
           content:
             application/json:
@@ -4472,8 +4472,8 @@ paths:
                   uuid:
                     type: string
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects:import':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/projects:import":
     post:
       tags:
         - exporter
@@ -4489,7 +4489,7 @@ paths:
                   type: string
                   format: binary
       responses:
-        '200':
+        "200":
           description: creates a new project from an archive
           content:
             application/json:
@@ -4499,8 +4499,8 @@ paths:
                   uuid:
                     type: string
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_id}:close':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/projects/{project_id}:close":
     parameters:
       - name: project_id
         in: path
@@ -4518,13 +4518,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/paths/~1projects~1%7Bproject_id%7D%3Aopen/post/requestBody/content/application~1json/schema'
+              $ref: "#/paths/~1projects~1%7Bproject_id%7D%3Aopen/post/requestBody/content/application~1json/schema"
       responses:
-        '204':
+        "204":
           description: project succesfuly closed
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_id}/nodes':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/projects/{project_id}/nodes":
     parameters:
       - name: project_id
         in: path
@@ -4561,7 +4561,7 @@ paths:
               service_key: simcore/services/dynamic/3d-viewer
               service_version: 1.4.0
       responses:
-        '201':
+        "201":
           description: created
           content:
             application/json:
@@ -4583,8 +4583,8 @@ paths:
                     nullable: true
                     default: null
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_id}/nodes/{node_id}':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/projects/{project_id}/nodes/{node_id}":
     parameters:
       - name: project_id
         in: path
@@ -4602,7 +4602,7 @@ paths:
       description: Gets node status
       operationId: get_node
       responses:
-        '200':
+        "200":
           description: OK service exists and runs. Returns node details.
           content:
             application/json:
@@ -4664,7 +4664,7 @@ paths:
                         description: different base path where current service is mounted otherwise defaults to root
                         type: string
                         example: /x/E1O2E-LAH
-                        default: ''
+                        default: ""
                       service_state:
                         description: |
                           the service state * 'pending' - The service is waiting for resources to start * 'pulling' - The service is being pulled from the registry * 'starting' - The service is starting * 'running' - The service is running * 'complete' - The service completed * 'failed' - The service failed to start
@@ -4683,23 +4683,23 @@ paths:
                       user_id:
                         description: the user that started the service
                         type: string
-                        example: '123'
+                        example: "123"
                   error:
                     nullable: true
                     default: null
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
     delete:
       tags:
         - project
       description: Stops and removes a node from the project
       operationId: delete_node
       responses:
-        '204':
+        "204":
           description: node has been successfully deleted from project
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_id}/nodes/{node_id}:retrieve':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/projects/{project_id}/nodes/{node_id}:retrieve":
     parameters:
       - name: project_id
         in: path
@@ -4729,7 +4729,7 @@ paths:
                   items:
                     type: string
       responses:
-        '200':
+        "200":
           description: Returns the amount of transferred bytes when pulling data via nodeports
           content:
             application/json:
@@ -4744,8 +4744,8 @@ paths:
                         type: integer
                         description: amount of transferred bytes
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_id}/nodes/{node_id}:start':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/projects/{project_id}/nodes/{node_id}:start":
     parameters:
       - name: project_id
         in: path
@@ -4763,11 +4763,11 @@ paths:
       description: Starts a project dynamic service
       operationId: start_node
       responses:
-        '204':
+        "204":
           description: started service (needs to be long running though)
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_id}/nodes/{node_id}:stop':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/projects/{project_id}/nodes/{node_id}:stop":
     parameters:
       - name: project_id
         in: path
@@ -4785,11 +4785,11 @@ paths:
       description: Stops a project node
       operationId: stop_node
       responses:
-        '204':
+        "204":
           description: stopped service
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_id}/nodes/{node_id}:restart':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/projects/{project_id}/nodes/{node_id}:restart":
     parameters:
       - name: project_id
         in: path
@@ -4807,11 +4807,11 @@ paths:
       description: Restarts containers started by the dynamic-sidecar
       operationId: restart_node
       responses:
-        '204':
+        "204":
           description: Restarts containers started by the dynamic-sidecar
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_id}/nodes/{node_id}/resources':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/projects/{project_id}/nodes/{node_id}/resources":
     parameters:
       - name: project_id
         in: path
@@ -4829,7 +4829,7 @@ paths:
       description: Returns the node resources
       operationId: get_node_resources
       responses:
-        '200':
+        "200":
           description: Returns the node resources.
           content:
             application/json:
@@ -4839,12 +4839,12 @@ paths:
                   - data
                 properties:
                   data:
-                    $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/put/requestBody/content/application~1json/schema'
+                    $ref: "#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/put/requestBody/content/application~1json/schema"
                   error:
                     nullable: true
                     default: null
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
     put:
       tags:
         - project
@@ -4873,15 +4873,15 @@ paths:
                       - type: number
                       - type: string
       responses:
-        '200':
+        "200":
           description: Returns the udpated node resources.
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/get/responses/200/content/application~1json/schema'
+                $ref: "#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/get/responses/200/content/application~1json/schema"
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_id}/inputs':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/projects/{project_id}/inputs":
     get:
       tags:
         - project
@@ -4897,12 +4897,12 @@ paths:
           name: project_id
           in: path
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                title: 'Envelope[dict[uuid.UUID, simcore_service_webserver.projects.projects_ports_handlers.ProjectInputGet]]'
+                title: "Envelope[dict[uuid.UUID, simcore_service_webserver.projects.projects_ports_handlers.ProjectInputGet]]"
                 type: object
                 properties:
                   data:
@@ -4966,13 +4966,13 @@ paths:
                     description: Value assigned to this i/o port
         required: true
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1inputs/get/responses/200/content/application~1json/schema'
-  '/projects/{project_id}/outputs':
+                $ref: "#/paths/~1projects~1%7Bproject_id%7D~1inputs/get/responses/200/content/application~1json/schema"
+  "/projects/{project_id}/outputs":
     get:
       tags:
         - project
@@ -4988,12 +4988,12 @@ paths:
           name: project_id
           in: path
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                title: 'Envelope[dict[uuid.UUID, simcore_service_webserver.projects.projects_ports_handlers.ProjectOutputGet]]'
+                title: "Envelope[dict[uuid.UUID, simcore_service_webserver.projects.projects_ports_handlers.ProjectOutputGet]]"
                 type: object
                 properties:
                   data:
@@ -5020,7 +5020,7 @@ paths:
                           type: string
                   error:
                     title: Error
-  '/projects/{project_id}/metadata/ports':
+  "/projects/{project_id}/metadata/ports":
     get:
       tags:
         - project
@@ -5036,12 +5036,12 @@ paths:
           name: project_id
           in: path
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                title: 'Envelope[list[simcore_service_webserver.projects.projects_ports_handlers.ProjectMetadataPortGet]]'
+                title: "Envelope[list[simcore_service_webserver.projects.projects_ports_handlers.ProjectMetadataPortGet]]"
                 type: object
                 properties:
                   data:
@@ -5068,24 +5068,24 @@ paths:
                         content_schema:
                           title: Content Schema
                           type: object
-                          description: 'jsonschema for the port''s value. SEE https://json-schema.org/understanding-json-schema/'
+                          description: "jsonschema for the port's value. SEE https://json-schema.org/understanding-json-schema/"
                   error:
                     title: Error
-  '/nodes/{nodeInstanceUUID}/outputUi/{outputKey}':
+  "/nodes/{nodeInstanceUUID}/outputUi/{outputKey}":
     get:
       tags:
         - node
       description: get a json description of the ui for presenting the output within the mainUi and a list of open api json schema objects describing the possible json payloads and responses for the api calls available at this endpoint
       operationId: get_node_output_ui
       parameters:
-        - $ref: '#/paths/~1nodes~1%7BnodeInstanceUUID%7D~1iframe/get/parameters/0'
+        - $ref: "#/paths/~1nodes~1%7BnodeInstanceUUID%7D~1iframe/get/parameters/0"
         - in: path
           name: outputKey
           required: true
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Service Information
           content:
             application/json:
@@ -5130,15 +5130,15 @@ paths:
                         description: Error code
                         type: integer
                         example: 404
-  '/nodes/{nodeInstanceUUID}/outputUi/{outputKey}/{apiCall}':
+  "/nodes/{nodeInstanceUUID}/outputUi/{outputKey}/{apiCall}":
     post:
       tags:
         - node
       summary: send data back to the output api ... protocol depends on the definition
       operationId: send_to_node_output_api
       parameters:
-        - $ref: '#/paths/~1nodes~1%7BnodeInstanceUUID%7D~1iframe/get/parameters/0'
-        - $ref: '#/paths/~1nodes~1%7BnodeInstanceUUID%7D~1outputUi~1%7BoutputKey%7D/get/parameters/1'
+        - $ref: "#/paths/~1nodes~1%7BnodeInstanceUUID%7D~1iframe/get/parameters/0"
+        - $ref: "#/paths/~1nodes~1%7BnodeInstanceUUID%7D~1outputUi~1%7BoutputKey%7D/get/parameters/1"
         - in: path
           name: apiCall
           required: true
@@ -5202,7 +5202,7 @@ paths:
                         label:
                           type: string
                         thumbnail:
-                          description: 'data url - https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/Data_URIs'
+                          description: "data url - https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/Data_URIs"
                           type: string
                   - type: object
                   - type: array
@@ -5216,7 +5216,7 @@ paths:
                         folder:
                           type: boolean
                   - type: object
-  '/nodes/{nodeInstanceUUID}/iframe':
+  "/nodes/{nodeInstanceUUID}/iframe":
     get:
       tags:
         - node
@@ -5231,7 +5231,7 @@ paths:
       responses:
         default:
           description: any response appropriate in the iframe context
-  '/projects/{study_uuid}/tags/{tag_id}':
+  "/projects/{study_uuid}/tags/{tag_id}":
     parameters:
       - name: tag_id
         in: path
@@ -5249,29 +5249,29 @@ paths:
       summary: Links an existing label with an existing study
       operationId: add_tag
       responses:
-        '200':
+        "200":
           description: The tag has been successfully linked to the study
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1active/get/responses/200/content/application~1json/schema'
+                $ref: "#/paths/~1projects~1active/get/responses/200/content/application~1json/schema"
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
     delete:
       tags:
         - project
       summary: Removes an existing link between a label and a study
       operationId: remove_tag
       responses:
-        '200':
+        "200":
           description: The tag has been successfully removed from the study
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1active/get/responses/200/content/application~1json/schema'
+                $ref: "#/paths/~1projects~1active/get/responses/200/content/application~1json/schema"
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_uuid}/checkpoint/{ref_id}/iterations':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/projects/{project_uuid}/checkpoint/{ref_id}/iterations":
     get:
       tags:
         - meta-projects
@@ -5319,12 +5319,12 @@ paths:
           name: limit
           in: query
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                title: 'Page[IterationItem]'
+                title: "Page[IterationItem]"
                 required:
                   - _meta
                   - _links
@@ -5412,7 +5412,7 @@ paths:
                         name:
                           title: Name
                           type: string
-                          description: 'Iteration''s resource name [AIP-122](https://google.aip.dev/122)'
+                          description: "Iteration's resource name [AIP-122](https://google.aip.dev/122)"
                         parent:
                           title: Parent
                           allOf:
@@ -5447,9 +5447,9 @@ paths:
                           minLength: 1
                           type: string
                           format: uri
-        '404':
+        "404":
           description: This project has no iterations.Only meta-project have iterations and they must be explicitly created.
-        '422':
+        "422":
           description: Validation Error
           content:
             application/json:
@@ -5479,7 +5479,7 @@ paths:
                         type:
                           title: Error Type
                           type: string
-  '/projects/{project_uuid}/checkpoint/{ref_id}/iterations/{iter_id}':
+  "/projects/{project_uuid}/checkpoint/{ref_id}/iterations/{iter_id}":
     get:
       tags:
         - meta-projects
@@ -5510,9 +5510,9 @@ paths:
             type: integer
           in: path
       responses:
-        '200':
+        "200":
           description: Successful Response
-  '/projects/{project_uuid}/checkpoint/{ref_id}/iterations/-/results':
+  "/projects/{project_uuid}/checkpoint/{ref_id}/iterations/-/results":
     get:
       tags:
         - meta-projects
@@ -5560,12 +5560,12 @@ paths:
           name: limit
           in: query
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                title: 'Page[IterationResultItem]'
+                title: "Page[IterationResultItem]"
                 required:
                   - _meta
                   - _links
@@ -5573,23 +5573,23 @@ paths:
                 type: object
                 properties:
                   _meta:
-                    $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1checkpoint~1%7Bref_id%7D~1iterations/get/responses/200/content/application~1json/schema/properties/_meta'
+                    $ref: "#/paths/~1projects~1%7Bproject_uuid%7D~1checkpoint~1%7Bref_id%7D~1iterations/get/responses/200/content/application~1json/schema/properties/_meta"
                   _links:
-                    $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1checkpoint~1%7Bref_id%7D~1iterations/get/responses/200/content/application~1json/schema/properties/_links'
+                    $ref: "#/paths/~1projects~1%7Bproject_uuid%7D~1checkpoint~1%7Bref_id%7D~1iterations/get/responses/200/content/application~1json/schema/properties/_links"
                   data:
                     title: Data
                     type: array
                     items:
-                      $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1checkpoint~1%7Bref_id%7D~1iterations/get/responses/200/content/application~1json/schema/properties/data/items'
-        '404':
+                      $ref: "#/paths/~1projects~1%7Bproject_uuid%7D~1checkpoint~1%7Bref_id%7D~1iterations/get/responses/200/content/application~1json/schema/properties/data/items"
+        "404":
           description: This project has no iterations.Only meta-project have iterations and they must be explicitly created.
-        '422':
+        "422":
           description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1checkpoint~1%7Bref_id%7D~1iterations/get/responses/422/content/application~1json/schema'
-  '/projects/{project_uuid}/checkpoint/{ref_id}/iterations/{iter_id}/results':
+                $ref: "#/paths/~1projects~1%7Bproject_uuid%7D~1checkpoint~1%7Bref_id%7D~1iterations/get/responses/422/content/application~1json/schema"
+  "/projects/{project_uuid}/checkpoint/{ref_id}/iterations/{iter_id}/results":
     get:
       tags:
         - meta-projects
@@ -5620,7 +5620,7 @@ paths:
           name: iter_id
           in: path
       responses:
-        '200':
+        "200":
           description: Successful Response
   /repos/projects:
     get:
@@ -5628,7 +5628,7 @@ paths:
         - repository
       summary: List Repos
       description: List info about versioned projects
-      operationId: simcore_service_webserver.version_control_handlers._list_repos_handler
+      operationId: simcore_service_webserver.version_control._rest_handlers._list_repos_handler
       parameters:
         - description: index to the first item to return (pagination)
           required: false
@@ -5652,12 +5652,12 @@ paths:
           name: limit
           in: query
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                title: 'Page[Repo]'
+                title: "Page[Repo]"
                 required:
                   - _meta
                   - _links
@@ -5749,7 +5749,7 @@ paths:
                           minLength: 1
                           type: string
                           format: uri
-        '422':
+        "422":
           description: Validation Error
           content:
             application/json:
@@ -5779,13 +5779,13 @@ paths:
                         type:
                           title: Error Type
                           type: string
-  '/repos/projects/{project_uuid}/checkpoints':
+  "/repos/projects/{project_uuid}/checkpoints":
     get:
       tags:
         - repository
       summary: List Checkpoints
       description: Lists commits&tags tree of the project
-      operationId: simcore_service_webserver.version_control_handlers._list_checkpoints_handler
+      operationId: simcore_service_webserver.version_control._rest_handlers._list_checkpoints_handler
       parameters:
         - description: Project unique identifier
           required: true
@@ -5818,12 +5818,12 @@ paths:
           name: limit
           in: query
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                title: 'Page[Checkpoint]'
+                title: "Page[Checkpoint]"
                 required:
                   - _meta
                   - _links
@@ -5831,25 +5831,25 @@ paths:
                 type: object
                 properties:
                   _meta:
-                    $ref: '#/paths/~1repos~1projects/get/responses/200/content/application~1json/schema/properties/_meta'
+                    $ref: "#/paths/~1repos~1projects/get/responses/200/content/application~1json/schema/properties/_meta"
                   _links:
-                    $ref: '#/paths/~1repos~1projects/get/responses/200/content/application~1json/schema/properties/_links'
+                    $ref: "#/paths/~1repos~1projects/get/responses/200/content/application~1json/schema/properties/_links"
                   data:
                     title: Data
                     type: array
                     items:
-                      $ref: '#/paths/~1repos~1projects~1%7Bproject_uuid%7D~1checkpoints/post/responses/201/content/application~1json/schema/properties/data'
-        '422':
+                      $ref: "#/paths/~1repos~1projects~1%7Bproject_uuid%7D~1checkpoints/post/responses/201/content/application~1json/schema/properties/data"
+        "422":
           description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1repos~1projects/get/responses/422/content/application~1json/schema'
+                $ref: "#/paths/~1repos~1projects/get/responses/422/content/application~1json/schema"
     post:
       tags:
         - repository
       summary: Create Checkpoint
-      operationId: simcore_service_webserver.version_control_handlers._create_checkpoint_handler
+      operationId: simcore_service_webserver.version_control._rest_handlers._create_checkpoint_handler
       parameters:
         - description: Project unique identifier
           required: true
@@ -5877,12 +5877,12 @@ paths:
                   type: string
         required: true
       responses:
-        '201':
+        "201":
           description: Successful Response
           content:
             application/json:
               schema:
-                title: 'Envelope[Checkpoint]'
+                title: "Envelope[Checkpoint]"
                 type: object
                 properties:
                   data:
@@ -5937,19 +5937,19 @@ paths:
                       message:
                         title: Message
                         type: string
-        '422':
+        "422":
           description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1repos~1projects/get/responses/422/content/application~1json/schema'
-  '/repos/projects/{project_uuid}/checkpoints/HEAD':
+                $ref: "#/paths/~1repos~1projects/get/responses/422/content/application~1json/schema"
+  "/repos/projects/{project_uuid}/checkpoints/HEAD":
     get:
       tags:
         - repository
       summary: Gets HEAD (i.e. current) checkpoint
       description: Get current commit
-      operationId: simcore_service_webserver.version_control_handlers._get_checkpoint_handler_head
+      operationId: simcore_service_webserver.version_control._rest_handlers._get_checkpoint_handler_head
       parameters:
         - description: Project unique identifier
           required: true
@@ -5961,27 +5961,27 @@ paths:
           name: project_uuid
           in: path
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1repos~1projects~1%7Bproject_uuid%7D~1checkpoints/post/responses/201/content/application~1json/schema'
-        '422':
+                $ref: "#/paths/~1repos~1projects~1%7Bproject_uuid%7D~1checkpoints/post/responses/201/content/application~1json/schema"
+        "422":
           description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1repos~1projects/get/responses/422/content/application~1json/schema'
-  '/repos/projects/{project_uuid}/checkpoints/{ref_id}':
+                $ref: "#/paths/~1repos~1projects/get/responses/422/content/application~1json/schema"
+  "/repos/projects/{project_uuid}/checkpoints/{ref_id}":
     get:
       tags:
         - repository
       summary: Get Checkpoint
       description: Set ref_id=HEAD to return current commit
-      operationId: simcore_service_webserver.version_control_handlers._get_checkpoint_handler
+      operationId: simcore_service_webserver.version_control._rest_handlers._get_checkpoint_handler
       parameters:
-        - description: 'A repository ref (commit, tag or branch)'
+        - description: "A repository ref (commit, tag or branch)"
           required: true
           schema:
             title: Ref Id
@@ -5989,7 +5989,7 @@ paths:
               - type: string
                 format: uuid
               - type: string
-            description: 'A repository ref (commit, tag or branch)'
+            description: "A repository ref (commit, tag or branch)"
           name: ref_id
           in: path
         - description: Project unique identifier
@@ -6002,25 +6002,25 @@ paths:
           name: project_uuid
           in: path
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1repos~1projects~1%7Bproject_uuid%7D~1checkpoints/post/responses/201/content/application~1json/schema'
-        '422':
+                $ref: "#/paths/~1repos~1projects~1%7Bproject_uuid%7D~1checkpoints/post/responses/201/content/application~1json/schema"
+        "422":
           description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1repos~1projects/get/responses/422/content/application~1json/schema'
+                $ref: "#/paths/~1repos~1projects/get/responses/422/content/application~1json/schema"
     patch:
       tags:
         - repository
       summary: Update Checkpoint Annotations
-      operationId: simcore_service_webserver.version_control_handlers._update_checkpoint_annotations_handler
+      operationId: simcore_service_webserver.version_control._rest_handlers._update_checkpoint_annotations_handler
       parameters:
-        - description: 'A repository ref (commit, tag or branch)'
+        - description: "A repository ref (commit, tag or branch)"
           required: true
           schema:
             title: Ref Id
@@ -6028,7 +6028,7 @@ paths:
               - type: string
                 format: uuid
               - type: string
-            description: 'A repository ref (commit, tag or branch)'
+            description: "A repository ref (commit, tag or branch)"
           name: ref_id
           in: path
         - description: Project unique identifier
@@ -6055,19 +6055,19 @@ paths:
                   type: string
         required: true
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1repos~1projects~1%7Bproject_uuid%7D~1checkpoints/post/responses/201/content/application~1json/schema'
-        '422':
+                $ref: "#/paths/~1repos~1projects~1%7Bproject_uuid%7D~1checkpoints/post/responses/201/content/application~1json/schema"
+        "422":
           description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1repos~1projects/get/responses/422/content/application~1json/schema'
-  '/repos/projects/{project_uuid}/checkpoints/{ref_id}:checkout':
+                $ref: "#/paths/~1repos~1projects/get/responses/422/content/application~1json/schema"
+  "/repos/projects/{project_uuid}/checkpoints/{ref_id}:checkout":
     post:
       tags:
         - repository
@@ -6075,9 +6075,9 @@ paths:
       description: |-
         Affect current working copy of the project, i.e. get_project will now return
         the check out
-      operationId: simcore_service_webserver.version_control_handlers._checkout_handler
+      operationId: simcore_service_webserver.version_control._rest_handlers._checkout_handler
       parameters:
-        - description: 'A repository ref (commit, tag or branch)'
+        - description: "A repository ref (commit, tag or branch)"
           required: true
           schema:
             title: Ref Id
@@ -6085,7 +6085,7 @@ paths:
               - type: string
                 format: uuid
               - type: string
-            description: 'A repository ref (commit, tag or branch)'
+            description: "A repository ref (commit, tag or branch)"
           name: ref_id
           in: path
         - description: Project unique identifier
@@ -6098,27 +6098,27 @@ paths:
           name: project_uuid
           in: path
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1repos~1projects~1%7Bproject_uuid%7D~1checkpoints/post/responses/201/content/application~1json/schema'
-        '422':
+                $ref: "#/paths/~1repos~1projects~1%7Bproject_uuid%7D~1checkpoints/post/responses/201/content/application~1json/schema"
+        "422":
           description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1repos~1projects/get/responses/422/content/application~1json/schema'
-  '/repos/projects/{project_uuid}/checkpoints/{ref_id}/workbench/view':
+                $ref: "#/paths/~1repos~1projects/get/responses/422/content/application~1json/schema"
+  "/repos/projects/{project_uuid}/checkpoints/{ref_id}/workbench/view":
     get:
       tags:
         - repository
       summary: View Project Workbench
       description: Returns a view of the workbench for a given project's version
-      operationId: simcore_service_webserver.version_control_handlers._view_project_workbench_handler
+      operationId: simcore_service_webserver.version_control._rest_handlers._view_project_workbench_handler
       parameters:
-        - description: 'A repository ref (commit, tag or branch)'
+        - description: "A repository ref (commit, tag or branch)"
           required: true
           schema:
             title: Ref Id
@@ -6126,7 +6126,7 @@ paths:
               - type: string
                 format: uuid
               - type: string
-            description: 'A repository ref (commit, tag or branch)'
+            description: "A repository ref (commit, tag or branch)"
           name: ref_id
           in: path
         - description: Project unique identifier
@@ -6139,12 +6139,12 @@ paths:
           name: project_uuid
           in: path
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                title: 'Envelope[WorkbenchView]'
+                title: "Envelope[WorkbenchView]"
                 type: object
                 properties:
                   data:
@@ -6187,21 +6187,21 @@ paths:
                         default: {}
                     description: A view (i.e. read-only and visual) of the project's workbench
                   error:
-                    $ref: '#/paths/~1repos~1projects~1%7Bproject_uuid%7D~1checkpoints/post/responses/201/content/application~1json/schema/properties/error'
-        '422':
+                    $ref: "#/paths/~1repos~1projects~1%7Bproject_uuid%7D~1checkpoints/post/responses/201/content/application~1json/schema/properties/error"
+        "422":
           description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1repos~1projects/get/responses/422/content/application~1json/schema'
+                $ref: "#/paths/~1repos~1projects/get/responses/422/content/application~1json/schema"
   /activity/status:
     get:
       operationId: get_status
       tags:
         - activity
       responses:
-        '200':
-          description: 'Object containing queuing, CPU and Memory usage/limits information of services'
+        "200":
+          description: "Object containing queuing, CPU and Memory usage/limits information of services"
           content:
             application/json:
               schema:
@@ -6234,7 +6234,7 @@ paths:
                     nullable: true
                     default: null
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
   /tags:
     get:
       tags:
@@ -6242,19 +6242,19 @@ paths:
       summary: List Tags
       operationId: list_tags
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                title: 'Envelope[list[simcore_service_webserver.tags_handlers.TagGet]]'
+                title: "Envelope[list[simcore_service_webserver.tags_handlers.TagGet]]"
                 type: object
                 properties:
                   data:
                     title: Data
                     type: array
                     items:
-                      $ref: '#/paths/~1tags/post/responses/200/content/application~1json/schema/properties/data'
+                      $ref: "#/paths/~1tags/post/responses/200/content/application~1json/schema/properties/data"
                   error:
                     title: Error
     post:
@@ -6280,17 +6280,17 @@ paths:
                   type: string
                 color:
                   title: Color
-                  pattern: '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$'
+                  pattern: "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
                   type: string
               additionalProperties: false
         required: true
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                title: 'Envelope[TagGet]'
+                title: "Envelope[TagGet]"
                 type: object
                 properties:
                   data:
@@ -6335,7 +6335,7 @@ paths:
                             type: boolean
                   error:
                     title: Error
-  '/tags/{tag_id}':
+  "/tags/{tag_id}":
     delete:
       tags:
         - tag
@@ -6349,7 +6349,7 @@ paths:
           name: tag_id
           in: path
       responses:
-        '204':
+        "204":
           description: Successful Response
     patch:
       tags:
@@ -6378,17 +6378,17 @@ paths:
                   type: string
                 color:
                   title: Color
-                  pattern: '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$'
+                  pattern: "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
                   type: string
               additionalProperties: false
         required: true
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1tags/post/responses/200/content/application~1json/schema'
+                $ref: "#/paths/~1tags/post/responses/200/content/application~1json/schema"
   /publications/service-submission:
     post:
       tags:
@@ -6410,22 +6410,22 @@ paths:
                   type: string
                   format: binary
       responses:
-        '204':
+        "204":
           description: Submission has been registered
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
   /catalog/dags:
     get:
       tags:
         - catalog
       operationId: list_catalog_dags
       responses:
-        '200':
+        "200":
           description: List of catalog dags
-        '422':
+        "422":
           description: Validation Error
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
     post:
       tags:
         - catalog
@@ -6438,13 +6438,13 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        '201':
+        "201":
           description: The dag was successfully created
-        '422':
+        "422":
           description: Validation Error
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/catalog/dags/{dag_id}':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/catalog/dags/{dag_id}":
     parameters:
       - in: path
         name: dag_id
@@ -6464,21 +6464,21 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        '200':
+        "200":
           description: The dag was replaced in catalog
-        '422':
+        "422":
           description: Validation Error
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
     delete:
       tags:
         - catalog
       summary: Deletes an existing dag
       operationId: delete_catalog_dag
       responses:
-        '204':
+        "204":
           description: Successfully deleted
-        '422':
+        "422":
           description: Validation Error
   /catalog/services:
     get:
@@ -6487,11 +6487,11 @@ paths:
       summary: List Services
       operationId: list_services_handler
       responses:
-        '200':
+        "200":
           description: Returns list of services from the catalog
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/catalog/services/{service_key}/{service_version}':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/catalog/services/{service_key}/{service_version}":
     parameters:
       - in: path
         name: service_key
@@ -6513,10 +6513,10 @@ paths:
       summary: Get Service
       operationId: get_service_handler
       responses:
-        '200':
+        "200":
           description: Returns service
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
     patch:
       tags:
         - catalog
@@ -6529,11 +6529,11 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        '200':
+        "200":
           description: Returns modified service
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/catalog/services/{service_key}/{service_version}/inputs':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/catalog/services/{service_key}/{service_version}/inputs":
     get:
       tags:
         - catalog
@@ -6554,7 +6554,7 @@ paths:
             title: Service Version
             type: string
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
@@ -6597,7 +6597,7 @@ paths:
                     type: object
                   keyId:
                     description: Unique name identifier for this input
-                    pattern: '^[-_a-zA-Z0-9]+$'
+                    pattern: "^[-_a-zA-Z0-9]+$"
                     title: Keyid
                     type: string
                   label:
@@ -6611,15 +6611,15 @@ paths:
                     title: Type
                     type: string
                   unit:
-                    description: 'Units, when it refers to a physical quantity'
+                    description: "Units, when it refers to a physical quantity"
                     title: Unit
                     type: string
                   unitLong:
-                    description: 'Long name of the unit, if available'
+                    description: "Long name of the unit, if available"
                     title: Unitlong
                     type: string
                   unitShort:
-                    description: 'Short name for the unit, if available'
+                    description: "Short name for the unit, if available"
                     title: Unitshort
                     type: string
                   widget:
@@ -6692,7 +6692,7 @@ paths:
                 title: ServiceInputApiOut
                 type: object
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
@@ -6723,7 +6723,7 @@ paths:
                 type: object
           description: Validation Error
       summary: List Service Inputs
-  '/catalog/services/{service_key}/{service_version}/inputs/{input_key}':
+  "/catalog/services/{service_key}/{service_version}/inputs/{input_key}":
     get:
       tags:
         - catalog
@@ -6747,28 +6747,28 @@ paths:
           name: input_key
           required: true
           schema:
-            pattern: '^[-_a-zA-Z0-9]+$'
+            pattern: "^[-_a-zA-Z0-9]+$"
             title: Input Key
             type: string
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1inputs/get/responses/200/content/application~1json/schema'
+                $ref: "#/paths/~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1inputs/get/responses/200/content/application~1json/schema"
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1inputs/get/responses/422/content/application~1json/schema'
+                $ref: "#/paths/~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1inputs/get/responses/422/content/application~1json/schema"
           description: Validation Error
       summary: Get Service Input
-  '/catalog/services/{service_key}/{service_version}/inputs:match':
+  "/catalog/services/{service_key}/{service_version}/inputs:match":
     get:
       tags:
         - catalog
-      description: 'Filters inputs of this service that match a given service output. Returns compatible input ports of the service, provided an output port of a connected node.'
+      description: "Filters inputs of this service that match a given service output. Returns compatible input ports of the service, provided an output port of a connected node."
       operationId: get_compatible_inputs_given_source_output_handler
       parameters:
         - in: path
@@ -6803,28 +6803,28 @@ paths:
           name: fromOutput
           required: true
           schema:
-            pattern: '^[-_a-zA-Z0-9]+$'
+            pattern: "^[-_a-zA-Z0-9]+$"
             title: Fromoutput
             type: string
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 items:
-                  pattern: '^[-_a-zA-Z0-9]+$'
+                  pattern: "^[-_a-zA-Z0-9]+$"
                   type: string
                 title: Response Get Compatible Inputs Given Source Output Catalog Services  Service Key   Service Version  Inputs Match Get
                 type: array
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1inputs/get/responses/422/content/application~1json/schema'
+                $ref: "#/paths/~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1inputs/get/responses/422/content/application~1json/schema"
           description: Validation Error
       summary: Get Compatible Inputs Given Source Output
-  '/catalog/services/{service_key}/{service_version}/outputs':
+  "/catalog/services/{service_key}/{service_version}/outputs":
     get:
       tags:
         - catalog
@@ -6845,23 +6845,23 @@ paths:
             title: Service Version
             type: string
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 items:
-                  $ref: '#/paths/~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1outputs~1%7Boutput_key%7D/get/responses/200/content/application~1json/schema'
+                  $ref: "#/paths/~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1outputs~1%7Boutput_key%7D/get/responses/200/content/application~1json/schema"
                 title: Response List Service Outputs Catalog Services  Service Key   Service Version  Outputs Get
                 type: array
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1inputs/get/responses/422/content/application~1json/schema'
+                $ref: "#/paths/~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1inputs/get/responses/422/content/application~1json/schema"
           description: Validation Error
       summary: List Service Outputs
-  '/catalog/services/{service_key}/{service_version}/outputs/{output_key}':
+  "/catalog/services/{service_key}/{service_version}/outputs/{output_key}":
     get:
       tags:
         - catalog
@@ -6885,11 +6885,11 @@ paths:
           name: output_key
           required: true
           schema:
-            pattern: '^[-_a-zA-Z0-9]+$'
+            pattern: "^[-_a-zA-Z0-9]+$"
             title: Output Key
             type: string
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
@@ -6932,7 +6932,7 @@ paths:
                     type: object
                   keyId:
                     description: Unique name identifier for this input
-                    pattern: '^[-_a-zA-Z0-9]+$'
+                    pattern: "^[-_a-zA-Z0-9]+$"
                     title: Keyid
                     type: string
                   label:
@@ -6946,20 +6946,20 @@ paths:
                     title: Type
                     type: string
                   unit:
-                    description: 'Units, when it refers to a physical quantity'
+                    description: "Units, when it refers to a physical quantity"
                     title: Unit
                     type: string
                   unitLong:
-                    description: 'Long name of the unit, if available'
+                    description: "Long name of the unit, if available"
                     title: Unitlong
                     type: string
                   unitShort:
-                    description: 'Short name for the unit, if available'
+                    description: "Short name for the unit, if available"
                     title: Unitshort
                     type: string
                   widget:
                     allOf:
-                      - $ref: '#/paths/~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1inputs/get/responses/200/content/application~1json/schema/properties/widget/allOf/0'
+                      - $ref: "#/paths/~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1inputs/get/responses/200/content/application~1json/schema/properties/widget/allOf/0"
                     deprecated: true
                     description: custom widget to use instead of the default one determined from the data-type
                     title: Widget
@@ -6972,14 +6972,14 @@ paths:
                 title: ServiceOutputApiOut
                 type: object
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1inputs/get/responses/422/content/application~1json/schema'
+                $ref: "#/paths/~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1inputs/get/responses/422/content/application~1json/schema"
           description: Validation Error
       summary: Get Service Output
-  '/catalog/services/{service_key}/{service_version}/outputs:match':
+  "/catalog/services/{service_key}/{service_version}/outputs:match":
     get:
       tags:
         - catalog
@@ -7018,28 +7018,28 @@ paths:
           name: toInput
           required: true
           schema:
-            pattern: '^[-_a-zA-Z0-9]+$'
+            pattern: "^[-_a-zA-Z0-9]+$"
             title: Toinput
             type: string
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 items:
-                  pattern: '^[-_a-zA-Z0-9]+$'
+                  pattern: "^[-_a-zA-Z0-9]+$"
                   type: string
                 title: Response Get Compatible Outputs Given Target Input Catalog Services  Service Key   Service Version  Outputs Match Get
                 type: array
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1inputs/get/responses/422/content/application~1json/schema'
+                $ref: "#/paths/~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1inputs/get/responses/422/content/application~1json/schema"
           description: Validation Error
       summary: Get Compatible Outputs Given Target Input
-  '/catalog/services/{service_key}/{service_version}/resources':
+  "/catalog/services/{service_key}/{service_version}/resources":
     get:
       tags:
         - catalog
@@ -7061,15 +7061,15 @@ paths:
             title: Service Version
             type: string
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/get/responses/200/content/application~1json/schema'
+                $ref: "#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/get/responses/200/content/application~1json/schema"
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/clusters:ping':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/clusters:ping":
     post:
       summary: test connectivity with cluster
       operationId: ping_cluster_handler
@@ -7090,18 +7090,18 @@ paths:
                 authentication:
                   description: Dask gateway authentication
                   anyOf:
-                    - $ref: '#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/0'
-                    - $ref: '#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/1'
-                    - $ref: '#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/2'
+                    - $ref: "#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/0"
+                    - $ref: "#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/1"
+                    - $ref: "#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/2"
               required:
                 - endpoint
                 - authentication
               additionalProperties: false
       responses:
-        '204':
+        "204":
           description: connectivity is OK
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
   /clusters:
     get:
       summary: List my clusters
@@ -7109,7 +7109,7 @@ paths:
       tags:
         - cluster
       responses:
-        '200':
+        "200":
           description: list of the clusters I have access to
           content:
             application/json:
@@ -7121,12 +7121,12 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/paths/~1clusters/post/responses/201/content/application~1json/schema/properties/data'
+                      $ref: "#/paths/~1clusters/post/responses/201/content/application~1json/schema/properties/data"
                   error:
                     nullable: true
                     default: null
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
     post:
       summary: Create a new cluster
       operationId: create_cluster_handler
@@ -7204,7 +7204,7 @@ paths:
                 - authentication
               additionalProperties: false
       responses:
-        '201':
+        "201":
           description: cluster created
           content:
             application/json:
@@ -7246,15 +7246,15 @@ paths:
                       authentication:
                         description: Dask gateway authentication
                         anyOf:
-                          - $ref: '#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/0'
-                          - $ref: '#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/1'
-                          - $ref: '#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/2'
+                          - $ref: "#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/0"
+                          - $ref: "#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/1"
+                          - $ref: "#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/2"
                       accessRights:
                         type: object
                         description: object containing the GroupID as key and read/write/execution permissions as value
                         x-patternProperties:
                           ^\S+$:
-                            $ref: '#/paths/~1clusters~1%7Bcluster_id%7D/patch/requestBody/content/application~1json/schema/properties/accessRights/x-patternProperties/%5E%5CS%2B%24'
+                            $ref: "#/paths/~1clusters~1%7Bcluster_id%7D/patch/requestBody/content/application~1json/schema/properties/accessRights/x-patternProperties/%5E%5CS%2B%24"
                     required:
                       - id
                       - name
@@ -7266,14 +7266,14 @@ paths:
                       - id: 1
                         name: AWS cluster
                         type: AWS
-                        endpoint: 'https://registry.osparc-development.fake.dev'
+                        endpoint: "https://registry.osparc-development.fake.dev"
                         authentication:
                           type: simple
                           username: someuser
                           password: somepassword
                         owner: 2
                         accessRights:
-                          '2':
+                          "2":
                             read: true
                             write: true
                             delete: true
@@ -7281,8 +7281,8 @@ paths:
                     nullable: true
                     default: null
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/clusters/{cluster_id}':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/clusters/{cluster_id}":
     parameters:
       - name: cluster_id
         in: path
@@ -7295,14 +7295,14 @@ paths:
       summary: Gets one cluster
       operationId: get_cluster_handler
       responses:
-        '200':
+        "200":
           description: got cluster
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1clusters/post/responses/201/content/application~1json/schema'
+                $ref: "#/paths/~1clusters/post/responses/201/content/application~1json/schema"
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
     patch:
       summary: Update one cluster
       operationId: update_cluster_handler
@@ -7341,9 +7341,9 @@ paths:
                 authentication:
                   description: Dask gateway authentication
                   anyOf:
-                    - $ref: '#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/0'
-                    - $ref: '#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/1'
-                    - $ref: '#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/2'
+                    - $ref: "#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/0"
+                    - $ref: "#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/1"
+                    - $ref: "#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/2"
                 accessRights:
                   type: object
                   description: object containing the GroupID as key and read/write/execution permissions as value
@@ -7367,25 +7367,25 @@ paths:
                         - delete
               additionalProperties: false
       responses:
-        '200':
+        "200":
           description: the modified cluster
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1clusters/post/responses/201/content/application~1json/schema'
+                $ref: "#/paths/~1clusters/post/responses/201/content/application~1json/schema"
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
     delete:
       tags:
         - cluster
       summary: Deletes one cluster
       operationId: delete_cluster_handler
       responses:
-        '204':
+        "204":
           description: cluster has been successfully deleted
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/clusters/{cluster_id}:ping':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/clusters/{cluster_id}:ping":
     parameters:
       - name: cluster_id
         in: path
@@ -7398,11 +7398,11 @@ paths:
       tags:
         - cluster
       responses:
-        '204':
+        "204":
           description: connectivity is OK
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/clusters/{cluster_id}/details':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/clusters/{cluster_id}/details":
     parameters:
       - name: cluster_id
         in: path
@@ -7415,7 +7415,7 @@ paths:
       summary: Gets one cluster details
       operationId: get_cluster_details_handler
       responses:
-        '200':
+        "200":
           description: got cluster
           content:
             application/json:
@@ -7446,22 +7446,22 @@ paths:
                     nullable: true
                     default: null
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
   /tasks:
     get:
       operationId: list_tasks
       tags:
         - tasks
       responses:
-        '200':
+        "200":
           description: Returns the list of active tasks (running and/or done)
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/paths/~1projects/post/responses/202/content/application~1json/schema'
-  '/tasks/{task_id}':
+                  $ref: "#/paths/~1projects/post/responses/202/content/application~1json/schema"
+  "/tasks/{task_id}":
     parameters:
       - name: task_id
         in: path
@@ -7473,7 +7473,7 @@ paths:
       tags:
         - tasks
       responses:
-        '200':
+        "200":
           description: Returns the task status
           content:
             application/json:
@@ -7498,23 +7498,23 @@ paths:
                       started:
                         type: string
                         pattern: '\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z'
-                        example: '2018-07-01T11:13:43Z'
+                        example: "2018-07-01T11:13:43Z"
                   error:
                     nullable: true
                     default: null
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
     delete:
       operationId: cancel_and_delete_task
       description: Aborts and remove the task
       tags:
         - tasks
       responses:
-        '204':
+        "204":
           description: Task was successfully aborted
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/tasks/{task_id}/result':
+          $ref: "#/components/responses/DefaultErrorResponse"
+  "/tasks/{task_id}/result":
     parameters:
       - name: task_id
         in: path
@@ -7529,7 +7529,7 @@ paths:
         2XX:
           description: Retrieve the task result and returns directly its HTTP code
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
   /services:
     get:
       tags:
@@ -7538,12 +7538,12 @@ paths:
       description: Returns a list latest version of services
       operationId: list_services
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                title: 'Envelope[list[simcore_service_webserver.studies_dispatcher.handlers_rest.ServiceGet]]'
+                title: "Envelope[list[simcore_service_webserver.studies_dispatcher.handlers_rest.ServiceGet]]"
                 type: object
                 properties:
                   data:
@@ -7596,11 +7596,11 @@ paths:
                         key: simcore/services/dynamic/sim4life
                         title: Sim4Life Mattermost
                         description: It is also sim4life for the web
-                        thumbnail: 'https://via.placeholder.com/170x120.png'
+                        thumbnail: "https://via.placeholder.com/170x120.png"
                         file_extensions:
                           - smash
                           - h5
-                        view_url: 'https://host.com/view?viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=1.2.3'
+                        view_url: "https://host.com/view?viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=1.2.3"
                   error:
                     title: Error
   /viewers:
@@ -7623,12 +7623,12 @@ paths:
           name: file_type
           in: query
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                title: 'Envelope[list[simcore_service_webserver.studies_dispatcher.handlers_rest.Viewer]]'
+                title: "Envelope[list[simcore_service_webserver.studies_dispatcher.handlers_rest.Viewer]]"
                 type: object
                 properties:
                   data:
@@ -7655,7 +7655,7 @@ paths:
                           maxLength: 2083
                           minLength: 1
                           type: string
-                          description: 'Base url to execute viewer. Needs appending file_size,[file_name] and download_link as query parameters'
+                          description: "Base url to execute viewer. Needs appending file_size,[file_name] and download_link as query parameters"
                           format: uri
                       description: |-
                         API model for a viewer resource
@@ -7695,12 +7695,12 @@ paths:
           name: file_type
           in: query
       responses:
-        '200':
+        "200":
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1viewers/get/responses/200/content/application~1json/schema'
+                $ref: "#/paths/~1viewers/get/responses/200/content/application~1json/schema"
   /view:
     get:
       tags:
@@ -7769,9 +7769,9 @@ paths:
               description: This pair uniquely identifies a services
         required: true
       responses:
-        '302':
+        "302":
           description: Opens osparc and starts viewer for selected data
-  '/study/{study_id}':
+  "/study/{study_id}":
     get:
       tags:
         - nih-sparc
@@ -7787,7 +7787,7 @@ paths:
           name: study_id
           in: path
       responses:
-        '302':
+        "302":
           description: Opens osparc and opens a copy of publised study
 components:
   responses:
@@ -7823,7 +7823,7 @@ components:
                             - INFO
                             - ERROR
                         message:
-                          description: 'log message. If logger is USER, then it MUST be human readable'
+                          description: "log message. If logger is USER, then it MUST be human readable"
                           type: string
                         logger:
                           description: name of the logger receiving this message
@@ -7831,7 +7831,7 @@ components:
                       required:
                         - message
                       example:
-                        message: 'Hi there, Mr user'
+                        message: "Hi there, Mr user"
                         level: INFO
                         logger: user-logger
                   errors:
