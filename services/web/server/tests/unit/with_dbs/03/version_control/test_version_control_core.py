@@ -17,10 +17,7 @@ from simcore_service_webserver.version_control._core import (
     list_checkpoints,
     update_checkpoint,
 )
-from simcore_service_webserver.version_control.version_control_db import (
-    HEAD,
-    VersionControlRepository,
-)
+from simcore_service_webserver.version_control.db import HEAD, VersionControlRepository
 
 ProjectDict = dict[str, Any]
 

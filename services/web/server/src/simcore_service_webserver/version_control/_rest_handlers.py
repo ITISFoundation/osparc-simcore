@@ -25,6 +25,7 @@ from ._core import (
     update_checkpoint_safe,
 )
 from ._rest_handlers_base import handle_request_errors
+from .db import VersionControlRepository
 from .models import (
     HEAD,
     Checkpoint,
@@ -36,7 +37,6 @@ from .models import (
     WorkbenchView,
     WorkbenchViewApiModel,
 )
-from .version_control_db import VersionControlRepository
 
 logger = logging.getLogger(__name__)
 
