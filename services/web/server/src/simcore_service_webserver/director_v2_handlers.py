@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from aiohttp import web
 from models_library.clusters import ClusterID
@@ -19,7 +19,7 @@ from .director_v2_core_computations import ComputationsApi
 from .director_v2_exceptions import DirectorServiceError
 from .login.decorators import RQT_USERID_KEY, login_required
 from .security_decorators import permission_required
-from .version_control_db import CommitID
+from .version_control.version_control_db import CommitID
 
 log = logging.getLogger(__name__)
 
@@ -156,7 +156,7 @@ async def stop_computation(request: web.Request) -> web.Response:
 
 
 class ComputationTaskGet(BaseModel):
-    cluster_id: Optional[ClusterID]
+    cluster_id: ClusterID | None
 
 
 @routes.get(f"/{VTAG}/computations/{{project_id}}")

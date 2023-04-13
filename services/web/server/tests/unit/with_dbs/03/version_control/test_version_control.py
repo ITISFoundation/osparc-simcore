@@ -10,7 +10,9 @@ from openapi_core.schema.specs.models import Spec as OpenApiSpecs
 from pydantic import BaseModel
 from simcore_service_webserver._meta import API_VTAG as VX
 from simcore_service_webserver.version_control.plugin import version_control_handlers
-from simcore_service_webserver.version_control_db import compute_workbench_checksum
+from simcore_service_webserver.version_control.version_control_db import (
+    compute_workbench_checksum,
+)
 
 ProjectDict = dict[str, Any]
 
