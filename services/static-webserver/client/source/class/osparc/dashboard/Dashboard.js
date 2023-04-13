@@ -39,6 +39,16 @@ qx.Class.define("osparc.dashboard.Dashboard", {
 
     osparc.utils.Utils.setIdToWidget(this, "dashboard");
 
+    if (osparc.product.panddy.Utils.hasPanddy()) {
+      const panddy = osparc.panddy.Panddy.getInstance();
+      const root = qx.core.Init.getApplication().getRoot();
+      root.add(panddy, {
+        bottom: 10,
+        right: 10
+      });
+      setTimeout(() => panddy.start(), 2000);
+    }
+
     this.set({
       contentPaddingTop: 15,
       contentPaddingLeft: 0,

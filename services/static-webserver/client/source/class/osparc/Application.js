@@ -98,10 +98,6 @@ qx.Class.define("osparc.Application", {
       this.__updateFavicon();
 
       this.__startupChecks();
-
-      if (osparc.product.panddy.Utils.hasPanddy()) {
-        this.__startPanddy();
-      }
     },
 
     __initRouting: function() {
@@ -381,16 +377,6 @@ qx.Class.define("osparc.Application", {
 
       this.__connectWebSocket();
       this.__loadView(new osparc.viewer.MainPage(studyId, viewerNodeId));
-    },
-
-    __startPanddy: function() {
-      const panddy = osparc.panddy.Panddy.getInstance();
-      const doc = this.getRoot();
-      doc.add(panddy, {
-        bottom: 10,
-        right: 10
-      });
-      setTimeout(() => panddy.start(), 2000);
     },
 
     __loadView: function(view, opts, clearUrl=true) {
