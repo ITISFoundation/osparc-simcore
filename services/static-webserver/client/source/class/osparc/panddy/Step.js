@@ -41,11 +41,19 @@ qx.Class.define("osparc.panddy.Step", {
     if (message) {
       this.setMessage(message);
     }
+
+    this.addListener("changeVisibility", e => {
+      if (e.getData() !== "visible") {
+        this.fireEvent("widgetExcluded");
+      }
+    }, this);
   },
 
   events: {
-    "closePressed": "qx.event.type.Event",
-    "nextPressed": "qx.event.type.Event"
+    "skipPressed": "qx.event.type.Event",
+    "nextPressed": "qx.event.type.Event",
+    "endPressed": "qx.event.type.Event",
+    "widgetExcluded": "qx.event.type.Event"
   },
 
   properties: {
@@ -116,7 +124,7 @@ qx.Class.define("osparc.panddy.Step", {
             allowGrowX: false,
             alignX: "left"
           });
-          control.addListener("execute", () => this.fireEvent("closePressed"), this);
+          control.addListener("execute", () => this.fireEvent("skipPressed"), this);
           const bottomLayout = this.getChildControl("bottom-layout");
           bottomLayout.add(control);
           break;
@@ -143,7 +151,7 @@ qx.Class.define("osparc.panddy.Step", {
             allowGrowX: false,
             alignX: "right"
           });
-          control.addListener("tap", () => this.fireEvent("nextPressed"), this);
+          control.addListener("execute", () => this.fireEvent("nextPressed"), this);
           const bottomLayout = this.getChildControl("bottom-layout");
           bottomLayout.add(control);
           break;
@@ -154,10 +162,9 @@ qx.Class.define("osparc.panddy.Step", {
             iconPosition: "right",
             appearance: "strong-button",
             allowGrowX: false,
-            alignX: "right",
-            visibility: "excluded"
+            alignX: "right"
           });
-          control.addListener("execute", () => this.fireEvent("closePressed"), this);
+          control.addListener("execute", () => this.fireEvent("endPressed"), this);
           const bottomLayout = this.getChildControl("bottom-layout");
           bottomLayout.add(control);
           break;
@@ -173,7 +180,7 @@ qx.Class.define("osparc.panddy.Step", {
       const nextButton = this.getChildControl("next-button");
       if (this.getStepIndex() === this.getNSteps()) {
         nextButton.exclude();
-        this.getChildControl("end-button").show();
+        this.getChildControl("end-button");
       }
     }
   }

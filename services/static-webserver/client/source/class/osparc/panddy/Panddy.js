@@ -172,7 +172,11 @@ qx.Class.define("osparc.panddy.Panddy", {
       const stepWidget = new osparc.panddy.Step(element, text).set({
         maxWidth: 400
       });
-      stepWidget.addListener("closePressed", () => this.stop(), this);
+      [
+        "skipPressed",
+        "endPressed",
+        "widgetExcluded"
+      ].forEach(evName => stepWidget.addListener(evName, () => this.stop(), this));
       stepWidget.addListener("nextPressed", () => this.__toStepCheck(this.__currentIdx+1), this);
       return stepWidget;
     },
@@ -211,10 +215,8 @@ qx.Class.define("osparc.panddy.Panddy", {
         });
       }
       stepWidget.show();
-      setTimeout(() => {
-        stepWidget.exclude();
-        stepWidget.show();
-      }, 10); // Hacky: Execute async and give some time for the relevant properties to be set
+      // eslint-disable-next-line no-underscore-dangle
+      setTimeout(() => stepWidget.__updatePosition(), 10); // Hacky: Execute async and give some time for the relevant properties to be set
     }
   }
 });
