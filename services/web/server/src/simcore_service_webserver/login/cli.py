@@ -34,7 +34,7 @@ def invitations(
             origin=URL(base_url),
         )
         typer.secho(f"{i:2d}. {url}")
-    # Missing keys ("user_id", "created_at", "data") for TypedDict "ConfirmationTokenDict"
+
     #
     # NOTE: An obvious improvement would be to inject the invitations directly from here
     #       into the database but for that I would add an authentication first. Could
