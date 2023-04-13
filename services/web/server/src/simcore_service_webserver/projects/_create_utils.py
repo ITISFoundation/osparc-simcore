@@ -253,11 +253,14 @@ async def create_project(
 
     except asyncio.CancelledError:
         log.warning(
-            "cancelled creation of project for '%s', cleaning up",
+            "cancelled create_project for '%s'. Cleaning up",
             f"{user_id=}",
         )
         if project_uuid := new_project.get("uuid"):
             await projects_api.submit_delete_project_task(
-                app, project_uuid, user_id, simcore_user_agent
+                app=app,
+                project_uuid=project_uuid,
+                user_id=user_id,
+                simcore_user_agent=simcore_user_agent,
             )
         raise
