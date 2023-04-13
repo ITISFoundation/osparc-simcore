@@ -362,6 +362,39 @@ async def test_dask_cluster_executes_simple_functions(dask_client: DaskClient):
     assert result == 7
 
 
+@pytest.mark.parametrize(
+    "dask_client", ["create_dask_client_from_scheduler"], indirect=True
+)
+@pytest.mark.parametrize("tasks_file_link_type", ["S3"], indirect=True)
+async def test_dask_run_on_scheduler_functions(dask_client: DaskClient):
+    def test_fct_add_sleep(x: int, y: int) -> int:
+        import time
+
+        time.sleep(x + y)
+        print(f"I'm the sleeping task... that slept {x+y} seconds")
+        return x + y
+
+    def _get_all_task_statues(dask_scheduler: distributed.Scheduler):
+        return {job_id: task.state for job_id, task in dask_scheduler.tasks.items()}
+
+    def _get_task_status(dask_scheduler):
+        return dask_scheduler.get_task_status(keys=[])
+
+    future = dask_client.backend.client.submit(test_fct_add_sleep, 2, 5)
+    assert future
+    for x in range(100):
+
+        task_statuses = await dask_client.backend.client.run_on_scheduler(
+            _get_all_task_statues
+        )
+        print(f"Processing jobs: {await dask_client.backend.client.processing()}")
+        print(f"{task_statuses=}")
+        print(f"{future=}")
+        await asyncio.sleep(0.5)
+
+    print(task_statuses)
+
+
 @pytest.mark.xfail(
     reason="BaseException is not propagated back by dask [https://github.com/dask/distributed/issues/5846]"
 )
