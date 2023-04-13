@@ -133,7 +133,7 @@ async def _copy_files_from_source_project(
 
 
 async def _compose_project_data(
-    app: web.Application, new_project: ProjectDict, predefined_project: ProjectDict
+    new_project: ProjectDict, predefined_project: ProjectDict
 ) -> ProjectDict:
     if new_project:  # creates from a copy, just override fields
         for key in OVERRIDABLE_DOCUMENT_KEYS:
@@ -141,7 +141,8 @@ async def _compose_project_data(
                 new_project[key] = non_null_value
     else:
         new_project = predefined_project
-    await projects_api.validate_project(app, new_project)
+
+    await projects_api.validate_project(new_project)
     return new_project
 
 
@@ -197,9 +198,7 @@ async def create_project(
 
         if predefined_project:
             # 2. overrides with optional body and re-validate
-            new_project = await _compose_project_data(
-                app, new_project, predefined_project
-            )
+            new_project = await _compose_project_data(new_project, predefined_project)
 
         # 3. save new project in DB
         new_project = await db.insert_project(

@@ -392,7 +392,7 @@ async def replace_project(request: web.Request):
     )
 
     try:
-        await projects_api.validate_project(request.app, new_project)
+        await projects_api.validate_project(new_project)
 
         current_project = await projects_api.get_project_for_user(
             request.app,

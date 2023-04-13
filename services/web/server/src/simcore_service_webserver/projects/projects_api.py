@@ -20,7 +20,7 @@ from uuid import UUID, uuid4
 
 from aiohttp import web
 from models_library.errors import ErrorDict
-from models_library.projects import ProjectID
+from models_library.projects import Project, ProjectID
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import (
@@ -35,11 +35,7 @@ from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import parse_obj_as
-from servicelib.aiohttp.application_keys import (
-    APP_FIRE_AND_FORGET_TASKS_KEY,
-    APP_JSONSCHEMA_SPECS_KEY,
-)
-from servicelib.aiohttp.jsonschema_validation import validate_instance
+from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_FORWARDED_PROTO,
@@ -49,6 +45,7 @@ from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_context
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_postgres_database.webserver_models import ProjectType
+from simcore_service_webserver.projects.project_models import ProjectDict
 
 from .. import catalog_client, director_v2_api, storage_api
 from ..products import get_product_name
@@ -93,11 +90,8 @@ def _is_node_dynamic(node_key: str) -> bool:
     return "/dynamic/" in node_key
 
 
-async def validate_project(app: web.Application, project: dict):
-    project_schema = app[APP_JSONSCHEMA_SPECS_KEY]["projects"]
-    await asyncio.get_event_loop().run_in_executor(
-        None, validate_instance, project, project_schema
-    )
+async def validate_project(project: ProjectDict):
+    await asyncio.get_event_loop().run_in_executor(None, parse_obj_as, Project, project)
 
 
 #
@@ -133,7 +127,7 @@ async def get_project_for_user(
             user_id, project, project_type is ProjectType.TEMPLATE, app
         )
 
-    await validate_project(app, project)
+    await validate_project(project)
     return project
 
 
