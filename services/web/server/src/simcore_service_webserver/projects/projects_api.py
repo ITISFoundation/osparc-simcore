@@ -9,13 +9,13 @@
 
 import asyncio
 import contextlib
+import datetime
 import json
 import logging
 from collections import defaultdict
 from contextlib import suppress
-from datetime import datetime
 from pprint import pformat
-from typing import Any
+from typing import Any, Final
 from uuid import UUID, uuid4
 
 from aiohttp import web
@@ -34,7 +34,7 @@ from models_library.projects_state import (
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import parse_obj_as
+from pydantic import NonNegativeFloat, NonNegativeInt, parse_obj_as
 from servicelib.aiohttp.application_keys import (
     APP_FIRE_AND_FORGET_TASKS_KEY,
     APP_JSONSCHEMA_SPECS_KEY,
@@ -83,6 +83,8 @@ from .projects_utils import extract_dns_without_default_port
 log = logging.getLogger(__name__)
 
 PROJECT_REDIS_LOCK_KEY: str = "project:{}"
+
+_NODE_START_INTERVAL_S: Final[datetime.timedelta] = datetime.timedelta(seconds=15)
 
 
 def _is_node_dynamic(node_key: str) -> bool:
@@ -224,6 +226,16 @@ def _check_num_service_per_projects_limit(
         )
 
 
+def _get_total_project_dynamic_nodes_creation_interval(
+    max_nodes: NonNegativeInt,
+) -> NonNegativeFloat:
+    """
+    Estimated amount of time for all project node creation requests to be sent to the
+    director-v2. Note: these calls are sent one after the other.
+    """
+    return max_nodes * _NODE_START_INTERVAL_S.total_seconds()
+
+
 async def _start_dynamic_service(
     request: web.Request,
     *,
@@ -242,11 +254,14 @@ async def _start_dynamic_service(
     lock_key = _get_service_start_lock_key(user_id, project_uuid)
     client_sdk = get_redis_lock_manager_client_sdk(request.app)
     project_settings = get_settings(request.app).WEBSERVER_PROJECTS
+    assert project_settings is not None  # nosec
 
     async with client_sdk.lock_context(
         lock_key,
         blocking=True,
-        blocking_timeout_s=project_settings.total_project_dynamic_nodes_creation_interval,
+        blocking_timeout_s=_get_total_project_dynamic_nodes_creation_interval(
+            project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
+        ),
     ):
         project_running_nodes = await director_v2_api.list_dynamic_services(
             request.app, user_id, f"{project_uuid}"
@@ -895,8 +910,8 @@ async def is_service_deprecated(
         app, user_id, service_key, service_version, product_name
     )
     if deprecation_date := service.get("deprecated"):
-        deprecation_date = parse_obj_as(datetime, deprecation_date)
-        return datetime.utcnow() > deprecation_date
+        deprecation_date = parse_obj_as(datetime.datetime, deprecation_date)
+        return datetime.datetime.utcnow() > deprecation_date
     return False
 
 
