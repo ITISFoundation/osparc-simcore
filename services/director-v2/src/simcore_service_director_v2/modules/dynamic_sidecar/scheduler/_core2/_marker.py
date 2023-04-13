@@ -25,7 +25,7 @@ def mark_step(func: Callable) -> Callable:
         return await func(*args, **kwargs)
 
     # store input and return types for later usage
-    wrapped.return_type = return_type
-    wrapped.input_types = func_annotations
+    wrapped.return_type = return_type  # type: ignore
+    wrapped.input_types = func_annotations  # type: ignore
 
     return wrapped

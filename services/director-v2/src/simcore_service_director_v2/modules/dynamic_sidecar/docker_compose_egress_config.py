@@ -293,7 +293,7 @@ def add_egress_configuration(
         all_host_permit_list_policies: list[NATRule] = []
 
         hostname_port_to_container_name: dict[tuple[str, PortInt], str] = {}
-        container_name_to_proxies_names: dict[str, set[set]] = {}
+        container_name_to_proxies_names: dict[str, set[str]] = {}
 
         for (
             container_name,
