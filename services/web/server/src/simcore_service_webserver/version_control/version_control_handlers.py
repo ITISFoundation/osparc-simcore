@@ -15,7 +15,7 @@ from ..utils_aiohttp import (
     get_routes_view,
     rename_routes_as_handler_function,
 )
-from .version_control_core import (
+from ._core import (
     checkout_checkpoint_safe,
     create_checkpoint_safe,
     get_checkpoint_safe,
