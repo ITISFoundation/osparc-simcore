@@ -9,7 +9,7 @@
 import logging
 from asyncio import CancelledError, Task, create_task
 from contextlib import suppress
-from typing import Any, Callable, Coroutine, Optional, cast
+from typing import Any, Callable, Coroutine, cast
 
 from fastapi import FastAPI
 
@@ -45,9 +45,9 @@ class BackgroundLogFetcher:
         self._log_processor_tasks: dict[str, Task[None]] = {}
 
     async def _dispatch_logs(self, image_name: str, message: str) -> None:
-        # sending the logs to the UI to facilitate the
-        # user debugging process
-        await post_log_message(self._app, f"[{image_name}] {message}")
+        await post_log_message(
+            self._app, f"[{image_name}] {message}", log_level=logging.INFO
+        )
 
     async def start_log_feching(self, container_name: str) -> None:
         self._log_processor_tasks[container_name] = create_task(
@@ -62,7 +62,7 @@ class BackgroundLogFetcher:
     async def stop_log_fetching(self, container_name: str) -> None:
         logger.debug("Stopping logs fetching from container '%s'", container_name)
 
-        task: Optional[Task] = self._log_processor_tasks.pop(container_name, None)
+        task: Task | None = self._log_processor_tasks.pop(container_name, None)
         if task is None:
             logger.info(
                 "No log_processor task found for container: %s ", container_name
@@ -80,7 +80,7 @@ class BackgroundLogFetcher:
             await self.stop_log_fetching(container_name)
 
 
-def _get_background_log_fetcher(app: FastAPI) -> Optional[BackgroundLogFetcher]:
+def _get_background_log_fetcher(app: FastAPI) -> BackgroundLogFetcher | None:
     if hasattr(app.state, "background_log_fetcher"):
         return cast(BackgroundLogFetcher, app.state.background_log_fetcher)
     return None

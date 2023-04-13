@@ -11,10 +11,10 @@
 
 --constraint _base.txt
 
+
+
 alembic # migration due to pytest_simcore.postgres_service
 click
-
-coveralls
 docker
 Faker
 jsonschema # 'services/catalog/tests/unit' dependencies

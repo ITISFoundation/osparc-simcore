@@ -10,13 +10,11 @@ aio-pika
 aiodocker
 alembic
 click
-coverage
 docker
 jsonschema
 minio
 pytest
 pytest-aiohttp
-pytest-cov
 pytest-instafail
 pytest-mock
 pytest-runner
