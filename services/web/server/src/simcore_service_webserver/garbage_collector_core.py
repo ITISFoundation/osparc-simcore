@@ -9,6 +9,7 @@ from typing import Any
 
 import asyncpg.exceptions
 from aiohttp import web
+from models_library.projects import ProjectID
 from redis.asyncio import Redis
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_utils import log_context, log_decorator
@@ -526,7 +527,12 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
                     f"{project_uuid=}",
                     f"{user_id=}",
                 )
-                task = await submit_delete_project_task(app, project_uuid, user_id)
+                task = await submit_delete_project_task(
+                    app,
+                    ProjectID(project_uuid),
+                    user_id,
+                    UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                )
                 assert task  # nosec
                 delete_tasks.append(task)
 
