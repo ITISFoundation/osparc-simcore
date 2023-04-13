@@ -30,4 +30,4 @@ async def _eval_hash_async(async_stream, hasher, chunk_size) -> str:
 
         hasher.update(chunk)
     digest = hasher.hexdigest()
-    return digest
+    return f"{digest}"

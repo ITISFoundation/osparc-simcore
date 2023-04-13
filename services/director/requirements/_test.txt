@@ -62,12 +62,9 @@ charset-normalizer==2.0.12
     # via
     #   -r requirements/_base.txt
     #   requests
-codecov==2.1.10
-    # via -r requirements/_test.in
 coverage==4.5.1
     # via
     #   -r requirements/_test.in
-    #   codecov
     #   coveralls
     #   pytest-cov
 coveralls==2.1.2

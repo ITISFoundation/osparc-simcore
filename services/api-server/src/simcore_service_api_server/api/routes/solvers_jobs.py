@@ -13,10 +13,11 @@ from models_library.clusters import ClusterID
 from models_library.projects_nodes_io import BaseFileLink
 from pydantic.types import PositiveInt
 
+from ...models.basic_types import VersionStr
 from ...models.domain.projects import NewProjectIn, Project
 from ...models.schemas.files import File
 from ...models.schemas.jobs import ArgumentType, Job, JobInputs, JobOutputs, JobStatus
-from ...models.schemas.solvers import Solver, SolverKeyId, VersionStr
+from ...models.schemas.solvers import Solver, SolverKeyId
 from ...modules.catalog import CatalogApi
 from ...modules.director_v2 import DirectorV2Api, DownloadLink, NodeName
 from ...modules.storage import StorageApi, to_file_api_model
@@ -40,7 +41,7 @@ router = APIRouter()
 def _compose_job_resource_name(solver_key, solver_version, job_id) -> str:
     """Creates a unique resource name for solver's jobs"""
     return Job.compose_resource_name(
-        parent_name=Solver.compose_resource_name(solver_key, solver_version),
+        parent_name=Solver.compose_resource_name(solver_key, solver_version),  # type: ignore
         job_id=job_id,
     )
 
@@ -322,9 +323,10 @@ async def get_job_output_logfile(
     )
 
     # if more than one node? should rezip all of them??
-    assert (
+    assert (  # nosec
         len(logs_urls) <= 1
-    ), "Current version only supports one node per solver"  # nosec
+    ), "Current version only supports one node per solver"
+
     for presigned_download_link in logs_urls.values():
         logger.info(
             "Redirecting '%s' to %s ...",

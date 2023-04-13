@@ -40,11 +40,11 @@ def setup_projects_model_schema(app: web.Application):
         # Tested in test_validate_project_json_schema()
         project_schema["properties"]["workbench"].pop("patternProperties")
         project_schema["properties"]["ui"]["properties"]["workbench"].pop(
-            "patternProperties"
+            "patternProperties", None
         )
         project_schema["properties"]["workbench"].pop("additionalProperties")
         project_schema["properties"]["ui"]["properties"]["workbench"].pop(
-            "additionalProperties"
+            "additionalProperties", None
         )
 
     if app.get(APP_JSONSCHEMA_SPECS_KEY) is None:
