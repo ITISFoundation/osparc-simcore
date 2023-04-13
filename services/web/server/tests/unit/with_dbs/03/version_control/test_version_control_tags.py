@@ -1,5 +1,5 @@
 from faker import Faker
-from simcore_service_webserver.version_control.vctags import (
+from simcore_service_webserver.version_control.vc_tags import (
     compose_workcopy_project_tag_name,
     parse_workcopy_project_tag_name,
 )
