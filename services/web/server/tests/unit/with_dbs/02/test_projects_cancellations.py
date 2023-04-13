@@ -77,7 +77,7 @@ async def test_copying_large_project_and_aborting_correctly_removes_new_project(
     catalog_subsystem_mock([user_project])
     # initiate a project copy that will last long (simulated by a long running storage)
     # POST /v0/projects
-    create_url = client.app.router["create_projects"].url_for()
+    create_url = client.app.router["create_project"].url_for()
     assert str(create_url) == f"{API_PREFIX}/projects"
     create_url = create_url.with_query(from_study=user_project["uuid"])
     resp = await client.post(f"{create_url}", json={})
@@ -130,7 +130,7 @@ async def test_copying_large_project_and_retrieving_copy_task(
 
     # initiate a project copy that will last long (simulated by a long running storage)
     # POST /v0/projects
-    create_url = client.app.router["create_projects"].url_for()
+    create_url = client.app.router["create_project"].url_for()
     assert str(create_url) == f"{API_PREFIX}/projects"
     create_url = create_url.with_query(from_study=user_project["uuid"])
     resp = await client.post(f"{create_url}", json={})

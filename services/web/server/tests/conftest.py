@@ -232,7 +232,7 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
 
         # POST /v0/projects -> returns 202 or denied access
         assert client.app
-        url: URL = client.app.router["create_projects"].url_for()
+        url: URL = client.app.router["create_project"].url_for()
 
         if from_study:
             url = url.update_query(from_study=from_study["uuid"])
