@@ -21,24 +21,14 @@ attrs==22.2.0
     #   aiohttp
     #   pytest
     #   pytest-docker
-certifi==2022.12.7
-    # via
-    #   -c requirements/_migration.txt
-    #   requests
 charset-normalizer==3.0.1
     # via
     #   -c requirements/_migration.txt
     #   aiohttp
-    #   requests
-coverage==6.5.0
+coverage==7.2.3
     # via
     #   -r requirements/_test.in
-    #   coveralls
     #   pytest-cov
-coveralls==3.3.1
-    # via -r requirements/_test.in
-docopt==0.6.2
-    # via coveralls
 exceptiongroup==1.1.0
     # via pytest
 faker==17.4.0
@@ -54,7 +44,6 @@ greenlet==2.0.2
 idna==3.4
     # via
     #   -c requirements/_migration.txt
-    #   requests
     #   yarl
 iniconfig==2.0.0
     # via pytest
@@ -102,10 +91,6 @@ python-dateutil==2.8.2
     # via faker
 pyyaml==6.0
     # via -r requirements/_test.in
-requests==2.28.2
-    # via
-    #   -c requirements/_migration.txt
-    #   coveralls
 six==1.16.0
     # via
     #   -c requirements/_migration.txt
@@ -125,10 +110,6 @@ typing-extensions==4.5.0
     # via
     #   mypy
     #   sqlalchemy2-stubs
-urllib3==1.26.14
-    # via
-    #   -c requirements/_migration.txt
-    #   requests
 yarl==1.8.2
     # via
     #   -c requirements/_base.txt

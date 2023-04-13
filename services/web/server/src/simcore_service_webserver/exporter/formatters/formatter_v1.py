@@ -5,7 +5,7 @@ import traceback
 from collections import deque
 from itertools import chain
 from pathlib import Path
-from typing import Deque, Optional
+from typing import Deque
 from uuid import UUID
 
 from aiohttp import ClientError, ClientSession, ClientTimeout, web
@@ -22,6 +22,7 @@ from models_library.users import UserID
 from models_library.utils.nodes import compute_node_hash, project_node_io_payload_cb
 from pydantic import AnyUrl, parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
+from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.utils import logged_gather
 from simcore_sdk.node_ports_common.exceptions import (
     NodeportsException,
@@ -141,7 +142,7 @@ async def extract_download_links(
 async def generate_directory_contents(
     app: web.Application,
     root_folder: Path,
-    manifest_root_folder: Optional[Path],
+    manifest_root_folder: Path | None,
     project_id: str,
     user_id: int,
     version: str,
@@ -348,7 +349,7 @@ async def import_files_and_validate_project(
     user_id: int,
     product_name: str,
     root_folder: Path,
-    manifest_root_folder: Optional[Path],
+    manifest_root_folder: Path | None,
 ) -> str:
     project_file = await ProjectFile.model_from_file(root_dir=root_folder)
     shuffled_data: ShuffledData = project_file.get_shuffled_uuids()
@@ -420,7 +421,10 @@ async def import_files_and_validate_project(
         )
         try:
             await submit_delete_project_task(
-                app=app, project_uuid=UUID(project_uuid), user_id=user_id
+                app=app,
+                project_uuid=UUID(project_uuid),
+                user_id=user_id,
+                simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             )
         except ProjectsException:
             # no need to raise an error here
@@ -440,7 +444,7 @@ class FormatterV1(BaseFormatter):
         self, app: web.Application, project_id: str, user_id: int, **kwargs
     ) -> None:
         # injected by Formatter_V2
-        manifest_root_folder: Optional[Path] = kwargs.get("manifest_root_folder")
+        manifest_root_folder: Path | None = kwargs.get("manifest_root_folder")
 
         await generate_directory_contents(
             app=app,
@@ -456,7 +460,7 @@ class FormatterV1(BaseFormatter):
         user_id: int = kwargs["user_id"]
         product_name: str = kwargs["product_name"]
         # injected by Formatter_V2
-        manifest_root_folder: Optional[Path] = kwargs.get("manifest_root_folder")
+        manifest_root_folder: Path | None = kwargs.get("manifest_root_folder")
 
         return await import_files_and_validate_project(
             app=app,

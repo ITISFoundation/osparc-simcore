@@ -38,7 +38,7 @@ cloudpickle==2.2.1
     #   -c requirements/../../../../dask-sidecar/requirements/_dask-distributed.txt
     #   dask
     #   distributed
-coverage==7.2.1
+coverage==7.2.3
     # via pytest-cov
 dask==2023.3.0
     # via
