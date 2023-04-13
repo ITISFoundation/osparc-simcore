@@ -6,16 +6,16 @@ from models_library.rest_pagination_utils import paginate_data
 from pydantic.decorator import validate_arguments
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
-from ._meta import api_version_prefix as VTAG
-from .login.decorators import login_required
-from .security_decorators import permission_required
-from .utils_aiohttp import (
+from .._meta import api_version_prefix as VTAG
+from ..login.decorators import login_required
+from ..security_decorators import permission_required
+from ..utils_aiohttp import (
     create_url_for_function,
     envelope_json_response,
     get_routes_view,
     rename_routes_as_handler_function,
 )
-from .version_control.version_control_core import (
+from .version_control_core import (
     checkout_checkpoint_safe,
     create_checkpoint_safe,
     get_checkpoint_safe,
@@ -24,9 +24,9 @@ from .version_control.version_control_core import (
     list_repos_safe,
     update_checkpoint_safe,
 )
-from .version_control.version_control_db import HEAD, VersionControlRepository
-from .version_control.version_control_handlers_base import handle_request_errors
-from .version_control.version_control_models import (
+from .version_control_db import HEAD, VersionControlRepository
+from .version_control_handlers_base import handle_request_errors
+from .version_control_models import (
     Checkpoint,
     CheckpointAnnotations,
     CheckpointApiModel,
