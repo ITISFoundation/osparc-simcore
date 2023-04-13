@@ -27,12 +27,12 @@ qx.Class.define("osparc.product.panddy.s4llite.Sequences", {
         steps: this.__getDashboardSteps()
       }, {
         id: "studies",
-        name: "Studies",
+        name: "Projects",
         description: "Introduction to Studies",
         steps: this.__getStudiesSteps()
       }, {
         id: "s4llite",
-        name: "S4L <sup>lite</sup>",
+        name: "<i>S4L<sup>lite</sup></i>",
         description: "Introduction to Studies",
         steps: this.__getS4LLiteSteps()
       }];
@@ -76,11 +76,29 @@ qx.Class.define("osparc.product.panddy.s4llite.Sequences", {
         },
         target: "osparc-test-id=startS4LButton",
         title: "New Project",
-        message: "Click first on the Start <i>S4L <sup>lite</sup></i>."
+        message: "Click first on the Start <i>S4L<sup>lite</sup></i>."
       }, {
-        target: "osparc-test-id=searchBarFilter-textField-study",
-        title: "Filter Projects",
-        message: "Type here the text of the Project you want to search.<br>Pro tip: click on the field to open filtering options"
+        title: "Welcome to The Rocket",
+        message: "It will take a few seconds to start a new Project",
+        waitFor: {
+          target: "osparc-test-id=tree-model",
+          timeout: 30
+        }
+      }, {
+        target: "osparc-test-id=mode-button-modeling",
+        action: "execute",
+        title: "Modeling",
+        message: "This is the first step in the pipeline. Use our Virtual Population, upload CAD models or build your own model."
+      }, {
+        target: "osparc-test-id=mode-button-modeling",
+        action: "execute",
+        title: "Simulation",
+        message: "Simulators, gridders, voxelers and solvers. As you can see, the context chanded so did the avaialble tools."
+      }, {
+        target: "osparc-test-id=mode-button-modeling",
+        action: "execute",
+        title: "Post Processing",
+        message: "Analyze simulation results and imaging data through advanced visualization and analysis capabilities."
       }];
     }
   }
