@@ -11,7 +11,7 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 
 from .projects.project_models import ProjectDict
 from .version_control.errors import UserUndefined
-from .version_control.tags import compose_workcopy_project_tag_name
+from .version_control.vctags import compose_workcopy_project_tag_name
 from .version_control.version_control_changes import (
     compute_workbench_checksum,
     eval_workcopy_project_id,

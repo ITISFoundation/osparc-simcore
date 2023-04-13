@@ -31,7 +31,7 @@ from .errors import (
     NoCommitError,
     NotFoundError,
 )
-from .tags import parse_workcopy_project_tag_name
+from .vctags import parse_workcopy_project_tag_name
 from .version_control_changes import compute_workbench_checksum
 from .version_control_models import (
     HEAD,
