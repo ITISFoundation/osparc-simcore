@@ -1,6 +1,6 @@
 import logging
 from enum import Enum, auto
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
@@ -85,7 +85,8 @@ class InstrumentationRabbitMessage(RabbitMessageBase, NodeMessageBase):
     service_type: str
     service_key: str
     service_tag: str
-    result: Optional[RunningState] = None
+    result: RunningState | None = None
+    simcore_user_agent: str
 
 
 class _RabbitAutoscalingBaseMessage(RabbitMessageBase):
