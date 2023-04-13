@@ -23,29 +23,29 @@ qx.Class.define("osparc.product.panddy.osparc.Sequences", {
       return [{
         id: "dashboard",
         name: "Dashboard",
-        description: "Inotrduction to Dashboard tabs",
+        description: "Introduction to Dashboard tabs",
         steps: this.__getDashboardSteps()
       }];
     },
 
     __getDashboardSteps: function() {
       return [{
-        target: "studiesTabBtn",
+        target: "osparc-test-id=studiesTabBtn",
         action: "execute",
         title: "Studies",
         message: "These are your Studies."
       }, {
-        target: "templatesTabBtn",
+        target: "osparc-test-id=templatesTabBtn",
         action: "execute",
         title: "Templates",
         message: "These are the Templates you have access to. If you click on any of the cards listed below, we will create a copy of it so that you can edit it."
       }, {
-        target: "servicesTabBtn",
+        target: "osparc-test-id=servicesTabBtn",
         action: "execute",
         title: "Services",
         message: "These are the Services you have access to. Some are computational and others are dynamic. The Computational ones can be run for number crunching and the dynamic ones require user interaction."
       }, {
-        target: "dataTabBtn",
+        target: "osparc-test-id=dataTabBtn",
         action: "execute",
         title: "Data",
         message: "This is the section where you can access all the data you produced or you have access to."

@@ -99,7 +99,7 @@ qx.Class.define("osparc.panddy.Step", {
           this.add(control);
           break;
         case "bottom-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
             alignX: "center"
           }));
           this.add(control);

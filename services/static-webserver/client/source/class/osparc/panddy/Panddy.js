@@ -29,17 +29,26 @@ qx.Class.define("osparc.panddy.Panddy", {
     });
 
     this.__currentIdx = 0;
+    this.setSequences(this.self().INTRO_SEQUENCES);
   },
 
   statics: {
-    INTRO_SEQUENCE: [{
-      target: null,
-      title: qx.locale.Manager.tr("Grüezi!"),
-      message: qx.locale.Manager.tr("This is Panddy. I'm here to give you hints on how to use oSPARC.")
-    }, {
-      target: "userMenuBtn",
-      action: "execute",
-      message: qx.locale.Manager.tr("You can always find me in the User Menu.")
+    INTRO_SEQUENCES: [{
+      id: "panddyIntro",
+      name: "Panddy intro",
+      description: "Introduction to Panddy",
+      steps: [{
+        target: null,
+        title: qx.locale.Manager.tr("Grüezi!"),
+        message: qx.locale.Manager.tr("This is Panddy. I'm here to give you hints on how to use oSPARC.")
+      }, {
+        preStep: {
+          target: "osparc-test-id=userMenuBtn",
+          action: "execute"
+        },
+        target: "osparc-test-id=userMenuMenu",
+        message: qx.locale.Manager.tr("You can always find me in the User Menu.")
+      }]
     }]
   },
 
@@ -58,6 +67,7 @@ qx.Class.define("osparc.panddy.Panddy", {
   },
 
   members: {
+    __currentSequence: null,
     __currentStep: null,
     __currentIdx: null,
 
@@ -81,18 +91,9 @@ qx.Class.define("osparc.panddy.Panddy", {
       return control || this.base(arguments, id);
     },
 
-    __createStep: function(element, text) {
-      const stepWidget = new osparc.panddy.Step(element, text).set({
-        maxWidth: 400
-      });
-      stepWidget.addListener("closePressed", () => this.stop(), this);
-      stepWidget.addListener("nextPressed", () => this.__toStep(this.__currentIdx+1), this);
-      return stepWidget;
-    },
-
     start: function() {
       this.getChildControl("panddy");
-      setTimeout(() => this.__toStep(0), 2000);
+      setTimeout(() => this.__toSequences(), 1000);
     },
 
     stop: function() {
@@ -103,11 +104,43 @@ qx.Class.define("osparc.panddy.Panddy", {
       }
     },
 
-    __toStep: function(idx = 0) {
-      let steps = this.self().INTRO_SEQUENCE;
-      if (this.isPropertyInitialized("steps") && this.getSteps() && this.getSteps().length) {
-        steps = this.getSteps();
+    __toSequences: function() {
+      const sequences = this.getSequences();
+      if (sequences.length === 0) {
+        this.stop();
+      } else if (sequences.length === 1) {
+        this.__selectSequence(sequences[0]);
+      } else {
+        this.__showSequences();
       }
+    },
+
+    __showSequences: function(sequences) {
+      const seqsWidget = new osparc.panddy.Sequences(sequences);
+      const panddy = this.getChildControl("panddy");
+      seqsWidget.setElement(panddy);
+      seqsWidget.setOrientation(osparc.ui.basic.FloatingHelper.ORIENTATION.LEFT);
+      seqsWidget.addListener("sequenceSelected", e => this.__selectSequence(e.getData()));
+    },
+
+    __selectSequence: function(sequence) {
+      if ("steps" in sequence) {
+        this.setSteps(sequence.steps);
+        this.__toStepCheck(0);
+      }
+    },
+
+    __createStep: function(element, text) {
+      const stepWidget = new osparc.panddy.Step(element, text).set({
+        maxWidth: 400
+      });
+      stepWidget.addListener("closePressed", () => this.stop(), this);
+      stepWidget.addListener("nextPressed", () => this.__toStepCheck(this.__currentIdx+1), this);
+      return stepWidget;
+    },
+
+    __toStepCheck: function(idx = 0) {
+      const steps = this.getSteps();
       if (idx >= steps.length) {
         idx = 0;
       }
@@ -118,9 +151,27 @@ qx.Class.define("osparc.panddy.Panddy", {
         this.__currentStep.exclude();
         this.__currentStep = null;
       }
+
+      if (step.preStep) {
+        const preStep = step.preStep;
+        if (preStep.target) {
+          const domEl = document.querySelector(`[${preStep.target}]`);
+          const widget = qx.ui.core.Widget.getWidgetByElement(domEl);
+          if (preStep.action === "execute") {
+            widget.execute();
+          }
+          setTimeout(() => this.__toStep(steps, idx), 1000);
+        }
+      } else {
+        this.__toStep(steps, idx);
+      }
+    },
+
+    __toStep: function(steps, idx) {
+      const step = steps[idx];
       const stepWidget = this.__currentStep = this.__createStep();
       if (step.target) {
-        const domEl = document.querySelector(`[osparc-test-id=${step.target}]`);
+        const domEl = document.querySelector(`[${step.target}]`);
         const widget = qx.ui.core.Widget.getWidgetByElement(domEl);
         if (step.action === "execute") {
           widget.execute();
