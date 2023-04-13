@@ -20,8 +20,8 @@ from .meta_modeling_results import ExtractedResults, extract_project_results
 from .meta_modeling_version_control import VersionControlForMetaModeling
 from .security_decorators import permission_required
 from .utils_aiohttp import create_url_for_function, envelope_json_response
+from .version_control.models import CheckpointID, CommitID, TagProxy
 from .version_control.vc_tags import parse_workcopy_project_tag_name
-from .version_control.version_control_models import CheckpointID, CommitID, TagProxy
 
 log = logging.getLogger(__name__)
 

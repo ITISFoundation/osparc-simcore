@@ -31,17 +31,9 @@ from .errors import (
     NoCommitError,
     NotFoundError,
 )
+from .models import HEAD, CommitID, CommitLog, CommitProxy, RefID, RepoProxy, TagProxy
 from .vc_changes import compute_workbench_checksum
 from .vc_tags import parse_workcopy_project_tag_name
-from .version_control_models import (
-    HEAD,
-    CommitID,
-    CommitLog,
-    CommitProxy,
-    RefID,
-    RepoProxy,
-    TagProxy,
-)
 
 log = logging.getLogger(__name__)
 
