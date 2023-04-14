@@ -937,8 +937,6 @@ async def run_project_dynamic_services(
     project: dict,
     user_id: UserID,
     product_name: str,
-    *,
-    num_auto_start_services: int | None,
 ) -> None:
     # first get the services if they already exist
     project_settings = get_settings(request.app).WEBSERVER_PROJECTS

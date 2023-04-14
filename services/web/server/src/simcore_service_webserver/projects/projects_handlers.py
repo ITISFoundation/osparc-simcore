@@ -47,7 +47,7 @@ routes = web.RouteTableDef()
 
 
 class _OpenProjectQuery(BaseModel):
-    num_auto_start_services: int | None = None
+    disable_service_auto_start: bool = False
 
 
 @routes.post(f"/{VTAG}/projects/{{project_id}}:open", name="open_project")
@@ -102,20 +102,13 @@ async def open_project(request: web.Request) -> web.Response:
         )
 
         # user id opened project uuid
-        if (
-            query_params.num_auto_start_services is not None
-            and query_params.num_auto_start_services > 0
-        ):
+        if not query_params.disable_service_auto_start:
             with contextlib.suppress(ProjectStartsTooManyDynamicNodes):
                 # NOTE: this method raises that exception when the number of dynamic
                 # services in the project is highter than the maximum allowed per project
                 # the project shall still open though.
                 await projects_api.run_project_dynamic_services(
-                    request,
-                    project,
-                    req_ctx.user_id,
-                    req_ctx.product_name,
-                    num_auto_start_services=query_params.num_auto_start_services,
+                    request, project, req_ctx.user_id, req_ctx.product_name
                 )
 
         # and let's update the project last change timestamp
