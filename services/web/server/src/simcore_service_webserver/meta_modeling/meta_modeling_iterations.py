@@ -22,11 +22,7 @@ from pydantic.types import PositiveInt
 from ..utils import compute_sha1_on_small_dataset, now_str
 from ..version_control.errors import UserUndefined
 from . import meta_modeling_function_nodes
-from .meta_modeling_version_control import (
-    CommitID,
-    ProjectDict,
-    VersionControlForMetaModeling,
-)
+from ._version_control import CommitID, ProjectDict, VersionControlForMetaModeling
 
 log = logging.getLogger(__name__)
 
