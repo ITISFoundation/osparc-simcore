@@ -172,8 +172,7 @@ qx.Class.define("osparc.panddy.Panddy", {
       });
       [
         "skipPressed",
-        "endPressed",
-        "widgetExcluded"
+        "endPressed"
       ].forEach(evName => stepWidget.addListener(evName, () => this.stop(), this));
       stepWidget.addListener("nextPressed", () => this.__toStepCheck(this.__currentIdx+1), this);
       return stepWidget;
