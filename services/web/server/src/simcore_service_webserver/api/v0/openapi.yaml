@@ -4354,6 +4354,12 @@ paths:
         required: true
         schema:
           type: string
+      - name: disable_service_auto_start
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
     post:
       tags:
         - project
