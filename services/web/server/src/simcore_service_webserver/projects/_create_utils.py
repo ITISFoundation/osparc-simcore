@@ -23,6 +23,7 @@ from ..storage_api import (
 from ..users_api import get_user_name
 from . import projects_api
 from .project_models import ProjectDict
+from .projects_api import validate_project
 from .projects_db import ProjectDBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from .projects_utils import NodesMap, clone_project_document, default_copy_project_name
@@ -143,6 +144,8 @@ async def _compose_project_data(
     else:
         # when predefined_project is ProjectCreateNew
         new_project = predefined_project
+
+    await validate_project(new_project)
 
     return new_project
 

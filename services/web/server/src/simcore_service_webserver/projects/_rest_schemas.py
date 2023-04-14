@@ -13,7 +13,7 @@ from models_library.projects_access import AccessRights, GroupIDStr
 from models_library.projects_nodes import HttpUrlWithCustomMinLength
 from models_library.projects_state import ProjectState
 from models_library.projects_ui import StudyUI
-from pydantic import Field, validator
+from pydantic import BaseModel, Extra, Field, validator
 from servicelib.aiohttp.long_running_tasks.server import TaskGet
 
 from ..rest_schemas_base import InputSchema, OutputSchema
@@ -23,6 +23,12 @@ def empty_str_to_none(value: Any):
     if isinstance(value, str) and value.strip() == "":
         return None
     return value
+
+
+class EmptyModel(BaseModel):
+    # Used to represent body={}
+    class Config:
+        extra = Extra.forbid
 
 
 class ProjectCreateNew(InputSchema):

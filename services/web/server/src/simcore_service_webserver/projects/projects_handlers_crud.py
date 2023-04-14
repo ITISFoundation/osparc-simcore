@@ -41,7 +41,12 @@ from ..security_api import check_permission
 from ..security_decorators import permission_required
 from ..users_api import get_user_name
 from . import _create_utils, projects_api
-from ._rest_schemas import ProjectCopyOverride, ProjectCreateNew, ProjectUpdate
+from ._rest_schemas import (
+    EmptyModel,
+    ProjectCopyOverride,
+    ProjectCreateNew,
+    ProjectUpdate,
+)
 from .project_lock import get_project_locked_state
 from .project_models import ProjectDict, ProjectTypeAPI
 from .projects_db import ProjectDBAPI
@@ -119,18 +124,23 @@ async def create_project(request: web.Request):
     if query_params.as_template:  # create template from
         await check_permission(request, "project.template.create")
 
-    if request.can_read_body:
-        # request w/ body
-        project_create = await parse_request_body_as(
-            ProjectCreateNew | ProjectCopyOverride, request
-        )
-        predefined_project = project_create.dict(
-            exclude_unset=True, by_alias=True, exclude_none=True
-        )
-    else:
+    # NOTE: Having so many different types of bodys is an indication that
+    # this entrypoint are in reality multiple entrypoints in one, namely
+    # :create, :copy (w/ and w/o override)
+    #
+    if not request.can_read_body:
         # request w/o body
         assert query_params.from_study  # nosec
         predefined_project = None
+    else:
+        # request w/ body (I found cases in which body = {})
+        project_create = await parse_request_body_as(
+            ProjectCreateNew | ProjectCopyOverride | EmptyModel, request
+        )
+        predefined_project = (
+            project_create.dict(exclude_unset=True, by_alias=True, exclude_none=True)
+            or None
+        )
 
     return await start_long_running_task(
         request,
