@@ -19,7 +19,7 @@ from pydantic import BaseModel, ValidationError
 from pydantic.fields import Field
 from pydantic.types import PositiveInt
 
-from . import meta_modeling_function_nodes
+from .meta_modeling import meta_modeling_function_nodes
 from .meta_modeling.meta_modeling_version_control import (
     CommitID,
     ProjectDict,
