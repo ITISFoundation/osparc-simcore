@@ -11,13 +11,18 @@ from typing import Any
 
 from models_library.projects_nodes import OutputsDict
 from models_library.projects_nodes_io import NodeIDStr
-from pydantic import BaseModel, Field, conint
+from pydantic import BaseModel, ConstrainedInt, Field
 
 log = logging.getLogger(__name__)
 
 
+class ProgressInt(ConstrainedInt):
+    ge = 0
+    le = 100
+
+
 class ExtractedResults(BaseModel):
-    progress: dict[NodeIDStr, conint(ge=0, le=100)] = Field(
+    progress: dict[NodeIDStr, ProgressInt] = Field(
         ..., description="Progress in each computational node"
     )
     labels: dict[NodeIDStr, str] = Field(

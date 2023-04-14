@@ -100,10 +100,13 @@ class VersionControlForMetaModeling(VersionControlRepository):
         # SEE https://fastapi.tiangolo.com/tutorial/encoder/
         project = jsonable_encoder(project, sqlalchemy_safe=True)
 
+        commit_id: CommitID
+
         async with self.engine.acquire() as conn:
             # existance check prevents errors later
             if tag := await self.TagsOrm(conn).set_filter(name=tag_name).fetch():
-                return tag.commit_id
+                commit_id = tag.commit_id
+                return commit_id
 
             # get workcopy for start_commit_id and update with 'project'
             repo = (
@@ -160,7 +163,8 @@ class VersionControlForMetaModeling(VersionControlRepository):
                         hidden=IS_INTERNAL_OPERATION,
                     )
 
-                return branch.head_commit_id
+                commit_id = branch.head_commit_id
+                return commit_id
 
     async def get_children_tags(
         self, repo_id: int, commit_id: int
