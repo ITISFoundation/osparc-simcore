@@ -26,7 +26,6 @@ test() {
   # add too much overhead (e.g. low log-level etc)
   pytest \
     --color=yes \
-    --cov-report=term-missing \
     -v \
     --durations=5 \
     --log-level=INFO \

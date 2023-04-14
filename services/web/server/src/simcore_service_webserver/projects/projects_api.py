@@ -40,7 +40,11 @@ from servicelib.aiohttp.application_keys import (
     APP_JSONSCHEMA_SPECS_KEY,
 )
 from servicelib.aiohttp.jsonschema_validation import validate_instance
-from servicelib.common_headers import X_FORWARDED_PROTO, X_SIMCORE_USER_AGENT
+from servicelib.common_headers import (
+    UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+    X_FORWARDED_PROTO,
+    X_SIMCORE_USER_AGENT,
+)
 from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_context
 from servicelib.utils import fire_and_forget_task, logged_gather
@@ -162,7 +166,10 @@ async def update_project_last_change_timestamp(
 
 
 async def submit_delete_project_task(
-    app: web.Application, project_uuid: ProjectID, user_id: UserID
+    app: web.Application,
+    project_uuid: ProjectID,
+    user_id: UserID,
+    simcore_user_agent: str,
 ) -> asyncio.Task:
     """
     Marks a project as deleted and schedules a task to performe the entire removal workflow
@@ -183,7 +190,12 @@ async def submit_delete_project_task(
     task = get_delete_project_task(project_uuid, user_id)
     if not task:
         task = _delete.schedule_task(
-            app, project_uuid, user_id, remove_project_dynamic_services, log
+            app,
+            project_uuid,
+            user_id,
+            simcore_user_agent,
+            remove_project_dynamic_services,
+            log,
         )
     return task
 
@@ -292,7 +304,9 @@ async def _start_dynamic_service(
             service_uuid=f"{node_uuid}",
             request_dns=extract_dns_without_default_port(request.url),
             request_scheme=request.headers.get(X_FORWARDED_PROTO, request.url.scheme),
-            request_simcore_user_agent=request.headers.get(X_SIMCORE_USER_AGENT, ""),
+            simcore_user_agent=request.headers.get(
+                X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+            ),
             service_resources=service_resources,
         )
 
@@ -380,7 +394,7 @@ async def start_project_node(
 
 
 async def delete_project_node(
-    request: web.Request, project_uuid: ProjectID, user_id: UserID, node_uuid: str
+    request: web.Request, project_uuid: ProjectID, user_id: UserID, node_uuid: NodeIDStr
 ) -> None:
     log.debug(
         "deleting node %s in project %s for user %s", node_uuid, project_uuid, user_id
@@ -394,6 +408,9 @@ async def delete_project_node(
         await director_v2_api.stop_dynamic_service(
             request.app,
             node_uuid,
+            simcore_user_agent=request.headers.get(
+                X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+            ),
             save_state=False,
         )
 
@@ -718,6 +735,7 @@ async def try_close_project_for_user(
     project_uuid: str,
     client_session_id: str,
     app: web.Application,
+    simcore_user_agent: str,
 ):
     with managed_resource(user_id, client_session_id, app) as rt:
         user_to_session_ids: list[UserSessionID] = await rt.find_users_of_resource(
@@ -743,7 +761,9 @@ async def try_close_project_for_user(
     if not user_to_session_ids:
         # NOTE: depending on the garbage collector speed, it might already be removing it
         fire_and_forget_task(
-            remove_project_dynamic_services(user_id, project_uuid, app),
+            remove_project_dynamic_services(
+                user_id, project_uuid, app, simcore_user_agent
+            ),
             task_suffix_name=f"remove_project_dynamic_services_{user_id=}_{project_uuid=}",
             fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
         )
@@ -957,7 +977,10 @@ async def set_project_node_resources(
 
 
 async def run_project_dynamic_services(
-    request: web.Request, project: dict, user_id: UserID, product_name: str
+    request: web.Request,
+    project: dict,
+    user_id: UserID,
+    product_name: str,
 ) -> None:
     # first get the services if they already exist
     project_settings = get_settings(request.app).WEBSERVER_PROJECTS
@@ -1022,6 +1045,7 @@ async def remove_project_dynamic_services(
     user_id: int,
     project_uuid: str,
     app: web.Application,
+    simcore_user_agent: str,
     notify_users: bool = True,
     user_name: UserNameDict | None = None,
 ) -> None:
@@ -1069,6 +1093,7 @@ async def remove_project_dynamic_services(
                 app=app,
                 user_id=user_id,
                 project_id=project_uuid,
+                simcore_user_agent=simcore_user_agent,
                 save_state=save_state,
             )
 

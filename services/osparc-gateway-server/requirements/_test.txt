@@ -39,13 +39,10 @@ cloudpickle==2.2.1
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
     #   dask
     #   distributed
-coverage==6.5.0
+coverage==7.2.3
     # via
     #   -r requirements/_test.in
-    #   coveralls
     #   pytest-cov
-coveralls==3.3.1
-    # via -r requirements/_test.in
 dask==2023.3.0
     # via
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
@@ -61,8 +58,6 @@ distributed==2023.3.0
     #   dask-gateway
 docker==6.0.1
     # via -r requirements/_test.in
-docopt==0.6.2
-    # via coveralls
 exceptiongroup==1.1.0
     # via pytest
 faker==17.6.0
@@ -169,9 +164,7 @@ pyyaml==5.4.1
     #   dask-gateway
     #   distributed
 requests==2.28.2
-    # via
-    #   coveralls
-    #   docker
+    # via docker
 six==1.16.0
     # via python-dateutil
 sortedcontainers==2.4.0

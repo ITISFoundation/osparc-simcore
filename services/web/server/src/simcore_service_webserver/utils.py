@@ -11,7 +11,7 @@ import tracemalloc
 from collections import OrderedDict
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import orjson
 from models_library.basic_types import SHA1Str
@@ -179,4 +179,4 @@ def compute_sha1_on_small_dataset(d: Any) -> SHA1Str:
     """
     # SEE options in https://github.com/ijl/orjson#option
     data_bytes = orjson.dumps(d, option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SORT_KEYS)
-    return hashlib.sha1(data_bytes).hexdigest()  # nosec
+    return cast(SHA1Str, hashlib.sha1(data_bytes).hexdigest())  # nosec

@@ -74,7 +74,7 @@ describe('tags testing', () => {
 
   test('add a tag', async () => {
     // Add a tag
-    await waitAndClick(page, '[osparc-test-id="userMenuMainBtn"]');
+    await waitAndClick(page, '[osparc-test-id="userMenuBtn"]');
     await waitAndClick(page, '[osparc-test-id="userMenuPreferencesBtn"]');
     await waitAndClick(page, '[osparc-test-id="preferencesTagsTabBtn"]');
     await waitAndClick(page, '[osparc-test-id="addTagBtn"]');
@@ -122,7 +122,7 @@ describe('tags testing', () => {
   // wait until card gets unlocked. Tags will anyway be replaced by folder in the coming weeks
   test.skip('change tag and reflect changes', async () => {
     // Change the tag
-    await waitAndClick(page, '[osparc-test-id="userMenuMainBtn"]');
+    await waitAndClick(page, '[osparc-test-id="userMenuBtn"]');
     await waitAndClick(page, '[osparc-test-id="userMenuPreferencesBtn"]');
     await waitAndClick(page, '[osparc-test-id="preferencesTagsTabBtn"]');
     await waitAndClick(page, '[qxclass="osparc.component.form.tag.TagItem"] [qxclass="qx.ui.form.Button"]');

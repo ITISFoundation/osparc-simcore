@@ -337,6 +337,7 @@ async def attempt_pod_removal_and_data_saving(
         service_type=NodeClass.INTERACTIVE.value,
         service_key=scheduler_data.key,
         service_tag=scheduler_data.version,
+        simcore_user_agent=scheduler_data.request_simcore_user_agent,
     )
     rabbitmq_client: RabbitMQClient = app.state.rabbitmq_client
     await rabbitmq_client.publish(message.channel_name, message.json())

@@ -25,6 +25,7 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     MockedStorageSubsystem,
     standard_role_response,
 )
+from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.projects import projects as projects_db_model
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects.project_models import ProjectDict
@@ -520,7 +521,12 @@ async def test_delete_node(
         if node_id in running_dy_services:
             mocked_director_v2_api[
                 "director_v2_api.stop_dynamic_service"
-            ].assert_called_once_with(mock.ANY, node_id, save_state=False)
+            ].assert_called_once_with(
+                mock.ANY,
+                node_id,
+                simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                save_state=False,
+            )
             mocked_director_v2_api["director_v2_api.stop_dynamic_service"].reset_mock()
         else:
             mocked_director_v2_api[
