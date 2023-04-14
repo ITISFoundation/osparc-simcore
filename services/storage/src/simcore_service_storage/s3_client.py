@@ -110,7 +110,8 @@ class StorageS3Client:
             Params={"Bucket": bucket, "Key": file_id},
             ExpiresIn=expiration_secs,
         )
-        return cast(AnyUrl, parse_obj_as(AnyUrl, generated_link))  # mypy
+        url: AnyUrl = parse_obj_as(AnyUrl, generated_link)
+        return url
 
     @s3_exception_handler(log)
     async def create_single_presigned_upload_link(
@@ -123,7 +124,8 @@ class StorageS3Client:
             Params={"Bucket": bucket, "Key": file_id},
             ExpiresIn=expiration_secs,
         )
-        return cast(AnyUrl, parse_obj_as(AnyUrl, generated_link))  # mypy
+        url: AnyUrl = parse_obj_as(AnyUrl, generated_link)
+        return url
 
     @s3_exception_handler(log)
     async def create_multipart_upload_links(
@@ -317,9 +319,10 @@ class StorageS3Client:
 
     @staticmethod
     def compute_s3_url(bucket: S3BucketName, file_id: SimcoreS3FileID) -> AnyUrl:
-        return cast(  # mypy
-            AnyUrl, parse_obj_as(AnyUrl, f"s3://{bucket}/{urllib.parse.quote(file_id)}")
+        url: AnyUrl = parse_obj_as(
+            AnyUrl, f"s3://{bucket}/{urllib.parse.quote(file_id)}"
         )
+        return url
 
     @staticmethod
     def is_multipart(file_size: ByteSize) -> bool:
