@@ -26,7 +26,7 @@ from simcore_service_webserver.meta_modeling.meta_modeling_handlers import (
     ProjectIterationItem,
     ProjectIterationResultItem,
 )
-from simcore_service_webserver.meta_modeling_projects import (
+from simcore_service_webserver.meta_modeling.meta_modeling_projects import (
     meta_project_policy,
     projects_redirection_middleware,
 )
