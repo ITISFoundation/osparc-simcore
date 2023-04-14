@@ -239,6 +239,17 @@ qx.Class.define("osparc.info.StudyUtils", {
     /**
       * @param study {osparc.data.model.Study} Study Model
       */
+    createAutoStartServices: function(study) {
+      console.log(study);
+      const cb = new qx.ui.form.CheckBox().set({
+        label: this.tr("Auto start Services")
+      });
+      return cb;
+    },
+
+    /**
+      * @param study {osparc.data.model.Study} Study Model
+      */
     createTags: function(study) {
       const tagsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
         alignY: "middle"
