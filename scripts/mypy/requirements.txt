@@ -1,5 +1,6 @@
 mypy~=1.2.0
 pydantic[email]
+sqlalchemy-stubs
 types-aiofiles
 types-attrs
 types-PyYAML
