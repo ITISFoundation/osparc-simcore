@@ -478,6 +478,9 @@ qx.Class.define("osparc.data.model.Study", {
         },
         data: osparc.utils.Utils.getClientSessionID()
       };
+      if ("disableServiceAutoStart" in this.getDev()) {
+        params["url"]["disableServiceAutoStart"] = this.getDev()["disableServiceAutoStart"];
+      }
       return osparc.data.Resources.fetch("studies", "open", params);
     },
 
