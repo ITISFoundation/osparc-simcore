@@ -12,12 +12,10 @@ from pydantic.errors import PydanticErrorMixin
 from redis.asyncio.lock import Lock
 from redis.asyncio.retry import Retry
 from redis.backoff import ExponentialBackoff
+from servicelib.retry_policies import RedisRetryPolicyUponInitialization
 from servicelib.utils import logged_gather
 from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity import retry
-from tenacity.before_sleep import before_sleep_log
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
 
 from .background_task import periodic_task
 from .logging_utils import log_catch, log_context
@@ -66,12 +64,7 @@ class RedisClientSDK:
             decode_responses=True,
         )
 
-    @retry(
-        stop=stop_after_delay(1 * _MINUTE),
-        wait=wait_fixed(_WAIT_SECS),
-        before_sleep=before_sleep_log(logger, logging.WARNING),
-        reraise=True,
-    )
+    @retry(**RedisRetryPolicyUponInitialization(logger).kwargs)
     async def setup(self) -> None:
         if not await self._client.ping():
             await self.shutdown()
