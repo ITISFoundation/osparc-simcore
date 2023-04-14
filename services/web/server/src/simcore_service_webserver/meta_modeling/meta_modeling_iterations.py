@@ -21,7 +21,7 @@ from pydantic.types import PositiveInt
 
 from ..utils import compute_sha1_on_small_dataset, now_str
 from ..version_control.errors import UserUndefined
-from . import meta_modeling_function_nodes
+from . import _function_nodes
 from ._version_control import CommitID, ProjectDict, VersionControlForMetaModeling
 
 log = logging.getLogger(__name__)
@@ -52,9 +52,7 @@ def _build_project_iterations(project_nodes: NodesDict) -> list[_ParametersNodes
 
     for node_id, node in project_nodes.items():
         if is_iterator_service(node.key):
-            node_def = meta_modeling_function_nodes.catalog.get_metadata(
-                node.key, node.version
-            )
+            node_def = _function_nodes.catalog.get_metadata(node.key, node.version)
             # save
             iterable_nodes_defs.append(node_def)
             iterable_nodes.append(node)
@@ -67,9 +65,7 @@ def _build_project_iterations(project_nodes: NodesDict) -> list[_ParametersNodes
         assert node.inputs  # nosec
         assert node_def.inputs  # nosec
 
-        node_call = meta_modeling_function_nodes.catalog.get_implementation(
-            node.key, node.version
-        )
+        node_call = _function_nodes.catalog.get_implementation(node.key, node.version)
         g: Generator[NodeOutputsDict, None, None] = node_call(
             **{name: node.inputs[name] for name in node_def.inputs}
         )
