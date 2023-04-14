@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 def setup(app: FastAPI):
     async def on_startup() -> None:
         app.state.node_rights_manager = await NodeRightsManager.create(app)
+        await app.state.node_rights_manager.redis_client_sdk.setup()
 
     async def on_shutdown() -> None:
         node_rights_manager: NodeRightsManager = app.state.node_rights_manager
@@ -104,7 +105,6 @@ class NodeRightsManager:
                 "RedisLockManager client is not available. Please check the configuration."
             )
         node_rights_manager: NodeRightsManager = app.state.node_rights_manager
-        await node_rights_manager.redis_client_sdk.setup()
         return node_rights_manager
 
     @classmethod
