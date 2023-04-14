@@ -146,7 +146,6 @@ def all_permission_combinations() -> list[str]:
     return res
 
 
-@pytest.mark.testit
 def test_check_project_permissions_for_any_user():
     project = {"access_rights": {"1": {"read": True, "write": False, "delete": False}}}
 
