@@ -28,12 +28,11 @@ qx.Class.define("osparc.panddy.Panddy", {
       zIndex: 100000
     });
 
-    this.__currentIdx = 0;
-    this.setSequences(this.self().INTRO_SEQUENCES);
+    this.setSequences(this.self().INTRO_SEQUENCE);
   },
 
   statics: {
-    INTRO_SEQUENCES: [{
+    INTRO_SEQUENCE: [{
       name: "Panddy intro",
       description: "Introduction to Panddy",
       steps: [{
@@ -111,9 +110,13 @@ qx.Class.define("osparc.panddy.Panddy", {
 
     __toSequences: function() {
       const sequences = this.getSequences();
-      if (sequences.length === 0) {
+      const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem("panddyDontShow");
+      if (sequences.length === 0 || (sequences === this.self().INTRO_SEQUENCE && dontShow === "true")) {
         this.stop();
-      } else if (sequences.length === 1) {
+        return;
+      }
+
+      if (sequences.length === 1) {
         this.__selectSequence(sequences[0]);
       } else {
         this.__showSequences();
@@ -211,6 +214,12 @@ qx.Class.define("osparc.panddy.Panddy", {
           nSteps: steps.length
         });
       }
+
+      if (this.getSequences() === this.self().INTRO_SEQUENCE) {
+        const dontShowCB = osparc.product.tutorial.Utils.createDontShowAgain("panddyDontShow");
+        stepWidget.add(dontShowCB);
+      }
+
       stepWidget.show();
       // eslint-disable-next-line no-underscore-dangle
       setTimeout(() => stepWidget.__updatePosition(), 10); // Hacky: Execute async and give some time for the relevant properties to be set
