@@ -51,7 +51,6 @@ from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_postgres_database.webserver_models import ProjectType
 
 from .. import catalog_client, director_v2_api, storage_api
-from ..application_settings import get_settings
 from ..products import get_product_name
 from ..redis import get_redis_lock_manager_client_sdk
 from ..resource_manager.websocket_manager import (
@@ -82,6 +81,7 @@ from .projects_exceptions import (
     ProjectStartsTooManyDynamicNodes,
     ProjectTooManyProjectOpened,
 )
+from .projects_settings import ProjectsSettings, get_plugin_settings
 from .projects_utils import extract_dns_without_default_port
 
 log = logging.getLogger(__name__)
@@ -230,8 +230,7 @@ async def _start_dynamic_service(
 
     lock_key = _nodes_utils.get_service_start_lock_key(user_id, project_uuid)
     redis_client_sdk = get_redis_lock_manager_client_sdk(request.app)
-    project_settings = get_settings(request.app).WEBSERVER_PROJECTS
-    assert project_settings is not None  # nosec
+    project_settings: ProjectsSettings = get_plugin_settings(request.app)
 
     async with redis_client_sdk.lock_context(
         lock_key,
@@ -948,8 +947,7 @@ async def run_project_dynamic_services(
     product_name: str,
 ) -> None:
     # first get the services if they already exist
-    project_settings = get_settings(request.app).WEBSERVER_PROJECTS
-    assert project_settings  # nosec
+    project_settings: ProjectsSettings = get_plugin_settings(request.app)
     running_service_uuids: list[NodeIDStr] = [
         d["service_uuid"]
         for d in await director_v2_api.list_dynamic_services(
