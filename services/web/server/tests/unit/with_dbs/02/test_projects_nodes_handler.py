@@ -30,6 +30,17 @@ from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects.project_models import ProjectDict
 
 
+@pytest.fixture
+def mock_get_total_project_dynamic_nodes_creation_interval(
+    mocker: MockerFixture,
+) -> None:
+    _VERY_LONG_LOCK_TIMEOUT_S: Final[float] = 300
+    mocker.patch(
+        "simcore_service_webserver.projects.projects_api._get_total_project_dynamic_nodes_creation_interval",
+        return_value=_VERY_LONG_LOCK_TIMEOUT_S,
+    )
+
+
 @pytest.mark.parametrize(
     "user_role,expected",
     [
@@ -164,7 +175,6 @@ async def test_create_node(
     faker: Faker,
     mocked_director_v2_api: dict[str, mock.MagicMock],
     mock_catalog_api: dict[str, mock.Mock],
-    mocker: MockerFixture,
     postgres_db: sa.engine.Engine,
 ):
     assert client.app
@@ -223,6 +233,7 @@ async def test_create_and_delete_many_nodes_in_parallel(
     faker: Faker,
     postgres_db: sa.engine.Engine,
     storage_subsystem_mock: MockedStorageSubsystem,
+    mock_get_total_project_dynamic_nodes_creation_interval: None,
 ):
     assert client.app
 
@@ -332,6 +343,7 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
     faker: Faker,
     max_amount_of_auto_started_dyn_services: int,
     postgres_db: sa.engine.Engine,
+    mock_get_total_project_dynamic_nodes_creation_interval: None,
 ):
     assert client.app
     # create a starting project with no dy-services
