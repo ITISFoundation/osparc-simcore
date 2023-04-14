@@ -21,7 +21,7 @@ from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.models.projects import projects
 from simcore_service_webserver._constants import APP_DB_ENGINE_KEY
 from simcore_service_webserver.director_v2_api import get_project_run_policy
-from simcore_service_webserver.meta_modeling_handlers import (
+from simcore_service_webserver.meta_modeling.meta_modeling_handlers import (
     Page,
     ProjectIterationItem,
     ProjectIterationResultItem,

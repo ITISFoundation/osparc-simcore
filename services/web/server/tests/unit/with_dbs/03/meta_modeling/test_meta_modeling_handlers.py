@@ -5,8 +5,8 @@
 
 import pytest
 from openapi_core.schema.specs.models import Spec as OpenApiSpecs
-from simcore_service_webserver import meta_modeling_handlers
 from simcore_service_webserver._meta import API_VTAG as VX
+from simcore_service_webserver.meta_modeling import meta_modeling_handlers
 
 
 @pytest.mark.parametrize(

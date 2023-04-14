@@ -8,9 +8,9 @@ import logging
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from . import meta_modeling_handlers
 from ._constants import APP_SETTINGS_KEY
 from .director_v2_api import get_project_run_policy, set_project_run_policy
+from .meta_modeling import meta_modeling_handlers
 from .meta_modeling_projects import meta_project_policy, projects_redirection_middleware
 
 log = logging.getLogger(__name__)
