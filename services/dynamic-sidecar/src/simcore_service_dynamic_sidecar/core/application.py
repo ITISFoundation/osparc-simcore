@@ -1,6 +1,5 @@
 import logging
 from asyncio import Lock
-from typing import Optional
 
 from fastapi import FastAPI
 from models_library.basic_types import BootModeEnum
@@ -13,7 +12,7 @@ from servicelib.fastapi.openapi import (
 from servicelib.logging_utils import config_all_loggers
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 
-from .._meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY, __version__
+from .._meta import API_VERSION, API_VTAG, APP_NAME, PROJECT_NAME, SUMMARY, __version__
 from ..api import main_router
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore, setup_shared_store
@@ -94,7 +93,7 @@ class AppState:
         return self._app.state.shared_store
 
     @property
-    def compose_spec(self) -> Optional[str]:
+    def compose_spec(self) -> str | None:
         return self._shared_store.compose_spec
 
 
@@ -102,7 +101,7 @@ def setup_logger(settings: ApplicationSettings):
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3148
     logging.basicConfig(level=settings.log_level)
     logging.root.setLevel(settings.log_level)
-    config_all_loggers()
+    config_all_loggers(service_name=APP_NAME)
 
 
 def create_base_app() -> FastAPI:

@@ -12,7 +12,7 @@ import sys
 from asyncio import iscoroutinefunction
 from contextlib import contextmanager
 from inspect import getframeinfo, stack
-from typing import Callable, Optional
+from typing import Callable
 
 log = logging.getLogger(__name__)
 
@@ -52,25 +52,32 @@ class CustomFormatter(logging.Formatter):
     2. Overrides 'filename' with the value of 'file_name_override', if it exists.
     """
 
+    def __init__(self, fmt, color_log_enabled=False):
+        super().__init__(fmt)
+        self.color_log_enabled: bool = color_log_enabled
+
     def format(self, record):
         if hasattr(record, "func_name_override"):
             record.funcName = record.func_name_override
         if hasattr(record, "file_name_override"):
             record.filename = record.file_name_override
 
-        # add color
-        levelname = record.levelname
-        if levelname in COLORS:
-            levelname_color = COLORS[levelname] + levelname + NORMAL
-            record.levelname = levelname_color
-        return super().format(record)
+        if self.color_log_enabled == True:
+            levelname = record.levelname
+            if levelname in COLORS:
+                levelname_color = COLORS[levelname] + levelname + NORMAL
+                record.levelname = levelname_color
+        return super().format(record).replace("\n", "\\n")
 
 
 # SEE https://docs.python.org/3/library/logging.html#logrecord-attributes
-DEFAULT_FORMATTING = "%(levelname)s: [%(asctime)s/%(processName)s] [%(name)s:%(funcName)s(%(lineno)d)]  -  %(message)s"
+DEFAULT_FORMATTING = "log_level=%(levelname)s | log_timestamp=%(asctime)s | log_source=%(name)s:%(funcName)s(%(lineno)d) | log_msg=%(message)s"
+
+# Graylog Grok pattern extractor:
+# log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{DATA:log_source} \| log_msg=%{GREEDYDATA:log_msg} \| log_service=%{WORD:log_level}
 
 
-def config_all_loggers():
+def config_all_loggers(service_name: str = ""):
     """
     Applies common configuration to ALL registered loggers
     """
@@ -79,20 +86,18 @@ def config_all_loggers():
     loggers = [logging.getLogger()] + [
         logging.getLogger(name) for name in the_manager.loggerDict
     ]
+
+    FINAL_FORMATTING = DEFAULT_FORMATTING + f" | log_service={service_name}"
     for logger in loggers:
-        set_logging_handler(logger)
+        set_logging_handler(logger, FINAL_FORMATTING)
 
 
 def set_logging_handler(
     logger: logging.Logger,
-    formatter_base: Optional[type[logging.Formatter]] = None,
-    fmt: str = DEFAULT_FORMATTING,
+    fmt: str,
 ) -> None:
-    if not formatter_base:
-        formatter_base = CustomFormatter
-
     for handler in logger.handlers:
-        handler.setFormatter(formatter_base(fmt))
+        handler.setFormatter(CustomFormatter(fmt))
 
 
 def test_logger_propagation(logger: logging.Logger):

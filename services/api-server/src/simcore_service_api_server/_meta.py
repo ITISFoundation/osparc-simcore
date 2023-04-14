@@ -13,6 +13,8 @@ API_VERSION: str = _current_distribution.version
 MAJOR, MINOR, PATCH = _current_distribution.version.split(".")
 API_VTAG: str = f"v{MAJOR}"
 
+APP_NAME: str = __name__.split(".")[0]
+
 __version__ = _current_distribution.version
 
 

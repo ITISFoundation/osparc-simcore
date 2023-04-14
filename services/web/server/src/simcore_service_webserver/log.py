@@ -2,11 +2,12 @@
 
 """
 import logging
-from typing import Optional, Union
 
 from aiodebug import log_slow_callbacks
 from aiohttp.log import access_logger
 from servicelib.logging_utils import config_all_loggers
+
+from ._meta import APP_NAME
 
 LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
 NOISY_LOGGERS = (
@@ -19,13 +20,13 @@ NOISY_LOGGERS = (
 )
 
 
-def setup_logging(*, level: Union[str, int], slow_duration: Optional[float] = None):
+def setup_logging(*, level: str | int, slow_duration: float | None = None):
     # service log level
     logging.basicConfig(level=level)
 
     # root
     logging.root.setLevel(level)
-    config_all_loggers()
+    config_all_loggers(service_name=APP_NAME)
 
     # Enforces same log-level to aiohttp & gunicorn access loggers
     #
