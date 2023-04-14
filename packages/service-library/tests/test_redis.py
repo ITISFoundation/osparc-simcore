@@ -18,7 +18,6 @@ from servicelib.redis import (
     CouldNotAcquireLockError,
     RedisClientSDK,
     RedisClientsManager,
-    _get_lock_renew_interval,
 )
 from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity._asyncio import AsyncRetrying
@@ -208,7 +207,7 @@ async def test_lock_context_with_data(redis_client_sdk: RedisClientSDK, faker: F
 async def test_lock_acquired_in_parallel_to_update_same_resource(
     mock_default_lock_ttl: None, redis_client_sdk: RedisClientSDK, faker: Faker
 ):
-    INCREASE_OPERATIONS: Final[int] = 50
+    INCREASE_OPERATIONS: Final[int] = 250
     INCREASE_BY: Final[int] = 10
 
     class RaceConditionCounter:
@@ -219,11 +218,12 @@ async def test_lock_acquired_in_parallel_to_update_same_resource(
             current_value = self.value
             current_value += by
             # most likely situation which creates issues
-            await asyncio.sleep(_get_lock_renew_interval().total_seconds())
+            await asyncio.sleep(servicelib_redis._DEFAULT_LOCK_TTL.total_seconds() / 2)
             self.value = current_value
 
     counter = RaceConditionCounter()
     lock_name: str = faker.pystr()
+    # ensures it does nto time out before acquiring the lock
     time_for_all_inc_counter_calls_to_finish_s: float = (
         servicelib_redis._DEFAULT_LOCK_TTL.total_seconds() * INCREASE_OPERATIONS * 10
     )
@@ -241,7 +241,7 @@ async def test_lock_acquired_in_parallel_to_update_same_resource(
 
 
 async def test_redis_client_sdks_manager(redis_service: RedisSettings):
-    all_redis_databases: set[int] = set(RedisDatabase)
+    all_redis_databases: set[RedisDatabase] = set(RedisDatabase)
     manager = RedisClientsManager(databases=all_redis_databases, settings=redis_service)
 
     await manager.setup()
