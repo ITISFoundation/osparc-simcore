@@ -229,11 +229,11 @@ async def _start_dynamic_service(
     # this is a dynamic node, let's gather its resources and start it
 
     lock_key = _nodes_utils.get_service_start_lock_key(user_id, project_uuid)
-    client_sdk = get_redis_lock_manager_client_sdk(request.app)
+    redis_client_sdk = get_redis_lock_manager_client_sdk(request.app)
     project_settings = get_settings(request.app).WEBSERVER_PROJECTS
     assert project_settings is not None  # nosec
 
-    async with client_sdk.lock_context(
+    async with redis_client_sdk.lock_context(
         lock_key,
         blocking=True,
         blocking_timeout_s=_nodes_utils.get_total_project_dynamic_nodes_creation_interval(
