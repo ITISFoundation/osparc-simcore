@@ -44,3 +44,9 @@ def create_param_node_from_iterator_with_outputs(iterator_node: Node) -> Node:
         thumbnail="",  # TODO: hack due to issue in projects json-schema
         outputs=deepcopy(iterator_node.outputs),
     )
+
+
+__all__: tuple[str, ...] = (
+    "catalog",
+    "create_param_node_from_iterator_with_outputs",
+)

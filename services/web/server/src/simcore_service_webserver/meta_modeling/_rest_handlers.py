@@ -204,7 +204,7 @@ class ProjectIterationItem(_BaseModelGet):
     )
 
     @classmethod
-    def create(
+    def create_iteration(
         cls,
         meta_project_uuid,
         meta_project_commit_id,
@@ -236,7 +236,7 @@ class ProjectIterationResultItem(ProjectIterationItem):
     results: ExtractedResults
 
     @classmethod
-    def create(  # pylint: disable=arguments-differ
+    def create_result(  # pylint: disable=arguments-differ
         cls,
         meta_project_uuid,
         meta_project_commit_id,
@@ -307,7 +307,7 @@ async def _list_meta_project_iterations_handler(request: web.Request) -> web.Res
 
     # parse and validate response ----
     page_items = [
-        ProjectIterationItem.create(
+        ProjectIterationItem.create_iteration(
             meta_project_uuid,
             meta_project_commit_id,
             item.iteration_index,
@@ -358,7 +358,7 @@ async def _create_meta_project_iterations_handler(request: web.Request) -> web.R
 
     # parse and validate response ----
     iterations_items = [
-        ProjectIterationItem.create(
+        ProjectIterationItem.create_iteration(
             meta_project_uuid,
             meta_project_commit_id,
             item.iteration_index,
@@ -432,7 +432,7 @@ async def _list_meta_project_iterations_results_handler(
 
     # parse and validate response ----
     page_items = [
-        ProjectIterationResultItem.create(
+        ProjectIterationResultItem.create_result(
             meta_project_uuid,
             meta_project_commit_id,
             item.iteration_index,
