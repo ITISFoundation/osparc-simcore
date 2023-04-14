@@ -15,12 +15,12 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._meta import api_version_prefix as VTAG
 from ..login.decorators import login_required
-from ..meta_modeling_results import ExtractedResults, extract_project_results
 from ..security_decorators import permission_required
 from ..utils_aiohttp import create_url_for_function, envelope_json_response
 from ..version_control.models import CheckpointID, CommitID, TagProxy
 from ..version_control.vc_tags import parse_workcopy_project_tag_name
 from .meta_modeling_iterations import IterationID, ProjectIteration
+from .meta_modeling_results import ExtractedResults, extract_project_results
 from .meta_modeling_version_control import VersionControlForMetaModeling
 
 log = logging.getLogger(__name__)

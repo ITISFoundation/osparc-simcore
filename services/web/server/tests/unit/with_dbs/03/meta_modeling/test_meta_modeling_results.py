@@ -4,18 +4,18 @@
 
 
 import json
-from typing import Any, Dict, Type
+from typing import Any
 
 import pytest
 from pydantic import BaseModel
-from simcore_service_webserver.meta_modeling_results import (
+from simcore_service_webserver.meta_modeling.meta_modeling_results import (
     ExtractedResults,
     extract_project_results,
 )
 
 
 @pytest.fixture
-def fake_workbench() -> Dict[str, Any]:
+def fake_workbench() -> dict[str, Any]:
     return {
         "0f1e38c9-dcb7-443c-a745-91b97ac28ccc": {
             "key": "simcore/services/frontend/data-iterator/funky-range",
@@ -95,7 +95,7 @@ def fake_workbench() -> Dict[str, Any]:
     }
 
 
-def test_extract_project_results(fake_workbench: Dict[str, Any]):
+def test_extract_project_results(fake_workbench: dict[str, Any]):
 
     results = extract_project_results(fake_workbench)
 
@@ -130,7 +130,7 @@ def test_extract_project_results(fake_workbench: Dict[str, Any]):
     (ExtractedResults,),
 )
 def test_models_examples(
-    model_cls: Type[BaseModel], model_cls_examples: Dict[str, Any]
+    model_cls: type[BaseModel], model_cls_examples: dict[str, Any]
 ):
     for name, example in model_cls_examples.items():
         print(name, ":", json.dumps(example, indent=1))

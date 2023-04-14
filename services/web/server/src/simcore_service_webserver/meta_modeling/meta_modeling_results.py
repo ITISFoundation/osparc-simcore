@@ -7,7 +7,7 @@
 
 
 import logging
-from typing import Any, Dict
+from typing import Any
 
 from models_library.projects_nodes import OutputsDict
 from models_library.projects_nodes_io import NodeIDStr
@@ -17,13 +17,13 @@ log = logging.getLogger(__name__)
 
 
 class ExtractedResults(BaseModel):
-    progress: Dict[NodeIDStr, conint(ge=0, le=100)] = Field(
+    progress: dict[NodeIDStr, conint(ge=0, le=100)] = Field(
         ..., description="Progress in each computational node"
     )
-    labels: Dict[NodeIDStr, str] = Field(
+    labels: dict[NodeIDStr, str] = Field(
         ..., description="Maps captured node with a label"
     )
-    values: Dict[NodeIDStr, OutputsDict] = Field(
+    values: dict[NodeIDStr, OutputsDict] = Field(
         ..., description="Captured outputs per node"
     )
 
@@ -54,7 +54,7 @@ class ExtractedResults(BaseModel):
         }
 
 
-def extract_project_results(workbench: Dict[str, Any]) -> ExtractedResults:
+def extract_project_results(workbench: dict[str, Any]) -> ExtractedResults:
     """Extracting results from a project's workbench section (i.e. pipeline).  Specifically:
 
     - data sources (e.g. outputs from iterators, paramters)
