@@ -204,6 +204,21 @@ async def test_lock_context_with_data(redis_client_sdk: RedisClientSDK, faker: F
     assert await redis_client_sdk.lock_value(lock_name) is None
 
 
+async def test_lock_context_released_after_error(
+    redis_client_sdk: RedisClientSDK, faker: Faker
+):
+    lock_name = faker.pystr()
+
+    assert await redis_client_sdk.lock_value(lock_name) is None
+
+    with pytest.raises(RuntimeError):
+        async with redis_client_sdk.lock_context(lock_name):
+            assert await redis_client_sdk.redis.get(lock_name) is not None
+            raise RuntimeError("Expected error")
+
+    assert await redis_client_sdk.lock_value(lock_name) is None
+
+
 async def test_lock_acquired_in_parallel_to_update_same_resource(
     mock_default_lock_ttl: None, redis_client_sdk: RedisClientSDK, faker: Faker
 ):
