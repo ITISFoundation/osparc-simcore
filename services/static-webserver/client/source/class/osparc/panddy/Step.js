@@ -41,19 +41,12 @@ qx.Class.define("osparc.panddy.Step", {
     if (message) {
       this.setMessage(message);
     }
-
-    this.addListener("changeVisibility", e => {
-      if (e.getData() !== "visible") {
-        this.fireEvent("widgetExcluded");
-      }
-    }, this);
   },
 
   events: {
     "skipPressed": "qx.event.type.Event",
     "nextPressed": "qx.event.type.Event",
-    "endPressed": "qx.event.type.Event",
-    "widgetExcluded": "qx.event.type.Event"
+    "endPressed": "qx.event.type.Event"
   },
 
   properties: {
@@ -158,6 +151,21 @@ qx.Class.define("osparc.panddy.Step", {
         }
       }
       return control || this.base(arguments, id);
+    },
+
+    // override
+    _elementAppearDisappearHandler: function(e) {
+      // If the element is a floating view, when clicking away it will disappear
+      // Treat that event as a "nextPressed"
+      switch (e.getType()) {
+        case "disappear":
+          if (this.isVisible()) {
+            this.__nextRequested();
+          }
+          break;
+      }
+
+      this.base(arguments, e);
     },
 
     __nextRequested: function() {

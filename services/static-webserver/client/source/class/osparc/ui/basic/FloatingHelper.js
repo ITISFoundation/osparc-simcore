@@ -192,8 +192,8 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
 
     __applyElement: function(element, oldElement) {
       if (oldElement) {
-        oldElement.removeListener("appear", this.__elementVisibilityHandler);
-        oldElement.removeListener("disappear", this.__elementVisibilityHandler);
+        oldElement.removeListener("appear", this._elementAppearDisappearHandler);
+        oldElement.removeListener("disappear", this._elementAppearDisappearHandler);
         this.__removeListeners(["move", "resize"]);
         this.__removeListeners(["scrollX", "scrollY"], true);
       }
@@ -202,8 +202,8 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
         if (isElementVisible && this.isActive()) {
           this.show();
         }
-        element.addListener("appear", this.__elementVisibilityHandler, this);
-        element.addListener("disappear", this.__elementVisibilityHandler, this);
+        element.addListener("appear", this._elementAppearDisappearHandler, this);
+        element.addListener("disappear", this._elementAppearDisappearHandler, this);
         this.__addListeners(["move", "resize"]);
         this.__addListeners(["scrollX", "scrollY"], true);
       } else {
@@ -233,6 +233,10 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
         });
         widget = widget.getLayoutParent();
       }
+    },
+
+    _elementAppearDisappearHandler: function(e) {
+      this.__elementVisibilityHandler(e);
     },
 
     __elementVisibilityHandler: function(e) {

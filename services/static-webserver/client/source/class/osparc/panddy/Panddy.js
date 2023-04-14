@@ -97,13 +97,14 @@ qx.Class.define("osparc.panddy.Panddy", {
     },
 
     stop: function() {
-      this.getChildControl("panddy").exclude();
       this.__removeCurrentBuble();
+      this.getChildControl("panddy").exclude();
     },
 
     __removeCurrentBuble: function() {
       if (this.__currentBuble) {
         qx.core.Init.getApplication().getRoot().remove(this.__currentBuble);
+        this.__currentBuble.exclude();
         this.__currentBuble = null;
       }
     },
