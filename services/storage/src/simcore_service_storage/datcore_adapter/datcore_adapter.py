@@ -227,7 +227,8 @@ async def get_file_download_presigned_link(
         dict[str, Any],
         await _request(app, api_key, api_secret, "GET", f"/files/{file_id}"),
     )
-    return cast(AnyUrl, parse_obj_as(AnyUrl, file_download_data["link"]))  # mypy
+    url: AnyUrl = parse_obj_as(AnyUrl, file_download_data["link"])
+    return url
 
 
 async def delete_file(

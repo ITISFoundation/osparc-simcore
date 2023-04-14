@@ -39,7 +39,7 @@ async def dsm_cleaner_task(app: web.Application) -> None:
     logger.info("starting dsm cleaner task...")
     cfg: Settings = app[APP_CONFIG_KEY]
     dsm: DataManagerProvider = app[APP_DSM_KEY]
-    simcore_s3_dsm = cast(
+    simcore_s3_dsm: SimcoreS3DataManager = cast(
         SimcoreS3DataManager, dsm.get(SimcoreS3DataManager.get_location_id())
     )
     assert cfg.STORAGE_CLEANER_INTERVAL_S  # nosec
