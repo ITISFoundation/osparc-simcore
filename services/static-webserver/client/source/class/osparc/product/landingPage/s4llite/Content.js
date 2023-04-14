@@ -362,7 +362,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       [{
         image: "https://zmt.swiss/assets/images/sim4life/modules/MRI/bcage.png",
         title: "Modeling",
-        text: "Use our Virtual poupualtion, upload CAD models or build your own model with our amazing tools."
+        text: "Use our Virtual Poupualtion, upload CAD models or build your own model with our amazing tools."
       }, {
         image: "https://zmt.swiss/assets/images/sim4life/framework/NewUnstructuredMesh.png",
         title: "Simulation",
@@ -370,7 +370,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       }, {
         image: "https://zmt.swiss/assets/images/sim4life/framework/postpromain.jpg",
         title: "Post Processing",
-        text: "Analiyze simulation results and imaging data through advanced visualization and analysis capabilities."
+        text: "Analyze simulation results and imaging data through advanced visualization and analysis capabilities."
       }].forEach(tab => {
         const verticalCard = this.self().createVerticalCard(tab.image, tab.title, tab.text);
         stepsLayout.add(verticalCard);

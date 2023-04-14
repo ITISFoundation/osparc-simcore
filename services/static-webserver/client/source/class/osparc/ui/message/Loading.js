@@ -135,6 +135,7 @@ qx.Class.define("osparc.ui.message.Loading", {
         textColor: "black",
         alignX: "center"
       });
+      osparc.utils.Utils.setIdToWidget(disclaimer, "disclaimerMessage");
       disclaimer.getContentElement().setStyles({
         "border-radius": "8px"
       });
