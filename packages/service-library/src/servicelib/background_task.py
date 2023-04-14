@@ -114,4 +114,6 @@ async def periodic_task(
         yield asyncio_task
     finally:
         if asyncio_task is not None:
+            # NOTE: this stopping is shielded to prevent the cancellation to propagate
+            # into the stopping procedure
             await asyncio.shield(stop_periodic_task(asyncio_task, timeout=stop_timeout))
