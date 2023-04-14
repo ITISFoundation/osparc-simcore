@@ -231,9 +231,9 @@ class DaskScheduler(BaseCompScheduler):
             )
             await self.rabbitmq_client.publish(message.channel_name, message.json())
 
-        await CompTasksRepository(self.db_engine).set_project_tasks_state(
-            project_id, [node_id], task_state_event.state
-        )
+        # await CompTasksRepository(self.db_engine).set_project_tasks_state(
+        #     project_id, [node_id], task_state_event.state
+        # )
 
     async def _task_progress_change_handler(self, event: str) -> None:
         task_progress_event = TaskProgressEvent.parse_raw(event)
