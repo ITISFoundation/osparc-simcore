@@ -3,6 +3,7 @@ import datetime
 import logging
 from dataclasses import dataclass, field
 from typing import AsyncIterator, Final
+from uuid import uuid4
 
 import redis.asyncio as aioredis
 import redis.exceptions
@@ -19,18 +20,15 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 from .background_task import periodic_task
-from .logging_utils import log_catch
+from .logging_utils import log_catch, log_context
 
-_DEFAULT_LOCK_TTL: datetime.timedelta = datetime.timedelta(seconds=10)
-_AUTO_EXTEND_LOCK_RATIO: Final[float] = 0.6
+_DEFAULT_LOCK_TTL: Final[datetime.timedelta] = datetime.timedelta(seconds=10)
+_CANCEL_TASK_TIMEOUT: Final[datetime.timedelta] = datetime.timedelta(seconds=0.1)
 _MINUTE: Final[NonNegativeFloat] = 60
 _WAIT_SECS: Final[NonNegativeFloat] = 1
 
+
 logger = logging.getLogger(__name__)
-
-
-def _get_lock_renew_interval() -> datetime.timedelta:
-    return _DEFAULT_LOCK_TTL * _AUTO_EXTEND_LOCK_RATIO
 
 
 class BaseRedisError(PydanticErrorMixin, RuntimeError):
@@ -103,45 +101,49 @@ class RedisClientSDK:
         blocking: bool = False,
         blocking_timeout_s: NonNegativeFloat = 5,
     ) -> AsyncIterator[Lock]:
+        """Tries to acquire a lock.
+
+        :param lock_key: unique name of the lock
+        :param lock_value: content of the lock, defaults to None
+        :param blocking: should block here while acquiring the lock, defaults to False
+        :param blocking_timeout_s: time to wait while acquire a lock before giving up, defaults to 5
+
+        :raises CouldNotAcquireLockError: reasons why lock acquisition fails:
+            1. `blocking==False` the lock was already acquired by some other entity
+            2. `blocking==True` timeouts out while waiting for lock to be free (another entity holds the lock)
         """
-        Tries to acquire the lock and returns it when succeeds.
 
-        If already locked raises `CouldNotAcquireLockError`.
+        total_lock_duration: datetime.timedelta = _DEFAULT_LOCK_TTL
+        lock_unique_id = f"lock_extender_{uuid4()}"
 
-        When `blocking` is True, waits `blocking_timeout_s` for the lock to be
-        acquired. Otherwise raises `CouldNotAcquireLockError`.
-        """
+        ttl_lock: Lock = self._client.lock(
+            name=lock_key,
+            timeout=total_lock_duration.total_seconds(),
+            blocking=blocking,
+            blocking_timeout=blocking_timeout_s,
+        )
 
-        ttl_lock = None
-        try:
+        if not await ttl_lock.acquire(token=lock_value):
+            raise CouldNotAcquireLockError(lock=ttl_lock)
 
-            async def _auto_extend_lock(lock: Lock) -> None:
+        async def _extend_lock(lock: Lock) -> None:
+            with log_context(
+                logger, logging.DEBUG, f"Extending lock {lock_unique_id}"
+            ), log_catch(logger, reraise=False):
                 await lock.reacquire()
 
-            ttl_lock = self._client.lock(
-                lock_key, timeout=_DEFAULT_LOCK_TTL.total_seconds()
-            )
-
-            if not await ttl_lock.acquire(
-                blocking=blocking, token=lock_value, blocking_timeout=blocking_timeout_s
-            ):
-                # NOTE: acquisition fails because
-                # 1. the lock was already acquired by some other entity
-                # 2. timeouts out while waiting for lock to be free (another entity holds the lock)
-                raise CouldNotAcquireLockError(lock=ttl_lock)
-
+        try:
             async with periodic_task(
-                _auto_extend_lock,
-                interval=_get_lock_renew_interval(),
-                task_name=f"{lock_key}_auto_extend",
+                _extend_lock,
+                interval=total_lock_duration / 2,
+                task_name=lock_unique_id,
                 lock=ttl_lock,
+                stop_timeout=0.1,
             ):
+                # lock is in use now
                 yield ttl_lock
-
         finally:
-            if ttl_lock:
-                with log_catch(logger, reraise=False):
-                    await ttl_lock.release()
+            await ttl_lock.release()
 
     async def lock_value(self, lock_name: str) -> str | None:
         return await self._client.get(lock_name)
