@@ -6,8 +6,8 @@ from pydantic.error_wrappers import ValidationError
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.json_serialization import json_dumps
 
-from .projects.projects_exceptions import ProjectNotFoundError
-from .version_control_errors import InvalidParameterError, NoCommitError, NotFoundError
+from ..projects.projects_exceptions import ProjectNotFoundError
+from .errors import InvalidParameterError, NoCommitError, NotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +49,3 @@ def handle_request_errors(handler: Handler) -> Handler:
             ) from err
 
     return wrapped
-
-
-# FIXME: access rights using same approach as in access_layer.py in storage.
-# A user can only check snapshots (subresource) of its project (parent resource)

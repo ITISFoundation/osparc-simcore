@@ -1,5 +1,5 @@
 import datetime
-from typing import AsyncGenerator, Optional, Union
+from typing import AsyncGenerator
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -17,7 +17,7 @@ from .models import FileMetaData, FileMetaDataAtDB
 
 
 async def exists(conn: SAConnection, file_id: SimcoreS3FileID) -> bool:
-    return (
+    return bool(
         await conn.scalar(
             sa.select([sa.func.count()])
             .select_from(file_meta_data)
@@ -28,7 +28,7 @@ async def exists(conn: SAConnection, file_id: SimcoreS3FileID) -> bool:
 
 
 async def upsert(
-    conn: SAConnection, fmd: Union[FileMetaData, FileMetaDataAtDB]
+    conn: SAConnection, fmd: FileMetaData | FileMetaDataAtDB
 ) -> FileMetaDataAtDB:
     # NOTE: upsert file_meta_data, if the file already exists, we update the whole row
     # so we get the correct time stamps
@@ -69,8 +69,8 @@ async def list_filter_with_partial_file_id(
     *,
     user_id: UserID,
     project_ids: list[ProjectID],
-    file_id_prefix: Optional[str],
-    partial_file_id: Optional[str],
+    file_id_prefix: str | None,
+    partial_file_id: str | None,
 ) -> list[FileMetaDataAtDB]:
     stmt = sa.select([file_meta_data]).where(
         (
@@ -94,12 +94,11 @@ async def list_filter_with_partial_file_id(
 async def list_fmds(
     conn: SAConnection,
     *,
-    user_id: Optional[UserID] = None,
-    project_ids: Optional[list[ProjectID]] = None,
-    file_ids: Optional[list[SimcoreS3FileID]] = None,
-    expired_after: Optional[datetime.datetime] = None,
+    user_id: UserID | None = None,
+    project_ids: list[ProjectID] | None = None,
+    file_ids: list[SimcoreS3FileID] | None = None,
+    expired_after: datetime.datetime | None = None,
 ) -> list[FileMetaDataAtDB]:
-
     stmt = sa.select([file_meta_data]).where(
         and_(
             (file_meta_data.c.user_id == f"{user_id}") if user_id else True,

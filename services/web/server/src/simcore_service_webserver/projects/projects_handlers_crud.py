@@ -7,12 +7,12 @@ import asyncio
 import json
 import logging
 from contextlib import AsyncExitStack
-from typing import Any, Coroutine, Optional
+from typing import Any, Coroutine
 
 from aiohttp import web
 from jsonschema import ValidationError as JsonSchemaValidationError
 from models_library.projects import ProjectID
-from models_library.projects_state import ProjectStatus
+from models_library.projects_state import ProjectLocked, ProjectStatus
 from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Page
 from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
@@ -25,6 +25,10 @@ from servicelib.aiohttp.long_running_tasks.server import (
 from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
+)
+from servicelib.common_headers import (
+    UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+    X_SIMCORE_USER_AGENT,
 )
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -52,7 +56,6 @@ from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .projects_exceptions import (
     ProjectDeleteError,
     ProjectInvalidRightsError,
-    ProjectLockError,
     ProjectNotFoundError,
 )
 from .projects_nodes_utils import update_frontend_outputs
@@ -105,7 +108,7 @@ class ProjectPathParams(BaseModel):
 
 
 class _ProjectCreateParams(BaseModel):
-    from_study: Optional[ProjectID] = Field(
+    from_study: ProjectID | None = Field(
         None,
         description="Option to create a project from existing template or study: from_study={study_uuid}",
     )
@@ -147,6 +150,9 @@ async def create_projects(request: web.Request):
         query_params=query_params,
         predefined_project=predefined_project,
         product_name=req_ctx.product_name,
+        simcore_user_agent=request.headers.get(
+            X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+        ),
         fire_and_forget=True,
     )
 
@@ -159,7 +165,7 @@ async def _prepare_project_copy(
     as_template: bool,
     deep_copy: bool,
     task_progress: TaskProgress,
-) -> tuple[ProjectDict, Optional[Coroutine[Any, Any, None]]]:
+) -> tuple[ProjectDict, Coroutine[Any, Any, None] | None]:
     source_project = await projects_api.get_project_for_user(
         app,
         project_uuid=f"{src_project_uuid}",
@@ -249,8 +255,9 @@ async def _create_projects(
     app: web.Application,
     query_params: _ProjectCreateParams,
     request_context: RequestContext,
-    predefined_project: Optional[ProjectDict],
+    predefined_project: ProjectDict | None,
     product_name: str,
+    simcore_user_agent: str,
 ) -> None:
     """
 
@@ -345,7 +352,7 @@ async def _create_projects(
         # FIXME: If cancelled during shutdown, cancellation of all_tasks will produce "new tasks"!
         if prj_uuid := new_project.get("uuid"):
             await projects_api.submit_delete_project_task(
-                app, prj_uuid, request_context.user_id
+                app, prj_uuid, request_context.user_id, simcore_user_agent
             )
         raise
 
@@ -713,7 +720,7 @@ async def delete_project(request: web.Request):
                 "It cannot be deleted until the project is closed."
             )
 
-        project_locked_state: Optional[ProjectLockError]
+        project_locked_state: ProjectLocked | None
         if project_locked_state := await get_project_locked_state(
             app=request.app, project_uuid=path_params.project_id
         ):
@@ -722,7 +729,12 @@ async def delete_project(request: web.Request):
             )
 
         await projects_api.submit_delete_project_task(
-            request.app, path_params.project_id, req_ctx.user_id
+            request.app,
+            path_params.project_id,
+            req_ctx.user_id,
+            request.headers.get(
+                X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+            ),
         )
 
     except ProjectInvalidRightsError as err:

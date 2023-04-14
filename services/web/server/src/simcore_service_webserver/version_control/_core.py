@@ -9,17 +9,14 @@
     more fine grained concepts as tags and commits directly
 """
 import logging
-from typing import List, Optional, Tuple
 from uuid import UUID
 
 from aiopg.sa.result import RowProxy
 from pydantic import NonNegativeInt, PositiveInt, validate_arguments
 
-from .version_control_db import CommitLog, VersionControlRepository
-from .version_control_errors import CleanRequiredError
-from .version_control_models import Checkpoint, RefID, WorkbenchView
-
-CFG = {"arbitrary_types_allowed": True}
+from .db import VersionControlRepository
+from .errors import CleanRequiredError
+from .models import Checkpoint, CommitLog, RefID, WorkbenchView
 
 log = logging.getLogger(__name__)
 
@@ -28,8 +25,8 @@ async def list_repos(
     vc_repo: VersionControlRepository,
     *,
     offset: NonNegativeInt = 0,
-    limit: Optional[PositiveInt] = None,
-) -> Tuple[List[RowProxy], PositiveInt]:
+    limit: PositiveInt | None = None,
+) -> tuple[list[RowProxy], PositiveInt]:
 
     # NOTE: this layer does NOT add much .. why not use vc_repo directly?
     repos_rows, total_number_of_repos = await vc_repo.list_repos(offset, limit)
@@ -43,21 +40,21 @@ async def list_checkpoints(
     project_uuid: UUID,
     *,
     offset: NonNegativeInt = 0,
-    limit: Optional[PositiveInt] = None,
-) -> Tuple[List[Checkpoint], PositiveInt]:
+    limit: PositiveInt | None = None,
+) -> tuple[list[Checkpoint], PositiveInt]:
 
     repo_id = await vc_repo.get_repo_id(project_uuid)
     if not repo_id:
         return [], 0
 
-    logs: List[CommitLog]
+    logs: list[CommitLog]
     logs, total_number_of_commits = await vc_repo.log(
         repo_id, offset=offset, limit=limit
     )
 
     checkpoints = [Checkpoint.from_commit_log(commit, tags) for commit, tags in logs]
     assert len(checkpoints) <= limit if limit else True  # nosec
-    assert total_number_of_commits > 0
+    assert total_number_of_commits > 0  # nosec
 
     return checkpoints, total_number_of_commits
 
@@ -67,7 +64,7 @@ async def create_checkpoint(
     project_uuid: UUID,
     *,
     tag: str,
-    message: Optional[str] = None,
+    message: str | None = None,
 ) -> Checkpoint:
     repo_id = await vc_repo.get_repo_id(project_uuid)
     if repo_id is None:
@@ -98,8 +95,8 @@ async def update_checkpoint(
     project_uuid: UUID,
     ref_id: RefID,
     *,
-    message: Optional[str] = None,
-    tag: Optional[str] = None,
+    message: str | None = None,
+    tag: str | None = None,
 ) -> Checkpoint:
 
     repo_id, commit_id = await vc_repo.as_repo_and_commit_ids(project_uuid, ref_id)
@@ -142,8 +139,6 @@ async def get_workbench(
     repo_id, commit_id = await vc_repo.as_repo_and_commit_ids(project_uuid, ref_id)
 
     # prefer actual project to snapshot
-    # TODO: tmp disabled
-    # content: Dict = await vc_repo.get_snapshot_content(repo_id, commit_id)
     content = await vc_repo.get_workbench_view(repo_id, commit_id)
     return WorkbenchView.parse_obj(content)
 
@@ -151,10 +146,14 @@ async def get_workbench(
 #
 # All above with validated arguments
 #
-list_repos_safe = validate_arguments(list_repos, config=CFG)
-list_checkpoints_safe = validate_arguments(list_checkpoints, config=CFG)
-create_checkpoint_safe = validate_arguments(create_checkpoint, config=CFG)
-get_checkpoint_safe = validate_arguments(get_checkpoint, config=CFG)
-update_checkpoint_safe = validate_arguments(update_checkpoint, config=CFG)
-checkout_checkpoint_safe = validate_arguments(checkout_checkpoint, config=CFG)
-get_workbench_safe = validate_arguments(get_workbench, config=CFG)
+
+_CONFIG = {"arbitrary_types_allowed": True}
+
+
+list_repos_safe = validate_arguments(list_repos, config=_CONFIG)  # type: ignore
+list_checkpoints_safe = validate_arguments(list_checkpoints, config=_CONFIG)  # type: ignore
+create_checkpoint_safe = validate_arguments(create_checkpoint, config=_CONFIG)  # type: ignore
+get_checkpoint_safe = validate_arguments(get_checkpoint, config=_CONFIG)  # type: ignore
+update_checkpoint_safe = validate_arguments(update_checkpoint, config=_CONFIG)  # type: ignore
+checkout_checkpoint_safe = validate_arguments(checkout_checkpoint, config=_CONFIG)  # type: ignore
+get_workbench_safe = validate_arguments(get_workbench, config=_CONFIG)  # type: ignore

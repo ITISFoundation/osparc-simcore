@@ -4,28 +4,27 @@
 
 import logging
 from types import SimpleNamespace
-from typing import List, Optional
 
 from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectIDStr
 from models_library.utils.fastapi_encoders import jsonable_encoder
 
 from .projects.project_models import ProjectDict
-from .version_control_changes import (
+from .version_control.db import VersionControlRepository
+from .version_control.errors import UserUndefined
+from .version_control.models import CommitID, TagProxy
+from .version_control.vc_changes import (
     compute_workbench_checksum,
     eval_workcopy_project_id,
 )
-from .version_control_db import VersionControlRepository
-from .version_control_errors import UserUndefined
-from .version_control_models import CommitID, TagProxy
-from .version_control_tags import compose_workcopy_project_tag_name
+from .version_control.vc_tags import compose_workcopy_project_tag_name
 
 log = logging.getLogger(__name__)
 
 
 class VersionControlForMetaModeling(VersionControlRepository):
     async def get_workcopy_project_id(
-        self, repo_id: int, commit_id: Optional[int] = None
+        self, repo_id: int, commit_id: int | None = None
     ) -> ProjectIDStr:
         async with self.engine.acquire() as conn:
             if commit_id is None:
@@ -44,7 +43,7 @@ class VersionControlForMetaModeling(VersionControlRepository):
             return dict(project.items())
 
     async def get_project(
-        self, project_id: ProjectIDStr, *, include: Optional[List[str]] = None
+        self, project_id: ProjectIDStr, *, include: list[str] | None = None
     ) -> ProjectDict:
         async with self.engine.acquire() as conn:
             if self.user_id is None:
@@ -165,7 +164,7 @@ class VersionControlForMetaModeling(VersionControlRepository):
 
     async def get_children_tags(
         self, repo_id: int, commit_id: int
-    ) -> List[List[TagProxy]]:
+    ) -> list[list[TagProxy]]:
         async with self.engine.acquire() as conn:
             commits = (
                 await self.CommitsOrm(conn)

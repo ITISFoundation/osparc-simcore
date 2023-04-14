@@ -380,6 +380,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         toolTipText: this.tr("Manuals")
       });
       osparc.store.Support.addQuickStartToMenu(menu);
+      osparc.store.Support.addPanddyToMenu(menu);
       osparc.store.Support.addManualButtonsToMenu(menu, menuButton);
       return menuButton;
     },

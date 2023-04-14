@@ -2,7 +2,7 @@
 
 """
 import logging
-from typing import Callable, NamedTuple, Optional
+from typing import Callable, NamedTuple
 
 from aiohttp import web
 from models_library.projects import ProjectID
@@ -20,8 +20,8 @@ from .meta_modeling_results import ExtractedResults, extract_project_results
 from .meta_modeling_version_control import VersionControlForMetaModeling
 from .security_decorators import permission_required
 from .utils_aiohttp import create_url_for_function, envelope_json_response
-from .version_control_models import CheckpointID, CommitID, TagProxy
-from .version_control_tags import parse_workcopy_project_tag_name
+from .version_control.models import CheckpointID, CommitID, TagProxy
+from .version_control.vc_tags import parse_workcopy_project_tag_name
 
 log = logging.getLogger(__name__)
 
@@ -76,7 +76,7 @@ async def _get_project_iterations_range(
     project_uuid: ProjectID,
     commit_id: CommitID,
     offset: int = 0,
-    limit: Optional[int] = None,
+    limit: int | None = None,
 ) -> _IterationsRange:
     assert offset >= 0  # nosec
 
@@ -96,8 +96,8 @@ async def _get_project_iterations_range(
     iter_items: list[IterationItem] = []
     for n, tags in enumerate(tags_per_child):
         try:
-            iteration: Optional[ProjectIteration] = None
-            workcopy_id: Optional[ProjectID] = None
+            iteration: ProjectIteration | None = None
+            workcopy_id: ProjectID | None = None
 
             for tag in tags:
                 if pim := ProjectIteration.from_tag_name(

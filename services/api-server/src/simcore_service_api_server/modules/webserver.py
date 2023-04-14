@@ -4,7 +4,7 @@ import logging
 from collections import deque
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 from uuid import UUID
 
 from cryptography import fernet
@@ -46,7 +46,7 @@ class AuthSession:
     session_cookies: dict | None = None
 
     @classmethod
-    def create(cls, app: FastAPI, session_cookies: dict):
+    def create(cls, app: FastAPI, session_cookies: dict) -> "AuthSession":
         return cls(
             client=app.state.webserver_client,
             vtag=app.state.settings.API_SERVER_WEBSERVER.WEBSERVER_VTAG,
@@ -56,7 +56,8 @@ class AuthSession:
     @classmethod
     def _postprocess(cls, resp: Response) -> JSON | None:
         # enveloped answer
-        data, error = None, None
+        data: JSON | None = None
+        error: JSON | None = None
 
         if resp.status_code != status.HTTP_204_NO_CONTENT:
             try:
@@ -136,17 +137,13 @@ class AuthSession:
             before_sleep=before_sleep_log(logger, logging.INFO),
         ):
             with attempt:
-                data: JSON | None = await self.get(
-                    status_url,
-                )
+                data = await self.get(status_url)
                 task_status = TaskStatus.parse_obj(data)
                 if not task_status.done:
                     raise TryAgain(
                         "Timed out creating project. TIP: Try again, or contact oSparc support if this is happening repeatedly"
                     )
-        data: JSON | None = await self.get(
-            f"{result_url}",
-        )
+        data = await self.get(f"{result_url}")
         return Project.parse_obj(data)
 
     async def get_project(self, project_id: UUID) -> Project:
@@ -165,7 +162,7 @@ class AuthSession:
             cookies=self.session_cookies,
         )
 
-        data: ListAnyDict = self._postprocess(resp) or []
+        data: ListAnyDict = cast(ListAnyDict, self._postprocess(resp)) or []
 
         # FIXME: move filter to webserver API (next PR)
         projects: deque[Project] = deque()

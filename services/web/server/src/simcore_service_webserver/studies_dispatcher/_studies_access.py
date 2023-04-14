@@ -25,11 +25,11 @@ from models_library.emails import LowerCaseEmailStr
 from pydantic import parse_obj_as
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.error_codes import create_error_code
-from simcore_service_webserver.projects.project_models import ProjectDict
 
 from .._constants import INDEX_RESOURCE_NAME
 from ..garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
 from ..products import get_product_name
+from ..projects.project_models import ProjectDict
 from ..projects.projects_db import ANY_USER, ProjectDBAPI
 from ..projects.projects_exceptions import (
     ProjectInvalidRightsError,

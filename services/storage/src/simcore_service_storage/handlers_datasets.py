@@ -8,6 +8,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
+from servicelib.json_serialization import json_dumps
 
 # Exclusive for simcore-s3 storage -----------------------
 from ._meta import api_vtag
@@ -26,8 +27,10 @@ routes = RouteTableDef()
 UPLOAD_TASKS_KEY = f"{__name__}.upload_tasks"
 
 
-@routes.get(f"/{api_vtag}/locations/{{location_id}}/datasets", name="get_datasets_metadata")  # type: ignore
-async def get_datasets_metadata(request: web.Request):
+@routes.get(
+    f"/{api_vtag}/locations/{{location_id}}/datasets", name="get_datasets_metadata"
+)
+async def get_datasets_metadata(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
     path_params = parse_request_path_parameters_as(LocationPathParams, request)
     log.debug(
@@ -36,11 +39,16 @@ async def get_datasets_metadata(request: web.Request):
     )
 
     dsm = get_dsm_provider(request.app).get(path_params.location_id)
-    return await dsm.list_datasets(query_params.user_id)
+    return web.json_response(
+        {"data": await dsm.list_datasets(query_params.user_id)}, dumps=json_dumps
+    )
 
 
-@routes.get(f"/{api_vtag}/locations/{{location_id}}/datasets/{{dataset_id}}/metadata", name="get_files_metadata_dataset")  # type: ignore
-async def get_files_metadata_dataset(request: web.Request):
+@routes.get(
+    f"/{api_vtag}/locations/{{location_id}}/datasets/{{dataset_id}}/metadata",
+    name="get_files_metadata_dataset",
+)
+async def get_files_metadata_dataset(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
     path_params = parse_request_path_parameters_as(
         FilesMetadataDatasetPathParams, request
@@ -54,4 +62,7 @@ async def get_files_metadata_dataset(request: web.Request):
         user_id=query_params.user_id,
         dataset_id=path_params.dataset_id,
     )
-    return [jsonable_encoder(FileMetaDataGet.from_orm(d)) for d in data]
+    return web.json_response(
+        {"data": [jsonable_encoder(FileMetaDataGet.from_orm(d)) for d in data]},
+        dumps=json_dumps,
+    )

@@ -1,17 +1,38 @@
-import os
+import argparse
+import logging
 import sys
+from pathlib import Path
+
 import yaml
 
-DIR_PATH = os.path.dirname(os.path.realpath(__file__))
-source_file_name = sys.argv[1]
-target_file_name = sys.argv[2]
-file_source_path = DIR_PATH + f"/../{source_file_name}"
-file_target_path = DIR_PATH + f"/../{target_file_name}"
+log = logging.getLogger(__name__)
 
-with open(file_source_path, "r") as stream:
+
+current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+schemas_dir = current_dir.parent
+
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(
+        "Remove Definitions",
+        description="prunes 'definitions' from json-schemas in 'source_file_name' and dumps it into 'target_file_name'",
+    )
+    parser.add_argument("source_file_name", type=str)
+    parser.add_argument("target_file_name", type=str)
+    args = parser.parse_args()
+
+    file_source_path: Path = schemas_dir / args.source_file_name
+    file_target_path: Path = schemas_dir / args.target_file_name
+
     try:
-        data = yaml.safe_load(stream)
+        data = yaml.safe_load(file_source_path.read_text())
         data.pop("definitions", None)
-        yaml.dump(data, open(file_target_path, "w"))
+        with open(file_target_path, "w") as file_stream:
+            yaml.safe_dump(data, file_stream)
     except yaml.YAMLError as exc:
-        print(exc)
+        log.error(
+            "Ignoring error while load+pop+dump %s -> %s",
+            file_source_path,
+            file_target_path,
+        )

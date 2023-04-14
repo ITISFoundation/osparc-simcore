@@ -321,6 +321,7 @@
                         },
                         "label": {
                           "title": "Label",
+                          "description": "Display name",
                           "type": "string"
                         }
                       },
@@ -343,6 +344,220 @@
                     }
                   ]
                 }
+              },
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string",
+                    "format": "json-string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "title": "PortLink",
+                    "description": "I/O port type to reference to an output port of another node in the same project",
+                    "type": "object",
+                    "properties": {
+                      "nodeUuid": {
+                        "title": "Nodeuuid",
+                        "description": "The node to get the port output from",
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "output": {
+                        "title": "Output",
+                        "description": "The port key in the node given by nodeUuid",
+                        "pattern": "^[-_a-zA-Z0-9]+$",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "nodeUuid",
+                      "output"
+                    ],
+                    "additionalProperties": false,
+                    "examples": [
+                      {
+                        "nodeUuid": "da5068e0-8a8d-4fb9-9516-56e5ddaef15b",
+                        "output": "out_2"
+                      }
+                    ]
+                  },
+                  {
+                    "title": "SimCoreFileLink",
+                    "description": "I/O port type to hold a link to a file in simcore S3 storage",
+                    "type": "object",
+                    "properties": {
+                      "store": {
+                        "title": "Store",
+                        "description": "The store identifier: 0 for simcore S3, 1 for datcore",
+                        "type": "integer"
+                      },
+                      "path": {
+                        "title": "Path",
+                        "description": "The path to the file in the storage provider domain",
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$"
+                          },
+                          {
+                            "type": "string",
+                            "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+                          }
+                        ]
+                      },
+                      "label": {
+                        "title": "Label",
+                        "description": "The real file name",
+                        "type": "string"
+                      },
+                      "eTag": {
+                        "title": "Etag",
+                        "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).",
+                        "type": "string"
+                      },
+                      "dataset": {
+                        "title": "Dataset",
+                        "deprecated": true,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "store",
+                      "path"
+                    ],
+                    "additionalProperties": false,
+                    "examples": [
+                      {
+                        "store": 0,
+                        "path": "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
+                        "eTag": "859fda0cb82fc4acb4686510a172d9a9-1",
+                        "label": "input.txt"
+                      },
+                      {
+                        "store": "0",
+                        "path": "50339632-ee1d-11ec-a0c2-02420a0194e4/23b1522f-225f-5a4c-9158-c4c19a70d4a8/output.h5",
+                        "eTag": "f7e4c7076761a42a871e978c8691c676"
+                      },
+                      {
+                        "store": 0,
+                        "path": "api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt"
+                      },
+                      {
+                        "store": 0,
+                        "path": "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/d4442ca4-23fd-5b6b-ba6d-0b75f711c109/y_1D.txt"
+                      }
+                    ]
+                  },
+                  {
+                    "title": "DatCoreFileLink",
+                    "description": "I/O port type to hold a link to a file in DATCORE storage",
+                    "type": "object",
+                    "properties": {
+                      "store": {
+                        "title": "Store",
+                        "description": "The store identifier: 0 for simcore S3, 1 for datcore",
+                        "type": "integer"
+                      },
+                      "path": {
+                        "title": "Path",
+                        "description": "The path to the file in the storage provider domain",
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$"
+                          },
+                          {
+                            "type": "string",
+                            "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+                          }
+                        ]
+                      },
+                      "label": {
+                        "title": "Label",
+                        "description": "The real file name",
+                        "type": "string"
+                      },
+                      "eTag": {
+                        "title": "Etag",
+                        "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).",
+                        "type": "string"
+                      },
+                      "dataset": {
+                        "title": "Dataset",
+                        "description": "Unique identifier to access the dataset on datcore (REQUIRED for datcore)",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "store",
+                      "path",
+                      "label",
+                      "dataset"
+                    ],
+                    "additionalProperties": false,
+                    "examples": [
+                      {
+                        "store": 1,
+                        "dataset": "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4",
+                        "path": "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce",
+                        "label": "initial_WTstates"
+                      },
+                      {
+                        "store": 1,
+                        "dataset": "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4",
+                        "path": "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce",
+                        "label": "initial_WTstates"
+                      }
+                    ]
+                  },
+                  {
+                    "title": "DownloadLink",
+                    "description": "I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)",
+                    "type": "object",
+                    "properties": {
+                      "downloadLink": {
+                        "title": "Downloadlink",
+                        "minLength": 1,
+                        "maxLength": 65536,
+                        "format": "uri",
+                        "type": "string"
+                      },
+                      "label": {
+                        "title": "Label",
+                        "description": "Display name",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "downloadLink"
+                    ],
+                    "additionalProperties": false,
+                    "examples": [
+                      {
+                        "downloadLink": "https://fakeimg.pl/250x100/"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "array",
+                    "items": {}
+                  },
+                  {
+                    "type": "object"
+                  }
+                ]
               }
             },
             "inputsUnits": {
@@ -353,6 +568,9 @@
                 "^[-_a-zA-Z0-9]+$": {
                   "type": "string"
                 }
+              },
+              "additionalProperties": {
+                "type": "string"
               }
             },
             "inputAccess": {
@@ -369,6 +587,16 @@
                   ],
                   "type": "string"
                 }
+              },
+              "additionalProperties": {
+                "title": "AccessEnum",
+                "description": "An enumeration.",
+                "enum": [
+                  "ReadAndWrite",
+                  "Invisible",
+                  "ReadOnly"
+                ],
+                "type": "string"
               }
             },
             "inputNodes": {
@@ -546,6 +774,7 @@
                         },
                         "label": {
                           "title": "Label",
+                          "description": "Display name",
                           "type": "string"
                         }
                       },
@@ -568,6 +797,190 @@
                     }
                   ]
                 }
+              },
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string",
+                    "format": "json-string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "title": "SimCoreFileLink",
+                    "description": "I/O port type to hold a link to a file in simcore S3 storage",
+                    "type": "object",
+                    "properties": {
+                      "store": {
+                        "title": "Store",
+                        "description": "The store identifier: 0 for simcore S3, 1 for datcore",
+                        "type": "integer"
+                      },
+                      "path": {
+                        "title": "Path",
+                        "description": "The path to the file in the storage provider domain",
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$"
+                          },
+                          {
+                            "type": "string",
+                            "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+                          }
+                        ]
+                      },
+                      "label": {
+                        "title": "Label",
+                        "description": "The real file name",
+                        "type": "string"
+                      },
+                      "eTag": {
+                        "title": "Etag",
+                        "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).",
+                        "type": "string"
+                      },
+                      "dataset": {
+                        "title": "Dataset",
+                        "deprecated": true,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "store",
+                      "path"
+                    ],
+                    "additionalProperties": false,
+                    "examples": [
+                      {
+                        "store": 0,
+                        "path": "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
+                        "eTag": "859fda0cb82fc4acb4686510a172d9a9-1",
+                        "label": "input.txt"
+                      },
+                      {
+                        "store": "0",
+                        "path": "50339632-ee1d-11ec-a0c2-02420a0194e4/23b1522f-225f-5a4c-9158-c4c19a70d4a8/output.h5",
+                        "eTag": "f7e4c7076761a42a871e978c8691c676"
+                      },
+                      {
+                        "store": 0,
+                        "path": "api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt"
+                      },
+                      {
+                        "store": 0,
+                        "path": "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/d4442ca4-23fd-5b6b-ba6d-0b75f711c109/y_1D.txt"
+                      }
+                    ]
+                  },
+                  {
+                    "title": "DatCoreFileLink",
+                    "description": "I/O port type to hold a link to a file in DATCORE storage",
+                    "type": "object",
+                    "properties": {
+                      "store": {
+                        "title": "Store",
+                        "description": "The store identifier: 0 for simcore S3, 1 for datcore",
+                        "type": "integer"
+                      },
+                      "path": {
+                        "title": "Path",
+                        "description": "The path to the file in the storage provider domain",
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$"
+                          },
+                          {
+                            "type": "string",
+                            "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+                          }
+                        ]
+                      },
+                      "label": {
+                        "title": "Label",
+                        "description": "The real file name",
+                        "type": "string"
+                      },
+                      "eTag": {
+                        "title": "Etag",
+                        "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).",
+                        "type": "string"
+                      },
+                      "dataset": {
+                        "title": "Dataset",
+                        "description": "Unique identifier to access the dataset on datcore (REQUIRED for datcore)",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "store",
+                      "path",
+                      "label",
+                      "dataset"
+                    ],
+                    "additionalProperties": false,
+                    "examples": [
+                      {
+                        "store": 1,
+                        "dataset": "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4",
+                        "path": "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce",
+                        "label": "initial_WTstates"
+                      },
+                      {
+                        "store": 1,
+                        "dataset": "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4",
+                        "path": "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce",
+                        "label": "initial_WTstates"
+                      }
+                    ]
+                  },
+                  {
+                    "title": "DownloadLink",
+                    "description": "I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)",
+                    "type": "object",
+                    "properties": {
+                      "downloadLink": {
+                        "title": "Downloadlink",
+                        "minLength": 1,
+                        "maxLength": 65536,
+                        "format": "uri",
+                        "type": "string"
+                      },
+                      "label": {
+                        "title": "Label",
+                        "description": "Display name",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "downloadLink"
+                    ],
+                    "additionalProperties": false,
+                    "examples": [
+                      {
+                        "downloadLink": "https://fakeimg.pl/250x100/"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "array",
+                    "items": {}
+                  },
+                  {
+                    "type": "object"
+                  }
+                ]
               }
             },
             "outputNode": {
@@ -709,6 +1122,9 @@
                 "[a-zA-Z][a-azA-Z0-9_]*": {
                   "type": "string"
                 }
+              },
+              "additionalProperties": {
+                "type": "string"
               }
             }
           },
@@ -719,6 +1135,1079 @@
           ],
           "additionalProperties": false
         }
+      },
+      "additionalProperties": {
+        "title": "Node",
+        "type": "object",
+        "properties": {
+          "key": {
+            "title": "Key",
+            "description": "distinctive name for the node based on the docker registry path",
+            "examples": [
+              "simcore/services/comp/itis/sleeper",
+              "simcore/services/dynamic/3dviewer",
+              "simcore/services/frontend/file-picker"
+            ],
+            "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "description": "semantic version number of the node",
+            "examples": [
+              "1.0.0",
+              "0.0.1"
+            ],
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "description": "The short name of the node",
+            "examples": [
+              "JupyterLab"
+            ],
+            "type": "string"
+          },
+          "progress": {
+            "title": "Progress",
+            "description": "the node progress value",
+            "minimum": 0,
+            "maximum": 100,
+            "type": "number"
+          },
+          "thumbnail": {
+            "title": "Thumbnail",
+            "description": "url of the latest screenshot of the node",
+            "examples": [
+              "https://placeimg.com/171/96/tech/grayscale/?0.jpg"
+            ],
+            "minLength": 0,
+            "maxLength": 2083,
+            "format": "uri",
+            "type": "string"
+          },
+          "runHash": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "title": "Runhash",
+                "description": "the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated",
+                "type": "string"
+              }
+            ]
+          },
+          "inputs": {
+            "title": "Inputs",
+            "description": "values of input properties",
+            "type": "object",
+            "patternProperties": {
+              "^[-_a-zA-Z0-9]+$": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string",
+                    "format": "json-string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "title": "PortLink",
+                    "description": "I/O port type to reference to an output port of another node in the same project",
+                    "type": "object",
+                    "properties": {
+                      "nodeUuid": {
+                        "title": "Nodeuuid",
+                        "description": "The node to get the port output from",
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "output": {
+                        "title": "Output",
+                        "description": "The port key in the node given by nodeUuid",
+                        "pattern": "^[-_a-zA-Z0-9]+$",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "nodeUuid",
+                      "output"
+                    ],
+                    "additionalProperties": false,
+                    "examples": [
+                      {
+                        "nodeUuid": "da5068e0-8a8d-4fb9-9516-56e5ddaef15b",
+                        "output": "out_2"
+                      }
+                    ]
+                  },
+                  {
+                    "title": "SimCoreFileLink",
+                    "description": "I/O port type to hold a link to a file in simcore S3 storage",
+                    "type": "object",
+                    "properties": {
+                      "store": {
+                        "title": "Store",
+                        "description": "The store identifier: 0 for simcore S3, 1 for datcore",
+                        "type": "integer"
+                      },
+                      "path": {
+                        "title": "Path",
+                        "description": "The path to the file in the storage provider domain",
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$"
+                          },
+                          {
+                            "type": "string",
+                            "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+                          }
+                        ]
+                      },
+                      "label": {
+                        "title": "Label",
+                        "description": "The real file name",
+                        "type": "string"
+                      },
+                      "eTag": {
+                        "title": "Etag",
+                        "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).",
+                        "type": "string"
+                      },
+                      "dataset": {
+                        "title": "Dataset",
+                        "deprecated": true,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "store",
+                      "path"
+                    ],
+                    "additionalProperties": false,
+                    "examples": [
+                      {
+                        "store": 0,
+                        "path": "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
+                        "eTag": "859fda0cb82fc4acb4686510a172d9a9-1",
+                        "label": "input.txt"
+                      },
+                      {
+                        "store": "0",
+                        "path": "50339632-ee1d-11ec-a0c2-02420a0194e4/23b1522f-225f-5a4c-9158-c4c19a70d4a8/output.h5",
+                        "eTag": "f7e4c7076761a42a871e978c8691c676"
+                      },
+                      {
+                        "store": 0,
+                        "path": "api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt"
+                      },
+                      {
+                        "store": 0,
+                        "path": "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/d4442ca4-23fd-5b6b-ba6d-0b75f711c109/y_1D.txt"
+                      }
+                    ]
+                  },
+                  {
+                    "title": "DatCoreFileLink",
+                    "description": "I/O port type to hold a link to a file in DATCORE storage",
+                    "type": "object",
+                    "properties": {
+                      "store": {
+                        "title": "Store",
+                        "description": "The store identifier: 0 for simcore S3, 1 for datcore",
+                        "type": "integer"
+                      },
+                      "path": {
+                        "title": "Path",
+                        "description": "The path to the file in the storage provider domain",
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$"
+                          },
+                          {
+                            "type": "string",
+                            "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+                          }
+                        ]
+                      },
+                      "label": {
+                        "title": "Label",
+                        "description": "The real file name",
+                        "type": "string"
+                      },
+                      "eTag": {
+                        "title": "Etag",
+                        "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).",
+                        "type": "string"
+                      },
+                      "dataset": {
+                        "title": "Dataset",
+                        "description": "Unique identifier to access the dataset on datcore (REQUIRED for datcore)",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "store",
+                      "path",
+                      "label",
+                      "dataset"
+                    ],
+                    "additionalProperties": false,
+                    "examples": [
+                      {
+                        "store": 1,
+                        "dataset": "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4",
+                        "path": "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce",
+                        "label": "initial_WTstates"
+                      },
+                      {
+                        "store": 1,
+                        "dataset": "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4",
+                        "path": "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce",
+                        "label": "initial_WTstates"
+                      }
+                    ]
+                  },
+                  {
+                    "title": "DownloadLink",
+                    "description": "I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)",
+                    "type": "object",
+                    "properties": {
+                      "downloadLink": {
+                        "title": "Downloadlink",
+                        "minLength": 1,
+                        "maxLength": 65536,
+                        "format": "uri",
+                        "type": "string"
+                      },
+                      "label": {
+                        "title": "Label",
+                        "description": "Display name",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "downloadLink"
+                    ],
+                    "additionalProperties": false,
+                    "examples": [
+                      {
+                        "downloadLink": "https://fakeimg.pl/250x100/"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "array",
+                    "items": {}
+                  },
+                  {
+                    "type": "object"
+                  }
+                ]
+              }
+            },
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string",
+                  "format": "json-string"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "title": "PortLink",
+                  "description": "I/O port type to reference to an output port of another node in the same project",
+                  "type": "object",
+                  "properties": {
+                    "nodeUuid": {
+                      "title": "Nodeuuid",
+                      "description": "The node to get the port output from",
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "output": {
+                      "title": "Output",
+                      "description": "The port key in the node given by nodeUuid",
+                      "pattern": "^[-_a-zA-Z0-9]+$",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "nodeUuid",
+                    "output"
+                  ],
+                  "additionalProperties": false,
+                  "examples": [
+                    {
+                      "nodeUuid": "da5068e0-8a8d-4fb9-9516-56e5ddaef15b",
+                      "output": "out_2"
+                    }
+                  ]
+                },
+                {
+                  "title": "SimCoreFileLink",
+                  "description": "I/O port type to hold a link to a file in simcore S3 storage",
+                  "type": "object",
+                  "properties": {
+                    "store": {
+                      "title": "Store",
+                      "description": "The store identifier: 0 for simcore S3, 1 for datcore",
+                      "type": "integer"
+                    },
+                    "path": {
+                      "title": "Path",
+                      "description": "The path to the file in the storage provider domain",
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+                        }
+                      ]
+                    },
+                    "label": {
+                      "title": "Label",
+                      "description": "The real file name",
+                      "type": "string"
+                    },
+                    "eTag": {
+                      "title": "Etag",
+                      "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).",
+                      "type": "string"
+                    },
+                    "dataset": {
+                      "title": "Dataset",
+                      "deprecated": true,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "store",
+                    "path"
+                  ],
+                  "additionalProperties": false,
+                  "examples": [
+                    {
+                      "store": 0,
+                      "path": "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
+                      "eTag": "859fda0cb82fc4acb4686510a172d9a9-1",
+                      "label": "input.txt"
+                    },
+                    {
+                      "store": "0",
+                      "path": "50339632-ee1d-11ec-a0c2-02420a0194e4/23b1522f-225f-5a4c-9158-c4c19a70d4a8/output.h5",
+                      "eTag": "f7e4c7076761a42a871e978c8691c676"
+                    },
+                    {
+                      "store": 0,
+                      "path": "api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt"
+                    },
+                    {
+                      "store": 0,
+                      "path": "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/d4442ca4-23fd-5b6b-ba6d-0b75f711c109/y_1D.txt"
+                    }
+                  ]
+                },
+                {
+                  "title": "DatCoreFileLink",
+                  "description": "I/O port type to hold a link to a file in DATCORE storage",
+                  "type": "object",
+                  "properties": {
+                    "store": {
+                      "title": "Store",
+                      "description": "The store identifier: 0 for simcore S3, 1 for datcore",
+                      "type": "integer"
+                    },
+                    "path": {
+                      "title": "Path",
+                      "description": "The path to the file in the storage provider domain",
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+                        }
+                      ]
+                    },
+                    "label": {
+                      "title": "Label",
+                      "description": "The real file name",
+                      "type": "string"
+                    },
+                    "eTag": {
+                      "title": "Etag",
+                      "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).",
+                      "type": "string"
+                    },
+                    "dataset": {
+                      "title": "Dataset",
+                      "description": "Unique identifier to access the dataset on datcore (REQUIRED for datcore)",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "store",
+                    "path",
+                    "label",
+                    "dataset"
+                  ],
+                  "additionalProperties": false,
+                  "examples": [
+                    {
+                      "store": 1,
+                      "dataset": "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4",
+                      "path": "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce",
+                      "label": "initial_WTstates"
+                    },
+                    {
+                      "store": 1,
+                      "dataset": "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4",
+                      "path": "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce",
+                      "label": "initial_WTstates"
+                    }
+                  ]
+                },
+                {
+                  "title": "DownloadLink",
+                  "description": "I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)",
+                  "type": "object",
+                  "properties": {
+                    "downloadLink": {
+                      "title": "Downloadlink",
+                      "minLength": 1,
+                      "maxLength": 65536,
+                      "format": "uri",
+                      "type": "string"
+                    },
+                    "label": {
+                      "title": "Label",
+                      "description": "Display name",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "downloadLink"
+                  ],
+                  "additionalProperties": false,
+                  "examples": [
+                    {
+                      "downloadLink": "https://fakeimg.pl/250x100/"
+                    }
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {}
+                },
+                {
+                  "type": "object"
+                }
+              ]
+            }
+          },
+          "inputsUnits": {
+            "title": "Inputsunits",
+            "description": "Overrides default unit (if any) defined in the service for each port",
+            "type": "object",
+            "patternProperties": {
+              "^[-_a-zA-Z0-9]+$": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "inputAccess": {
+            "description": "map with key - access level pairs",
+            "type": "object",
+            "patternProperties": {
+              "^[-_a-zA-Z0-9]+$": {
+                "title": "AccessEnum",
+                "description": "An enumeration.",
+                "enum": [
+                  "ReadAndWrite",
+                  "Invisible",
+                  "ReadOnly"
+                ],
+                "type": "string"
+              }
+            },
+            "additionalProperties": {
+              "title": "AccessEnum",
+              "description": "An enumeration.",
+              "enum": [
+                "ReadAndWrite",
+                "Invisible",
+                "ReadOnly"
+              ],
+              "type": "string"
+            }
+          },
+          "inputNodes": {
+            "title": "Inputnodes",
+            "description": "node IDs of where the node is connected to",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "outputs": {
+            "title": "Outputs",
+            "description": "values of output properties",
+            "type": "object",
+            "patternProperties": {
+              "^[-_a-zA-Z0-9]+$": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string",
+                    "format": "json-string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "title": "SimCoreFileLink",
+                    "description": "I/O port type to hold a link to a file in simcore S3 storage",
+                    "type": "object",
+                    "properties": {
+                      "store": {
+                        "title": "Store",
+                        "description": "The store identifier: 0 for simcore S3, 1 for datcore",
+                        "type": "integer"
+                      },
+                      "path": {
+                        "title": "Path",
+                        "description": "The path to the file in the storage provider domain",
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$"
+                          },
+                          {
+                            "type": "string",
+                            "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+                          }
+                        ]
+                      },
+                      "label": {
+                        "title": "Label",
+                        "description": "The real file name",
+                        "type": "string"
+                      },
+                      "eTag": {
+                        "title": "Etag",
+                        "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).",
+                        "type": "string"
+                      },
+                      "dataset": {
+                        "title": "Dataset",
+                        "deprecated": true,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "store",
+                      "path"
+                    ],
+                    "additionalProperties": false,
+                    "examples": [
+                      {
+                        "store": 0,
+                        "path": "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
+                        "eTag": "859fda0cb82fc4acb4686510a172d9a9-1",
+                        "label": "input.txt"
+                      },
+                      {
+                        "store": "0",
+                        "path": "50339632-ee1d-11ec-a0c2-02420a0194e4/23b1522f-225f-5a4c-9158-c4c19a70d4a8/output.h5",
+                        "eTag": "f7e4c7076761a42a871e978c8691c676"
+                      },
+                      {
+                        "store": 0,
+                        "path": "api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt"
+                      },
+                      {
+                        "store": 0,
+                        "path": "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/d4442ca4-23fd-5b6b-ba6d-0b75f711c109/y_1D.txt"
+                      }
+                    ]
+                  },
+                  {
+                    "title": "DatCoreFileLink",
+                    "description": "I/O port type to hold a link to a file in DATCORE storage",
+                    "type": "object",
+                    "properties": {
+                      "store": {
+                        "title": "Store",
+                        "description": "The store identifier: 0 for simcore S3, 1 for datcore",
+                        "type": "integer"
+                      },
+                      "path": {
+                        "title": "Path",
+                        "description": "The path to the file in the storage provider domain",
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$"
+                          },
+                          {
+                            "type": "string",
+                            "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+                          }
+                        ]
+                      },
+                      "label": {
+                        "title": "Label",
+                        "description": "The real file name",
+                        "type": "string"
+                      },
+                      "eTag": {
+                        "title": "Etag",
+                        "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).",
+                        "type": "string"
+                      },
+                      "dataset": {
+                        "title": "Dataset",
+                        "description": "Unique identifier to access the dataset on datcore (REQUIRED for datcore)",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "store",
+                      "path",
+                      "label",
+                      "dataset"
+                    ],
+                    "additionalProperties": false,
+                    "examples": [
+                      {
+                        "store": 1,
+                        "dataset": "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4",
+                        "path": "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce",
+                        "label": "initial_WTstates"
+                      },
+                      {
+                        "store": 1,
+                        "dataset": "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4",
+                        "path": "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce",
+                        "label": "initial_WTstates"
+                      }
+                    ]
+                  },
+                  {
+                    "title": "DownloadLink",
+                    "description": "I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)",
+                    "type": "object",
+                    "properties": {
+                      "downloadLink": {
+                        "title": "Downloadlink",
+                        "minLength": 1,
+                        "maxLength": 65536,
+                        "format": "uri",
+                        "type": "string"
+                      },
+                      "label": {
+                        "title": "Label",
+                        "description": "Display name",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "downloadLink"
+                    ],
+                    "additionalProperties": false,
+                    "examples": [
+                      {
+                        "downloadLink": "https://fakeimg.pl/250x100/"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "array",
+                    "items": {}
+                  },
+                  {
+                    "type": "object"
+                  }
+                ]
+              }
+            },
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string",
+                  "format": "json-string"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "title": "SimCoreFileLink",
+                  "description": "I/O port type to hold a link to a file in simcore S3 storage",
+                  "type": "object",
+                  "properties": {
+                    "store": {
+                      "title": "Store",
+                      "description": "The store identifier: 0 for simcore S3, 1 for datcore",
+                      "type": "integer"
+                    },
+                    "path": {
+                      "title": "Path",
+                      "description": "The path to the file in the storage provider domain",
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+                        }
+                      ]
+                    },
+                    "label": {
+                      "title": "Label",
+                      "description": "The real file name",
+                      "type": "string"
+                    },
+                    "eTag": {
+                      "title": "Etag",
+                      "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).",
+                      "type": "string"
+                    },
+                    "dataset": {
+                      "title": "Dataset",
+                      "deprecated": true,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "store",
+                    "path"
+                  ],
+                  "additionalProperties": false,
+                  "examples": [
+                    {
+                      "store": 0,
+                      "path": "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
+                      "eTag": "859fda0cb82fc4acb4686510a172d9a9-1",
+                      "label": "input.txt"
+                    },
+                    {
+                      "store": "0",
+                      "path": "50339632-ee1d-11ec-a0c2-02420a0194e4/23b1522f-225f-5a4c-9158-c4c19a70d4a8/output.h5",
+                      "eTag": "f7e4c7076761a42a871e978c8691c676"
+                    },
+                    {
+                      "store": 0,
+                      "path": "api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt"
+                    },
+                    {
+                      "store": 0,
+                      "path": "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/d4442ca4-23fd-5b6b-ba6d-0b75f711c109/y_1D.txt"
+                    }
+                  ]
+                },
+                {
+                  "title": "DatCoreFileLink",
+                  "description": "I/O port type to hold a link to a file in DATCORE storage",
+                  "type": "object",
+                  "properties": {
+                    "store": {
+                      "title": "Store",
+                      "description": "The store identifier: 0 for simcore S3, 1 for datcore",
+                      "type": "integer"
+                    },
+                    "path": {
+                      "title": "Path",
+                      "description": "The path to the file in the storage provider domain",
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+                        }
+                      ]
+                    },
+                    "label": {
+                      "title": "Label",
+                      "description": "The real file name",
+                      "type": "string"
+                    },
+                    "eTag": {
+                      "title": "Etag",
+                      "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).",
+                      "type": "string"
+                    },
+                    "dataset": {
+                      "title": "Dataset",
+                      "description": "Unique identifier to access the dataset on datcore (REQUIRED for datcore)",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "store",
+                    "path",
+                    "label",
+                    "dataset"
+                  ],
+                  "additionalProperties": false,
+                  "examples": [
+                    {
+                      "store": 1,
+                      "dataset": "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4",
+                      "path": "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce",
+                      "label": "initial_WTstates"
+                    },
+                    {
+                      "store": 1,
+                      "dataset": "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4",
+                      "path": "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce",
+                      "label": "initial_WTstates"
+                    }
+                  ]
+                },
+                {
+                  "title": "DownloadLink",
+                  "description": "I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)",
+                  "type": "object",
+                  "properties": {
+                    "downloadLink": {
+                      "title": "Downloadlink",
+                      "minLength": 1,
+                      "maxLength": 65536,
+                      "format": "uri",
+                      "type": "string"
+                    },
+                    "label": {
+                      "title": "Label",
+                      "description": "Display name",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "downloadLink"
+                  ],
+                  "additionalProperties": false,
+                  "examples": [
+                    {
+                      "downloadLink": "https://fakeimg.pl/250x100/"
+                    }
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {}
+                },
+                {
+                  "type": "object"
+                }
+              ]
+            }
+          },
+          "outputNode": {
+            "title": "Outputnode",
+            "deprecated": true,
+            "type": "boolean"
+          },
+          "outputNodes": {
+            "title": "Outputnodes",
+            "description": "Used in group-nodes. Node IDs of those connected to the output",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "parent": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "title": "Parent",
+                "description": "Parent's (group-nodes') node ID s. Used to group",
+                "type": "string",
+                "format": "uuid"
+              }
+            ]
+          },
+          "position": {
+            "title": "Position",
+            "description": "Use projects_ui.WorkbenchUI.position instead",
+            "deprecated": true,
+            "allOf": [
+              {
+                "title": "Position",
+                "type": "object",
+                "properties": {
+                  "x": {
+                    "title": "X",
+                    "description": "The x position",
+                    "example": [
+                      "12"
+                    ],
+                    "type": "integer"
+                  },
+                  "y": {
+                    "title": "Y",
+                    "description": "The y position",
+                    "example": [
+                      "15"
+                    ],
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "x",
+                  "y"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "state": {
+            "title": "State",
+            "description": "The node's state object",
+            "allOf": [
+              {
+                "title": "NodeState",
+                "type": "object",
+                "properties": {
+                  "modified": {
+                    "title": "Modified",
+                    "description": "true if the node's outputs need to be re-computed",
+                    "default": true,
+                    "type": "boolean"
+                  },
+                  "dependencies": {
+                    "title": "Dependencies",
+                    "description": "contains the node inputs dependencies if they need to be computed first",
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "uniqueItems": true
+                  },
+                  "currentStatus": {
+                    "description": "the node's current state",
+                    "default": "NOT_STARTED",
+                    "allOf": [
+                      {
+                        "title": "RunningState",
+                        "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state",
+                        "enum": [
+                          "UNKNOWN",
+                          "PUBLISHED",
+                          "NOT_STARTED",
+                          "PENDING",
+                          "STARTED",
+                          "RETRY",
+                          "SUCCESS",
+                          "FAILED",
+                          "ABORTED"
+                        ],
+                        "type": "string"
+                      }
+                    ]
+                  }
+                },
+                "additionalProperties": false,
+                "examples": [
+                  {
+                    "modified": true,
+                    "dependencies": [],
+                    "currentStatus": "NOT_STARTED"
+                  },
+                  {
+                    "modified": true,
+                    "dependencies": [
+                      "42838344-03de-4ce2-8d93-589a5dcdfd05"
+                    ],
+                    "currentStatus": "ABORTED"
+                  },
+                  {
+                    "modified": false,
+                    "dependencies": [],
+                    "currentStatus": "SUCCESS"
+                  }
+                ]
+              }
+            ]
+          },
+          "bootOptions": {
+            "title": "Bootoptions",
+            "description": "Some services provide alternative parameters to be injected at boot time. The user selection should be stored here, and it will overwrite the services's defaults.",
+            "type": "object",
+            "patternProperties": {
+              "[a-zA-Z][a-azA-Z0-9_]*": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "key",
+          "version",
+          "label"
+        ],
+        "additionalProperties": false
       }
     },
     "prjOwner": {
@@ -759,6 +2248,33 @@
           ],
           "additionalProperties": false
         }
+      },
+      "additionalProperties": {
+        "title": "AccessRights",
+        "type": "object",
+        "properties": {
+          "read": {
+            "title": "Read",
+            "description": "gives read access",
+            "type": "boolean"
+          },
+          "write": {
+            "title": "Write",
+            "description": "gives write access",
+            "type": "boolean"
+          },
+          "delete": {
+            "title": "Delete",
+            "description": "gives deletion rights",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "read",
+          "write",
+          "delete"
+        ],
+        "additionalProperties": false
       }
     },
     "tags": {
@@ -1001,6 +2517,64 @@
               ],
               "additionalProperties": false
             }
+          },
+          "additionalProperties": {
+            "title": "WorkbenchUI",
+            "type": "object",
+            "properties": {
+              "position": {
+                "title": "Position",
+                "description": "The node position in the workbench",
+                "allOf": [
+                  {
+                    "title": "Position",
+                    "type": "object",
+                    "properties": {
+                      "x": {
+                        "title": "X",
+                        "description": "The x position",
+                        "example": [
+                          "12"
+                        ],
+                        "type": "integer"
+                      },
+                      "y": {
+                        "title": "Y",
+                        "description": "The y position",
+                        "example": [
+                          "15"
+                        ],
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "x",
+                      "y"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "marker": {
+                "title": "Marker",
+                "type": "object",
+                "properties": {
+                  "color": {
+                    "title": "Color",
+                    "type": "string",
+                    "format": "color"
+                  }
+                },
+                "required": [
+                  "color"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "position"
+            ],
+            "additionalProperties": false
           }
         },
         "slideshow": {
@@ -1024,6 +2598,23 @@
                 "position"
               ]
             }
+          },
+          "additionalProperties": {
+            "title": "Slideshow",
+            "type": "object",
+            "properties": {
+              "position": {
+                "title": "Position",
+                "type": "integer"
+              },
+              "instructions": {
+                "title": "Instructions",
+                "type": "string"
+              }
+            },
+            "required": [
+              "position"
+            ]
           }
         },
         "currentNodeId": {
@@ -1086,6 +2677,57 @@
                 }
               ]
             }
+          },
+          "additionalProperties": {
+            "title": "Annotation",
+            "type": "object",
+            "properties": {
+              "type": {
+                "title": "Type",
+                "enum": [
+                  "rect",
+                  "text"
+                ],
+                "type": "string"
+              },
+              "color": {
+                "title": "Color",
+                "type": "string",
+                "format": "color"
+              },
+              "attributes": {
+                "title": "Attributes",
+                "description": "svg attributes",
+                "type": "object"
+              }
+            },
+            "required": [
+              "type",
+              "color",
+              "attributes"
+            ],
+            "additionalProperties": false,
+            "examples": [
+              {
+                "type": "rect",
+                "color": "#FF0000",
+                "attributes": {
+                  "x": 415,
+                  "y": 100,
+                  "width": 117,
+                  "height": 26
+                }
+              },
+              {
+                "type": "text",
+                "color": "#0000FF",
+                "attributes": {
+                  "x": 415,
+                  "y": 100,
+                  "text": "Hey!"
+                }
+              }
+            ]
           }
         }
       }
@@ -1093,7 +2735,6 @@
     "quality": {
       "title": "Quality",
       "description": "stores the study quality assessment",
-      "default": {},
       "type": "object"
     },
     "dev": {
@@ -1288,6 +2929,7 @@
         },
         "label": {
           "title": "Label",
+          "description": "Display name",
           "type": "string"
         }
       },
@@ -1677,6 +3319,7 @@
                     },
                     "label": {
                       "title": "Label",
+                      "description": "Display name",
                       "type": "string"
                     }
                   },
@@ -1699,6 +3342,220 @@
                 }
               ]
             }
+          },
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "format": "json-string"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "title": "PortLink",
+                "description": "I/O port type to reference to an output port of another node in the same project",
+                "type": "object",
+                "properties": {
+                  "nodeUuid": {
+                    "title": "Nodeuuid",
+                    "description": "The node to get the port output from",
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "output": {
+                    "title": "Output",
+                    "description": "The port key in the node given by nodeUuid",
+                    "pattern": "^[-_a-zA-Z0-9]+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "nodeUuid",
+                  "output"
+                ],
+                "additionalProperties": false,
+                "examples": [
+                  {
+                    "nodeUuid": "da5068e0-8a8d-4fb9-9516-56e5ddaef15b",
+                    "output": "out_2"
+                  }
+                ]
+              },
+              {
+                "title": "SimCoreFileLink",
+                "description": "I/O port type to hold a link to a file in simcore S3 storage",
+                "type": "object",
+                "properties": {
+                  "store": {
+                    "title": "Store",
+                    "description": "The store identifier: 0 for simcore S3, 1 for datcore",
+                    "type": "integer"
+                  },
+                  "path": {
+                    "title": "Path",
+                    "description": "The path to the file in the storage provider domain",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$"
+                      },
+                      {
+                        "type": "string",
+                        "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+                      }
+                    ]
+                  },
+                  "label": {
+                    "title": "Label",
+                    "description": "The real file name",
+                    "type": "string"
+                  },
+                  "eTag": {
+                    "title": "Etag",
+                    "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).",
+                    "type": "string"
+                  },
+                  "dataset": {
+                    "title": "Dataset",
+                    "deprecated": true,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "store",
+                  "path"
+                ],
+                "additionalProperties": false,
+                "examples": [
+                  {
+                    "store": 0,
+                    "path": "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
+                    "eTag": "859fda0cb82fc4acb4686510a172d9a9-1",
+                    "label": "input.txt"
+                  },
+                  {
+                    "store": "0",
+                    "path": "50339632-ee1d-11ec-a0c2-02420a0194e4/23b1522f-225f-5a4c-9158-c4c19a70d4a8/output.h5",
+                    "eTag": "f7e4c7076761a42a871e978c8691c676"
+                  },
+                  {
+                    "store": 0,
+                    "path": "api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt"
+                  },
+                  {
+                    "store": 0,
+                    "path": "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/d4442ca4-23fd-5b6b-ba6d-0b75f711c109/y_1D.txt"
+                  }
+                ]
+              },
+              {
+                "title": "DatCoreFileLink",
+                "description": "I/O port type to hold a link to a file in DATCORE storage",
+                "type": "object",
+                "properties": {
+                  "store": {
+                    "title": "Store",
+                    "description": "The store identifier: 0 for simcore S3, 1 for datcore",
+                    "type": "integer"
+                  },
+                  "path": {
+                    "title": "Path",
+                    "description": "The path to the file in the storage provider domain",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$"
+                      },
+                      {
+                        "type": "string",
+                        "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+                      }
+                    ]
+                  },
+                  "label": {
+                    "title": "Label",
+                    "description": "The real file name",
+                    "type": "string"
+                  },
+                  "eTag": {
+                    "title": "Etag",
+                    "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).",
+                    "type": "string"
+                  },
+                  "dataset": {
+                    "title": "Dataset",
+                    "description": "Unique identifier to access the dataset on datcore (REQUIRED for datcore)",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "store",
+                  "path",
+                  "label",
+                  "dataset"
+                ],
+                "additionalProperties": false,
+                "examples": [
+                  {
+                    "store": 1,
+                    "dataset": "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4",
+                    "path": "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce",
+                    "label": "initial_WTstates"
+                  },
+                  {
+                    "store": 1,
+                    "dataset": "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4",
+                    "path": "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce",
+                    "label": "initial_WTstates"
+                  }
+                ]
+              },
+              {
+                "title": "DownloadLink",
+                "description": "I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)",
+                "type": "object",
+                "properties": {
+                  "downloadLink": {
+                    "title": "Downloadlink",
+                    "minLength": 1,
+                    "maxLength": 65536,
+                    "format": "uri",
+                    "type": "string"
+                  },
+                  "label": {
+                    "title": "Label",
+                    "description": "Display name",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "downloadLink"
+                ],
+                "additionalProperties": false,
+                "examples": [
+                  {
+                    "downloadLink": "https://fakeimg.pl/250x100/"
+                  }
+                ]
+              },
+              {
+                "type": "array",
+                "items": {}
+              },
+              {
+                "type": "object"
+              }
+            ]
           }
         },
         "inputsUnits": {
@@ -1709,6 +3566,9 @@
             "^[-_a-zA-Z0-9]+$": {
               "type": "string"
             }
+          },
+          "additionalProperties": {
+            "type": "string"
           }
         },
         "inputAccess": {
@@ -1725,6 +3585,16 @@
               ],
               "type": "string"
             }
+          },
+          "additionalProperties": {
+            "title": "AccessEnum",
+            "description": "An enumeration.",
+            "enum": [
+              "ReadAndWrite",
+              "Invisible",
+              "ReadOnly"
+            ],
+            "type": "string"
           }
         },
         "inputNodes": {
@@ -1902,6 +3772,7 @@
                     },
                     "label": {
                       "title": "Label",
+                      "description": "Display name",
                       "type": "string"
                     }
                   },
@@ -1924,6 +3795,190 @@
                 }
               ]
             }
+          },
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "format": "json-string"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "title": "SimCoreFileLink",
+                "description": "I/O port type to hold a link to a file in simcore S3 storage",
+                "type": "object",
+                "properties": {
+                  "store": {
+                    "title": "Store",
+                    "description": "The store identifier: 0 for simcore S3, 1 for datcore",
+                    "type": "integer"
+                  },
+                  "path": {
+                    "title": "Path",
+                    "description": "The path to the file in the storage provider domain",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$"
+                      },
+                      {
+                        "type": "string",
+                        "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+                      }
+                    ]
+                  },
+                  "label": {
+                    "title": "Label",
+                    "description": "The real file name",
+                    "type": "string"
+                  },
+                  "eTag": {
+                    "title": "Etag",
+                    "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).",
+                    "type": "string"
+                  },
+                  "dataset": {
+                    "title": "Dataset",
+                    "deprecated": true,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "store",
+                  "path"
+                ],
+                "additionalProperties": false,
+                "examples": [
+                  {
+                    "store": 0,
+                    "path": "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
+                    "eTag": "859fda0cb82fc4acb4686510a172d9a9-1",
+                    "label": "input.txt"
+                  },
+                  {
+                    "store": "0",
+                    "path": "50339632-ee1d-11ec-a0c2-02420a0194e4/23b1522f-225f-5a4c-9158-c4c19a70d4a8/output.h5",
+                    "eTag": "f7e4c7076761a42a871e978c8691c676"
+                  },
+                  {
+                    "store": 0,
+                    "path": "api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt"
+                  },
+                  {
+                    "store": 0,
+                    "path": "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/d4442ca4-23fd-5b6b-ba6d-0b75f711c109/y_1D.txt"
+                  }
+                ]
+              },
+              {
+                "title": "DatCoreFileLink",
+                "description": "I/O port type to hold a link to a file in DATCORE storage",
+                "type": "object",
+                "properties": {
+                  "store": {
+                    "title": "Store",
+                    "description": "The store identifier: 0 for simcore S3, 1 for datcore",
+                    "type": "integer"
+                  },
+                  "path": {
+                    "title": "Path",
+                    "description": "The path to the file in the storage provider domain",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$"
+                      },
+                      {
+                        "type": "string",
+                        "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+                      }
+                    ]
+                  },
+                  "label": {
+                    "title": "Label",
+                    "description": "The real file name",
+                    "type": "string"
+                  },
+                  "eTag": {
+                    "title": "Etag",
+                    "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).",
+                    "type": "string"
+                  },
+                  "dataset": {
+                    "title": "Dataset",
+                    "description": "Unique identifier to access the dataset on datcore (REQUIRED for datcore)",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "store",
+                  "path",
+                  "label",
+                  "dataset"
+                ],
+                "additionalProperties": false,
+                "examples": [
+                  {
+                    "store": 1,
+                    "dataset": "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4",
+                    "path": "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce",
+                    "label": "initial_WTstates"
+                  },
+                  {
+                    "store": 1,
+                    "dataset": "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4",
+                    "path": "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce",
+                    "label": "initial_WTstates"
+                  }
+                ]
+              },
+              {
+                "title": "DownloadLink",
+                "description": "I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)",
+                "type": "object",
+                "properties": {
+                  "downloadLink": {
+                    "title": "Downloadlink",
+                    "minLength": 1,
+                    "maxLength": 65536,
+                    "format": "uri",
+                    "type": "string"
+                  },
+                  "label": {
+                    "title": "Label",
+                    "description": "Display name",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "downloadLink"
+                ],
+                "additionalProperties": false,
+                "examples": [
+                  {
+                    "downloadLink": "https://fakeimg.pl/250x100/"
+                  }
+                ]
+              },
+              {
+                "type": "array",
+                "items": {}
+              },
+              {
+                "type": "object"
+              }
+            ]
           }
         },
         "outputNode": {
@@ -2065,6 +4120,9 @@
             "[a-zA-Z][a-azA-Z0-9_]*": {
               "type": "string"
             }
+          },
+          "additionalProperties": {
+            "type": "string"
           }
         }
       },
@@ -2631,6 +4689,64 @@
               ],
               "additionalProperties": false
             }
+          },
+          "additionalProperties": {
+            "title": "WorkbenchUI",
+            "type": "object",
+            "properties": {
+              "position": {
+                "title": "Position",
+                "description": "The node position in the workbench",
+                "allOf": [
+                  {
+                    "title": "Position",
+                    "type": "object",
+                    "properties": {
+                      "x": {
+                        "title": "X",
+                        "description": "The x position",
+                        "example": [
+                          "12"
+                        ],
+                        "type": "integer"
+                      },
+                      "y": {
+                        "title": "Y",
+                        "description": "The y position",
+                        "example": [
+                          "15"
+                        ],
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "x",
+                      "y"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "marker": {
+                "title": "Marker",
+                "type": "object",
+                "properties": {
+                  "color": {
+                    "title": "Color",
+                    "type": "string",
+                    "format": "color"
+                  }
+                },
+                "required": [
+                  "color"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "position"
+            ],
+            "additionalProperties": false
           }
         },
         "slideshow": {
@@ -2654,6 +4770,23 @@
                 "position"
               ]
             }
+          },
+          "additionalProperties": {
+            "title": "Slideshow",
+            "type": "object",
+            "properties": {
+              "position": {
+                "title": "Position",
+                "type": "integer"
+              },
+              "instructions": {
+                "title": "Instructions",
+                "type": "string"
+              }
+            },
+            "required": [
+              "position"
+            ]
           }
         },
         "currentNodeId": {
@@ -2716,6 +4849,57 @@
                 }
               ]
             }
+          },
+          "additionalProperties": {
+            "title": "Annotation",
+            "type": "object",
+            "properties": {
+              "type": {
+                "title": "Type",
+                "enum": [
+                  "rect",
+                  "text"
+                ],
+                "type": "string"
+              },
+              "color": {
+                "title": "Color",
+                "type": "string",
+                "format": "color"
+              },
+              "attributes": {
+                "title": "Attributes",
+                "description": "svg attributes",
+                "type": "object"
+              }
+            },
+            "required": [
+              "type",
+              "color",
+              "attributes"
+            ],
+            "additionalProperties": false,
+            "examples": [
+              {
+                "type": "rect",
+                "color": "#FF0000",
+                "attributes": {
+                  "x": 415,
+                  "y": 100,
+                  "width": 117,
+                  "height": 26
+                }
+              },
+              {
+                "type": "text",
+                "color": "#0000FF",
+                "attributes": {
+                  "x": 415,
+                  "y": 100,
+                  "text": "Hey!"
+                }
+              }
+            ]
           }
         }
       }

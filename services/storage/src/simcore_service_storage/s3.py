@@ -4,6 +4,7 @@
 import json
 import logging
 from contextlib import AsyncExitStack
+from typing import cast
 
 from aiohttp import web
 from tenacity._asyncio import AsyncRetrying
@@ -71,5 +72,5 @@ def setup_s3(app: web.Application):
 
 def get_s3_client(app: web.Application) -> StorageS3Client:
     assert app[APP_S3_KEY]  # nosec
-    assert isinstance(app[APP_S3_KEY], StorageS3Client)
-    return app[APP_S3_KEY]
+    assert isinstance(app[APP_S3_KEY], StorageS3Client)  # nosec
+    return cast(StorageS3Client, app[APP_S3_KEY])

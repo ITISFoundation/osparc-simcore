@@ -8,8 +8,8 @@ import logging
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from . import version_control_handlers
-from ._constants import APP_SETTINGS_KEY
+from .._constants import APP_SETTINGS_KEY
+from . import _rest_handlers
 
 log = logging.getLogger(__name__)
 
@@ -26,4 +26,4 @@ log = logging.getLogger(__name__)
 def setup_version_control(app: web.Application):
     assert app[APP_SETTINGS_KEY].WEBSERVER_VERSION_CONTROL  # nosec
 
-    app.add_routes(version_control_handlers.routes)
+    app.add_routes(_rest_handlers.routes)

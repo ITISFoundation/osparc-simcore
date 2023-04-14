@@ -10,11 +10,9 @@
 #
 --constraint _base.txt
 
-asgi-lifespan
 
-codecov
+asgi-lifespan
 coverage
-coveralls
 deepdiff
 docker
 faker

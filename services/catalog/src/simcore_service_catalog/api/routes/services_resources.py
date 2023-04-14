@@ -1,7 +1,7 @@
 import logging
 import urllib.parse
 from copy import deepcopy
-from typing import Any, Final, Optional, cast
+from typing import Any, Final, cast
 
 import yaml
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -59,7 +59,7 @@ def _compute_service_available_boot_modes(
     """
 
     resource_entries = filter(lambda entry: entry.name.lower() == "resources", settings)
-    generic_resources = {}
+    generic_resources: ResourcesDict = {}
     for entry in resource_entries:
         if not isinstance(entry.value, dict):
             logger.warning(
@@ -132,7 +132,7 @@ def _resources_from_settings(
 
 async def _get_service_labels(
     director_client: DirectorApi, key: ServiceKey, version: ServiceVersion
-) -> Optional[dict[str, Any]]:
+) -> dict[str, Any] | None:
     try:
         service_labels = cast(
             dict[str, Any],
@@ -186,7 +186,7 @@ async def get_service_resources(
             image_version, default_service_resources
         )
 
-    service_labels: Optional[dict[str, Any]] = await _get_service_labels(
+    service_labels: dict[str, Any] | None = await _get_service_labels(
         director_client, service_key, service_version
     )
 
@@ -195,8 +195,8 @@ async def get_service_resources(
             image_version, default_service_resources
         )
 
-    service_spec: Optional[ComposeSpecLabel] = parse_raw_as(
-        Optional[ComposeSpecLabel],
+    service_spec: ComposeSpecLabel | None = parse_raw_as(
+        ComposeSpecLabel | None,
         service_labels.get(SIMCORE_SERVICE_COMPOSE_SPEC_LABEL, "null"),
     )
     logger.debug("received %s", f"{service_spec=}")
@@ -243,16 +243,18 @@ async def get_service_resources(
         # leading slashes must be stripped
         image = spec_data["image"].lstrip("/")
         key, version = image.split(":")
-        spec_service_labels: Optional[dict[str, Any]] = await _get_service_labels(
+        spec_service_labels: dict[str, Any] | None = await _get_service_labels(
             director_client, key, version
         )
 
+        spec_service_resources: ResourcesDict
+
         if not spec_service_labels:
-            spec_service_resources: ResourcesDict = default_service_resources
+            spec_service_resources = default_service_resources
             service_boot_modes = [BootMode.CPU]
         else:
             spec_service_settings = _get_service_settings(spec_service_labels)
-            spec_service_resources: ResourcesDict = _resources_from_settings(
+            spec_service_resources = _resources_from_settings(
                 spec_service_settings,
                 default_service_resources,
                 service_key,

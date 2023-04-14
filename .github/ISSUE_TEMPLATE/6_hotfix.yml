@@ -1,0 +1,82 @@
+name: 🚑️ Hotfix (developers-only)
+description: Critical hotfix to staging or production
+title: "🚑️ Release hotfix/v<version> (hotfix)"
+labels: ["t:maintenance", "release"]
+assignees: ["matusdrobuliak66"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Release version
+      description: Release version as major.minor.patch .Check [Releases](https://github.com/ITISFoundation/osparc-simcore/releases)
+      placeholder: e.g. 1.51.1
+    validations:
+      required: true
+  - type: input
+    id: commit_sha
+    attributes:
+      label: Commit SHA
+      description: |
+        Selets the commit from which the release takes placeholder. Check [commits](https://github.com/ITISFoundation/osparc-simcore/commits/master)
+        IMPORTANT: make sure t (i.e. tests passed and images were built and pushed)
+      placeholder: e.g. `8d9a27ebb3e64956e6a41f31839748b3f6a27074`
+    validations:
+      required: true
+  - type: input
+    id: previous_release
+    attributes:
+      label: "Previous release"
+      description: |
+        Link to release that preceeds this release
+      value: https://github.com/ITISFoundation/osparc-simcore/releases/tag/v<version>
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Motivation
+      description: |
+        What is the motivation to release hotfix to stagging/production?
+        - Explain what motivates this release?
+        - Which important changes we might pay attention to?
+        - How should we test them?
+        - Is there anything in particular we should monitor?
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: "🚑️ Hotfix branch"
+      value: |
+        - [] create hotfix branch [``hotfix_v1_51_x``](https://github.com/ITISFoundation/osparc-simcore/tree/hotfix_v1_51_x) directly in *upstream* repo. **Do not delete hotfix branches** at least until next *full* release takes place.
+        - [] prepare hotfix by applying patches/cherry-picks (see *what changed* section)
+        - [] test hotfix in local deployment
+        - [] push and [check whether CI passed](https://github.com/ITISFoundation/osparc-simcore/actions)
+        - [] check [images in dockerhub](https://registry.hub.docker.com/u/itisfoundation)
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: Changes
+      description: |
+        Changes introduced by this release.
+        List links to the PRs associated to every commit in the release. This will automatically create references between PRs and this release that will be very valuable for traceability.
+        TIP: use the autogenerate changelog feature during the draft release.
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: Releasing 🚀
+      value: |
+        - ``make release-hotfix version=<version> git_sha=<commit_sha>``
+        - [ ] Draft [release notes](https://github.com/ITISFoundation/osparc-simcore/releases) 🚀
+        - [ ] No need for maintenance announcement?: Target update of ``<target_service>``
+        - [ ] Deploy hot-fix.
+          - [ ] ``autodeployer`` OFF in aws-prod, dalco-prod, ti
+          - [ ] [release](https://github.com/ITISFoundation/osparc-simcore/releases) 🚀 !!!!
+          - [ ] aws-prod (updated target service)
+          - [ ] dalco-prod (updated target service)
+          - [ ] ti (updated target service)
+        - [ ] Test and Monitor. Revert back if needed!
+        - [ ] Announce hot-fix
+        ``` md
+        :tada: https://github.com/ITISFoundation/osparc-simcore/releases/tag/v<version>
+        ```

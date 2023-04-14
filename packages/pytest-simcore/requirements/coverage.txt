@@ -1,7 +1,0 @@
-#
-#  Include these tools for test coverage
-#
-pytest-cov
-coveralls
-coverage
-codecov

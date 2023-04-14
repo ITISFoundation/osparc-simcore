@@ -81,17 +81,10 @@ cloudpickle==2.2.1
     #   -c requirements/_base.txt
     #   dask
     #   distributed
-codecov==2.1.12
-    # via -r requirements/_test.in
 colorlog==6.7.0
     # via dask-gateway-server
-coverage==6.5.0
-    # via
-    #   codecov
-    #   coveralls
-    #   pytest-cov
-coveralls==3.3.1
-    # via -r requirements/_test.in
+coverage==7.2.3
+    # via pytest-cov
 cryptography==39.0.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -110,8 +103,6 @@ distributed==2023.3.0
     #   dask
 docker==6.0.1
     # via -r requirements/_test.in
-docopt==0.6.2
-    # via coveralls
 exceptiongroup==1.1.0
     # via pytest
 execnet==1.9.0
@@ -129,7 +120,7 @@ fsspec==2023.3.0
     # via
     #   -c requirements/_base.txt
     #   dask
-greenlet==1.1.2
+greenlet==2.0.2
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
@@ -202,6 +193,10 @@ multidict==6.0.2
     #   aiohttp
     #   async-asgi-testclient
     #   yarl
+mypy==1.1.1
+    # via sqlalchemy
+mypy-extensions==1.0.0
+    # via mypy
 numpy==1.24.2
     # via bokeh
 packaging==23.0
@@ -277,8 +272,6 @@ requests==2.27.1
     # via
     #   -c requirements/_base.txt
     #   async-asgi-testclient
-    #   codecov
-    #   coveralls
     #   docker
 respx==0.20.1
     # via -r requirements/_test.in
@@ -303,11 +296,13 @@ sortedcontainers==2.4.0
     # via
     #   -c requirements/_base.txt
     #   distributed
-sqlalchemy==1.4.37
+sqlalchemy==1.4.47
     # via
-    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
     #   alembic
     #   dask-gateway-server
+sqlalchemy2-stubs==0.0.2a32
+    # via sqlalchemy
 tblib==1.7.0
     # via
     #   -c requirements/_base.txt
@@ -315,6 +310,7 @@ tblib==1.7.0
 tomli==2.0.1
     # via
     #   coverage
+    #   mypy
     #   pylint
     #   pytest
 tomlkit==0.11.6
@@ -337,6 +333,8 @@ typing-extensions==4.3.0
     #   -c requirements/_base.txt
     #   astroid
     #   bokeh
+    #   mypy
+    #   sqlalchemy2-stubs
 urllib3==1.26.14
     # via
     #   -c requirements/_base.txt

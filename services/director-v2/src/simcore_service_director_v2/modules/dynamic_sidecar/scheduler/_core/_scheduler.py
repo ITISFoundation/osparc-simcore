@@ -106,7 +106,7 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
         self, node_uuid: NodeID, progress_callback: ProgressCallback | None = None
     ) -> None:
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-            self.app
+            self.app, node_uuid
         )
         await service_remove_containers(
             app=self.app,
@@ -132,7 +132,7 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
         self, node_uuid: NodeID, progress_callback: ProgressCallback | None = None
     ) -> None:
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-            self.app
+            self.app, node_uuid
         )
         await service_save_state(
             app=self.app,
@@ -287,7 +287,7 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
 
     async def is_service_awaiting_manual_intervention(self, node_uuid: NodeID) -> bool:
         """returns True if services is waiting for manual intervention"""
-        return _scheduler_utils.service_awaits_manual_interventions(
+        return await _scheduler_utils.service_awaits_manual_interventions(
             self.get_scheduler_data(node_uuid)
         )
 
@@ -406,7 +406,7 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
         scheduler_data: SchedulerData = self._to_observe[service_name]
         dynamic_sidecar_endpoint: AnyHttpUrl = scheduler_data.endpoint
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-            self.app
+            self.app, node_uuid
         )
 
         transferred_bytes = await dynamic_sidecar_client.pull_service_input_ports(
@@ -429,7 +429,7 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
         scheduler_data = self._to_observe[service_name]
 
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-            self.app
+            self.app, node_id
         )
 
         await dynamic_sidecar_client.attach_service_containers_to_project_network(
@@ -450,7 +450,7 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
         scheduler_data = self._to_observe[service_name]
 
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-            self.app
+            self.app, node_id
         )
 
         await dynamic_sidecar_client.detach_service_containers_from_project_network(
@@ -468,7 +468,7 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
         scheduler_data: SchedulerData = self._to_observe[service_name]
 
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-            self.app
+            self.app, node_uuid
         )
 
         await dynamic_sidecar_client.restart_containers(scheduler_data.endpoint)
