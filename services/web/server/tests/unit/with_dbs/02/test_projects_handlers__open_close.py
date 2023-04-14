@@ -494,9 +494,8 @@ async def test_open_project_with_small_amount_of_dynamic_services_starts_them_au
         mocked_director_v2_api["director_v2_api.run_dynamic_service"].reset_mock()
 
 
-@pytest.mark.parametrize("num_auto_start_services", list(range(6)))
 @pytest.mark.parametrize(*standard_user_role())
-async def test_open_project_with_num_auto_start_services_query_overrides_behavior(
+async def test_open_project_with_disable_service_auto_start_set_overrides_behavior(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
@@ -506,7 +505,6 @@ async def test_open_project_with_num_auto_start_services_query_overrides_behavio
     mock_catalog_api: dict[str, mock.Mock],
     max_amount_of_auto_started_dyn_services: int,
     faker: Faker,
-    num_auto_start_services: int,
 ):
     assert client.app
     num_of_dyn_services = max_amount_of_auto_started_dyn_services or faker.pyint(
@@ -523,16 +521,14 @@ async def test_open_project_with_num_auto_start_services_query_overrides_behavio
         url = (
             client.app.router["open_project"]
             .url_for(project_id=project["uuid"])
-            .with_query(num_auto_start_services=num_auto_start_services)
+            .with_query(disable_service_auto_start=f"{True}")
         )
 
         resp = await client.post(f"{url}", json=client_session_id_factory())
         await assert_status(resp, expected.ok)
-        assert (
-            mocked_director_v2_api["director_v2_api.run_dynamic_service"].call_count
-            == num_auto_start_services
-        )
-        mocked_director_v2_api["director_v2_api.run_dynamic_service"].reset_mock()
+        mocked_director_v2_api[
+            "director_v2_api.run_dynamic_service"
+        ].assert_not_called()
 
 
 @pytest.mark.parametrize(*standard_user_role())
@@ -851,7 +847,6 @@ async def test_project_node_lifetime(
     mocker,
     faker: Faker,
 ):
-
     mock_storage_api_delete_data_folders_of_project_node = mocker.patch(
         "simcore_service_webserver.projects.projects_handlers_crud.projects_api.storage_api.delete_data_folders_of_project_node",
         return_value="",
@@ -1222,7 +1217,6 @@ async def test_open_shared_project_at_same_time(
     ]
     # create other clients
     for i in range(NUMBER_OF_ADDITIONAL_CLIENTS):
-
         new_client = client_on_running_server_factory()
         user = await log_client_in(
             new_client,
