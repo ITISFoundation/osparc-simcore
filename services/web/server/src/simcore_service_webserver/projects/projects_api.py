@@ -933,7 +933,10 @@ async def set_project_node_resources(
 
 
 async def run_project_dynamic_services(
-    request: web.Request, project: dict, user_id: UserID, product_name: str
+    request: web.Request,
+    project: dict,
+    user_id: UserID,
+    product_name: str,
 ) -> None:
     # first get the services if they already exist
     project_settings = get_settings(request.app).WEBSERVER_PROJECTS
