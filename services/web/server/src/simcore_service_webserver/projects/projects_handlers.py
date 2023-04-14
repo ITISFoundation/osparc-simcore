@@ -102,17 +102,21 @@ async def open_project(request: web.Request) -> web.Response:
         )
 
         # user id opened project uuid
-        with contextlib.suppress(ProjectStartsTooManyDynamicNodes):
-            # NOTE: this method raises that exception when the number of dynamic
-            # services in the project is highter than the maximum allowed per project
-            # the project shall still open though.
-            await projects_api.run_project_dynamic_services(
-                request,
-                project,
-                req_ctx.user_id,
-                req_ctx.product_name,
-                num_auto_start_services=query_params.num_auto_start_services,
-            )
+        if (
+            query_params.num_auto_start_services is not None
+            and query_params.num_auto_start_services > 0
+        ):
+            with contextlib.suppress(ProjectStartsTooManyDynamicNodes):
+                # NOTE: this method raises that exception when the number of dynamic
+                # services in the project is highter than the maximum allowed per project
+                # the project shall still open though.
+                await projects_api.run_project_dynamic_services(
+                    request,
+                    project,
+                    req_ctx.user_id,
+                    req_ctx.product_name,
+                    num_auto_start_services=query_params.num_auto_start_services,
+                )
 
         # and let's update the project last change timestamp
         await projects_api.update_project_last_change_timestamp(
