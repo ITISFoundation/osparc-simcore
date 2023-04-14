@@ -57,24 +57,20 @@ class CustomFormatter(logging.Formatter):
             record.funcName = record.func_name_override
         if hasattr(record, "file_name_override"):
             record.filename = record.file_name_override
-        # MATUS: introduce parameter if local development then colours are OK:
-        # # add color
-        # levelname = record.levelname
-        # if levelname in COLORS:
-        #     levelname_color = COLORS[levelname] + levelname + NORMAL
-        #     record.levelname = levelname_color
-        return super().format(record).replace("\n", "\\n")
+
+        # add color
+        levelname = record.levelname
+        if levelname in COLORS:
+            levelname_color = COLORS[levelname] + levelname + NORMAL
+            record.levelname = levelname_color
+        return super().format(record)
 
 
 # SEE https://docs.python.org/3/library/logging.html#logrecord-attributes
-# DEFAULT_FORMATTING = "%(levelname)s: [%(asctime)s/%(processName)s] [%(name)s:%(funcName)s(%(lineno)d)]  -  %(message)s"
-DEFAULT_FORMATTING = "log_level=%(levelname)s | log_timestamp=%(asctime)s | log_source=%(name)s:%(funcName)s(%(lineno)d) | log_msg=%(message)s"
-
-# Graylog Grok pattern extractor:
-# log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{DATA:log_source} \| log_msg=%{GREEDYDATA:log_msg} \| log_service=%{WORD:log_level}
+DEFAULT_FORMATTING = "%(levelname)s: [%(asctime)s/%(processName)s] [%(name)s:%(funcName)s(%(lineno)d)]  -  %(message)s"
 
 
-def config_all_loggers(service_name: str = ""):  # MATUS: create enum from service_name
+def config_all_loggers():
     """
     Applies common configuration to ALL registered loggers
     """
@@ -83,18 +79,20 @@ def config_all_loggers(service_name: str = ""):  # MATUS: create enum from servi
     loggers = [logging.getLogger()] + [
         logging.getLogger(name) for name in the_manager.loggerDict
     ]
-
-    FINAL_FORMATTING = DEFAULT_FORMATTING + f" | log_service={service_name}"
     for logger in loggers:
-        set_logging_handler(logger, FINAL_FORMATTING)
+        set_logging_handler(logger)
 
 
 def set_logging_handler(
     logger: logging.Logger,
-    fmt: str,
+    formatter_base: type[logging.Formatter] | None = None,
+    fmt: str = DEFAULT_FORMATTING,
 ) -> None:
+    if not formatter_base:
+        formatter_base = CustomFormatter
+
     for handler in logger.handlers:
-        handler.setFormatter(CustomFormatter(fmt))
+        handler.setFormatter(formatter_base(fmt))
 
 
 def test_logger_propagation(logger: logging.Logger):
