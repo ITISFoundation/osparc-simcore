@@ -19,14 +19,14 @@ from pydantic import BaseModel, ValidationError
 from pydantic.fields import Field
 from pydantic.types import PositiveInt
 
-from .meta_modeling import meta_modeling_function_nodes
-from .meta_modeling.meta_modeling_version_control import (
+from ..utils import compute_sha1_on_small_dataset, now_str
+from ..version_control.errors import UserUndefined
+from . import meta_modeling_function_nodes
+from .meta_modeling_version_control import (
     CommitID,
     ProjectDict,
     VersionControlForMetaModeling,
 )
-from .utils import compute_sha1_on_small_dataset, now_str
-from .version_control.errors import UserUndefined
 
 log = logging.getLogger(__name__)
 
