@@ -1,7 +1,6 @@
 import logging
 import urllib.parse
 from pathlib import Path
-from typing import cast
 
 import aiofiles
 from aiohttp import ClientSession
@@ -16,16 +15,14 @@ logger = logging.getLogger(__name__)
 
 
 def convert_db_to_model(x: FileMetaDataAtDB) -> FileMetaData:
-    return cast(  # mypy
-        FileMetaData,
-        FileMetaData.parse_obj(
-            x.dict()
-            | {
-                "file_uuid": x.file_id,
-                "file_name": x.file_id.split("/")[-1],
-            }
-        ),
+    model: FileMetaData = FileMetaData.parse_obj(
+        x.dict()
+        | {
+            "file_uuid": x.file_id,
+            "file_name": x.file_id.split("/")[-1],
+        }
     )
+    return model
 
 
 async def download_to_file_or_raise(

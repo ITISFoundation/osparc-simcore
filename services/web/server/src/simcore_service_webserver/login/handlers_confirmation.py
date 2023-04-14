@@ -11,11 +11,11 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.error_codes import create_error_code
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.errors import UniqueViolation
-from simcore_service_webserver.session_access import session_access_required
 from yarl import URL
 
 from ..products import Product, get_current_product
 from ..security_api import encrypt_password
+from ..session_access import session_access_required
 from ..utils import MINUTE
 from ..utils_aiohttp import create_redirect_response
 from ..utils_rate_limiting import global_rate_limit_route

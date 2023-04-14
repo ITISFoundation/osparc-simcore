@@ -31,7 +31,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "background-main-5": "c06",
 
     // text
-    "text": "c12",
+    "text": "c13",
     "text-disabled": "c07",
     "text-selected": "c12",
     "text-placeholder": "c07",

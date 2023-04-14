@@ -20,7 +20,7 @@ from .director_v2_core_computations import ComputationsApi
 from .director_v2_exceptions import DirectorServiceError
 from .login.decorators import login_required
 from .security_decorators import permission_required
-from .version_control_db import CommitID
+from .version_control.db import CommitID
 
 log = logging.getLogger(__name__)
 

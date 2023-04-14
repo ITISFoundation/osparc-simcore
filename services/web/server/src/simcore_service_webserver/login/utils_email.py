@@ -4,10 +4,10 @@ from pathlib import Path
 from typing import cast
 
 from aiohttp import web
-from simcore_service_webserver.products import get_product_template_path
 
 from .._resources import resources
 from ..email_core import AttachmentTuple, send_email_from_template
+from ..products import get_product_template_path
 
 log = logging.getLogger(__name__)
 

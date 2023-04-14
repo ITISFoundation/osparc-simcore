@@ -6,16 +6,16 @@ from models_library.rest_pagination_utils import paginate_data
 from pydantic.decorator import validate_arguments
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
-from ._meta import api_version_prefix as VTAG
-from .login.decorators import login_required
-from .security_decorators import permission_required
-from .utils_aiohttp import (
+from .._meta import api_version_prefix as VTAG
+from ..login.decorators import login_required
+from ..security_decorators import permission_required
+from ..utils_aiohttp import (
     create_url_for_function,
     envelope_json_response,
     get_routes_view,
     rename_routes_as_handler_function,
 )
-from .version_control_core import (
+from ._core import (
     checkout_checkpoint_safe,
     create_checkpoint_safe,
     get_checkpoint_safe,
@@ -24,9 +24,10 @@ from .version_control_core import (
     list_repos_safe,
     update_checkpoint_safe,
 )
-from .version_control_db import HEAD, VersionControlRepository
-from .version_control_handlers_base import handle_request_errors
-from .version_control_models import (
+from ._rest_handlers_base import handle_request_errors
+from .db import VersionControlRepository
+from .models import (
+    HEAD,
     Checkpoint,
     CheckpointAnnotations,
     CheckpointApiModel,
@@ -38,10 +39,6 @@ from .version_control_models import (
 )
 
 logger = logging.getLogger(__name__)
-
-
-# FIXME: access rights using same approach as in access_layer.py in storage.
-# A user can only check snapshots (subresource) of its project (parent resource)
 
 
 @validate_arguments
@@ -60,7 +57,6 @@ routes = web.RouteTableDef()
 @permission_required("project.read")
 @handle_request_errors
 async def _list_repos_handler(request: web.Request):
-    # FIXME: check access to non owned projects user_id = request[RQT_USERID_KEY]
     url_for = create_url_for_function(request)
     vc_repo = VersionControlRepository(request)
 
@@ -115,7 +111,7 @@ async def _create_checkpoint_handler(request: web.Request):
 
     checkpoint: Checkpoint = await create_checkpoint_safe(
         vc_repo,
-        project_uuid=_project_uuid,  # type: ignore
+        project_uuid=_project_uuid,
         **_body.dict(include={"tag", "message"}),
     )
 
@@ -148,7 +144,7 @@ async def _list_checkpoints_handler(request: web.Request):
 
     checkpoints, total = await list_checkpoints_safe(
         vc_repo,
-        project_uuid=_project_uuid,  # type: ignore
+        project_uuid=_project_uuid,
         offset=_offset,
         limit=_limit,
     )
@@ -206,7 +202,7 @@ async def _get_checkpoint_handler(request: web.Request):
 
     checkpoint: Checkpoint = await get_checkpoint_safe(
         vc_repo,
-        project_uuid=_project_uuid,  # type: ignore
+        project_uuid=_project_uuid,
         ref_id=_ref_id,
     )
 
@@ -240,7 +236,7 @@ async def _update_checkpoint_annotations_handler(request: web.Request):
 
     checkpoint: Checkpoint = await update_checkpoint_safe(
         vc_repo,
-        project_uuid=_project_uuid,  # type: ignore
+        project_uuid=_project_uuid,
         ref_id=_ref_id,
         **_body.dict(include={"tag", "message"}, exclude_none=True),
     )
@@ -271,7 +267,7 @@ async def _checkout_handler(request: web.Request):
 
     checkpoint: Checkpoint = await checkout_checkpoint_safe(
         vc_repo,
-        project_uuid=_project_uuid,  # type: ignore
+        project_uuid=_project_uuid,
         ref_id=_ref_id,
     )
 
@@ -303,13 +299,13 @@ async def _view_project_workbench_handler(request: web.Request):
 
     checkpoint: Checkpoint = await get_checkpoint_safe(
         vc_repo,
-        project_uuid=_project_uuid,  # type: ignore
+        project_uuid=_project_uuid,
         ref_id=_ref_id,
     )
 
     view: WorkbenchView = await get_workbench_safe(
         vc_repo,
-        project_uuid=_project_uuid,  # type: ignore
+        project_uuid=_project_uuid,
         ref_id=checkpoint.id,
     )
 
