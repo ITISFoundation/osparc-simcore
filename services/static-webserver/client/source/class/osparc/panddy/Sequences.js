@@ -69,6 +69,32 @@ qx.Class.define("osparc.panddy.Sequences", {
       return control || this.base(arguments, id);
     },
 
+    __isSelectorVisible: function(doc, selector) {
+      const domEl = doc.querySelector(`[${selector}]`);
+      if (domEl) {
+        const domWidget = qx.ui.core.Widget.getWidgetByElement(domEl);
+        if (qx.ui.core.queue.Visibility.isVisible(domWidget)) {
+          return true;
+        }
+      }
+      return false;
+    },
+
+    __evaluateRequiredTarget: function(sequence, seqButton) {
+      if (this.__isSelectorVisible(document, sequence.requiredTarget)) {
+        seqButton.setEnabled(true);
+        return;
+      }
+      const iframes = document.querySelectorAll("iframe");
+      for (let i=0; i<iframes.length; i++) {
+        if (this.__isSelectorVisible(iframes[i].contentWindow.document, sequence.requiredTarget)) {
+          seqButton.setEnabled(true);
+          return;
+        }
+      }
+      seqButton.setEnabled(false);
+    },
+
     __getSequenceButton: function(sequence) {
       const seqButton = new qx.ui.form.Button().set({
         label: sequence.name,
@@ -79,8 +105,7 @@ qx.Class.define("osparc.panddy.Sequences", {
         toolTipText: sequence.description
       });
       if (sequence.requiredTarget) {
-        const domEl = document.querySelector(`[${sequence.requiredTarget}]`);
-        seqButton.setEnabled(Boolean(domEl));
+        this.__evaluateRequiredTarget(sequence, seqButton);
       }
       seqButton.addListener("execute", () => this.fireDataEvent("sequenceSelected", sequence), this);
       return seqButton;
