@@ -15,7 +15,7 @@ import logging
 from collections import defaultdict
 from contextlib import suppress
 from pprint import pformat
-from typing import Any, Final
+from typing import Any
 from uuid import UUID, uuid4
 
 from aiohttp import web
@@ -34,7 +34,7 @@ from models_library.projects_state import (
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import NonNegativeFloat, NonNegativeInt, parse_obj_as
+from pydantic import parse_obj_as
 from servicelib.aiohttp.application_keys import (
     APP_FIRE_AND_FORGET_TASKS_KEY,
     APP_JSONSCHEMA_SPECS_KEY,
@@ -68,7 +68,7 @@ from ..socketio.events import (
 )
 from ..users_api import UserRole, get_user_name, get_user_role
 from ..users_exceptions import UserNotFoundError
-from . import _delete
+from . import _delete, _nodes_utils
 from .project_lock import (
     UserNameDict,
     get_project_locked_state,
@@ -87,8 +87,6 @@ from .projects_utils import extract_dns_without_default_port
 log = logging.getLogger(__name__)
 
 PROJECT_REDIS_LOCK_KEY: str = "project:{}"
-
-_NODE_START_INTERVAL_S: Final[datetime.timedelta] = datetime.timedelta(seconds=15)
 
 
 def _is_node_dynamic(node_key: str) -> bool:
@@ -215,39 +213,6 @@ def get_delete_project_task(
 #
 
 
-def _get_service_start_lock_key(user_id: UserID, project_uuid: ProjectID) -> str:
-    return f"lock_service_start_limit.{user_id}.{project_uuid}"
-
-
-def _check_num_service_per_projects_limit(
-    app: web.Application,
-    number_of_services: int,
-    user_id: UserID,
-    project_uuid: ProjectID,
-) -> None:
-    """
-    raises ProjectStartsTooManyDynamicNodes if the user cannot start more services
-    """
-    project_settings = get_settings(app).WEBSERVER_PROJECTS
-    assert project_settings  # nosec
-    if project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES > 0 and (
-        number_of_services >= project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
-    ):
-        raise ProjectStartsTooManyDynamicNodes(
-            user_id=user_id, project_uuid=project_uuid
-        )
-
-
-def _get_total_project_dynamic_nodes_creation_interval(
-    max_nodes: NonNegativeInt,
-) -> NonNegativeFloat:
-    """
-    Estimated amount of time for all project node creation requests to be sent to the
-    director-v2. Note: these calls are sent one after the other.
-    """
-    return max_nodes * _NODE_START_INTERVAL_S.total_seconds()
-
-
 async def _start_dynamic_service(
     request: web.Request,
     *,
@@ -263,7 +228,7 @@ async def _start_dynamic_service(
 
     # this is a dynamic node, let's gather its resources and start it
 
-    lock_key = _get_service_start_lock_key(user_id, project_uuid)
+    lock_key = _nodes_utils.get_service_start_lock_key(user_id, project_uuid)
     client_sdk = get_redis_lock_manager_client_sdk(request.app)
     project_settings = get_settings(request.app).WEBSERVER_PROJECTS
     assert project_settings is not None  # nosec
@@ -271,14 +236,14 @@ async def _start_dynamic_service(
     async with client_sdk.lock_context(
         lock_key,
         blocking=True,
-        blocking_timeout_s=_get_total_project_dynamic_nodes_creation_interval(
+        blocking_timeout_s=_nodes_utils.get_total_project_dynamic_nodes_creation_interval(
             project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
         ),
     ):
         project_running_nodes = await director_v2_api.list_dynamic_services(
             request.app, user_id, f"{project_uuid}"
         )
-        _check_num_service_per_projects_limit(
+        _nodes_utils.check_num_service_per_projects_limit(
             app=request.app,
             number_of_services=len(project_running_nodes),
             user_id=user_id,
