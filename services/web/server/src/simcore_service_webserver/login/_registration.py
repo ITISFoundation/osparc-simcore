@@ -291,7 +291,7 @@ def get_confirmation_info(
     Extends ConfirmationTokenDict by adding extra info and
     deserializing action's data entry
     """
-    info = ConfirmationTokenInfoDict(**confirmation)
+    info: ConfirmationTokenInfoDict = ConfirmationTokenInfoDict(**confirmation)
 
     action = ConfirmationAction(confirmation["action"])
     if (data_type := ACTION_TO_DATA_TYPE[action]) and (data := confirmation["data"]):
@@ -303,4 +303,4 @@ def get_confirmation_info(
     if confirmation["action"] == ConfirmationAction.INVITATION.name:
         info["url"] = f"{get_invitation_url(confirmation)}"
 
-    return cast(ConfirmationTokenInfoDict, info)
+    return info
