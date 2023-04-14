@@ -10,8 +10,8 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 
 from .._constants import APP_SETTINGS_KEY
 from ..director_v2_api import get_project_run_policy, set_project_run_policy
-from . import meta_modeling_handlers
-from .meta_modeling_projects import meta_project_policy, projects_redirection_middleware
+from . import _rest_handlers
+from ._projects import meta_project_policy, projects_redirection_middleware
 
 log = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ log = logging.getLogger(__name__)
 def setup_meta_modeling(app: web.Application):
     assert app[APP_SETTINGS_KEY].WEBSERVER_META_MODELING  # nosec
 
-    app.add_routes(meta_modeling_handlers.routes)
+    app.add_routes(_rest_handlers.routes)
     app.middlewares.append(projects_redirection_middleware)
 
     # Overrides run-policy from directorv2

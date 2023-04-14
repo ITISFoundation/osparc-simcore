@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 from pydantic import BaseModel
-from simcore_service_webserver.meta_modeling.meta_modeling_results import (
+from simcore_service_webserver.meta_modeling._results import (
     ExtractedResults,
     extract_project_results,
 )

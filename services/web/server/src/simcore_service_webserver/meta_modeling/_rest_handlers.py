@@ -19,9 +19,9 @@ from ..security_decorators import permission_required
 from ..utils_aiohttp import create_url_for_function, envelope_json_response
 from ..version_control.models import CheckpointID, CommitID, TagProxy
 from ..version_control.vc_tags import parse_workcopy_project_tag_name
+from ._iterations import IterationID, ProjectIteration
+from ._results import ExtractedResults, extract_project_results
 from ._version_control import VersionControlForMetaModeling
-from .meta_modeling_iterations import IterationID, ProjectIteration
-from .meta_modeling_results import ExtractedResults, extract_project_results
 
 log = logging.getLogger(__name__)
 
