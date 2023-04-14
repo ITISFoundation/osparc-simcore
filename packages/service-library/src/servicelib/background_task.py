@@ -2,18 +2,19 @@ import asyncio
 import contextlib
 import datetime
 import logging
-from contextlib import suppress
 from typing import AsyncIterator, Awaitable, Callable, Final
 
 from servicelib.logging_utils import log_catch, log_context
 from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
+from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
 logger = logging.getLogger(__name__)
 
 
 _DEFAULT_STOP_TIMEOUT_S: Final[int] = 5
+_MAX_TASK_CANCELLATION_ATTEMPTS: Final[int] = 3
 
 
 async def _periodic_scheduled_task(
@@ -57,6 +58,34 @@ def start_periodic_task(
         )
 
 
+async def cancel_task(
+    task: asyncio.Task,
+    *,
+    timeout: float | None,
+    cancellation_attempts: int = _MAX_TASK_CANCELLATION_ATTEMPTS,
+) -> None:
+    """Reliable task cancellation. Some libraries will just hang without
+    cancelling the task. It is important to retry the operation to provide
+    a timeout in that situation to avoid forever pending tasks.
+
+    :param task: task to be canceled
+    :param timeout: total duration (in seconds) to wait before giving
+        up the cancellation. If None it waits forever.
+    :raises TryAgain: raised if cannot cancel the task.
+    """
+    async for attempt in AsyncRetrying(
+        stop=stop_after_attempt(cancellation_attempts), reraise=True
+    ):
+        with attempt:
+            task.cancel()
+            _, pending = await asyncio.wait((task,), timeout=timeout)
+            if pending:
+                logger.info(
+                    "tried to cancel '%s' but timed-out! %s", task.get_name(), pending
+                )
+                raise TryAgain()
+
+
 async def stop_periodic_task(
     asyncio_task: asyncio.Task, *, timeout: float | None = None
 ) -> None:
@@ -65,15 +94,7 @@ async def stop_periodic_task(
         logging.INFO,
         msg=f"cancel periodic background task '{asyncio_task.get_name()}'",
     ):
-        asyncio_task.cancel()
-        with suppress(asyncio.CancelledError):
-            try:
-                await asyncio.wait_for(asyncio_task, timeout=timeout)
-            except asyncio.TimeoutError:
-                logger.warning(
-                    "periodic background task '%s' did not cancel properly and timed-out!",
-                    f"{asyncio_task.get_name()}",
-                )
+        await cancel_task(asyncio_task, timeout=timeout)
 
 
 @contextlib.asynccontextmanager
@@ -92,4 +113,6 @@ async def periodic_task(
         yield asyncio_task
     finally:
         if asyncio_task is not None:
-            await stop_periodic_task(asyncio_task, timeout=_DEFAULT_STOP_TIMEOUT_S)
+            await asyncio.shield(
+                stop_periodic_task(asyncio_task, timeout=_DEFAULT_STOP_TIMEOUT_S)
+            )
