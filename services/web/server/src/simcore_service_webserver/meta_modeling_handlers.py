@@ -15,9 +15,9 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from ._meta import api_version_prefix as VTAG
 from .login.decorators import login_required
+from .meta_modeling.meta_modeling_version_control import VersionControlForMetaModeling
 from .meta_modeling_iterations import IterationID, ProjectIteration
 from .meta_modeling_results import ExtractedResults, extract_project_results
-from .meta_modeling_version_control import VersionControlForMetaModeling
 from .security_decorators import permission_required
 from .utils_aiohttp import create_url_for_function, envelope_json_response
 from .version_control.models import CheckpointID, CommitID, TagProxy
