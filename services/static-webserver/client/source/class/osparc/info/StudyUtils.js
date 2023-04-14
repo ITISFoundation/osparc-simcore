@@ -246,7 +246,7 @@ qx.Class.define("osparc.info.StudyUtils", {
         iconPosition: "right"
       });
       const devObj = study.getDev();
-      cb.setValue(("disableServiceAutoStart" in devObj) ? devObj["disableServiceAutoStart"] : true);
+      cb.setValue(("disableServiceAutoStart" in devObj) ? devObj["disableServiceAutoStart"] : false);
       cb.addListener("changeValue", e => {
         const newVal = e.getData();
         devObj["disableServiceAutoStart"] = newVal;

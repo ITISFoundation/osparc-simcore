@@ -480,6 +480,7 @@ qx.Class.define("osparc.data.model.Study", {
       };
       if ("disableServiceAutoStart" in this.getDev()) {
         params["url"]["disableServiceAutoStart"] = this.getDev()["disableServiceAutoStart"];
+        return osparc.data.Resources.fetch("studies", "openDisableAutoStart", params);
       }
       return osparc.data.Resources.fetch("studies", "open", params);
     },

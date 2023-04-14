@@ -96,6 +96,10 @@ qx.Class.define("osparc.data.Resources", {
           },
           open: {
             method: "POST",
+            url: statics.API + "/projects/{studyId}:open"
+          },
+          openDisableAutoStart: {
+            method: "POST",
             url: statics.API + "/projects/{studyId}:open?disable_service_auto_start={disableServiceAutoStart}"
           },
           close: {
