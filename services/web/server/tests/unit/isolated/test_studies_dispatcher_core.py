@@ -18,7 +18,6 @@ from pydantic.main import BaseModel
 from pydantic.networks import HttpUrl
 from pytest_simcore.helpers.utils_services import list_fake_file_consumers
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
-from simcore_service_webserver.projects import projects_api
 from simcore_service_webserver.studies_dispatcher._projects import (
     UserInfo,
     ViewerInfo,
@@ -82,9 +81,7 @@ async def test_create_project_with_viewer(project_jsonschema: dict[str, Any], vi
     print(json.dumps(project_in, indent=2))
 
     # This operation is done exactly before adding to the database in projects_handlers.create_projects
-    await projects_api.validate_project(
-        project=project_in,
-    )
+    Project.parse_obj(project_in)
 
 
 @pytest.mark.parametrize(

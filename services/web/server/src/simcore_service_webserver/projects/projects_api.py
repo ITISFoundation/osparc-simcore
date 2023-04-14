@@ -45,7 +45,6 @@ from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_context
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_postgres_database.webserver_models import ProjectType
-from simcore_service_webserver.projects.project_models import ProjectDict
 
 from .. import catalog_client, director_v2_api, storage_api
 from ..products import get_product_name
@@ -90,10 +89,6 @@ def _is_node_dynamic(node_key: str) -> bool:
     return "/dynamic/" in node_key
 
 
-async def validate_project(project: ProjectDict):
-    await asyncio.get_event_loop().run_in_executor(None, parse_obj_as, Project, project)
-
-
 #
 # GET project -----------------------------------------------------
 #
@@ -127,7 +122,7 @@ async def get_project_for_user(
             user_id, project, project_type is ProjectType.TEMPLATE, app
         )
 
-    await validate_project(project)
+    Project.parse_obj(project)
     return project
 
 

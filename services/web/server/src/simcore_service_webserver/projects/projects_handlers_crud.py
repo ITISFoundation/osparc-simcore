@@ -9,7 +9,7 @@ from typing import Any
 
 from aiohttp import web
 from jsonschema import ValidationError as JsonSchemaValidationError
-from models_library.projects import ProjectID
+from models_library.projects import Project, ProjectID
 from models_library.projects_state import ProjectLocked
 from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Page
 from models_library.rest_pagination_utils import paginate_data
@@ -409,7 +409,7 @@ async def replace_project(request: web.Request):
     )
 
     try:
-        await projects_api.validate_project(new_project)
+        Project.parse_obj(new_project)
 
         current_project = await projects_api.get_project_for_user(
             request.app,

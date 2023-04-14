@@ -10,8 +10,8 @@ from typing import Any
 import jsonschema
 import pytest
 from jsonschema import ValidationError
+from models_library.projects import Project
 from simcore_service_webserver.projects.project_models import ProjectDict
-from simcore_service_webserver.projects.projects_api import validate_project
 from simcore_service_webserver.projects.projects_nodes_utils import (
     project_get_depending_nodes,
 )
@@ -141,10 +141,10 @@ def test_default_copy_project_name(original_name: str, expected_copy_suffix: str
     assert received_name == expected_copy_suffix
 
 
-async def test_validate_project_json_schema():
+def test_validate_project_json_schema():
     CURRENT_DIR = Path(__file__).resolve().parent
 
     with open(CURRENT_DIR / "data/project-data.json") as f:
         project: ProjectDict = json.load(f)
 
-    await validate_project(project=project)
+    Project.parse_obj(project)
