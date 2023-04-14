@@ -103,7 +103,7 @@ async def periodic_task(
     *,
     interval: datetime.timedelta,
     task_name: str,
-    stop_timeout: float | None = None,
+    stop_timeout: float = _DEFAULT_STOP_TIMEOUT_S,
     **kwargs,
 ) -> AsyncIterator[asyncio.Task]:
     asyncio_task: asyncio.Task | None = None
@@ -114,8 +114,4 @@ async def periodic_task(
         yield asyncio_task
     finally:
         if asyncio_task is not None:
-            await asyncio.shield(
-                stop_periodic_task(
-                    asyncio_task, timeout=stop_timeout or _DEFAULT_STOP_TIMEOUT_S
-                )
-            )
+            await asyncio.shield(stop_periodic_task(asyncio_task, timeout=stop_timeout))
