@@ -8,7 +8,7 @@ from .utils_migration import get_current_head
 
 async def get_pg_engine_stateinfo(engine: AsyncEngine) -> dict[str, Any]:
     return {
-        "current pool connections": f"{engine.pool.checkedin()=},{engine.pool.checkedout()=}",
+        "current pool connections": f"{engine.pool.checkedin()=},{engine.pool.checkedout()=}",  # type: ignore
     }
 
 

@@ -6,11 +6,9 @@
         - the new async sqlalchemy ORM https://docs.sqlalchemy.org/en/14/orm/
         - https://piccolo-orm.readthedocs.io/en/latest/index.html
 """
-# pylint: disable=no-value-for-parameter
-
 import functools
 import operator
-from typing import Generic, TypeVar
+from typing import Any, Generic, TypeVar
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -18,6 +16,8 @@ from aiopg.sa.result import ResultProxy, RowProxy
 from sqlalchemy import func
 from sqlalchemy.sql.base import ImmutableColumnCollection
 from sqlalchemy.sql.dml import Insert, Update, UpdateBase
+
+# pylint: disable=no-value-for-parameter
 from sqlalchemy.sql.elements import literal_column
 from sqlalchemy.sql.schema import Column
 from sqlalchemy.sql.selectable import Select
@@ -59,7 +59,7 @@ class BaseOrm(Generic[RowUId]):
         self._writeonce: set = writeonce or set()
 
         # row selection logic
-        self._where_clause = None
+        self._where_clause: Any = None
         try:
             self._primary_key: Column = next(c for c in table.columns if c.primary_key)
             # FIXME: how can I compare a concrete with a generic type??
@@ -126,7 +126,7 @@ class BaseOrm(Generic[RowUId]):
         if unique_id and rowid:
             raise ValueError("Either identifier or unique condition but not both")
 
-        if rowid:
+        if rowid is not None:
             self._where_clause = self._primary_key == rowid
         elif unique_id:
             self._where_clause = functools.reduce(
