@@ -6,7 +6,7 @@ import logging
 from copy import deepcopy
 from datetime import datetime
 from enum import Enum
-from typing import Any, Literal, Mapping, Optional, Union
+from typing import Any, Literal, Mapping
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -45,7 +45,7 @@ class ProjectAccessRights(Enum):
 
 
 def check_project_permissions(
-    project: Union[ProjectProxy, ProjectDict],
+    project: ProjectProxy | ProjectDict,
     user_id: int,
     user_groups: list[RowProxy],
     permission: str,
@@ -137,6 +137,11 @@ def convert_to_db_names(project_document_data: dict) -> dict:
     for key, value in project_document_data.items():
         if key not in exclude_keys:
             converted_args[camel_to_snake(key)] = value
+
+    # ensures UUIDs e.g. are converted to str
+    if uid := converted_args.get("uuid"):
+        converted_args["uuid"] = f"{uid}"
+
     return converted_args
 
 
@@ -200,7 +205,7 @@ class BaseProjectDB:
         return user_groups
 
     @staticmethod
-    async def _get_user_email(conn: SAConnection, user_id: Optional[int]) -> str:
+    async def _get_user_email(conn: SAConnection, user_id: int | None) -> str:
         if not user_id:
             return "not_a_user@unknown.com"
         email = await conn.scalar(
@@ -247,7 +252,7 @@ class BaseProjectDB:
         select_projects_query: str,
         user_id: int,
         user_groups: list[RowProxy],
-        filter_by_services: Optional[list[dict]] = None,
+        filter_by_services: list[dict] | None = None,
     ) -> tuple[list[dict[str, Any]], list[ProjectType]]:
         api_projects: list[dict] = []  # API model-compatible projects
         db_projects: list[dict] = []  # DB model-compatible projects
@@ -305,7 +310,7 @@ class BaseProjectDB:
         connection: SAConnection,
         user_id: UserID,
         project_uuid: str,
-        exclude_foreign: Optional[list[str]] = None,
+        exclude_foreign: list[str] | None = None,
         for_update: bool = False,
         only_templates: bool = False,
         only_published: bool = False,
