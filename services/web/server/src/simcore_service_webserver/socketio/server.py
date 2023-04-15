@@ -56,4 +56,4 @@ def setup_socketio_server(app: web.Application):
 
         assert sio_server == get_socket_server(app)  # nosec
 
-    return sio_server
+    return get_socket_server(app)
