@@ -121,7 +121,8 @@ class SimcoreNode(Model):
         if key is None:
             raise ValueError("Invalid value for `key`, must not be `None`")
         if key is not None and not re.search(
-            r"^(simcore)\/(services)\/(comp|dynamic|frontend)(\/[\w\/-]+)+$", key
+            r"^(simcore)\/(services)\/(comp|dynamic|frontend)(\/[\w\/-]{1,30}){1,3}$",
+            key,
         ):
             raise ValueError(
                 "Invalid value for `key`, must be a follow pattern or equal to `/^(simcore)\/(services)\/(comp|dynamic|frontend)(\/[\w\/-]+)+$/`"
