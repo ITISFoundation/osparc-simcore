@@ -240,11 +240,11 @@ async def create_project(
             app=app,
         )
 
-        # Ensures
-        new_project = ProjectGet.parse_obj(new_project).dict()
+        # Ensures is like ProjectGet
+        data = ProjectGet.parse_obj(new_project).dict(by_alias=True)
 
         raise web.HTTPCreated(
-            text=json_dumps({"data": new_project}),
+            text=json_dumps({"data": data}),
             content_type=MIMETYPE_APPLICATION_JSON,
         )
 

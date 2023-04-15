@@ -54,8 +54,7 @@ class ProjectCopyOverride(InputSchema):
 
 
 #
-# This is the schema the client will read
-# Parses some domain data and has to fit
+# used in GET project
 #
 class ProjectGet(OutputSchema):
     uuid: ProjectID
