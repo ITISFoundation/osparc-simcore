@@ -28,7 +28,7 @@ class EmptyModel(BaseModel):
 
 class ProjectCreateNew(InputSchema):
     name: str
-    description: str
+    description: str | None
     thumbnail: HttpUrlWithCustomMinLength | None
     workbench: NodesDict
     access_rights: dict[GroupIDStr, AccessRights]
@@ -36,7 +36,7 @@ class ProjectCreateNew(InputSchema):
     classifiers: list[ClassifierID] = Field(default_factory=list)
     ui: StudyUI | None = None
 
-    _empty_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
+    _empty_is_none = validator("thumbnail", "description", allow_reuse=True, pre=True)(
         empty_str_to_none
     )
 
@@ -44,7 +44,7 @@ class ProjectCreateNew(InputSchema):
 # NOTE: based on OVERRIDABLE_DOCUMENT_KEYS
 class ProjectCopyOverride(InputSchema):
     name: str
-    description: str
+    description: str | None
     thumbnail: HttpUrlWithCustomMinLength | None
     prj_owner: LowerCaseEmailStr
 
@@ -59,7 +59,7 @@ class ProjectCopyOverride(InputSchema):
 class ProjectGet(OutputSchema):
     uuid: ProjectID
     name: str
-    description: str
+    description: str | None
     thumbnail: HttpUrlWithCustomMinLength | None
     creation_date: DateTimeStr
     last_change_date: DateTimeStr
@@ -73,11 +73,10 @@ class ProjectGet(OutputSchema):
     quality: dict[str, Any]
     dev: dict | None
 
-    @validator("description", pre=True)
-    @classmethod
-    def none_is_empty_str(cls, v):
-        # NOTE: in db the description can be null
-        return v or ""
+    # NOTE: until hacky convert_to_schema_names is resolved
+    _empty_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
+        empty_str_to_none
+    )
 
 
 TaskProjectGet: TypeAlias = TaskGet
@@ -116,19 +115,15 @@ NOT_REQUIRED = Field(default=None)
 class ProjectUpdate(InputSchema):
     name: str = NOT_REQUIRED
     description: str = NOT_REQUIRED
-    name: str = Field(default=None)
-    description: str = Field(default=None)
-    thumbnail: HttpUrlWithCustomMinLength | None = None
-    workbench: NodesDict = Field(default=None)
-    access_rights: dict[GroupIDStr, AccessRights] = Field(default=None)
-    tags: list[int] | None = []
-    classifiers: list[ClassifierID] | None = Field(default_factory=list)
+    name: str = NOT_REQUIRED
+    description: str = NOT_REQUIRED
+    thumbnail: HttpUrlWithCustomMinLength = NOT_REQUIRED
+    workbench: NodesDict = NOT_REQUIRED
+    access_rights: dict[GroupIDStr, AccessRights] = NOT_REQUIRED
+    tags: list[int] = NOT_REQUIRED
+    classifiers: list[ClassifierID] = NOT_REQUIRED
     ui: StudyUI | None = None
-    quality: dict[str, Any] = Field(default_factory=dict)
-
-    _empty_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
-        empty_str_to_none
-    )
+    quality: dict[str, Any] = NOT_REQUIRED
 
 
 __all__: tuple[str, ...] = (

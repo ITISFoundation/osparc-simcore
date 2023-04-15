@@ -157,6 +157,7 @@ class ProjectDBAPI(BaseProjectDB):
             # All non-default in projects table
             insert_values.setdefault("name", "New Study")
             insert_values.setdefault("workbench", {})
+
             # must be valid uuid
             try:
                 uuidlib.UUID(str(insert_values.get("uuid")))
@@ -192,6 +193,7 @@ class ProjectDBAPI(BaseProjectDB):
                                     projects.c.name,
                                     projects.c.description,
                                     projects.c.thumbnail,
+                                    projects.c.prj_owner,
                                     projects.c.creation_date,
                                     projects.c.last_change_date,
                                     projects.c.workbench,

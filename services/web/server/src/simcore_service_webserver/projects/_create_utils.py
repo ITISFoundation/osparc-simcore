@@ -241,7 +241,7 @@ async def create_project(
         )
 
         # Ensures is like ProjectGet
-        data = ProjectGet.parse_obj(new_project).dict(by_alias=True)
+        data = ProjectGet.parse_obj(new_project).data()
 
         raise web.HTTPCreated(
             text=json_dumps({"data": data}),
