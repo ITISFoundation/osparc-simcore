@@ -8,6 +8,7 @@ from enum import Enum
 from typing import Any, TypeAlias
 from uuid import UUID
 
+from models_library.utils.common_validators import empty_str_to_none
 from pydantic import BaseModel, ConstrainedStr, Extra, Field, validator
 
 from .basic_regex import DATE_RE, UUID_RE_BASE
@@ -40,11 +41,6 @@ class DateTimeStr(ConstrainedStr):
 
 # NOTE: careful this is in sync with packages/postgres-database/src/simcore_postgres_database/models/projects.py!!!
 class ProjectType(str, Enum):
-    """
-    template: template project
-    standard: standard project
-    """
-
     TEMPLATE = "TEMPLATE"
     STANDARD = "STANDARD"
 
@@ -79,12 +75,9 @@ class BaseProjectModel(BaseModel):
     # Pipeline of nodes (SEE projects_nodes.py)
     workbench: NodesDict = Field(..., description="Project's pipeline")
 
-    @validator("thumbnail", always=True, pre=True)
-    @classmethod
-    def convert_empty_str_to_none(cls, v):
-        if isinstance(v, str) and v == "":
-            return None
-        return v
+    _empty_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
+        empty_str_to_none
+    )
 
 
 class ProjectAtDB(BaseProjectModel):
