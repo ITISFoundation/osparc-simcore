@@ -22,6 +22,7 @@ from ..storage_api import (
 )
 from ..users_api import get_user_name
 from . import projects_api
+from ._rest_schemas import ProjectGet
 from .project_models import ProjectDict
 from .projects_db import ProjectDBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
@@ -238,6 +239,9 @@ async def create_project(
             is_template=as_template,
             app=app,
         )
+
+        # Ensures
+        new_project = ProjectGet.parse_obj(new_project).dict()
 
         raise web.HTTPCreated(
             text=json_dumps({"data": new_project}),
