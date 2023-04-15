@@ -8,7 +8,7 @@ from enum import Enum
 from typing import Any, TypeAlias
 from uuid import UUID
 
-from models_library.utils.common_validators import empty_str_to_none
+from models_library.utils.common_validators import empty_str_to_none, none_to_empty_str
 from pydantic import BaseModel, ConstrainedStr, Extra, Field, validator
 
 from .basic_regex import DATE_RE, UUID_RE_BASE
@@ -75,8 +75,13 @@ class BaseProjectModel(BaseModel):
     # Pipeline of nodes (SEE projects_nodes.py)
     workbench: NodesDict = Field(..., description="Project's pipeline")
 
-    _empty_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
+    # validators
+    _empty_thumbnail_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
         empty_str_to_none
+    )
+
+    _none_description_is_empty = validator("description", allow_reuse=True, pre=True)(
+        none_to_empty_str
     )
 
 

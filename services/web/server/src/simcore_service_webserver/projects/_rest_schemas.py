@@ -13,7 +13,7 @@ from models_library.projects_access import AccessRights, GroupIDStr
 from models_library.projects_nodes import HttpUrlWithCustomMinLength
 from models_library.projects_state import ProjectState
 from models_library.projects_ui import StudyUI
-from models_library.utils.common_validators import empty_str_to_none
+from models_library.utils.common_validators import empty_str_to_none, none_to_empty_str
 from pydantic import BaseModel, Extra, Field, validator
 from servicelib.aiohttp.long_running_tasks.server import TaskGet
 
@@ -69,6 +69,10 @@ class ProjectGet(OutputSchema):
     ui: EmptyModel | StudyUI | None
     quality: dict[str, Any] = {}
     dev: dict | None
+
+    _empty_description = validator("description", allow_reuse=True, pre=True)(
+        none_to_empty_str
+    )
 
 
 TaskProjectGet: TypeAlias = TaskGet
