@@ -6,8 +6,6 @@
         - the new async sqlalchemy ORM https://docs.sqlalchemy.org/en/14/orm/
         - https://piccolo-orm.readthedocs.io/en/latest/index.html
 """
-# pylint: disable=no-value-for-parameter
-
 import functools
 import operator
 from typing import Any, Generic, TypeVar
@@ -18,6 +16,8 @@ from aiopg.sa.result import ResultProxy, RowProxy
 from sqlalchemy import func
 from sqlalchemy.sql.base import ImmutableColumnCollection
 from sqlalchemy.sql.dml import Insert, Update, UpdateBase
+
+# pylint: disable=no-value-for-parameter
 from sqlalchemy.sql.elements import literal_column
 from sqlalchemy.sql.schema import Column
 from sqlalchemy.sql.selectable import Select
