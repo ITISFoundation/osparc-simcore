@@ -5,12 +5,16 @@ import logging
 import asyncpg
 from aiohttp import web
 from pydantic import ValidationError
-from servicelib.aiohttp.application_keys import APP_OPENAPI_SPECS_KEY, APP_SETTINGS_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
 
-from .._constants import APP_PUBLIC_CONFIG_PER_PRODUCT, INDEX_RESOURCE_NAME
+from .._constants import (
+    APP_OPENAPI_SPECS_KEY,
+    APP_PUBLIC_CONFIG_PER_PRODUCT,
+    APP_SETTINGS_KEY,
+    INDEX_RESOURCE_NAME,
+)
 from ..db import setup_db
 from ..db_settings import get_plugin_settings as get_db_plugin_settings
 from ..email import setup_email

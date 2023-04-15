@@ -13,11 +13,10 @@ from models_library.services_resources import (
 )
 from pint import UnitRegistry
 from pydantic import ValidationError
-from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from . import catalog_client
-from ._constants import RQ_PRODUCT_KEY
+from ._constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
 from ._meta import api_version_prefix
 from .catalog_models import (
     ServiceInputGet,
