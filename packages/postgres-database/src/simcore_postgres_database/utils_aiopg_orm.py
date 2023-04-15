@@ -10,7 +10,7 @@
 
 import functools
 import operator
-from typing import Generic, Optional, TypeVar, Union
+from typing import Generic, TypeVar
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -25,7 +25,7 @@ from sqlalchemy.sql.selectable import Select
 RowUId = TypeVar("RowUId", int, str)  # typically id or uuid
 
 
-def _normalize(names: Union[str, list[str], None]) -> list[str]:
+def _normalize(names: str | list[str] | None) -> list[str]:
     if not names:
         return []
     if isinstance(names, str):
@@ -37,6 +37,8 @@ def _normalize(names: Union[str, list[str], None]) -> list[str]:
 ALL_COLUMNS = f"{__name__}.ALL_COLUMNS"
 PRIMARY_KEY = f"{__name__}.PRIMARY_KEY"
 
+QueryT = TypeVar("QueryT", bound=UpdateBase)
+
 
 class BaseOrm(Generic[RowUId]):
     def __init__(
@@ -44,8 +46,8 @@ class BaseOrm(Generic[RowUId]):
         table: sa.Table,
         connection: SAConnection,
         *,
-        readonly: Optional[set] = None,
-        writeonce: Optional[set] = None,
+        readonly: set | None = None,
+        writeonce: set | None = None,
     ):
         """
         :param readonly: read-only columns typically created in the server side, defaults to None
@@ -69,7 +71,7 @@ class BaseOrm(Generic[RowUId]):
 
     def _compose_select_query(
         self,
-        columns: Union[str, list[str]],
+        columns: str | list[str],
     ) -> Select:
         column_names: list[str] = _normalize(columns)
 
@@ -87,8 +89,8 @@ class BaseOrm(Generic[RowUId]):
         return query
 
     def _append_returning(
-        self, columns: Union[str, list[str]], query: UpdateBase
-    ) -> tuple[UpdateBase, bool]:
+        self, columns: str | list[str], query: QueryT
+    ) -> tuple[QueryT, bool]:
         column_names: list[str] = _normalize(columns)
 
         is_scalar: bool = len(column_names) == 1
@@ -117,7 +119,7 @@ class BaseOrm(Generic[RowUId]):
     def columns(self) -> ImmutableColumnCollection:
         return self._table.columns
 
-    def set_filter(self, rowid: Optional[RowUId] = None, **unique_id) -> "BaseOrm":
+    def set_filter(self, rowid: RowUId | None = None, **unique_id) -> "BaseOrm":
         """
         Sets default for read operations either by passing a row identifier or a filter
         """
@@ -149,10 +151,10 @@ class BaseOrm(Generic[RowUId]):
 
     async def fetch(
         self,
-        returning_cols: Union[str, list[str]] = ALL_COLUMNS,
+        returning_cols: str | list[str] = ALL_COLUMNS,
         *,
-        rowid: Optional[RowUId] = None,
-    ) -> Optional[RowProxy]:
+        rowid: RowUId | None = None,
+    ) -> RowProxy | None:
         query = self._compose_select_query(returning_cols)
         if rowid:
             # overrides pinned row
@@ -162,14 +164,13 @@ class BaseOrm(Generic[RowUId]):
             query = query.where(self._where_clause)
 
         result: ResultProxy = await self._conn.execute(query)
-        row: Optional[RowProxy] = await result.first()
+        row: RowProxy | None = await result.first()
         return row
 
     async def fetch_all(
         self,
-        returning_cols: Union[str, list[str]] = ALL_COLUMNS,
+        returning_cols: str | list[str] = ALL_COLUMNS,
     ) -> list[RowProxy]:
-
         query = self._compose_select_query(returning_cols)
         if self.is_filter_set():
             assert self._where_clause is not None  # nosec
@@ -181,10 +182,10 @@ class BaseOrm(Generic[RowUId]):
 
     async def fetch_page(
         self,
-        returning_cols: Union[str, list[str]] = ALL_COLUMNS,
+        returning_cols: str | list[str] = ALL_COLUMNS,
         *,
         offset: int,
-        limit: Optional[int] = None,
+        limit: int | None = None,
         sort_by=None,
     ) -> tuple[list[RowProxy], int]:
         """Support for paginated fetchall
@@ -231,8 +232,8 @@ class BaseOrm(Generic[RowUId]):
         return rows, total_count
 
     async def update(
-        self, returning_cols: Union[str, list[str]] = PRIMARY_KEY, **values
-    ) -> Union[RowUId, RowProxy, None]:
+        self, returning_cols: str | list[str] = PRIMARY_KEY, **values
+    ) -> RowUId | RowProxy | None:
         self._check_access_rights(self._readonly, values)
         self._check_access_rights(self._writeonce, values)
 
@@ -246,12 +247,12 @@ class BaseOrm(Generic[RowUId]):
             return await self._conn.scalar(query)
 
         result: ResultProxy = await self._conn.execute(query)
-        row: Optional[RowProxy] = await result.first()
+        row: RowProxy | None = await result.first()
         return row
 
     async def insert(
-        self, returning_cols: Union[str, list[str]] = PRIMARY_KEY, **values
-    ) -> Union[RowUId, RowProxy, None]:
+        self, returning_cols: str | list[str] = PRIMARY_KEY, **values
+    ) -> RowUId | RowProxy | None:
         self._check_access_rights(self._readonly, values)
 
         query: Insert = self._table.insert().values(**values)
@@ -261,5 +262,5 @@ class BaseOrm(Generic[RowUId]):
             return await self._conn.scalar(query)
 
         result: ResultProxy = await self._conn.execute(query)
-        row: Optional[RowProxy] = await result.first()
+        row: RowProxy | None = await result.first()
         return row
