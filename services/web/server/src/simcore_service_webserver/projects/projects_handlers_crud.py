@@ -290,7 +290,7 @@ async def get_active_project(request: web.Request) -> web.Response:
                 user_id=req_ctx.user_id,
                 include_state=True,
             )
-        data = ProjectGet.parse_obj(project).data()
+        data = ProjectGet.parse_obj(project).data(exclude_unset=True)
         return web.json_response({"data": data}, dumps=json_dumps)
 
     except ProjectNotFoundError as exc:
@@ -344,7 +344,7 @@ async def get_project(request: web.Request):
         if new_uuid := request.get(RQ_REQUESTED_REPO_PROJECT_UUID_KEY):
             project["uuid"] = new_uuid
 
-        data = ProjectGet.parse_obj(project).data()
+        data = ProjectGet.parse_obj(project).data(exclude_unset=True)
         return web.json_response({"data": data}, dumps=json_dumps)
 
     except ProjectInvalidRightsError as exc:
