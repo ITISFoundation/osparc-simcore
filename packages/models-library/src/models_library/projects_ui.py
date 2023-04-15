@@ -2,13 +2,14 @@
     Models Front-end UI
 """
 
-from typing import Any, Literal, TypedDict
+from typing import Literal, TypedDict
 
 from pydantic import BaseModel, Extra, Field, validator
 from pydantic.color import Color
 
 from .projects_nodes_io import NodeID, NodeIDStr
 from .projects_nodes_ui import Marker, Position
+from .utils.common_validators import empty_str_to_none
 
 
 class WorkbenchUI(BaseModel):
@@ -24,7 +25,7 @@ class _SlideshowRequired(TypedDict):
 
 
 class Slideshow(_SlideshowRequired, total=False):
-    instructions: str | None  # "Instructions about what to do in this step"
+    instructions: str | None  # Instructions about what to do in this step
 
 
 class Annotation(BaseModel):
@@ -59,9 +60,4 @@ class StudyUI(BaseModel):
     class Config:
         extra = Extra.allow
 
-    @validator("*", pre=True)
-    @classmethod
-    def empty_str_to_none(cls, value: Any):
-        if isinstance(value, str) and value.strip() == "":
-            return None
-        return value
+    _empty_is_none = validator("*", allow_reuse=True, pre=True)(empty_str_to_none)
