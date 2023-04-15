@@ -70,6 +70,7 @@ from .project_lock import (
     is_project_locked,
     lock_project,
 )
+from .project_models import ProjectDict
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .projects_exceptions import (
     NodeNotFoundError,
@@ -101,10 +102,11 @@ async def get_project_for_user(
     *,
     include_state: bool | None = False,
     check_permissions: str = "read",
-) -> dict:
+) -> ProjectDict:
     """Returns a VALID project accessible to user
 
     :raises ProjectNotFoundError: if no match found
+    :
     :return: schema-compliant project data
     :rtype: Dict
     """
@@ -122,7 +124,7 @@ async def get_project_for_user(
             user_id, project, project_type is ProjectType.TEMPLATE, app
         )
 
-    Project.parse_obj(project)
+    Project.parse_obj(project)  # NOTE: only validates
     return project
 
 
@@ -836,10 +838,10 @@ async def get_project_states_for_user(
 
 async def add_project_states_for_user(
     user_id: int,
-    project: dict[str, Any],
+    project: ProjectDict,
     is_template: bool,
     app: web.Application,
-) -> dict[str, Any]:
+) -> ProjectDict:
     log.debug(
         "adding project states for %s with project %s",
         f"{user_id=}",
