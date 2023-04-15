@@ -276,13 +276,14 @@ async def get_active_project(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(_ProjectActiveParams, request)
 
     try:
-        project = None
         user_active_projects = []
         with managed_resource(
             req_ctx.user_id, query_params.client_session_id, request.app
         ) as rt:
             # get user's projects
             user_active_projects = await rt.find(PROJECT_ID_KEY)
+
+        data = None
         if user_active_projects:
             project = await projects_api.get_project_for_user(
                 request.app,
@@ -290,7 +291,8 @@ async def get_active_project(request: web.Request) -> web.Response:
                 user_id=req_ctx.user_id,
                 include_state=True,
             )
-        data = ProjectGet.parse_obj(project).data(exclude_unset=True)
+            data = ProjectGet.parse_obj(project).data(exclude_unset=True)
+
         return web.json_response({"data": data}, dumps=json_dumps)
 
     except ProjectNotFoundError as exc:
