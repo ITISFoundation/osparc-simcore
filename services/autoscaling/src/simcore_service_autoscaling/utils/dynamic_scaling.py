@@ -15,7 +15,7 @@ from .rabbitmq import log_tasks_message, progress_tasks_message
 logger = logging.getLogger(__name__)
 
 
-_EC2_INTERNAL_DNS_RE: Final[re.Pattern] = re.compile(r"^(?P<ip>ip-[0-9-]+).+$")
+_EC2_INTERNAL_DNS_RE: Final[re.Pattern] = re.compile(r"^(?P<ip>ip-[0-9-]+).{1,20}$")
 
 
 def node_host_name_from_ec2_private_dns(

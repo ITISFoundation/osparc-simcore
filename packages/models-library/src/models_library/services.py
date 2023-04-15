@@ -37,17 +37,17 @@ from .utils.json_schema import (
 # CONSTANTS -------------------------------------------
 # NOTE: move to _constants.py: SEE https://github.com/ITISFoundation/osparc-simcore/issues/3486
 # NOTE: needs to end with / !!
-SERVICE_KEY_RE = r"^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$"
+SERVICE_KEY_RE = r"^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]{1,30}){1,3}$"
 
-DYNAMIC_SERVICE_KEY_RE = r"^(simcore)/(services)/dynamic(/[\w/-]+)+$"
+DYNAMIC_SERVICE_KEY_RE = r"^(simcore)/(services)/dynamic(/[\w/-]{1,30}){1,3}$"
 DYNAMIC_SERVICE_KEY_FORMAT = "simcore/services/dynamic/{service_name}"
 
-COMPUTATIONAL_SERVICE_KEY_RE = r"^(simcore)/(services)/comp(/[\w/-]+)+$"
+COMPUTATIONAL_SERVICE_KEY_RE = r"^(simcore)/(services)/comp(/[\w/-]{1,30}){1,3}$"
 COMPUTATIONAL_SERVICE_KEY_FORMAT = "simcore/services/comp/{service_name}"
 
 KEY_RE = SERVICE_KEY_RE  # TODO: deprecate this global constant by SERVICE_KEY_RE
 
-PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]+$"  # TODO: PC->* it would be advisable to have this "variable friendly" (see VARIABLE_NAME_RE)
+PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]{1,30}$"  # TODO: PC->* it would be advisable to have this "variable friendly" (see VARIABLE_NAME_RE)
 
 LATEST_INTEGRATION_VERSION = "1.0.0"
 
