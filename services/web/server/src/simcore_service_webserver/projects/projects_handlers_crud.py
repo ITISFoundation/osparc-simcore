@@ -45,6 +45,7 @@ from ._rest_schemas import (
     EmptyModel,
     ProjectCopyOverride,
     ProjectCreateNew,
+    ProjectGet,
     ProjectUpdate,
 )
 from .project_lock import get_project_locked_state
@@ -289,8 +290,8 @@ async def get_active_project(request: web.Request) -> web.Response:
                 user_id=req_ctx.user_id,
                 include_state=True,
             )
-
-        return web.json_response({"data": project}, dumps=json_dumps)
+        data = ProjectGet.parse_obj(project).data()
+        return web.json_response({"data": data}, dumps=json_dumps)
 
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason="Project not found") from exc
@@ -343,7 +344,8 @@ async def get_project(request: web.Request):
         if new_uuid := request.get(RQ_REQUESTED_REPO_PROJECT_UUID_KEY):
             project["uuid"] = new_uuid
 
-        return web.json_response({"data": project}, dumps=json_dumps)
+        data = ProjectGet.parse_obj(project).data()
+        return web.json_response({"data": data}, dumps=json_dumps)
 
     except ProjectInvalidRightsError as exc:
         raise web.HTTPForbidden(
