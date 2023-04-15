@@ -21,3 +21,9 @@ def empty_str_to_none(value: Any):
     if isinstance(value, str) and value.strip() == "":
         return None
     return value
+
+
+def none_to_empty_str(value: Any):
+    if value is None:
+        return ""
+    return value

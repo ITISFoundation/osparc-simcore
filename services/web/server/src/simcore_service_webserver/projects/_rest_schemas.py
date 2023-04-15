@@ -5,7 +5,7 @@ SEE rationale in https://fastapi.tiangolo.com/tutorial/extra-models/#multiple-mo
 
 """
 
-from typing import Any, TypeAlias
+from typing import Any, Literal, TypeAlias
 
 from models_library.emails import LowerCaseEmailStr
 from models_library.projects import ClassifierID, DateTimeStr, NodesDict, ProjectID
@@ -53,30 +53,22 @@ class ProjectCopyOverride(InputSchema):
     )
 
 
-#
-# used in GET project
-#
 class ProjectGet(OutputSchema):
     uuid: ProjectID
     name: str
-    description: str | None
-    thumbnail: HttpUrlWithCustomMinLength | None
+    description: str
+    thumbnail: HttpUrlWithCustomMinLength | Literal[""]
     creation_date: DateTimeStr
     last_change_date: DateTimeStr
     workbench: NodesDict
     prj_owner: LowerCaseEmailStr
     access_rights: dict[GroupIDStr, AccessRights]
     tags: list[int]
-    classifiers: list[ClassifierID]
+    classifiers: list[ClassifierID] = []
     state: ProjectState | None
-    ui: StudyUI | None
-    quality: dict[str, Any]
+    ui: EmptyModel | StudyUI | None
+    quality: dict[str, Any] = {}
     dev: dict | None
-
-    # NOTE: until hacky convert_to_schema_names is resolved
-    _empty_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
-        empty_str_to_none
-    )
 
 
 TaskProjectGet: TypeAlias = TaskGet

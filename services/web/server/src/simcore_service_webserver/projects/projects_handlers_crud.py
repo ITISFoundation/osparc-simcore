@@ -411,7 +411,7 @@ async def replace_project(request: web.Request):
     )
 
     try:
-        Project.parse_obj(new_project)
+        Project.parse_obj(new_project)  # validate
 
         current_project = await projects_api.get_project_for_user(
             request.app,
@@ -474,12 +474,14 @@ async def replace_project(request: web.Request):
             product_name=req_ctx.product_name,
         )
         # Appends state
-        new_project = await projects_api.add_project_states_for_user(
+        data = await projects_api.add_project_states_for_user(
             user_id=req_ctx.user_id,
             project=new_project,
             is_template=False,
             app=request.app,
         )
+
+        return web.json_response({"data": data}, dumps=json_dumps)
 
     except JsonSchemaValidationError as exc:
         raise web.HTTPBadRequest(
@@ -493,8 +495,6 @@ async def replace_project(request: web.Request):
 
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound from exc
-
-    return web.json_response({"data": new_project}, dumps=json_dumps)
 
 
 @routes.patch(f"/{VTAG}/projects/{{project_id}}", name="update_project")

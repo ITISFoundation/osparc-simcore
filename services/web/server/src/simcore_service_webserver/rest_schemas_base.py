@@ -25,7 +25,9 @@ class OutputSchema(BaseModel):
         alias_generator = snake_to_camel
 
     def data(self, **dict_kwargs) -> dict[str, Any]:
+        """Helper to get envelope's data as a dict"""
         return self.dict(by_alias=True, **dict_kwargs)
 
     def data_json(self, **json_kwargs) -> str:
+        """Helper to get envelope's data as a json"""
         return self.json(by_alias=True, **json_kwargs)

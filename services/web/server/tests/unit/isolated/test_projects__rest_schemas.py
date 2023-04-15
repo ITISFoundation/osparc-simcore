@@ -34,7 +34,6 @@ from simcore_service_webserver.projects._rest_schemas import (
     ids=lambda c: c.name,
 )
 def test_create_project_schemas(api_call: HttpApiCallCapture):
-
     request_payload = ProjectCreateNew.parse_obj(api_call.request_payload)
     assert request_payload
 
@@ -50,7 +49,6 @@ def test_create_project_schemas(api_call: HttpApiCallCapture):
     ids=lambda c: c.name,
 )
 def test_list_project_schemas(api_call: HttpApiCallCapture):
-
     assert api_call.request_payload is None
 
     response_body = parse_obj_as(Page[ProjectListItem], api_call.response_body)
@@ -63,7 +61,9 @@ def test_list_project_schemas(api_call: HttpApiCallCapture):
     ids=lambda c: c.name,
 )
 def test_get_project_schemas(api_call: HttpApiCallCapture):
-
+    # NOTE: that response_body here is the exported values
+    # and therefore ProjectGet has to be implemented in such a way that
+    # can also parse exported values! (e.g. Json does not allow that, or ocassionaly exclude_none)
     response_body = parse_obj_as(Envelope[ProjectGet], api_call.response_body)
     assert response_body
 
@@ -74,7 +74,6 @@ def test_get_project_schemas(api_call: HttpApiCallCapture):
     ids=lambda c: c.name,
 )
 def test_replace_project_schemas(api_call: HttpApiCallCapture):
-
     request_payload = parse_obj_as(ProjectReplace, api_call.request_payload)
     assert request_payload
 
