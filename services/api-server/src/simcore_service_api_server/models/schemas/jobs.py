@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Union
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConstrainedInt, Field, HttpUrl, validator
+from pydantic import BaseModel, ConstrainedInt, Field, HttpUrl, parse_obj_as, validator
 
 from ...models.config import BaseConfig
 from ...models.schemas.files import File
@@ -232,7 +232,7 @@ class JobStatus(BaseModel):
 
     job_id: UUID
     state: TaskStates
-    progress: PercentageInt = Field(default=PercentageInt(0))
+    progress: PercentageInt = Field(default=parse_obj_as(PercentageInt, 0))
 
     # Timestamps on states
     # TODO: sync state events and timestamps

@@ -7,8 +7,6 @@ from aiodebug import log_slow_callbacks
 from aiohttp.log import access_logger
 from servicelib.logging_utils import config_all_loggers
 
-from ._meta import APP_NAME
-
 LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
 NOISY_LOGGERS = (
     "engineio",
@@ -26,7 +24,7 @@ def setup_logging(*, level: str | int, slow_duration: float | None = None):
 
     # root
     logging.root.setLevel(level)
-    config_all_loggers(service_name=APP_NAME)
+    config_all_loggers()
 
     # Enforces same log-level to aiohttp & gunicorn access loggers
     #

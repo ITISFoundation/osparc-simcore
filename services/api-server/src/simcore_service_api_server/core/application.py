@@ -9,7 +9,7 @@ from servicelib.logging_utils import config_all_loggers
 from starlette import status
 from starlette.exceptions import HTTPException
 
-from .._meta import API_VERSION, API_VTAG, APP_NAME
+from .._meta import API_VERSION, API_VTAG
 from ..api.errors.http_error import (
     http_error_handler,
     make_http_error_handler_for_exception,
@@ -110,5 +110,5 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     # NOTE: cleanup all OpenAPIs https://github.com/ITISFoundation/osparc-simcore/issues/3487
     use_route_names_as_operation_ids(app)
-    config_all_loggers(service_name=APP_NAME)
+    config_all_loggers()
     return app

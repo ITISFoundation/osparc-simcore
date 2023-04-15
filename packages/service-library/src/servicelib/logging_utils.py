@@ -74,10 +74,10 @@ class CustomFormatter(logging.Formatter):
 DEFAULT_FORMATTING = "log_level=%(levelname)s | log_timestamp=%(asctime)s | log_source=%(name)s:%(funcName)s(%(lineno)d) | log_msg=%(message)s"
 
 # Graylog Grok pattern extractor:
-# log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{DATA:log_source} \| log_msg=%{GREEDYDATA:log_msg} \| log_service=%{WORD:log_level}
+# log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{DATA:log_source} \| log_msg=%{GREEDYDATA:log_msg}
 
 
-def config_all_loggers(service_name: str = ""):
+def config_all_loggers():
     """
     Applies common configuration to ALL registered loggers
     """
@@ -87,9 +87,8 @@ def config_all_loggers(service_name: str = ""):
         logging.getLogger(name) for name in the_manager.loggerDict
     ]
 
-    FINAL_FORMATTING = DEFAULT_FORMATTING + f" | log_service={service_name}"
     for logger in loggers:
-        set_logging_handler(logger, FINAL_FORMATTING)
+        set_logging_handler(logger, DEFAULT_FORMATTING)
 
 
 def set_logging_handler(

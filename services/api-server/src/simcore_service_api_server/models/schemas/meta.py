@@ -1,4 +1,4 @@
-from pydantic import AnyHttpUrl, BaseModel, Field
+from pydantic import AnyHttpUrl, BaseModel, Field, parse_obj_as
 
 from ..basic_types import VersionStr
 
@@ -9,9 +9,11 @@ class Meta(BaseModel):
     released: dict[str, VersionStr] | None = Field(
         None, description="Maps every route's path tag with a released version"
     )
-    docs_url: AnyHttpUrl = Field(default=AnyHttpUrl("https://docs.osparc.io"))
+    docs_url: AnyHttpUrl = Field(
+        default=parse_obj_as(AnyHttpUrl, "https://docs.osparc.io")
+    )
     docs_dev_url: AnyHttpUrl = Field(
-        default=AnyHttpUrl("https://api.osparc.io/dev/docs")
+        default=parse_obj_as(AnyHttpUrl, "https://api.osparc.io/dev/docs")
     )
 
     class Config:
