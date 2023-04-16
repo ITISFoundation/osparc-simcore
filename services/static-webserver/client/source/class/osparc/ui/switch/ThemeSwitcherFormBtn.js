@@ -15,8 +15,7 @@ qx.Class.define("osparc.ui.switch.ThemeSwitcherFormBtn", {
   construct: function() {
     this.base(arguments);
 
-    const validThemes = osparc.ui.switch.ThemeSwitcher.getValidThemes();
-    if (validThemes.length !== 2) {
+    if (!osparc.ui.switch.ThemeSwitcher.isSwitchUseful()) {
       this.setVisibility("excluded");
       return;
     }
