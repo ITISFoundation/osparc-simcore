@@ -36,6 +36,7 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
   },
 
   events: {
+    "showPricing": "qx.event.type.Event",
     "loginPressed": "qx.event.type.Event"
   },
 
@@ -67,11 +68,14 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
           this._addAt(control, 2);
           break;
         case "on-logo": {
-          control = new osparc.ui.basic.LogoWPlatform();
+          control = new osparc.ui.basic.LogoWPlatform().set({
+            cursor: "pointer"
+          });
           control.setSize({
             width: 100,
             height: 50
           });
+          control.addListener("execute", () => window.location.reload());
           control.setFont("text-9");
           this.getChildControl("left-items").add(control);
           break;
@@ -92,6 +96,11 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
           break;
         case "feedback":
           control = this.__createFeedbackMenuBtn();
+          control.set(osparc.navigation.NavigationBar.BUTTON_OPTIONS);
+          this.getChildControl("right-items").add(control);
+          break;
+        case "pricing":
+          control = this.__createPricingBtn();
           control.set(osparc.navigation.NavigationBar.BUTTON_OPTIONS);
           this.getChildControl("right-items").add(control);
           break;
@@ -127,6 +136,7 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
 
       this.getChildControl("manual");
       this.getChildControl("feedback");
+      this.getChildControl("pricing");
       this.getChildControl("theme-switch");
       this.getChildControl("login-button");
     },
@@ -154,6 +164,15 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
       });
       osparc.store.Support.addSupportButtonsToMenu(menu, menuButton);
       return menuButton;
+    },
+
+    __createPricingBtn: function() {
+      const pricingButton = new qx.ui.form.Button().set({
+        label: this.tr("Pricing"),
+        backgroundColor: "transparent"
+      });
+      pricingButton.addListener("execute", () => this.fireEvent("showPricing"));
+      return pricingButton;
     },
 
     __createLoginBtn: function() {
