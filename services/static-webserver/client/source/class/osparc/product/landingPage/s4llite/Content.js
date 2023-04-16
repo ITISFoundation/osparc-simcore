@@ -183,19 +183,21 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       });
       leftLayout.add(text2);
 
-      const tryItOutButton = this.self().createLinkButton("https://s4l-lite-master.speag.com/study/6d627670-d872-11ed-bf2e-02420a000d72");
+      const templateUrl = "https://s4l-lite-master.speag.com/study/6d627670-d872-11ed-bf2e-02420a000d72";
+      const tryItOutButton = this.self().createLinkButton(templateUrl);
       leftLayout.add(tryItOutButton);
 
       contentLayout.add(leftLayout, {
         width: "50%"
       });
 
-      const image = new qx.ui.basic.Image().set({
+      const image = new osparc.ui.basic.ImagePlayLink().set({
         source: "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/lite/extra/bunny.png",
         scale: true,
         alignX: "center",
         maxWidth: 400,
-        maxHeight: 300
+        maxHeight: 300,
+        link: templateUrl
       });
       contentLayout.add(image, {
         width: "50%"
