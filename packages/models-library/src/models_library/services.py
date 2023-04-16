@@ -43,10 +43,18 @@ SERVICE_KEY_RE: Final[re.Pattern[str]] = re.compile(
     r"(?P<name>[a-z0-9-_]+[a-z0-9])$"
 )
 
-DYNAMIC_SERVICE_KEY_RE = r"^(simcore)/(services)/dynamic(/[\w/-]+)+$"
+DYNAMIC_SERVICE_KEY_RE = re.compile(
+    r"^(simcore)/(services)/dynamic"
+    r"(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*"
+    r"(?P<name>[a-z0-9-_]+[a-z0-9])$"
+)
 DYNAMIC_SERVICE_KEY_FORMAT = "simcore/services/dynamic/{service_name}"
 
-COMPUTATIONAL_SERVICE_KEY_RE = r"^(simcore)/(services)/comp(/[\w/-]+)+$"
+COMPUTATIONAL_SERVICE_KEY_RE = re.compile(
+    r"^(simcore)/(services)/comp"
+    r"(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*"
+    r"(?P<name>[a-z0-9-_]+[a-z0-9])$"
+)
 COMPUTATIONAL_SERVICE_KEY_FORMAT = "simcore/services/comp/{service_name}"
 
 PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]+$"  # TODO: PC->* it would be advisable to have this "variable friendly" (see VARIABLE_NAME_RE)
@@ -64,6 +72,14 @@ class ServiceKey(ConstrainedStr):
 
     class Config:
         frozen = True
+
+
+class DynamicServiceKey(ServiceKey):
+    regex = DYNAMIC_SERVICE_KEY_RE
+
+
+class ComputationalServiceKey(ServiceKey):
+    regex = COMPUTATIONAL_SERVICE_KEY_RE
 
 
 class ServiceVersion(ConstrainedStr):
