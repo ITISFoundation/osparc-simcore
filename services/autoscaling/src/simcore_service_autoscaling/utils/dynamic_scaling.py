@@ -15,14 +15,14 @@ from .rabbitmq import log_tasks_message, progress_tasks_message
 logger = logging.getLogger(__name__)
 
 
-_EC2_INTERNAL_DNS_RE: Final[re.Pattern] = re.compile(r"^(?P<ip>ip-[0-9-]+).+$")
+_EC2_INTERNAL_DNS_RE: Final[re.Pattern] = re.compile(r"^(?P<host_name>ip-[^.]+).*$")
 
 
 def node_host_name_from_ec2_private_dns(
     ec2_instance_data: EC2InstanceData,
 ) -> str:
     if match := re.match(_EC2_INTERNAL_DNS_RE, ec2_instance_data.aws_private_dns):
-        return match.group(1)
+        return match.group("host_name")
     raise Ec2InvalidDnsNameError(aws_private_dns_name=ec2_instance_data.aws_private_dns)
 
 
