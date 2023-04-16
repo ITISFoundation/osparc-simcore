@@ -772,23 +772,26 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       subscribeLayout.add(subscribeLabel);
 
       const height = 48;
-      const textFieldLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      const textFieldLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+        alignX: "center",
+        alignY: "middle"
+      }));
       const image = new qx.ui.basic.Image().set({
         source: "@FontAwesome5Solid/envelope/20",
-        backgroundColor: "white",
+        backgroundColor: "contrasted-text-light",
+        textColor: "contrasted-text-dark",
         alignY: "middle",
         alignX: "center",
+        paddingTop: 14,
         width: 40,
         height
       });
-      image.getContentElement().setStyles({
-        "border-top-left": "4px",
-        "border-bottom-left": "4px"
-      });
       textFieldLayout.add(image);
       const email = new qx.ui.form.TextField().set({
-        placeholder: this.tr("Email*"),
-        backgroundColor: "white",
+        placeholder: this.tr("  Email*"),
+        backgroundColor: "contrasted-text-light",
+        textColor: "contrasted-text-dark",
+        font: "text-16",
         width: 300,
         height
       });
@@ -797,16 +800,14 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         appearance: "strong-button",
         icon: "@FontAwesome5Solid/arrow-right/20",
         font: "text-18",
-        alignY: "middle",
         alignX: "center",
+        alignY: "middle",
+        paddingLeft: 14,
         width: 50,
         height
       });
-      subscribeButton.getContentElement().setStyles({
-        "border-top-right": "4px",
-        "border-bottom-right": "4px"
-      });
       textFieldLayout.add(subscribeButton);
+      subscribeLayout.add(textFieldLayout);
 
       return subscribeLayout;
     }
