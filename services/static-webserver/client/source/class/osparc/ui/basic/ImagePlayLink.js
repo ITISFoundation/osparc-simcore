@@ -69,6 +69,9 @@ qx.Class.define("osparc.ui.basic.ImagePlayLink", {
         backgroundColor: "text",
         opacity: 0.5
       });
+      image.getContentElement().setStyles({
+        "border-radius": "8px"
+      });
       return image;
     },
 

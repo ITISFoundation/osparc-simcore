@@ -182,7 +182,9 @@ qx.Class.define("osparc.product.landingPage.Chat", {
       const introLabel = new qx.ui.basic.Label().set({
         value: this.tr("Hi there, this is the App Team. How can we help you?"),
         font: "text-18",
-        maxWidth: 200,
+        maxWidth: 240,
+        textAlign: "center",
+        alignX: "center",
         rich: true,
         wrap: true
       });
