@@ -176,7 +176,10 @@ class InlineResponse2003Data(Model):
         """
         if service_key is None:
             raise ValueError("Invalid value for `service_key`, must not be `None`")
-        if service_key is not None and not re.search(r'^(simcore)\/(services)\/(comp|dynamic)(\/[\w\/-]+)+$', service_key):
+        if service_key is not None and not re.search(r"^simcore/services/"
+                                                     r"(?P<type>(comp|dynamic|frontend))/"
+                                                     r"(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*"
+                                                     r"(?P<name>[a-z0-9-_]+[a-z0-9])$", service_key):
             raise ValueError("Invalid value for `service_key`, must be a follow pattern or equal to `/^(simcore)\/(services)\/(comp|dynamic)(\/[\w\/-]+)+$/`")
 
         self._service_key = service_key
@@ -287,7 +290,7 @@ class InlineResponse2003Data(Model):
     def service_state(self):
         """Gets the service_state of this InlineResponse2003Data.
 
-        the service state * 'pending' - The service is waiting for resources to start * 'pulling' - The service is being pulled from the registry * 'starting' - The service is starting * 'running' - The service is running * 'complete' - The service completed * 'failed' - The service failed to start 
+        the service state * 'pending' - The service is waiting for resources to start * 'pulling' - The service is being pulled from the registry * 'starting' - The service is starting * 'running' - The service is running * 'complete' - The service completed * 'failed' - The service failed to start
 
         :return: The service_state of this InlineResponse2003Data.
         :rtype: str
@@ -298,7 +301,7 @@ class InlineResponse2003Data(Model):
     def service_state(self, service_state):
         """Sets the service_state of this InlineResponse2003Data.
 
-        the service state * 'pending' - The service is waiting for resources to start * 'pulling' - The service is being pulled from the registry * 'starting' - The service is starting * 'running' - The service is running * 'complete' - The service completed * 'failed' - The service failed to start 
+        the service state * 'pending' - The service is waiting for resources to start * 'pulling' - The service is being pulled from the registry * 'starting' - The service is starting * 'running' - The service is running * 'complete' - The service completed * 'failed' - The service failed to start
 
         :param service_state: The service_state of this InlineResponse2003Data.
         :type service_state: str
