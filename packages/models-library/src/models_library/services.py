@@ -36,7 +36,6 @@ from .utils.json_schema import (
 
 # CONSTANTS -------------------------------------------
 # NOTE: move to _constants.py: SEE https://github.com/ITISFoundation/osparc-simcore/issues/3486
-# NOTE: needs to end with / !!
 SERVICE_KEY_RE: Final[re.Pattern[str]] = re.compile(
     r"^simcore/services/"
     r"(?P<type>(comp|dynamic|frontend))/"
