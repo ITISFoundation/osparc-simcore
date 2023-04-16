@@ -84,6 +84,7 @@ jobs:
               - 'packages/dask-task-models-library/**'
               - 'packages/pytest-simcore/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
             models-library:
               - 'packages/models-library/**'
               - 'packages/postgres-database/**'
