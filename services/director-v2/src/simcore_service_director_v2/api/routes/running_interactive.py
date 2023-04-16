@@ -41,7 +41,7 @@ async def start_interactive_service(
     service_key: str = Query(
         ...,
         description="distinctive name for the node based on the docker registry path",
-        regex=SERVICE_KEY_RE,
+        regex=SERVICE_KEY_RE.pattern,
         example=[
             "simcore/services/comp/itis/sleeper",
             "simcore/services/dynamic/3dviewer",
