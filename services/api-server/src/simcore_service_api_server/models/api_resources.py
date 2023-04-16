@@ -28,7 +28,7 @@ from pydantic.types import ConstrainedStr
 #
 
 
-_RELATIVE_RESOURCE_NAME_RE = r"^([^\s/]{1,30}/?){1,10}$"
+_RELATIVE_RESOURCE_NAME_RE = r"^([^\s/]+/?){1,10}$"
 
 
 class RelativeResourceName(ConstrainedStr):
