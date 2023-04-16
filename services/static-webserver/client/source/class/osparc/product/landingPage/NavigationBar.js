@@ -75,7 +75,7 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
             width: 100,
             height: 50
           });
-          control.addListener("execute", () => window.location.reload());
+          control.getChildControl("logo").addListener("tap", () => window.location.reload());
           control.setFont("text-9");
           this.getChildControl("left-items").add(control);
           break;
