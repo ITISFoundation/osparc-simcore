@@ -135,8 +135,9 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
       const menu = new qx.ui.menu.Menu().set({
         font: "text-14"
       });
-      const menuButton = new qx.ui.form.MenuButton(null, "@FontAwesome5Solid/book/22", menu).set({
-        toolTipText: this.tr("Manuals")
+      const menuButton = new osparc.ui.form.HoverMenuButton().set({
+        label: this.tr("Manuals"),
+        menu
       });
       osparc.store.Support.addQuickStartToMenu(menu);
       osparc.store.Support.addManualButtonsToMenu(menu, menuButton);
@@ -147,8 +148,9 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
       const menu = new qx.ui.menu.Menu().set({
         font: "text-14"
       });
-      const menuButton = new qx.ui.form.MenuButton(null, "@FontAwesome5Solid/comments/22", menu).set({
-        toolTipText: this.tr("Support")
+      const menuButton = new osparc.ui.form.HoverMenuButton().set({
+        label: this.tr("Support"),
+        menu
       });
       osparc.store.Support.addSupportButtonsToMenu(menu, menuButton);
       return menuButton;
