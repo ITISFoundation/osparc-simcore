@@ -12,7 +12,7 @@ aiosignal==1.3.1
     # via
     #   -c requirements/_aiohttp.txt
     #   aiohttp
-asgi-lifespan==2.0.0
+asgi-lifespan==2.1.0
     # via -r requirements/_test.in
 async-timeout==4.0.2
     # via
@@ -23,13 +23,12 @@ attrs==21.4.0
     #   -c requirements/_aiohttp.txt
     #   aiohttp
     #   jsonschema
-    #   pytest
     #   pytest-docker
 certifi==2022.12.7
     # via
     #   -c requirements/_fastapi.txt
     #   requests
-charset-normalizer==3.0.1
+charset-normalizer==3.1.0
     # via
     #   -c requirements/_aiohttp.txt
     #   aiohttp
@@ -40,11 +39,11 @@ coverage==7.2.3
     #   pytest-cov
 docker==6.0.1
     # via -r requirements/_test.in
-exceptiongroup==1.1.0
+exceptiongroup==1.1.1
     # via pytest
 execnet==1.9.0
     # via pytest-xdist
-faker==17.4.0
+faker==18.4.0
     # via -r requirements/_test.in
 flaky==3.7.0
     # via -r requirements/_test.in
@@ -76,7 +75,7 @@ openapi-schema-validator==0.2.3
     #   openapi-spec-validator
 openapi-spec-validator==0.4.0
     # via -r requirements/_test.in
-packaging==23.0
+packaging==23.1
     # via
     #   docker
     #   pytest
@@ -89,7 +88,7 @@ pyrsistent==0.19.3
     # via
     #   -c requirements/_aiohttp.txt
     #   jsonschema
-pytest==7.2.1
+pytest==7.3.1
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -103,7 +102,7 @@ pytest==7.2.1
     #   pytest-xdist
 pytest-aiohttp==1.0.4
     # via -r requirements/_test.in
-pytest-asyncio==0.20.3
+pytest-asyncio==0.21.0
     # via pytest-aiohttp
 pytest-benchmark==4.0.0
     # via -r requirements/_test.in
@@ -111,15 +110,15 @@ pytest-cov==4.0.0
     # via -r requirements/_test.in
 pytest-docker==1.0.1
     # via -r requirements/_test.in
-pytest-instafail==0.4.2
+pytest-instafail==0.5.0
     # via -r requirements/_test.in
 pytest-mock==3.10.0
     # via -r requirements/_test.in
 pytest-runner==6.0.0
     # via -r requirements/_test.in
-pytest-sugar==0.9.6
+pytest-sugar==0.9.7
     # via -r requirements/_test.in
-pytest-xdist==3.2.0
+pytest-xdist==3.2.1
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via
@@ -148,7 +147,7 @@ tomli==2.0.1
     # via
     #   coverage
     #   pytest
-urllib3==1.26.14
+urllib3==1.26.15
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   docker

@@ -24,7 +24,7 @@ attrs==21.4.0
     #   aiohttp
     #   jsonschema
     #   openapi-core
-charset-normalizer==3.0.1
+charset-normalizer==3.1.0
     # via aiohttp
 frozenlist==1.3.3
     # via
