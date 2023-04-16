@@ -102,16 +102,25 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       return stepLayout;
     },
 
-    createLinkButton: function(link) {
+    lpStrongButton: function(label) {
       const linkButton = new qx.ui.form.Button().set({
         appearance: "strong-button",
-        label: qx.locale.Manager.tr("Try it out"),
+        label,
         font: "text-18",
         center: true,
         padding: 12,
         allowGrowX: false,
-        width: 160
+        width: 170
       });
+      linkButton.getContentElement().setStyles({
+        "border-radius": "8px"
+      });
+      return linkButton;
+    },
+
+    createLinkButton: function(link) {
+      const label = qx.locale.Manager.tr("Try it out");
+      const linkButton = this.lpStrongButton(label);
       linkButton.getContentElement().setStyles({
         "border-radius": "8px"
       });
@@ -724,18 +733,8 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
             textAlign: "center"
           });
           createAccountLayout.add(createAccountLabel);
-          const requestAccountButton = new qx.ui.form.Button().set({
-            appearance: "strong-button",
-            label: this.tr("Request account"),
-            font: "text-18",
-            center: true,
-            padding: 20,
-            allowGrowX: false,
-            width: 180
-          });
-          requestAccountButton.getContentElement().setStyles({
-            "border-radius": "8px"
-          });
+          const label = this.tr("Request account");
+          const requestAccountButton = this.self().lpStrongButton(label);
           createAccountLayout.add(requestAccountButton);
           const vendor = values[0];
           const displayName = values[1];
