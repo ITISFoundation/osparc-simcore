@@ -102,10 +102,10 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       return stepLayout;
     },
 
-    createLinkButton: function() {
+    createLinkButton: function(link) {
       const linkButton = new qx.ui.form.Button().set({
         appearance: "strong-button",
-        label: this.tr("Try it out"),
+        label: qx.locale.Manager.tr("Try it out"),
         font: "text-18",
         center: true,
         padding: 15,
@@ -115,7 +115,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       linkButton.getContentElement().setStyles({
         "border-radius": "8px"
       });
-      linkButton.addListener("tap", () => window.open("https://s4l-lite-master.speag.com/study/6d627670-d872-11ed-bf2e-02420a000d72", "_blank"));
+      linkButton.addListener("tap", () => window.open(link, "_blank"));
       return linkButton;
     }
   },
