@@ -24,6 +24,9 @@ qx.Class.define("osparc.ui.basic.ImagePlayLink", {
     this.set({
       cursor: "pointer"
     });
+    this.getContentElement().setStyles({
+      "border-radius": "8px"
+    });
 
     if (link) {
       this.setLink(link);
