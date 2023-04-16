@@ -100,6 +100,23 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       });
       stepLayout.add(labelText);
       return stepLayout;
+    },
+
+    createLinkButton: function() {
+      const linkButton = new qx.ui.form.Button().set({
+        appearance: "strong-button",
+        label: this.tr("Try it out"),
+        font: "text-18",
+        center: true,
+        padding: 15,
+        allowGrowX: false,
+        width: 170
+      });
+      linkButton.getContentElement().setStyles({
+        "border-radius": "8px"
+      });
+      linkButton.addListener("tap", () => window.open("https://s4l-lite-master.speag.com/study/6d627670-d872-11ed-bf2e-02420a000d72", "_blank"));
+      return linkButton;
     }
   },
 
@@ -163,19 +180,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       });
       leftLayout.add(text2);
 
-      const tryItOutButton = new qx.ui.form.Button().set({
-        appearance: "strong-button",
-        label: this.tr("Try it out"),
-        font: "text-18",
-        center: true,
-        padding: 20,
-        allowGrowX: false,
-        width: 180
-      });
-      tryItOutButton.getContentElement().setStyles({
-        "border-radius": "8px"
-      });
-      tryItOutButton.addListener("tap", () => window.open("https://s4l-lite-master.speag.com/study/6d627670-d872-11ed-bf2e-02420a000d72", "_blank"));
+      const tryItOutButton = this.self().createLinkButton("https://s4l-lite-master.speag.com/study/6d627670-d872-11ed-bf2e-02420a000d72");
       leftLayout.add(tryItOutButton);
 
       contentLayout.add(leftLayout, {
@@ -665,18 +670,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
           row: 1,
           column: 0
         });
-        const tryItOutButton = new qx.ui.form.Button().set({
-          appearance: "strong-button",
-          label: this.tr("Try it out"),
-          font: "text-18",
-          center: true,
-          padding: 10,
-          allowGrowX: false,
-          width: 150
-        });
-        tryItOutButton.getContentElement().setStyles({
-          "border-radius": "8px"
-        });
+        const tryItOutButton = this.self().createLinkButton(link);
         tryItOutButton.addListener("tap", () => window.open(link, "_blank"));
         templateCard.add(tryItOutButton, {
           row: 2,
