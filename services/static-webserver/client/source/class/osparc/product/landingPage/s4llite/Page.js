@@ -47,14 +47,17 @@ qx.Class.define("osparc.product.landingPage.s4llite.Page", {
     });
 
     const chat = osparc.product.landingPage.Chat.getInstance();
-    const root = qx.core.Init.getApplication().getRoot();
-    root.add(chat, {
-      bottom: 20,
-      right: 20
-    });
+    chat.start();
   },
 
   events: {
     "loginPressed": "qx.event.type.Event"
+  },
+
+  members: {
+    close: function() {
+      const chat = osparc.product.landingPage.Chat.getInstance();
+      chat.stop();
+    }
   }
 });

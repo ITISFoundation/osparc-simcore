@@ -99,8 +99,18 @@ qx.Class.define("osparc.product.landingPage.Chat", {
       return control || this.base(arguments, id);
     },
 
+    start: function() {
+      const root = qx.core.Init.getApplication().getRoot();
+      root.add(this, {
+        bottom: 20,
+        right: 20
+      });
+    },
+
     stop: function() {
       this.__closeChat();
+      const root = qx.core.Init.getApplication().getRoot();
+      root.remove(this);
     },
 
     __createChat: function() {

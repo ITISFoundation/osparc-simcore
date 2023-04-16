@@ -247,6 +247,9 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         user: "https://github.com/elisabettai",
         avatar: "https://avatars.githubusercontent.com/u/18575092"
       }, {
+        user: "https://github.com/eofli",
+        avatar: "https://avatars.githubusercontent.com/u/40888440"
+      }, {
         user: "https://github.com/GitHK",
         avatar: "https://avatars.githubusercontent.com/u/5694077"
       }, {
