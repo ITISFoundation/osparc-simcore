@@ -108,9 +108,9 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         label: qx.locale.Manager.tr("Try it out"),
         font: "text-18",
         center: true,
-        padding: 15,
+        padding: 12,
         allowGrowX: false,
-        width: 170
+        width: 160
       });
       linkButton.getContentElement().setStyles({
         "border-radius": "8px"
