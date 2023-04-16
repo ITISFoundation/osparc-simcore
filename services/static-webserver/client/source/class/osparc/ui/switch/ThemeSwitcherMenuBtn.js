@@ -23,9 +23,7 @@ qx.Class.define("osparc.ui.switch.ThemeSwitcherMenuBtn", {
       return;
     }
 
-    this.addListener("execute", () => {
-      osparc.ui.switch.ThemeSwitcher.switchTheme();
-    });
+    this.addListener("execute", () => osparc.ui.switch.ThemeSwitcher.switchTheme());
 
     osparc.ui.switch.ThemeSwitcher.bindIconToTheme(this, 18);
   }

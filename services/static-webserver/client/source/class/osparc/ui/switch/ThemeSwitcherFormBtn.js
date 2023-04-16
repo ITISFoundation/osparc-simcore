@@ -21,9 +21,11 @@ qx.Class.define("osparc.ui.switch.ThemeSwitcherFormBtn", {
       return;
     }
 
-    this.addListener("execute", () => {
-      osparc.ui.switch.ThemeSwitcher.switchTheme();
+    this.set({
+      backgroundColor: "transparent"
     });
+
+    this.addListener("execute", () => osparc.ui.switch.ThemeSwitcher.switchTheme());
 
     osparc.ui.switch.ThemeSwitcher.bindIconToTheme(this, 22);
   }
