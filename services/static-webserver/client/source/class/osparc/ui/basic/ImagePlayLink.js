@@ -44,7 +44,7 @@ qx.Class.define("osparc.ui.basic.ImagePlayLink", {
     __hoverCanvas: null,
     __hoverPlay: null,
 
-    __createHoverCanvas: function() {
+    __createHoverImage: function() {
       const element = this.getContentElement().getDomElement();
       const {
         width,
@@ -52,8 +52,6 @@ qx.Class.define("osparc.ui.basic.ImagePlayLink", {
       } = qx.bom.element.Dimension.getSize(element);
 
       const image = new qx.ui.basic.Image().set({
-        backgroundColor: "text",
-        opacity: 0.5,
         height,
         width,
         cursor: "pointer"
@@ -63,26 +61,29 @@ qx.Class.define("osparc.ui.basic.ImagePlayLink", {
       return image;
     },
 
+    __createHoverCanvas: function() {
+      const image = this.__createHoverImage().set({
+        backgroundColor: "text",
+        opacity: 0.5
+      });
+      return image;
+    },
+
     __createHoverPlay: function() {
       const element = this.getContentElement().getDomElement();
       const {
-        width,
         height
       } = qx.bom.element.Dimension.getSize(element);
 
       const playSize = 96;
-      const image = new qx.ui.basic.Image().set({
+      const image = this.__createHoverImage().set({
         source: "@FontAwesome5Solid/play/" + playSize,
         textColor: "strong-main",
-        height,
-        width,
         alignX: "center",
         alignY: "middle",
         cursor: "pointer",
         paddingTop: parseInt(height/2 - playSize/2)
       });
-      image.addListener("pointerout", this.__hidePlayLink, this);
-      image.addListener("tap", this.__openPlayLink, this);
       return image;
     },
 
