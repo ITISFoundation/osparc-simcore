@@ -232,7 +232,7 @@ class JobStatus(BaseModel):
 
     job_id: UUID
     state: TaskStates
-    progress: PercentageInt = Field(default=0)
+    progress: PercentageInt = Field(default=0)  # type: ignore
 
     # Timestamps on states
     # TODO: sync state events and timestamps
