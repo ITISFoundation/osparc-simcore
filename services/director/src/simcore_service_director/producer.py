@@ -663,7 +663,7 @@ async def _get_dependant_repos(
 
 _TAG_REGEX = re.compile(r"^\d{1,3}\.\d{1,3}\.\d{1,3}$")
 _SERVICE_KEY_REGEX = re.compile(
-    r"^(simcore/services/(comp|dynamic|frontend)(/[\w/-]+){1,3}):(\d+\.\d+\.\d+).*$"
+    r"^(simcore/services/(comp|dynamic|frontend)(/[\w/-]+){1,4}):(\d+\.\d+\.\d+).*$"
 )
 
 
