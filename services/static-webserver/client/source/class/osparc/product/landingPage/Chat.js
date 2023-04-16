@@ -31,15 +31,41 @@ qx.Class.define("osparc.product.landingPage.Chat", {
     this.getChildControl("chat-button");
   },
 
+  statics: {
+    PHRASES: [
+      "All our dreams can come true, if we have the courage to pursue them.",
+      "The secret of getting ahead is getting started.",
+      "I've missed more than 9,000 shots in my career. I've lost almost 300 games. 26 times I've been trusted to take the game winning shot and missed. I've failed over and over and over again in my life, and that is why I succeed.",
+      "Don't limit yourself. Many people limit themselves to what they think they can do. You can go as far as your mind lets you. What you believe, remember, you can achieve.",
+      "The best time to plant a tree was 20 years ago. The second best time is now.",
+      "Only the paranoid survive.",
+      "It's hard to beat a person who never gives up.",
+      "I wake up every morning and think to myself, 'How far can I push this company in the next 24 hours'.",
+      "If people are doubting how far you can go, go so far that you can't hear them anymore.",
+      "We need to accept that we won't always make the right decisions, that we'll screw up royally sometimes―understanding that failure is not the opposite of success, it's part of success.",
+      "Write it. Shoot it. Publish it. Crochet it. Sauté it. Whatever. MAKE.",
+      "The same boiling water that softens the potato hardens the egg. It's what you're made of. Not the circumstances.",
+      "If we have the attitude that it's going to be a great day it usually is.",
+      "You can either experience the pain of discipline or the pain of regret. The choice is yours.",
+      "Impossible is just an opinion.",
+      "Your passion is waiting for your courage to catch up.",
+      "Magic is believing in yourself. If you can make that happen, you can make anything happen.",
+      "If something is important enough, even if the odds are stacked against you, you should still do it.",
+      "Hold the vision, trust the process.",
+      "Don't be afraid to give up the good to go for the great.",
+      "People who wonder if the glass is half empty or full miss the point. The glass is refillable."
+    ]
+  },
+
   members: {
     __chatBuble: null,
 
     _createChildControlImpl: function(id) {
-      const iconSize = 72;
+      const iconSize = 64;
       let control;
       switch (id) {
         case "chat-button": {
-          const imgSize = 30;
+          const imgSize = 28;
           const imgClosed = "@FontAwesome5Solid/envelope/"+imgSize;
           const imgOpened = "@FontAwesome5Solid/chevron-down/"+imgSize;
           control = new qx.ui.basic.Image(imgClosed).set({
@@ -52,7 +78,7 @@ qx.Class.define("osparc.product.landingPage.Chat", {
             cursor: "pointer"
           });
           control.addListener("tap", () => {
-            if (control.getSource().includes("message")) {
+            if (control.getSource() === imgClosed) {
               control.setSource(imgOpened);
               this.__openChat();
             } else {
@@ -77,20 +103,77 @@ qx.Class.define("osparc.product.landingPage.Chat", {
       this.__closeChat();
     },
 
-    __closeChat: function() {
-      this.__removeChat();
-    },
-
-    __removeChat: function() {
-      if (this.__chatBuble) {
-        qx.core.Init.getApplication().getRoot().remove(this.__chatBuble);
-        this.__chatBuble.exclude();
-      }
-    },
-
     __createChat: function() {
+      const chatLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(0, null, "separator-vertical")).set({
+        padding: 5,
+        paddingBottom: 0,
+        backgroundColor: "contrasted-text-light"
+      });
+      chatLayout.getContentElement().setStyles({
+        "border-radius": "8px"
+      });
+
+      const chatMessages = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+        backgroundColor: "contrasted-text-light",
+        minHeight: 200,
+        maxHeight: 500
+      });
+      const scrollMessages = new qx.ui.container.Scroll();
+      scrollMessages.add(chatMessages);
+      chatLayout.add(scrollMessages, {
+        flex: 1
+      });
+
+      const addMessage = (msg, who) => {
+        const message = new qx.ui.basic.Label().set({
+          font: "text-14",
+          rich: true,
+          backgroundColor: "contrasted-text-light",
+          textColor: "contrasted-text-dark"
+        });
+        if (who === "user") {
+          message.set({
+            value: "<b>You</b>: " + msg,
+            textAlign: "left"
+          });
+        } else {
+          message.set({
+            value: "<b>App team</b>: " + msg,
+            alignX: "right",
+            textAlign: "right"
+          });
+        }
+        chatMessages.add(message);
+      };
+
+      const typeMessage = new qx.ui.form.TextField().set({
+        placeholder: this.tr(" Write your message..."),
+        backgroundColor: "contrasted-text-light",
+        textColor: "contrasted-text-dark",
+        font: "text-14",
+        height: 30
+      });
+      const phrases = this.self().PHRASES;
+      typeMessage.addListener("keypress", e => {
+        if (e.getKeyIdentifier() === "Enter") {
+          addMessage(typeMessage.getValue(), "user");
+          typeMessage.setValue("");
+          setTimeout(() => {
+            const idx = Math.floor(Math.random() * phrases.length);
+            addMessage(phrases[idx], "app-team");
+          }, 1000);
+        }
+      }, this);
+      chatLayout.add(typeMessage);
+
+      return chatLayout;
+    },
+
+    __createChatLayout: function() {
       const chatLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
-        maxWidth: 400
+        backgroundColor: "strong-main",
+        padding: 15,
+        width: 400
       });
       chatLayout.getContentElement().setStyles({
         "border-radius": "8px"
@@ -98,7 +181,8 @@ qx.Class.define("osparc.product.landingPage.Chat", {
 
       const introLabel = new qx.ui.basic.Label().set({
         value: this.tr("Hi there, this is the App Team. How can we help you?"),
-        font: "text-24",
+        font: "text-18",
+        maxWidth: 200,
         rich: true,
         wrap: true
       });
@@ -133,132 +217,29 @@ qx.Class.define("osparc.product.landingPage.Chat", {
       });
       chatLayout.add(appTeamLayout);
 
-      const root = qx.core.Init.getApplication().getRoot();
-      root.add(chatLayout, {
-        bottom: 20,
-        right: 72
-      });
+      const chat = this.__createChat();
+      chatLayout.add(chat);
+
+      return chatLayout;
     },
 
     __openChat: function() {
-      this.getChildControl("chat-layout").show();
-    },
+      if (this.__chatBuble === null) {
+        this.__chatBuble = this.__createChatLayout();
 
-    __toSequences: function() {
-      const sequences = this.getSequences();
-      const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem("panddyDontShow");
-      if (sequences.length === 0 || (sequences === this.self().INTRO_SEQUENCE && dontShow === "true")) {
-        this.stop();
-        return;
-      }
-
-      if (sequences.length === 1) {
-        this.__selectSequence(sequences[0]);
-      } else {
-        this.__showSequences();
-      }
-    },
-
-    __showSequences: function() {
-      const panddy = this.getChildControl("chat-button");
-      panddy.show();
-      setTimeout(() => {
-        const sequences = this.getSequences();
-        const seqsWidget = new osparc.panddy.Sequences(panddy, sequences);
-        seqsWidget.setOrientation(osparc.ui.basic.FloatingHelper.ORIENTATION.LEFT);
-        seqsWidget.addListener("sequenceSelected", e => {
-          seqsWidget.exclude();
-          this.__selectSequence(e.getData());
-        });
-        seqsWidget.show();
-      }, 200);
-    },
-
-    __selectSequence: function(sequence) {
-      if ("steps" in sequence) {
-        this.setSteps(sequence.steps);
-        this.__toStepCheck(0);
-      }
-    },
-
-    __toStepCheck: function(idx = 0) {
-      const steps = this.getSteps();
-      if (idx >= steps.length) {
-        idx = 0;
-      }
-
-      this.__removeChat();
-      this.__currentIdx = idx;
-      const step = steps[idx];
-      if (step.preStep) {
-        const preStep = step.preStep;
-        if (preStep.target) {
-          const el = document.querySelector(`[${preStep.target}]`);
-          const widget = qx.ui.core.Widget.getWidgetByElement(el);
-          if (widget && preStep.action) {
-            widget[preStep.action]();
-          }
-          setTimeout(() => this.__toStep(steps, idx), 200);
-        }
-      } else {
-        this.__toStep(steps, idx);
-      }
-    },
-
-    __createStep: function(element, text) {
-      const stepWidget = new osparc.panddy.Step(element, text).set({
-        maxWidth: 400
-      });
-      [
-        "skipPressed",
-        "endPressed"
-      ].forEach(evName => stepWidget.addListener(evName, () => this.stop(), this));
-      stepWidget.addListener("nextPressed", () => this.__toStepCheck(this.__currentIdx+1), this);
-      return stepWidget;
-    },
-
-    __toStep: async function(steps, idx) {
-      const step = steps[idx];
-      const stepWidget = this.__currentBuble = this.__createStep();
-      let targetWidget = null;
-      if (step.target) {
-        const el = document.querySelector(`[${step.target}]`);
-        targetWidget = qx.ui.core.Widget.getWidgetByElement(el);
-      }
-      if (targetWidget) {
-        if (step.action) {
-          targetWidget[step.action]();
-        }
-        stepWidget.setElement(targetWidget);
-        if (step.orientation) {
-          stepWidget.setOrientation(osparc.ui.basic.FloatingHelper.textToOrientation(step.orientation));
-        }
-      } else {
-        const panddy = this.getChildControl("chat-button");
-        stepWidget.setElement(panddy);
-        stepWidget.setOrientation(osparc.ui.basic.FloatingHelper.ORIENTATION.LEFT);
-      }
-      if (step.title) {
-        stepWidget.setTitle(step.title);
-      }
-      if (step.message) {
-        stepWidget.setText(step.message);
-      }
-      if (steps.length > 1) {
-        stepWidget.set({
-          stepIndex: idx+1,
-          nSteps: steps.length
+        const root = qx.core.Init.getApplication().getRoot();
+        root.add(this.__chatBuble, {
+          bottom: 64+20+20,
+          right: 20
         });
       }
+      this.__chatBuble.show();
+    },
 
-      if (this.getSequences() === this.self().INTRO_SEQUENCE) {
-        const dontShowCB = osparc.product.tutorial.Utils.createDontShowAgain("panddyDontShow");
-        stepWidget.add(dontShowCB);
+    __closeChat: function() {
+      if (this.__chatBuble) {
+        this.__chatBuble.exclude();
       }
-
-      stepWidget.show();
-      // eslint-disable-next-line no-underscore-dangle
-      setTimeout(() => stepWidget.__updatePosition(), 10); // Hacky: Execute async and give some time for the relevant properties to be set
     }
   }
 });
