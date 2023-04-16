@@ -68,8 +68,8 @@ DOCKER_LABEL_KEY_REGEX: Final[re.Pattern] = re.compile(
     # NOTE: https://docs.docker.com/config/labels-custom-metadata/#key-format-recommendations
     r"^(?!(\.|\-|com.docker\.|io.docker\.|org.dockerproject\.|\d))(?!.*(--|\.\.))[a-z0-9\.-]+(?<![\d\.\-])$"
 )
-DOCKER_IMAGE_KEY_RE = r"[\w/-]+"
-DOCKER_IMAGE_VERSION_RE = r"[\w/.]+"
+DOCKER_IMAGE_KEY_RE = r"[\w/-]{1,50}"
+DOCKER_IMAGE_VERSION_RE = r"[\w/.]{1,20}"
 DOCKER_GENERIC_TAG_KEY_RE: Final[re.Pattern] = re.compile(
     r"^(?P<registry_host>(?:(?:(?:[a-zA-Z0-9-]+\.)+[a-zA-Z0-9-]+(?::\d+)?)|[a-zA-Z0-9-]+:\d+))?(?:/)?(?P<docker_image>(?:[a-z0-9][a-z0-9_.-]*/)*[a-z0-9-_]+[a-z0-9])(?::(?P<docker_tag>[\w][\w.-]{0,126}[\w]))?(?P<docker_digest>\@sha256:[a-fA-F0-9]{64})?$"
 )
