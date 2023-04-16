@@ -35,6 +35,22 @@ qx.Class.define("osparc.ui.form.HoverMenuButton", {
     },
 
     // overriden
+    _onPointerOut: function() {
+      this.base(arguments);
+
+      /*
+      if (this.getMenu() && this.getMenu().isVisible()) {
+        const menu = this.getMenu();
+        this.getMenu().addListener("pointerout", e => {
+          if (!qx.ui.core.Widget.contains(menu, e.getRelatedTarget())) {
+            this.getMenu().exclude();
+          }
+        });
+      }
+      */
+    },
+
+    // overriden
     _applyMenu: function(menu) {
       this.base(arguments, menu);
 
