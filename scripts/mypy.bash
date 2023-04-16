@@ -26,7 +26,6 @@ echo_requirements() {
   echo "Installed :"
   docker run \
     --interactive \
-    --tty \
     --rm \
     --user="$(id --user "$USER")":"$(id --group "$USER")" \
     --entrypoint="pip" \
