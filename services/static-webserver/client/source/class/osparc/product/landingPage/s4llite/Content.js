@@ -148,6 +148,9 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
 
       const contentCreateAccount = this.__createContentCreateAccount();
       this._add(contentCreateAccount);
+
+      const contentSubscribe = this.__createContentSubscribe();
+      this._add(contentSubscribe);
     },
 
     __createContentTryItOut: function() {
@@ -750,6 +753,60 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
           }
         });
       return createAccountLayout;
+    },
+
+    __createContentSubscribe: function() {
+      const subscribeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(15).set({
+        alignX: "center",
+        alignY: "middle"
+      }));
+
+      const subscribeLabel = new qx.ui.basic.Label(this.tr("Subscribe")).set({
+        font: "text-18",
+        rich: true,
+        wrap: true,
+        textAlign: "center"
+      });
+      subscribeLayout.add(subscribeLabel);
+
+      const height = 48;
+      const textFieldLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      const image = new qx.ui.basic.Image().set({
+        source: "@FontAwesome5Solid/envelope/20",
+        backgroundColor: "white",
+        alignY: "middle",
+        alignX: "center",
+        width: 40,
+        height
+      });
+      image.getContentElement().setStyles({
+        "border-top-left": "4px",
+        "border-bottom-left": "4px"
+      });
+      textFieldLayout.add(image);
+      const email = new qx.ui.form.TextField().set({
+        placeholder: this.tr("Email*"),
+        backgroundColor: "white",
+        width: 300,
+        height
+      });
+      textFieldLayout.add(email);
+      const subscribeButton = new qx.ui.form.Button().set({
+        appearance: "strong-button",
+        icon: "@FontAwesome5Solid/arrow-right/20",
+        font: "text-18",
+        alignY: "middle",
+        alignX: "center",
+        width: 50,
+        height
+      });
+      subscribeButton.getContentElement().setStyles({
+        "border-top-right": "4px",
+        "border-bottom-right": "4px"
+      });
+      textFieldLayout.add(subscribeButton);
+
+      return subscribeLayout;
     }
   }
 });
