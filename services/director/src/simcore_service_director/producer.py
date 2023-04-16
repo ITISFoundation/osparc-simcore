@@ -663,7 +663,7 @@ async def _get_dependant_repos(
 
 _TAG_REGEX = re.compile(r"^\d{1,3}\.\d{1,3}\.\d{1,3}$")
 _SERVICE_KEY_REGEX = re.compile(
-    r"^(simcore/services/(comp|dynamic|frontend)(/[\w/-]{1,30}){1,3}):(\d+\.\d+\.\d+).{0,20}$"
+    r"^(simcore/services/(comp|dynamic|frontend)(/[\w/-]+){1,3}):(\d+\.\d+\.\d+).*$"
 )
 
 
@@ -873,7 +873,7 @@ async def start_service(
     service_tag: str,
     node_uuid: str,
     node_base_path: str,
-    request_simcore_user_agent: str
+    request_simcore_user_agent: str,
 ) -> Dict:
     # pylint: disable=C0103
     log.debug(
@@ -1131,7 +1131,7 @@ async def stop_service(app: web.Application, node_uuid: str, save_state: bool) -
                     "Could not save state because %s is unreachable [%s]."
                     "Resuming stop_service.",
                     service_host_name,
-                    err
+                    err,
                 )
 
         # remove the services
