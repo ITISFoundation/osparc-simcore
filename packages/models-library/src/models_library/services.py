@@ -44,14 +44,14 @@ SERVICE_KEY_RE: Final[re.Pattern[str]] = re.compile(
 )
 
 DYNAMIC_SERVICE_KEY_RE = re.compile(
-    r"^(simcore)/(services)/dynamic"
+    r"^simcore/services/dynamic"
     r"(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*"
     r"(?P<name>[a-z0-9-_]+[a-z0-9])$"
 )
 DYNAMIC_SERVICE_KEY_FORMAT = "simcore/services/dynamic/{service_name}"
 
 COMPUTATIONAL_SERVICE_KEY_RE = re.compile(
-    r"^(simcore)/(services)/comp"
+    r"^simcore/services/comp"
     r"(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*"
     r"(?P<name>[a-z0-9-_]+[a-z0-9])$"
 )
