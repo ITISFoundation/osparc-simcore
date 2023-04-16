@@ -45,6 +45,13 @@ qx.Class.define("osparc.product.landingPage.s4llite.Page", {
     this._add(scrollContainer, {
       flex: 1
     });
+
+    const chat = osparc.product.landingPage.Chat.getInstance();
+    const root = qx.core.Init.getApplication().getRoot();
+    root.add(chat, {
+      bottom: 20,
+      right: 20
+    });
   },
 
   events: {
