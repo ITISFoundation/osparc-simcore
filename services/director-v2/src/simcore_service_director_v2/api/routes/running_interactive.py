@@ -1,6 +1,6 @@
 # pylint: disable=unused-argument
 from fastapi import APIRouter, Depends, Query, Response, status
-from models_library.services import KEY_RE, VERSION_RE
+from models_library.services import SERVICE_KEY_RE, VERSION_RE
 
 from ...models.schemas.services import RunningServicesDetailsArrayEnveloped
 from ..dependencies.director_v0 import forward_to_director_v0
@@ -41,7 +41,7 @@ async def start_interactive_service(
     service_key: str = Query(
         ...,
         description="distinctive name for the node based on the docker registry path",
-        regex=KEY_RE,
+        regex=SERVICE_KEY_RE,
         example=[
             "simcore/services/comp/itis/sleeper",
             "simcore/services/dynamic/3dviewer",

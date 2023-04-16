@@ -1,8 +1,7 @@
 # pylint: disable=unused-argument
-from typing import Optional
 
 from fastapi import APIRouter, Depends, Path, Query, Response
-from models_library.services import KEY_RE, VERSION_RE, ServiceType
+from models_library.services import SERVICE_KEY_RE, VERSION_RE, ServiceType
 
 from ...models.schemas.services import ServiceExtrasEnveloped, ServicesArrayEnveloped
 from ..dependencies.director_v0 import forward_to_director_v0
@@ -16,7 +15,8 @@ router = APIRouter()
     response_model=ServicesArrayEnveloped,
 )
 async def list_services(
-    service_type: Optional[ServiceType] = Query(
+    service_type: ServiceType
+    | None = Query(
         None,
         description=(
             "The service type:\n"
@@ -32,7 +32,7 @@ async def list_services(
 ServiceKeyPath = Path(
     ...,
     description="Distinctive name for the node based on the docker registry path",
-    regex=KEY_RE,
+    regex=SERVICE_KEY_RE,
 )
 ServiceKeyVersionPath = Path(
     ..., description="The tag/version of the service", regex=VERSION_RE

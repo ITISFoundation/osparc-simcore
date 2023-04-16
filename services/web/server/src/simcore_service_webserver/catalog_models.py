@@ -1,8 +1,8 @@
-from typing import Any, Optional
+from typing import Any
 
 import orjson
 from models_library.services import (
-    KEY_RE,
+    SERVICE_KEY_RE,
     VERSION_RE,
     ServiceInput,
     ServiceOutput,
@@ -10,12 +10,16 @@ from models_library.services import (
 )
 from models_library.utils.change_case import snake_to_camel
 from pint import UnitRegistry
-from pydantic import Extra, Field, constr
+from pydantic import ConstrainedStr, Extra, Field, constr
 from pydantic.main import BaseModel
 
 from .catalog_units import UnitHtmlFormat, get_html_formatted_unit
 
-ServiceKey = constr(regex=KEY_RE)
+
+class ServiceKey(ConstrainedStr):
+    regex = SERVICE_KEY_RE
+
+
 ServiceVersion = constr(regex=VERSION_RE)
 ServiceInputKey = ServicePortKey
 ServiceOutputKey = ServicePortKey
@@ -39,11 +43,11 @@ def json_dumps(v, *, default=None) -> str:
 #
 # TODO: reduce to a minimum returned input/output models (ask OM)
 class _BaseCommonApiExtension(BaseModel):
-    unit_long: Optional[str] = Field(
+    unit_long: str | None = Field(
         None,
         description="Long name of the unit for display (html-compatible), if available",
     )
-    unit_short: Optional[str] = Field(
+    unit_short: str | None = Field(
         None,
         description="Short name for the unit for display (html-compatible), if available",
     )
@@ -97,7 +101,7 @@ class ServiceInputGet(ServiceInput, _BaseCommonApiExtension):
         cls,
         service: dict[str, Any],
         input_key: ServiceInputKey,
-        ureg: Optional[UnitRegistry] = None,
+        ureg: UnitRegistry | None = None,
     ):
         data = service["inputs"][input_key]
         port = cls(keyId=input_key, **data)  # validated!
@@ -138,7 +142,7 @@ class ServiceOutputGet(ServiceOutput, _BaseCommonApiExtension):
         cls,
         service: dict[str, Any],
         output_key: ServiceOutputKey,
-        ureg: Optional[UnitRegistry] = None,
+        ureg: UnitRegistry | None = None,
     ):
         data = service["outputs"][output_key]
         # NOTE: prunes invalid field that might have remained in database
@@ -168,7 +172,7 @@ class ServiceOutputGet(ServiceOutput, _BaseCommonApiExtension):
 def replace_service_input_outputs(
     service: dict[str, Any],
     *,
-    unit_registry: Optional[UnitRegistry] = None,
+    unit_registry: UnitRegistry | None = None,
     **export_options,
 ):
     """Thin wrapper to replace i/o ports in returned service model"""
