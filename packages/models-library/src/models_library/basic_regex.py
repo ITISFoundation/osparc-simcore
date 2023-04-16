@@ -72,5 +72,5 @@ DOCKER_IMAGE_KEY_RE = r"[\w/-]+"
 DOCKER_IMAGE_VERSION_RE = r"[\w/.]+"
 DOCKER_GENERIC_TAG_KEY_RE: Final[re.Pattern] = re.compile(
     # NOTE: https://docs.docker.com/engine/reference/commandline/tag/#description
-    r"^(?P<registry_host>(?:(?:(?:[a-z0-9-]+\.)+[a-z0-9-]+(?::\d+)?)|[a-z0-9-]+:\d+))?(?:/)?(?P<docker_image>(?:[a-z0-9][a-z0-9_.-]*/)*[a-z0-9-_]+[a-z0-9])(?::(?P<docker_tag>[\w][\w.-]{0,127}))?(?P<docker_digest>\@sha256:[a-fA-F0-9]{32,64})?$"
+    r"^(?:(?P<registry_host>(?:(?:[a-z0-9-]+(?:\.[a-z0-9-]+)+)(?::\d+)?)|[a-z0-9-]+:\d+)/)?(?P<docker_image>(?:[a-z0-9][a-z0-9_.-]*/)*[a-z0-9-_]+[a-z0-9])(?::(?P<docker_tag>[\w][\w.-]{0,127}))?(?P<docker_digest>\@sha256:[a-fA-F0-9]{32,64})?$"
 )
