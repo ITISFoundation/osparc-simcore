@@ -37,7 +37,7 @@ from .utils.json_schema import (
 # CONSTANTS -------------------------------------------
 # NOTE: move to _constants.py: SEE https://github.com/ITISFoundation/osparc-simcore/issues/3486
 # NOTE: needs to end with / !!
-SERVICE_KEY_RE: Final[re.Pattern] = re.compile(
+SERVICE_KEY_RE: Final[re.Pattern[str]] = re.compile(
     r"^simcore/services/"
     r"(?P<type>(comp|dynamic|frontend))/"
     r"(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*"
