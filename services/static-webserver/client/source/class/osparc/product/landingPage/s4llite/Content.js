@@ -95,6 +95,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         font: "text-16",
         textAlign: "center",
         width: 225,
+        height: 80,
         rich: true,
         wrap: true
       });
@@ -803,7 +804,8 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         alignY: "middle",
         paddingLeft: 14,
         width: 50,
-        height
+        margin: -1,
+        height: height + 2
       });
       textFieldLayout.add(subscribeButton);
       subscribeLayout.add(textFieldLayout);
