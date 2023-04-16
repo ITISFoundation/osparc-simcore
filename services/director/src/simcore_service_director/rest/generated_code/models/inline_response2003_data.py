@@ -14,7 +14,20 @@ class InlineResponse2003Data(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, published_port: int=None, entry_point: str=None, service_uuid: str=None, service_key: str=None, service_version: str=None, service_host: str=None, service_port: int=None, service_basepath: str='', service_state: str=None, service_message: str=None, user_id: str=None):
+    def __init__(
+        self,
+        published_port: int = None,
+        entry_point: str = None,
+        service_uuid: str = None,
+        service_key: str = None,
+        service_version: str = None,
+        service_host: str = None,
+        service_port: int = None,
+        service_basepath: str = "",
+        service_state: str = None,
+        service_message: str = None,
+        user_id: str = None,
+    ):
         """InlineResponse2003Data - a model defined in OpenAPI
 
         :param published_port: The published_port of this InlineResponse2003Data.
@@ -30,31 +43,31 @@ class InlineResponse2003Data(Model):
         :param user_id: The user_id of this InlineResponse2003Data.
         """
         self.openapi_types = {
-            'published_port': int,
-            'entry_point': str,
-            'service_uuid': str,
-            'service_key': str,
-            'service_version': str,
-            'service_host': str,
-            'service_port': int,
-            'service_basepath': str,
-            'service_state': str,
-            'service_message': str,
-            'user_id': str
+            "published_port": int,
+            "entry_point": str,
+            "service_uuid": str,
+            "service_key": str,
+            "service_version": str,
+            "service_host": str,
+            "service_port": int,
+            "service_basepath": str,
+            "service_state": str,
+            "service_message": str,
+            "user_id": str,
         }
 
         self.attribute_map = {
-            'published_port': 'published_port',
-            'entry_point': 'entry_point',
-            'service_uuid': 'service_uuid',
-            'service_key': 'service_key',
-            'service_version': 'service_version',
-            'service_host': 'service_host',
-            'service_port': 'service_port',
-            'service_basepath': 'service_basepath',
-            'service_state': 'service_state',
-            'service_message': 'service_message',
-            'user_id': 'user_id'
+            "published_port": "published_port",
+            "entry_point": "entry_point",
+            "service_uuid": "service_uuid",
+            "service_key": "service_key",
+            "service_version": "service_version",
+            "service_host": "service_host",
+            "service_port": "service_port",
+            "service_basepath": "service_basepath",
+            "service_state": "service_state",
+            "service_message": "service_message",
+            "user_id": "user_id",
         }
 
         self._published_port = published_port
@@ -70,7 +83,7 @@ class InlineResponse2003Data(Model):
         self._user_id = user_id
 
     @classmethod
-    def from_dict(cls, dikt: dict) -> 'InlineResponse2003Data':
+    def from_dict(cls, dikt: dict) -> "InlineResponse2003Data":
         """Returns the dict as a model
 
         :param dikt: A dict.
@@ -101,7 +114,9 @@ class InlineResponse2003Data(Model):
         if published_port is None:
             raise ValueError("Invalid value for `published_port`, must not be `None`")
         if published_port is not None and published_port < 1:
-            raise ValueError("Invalid value for `published_port`, must be a value greater than or equal to `1`")
+            raise ValueError(
+                "Invalid value for `published_port`, must be a value greater than or equal to `1`"
+            )
 
         self._published_port = published_port
 
@@ -175,8 +190,12 @@ class InlineResponse2003Data(Model):
         """
         if service_key is None:
             raise ValueError("Invalid value for `service_key`, must not be `None`")
-        if service_key is not None and not re.search(r'^(simcore)\/(services)\/(comp|dynamic)(\/[\w\/-]{1,30}){1,3}$', service_key):
-            raise ValueError("Invalid value for `service_key`, must be a follow pattern or equal to `/^(simcore)\/(services)\/(comp|dynamic)(\/[\w\/-])+$/`")
+        if service_key is not None and not re.search(
+            r"^(simcore)\/(services)\/(comp|dynamic)(\/[\w\/-]+){1,4}$", service_key
+        ):
+            raise ValueError(
+                "Invalid value for `service_key`, must be a follow pattern or equal to `/^(simcore)\/(services)\/(comp|dynamic)(\/[\w\/-])+$/`"
+            )
 
         self._service_key = service_key
 
@@ -202,8 +221,13 @@ class InlineResponse2003Data(Model):
         """
         if service_version is None:
             raise ValueError("Invalid value for `service_version`, must not be `None`")
-        if service_version is not None and not re.search(r'^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$', service_version):
-            raise ValueError("Invalid value for `service_version`, must be a follow pattern or equal to `/^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$/`")
+        if service_version is not None and not re.search(
+            r"^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$",
+            service_version,
+        ):
+            raise ValueError(
+                "Invalid value for `service_version`, must be a follow pattern or equal to `/^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$/`"
+            )
 
         self._service_version = service_version
 
@@ -255,7 +279,9 @@ class InlineResponse2003Data(Model):
         if service_port is None:
             raise ValueError("Invalid value for `service_port`, must not be `None`")
         if service_port is not None and service_port < 1:
-            raise ValueError("Invalid value for `service_port`, must be a value greater than or equal to `1`")
+            raise ValueError(
+                "Invalid value for `service_port`, must be a value greater than or equal to `1`"
+            )
 
         self._service_port = service_port
 
@@ -302,11 +328,19 @@ class InlineResponse2003Data(Model):
         :param service_state: The service_state of this InlineResponse2003Data.
         :type service_state: str
         """
-        allowed_values = ["pending", "pulling", "starting", "running", "complete", "failed"]
+        allowed_values = [
+            "pending",
+            "pulling",
+            "starting",
+            "running",
+            "complete",
+            "failed",
+        ]
         if service_state not in allowed_values:
             raise ValueError(
-                "Invalid value for `service_state` ({0}), must be one of {1}"
-                .format(service_state, allowed_values)
+                "Invalid value for `service_state` ({0}), must be one of {1}".format(
+                    service_state, allowed_values
+                )
             )
 
         self._service_state = service_state
