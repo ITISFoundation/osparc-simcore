@@ -29,8 +29,7 @@ URL_PATTERN = re.compile(rf"^\/{VTAG}\/projects\/({UUID_RE})[\/]{{0,1}}")
 
 
 def _match_project_id(request: web.Request):
-    # TODO: need to enforce unique path params since
-    # OAS uses both 'project_id' and also 'project_uuid'
+    # OAS uses both 'project_id' and also 'project_uuid' :-(
     for path_param in ("project_id", "project_uuid"):
         if project_id := request.match_info.get(path_param):
             return project_id, path_param
@@ -54,7 +53,7 @@ async def projects_redirection_middleware(request: web.Request, handler: Handler
 
     if URL_PATTERN.match(f"{request.rel_url}"):
         #
-        # TODO: because hierarchical design is not guaranteed, we find ourselves with
+        # WARNING: because hierarchical design is not guaranteed, we find ourselves with
         # entries like /v0/computations/{project_id}:start which might also neeed
         # indirection
         #
@@ -65,8 +64,6 @@ async def projects_redirection_middleware(request: web.Request, handler: Handler
 
             if repo_id := await vc_repo.get_repo_id(ProjectID(project_id)):
                 # Changes resolved project_id parameter with working copy instead
-                # TODO: optimize db calls
-                #
                 workcopy_project_id = await vc_repo.get_workcopy_project_id(repo_id)
                 request.match_info[path_param] = f"{workcopy_project_id}"
 

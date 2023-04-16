@@ -95,7 +95,7 @@ def _build_project_iterations(project_nodes: NodesDict) -> list[_ParametersNodes
             _iter_node.outputs = _iter_node.outputs or {}
             _iter_node.outputs.update(node_results)
 
-            # TODO: Replacing iter_node by a param_node, it avoid re-running matching iterations
+            # NOTE: Replacing iter_node by a param_node, it avoid re-running matching iterations
             #       Currently it does not work because front-end needs to change
             # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735
             #
@@ -172,7 +172,6 @@ class ProjectIteration(BaseModel):
 # NOTE: compose_/parse_ functions are basically serialization functions for ProjectIteration
 #       into/from string tags. An alternative approach would be simply using json.dump/load
 #       but we should guarantee backwards compatibilty with old tags
-# TODO: change this by json-serialization
 def compose_iteration_tag_name(
     repo_commit_id: CommitID,
     iteration_index: IterationID,
@@ -264,7 +263,6 @@ async def get_or_create_runnable_projects(
     total_count = len(iterations)
     original_name = project["name"]
 
-    # FIXME: in an optimization, iteration_index should start with LAST iterated index
     for iteration_index, (parameters, updated_nodes) in enumerate(iterations, start=1):
         log.debug(
             "Creating snapshot of project %s with parameters=%s [%s]",
@@ -316,7 +314,6 @@ async def get_runnable_projects_ids(
     request: web.Request,
     project_uuid: ProjectID,
 ) -> list[ProjectID]:
-
     vc_repo = VersionControlForMetaModeling(request)
     assert vc_repo.user_id  # nosec
 

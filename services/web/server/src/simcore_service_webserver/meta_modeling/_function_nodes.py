@@ -27,11 +27,6 @@ def create_param_node_from_iterator_with_outputs(iterator_node: Node) -> Node:
     Converts an iterator_node with outputs (i.e. evaluated) to a parameter-node
     that represents a constant value.
     """
-    #
-    # TODO: this MUST be implemented with a more sophisticated mechanism
-    # that can replace any node with equivalent param-node with outputs
-    #
-
     assert is_iterator_service(iterator_node.key)  # nosec
     assert iterator_node.version == "1.0.0"  # nosec
 
@@ -41,7 +36,7 @@ def create_param_node_from_iterator_with_outputs(iterator_node: Node) -> Node:
         label=iterator_node.label,
         inputs={},
         inputNodes=[],
-        thumbnail="",  # TODO: hack due to issue in projects json-schema
+        thumbnail="",  # NOTE: hack due to issue in projects json-schema
         outputs=deepcopy(iterator_node.outputs),
     )
 

@@ -21,13 +21,17 @@ log = logging.getLogger(__name__)
     ModuleCategory.ADDON,
     depends=[
         "simcore_service_webserver.projects",
-        ## FIXME: tmp disabled so it can start "simcore_service_webserver.version_control",
     ],
     settings_name="WEBSERVER_META_MODELING",
     logger=log,
 )
 def setup_meta_modeling(app: web.Application):
     assert app[APP_SETTINGS_KEY].WEBSERVER_META_MODELING  # nosec
+
+    log.warning(
+        "'meta_modeling' plugin is STILL UNDER DEVELOPMENT and should not be used in production."
+        "Can only be activated with WEBSERVER_DEV_FEATURES_ENABLED=1"
+    )
 
     app.add_routes(_rest_handlers.routes)
     app.middlewares.append(projects_redirection_middleware)

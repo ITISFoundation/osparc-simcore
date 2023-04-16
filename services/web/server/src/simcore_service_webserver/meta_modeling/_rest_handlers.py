@@ -50,7 +50,6 @@ def parse_query_parameters(request: web.Request) -> _QueryParametersModel:
     try:
         return _QueryParametersModel(**request.match_info)
     except ValidationError as err:
-        # TODO: compose reason message better
         raise web.HTTPUnprocessableEntity(reason=f"Invalid query parameters: {err}")
 
 
@@ -86,9 +85,6 @@ async def _get_project_iterations_range(
     total_number_of_iterations = 0
 
     # Searches all subsequent commits (i.e. children) and retrieve their tags
-
-    # TODO: do all these operations in database.
-    # TODO: implement real pagination https://github.com/ITISFoundation/osparc-simcore/issues/2735
     tags_per_child: list[list[TagProxy]] = await vc_repo.get_children_tags(
         repo_id, commit_id
     )
@@ -162,7 +158,6 @@ async def create_or_get_project_iterations(
     project_uuid: ProjectID,
     commit_id: CommitID,
 ) -> list[IterationItem]:
-
     raise NotImplementedError()
 
 
@@ -175,11 +170,7 @@ class ParentMetaProjectRef(BaseModel):
 
 
 class _BaseModelGet(BaseModel):
-    name: str = Field(
-        ...,
-        description="Iteration's resource API name",
-        # TODO: PC x_mark_resouce_name=True,  # [AIP-122](https://google.aip.dev/122)
-    )
+    name: str = Field(..., description="Iteration's resource API name")
     parent: ParentMetaProjectRef = Field(
         ..., description="Reference to the the meta-project that created this iteration"
     )
@@ -188,10 +179,7 @@ class _BaseModelGet(BaseModel):
 
 
 class ProjectIterationItem(_BaseModelGet):
-    iteration_index: IterationID = Field(
-        ...,
-        # TODO: PC x_mark_resource_id_segment=True,  # [AIP-122](https://google.aip.dev/122)
-    )
+    iteration_index: IterationID = Field(...)
 
     workcopy_project_id: ProjectID = Field(
         ...,
@@ -278,7 +266,6 @@ routes = web.RouteTableDef()
 @login_required
 @permission_required("project.snapshot.read")
 async def _list_meta_project_iterations_handler(request: web.Request) -> web.Response:
-    # TODO: check access to non owned projects user_id = request[RQT_USERID_KEY]
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735
 
     # parse and validate request ----
@@ -332,7 +319,7 @@ async def _list_meta_project_iterations_handler(request: web.Request) -> web.Res
     )
 
 
-# TODO: Enable when create_or_get_project_iterations is implemented
+# NOTE: Enable when create_or_get_project_iterations is implemented
 # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735
 #
 # @routes.post(
@@ -341,9 +328,6 @@ async def _list_meta_project_iterations_handler(request: web.Request) -> web.Res
 # )
 @permission_required("project.snapshot.create")
 async def _create_meta_project_iterations_handler(request: web.Request) -> web.Response:
-    # TODO: check access to non owned projects user_id = request[RQT_USERID_KEY]
-    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735
-
     q = parse_query_parameters(request)
     meta_project_uuid = q.project_uuid
     meta_project_commit_id = q.ref_id
@@ -371,7 +355,6 @@ async def _create_meta_project_iterations_handler(request: web.Request) -> web.R
     return envelope_json_response(iterations_items, web.HTTPCreated)
 
 
-# TODO: registry as route when implemented. Currently iteration is retrieved via GET /projects/{workcopy_project_id}
 @routes.get(
     f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations/{{iter_id}}",
     name=f"{__name__}._get_meta_project_iterations_handler",
@@ -380,6 +363,7 @@ async def _create_meta_project_iterations_handler(request: web.Request) -> web.R
 @permission_required("project.snapshot.read")
 async def _get_meta_project_iterations_handler(request: web.Request) -> web.Response:
     raise NotImplementedError(
+        "Currently iteration is retrieved via GET /projects/{workcopy_project_id}"
         "SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735"
     )
 
@@ -420,13 +404,10 @@ async def _list_meta_project_iterations_results_handler(
     # get every project from the database and extract results
     _prj_data = {}
     for item in iterations_range.items:
-        # TODO: fetch ALL project iterations at once. Otherwise they will have different results
-        # TODO: if raises?
         prj = await vc_repo.get_project(f"{item.project_id}", include=["workbench"])
         _prj_data[item.project_id] = prj["workbench"]
 
     def _get_project_results(project_id) -> ExtractedResults:
-        # TODO: if raises?
         results = extract_project_results(_prj_data[project_id])
         return results
 

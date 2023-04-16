@@ -76,7 +76,7 @@ class VersionControlForMetaModeling(VersionControlRepository):
             project_as_dict = dict(project.items())
 
             # -------------
-            # TODO: hack to avoid validation error. Revisit when models_library.utils.pydantic_models_factory is
+            # NOTE: hack to avoid validation error. Revisit when models_library.utils.pydantic_models_factory is
             # used to create a reliable project's model to validate http API
             if "thumbnail" in project_as_dict:
                 project_as_dict["thumbnail"] = project_as_dict["thumbnail"] or ""
@@ -115,7 +115,6 @@ class VersionControlForMetaModeling(VersionControlRepository):
             assert repo  # nosec
 
             async with conn.begin():
-
                 # take snapshot of forced project
                 snapshot_checksum = compute_workbench_checksum(project["workbench"])
 
@@ -175,7 +174,6 @@ class VersionControlForMetaModeling(VersionControlRepository):
                 .set_filter(repo_id=repo_id, parent_commit_id=commit_id)
                 .fetch_all(returning_cols="id")
             )
-            # TODO: single query for this loop
             tags = []
             for commit in commits:
                 tags_in_commit = (
