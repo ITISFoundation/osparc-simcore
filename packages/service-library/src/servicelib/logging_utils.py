@@ -52,9 +52,9 @@ class CustomFormatter(logging.Formatter):
     2. Overrides 'filename' with the value of 'file_name_override', if it exists.
     """
 
-    def __init__(self, fmt, color_log_enabled=False):
+    def __init__(self, fmt, color_log_enabled: bool = False):
         super().__init__(fmt)
-        self.color_log_enabled: bool = color_log_enabled
+        self.color_log_enabled = color_log_enabled
 
     def format(self, record):
         if hasattr(record, "func_name_override"):
@@ -62,7 +62,7 @@ class CustomFormatter(logging.Formatter):
         if hasattr(record, "file_name_override"):
             record.filename = record.file_name_override
 
-        if self.color_log_enabled == True:
+        if self.color_log_enabled:
             levelname = record.levelname
             if levelname in COLORS:
                 levelname_color = COLORS[levelname] + levelname + NORMAL
