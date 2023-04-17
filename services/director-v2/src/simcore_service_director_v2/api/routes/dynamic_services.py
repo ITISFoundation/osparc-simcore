@@ -33,6 +33,8 @@ from ...models.domains.dynamic_services import (
 from ...modules import projects_networks
 from ...modules.db.repositories.projects import ProjectsRepository
 from ...modules.db.repositories.projects_networks import ProjectsNetworksRepository
+from ...modules.director_v0 import DirectorV0Client
+from ...modules.dynamic_services import ServicesClient
 from ...modules.dynamic_sidecar.docker_api import is_sidecar_running
 from ...modules.dynamic_sidecar.errors import (
     DynamicSidecarNotFoundError,
@@ -41,9 +43,8 @@ from ...modules.dynamic_sidecar.errors import (
 from ...modules.dynamic_sidecar.scheduler import DynamicSidecarsScheduler
 from ...utils.logging_utils import log_decorator
 from ...utils.routes import NoContentResponse
-from ..dependencies.director_v0 import DirectorV0Client, get_director_v0_client
+from ..dependencies.director_v0 import get_director_v0_client
 from ..dependencies.dynamic_services import (
-    ServicesClient,
     get_dynamic_services_settings,
     get_scheduler,
     get_service_base_url,
@@ -144,7 +145,7 @@ async def create_dynamic_service(
             request_simcore_user_agent=x_simcore_user_agent,
         )
 
-    return cast(DynamicServiceGet, await scheduler.get_stack_status(service.node_uuid))
+    return await scheduler.get_stack_status(service.node_uuid)
 
 
 @router.get(
@@ -158,7 +159,7 @@ async def get_dynamic_sidecar_status(
     scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
 ) -> DynamicServiceGet | RedirectResponse:
     try:
-        return cast(DynamicServiceGet, await scheduler.get_stack_status(node_uuid))
+        return await scheduler.get_stack_status(node_uuid)
     except DynamicSidecarNotFoundError:
         # legacy service? if it's not then a 404 will anyway be received
         # forward to director-v0

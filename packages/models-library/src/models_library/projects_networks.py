@@ -1,15 +1,22 @@
+import re
+
 from models_library.projects import ProjectID
-from pydantic import BaseModel, Field, constr
+from pydantic import BaseModel, ConstrainedStr, Field
 
 from .generics import DictModel
 from .projects_nodes_io import NodeIDStr
 
-SERVICE_NETWORK_RE = r"^[a-zA-Z]([a-zA-Z0-9_-]{0,63})$"
+SERVICE_NETWORK_RE = re.compile(r"^[a-zA-Z]([a-zA-Z0-9_-]{0,63})$")
 
 PROJECT_NETWORK_PREFIX = "prj-ntwrk"
 
-DockerNetworkName = constr(regex=SERVICE_NETWORK_RE)
-DockerNetworkAlias = constr(regex=SERVICE_NETWORK_RE)
+
+class DockerNetworkName(ConstrainedStr):
+    regex = SERVICE_NETWORK_RE
+
+
+class DockerNetworkAlias(ConstrainedStr):
+    regex = SERVICE_NETWORK_RE
 
 
 class ContainerAliases(DictModel[NodeIDStr, DockerNetworkAlias]):

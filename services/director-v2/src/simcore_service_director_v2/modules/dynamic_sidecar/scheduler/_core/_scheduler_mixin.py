@@ -3,7 +3,6 @@ import contextlib
 import logging
 from asyncio import Lock, Queue, Task
 from dataclasses import dataclass, field
-from typing import Optional, Union
 
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
@@ -22,14 +21,14 @@ class SchedulerInternalsMixin(  # pylint: disable=too-many-instance-attributes
 
     _lock: Lock = field(default_factory=Lock)
     _to_observe: dict[ServiceName, SchedulerData] = field(default_factory=dict)
-    _service_observation_task: dict[
-        ServiceName, Optional[Union[asyncio.Task, object]]
-    ] = field(default_factory=dict)
+    _service_observation_task: dict[ServiceName, asyncio.Task | object | None] = field(
+        default_factory=dict
+    )
     _keep_running: bool = False
-    _inverse_search_mapping: dict[NodeID, str] = field(default_factory=dict)
-    _scheduler_task: Optional[Task] = None
-    _cleanup_volume_removal_services_task: Optional[Task] = None
-    _trigger_observation_queue_task: Optional[Task] = None
+    _inverse_search_mapping: dict[NodeID, ServiceName] = field(default_factory=dict)
+    _scheduler_task: Task | None = None
+    _cleanup_volume_removal_services_task: Task | None = None
+    _trigger_observation_queue_task: Task | None = None
     _trigger_observation_queue: Queue = field(default_factory=Queue)
     _observation_counter: int = 0
 

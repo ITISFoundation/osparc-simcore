@@ -29,6 +29,9 @@ from models_library.users import UserID
 from pydantic import AnyHttpUrl
 from servicelib.fastapi.long_running_tasks.client import ProgressCallback
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
+from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
+    ServiceName,
+)
 
 from .....core.settings import DynamicServicesSchedulerSettings, DynamicSidecarSettings
 from .....models.domains.dynamic_services import (
@@ -39,6 +42,7 @@ from .....models.schemas.dynamic_services import (
     DynamicSidecarStatus,
     RunningDynamicServiceDetails,
     SchedulerData,
+    ServiceState,
 )
 from ...api_client import DynamicSidecarClient, get_dynamic_sidecar_client
 from ...docker_api import (
@@ -47,7 +51,7 @@ from ...docker_api import (
     remove_pending_volume_removal_services,
     update_scheduler_data_label,
 )
-from ...docker_states import ServiceState, extract_containers_minimum_statuses
+from ...docker_states import extract_containers_minimum_statuses
 from ...errors import (
     DockerServiceNotFoundError,
     DynamicSidecarError,
@@ -464,7 +468,7 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
         if node_uuid not in self._inverse_search_mapping:
             raise DynamicSidecarNotFoundError(node_uuid)
 
-        service_name = self._inverse_search_mapping[node_uuid]
+        service_name: ServiceName = self._inverse_search_mapping[node_uuid]
         scheduler_data: SchedulerData = self._to_observe[service_name]
 
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
@@ -480,7 +484,7 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
         self,
         dynamic_sidecar_settings: DynamicSidecarSettings,
         dynamic_scheduler: DynamicServicesSchedulerSettings,
-        service_name: str,
+        service_name: ServiceName,
     ) -> asyncio.Task:
         scheduler_data: SchedulerData = self._to_observe[service_name]
         observation_task = asyncio.create_task(
@@ -511,7 +515,7 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
             self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
         )
 
-        service_name: str
+        service_name: ServiceName
         while service_name := await self._trigger_observation_queue.get():
             logger.info("Handling observation for %s", service_name)
 

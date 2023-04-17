@@ -18,13 +18,13 @@ from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
 from pydantic import ValidationError, parse_obj_as
+from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 from simcore_service_director_v2.core.errors import ProjectNotFoundError
-from simcore_service_director_v2.modules.rabbitmq import RabbitMQClient
 
-from ..api.dependencies.director_v0 import DirectorV0Client
 from ..modules.db.repositories.projects import ProjectsRepository
 from ..modules.db.repositories.projects_networks import ProjectsNetworksRepository
+from ..modules.director_v0 import DirectorV0Client
 from ..modules.dynamic_sidecar.scheduler import DynamicSidecarsScheduler
 
 logger = logging.getLogger(__name__)
@@ -64,10 +64,12 @@ async def requires_dynamic_sidecar(
 
     simcore_service_labels: SimcoreServiceLabels = (
         await director_v0_client.get_service_labels(
-            service=ServiceKeyVersion(key=decoded_service_key, version=service_version)
+            service=ServiceKeyVersion.parse_obj(
+                {"key": decoded_service_key, "version": service_version}
+            )
         )
     )
-    return simcore_service_labels.needs_dynamic_sidecar
+    return simcore_service_labels.needs_dynamic_sidecar  # type: ignore
 
 
 async def _send_network_configuration_to_dynamic_sidecar(
