@@ -17,6 +17,14 @@ qx.Class.define("osparc.ui.switch.ThemeSwitcher", {
       return Object.values(qx.Theme.getAll()).filter(theme => theme.type === "meta");
     },
 
+    isSwitchUseful: function() {
+      const validThemes = this.getValidThemes();
+      if (validThemes && validThemes.length === 2) {
+        return true;
+      }
+      return false;
+    },
+
     switchTheme: function() {
       const validThemes = osparc.ui.switch.ThemeSwitcher.getValidThemes();
       if (validThemes.length !== 2) {

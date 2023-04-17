@@ -5,7 +5,7 @@
    https://osparc.io
 
    Copyright:
-     2020 IT'IS Foundation, https://itis.swiss
+     2023 IT'IS Foundation, https://itis.swiss
 
    License:
      MIT: https://opensource.org/licenses/MIT
@@ -28,8 +28,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Footer", {
     this.set({
       padding: 30,
       paddingLeft: 250,
-      paddingRight: 250,
-      backgroundColor: "background-main-2"
+      paddingRight: 250
     });
 
     this.buildLayout();
