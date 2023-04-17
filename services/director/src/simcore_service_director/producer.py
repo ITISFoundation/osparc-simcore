@@ -663,10 +663,10 @@ async def _get_dependant_repos(
 
 _TAG_REGEX = re.compile(r"^\d+\.\d+\.\d+$")
 _SERVICE_KEY_REGEX = re.compile(
-    r"^simcore/services/"
+    r"^(?P<key>simcore/services/"
     r"(?P<type>(comp|dynamic|frontend))/"
     r"(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*"
-    r"(?P<name>[a-z0-9-_]+[a-z0-9])"
+    r"(?P<name>[a-z0-9-_]+[a-z0-9]))"
     r"(?::(?P<version>[\w][\w.-]{0,127}))?"
     r"(?P<docker_digest>\@sha256:[a-fA-F0-9]{32,64})?$"
 )
@@ -859,8 +859,8 @@ async def _get_service_key_version_from_docker_service(
         raise exceptions.DirectorException(
             msg=f"Invalid service '{service_full_name}', it does not follow pattern '{_SERVICE_KEY_REGEX.pattern}'"
         )
-    service_key = service_re_match.group(1)
-    service_tag = service_re_match.group(4)
+    service_key = service_re_match.group("key")
+    service_tag = service_re_match.group("version")
     return service_key, service_tag
 
 
