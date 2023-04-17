@@ -171,7 +171,7 @@ async def test_create_node(
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
 
     body = {
-        "service_key": f"simcore/services/{node_class}/{faker.pystr()}",
+        "service_key": f"simcore/services/{node_class}/{faker.pystr().lower()}",
         "service_version": faker.numerify("%.#.#"),
     }
     response = await client.post(url.path, json=body)
@@ -253,7 +253,7 @@ async def test_create_and_delete_many_nodes_in_parallel(
     num_services_in_project = len(user_project["workbench"])
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
     body = {
-        "service_key": f"simcore/services/dynamic/{faker.pystr()}",
+        "service_key": f"simcore/services/dynamic/{faker.pystr().lower()}",
         "service_version": faker.numerify("%.#.#"),
     }
     NUM_DY_SERVICES = 250
@@ -314,7 +314,7 @@ async def test_create_node_does_not_start_dynamic_node_if_there_are_already_too_
     ]
     url = client.app.router["create_node"].url_for(project_id=project["uuid"])
     body = {
-        "service_key": f"simcore/services/dynamic/{faker.pystr()}",
+        "service_key": f"simcore/services/dynamic/{faker.pystr().lower()}",
         "service_version": faker.numerify("%.#.#"),
     }
     response = await client.post(f"{ url}", json=body)
@@ -363,7 +363,7 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
     # let's create more than the allowed max amount in parallel
     url = client.app.router["create_node"].url_for(project_id=project["uuid"])
     body = {
-        "service_key": f"simcore/services/dynamic/{faker.pystr()}",
+        "service_key": f"simcore/services/dynamic/{faker.pystr().lower()}",
         "service_version": faker.numerify("%.#.#"),
     }
     NUM_DY_SERVICES = 250
@@ -414,7 +414,7 @@ async def test_create_node_does_start_dynamic_node_if_max_num_set_to_0(
 
     # Use-case 1.: not passing a service UUID will generate a new one on the fly
     body = {
-        "service_key": f"simcore/services/dynamic/{faker.pystr()}",
+        "service_key": f"simcore/services/dynamic/{faker.pystr().lower()}",
         "service_version": faker.numerify("%.#.#"),
     }
     response = await client.post(f"{ url}", json=body)
@@ -444,7 +444,7 @@ async def test_creating_deprecated_node_returns_406_not_acceptable(
 
     # Use-case 1.: not passing a service UUID will generate a new one on the fly
     body = {
-        "service_key": f"simcore/services/{node_class}/{faker.pystr()}",
+        "service_key": f"simcore/services/{node_class}/{faker.pystr().lower()}",
         "service_version": f"{faker.random_int()}.{faker.random_int()}.{faker.random_int()}",
     }
     response = await client.post(url.path, json=body)

@@ -84,6 +84,8 @@ jobs:
               - 'packages/dask-task-models-library/**'
               - 'packages/pytest-simcore/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             models-library:
               - 'packages/models-library/**'
               - 'packages/postgres-database/**'
@@ -93,6 +95,8 @@ jobs:
               - 'packages/postgres-database/**'
               - 'packages/pytest-simcore/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             service-integration:
               - 'packages/models-library/**'
               - 'packages/pytest-simcore/**'
@@ -113,28 +117,40 @@ jobs:
               - 'packages/**'
               - 'services/agent/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             api:
               - 'api/**'
             api-server:
               - 'packages/**'
               - 'services/api-server/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             autoscaling:
               - 'packages/**'
               - 'services/autoscaling/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             catalog:
               - 'packages/**'
               - 'services/catalog/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             dask-sidecar:
               - 'packages/**'
               - 'services/dask-sidecar/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             datcore-adapter:
               - 'packages/**'
               - 'services/datcore-adapter/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             director:
               - 'packages/**'
               - 'services/director/**'
@@ -147,10 +163,14 @@ jobs:
               - 'packages/**'
               - 'services/dynamic-sidecar/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             invitations:
               - 'packages/**'
               - 'services/invitations/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             migration:
               - 'packages/**'
               - 'services/migration/**'
@@ -159,6 +179,8 @@ jobs:
               - 'packages/**'
               - 'services/osparc-gateway-server/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             static-webserver:
               - 'services/static-webserver/**'
               - 'services/docker-compose*'
@@ -166,6 +188,8 @@ jobs:
               - 'packages/**'
               - 'services/storage/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             webserver:
               - 'packages/**'
               - 'services/web/**'

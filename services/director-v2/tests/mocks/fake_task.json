@@ -45,7 +45,7 @@
   },
   "inputs": {},
   "image": {
-    "name": "simcore/services/dynamic/sdfkljhsdffsd121231/sdfkjhsdjf/12kdfsjlsj98u0923----dsdljklsd_",
+    "name": "simcore/services/dynamic/sdfkljhsdffsd121231/sdfkjhsdjf/12kdfsjlsj98u0923----dsdljklsd",
     "tag": "0.5824.51",
     "requires_gpu": false,
     "requires_mpi": true
