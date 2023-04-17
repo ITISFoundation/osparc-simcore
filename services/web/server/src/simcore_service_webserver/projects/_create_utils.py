@@ -8,6 +8,7 @@ from jsonschema import ValidationError as JsonSchemaValidationError
 from models_library.projects import ProjectID
 from models_library.projects_state import ProjectStatus
 from models_library.users import UserID
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import parse_obj_as
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.json_serialization import json_dumps
@@ -204,8 +205,8 @@ async def create_project(
 
         # 3. save new project in DB
         new_project = await db.insert_project(
-            new_project,
-            user_id,
+            project=jsonable_encoder(new_project),
+            user_id=user_id,
             product_name=product_name,
             force_as_template=as_template,
             hidden=copy_data,

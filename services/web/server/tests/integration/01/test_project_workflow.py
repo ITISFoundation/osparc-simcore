@@ -190,7 +190,7 @@ async def _request_get(client, pid) -> dict:
     return project
 
 
-async def _request_update(client, project, pid):
+async def _request_replace(client, project, pid):
     # PUT /v0/projects/{project_id}
     url = client.app.router["replace_project"].url_for(project_id=pid)
     resp = await client.put(url, json=project)
@@ -207,6 +207,7 @@ async def _request_delete(client, pid):
     await assert_status(resp, web.HTTPNoContent)
 
 
+@pytest.mark.testit
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_workflow(
     postgres_db: sa.engine.Engine,
@@ -272,7 +273,7 @@ async def test_workflow(
     )
     # modify
     pid = modified_project["uuid"]
-    await _request_update(client, modified_project, pid)
+    await _request_replace(client, modified_project, pid)
 
     # list not empty
     projects = await _request_list(client)

@@ -116,6 +116,7 @@ class ProjectDBAPI(BaseProjectDB):
         :raises ValidationError
         :return: inserted project
         """
+
         # pylint: disable=no-value-for-parameter
         async with self.engine.acquire() as conn:
             # TODO: check security of this query with args. Hard-code values?
@@ -133,9 +134,9 @@ class ProjectDBAPI(BaseProjectDB):
             insert_values = convert_to_db_names(project)
             insert_values.update(
                 {
-                    "type": ProjectType.TEMPLATE
+                    "type": ProjectType.TEMPLATE.value
                     if (force_as_template or user_id is None)
-                    else ProjectType.STANDARD,
+                    else ProjectType.STANDARD.value,
                     "prj_owner": user_id if user_id else None,
                 }
             )
