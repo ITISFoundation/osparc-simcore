@@ -7,11 +7,12 @@
 import keyword
 import re
 from datetime import datetime
-from typing import Any, Optional, Pattern, Sequence, Union
+from typing import Any, Pattern, Sequence
 
 import pytest
 from models_library.basic_regex import (
     DATE_RE,
+    DOCKER_GENERIC_TAG_KEY_RE,
     DOCKER_LABEL_KEY_REGEX,
     PUBLIC_VARIABLE_NAME_RE,
     SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS,
@@ -28,12 +29,12 @@ NOT_CAPTURED = ()
 
 
 def assert_match_and_get_capture(
-    regex_or_str: Union[str, Pattern[str]],
+    regex_or_str: str | Pattern[str],
     test_str: str,
     expected: Any,
     *,
-    group_names: Optional[tuple[str]] = None,
-) -> Optional[Sequence]:
+    group_names: tuple[str] | None = None,
+) -> Sequence | None:
     match = re.match(regex_or_str, test_str)
     if expected is INVALID:
         assert match is None
@@ -338,3 +339,100 @@ def test_TWILIO_ALPHANUMERIC_SENDER_ID_RE(sample, expected):
 )
 def test_DOCKER_LABEL_KEY_REGEX(sample, expected):
     assert_match_and_get_capture(DOCKER_LABEL_KEY_REGEX, sample, expected)
+
+
+@pytest.mark.parametrize(
+    "sample, expected",
+    [
+        ("fedora/httpd:version1.0", VALID),
+        ("fedora/httpd:version1.0.test", VALID),
+        ("itisfoundation/dynamic-sidecar:release-latest", VALID),
+        ("simcore/service/comp/itis/sleepers:2.0.2", VALID),
+        ("registry.osparc.io/simcore/service/comp/itis/sleepers:2.0.2", VALID),
+        ("nginx:2.0.2", VALID),
+        ("envoyproxy/envoy:v1.25-latest", VALID),
+        ("myregistryhost:5000/fedora/httpd:version1.0", VALID),
+        ("alpine", VALID),
+        ("alpine:latest", VALID),
+        ("localhost/latest", VALID),
+        ("library/alpine", VALID),
+        ("localhost:1234/test", VALID),
+        ("test:1234/blaboon", VALID),
+        ("alpine:3.7", VALID),
+        ("docker.example.edu/gmr/alpine:3.7", VALID),
+        (
+            "docker.example.com:5000/gmr/alpine@sha256:5a156ff125e5a12ac7ff43ee5120fa249cf62248337b6d04abc574c8",
+            VALID,
+        ),
+        ("docker.example.co.uk/gmr/alpine/test2:latest", VALID),
+        ("registry.dobby.org/dobby/dobby-servers/arthound:2019-08-08", VALID),
+        ("owasp/zap:3.8.0", VALID),
+        ("registry.dobby.co/dobby/dobby-servers/github-run:2021-10-04", VALID),
+        ("docker.elastic.co/kibana/kibana:7.6.2", VALID),
+        ("registry.dobby.org/dobby/dobby-servers/lerphound:latest", VALID),
+        ("registry.dobby.org/dobby/dobby-servers/marbletown-poc:2021-03-29", VALID),
+        ("marbles/marbles:v0.38.1", VALID),
+        (
+            "registry.dobby.org/dobby/dobby-servers/loophole@sha256:5a156ff125e5a12ac7ff43ee5120fa249cf62248337b6d04abc574c8",
+            VALID,
+        ),
+        ("sonatype/nexon:3.30.0", VALID),
+        ("prom/node-exporter:v1.1.1", VALID),
+        (
+            "sosedoff/pgweb@sha256:5a156ff125e5a12ac7ff43ee5120fa249cf62248337b6d04abc574c8",
+            VALID,
+        ),
+        ("sosedoff/pgweb:latest", VALID),
+        ("registry.dobby.org/dobby/dobby-servers/arpeggio:2021-06-01", VALID),
+        ("registry.dobby.org/dobby/antique-penguin:release-production", VALID),
+        ("dalprodictus/halcon:6.7.5", VALID),
+        ("antigua/antigua:v31", VALID),
+        ("weblate/weblate:4.7.2-1", VALID),
+        ("redis:4.0.01-alpine", VALID),
+        ("registry.dobby.com/dobby/dobby-servers/github-run:latest", VALID),
+        ("portainer/portainer:latest", VALID),
+        (
+            "registry:2@sha256:5a156ff125e5a12ac7fdec2b90b7e2ae5120fa249cf62248337b6d04abc574c8",
+            VALID,
+        ),
+        ("alpine", VALID),
+        ("alpine:latest", VALID),
+        ("library/alpine", VALID),
+        ("localhost/test", VALID),
+        ("localhost:1234/test", VALID),
+        ("test:1234/bla", VALID),
+        ("alpine:3.7", VALID),
+        ("docker.example.com/gmr/alpine:3.7", VALID),
+        ("docker.example.com/gmr/alpine/test2:3.7", VALID),
+        ("docker.example.com/gmr/alpine/test2/test3:3.7", VALID),
+        ("docker.example.com:5000/gmr/alpine:latest", VALID),
+        (
+            "docker.example.com:5000/gmr/alpine:latest@sha256:5ae13221a775e9ded1d00f4dd6a3ad869ed1d662eb8cf81cb1fc2ba06f2b7172",
+            VALID,
+        ),
+        (
+            "docker.example.com:5000/gmr/alpine/test2:latest@sha256:5ae13221a775e9ded1d00f4dd6a3ad869ed1d662eb8cf81cb1fc2ba06f2b7172",
+            VALID,
+        ),
+        (
+            "docker.example.com/gmr/alpine/test2:latest@sha256:5ae13221a775e9ded1d00f4dd6a3ad869ed1d662eb8cf81cb1fc2ba06f2b7172",
+            VALID,
+        ),
+        (
+            "docker.example.com/gmr/alpine/test2@sha256:5ae13221a775e9ded1d00f4dd6a3ad869ed1d662eb8cf81cb1fc2ba06f2b7172",
+            VALID,
+        ),
+        ("myregist_ryhost:5000/fedora/httpd:version1.0", INVALID),  # undescrore
+        ("myregistryhost:5000/fe_dora/http_d:ver_sion1.0", VALID),
+        ("myregistryHOST:5000/fedora/httpd:version1.0", INVALID),  # upper case
+        ("myregistryhost:5000/fedora/httpd:-version1.0", INVALID),  # tag starts with -
+        ("myregistryhost:5000/fedora/httpd:.version1.0", INVALID),  # tag starts with .
+        (
+            "simcore/services/dynamic/some/sub/folder/my_service-key:123.456.3214@sha256:2aef165ab4f30fbb109e88959271d8b57489790ea13a77d27c02d8adb8feb20f",
+            VALID,
+        ),
+    ],
+    ids=lambda d: f"{d if isinstance(d, str) else ('INVALID' if d is INVALID else 'VALID')}",
+)
+def test_DOCKER_GENERIC_TAG_KEY_RE(sample, expected):
+    assert_match_and_get_capture(DOCKER_GENERIC_TAG_KEY_RE, sample, expected)

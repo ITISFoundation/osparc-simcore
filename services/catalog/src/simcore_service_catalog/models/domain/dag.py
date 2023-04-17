@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field, Json
 class DAGBase(BaseModel):
     key: str = Field(
         ...,
-        regex=SERVICE_KEY_RE,
+        regex=SERVICE_KEY_RE.pattern,
         example="simcore/services/frontend/nodes-group/macros/1",
     )
     version: str = Field(..., regex=VERSION_RE, example="1.0.0")

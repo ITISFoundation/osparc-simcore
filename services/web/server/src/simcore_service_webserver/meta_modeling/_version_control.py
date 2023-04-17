@@ -9,15 +9,15 @@ from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectIDStr
 from models_library.utils.fastapi_encoders import jsonable_encoder
 
-from .projects.project_models import ProjectDict
-from .version_control.db import VersionControlRepository
-from .version_control.errors import UserUndefined
-from .version_control.models import CommitID, TagProxy
-from .version_control.vc_changes import (
+from ..projects.project_models import ProjectDict
+from ..version_control.db import VersionControlRepository
+from ..version_control.errors import UserUndefined
+from ..version_control.models import CommitID, TagProxy
+from ..version_control.vc_changes import (
     compute_workbench_checksum,
     eval_workcopy_project_id,
 )
-from .version_control.vc_tags import compose_workcopy_project_tag_name
+from ..version_control.vc_tags import compose_workcopy_project_tag_name
 
 log = logging.getLogger(__name__)
 
@@ -76,7 +76,7 @@ class VersionControlForMetaModeling(VersionControlRepository):
             project_as_dict = dict(project.items())
 
             # -------------
-            # TODO: hack to avoid validation error. Revisit when models_library.utils.pydantic_models_factory is
+            # NOTE: hack to avoid validation error. Revisit when models_library.utils.pydantic_models_factory is
             # used to create a reliable project's model to validate http API
             if "thumbnail" in project_as_dict:
                 project_as_dict["thumbnail"] = project_as_dict["thumbnail"] or ""
@@ -100,10 +100,13 @@ class VersionControlForMetaModeling(VersionControlRepository):
         # SEE https://fastapi.tiangolo.com/tutorial/encoder/
         project = jsonable_encoder(project, sqlalchemy_safe=True)
 
+        commit_id: CommitID
+
         async with self.engine.acquire() as conn:
             # existance check prevents errors later
             if tag := await self.TagsOrm(conn).set_filter(name=tag_name).fetch():
-                return tag.commit_id
+                commit_id = tag.commit_id
+                return commit_id
 
             # get workcopy for start_commit_id and update with 'project'
             repo = (
@@ -112,7 +115,6 @@ class VersionControlForMetaModeling(VersionControlRepository):
             assert repo  # nosec
 
             async with conn.begin():
-
                 # take snapshot of forced project
                 snapshot_checksum = compute_workbench_checksum(project["workbench"])
 
@@ -160,7 +162,8 @@ class VersionControlForMetaModeling(VersionControlRepository):
                         hidden=IS_INTERNAL_OPERATION,
                     )
 
-                return branch.head_commit_id
+                commit_id = branch.head_commit_id
+                return commit_id
 
     async def get_children_tags(
         self, repo_id: int, commit_id: int
@@ -171,7 +174,6 @@ class VersionControlForMetaModeling(VersionControlRepository):
                 .set_filter(repo_id=repo_id, parent_commit_id=commit_id)
                 .fetch_all(returning_cols="id")
             )
-            # TODO: single query for this loop
             tags = []
             for commit in commits:
                 tags_in_commit = (

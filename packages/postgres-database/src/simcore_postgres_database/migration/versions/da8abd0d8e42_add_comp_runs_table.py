@@ -7,6 +7,7 @@ Create Date: 2021-05-12 13:46:36.676255+00:00
 """
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects.postgresql import ENUM
 
 # revision identifiers, used by Alembic.
 revision = "da8abd0d8e42"
@@ -31,7 +32,7 @@ def upgrade():
         sa.Column("iteration", sa.BigInteger(), autoincrement=False, nullable=False),
         sa.Column(
             "result",
-            sa.dialects.postgresql.ENUM(
+            ENUM(
                 "NOT_STARTED",
                 "PUBLISHED",
                 "PENDING",

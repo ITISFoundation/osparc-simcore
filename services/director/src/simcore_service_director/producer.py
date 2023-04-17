@@ -663,7 +663,12 @@ async def _get_dependant_repos(
 
 _TAG_REGEX = re.compile(r"^\d+\.\d+\.\d+$")
 _SERVICE_KEY_REGEX = re.compile(
-    r"^(simcore/services/(comp|dynamic|frontend)(/[\w/-]+)+):(\d+\.\d+\.\d+).*$"
+    r"^(?P<key>simcore/services/"
+    r"(?P<type>(comp|dynamic|frontend))/"
+    r"(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*"
+    r"(?P<name>[a-z0-9-_]+[a-z0-9]))"
+    r"(?::(?P<version>[\w][\w.-]{0,127}))?"
+    r"(?P<docker_digest>\@sha256:[a-fA-F0-9]{32,64})?$"
 )
 
 
@@ -854,8 +859,8 @@ async def _get_service_key_version_from_docker_service(
         raise exceptions.DirectorException(
             msg=f"Invalid service '{service_full_name}', it does not follow pattern '{_SERVICE_KEY_REGEX.pattern}'"
         )
-    service_key = service_re_match.group(1)
-    service_tag = service_re_match.group(4)
+    service_key = service_re_match.group("key")
+    service_tag = service_re_match.group("version")
     return service_key, service_tag
 
 
@@ -873,7 +878,7 @@ async def start_service(
     service_tag: str,
     node_uuid: str,
     node_base_path: str,
-    request_simcore_user_agent: str
+    request_simcore_user_agent: str,
 ) -> Dict:
     # pylint: disable=C0103
     log.debug(
@@ -1131,7 +1136,7 @@ async def stop_service(app: web.Application, node_uuid: str, save_state: bool) -
                     "Could not save state because %s is unreachable [%s]."
                     "Resuming stop_service.",
                     service_host_name,
-                    err
+                    err,
                 )
 
         # remove the services

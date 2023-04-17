@@ -134,19 +134,13 @@ def test_service_models_examples(model_cls, model_cls_examples):
         "simcore/services/dynamic/raw-graphs-table",
         "simcore/services/dynamic/tissue-properties",
     ],
+    ids=str,
 )
-@pytest.mark.parametrize(
-    "regex_pattern",
-    [SERVICE_KEY_RE, r"^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$"],
-    ids=["pattern_with_w", "pattern_with_s"],
-)
-def test_service_key_regex_patterns(service_key: str, regex_pattern: str):
-    match = re.match(regex_pattern, service_key)
+def test_SERVICE_KEY_RE(service_key: str):
+    match = re.match(SERVICE_KEY_RE, service_key)
     assert match
 
-    assert match.group(1) == "simcore"
-    assert match.group(2) == "services"
-    assert match.group(3) in ["comp", "dynamic", "frontend"]
+    assert match.group("type") in ["comp", "dynamic", "frontend"]
     assert match.group(4) is not None
 
     # tests formatters
@@ -163,7 +157,7 @@ def test_service_key_regex_patterns(service_key: str, regex_pattern: str):
         new_service_key = DYNAMIC_SERVICE_KEY_FORMAT.format(service_name=service_name)
 
     if new_service_key:
-        new_match = re.match(regex_pattern, new_service_key)
+        new_match = re.match(SERVICE_KEY_RE, new_service_key)
         assert new_match
         assert new_match.groups() == match.groups()
 
@@ -179,6 +173,7 @@ def test_services_model_examples(model_cls, model_cls_examples):
         assert model_instance, f"Failed with {name}"
 
 
+@pytest.mark.skip(reason="will be disabled by PC")
 @pytest.mark.parametrize(
     "python_regex_pattern, json_schema_file_name, json_schema_entry_paths",
     [

@@ -25,7 +25,7 @@ from .groups import setup_groups
 from .invitations import setup_invitations
 from .login.plugin import setup_login
 from .long_running_tasks import setup_long_running_tasks
-from .meta_modeling import setup_meta_modeling
+from .meta_modeling.plugin import setup_meta_modeling
 from .products import setup_products
 from .projects.plugin import setup_projects
 from .publications import setup_publications

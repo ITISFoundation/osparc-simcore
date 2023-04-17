@@ -239,6 +239,27 @@ qx.Class.define("osparc.info.StudyUtils", {
     /**
       * @param study {osparc.data.model.Study} Study Model
       */
+    createDisableServiceAutoStart: function(study) {
+      const cb = new qx.ui.form.CheckBox().set({
+        label: qx.locale.Manager.tr("Disable Services Auto Start"),
+        toolTipText: qx.locale.Manager.tr("This will help opening and closing studies faster"),
+        iconPosition: "right"
+      });
+      const devObj = study.getDev();
+      cb.setValue(("disableServiceAutoStart" in devObj) ? devObj["disableServiceAutoStart"] : false);
+      cb.addListener("changeValue", e => {
+        const newVal = e.getData();
+        devObj["disableServiceAutoStart"] = newVal;
+        study.updateStudy({
+          dev: devObj
+        });
+      });
+      return cb;
+    },
+
+    /**
+      * @param study {osparc.data.model.Study} Study Model
+      */
     createTags: function(study) {
       const tagsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
         alignY: "middle"
