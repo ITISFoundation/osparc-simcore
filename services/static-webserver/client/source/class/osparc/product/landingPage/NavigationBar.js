@@ -40,6 +40,16 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
     "loginPressed": "qx.event.type.Event"
   },
 
+  statics: {
+    addEntryToMenu: function(menu, entryText) {
+      const entryButton = new qx.ui.menu.Button(entryText);
+      entryButton.getChildControl("label").set({
+        rich: true
+      });
+      menu.add(entryButton);
+    }
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
@@ -89,13 +99,23 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
           });
           this.getChildControl("left-items").add(control);
           break;
-        case "manual":
-          control = this.__createManualMenuBtn();
+        case "products":
+          control = this.__createProductsMenuBtn();
           control.set(osparc.navigation.NavigationBar.BUTTON_OPTIONS);
           this.getChildControl("right-items").add(control);
           break;
-        case "feedback":
-          control = this.__createFeedbackMenuBtn();
+        case "solutions":
+          control = this.__createSolutionsMenuBtn();
+          control.set(osparc.navigation.NavigationBar.BUTTON_OPTIONS);
+          this.getChildControl("right-items").add(control);
+          break;
+        case "success-stories":
+          control = this.__createSuccessStoriesBtn();
+          control.set(osparc.navigation.NavigationBar.BUTTON_OPTIONS);
+          this.getChildControl("right-items").add(control);
+          break;
+        case "community":
+          control = this.__createCommunityBtn();
           control.set(osparc.navigation.NavigationBar.BUTTON_OPTIONS);
           this.getChildControl("right-items").add(control);
           break;
@@ -134,36 +154,57 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
         this.getChildControl("logo-powered");
       }
 
-      this.getChildControl("manual");
-      this.getChildControl("feedback");
+      this.getChildControl("products");
+      this.getChildControl("solutions");
+      this.getChildControl("success-stories");
+      this.getChildControl("community");
       this.getChildControl("pricing");
       this.getChildControl("theme-switch");
       this.getChildControl("login-button");
     },
 
-    __createManualMenuBtn: function() {
+    __createProductsMenuBtn: function() {
       const menu = new qx.ui.menu.Menu().set({
         font: "text-14"
       });
       const menuButton = new osparc.ui.form.HoverMenuButton().set({
-        label: this.tr("Manuals"),
+        label: this.tr("Products"),
         menu
       });
-      osparc.store.Support.addQuickStartToMenu(menu);
-      osparc.store.Support.addManualButtonsToMenu(menu, menuButton);
+      this.self().addEntryToMenu(menu, "Sim4Life");
+      this.self().addEntryToMenu(menu, "S4L");
+      this.self().addEntryToMenu(menu, "<i>S4L<sup>lite</sup></i>");
       return menuButton;
     },
 
-    __createFeedbackMenuBtn: function() {
+    __createSolutionsMenuBtn: function() {
       const menu = new qx.ui.menu.Menu().set({
         font: "text-14"
       });
       const menuButton = new osparc.ui.form.HoverMenuButton().set({
-        label: this.tr("Support"),
+        label: this.tr("Solutions"),
         menu
       });
-      osparc.store.Support.addSupportButtonsToMenu(menu, menuButton);
+      this.self().addEntryToMenu(menu, "Industries");
+      this.self().addEntryToMenu(menu, "Academia");
+      this.self().addEntryToMenu(menu, "Applications");
       return menuButton;
+    },
+
+    __createSuccessStoriesBtn: function() {
+      const pricingButton = new qx.ui.form.Button().set({
+        label: this.tr("Success stories"),
+        backgroundColor: "transparent"
+      });
+      return pricingButton;
+    },
+
+    __createCommunityBtn: function() {
+      const pricingButton = new qx.ui.form.Button().set({
+        label: this.tr("Community"),
+        backgroundColor: "transparent"
+      });
+      return pricingButton;
     },
 
     __createPricingBtn: function() {
