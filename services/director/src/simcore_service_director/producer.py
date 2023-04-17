@@ -666,7 +666,9 @@ _SERVICE_KEY_REGEX = re.compile(
     r"^simcore/services/"
     r"(?P<type>(comp|dynamic|frontend))/"
     r"(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*"
-    r"(?P<name>[a-z0-9-_]+[a-z0-9])$"
+    r"(?P<name>[a-z0-9-_]+[a-z0-9])"
+    r"(?P<version>[\w][\w.-]{0,127})?"
+    r"(?P<docker_digest>\@sha256:[a-fA-F0-9]{32,64})?$"
 )
 
 
