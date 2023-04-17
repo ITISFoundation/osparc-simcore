@@ -30,6 +30,29 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
   },
 
   statics: {
+    titleLabel: function(text) {
+      return new qx.ui.basic.Label().set({
+        textAlign: "center",
+        value: text,
+        rich: true,
+        wrap: true
+      });
+    },
+
+    smallTitle: function(text) {
+      return this.self().titleLabel(text).set({
+        font: "text-18",
+        width: 200
+      });
+    },
+
+    largeTitle: function(text) {
+      return this.self().titleLabel(text).set({
+        font: "text-26",
+        width: 380
+      });
+    },
+
     createTabPage: function(title, imageSrc, text) {
       const page = new qx.ui.tabview.Page(title);
       page.setLayout(new qx.ui.layout.HBox(10));
@@ -131,16 +154,16 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
   members: {
     buildLayout: function() {
       [
-        this.__createContentTryItOut(),
-        this.__createContentUsers(),
-        this.__createContentTabbedLeft(),
-        this.__createContentSteps(),
-        this.__createContentPartners(),
-        this.__createContentPhysics(),
-        this.__createContentTestimonials(),
-        this.__createContentTemplates(),
-        this.__createContentCreateAccount(),
-        this.__createContentSubscribe()
+        this.__createTryItOut(),
+        this.__createUsers(),
+        this.__createTabbedLeft(),
+        this.__createSteps(),
+        this.__createPartners(),
+        this.__createPhysics(),
+        this.__createTestimonials(),
+        this.__createTemplates(),
+        this.__createCreateAccount(),
+        this.__createSubscribe()
       ].forEach((section, idx) => {
         section.setPadding(50);
         if (idx % 2 === 0) {
@@ -152,7 +175,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       });
     },
 
-    __createContentTryItOut: function() {
+    __createTryItOut: function() {
       const contentLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(50).set({
         alignX: "center",
         alignY: "middle"
@@ -205,19 +228,13 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       return contentLayout;
     },
 
-    __createContentUsers: function() {
+    __createUsers: function() {
       const contentLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
         alignX: "center",
         alignY: "middle"
       }));
 
-      const text1 = new qx.ui.basic.Label().set({
-        value: this.tr("Trusted by 100+ users"),
-        font: "text-16",
-        width: 160,
-        rich: true,
-        wrap: true
-      });
+      const text1 = this.self().smallTitle(this.tr("Trusted by 100+ users"));
       contentLayout.add(text1);
 
       const usersLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
@@ -285,20 +302,13 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       return contentLayout;
     },
 
-    __createContentTabbedLeft: function() {
+    __createTabbedLeft: function() {
       const contentLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
         alignX: "center",
         alignY: "middle"
       }));
 
-      const text1 = new qx.ui.basic.Label().set({
-        value: this.tr("Some features, images and texts taken from the sim4life section"),
-        font: "text-24",
-        textAlign: "center",
-        width: 380,
-        rich: true,
-        wrap: true
-      });
+      const text1 = this.self().largeTitle(this.tr("Multiphysics simulation platform combining human models with powerful physics solvers"));
       contentLayout.add(text1);
 
       const tabs = new qx.ui.tabview.TabView().set({
@@ -341,30 +351,16 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       return contentLayout;
     },
 
-    __createContentSteps: function() {
+    __createSteps: function() {
       const contentLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
         alignX: "center",
         alignY: "middle"
       }));
 
-      const text1 = new qx.ui.basic.Label().set({
-        value: this.tr("HOW IT WORKS"),
-        font: "text-18",
-        textAlign: "center",
-        width: 360,
-        rich: true,
-        wrap: true
-      });
+      const text1 = this.self().smallTitle(this.tr("HOW IT WORKS"));
       contentLayout.add(text1);
 
-      const text2 = new qx.ui.basic.Label().set({
-        value: this.tr("Well separated contexts, we had three tabs now we have buttons"),
-        font: "text-24",
-        textAlign: "center",
-        width: 360,
-        rich: true,
-        wrap: true
-      });
+      const text2 = this.self().largeTitle(this.tr("Easy to use, all-in-one solution"));
       contentLayout.add(text2);
 
       const stepsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(30).set({
@@ -373,7 +369,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       }));
       [{
         image: "https://zmt.swiss/assets/images/sim4life/modules/MRI/bcage.png",
-        title: "Modeling",
+        title: "CAD Modeling",
         text: "Use our Virtual Poupualtion, upload CAD models or build your own model with our amazing tools."
       }, {
         image: "https://zmt.swiss/assets/images/sim4life/framework/NewUnstructuredMesh.png",
@@ -381,7 +377,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         text: "Simulators, gridders, voxelers and solvers"
       }, {
         image: "https://zmt.swiss/assets/images/sim4life/framework/postpromain.jpg",
-        title: "Post Processing",
+        title: "Post-processing",
         text: "Analyze simulation results and imaging data through advanced visualization and analysis capabilities."
       }].forEach(tab => {
         const verticalCard = this.self().createVerticalCard(tab.image, tab.title, tab.text);
@@ -392,7 +388,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       return contentLayout;
     },
 
-    __createContentPartners: function() {
+    __createPartners: function() {
       const contentLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
         alignX: "center",
         alignY: "middle"
@@ -437,7 +433,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       return contentLayout;
     },
 
-    __createContentPhysics: function() {
+    __createPhysics: function() {
       const contentLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
         alignX: "center",
         alignY: "middle"
@@ -519,7 +515,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       return contentLayout;
     },
 
-    __createContentTestimonials: function() {
+    __createTestimonials: function() {
       const contentLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
         alignX: "center",
         alignY: "middle"
@@ -645,7 +641,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       return contentLayout;
     },
 
-    __createContentTemplates: function() {
+    __createTemplates: function() {
       const contentLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(30).set({
         alignX: "center",
         alignY: "middle"
@@ -705,7 +701,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       return contentLayout;
     },
 
-    __createContentCreateAccount: function() {
+    __createCreateAccount: function() {
       const createAccountLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(15).set({
         alignX: "center",
         alignY: "middle"
@@ -749,7 +745,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       return createAccountLayout;
     },
 
-    __createContentSubscribe: function() {
+    __createSubscribe: function() {
       const subscribeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(15).set({
         alignX: "center",
         alignY: "middle"
