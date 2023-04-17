@@ -31,12 +31,15 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
 
   statics: {
     titleLabel: function(text) {
-      return new qx.ui.basic.Label().set({
+      const label = new qx.ui.basic.Label().set({
         textAlign: "center",
-        value: text,
         rich: true,
         wrap: true
       });
+      if (text) {
+        label.setValue(text);
+      }
+      return label;
     },
 
     smallTitle: function(text) {
@@ -46,10 +49,17 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       });
     },
 
+    mediumTitle: function(text) {
+      return this.self().titleLabel(text).set({
+        font: "text-22",
+        width: 550
+      });
+    },
+
     largeTitle: function(text) {
       return this.self().titleLabel(text).set({
         font: "text-26",
-        width: 480
+        width: 500
       });
     },
 
@@ -394,13 +404,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         alignY: "middle"
       }));
 
-      const text1 = new qx.ui.basic.Label().set({
-        value: this.tr("Our partners"),
-        font: "text-16",
-        width: 160,
-        rich: true,
-        wrap: true
-      });
+      const text1 = this.self().smallTitle(this.tr("Our partners"));
       contentLayout.add(text1);
 
       const partnersLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(50).set({
@@ -439,24 +443,10 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         alignY: "middle"
       }));
 
-      const text1 = new qx.ui.basic.Label().set({
-        value: this.tr("AVAILABLE PHYSICS"),
-        font: "text-18",
-        textAlign: "center",
-        width: 360,
-        rich: true,
-        wrap: true
-      });
+      const text1 = this.self().smallTitle(this.tr("AVAILABLE PHYSICS"));
       contentLayout.add(text1);
 
-      const text2 = new qx.ui.basic.Label().set({
-        value: this.tr("A broad range of physics based on best-of-breed simulation solvers"),
-        font: "text-24",
-        textAlign: "center",
-        width: 450,
-        rich: true,
-        wrap: true
-      });
+      const text2 = this.self().largeTitle(("A broad range of physics based on best-of-breed simulation solvers"));
       contentLayout.add(text2);
 
       const grid = new qx.ui.layout.Grid(20, 10);
@@ -647,24 +637,24 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         alignY: "middle"
       }));
 
-      const createTemplateCard = (image, title, link) => {
+      const createTemplateCard = (imageSrc, title, link) => {
         const grid = new qx.ui.layout.Grid(10, 10);
         grid.setColumnAlign(0, "center", "bottom");
         const templateCard = new qx.ui.container.Composite(grid).set({
           allowGrowX: false
         });
-        const testimonyImage = new qx.ui.basic.Image(image).set({
+        const image = new osparc.ui.basic.ImagePlayLink(imageSrc, link, 48).set({
           scale: true,
-          maxWidth: 190,
-          maxHeight: 150
+          maxWidth: 260,
+          maxHeight: 160
         });
-        templateCard.add(testimonyImage, {
+        templateCard.add(image, {
           row: 0,
           column: 0
         });
         const testimonyLabel = new qx.ui.basic.Label(title).set({
           font: "text-18",
-          width: 190,
+          width: 260,
           rich: true,
           wrap: true,
           textAlign: "center"
@@ -682,20 +672,20 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         return templateCard;
       };
       [{
-        image: "https://github.com/KZzizzle/osparc_images/blob/master/catmap.JPG?raw=true",
-        title: "CNN Trainer",
+        image: "https://zmt.swiss/assets/images/sim4lifeweb/AnimationsFinal/AnimFinal_NewLogo/EM_Phone_Exposure_new.gif",
+        title: "EM Full-Wave and Quasi-Static",
         link: "https://osparc.io/study/b31f2b80-996e-11eb-9a48-02420a0b0129"
       }, {
-        image: "https://github.com/KZzizzle/osparc_images/blob/master/SPARC_Report%20(1).png?raw=true",
-        title: "SPARC Sample Report",
+        image: "https://zmt.swiss/assets/images/sim4lifeweb/AnimationsFinal/AnimFinal_NewLogo/EM_Neuron_new.gif",
+        title: "Coupled EM – Neuro",
         link: "https://osparc.io/study/733ddc42-c7a3-11eb-8a4e-02420a0b01de"
       }, {
-        image: "https://drive.google.com/uc?id=1w8zGcZlpODX8vYu0_eIJ_HQnds-T8MI9",
-        title: "SPARC Metadata Editor",
+        image: "https://zmt.swiss/assets/images/sim4lifeweb/AnimationsFinal/AnimFinal_NewLogo/Thermo_MRILeadPass_new.gif",
+        title: "Thermal",
         link: "https://osparc.io/study/6e0dfe20-1bab-11ed-b162-02420a0b0093"
       }, {
-        image: "https://assets.discover.pennsieve.io/dataset-assets/84/1/banner.jpg",
-        title: "Neurofauna Rat",
+        image: "https://zmt.swiss/assets/images/sim4lifeweb/AnimationsFinal/AnimFinal_NewLogo/AcousticHead_new.gif",
+        title: "Acoustics",
         link: "https://osparc.io/study/13b9ed12-e7aa-11ea-9b21-02420a0b001d"
       }].forEach(template => contentLayout.add(createTemplateCard(template.image, template.title, template.link)));
       return contentLayout;
@@ -714,13 +704,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         osparc.store.StaticInfo.getInstance().getDisplayName()
       ])
         .then(values => {
-          const createAccountLabel = new qx.ui.basic.Label().set({
-            font: "text-18",
-            width: 450,
-            rich: true,
-            wrap: true,
-            textAlign: "center"
-          });
+          const createAccountLabel = this.self().mediumTitle();
           createAccountLayout.add(createAccountLabel);
           const label = this.tr("Request account");
           const requestAccountButton = this.self().lpStrongButton(label);
@@ -751,12 +735,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         alignY: "middle"
       }));
 
-      const subscribeLabel = new qx.ui.basic.Label(this.tr("Subscribe")).set({
-        font: "text-18",
-        rich: true,
-        wrap: true,
-        textAlign: "center"
-      });
+      const subscribeLabel = this.self().mediumTitle(this.tr("Subscribe"));
       subscribeLayout.add(subscribeLabel);
 
       const height = 48;
