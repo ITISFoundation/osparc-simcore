@@ -5,7 +5,7 @@
    https://osparc.io
 
    Copyright:
-     2020 IT'IS Foundation, https://itis.swiss
+     2023 IT'IS Foundation, https://itis.swiss
 
    License:
      MIT: https://opensource.org/licenses/MIT
@@ -21,12 +21,10 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(80).set({
+    this._setLayout(new qx.ui.layout.VBox().set({
       alignX: "center",
       alignY: "middle"
     }));
-
-    this.setPadding(50);
 
     this.buildLayout();
   },
@@ -34,7 +32,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
   statics: {
     createTabPage: function(title, imageSrc, text) {
       const page = new qx.ui.tabview.Page(title);
-      page.setLayout(new qx.ui.layout.HBox(10));
+      page.setLayout(new qx.ui.layout.HBox(20));
       const tabButton = page.getChildControl("button");
       tabButton.set({
         padding: 10,
@@ -43,14 +41,14 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         alignX: "right"
       });
       tabButton.getChildControl("label").set({
-        font: "text-16",
+        font: "text-18",
         textAlign: "right",
         alignX: "right",
-        width: 240
+        width: 280
       });
       const image = new qx.ui.basic.Image(imageSrc).set({
-        width: 600,
-        height: 350,
+        width: 500,
+        height: 300,
         scale: true
       });
       image.getContentElement().setStyles({
@@ -95,45 +93,66 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         font: "text-16",
         textAlign: "center",
         width: 225,
+        height: 80,
         rich: true,
         wrap: true
       });
       stepLayout.add(labelText);
       return stepLayout;
+    },
+
+    lpStrongButton: function(label) {
+      const linkButton = new qx.ui.form.Button().set({
+        appearance: "strong-button",
+        label,
+        font: "text-18",
+        center: true,
+        padding: 12,
+        allowGrowX: false,
+        width: 170
+      });
+      linkButton.getContentElement().setStyles({
+        "border-radius": "8px"
+      });
+      return linkButton;
+    },
+
+    createLinkButton: function(link) {
+      const label = qx.locale.Manager.tr("Try it out");
+      const linkButton = this.lpStrongButton(label);
+      linkButton.getContentElement().setStyles({
+        "border-radius": "8px"
+      });
+      linkButton.addListener("tap", () => window.open(link, "_blank"));
+      return linkButton;
     }
   },
 
   members: {
     buildLayout: function() {
-      const contentTryItOut = this.__createContentTryItOut();
-      this._add(contentTryItOut);
-
-      const contentUsers = this.__createContentUsers();
-      this._add(contentUsers);
-
-      const contentTabbedLaptop = this.__createContentTabbedLeft();
-      this._add(contentTabbedLaptop);
-
-      const content3Tabs = this.__createContentSteps();
-      this._add(content3Tabs);
-
-      const contentPartners = this.__createContentPartners();
-      this._add(contentPartners);
-
-      const contentPhysics = this.__createContentPhysics();
-      this._add(contentPhysics);
-
-      const contentTestimonials = this.__createContentTestimonials();
-      this._add(contentTestimonials);
-
-      const contentTemplates = this.__createContentTemplates();
-      this._add(contentTemplates);
-
-      const contentCreateAccount = this.__createContentCreateAccount();
-      this._add(contentCreateAccount);
+      [
+        this.__createTryItOut(),
+        this.__createUsers(),
+        this.__createTabbedLeft(),
+        this.__createSteps(),
+        this.__createPartners(),
+        this.__createPhysics(),
+        this.__createTestimonials(),
+        this.__createTemplates(),
+        this.__createCreateAccount(),
+        this.__createSubscribe()
+      ].forEach((section, idx) => {
+        section.setPadding(50);
+        if (idx % 2 === 0) {
+          section.setBackgroundColor("background-main");
+        } else {
+          section.setBackgroundColor("background-main-1");
+        }
+        this._add(section);
+      });
     },
 
-    __createContentTryItOut: function() {
+    __createTryItOut: function() {
       const contentLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(50).set({
         alignX: "center",
         alignY: "middle"
@@ -148,46 +167,36 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       });
 
       const text1 = new qx.ui.basic.Label().set({
-        value: this.tr("Preview the impossible: a native implementation of the most advanced simulation platform Sim4Life in the cloud"),
-        font: "text-24",
+        value: this.tr("Preview the impossible: a native implementation of Sim4Life in the cloud"),
+        font: "text-30",
         rich: true,
         wrap: true
       });
       leftLayout.add(text1);
 
       const text2 = new qx.ui.basic.Label().set({
-        value: this.tr("Access it without sacrificing performance and explore the many advantages. More information will be released soon so stay tuned! Until then, experience the student version <i>S4L<sup>lite</sup></i>."),
-        font: "text-16",
+        value: this.tr("Access it without sacrificing performance and explore the many advantages. Experience the student version <i>S4L<sup>lite</sup></i>."),
+        font: "text-20",
         rich: true,
         wrap: true
       });
       leftLayout.add(text2);
 
-      const tryItOutButton = new qx.ui.form.Button().set({
-        appearance: "strong-button",
-        label: this.tr("Try it out"),
-        font: "text-18",
-        center: true,
-        padding: 20,
-        allowGrowX: false,
-        width: 180
-      });
-      tryItOutButton.getContentElement().setStyles({
-        "border-radius": "8px"
-      });
-      tryItOutButton.addListener("tap", () => window.open("https://s4l-lite-master.speag.com/study/6d627670-d872-11ed-bf2e-02420a000d72", "_blank"));
+      const templateUrl = "https://s4l-lite-master.speag.com/study/6d627670-d872-11ed-bf2e-02420a000d72";
+      const tryItOutButton = this.self().createLinkButton(templateUrl);
       leftLayout.add(tryItOutButton);
 
       contentLayout.add(leftLayout, {
         width: "50%"
       });
 
-      const image = new qx.ui.basic.Image().set({
+      const image = new osparc.ui.basic.ImagePlayLink().set({
         source: "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/lite/extra/bunny.png",
         scale: true,
         alignX: "center",
         maxWidth: 400,
-        maxHeight: 300
+        maxHeight: 300,
+        link: templateUrl
       });
       contentLayout.add(image, {
         width: "50%"
@@ -196,19 +205,13 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       return contentLayout;
     },
 
-    __createContentUsers: function() {
+    __createUsers: function() {
       const contentLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
         alignX: "center",
         alignY: "middle"
       }));
 
-      const text1 = new qx.ui.basic.Label().set({
-        value: this.tr("Trusted by 100+ users"),
-        font: "text-16",
-        width: 160,
-        rich: true,
-        wrap: true
-      });
+      const text1 = osparc.product.landingPage.Utils.smallTitle(this.tr("Trusted by 100+ users"));
       contentLayout.add(text1);
 
       const usersLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
@@ -226,6 +229,9 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       }, {
         user: "https://github.com/elisabettai",
         avatar: "https://avatars.githubusercontent.com/u/18575092"
+      }, {
+        user: "https://github.com/eofli",
+        avatar: "https://avatars.githubusercontent.com/u/40888440"
       }, {
         user: "https://github.com/GitHK",
         avatar: "https://avatars.githubusercontent.com/u/5694077"
@@ -273,20 +279,13 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       return contentLayout;
     },
 
-    __createContentTabbedLeft: function() {
+    __createTabbedLeft: function() {
       const contentLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
         alignX: "center",
         alignY: "middle"
       }));
 
-      const text1 = new qx.ui.basic.Label().set({
-        value: this.tr("Some features, images and texts taken from the sim4life section"),
-        font: "text-24",
-        textAlign: "center",
-        width: 380,
-        rich: true,
-        wrap: true
-      });
+      const text1 = osparc.product.landingPage.Utils.largeTitle(this.tr("Multiphysics simulation platform combining human models with powerful physics solvers"));
       contentLayout.add(text1);
 
       const tabs = new qx.ui.tabview.TabView().set({
@@ -296,21 +295,21 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         alignX: "center"
       });
       [{
-        title: "Computable Human Phantoms",
+        title: "Whole-body Human Models",
         image: "https://zmt.swiss/assets/images/sim4life/vipnews.png",
         text: "Sim4Life natively supports the Virtual Population ViP 3.x/4.0 models that include integrated posing and morphing tools."
       }, {
-        title: "Physics Solvers",
+        title: "Physics Solvers & Tissue Models",
         image: "https://zmt.swiss/assets/images/sim4life/physics_models/EM01__ResizedImageWzQyMCwyNTFd.jpg",
-        text: "The powerful Sim4Life solvers are specifically developed for computationally complex problems."
-      }, {
-        title: "Tissue Models",
-        image: "https://zmt.swiss/assets/images/sim4life/tissue_models/_resampled/ResizedImageWzQyMCwyNTBd/neuro01.jpg",
-        text: "The integrated tissue models enable the modeling and analysis of physiological processes."
+        text: "The powerful Sim4Life solvers are specifically developed for computationally complex problems, and the integrated tissue models enable the modeling and analysis of physiological processes."
       }, {
         title: "Framework",
         image: "https://zmt.swiss/assets/images/sim4life/framework/_resampled/ResizedImageWzQyMCwyNTBd/postpro01.jpg",
         text: "The Sim4Life Framework efficiently facilitates all steps in complex multiphysics modeling, from defining the problem, discretizing, simulating, and analyzing to visualizing the results, with clarity and flexibility."
+      }, {
+        title: "Modules",
+        image: "https://zmt.swiss/assets/images/sim4life/tissue_models/_resampled/ResizedImageWzQyMCwyNTBd/neuro01.jpg",
+        text: "- MRI: IMAnalytics, Musaik, SysSim, BCage, IMSafe, TxCoil<br>- Modeling: Remsesh, iSeg<br>- Calculators: DispFit, PPCalc<br>- Processing: Match, MBSAR, 5G, MiMo, HAC<br>- Import: Huygens, Img, Vox"
       }].forEach(tab => {
         const tabPage = this.self().createTabPage(tab.title, tab.image, tab.text);
         tabs.add(tabPage);
@@ -329,30 +328,16 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       return contentLayout;
     },
 
-    __createContentSteps: function() {
+    __createSteps: function() {
       const contentLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
         alignX: "center",
         alignY: "middle"
       }));
 
-      const text1 = new qx.ui.basic.Label().set({
-        value: this.tr("HOW IT WORKS"),
-        font: "text-18",
-        textAlign: "center",
-        width: 360,
-        rich: true,
-        wrap: true
-      });
+      const text1 = osparc.product.landingPage.Utils.smallTitle(this.tr("HOW IT WORKS"));
       contentLayout.add(text1);
 
-      const text2 = new qx.ui.basic.Label().set({
-        value: this.tr("Well separated contexts, we had three tabs now we have buttons"),
-        font: "text-24",
-        textAlign: "center",
-        width: 360,
-        rich: true,
-        wrap: true
-      });
+      const text2 = osparc.product.landingPage.Utils.largeTitle(this.tr("Easy to use, all-in-one solution"));
       contentLayout.add(text2);
 
       const stepsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(30).set({
@@ -360,16 +345,16 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         alignY: "middle"
       }));
       [{
-        image: "https://zmt.swiss/assets/images/sim4life/modules/MRI/bcage.png",
-        title: "Modeling",
+        image: "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/lite/extra/phone_cad.png",
+        title: "CAD Modeling",
         text: "Use our Virtual Poupualtion, upload CAD models or build your own model with our amazing tools."
       }, {
         image: "https://zmt.swiss/assets/images/sim4life/framework/NewUnstructuredMesh.png",
         title: "Simulation",
-        text: "Simulators, gridders, voxelers and solvers"
+        text: "Simulators, gridders, voxelers and solvers."
       }, {
         image: "https://zmt.swiss/assets/images/sim4life/framework/postpromain.jpg",
-        title: "Post Processing",
+        title: "Post-processing",
         text: "Analyze simulation results and imaging data through advanced visualization and analysis capabilities."
       }].forEach(tab => {
         const verticalCard = this.self().createVerticalCard(tab.image, tab.title, tab.text);
@@ -380,19 +365,13 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       return contentLayout;
     },
 
-    __createContentPartners: function() {
+    __createPartners: function() {
       const contentLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
         alignX: "center",
         alignY: "middle"
       }));
 
-      const text1 = new qx.ui.basic.Label().set({
-        value: this.tr("Our partners"),
-        font: "text-16",
-        width: 160,
-        rich: true,
-        wrap: true
-      });
+      const text1 = osparc.product.landingPage.Utils.smallTitle(this.tr("Our partners"));
       contentLayout.add(text1);
 
       const partnersLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(50).set({
@@ -408,7 +387,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         avatar: "https://itis.swiss/resources/themes/itis/images/logo.png"
       }, {
         link: "https://zmt.swiss/",
-        avatar: "https://d2jx2rerrg6sh3.cloudfront.net/image-handler/picture/2019/10/logo-ZMT-3.png"
+        avatar: "https://zmt.swiss/resources/themes/zmt/images/zmt_logo_white.svg"
       }].forEach(partner => {
         const image = new qx.ui.basic.Image().set({
           source: partner.avatar,
@@ -425,30 +404,16 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       return contentLayout;
     },
 
-    __createContentPhysics: function() {
+    __createPhysics: function() {
       const contentLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
         alignX: "center",
         alignY: "middle"
       }));
 
-      const text1 = new qx.ui.basic.Label().set({
-        value: this.tr("AVAILABLE PHYSICS"),
-        font: "text-18",
-        textAlign: "center",
-        width: 360,
-        rich: true,
-        wrap: true
-      });
+      const text1 = osparc.product.landingPage.Utils.smallTitle(this.tr("AVAILABLE PHYSICS"));
       contentLayout.add(text1);
 
-      const text2 = new qx.ui.basic.Label().set({
-        value: this.tr("A broad range of physics based on best-of-breed simulation solvers"),
-        font: "text-24",
-        textAlign: "center",
-        width: 450,
-        rich: true,
-        wrap: true
-      });
+      const text2 = osparc.product.landingPage.Utils.largeTitle(("A broad range of physics based on best-of-breed simulation solvers"));
       contentLayout.add(text2);
 
       const grid = new qx.ui.layout.Grid(20, 10);
@@ -458,23 +423,23 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       [{
         image: "https://zmt.swiss/assets/images/sim4life/physics_models/EM01b.jpg",
         title: "EM Full Wave",
-        text: "The Electromagnetics Full Wave Solvers (P-EM-FDTD) enable accelerated full-wave, large-scale EM modeling (> billion voxels) with Yee discretization on geometrically adaptive, inhomogeneous, rectilinear meshes with conformal sub-cell correction and thin layer models, with support for dispersive materials."
+        text: "Our Electromagnetics Full Wave Solvers offer GPU accelerated, large-scale EM modeling with advanced features such as geometrically adaptive meshes and support for dispersive materials."
       }, {
         image: "https://zmt.swiss/assets/images/sim4life/physics_models/EM02b.jpg",
         title: "Quasi-Static EM",
-        text: "The Quasi-Static Electromagnetic Solvers (P-EM-QS) enable the efficient modeling of static and quasi-static EM regimes by applying the finite element method on graded voxel meshes."
+        text: "Our Quasi-Static Electromagnetic Solvers efficiently model static and quasi-static EM regimes, addressing low-frequency challenges in medical and EM compliance applications."
       }, {
         image: "https://zmt.swiss/assets/images/sim4life/physics_models/thermo01b.jpg",
         title: "Thermodynamics",
-        text: "The Thermodynamic Solvers (P-THERMAL) enable the modeling of heat transfer in living tissue using advanced perfusion and thermoregulation models."
+        text: "Our Thermodynamic Solvers model heat transfer in living tissue using advanced perfusion and thermoregulation models."
       }, {
         image: "https://zmt.swiss/assets/images/sim4life/tissue_models/vagusnerve.png",
         title: "Neuronal Models",
-        text: "The Neuronal Tissue Models (T-NEURO) enable the dynamic modeling of EM-induced neuronal activation, inhibition, and synchronization using either complex, multi-compartmental representations of axons, neurons, and neuronal networks with varying channel dynamics, or generic models."
+        text: "Sim4Life's Neuronal Tissue Models dynamically model EM-induced neuronal activity and allow for accurate neural sensing simulations. Our product offers complex multi-compartmental representations and generic models with varying channel dynamics."
       }, {
         image: "https://zmt.swiss/assets/images/sim4life/physics_models/acoustics01B.jpg",
         title: "Acoustics",
-        text: "Sim4Life offers a novel full-wave Acoustics Solver (P-ACOUSTICS) based on the linear pressure wave equation (LAPWE), extended and optimized for heterogeneous, lossy materials for the modeling of the propagation of pressure waves through highly inhomogeneous media like tissue and bone."
+        text: "Our Acoustics Solver models pressure wave propagation in highly inhomogeneous media such as tissue and bone. Based on the linear pressure wave equation and optimized for lossy materials, it captures all relevant phenomena like scattering, reflection, and absorption."
       }].forEach((physics, idx) => {
         grid.setColumnAlign(idx, "center", "top");
         grid.setRowAlign(0, "center", "middle"); // image
@@ -494,8 +459,8 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         });
         const image = verticalCard.getChildren()[0];
         image.set({
-          width: 240,
-          height: 180
+          width: 225,
+          height: 170
         });
         gridLayout.add(image, {
           row: 0,
@@ -507,7 +472,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       return contentLayout;
     },
 
-    __createContentTestimonials: function() {
+    __createTestimonials: function() {
       const contentLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
         alignX: "center",
         alignY: "middle"
@@ -633,30 +598,30 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       return contentLayout;
     },
 
-    __createContentTemplates: function() {
+    __createTemplates: function() {
       const contentLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(30).set({
         alignX: "center",
         alignY: "middle"
       }));
 
-      const createTemplateCard = (image, title, link) => {
+      const createTemplateCard = (imageSrc, title, link) => {
         const grid = new qx.ui.layout.Grid(10, 10);
         grid.setColumnAlign(0, "center", "bottom");
         const templateCard = new qx.ui.container.Composite(grid).set({
           allowGrowX: false
         });
-        const testimonyImage = new qx.ui.basic.Image(image).set({
+        const image = new osparc.ui.basic.ImagePlayLink(imageSrc, link, 48).set({
           scale: true,
-          maxWidth: 190,
-          maxHeight: 150
+          maxWidth: 260,
+          maxHeight: 160
         });
-        templateCard.add(testimonyImage, {
+        templateCard.add(image, {
           row: 0,
           column: 0
         });
         const testimonyLabel = new qx.ui.basic.Label(title).set({
           font: "text-18",
-          width: 190,
+          width: 260,
           rich: true,
           wrap: true,
           textAlign: "center"
@@ -665,18 +630,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
           row: 1,
           column: 0
         });
-        const tryItOutButton = new qx.ui.form.Button().set({
-          appearance: "strong-button",
-          label: this.tr("Try it out"),
-          font: "text-18",
-          center: true,
-          padding: 10,
-          allowGrowX: false,
-          width: 150
-        });
-        tryItOutButton.getContentElement().setStyles({
-          "border-radius": "8px"
-        });
+        const tryItOutButton = this.self().createLinkButton(link);
         tryItOutButton.addListener("tap", () => window.open(link, "_blank"));
         templateCard.add(tryItOutButton, {
           row: 2,
@@ -685,26 +639,26 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         return templateCard;
       };
       [{
-        image: "https://github.com/KZzizzle/osparc_images/blob/master/catmap.JPG?raw=true",
-        title: "CNN Trainer",
-        link: "https://osparc.io/study/b31f2b80-996e-11eb-9a48-02420a0b0129"
+        image: "https://zmt.swiss/assets/images/sim4lifeweb/AnimationsFinal/AnimFinal_NewLogo/EM_Phone_Exposure_new.gif",
+        title: "EM Full-Wave and Quasi-Static",
+        link: "https://https://s4l-lite-master.speag.com/study/58b6d654-5c57-11ed-9d5b-02420a051fc4"
       }, {
-        image: "https://github.com/KZzizzle/osparc_images/blob/master/SPARC_Report%20(1).png?raw=true",
-        title: "SPARC Sample Report",
-        link: "https://osparc.io/study/733ddc42-c7a3-11eb-8a4e-02420a0b01de"
+        image: "https://zmt.swiss/assets/images/sim4lifeweb/AnimationsFinal/AnimFinal_NewLogo/EM_Neuron_new.gif",
+        title: "Coupled EM – Neuro",
+        link: "https://https://s4l-lite-master.speag.com/study/58b6d654-5c57-11ed-9d5b-02420a051fc4"
       }, {
-        image: "https://drive.google.com/uc?id=1w8zGcZlpODX8vYu0_eIJ_HQnds-T8MI9",
-        title: "SPARC Metadata Editor",
-        link: "https://osparc.io/study/6e0dfe20-1bab-11ed-b162-02420a0b0093"
+        image: "https://zmt.swiss/assets/images/sim4lifeweb/AnimationsFinal/AnimFinal_NewLogo/Thermo_MRILeadPass_new.gif",
+        title: "Thermal",
+        link: "https://https://s4l-lite-master.speag.com/study/58b6d654-5c57-11ed-9d5b-02420a051fc4"
       }, {
-        image: "https://assets.discover.pennsieve.io/dataset-assets/84/1/banner.jpg",
-        title: "Neurofauna Rat",
-        link: "https://osparc.io/study/13b9ed12-e7aa-11ea-9b21-02420a0b001d"
+        image: "https://zmt.swiss/assets/images/sim4lifeweb/AnimationsFinal/AnimFinal_NewLogo/AcousticHead_new.gif",
+        title: "Acoustics",
+        link: "https://https://s4l-lite-master.speag.com/study/58b6d654-5c57-11ed-9d5b-02420a051fc4"
       }].forEach(template => contentLayout.add(createTemplateCard(template.image, template.title, template.link)));
       return contentLayout;
     },
 
-    __createContentCreateAccount: function() {
+    __createCreateAccount: function() {
       const createAccountLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(15).set({
         alignX: "center",
         alignY: "middle"
@@ -717,26 +671,10 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         osparc.store.StaticInfo.getInstance().getDisplayName()
       ])
         .then(values => {
-          const createAccountLabel = new qx.ui.basic.Label().set({
-            font: "text-18",
-            width: 450,
-            rich: true,
-            wrap: true,
-            textAlign: "center"
-          });
+          const createAccountLabel = osparc.product.landingPage.Utils.mediumTitle();
           createAccountLayout.add(createAccountLabel);
-          const requestAccountButton = new qx.ui.form.Button().set({
-            appearance: "strong-button",
-            label: this.tr("Request account"),
-            font: "text-18",
-            center: true,
-            padding: 20,
-            allowGrowX: false,
-            width: 180
-          });
-          requestAccountButton.getContentElement().setStyles({
-            "border-radius": "8px"
-          });
+          const label = this.tr("Request account");
+          const requestAccountButton = this.self().lpStrongButton(label);
           createAccountLayout.add(requestAccountButton);
           const vendor = values[0];
           const displayName = values[1];
@@ -756,6 +694,57 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
           }
         });
       return createAccountLayout;
+    },
+
+    __createSubscribe: function() {
+      const subscribeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(15).set({
+        alignX: "center",
+        alignY: "middle"
+      }));
+
+      const subscribeLabel = osparc.product.landingPage.Utils.mediumTitle(this.tr("Subscribe"));
+      subscribeLayout.add(subscribeLabel);
+
+      const height = 48;
+      const textFieldLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+        alignX: "center",
+        alignY: "middle"
+      }));
+      const image = new qx.ui.basic.Image().set({
+        source: "@FontAwesome5Solid/envelope/20",
+        backgroundColor: "contrasted-text-light",
+        textColor: "contrasted-text-dark",
+        alignY: "middle",
+        alignX: "center",
+        paddingTop: 14,
+        width: 40,
+        height
+      });
+      textFieldLayout.add(image);
+      const email = new qx.ui.form.TextField().set({
+        placeholder: this.tr("  Email*"),
+        backgroundColor: "contrasted-text-light",
+        textColor: "contrasted-text-dark",
+        font: "text-16",
+        width: 300,
+        height
+      });
+      textFieldLayout.add(email);
+      const subscribeButton = new qx.ui.form.Button().set({
+        appearance: "strong-button",
+        icon: "@FontAwesome5Solid/arrow-right/20",
+        font: "text-18",
+        alignX: "center",
+        alignY: "middle",
+        paddingLeft: 14,
+        width: 50,
+        margin: -1,
+        height: height + 2
+      });
+      textFieldLayout.add(subscribeButton);
+      subscribeLayout.add(textFieldLayout);
+
+      return subscribeLayout;
     }
   }
 });
