@@ -534,17 +534,17 @@ async def _get_service_state(
     log.debug("Getting service %s state", service_name)
     tasks = await client.tasks.list(filters={"service": service_name})
 
-    async def _wait_for_tasks():
+    async def _wait_for_tasks(target_tasks):
         task_started_time = datetime.utcnow()
         while (datetime.utcnow() - task_started_time) < timedelta(seconds=20):
-            tasks = await client.tasks.list(filters={"service": service_name})
+            target_tasks = await client.tasks.list(filters={"service": service_name})
             # only keep the ones with the right service ID (we're being a bit picky maybe)
-            tasks = [x for x in tasks if x["ServiceID"] == service["ID"]]
-            if tasks:
+            target_tasks = [x for x in target_tasks if x["ServiceID"] == service["ID"]]
+            if target_tasks:
                 return
             await asyncio.sleep(1)  # let other events happen too
 
-    await _wait_for_tasks()
+    await _wait_for_tasks(target_tasks=tasks)
     if not tasks:
         return (ServiceState.FAILED, "getting state timed out")
 
