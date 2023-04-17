@@ -20,11 +20,11 @@ class DAGBase(BaseModel):
 class DAGAtDB(DAGBase):
     id: int
     # pylint: disable=unsubscriptable-object
-    workbench: Json[dict[str, Node]]  # type: ignore
+    workbench: Json[dict[str, Node]]
 
     class Config:
         orm_mode = True
 
 
 class DAGData(DAGAtDB):
-    workbench: dict[str, Node] | None  # type: ignore
+    workbench: dict[str, Node] | None
