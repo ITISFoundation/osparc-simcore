@@ -9,24 +9,20 @@ has changed
 
 """
 
-from typing import Any, Dict, Optional, Union
+from typing import Any
 from uuid import UUID, uuid3
 
 from models_library.basic_types import SHA1Str
 from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes import Node
 
-from .projects.project_models import ProjectProxy
-from .utils import compute_sha1_on_small_dataset
+from ..projects.project_models import ProjectProxy
+from ..utils import compute_sha1_on_small_dataset
 
 
-def compute_workbench_checksum(workbench: Dict[str, Any]) -> SHA1Str:
+def compute_workbench_checksum(workbench: dict[str, Any]) -> SHA1Str:
     #
-    # UI is NOT accounted in the checksum
-    # TODO: review other fields to mask?
-    # TODO: search for async def compute_node_hash
-    #
-    # - Add options with include/exclude fields (e.g. to avoid status)
+    # NOTE that UI is NOT accounted in the checksum
     #
     normalized = {
         str(k): (Node(**v) if not isinstance(v, Node) else v)
@@ -56,18 +52,17 @@ def compute_workbench_checksum(workbench: Dict[str, Any]) -> SHA1Str:
 
 def _eval_checksum(repo, project: ProjectProxy) -> SHA1Str:
     # cached checksum of project workcopy
-    checksum: Optional[SHA1Str] = repo.project_checksum
+    checksum: SHA1Str | None = repo.project_checksum
     is_invalid = not checksum or (checksum and repo.modified < project.last_change_date)
     if is_invalid:
         # invalid -> recompute
         checksum = compute_workbench_checksum(project.workbench)
-        # TODO: cache
     assert checksum  # nosec
     return checksum
 
 
 def eval_workcopy_project_id(
-    repo_project_uuid: Union[ProjectID, ProjectIDStr], snapshot_checksum: SHA1Str
+    repo_project_uuid: ProjectID | ProjectIDStr, snapshot_checksum: SHA1Str
 ) -> ProjectID:
     """
     A working copy is a real project associated to a snapshot so it can be operated

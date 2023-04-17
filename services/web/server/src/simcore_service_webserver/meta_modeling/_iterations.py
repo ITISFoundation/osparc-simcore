@@ -7,7 +7,7 @@ import json
 import logging
 import re
 from copy import deepcopy
-from typing import Any, Dict, Generator, Iterator, List, Literal, Optional, Tuple, Union
+from typing import Any, Generator, Iterator, Literal, Optional
 
 from aiohttp import web
 from models_library.basic_types import MD5Str, SHA1Str
@@ -19,22 +19,20 @@ from pydantic import BaseModel, ValidationError
 from pydantic.fields import Field
 from pydantic.types import PositiveInt
 
-from . import meta_modeling_function_nodes
-from .meta_modeling_version_control import (
-    CommitID,
-    ProjectDict,
-    VersionControlForMetaModeling,
-)
-from .utils import compute_sha1_on_small_dataset, now_str
-from .version_control_errors import UserUndefined
+from ..projects.project_models import ProjectDict
+from ..utils import compute_sha1_on_small_dataset, now_str
+from ..version_control.errors import UserUndefined
+from ..version_control.models import CommitID
+from . import _function_nodes
+from ._version_control import VersionControlForMetaModeling
 
 log = logging.getLogger(__name__)
 
 
-NodesDict = Dict[NodeID, Node]
-NodeOutputsDict = Dict[OutputID, OutputTypes]
-Parameters = Tuple[NodeOutputsDict]
-_ParametersNodesPair = Tuple[Parameters, NodesDict]
+NodesDict = dict[NodeID, Node]
+NodeOutputsDict = dict[OutputID, OutputTypes]
+Parameters = tuple[NodeOutputsDict]
+_ParametersNodesPair = tuple[Parameters, NodesDict]
 
 
 def _compute_params_checksum(parameters: Parameters) -> MD5Str:
@@ -43,22 +41,20 @@ def _compute_params_checksum(parameters: Parameters) -> MD5Str:
     return compute_sha1_on_small_dataset(parameters)
 
 
-def _build_project_iterations(project_nodes: NodesDict) -> List[_ParametersNodesPair]:
+def _build_project_iterations(project_nodes: NodesDict) -> list[_ParametersNodesPair]:
     """Builds changing instances (i.e. iterations) of the meta-project
 
     This interface only knows about project/node models and parameters
     """
 
     # select iterable nodes
-    iterable_nodes_defs: List[ServiceDockerData] = []  # schemas of iterable nodes
-    iterable_nodes: List[Node] = []  # iterable nodes
-    iterable_nodes_ids: List[NodeID] = []
+    iterable_nodes_defs: list[ServiceDockerData] = []  # schemas of iterable nodes
+    iterable_nodes: list[Node] = []  # iterable nodes
+    iterable_nodes_ids: list[NodeID] = []
 
     for node_id, node in project_nodes.items():
         if is_iterator_service(node.key):
-            node_def = meta_modeling_function_nodes.catalog.get_metadata(
-                node.key, node.version
-            )
+            node_def = _function_nodes.catalog.get_metadata(node.key, node.version)
             # save
             iterable_nodes_defs.append(node_def)
             iterable_nodes.append(node)
@@ -71,17 +67,15 @@ def _build_project_iterations(project_nodes: NodesDict) -> List[_ParametersNodes
         assert node.inputs  # nosec
         assert node_def.inputs  # nosec
 
-        node_call = meta_modeling_function_nodes.catalog.get_implementation(
-            node.key, node.version
-        )
+        node_call = _function_nodes.catalog.get_implementation(node.key, node.version)
         g: Generator[NodeOutputsDict, None, None] = node_call(
             **{name: node.inputs[name] for name in node_def.inputs}
         )
         assert isinstance(g, Iterator)  # nosec
         nodes_generators.append(g)
 
-    updated_nodes_per_iter: List[NodesDict] = []
-    parameters_per_iter: List[Tuple[NodeOutputsDict]] = []
+    updated_nodes_per_iter: list[NodesDict] = []
+    parameters_per_iter: list[tuple[NodeOutputsDict]] = []
 
     for parameters in itertools.product(*nodes_generators):
         # Q: what if iter are infinite?
@@ -101,7 +95,7 @@ def _build_project_iterations(project_nodes: NodesDict) -> List[_ParametersNodes
             _iter_node.outputs = _iter_node.outputs or {}
             _iter_node.outputs.update(node_results)
 
-            # TODO: Replacing iter_node by a param_node, it avoid re-running matching iterations
+            # NOTE: Replacing iter_node by a param_node, it avoid re-running matching iterations
             #       Currently it does not work because front-end needs to change
             # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735
             #
@@ -138,7 +132,7 @@ class ProjectIteration(BaseModel):
     """
 
     # version-control info
-    repo_id: Optional[int] = None
+    repo_id: int | None = None
     repo_commit_id: CommitID = Field(
         ...,
         description="this id makes it unique but does not guarantees order. See iter_index for that",
@@ -149,7 +143,7 @@ class ProjectIteration(BaseModel):
         ...,
         description="Index that allows iterations to be sortable",
     )
-    total_count: Union[int, Literal["unbound"]] = "unbound"
+    total_count: int | Literal["unbound"] = "unbound"
     parameters_checksum: SHA1Str = Field(...)
 
     @classmethod
@@ -178,18 +172,17 @@ class ProjectIteration(BaseModel):
 # NOTE: compose_/parse_ functions are basically serialization functions for ProjectIteration
 #       into/from string tags. An alternative approach would be simply using json.dump/load
 #       but we should guarantee backwards compatibilty with old tags
-# TODO: change this by json-serialization
 def compose_iteration_tag_name(
     repo_commit_id: CommitID,
     iteration_index: IterationID,
-    total_count: Union[int, str],
+    total_count: int | str,
     parameters_checksum: SHA1Str,
 ) -> str:
     """Composes unique tag name for iter_index-th iteration of repo_commit_id out of total_count"""
     return f"iteration:{repo_commit_id}/{iteration_index}/{total_count}/{parameters_checksum}"
 
 
-def parse_iteration_tag_name(name: str) -> Dict[str, Any]:
+def parse_iteration_tag_name(name: str) -> dict[str, Any]:
     if m := re.match(
         r"^iteration:(?P<repo_commit_id>\d+)/(?P<iteration_index>\d+)/(?P<total_count>-*\d+)/(?P<parameters_checksum>.*)$",
         name,
@@ -204,7 +197,7 @@ def parse_iteration_tag_name(name: str) -> Dict[str, Any]:
 async def get_or_create_runnable_projects(
     request: web.Request,
     project_uuid: ProjectID,
-) -> Tuple[List[ProjectID], List[CommitID]]:
+) -> tuple[list[ProjectID], list[CommitID]]:
     """
     Returns ids and refid of projects that can run
     If project_uuid is a std-project, then it returns itself
@@ -219,13 +212,13 @@ async def get_or_create_runnable_projects(
     except UserUndefined as err:
         raise web.HTTPForbidden(reason="Unauthenticated request") from err
 
-    project_nodes: Dict[NodeID, Node] = {
+    project_nodes: dict[NodeID, Node] = {
         nid: Node.parse_obj(n) for nid, n in project["workbench"].items()
     }
 
     # init returns
-    runnable_project_vc_commits: List[CommitID] = []
-    runnable_project_ids: List[ProjectID] = [
+    runnable_project_vc_commits: list[CommitID] = []
+    runnable_project_ids: list[ProjectID] = [
         project_uuid,
     ]
 
@@ -270,7 +263,6 @@ async def get_or_create_runnable_projects(
     total_count = len(iterations)
     original_name = project["name"]
 
-    # FIXME: in an optimization, iteration_index should start with LAST iterated index
     for iteration_index, (parameters, updated_nodes) in enumerate(iterations, start=1):
         log.debug(
             "Creating snapshot of project %s with parameters=%s [%s]",
@@ -321,19 +313,18 @@ async def get_or_create_runnable_projects(
 async def get_runnable_projects_ids(
     request: web.Request,
     project_uuid: ProjectID,
-) -> List[ProjectID]:
-
+) -> list[ProjectID]:
     vc_repo = VersionControlForMetaModeling(request)
     assert vc_repo.user_id  # nosec
 
     project: ProjectDict = await vc_repo.get_project(str(project_uuid))
     assert project["uuid"] == str(project_uuid)  # nosec
-    project_nodes: Dict[NodeID, Node] = {
+    project_nodes: dict[NodeID, Node] = {
         nid: Node.parse_obj(n) for nid, n in project["workbench"].items()
     }
 
     # init returns
-    runnable_project_ids: List[ProjectID] = []
+    runnable_project_ids: list[ProjectID] = []
 
     # std-project
     is_meta_project = any(

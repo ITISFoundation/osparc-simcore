@@ -401,12 +401,13 @@ async def test_regression_io_log_redirect_cb(
             varargs=None,
             varkw=None,
             defaults=None,
-            kwonlyargs=[],
+            kwonlyargs=["log_level"],
             kwonlydefaults=None,
             annotations={
                 "return": None,
                 "app": FastAPI,
                 "logs": str,
+                "log_level": int,
             },
         )
 

@@ -256,7 +256,7 @@ def setup_outputs_manager(app: FastAPI) -> None:
 
         io_log_redirect_cb: LogRedirectCB | None = None
         if settings.RABBIT_SETTINGS:
-            io_log_redirect_cb = partial(post_log_message, app)
+            io_log_redirect_cb = partial(post_log_message, app, log_level=logging.INFO)
         logger.debug(
             "setting up outputs manager %s",
             "with redirection of logs..." if io_log_redirect_cb else "...",

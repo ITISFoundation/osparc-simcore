@@ -2,7 +2,7 @@
 
 """
 import logging
-from typing import Callable, NamedTuple, Optional
+from typing import Callable, NamedTuple
 
 from aiohttp import web
 from models_library.projects import ProjectID
@@ -13,15 +13,15 @@ from pydantic.fields import Field
 from pydantic.networks import HttpUrl
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
-from ._meta import api_version_prefix as VTAG
-from .login.decorators import login_required
-from .meta_modeling_iterations import IterationID, ProjectIteration
-from .meta_modeling_results import ExtractedResults, extract_project_results
-from .meta_modeling_version_control import VersionControlForMetaModeling
-from .security_decorators import permission_required
-from .utils_aiohttp import create_url_for_function, envelope_json_response
-from .version_control_models import CheckpointID, CommitID, TagProxy
-from .version_control_tags import parse_workcopy_project_tag_name
+from .._meta import api_version_prefix as VTAG
+from ..login.decorators import login_required
+from ..security_decorators import permission_required
+from ..utils_aiohttp import create_url_for_function, envelope_json_response
+from ..version_control.models import CheckpointID, CommitID, TagProxy
+from ..version_control.vc_tags import parse_workcopy_project_tag_name
+from ._iterations import IterationID, ProjectIteration
+from ._results import ExtractedResults, extract_project_results
+from ._version_control import VersionControlForMetaModeling
 
 log = logging.getLogger(__name__)
 
@@ -50,7 +50,6 @@ def parse_query_parameters(request: web.Request) -> _QueryParametersModel:
     try:
         return _QueryParametersModel(**request.match_info)
     except ValidationError as err:
-        # TODO: compose reason message better
         raise web.HTTPUnprocessableEntity(reason=f"Invalid query parameters: {err}")
 
 
@@ -76,7 +75,7 @@ async def _get_project_iterations_range(
     project_uuid: ProjectID,
     commit_id: CommitID,
     offset: int = 0,
-    limit: Optional[int] = None,
+    limit: int | None = None,
 ) -> _IterationsRange:
     assert offset >= 0  # nosec
 
@@ -86,9 +85,6 @@ async def _get_project_iterations_range(
     total_number_of_iterations = 0
 
     # Searches all subsequent commits (i.e. children) and retrieve their tags
-
-    # TODO: do all these operations in database.
-    # TODO: implement real pagination https://github.com/ITISFoundation/osparc-simcore/issues/2735
     tags_per_child: list[list[TagProxy]] = await vc_repo.get_children_tags(
         repo_id, commit_id
     )
@@ -96,8 +92,8 @@ async def _get_project_iterations_range(
     iter_items: list[IterationItem] = []
     for n, tags in enumerate(tags_per_child):
         try:
-            iteration: Optional[ProjectIteration] = None
-            workcopy_id: Optional[ProjectID] = None
+            iteration: ProjectIteration | None = None
+            workcopy_id: ProjectID | None = None
 
             for tag in tags:
                 if pim := ProjectIteration.from_tag_name(
@@ -162,7 +158,6 @@ async def create_or_get_project_iterations(
     project_uuid: ProjectID,
     commit_id: CommitID,
 ) -> list[IterationItem]:
-
     raise NotImplementedError()
 
 
@@ -175,11 +170,7 @@ class ParentMetaProjectRef(BaseModel):
 
 
 class _BaseModelGet(BaseModel):
-    name: str = Field(
-        ...,
-        description="Iteration's resource API name",
-        # TODO: PC x_mark_resouce_name=True,  # [AIP-122](https://google.aip.dev/122)
-    )
+    name: str = Field(..., description="Iteration's resource API name")
     parent: ParentMetaProjectRef = Field(
         ..., description="Reference to the the meta-project that created this iteration"
     )
@@ -188,10 +179,7 @@ class _BaseModelGet(BaseModel):
 
 
 class ProjectIterationItem(_BaseModelGet):
-    iteration_index: IterationID = Field(
-        ...,
-        # TODO: PC x_mark_resource_id_segment=True,  # [AIP-122](https://google.aip.dev/122)
-    )
+    iteration_index: IterationID = Field(...)
 
     workcopy_project_id: ProjectID = Field(
         ...,
@@ -204,7 +192,7 @@ class ProjectIterationItem(_BaseModelGet):
     )
 
     @classmethod
-    def create(
+    def create_iteration(
         cls,
         meta_project_uuid,
         meta_project_commit_id,
@@ -236,7 +224,7 @@ class ProjectIterationResultItem(ProjectIterationItem):
     results: ExtractedResults
 
     @classmethod
-    def create(  # pylint: disable=arguments-differ
+    def create_result(  # pylint: disable=arguments-differ
         cls,
         meta_project_uuid,
         meta_project_commit_id,
@@ -278,7 +266,6 @@ routes = web.RouteTableDef()
 @login_required
 @permission_required("project.snapshot.read")
 async def _list_meta_project_iterations_handler(request: web.Request) -> web.Response:
-    # TODO: check access to non owned projects user_id = request[RQT_USERID_KEY]
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735
 
     # parse and validate request ----
@@ -307,7 +294,7 @@ async def _list_meta_project_iterations_handler(request: web.Request) -> web.Res
 
     # parse and validate response ----
     page_items = [
-        ProjectIterationItem.create(
+        ProjectIterationItem.create_iteration(
             meta_project_uuid,
             meta_project_commit_id,
             item.iteration_index,
@@ -332,7 +319,7 @@ async def _list_meta_project_iterations_handler(request: web.Request) -> web.Res
     )
 
 
-# TODO: Enable when create_or_get_project_iterations is implemented
+# NOTE: Enable when create_or_get_project_iterations is implemented
 # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735
 #
 # @routes.post(
@@ -341,9 +328,6 @@ async def _list_meta_project_iterations_handler(request: web.Request) -> web.Res
 # )
 @permission_required("project.snapshot.create")
 async def _create_meta_project_iterations_handler(request: web.Request) -> web.Response:
-    # TODO: check access to non owned projects user_id = request[RQT_USERID_KEY]
-    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735
-
     q = parse_query_parameters(request)
     meta_project_uuid = q.project_uuid
     meta_project_commit_id = q.ref_id
@@ -358,7 +342,7 @@ async def _create_meta_project_iterations_handler(request: web.Request) -> web.R
 
     # parse and validate response ----
     iterations_items = [
-        ProjectIterationItem.create(
+        ProjectIterationItem.create_iteration(
             meta_project_uuid,
             meta_project_commit_id,
             item.iteration_index,
@@ -371,7 +355,6 @@ async def _create_meta_project_iterations_handler(request: web.Request) -> web.R
     return envelope_json_response(iterations_items, web.HTTPCreated)
 
 
-# TODO: registry as route when implemented. Currently iteration is retrieved via GET /projects/{workcopy_project_id}
 @routes.get(
     f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations/{{iter_id}}",
     name=f"{__name__}._get_meta_project_iterations_handler",
@@ -380,6 +363,7 @@ async def _create_meta_project_iterations_handler(request: web.Request) -> web.R
 @permission_required("project.snapshot.read")
 async def _get_meta_project_iterations_handler(request: web.Request) -> web.Response:
     raise NotImplementedError(
+        "Currently iteration is retrieved via GET /projects/{workcopy_project_id}"
         "SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735"
     )
 
@@ -420,19 +404,16 @@ async def _list_meta_project_iterations_results_handler(
     # get every project from the database and extract results
     _prj_data = {}
     for item in iterations_range.items:
-        # TODO: fetch ALL project iterations at once. Otherwise they will have different results
-        # TODO: if raises?
         prj = await vc_repo.get_project(f"{item.project_id}", include=["workbench"])
         _prj_data[item.project_id] = prj["workbench"]
 
     def _get_project_results(project_id) -> ExtractedResults:
-        # TODO: if raises?
         results = extract_project_results(_prj_data[project_id])
         return results
 
     # parse and validate response ----
     page_items = [
-        ProjectIterationResultItem.create(
+        ProjectIterationResultItem.create_result(
             meta_project_uuid,
             meta_project_commit_id,
             item.iteration_index,

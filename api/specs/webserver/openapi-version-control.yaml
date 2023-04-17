@@ -5,7 +5,7 @@ paths:
         - repository
       summary: List Repos
       description: List info about versioned projects
-      operationId: simcore_service_webserver.version_control_handlers._list_repos_handler
+      operationId: simcore_service_webserver.version_control._rest_handlers._list_repos_handler
       parameters:
         - description: index to the first item to return (pagination)
           required: false
@@ -47,7 +47,7 @@ paths:
         - repository
       summary: List Checkpoints
       description: Lists commits&tags tree of the project
-      operationId: simcore_service_webserver.version_control_handlers._list_checkpoints_handler
+      operationId: simcore_service_webserver.version_control._rest_handlers._list_checkpoints_handler
       parameters:
         - description: Project unique identifier
           required: true
@@ -96,7 +96,7 @@ paths:
       tags:
         - repository
       summary: Create Checkpoint
-      operationId: simcore_service_webserver.version_control_handlers._create_checkpoint_handler
+      operationId: simcore_service_webserver.version_control._rest_handlers._create_checkpoint_handler
       parameters:
         - description: Project unique identifier
           required: true
@@ -132,7 +132,7 @@ paths:
         - repository
       summary: Gets HEAD (i.e. current) checkpoint
       description: Get current commit
-      operationId: simcore_service_webserver.version_control_handlers._get_checkpoint_handler_head
+      operationId: simcore_service_webserver.version_control._rest_handlers._get_checkpoint_handler_head
       parameters:
         - description: Project unique identifier
           required: true
@@ -162,7 +162,7 @@ paths:
         - repository
       summary: Get Checkpoint
       description: Set ref_id=HEAD to return current commit
-      operationId: simcore_service_webserver.version_control_handlers._get_checkpoint_handler
+      operationId: simcore_service_webserver.version_control._rest_handlers._get_checkpoint_handler
       parameters:
         - description: A repository ref (commit, tag or branch)
           required: true
@@ -201,7 +201,7 @@ paths:
       tags:
         - repository
       summary: Update Checkpoint Annotations
-      operationId: simcore_service_webserver.version_control_handlers._update_checkpoint_annotations_handler
+      operationId: simcore_service_webserver.version_control._rest_handlers._update_checkpoint_annotations_handler
       parameters:
         - description: A repository ref (commit, tag or branch)
           required: true
@@ -250,7 +250,7 @@ paths:
       description: |-
         Affect current working copy of the project, i.e. get_project will now return
         the check out
-      operationId: simcore_service_webserver.version_control_handlers._checkout_handler
+      operationId: simcore_service_webserver.version_control._rest_handlers._checkout_handler
       parameters:
         - description: A repository ref (commit, tag or branch)
           required: true
@@ -291,7 +291,7 @@ paths:
         - repository
       summary: View Project Workbench
       description: Returns a view of the workbench for a given project's version
-      operationId: simcore_service_webserver.version_control_handlers._view_project_workbench_handler
+      operationId: simcore_service_webserver.version_control._rest_handlers._view_project_workbench_handler
       parameters:
         - description: A repository ref (commit, tag or branch)
           required: true

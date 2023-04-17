@@ -187,7 +187,6 @@ async def _get_networks_with_aliases_for_default_network(
     new_networks_with_aliases[default_network] = ContainerAliases.parse_obj({})
 
     for node_uuid, node_content in new_workbench.items():
-
         # only add dynamic-sidecar nodes
         if not await requires_dynamic_sidecar(
             service_key=node_content.key,
@@ -215,7 +214,7 @@ async def _get_networks_with_aliases_for_default_network(
                         f"Network name is {default_network}"
                     )
                 ],
-                log_level=logging.INFO,
+                log_level=logging.WARNING,
             )
             await rabbitmq_client.publish(message.channel_name, message.json())
             continue
