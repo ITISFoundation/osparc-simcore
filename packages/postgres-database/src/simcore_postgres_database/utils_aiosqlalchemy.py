@@ -1,14 +1,14 @@
-from typing import Any
-
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from .utils_migration import get_current_head
 
 
-async def get_pg_engine_stateinfo(engine: AsyncEngine) -> dict[str, Any]:
+async def get_pg_engine_stateinfo(engine: AsyncEngine) -> dict[str, str]:
+    checkedin = engine.pool.checkedin()  # type: ignore
+    checkedout = engine.pool.checkedout()  # type: ignore
     return {
-        "current pool connections": f"{engine.pool.checkedin()=},{engine.pool.checkedout()=}",  # type: ignore
+        "current pool connections": f"{checkedin=},{checkedout=}",
     }
 
 
