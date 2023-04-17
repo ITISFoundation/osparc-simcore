@@ -287,7 +287,7 @@ async def user_project_with_num_dynamic_services(
             project_data = {
                 "workbench": {
                     faker.uuid4(): {
-                        "key": f"simcore/services/dynamic/{faker.pystr()}",
+                        "key": f"simcore/services/dynamic/{faker.pystr().lower()}",
                         "version": faker.numerify("#.#.#"),
                         "label": faker.name(),
                     }

@@ -11,7 +11,9 @@ logger = logging.getLogger(__name__)
 
 
 def _get_db_engine(request: Request) -> AsyncEngine:
-    return request.app.state.engine
+    engine: AsyncEngine = request.app.state.engine
+    assert engine  # nosec
+    return engine
 
 
 def get_repository(repo_type: type[BaseRepository]) -> Callable:

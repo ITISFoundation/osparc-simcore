@@ -7,7 +7,7 @@ NOTE: to dump json-schema from CLI use
 import re
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import Any, Final
 from uuid import UUID
 
 from pydantic import (
@@ -36,16 +36,26 @@ from .utils.json_schema import (
 
 # CONSTANTS -------------------------------------------
 # NOTE: move to _constants.py: SEE https://github.com/ITISFoundation/osparc-simcore/issues/3486
-# NOTE: needs to end with / !!
-SERVICE_KEY_RE = r"^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$"
+SERVICE_KEY_RE: Final[re.Pattern[str]] = re.compile(
+    r"^simcore/services/"
+    r"(?P<type>(comp|dynamic|frontend))/"
+    r"(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*"
+    r"(?P<name>[a-z0-9-_]+[a-z0-9])$"
+)
 
-DYNAMIC_SERVICE_KEY_RE = r"^(simcore)/(services)/dynamic(/[\w/-]+)+$"
+DYNAMIC_SERVICE_KEY_RE = re.compile(
+    r"^simcore/services/dynamic/"
+    r"(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*"
+    r"(?P<name>[a-z0-9-_]+[a-z0-9])$"
+)
 DYNAMIC_SERVICE_KEY_FORMAT = "simcore/services/dynamic/{service_name}"
 
-COMPUTATIONAL_SERVICE_KEY_RE = r"^(simcore)/(services)/comp(/[\w/-]+)+$"
+COMPUTATIONAL_SERVICE_KEY_RE = re.compile(
+    r"^simcore/services/comp/"
+    r"(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*"
+    r"(?P<name>[a-z0-9-_]+[a-z0-9])$"
+)
 COMPUTATIONAL_SERVICE_KEY_FORMAT = "simcore/services/comp/{service_name}"
-
-KEY_RE = SERVICE_KEY_RE  # TODO: deprecate this global constant by SERVICE_KEY_RE
 
 PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]+$"  # TODO: PC->* it would be advisable to have this "variable friendly" (see VARIABLE_NAME_RE)
 
@@ -58,10 +68,18 @@ FileName = constr(regex=FILENAME_RE)
 
 
 class ServiceKey(ConstrainedStr):
-    regex = re.compile(SERVICE_KEY_RE)
+    regex = SERVICE_KEY_RE
 
     class Config:
         frozen = True
+
+
+class DynamicServiceKey(ServiceKey):
+    regex = DYNAMIC_SERVICE_KEY_RE
+
+
+class ComputationalServiceKey(ServiceKey):
+    regex = COMPUTATIONAL_SERVICE_KEY_RE
 
 
 class ServiceVersion(ConstrainedStr):
