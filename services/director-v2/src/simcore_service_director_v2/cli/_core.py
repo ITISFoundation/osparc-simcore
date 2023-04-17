@@ -87,7 +87,7 @@ async def async_project_save_state(project_id: ProjectID, save_attempts: int) ->
     async with _initialized_app() as app:
         projects_repository: ProjectsRepository = get_repository(
             app, ProjectsRepository
-        )
+        )  # type: ignore
         project_at_db = await projects_repository.get_project(project_id)
 
         typer.echo(f"Saving project '{project_at_db.uuid}' - '{project_at_db.name}'")
@@ -218,7 +218,8 @@ async def _get_nodes_render_data(
     app: FastAPI,
     project_id: ProjectID,
 ) -> list[RenderData]:
-    projects_repository: ProjectsRepository = get_repository(app, ProjectsRepository)
+    projects_repository: ProjectsRepository = get_repository(app, ProjectsRepository)  # type: ignore
+
     project_at_db = await projects_repository.get_project(project_id)
 
     render_data = []
@@ -230,7 +231,7 @@ async def _get_nodes_render_data(
                     client, node_uuid, node_content.label, service_type
                 )
             )
-    return sorted(render_data, key=lambda x: x.node_uuid)
+    return sorted(render_data, key=lambda x: x.node_uuid)  # type: ignore
 
 
 async def _display(
