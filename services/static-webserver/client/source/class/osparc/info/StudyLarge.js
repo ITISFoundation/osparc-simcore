@@ -100,6 +100,11 @@ qx.Class.define("osparc.info.StudyLarge", {
         this._add(hBox);
       }
 
+      if (osparc.product.Utils.showDisableServiceAutoStart() && this.__canIWrite()) {
+        const autoStart = this.__createDisableServiceAutoStart();
+        this._add(autoStart);
+      }
+
       if (this.getStudy().getTags().length || this.__canIWrite()) {
         const tags = this.__createTags();
         const editInTitle = this.__createViewWithEdit(tags.getChildren()[0], null);
@@ -246,6 +251,10 @@ qx.Class.define("osparc.info.StudyLarge", {
 
     __createThumbnail: function(maxWidth, maxHeight = 160) {
       return osparc.info.StudyUtils.createThumbnail(this.getStudy(), maxWidth, maxHeight);
+    },
+
+    __createDisableServiceAutoStart: function() {
+      return osparc.info.StudyUtils.createDisableServiceAutoStart(this.getStudy());
     },
 
     __createTags: function() {
