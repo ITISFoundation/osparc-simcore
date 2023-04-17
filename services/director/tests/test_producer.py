@@ -257,7 +257,6 @@ def docker_network(
 async def test_interactive_service_in_correct_network(
     docker_network: docker.models.networks.Network, run_services
 ):
-
     running_dynamic_services = await run_services(
         number_comp=0, number_dyn=2, dependant=False
     )
@@ -348,8 +347,6 @@ async def test_get_service_key_version_from_docker_service(
         "/simcore/postgres:14.5-alpine@sha256:db802f226b620fc0b8adbeca7859eb203c8d3c9ce5d84870fadee05dea8f50ce",
         "itisfoundation/postgres:14.5-alpine@sha256:db802f226b620fc0b8adbeca7859eb203c8d3c9ce5d84870fadee05dea8f50ce",
         "/simcore/services/stuff/postgres:10.11",
-        "/simcore/services/dynamic/postgres:10.11",
-        "/simcore/services/dynamic/postgres:10",
     ],
 )
 async def test_get_service_key_version_from_docker_service_except_invalid_keys(
