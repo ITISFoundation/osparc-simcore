@@ -18,6 +18,7 @@ when fastapi or related libraries are upgraded.
 """
 
 import urllib
+import urllib.parse
 from uuid import UUID
 
 import pytest
