@@ -1,7 +1,6 @@
 import logging
 from os.path import join
 from pathlib import Path
-from typing import cast
 
 from aiohttp import web
 
@@ -13,7 +12,8 @@ log = logging.getLogger(__name__)
 
 
 def themed(dirname: str, template: str) -> Path:
-    return cast(Path, resources.get_path(join(dirname, template)))
+    path: Path = resources.get_path(join(dirname, template))
+    return path
 
 
 async def get_template_path(request: web.Request, filename: str) -> Path:
