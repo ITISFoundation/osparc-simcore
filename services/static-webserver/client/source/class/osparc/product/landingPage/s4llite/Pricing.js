@@ -41,20 +41,24 @@ qx.Class.define("osparc.product.landingPage.s4llite.Pricing", {
         alignX: "left",
         alignY: "middle",
         allowGrowX: false,
-        padding: 10,
-        width: 100
+        padding: 5,
+        width: 90
       });
-      backToContentButton.setMargin(20);
+      backToContentButton.setMargin(30);
       backToContentButton.addListener("execute", () => this.fireEvent("backToContent"));
       this._add(backToContentButton);
 
-      const img1 = new qx.ui.basic.Image("osparc/landingPage/diru1.png");
-      img1.setMargin(20);
-      this._add(img1);
-
-      const img2 = new qx.ui.basic.Image("osparc/landingPage/diru2.png");
-      img2.setMargin(20);
-      this._add(img2);
+      [
+        "osparc/landingPage/diru1.png",
+        "osparc/landingPage/diru2.png"
+      ].forEach(imgSrc => {
+        const img = new qx.ui.basic.Image(imgSrc);
+        img.setMargin(30);
+        img.getContentElement().setStyles({
+          "border-radius": "6px"
+        });
+        this._add(img);
+      });
     }
   }
 });
