@@ -60,7 +60,8 @@ def _get_dynamic_sidecar_endpoint(
     dynamic_sidecar_names = DynamicSidecarNamesHelper.make(NodeID(node_id))
     hostname = dynamic_sidecar_names.service_name_dynamic_sidecar
     port = settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_PORT
-    return parse_obj_as(AnyHttpUrl, f"http://{hostname}:{port}")  # NOSONAR
+    url: AnyHttpUrl = parse_obj_as(AnyHttpUrl, f"http://{hostname}:{port}")  # NOSONAR
+    return url
 
 
 async def _save_node_state(
@@ -222,7 +223,7 @@ async def _get_nodes_render_data(
 
     project_at_db = await projects_repository.get_project(project_id)
 
-    render_data = []
+    render_data: list[RenderData] = []
     async with AsyncClient() as client:
         for node_uuid, node_content in project_at_db.workbench.items():
             service_type = get_service_from_key(service_key=node_content.key)
@@ -231,7 +232,10 @@ async def _get_nodes_render_data(
                     client, node_uuid, node_content.label, service_type
                 )
             )
-    return sorted(render_data, key=lambda x: x.node_uuid)  # type: ignore
+    sorted_render_data: list[RenderData] = sorted(
+        render_data, key=lambda x: x.node_uuid  # type:ignore
+    )
+    return sorted_render_data
 
 
 async def _display(

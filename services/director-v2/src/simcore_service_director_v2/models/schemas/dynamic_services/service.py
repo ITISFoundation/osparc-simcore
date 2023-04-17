@@ -1,7 +1,7 @@
 from enum import Enum, unique
 from functools import cached_property, lru_cache, total_ordering
 from pathlib import Path
-from typing import Optional
+from typing import Any
 
 from models_library.basic_types import PortInt
 from models_library.projects import ProjectID
@@ -57,7 +57,7 @@ class ServiceDetails(CommonServiceDetails):
 
     class Config:
         allow_population_by_field_name = True
-        schema_extra = {
+        schema_extra: dict[str, Any] = {
             "example": {
                 "key": "simcore/services/dynamic/3dviewer",
                 "version": "2.4.5",
@@ -130,7 +130,7 @@ class RunningDynamicServiceDetails(ServiceDetails):
         deprecated=True,
     )
 
-    entry_point: Optional[str] = Field(
+    entry_point: str | None = Field(
         default=None,
         description="if empty the service entrypoint is on the root endpoint.",
         deprecated=True,
@@ -138,7 +138,7 @@ class RunningDynamicServiceDetails(ServiceDetails):
     state: ServiceState = Field(
         ..., description="service current state", alias="service_state"
     )
-    message: Optional[str] = Field(
+    message: str | None = Field(
         default=None,
         description="additional information related to service state",
         alias="service_message",

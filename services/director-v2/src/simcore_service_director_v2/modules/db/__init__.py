@@ -1,6 +1,6 @@
 from fastapi import FastAPI
+from settings_library.postgres import PostgresSettings
 
-from ...core.settings import PostgresSettings
 from .events import close_db_connection, connect_to_db
 
 
