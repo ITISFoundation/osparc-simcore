@@ -10,7 +10,6 @@ class Meta(BaseModel):
         None, description="Maps every route's path tag with a released version"
     )
     docs_url: AnyHttpUrl
-
     docs_dev_url: AnyHttpUrl
 
     class Config:
