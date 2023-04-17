@@ -427,6 +427,10 @@ def test_DOCKER_LABEL_KEY_REGEX(sample, expected):
         ("myregistryHOST:5000/fedora/httpd:version1.0", INVALID),  # upper case
         ("myregistryhost:5000/fedora/httpd:-version1.0", INVALID),  # tag starts with -
         ("myregistryhost:5000/fedora/httpd:.version1.0", INVALID),  # tag starts with .
+        (
+            "simcore/services/dynamic/some/sub/folder/my_service-key:123.456.3214@sha256:2aef165ab4f30fbb109e88959271d8b57489790ea13a77d27c02d8adb8feb20f",
+            VALID,
+        ),
     ],
     ids=lambda d: f"{d if isinstance(d, str) else ('INVALID' if d is INVALID else 'VALID')}",
 )
