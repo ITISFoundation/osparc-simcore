@@ -30,39 +30,6 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
   },
 
   statics: {
-    titleLabel: function(text) {
-      const label = new qx.ui.basic.Label().set({
-        textAlign: "center",
-        rich: true,
-        wrap: true
-      });
-      if (text) {
-        label.setValue(text);
-      }
-      return label;
-    },
-
-    smallTitle: function(text) {
-      return this.self().titleLabel(text).set({
-        font: "text-18",
-        width: 200
-      });
-    },
-
-    mediumTitle: function(text) {
-      return this.self().titleLabel(text).set({
-        font: "text-22",
-        width: 550
-      });
-    },
-
-    largeTitle: function(text) {
-      return this.self().titleLabel(text).set({
-        font: "text-26",
-        width: 500
-      });
-    },
-
     createTabPage: function(title, imageSrc, text) {
       const page = new qx.ui.tabview.Page(title);
       page.setLayout(new qx.ui.layout.HBox(20));
@@ -244,7 +211,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         alignY: "middle"
       }));
 
-      const text1 = this.self().smallTitle(this.tr("Trusted by 100+ users"));
+      const text1 = osparc.product.landingPage.Utils.smallTitle(this.tr("Trusted by 100+ users"));
       contentLayout.add(text1);
 
       const usersLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
@@ -318,7 +285,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         alignY: "middle"
       }));
 
-      const text1 = this.self().largeTitle(this.tr("Multiphysics simulation platform combining human models with powerful physics solvers"));
+      const text1 = osparc.product.landingPage.Utils.largeTitle(this.tr("Multiphysics simulation platform combining human models with powerful physics solvers"));
       contentLayout.add(text1);
 
       const tabs = new qx.ui.tabview.TabView().set({
@@ -367,10 +334,10 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         alignY: "middle"
       }));
 
-      const text1 = this.self().smallTitle(this.tr("HOW IT WORKS"));
+      const text1 = osparc.product.landingPage.Utils.smallTitle(this.tr("HOW IT WORKS"));
       contentLayout.add(text1);
 
-      const text2 = this.self().largeTitle(this.tr("Easy to use, all-in-one solution"));
+      const text2 = osparc.product.landingPage.Utils.largeTitle(this.tr("Easy to use, all-in-one solution"));
       contentLayout.add(text2);
 
       const stepsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(30).set({
@@ -378,13 +345,13 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         alignY: "middle"
       }));
       [{
-        image: "https://zmt.swiss/assets/images/sim4life/modules/MRI/bcage.png",
+        image: "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/lite/extra/phone_cad.png",
         title: "CAD Modeling",
         text: "Use our Virtual Poupualtion, upload CAD models or build your own model with our amazing tools."
       }, {
         image: "https://zmt.swiss/assets/images/sim4life/framework/NewUnstructuredMesh.png",
         title: "Simulation",
-        text: "Simulators, gridders, voxelers and solvers"
+        text: "Simulators, gridders, voxelers and solvers."
       }, {
         image: "https://zmt.swiss/assets/images/sim4life/framework/postpromain.jpg",
         title: "Post-processing",
@@ -404,7 +371,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         alignY: "middle"
       }));
 
-      const text1 = this.self().smallTitle(this.tr("Our partners"));
+      const text1 = osparc.product.landingPage.Utils.smallTitle(this.tr("Our partners"));
       contentLayout.add(text1);
 
       const partnersLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(50).set({
@@ -443,10 +410,10 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         alignY: "middle"
       }));
 
-      const text1 = this.self().smallTitle(this.tr("AVAILABLE PHYSICS"));
+      const text1 = osparc.product.landingPage.Utils.smallTitle(this.tr("AVAILABLE PHYSICS"));
       contentLayout.add(text1);
 
-      const text2 = this.self().largeTitle(("A broad range of physics based on best-of-breed simulation solvers"));
+      const text2 = osparc.product.landingPage.Utils.largeTitle(("A broad range of physics based on best-of-breed simulation solvers"));
       contentLayout.add(text2);
 
       const grid = new qx.ui.layout.Grid(20, 10);
@@ -704,7 +671,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         osparc.store.StaticInfo.getInstance().getDisplayName()
       ])
         .then(values => {
-          const createAccountLabel = this.self().mediumTitle();
+          const createAccountLabel = osparc.product.landingPage.Utils.mediumTitle();
           createAccountLayout.add(createAccountLabel);
           const label = this.tr("Request account");
           const requestAccountButton = this.self().lpStrongButton(label);
@@ -735,7 +702,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         alignY: "middle"
       }));
 
-      const subscribeLabel = this.self().mediumTitle(this.tr("Subscribe"));
+      const subscribeLabel = osparc.product.landingPage.Utils.mediumTitle(this.tr("Subscribe"));
       subscribeLayout.add(subscribeLabel);
 
       const height = 48;

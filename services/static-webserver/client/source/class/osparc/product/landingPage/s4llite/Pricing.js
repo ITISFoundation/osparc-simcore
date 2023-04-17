@@ -21,10 +21,12 @@ qx.Class.define("osparc.product.landingPage.s4llite.Pricing", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox().set({
+    this._setLayout(new qx.ui.layout.VBox(20).set({
       alignX: "center",
       alignY: "middle"
     }));
+
+    this.setPadding(30);
 
     this.buildLayout();
   },
@@ -44,21 +46,30 @@ qx.Class.define("osparc.product.landingPage.s4llite.Pricing", {
         padding: 5,
         width: 90
       });
-      backToContentButton.setMargin(30);
       backToContentButton.addListener("execute", () => this.fireEvent("backToContent"));
       this._add(backToContentButton);
 
-      [
-        "osparc/landingPage/diru1.png",
-        "osparc/landingPage/diru2.png"
-      ].forEach(imgSrc => {
-        const img = new qx.ui.basic.Image(imgSrc);
-        img.setMargin(30);
-        img.getContentElement().setStyles({
-          "border-radius": "6px"
-        });
-        this._add(img);
+      const title1 = osparc.product.landingPage.Utils.largeTitle(this.tr("Pricing & Plans")).set({
+        paddingTop: 20
       });
+      this._add(title1);
+
+      const img1 = new qx.ui.basic.Image("osparc/landingPage/diru1.png");
+      img1.getContentElement().setStyles({
+        "border-radius": "6px"
+      });
+      this._add(img1);
+
+      const title2 = osparc.product.landingPage.Utils.largeTitle(this.tr("Choose the Right Plan for You")).set({
+        paddingTop: 20
+      });
+      this._add(title2);
+
+      const img2 = new qx.ui.basic.Image("osparc/landingPage/diru2.png");
+      img2.getContentElement().setStyles({
+        "border-radius": "6px"
+      });
+      this._add(img2);
     }
   }
 });
