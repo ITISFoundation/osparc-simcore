@@ -124,8 +124,9 @@ def app_environment(
     print("+ web_server:")
     cfg = deepcopy(app_cfg)
     env = monkeypatch_setenv_from_app_config(cfg)
-    monkeypatch.setenv("WEBSERVER_CLUSTERS", "0")  # currently defaults to being false
-    return env | {"WEBSERVER_CLUSTERS": "0"}
+    return env
+    # monkeypatch.setenv("WEBSERVER_CLUSTERS", "0")  # currently defaults to being false
+    # return env | {"WEBSERVER_CLUSTERS": "0"}
 
 
 @pytest.fixture
