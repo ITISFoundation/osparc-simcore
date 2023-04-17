@@ -28,8 +28,7 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
     this.set({
       paddingLeft: 10,
       paddingRight: 10,
-      height: osparc.navigation.NavigationBar.HEIGHT,
-      backgroundColor: "background-main-1"
+      height: osparc.navigation.NavigationBar.HEIGHT
     });
 
     this.buildLayout();

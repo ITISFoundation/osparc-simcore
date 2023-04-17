@@ -28,8 +28,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Footer", {
     this.set({
       padding: 30,
       paddingLeft: 250,
-      paddingRight: 250,
-      backgroundColor: "background-main-2"
+      paddingRight: 250
     });
 
     this.buildLayout();

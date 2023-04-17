@@ -28,7 +28,9 @@ qx.Class.define("osparc.product.landingPage.s4llite.Page", {
 
     this._setLayout(new qx.ui.layout.VBox(null, null, "separator-vertical"));
 
-    const navBar = new osparc.product.landingPage.NavigationBar();
+    const navBar = new osparc.product.landingPage.NavigationBar().set({
+      backgroundColor: "background-main-2"
+    });
     navBar.addListener("loginPressed", () => this.fireEvent("loginPressed"));
     this._add(navBar);
 
@@ -38,7 +40,9 @@ qx.Class.define("osparc.product.landingPage.s4llite.Page", {
     const content = new osparc.product.landingPage.s4llite.Content();
     contentVBox.add(content);
 
-    const footer = new osparc.product.landingPage.s4llite.Footer();
+    const footer = new osparc.product.landingPage.s4llite.Footer().set({
+      backgroundColor: "background-main-2"
+    });
     contentVBox.add(footer);
 
     scrollContainer.add(contentVBox);

@@ -21,12 +21,10 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(80).set({
+    this._setLayout(new qx.ui.layout.VBox().set({
       alignX: "center",
       alignY: "middle"
     }));
-
-    this.setPadding(50);
 
     this.buildLayout();
   },
@@ -132,35 +130,26 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
 
   members: {
     buildLayout: function() {
-      const contentTryItOut = this.__createContentTryItOut();
-      this._add(contentTryItOut);
-
-      const contentUsers = this.__createContentUsers();
-      this._add(contentUsers);
-
-      const contentTabbedLaptop = this.__createContentTabbedLeft();
-      this._add(contentTabbedLaptop);
-
-      const content3Tabs = this.__createContentSteps();
-      this._add(content3Tabs);
-
-      const contentPartners = this.__createContentPartners();
-      this._add(contentPartners);
-
-      const contentPhysics = this.__createContentPhysics();
-      this._add(contentPhysics);
-
-      const contentTestimonials = this.__createContentTestimonials();
-      this._add(contentTestimonials);
-
-      const contentTemplates = this.__createContentTemplates();
-      this._add(contentTemplates);
-
-      const contentCreateAccount = this.__createContentCreateAccount();
-      this._add(contentCreateAccount);
-
-      const contentSubscribe = this.__createContentSubscribe();
-      this._add(contentSubscribe);
+      [
+        this.__createContentTryItOut(),
+        this.__createContentUsers(),
+        this.__createContentTabbedLeft(),
+        this.__createContentSteps(),
+        this.__createContentPartners(),
+        this.__createContentPhysics(),
+        this.__createContentTestimonials(),
+        this.__createContentTemplates(),
+        this.__createContentCreateAccount(),
+        this.__createContentSubscribe()
+      ].forEach((section, idx) => {
+        section.setPadding(50);
+        if (idx % 2 === 0) {
+          section.setBackgroundColor("background-main");
+        } else {
+          section.setBackgroundColor("background-main-1");
+        }
+        this._add(section);
+      });
     },
 
     __createContentTryItOut: function() {
@@ -178,16 +167,16 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       });
 
       const text1 = new qx.ui.basic.Label().set({
-        value: this.tr("Preview the impossible: a native implementation of the most advanced simulation platform Sim4Life in the cloud"),
-        font: "text-24",
+        value: this.tr("Preview the impossible: a native implementation of Sim4Life in the cloud"),
+        font: "text-30",
         rich: true,
         wrap: true
       });
       leftLayout.add(text1);
 
       const text2 = new qx.ui.basic.Label().set({
-        value: this.tr("Access it without sacrificing performance and explore the many advantages. More information will be released soon so stay tuned! Until then, experience the student version <i>S4L<sup>lite</sup></i>."),
-        font: "text-16",
+        value: this.tr("Access it without sacrificing performance and explore the many advantages. Experience the student version <i>S4L<sup>lite</sup></i>."),
+        font: "text-20",
         rich: true,
         wrap: true
       });
