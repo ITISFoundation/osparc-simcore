@@ -1,9 +1,7 @@
-from typing import Optional
-
 from models_library.basic_regex import UUID_RE
 from models_library.basic_types import PortInt
 from models_library.service_settings_labels import ContainerSpec
-from models_library.services import KEY_RE, VERSION_RE, ServiceDockerData
+from models_library.services import SERVICE_KEY_RE, VERSION_RE, ServiceDockerData
 from pydantic import BaseModel, Field, validator
 from pydantic.types import ByteSize, NonNegativeInt
 
@@ -23,7 +21,7 @@ class NodeRequirements(BaseModel):
         alias="CPU",
         gt=0.0,
     )
-    gpu: Optional[NonNegativeInt] = Field(
+    gpu: NonNegativeInt | None = Field(
         None,
         description="defines the required (maximum) GPU for running the services",
         alias="GPU",
@@ -33,7 +31,7 @@ class NodeRequirements(BaseModel):
         description="defines the required (maximum) amount of RAM for running the services",
         alias="RAM",
     )
-    vram: Optional[ByteSize] = Field(
+    vram: ByteSize | None = Field(
         default=None,
         description="defines the required (maximum) amount of VRAM for running the services",
         alias="VRAM",
@@ -61,8 +59,8 @@ class NodeRequirements(BaseModel):
 
 class ServiceExtras(BaseModel):
     node_requirements: NodeRequirements
-    service_build_details: Optional[ServiceBuildDetails] = None
-    container_spec: Optional[ContainerSpec] = None
+    service_build_details: ServiceBuildDetails | None = None
+    container_spec: ContainerSpec | None = None
 
     class Config:
         schema_extra = {
@@ -101,7 +99,7 @@ class ServiceExtrasEnveloped(BaseModel):
 
 
 class RunningServiceDetails(BaseModel):
-    published_port: Optional[PortInt] = Field(
+    published_port: PortInt | None = Field(
         None,
         description="The ports where the service provides its interface on the docker swarm",
         deprecated=True,
@@ -115,7 +113,7 @@ class RunningServiceDetails(BaseModel):
     )
     service_key: str = Field(
         ...,
-        regex=KEY_RE,
+        regex=SERVICE_KEY_RE.pattern,
         description="distinctive name for the node based on the docker registry path",
         example=[
             "simcore/services/comp/itis/sleeper",

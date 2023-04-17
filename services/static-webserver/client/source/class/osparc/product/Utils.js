@@ -147,6 +147,13 @@ qx.Class.define("osparc.product.Utils", {
       return true;
     },
 
+    showDisableServiceAutoStart: function() {
+      if (this.isProduct("s4llite")) {
+        return false;
+      }
+      return true;
+    },
+
     showQuality: function() {
       if (this.isProduct("s4llite")) {
         return false;

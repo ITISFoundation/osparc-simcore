@@ -22,6 +22,19 @@ build() {
     "$SCRIPT_DIR/mypy"
 }
 
+echo_requirements() {
+  echo "Installed :"
+  docker run \
+    --interactive \
+    --rm \
+    --user="$(id --user "$USER")":"$(id --group "$USER")" \
+    --entrypoint="pip" \
+    "$IMAGE_NAME" \
+     --no-cache-dir freeze
+}
+
+
+
 run() {
   echo Using "$(docker run --rm "$IMAGE_NAME" --version)"
   echo Mypy config "${MYPY_CONFIG}"
@@ -45,6 +58,7 @@ run() {
 # USAGE
 #    ./scripts/mypy.bash --help
 build
+echo_requirements
 run "$@"
 echo "DONE"
 # ----------------------------------------------------------------------
