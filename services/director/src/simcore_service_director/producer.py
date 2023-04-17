@@ -454,7 +454,7 @@ async def _pass_port_to_service(
                 port,
                 route,
             )
-            service_url = "http://" + service_name + "/" + route
+            service_url = "http://" + service_name + "/" + route # NOSONAR
             query_string = {
                 "hostname": str(config.PUBLISHED_HOST_NAME),
                 "port": str(port),
@@ -1040,7 +1040,7 @@ async def get_service_details(app: web.Application, node_uuid: str) -> Dict:
 async def _save_service_state(service_host_name: str, session: aiohttp.ClientSession):
     response: ClientResponse
     async with session.post(
-        url=f"http://{service_host_name}/state",
+        url=f"http://{service_host_name}/state", # NOSONAR
         timeout=ServicesCommonSettings().director_dynamic_service_save_timeout,
     ) as response:
         try:

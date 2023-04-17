@@ -97,7 +97,7 @@ class StaticWebserverModuleSettings(BaseCustomSettings):
 
     # TODO: host/port
     STATIC_WEBSERVER_URL: AnyHttpUrl = Field(
-        "http://static-webserver:8000",
+        "https://static-webserver:8000",
         description="url fort static content",
         env=[
             "STATIC_WEBSERVER_URL",
