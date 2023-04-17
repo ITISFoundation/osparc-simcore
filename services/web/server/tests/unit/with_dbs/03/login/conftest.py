@@ -22,7 +22,6 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
         monkeypatch,
         {
             "WEBSERVER_ACTIVITY": "null",
-            "WEBSERVER_CLUSTERS": "null",
             "WEBSERVER_COMPUTATION": "0",
             "WEBSERVER_DIAGNOSTICS": "null",
             "WEBSERVER_DIRECTOR": "null",
