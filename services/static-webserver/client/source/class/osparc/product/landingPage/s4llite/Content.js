@@ -49,13 +49,13 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
     largeTitle: function(text) {
       return this.self().titleLabel(text).set({
         font: "text-26",
-        width: 380
+        width: 480
       });
     },
 
     createTabPage: function(title, imageSrc, text) {
       const page = new qx.ui.tabview.Page(title);
-      page.setLayout(new qx.ui.layout.HBox(10));
+      page.setLayout(new qx.ui.layout.HBox(20));
       const tabButton = page.getChildControl("button");
       tabButton.set({
         padding: 10,
@@ -64,14 +64,14 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         alignX: "right"
       });
       tabButton.getChildControl("label").set({
-        font: "text-16",
+        font: "text-18",
         textAlign: "right",
         alignX: "right",
-        width: 240
+        width: 280
       });
       const image = new qx.ui.basic.Image(imageSrc).set({
-        width: 600,
-        height: 350,
+        width: 500,
+        height: 300,
         scale: true
       });
       image.getContentElement().setStyles({
@@ -318,21 +318,21 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         alignX: "center"
       });
       [{
-        title: "Computable Human Phantoms",
+        title: "Whole-body Human Models",
         image: "https://zmt.swiss/assets/images/sim4life/vipnews.png",
         text: "Sim4Life natively supports the Virtual Population ViP 3.x/4.0 models that include integrated posing and morphing tools."
       }, {
-        title: "Physics Solvers",
+        title: "Physics Solvers & Tissue Models",
         image: "https://zmt.swiss/assets/images/sim4life/physics_models/EM01__ResizedImageWzQyMCwyNTFd.jpg",
-        text: "The powerful Sim4Life solvers are specifically developed for computationally complex problems."
-      }, {
-        title: "Tissue Models",
-        image: "https://zmt.swiss/assets/images/sim4life/tissue_models/_resampled/ResizedImageWzQyMCwyNTBd/neuro01.jpg",
-        text: "The integrated tissue models enable the modeling and analysis of physiological processes."
+        text: "The powerful Sim4Life solvers are specifically developed for computationally complex problems, and the integrated tissue models enable the modeling and analysis of physiological processes."
       }, {
         title: "Framework",
         image: "https://zmt.swiss/assets/images/sim4life/framework/_resampled/ResizedImageWzQyMCwyNTBd/postpro01.jpg",
         text: "The Sim4Life Framework efficiently facilitates all steps in complex multiphysics modeling, from defining the problem, discretizing, simulating, and analyzing to visualizing the results, with clarity and flexibility."
+      }, {
+        title: "Modules",
+        image: "https://zmt.swiss/assets/images/sim4life/tissue_models/_resampled/ResizedImageWzQyMCwyNTBd/neuro01.jpg",
+        text: "- MRI: IMAnalytics, Musaik, SysSim, BCage, IMSafe, TxCoil<br>- Modeling: Remsesh, iSeg<br>- Calculators: DispFit, PPCalc<br>- Processing: Match, MBSAR, 5G, MiMo, HAC<br>- Import: Huygens, Img, Vox"
       }].forEach(tab => {
         const tabPage = this.self().createTabPage(tab.title, tab.image, tab.text);
         tabs.add(tabPage);
@@ -466,23 +466,23 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       [{
         image: "https://zmt.swiss/assets/images/sim4life/physics_models/EM01b.jpg",
         title: "EM Full Wave",
-        text: "The Electromagnetics Full Wave Solvers (P-EM-FDTD) enable accelerated full-wave, large-scale EM modeling (> billion voxels) with Yee discretization on geometrically adaptive, inhomogeneous, rectilinear meshes with conformal sub-cell correction and thin layer models, with support for dispersive materials."
+        text: "Our Electromagnetics Full Wave Solvers offer GPU accelerated, large-scale EM modeling with advanced features such as geometrically adaptive meshes and support for dispersive materials."
       }, {
         image: "https://zmt.swiss/assets/images/sim4life/physics_models/EM02b.jpg",
         title: "Quasi-Static EM",
-        text: "The Quasi-Static Electromagnetic Solvers (P-EM-QS) enable the efficient modeling of static and quasi-static EM regimes by applying the finite element method on graded voxel meshes."
+        text: "Our Quasi-Static Electromagnetic Solvers efficiently model static and quasi-static EM regimes, addressing low-frequency challenges in medical and EM compliance applications."
       }, {
         image: "https://zmt.swiss/assets/images/sim4life/physics_models/thermo01b.jpg",
         title: "Thermodynamics",
-        text: "The Thermodynamic Solvers (P-THERMAL) enable the modeling of heat transfer in living tissue using advanced perfusion and thermoregulation models."
+        text: "Our Thermodynamic Solvers model heat transfer in living tissue using advanced perfusion and thermoregulation models."
       }, {
         image: "https://zmt.swiss/assets/images/sim4life/tissue_models/vagusnerve.png",
         title: "Neuronal Models",
-        text: "The Neuronal Tissue Models (T-NEURO) enable the dynamic modeling of EM-induced neuronal activation, inhibition, and synchronization using either complex, multi-compartmental representations of axons, neurons, and neuronal networks with varying channel dynamics, or generic models."
+        text: "Sim4Life's Neuronal Tissue Models dynamically model EM-induced neuronal activity and allow for accurate neural sensing simulations. Our product offers complex multi-compartmental representations and generic models with varying channel dynamics."
       }, {
         image: "https://zmt.swiss/assets/images/sim4life/physics_models/acoustics01B.jpg",
         title: "Acoustics",
-        text: "Sim4Life offers a novel full-wave Acoustics Solver (P-ACOUSTICS) based on the linear pressure wave equation (LAPWE), extended and optimized for heterogeneous, lossy materials for the modeling of the propagation of pressure waves through highly inhomogeneous media like tissue and bone."
+        text: "Our Acoustics Solver models pressure wave propagation in highly inhomogeneous media such as tissue and bone. Based on the linear pressure wave equation and optimized for lossy materials, it captures all relevant phenomena like scattering, reflection, and absorption."
       }].forEach((physics, idx) => {
         grid.setColumnAlign(idx, "center", "top");
         grid.setRowAlign(0, "center", "middle"); // image
@@ -502,8 +502,8 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
         });
         const image = verticalCard.getChildren()[0];
         image.set({
-          width: 240,
-          height: 180
+          width: 225,
+          height: 170
         });
         gridLayout.add(image, {
           row: 0,
