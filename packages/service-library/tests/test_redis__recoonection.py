@@ -10,9 +10,9 @@ pytest_simcore_core_services_selection = [
 ]
 
 
-# NOTE: keep this test last as it breaks the service `redis`
-# from `pytest_simcore_core_services_selection`
-# since the service is being removed
+# NOTE: keep this test ONLY tes tin the file!
+# It breaks the service `redis` from `pytest_simcore_core_services_selection`
+# since the service is being removed.
 async def test_redis_client_sdk_lost_connection(
     redis_service: RedisSettings, docker_client: docker.client.DockerClient
 ):

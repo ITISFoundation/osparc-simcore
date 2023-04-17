@@ -106,7 +106,7 @@ class RedisClientSDK:
         """
 
         total_lock_duration: datetime.timedelta = _DEFAULT_LOCK_TTL
-        lock_unique_id = f"lock_extender_{uuid4()}"
+        lock_unique_id = f"lock_extender_{lock_key}_{uuid4()}"
 
         ttl_lock: Lock = self._client.lock(
             name=lock_key,

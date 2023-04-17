@@ -4,6 +4,7 @@ import datetime
 import logging
 from typing import AsyncIterator, Awaitable, Callable, Final
 
+from pydantic.errors import PydanticErrorMixin
 from servicelib.logging_utils import log_catch, log_context
 from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
@@ -15,6 +16,10 @@ logger = logging.getLogger(__name__)
 
 _DEFAULT_STOP_TIMEOUT_S: Final[int] = 5
 _MAX_TASK_CANCELLATION_ATTEMPTS: Final[int] = 3
+
+
+class PeriodicTaskCancellationError(PydanticErrorMixin, Exception):
+    msg_template: str = "Could not cancel task '{task_name}'"
 
 
 async def _periodic_scheduled_task(
@@ -80,10 +85,11 @@ async def cancel_task(
             task.cancel()
             _, pending = await asyncio.wait((task,), timeout=timeout)
             if pending:
+                task_name = task.get_name()
                 logger.info(
-                    "tried to cancel '%s' but timed-out! %s", task.get_name(), pending
+                    "tried to cancel '%s' but timed-out! %s", task_name, pending
                 )
-                raise TryAgain()
+                raise PeriodicTaskCancellationError(task_name=task_name)
 
 
 async def stop_periodic_task(
