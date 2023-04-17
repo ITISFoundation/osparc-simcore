@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 from functools import cached_property
-from typing import Any, Optional
+from typing import Any
 
 from aiohttp import web
 from models_library.basic_types import (
@@ -55,21 +55,21 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # IMAGE BUILDTIME ------------------------------------------------------
     # @Makefile
-    SC_BUILD_DATE: Optional[str] = None
-    SC_BUILD_TARGET: Optional[BuildTargetEnum] = None
-    SC_VCS_REF: Optional[str] = None
-    SC_VCS_URL: Optional[str] = None
+    SC_BUILD_DATE: str | None = None
+    SC_BUILD_TARGET: BuildTargetEnum | None = None
+    SC_VCS_REF: str | None = None
+    SC_VCS_URL: str | None = None
 
     # @Dockerfile
-    SC_BOOT_MODE: Optional[BootModeEnum] = None
-    SC_HEALTHCHECK_TIMEOUT: Optional[PositiveInt] = Field(
+    SC_BOOT_MODE: BootModeEnum | None = None
+    SC_HEALTHCHECK_TIMEOUT: PositiveInt | None = Field(
         None,
         description="If a single run of the check takes longer than timeout seconds "
         "then the check is considered to have failed."
         "It takes retries consecutive failures of the health check for the container to be considered unhealthy.",
     )
-    SC_USER_ID: Optional[int] = None
-    SC_USER_NAME: Optional[str] = None
+    SC_USER_ID: int | None = None
+    SC_USER_NAME: str | None = None
 
     # RUNTIME  -----------------------------------------------------------
     # settings defined from environs defined when container runs
@@ -78,22 +78,22 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     AIODEBUG_SLOW_DURATION_SECS: float = 0
 
     # Release information: Passed by the osparc-ops-autodeployer
-    SIMCORE_VCS_RELEASE_TAG: Optional[str] = Field(
+    SIMCORE_VCS_RELEASE_TAG: str | None = Field(
         default=None,
         description="Name of the tag that makrs this release or None if undefined",
         example="ResistanceIsFutile10",
     )
-    SIMCORE_VCS_RELEASE_DATE: Optional[datetime] = Field(
+    SIMCORE_VCS_RELEASE_DATE: datetime | None = Field(
         default=None,
         description="Release date or None if undefined. It corresponds to the tag's creation date",
     )
-    SIMCORE_VCS_RELEASE_URL: Optional[AnyHttpUrl] = Field(
+    SIMCORE_VCS_RELEASE_URL: AnyHttpUrl | None = Field(
         default=None,
         description="URL to release notes",
         example="https://github.com/ITISFoundation/osparc-simcore/releases/tag/staging_ResistanceIsFutile10",
     )
 
-    SWARM_STACK_NAME: Optional[str] = Field(
+    SWARM_STACK_NAME: str | None = Field(
         None, description="Stack name defined upon deploy (see main Makefile)"
     )
 
@@ -112,89 +112,87 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="host name to serve within the container."
         "NOTE that this different from WEBSERVER_HOST env which is the host seen outside the container",
     )
-    WEBSERVER_HOST: Optional[str] = Field(
-        None, env=["WEBSERVER_HOST", "HOST", "HOSTNAME"]
-    )
+    WEBSERVER_HOST: str | None = Field(None, env=["WEBSERVER_HOST", "HOST", "HOSTNAME"])
     WEBSERVER_PORT: PortInt = DEFAULT_AIOHTTP_PORT
 
-    WEBSERVER_FRONTEND: Optional[FrontEndAppSettings] = Field(
+    WEBSERVER_FRONTEND: FrontEndAppSettings | None = Field(
         auto_default_from_env=True, description="front-end static settings"
     )
 
     # PLUGINS ----------------
 
-    WEBSERVER_ACTIVITY: Optional[PrometheusSettings] = Field(
+    WEBSERVER_ACTIVITY: PrometheusSettings | None = Field(
         auto_default_from_env=True,
         description="activity plugin",
     )
-    WEBSERVER_CATALOG: Optional[CatalogSettings] = Field(
+    WEBSERVER_CATALOG: CatalogSettings | None = Field(
         auto_default_from_env=True, description="catalog service client's plugin"
     )
     # TODO: Shall be required
-    WEBSERVER_DB: Optional[PostgresSettings] = Field(
+    WEBSERVER_DB: PostgresSettings | None = Field(
         auto_default_from_env=True, description="database plugin"
     )
-    WEBSERVER_DIAGNOSTICS: Optional[DiagnosticsSettings] = Field(
+    WEBSERVER_DIAGNOSTICS: DiagnosticsSettings | None = Field(
         auto_default_from_env=True, description="diagnostics plugin"
     )
-    WEBSERVER_DIRECTOR_V2: Optional[DirectorV2Settings] = Field(
+    WEBSERVER_DIRECTOR_V2: DirectorV2Settings | None = Field(
         auto_default_from_env=True, description="director-v2 service client's plugin"
     )
-    WEBSERVER_DIRECTOR: Optional[DirectorSettings] = Field(
+    WEBSERVER_DIRECTOR: DirectorSettings | None = Field(
         auto_default_from_env=True, description="director service client's plugin"
     )
-    WEBSERVER_EMAIL: Optional[SMTPSettings] = Field(
+    WEBSERVER_EMAIL: SMTPSettings | None = Field(
         auto_default_from_env=True, description="email plugin"
     )
-    WEBSERVER_EXPORTER: Optional[ExporterSettings] = Field(
+    WEBSERVER_EXPORTER: ExporterSettings | None = Field(
         auto_default_from_env=True, description="exporter plugin"
     )
 
-    WEBSERVER_GARBAGE_COLLECTOR: Optional[GarbageCollectorSettings] = Field(
+    WEBSERVER_GARBAGE_COLLECTOR: GarbageCollectorSettings | None = Field(
         auto_default_from_env=True, description="garbage collector plugin"
     )
 
-    WEBSERVER_INVITATIONS: Optional[InvitationsSettings] = Field(
+    WEBSERVER_INVITATIONS: InvitationsSettings | None = Field(
         auto_default_from_env=True, description="invitations plugin"
     )
 
-    WEBSERVER_LOGIN: Optional[LoginSettings] = Field(
+    WEBSERVER_LOGIN: LoginSettings | None = Field(
         auto_default_from_env=True, description="login plugin"
     )
-    WEBSERVER_REDIS: Optional[RedisSettings] = Field(auto_default_from_env=True)
+    WEBSERVER_REDIS: RedisSettings | None = Field(auto_default_from_env=True)
 
-    WEBSERVER_REST: Optional[RestSettings] = Field(
+    WEBSERVER_REST: RestSettings | None = Field(
         auto_default_from_env=True, description="rest api plugin"
     )
 
     WEBSERVER_RESOURCE_MANAGER: ResourceManagerSettings = Field(
         auto_default_from_env=True, description="resource_manager plugin"
     )
-    WEBSERVER_SCICRUNCH: Optional[SciCrunchSettings] = Field(
+    WEBSERVER_SCICRUNCH: SciCrunchSettings | None = Field(
         auto_default_from_env=True, description="scicrunch plugin"
     )
     WEBSERVER_SESSION: SessionSettings = Field(
         auto_default_from_env=True, description="session plugin"
     )
 
-    WEBSERVER_STATICWEB: Optional[StaticWebserverModuleSettings] = Field(
+    WEBSERVER_STATICWEB: StaticWebserverModuleSettings | None = Field(
         auto_default_from_env=True, description="static-webserver service plugin"
     )
-    WEBSERVER_STORAGE: Optional[StorageSettings] = Field(
+    WEBSERVER_STORAGE: StorageSettings | None = Field(
         auto_default_from_env=True, description="storage service client's plugin"
     )
-    WEBSERVER_STUDIES_DISPATCHER: Optional[StudiesDispatcherSettings] = Field(
+    WEBSERVER_STUDIES_DISPATCHER: StudiesDispatcherSettings | None = Field(
         auto_default_from_env=True, description="studies dispatcher plugin"
     )
 
-    WEBSERVER_TRACING: Optional[TracingSettings] = Field(
+    WEBSERVER_TRACING: TracingSettings | None = Field(
         auto_default_from_env=True, description="tracing plugin"
     )
 
-    WEBSERVER_PROJECTS: Optional[ProjectsSettings] = Field(
+    WEBSERVER_PROJECTS: ProjectsSettings | None = Field(
         auto_default_from_env=True, description="projects plugin"
     )
-    WEBSERVER_RABBITMQ: Optional[RabbitSettings] = Field(
+    WEBSERVER_RABBITMQ: RabbitSettings | None = Field(
         auto_default_from_env=True, description="rabbitmq plugin"
     )
 
@@ -235,7 +233,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         # List of plugins under-development (keep up-to-date)
         # TODO: consider mark as dev-feature in field extras of Config attr.
         # Then they can be automtically advertised
-        "WEBSERVER_CLUSTERS",
         "WEBSERVER_META_MODELING",
         "WEBSERVER_VERSION_CONTROL",
         pre=True,
