@@ -674,19 +674,19 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       [{
         image: "https://zmt.swiss/assets/images/sim4lifeweb/AnimationsFinal/AnimFinal_NewLogo/EM_Phone_Exposure_new.gif",
         title: "EM Full-Wave and Quasi-Static",
-        link: "https://osparc.io/study/b31f2b80-996e-11eb-9a48-02420a0b0129"
+        link: "https://https://s4l-lite-master.speag.com/study/1f752304-dd22-11ed-b824-02420a000ddd"
       }, {
         image: "https://zmt.swiss/assets/images/sim4lifeweb/AnimationsFinal/AnimFinal_NewLogo/EM_Neuron_new.gif",
         title: "Coupled EM – Neuro",
-        link: "https://osparc.io/study/733ddc42-c7a3-11eb-8a4e-02420a0b01de"
+        link: "https://https://s4l-lite-master.speag.com/study/1f752304-dd22-11ed-b824-02420a000ddd"
       }, {
         image: "https://zmt.swiss/assets/images/sim4lifeweb/AnimationsFinal/AnimFinal_NewLogo/Thermo_MRILeadPass_new.gif",
         title: "Thermal",
-        link: "https://osparc.io/study/6e0dfe20-1bab-11ed-b162-02420a0b0093"
+        link: "https://https://s4l-lite-master.speag.com/study/1f752304-dd22-11ed-b824-02420a000ddd"
       }, {
         image: "https://zmt.swiss/assets/images/sim4lifeweb/AnimationsFinal/AnimFinal_NewLogo/AcousticHead_new.gif",
         title: "Acoustics",
-        link: "https://osparc.io/study/13b9ed12-e7aa-11ea-9b21-02420a0b001d"
+        link: "https://https://s4l-lite-master.speag.com/study/1f752304-dd22-11ed-b824-02420a000ddd"
       }].forEach(template => contentLayout.add(createTemplateCard(template.image, template.title, template.link)));
       return contentLayout;
     },
