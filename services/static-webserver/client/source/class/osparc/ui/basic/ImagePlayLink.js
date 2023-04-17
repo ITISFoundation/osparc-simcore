@@ -18,7 +18,7 @@
 qx.Class.define("osparc.ui.basic.ImagePlayLink", {
   extend: qx.ui.basic.Image,
 
-  construct: function(source, link) {
+  construct: function(source, link, playButtonSize = 96) {
     this.base(arguments, source);
 
     this.set({
@@ -32,6 +32,7 @@ qx.Class.define("osparc.ui.basic.ImagePlayLink", {
       this.setLink(link);
     }
 
+    this.__playButtonSize = playButtonSize;
     this.addListener("pointerover", this.__showPlayLink, this);
   },
 
@@ -44,6 +45,7 @@ qx.Class.define("osparc.ui.basic.ImagePlayLink", {
   },
 
   members: {
+    __playButtonSize: null,
     __hoverCanvas: null,
     __hoverPlay: null,
 
@@ -81,7 +83,7 @@ qx.Class.define("osparc.ui.basic.ImagePlayLink", {
         height
       } = qx.bom.element.Dimension.getSize(element);
 
-      const playSize = 96;
+      const playSize = this.__playButtonSize;
       const image = this.__createHoverImage().set({
         source: "@FontAwesome5Solid/play/" + playSize,
         textColor: "strong-main",
