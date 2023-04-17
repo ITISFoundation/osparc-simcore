@@ -1,5 +1,4 @@
 import logging
-import re
 from datetime import datetime
 from typing import Any
 
@@ -75,7 +74,6 @@ def get_pipeline_state_from_task_states(tasks: list[CompTaskAtDB]) -> RunningSta
     return RunningState.UNKNOWN
 
 
-_node_key_re = re.compile(SERVICE_KEY_RE)
 _STR_TO_NODECLASS = {
     "comp": NodeClass.COMPUTATIONAL,
     "dynamic": NodeClass.INTERACTIVE,
@@ -84,9 +82,9 @@ _STR_TO_NODECLASS = {
 
 
 def to_node_class(service_key: str) -> NodeClass:
-    match = _node_key_re.match(service_key)
+    match = SERVICE_KEY_RE.match(service_key)
     if match:
-        node_class = _STR_TO_NODECLASS.get(match.group(3))
+        node_class = _STR_TO_NODECLASS.get(match.group("type"))
         if node_class:
             return node_class
     raise ValueError
