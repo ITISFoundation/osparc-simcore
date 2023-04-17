@@ -2,7 +2,6 @@
 
 """
 import logging
-from typing import Optional, Union
 
 from aiodebug import log_slow_callbacks
 from aiohttp.log import access_logger
@@ -19,7 +18,7 @@ NOISY_LOGGERS = (
 )
 
 
-def setup_logging(*, level: Union[str, int], slow_duration: Optional[float] = None):
+def setup_logging(*, level: str | int, slow_duration: float | None = None):
     # service log level
     logging.basicConfig(level=level)
 

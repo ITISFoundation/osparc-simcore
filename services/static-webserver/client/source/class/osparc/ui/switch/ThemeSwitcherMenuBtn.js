@@ -17,15 +17,12 @@ qx.Class.define("osparc.ui.switch.ThemeSwitcherMenuBtn", {
 
     this.setLabel(this.tr("Switch theme"));
 
-    const validThemes = osparc.ui.switch.ThemeSwitcher.getValidThemes();
-    if (validThemes.length !== 2) {
+    if (!osparc.ui.switch.ThemeSwitcher.isSwitchUseful()) {
       this.setVisibility("excluded");
       return;
     }
 
-    this.addListener("execute", () => {
-      osparc.ui.switch.ThemeSwitcher.switchTheme();
-    });
+    this.addListener("execute", () => osparc.ui.switch.ThemeSwitcher.switchTheme());
 
     osparc.ui.switch.ThemeSwitcher.bindIconToTheme(this, 18);
   }
