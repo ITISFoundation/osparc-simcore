@@ -17,7 +17,6 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from pydantic import NonNegativeFloat, NonNegativeInt
-from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_webserver_unit_with_db import (
@@ -29,18 +28,6 @@ from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.projects import projects as projects_db_model
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects.project_models import ProjectDict
-
-
-@pytest.fixture
-def mock_get_total_project_dynamic_nodes_creation_interval(
-    mocker: MockerFixture,
-) -> None:
-    _VERY_LONG_LOCK_TIMEOUT_S: Final[float] = 300
-    mocker.patch(
-        "simcore_service_webserver.projects.projects_api._nodes_utils"
-        ".get_total_project_dynamic_nodes_creation_interval",
-        return_value=_VERY_LONG_LOCK_TIMEOUT_S,
-    )
 
 
 @pytest.mark.parametrize(
