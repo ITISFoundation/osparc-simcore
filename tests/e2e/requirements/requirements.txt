@@ -6,13 +6,13 @@
 #
 certifi==2022.12.7
     # via requests
-charset-normalizer==3.0.1
+charset-normalizer==3.1.0
     # via requests
 docker==6.0.1
     # via -r requirements/requirements.in
 idna==3.4
     # via requests
-packaging==23.0
+packaging==23.1
     # via docker
 pyyaml==6.0
     # via -r requirements/requirements.in
@@ -20,7 +20,7 @@ requests==2.28.2
     # via docker
 tenacity==8.2.2
     # via -r requirements/requirements.in
-urllib3==1.26.14
+urllib3==1.26.15
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   docker
