@@ -1,3 +1,4 @@
+from typing import Any
 from models_library.basic_regex import UUID_RE
 from models_library.basic_types import PortInt
 from models_library.service_settings_labels import ContainerSpec
@@ -45,7 +46,7 @@ class NodeRequirements(BaseModel):
         return v
 
     class Config:
-        schema_extra = {
+        schema_extra: dict[str, Any] = {
             "examples": [
                 {"CPU": 1.0, "RAM": 4194304},
                 {"CPU": 1.0, "GPU": 1, "RAM": 4194304},
@@ -63,7 +64,7 @@ class ServiceExtras(BaseModel):
     container_spec: ContainerSpec | None = None
 
     class Config:
-        schema_extra = {
+        schema_extra: dict[str, Any] = {
             "examples": [
                 {"node_requirements": node_example}
                 for node_example in NodeRequirements.Config.schema_extra["examples"]
