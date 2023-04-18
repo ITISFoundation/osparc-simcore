@@ -7,7 +7,6 @@ import re
 from enum import Enum, auto
 from functools import cached_property
 from pathlib import Path
-from typing import Optional
 
 from models_library.basic_types import (
     BootModeEnum,
@@ -317,7 +316,7 @@ class DynamicSidecarSettings(BaseCustomSettings):
     # DEVELOPMENT ONLY config
     #
 
-    DYNAMIC_SIDECAR_MOUNT_PATH_DEV: Optional[Path] = Field(
+    DYNAMIC_SIDECAR_MOUNT_PATH_DEV: Path | None = Field(
         None,
         description="Host path to the dynamic-sidecar project. Used as source path to mount to the dynamic-sidecar [DEVELOPMENT ONLY]",
         example="osparc-simcore/services/dynamic-sidecar",
@@ -449,7 +448,7 @@ class ComputationalBackendSettings(BaseCustomSettings):
         "tcp://dask-scheduler:8786 for the internal cluster, or "
         "http(s)/GATEWAY_IP:8000 for a osparc-dask-gateway)",
     )
-    COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH: Optional[ClusterAuthentication] = Field(
+    COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH: ClusterAuthentication | None = Field(
         NoAuthentication(),
         description="Empty for the internal cluster, must be one "
         "of simple/kerberos/jupyterhub for the osparc-dask-gateway",
@@ -484,11 +483,16 @@ class ComputationalBackendSettings(BaseCustomSettings):
 class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     # docker environs
     SC_BOOT_MODE: BootModeEnum
-    SC_BOOT_TARGET: Optional[BuildTargetEnum]
+    SC_BOOT_TARGET: BuildTargetEnum | None
 
     LOG_LEVEL: LogLevel = Field(
         LogLevel.INFO.value,
         env=["DIRECTOR_V2_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
+    )
+    DIRECTOR_V2_LOG_FORMAT_LOCAL_ENABLED: bool = Field(
+        False,
+        env=["DIRECTOR_V2_LOG_FORMAT_LOCAL_ENABLED", "LOG_FORMAT_LOCAL_ENABLED"],
+        description="Enables local log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
     DIRECTOR_V2_DEV_FEATURES_ENABLED: bool = False
 
@@ -524,11 +528,11 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
         description="used when in devel mode vs release mode",
     )
 
-    SIMCORE_SERVICES_NETWORK_NAME: Optional[str] = Field(
+    SIMCORE_SERVICES_NETWORK_NAME: str | None = Field(
         None,
         description="used to find the right network name",
     )
-    SIMCORE_SERVICES_PREFIX: Optional[str] = Field(
+    SIMCORE_SERVICES_PREFIX: str | None = Field(
         "simcore/services",
         description="useful when developing with an alternative registry namespace",
     )
@@ -547,7 +551,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     # App modules settings ---------------------
     DIRECTOR_V2_STORAGE: StorageSettings = Field(auto_default_from_env=True)
 
-    DIRECTOR_V2_CATALOG: Optional[CatalogSettings] = Field(auto_default_from_env=True)
+    DIRECTOR_V2_CATALOG: CatalogSettings | None = Field(auto_default_from_env=True)
 
     DIRECTOR_V0: DirectorV0Settings = Field(auto_default_from_env=True)
 
@@ -565,7 +569,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
         auto_default_from_env=True
     )
 
-    DIRECTOR_V2_TRACING: Optional[TracingSettings] = Field(auto_default_from_env=True)
+    DIRECTOR_V2_TRACING: TracingSettings | None = Field(auto_default_from_env=True)
 
     DIRECTOR_V2_DOCKER_REGISTRY: RegistrySettings = Field(auto_default_from_env=True)
 
