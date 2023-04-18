@@ -35,7 +35,7 @@ class RRIDEntry(BaseModel):
 
 class CodeDescriptionModel(BaseModel):
     rrid_entires: list[RRIDEntry] = Field(
-        [], description="composed from the classifiers"
+        default_factory=list, description="composed from the classifiers"
     )
 
     # TSR
@@ -270,8 +270,12 @@ class CodeDescriptionParams(BaseModel):
     code_description: CodeDescriptionModel = Field(
         ..., description="code description data"
     )
-    inputs: list[InputsEntryModel] = Field([], description="List of inputs, if any")
-    outputs: list[OutputsEntryModel] = Field([], description="List of outputs, if any")
+    inputs: list[InputsEntryModel] = Field(
+        default_factory=list, description="List of inputs, if any"
+    )
+    outputs: list[OutputsEntryModel] = Field(
+        default_factory=list, description="List of outputs, if any"
+    )
 
 
 class SheetCodeDescription(BaseXLSXSheet):
