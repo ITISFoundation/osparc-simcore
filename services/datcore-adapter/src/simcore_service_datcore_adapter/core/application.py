@@ -1,10 +1,10 @@
 import logging
-from typing import Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.tracing import setup_tracing
+from servicelib.logging_utils import config_all_loggers
 
 from ..api.errors.http_error import http_error_handler
 from ..api.errors.validation_error import http422_error_handler
@@ -29,13 +29,15 @@ NOISY_LOGGERS = (
 logger = logging.getLogger(__name__)
 
 
-def create_app(settings: Optional[Settings] = None) -> FastAPI:
+def create_app(settings: Settings | None = None) -> FastAPI:
     if settings is None:
         settings = Settings.create_from_envs()
     assert settings  # nosec
 
     logging.basicConfig(level=settings.LOG_LEVEL.value)
     logging.root.setLevel(settings.LOG_LEVEL.value)
+    config_all_loggers()
+
     # keep mostly quiet noisy loggers
     quiet_level: int = max(
         min(logging.root.level + LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING
