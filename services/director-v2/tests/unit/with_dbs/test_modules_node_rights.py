@@ -70,6 +70,7 @@ async def minimal_app(
 ) -> AsyncIterable[FastAPI]:
     monkeypatch.setenv("REDIS_HOST", redis_settings.REDIS_HOST)
     monkeypatch.setenv("REDIS_PORT", f"{redis_settings.REDIS_PORT}")
+    monkeypatch.setenv("DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED", "true")
 
     app = FastAPI()
 
@@ -85,6 +86,7 @@ async def minimal_app(
 
 @pytest.fixture
 async def node_rights_manager(minimal_app: FastAPI) -> AsyncIterable[NodeRightsManager]:
+
     redis_lock_manger = await NodeRightsManager.instance(minimal_app)
     await redis_lock_manger.redis_client_sdk.redis.flushall()
     yield redis_lock_manger
