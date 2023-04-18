@@ -21,6 +21,7 @@ from models_library.clusters import (
     SimpleAuthentication,
 )
 from pydantic import AnyUrl
+from simcore_service_director_v2.utils.dask import check_maximize_workers
 
 from ..core.errors import (
     ConfigurationError,
@@ -123,8 +124,7 @@ async def _connect_with_gateway_and_create_cluster(
                 logger.debug("created %s", f"{cluster=}")
             assert cluster  # nosec
             logger.info("Cluster dashboard available: %s", cluster.dashboard_link)
-            # NOTE: we scale to 1 worker as they are global
-            await cluster.adapt(active=True)
+            await check_maximize_workers(cluster)
             client = await cluster.get_client()
             assert client  # nosec
             return DaskSubSystem(

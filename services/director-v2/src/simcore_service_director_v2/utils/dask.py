@@ -1,9 +1,10 @@
 import asyncio
 import collections
 import logging
-from typing import Any, Awaitable, Callable, Final, Iterable, Optional, Union, get_args
+from typing import Any, Awaitable, Callable, Final, Iterable, Optional, get_args
 from uuid import uuid4
 
+import dask_gateway
 import distributed
 from aiopg.sa.engine import Engine
 from dask_task_models_library.container_tasks.io import (
@@ -119,7 +120,7 @@ async def parse_output_data(
     db_engine: Engine,
     job_id: str,
     data: TaskOutputData,
-    ports: Optional[node_ports_v2.Nodeports] = None,
+    ports: node_ports_v2.Nodeports | None = None,
 ) -> None:
     """
 
@@ -152,7 +153,7 @@ async def parse_output_data(
 
     ports_errors = []
     for port_key, port_value in data.items():
-        value_to_transfer: Optional[links.ItemValue] = None
+        value_to_transfer: links.ItemValue | None = None
         if isinstance(port_value, FileUrl):
             value_to_transfer = port_value.url
         else:
@@ -173,7 +174,7 @@ async def compute_input_data(
     project_id: ProjectID,
     node_id: NodeID,
     file_link_type: FileLinkType,
-    ports: Optional[node_ports_v2.Nodeports] = None,
+    ports: node_ports_v2.Nodeports | None = None,
 ) -> TaskInputData:
     """Retrieves values registered to the inputs of project_id/node_id
 
@@ -228,7 +229,7 @@ async def compute_output_data_schema(
     project_id: ProjectID,
     node_id: NodeID,
     file_link_type: FileLinkType,
-    ports: Optional[node_ports_v2.Nodeports] = None,
+    ports: node_ports_v2.Nodeports | None = None,
 ) -> TaskOutputDataSchema:
     """
 
@@ -300,7 +301,7 @@ async def get_service_log_file_download_link(
     project_id: ProjectID,
     node_id: NodeID,
     file_link_type: FileLinkType,
-) -> Optional[AnyUrl]:
+) -> AnyUrl | None:
     """Returns None if log file is not available (e.g. when tasks is not done)
 
     : raises StorageServerIssue
@@ -326,7 +327,7 @@ async def clean_task_output_and_log_files_if_invalid(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
-    ports: Optional[node_ports_v2.Nodeports] = None,
+    ports: node_ports_v2.Nodeports | None = None,
 ) -> None:
     """
 
@@ -400,7 +401,7 @@ async def dask_sub_consumer_task(
 
 def from_node_reqs_to_dask_resources(
     node_reqs: NodeRequirements,
-) -> dict[str, Union[int, float]]:
+) -> dict[str, int | float]:
     """Dask resources are set such as {"CPU": X.X, "GPU": Y.Y, "RAM": INT}"""
     dask_resources = node_reqs.dict(
         exclude_unset=True,
@@ -445,6 +446,14 @@ def check_scheduler_status(client: distributed.Client):
             "The computational backend is not connected!",
         )
         raise ComputationalBackendNotConnectedError()
+
+
+_LARGE_NUMBER_OF_WORKERS = 10000
+
+
+async def check_maximize_workers(cluster: dask_gateway.GatewayCluster | None) -> None:
+    if cluster:
+        await cluster.scale(_LARGE_NUMBER_OF_WORKERS)
 
 
 def check_if_cluster_is_able_to_run_pipeline(

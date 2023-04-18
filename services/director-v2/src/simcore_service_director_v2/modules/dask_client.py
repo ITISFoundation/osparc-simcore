@@ -55,6 +55,7 @@ from ..models.schemas.clusters import ClusterDetails, Scheduler
 from ..utils.dask import (
     check_communication_with_scheduler_is_open,
     check_if_cluster_is_able_to_run_pipeline,
+    check_maximize_workers,
     check_scheduler_is_still_the_same,
     check_scheduler_status,
     compute_input_data,
@@ -246,7 +247,7 @@ class DaskClient:
                 self.backend.scheduler_id, self.backend.client
             )
             check_communication_with_scheduler_is_open(self.backend.client)
-            check_scheduler_status(self.backend.client)
+            await check_maximize_workers(self.backend.gateway_cluster)
             # NOTE: in case it's a gateway we do not check a priori if the task
             # is runnable because we CAN'T. A cluster might auto-scale, the worker(s)
             # might also auto-scale and the gateway does not know that a priori.
