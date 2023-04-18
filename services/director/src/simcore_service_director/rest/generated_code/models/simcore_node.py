@@ -1,13 +1,14 @@
 # coding: utf-8
 
-import re
 from datetime import date, datetime
-from typing import Dict, List, Type
 
-from .. import util
+from typing import List, Dict, Type
+
 from .base_model_ import Model
 from .inline_response2001_authors import InlineResponse2001Authors
 from .inline_response2001_badges import InlineResponse2001Badges
+import re
+from .. import util
 
 
 class SimcoreNode(Model):
@@ -30,6 +31,7 @@ class SimcoreNode(Model):
         contact: str = None,
         inputs: Dict[str, object] = None,
         outputs: Dict[str, object] = None,
+        boot_options: Dict[str, object] = None,
     ):
         """SimcoreNode - a model defined in OpenAPI
 
@@ -45,6 +47,7 @@ class SimcoreNode(Model):
         :param contact: The contact of this SimcoreNode.
         :param inputs: The inputs of this SimcoreNode.
         :param outputs: The outputs of this SimcoreNode.
+        :param boot_options: The boot_options of this SimcoreNode.
         """
         self.openapi_types = {
             "key": str,
@@ -59,6 +62,7 @@ class SimcoreNode(Model):
             "contact": str,
             "inputs": Dict[str, object],
             "outputs": Dict[str, object],
+            "boot_options": Dict[str, object],
         }
 
         self.attribute_map = {
@@ -74,6 +78,7 @@ class SimcoreNode(Model):
             "contact": "contact",
             "inputs": "inputs",
             "outputs": "outputs",
+            "boot_options": "boot-options",
         }
 
         self._key = key
@@ -88,6 +93,7 @@ class SimcoreNode(Model):
         self._contact = contact
         self._inputs = inputs
         self._outputs = outputs
+        self._boot_options = boot_options
 
     @classmethod
     def from_dict(cls, dikt: dict) -> "SimcoreNode":
@@ -121,10 +127,14 @@ class SimcoreNode(Model):
         if key is None:
             raise ValueError("Invalid value for `key`, must not be `None`")
         if key is not None and not re.search(
-            r"^(simcore)\/(services)\/(comp|dynamic|frontend)(\/[\w\/-]+)+$", key
+            r"^simcore/services/"
+            r"(?P<type>(comp|dynamic|frontend))/"
+            r"(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*"
+            r"(?P<name>[a-z0-9-_]+[a-z0-9])$",
+            key,
         ):
             raise ValueError(
-                "Invalid value for `key`, must be a follow pattern or equal to `/^(simcore)\/(services)\/(comp|dynamic|frontend)(\/[\w\/-]+)+$/`"
+                r"Invalid value for `key`, must be a follow pattern or equal to `/^(simcore)\/(services)\/(comp|dynamic|frontend)(\/[\w\/-]+)+$/`"
             )
 
         self._key = key
@@ -154,7 +164,7 @@ class SimcoreNode(Model):
             integration_version,
         ):
             raise ValueError(
-                "Invalid value for `integration_version`, must be a follow pattern or equal to `/^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$/`"
+                r"Invalid value for `integration_version`, must be a follow pattern or equal to `/^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$/`"
             )
 
         self._integration_version = integration_version
@@ -186,7 +196,7 @@ class SimcoreNode(Model):
             version,
         ):
             raise ValueError(
-                "Invalid value for `version`, must be a follow pattern or equal to `/^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$/`"
+                r"Invalid value for `version`, must be a follow pattern or equal to `/^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$/`"
             )
 
         self._version = version
@@ -412,3 +422,26 @@ class SimcoreNode(Model):
             raise ValueError("Invalid value for `outputs`, must not be `None`")
 
         self._outputs = outputs
+
+    @property
+    def boot_options(self):
+        """Gets the boot_options of this SimcoreNode.
+
+        Service defined boot options. These get injected in the service as env variables.
+
+        :return: The boot_options of this SimcoreNode.
+        :rtype: Dict[str, object]
+        """
+        return self._boot_options
+
+    @boot_options.setter
+    def boot_options(self, boot_options):
+        """Sets the boot_options of this SimcoreNode.
+
+        Service defined boot options. These get injected in the service as env variables.
+
+        :param boot_options: The boot_options of this SimcoreNode.
+        :type boot_options: Dict[str, object]
+        """
+
+        self._boot_options = boot_options

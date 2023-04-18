@@ -70,7 +70,7 @@ qx.Class.define("osparc.panddy.Panddy", {
     __currentIdx: null,
 
     _createChildControlImpl: function(id) {
-      const pandiSize = 140;
+      const pandiSize = 150;
       let control;
       switch (id) {
         case "panddy": {
@@ -80,7 +80,13 @@ qx.Class.define("osparc.panddy.Panddy", {
             scale: true,
             cursor: "pointer"
           });
-          control.addListener("tap", () => this.stop());
+          control.addListener("tap", () => {
+            if (control.getSource().includes("pand")) {
+              control.setSource("osparc/crocky.gif");
+            } else {
+              control.setSource("osparc/panda.gif");
+            }
+          });
           this._add(control, {
             bottom: 0,
             right: 0
