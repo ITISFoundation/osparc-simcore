@@ -2,7 +2,7 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass
-from typing import AsyncIterator, Optional
+from typing import AsyncIterator
 
 from fastapi import FastAPI
 from pydantic import NonNegativeInt, PositiveFloat, PositiveInt
@@ -52,7 +52,7 @@ class ExtendLock:
         self.timeout_s: PositiveFloat = timeout_s
         self.extend_interval_s: PositiveFloat = extend_interval_s
         self._redis_lock: Lock = lock
-        self.task: Optional[asyncio.Task] = asyncio.create_task(
+        self.task: asyncio.Task | None = asyncio.create_task(
             self._extend_task(), name=f"{self.__class__.__name__}"
         )
 
@@ -63,7 +63,7 @@ class ExtendLock:
 
     @property
     def name(self) -> str:
-        return self._redis_lock.name
+        return f"{self._redis_lock.name!r}"
 
     async def initialize(self) -> None:
         await self._redis_lock.do_reacquire()
@@ -111,7 +111,8 @@ class NodeRightsManager:
             raise ConfigurationError(
                 "RedisLockManager client is not available. Please check the configuration."
             )
-        return app.state.node_rights_manager
+        manager: NodeRightsManager = app.state.node_rights_manager
+        return manager
 
     @classmethod
     def _get_key(cls, docker_node_id: DockerNodeId, resource_name: ResourceName) -> str:
@@ -135,7 +136,7 @@ class NodeRightsManager:
         """
 
         node_slots_key = self._get_key(docker_node_id, resource_name)
-        slots: Optional[bytes] = await self._redis.get(node_slots_key)
+        slots: bytes | None = await self._redis.get(node_slots_key)
         if slots is not None:
             return int(slots)
 
@@ -197,7 +198,7 @@ class NodeRightsManager:
         raises: `NodeRightsAcquireError` if the lock was not acquired.
         """
         slots = await self._get_node_slots(docker_node_id, resource_name)
-        acquired_lock: Optional[Lock] = None
+        acquired_lock: Lock | None = None
         for slot in range(slots):
             node_lock_name = self._get_lock_name(docker_node_id, resource_name, slot)
 

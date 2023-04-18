@@ -16,7 +16,7 @@ from collections import deque
 from copy import deepcopy
 from dataclasses import dataclass, field
 from http.client import HTTPException
-from typing import Any, Callable, Deque, Final, Optional
+from typing import Any, Callable, Deque, Optional
 
 import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
@@ -114,7 +114,7 @@ class DaskClient:
     app: FastAPI
     backend: DaskSubSystem
     settings: ComputationalBackendSettings
-    tasks_file_link_type: Final[FileLinkType]
+    tasks_file_link_type: FileLinkType
 
     _subscribed_tasks: list[asyncio.Task] = field(default_factory=list)
 

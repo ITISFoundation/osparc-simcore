@@ -129,7 +129,8 @@ async def find_deprecated_tasks(
     def _is_service_deprecated(service: dict[str, Any]) -> bool:
         if deprecation_date := service.get("deprecated"):
             deprecation_date = parse_obj_as(datetime, deprecation_date)
-            return today > deprecation_date
+            is_deprecated: bool = today > deprecation_date
+            return is_deprecated
         return False
 
     deprecated_tasks = [

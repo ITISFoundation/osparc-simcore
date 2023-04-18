@@ -2,7 +2,7 @@ import asyncio
 import functools
 import inspect
 import logging
-from typing import Any, Awaitable, Callable, Optional
+from typing import Any, Awaitable, Callable
 
 from httpx import AsyncClient, ConnectError, HTTPError, PoolTimeout, Response
 from httpx._types import TimeoutTypes, URLTypes
@@ -121,9 +121,9 @@ class BaseThinClient:
     def __init__(
         self,
         *,
-        request_timeout: int,
-        base_url: Optional[URLTypes] = None,
-        timeout: Optional[TimeoutTypes] = None,
+        request_timeout: float,
+        base_url: URLTypes | None = None,
+        timeout: TimeoutTypes | None = None,
     ) -> None:
         self.request_timeout: int = request_timeout
 

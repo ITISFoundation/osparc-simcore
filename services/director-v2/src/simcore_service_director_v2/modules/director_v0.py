@@ -72,7 +72,8 @@ class DirectorV0Client:
 
     @classmethod
     def instance(cls, app: FastAPI) -> "DirectorV0Client":
-        return app.state.director_v0_client
+        client: DirectorV0Client = app.state.director_v0_client
+        return client
 
     @handle_errors("Director", logger)
     @handle_retry(logger)

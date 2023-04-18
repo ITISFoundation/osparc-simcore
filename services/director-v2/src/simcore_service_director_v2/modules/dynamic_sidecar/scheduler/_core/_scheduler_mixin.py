@@ -37,20 +37,20 @@ class SchedulerInternalsMixin(  # pylint: disable=too-many-instance-attributes
         logger.info("Starting dynamic-sidecar scheduler")
         self._keep_running = True
         self._scheduler_task = asyncio.create_task(
-            self._run_scheduler_task(), name="dynamic-scheduler"
+            self._run_scheduler_task(), name="dynamic-scheduler"  # type: ignore
         )
         self._trigger_observation_queue_task = asyncio.create_task(
-            self._run_trigger_observation_queue_task(),
+            self._run_trigger_observation_queue_task(),  # type: ignore
             name="dynamic-scheduler-trigger-obs-queue",
         )
 
         self._cleanup_volume_removal_services_task = asyncio.create_task(
-            self._cleanup_volume_removal_services(),
+            self._cleanup_volume_removal_services(),  # type: ignore
             name="dynamic-scheduler-cleanup-volume-removal-services",
         )
-        await self._discover_running_services()
+        await self._discover_running_services()  # type: ignore
 
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         logger.info("Shutting down dynamic-sidecar scheduler")
         self._keep_running = False
         self._inverse_search_mapping = {}
@@ -78,7 +78,9 @@ class SchedulerInternalsMixin(  # pylint: disable=too-many-instance-attributes
             self._trigger_observation_queue = Queue()
 
         # let's properly cleanup remaining observation tasks
-        running_tasks = self._service_observation_task.values()
+        running_tasks = [
+            x for x in self._service_observation_task.values() if isinstance(x, Task)
+        ]
         for task in running_tasks:
             task.cancel()
         try:

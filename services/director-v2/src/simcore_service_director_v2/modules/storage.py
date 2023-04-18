@@ -57,7 +57,8 @@ class StorageClient:
 
     @classmethod
     def instance(cls, app: FastAPI) -> "StorageClient":
-        return app.state.storage_client
+        client: StorageClient = app.state.storage_client
+        return client
 
     @handle_errors("Storage", logger)
     @handle_retry(logger)
