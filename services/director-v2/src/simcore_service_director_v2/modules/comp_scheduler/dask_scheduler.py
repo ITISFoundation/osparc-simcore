@@ -37,7 +37,6 @@ from ...utils.dask import (
 )
 from ...utils.scheduler import get_repository
 from ..db.repositories.comp_tasks import CompTasksRepository
-from ..rabbitmq import RabbitMQClient
 from .base_scheduler import BaseCompScheduler
 
 logger = logging.getLogger(__name__)
@@ -61,7 +60,6 @@ async def _cluster_dask_client(
 class DaskScheduler(BaseCompScheduler):
     settings: ComputationalBackendSettings
     dask_clients_pool: DaskClientsPool
-    rabbitmq_client: RabbitMQClient
 
     def __post_init__(self):
         self.dask_clients_pool.register_handlers(

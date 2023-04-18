@@ -23,8 +23,12 @@ from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import RunningState
+from models_library.rabbitmq_messages import InstrumentationRabbitMessage
 from models_library.users import UserID
 from pydantic import PositiveInt
+from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+from servicelib.rabbitmq import RabbitMQClient
+from simcore_postgres_database.models.comp_tasks import NodeClass
 
 from ...core.errors import (
     ComputationalBackendNotConnectedError,
@@ -38,7 +42,13 @@ from ...models.domains.comp_pipelines import CompPipelineAtDB
 from ...models.domains.comp_runs import CompRunsAtDB
 from ...models.domains.comp_tasks import CompTaskAtDB, Image
 from ...utils.computations import get_pipeline_state_from_task_states
-from ...utils.scheduler import COMPLETED_STATES, Iteration, get_repository
+from ...utils.scheduler import (
+    COMPLETED_STATES,
+    PROCESSING_STATES,
+    WAITING_FOR_START_STATES,
+    Iteration,
+    get_repository,
+)
 from ..db.repositories.comp_pipelines import CompPipelinesRepository
 from ..db.repositories.comp_runs import CompRunsRepository
 from ..db.repositories.comp_tasks import CompTasksRepository
@@ -59,6 +69,7 @@ class BaseCompScheduler(ABC):
     ]
     db_engine: Engine
     wake_up_event: asyncio.Event = field(default_factory=asyncio.Event, init=False)
+    rabbitmq_client: RabbitMQClient
 
     async def run_new_pipeline(
         self, user_id: UserID, project_id: ProjectID, cluster_id: ClusterID
@@ -150,9 +161,9 @@ class BaseCompScheduler(ABC):
             self.db_engine, CompTasksRepository
         )  # type: ignore
         pipeline_comp_tasks: dict[str, CompTaskAtDB] = {
-            str(t.node_id): t
+            f"{t.node_id}": t
             for t in await comp_tasks_repo.get_comp_tasks(project_id)
-            if (str(t.node_id) in list(pipeline_dag.nodes()))
+            if (f"{t.node_id}" in list(pipeline_dag.nodes()))
         }
         if len(pipeline_comp_tasks) != len(pipeline_dag.nodes()):
             raise InvalidPipelineError(
@@ -168,7 +179,6 @@ class BaseCompScheduler(ABC):
         iteration: PositiveInt,
         pipeline_tasks: dict[str, CompTaskAtDB],
     ) -> RunningState:
-
         pipeline_state_from_tasks: RunningState = get_pipeline_state_from_task_states(
             list(pipeline_tasks.values()),
         )
@@ -203,7 +213,7 @@ class BaseCompScheduler(ABC):
         for task in tasks.values():
             if task.state == RunningState.FAILED:
                 tasks_to_set_aborted.update(nx.bfs_tree(dag, f"{task.node_id}"))
-                tasks_to_set_aborted.remove(f"{task.node_id}")
+                tasks_to_set_aborted.remove(NodeIDStr(f"{task.node_id}"))
         for task in tasks_to_set_aborted:
             tasks[f"{task}"].state = RunningState.ABORTED
         if tasks_to_set_aborted:
@@ -219,6 +229,62 @@ class BaseCompScheduler(ABC):
             )
         return tasks
 
+    Previous = CompTaskAtDB
+    Current = CompTaskAtDB
+
+    async def _get_changed_tasks_from_backend(
+        self,
+        user_id: UserID,
+        cluster_id: ClusterID,
+        processing_tasks: list[CompTaskAtDB],
+    ) -> list[tuple[Previous, Current]]:
+        tasks_backend_status = await self._get_tasks_status(
+            user_id, cluster_id, processing_tasks
+        )
+        return [
+            (
+                task,
+                task.copy(update={"state": backend_state}),
+            )
+            for task, backend_state in zip(processing_tasks, tasks_backend_status)
+            if task.state is not backend_state
+        ]
+
+    async def _process_incomplete_tasks(self, tasks: list[CompTaskAtDB]) -> None:
+        comp_tasks_repo = CompTasksRepository(self.db_engine)
+        await asyncio.gather(
+            *(
+                comp_tasks_repo.set_project_tasks_state(
+                    t.project_id, [t.node_id], t.state
+                )
+                for t in tasks
+            )
+        )
+
+    async def _publish_service_started_metrics(
+        self,
+        user_id: UserID,
+        project_id: ProjectID,
+        changed_tasks: list[tuple[Previous, Current]],
+    ) -> None:
+        for previous, current in changed_tasks:
+            if current.state is RunningState.STARTED or (
+                previous.state in WAITING_FOR_START_STATES
+                and current.state in COMPLETED_STATES
+            ):
+                message = InstrumentationRabbitMessage.construct(
+                    metrics="service_started",
+                    user_id=user_id,
+                    project_id=project_id,
+                    node_id=current.node_id,
+                    service_uuid=current.node_id,
+                    service_type=NodeClass.COMPUTATIONAL.value,
+                    service_key=current.image.name,
+                    service_tag=current.image.tag,
+                    simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                )
+                await self.rabbitmq_client.publish(message.channel_name, message.json())
+
     async def _update_states_from_comp_backend(
         self,
         user_id: UserID,
@@ -226,59 +292,29 @@ class BaseCompScheduler(ABC):
         project_id: ProjectID,
         pipeline_dag: nx.DiGraph,
     ):
-        pipeline_tasks: dict[str, CompTaskAtDB] = await self._get_pipeline_tasks(
-            project_id, pipeline_dag
+        all_tasks = await self._get_pipeline_tasks(project_id, pipeline_dag)
+        processing_tasks = [
+            t for t in all_tasks.values() if t.state in PROCESSING_STATES
+        ]
+        changed_tasks = await self._get_changed_tasks_from_backend(
+            user_id, cluster_id, processing_tasks
         )
-        tasks_completed: list[CompTaskAtDB] = []
-        tasks_with_changed_state: list[CompTaskAtDB] = []
-        if tasks_supposedly_processing := [
-            task
-            for task in pipeline_tasks.values()
-            if task.state in [RunningState.STARTED, RunningState.PENDING]
-        ]:
-            logger.debug(
-                "Currently pending/running tasks are: %s",
-                f"{((task.node_id, task.state) for task in tasks_supposedly_processing)}",
-            )
-            # ensure these tasks still exist in the backend, if not we abort these
-            tasks_backend_status = await self._get_tasks_status(
-                user_id, cluster_id, tasks_supposedly_processing
-            )
-            logger.debug("Computational states: %s", f"{tasks_backend_status=}")
-            for task, backend_state in zip(
-                tasks_supposedly_processing, tasks_backend_status
-            ):
 
-                if backend_state == RunningState.UNKNOWN:
-                    tasks_completed.append(task)
-                    # these tasks should be running but they are not available in the backend, something bad happened
-                    logger.error(
-                        "Project %s: %s has %s. The task disappeared from the dask-scheduler"
-                        ", aborting the computational pipeline!\n"
-                        "TIP: Check if the connected dask-scheduler was restarted.",
-                        f"{project_id}",
-                        f"{task=}",
-                        f"{backend_state=}",
-                    )
-                elif backend_state in COMPLETED_STATES:
-                    tasks_completed.append(task)
-                elif task.state != backend_state:
-                    tasks_with_changed_state.append(
-                        task.copy(update={"state": backend_state})
-                    )
-        if tasks_completed:
-            await self._process_completed_tasks(user_id, cluster_id, tasks_completed)
-        if tasks_with_changed_state:
-            # update the state in the DB
-            comp_tasks_repo = CompTasksRepository(self.db_engine)
-            await asyncio.gather(
-                *(
-                    comp_tasks_repo.set_project_tasks_state(
-                        t.project_id, [t.node_id], t.state
-                    )
-                    for t in tasks_with_changed_state
-                )
-            )
+        await self._publish_service_started_metrics(user_id, project_id, changed_tasks)
+
+        completed_tasks = [
+            current for _, current in changed_tasks if current.state in COMPLETED_STATES
+        ]
+        incomplete_tasks = [
+            current
+            for _, current in changed_tasks
+            if current.state not in COMPLETED_STATES
+        ]
+
+        if completed_tasks:
+            await self._process_completed_tasks(user_id, cluster_id, completed_tasks)
+        if incomplete_tasks:
+            await self._process_incomplete_tasks(incomplete_tasks)
 
     @abstractmethod
     async def _start_tasks(
