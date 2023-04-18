@@ -19,7 +19,6 @@ translate into something like
 }
 """
 
-from typing import Optional
 
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
@@ -31,13 +30,13 @@ class DirectorException(Exception):
     """Basic exception"""
 
     def message(self) -> str:
-        return self.args[0]
+        return f"{self.args[0]}"
 
 
 class ConfigurationError(DirectorException):
     """An error in the director-v2 configuration"""
 
-    def __init__(self, msg: Optional[str] = None):
+    def __init__(self, msg: str | None = None):
         super().__init__(
             msg or "Invalid configuration of the director-v2 application. Please check."
         )
@@ -54,7 +53,7 @@ class GenericDockerError(DirectorException):
 class ServiceNotAvailableError(DirectorException):
     """Service not found"""
 
-    def __init__(self, service_name: str, service_tag: Optional[str] = None):
+    def __init__(self, service_name: str, service_tag: str | None = None):
         service_tag = service_tag or "UNDEFINED"
         super().__init__(f"The service {service_name}:{service_tag} does not exist")
         self.service_name = service_name
@@ -116,23 +115,21 @@ class NodeRightsAcquireError(PydanticErrorMixin, DirectorException):
 class SchedulerError(DirectorException):
     code = "scheduler_error"
 
-    def __init__(self, msg: Optional[str] = None):
+    def __init__(self, msg: str | None = None):
         super().__init__(msg or "Unexpected error in the scheduler")
 
 
 class InvalidPipelineError(SchedulerError):
     """A pipeline is misconfigured"""
 
-    def __init__(self, pipeline_id: str, msg: Optional[str] = None):
+    def __init__(self, pipeline_id: str, msg: str | None = None):
         super().__init__(msg or f"Invalid configuration of pipeline {pipeline_id}")
 
 
 class TaskSchedulingError(SchedulerError):
     """A task cannot be scheduled"""
 
-    def __init__(
-        self, project_id: ProjectID, node_id: NodeID, msg: Optional[str] = None
-    ):
+    def __init__(self, project_id: ProjectID, node_id: NodeID, msg: str | None = None):
         super().__init__(msg=msg)
         self.project_id = project_id
         self.node_id = node_id
@@ -156,9 +153,7 @@ class MissingComputationalResourcesError(TaskSchedulingError):
 
     code = "scheduler_error.missing_resources"
 
-    def __init__(
-        self, project_id: ProjectID, node_id: NodeID, msg: Optional[str] = None
-    ):
+    def __init__(self, project_id: ProjectID, node_id: NodeID, msg: str | None = None):
         super().__init__(project_id, node_id, msg=msg)
 
 
@@ -167,9 +162,7 @@ class InsuficientComputationalResourcesError(TaskSchedulingError):
 
     code = "scheduler_error.insuficient_resources"
 
-    def __init__(
-        self, project_id: ProjectID, node_id: NodeID, msg: Optional[str] = None
-    ):
+    def __init__(self, project_id: ProjectID, node_id: NodeID, msg: str | None = None):
         super().__init__(project_id, node_id, msg=msg)
 
 
