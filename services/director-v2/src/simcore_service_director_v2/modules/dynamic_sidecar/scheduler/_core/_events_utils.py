@@ -407,9 +407,6 @@ async def prepare_services_environment(
     app_settings: AppSettings = app.state.settings
     dynamic_sidecar_client = get_dynamic_sidecar_client(app, scheduler_data.node_uuid)
     dynamic_sidecar_endpoint = scheduler_data.endpoint
-    dynamic_sidecar_settings: DynamicSidecarSettings = (
-        app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-    )
 
     async def _pull_outputs_and_state():
         tasks = [
