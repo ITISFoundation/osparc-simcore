@@ -40,7 +40,7 @@ async def get_value_link_from_port_link(
 async def get_value_from_link(
     key: str,
     value: PortLink,
-    fileToKeyMap: dict[str, str] | None,
+    file_to_key_map: dict[str, str] | None,
     node_port_creator: Callable[[str], Coroutine[Any, Any, Any]],
     *,
     progress_bar: ProgressBarData | None,
@@ -58,8 +58,8 @@ async def get_value_from_link(
         file_name = other_value.name
         # move the file to the right final location
         # if a file alias is present use it
-        if fileToKeyMap:
-            file_name = next(iter(fileToKeyMap))
+        if file_to_key_map:
+            file_name = next(iter(file_to_key_map))
 
         file_path = data_items_utils.create_file_path(key, file_name)
         if other_value == file_path:
@@ -173,7 +173,7 @@ async def delete_target_link(
 async def pull_file_from_store(
     user_id: UserID,
     key: str,
-    fileToKeyMap: dict[str, str] | None,
+    file_to_key_map: dict[str, str] | None,
     value: FileLink,
     io_log_redirect_cb: LogRedirectCB | None,
     progress_bar: ProgressBarData | None,
@@ -191,8 +191,8 @@ async def pull_file_from_store(
         progress_bar=progress_bar or ProgressBarData(steps=1),
     )
     # if a file alias is present use it to rename the file accordingly
-    if fileToKeyMap:
-        renamed_file = local_path / next(iter(fileToKeyMap))
+    if file_to_key_map:
+        renamed_file = local_path / next(iter(file_to_key_map))
         if downloaded_file != renamed_file:
             if renamed_file.exists():
                 renamed_file.unlink()
@@ -233,7 +233,7 @@ async def push_file_to_store(
 
 async def pull_file_from_download_link(
     key: str,
-    fileToKeyMap: dict[str, str] | None,
+    file_to_key_map: dict[str, str] | None,
     value: DownloadLink,
     io_log_redirect_cb: LogRedirectCB | None,
     progress_bar: ProgressBarData | None,
@@ -253,8 +253,8 @@ async def pull_file_from_download_link(
     )
 
     # if a file alias is present use it to rename the file accordingly
-    if fileToKeyMap:
-        renamed_file = local_path / next(iter(fileToKeyMap))
+    if file_to_key_map:
+        renamed_file = local_path / next(iter(file_to_key_map))
         if downloaded_file != renamed_file:
             if renamed_file.exists():
                 renamed_file.unlink()

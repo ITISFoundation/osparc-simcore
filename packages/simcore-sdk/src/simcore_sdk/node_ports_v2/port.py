@@ -253,7 +253,7 @@ class Port(BaseServiceIOModel):
                     # pylint: disable=protected-access
                     key=self.key,
                     value=self.value,
-                    fileToKeyMap=self.file_to_key_map,
+                    file_to_key_map=self.file_to_key_map,
                     node_port_creator=self._node_ports._node_ports_creator_cb,
                     progress_bar=progress_bar,
                 )
@@ -264,7 +264,7 @@ class Port(BaseServiceIOModel):
                 value = await port_utils.pull_file_from_store(
                     user_id=self._node_ports.user_id,
                     key=self.key,
-                    fileToKeyMap=self.file_to_key_map,
+                    file_to_key_map=self.file_to_key_map,
                     value=self.value,
                     io_log_redirect_cb=self._node_ports.io_log_redirect_cb,
                     progress_bar=progress_bar,
@@ -274,7 +274,7 @@ class Port(BaseServiceIOModel):
                 # this is a downloadable link
                 value = await port_utils.pull_file_from_download_link(
                     key=self.key,
-                    fileToKeyMap=self.file_to_key_map,
+                    file_to_key_map=self.file_to_key_map,
                     value=self.value,
                     io_log_redirect_cb=self._node_ports.io_log_redirect_cb,
                     progress_bar=progress_bar,
