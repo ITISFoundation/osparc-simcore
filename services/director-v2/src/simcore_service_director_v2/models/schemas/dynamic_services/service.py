@@ -1,6 +1,7 @@
 from enum import Enum, unique
 from functools import cached_property, lru_cache, total_ordering
 from pathlib import Path
+from typing import Any
 
 from models_library.basic_types import PortInt
 from models_library.projects import ProjectID
@@ -55,7 +56,7 @@ class ServiceDetails(CommonServiceDetails):
 
     class Config:
         allow_population_by_field_name = True
-        schema_extra = {
+        schema_extra: dict[str, Any] = {
             "example": {
                 "key": "simcore/services/dynamic/3dviewer",
                 "version": "2.4.5",

@@ -3,7 +3,7 @@ import os
 import socket
 from contextlib import suppress
 from dataclasses import dataclass, field
-from typing import Awaitable, Callable, Final, Optional, Union
+from typing import Awaitable, Callable, Final, Union
 
 import dask_gateway
 import distributed
@@ -50,8 +50,8 @@ logger = logging.getLogger(__name__)
 class DaskSubSystem:
     client: distributed.Client
     scheduler_id: str
-    gateway: Optional[dask_gateway.Gateway]
-    gateway_cluster: Optional[dask_gateway.GatewayCluster]
+    gateway: dask_gateway.Gateway | None
+    gateway_cluster: dask_gateway.GatewayCluster | None
     state_sub: distributed.Sub = field(init=False)
     progress_sub: distributed.Sub = field(init=False)
     logs_sub: distributed.Sub = field(init=False)
@@ -65,21 +65,21 @@ class DaskSubSystem:
         )
         self.logs_sub = distributed.Sub(TaskLogEvent.topic_name(), client=self.client)
 
-    async def close(self):
+    async def close(self) -> None:
         # NOTE: if the Sub are deleted before closing the connection,
         # then the dask-scheduler goes in a bad state [https://github.com/dask/distributed/issues/3276]
         # closing the client appears to fix the issue and the dask-scheduler remains happy
         if self.client:
-            await self.client.close()  # type: ignore
+            await self.client.close()
         if self.gateway_cluster:
-            await self.gateway_cluster.close()  # type: ignore
+            await self.gateway_cluster.close()
         if self.gateway:
-            await self.gateway.close()  # type: ignore
+            await self.gateway.close()
 
 
 async def _connect_to_dask_scheduler(endpoint: AnyUrl) -> DaskSubSystem:
     try:
-        client = await distributed.Client(  # type: ignore
+        client = await distributed.Client(
             f"{endpoint}",
             asynchronous=True,
             name=f"director-v2_{socket.gethostname()}_{os.getpid()}",
@@ -131,7 +131,7 @@ async def _connect_with_gateway_and_create_cluster(
             logger.info("Cluster dashboard available: %s", cluster.dashboard_link)
             # NOTE: we scale to 1 worker as they are global
             await cluster.adapt(active=True)
-            client = await cluster.get_client()  # type: ignore
+            client = await cluster.get_client()
             assert client  # nosec
             return DaskSubSystem(
                 client=client,
@@ -142,7 +142,7 @@ async def _connect_with_gateway_and_create_cluster(
         except Exception as exc:
             # cleanup
             with suppress(Exception):
-                await gateway.close()  # type: ignore
+                await gateway.close()
             raise exc
 
     except (TypeError) as exc:
