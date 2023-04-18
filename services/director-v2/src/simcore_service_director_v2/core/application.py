@@ -2,6 +2,7 @@ import logging
 
 from fastapi import FastAPI, HTTPException, status
 from fastapi.exceptions import RequestValidationError
+from models_library.basic_types import BootModeEnum
 from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
@@ -36,7 +37,7 @@ from .errors import (
     ProjectNotFoundError,
 )
 from .events import on_shutdown, on_startup
-from .settings import AppSettings, BootModeEnum
+from .settings import AppSettings
 
 logger = logging.getLogger(__name__)
 

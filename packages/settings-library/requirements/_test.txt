@@ -4,23 +4,21 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --resolver=backtracking --strip-extras requirements/_test.in
 #
-attrs==22.2.0
-    # via pytest
 coverage==7.2.3
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-exceptiongroup==1.1.0
+exceptiongroup==1.1.1
     # via pytest
 iniconfig==2.0.0
     # via pytest
-packaging==23.0
+packaging==23.1
     # via
     #   pytest
     #   pytest-sugar
 pluggy==1.0.0
     # via pytest
-pytest==7.2.1
+pytest==7.3.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -29,13 +27,13 @@ pytest==7.2.1
     #   pytest-sugar
 pytest-cov==4.0.0
     # via -r requirements/_test.in
-pytest-instafail==0.4.2
+pytest-instafail==0.5.0
     # via -r requirements/_test.in
 pytest-mock==3.10.0
     # via -r requirements/_test.in
 pytest-runner==6.0.0
     # via -r requirements/_test.in
-pytest-sugar==0.9.6
+pytest-sugar==0.9.7
     # via -r requirements/_test.in
 python-dotenv==1.0.0
     # via -r requirements/_test.in

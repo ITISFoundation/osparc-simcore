@@ -1,6 +1,5 @@
 import json
 import logging
-from typing import Optional
 
 import redis.asyncio as aioredis
 from aiohttp import web
@@ -16,8 +15,8 @@ from .redis_constants import (
     APP_CLIENT_REDIS_CLIENT_KEY,
     APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY,
     APP_CLIENT_REDIS_SCHEDULED_MAINTENANCE_CLIENT_KEY,
-    APP_CLIENT_REDIS_VALIDATION_CODE_CLIENT_KEY,
     APP_CLIENT_REDIS_USER_NOTIFICATIONS_CLIENT_KEY,
+    APP_CLIENT_REDIS_VALIDATION_CODE_CLIENT_KEY,
 )
 
 log = logging.getLogger(__name__)
@@ -29,7 +28,7 @@ _WAIT_SECS = 2
 
 
 def get_plugin_settings(app: web.Application) -> RedisSettings:
-    settings: Optional[RedisSettings] = app[APP_SETTINGS_KEY].WEBSERVER_REDIS
+    settings: RedisSettings | None = app[APP_SETTINGS_KEY].WEBSERVER_REDIS
     assert settings, "setup_settings not called?"  # nosec
     assert isinstance(settings, RedisSettings)  # nosec
     return settings
@@ -64,8 +63,9 @@ async def setup_redis_client(app: web.Application):
                     f"{client=}",
                     json.dumps(attempt.retry_state.retry_object.statistics),
                 )
-            assert client  # nosec
-            return client
+                assert client  # nosec
+                return client
+        raise ConnectionError(f"Connection to {address!r} failed")
 
     REDIS_DSN_MAP = {
         APP_CLIENT_REDIS_CLIENT_KEY: redis_settings.dsn_resources,
@@ -87,7 +87,7 @@ async def setup_redis_client(app: web.Application):
 
 
 def _get_redis_client(app: web.Application, app_key: str) -> aioredis.Redis:
-    redis_client = app[app_key]
+    redis_client: aioredis.Redis = app[app_key]
     assert redis_client is not None, f"redis plugin was not init for {app_key}"  # nosec
     return redis_client
 

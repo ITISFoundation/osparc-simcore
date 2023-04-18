@@ -7,8 +7,8 @@ import httpx
 from fastapi import FastAPI, HTTPException, status
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
+from settings_library.catalog import CatalogSettings
 
-from ..core.settings import CatalogSettings
 from ..utils.client_decorators import handle_errors, handle_retry
 
 logger = logging.getLogger(__name__)
@@ -51,6 +51,7 @@ class CatalogClient:
 
     @classmethod
     def instance(cls, app: FastAPI) -> "CatalogClient":
+        assert type(app.state.catalog_client) == CatalogClient  # nosec
         return app.state.catalog_client
 
     @handle_errors("Catalog", logger)
@@ -73,7 +74,8 @@ class CatalogClient:
         )
         resp.raise_for_status()
         if resp.status_code == status.HTTP_200_OK:
-            return resp.json()
+            json_response: dict[str, Any] = resp.json()
+            return json_response
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     async def get_service_resources(
@@ -86,7 +88,8 @@ class CatalogClient:
         )
         resp.raise_for_status()
         if resp.status_code == status.HTTP_200_OK:
-            return resp.json()
+            json_response: dict[str, Any] = resp.json()
+            return json_response
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     async def get_service_specifications(
@@ -99,7 +102,8 @@ class CatalogClient:
         )
         resp.raise_for_status()
         if resp.status_code == status.HTTP_200_OK:
-            return resp.json()
+            json_response: dict[str, Any] = resp.json()
+            return json_response
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     async def is_responsive(self) -> bool:

@@ -1,11 +1,12 @@
 from abc import ABC, abstractmethod
 from enum import Enum, auto
-from typing import Any, Optional
+from typing import Any
 
 
 class ReservedContextKeys(str, Enum):
-    def _generate_next_value_(self, *_: Any) -> str:  # pylint:disable=arguments-differ
-        return self.lower()
+    @staticmethod
+    def _generate_next_value_(name: str, *_: Any) -> str:
+        return name.lower()
 
     APP = auto()
 
@@ -58,7 +59,7 @@ class _ContextStorageInterface(ABC):
         """saves value to sore"""
 
     @abstractmethod
-    async def load(self, key: str) -> Optional[Any]:
+    async def load(self, key: str) -> Any | None:
         """load value from store"""
 
     @abstractmethod
