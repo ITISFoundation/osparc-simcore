@@ -9,7 +9,7 @@ import datetime
 import functools
 import traceback
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Awaitable, Callable
+from typing import Any, AsyncIterator, Awaitable, Callable, NoReturn
 from unittest import mock
 from uuid import uuid4
 
@@ -102,7 +102,7 @@ async def _assert_wait_for_task_status(
                 f"waiting for task to be {expected_status=}, "
                 f"Attempt={attempt.retry_state.attempt_number}"
             )
-            current_task_status = await dask_client.get_task_status(job_id)
+            current_task_status = (await dask_client.get_tasks_status([job_id]))[0]
             assert isinstance(current_task_status, RunningState)
             print(f"{current_task_status=} vs {expected_status=}")
             assert current_task_status == expected_status
@@ -371,7 +371,7 @@ async def test_dask_cluster_executes_simple_functions(dask_client: DaskClient):
 async def test_dask_does_not_report_asyncio_cancelled_error_in_task(
     dask_client: DaskClient,
 ):
-    def fct_that_raise_cancellation_error():
+    def fct_that_raise_cancellation_error() -> NoReturn:
         import asyncio
 
         raise asyncio.CancelledError("task was cancelled, but dask does not care...")
@@ -394,7 +394,6 @@ async def test_dask_does_not_report_asyncio_cancelled_error_in_task(
 )
 async def test_dask_does_not_report_base_exception_in_task(dask_client: DaskClient):
     def fct_that_raise_base_exception():
-
         raise BaseException(  # pylint: disable=broad-exception-raised
             "task triggers a base exception, but dask does not care..."
         )
@@ -444,6 +443,7 @@ async def test_send_computation_task(
     faker: Faker,
 ):
     _DASK_EVENT_NAME = faker.pystr()
+
     # NOTE: this must be inlined so that the test works,
     # the dask-worker must be able to import the function
     def fake_sidecar_fct(
@@ -537,6 +537,7 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
 
     When submitting a computation task, the future corresponding to that task is "published" on the scheduler.
     """
+
     # NOTE: this must be inlined so that the test works,
     # the dask-worker must be able to import the function
     def fake_sidecar_fct(
@@ -616,6 +617,7 @@ async def test_abort_computation_tasks(
     faker: Faker,
 ):
     _DASK_EVENT_NAME = faker.pystr()
+
     # NOTE: this must be inlined so that the test works,
     # the dask-worker must be able to import the function
     def fake_remote_fct(
@@ -712,7 +714,6 @@ async def test_failed_task_returns_exceptions(
         s3_settings: S3Settings | None,
         boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
-
         raise ValueError(
             "sadly we are failing to execute anything cause we are dumb..."
         )
@@ -764,7 +765,6 @@ async def test_missing_resource_send_computation_task(
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
 ):
-
     # remove the workers that can handle gpu
     scheduler_info = dask_client.backend.client.scheduler_info()
     assert scheduler_info
@@ -1015,7 +1015,6 @@ async def test_dask_sub_handlers(
         s3_settings: S3Settings | None,
         boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
-
         state_pub = distributed.Pub(TaskStateEvent.topic_name())
         progress_pub = distributed.Pub(TaskProgressEvent.topic_name())
         logs_pub = distributed.Pub(TaskLogEvent.topic_name())
@@ -1083,6 +1082,7 @@ async def test_get_cluster_details(
     assert cluster_details
 
     _DASK_EVENT_NAME = faker.pystr()
+
     # send a fct that uses resources
     def fake_sidecar_fct(
         docker_auth: DockerBasicAuth,

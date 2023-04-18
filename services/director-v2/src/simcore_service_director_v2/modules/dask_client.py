@@ -12,11 +12,10 @@ import asyncio
 import json
 import logging
 import traceback
-from collections import deque
 from copy import deepcopy
 from dataclasses import dataclass, field
 from http.client import HTTPException
-from typing import Any, Callable, Deque, Final, Optional
+from typing import Any, Callable, Final, Optional
 
 import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
@@ -348,9 +347,6 @@ class DaskClient:
                 raise
         return list_of_node_id_to_job_id
 
-    async def get_task_status(self, job_id: str) -> RunningState:
-        return (await self.get_tasks_status(job_ids=[job_id]))[0]
-
     async def get_tasks_status(self, job_ids: list[str]) -> list[RunningState]:
         check_scheduler_is_still_the_same(
             self.backend.scheduler_id, self.backend.client
@@ -363,7 +359,7 @@ class DaskClient:
         )  # type: ignore
         logger.debug("found dask task statuses: %s", f"{task_statuses=}")
 
-        running_states: Deque[RunningState] = deque()
+        running_states: list[RunningState] = []
         for job_id in job_ids:
             dask_status = task_statuses.get(job_id, "lost")
             if dask_status == "erred":
@@ -388,7 +384,7 @@ class DaskClient:
                     )
                 )
 
-        return list(running_states)
+        return running_states
 
     async def abort_computation_task(self, job_id: str) -> None:
         # Dask future may be cancelled, but only a future that was not already taken by
