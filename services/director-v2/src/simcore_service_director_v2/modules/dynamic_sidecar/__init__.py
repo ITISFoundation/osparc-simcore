@@ -6,3 +6,5 @@ Helpful conventions in method names:
 """
 
 from .module_setup import setup
+
+__all__: tuple[str, ...] = ("setup",)

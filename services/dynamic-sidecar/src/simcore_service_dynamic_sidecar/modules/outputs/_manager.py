@@ -5,7 +5,6 @@ from asyncio import CancelledError, Future, Lock, Task, create_task, wait
 from contextlib import suppress
 from datetime import timedelta
 from functools import partial
-from typing import Optional
 
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import ProgressType
@@ -100,8 +99,8 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
         outputs_context: OutputsContext,
-        io_log_redirect_cb: Optional[LogRedirectCB],
-        progress_cb: Optional[progress_bar.AsyncReportCB],
+        io_log_redirect_cb: LogRedirectCB | None,
+        progress_cb: progress_bar.AsyncReportCB | None,
         *,
         upload_upon_api_request: bool = True,
         task_cancellation_timeout_s: PositiveFloat = 5,
@@ -115,12 +114,12 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         self.task_progress_cb = progress_cb
 
         self._port_key_tracker = _PortKeyTracker()
-        self._task_uploading: Optional[Task] = None
-        self._task_scheduler_worker: Optional[Task] = None
+        self._task_uploading: Task | None = None
+        self._task_scheduler_worker: Task | None = None
         self._schedule_all_ports_for_upload: bool = False
 
         # keep track if a port was uploaded and there was an error, remove said error if
-        self._last_upload_error_tracker: dict[str, Optional[Exception]] = {}
+        self._last_upload_error_tracker: dict[str, Exception | None] = {}
 
     async def _uploading_task_start(self) -> None:
         port_keys = await self._port_key_tracker.get_uploading()
@@ -145,15 +144,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
             # pylint: disable=protected-access
             if future._exception is not None:
                 formatted_traceback = (
-                    "\n"
-                    + "".join(
-                        # pylint:disable = unexpected-keyword-arg, no-value-for-parameter
-                        traceback.format_exception(
-                            etype=type(future._exception),
-                            value=future._exception,
-                            tb=future._exception.__traceback__,
-                        )
-                    )
+                    "\n" + "".join(traceback.format_exception(future._exception))
                     if future._exception.__traceback__
                     else ""
                 )
@@ -263,9 +254,9 @@ def setup_outputs_manager(app: FastAPI) -> None:
         assert isinstance(app.state.settings, ApplicationSettings)  # nosec
         settings: ApplicationSettings = app.state.settings
 
-        io_log_redirect_cb: Optional[LogRedirectCB] = None
+        io_log_redirect_cb: LogRedirectCB | None = None
         if settings.RABBIT_SETTINGS:
-            io_log_redirect_cb = partial(post_log_message, app)
+            io_log_redirect_cb = partial(post_log_message, app, log_level=logging.INFO)
         logger.debug(
             "setting up outputs manager %s",
             "with redirection of logs..." if io_log_redirect_cb else "...",
@@ -281,7 +272,7 @@ def setup_outputs_manager(app: FastAPI) -> None:
         await outputs_manager.start()
 
     async def on_shutdown() -> None:
-        outputs_manager: Optional[OutputsManager] = app.state.outputs_manager
+        outputs_manager: OutputsManager | None = app.state.outputs_manager
         if outputs_manager is not None:
             await outputs_manager.shutdown()
 

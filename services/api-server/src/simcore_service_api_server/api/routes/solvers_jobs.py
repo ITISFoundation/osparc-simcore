@@ -3,7 +3,7 @@
 
 import logging
 from collections import deque
-from typing import Callable, Optional, Union
+from typing import Callable
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
@@ -13,17 +13,13 @@ from models_library.clusters import ClusterID
 from models_library.projects_nodes_io import BaseFileLink
 from pydantic.types import PositiveInt
 
+from ...models.basic_types import VersionStr
 from ...models.domain.projects import NewProjectIn, Project
 from ...models.schemas.files import File
 from ...models.schemas.jobs import ArgumentType, Job, JobInputs, JobOutputs, JobStatus
-from ...models.schemas.solvers import Solver, SolverKeyId, VersionStr
+from ...models.schemas.solvers import Solver, SolverKeyId
 from ...modules.catalog import CatalogApi
-from ...modules.director_v2 import (
-    ComputationTaskGet,
-    DirectorV2Api,
-    DownloadLink,
-    NodeName,
-)
+from ...modules.director_v2 import DirectorV2Api, DownloadLink, NodeName
 from ...modules.storage import StorageApi, to_file_api_model
 from ...utils.solver_job_models_converters import (
     create_job_from_project,
@@ -45,7 +41,7 @@ router = APIRouter()
 def _compose_job_resource_name(solver_key, solver_version, job_id) -> str:
     """Creates a unique resource name for solver's jobs"""
     return Job.compose_resource_name(
-        parent_name=Solver.compose_resource_name(solver_key, solver_version),
+        parent_name=Solver.compose_resource_name(solver_key, solver_version),  # type: ignore
         job_id=job_id,
     )
 
@@ -62,7 +58,7 @@ def _compose_job_resource_name(solver_key, solver_version, job_id) -> str:
 )
 async def list_jobs(
     solver_key: SolverKeyId,
-    version: str,
+    version: VersionStr,
     user_id: PositiveInt = Depends(get_current_user_id),
     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     webserver_api: AuthSession = Depends(get_webserver_session),
@@ -97,12 +93,11 @@ async def list_jobs(
 )
 async def create_job(
     solver_key: SolverKeyId,
-    version: str,
+    version: VersionStr,
     inputs: JobInputs,
     user_id: PositiveInt = Depends(get_current_user_id),
     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     webserver_api: AuthSession = Depends(get_webserver_session),
-    director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
     url_for: Callable = Depends(get_reverse_url_mapper),
     product_name: str = Depends(get_product_name),
 ):
@@ -143,16 +138,6 @@ async def create_job(
     assert job.name == pre_job.name  # nosec
     assert job.name == _compose_job_resource_name(solver_key, version, job.id)  # nosec
 
-    # -> director2:   ComputationTaskOut = JobStatus
-    # consistency check
-    task: ComputationTaskGet = await director2_api.create_computation(
-        job.id, user_id, product_name
-    )
-    assert task.id == job.id  # nosec
-
-    job_status: JobStatus = create_jobstatus_from_task(task)
-    assert job.id == job_status.job_id  # nosec
-
     return job
 
 
@@ -186,7 +171,7 @@ async def start_job(
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: UUID,
-    cluster_id: Optional[ClusterID] = None,
+    cluster_id: ClusterID | None = None,
     user_id: PositiveInt = Depends(get_current_user_id),
     director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
     product_name: str = Depends(get_product_name),
@@ -269,7 +254,7 @@ async def get_job_outputs(
     assert len(node_ids) == 1  # nosec
 
     outputs: dict[
-        str, Union[float, int, bool, BaseFileLink, str, None]
+        str, float | int | bool | BaseFileLink | str | None
     ] = await get_solver_output_results(
         user_id=user_id,
         project_uuid=job_id,
@@ -338,7 +323,10 @@ async def get_job_output_logfile(
     )
 
     # if more than one node? should rezip all of them??
-    assert len(logs_urls) <= 1, "Current version only supports one node per solver"
+    assert (  # nosec
+        len(logs_urls) <= 1
+    ), "Current version only supports one node per solver"
+
     for presigned_download_link in logs_urls.values():
         logger.info(
             "Redirecting '%s' to %s ...",

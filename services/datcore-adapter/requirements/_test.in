@@ -6,9 +6,7 @@
 
 
 asgi_lifespan
-codecov
 coverage
-coveralls
 faker
 pytest
 pytest-asyncio
@@ -19,4 +17,5 @@ pytest-mock
 pytest-runner
 pytest-sugar
 pytest-xdist
+requests
 respx

@@ -11,7 +11,6 @@
 
 aiopg[sa]
 coverage
-coveralls
 faker
 pytest
 pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
@@ -20,3 +19,4 @@ pytest-docker
 pytest-instafail
 pytest-runner
 pyyaml
+sqlalchemy[mypy] # adds Mypy / Pep-484 Support for ORM Mappings SEE https://docs.sqlalchemy.org/en/20/orm/extensions/mypy.html

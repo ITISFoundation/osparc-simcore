@@ -1,8 +1,8 @@
 import logging
-from typing import Optional
 
 from fastapi import FastAPI, HTTPException, status
 from fastapi.exceptions import RequestValidationError
+from models_library.basic_types import BootModeEnum
 from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
@@ -37,7 +37,7 @@ from .errors import (
     ProjectNotFoundError,
 )
 from .events import on_shutdown, on_startup
-from .settings import AppSettings, BootModeEnum
+from .settings import AppSettings
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +86,14 @@ def _set_exception_handlers(app: FastAPI):
     )
 
 
-def create_base_app(settings: Optional[AppSettings] = None) -> FastAPI:
+LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
+NOISY_LOGGERS = (
+    "aio_pika",
+    "aiormq",
+)
+
+
+def create_base_app(settings: AppSettings | None = None) -> FastAPI:
     if settings is None:
         settings = AppSettings.create_from_envs()
     assert settings  # nosec
@@ -94,6 +101,14 @@ def create_base_app(settings: Optional[AppSettings] = None) -> FastAPI:
     logging.basicConfig(level=settings.LOG_LEVEL.value)
     logging.root.setLevel(settings.LOG_LEVEL.value)
     logger.debug(settings.json(indent=2))
+
+    # keep mostly quiet noisy loggers
+    quiet_level: int = max(
+        min(logging.root.level + LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING
+    )
+
+    for name in NOISY_LOGGERS:
+        logging.getLogger(name).setLevel(quiet_level)
 
     app = FastAPI(
         debug=settings.SC_BOOT_MODE.is_devel_mode(),
@@ -110,7 +125,7 @@ def create_base_app(settings: Optional[AppSettings] = None) -> FastAPI:
     return app
 
 
-def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
+def init_app(settings: AppSettings | None = None) -> FastAPI:
     app = create_base_app(settings)
     if settings is None:
         settings = app.state.settings

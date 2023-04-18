@@ -84,6 +84,18 @@ qx.Class.define("osparc.utils.Utils", {
       }
     },
 
+    resourceTypeToAlias: function(resourceType, options) {
+      switch (resourceType) {
+        case "study":
+          return osparc.product.Utils.getStudyAlias(options);
+        case "template":
+          return osparc.product.Utils.getTemplateAlias(options);
+        case "service":
+          return osparc.product.Utils.getServiceAlias(options);
+      }
+      return resourceType;
+    },
+
     hardRefresh: function() {
       // https://stackoverflow.com/questions/5721704/window-location-reload-with-clear-cache
       // No cigar. Tried:
@@ -335,6 +347,10 @@ qx.Class.define("osparc.utils.Utils", {
       return window.location.hostname.includes("speag");
     },
 
+    isDevelEnv: function() {
+      return window.location.hostname.includes("master.speag") || window.location.port === "9081";
+    },
+
     addBorder: function(widget, width = 1, color = "transparent") {
       widget.getContentElement().setStyle("border", width+"px solid " + color);
     },
@@ -345,6 +361,20 @@ qx.Class.define("osparc.utils.Utils", {
 
     hideBorder: function(widget) {
       widget.getContentElement().setStyle("border", "1px solid transparent");
+    },
+
+    addBorderLeftRadius: function(widget) {
+      widget.getContentElement().setStyles({
+        "border-top-left-radius": "4px",
+        "border-bottom-left-radius": "4px"
+      });
+    },
+
+    addBorderRightRadius: function(widget) {
+      widget.getContentElement().setStyles({
+        "border-top-right-radius": "4px",
+        "border-bottom-right-radius": "4px"
+      });
     },
 
     __setStyleToIFrame: function(domEl) {

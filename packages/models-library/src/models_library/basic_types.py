@@ -1,11 +1,15 @@
 from enum import Enum
 
-from pydantic import HttpUrl, PositiveInt, conint, constr
+from pydantic import ConstrainedInt, HttpUrl, PositiveInt, constr
 
 from .basic_regex import UUID_RE, VERSION_RE
 
+
 # port number range
-PortInt = conint(gt=0, lt=65535)
+class PortInt(ConstrainedInt):
+    gt = 0
+    lt = 65535
+
 
 # e.g. 'v5'
 VersionTag = constr(regex=r"^v\d$")

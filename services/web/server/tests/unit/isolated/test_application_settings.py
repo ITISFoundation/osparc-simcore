@@ -78,7 +78,7 @@ def mock_env_Dockerfile_build(monkeypatch: MonkeyPatch) -> EnvVarsDict:
         PYTHON_GET_PIP_SHA256=6123659241292b2147b58922b9ffe11dda66b39d52d8a6f3aa310bc1d60ea6f7
         PYTHON_GET_PIP_URL=https://github.com/pypa/get-pip/raw/a1675ab6c2bd898ed82b1f58c486097f763c74a9/public/get-pip.py
         PYTHON_PIP_VERSION=21.1.3
-        PYTHON_VERSION=3.9.12
+        PYTHON_VERSION=3.10.10
         PYTHONDONTWRITEBYTECODE=1
         PYTHONOPTIMIZE=TRUE
         SC_BOOT_MODE=production
@@ -161,7 +161,6 @@ def mock_webserver_service_environment(
 def app_settings(
     mock_webserver_service_environment: EnvVarsDict,
 ) -> ApplicationSettings:
-
     app = web.Application()
 
     # init and validation happens here
@@ -202,7 +201,7 @@ def test_settings_to_client_statics(app_settings: ApplicationSettings):
 
     # special alias
     assert statics["stackName"] == "master-simcore"
-    assert not statics["pluginsDisabled"]
+    assert statics["pluginsDisabled"] == ["WEBSERVER_CLUSTERS"]
 
 
 def test_settings_to_client_statics_plugins(
@@ -220,7 +219,7 @@ def test_settings_to_client_statics_plugins(
 
     print("STATICS:\n", json_dumps(statics, indent=1))
 
-    assert set(statics["pluginsDisabled"]) == disable_plugins
+    assert set(statics["pluginsDisabled"]) == (disable_plugins | {"WEBSERVER_CLUSTERS"})
 
 
 def test_avoid_sensitive_info_in_public(app_settings: ApplicationSettings):

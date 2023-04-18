@@ -20,6 +20,30 @@ qx.Theme.define("osparc.theme.Font", {
   extend: osparc.theme.common.Font,
 
   fonts: {
+    "text-30": {
+      size: 30,
+      family: ["Roboto", "sanf-serif"],
+      color: "text"
+    },
+
+    "text-26": {
+      size: 24,
+      family: ["Roboto", "sanf-serif"],
+      color: "text"
+    },
+
+    "text-24": {
+      size: 24,
+      family: ["Roboto", "sanf-serif"],
+      color: "text"
+    },
+
+    "text-22": {
+      size: 22,
+      family: ["Roboto", "sanf-serif"],
+      color: "text"
+    },
+
     "title-20": {
       size: 20,
       family: ["Roboto", "sanf-serif"],

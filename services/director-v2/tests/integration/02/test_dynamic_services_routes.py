@@ -277,6 +277,7 @@ async def test_start_status_stop(
     mock_dynamic_sidecar_api_calls: None,
     mock_projects_networks_repository: None,
     mock_projects_repository: None,
+    mocked_service_awaits_manual_interventions: None,
 ):
     # NOTE: this test does not like it when the catalog is not fully ready!!!
 

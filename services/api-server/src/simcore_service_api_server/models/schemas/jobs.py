@@ -1,10 +1,10 @@
 import hashlib
 from datetime import datetime
 from enum import Enum
-from typing import Optional, Type, Union
+from typing import Union
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, HttpUrl, conint, validator
+from pydantic import BaseModel, ConstrainedInt, Field, HttpUrl, validator
 
 from ...models.config import BaseConfig
 from ...models.schemas.files import File
@@ -57,8 +57,9 @@ class JobInputs(BaseModel):
                     "n": 55,
                     "title": "Temperature",
                     "enabled": True,
-                    "input_file": File(
-                        filename="input.txt", id="0a3b2c56-dbcd-4871-b93b-d454b7883f9f"
+                    "input_file": dict(
+                        filename="input.txt",
+                        id="0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
                     ),
                 }
             }
@@ -91,7 +92,7 @@ class JobOutputs(BaseModel):
                     "n": 55,
                     "title": "Specific Absorption Rate",
                     "enabled": False,
-                    "output_file": File(
+                    "output_file": dict(
                         filename="sar_matrix.txt",
                         id="0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
                     ),
@@ -131,11 +132,11 @@ class Job(BaseModel):
     )
 
     # Get links to other resources
-    url: Optional[HttpUrl] = Field(..., description="Link to get this resource (self)")
-    runner_url: Optional[HttpUrl] = Field(
+    url: HttpUrl | None = Field(..., description="Link to get this resource (self)")
+    runner_url: HttpUrl | None = Field(
         ..., description="Link to the solver's job (parent collection)"
     )
-    outputs_url: Optional[HttpUrl] = Field(
+    outputs_url: HttpUrl | None = Field(
         ..., description="Link to the job outputs (sub-collection"
     )
 
@@ -170,7 +171,7 @@ class Job(BaseModel):
         global_uuid = uuid4()
 
         return cls(
-            name=cls.compose_resource_name(parent_name, global_uuid),
+            name=cls.compose_resource_name(parent_name, global_uuid),  # type: ignore
             id=global_uuid,
             runner_name=parent_name,
             inputs_checksum=inputs_checksum,
@@ -183,7 +184,8 @@ class Job(BaseModel):
     @classmethod
     def create_solver_job(cls, *, solver: Solver, inputs: JobInputs):
         job = Job.create_now(
-            parent_name=solver.name, inputs_checksum=inputs.compute_checksum()
+            parent_name=solver.name,  # type: ignore
+            inputs_checksum=inputs.compute_checksum(),
         )
         return job
 
@@ -193,7 +195,10 @@ class Job(BaseModel):
     ) -> str:
         # CAREFUL, this is not guarantee a UNIQUE identifier since the resource
         # could have some alias entrypoints and the wrong parent_name might be introduced here
-        collection_or_resource_ids = split_resource_name(parent_name) + ["jobs", job_id]
+        collection_or_resource_ids = split_resource_name(parent_name) + [
+            "jobs",
+            f"{job_id}",
+        ]
         return compose_resource_name(*collection_or_resource_ids)
 
     @property
@@ -215,7 +220,9 @@ class TaskStates(str, Enum):
     ABORTED = "ABORTED"
 
 
-PercentageInt: Type[int] = conint(ge=0, le=100)
+class PercentageInt(ConstrainedInt):
+    ge = 0
+    le = 100
 
 
 class JobStatus(BaseModel):
@@ -225,16 +232,16 @@ class JobStatus(BaseModel):
 
     job_id: UUID
     state: TaskStates
-    progress: PercentageInt = 0
+    progress: PercentageInt = Field(default=PercentageInt(0))
 
     # Timestamps on states
     # TODO: sync state events and timestamps
     submitted_at: datetime
-    started_at: Optional[datetime] = Field(
+    started_at: datetime | None = Field(
         None,
         description="Timestamp that indicate the moment the solver starts execution or None if the event did not occur",
     )
-    stopped_at: Optional[datetime] = Field(
+    stopped_at: datetime | None = Field(
         None,
         description="Timestamp at which the solver finished or killed execution or None if the event did not occur",
     )

@@ -1,5 +1,3 @@
-from typing import Optional
-
 from models_library.basic_regex import VERSION_RE
 from models_library.emails import LowerCaseEmailStr
 from models_library.projects_nodes import Node
@@ -10,22 +8,23 @@ from pydantic import BaseModel, Field, Json
 class DAGBase(BaseModel):
     key: str = Field(
         ...,
-        regex=SERVICE_KEY_RE,
+        regex=SERVICE_KEY_RE.pattern,
         example="simcore/services/frontend/nodes-group/macros/1",
     )
     version: str = Field(..., regex=VERSION_RE, example="1.0.0")
     name: str
-    description: Optional[str]
-    contact: Optional[LowerCaseEmailStr]
+    description: str | None
+    contact: LowerCaseEmailStr | None
 
 
 class DAGAtDB(DAGBase):
     id: int
-    workbench: Json[dict[str, Node]]  # pylint: disable=unsubscriptable-object
+    # pylint: disable=unsubscriptable-object
+    workbench: Json[dict[str, Node]]
 
     class Config:
         orm_mode = True
 
 
 class DAGData(DAGAtDB):
-    workbench: Optional[dict[str, Node]]
+    workbench: dict[str, Node] | None

@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 import sqlalchemy as sa
 from models_library.function_services_catalog import iter_service_docker_data
@@ -9,7 +9,7 @@ from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
-from models_library.services import ServiceDockerData
+from models_library.services import ServiceDockerData, ServiceKeyVersion
 from models_library.services_resources import BootMode
 from models_library.users import UserID
 from sqlalchemy import literal_column
@@ -42,7 +42,10 @@ _FRONTEND_SERVICES_CATALOG: dict[str, ServiceDockerData] = {
 
 
 async def _get_service_details(
-    catalog_client: CatalogClient, user_id: UserID, product_name: str, node: Node
+    catalog_client: CatalogClient,
+    user_id: UserID,
+    product_name: str,
+    node: ServiceKeyVersion,
 ) -> ServiceDockerData:
     service_details = await catalog_client.get_service(
         user_id,
@@ -70,6 +73,29 @@ def _compute_node_boot_mode(node_resources: dict[str, Any]) -> BootMode:
     raise RuntimeError("No BootMode")
 
 
+_ServiceResources = dict[str, Any]
+
+
+async def _get_node_infos(
+    catalog_client: CatalogClient,
+    director_client: DirectorV0Client,
+    user_id: UserID,
+    product_name: str,
+    node: ServiceKeyVersion,
+) -> tuple[ServiceDockerData | None, _ServiceResources | None, ServiceExtras | None]:
+    if to_node_class(node.key) == NodeClass.FRONTEND:
+        return (
+            _FRONTEND_SERVICES_CATALOG.get(node.key, None),
+            None,
+            None,
+        )
+    return await asyncio.gather(
+        _get_service_details(catalog_client, user_id, product_name, node),
+        catalog_client.get_service_resources(user_id, node.key, node.version),
+        director_client.get_service_extras(node.key, node.version),
+    )
+
+
 async def _generate_tasks_list_from_project(
     project: ProjectAtDB,
     catalog_client: CatalogClient,
@@ -79,22 +105,33 @@ async def _generate_tasks_list_from_project(
     product_name: str,
 ) -> list[CompTaskAtDB]:
     list_comp_tasks = []
+
+    unique_service_key_versions = {
+        ServiceKeyVersion.construct(
+            key=node.key, version=node.version
+        )  # the service key version is frozen
+        for node in project.workbench.values()
+    }
+    key_version_to_node_infos = {
+        key_version: await _get_node_infos(
+            catalog_client, director_client, user_id, product_name, key_version
+        )
+        for key_version in unique_service_key_versions
+    }
+
     for internal_id, node_id in enumerate(project.workbench, 1):
         node: Node = project.workbench[node_id]
-
-        # get node infos
-        node_class = to_node_class(node.key)
-        node_details: Optional[ServiceDockerData] = None
-        node_resources: Optional[dict[str, Any]] = None
-        node_extras: Optional[ServiceExtras] = None
-        if node_class == NodeClass.FRONTEND:
-            node_details = _FRONTEND_SERVICES_CATALOG.get(node.key, None)
-        else:
-            node_details, node_resources, node_extras = await asyncio.gather(
-                _get_service_details(catalog_client, user_id, product_name, node),
-                catalog_client.get_service_resources(user_id, node.key, node.version),
-                director_client.get_service_extras(node.key, node.version),
-            )
+        node_key_version = ServiceKeyVersion.construct(
+            key=node.key, version=node.version
+        )
+        node_details, node_resources, node_extras = key_version_to_node_infos.get(
+            node_key_version,
+            (
+                None,
+                None,
+                None,
+            ),
+        )
 
         if not node_details:
             continue
@@ -114,7 +151,10 @@ async def _generate_tasks_list_from_project(
 
         assert node.state is not None  # nosec
         task_state = node.state.current_status
-        if node_id in published_nodes and node_class == NodeClass.COMPUTATIONAL:
+        if (
+            node_id in published_nodes
+            and to_node_class(node.key) == NodeClass.COMPUTATIONAL
+        ):
             task_state = RunningState.PUBLISHED
 
         task_db = CompTaskAtDB(
@@ -131,7 +171,7 @@ async def _generate_tasks_list_from_project(
             submit=datetime.utcnow(),
             state=task_state,
             internal_id=internal_id,
-            node_class=node_class,
+            node_class=to_node_class(node.key),
         )
 
         list_comp_tasks.append(task_db)
@@ -169,12 +209,11 @@ class CompTasksRepository(BaseRepository):
             ):
                 task_db = CompTaskAtDB.from_orm(row)
                 tasks.append(task_db)
-        logger.debug("found the tasks: %s", f"{tasks=}")
         return tasks
 
     async def check_task_exists(self, project_id: ProjectID, node_id: NodeID) -> bool:
         async with self.db_engine.acquire() as conn:
-            nid: Optional[str] = await conn.scalar(
+            nid: str | None = await conn.scalar(
                 sa.select([comp_tasks.c.node_id]).where(
                     (comp_tasks.c.project_id == f"{project_id}")
                     & (comp_tasks.c.node_id == f"{node_id}")
@@ -291,7 +330,7 @@ class CompTasksRepository(BaseRepository):
         project_id: ProjectID,
         tasks: list[NodeID],
         state: RunningState,
-        errors: Optional[list[ErrorDict]] = None,
+        errors: list[ErrorDict] | None = None,
     ) -> None:
         async with self.db_engine.acquire() as conn:
             await conn.execute(

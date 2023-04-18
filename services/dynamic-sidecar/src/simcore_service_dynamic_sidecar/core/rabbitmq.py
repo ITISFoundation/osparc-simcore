@@ -26,14 +26,14 @@ async def _post_rabbit_message(app: FastAPI, message: RabbitMessageBase) -> None
         await get_rabbitmq_client(app).publish(message.channel_name, message.json())
 
 
-async def post_log_message(app: FastAPI, logs: str) -> None:
+async def post_log_message(app: FastAPI, logs: str, *, log_level: int) -> None:
     app_settings: ApplicationSettings = app.state.settings
     message = LoggerRabbitMessage(
         node_id=app_settings.DY_SIDECAR_NODE_ID,
         user_id=app_settings.DY_SIDECAR_USER_ID,
         project_id=app_settings.DY_SIDECAR_PROJECT_ID,
         messages=[logs],
-        log_level=logging.INFO,
+        log_level=log_level,
     )
 
     await _post_rabbit_message(app, message)
@@ -53,8 +53,8 @@ async def post_progress_message(
     await _post_rabbit_message(app, message)
 
 
-async def post_sidecar_log_message(app: FastAPI, logs: str) -> None:
-    await post_log_message(app, f"[sidecar] {logs}")
+async def post_sidecar_log_message(app: FastAPI, logs: str, *, log_level: int) -> None:
+    await post_log_message(app, f"[sidecar] {logs}", log_level=log_level)
 
 
 async def post_event_reload_iframe(app: FastAPI) -> None:

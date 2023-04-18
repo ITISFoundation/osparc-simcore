@@ -1,6 +1,7 @@
 import asyncio
+import logging
 from importlib.metadata import version
-from typing import Any, AsyncGenerator, Union
+from typing import Any, AsyncGenerator
 
 import osparc_gateway_server
 from aiodocker import Docker
@@ -62,6 +63,7 @@ class OsparcBackend(DBBackendBase):
 
     async def do_setup(self) -> None:
         self.settings = AppSettings()
+        assert isinstance(self.log, logging.Logger)  # nosec
         self.log.info(
             "osparc-gateway-server application settings:\n%s",
             self.settings.json(indent=2),
@@ -78,12 +80,15 @@ class OsparcBackend(DBBackendBase):
         print(WELCOME_MSG, flush=True)
 
     async def do_cleanup(self) -> None:
+        assert isinstance(self.log, logging.Logger)  # nosec
         await self.docker_client.close()
         self.log.info("osparc-gateway-server closed.")
 
     async def do_start_cluster(
         self, cluster: Cluster
     ) -> AsyncGenerator[dict[str, Any], None]:
+        assert isinstance(self.log, logging.Logger)  # nosec
+        assert isinstance(self.api_url, str)  # nosec
         self.log.debug(f"starting {cluster=}")
         self.cluster_secrets.extend(
             await create_docker_secrets_from_tls_certs_for_cluster(
@@ -118,6 +123,8 @@ class OsparcBackend(DBBackendBase):
             yield dask_scheduler_start_result
 
     async def do_stop_cluster(self, cluster: Cluster) -> None:
+        assert isinstance(self.log, logging.Logger)  # nosec
+        assert cluster.state  # nosec
         self.log.debug("--> stopping %s", f"{cluster=}")
         dask_scheduler_service_id = cluster.state.get("service_id")
         await stop_service(self.docker_client, dask_scheduler_service_id, self.log)
@@ -125,6 +132,7 @@ class OsparcBackend(DBBackendBase):
         self.log.debug("<--%s stopped", f"{cluster=}")
 
     async def do_check_clusters(self, clusters: list[Cluster]) -> list[bool]:
+        assert isinstance(self.log, logging.Logger)  # nosec
         self.log.debug("--> checking statuses of : %s", f"{clusters=}")
         ok: list[bool] = await asyncio.gather(
             *[self._check_service_status(c) for c in clusters], return_exceptions=True
@@ -135,6 +143,9 @@ class OsparcBackend(DBBackendBase):
     async def do_start_worker(
         self, worker: Worker
     ) -> AsyncGenerator[dict[str, Any], None]:
+        assert isinstance(self.log, logging.Logger)  # nosec
+        assert isinstance(self.api_url, str)  # nosec
+        assert worker.cluster  # nosec
         self.log.debug("--> starting %s", f"{worker=}")
         node_hostname = None
         try:
@@ -161,6 +172,7 @@ class OsparcBackend(DBBackendBase):
                 "DASK_WORKER_NAME": worker.name,
             }
         )
+
         async for dask_sidecar_start_result in start_service(
             docker_client=self.docker_client,
             settings=self.settings,
@@ -182,7 +194,9 @@ class OsparcBackend(DBBackendBase):
             yield dask_sidecar_start_result
 
     async def do_stop_worker(self, worker: Worker) -> None:
+        assert isinstance(self.log, logging.Logger)  # nosec
         self.log.debug("--> Stopping %s", f"{worker=}")
+        assert worker.state  # nosec
         if service_id := worker.state.get("service_id"):
             await stop_service(self.docker_client, service_id, self.log)
             self.log.debug("<-- %s stopped", f"{worker=}")
@@ -192,10 +206,10 @@ class OsparcBackend(DBBackendBase):
                 f"{worker=}",
             )
 
-    async def _check_service_status(
-        self, cluster_service: Union[Worker, Cluster]
-    ) -> bool:
+    async def _check_service_status(self, cluster_service: Worker | Cluster) -> bool:
+        assert isinstance(self.log, logging.Logger)  # nosec
         self.log.debug("--> checking status: %s", f"{cluster_service=}")
+        assert cluster_service.state  # nosec
         if service_id := cluster_service.state.get("service_id"):
             self.log.debug("--> checking service '%s' status", f"{service_id}")
             try:
@@ -215,6 +229,7 @@ class OsparcBackend(DBBackendBase):
         return False
 
     async def do_check_workers(self, workers: list[Worker]) -> list[bool]:
+        assert isinstance(self.log, logging.Logger)  # nosec
         self.log.debug("--> checking statuses: %s", f"{workers=}")
         ok = await asyncio.gather(
             *[self._check_service_status(w) for w in workers], return_exceptions=True
@@ -225,6 +240,7 @@ class OsparcBackend(DBBackendBase):
     async def on_cluster_heartbeat(self, cluster_name, msg) -> None:
         # pylint: disable=no-else-continue, unused-variable, too-many-branches
         # pylint: disable=too-many-statements
+        assert isinstance(self.log, logging.Logger)  # nosec
 
         # HACK: we override the base class heartbeat in order to
         # dynamically allow for more or less workers depending on the

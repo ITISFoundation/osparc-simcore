@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Union
+from typing import Union
 
 from pydantic import BaseModel, Extra, Field
 from pydantic.types import PositiveInt
@@ -28,7 +28,7 @@ class Structure(BaseModel):
 
 
 class SelectBox(BaseModel):
-    structure: List[Structure] = Field(..., min_items=1)
+    structure: list[Structure] = Field(..., min_items=1)
 
     class Config:
         extra = Extra.forbid

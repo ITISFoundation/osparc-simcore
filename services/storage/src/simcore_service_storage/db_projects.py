@@ -29,7 +29,7 @@ async def project_exists(
     conn: SAConnection,
     project_uuid: ProjectID,
 ) -> bool:
-    return (
+    return bool(
         await conn.scalar(
             sa.select([sa.func.count()])
             .select_from(projects)

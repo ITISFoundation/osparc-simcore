@@ -1,8 +1,9 @@
-mypy==0.971
-pydantic[email]==1.9.2
-types-aiofiles==0.8.10
+mypy~=1.2.0
+pydantic[email]~=1.10  # plugin for primary lib: keep in sync. SEE https://docs.pydantic.dev/mypy_plugin/#plugin-settings
+sqlalchemy[mypy]~=1.4  # plugin for primary lib: keep in sync. SEE https://docs.sqlalchemy.org/en/14/orm/extensions/mypy.html#installation
+types-aiofiles
 types-attrs
-types-PyYAML==6.0.11
+types-PyYAML
 types-redis
 types-setuptools
 types-ujson
