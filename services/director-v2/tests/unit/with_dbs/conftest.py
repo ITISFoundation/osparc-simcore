@@ -66,7 +66,7 @@ def pipeline(
 
 
 @pytest.fixture
-def processing(
+def tasks(
     postgres_db: sa.engine.Engine,
 ) -> Iterator[Callable[..., list[CompTaskAtDB]]]:
     created_task_ids: list[int] = []
