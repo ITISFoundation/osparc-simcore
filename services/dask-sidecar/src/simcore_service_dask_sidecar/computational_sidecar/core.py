@@ -19,7 +19,6 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputData,
     TaskOutputDataSchema,
 )
-from models_library.projects_state import RunningState
 from models_library.services_resources import BootMode
 from packaging import version
 from pydantic import ValidationError
@@ -223,11 +222,6 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                     ]:
                         await asyncio.sleep(CONTAINER_WAIT_TIME_SECS)
                     if container_data["State"]["ExitCode"] > os.EX_OK:
-                        await self._publish_sidecar_state(
-                            RunningState.FAILED,
-                            msg=f"error while running container '{container.id}' for '{self.service_key}:{self.service_version}'",
-                        )
-
                         raise ServiceRuntimeError(
                             service_key=self.service_key,
                             service_version=self.service_version,

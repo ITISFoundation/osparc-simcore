@@ -986,7 +986,9 @@ async def test_get_tasks_status(
 
 @pytest.fixture
 async def fake_task_handlers(mocker: MockerFixture) -> TaskHandlers:
-    return TaskHandlers(mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock())
+    return TaskHandlers(
+        task_progress_handler=mocker.MagicMock(), task_log_handler=mocker.MagicMock()
+    )
 
 
 async def test_dask_sub_handlers(
@@ -1054,9 +1056,6 @@ async def test_dask_sub_handlers(
                 f"Attempt={attempt.retry_state.attempt_number}"
             )
             # we should have received data in our TaskHandlers
-            fake_task_handlers.task_change_handler.assert_called_with(
-                "my name is state"
-            )
             fake_task_handlers.task_progress_handler.assert_called_with(
                 "my name is progress"
             )
