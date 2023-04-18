@@ -5,7 +5,7 @@ from servicelib.aiohttp.typing_extension import Handler
 
 from ._constants import APP_PRODUCTS_KEY, RQ_PRODUCT_KEY, X_PRODUCT_NAME_HEADER
 from ._meta import API_VTAG
-from .products import Product
+from .products_model import Product
 
 log = logging.getLogger(__name__)
 
@@ -14,7 +14,8 @@ def discover_product_by_hostname(request: web.Request) -> str | None:
     products: dict[str, Product] = request.app[APP_PRODUCTS_KEY]
     for _, product in products.items():
         if product.host_regex.search(request.host):
-            return f"{product.name}"
+            product_name: str = product.name
+            return product_name
     return None
 
 
