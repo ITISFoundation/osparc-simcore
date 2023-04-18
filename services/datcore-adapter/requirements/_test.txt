@@ -8,12 +8,8 @@ anyio==3.6.2
     # via
     #   -c requirements/_base.txt
     #   httpcore
-asgi-lifespan==2.0.0
+asgi-lifespan==2.1.0
     # via -r requirements/_test.in
-attrs==21.4.0
-    # via
-    #   -c requirements/_base.txt
-    #   pytest
 certifi==2022.12.7
     # via
     #   -c requirements/_base.txt
@@ -26,11 +22,11 @@ coverage==7.2.3
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-exceptiongroup==1.1.0
+exceptiongroup==1.1.1
     # via pytest
 execnet==1.9.0
     # via pytest-xdist
-faker==17.4.0
+faker==18.4.0
     # via -r requirements/_test.in
 h11==0.12.0
     # via
@@ -54,7 +50,7 @@ idna==3.4
     #   rfc3986
 iniconfig==2.0.0
     # via pytest
-packaging==23.0
+packaging==23.1
     # via
     #   pytest
     #   pytest-sugar
@@ -62,7 +58,7 @@ pluggy==1.0.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-pytest==7.2.1
+pytest==7.3.1
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -72,21 +68,21 @@ pytest==7.2.1
     #   pytest-mock
     #   pytest-sugar
     #   pytest-xdist
-pytest-asyncio==0.20.3
+pytest-asyncio==0.21.0
     # via -r requirements/_test.in
 pytest-cov==4.0.0
     # via -r requirements/_test.in
 pytest-icdiff==0.6
     # via -r requirements/_test.in
-pytest-instafail==0.4.2
+pytest-instafail==0.5.0
     # via -r requirements/_test.in
 pytest-mock==3.10.0
     # via -r requirements/_test.in
 pytest-runner==6.0.0
     # via -r requirements/_test.in
-pytest-sugar==0.9.6
+pytest-sugar==0.9.7
     # via -r requirements/_test.in
-pytest-xdist==3.2.0
+pytest-xdist==3.2.1
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via
