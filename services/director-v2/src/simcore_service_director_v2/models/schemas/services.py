@@ -1,9 +1,8 @@
 from typing import Any
-
 from models_library.basic_regex import UUID_RE
 from models_library.basic_types import PortInt
 from models_library.service_settings_labels import ContainerSpec
-from models_library.services import KEY_RE, VERSION_RE, ServiceDockerData
+from models_library.services import SERVICE_KEY_RE, VERSION_RE, ServiceDockerData
 from pydantic import BaseModel, Field, validator
 from pydantic.types import ByteSize, NonNegativeInt
 
@@ -115,7 +114,7 @@ class RunningServiceDetails(BaseModel):
     )
     service_key: str = Field(
         ...,
-        regex=KEY_RE,
+        regex=SERVICE_KEY_RE.pattern,
         description="distinctive name for the node based on the docker registry path",
         example=[
             "simcore/services/comp/itis/sleeper",

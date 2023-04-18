@@ -1,4 +1,3 @@
-import re
 import urllib.parse
 from typing import Any, Literal
 
@@ -32,7 +31,7 @@ SOLVER_RESOURCE_NAME_RE = r"^solvers/([^\s/]+)/releases/([\d\.]+)$"
 
 class SolverKeyId(ConstrainedStr):
     strip_whitespace = True
-    regex = re.compile(COMPUTATIONAL_SERVICE_KEY_RE)
+    regex = COMPUTATIONAL_SERVICE_KEY_RE
 
 
 class Solver(BaseModel):
