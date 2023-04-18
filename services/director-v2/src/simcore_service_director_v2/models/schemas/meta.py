@@ -1,9 +1,11 @@
+import re
+
 from models_library.basic_regex import VERSION_RE
 from pydantic import BaseModel, ConstrainedStr, Field
 
 
 class VersionStr(ConstrainedStr):
-    regex = VERSION_RE
+    regex = re.compile(VERSION_RE)
 
 
 class Meta(BaseModel):

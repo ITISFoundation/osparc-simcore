@@ -43,7 +43,7 @@ TEMPORARY_PORT_NUMBER = 65_534
 MAX_ALLOWED_SERVICE_NAME_LENGTH: int = 63
 
 
-DockerStatus = Status2
+DockerStatus: TypeAlias = Status2
 
 
 class DockerId(ConstrainedStr):
@@ -121,7 +121,8 @@ class DockerContainerInspect(BaseModel):
     @cached_property
     def status(self) -> DockerStatus:
         assert self.container_state.Status  # nosec
-        return self.container_state.Status
+        result: DockerStatus = self.container_state.Status
+        return result
 
     @classmethod
     def from_container(cls, container: dict[str, Any]) -> "DockerContainerInspect":

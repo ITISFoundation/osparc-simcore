@@ -91,7 +91,8 @@ def to_node_class(service_key: str) -> NodeClass:
 
 
 def is_pipeline_running(pipeline_state: RunningState) -> bool:
-    return pipeline_state.is_running()
+    is_running: bool = pipeline_state.is_running()
+    return is_running
 
 
 def is_pipeline_stopped(pipeline_state: RunningState) -> bool:

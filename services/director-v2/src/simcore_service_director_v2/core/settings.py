@@ -31,6 +31,7 @@ from pydantic import (
     Field,
     PositiveFloat,
     PositiveInt,
+    parse_obj_as,
     validator,
 )
 from settings_library.base import BaseCustomSettings
@@ -170,7 +171,7 @@ class DynamicSidecarEgressSettings(BaseCustomSettings):
         "envoyproxy/envoy:v1.25-latest",
         description="envoy image to use",
     )
-    DYNAMIC_SIDECAR_ENVOY_LOG_LEVEL: EnvoyLogLevel = Field(
+    DYNAMIC_SIDECAR_ENVOY_LOG_LEVEL: EnvoyLogLevel = Field(  # type: ignore
         EnvoyLogLevel.ERROR, description="log level for envoy proxy service"
     )
 
@@ -445,7 +446,7 @@ class ComputationalBackendSettings(BaseCustomSettings):
         True,
     )
     COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL: AnyUrl = Field(
-        "tcp://dask-scheduler:8786",
+        parse_obj_as(AnyUrl, "tcp://dask-scheduler:8786"),
         description="This is the cluster that will be used by default"
         " when submitting computational services (typically "
         "tcp://dask-scheduler:8786 for the internal cluster, or "

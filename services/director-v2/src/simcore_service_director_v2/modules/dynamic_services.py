@@ -46,7 +46,8 @@ class ServicesClient:
 
     @classmethod
     def instance(cls, app: FastAPI) -> "ServicesClient":
-        return app.state.dynamic_services_client
+        client: ServicesClient = app.state.dynamic_services_client
+        return client
 
     @handle_errors("DynamicService", logger)
     @handle_retry(logger)

@@ -125,7 +125,7 @@ class BaseThinClient:
         base_url: URLTypes | None = None,
         timeout: TimeoutTypes | None = None,
     ) -> None:
-        self.request_timeout: int = request_timeout
+        self.request_timeout: float = request_timeout
 
         client_args: dict[str, Any] = {
             # NOTE: the default httpx pool limit configurations look good

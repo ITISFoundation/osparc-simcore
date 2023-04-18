@@ -159,6 +159,7 @@ class RunningDynamicServiceDetails(ServiceDetails):
             boot_type=ServiceBootType.V2,
             user_id=scheduler_data.user_id,
             project_id=scheduler_data.project_id,
+            # type: ignore
             service_uuid=node_uuid,
             service_key=scheduler_data.key,
             service_version=scheduler_data.version,

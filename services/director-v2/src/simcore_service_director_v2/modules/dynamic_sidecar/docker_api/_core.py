@@ -118,7 +118,7 @@ async def create_service_and_get_id(
         raise DynamicSidecarError(
             f"Error while starting service: {str(service_start_result)}"
         )
-    service_id: str = service_start_result["ID"]
+    service_id: ServiceId = service_start_result["ID"]
     return service_id
 
 
