@@ -38,7 +38,6 @@ DaskGatewayAuths = Union[
 
 @dataclass
 class TaskHandlers:
-    task_change_handler: Callable[[str], Awaitable[None]]
     task_progress_handler: Callable[[str], Awaitable[None]]
     task_log_handler: Callable[[str], Awaitable[None]]
 
@@ -90,7 +89,7 @@ async def _connect_to_dask_scheduler(endpoint: AnyUrl) -> DaskSubSystem:
             gateway=None,
             gateway_cluster=None,
         )
-    except (TypeError) as exc:
+    except TypeError as exc:
         raise ConfigurationError(
             f"Scheduler has invalid configuration: {endpoint=}"
         ) from exc
@@ -145,17 +144,17 @@ async def _connect_with_gateway_and_create_cluster(
                 await gateway.close()
             raise exc
 
-    except (TypeError) as exc:
+    except TypeError as exc:
         raise ConfigurationError(
             f"Cluster has invalid configuration: {endpoint=}, {auth_params=}"
         ) from exc
-    except (ValueError) as exc:
+    except ValueError as exc:
         # this is when a 404=NotFound,422=MalformedData comes up
         raise DaskClientRequestError(endpoint=endpoint, error=exc) from exc
-    except (dask_gateway.GatewayClusterError) as exc:
+    except dask_gateway.GatewayClusterError as exc:
         # this is when a 409=Conflict/Cannot complete request comes up
         raise DaskClusterError(endpoint=endpoint, error=exc) from exc
-    except (dask_gateway.GatewayServerError) as exc:
+    except dask_gateway.GatewayServerError as exc:
         # this is when a 500 comes up
         raise DaskGatewayServerError(endpoint=endpoint, error=exc) from exc
 

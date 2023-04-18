@@ -176,7 +176,6 @@ class DaskClient:
 
     def register_handlers(self, task_handlers: TaskHandlers) -> None:
         _EVENT_CONSUMER_MAP = [
-            (self.backend.state_sub, task_handlers.task_change_handler),
             (self.backend.progress_sub, task_handlers.task_progress_handler),
             (self.backend.logs_sub, task_handlers.task_log_handler),
         ]
@@ -409,7 +408,7 @@ class DaskClient:
     async def get_task_result(self, job_id: str) -> TaskOutputData:
         logger.debug("getting result of %s", f"{job_id=}")
         try:
-            task_future = await self.backend.client.get_dataset(name=job_id)  # type: ignore
+            task_future: distributed.Future = await self.backend.client.get_dataset(name=job_id)  # type: ignore
             return await task_future.result(timeout=DASK_DEFAULT_TIMEOUT_S)  # type: ignore
         except KeyError as exc:
             raise ComputationalBackendTaskNotFoundError(job_id=job_id) from exc

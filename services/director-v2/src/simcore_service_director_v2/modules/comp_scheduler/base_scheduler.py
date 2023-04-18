@@ -230,6 +230,7 @@ class BaseCompScheduler(ABC):
             project_id, pipeline_dag
         )
         tasks_completed: list[CompTaskAtDB] = []
+        tasks_with_changed_state: list[CompTaskAtDB] = []
         if tasks_supposedly_processing := [
             task
             for task in pipeline_tasks.values()
@@ -247,6 +248,7 @@ class BaseCompScheduler(ABC):
             for task, backend_state in zip(
                 tasks_supposedly_processing, tasks_backend_status
             ):
+
                 if backend_state == RunningState.UNKNOWN:
                     tasks_completed.append(task)
                     # these tasks should be running but they are not available in the backend, something bad happened
@@ -260,8 +262,23 @@ class BaseCompScheduler(ABC):
                     )
                 elif backend_state in COMPLETED_STATES:
                     tasks_completed.append(task)
+                elif task.state != backend_state:
+                    tasks_with_changed_state.append(
+                        task.copy(update={"state": backend_state})
+                    )
         if tasks_completed:
             await self._process_completed_tasks(user_id, cluster_id, tasks_completed)
+        if tasks_with_changed_state:
+            # update the state in the DB
+            comp_tasks_repo = CompTasksRepository(self.db_engine)
+            await asyncio.gather(
+                *(
+                    comp_tasks_repo.set_project_tasks_state(
+                        t.project_id, [t.node_id], t.state
+                    )
+                    for t in tasks_with_changed_state
+                )
+            )
 
     @abstractmethod
     async def _start_tasks(

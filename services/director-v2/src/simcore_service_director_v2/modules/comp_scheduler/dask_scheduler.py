@@ -66,7 +66,6 @@ class DaskScheduler(BaseCompScheduler):
     def __post_init__(self):
         self.dask_clients_pool.register_handlers(
             TaskHandlers(
-                self._task_state_change_handler,
                 self._task_progress_change_handler,
                 self._task_log_change_handler,
             )
