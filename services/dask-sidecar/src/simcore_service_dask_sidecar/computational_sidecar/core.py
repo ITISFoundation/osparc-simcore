@@ -12,7 +12,7 @@ from uuid import uuid4
 from aiodocker import Docker
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import ServiceRuntimeError
-from dask_task_models_library.container_tasks.events import TaskLogEvent, TaskStateEvent
+from dask_task_models_library.container_tasks.events import TaskLogEvent
 from dask_task_models_library.container_tasks.io import (
     FileUrl,
     TaskInputData,
@@ -163,16 +163,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
         )
         logger.info(log)
 
-    async def _publish_sidecar_state(
-        self, state: RunningState, msg: str | None = None
-    ) -> None:
-        publish_event(
-            self.task_publishers.state,
-            TaskStateEvent.from_dask_worker(state=state, msg=msg),
-        )
-
     async def run(self, command: list[str]) -> TaskOutputData:
-        await self._publish_sidecar_state(RunningState.STARTED)
         await self._publish_sidecar_log(
             f"Starting task for {self.service_key}:{self.service_version} on {socket.gethostname()}..."
         )

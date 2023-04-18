@@ -8,7 +8,6 @@ from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import (
     TaskLogEvent,
     TaskProgressEvent,
-    TaskStateEvent,
 )
 from dask_task_models_library.container_tasks.io import TaskOutputData
 from models_library.clusters import DEFAULT_CLUSTER_ID, Cluster, ClusterID
@@ -202,34 +201,6 @@ class DaskScheduler(BaseCompScheduler):
 
         await CompTasksRepository(self.db_engine).set_project_tasks_state(
             task.project_id, [task.node_id], task_final_state, errors=errors
-        )
-
-    async def _task_state_change_handler(self, event: str) -> None:
-        task_state_event = TaskStateEvent.parse_raw(event)
-        logger.debug(
-            "received task state update: %s",
-            task_state_event,
-        )
-        service_key, service_version, user_id, project_id, node_id = parse_dask_job_id(
-            task_state_event.job_id
-        )
-
-        if task_state_event.state == RunningState.STARTED:
-            message = InstrumentationRabbitMessage.construct(
-                metrics="service_started",
-                user_id=user_id,
-                project_id=project_id,
-                node_id=node_id,
-                service_uuid=node_id,
-                service_type=NodeClass.COMPUTATIONAL.value,
-                service_key=service_key,
-                service_tag=service_version,
-                simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-            )
-            await self.rabbitmq_client.publish(message.channel_name, message.json())
-
-        await CompTasksRepository(self.db_engine).set_project_tasks_state(
-            project_id, [node_id], task_state_event.state
         )
 
     async def _task_progress_change_handler(self, event: str) -> None:

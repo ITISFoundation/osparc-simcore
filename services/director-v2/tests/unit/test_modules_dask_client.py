@@ -23,7 +23,6 @@ from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import (
     TaskLogEvent,
     TaskProgressEvent,
-    TaskStateEvent,
 )
 from dask_task_models_library.container_tasks.io import (
     TaskCancelEventName,
@@ -1015,10 +1014,8 @@ async def test_dask_sub_handlers(
         s3_settings: S3Settings | None,
         boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
-        state_pub = distributed.Pub(TaskStateEvent.topic_name())
         progress_pub = distributed.Pub(TaskProgressEvent.topic_name())
         logs_pub = distributed.Pub(TaskLogEvent.topic_name())
-        state_pub.put("my name is state")
         progress_pub.put("my name is progress")
         logs_pub.put("my name is logs")
         # tell the client we are done

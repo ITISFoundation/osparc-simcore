@@ -12,7 +12,6 @@ from aiohttp import ClientConnectionError, ClientResponseError
 from dask_task_models_library.container_tasks.events import (
     TaskLogEvent,
     TaskProgressEvent,
-    TaskStateEvent,
 )
 from models_library.clusters import (
     ClusterAuthentication,
@@ -51,14 +50,10 @@ class DaskSubSystem:
     scheduler_id: str
     gateway: dask_gateway.Gateway | None
     gateway_cluster: dask_gateway.GatewayCluster | None
-    state_sub: distributed.Sub = field(init=False)
     progress_sub: distributed.Sub = field(init=False)
     logs_sub: distributed.Sub = field(init=False)
 
     def __post_init__(self) -> None:
-        self.state_sub = distributed.Sub(
-            TaskStateEvent.topic_name(), client=self.client
-        )
         self.progress_sub = distributed.Sub(
             TaskProgressEvent.topic_name(), client=self.client
         )

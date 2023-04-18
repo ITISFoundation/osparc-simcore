@@ -24,7 +24,6 @@ from dask_task_models_library.container_tasks.errors import ServiceRuntimeError
 from dask_task_models_library.container_tasks.events import (
     TaskLogEvent,
     TaskProgressEvent,
-    TaskStateEvent,
 )
 from dask_task_models_library.container_tasks.io import (
     FileUrl,
@@ -401,7 +400,7 @@ def test_run_computational_sidecar_real_fct(
         ubuntu_task.service_key,
         ubuntu_task.service_version,
     )
-    for event in [TaskProgressEvent, TaskStateEvent, TaskLogEvent]:
+    for event in [TaskProgressEvent, TaskLogEvent]:
         dask_subsystem_mock["dask_event_publish"].assert_any_call(  # type: ignore
             name=event.topic_name()
         )
