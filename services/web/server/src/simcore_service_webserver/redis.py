@@ -63,8 +63,9 @@ async def setup_redis_client(app: web.Application):
                     f"{client=}",
                     json.dumps(attempt.retry_state.retry_object.statistics),
                 )
-        assert client  # nosec
-        return client
+                assert client  # nosec
+                return client
+        raise ConnectionError(f"Connection to {address!r} failed")
 
     REDIS_DSN_MAP = {
         APP_CLIENT_REDIS_CLIENT_KEY: redis_settings.dsn_resources,
