@@ -144,7 +144,9 @@ async def test_get_service_specifications_of_unknown_service_returns_default_spe
     user_db: dict[str, Any],
     faker: Faker,
 ):
-    service_key = f"simcore/services/{choice(['comp', 'dynamic'])}/{faker.pystr()}"
+    service_key = (
+        f"simcore/services/{choice(['comp', 'dynamic'])}/{faker.pystr().lower()}"
+    )
     service_version = f"{randint(0,100)}.{randint(0,100)}.{randint(0,100)}"
     url = URL(
         f"/v0/services/{service_key}/{service_version}/specifications"

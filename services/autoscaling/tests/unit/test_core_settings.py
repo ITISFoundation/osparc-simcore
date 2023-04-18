@@ -59,8 +59,6 @@ def test_EC2_INSTANCES_PRE_PULL_IMAGES(
         "EC2_INSTANCES_PRE_PULL_IMAGES",
         json.dumps(
             [
-                "io.simcore.some234.cool.label",
-                "com.example.some-label",
                 "nginx:latest",
                 "itisfoundation/my-very-nice-service:latest",
                 "simcore/services/dynamic/another-nice-one:2.4.5",
@@ -71,8 +69,6 @@ def test_EC2_INSTANCES_PRE_PULL_IMAGES(
     settings = ApplicationSettings.create_from_envs()
     assert settings.AUTOSCALING_EC2_INSTANCES
     assert settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_PRE_PULL_IMAGES == [
-        "io.simcore.some234.cool.label",
-        "com.example.some-label",
         "nginx:latest",
         "itisfoundation/my-very-nice-service:latest",
         "simcore/services/dynamic/another-nice-one:2.4.5",
