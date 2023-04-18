@@ -1,5 +1,4 @@
 from collections import deque
-from typing import Dict, List, Optional, Tuple
 
 from models_library.services import ServiceVersion
 from pydantic import BaseModel, Field, StrictStr
@@ -35,12 +34,12 @@ class RRIDEntry(BaseModel):
 
 
 class CodeDescriptionModel(BaseModel):
-    rrid_entires: List[RRIDEntry] = Field(
-        [], description="composed from the classifiers"
+    rrid_entires: list[RRIDEntry] = Field(
+        default_factory=list, description="composed from the classifiers"
     )
 
     # TSR
-    tsr1_rating: Optional[int] = Field(
+    tsr1_rating: int | None = Field(
         None,
         description=(
             "Develop and document the subject, purpose and intended use(s) of model,"
@@ -48,7 +47,7 @@ class CodeDescriptionModel(BaseModel):
         ),
     )
     tsr1_reference: StrictStr = Field("", description=("Reference to context of use"))
-    tsr2_rating: Optional[int] = Field(
+    tsr2_rating: int | None = Field(
         None,
         description=(
             "Employ relevant and traceable information in the development or "
@@ -62,7 +61,7 @@ class CodeDescriptionModel(BaseModel):
             "development or operation"
         ),
     )
-    tsr3_rating: Optional[int] = Field(
+    tsr3_rating: int | None = Field(
         None,
         description=(
             "Reference to relevant and traceable information employed in the "
@@ -76,7 +75,7 @@ class CodeDescriptionModel(BaseModel):
             "and sensitivity analysis"
         ),
     )
-    tsr4_rating: Optional[int] = Field(
+    tsr4_rating: int | None = Field(
         None,
         description=(
             "Restrictions, constraints or qualifications for, or on, the use "
@@ -87,7 +86,7 @@ class CodeDescriptionModel(BaseModel):
         "",
         description="Reference to restrictions, constraints or qualifcations for use",
     )
-    tsr5_rating: Optional[int] = Field(
+    tsr5_rating: int | None = Field(
         None,
         description=(
             "Implement a system to trace the time history of MSoP activities, "
@@ -97,7 +96,7 @@ class CodeDescriptionModel(BaseModel):
     tsr5_reference: StrictStr = Field(
         "", description="Reference to version control system"
     )
-    tsr6_rating: Optional[int] = Field(
+    tsr6_rating: int | None = Field(
         None,
         description=(
             "Maintain up-to-date informative records of all MSoP activities, "
@@ -108,7 +107,7 @@ class CodeDescriptionModel(BaseModel):
     tsr6_reference: StrictStr = Field(
         "", description="Reference to documentation described above"
     )
-    tsr7_rating: Optional[int] = Field(
+    tsr7_rating: int | None = Field(
         None,
         description=(
             "Publish all components of MSoP including simulation software, "
@@ -116,7 +115,7 @@ class CodeDescriptionModel(BaseModel):
         ),
     )
     tsr7_reference: StrictStr = Field("", description="Reference to publications")
-    tsr8_rating: Optional[int] = Field(
+    tsr8_rating: int | None = Field(
         None,
         description=(
             "Have the MSoP submission reviewed by nonpartisan third-party "
@@ -126,7 +125,7 @@ class CodeDescriptionModel(BaseModel):
     tsr8_reference: StrictStr = Field(
         "", description="Reference to independent reviews"
     )
-    tsr9_rating: Optional[int] = Field(
+    tsr9_rating: int | None = Field(
         None,
         description=(
             "Use contrasting MSoP execution strategies to compare the "
@@ -137,7 +136,7 @@ class CodeDescriptionModel(BaseModel):
     tsr9_reference: StrictStr = Field(
         "", description="Reference to implementations tested"
     )
-    tsr10a_rating: Optional[int] = Field(
+    tsr10a_rating: int | None = Field(
         None,
         description=(
             "Adopt and promote generally applicable and discipline-specific "
@@ -271,8 +270,12 @@ class CodeDescriptionParams(BaseModel):
     code_description: CodeDescriptionModel = Field(
         ..., description="code description data"
     )
-    inputs: List[InputsEntryModel] = Field([], description="List of inputs, if any")
-    outputs: List[OutputsEntryModel] = Field([], description="List of outputs, if any")
+    inputs: list[InputsEntryModel] = Field(
+        default_factory=list, description="List of inputs, if any"
+    )
+    outputs: list[OutputsEntryModel] = Field(
+        default_factory=list, description="List of outputs, if any"
+    )
 
 
 class SheetCodeDescription(BaseXLSXSheet):
@@ -700,7 +703,7 @@ class SheetCodeDescription(BaseXLSXSheet):
 
     def assemble_data_for_template(
         self, template_data: BaseModel
-    ) -> List[Tuple[str, Dict[str, BaseXLSXCellData]]]:
+    ) -> list[tuple[str, dict[str, BaseXLSXCellData]]]:
         params: CodeDescriptionParams = ensure_correct_instance(
             template_data, CodeDescriptionParams
         )
@@ -720,11 +723,11 @@ class SheetCodeDescription(BaseXLSXSheet):
             cells.append(cell_entry)
 
         # assemble RRIDs
+        rrid_entry: RRIDEntry
         for column_letter, rrid_entry in zip(
             column_iter(4, len(code_description.rrid_entires)),
             code_description.rrid_entires,
         ):
-            rrid_entry: RRIDEntry = rrid_entry
             cells.append(
                 (f"{column_letter}2", T(rrid_entry.rrid_term) | Borders.light_grid)
             )
@@ -856,16 +859,16 @@ class SheetInputs(BaseXLSXSheet):
 
     def assemble_data_for_template(
         self, template_data: BaseModel
-    ) -> List[Tuple[str, Dict[str, BaseXLSXCellData]]]:
+    ) -> list[tuple[str, dict[str, BaseXLSXCellData]]]:
         params: CodeDescriptionParams = ensure_correct_instance(
             template_data, CodeDescriptionParams
         )
-        intputs: List[InputsEntryModel] = params.inputs
+        intputs: list[InputsEntryModel] = params.inputs
 
         cells = deque()
 
+        inputs_entry: InputsEntryModel
         for row_index, inputs_entry in zip(range(4, len(intputs) + 4), intputs):
-            inputs_entry: InputsEntryModel = inputs_entry
             cells.append(
                 (f"B{row_index}", T(inputs_entry.service_alias) | Borders.light_grid)
             )
@@ -960,16 +963,16 @@ class SheetOutputs(BaseXLSXSheet):
 
     def assemble_data_for_template(
         self, template_data: BaseModel
-    ) -> List[Tuple[str, Dict[str, BaseXLSXCellData]]]:
+    ) -> list[tuple[str, dict[str, BaseXLSXCellData]]]:
         params: CodeDescriptionParams = ensure_correct_instance(
             template_data, CodeDescriptionParams
         )
-        outputs: List[OutputsEntryModel] = params.outputs
+        outputs: list[OutputsEntryModel] = params.outputs
 
         cells = deque()
 
+        outputs_entry: OutputsEntryModel
         for row_index, outputs_entry in zip(range(4, len(outputs) + 4), outputs):
-            outputs_entry: OutputsEntryModel = outputs_entry
             cells.append(
                 (f"B{row_index}", T(outputs_entry.service_alias) | Borders.light_grid)
             )

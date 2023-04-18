@@ -1,6 +1,6 @@
 import inspect
 from pathlib import Path
-from typing import Any, Dict, Generator, List, Set, Tuple, Union
+from typing import Any, Generator
 
 from openpyxl import Workbook
 from openpyxl.cell import Cell
@@ -8,7 +8,7 @@ from openpyxl.styles import Alignment, Border
 from openpyxl.worksheet.worksheet import Worksheet
 from pydantic import BaseModel
 
-BORDER_ATTRIBUTES: Set[str] = {
+BORDER_ATTRIBUTES: set[str] = {
     "left",
     "right",
     "top",
@@ -24,7 +24,7 @@ BORDER_ATTRIBUTES: Set[str] = {
     "end",
 }
 
-ALIGNMENT_ATTRIBUTES: Set[str] = {
+ALIGNMENT_ATTRIBUTES: set[str] = {
     "horizontal",
     "vertical",
     "textRotation",
@@ -41,8 +41,8 @@ ALIGNMENT_ATTRIBUTES: Set[str] = {
 
 
 def _apply_or_to_objects(
-    self_var: Any, other_var: Any, attributes: Set[str]
-) -> Dict[str, Any]:
+    self_var: Any, other_var: Any, attributes: set[str]
+) -> dict[str, Any]:
     return {
         x: getattr(self_var, x, None) or getattr(other_var, x, None) for x in attributes
     }
@@ -140,12 +140,12 @@ class BaseXLSXSheet:
     name: str = None
     # cell style contents, using a list of tuples instead of dict
     # to allow for "duplicate keys"
-    cell_styles: List[Tuple[str, Dict[str, BaseXLSXCellData]]] = None
+    cell_styles: list[tuple[str, dict[str, BaseXLSXCellData]]] = None
 
     # used to merge cells via ranges like A1:B2
-    cell_merge: Set[str] = set()
+    cell_merge: set[str] = set()
     # specify each column's length liek {"B": 10}
-    column_dimensions: Dict[str, int] = {}
+    column_dimensions: dict[str, int] = {}
 
     def _check_attribute(self, attribute_name: str):
         if getattr(self, attribute_name) is None:
@@ -160,7 +160,7 @@ class BaseXLSXSheet:
 
     def assemble_data_for_template(
         self, template_data: BaseModel
-    ) -> List[Tuple[str, Dict[str, BaseXLSXCellData]]]:
+    ) -> list[tuple[str, dict[str, BaseXLSXCellData]]]:
         """
         Expected to be implemented by the user.
         Used to polpulate the sheet before applying the
@@ -175,7 +175,7 @@ def _update_cell(cell: Cell, data: BaseXLSXCellData) -> None:
 
 
 def _update_entry_in_cell(
-    target: Dict[str, BaseXLSXCellData],
+    target: dict[str, BaseXLSXCellData],
     address: str,
     new_entry: BaseXLSXCellData,
 ) -> None:
@@ -190,7 +190,7 @@ def _update_entry_in_cell(
 
 
 def _parse_multiple_cell_ranges(
-    single_cells_cell_styles: Dict[str, BaseXLSXCellData],
+    single_cells_cell_styles: dict[str, BaseXLSXCellData],
     xls_sheet: Worksheet,
     entry: BaseXLSXCellData,
     cell_address: str,
@@ -209,16 +209,16 @@ class BaseXLSXDocument:
         if getattr(self, attribute_name) is None:
             raise ValueError(f"'{attribute_name}' attribute is None, please define it")
 
-    def __init__(self, *args, file_name: Union[str, Path] = None):
+    def __init__(self, *args, file_name: str | Path = None):
         for k, entry in enumerate(args):
             self.__dict__[f"__sheet__entry__{k}"] = entry
         self.file_name = (
             self.__getattribute__("file_name") if file_name is None else file_name
         )
         self._check_attribute("file_name")
-        self._sheets_by_name: Dict[str, Worksheet] = {}
+        self._sheets_by_name: dict[str, Worksheet] = {}
 
-    def _get_sheets(self) -> Generator[Tuple[str, Any], None, None]:
+    def _get_sheets(self) -> Generator[tuple[str, Any], None, None]:
         for member in inspect.getmembers(self):
             if isinstance(member[1], BaseXLSXSheet):
                 yield member
@@ -229,18 +229,18 @@ class BaseXLSXDocument:
 
     def _assemble_workbook(
         self,
-        sheets_entries: Generator[Tuple[str, Any], None, None],
+        sheets_entries: Generator[tuple[str, Any], None, None],
         template_data: BaseModel,
     ) -> Workbook:
         workbook = Workbook()
 
+        sheet_data: BaseXLSXSheet
         for _, sheet_data in sheets_entries:
-            sheet_data: BaseXLSXSheet = sheet_data
             sheet_name = sheet_data.name
 
             xls_sheet = workbook.create_sheet(sheet_name)
 
-            single_cells_cell_styles: Dict[str, BaseXLSXCellData] = {}
+            single_cells_cell_styles: dict[str, BaseXLSXCellData] = {}
 
             all_cells = []
             data_cells = sheet_data.assemble_data_for_template(template_data)
