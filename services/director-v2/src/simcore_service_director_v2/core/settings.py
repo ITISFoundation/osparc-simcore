@@ -22,7 +22,7 @@ from models_library.clusters import (
     NoAuthentication,
 )
 from models_library.docker import DockerGenericTag
-from models_library.projects_networks import SERVICE_NETWORK_RE
+from models_library.projects_networks import DockerNetworkName
 from models_library.utils.enums import StrAutoEnum
 from pydantic import (
     AnyHttpUrl,
@@ -197,9 +197,8 @@ class DynamicSidecarSettings(BaseCustomSettings):
         description="used by the director to start a specific version of the dynamic-sidecar",
     )
 
-    SIMCORE_SERVICES_NETWORK_NAME: str = Field(
+    SIMCORE_SERVICES_NETWORK_NAME: DockerNetworkName = Field(
         ...,
-        regex=SERVICE_NETWORK_RE,
         description="network all dynamic services are connected to",
     )
 
