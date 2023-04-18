@@ -14,7 +14,6 @@ from typing import (
     Callable,
     Coroutine,
     Final,
-    Optional,
     cast,
 )
 
@@ -92,7 +91,7 @@ async def create_container_config(
 
 @contextlib.asynccontextmanager
 async def managed_container(
-    docker_client: Docker, config: DockerContainerConfig, *, name: Optional[str] = None
+    docker_client: Docker, config: DockerContainerConfig, *, name: str | None = None
 ) -> AsyncIterator[DockerContainer]:
     container = None
     try:
@@ -128,7 +127,8 @@ async def managed_container(
 
 
 _DOCKER_LOG_REGEXP: re.Pattern[str] = re.compile(
-    r"^(?P<timestamp>\d+-\d+-\d+T\d+:\d+:\d+\.\d+[^\s]+) (?P<log>.+)$"
+    r"^(?P<timestamp>(?:(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}:\d{2}(?:\.\d+)?))(Z|[\+-]\d{2}:\d{2})?)"
+    r"\s(?P<log>.*)$"
 )
 _PROGRESS_REGEXP: re.Pattern[str] = re.compile(
     r"\[?progress\]?:?\s*([0-1]?\.\d+|\d+(%)|\d+\s*(percent)|(\d+\/\d+))"
@@ -203,7 +203,7 @@ async def _parse_container_log_file(
     task_volumes: TaskSharedVolumes,
     log_file_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
-    s3_settings: Optional[S3Settings],
+    s3_settings: S3Settings | None,
 ) -> None:
     log_file = task_volumes.logs_folder / LEGACY_SERVICE_LOG_FILE_NAME
     logger.debug("monitoring legacy-style container log file in %s", log_file)
@@ -269,7 +269,7 @@ async def _parse_container_docker_logs(
     logs_pub: Pub,
     log_file_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
-    s3_settings: Optional[S3Settings],
+    s3_settings: S3Settings | None,
 ) -> None:
     latest_log_timestamp = DEFAULT_TIME_STAMP
     logger.debug(
@@ -369,7 +369,7 @@ async def monitor_container_logs(
     task_volumes: TaskSharedVolumes,
     log_file_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
-    s3_settings: Optional[S3Settings],
+    s3_settings: S3Settings | None,
 ) -> None:
     """Services running with integration version 0.0.0 are logging into a file
     that must be available in task_volumes.log / log.dat
@@ -433,7 +433,7 @@ async def managed_monitor_container_log_task(
     task_volumes: TaskSharedVolumes,
     log_file_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
-    s3_settings: Optional[S3Settings],
+    s3_settings: S3Settings | None,
 ) -> AsyncIterator[Awaitable[None]]:
     monitoring_task = None
     try:

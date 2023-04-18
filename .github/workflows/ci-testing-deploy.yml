@@ -84,6 +84,8 @@ jobs:
               - 'packages/dask-task-models-library/**'
               - 'packages/pytest-simcore/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             models-library:
               - 'packages/models-library/**'
               - 'packages/postgres-database/**'
@@ -93,6 +95,8 @@ jobs:
               - 'packages/postgres-database/**'
               - 'packages/pytest-simcore/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             service-integration:
               - 'packages/models-library/**'
               - 'packages/pytest-simcore/**'
@@ -113,28 +117,40 @@ jobs:
               - 'packages/**'
               - 'services/agent/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             api:
               - 'api/**'
             api-server:
               - 'packages/**'
               - 'services/api-server/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             autoscaling:
               - 'packages/**'
               - 'services/autoscaling/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             catalog:
               - 'packages/**'
               - 'services/catalog/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             dask-sidecar:
               - 'packages/**'
               - 'services/dask-sidecar/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             datcore-adapter:
               - 'packages/**'
               - 'services/datcore-adapter/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             director:
               - 'packages/**'
               - 'services/director/**'
@@ -147,10 +163,14 @@ jobs:
               - 'packages/**'
               - 'services/dynamic-sidecar/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             invitations:
               - 'packages/**'
               - 'services/invitations/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             migration:
               - 'packages/**'
               - 'services/migration/**'
@@ -159,6 +179,8 @@ jobs:
               - 'packages/**'
               - 'services/osparc-gateway-server/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             static-webserver:
               - 'services/static-webserver/**'
               - 'services/docker-compose*'
@@ -166,6 +188,8 @@ jobs:
               - 'packages/**'
               - 'services/storage/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             webserver:
               - 'packages/**'
               - 'services/web/**'
@@ -260,7 +284,7 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash test_isolated
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 01
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -302,7 +326,7 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 02
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -344,7 +368,7 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 03
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -389,7 +413,7 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/storage.bash test
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -436,7 +460,7 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/agent.bash test
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -520,7 +544,7 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/api-server.bash test
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -565,7 +589,7 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/autoscaling.bash test
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -616,7 +640,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/catalog/test_failures
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -667,7 +691,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/datcore-adapter/test_failures
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -711,7 +735,7 @@ jobs:
         run: ./ci/github/unit-testing/director.bash install
       - name: test
         run: ./ci/github/unit-testing/director.bash test
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -759,7 +783,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -804,7 +828,7 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/dask-task-models-library.bash test
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -849,7 +873,7 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/dask-sidecar.bash test
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -904,7 +928,7 @@ jobs:
           source .venv/bin/activate && \
           pushd services/osparc-gateway-server && \
           make test-ci-unit
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -949,7 +973,7 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/dynamic-sidecar.bash test
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -1070,7 +1094,7 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/postgres-database.bash test
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -1115,7 +1139,7 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/invitations.bash test
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -1157,7 +1181,7 @@ jobs:
         run: ./ci/github/unit-testing/service-integration.bash install
       - name: test
         run: ./ci/github/unit-testing/service-integration.bash test
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -1199,7 +1223,7 @@ jobs:
         run: ./ci/github/unit-testing/service-library.bash install_all
       - name: test
         run: ./ci/github/unit-testing/service-library.bash test_all
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -1241,7 +1265,7 @@ jobs:
         run: ./ci/github/unit-testing/settings-library.bash install
       - name: test
         run: ./ci/github/unit-testing/settings-library.bash test
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -1283,7 +1307,7 @@ jobs:
         run: ./ci/github/unit-testing/models-library.bash install
       - name: test
         run: ./ci/github/unit-testing/models-library.bash test
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -1327,7 +1351,7 @@ jobs:
         run: ./ci/github/unit-testing/simcore-sdk.bash install
       - name: test
         run: ./ci/github/unit-testing/simcore-sdk.bash test
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -1427,7 +1451,7 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/webserver.bash clean_up
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: integrationtests #optional
 
@@ -1487,7 +1511,7 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/webserver.bash clean_up
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: integrationtests #optional
 
@@ -1547,7 +1571,7 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/director-v2.bash clean_up
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: integrationtests #optional
 
@@ -1610,7 +1634,7 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/director-v2.bash clean_up
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: integrationtests #optional
 
@@ -1685,7 +1709,7 @@ jobs:
         run: |
           pushd services/osparc-gateway-server && \
           make down
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: integrationtests #optional
 
@@ -1745,7 +1769,7 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/simcore-sdk.bash clean_up
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: integrationtests
 

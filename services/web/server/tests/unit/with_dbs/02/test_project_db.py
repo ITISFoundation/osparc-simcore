@@ -562,7 +562,7 @@ async def test_patch_user_project_workbench_creates_nodes(
     )
     partial_workbench_data = {
         faker.uuid4(): {
-            "key": f"simcore/services/comp/{faker.pystr()}",
+            "key": f"simcore/services/comp/{faker.pystr().lower()}",
             "version": faker.numerify("%.#.#"),
             "label": faker.text(),
         }

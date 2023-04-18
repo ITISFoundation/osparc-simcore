@@ -208,7 +208,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
 
     __fitIconHeight: function() {
       const iconLayout = this.getChildControl("icon");
-      let maxHeight = this.getHeight() - this.getPaddingTop() - this.getPaddingBottom();
+      let maxHeight = this.getHeight() - this.getPaddingTop() - this.getPaddingBottom() - 5;
       const checkThis = [
         "title",
         "subtitle",
