@@ -126,7 +126,7 @@ async def get_all_tasks_log_files(
     info = await analyze_pipeline(project_id, comp_pipelines_repo, comp_tasks_repo)
     iter_task_ids = (t.node_id for t in info.filtered_tasks)
 
-    return await logged_gather(
+    tasks_logs_files: list[TaskLogFileGet] = await logged_gather(
         *[
             _get_task_log_file(user_id, project_id, node_id)
             for node_id in iter_task_ids
@@ -134,6 +134,7 @@ async def get_all_tasks_log_files(
         reraise=True,
         log=log,
     )
+    return tasks_logs_files
 
 
 @router.get(

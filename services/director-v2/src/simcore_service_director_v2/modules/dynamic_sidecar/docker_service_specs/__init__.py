@@ -4,3 +4,11 @@ from .sidecar import (
     extract_service_port_from_compose_start_spec,
     get_dynamic_sidecar_spec,
 )
+
+__all__: tuple[str, ...] = (
+    "extract_service_port_from_compose_start_spec",
+    "get_dynamic_proxy_spec",
+    "get_dynamic_sidecar_spec",
+    "merge_settings_before_use",
+    "update_service_params_from_settings",
+)

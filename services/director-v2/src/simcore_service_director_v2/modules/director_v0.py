@@ -5,7 +5,7 @@
 import logging
 import urllib.parse
 from dataclasses import dataclass
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import httpx
 import yarl
@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 # Module's setup logic ---------------------------------------------
 
 
-def setup(app: FastAPI, settings: Optional[DirectorV0Settings]):
+def setup(app: FastAPI, settings: DirectorV0Settings | None):
     if not settings:
         settings = DirectorV0Settings()
 
@@ -66,12 +66,12 @@ class DirectorV0Client:
     client: httpx.AsyncClient
 
     @classmethod
-    def create(cls, app: FastAPI, **kwargs):
+    def create(cls, app: FastAPI, **kwargs) -> "DirectorV0Client":
         app.state.director_v0_client = cls(**kwargs)
         return cls.instance(app)
 
     @classmethod
-    def instance(cls, app: FastAPI):
+    def instance(cls, app: FastAPI) -> "DirectorV0Client":
         return app.state.director_v0_client
 
     @handle_errors("Director", logger)
@@ -152,7 +152,7 @@ class DirectorV0Client:
 
     @log_decorator(logger=logger)
     async def get_running_services(
-        self, user_id: Optional[UserID] = None, project_id: Optional[ProjectID] = None
+        self, user_id: UserID | None = None, project_id: ProjectID | None = None
     ) -> list[RunningDynamicServiceDetails]:
         query_params = {}
         if user_id is not None:

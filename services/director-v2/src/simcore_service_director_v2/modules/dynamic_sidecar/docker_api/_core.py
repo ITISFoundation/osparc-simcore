@@ -12,6 +12,9 @@ from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
+from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
+    NetworkId,
+)
 from tenacity import TryAgain, retry
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -23,7 +26,12 @@ from ....models.schemas.constants import (
     DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
-from ....models.schemas.dynamic_services import SchedulerData, ServiceState, ServiceType
+from ....models.schemas.dynamic_services import (
+    SchedulerData,
+    ServiceId,
+    ServiceState,
+    ServiceType,
+)
 from ....utils.dict_utils import get_leaf_key_paths, nested_update
 from ..docker_states import TASK_STATES_RUNNING, extract_task_state
 from ..errors import DockerServiceNotFoundError, DynamicSidecarError, GenericDockerError
@@ -58,11 +66,11 @@ async def get_swarm_network(dynamic_sidecar_settings: DynamicSidecarSettings) ->
     return networks[0]
 
 
-async def create_network(network_config: dict[str, Any]) -> str:
+async def create_network(network_config: dict[str, Any]) -> NetworkId:
     async with docker_client() as client:
         try:
             docker_network = await client.networks.create(network_config)
-            docker_network_id: str = docker_network.id
+            docker_network_id: NetworkId = docker_network.id
             return docker_network_id
         except aiodocker.exceptions.DockerError as e:
             network_name = network_config["Name"]
@@ -78,7 +86,7 @@ async def create_network(network_config: dict[str, Any]) -> str:
             # has removed a container; it results as already attached
             for network_details in await client.networks.list():
                 if network_name == network_details["Name"]:
-                    network_id: str = network_details["Id"]
+                    network_id: NetworkId = network_details["Id"]
                     return network_id
 
             # finally raise an error if a network cannot be spawned
@@ -90,7 +98,7 @@ async def create_network(network_config: dict[str, Any]) -> str:
 
 async def create_service_and_get_id(
     create_service_data: AioDockerServiceSpec | dict[str, Any]
-) -> str:
+) -> ServiceId:
     # NOTE: ideally the argument should always be AioDockerServiceSpec
     # but for that we need get_dynamic_proxy_spec to return that type
     async with docker_client() as client:

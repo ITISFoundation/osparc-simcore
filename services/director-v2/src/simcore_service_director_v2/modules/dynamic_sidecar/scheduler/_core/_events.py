@@ -23,6 +23,7 @@ from models_library.services import ServiceKeyVersion
 from pydantic import PositiveFloat
 from servicelib.fastapi.long_running_tasks.client import TaskId
 from servicelib.json_serialization import json_dumps
+from servicelib.rabbitmq import RabbitMQClient
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_service_director_v2.utils.dict_utils import nested_update
 from tenacity._asyncio import AsyncRetrying
@@ -35,13 +36,13 @@ from .....models.schemas.dynamic_services import DynamicSidecarStatus, Scheduler
 from .....models.schemas.dynamic_services.scheduler import (
     DockerContainerInspect,
     DockerStatus,
+    NetworkId,
 )
 from .....utils.db import get_repository
 from ....catalog import CatalogClient
 from ....db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from ....db.repositories.projects import ProjectsRepository
 from ....director_v0 import DirectorV0Client
-from ....rabbitmq import RabbitMQClient
 from ...api_client import (
     BaseClientHTTPError,
     get_dynamic_sidecar_client,
@@ -180,7 +181,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         swarm_network: dict[str, Any] = await get_swarm_network(
             dynamic_sidecar_settings
         )
-        swarm_network_id: str = swarm_network["Id"]
+        swarm_network_id: NetworkId = swarm_network["Id"]
         swarm_network_name: str = swarm_network["Name"]
 
         # start dynamic-sidecar and run the proxy on the same node

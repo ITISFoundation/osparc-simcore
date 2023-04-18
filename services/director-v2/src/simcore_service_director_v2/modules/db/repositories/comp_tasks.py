@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Any
 
 import sqlalchemy as sa
+from models_library.errors import ErrorDict
 from models_library.function_services_catalog import iter_service_docker_data
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes import Node
@@ -15,12 +16,11 @@ from models_library.users import UserID
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert
 
-from ....core.errors import ErrorDict
 from ....models.domains.comp_tasks import CompTaskAtDB, Image, NodeSchema
 from ....models.schemas.services import NodeRequirements, ServiceExtras
 from ....utils.computations import to_node_class
 from ....utils.db import RUNNING_STATE_TO_DB
-from ...catalog import CatalogClient
+from ...catalog import CatalogClient, ServiceResources
 from ...director_v0 import DirectorV0Client
 from ..tables import NodeClass, StateType, comp_tasks
 from ._base import BaseRepository
@@ -57,7 +57,7 @@ async def _get_service_details(
 
 
 def _compute_node_requirements(node_resources: dict[str, Any]) -> NodeRequirements:
-    node_defined_resources = {}
+    node_defined_resources: dict[str, Any] = {}
 
     for image_data in node_resources.values():
         for resource_name, resource_value in image_data.get("resources", {}).items():
@@ -73,27 +73,27 @@ def _compute_node_boot_mode(node_resources: dict[str, Any]) -> BootMode:
     raise RuntimeError("No BootMode")
 
 
-_ServiceResources = dict[str, Any]
-
-
 async def _get_node_infos(
     catalog_client: CatalogClient,
     director_client: DirectorV0Client,
     user_id: UserID,
     product_name: str,
     node: ServiceKeyVersion,
-) -> tuple[ServiceDockerData | None, _ServiceResources | None, ServiceExtras | None]:
+) -> tuple[ServiceDockerData | None, ServiceResources | None, ServiceExtras | None]:
     if to_node_class(node.key) == NodeClass.FRONTEND:
         return (
             _FRONTEND_SERVICES_CATALOG.get(node.key, None),
             None,
             None,
         )
-    return await asyncio.gather(
+    result: tuple[
+        ServiceDockerData, ServiceResources, ServiceExtras
+    ] = await asyncio.gather(
         _get_service_details(catalog_client, user_id, product_name, node),
         catalog_client.get_service_resources(user_id, node.key, node.version),
         director_client.get_service_extras(node.key, node.version),
     )
+    return result
 
 
 async def _generate_tasks_list_from_project(

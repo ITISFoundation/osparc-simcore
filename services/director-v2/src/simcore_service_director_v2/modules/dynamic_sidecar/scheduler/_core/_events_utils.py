@@ -17,6 +17,7 @@ from servicelib.fastapi.long_running_tasks.client import (
     TaskClientResultError,
 )
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
+from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from tenacity import TryAgain
@@ -37,7 +38,6 @@ from ....db.repositories.projects import ProjectsRepository
 from ....db.repositories.projects_networks import ProjectsNetworksRepository
 from ....director_v0 import DirectorV0Client
 from ....node_rights import NodeRightsManager, ResourceName
-from ....rabbitmq import RabbitMQClient
 from ...api_client import (
     BaseClientHTTPError,
     DynamicSidecarClient,
@@ -97,7 +97,10 @@ def _get_scheduler_data(app: FastAPI, node_uuid: NodeID) -> SchedulerData:
         app.state.dynamic_sidecar_scheduler
     )
     # pylint: disable=protected-access
-    return dynamic_sidecars_scheduler._scheduler.get_scheduler_data(node_uuid)
+    scheduler_data: SchedulerData = (
+        dynamic_sidecars_scheduler._scheduler.get_scheduler_data(node_uuid)
+    )
+    return scheduler_data
 
 
 async def service_remove_containers(

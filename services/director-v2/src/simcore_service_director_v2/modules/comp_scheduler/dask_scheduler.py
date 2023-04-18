@@ -22,12 +22,13 @@ from models_library.rabbitmq_messages import (
 )
 from models_library.users import UserID
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+from servicelib.rabbitmq import RabbitMQClient
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_service_director_v2.core.errors import TaskSchedulingError
 
 from ...core.settings import ComputationalBackendSettings
 from ...models.domains.comp_tasks import CompTaskAtDB, Image
-from ...modules.dask_client import DaskClient, TaskHandlers
+from ...modules.dask_client import DaskClient
 from ...modules.dask_clients_pool import DaskClientsPool
 from ...modules.db.repositories.clusters import ClustersRepository
 from ...utils.dask import (
@@ -35,9 +36,9 @@ from ...utils.dask import (
     parse_dask_job_id,
     parse_output_data,
 )
+from ...utils.dask_client_utils import TaskHandlers
 from ...utils.scheduler import get_repository
 from ..db.repositories.comp_tasks import CompTasksRepository
-from ..rabbitmq import RabbitMQClient
 from .base_scheduler import BaseCompScheduler
 
 logger = logging.getLogger(__name__)
