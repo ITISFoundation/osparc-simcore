@@ -49,6 +49,7 @@ from simcore_postgres_database.webserver_models import ProjectType
 from .. import catalog_client, director_v2_api, storage_api
 from ..application_settings import get_settings
 from ..products import get_product_name
+from ..redis import get_redis_lock_manager_client_sdk
 from ..resource_manager.websocket_manager import (
     PROJECT_ID_KEY,
     UserSessionID,
@@ -200,6 +201,30 @@ def get_delete_project_task(
 #
 
 
+def _get_service_start_lock_key(user_id: UserID, project_uuid: ProjectID) -> str:
+    return f"lock_service_start_limit.{user_id}.{project_uuid}"
+
+
+def _enforce_running_services_limit(
+    app: web.Application,
+    number_of_services: int,
+    user_id: UserID,
+    project_uuid: ProjectID,
+) -> None:
+    """
+    raises ProjectStartsTooManyDynamicNodes if the user cannot start more services
+    """
+    project_settings = get_settings(app).WEBSERVER_PROJECTS
+    assert project_settings  # nosec
+    if project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES > 0 and (
+        number_of_services
+        >= project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES - 1
+    ):
+        raise ProjectStartsTooManyDynamicNodes(
+            user_id=user_id, project_uuid=project_uuid
+        )
+
+
 async def _start_dynamic_service(
     request: web.Request,
     *,
@@ -212,19 +237,6 @@ async def _start_dynamic_service(
 ):
     if not _is_node_dynamic(service_key):
         return
-    project_running_nodes = await director_v2_api.list_dynamic_services(
-        request.app, user_id, f"{project_uuid}"
-    )
-
-    project_settings = get_settings(request.app).WEBSERVER_PROJECTS
-    assert project_settings  # nosec
-    if project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES > 0 and (
-        len(project_running_nodes)
-        >= project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
-    ):
-        raise ProjectStartsTooManyDynamicNodes(
-            user_id=user_id, project_uuid=project_uuid
-        )
 
     # this is a dynamic node, let's gather its resources and start it
     service_resources: ServiceResourcesDict = await get_project_node_resources(
@@ -247,20 +259,42 @@ async def _start_dynamic_service(
             user_id=user_id, project_uuid=f"{project_uuid}", permission="write"
         )
 
-    await director_v2_api.run_dynamic_service(
-        app=request.app,
-        product_name=product_name,
-        save_state=save_state,
-        project_id=f"{project_uuid}",
-        user_id=user_id,
-        service_key=service_key,
-        service_version=service_version,
-        service_uuid=f"{node_uuid}",
-        request_dns=extract_dns_without_default_port(request.url),
-        request_scheme=request.headers.get(X_FORWARDED_PROTO, request.url.scheme),
-        request_simcore_user_agent=request.headers.get(X_SIMCORE_USER_AGENT, ""),
-        service_resources=service_resources,
-    )
+    # NOTE: locking for as little as possible to avoid extra delays since this is
+    # using a global distributed lock
+    lock_key = _get_service_start_lock_key(user_id, project_uuid)
+    client_sdk = get_redis_lock_manager_client_sdk(request.app)
+
+    async with client_sdk.lock_context(
+        lock_key,
+        blocking=True,
+        blocking_timeout_s=60 * 5,  # TODO: move this to somewhere more meaningful
+    ):
+        # NOTE: between [point A] and [point B] there should be no code additions
+        # NOTE: [point A] is here
+        project_running_nodes = await director_v2_api.list_dynamic_services(
+            request.app, user_id, f"{project_uuid}"
+        )
+        _enforce_running_services_limit(
+            app=request.app,
+            number_of_services=len(project_running_nodes),
+            user_id=user_id,
+            project_uuid=project_uuid,
+        )
+        await director_v2_api.run_dynamic_service(
+            app=request.app,
+            product_name=product_name,
+            save_state=save_state,
+            project_id=f"{project_uuid}",
+            user_id=user_id,
+            service_key=service_key,
+            service_version=service_version,
+            service_uuid=f"{node_uuid}",
+            request_dns=extract_dns_without_default_port(request.url),
+            request_scheme=request.headers.get(X_FORWARDED_PROTO, request.url.scheme),
+            request_simcore_user_agent=request.headers.get(X_SIMCORE_USER_AGENT, ""),
+            service_resources=service_resources,
+        )
+        # NOTE: [point B] is here
 
 
 async def add_project_node(

@@ -85,10 +85,10 @@ async def minimal_app(
 
 @pytest.fixture
 async def node_rights_manager(minimal_app: FastAPI) -> AsyncIterable[NodeRightsManager]:
-    redis_lock_manger = NodeRightsManager.instance(minimal_app)
-    await redis_lock_manger._redis.flushall()
+    redis_lock_manger = await NodeRightsManager.instance(minimal_app)
+    await redis_lock_manger.redis_client_sdk.redis.flushall()
     yield redis_lock_manger
-    await redis_lock_manger._redis.flushall()
+    await redis_lock_manger.redis_client_sdk.redis.flushall()
 
 
 @pytest.fixture
@@ -99,7 +99,7 @@ def docker_node_id(faker: Faker) -> str:
 async def test_redis_lock_working_as_expected(
     node_rights_manager: NodeRightsManager, docker_node_id
 ) -> None:
-    lock = node_rights_manager._redis.lock(docker_node_id)
+    lock = node_rights_manager.redis_client_sdk.redis.lock(docker_node_id)
 
     lock_acquired = await lock.acquire(blocking=False)
     assert lock_acquired
@@ -119,14 +119,14 @@ async def test_redis_two_lock_instances(
     # you have to acquire the lock from the same istance
     # in order to avoid tricky situations
 
-    lock = node_rights_manager._redis.lock(docker_node_id)
+    lock = node_rights_manager.redis_client_sdk.redis.lock(docker_node_id)
 
     lock_acquired = await lock.acquire(blocking=False)
     assert lock_acquired
     assert await lock.locked() is True
 
     # we get a different instance
-    second_lock = node_rights_manager._redis.lock(docker_node_id)
+    second_lock = node_rights_manager.redis_client_sdk.redis.lock(docker_node_id)
     assert await second_lock.locked() is True
 
     # cannot release lock form different instance!

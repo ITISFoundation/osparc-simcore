@@ -41,7 +41,7 @@ from servicelib.aiohttp.long_running_tasks.client import LRTask
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.common_aiopg_utils import DSN
 from settings_library.email import SMTPSettings
-from settings_library.redis import RedisSettings
+from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_service_webserver import catalog
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
@@ -489,7 +489,9 @@ def redis_service(docker_services, docker_ip) -> RedisSettings:
 @pytest.fixture
 async def redis_client(redis_service: RedisSettings):
     client = aioredis.from_url(
-        redis_service.dsn_resources, encoding="utf-8", decode_responses=True
+        redis_service.build_redis_dsn(RedisDatabase.RESOURCES),
+        encoding="utf-8",
+        decode_responses=True,
     )
     yield client
 
@@ -503,7 +505,9 @@ async def redis_locks_client(
 ) -> AsyncIterator[aioredis.Redis]:
     """Creates a redis client to communicate with a redis service ready"""
     client = aioredis.from_url(
-        redis_service.dsn_locks, encoding="utf-8", decode_responses=True
+        redis_service.build_redis_dsn(RedisDatabase.LOCKS),
+        encoding="utf-8",
+        decode_responses=True,
     )
 
     yield client
