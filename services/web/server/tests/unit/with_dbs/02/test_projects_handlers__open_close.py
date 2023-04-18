@@ -581,6 +581,7 @@ async def test_open_project_with_large_amount_of_dynamic_services_starts_them_if
     # NOTE: reduced the amount of services in the test:
     # - services start in a sequence with  a lock
     # - lock is a bit slower to acquire and release then without the non locking version
+    # 20 services ~ 55 second runtime
     num_of_dyn_services = faker.pyint(min_value=10, max_value=20)
     project = await user_project_with_num_dynamic_services(num_of_dyn_services + 1)
     all_service_uuids = list(project["workbench"])
