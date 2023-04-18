@@ -28,6 +28,7 @@ from models_library.users import UserID
 from pydantic import PositiveInt
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.rabbitmq import RabbitMQClient
+from servicelib.utils import logged_gather
 from simcore_postgres_database.models.comp_tasks import NodeClass
 
 from ...core.errors import (
@@ -130,8 +131,8 @@ class BaseCompScheduler(ABC):
     async def schedule_all_pipelines(self) -> None:
         self.wake_up_event.clear()
         # if one of the task throws, the other are NOT cancelled which is what we want
-        await asyncio.gather(
-            *[
+        await logged_gather(
+            *(
                 self._schedule_pipeline(
                     user_id,
                     project_id,
@@ -144,7 +145,9 @@ class BaseCompScheduler(ABC):
                     project_id,
                     iteration,
                 ), pipeline_params in self.scheduled_pipelines.items()
-            ]
+            ),
+            log=logger,
+            max_concurrency=40,
         )
 
     async def _get_pipeline_dag(self, project_id: ProjectID) -> nx.DiGraph:
