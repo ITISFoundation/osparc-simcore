@@ -62,6 +62,10 @@ class ScheduledPipelineParams:
     mark_for_cancellation: bool = False
 
 
+_Previous = CompTaskAtDB
+_Current = CompTaskAtDB
+
+
 @dataclass
 class BaseCompScheduler(ABC):
     scheduled_pipelines: dict[
@@ -229,15 +233,12 @@ class BaseCompScheduler(ABC):
             )
         return tasks
 
-    Previous = CompTaskAtDB
-    Current = CompTaskAtDB
-
     async def _get_changed_tasks_from_backend(
         self,
         user_id: UserID,
         cluster_id: ClusterID,
         processing_tasks: list[CompTaskAtDB],
-    ) -> list[tuple[Previous, Current]]:
+    ) -> list[tuple[_Previous, _Current]]:
         tasks_backend_status = await self._get_tasks_status(
             user_id, cluster_id, processing_tasks
         )
@@ -265,7 +266,7 @@ class BaseCompScheduler(ABC):
         self,
         user_id: UserID,
         project_id: ProjectID,
-        changed_tasks: list[tuple[Previous, Current]],
+        changed_tasks: list[tuple[_Previous, _Current]],
     ) -> None:
         for previous, current in changed_tasks:
             if current.state is RunningState.STARTED or (
