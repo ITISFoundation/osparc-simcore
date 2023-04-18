@@ -1,9 +1,10 @@
 import json
 import logging
+import re
 import warnings
 from enum import Enum
 from functools import cached_property
-from typing import Any, Mapping
+from typing import Any, Mapping, TypeAlias
 from uuid import UUID, uuid4
 
 from models_library.basic_types import PortInt
@@ -20,9 +21,9 @@ from models_library.services_resources import ServiceResourcesDict
 from pydantic import (
     AnyHttpUrl,
     BaseModel,
+    ConstrainedStr,
     Extra,
     Field,
-    constr,
     parse_obj_as,
     root_validator,
 )
@@ -42,10 +43,20 @@ TEMPORARY_PORT_NUMBER = 65_534
 
 MAX_ALLOWED_SERVICE_NAME_LENGTH: int = 63
 
-DockerId = constr(max_length=25, regex=r"[A-Za-z0-9]{25}")
-ServiceId = DockerId
-NetworkId = DockerId
-ServiceName = constr(strip_whitespace=True, min_length=2)
+
+class DockerId(ConstrainedStr):
+    max_length = 25
+    regex = re.compile(r"[A-Za-z0-9]{25}")
+
+
+ServiceId: TypeAlias = DockerId
+NetworkId: TypeAlias = DockerId
+
+
+class ServiceName(ConstrainedStr):
+    strip_whitespace = True
+    min_length = 2
+
 
 logger = logging.getLogger()
 
@@ -86,7 +97,9 @@ class Status(BaseModel):
 
         self._update(DynamicSidecarStatus.FAILING, next_info)
 
-    def __eq__(self, other: "Status") -> bool:
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Status):
+            return NotImplemented
         return self.current == other.current and self.info == other.info
 
     @classmethod
@@ -342,9 +355,10 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     @property
     def endpoint(self) -> AnyHttpUrl:
         """endpoint where all the services are exposed"""
-        return parse_obj_as(
+        url: AnyHttpUrl = parse_obj_as(
             AnyHttpUrl, f"http://{self.hostname}:{self.port}"  # NOSONAR
         )
+        return url
 
     dynamic_sidecar: DynamicSidecar = Field(
         ...,
@@ -430,7 +444,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         # This constructor method sets current product
         names_helper = DynamicSidecarNamesHelper.make(service.node_uuid)
 
-        obj_dict = dict(
+        obj_dict: dict[str, Any] = dict(
             service_name=names_helper.service_name_dynamic_sidecar,
             hostname=names_helper.service_name_dynamic_sidecar,
             port=port,

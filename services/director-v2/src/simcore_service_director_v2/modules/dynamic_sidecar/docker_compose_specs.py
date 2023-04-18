@@ -1,6 +1,6 @@
 import logging
 from copy import deepcopy
-from typing import Optional, Union
+from typing import Optional
 
 from fastapi.applications import FastAPI
 from models_library.docker import SimcoreServiceDockerLabelKeys
@@ -77,14 +77,12 @@ class _environment_section:
     """
 
     @staticmethod
-    def parse(environment: Union[EnvVarsMap, EnvKeyEqValueList]) -> EnvVarsMap:
+    def parse(environment: EnvVarsMap | EnvKeyEqValueList) -> EnvVarsMap:
         envs = {}
         if isinstance(environment, list):
             for key_eq_value in environment:
                 assert isinstance(key_eq_value, str)  # nosec
-                key, value, *_ = key_eq_value.split("=", maxsplit=1) + [
-                    None,
-                ]  # type: ignore
+                key, value, *_ = key_eq_value.split("=", maxsplit=1) + [None]
                 envs[key] = value
         else:
             assert isinstance(environment, dict)  # nosec
@@ -219,8 +217,8 @@ def assemble_spec(
     service_key: ServiceKey,
     service_version: ServiceVersion,
     paths_mapping: PathMappingsLabel,
-    compose_spec: Optional[ComposeSpecLabel],
-    container_http_entry: Optional[str],
+    compose_spec: ComposeSpecLabel | None,
+    container_http_entry: str | None,
     dynamic_sidecar_network_name: str,
     swarm_network_name: str,
     service_resources: ServiceResourcesDict,
@@ -301,7 +299,7 @@ def assemble_spec(
     # TODO: will be used in next PR
     assert product_name  # nosec
 
-    stringified_service_spec = replace_env_vars_in_compose_spec(
+    stringified_service_spec: str = replace_env_vars_in_compose_spec(
         service_spec=service_spec,
         replace_simcore_registry=docker_registry_settings.resolved_registry_url,
         replace_service_version=service_version,

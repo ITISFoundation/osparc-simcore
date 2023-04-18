@@ -108,6 +108,7 @@ def app_cfg(default_app_cfg: ConfigDict, unused_tcp_port_factory) -> ConfigDict:
 @pytest.fixture
 def app_environment(
     app_cfg: ConfigDict,
+    monkeypatch: MonkeyPatch,
     monkeypatch_setenv_from_app_config: Callable[[ConfigDict], dict[str, str]],
 ) -> EnvVarsDict:
     # WARNING: this fixture is commonly overriden. Check before renaming.
@@ -122,7 +123,8 @@ def app_environment(
     """
     print("+ web_server:")
     cfg = deepcopy(app_cfg)
-    return monkeypatch_setenv_from_app_config(cfg)
+    env = monkeypatch_setenv_from_app_config(cfg)
+    return env
 
 
 @pytest.fixture
@@ -537,7 +539,6 @@ async def standard_groups(
     client: TestClient,
     logged_user: UserInfoDict,
 ) -> AsyncIterator[list[dict[str, Any]]]:
-
     sparc_group = {
         "gid": "5",  # this will be replaced
         "label": "SPARC",
@@ -557,7 +558,6 @@ async def standard_groups(
     async with NewUser(
         {"name": f"{logged_user['name']}_groups_owner", "role": "USER"}, client.app
     ) as owner_user:
-
         # creates two groups
         sparc_group = await create_user_group(
             app=client.app,
@@ -613,7 +613,6 @@ def mock_rabbitmq(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def mock_progress_bar(mocker: MockerFixture) -> Any:
-
     sub_progress = Mock()
 
     class MockedProgress:

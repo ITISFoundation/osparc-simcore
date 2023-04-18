@@ -17,7 +17,6 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from pydantic import NonNegativeFloat, NonNegativeInt
-from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_webserver_unit_with_db import (
@@ -165,7 +164,6 @@ async def test_create_node(
     faker: Faker,
     mocked_director_v2_api: dict[str, mock.MagicMock],
     mock_catalog_api: dict[str, mock.Mock],
-    mocker: MockerFixture,
     postgres_db: sa.engine.Engine,
 ):
     assert client.app
@@ -224,6 +222,7 @@ async def test_create_and_delete_many_nodes_in_parallel(
     faker: Faker,
     postgres_db: sa.engine.Engine,
     storage_subsystem_mock: MockedStorageSubsystem,
+    mock_get_total_project_dynamic_nodes_creation_interval: None,
 ):
     assert client.app
 
@@ -333,6 +332,7 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
     faker: Faker,
     max_amount_of_auto_started_dyn_services: int,
     postgres_db: sa.engine.Engine,
+    mock_get_total_project_dynamic_nodes_creation_interval: None,
 ):
     assert client.app
     # create a starting project with no dy-services
@@ -372,7 +372,7 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
         "service_key": f"simcore/services/dynamic/{faker.pystr().lower()}",
         "service_version": faker.numerify("%.#.#"),
     }
-    NUM_DY_SERVICES: Final[NonNegativeInt] = 20
+    NUM_DY_SERVICES: Final[NonNegativeInt] = 250
     responses = await asyncio.gather(
         *(client.post(f"{url}", json=body) for _ in range(NUM_DY_SERVICES))
     )

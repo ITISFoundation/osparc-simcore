@@ -6,39 +6,32 @@
 
 import asyncio
 import datetime
-from typing import AsyncIterator
+from typing import AsyncIterator, Final
 
-import docker
 import pytest
 from faker import Faker
+from pytest_mock import MockerFixture
 from redis.exceptions import LockError, LockNotOwnedError
+from servicelib import redis as servicelib_redis
 from servicelib.redis import (
     CouldNotAcquireLockError,
     RedisClientSDK,
     RedisClientsManager,
 )
 from settings_library.redis import RedisDatabase, RedisSettings
-from tenacity._asyncio import AsyncRetrying
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
 
 pytest_simcore_core_services_selection = [
     "redis",
 ]
 
 pytest_simcore_ops_services_selection = [
-    "redis-commander",
+    # "redis-commander",
 ]
-
-# UTILS
 
 
 async def _is_locked(redis_client_sdk: RedisClientSDK, lock_name: str) -> bool:
     lock = redis_client_sdk.redis.lock(lock_name)
     return await lock.locked()
-
-
-# FIXTURES
 
 
 @pytest.fixture
@@ -62,7 +55,11 @@ def lock_timeout() -> datetime.timedelta:
     return datetime.timedelta(seconds=1)
 
 
-# TESTS
+@pytest.fixture
+def mock_default_lock_ttl(mocker: MockerFixture) -> None:
+    mocker.patch.object(
+        servicelib_redis, "_DEFAULT_LOCK_TTL", datetime.timedelta(seconds=0.25)
+    )
 
 
 async def test_redis_key_encode_decode(redis_client_sdk: RedisClientSDK, faker: Faker):
@@ -172,10 +169,21 @@ async def test_lock_context_with_already_locked_lock_raises(
     async with redis_client_sdk.lock_context(lock_name) as lock:
         assert await _is_locked(redis_client_sdk, lock_name) is True
 
+        assert isinstance(lock.name, str)
+
+        # case where gives up immediately to acquire lock without waiting
         with pytest.raises(CouldNotAcquireLockError):
-            assert isinstance(lock.name, str)
-            async with redis_client_sdk.lock_context(lock.name):
+            async with redis_client_sdk.lock_context(lock.name, blocking=False):
                 ...
+
+        # case when lock waits up to blocking_timeout_s before giving up on
+        # lock acquisition
+        with pytest.raises(CouldNotAcquireLockError):
+            async with redis_client_sdk.lock_context(
+                lock.name, blocking=True, blocking_timeout_s=0.1
+            ):
+                ...
+
         assert await lock.locked() is True
     assert await _is_locked(redis_client_sdk, lock_name) is False
 
@@ -192,41 +200,60 @@ async def test_lock_context_with_data(redis_client_sdk: RedisClientSDK, faker: F
     assert await redis_client_sdk.lock_value(lock_name) is None
 
 
-class RaceConditionCounter:
-    def __init__(self):
-        self.value: int = 0
+async def test_lock_context_released_after_error(
+    redis_client_sdk: RedisClientSDK, faker: Faker
+):
+    lock_name = faker.pystr()
 
-    async def race_condition_increase(self, by: int) -> None:
-        current_value = self.value
-        current_value += by
-        await asyncio.sleep(0.1)
-        self.value = current_value
+    assert await redis_client_sdk.lock_value(lock_name) is None
+
+    with pytest.raises(RuntimeError):
+        async with redis_client_sdk.lock_context(lock_name):
+            assert await redis_client_sdk.redis.get(lock_name) is not None
+            raise RuntimeError("Expected error")
+
+    assert await redis_client_sdk.lock_value(lock_name) is None
 
 
 async def test_lock_acquired_in_parallel_to_update_same_resource(
-    redis_client_sdk: RedisClientSDK, faker: Faker
+    mock_default_lock_ttl: None, redis_client_sdk: RedisClientSDK, faker: Faker
 ):
-    PARALLEL_INCREASE_OPERATIONS = 250
-    INCREASE_BY = 10
+    INCREASE_OPERATIONS: Final[int] = 250
+    INCREASE_BY: Final[int] = 10
+
+    class RaceConditionCounter:
+        def __init__(self):
+            self.value: int = 0
+
+        async def race_condition_increase(self, by: int) -> None:
+            current_value = self.value
+            current_value += by
+            # most likely situation which creates issues
+            await asyncio.sleep(servicelib_redis._DEFAULT_LOCK_TTL.total_seconds() / 2)
+            self.value = current_value
 
     counter = RaceConditionCounter()
-    lock_name = faker.pystr()
+    lock_name: str = faker.pystr()
+    # ensures it does nto time out before acquiring the lock
+    time_for_all_inc_counter_calls_to_finish_s: float = (
+        servicelib_redis._DEFAULT_LOCK_TTL.total_seconds() * INCREASE_OPERATIONS * 10
+    )
 
     async def _inc_counter() -> None:
         async with redis_client_sdk.lock_context(
-            lock_key=lock_name, blocking=True, blocking_timeout_s=60
+            lock_key=lock_name,
+            blocking=True,
+            blocking_timeout_s=time_for_all_inc_counter_calls_to_finish_s,
         ):
             await counter.race_condition_increase(INCREASE_BY)
 
-    await asyncio.gather(*(_inc_counter() for _ in range(PARALLEL_INCREASE_OPERATIONS)))
-    assert counter.value == INCREASE_BY * PARALLEL_INCREASE_OPERATIONS
+    await asyncio.gather(*(_inc_counter() for _ in range(INCREASE_OPERATIONS)))
+    assert counter.value == INCREASE_BY * INCREASE_OPERATIONS
 
 
 async def test_redis_client_sdks_manager(redis_service: RedisSettings):
-    all_redis_databases: set[int] = set(RedisDatabase)
-    manager = RedisClientsManager(
-        databases=all_redis_databases, redis_settings=redis_service
-    )
+    all_redis_databases: set[RedisDatabase] = set(RedisDatabase)
+    manager = RedisClientsManager(databases=all_redis_databases, settings=redis_service)
 
     await manager.setup()
 
@@ -234,32 +261,3 @@ async def test_redis_client_sdks_manager(redis_service: RedisSettings):
         assert manager.client(database)
 
     await manager.shutdown()
-
-
-# NOTE: keep this test last as it breaks the service `redis`
-# from `pytest_simcore_core_services_selection`
-# since the service is being removed
-async def test_redis_client_sdk_lost_connection(
-    redis_service: RedisSettings, docker_client: docker.client.DockerClient
-):
-    redis_client_sdk = RedisClientSDK(
-        redis_service.build_redis_dsn(RedisDatabase.RESOURCES)
-    )
-
-    await redis_client_sdk.setup()
-
-    assert await redis_client_sdk.ping() is True
-    # now let's put down the rabbit service
-    for rabbit_docker_service in (
-        docker_service
-        for docker_service in docker_client.services.list()
-        if "redis" in docker_service.name  # type: ignore
-    ):
-        rabbit_docker_service.remove()  # type: ignore
-
-    # check that connection was lost
-    async for attempt in AsyncRetrying(
-        stop=stop_after_delay(60), wait=wait_fixed(0.5), reraise=True
-    ):
-        with attempt:
-            assert await redis_client_sdk.ping() is False

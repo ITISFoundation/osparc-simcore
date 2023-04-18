@@ -1,9 +1,9 @@
 import contextlib
 import datetime
-import json
 import logging
 from dataclasses import dataclass, field
-from typing import AsyncIterator, Final, Optional, Union
+from typing import AsyncIterator, Final
+from uuid import uuid4
 
 import redis.asyncio as aioredis
 import redis.exceptions
@@ -12,26 +12,33 @@ from pydantic.errors import PydanticErrorMixin
 from redis.asyncio.lock import Lock
 from redis.asyncio.retry import Retry
 from redis.backoff import ExponentialBackoff
+from servicelib.retry_policies import RedisRetryPolicyUponInitialization
+from servicelib.utils import logged_gather
 from settings_library.redis import RedisDatabase, RedisSettings
-from tenacity._asyncio import AsyncRetrying
-from tenacity.before_sleep import before_sleep_log
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
+from tenacity import retry
 
 from .background_task import periodic_task
-from .logging_utils import log_catch
+from .logging_utils import log_catch, log_context
 
 _DEFAULT_LOCK_TTL: Final[datetime.timedelta] = datetime.timedelta(seconds=10)
-_AUTO_EXTEND_LOCK_RATIO: Final[float] = 0.6
-
+_CANCEL_TASK_TIMEOUT: Final[datetime.timedelta] = datetime.timedelta(seconds=0.1)
 _MINUTE: Final[NonNegativeFloat] = 60
-_WAIT_SECS: Final[NonNegativeFloat] = 2
+_WAIT_SECS: Final[NonNegativeFloat] = 1
+
 
 logger = logging.getLogger(__name__)
 
 
-class CouldNotAcquireLockError(PydanticErrorMixin, RuntimeError):
+class BaseRedisError(PydanticErrorMixin, RuntimeError):
+    ...
+
+
+class CouldNotAcquireLockError(BaseRedisError):
     msg_template: str = "Lock {lock.name} could not be acquired!"
+
+
+class CouldNotConnectToRedisError(BaseRedisError):
+    msg_template: str = "Connection to '{dsn}' failed"
 
 
 @dataclass
@@ -44,11 +51,10 @@ class RedisClientSDK:
         return self._client
 
     def __post_init__(self):
-        # Run 3 retries with exponential backoff strategy source: https://redis.readthedocs.io/en/stable/backoff.html
-        retry = Retry(ExponentialBackoff(cap=0.512, base=0.008), retries=3)
         self._client = aioredis.from_url(
             self.redis_dsn,
-            retry=retry,
+            # Run 3 retries with exponential backoff strategy source: https://redis.readthedocs.io/en/stable/backoff.html
+            retry=Retry(ExponentialBackoff(cap=0.512, base=0.008), retries=3),
             retry_on_error=[
                 redis.exceptions.BusyLoadingError,
                 redis.exceptions.ConnectionError,
@@ -58,23 +64,16 @@ class RedisClientSDK:
             decode_responses=True,
         )
 
+    @retry(**RedisRetryPolicyUponInitialization(logger).kwargs)
     async def setup(self) -> None:
-        async for attempt in AsyncRetrying(
-            stop=stop_after_delay(1 * _MINUTE),
-            wait=wait_fixed(_WAIT_SECS),
-            before_sleep=before_sleep_log(logger, logging.WARNING),
-            reraise=True,
-        ):
-            with attempt:
-                if not await self._client.ping():
-                    await self._client.close(close_connection_pool=True)
-                    raise ConnectionError(f"Connection to {self.redis_dsn!r} failed")
-                logger.info(
-                    "Connection to %s succeeded with %s [%s]",
-                    f"redis at {self.redis_dsn=}",
-                    f"{self._client=}",
-                    json.dumps(attempt.retry_state.retry_object.statistics),
-                )
+        if not await self._client.ping():
+            await self.shutdown()
+            raise CouldNotConnectToRedisError(dsn=self.redis_dsn)
+        logger.info(
+            "Connection to %s succeeded with %s",
+            f"redis at {self.redis_dsn=}",
+            f"{self._client=}",
+        )
 
     async def shutdown(self) -> None:
         await self._client.close(close_connection_pool=True)
@@ -89,42 +88,56 @@ class RedisClientSDK:
     async def lock_context(
         self,
         lock_key: str,
-        lock_value: Optional[Union[bytes, str]] = None,
+        lock_value: bytes | str | None = None,
         *,
         blocking: bool = False,
         blocking_timeout_s: NonNegativeFloat = 5,
     ) -> AsyncIterator[Lock]:
-        ttl_lock = None
+        """Tries to acquire a lock.
+
+        :param lock_key: unique name of the lock
+        :param lock_value: content of the lock, defaults to None
+        :param blocking: should block here while acquiring the lock, defaults to False
+        :param blocking_timeout_s: time to wait while acquire a lock before giving up, defaults to 5
+
+        :raises CouldNotAcquireLockError: reasons why lock acquisition fails:
+            1. `blocking==False` the lock was already acquired by some other entity
+            2. `blocking==True` timeouts out while waiting for lock to be free (another entity holds the lock)
+        """
+
+        total_lock_duration: datetime.timedelta = _DEFAULT_LOCK_TTL
+        lock_unique_id = f"lock_extender_{lock_key}_{uuid4()}"
+
+        ttl_lock: Lock = self._client.lock(
+            name=lock_key,
+            timeout=total_lock_duration.total_seconds(),
+            blocking=blocking,
+            blocking_timeout=blocking_timeout_s,
+        )
+
+        if not await ttl_lock.acquire(token=lock_value):
+            raise CouldNotAcquireLockError(lock=ttl_lock)
+
+        async def _extend_lock(lock: Lock) -> None:
+            with log_context(
+                logger, logging.DEBUG, f"Extending lock {lock_unique_id}"
+            ), log_catch(logger, reraise=False):
+                await lock.reacquire()
+
         try:
-
-            async def _auto_extend_lock(lock: Lock) -> None:
-                with contextlib.suppress(redis.exceptions.LockError):
-                    await lock.reacquire()
-
-            ttl_lock = self._client.lock(
-                lock_key, timeout=_DEFAULT_LOCK_TTL.total_seconds()
-            )
-
-            if not await ttl_lock.acquire(
-                blocking=blocking, token=lock_value, blocking_timeout=blocking_timeout_s
-            ):
-                raise CouldNotAcquireLockError(lock=ttl_lock)
-
             async with periodic_task(
-                _auto_extend_lock,
-                interval=_AUTO_EXTEND_LOCK_RATIO * _DEFAULT_LOCK_TTL,
-                task_name=f"{lock_key}_auto_extend",
+                _extend_lock,
+                interval=total_lock_duration / 2,
+                task_name=lock_unique_id,
                 lock=ttl_lock,
+                stop_timeout=0.1,
             ):
+                # lock is in use now
                 yield ttl_lock
-
         finally:
-            if ttl_lock:
-                with log_catch(logger, reraise=False):
-                    with contextlib.suppress(redis.exceptions.LockError):
-                        await ttl_lock.release()
+            await ttl_lock.release()
 
-    async def lock_value(self, lock_name: str) -> Optional[str]:
+    async def lock_value(self, lock_name: str) -> str | None:
         return await self._client.get(lock_name)
 
 
@@ -135,21 +148,19 @@ class RedisClientsManager:
     """
 
     databases: set[RedisDatabase]
-    redis_settings: RedisSettings
+    settings: RedisSettings
 
-    _client_sdks: dict[RedisDatabase:RedisClientSDK] = field(default_factory=dict)
+    _client_sdks: dict[RedisDatabase, RedisClientSDK] = field(default_factory=dict)
 
     async def setup(self) -> None:
         for db in self.databases:
             self._client_sdks[db] = client_sdk = RedisClientSDK(
-                redis_dsn=self.redis_settings.build_redis_dsn(db)
+                redis_dsn=self.settings.build_redis_dsn(db)
             )
             await client_sdk.setup()
 
     async def shutdown(self) -> None:
-        client_sdk: RedisClientSDK
-        for client_sdk in self._client_sdks.values():
-            await client_sdk.shutdown()
+        await logged_gather(*(c.shutdown() for c in self._client_sdks.values()))
 
     def client(self, database: RedisDatabase) -> RedisClientSDK:
         return self._client_sdks[database]

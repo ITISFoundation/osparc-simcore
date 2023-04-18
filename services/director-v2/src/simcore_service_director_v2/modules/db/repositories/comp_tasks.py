@@ -107,7 +107,9 @@ async def _generate_tasks_list_from_project(
     list_comp_tasks = []
 
     unique_service_key_versions = {
-        ServiceKeyVersion.construct(key=node.key, version=node.version)  # type: ignore the service key version is frozen
+        ServiceKeyVersion.construct(
+            key=node.key, version=node.version
+        )  # the service key version is frozen
         for node in project.workbench.values()
     }
     key_version_to_node_infos = {
