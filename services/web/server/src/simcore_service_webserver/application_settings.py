@@ -106,6 +106,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         env=["WEBSERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
         # NOTE: suffix '_LOGLEVEL' is used overall
     )
+    WEBSERVER_LOG_FORMAT_LOCAL_ENABLED: bool = Field(
+        False,
+        env=["WEBSERVER_LOG_FORMAT_LOCAL_ENABLED", "LOG_FORMAT_LOCAL_ENABLED"],
+        description="Enables local log format. WARNING: make sure it is disabled if you want to have structured logs!",
+    )
     # TODO: find a better name!?
     WEBSERVER_SERVER_HOST: str = Field(
         "0.0.0.0",  # nosec
