@@ -57,6 +57,12 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
         description="Maximal amount of threads used by underlying S3 client to transfer data to S3 backend",
     )
 
+    STORAGE_LOG_FORMAT_LOCAL_ENABLED: bool = Field(
+        False,
+        env=["STORAGE_LOG_FORMAT_LOCAL_ENABLED", "LOG_FORMAT_LOCAL_ENABLED"],
+        description="Enables local log format. WARNING: make sure it is disabled if you want to have structured logs!",
+    )
+
     @validator("LOG_LEVEL")
     @classmethod
     def _validate_loglevel(cls, value) -> str:

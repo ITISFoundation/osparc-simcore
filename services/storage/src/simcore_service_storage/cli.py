@@ -1,6 +1,7 @@
 import logging
 
 import typer
+from servicelib.logging_utils import config_all_loggers
 from settings_library.utils_cli import create_settings_command
 
 from . import application
@@ -24,6 +25,7 @@ def run():
 
     logging.basicConfig(level=settings_obj.log_level)
     logging.root.setLevel(settings_obj.log_level)
+    config_all_loggers()
 
     # keep mostly quiet noisy loggers
     quiet_level: int = max(
