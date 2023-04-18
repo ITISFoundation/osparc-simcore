@@ -1,8 +1,8 @@
 import logging
-from collections import deque
 from pathlib import Path
-from typing import Any, Callable, Coroutine, Optional
+from typing import Any, Callable, Coroutine
 
+from models_library.api_schemas_storage import LinkType
 from models_library.projects import ProjectIDStr
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.users import UserID
@@ -15,11 +15,10 @@ from settings_library.r_clone import RCloneSettings
 from ..node_ports_common.dbmanager import DBManager
 from ..node_ports_common.exceptions import PortNotFound, UnboundPortError
 from ..node_ports_common.file_io_utils import LogRedirectCB
-from ..node_ports_common.storage_client import LinkType
 from ..node_ports_v2.port import SetKWargs
 from .links import ItemConcreteValue, ItemValue
 from .port_utils import is_file_type
-from .ports_mapping import InputsList, OutputsList
+from .ports_mapping import InputsList, OutputsList, PortKey
 
 log = logging.getLogger(__name__)
 
@@ -41,8 +40,8 @@ class Nodeports(BaseModel):
         Coroutine[Any, Any, type["Nodeports"]],
     ]
     auto_update: bool = False
-    r_clone_settings: Optional[RCloneSettings] = None
-    io_log_redirect_cb: Optional[LogRedirectCB]
+    r_clone_settings: RCloneSettings | None = None
+    io_log_redirect_cb: LogRedirectCB | None
 
     class Config:
         arbitrary_types_allowed = True
@@ -72,8 +71,8 @@ class Nodeports(BaseModel):
         return self.internal_outputs
 
     async def get_value_link(
-        self, item_key: str, *, file_link_type: LinkType
-    ) -> Optional[ItemValue]:
+        self, item_key: PortKey, *, file_link_type: LinkType
+    ) -> ItemValue | None:
         try:
             return await (await self.inputs)[item_key].get_value(
                 file_link_type=file_link_type
@@ -87,8 +86,8 @@ class Nodeports(BaseModel):
         )
 
     async def get(
-        self, item_key: str, progress_bar: Optional[ProgressBarData] = None
-    ) -> Optional[ItemConcreteValue]:
+        self, item_key: PortKey, progress_bar: ProgressBarData | None = None
+    ) -> ItemConcreteValue | None:
         try:
             return await (await self.inputs)[item_key].get(progress_bar)
         except UnboundPortError:
@@ -97,7 +96,7 @@ class Nodeports(BaseModel):
         # if this fails it will raise an exception
         return await (await self.outputs)[item_key].get(progress_bar)
 
-    async def set(self, item_key: str, item_value: ItemConcreteValue) -> None:
+    async def set(self, item_key: PortKey, item_value: ItemConcreteValue) -> None:
         # first try to set the inputs.
         try:
             the_updated_inputs = await self.inputs
@@ -137,7 +136,7 @@ class Nodeports(BaseModel):
 
     async def set_multiple(
         self,
-        port_values: dict[str, tuple[Optional[ItemConcreteValue], Optional[SetKWargs]]],
+        port_values: dict[PortKey, tuple[ItemConcreteValue | None, SetKWargs | None]],
         *,
         progress_bar: ProgressBarData,
     ) -> None:
@@ -148,7 +147,7 @@ class Nodeports(BaseModel):
 
         raises ValidationError
         """
-        tasks = deque()
+        tasks = []
         async with progress_bar.sub_progress(
             steps=len(port_values.items())
         ) as sub_progress:
@@ -174,7 +173,7 @@ class Nodeports(BaseModel):
 
         # groups all ValidationErrors pre-pending 'port_key' to loc and raises ValidationError
         if errors := [
-            flatten_errors(r, self.__config__, loc=(f"{port_key}",))
+            list(flatten_errors([r], self.__config__, loc=(f"{port_key}",)))
             for port_key, r in zip(port_values.keys(), results)
             if isinstance(r, ValidationError)
         ]:
