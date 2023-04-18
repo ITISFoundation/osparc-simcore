@@ -177,4 +177,4 @@ class Nodeports(BaseModel):
             for port_key, r in zip(port_values.keys(), results)
             if isinstance(r, ValidationError)
         ]:
-            raise ValidationError(errors, model=self)
+            raise ValidationError(errors, model=type(self))
