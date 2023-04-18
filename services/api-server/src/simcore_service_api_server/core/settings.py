@@ -1,5 +1,4 @@
 from functools import cached_property
-from typing import Optional
 
 from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import AnyHttpUrl, Field, SecretStr
@@ -17,12 +16,13 @@ from settings_library.utils_session import MixinSessionSettings
 class _UrlMixin:
     def _build_url(self, prefix: str) -> str:
         prefix = prefix.upper()
-        return AnyHttpUrl.build(
+        url: str = AnyHttpUrl.build(
             scheme="http",
             host=getattr(self, f"{prefix}_HOST"),
             port=f"{getattr(self, f'{prefix}_PORT')}",
             path=f"/{getattr(self, f'{prefix}_VTAG')}",  # NOTE: it ends with /{VTAG}
         )
+        return url
 
 
 class WebServerSettings(BaseCustomSettings, _UrlMixin, MixinSessionSettings):
@@ -91,29 +91,28 @@ class BasicSettings(BaseCustomSettings, MixinLoggingSettings):
     @validator("LOG_LEVEL", pre=True)
     @classmethod
     def _validate_loglevel(cls, value) -> str:
-        return cls.validate_log_level(value)
+        log_level: str = cls.validate_log_level(value)
+        return log_level
 
 
 class ApplicationSettings(BasicSettings):
 
     # DOCKER BOOT
-    SC_BOOT_MODE: Optional[BootModeEnum]
+    SC_BOOT_MODE: BootModeEnum | None
 
     # POSTGRES
-    API_SERVER_POSTGRES: Optional[PostgresSettings] = Field(auto_default_from_env=True)
+    API_SERVER_POSTGRES: PostgresSettings | None = Field(auto_default_from_env=True)
 
     # SERVICES with http API
-    API_SERVER_WEBSERVER: Optional[WebServerSettings] = Field(
-        auto_default_from_env=True
-    )
-    API_SERVER_CATALOG: Optional[CatalogSettings] = Field(auto_default_from_env=True)
-    API_SERVER_STORAGE: Optional[StorageSettings] = Field(auto_default_from_env=True)
-    API_SERVER_DIRECTOR_V2: Optional[DirectorV2Settings] = Field(
+    API_SERVER_WEBSERVER: WebServerSettings | None = Field(auto_default_from_env=True)
+    API_SERVER_CATALOG: CatalogSettings | None = Field(auto_default_from_env=True)
+    API_SERVER_STORAGE: StorageSettings | None = Field(auto_default_from_env=True)
+    API_SERVER_DIRECTOR_V2: DirectorV2Settings | None = Field(
         auto_default_from_env=True
     )
 
     # DIAGNOSTICS
-    API_SERVER_TRACING: Optional[TracingSettings] = Field(auto_default_from_env=True)
+    API_SERVER_TRACING: TracingSettings | None = Field(auto_default_from_env=True)
 
     @cached_property
     def debug(self) -> bool:

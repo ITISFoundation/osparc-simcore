@@ -1,6 +1,6 @@
 import json
 from enum import Enum
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 from aiohttp import web
 from aiopg.sa.result import RowProxy
@@ -10,7 +10,7 @@ from .._constants import APP_JSONSCHEMA_SPECS_KEY
 from .._resources import resources
 
 # TODO: extend
-ProjectDict = Dict[str, Any]
+ProjectDict = dict[str, Any]
 ProjectProxy = RowProxy
 
 
@@ -20,7 +20,7 @@ class ProjectTypeAPI(str, Enum):
     user = "user"
 
     @classmethod
-    def to_project_type_db(cls, api_type: "ProjectTypeAPI") -> Optional[ProjectType]:
+    def to_project_type_db(cls, api_type: "ProjectTypeAPI") -> ProjectType | None:
         return {
             ProjectTypeAPI.all: None,
             ProjectTypeAPI.template: ProjectType.TEMPLATE,
@@ -30,9 +30,22 @@ class ProjectTypeAPI(str, Enum):
 
 def setup_projects_model_schema(app: web.Application):
     # NOTE: inits once per app
-    # FIXME: schemas are hard-coded to api/V0!!!
-    with resources.stream("api/v0/schemas/project-v0.0.1.json") as fh:
+    with resources.stream("api/v0/schemas/project-v0.0.1-pydantic.json") as fh:
         project_schema = json.load(fh)
+
+        # WARNING: Mar.2023 During changing to pydantic generated json schema
+        # found out there was BUG in the previously used project-v0.0.1.json schema
+        # This is a temporary patch, until the bug is fixed.
+        # https://github.com/ITISFoundation/osparc-simcore/issues/3992
+        # Tested in test_validate_project_json_schema()
+        project_schema["properties"]["workbench"].pop("patternProperties")
+        project_schema["properties"]["ui"]["properties"]["workbench"].pop(
+            "patternProperties", None
+        )
+        project_schema["properties"]["workbench"].pop("additionalProperties")
+        project_schema["properties"]["ui"]["properties"]["workbench"].pop(
+            "additionalProperties", None
+        )
 
     if app.get(APP_JSONSCHEMA_SPECS_KEY) is None:
         app[APP_JSONSCHEMA_SPECS_KEY] = {"projects": project_schema}
@@ -43,7 +56,7 @@ def setup_projects_model_schema(app: web.Application):
     return app[APP_JSONSCHEMA_SPECS_KEY]["projects"]
 
 
-__all__: Tuple[str, ...] = (
+__all__: tuple[str, ...] = (
     "ProjectDict",
     "ProjectProxy",
     "setup_projects_model_schema",

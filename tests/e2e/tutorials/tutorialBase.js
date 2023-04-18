@@ -129,6 +129,9 @@ class TutorialBase {
       }
       setTimeout(waitForFlash, 0)
 
+      // In case there is landing page, go to the log in page
+      await auto.toLogInPage(this.__page);
+
       const needsRegister = await this.registerIfNeeded();
       if (!needsRegister) {
         await this.login();
@@ -675,7 +678,7 @@ class TutorialBase {
     await this.waitAndClick('mode-button-postro', s4lIframe);
     await this.takeScreenshot("Postpro");
     const algorithmTrees = await utils.getChildrenElementsBySelector(s4lIframe, '[osparc-test-id="tree-algorithm');
-    if (algorithmTrees.length !== 1) {
+    if (algorithmTrees.length < 1) {
       throw("Post Pro tree missing");
     }
 

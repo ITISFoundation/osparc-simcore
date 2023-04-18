@@ -20,7 +20,7 @@ def common_schemas_specs_dir(osparc_simcore_root_dir: Path) -> Path:
 
 @pytest.fixture(scope="session")
 def node_meta_schema_file(common_schemas_specs_dir: Path) -> Path:
-    node_meta_file = common_schemas_specs_dir / "node-meta-v0.0.1.json"
+    node_meta_file = common_schemas_specs_dir / "node-meta-v0.0.1-pydantic.json"
     assert node_meta_file.exists()
     return node_meta_file
 
@@ -105,6 +105,11 @@ def diff_json_schemas(json_diff_script: Path, tmp_path_factory) -> Callable:
         schema_lhs_path.write_text(json.dumps(schema_lhs, indent=1))
         schema_rhs_path = tmpdir / "schema_rhs.json"
         schema_rhs_path.write_text(json.dumps(schema_rhs, indent=1))
+
+        # NOTE: When debugging the differences, as of now both schemas come from
+        # pydantic model, now it is possible to visually compare the difference. To do so,
+        # just dereference the current pydantic schema. Example can be seen here:
+        # /osparc-simcore/api/specs/webserver/scripts/openapi_project.py
 
         return subprocess.run(
             [json_diff_script, schema_lhs_path, schema_rhs_path],

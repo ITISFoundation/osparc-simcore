@@ -1,6 +1,5 @@
 import logging
 from contextlib import contextmanager
-from typing import Optional
 from uuid import UUID
 
 from fastapi import FastAPI
@@ -29,7 +28,7 @@ class ComputationTaskGet(ComputationTask):
     url: AnyHttpUrl = Field(
         ..., description="the link where to get the status of the task"
     )
-    stop_url: Optional[AnyHttpUrl] = Field(
+    stop_url: AnyHttpUrl | None = Field(
         None, description="the link where to stop the task"
     )
 
@@ -37,13 +36,13 @@ class ComputationTaskGet(ComputationTask):
         # guess progress based on self.state
         # FIXME: incomplete!
         if self.state in [RunningState.SUCCESS, RunningState.FAILED]:
-            return 100
-        return 0
+            return PercentageInt(100)
+        return PercentageInt(0)
 
 
 class TaskLogFileGet(BaseModel):
     task_id: NodeID
-    download_link: Optional[AnyUrl] = Field(
+    download_link: AnyUrl | None = Field(
         None, description="Presigned link for log file or None if still not available"
     )
 
@@ -76,7 +75,8 @@ def handle_errors_context(project_id: UUID):
             raise err
 
         # server errors are logged and re-raised as 503
-        assert codes.is_server_error(err.response.status_code)
+        assert codes.is_server_error(err.response.status_code)  # nosec
+
         logger.exception(
             "director-v2 service failed: %s. Re-rasing as service unavailable (503)",
             msg,
@@ -126,7 +126,7 @@ class DirectorV2Api(BaseServiceClientApi):
         project_id: UUID,
         user_id: PositiveInt,
         product_name: str,
-        cluster_id: Optional[ClusterID] = None,
+        cluster_id: ClusterID | None = None,
     ) -> ComputationTaskGet:
         with handle_errors_context(project_id):
             extras = {}

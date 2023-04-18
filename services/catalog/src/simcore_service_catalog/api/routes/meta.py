@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from pydantic import parse_obj_as
 
-from ...meta import API_VERSION, API_VTAG
+from ..._meta import API_VERSION, API_VTAG
 from ...models.schemas.meta import Meta, VersionStr
 
 router = APIRouter()

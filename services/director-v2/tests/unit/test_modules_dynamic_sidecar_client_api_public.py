@@ -2,10 +2,11 @@
 # pylint:disable=redefined-outer-name
 
 from contextlib import contextmanager
-from typing import Any, AsyncIterable, Callable, Iterator, Optional
+from typing import Any, AsyncIterable, Callable, Iterator
 from unittest.mock import AsyncMock
 
 import pytest
+from faker import Faker
 from fastapi import FastAPI, status
 from httpx import HTTPError, Response
 from models_library.volumes import VolumeCategory
@@ -58,14 +59,14 @@ def mock_env(monkeypatch: MonkeyPatch, mock_env: EnvVarsDict) -> None:
 
 @pytest.fixture
 async def dynamic_sidecar_client(
-    mock_env: EnvVarsDict,
+    mock_env: EnvVarsDict, faker: Faker
 ) -> AsyncIterable[DynamicSidecarClient]:
     app = FastAPI()
     app.state.settings = AppSettings.create_from_envs()
 
     # WARNING: pytest gets confused with 'setup', use instead alias 'api_client_setup'
     await api_client_setup(app)
-    yield get_dynamic_sidecar_client(app)
+    yield get_dynamic_sidecar_client(app, faker.uuid4())
     await shutdown(app)
 
 
@@ -89,8 +90,8 @@ def get_patched_client(
     @contextmanager
     def wrapper(
         method: str,
-        return_value: Optional[Any] = None,
-        side_effect: Optional[Callable] = None,
+        return_value: Any | None = None,
+        side_effect: Callable | None = None,
     ) -> Iterator[DynamicSidecarClient]:
         mocker.patch(
             f"simcore_service_director_v2.modules.dynamic_sidecar.api_client._thin.ThinDynamicSidecarClient.{method}",

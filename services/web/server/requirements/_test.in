@@ -11,19 +11,15 @@
 aioresponses
 alembic
 click
-codecov
 coverage
-coveralls
 docker
 Faker
 flaky
 hypothesis
 jsonschema
 openapi-spec-validator
-ptvsd
-pylint
 pytest
-pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
+pytest-aiohttp
 pytest-cov
 pytest-docker
 pytest-icdiff
@@ -34,5 +30,6 @@ pytest-sugar
 pytest-xdist
 python-dotenv
 redis
+sqlalchemy[mypy] # adds Mypy / Pep-484 Support for ORM Mappings SEE https://docs.sqlalchemy.org/en/20/orm/extensions/mypy.html
 tenacity
 websockets

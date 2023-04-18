@@ -1,6 +1,5 @@
 import json
 import time
-from typing import Optional
 
 from cryptography.fernet import Fernet
 from fastapi import Depends, FastAPI, HTTPException, status
@@ -23,17 +22,20 @@ def _get_settings(request: Request) -> WebServerSettings:
         raise HTTPException(
             status.HTTP_503_SERVICE_UNAVAILABLE, detail="webserver disabled"
         )
+
+    assert isinstance(s, WebServerSettings)  # nosec
     return s
 
 
-def _get_encrypt(request: Request) -> Optional[Fernet]:
-    return getattr(request.app.state, "webserver_fernet", None)
+def _get_encrypt(request: Request) -> Fernet | None:
+    e: Fernet | None = getattr(request.app.state, "webserver_fernet", None)
+    return e
 
 
 def get_session_cookie(
     identity: str = Depends(get_active_user_email),
     settings: WebServerSettings = Depends(_get_settings),
-    fernet: Optional[Fernet] = Depends(_get_encrypt),
+    fernet: Fernet | None = Depends(_get_encrypt),
 ) -> dict:
     # Based on aiohttp_session and aiohttp_security
     # SEE services/web/server/tests/unit/with_dbs/test_login.py
@@ -64,4 +66,13 @@ def get_webserver_session(
     Lifetime of AuthSession wrapper is one request because it needs different session cookies
     Lifetime of embedded client is attached to the app lifetime
     """
-    return AuthSession.create(app, session_cookies)
+    session = AuthSession.create(app, session_cookies)
+    assert isinstance(session, AuthSession)  # nosec
+    return session
+
+
+__all__: tuple[str, ...] = (
+    "AuthSession",
+    "get_session_cookie",
+    "get_webserver_session",
+)

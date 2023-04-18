@@ -7,7 +7,6 @@ from typing import Any
 
 from aiohttp import web
 from servicelib.aiohttp.application import create_safe_application
-from simcore_service_webserver.invitations import setup_invitations
 
 from ._meta import WELCOME_GC_MSG, WELCOME_MSG, info
 from .activity.plugin import setup_activity
@@ -23,9 +22,10 @@ from .email import setup_email
 from .exporter.plugin import setup_exporter
 from .garbage_collector import setup_garbage_collector
 from .groups import setup_groups
+from .invitations import setup_invitations
 from .login.plugin import setup_login
 from .long_running_tasks import setup_long_running_tasks
-from .meta_modeling import setup_meta_modeling
+from .meta_modeling.plugin import setup_meta_modeling
 from .products import setup_products
 from .projects.plugin import setup_projects
 from .publications import setup_publications
@@ -44,7 +44,7 @@ from .studies_dispatcher.plugin import setup_studies_dispatcher
 from .tags import setup_tags
 from .tracing import setup_app_tracing
 from .users import setup_users
-from .version_control import setup_version_control
+from .version_control.plugin import setup_version_control
 
 logger = logging.getLogger(__name__)
 

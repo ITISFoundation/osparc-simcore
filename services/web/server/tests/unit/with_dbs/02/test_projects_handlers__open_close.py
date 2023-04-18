@@ -40,6 +40,7 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     standard_role_response,
 )
 from servicelib.aiohttp.web_exceptions_extension import HTTPLocked
+from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.products import products
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects.project_models import ProjectDict
@@ -343,7 +344,7 @@ async def test_open_project(
                     service_version=service["version"],
                     user_id=logged_user["id"],
                     request_scheme=request_scheme,
-                    request_simcore_user_agent="",
+                    simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                     request_dns=request_dns,
                     product_name=osparc_product_name,
                     save_state=user_role > UserRole.GUEST,
@@ -410,7 +411,7 @@ async def test_open_template_project_for_edition(
                     service_version=service["version"],
                     user_id=logged_user["id"],
                     request_scheme=request_scheme,
-                    request_simcore_user_agent="",
+                    simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                     request_dns=request_dns,
                     service_resources=ServiceResourcesDictHelpers.create_jsonable(
                         mock_service_resources
@@ -495,6 +496,43 @@ async def test_open_project_with_small_amount_of_dynamic_services_starts_them_au
             "director_v2_api.run_dynamic_service"
         ].call_count == (num_of_dyn_services - num_service_already_running)
         mocked_director_v2_api["director_v2_api.run_dynamic_service"].reset_mock()
+
+
+@pytest.mark.parametrize(*standard_user_role())
+async def test_open_project_with_disable_service_auto_start_set_overrides_behavior(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
+    client_session_id_factory: Callable,
+    expected: ExpectedResponse,
+    mocked_director_v2_api: dict[str, mock.Mock],
+    mock_catalog_api: dict[str, mock.Mock],
+    max_amount_of_auto_started_dyn_services: int,
+    faker: Faker,
+):
+    assert client.app
+    num_of_dyn_services = max_amount_of_auto_started_dyn_services or faker.pyint(
+        min_value=3, max_value=250
+    )
+    project = await user_project_with_num_dynamic_services(num_of_dyn_services)
+    all_service_uuids = list(project["workbench"])
+    for num_service_already_running in range(num_of_dyn_services):
+        mocked_director_v2_api["director_v2_api.list_dynamic_services"].return_value = [
+            {"service_uuid": all_service_uuids[service_id]}
+            for service_id in range(num_service_already_running)
+        ]
+
+        url = (
+            client.app.router["open_project"]
+            .url_for(project_id=project["uuid"])
+            .with_query(disable_service_auto_start=f"{True}")
+        )
+
+        resp = await client.post(f"{url}", json=client_session_id_factory())
+        await assert_status(resp, expected.ok)
+        mocked_director_v2_api[
+            "director_v2_api.run_dynamic_service"
+        ].assert_not_called()
 
 
 @pytest.mark.parametrize(*standard_user_role())
@@ -689,6 +727,7 @@ async def test_close_project(
             call(
                 app=client.server.app,
                 service_uuid=service["service_uuid"],
+                simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                 save_state=True,
                 progress=mock_progress_bar.sub_progress(1),
             )
@@ -812,7 +851,6 @@ async def test_project_node_lifetime(
     mocker,
     faker: Faker,
 ):
-
     mock_storage_api_delete_data_folders_of_project_node = mocker.patch(
         "simcore_service_webserver.projects.projects_handlers_crud.projects_api.storage_api.delete_data_folders_of_project_node",
         return_value="",
@@ -1183,7 +1221,6 @@ async def test_open_shared_project_at_same_time(
     ]
     # create other clients
     for i in range(NUMBER_OF_ADDITIONAL_CLIENTS):
-
         new_client = client_on_running_server_factory()
         user = await log_client_in(
             new_client,

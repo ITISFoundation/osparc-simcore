@@ -8,7 +8,7 @@ components:
         data:
           type: array
           items:
-            $ref: "./node-meta-v0.0.1-converted.yaml"
+            $ref: "./node-meta-v0.0.1-pydantic-converted-clean.yaml"
         error:
           nullable: true
           default: null

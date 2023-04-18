@@ -1,4 +1,3 @@
-import re
 import urllib.parse
 from typing import Any, Literal
 
@@ -32,7 +31,7 @@ SOLVER_RESOURCE_NAME_RE = r"^solvers/([^\s/]+)/releases/([\d\.]+)$"
 
 class SolverKeyId(ConstrainedStr):
     strip_whitespace = True
-    regex = re.compile(COMPUTATIONAL_SERVICE_KEY_RE)
+    regex = COMPUTATIONAL_SERVICE_KEY_RE
 
 
 class Solver(BaseModel):
@@ -100,7 +99,10 @@ class Solver(BaseModel):
         """Relative resource name"""
         return self.compose_resource_name(self.id, self.version)
 
-    name = resource_name  # API standards notation (see api_resources.py)
+    @property
+    def name(self) -> str:
+        """API standards notation (see api_resources.py)"""
+        return self.resource_name
 
     @classmethod
     def compose_resource_name(cls, solver_key, solver_version) -> str:

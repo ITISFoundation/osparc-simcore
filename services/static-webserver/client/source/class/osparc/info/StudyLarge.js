@@ -100,12 +100,20 @@ qx.Class.define("osparc.info.StudyLarge", {
         this._add(hBox);
       }
 
+      if (osparc.product.Utils.showDisableServiceAutoStart() && this.__canIWrite()) {
+        const autoStart = this.__createDisableServiceAutoStart();
+        this._add(autoStart);
+      }
+
       if (this.getStudy().getTags().length || this.__canIWrite()) {
         const tags = this.__createTags();
-        const editInTitle = this.__createViewWithEdit(tags.getChildren()[0], this.__openTagsEditor);
+        const editInTitle = this.__createViewWithEdit(tags.getChildren()[0], null);
         tags.addAt(editInTitle, 0);
         if (this.__canIWrite()) {
-          osparc.utils.Utils.setIdToWidget(editInTitle.getChildren()[1], "editStudyEditTagsBtn");
+          const editButton = editInTitle.getChildren()[1];
+          editButton.setIcon("@FontAwesome5Solid/eye/12");
+          editButton.addListener("execute", () => this.fireEvent("openTags"), this);
+          osparc.utils.Utils.setIdToWidget(editButton, "editStudyEditTagsBtn");
         }
         this._add(tags);
       }
@@ -125,7 +133,9 @@ qx.Class.define("osparc.info.StudyLarge", {
       layout.add(view);
       if (this.__canIWrite()) {
         const editBtn = osparc.utils.Utils.getEditButton();
-        editBtn.addListener("execute", () => cb.call(this), this);
+        if (cb) {
+          editBtn.addListener("execute", () => cb.call(this), this);
+        }
         layout.add(editBtn);
       }
 
@@ -243,6 +253,10 @@ qx.Class.define("osparc.info.StudyLarge", {
       return osparc.info.StudyUtils.createThumbnail(this.getStudy(), maxWidth, maxHeight);
     },
 
+    __createDisableServiceAutoStart: function() {
+      return osparc.info.StudyUtils.createDisableServiceAutoStart(this.getStudy());
+    },
+
     __createTags: function() {
       return osparc.info.StudyUtils.createTags(this.getStudy());
     },
@@ -307,11 +321,10 @@ qx.Class.define("osparc.info.StudyLarge", {
     },
 
     __openTagsEditor: function() {
-      const tagManager = new osparc.component.form.tag.TagManager(this.getStudy().serialize(), null, "study", this.getStudy().getUuid()).set({
-        liveUpdate: false
-      });
+      const tagManager = new osparc.component.form.tag.TagManager(this.getStudy().serialize());
+      const win = osparc.component.form.tag.TagManager.popUpInWindow(tagManager);
       tagManager.addListener("updateTags", e => {
-        tagManager.close();
+        win.close();
         const updatedData = e.getData();
         this.getStudy().setTags(updatedData["tags"]);
         this.fireDataEvent("updateStudy", updatedData);

@@ -1,6 +1,5 @@
 import logging
 from asyncio import Lock
-from typing import Optional
 
 from fastapi import FastAPI
 from models_library.basic_types import BootModeEnum
@@ -98,7 +97,7 @@ class AppState:
         return self._app.state.shared_store
 
     @property
-    def compose_spec(self) -> Optional[str]:
+    def compose_spec(self) -> str | None:
         return self._shared_store.compose_spec
 
 

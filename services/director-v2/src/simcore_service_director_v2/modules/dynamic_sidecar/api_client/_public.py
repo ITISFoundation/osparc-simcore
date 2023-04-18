@@ -1,12 +1,13 @@
 import logging
 from collections import deque
 from functools import cached_property
-from typing import Any, Final, Optional
+from typing import Any, Final
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkAlias
+from models_library.projects_nodes_io import NodeID
 from models_library.volumes import VolumeCategory
 from pydantic import AnyHttpUrl, PositiveFloat
 from servicelib.fastapi.long_running_tasks.client import (
@@ -17,6 +18,7 @@ from servicelib.fastapi.long_running_tasks.client import (
     TaskId,
     periodic_task_result,
 )
+from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
 from servicelib.volumes_utils import VolumeStatus
 from simcore_service_director_v2.core.settings import DynamicSidecarSettings
@@ -259,8 +261,8 @@ class DynamicSidecarClient:
         task_id: TaskId,
         dynamic_sidecar_endpoint: AnyHttpUrl,
         task_timeout: PositiveFloat,
-        progress_callback: Optional[ProgressCallback] = None,
-    ) -> Optional[Any]:
+        progress_callback: ProgressCallback | None = None,
+    ) -> Any | None:
         async with periodic_task_result(
             self._get_client(dynamic_sidecar_endpoint),
             task_id,
@@ -275,7 +277,7 @@ class DynamicSidecarClient:
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
         compose_spec: str,
-        progress_callback: Optional[ProgressCallback] = None,
+        progress_callback: ProgressCallback | None = None,
     ) -> None:
         response = await self._thin_client.post_containers_tasks(
             dynamic_sidecar_endpoint, compose_spec=compose_spec
@@ -292,7 +294,7 @@ class DynamicSidecarClient:
     async def stop_service(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
-        progress_callback: Optional[ProgressCallback] = None,
+        progress_callback: ProgressCallback | None = None,
     ) -> None:
         response = await self._thin_client.post_containers_tasks_down(
             dynamic_sidecar_endpoint
@@ -322,7 +324,7 @@ class DynamicSidecarClient:
     async def save_service_state(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
-        progress_callback: Optional[ProgressCallback] = None,
+        progress_callback: ProgressCallback | None = None,
     ) -> None:
         response = await self._thin_client.post_containers_tasks_state_save(
             dynamic_sidecar_endpoint
@@ -339,7 +341,7 @@ class DynamicSidecarClient:
     async def pull_service_input_ports(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
-        port_keys: Optional[list[str]] = None,
+        port_keys: list[str] | None = None,
     ) -> int:
         response = await self._thin_client.post_containers_tasks_ports_inputs_pull(
             dynamic_sidecar_endpoint, port_keys
@@ -357,7 +359,7 @@ class DynamicSidecarClient:
     async def pull_service_output_ports(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
-        port_keys: Optional[list[str]] = None,
+        port_keys: list[str] | None = None,
     ) -> None:
         response = await self._thin_client.post_containers_tasks_ports_outputs_pull(
             dynamic_sidecar_endpoint, port_keys
@@ -374,7 +376,7 @@ class DynamicSidecarClient:
     async def push_service_output_ports(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
-        progress_callback: Optional[ProgressCallback] = None,
+        progress_callback: ProgressCallback | None = None,
     ) -> None:
         response = await self._thin_client.post_containers_tasks_ports_outputs_push(
             dynamic_sidecar_endpoint
@@ -416,28 +418,43 @@ class DynamicSidecarClient:
 
 
 async def setup(app: FastAPI) -> None:
-    logger.debug("dynamic-sidecar api client setup")
-    app.state.dynamic_sidecar_api_client = DynamicSidecarClient(app)
+    with log_context(logger, logging.DEBUG, "dynamic-sidecar api client setup"):
+        app.state.dynamic_sidecar_api_clients: dict[str, DynamicSidecarClient] = {}
 
 
 async def shutdown(app: FastAPI) -> None:
-    logger.debug("dynamic-sidecar api client closing...")
-    client: Optional[DynamicSidecarClient]
-    if client := app.state.dynamic_sidecar_api_client:
-        await client._thin_client.close()  # pylint: disable=protected-access
+    with log_context(logger, logging.DEBUG, "dynamic-sidecar api client closing..."):
+        await logged_gather(
+            *(
+                x._thin_client.close()  # pylint: disable=protected-access
+                for x in app.state.dynamic_sidecar_api_clients.values()
+            ),
+            reraise=False,
+        )
 
 
-def get_dynamic_sidecar_client(app: FastAPI) -> DynamicSidecarClient:
-    assert app.state.dynamic_sidecar_api_client  # nosec
-    return app.state.dynamic_sidecar_api_client
+def get_dynamic_sidecar_client(
+    app: FastAPI, node_id: str | NodeID
+) -> DynamicSidecarClient:
+    str_node_id = f"{node_id}"
+
+    if str_node_id not in app.state.dynamic_sidecar_api_clients:
+        app.state.dynamic_sidecar_api_clients[str_node_id] = DynamicSidecarClient(app)
+
+    return app.state.dynamic_sidecar_api_clients[str_node_id]
+
+
+def remove_dynamic_sidecar_client(app: FastAPI, node_id: NodeID) -> None:
+    app.state.dynamic_sidecar_api_clients.pop(f"{node_id}", None)
 
 
 async def get_dynamic_sidecar_service_health(
     app: FastAPI, scheduler_data: SchedulerData, *, with_retry: bool = True
 ) -> bool:
-    api_client = get_dynamic_sidecar_client(app)
-    service_endpoint = scheduler_data.endpoint
+    api_client = get_dynamic_sidecar_client(app, scheduler_data.node_uuid)
 
     # update service health
-    is_healthy = await api_client.is_healthy(service_endpoint, with_retry=with_retry)
+    is_healthy = await api_client.is_healthy(
+        scheduler_data.endpoint, with_retry=with_retry
+    )
     return is_healthy

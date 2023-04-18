@@ -3,15 +3,18 @@
   WIP: work in progress
   🐛    Fix a bug.
   ✨    Introduce new features.
-  ♻️     Refactor code.
+  🎨    Enhance existing feature.
+  ♻️    Refactor code.
   🚑️    Critical hotfix.
-  ⚗️     Perform experiments.
-  ⬆️     Upgrade dependencies.
+  ⚗️    Perform experiments.
+  ⬆️    Upgrade dependencies.
   📝    Add or update documentation.
   🔨    Add or update development scripts.
   🔒️    Fix security issues.
-  ⚠️     Changes in devops configuration
-  🗃️    Migration of database
+  ⚠️    Changes in ops configuration etc. are required before deploying. 
+        [ Please add a link to the associated ops-issue or PR, such as in https://github.com/ITISFoundation/osparc-ops-environments or https://git.speag.com/oSparc/osparc-infra ]
+  🗃️    Database table changed (relevant for devops).
+
 
 or from https://gitmoji.dev/
 -->
@@ -33,3 +36,21 @@ or from https://gitmoji.dev/
 ## How to test
 
 <!-- Give REVIEWERS some hits or code snippets on how could this be tested -->
+
+## DevOps Checklist
+<!--
+
+Some checks that might help your code run stable on production, and help devops assess criticality.
+
+Modified from https://oschvr.com/posts/what-id-like-as-sre/
+
+
+- How can DevOps check the health of the service ?
+- How can DevOps safely and gracefully restart the service ?
+- How and why would this code fail ?
+- What kind of metrics are you exposing ?
+- Is there any documentation/design specification for the service ?
+- How (e.g. through which loglines) can DevOps detect unexpected situations that require escalation to human ?
+- What are the resource limitations (CPU, RAM) expected for this service ?
+- Are all relevant variables documented and adjustable via environment variables (i.e. no hardcoded magic numbers) ?
+-->
