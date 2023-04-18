@@ -193,30 +193,27 @@ def test_dataset_description(temp_dir: Path):
 
     expected_sheet1 = expected_layout["Sheet1"]
 
+    contributor_entry: ContributorEntryModel
     for column_letter, contributor_entry in zip(
         column_iter("D", len(contributor_entries)), contributor_entries
     ):
-        contributor_entry: ContributorEntryModel = contributor_entry
-
         expected_sheet1[f"{column_letter}5"] = contributor_entry.contributor
         expected_sheet1[f"{column_letter}6"] = contributor_entry.orcid_id
         expected_sheet1[f"{column_letter}7"] = contributor_entry.affiliation
         expected_sheet1[f"{column_letter}8"] = contributor_entry.role
         expected_sheet1[f"{column_letter}9"] = contributor_entry.is_contact_person
 
+    doi_entry: DoiEntryModel
     for column_letter, doi_entry in zip(
         column_iter("D", len(doi_entries)), doi_entries
     ):
-        doi_entry: DoiEntryModel = doi_entry
-
         expected_sheet1[f"{column_letter}12"] = doi_entry.originating_article_doi
         expected_sheet1[f"{column_letter}13"] = doi_entry.protocol_url_or_doi
 
+    link_entry: LinkEntryModel
     for column_letter, link_entry in zip(
         column_iter("D", len(link_entries)), link_entries
     ):
-        link_entry: LinkEntryModel = link_entry
-
         expected_sheet1[f"{column_letter}14"] = link_entry.additional_link
         expected_sheet1[f"{column_letter}15"] = link_entry.link_description
 
@@ -436,8 +433,8 @@ def test_directory_manifest(temp_dir: Path, dir_with_random_content: Path):
     )
 
     # inject random descrition & additional_metadata
+    file_entry: FileEntryModel
     for k, file_entry in enumerate(directory_manifest_params.file_entries):
-        file_entry: FileEntryModel = file_entry
         file_entry.description = random_text(f"description{k}")
         file_entry.additional_metadata = [
             random_text(f"{k}_{i}_additional_metadata")
@@ -453,12 +450,11 @@ def test_directory_manifest(temp_dir: Path, dir_with_random_content: Path):
     expected_layout = {"Sheet1": {}}
 
     expected_sheet1 = expected_layout["Sheet1"]
+    file_entry: FileEntryModel
     for row, file_entry in zip(
         range(2, len(directory_manifest_params.file_entries) + 2),
         directory_manifest_params.file_entries,
     ):
-        file_entry: FileEntryModel = file_entry
-
         expected_sheet1[f"C{row}"] = file_entry.description
         expected_sheet1[f"A{row}"] = file_entry.filename
         expected_sheet1[f"B{row}"] = file_entry.timestamp
