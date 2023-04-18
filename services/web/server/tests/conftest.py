@@ -8,7 +8,7 @@ import logging
 import sys
 from copy import deepcopy
 from pathlib import Path
-from typing import AsyncIterator, Awaitable, Callable, Optional
+from typing import AsyncIterator, Awaitable, Callable
 from uuid import UUID
 
 import pytest
@@ -50,6 +50,7 @@ logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
 # imports the fixtures for the integration tests
 pytest_plugins = [
     "pytest_simcore.cli_runner",
+    "pytest_simcore.db_entries_mocks",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
@@ -202,12 +203,11 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
     async def _setup(
         client: TestClient,
         *,
-        project: Optional[dict] = None,
-        from_study: Optional[dict] = None,
-        as_template: Optional[bool] = None,
-        copy_data: Optional[bool] = None,
+        project: dict | None = None,
+        from_study: dict | None = None,
+        as_template: bool | None = None,
+        copy_data: bool | None = None,
     ):
-
         # Pre-defined fields imposed by required properties in schema
         project_data = {}
         expected_data = {}
@@ -252,12 +252,11 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
         logged_user: dict[str, str],
         primary_group: dict[str, str],
         *,
-        project: Optional[dict] = None,
-        from_study: Optional[dict] = None,
-        as_template: Optional[bool] = None,
-        copy_data: Optional[bool] = None,
+        project: dict | None = None,
+        from_study: dict | None = None,
+        as_template: bool | None = None,
+        copy_data: bool | None = None,
     ) -> ProjectDict:
-
         url, project_data, expected_data = await _setup(
             client,
             project=project,
