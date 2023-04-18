@@ -3,7 +3,6 @@ import logging
 import signal
 import threading
 from pprint import pformat
-from typing import Optional
 
 import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
@@ -15,6 +14,7 @@ from dask_task_models_library.container_tasks.io import (
 from distributed.worker import logger
 from models_library.services_resources import BootMode
 from pydantic.networks import AnyUrl
+from servicelib.logging_utils import config_all_loggers
 from settings_library.s3 import S3Settings
 
 from .computational_sidecar.core import ComputationalSidecar
@@ -64,6 +64,7 @@ async def dask_setup(worker: distributed.Worker) -> None:
     # set up logging
     logging.basicConfig(level=settings.LOG_LEVEL.value)
     logging.root.setLevel(level=settings.LOG_LEVEL.value)
+    config_all_loggers()
     logger.setLevel(level=settings.LOG_LEVEL.value)
 
     logger.info("Setting up worker...")
@@ -91,7 +92,7 @@ async def _run_computational_sidecar_async(
     output_data_keys: TaskOutputDataSchema,
     log_file_url: AnyUrl,
     command: list[str],
-    s3_settings: Optional[S3Settings],
+    s3_settings: S3Settings | None,
     boot_mode: BootMode,
 ) -> TaskOutputData:
     task_publishers = TaskPublisher()
@@ -131,7 +132,7 @@ def run_computational_sidecar(
     output_data_keys: TaskOutputDataSchema,
     log_file_url: AnyUrl,
     command: list[str],
-    s3_settings: Optional[S3Settings],
+    s3_settings: S3Settings | None,
     boot_mode: BootMode = BootMode.CPU,
 ) -> TaskOutputData:
     # NOTE: The event loop MUST BE created in the main thread prior to this
