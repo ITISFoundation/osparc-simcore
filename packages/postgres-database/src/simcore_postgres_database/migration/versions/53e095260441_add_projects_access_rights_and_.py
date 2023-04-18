@@ -7,6 +7,7 @@ Create Date: 2020-04-24 06:30:31.689985+00:00
 """
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects.postgresql import JSONB
 
 # revision identifiers, used by Alembic.
 revision = "53e095260441"
@@ -21,7 +22,7 @@ def upgrade():
         "projects",
         sa.Column(
             "access_rights",
-            sa.dialects.postgresql.JSONB(),
+            JSONB,
             nullable=False,
             server_default=sa.text("'{}'::jsonb"),
         ),

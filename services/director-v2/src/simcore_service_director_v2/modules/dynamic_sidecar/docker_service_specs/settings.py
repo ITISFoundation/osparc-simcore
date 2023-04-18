@@ -123,13 +123,11 @@ def update_service_params_from_settings(
 
         # placement constraints
         elif param.name == "constraints":  # python-API compatible
-
             create_service_params["task_template"]["Placement"][
                 "Constraints"
             ] += param.value
 
         elif param.setting_type == "Constraints":  # REST-API compatible
-
             create_service_params["task_template"]["Placement"][
                 "Constraints"
             ] += param.value
@@ -390,7 +388,6 @@ def _assemble_env_vars_for_boot_options(
     boot_options: dict[EnvVarKey, BootOption],
     service_user_selection_boot_options: dict[EnvVarKey, str],
 ) -> SimcoreServiceSettingsLabel:
-
     env_vars: deque[str] = deque()
     for env_var_key, boot_option in boot_options.items():
         # fetch value selected by the user or use default if not present

@@ -1,12 +1,11 @@
 from enum import Enum, unique
 from functools import cached_property, lru_cache, total_ordering
 from pathlib import Path
-from typing import Any
 
 from models_library.basic_types import PortInt
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.services import DYNAMIC_SERVICE_KEY_RE, VERSION_RE
+from models_library.services import VERSION_RE, DynamicServiceKey
 from models_library.users import UserID
 from pydantic import BaseModel, Field
 
@@ -26,10 +25,9 @@ class ServiceType(Enum):
 
 
 class CommonServiceDetails(BaseModel):
-    key: str = Field(
+    key: DynamicServiceKey = Field(
         ...,
         description="distinctive name for the node based on the docker registry path",
-        regex=DYNAMIC_SERVICE_KEY_RE,
         examples=[
             "simcore/services/dynamic/3dviewer",
         ],

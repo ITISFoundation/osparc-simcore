@@ -320,7 +320,10 @@ qx.Class.define("osparc.Application", {
         case "s4llite":
           if (landingPage) {
             view = new osparc.product.landingPage.s4llite.Page();
-            view.addListener("loginPressed", () => this.__loadLoginPage(false));
+            view.addListener("loginPressed", () => {
+              view.close();
+              this.__loadLoginPage(false);
+            });
           } else {
             view = new osparc.auth.LoginPageS4L();
           }
@@ -429,6 +432,7 @@ qx.Class.define("osparc.Application", {
       if (this.__mainPage) {
         this.__mainPage.closeEditor();
       }
+      osparc.panddy.Panddy.getInstance().stop();
       osparc.utils.Utils.closeHangingWindows();
       osparc.store.Store.getInstance().dispose();
       this.__restart();

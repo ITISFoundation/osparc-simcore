@@ -1,6 +1,6 @@
 from contextlib import suppress
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from models_library.basic_regex import VERSION_RE
 from models_library.errors import ErrorDict
@@ -8,7 +8,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import InputsDict, NodeID, OutputsDict
 from models_library.projects_state import RunningState
 from models_library.services import (
-    KEY_RE,
+    SERVICE_KEY_RE,
     ServiceInputsDict,
     ServiceOutput,
     ServicePortKey,
@@ -23,16 +23,16 @@ from ..schemas.services import NodeRequirements
 
 
 class Image(BaseModel):
-    name: str = Field(..., regex=KEY_RE)
+    name: str = Field(..., regex=SERVICE_KEY_RE.pattern)
     tag: str = Field(..., regex=VERSION_RE)
 
-    requires_gpu: Optional[bool] = Field(
+    requires_gpu: bool | None = Field(
         None, deprecated=True, description="Use instead node_requirements"
     )
-    requires_mpi: Optional[bool] = Field(
+    requires_mpi: bool | None = Field(
         None, deprecated=True, description="Use instead node_requirements"
     )
-    node_requirements: Optional[NodeRequirements] = Field(
+    node_requirements: NodeRequirements | None = Field(
         None, description="the requirements for the service to run on a node"
     )
     boot_mode: BootMode = BootMode.CPU
@@ -104,23 +104,23 @@ class NodeSchema(BaseModel):
 class CompTaskAtDB(BaseModel):
     project_id: ProjectID
     node_id: NodeID
-    job_id: Optional[str] = Field(default=None, description="The worker job ID")
+    job_id: str | None = Field(default=None, description="The worker job ID")
     node_schema: NodeSchema = Field(..., alias="schema")
-    inputs: Optional[InputsDict] = Field(..., description="the inputs payload")
-    outputs: Optional[OutputsDict] = Field({}, description="the outputs payload")
-    run_hash: Optional[str] = Field(
+    inputs: InputsDict | None = Field(..., description="the inputs payload")
+    outputs: OutputsDict | None = Field({}, description="the outputs payload")
+    run_hash: str | None = Field(
         default=None,
         description="the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated",
     )
     image: Image
     submit: datetime
-    start: Optional[datetime] = Field(default=None)
-    end: Optional[datetime] = Field(default=None)
+    start: datetime | None = Field(default=None)
+    end: datetime | None = Field(default=None)
     state: RunningState
-    task_id: Optional[PositiveInt] = Field(default=None)
+    task_id: PositiveInt | None = Field(default=None)
     internal_id: PositiveInt
     node_class: NodeClass
-    errors: Optional[list[ErrorDict]] = Field(default=None)
+    errors: list[ErrorDict] | None = Field(default=None)
 
     @validator("state", pre=True)
     @classmethod

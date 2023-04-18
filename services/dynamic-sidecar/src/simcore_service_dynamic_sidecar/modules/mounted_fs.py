@@ -98,13 +98,11 @@ class MountedVolumes:
 
     def _ensure_directories(self) -> None:
         """
-        Creates the directories on its file system,
-        these will be mounted elsewere.
+        Creates directories on its file system, these will be mounted by the user services.
         """
         _ensure_path(self._dy_volumes)
-        self.disk_inputs_path  # pylint:disable= pointless-statement
-        self.disk_outputs_path  # pylint:disable= pointless-statement
-        set(self.disk_state_paths())
+        for path in self.all_disk_paths():
+            _ensure_path(path)
 
     @staticmethod
     async def _get_bind_path_from_label(label: str, run_id: RunID) -> Path:
