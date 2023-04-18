@@ -457,6 +457,11 @@ async def update_project_node_progress(
     return updated_project
 
 
+async def is_project_hidden(app: web.Application, project_id: ProjectID) -> bool:
+    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    return await db.is_hidden(project_id)
+
+
 async def update_project_node_outputs(
     app: web.Application,
     user_id: int,

@@ -729,6 +729,14 @@ class ProjectDBAPI(BaseProjectDB):
     #
     # Project HIDDEN column
     #
+    async def is_hidden(self, project_uuid: ProjectID) -> bool:
+        async with self.engine.acquire() as conn:
+            result = await conn.scalar(
+                sa.select([projects.c.hidden]).where(
+                    projects.c.uuid == f"{project_uuid}"
+                )
+            )
+        return bool(result)
 
     async def set_hidden_flag(self, project_uuid: ProjectID, enabled: bool):
         async with self.engine.acquire() as conn:
