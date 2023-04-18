@@ -20,6 +20,7 @@ from uuid import uuid4
 import fsspec
 import pytest
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
+from dask_task_models_library.container_tasks.errors import ServiceRuntimeError
 from dask_task_models_library.container_tasks.events import (
     TaskLogEvent,
     TaskProgressEvent,
@@ -46,7 +47,6 @@ from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
 )
 from simcore_service_dask_sidecar.computational_sidecar.errors import (
     ServiceBadFormattedOutputError,
-    ServiceRunError,
 )
 from simcore_service_dask_sidecar.computational_sidecar.models import (
     LEGACY_INTEGRATION_VERSION,
@@ -565,7 +565,7 @@ def test_failing_service_raises_exception(
     ubuntu_task_fail: ServiceExampleParam,
     s3_settings: S3Settings,
 ):
-    with pytest.raises(ServiceRunError):
+    with pytest.raises(ServiceRuntimeError):
         run_computational_sidecar(
             ubuntu_task_fail.docker_basic_auth,
             ubuntu_task_fail.service_key,
