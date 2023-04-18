@@ -1,6 +1,6 @@
 import logging
 import traceback
-from typing import Any, Awaitable, Callable, Iterable, Optional
+from typing import Any, Awaitable, Callable, Iterable
 
 from pydantic import NonNegativeInt
 from servicelib.utils import logged_gather
@@ -27,10 +27,8 @@ async def workflow_runner(
     workflow: Workflow,
     workflow_context: WorkflowContext,
     *,
-    before_step_hook: Optional[
-        Callable[[ActionName, StepName], Awaitable[None]]
-    ] = None,
-    after_step_hook: Optional[Callable[[ActionName, StepName], Awaitable[None]]] = None,
+    before_step_hook: None | (Callable[[ActionName, StepName], Awaitable[None]]) = None,
+    after_step_hook: Callable[[ActionName, StepName], Awaitable[None]] | None = None,
 ) -> None:
     """
     Given a `Workflow` and a `WorkflowContext`:
@@ -41,7 +39,7 @@ async def workflow_runner(
     action_name: ActionName = await workflow_context.get(
         ReservedContextKeys.WORKFLOW_ACTION_NAME, ActionName
     )
-    action: Optional[Action] = workflow[action_name]
+    action: Action | None = workflow[action_name]
 
     start_from_index: int = 0
     try:
@@ -66,14 +64,14 @@ async def workflow_runner(
 
                 # fetching inputs from context
                 inputs: dict[str, Any] = {}
-                if step.input_types:
+                if step.input_types:  # type: ignore
                     get_inputs_results = await logged_gather(
                         *[
                             workflow_context.get(var_name, var_type)
-                            for var_name, var_type in step.input_types.items()
+                            for var_name, var_type in step.input_types.items()  # type: ignore
                         ]
                     )
-                    inputs = dict(zip(step.input_types, get_inputs_results))
+                    inputs = dict(zip(step.input_types, get_inputs_results))  # type: ignore
                 logger.debug("step='%s' inputs=%s", step_name, inputs)
 
                 # running event handler
