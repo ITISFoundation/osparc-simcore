@@ -93,10 +93,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     DY_SIDECAR_STATE_EXCLUDE: set[str] = Field(
         ..., description="list of patterns to exclude files when saving states"
     )
-    DY_SIDECAR_LOG_FORMAT_LOCAL_ENABLED: bool = Field(
+    DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         False,
-        env=["DY_SIDECAR_LOG_FORMAT_LOCAL_ENABLED", "LOG_FORMAT_LOCAL_ENABLED"],
-        description="Enables local log format. WARNING: make sure it is disabled if you want to have structured logs!",
+        env=["DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"],
+        description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
     DY_SIDECAR_USER_ID: UserID
     DY_SIDECAR_PROJECT_ID: ProjectID
