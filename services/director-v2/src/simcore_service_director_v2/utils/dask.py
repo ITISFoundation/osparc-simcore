@@ -448,7 +448,7 @@ def check_scheduler_status(client: distributed.Client):
         raise ComputationalBackendNotConnectedError()
 
 
-_LARGE_NUMBER_OF_WORKERS = 10000
+_LARGE_NUMBER_OF_WORKERS: Final[int] = 10000
 
 
 async def check_maximize_workers(cluster: dask_gateway.GatewayCluster | None) -> None:
