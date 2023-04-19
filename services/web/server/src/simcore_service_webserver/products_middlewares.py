@@ -1,24 +1,26 @@
 import logging
-from typing import Optional
 
 from aiohttp import web
 from servicelib.aiohttp.typing_extension import Handler
 
 from ._constants import APP_PRODUCTS_KEY, RQ_PRODUCT_KEY, X_PRODUCT_NAME_HEADER
 from ._meta import API_VTAG
+from .products_model import Product
 
 log = logging.getLogger(__name__)
 
 
-def discover_product_by_hostname(request: web.Request) -> Optional[str]:
-    for product in request.app[APP_PRODUCTS_KEY].values():
+def discover_product_by_hostname(request: web.Request) -> str | None:
+    products: dict[str, Product] = request.app[APP_PRODUCTS_KEY]
+    for _, product in products.items():
         if product.host_regex.search(request.host):
-            return product.name
+            product_name: str = product.name
+            return product_name
     return None
 
 
-def discover_product_by_request_header(request: web.Request) -> Optional[str]:
-    requested_product = request.headers.get(X_PRODUCT_NAME_HEADER)
+def discover_product_by_request_header(request: web.Request) -> str | None:
+    requested_product: str | None = request.headers.get(X_PRODUCT_NAME_HEADER)
     if requested_product:
         for product_name in request.app[APP_PRODUCTS_KEY].keys():
             if requested_product == product_name:
@@ -27,7 +29,8 @@ def discover_product_by_request_header(request: web.Request) -> Optional[str]:
 
 
 def _get_app_default_product_name(request: web.Request) -> str:
-    return request.app[f"{APP_PRODUCTS_KEY}_default"]
+    product_name: str = request.app[f"{APP_PRODUCTS_KEY}_default"]
+    return product_name
 
 
 @web.middleware

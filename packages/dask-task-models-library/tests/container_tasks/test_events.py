@@ -10,9 +10,7 @@ from dask_task_models_library.container_tasks.events import (
     BaseTaskEvent,
     TaskLogEvent,
     TaskProgressEvent,
-    TaskStateEvent,
 )
-from models_library.projects_state import RunningState
 from pytest_mock.plugin import MockerFixture
 
 
@@ -22,7 +20,7 @@ def test_task_event_abstract():
         BaseTaskEvent(job_id="some_fake")  # type: ignore
 
 
-@pytest.mark.parametrize("model_cls", [TaskStateEvent, TaskProgressEvent, TaskLogEvent])
+@pytest.mark.parametrize("model_cls", [TaskProgressEvent, TaskLogEvent])
 def test_events_models_examples(model_cls):
     examples = model_cls.Config.schema_extra["examples"]
 
@@ -43,15 +41,6 @@ def mocked_dask_worker_job_id(mocker: MockerFixture) -> str:
     fake_job_id = "some_fake_job_id"
     mock_get_worker.return_value.get_current_task.return_value = fake_job_id
     return fake_job_id
-
-
-def test_task_state_from_worker(mocked_dask_worker_job_id: str):
-    event = TaskStateEvent.from_dask_worker(
-        RunningState.FAILED, msg="some test message"
-    )
-    assert event.job_id == mocked_dask_worker_job_id
-    assert event.state == RunningState.FAILED
-    assert event.msg == "some test message"
 
 
 def test_task_progress_from_worker(mocked_dask_worker_job_id: str):
