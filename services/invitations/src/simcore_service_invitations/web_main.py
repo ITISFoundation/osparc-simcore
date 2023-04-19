@@ -13,7 +13,7 @@ the_settings = ApplicationSettings.create_from_envs()
 # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3148
 logging.basicConfig(level=the_settings.log_level)  # NOSONAR
 logging.root.setLevel(the_settings.log_level)
-config_all_loggers()
+config_all_loggers(the_settings.WEB_LOG_FORMAT_LOCAL_DEV_ENABLED)
 
 # SINGLETON FastAPI app
 the_app: FastAPI = create_app(the_settings)
