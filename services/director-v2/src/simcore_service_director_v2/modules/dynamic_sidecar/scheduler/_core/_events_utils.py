@@ -421,7 +421,7 @@ async def prepare_services_environment(
     dynamic_sidecar_endpoint = scheduler_data.endpoint
 
     # update if volume requires saving
-    def _get_state_params(can_save: Optional[bool]) -> dict[str, Optional[bool]]:
+    def _get_state_params(can_save: bool | None) -> dict[str, VolumeStatus]:
         return (
             {"volume_status": VolumeStatus.CONTENT_WAS_SAVED}
             if can_save
