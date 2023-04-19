@@ -64,7 +64,7 @@ async def dask_setup(worker: distributed.Worker) -> None:
     # set up logging
     logging.basicConfig(level=settings.LOG_LEVEL.value)
     logging.root.setLevel(level=settings.LOG_LEVEL.value)
-    config_all_loggers()
+    config_all_loggers(settings.DASK_LOG_FORMAT_LOCAL_DEV_ENABLED)
     logger.setLevel(level=settings.LOG_LEVEL.value)
 
     logger.info("Setting up worker...")

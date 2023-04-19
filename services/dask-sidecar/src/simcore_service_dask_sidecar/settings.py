@@ -33,10 +33,10 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
         description="Address of the scheduler to register (only if started as worker )",
     )
 
-    DASK_LOG_FORMAT_LOCAL_ENABLED: bool = Field(
+    DASK_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         False,
-        env=["DASK_LOG_FORMAT_LOCAL_ENABLED", "LOG_FORMAT_LOCAL_ENABLED"],
-        description="Enables local log format. WARNING: make sure it is disabled if you want to have structured logs!",
+        env=["DASK_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"],
+        description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
 
     def as_scheduler(self) -> bool:
