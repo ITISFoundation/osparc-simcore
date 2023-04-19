@@ -2,24 +2,28 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 # pylint:disable=no-value-for-parameter
+# pylint:disable=too-many-arguments
 
 import json
 import logging
-from typing import Any, AsyncIterator
+from typing import Any, AsyncIterator, Callable, Iterator
 from unittest import mock
 
 import aiopg.sa
 import pytest
+import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
-from aiopg.sa.result import RowProxy
+from faker import Faker
+from models_library.projects import ProjectAtDB, ProjectID
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.utils_login import UserInfoDict
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
+from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.computation_comp_tasks_listening_task import (
     create_comp_tasks_listening_task,
 )
-from sqlalchemy.sql.elements import literal_column
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
@@ -56,9 +60,39 @@ async def mock_project_subsystem(
 async def comp_task_listening_task(
     mock_project_subsystem: dict, client: TestClient
 ) -> AsyncIterator:
+    assert client.app
     async for _comp_task in create_comp_tasks_listening_task(client.app):
         # first call creates the task, second call cleans it
         yield
+
+
+@pytest.fixture
+def comp_task(
+    postgres_db: sa.engine.Engine,
+) -> Iterator[Callable[..., dict[str, Any]]]:
+    created_task_ids: list[int] = []
+
+    def creator(project_id: ProjectID, **task_kwargs) -> dict[str, Any]:
+        task_config = {"project_id": f"{project_id}"} | task_kwargs
+        with postgres_db.connect() as conn:
+            result = conn.execute(
+                comp_tasks.insert()
+                .values(**task_config)
+                .returning(sa.literal_column("*"))
+            )
+            new_task = result.first()
+            assert new_task
+            new_task = dict(new_task)
+            created_task_ids.append(new_task["task_id"])
+        return new_task
+
+    yield creator
+
+    # cleanup
+    with postgres_db.connect() as conn:
+        conn.execute(
+            comp_tasks.delete().where(comp_tasks.c.task_id.in_(created_task_ids))
+        )
 
 
 @pytest.mark.parametrize(
@@ -91,25 +125,27 @@ async def comp_task_listening_task(
         ),
     ],
 )
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_listen_comp_tasks_task(
     mock_project_subsystem: dict,
+    logged_user: UserInfoDict,
+    project: Callable[..., ProjectAtDB],
+    pipeline: Callable[..., dict[str, Any]],
+    comp_task: Callable[..., dict[str, Any]],
     comp_task_listening_task: None,
     client,
     update_values: dict[str, Any],
     expected_calls: list[str],
     task_class: NodeClass,
+    faker: Faker,
 ):
     db_engine: aiopg.sa.Engine = client.app[APP_DB_ENGINE_KEY]
+    some_project = project(logged_user)
+    pipeline(project_id=f"{some_project.uuid}")
+    task = comp_task(
+        project_id=f"{some_project.uuid}", outputs=json.dumps({}), node_class=task_class
+    )
     async with db_engine.acquire() as conn:
-        # let's put some stuff in there now
-        result = await conn.execute(
-            comp_tasks.insert()
-            .values(outputs=json.dumps({}), node_class=task_class)
-            .returning(literal_column("*"))
-        )
-        row: RowProxy = await result.fetchone()
-        task = dict(row)
-
         # let's update some values
         await conn.execute(
             comp_tasks.update()

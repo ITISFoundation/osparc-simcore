@@ -3,7 +3,7 @@ import contextlib
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import AsyncIterator, Final, Optional
+from typing import AsyncIterator, Final
 
 import distributed
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
@@ -11,7 +11,6 @@ from dask_task_models_library.container_tasks.events import (
     BaseTaskEvent,
     TaskLogEvent,
     TaskProgressEvent,
-    TaskStateEvent,
 )
 from dask_task_models_library.container_tasks.io import TaskCancelEventName
 from distributed.worker import get_worker
@@ -25,7 +24,7 @@ def create_dask_worker_logger(name: str) -> logging.Logger:
 logger = create_dask_worker_logger(__name__)
 
 
-def _get_current_task_state() -> Optional[TaskState]:
+def _get_current_task_state() -> TaskState | None:
     worker = get_worker()
     logger.debug("current worker %s", f"{worker=}")
     current_task = worker.get_current_task()
@@ -34,7 +33,7 @@ def _get_current_task_state() -> Optional[TaskState]:
 
 
 def is_current_task_aborted() -> bool:
-    task: Optional[TaskState] = _get_current_task_state()
+    task: TaskState | None = _get_current_task_state()
     logger.debug("found following TaskState: %s", task)
     if task is None:
         # the task was removed from the list of tasks this worker should work on, meaning it is aborted
@@ -63,12 +62,10 @@ def get_current_task_resources() -> dict[str, float]:
 
 @dataclass()
 class TaskPublisher:
-    state: distributed.Pub = field(init=False)
     progress: distributed.Pub = field(init=False)
     logs: distributed.Pub = field(init=False)
 
     def __post_init__(self):
-        self.state = distributed.Pub(TaskStateEvent.topic_name())
         self.progress = distributed.Pub(TaskProgressEvent.topic_name())
         self.logs = distributed.Pub(TaskLogEvent.topic_name())
 
