@@ -1,7 +1,9 @@
-# pylint: disable=redefined-outer-name
-# pylint: disable=unused-argument
-# pylint: disable=unused-variable
-# pylint: disable=too-many-arguments
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+# pylint:disable=too-many-arguments
+# pylint:disable=no-name-in-module
+
 
 import asyncio
 import filecmp
@@ -10,7 +12,7 @@ import urllib.parse
 from dataclasses import dataclass
 from pathlib import Path
 from time import perf_counter
-from typing import Awaitable, Callable, Literal, Optional, Union
+from typing import Awaitable, Callable, Literal
 from uuid import uuid4
 
 import pytest
@@ -72,7 +74,7 @@ async def assert_multipart_uploads_in_progress(
     storage_s3_bucket: S3BucketName,
     file_id: SimcoreS3FileID,
     *,
-    expected_upload_ids: Optional[list[str]],
+    expected_upload_ids: list[str] | None,
 ):
     """if None is passed, then it checks that no uploads are in progress"""
     list_uploads: list[
@@ -92,7 +94,7 @@ async def assert_multipart_uploads_in_progress(
 @dataclass
 class SingleLinkParam:
     url_query: dict[str, str]
-    expected_link_scheme: Union[Literal["s3"], Literal["http"]]
+    expected_link_scheme: Literal["s3"] | Literal["http"]
     expected_link_query_keys: list[str]
     expected_chunk_size: ByteSize
 
@@ -335,7 +337,7 @@ async def test_create_upload_file_presigned_with_file_size_returns_multipart_lin
 
     # now check the entry in the database is correct, there should be only one
     expect_upload_id = bool(test_param.file_size >= MULTIPART_UPLOADS_MIN_TOTAL_SIZE)
-    upload_id: Optional[UploadID] = await assert_file_meta_data_in_db(
+    upload_id: UploadID | None = await assert_file_meta_data_in_db(
         aiopg_engine,
         file_id=simcore_file_id,
         expected_entry_exists=True,
@@ -540,7 +542,7 @@ async def test_upload_real_file_with_emulated_storage_restart_after_completion_w
     node_id: NodeID,
     location_id: LocationID,
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
-    create_file_of_size: Callable[[ByteSize, Optional[str]], Path],
+    create_file_of_size: Callable[[ByteSize, str | None], Path],
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
     aiopg_engine: Engine,
     storage_s3_client: StorageS3Client,
@@ -621,7 +623,7 @@ async def test_upload_of_single_presigned_link_lazily_update_database_on_get(
     storage_s3_bucket: S3BucketName,
     client: TestClient,
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
-    create_file_of_size: Callable[[ByteSize, Optional[str]], Path],
+    create_file_of_size: Callable[[ByteSize, str | None], Path],
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
     project_id: ProjectID,
     node_id: NodeID,
@@ -663,7 +665,7 @@ async def test_upload_real_file_with_s3_client(
     storage_s3_bucket: S3BucketName,
     client: TestClient,
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
-    create_file_of_size: Callable[[ByteSize, Optional[str]], Path],
+    create_file_of_size: Callable[[ByteSize, str | None], Path],
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
     project_id: ProjectID,
     node_id: NodeID,
@@ -765,7 +767,7 @@ async def test_upload_twice_and_fail_second_time_shall_keep_first_version(
     file_size: ByteSize,
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
     faker: Faker,
-    create_file_of_size: Callable[[ByteSize, Optional[str]], Path],
+    create_file_of_size: Callable[[ByteSize, str | None], Path],
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
     user_id: UserID,
     location_id: LocationID,

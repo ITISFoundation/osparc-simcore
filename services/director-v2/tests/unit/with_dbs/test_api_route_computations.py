@@ -408,7 +408,6 @@ async def test_get_computation_from_empty_project(
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., ProjectAtDB],
     pipeline: Callable[..., CompPipelineAtDB],
-    tasks: Callable[..., list[CompTaskAtDB]],
     faker: Faker,
     async_client: httpx.AsyncClient,
 ):

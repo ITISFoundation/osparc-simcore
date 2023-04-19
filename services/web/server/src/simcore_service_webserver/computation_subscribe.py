@@ -49,7 +49,9 @@ async def _handle_computation_running_progress(
             f"{message.node_id}",
             progress=message.progress,
         )
-        if project:
+        if project and not await projects_api.is_project_hidden(
+            app, message.project_id
+        ):
             messages: list[SocketMessageDict] = [
                 {
                     "event_type": SOCKET_IO_NODE_UPDATED_EVENT,
@@ -111,13 +113,14 @@ async def progress_message_parser(app: web.Application, data: bytes) -> bool:
 async def log_message_parser(app: web.Application, data: bytes) -> bool:
     rabbit_message = LoggerRabbitMessage.parse_raw(data)
 
-    socket_messages: list[SocketMessageDict] = [
-        {
-            "event_type": SOCKET_IO_LOG_EVENT,
-            "data": rabbit_message.dict(exclude={"user_id"}),
-        }
-    ]
-    await send_messages(app, f"{rabbit_message.user_id}", socket_messages)
+    if not await projects_api.is_project_hidden(app, rabbit_message.project_id):
+        socket_messages: list[SocketMessageDict] = [
+            {
+                "event_type": SOCKET_IO_LOG_EVENT,
+                "data": rabbit_message.dict(exclude={"user_id"}),
+            }
+        ]
+        await send_messages(app, f"{rabbit_message.user_id}", socket_messages)
     return True
 
 
