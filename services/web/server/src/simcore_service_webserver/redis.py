@@ -1,5 +1,4 @@
 import logging
-from typing import AsyncIterable
 
 import redis.asyncio as aioredis
 from aiohttp import web
@@ -26,7 +25,7 @@ def get_plugin_settings(app: web.Application) -> RedisSettings:
 
 
 # EVENTS --------------------------------------------------------------------------
-async def setup_redis_client(app: web.Application) -> AsyncIterable[None]:
+async def setup_redis_client(app: web.Application):
     """
 
     raises builtin ConnectionError
