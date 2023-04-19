@@ -99,7 +99,7 @@ def create_base_app(settings: AppSettings | None = None) -> FastAPI:
 
     logging.basicConfig(level=settings.LOG_LEVEL.value)
     logging.root.setLevel(settings.LOG_LEVEL.value)
-    config_all_loggers()
+    config_all_loggers(settings.DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED)
     logger.debug(settings.json(indent=2))
 
     # keep mostly quiet noisy loggers

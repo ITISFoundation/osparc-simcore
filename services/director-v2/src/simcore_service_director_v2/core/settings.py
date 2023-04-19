@@ -489,10 +489,13 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
         LogLevel.INFO.value,
         env=["DIRECTOR_V2_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
     )
-    DIRECTOR_V2_LOG_FORMAT_LOCAL_ENABLED: bool = Field(
+    DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         False,
-        env=["DIRECTOR_V2_LOG_FORMAT_LOCAL_ENABLED", "LOG_FORMAT_LOCAL_ENABLED"],
-        description="Enables local log format. WARNING: make sure it is disabled if you want to have structured logs!",
+        env=[
+            "DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED",
+            "LOG_FORMAT_LOCAL_DEV_ENABLED",
+        ],
+        description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
     DIRECTOR_V2_DEV_FEATURES_ENABLED: bool = False
 
