@@ -22,7 +22,6 @@ from .links import (
     DownloadLink,
     FileLink,
     ItemConcreteValue,
-    ItemConcreteValueTypes,
     ItemValue,
     PortLink,
 )
@@ -67,7 +66,6 @@ class SetKWargs:
 
 class Port(BaseServiceIOModel):
     key: str = Field(..., regex=PROPERTY_KEY_RE)
-    widget: dict[str, Any] | None = None
     default_value: DataItemValue | None = Field(None, alias="defaultValue")
 
     value: DataItemValue | None = None
@@ -80,8 +78,6 @@ class Port(BaseServiceIOModel):
     value_item: ItemValue | None = Field(None, exclude=True)
     value_concrete: ItemConcreteValue | None = Field(None, exclude=True)
 
-    # Types expected in _value_concrete
-    _py_value_type: tuple[ItemConcreteValueTypes, ...] = PrivateAttr()
     # Function to convert from ItemValue -> ItemConcreteValue
     _py_value_converter: Callable[[Any], ItemConcreteValue] = PrivateAttr()
     # Reference to the `NodePorts` instance that contains this port
@@ -142,11 +138,9 @@ class Port(BaseServiceIOModel):
         super().__init__(**data)
 
         if port_utils.is_file_type(self.property_type):
-            self._py_value_type = (Path, str)
             self._py_value_converter = Path
 
         elif self.property_type == "ref_contentSchema":
-            self._py_value_type = (int, float, bool, str, list[Any], dict[str, Any])
 
             def _converter(value: ItemConcreteValue) -> ItemConcreteValue:
                 return value
@@ -155,15 +149,12 @@ class Port(BaseServiceIOModel):
 
         else:
             assert self.property_type in TYPE_TO_PYTYPE  # nosec
-
-            self._py_value_type = (TYPE_TO_PYTYPE[self.property_type],)
             self._py_value_converter = TYPE_TO_PYTYPE[self.property_type]
 
             if self.value is None and self.default_value is not None:
                 self.value = self.default_value
                 self._used_default_value = True
 
-        assert self._py_value_type  # nosec
         assert self._py_value_converter  # nosec
 
     async def get_value(
