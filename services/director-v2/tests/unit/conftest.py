@@ -95,6 +95,11 @@ def request_scheme() -> str:
 
 
 @pytest.fixture
+def can_save() -> bool:
+    return True
+
+
+@pytest.fixture
 def request_simcore_user_agent() -> str:
     return "python/test"
 
@@ -107,6 +112,7 @@ def scheduler_data_from_http_request(
     request_dns: str,
     request_scheme: str,
     request_simcore_user_agent: str,
+    can_save: bool,
     run_id: RunID,
 ) -> SchedulerData:
     return SchedulerData.from_http_request(
@@ -116,6 +122,7 @@ def scheduler_data_from_http_request(
         request_dns=request_dns,
         request_scheme=request_scheme,
         request_simcore_user_agent=request_simcore_user_agent,
+        can_save=can_save,
         run_id=run_id,
     )
 

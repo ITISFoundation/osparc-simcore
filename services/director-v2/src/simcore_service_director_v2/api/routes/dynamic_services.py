@@ -142,6 +142,7 @@ async def create_dynamic_service(
             request_dns=x_dynamic_sidecar_request_dns,
             request_scheme=x_dynamic_sidecar_request_scheme,
             request_simcore_user_agent=x_simcore_user_agent,
+            can_save=service.can_save,
         )
 
     return cast(DynamicServiceGet, await scheduler.get_stack_status(service.node_uuid))
