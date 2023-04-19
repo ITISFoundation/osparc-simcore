@@ -52,10 +52,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         LogLevel.INFO.value,
         env=["CATALOG_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
     )
-    CATALOG_LOG_FORMAT_LOCAL_ENABLED: bool = Field(
+    CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         False,
-        env=["CATALOG_LOG_FORMAT_LOCAL_ENABLED", "LOG_FORMAT_LOCAL_ENABLED"],
-        description="Enables local log format. WARNING: make sure it is disabled if you want to have structured logs!",
+        env=["CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"],
+        description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
     CATALOG_DEV_FEATURES_ENABLED: bool = Field(
         False,

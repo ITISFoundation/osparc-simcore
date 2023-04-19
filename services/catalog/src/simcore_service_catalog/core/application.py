@@ -40,7 +40,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     assert settings  # nosec
     logging.basicConfig(level=settings.CATALOG_LOG_LEVEL.value)
     logging.root.setLevel(settings.CATALOG_LOG_LEVEL.value)
-    config_all_loggers()
+    config_all_loggers(settings.CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED)
     logger.debug(settings.json(indent=2))
 
     app = FastAPI(
