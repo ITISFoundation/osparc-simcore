@@ -66,6 +66,7 @@ class SetKWargs:
 
 class Port(BaseServiceIOModel):
     key: str = Field(..., regex=PROPERTY_KEY_RE)
+    widget: dict[str, Any] | None = None
     default_value: DataItemValue | None = Field(None, alias="defaultValue")
 
     value: DataItemValue | None = None

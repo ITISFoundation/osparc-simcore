@@ -75,6 +75,10 @@ async def _check_port_valid(
         assert port.file_to_key_map == port_schema["fileToKeyMap"]
     else:
         assert port.file_to_key_map is None
+    if "widget" in port_schema:
+        assert port.widget == port_schema["widget"]
+    else:
+        assert port.widget is None
 
     # check payload values
     port_values = config_dict[port_type]
