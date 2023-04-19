@@ -34,10 +34,13 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
     PENNSIEVE: PennsieveSettings = Field(auto_default_from_env=True)
 
     DATCORE_ADAPTER_TRACING: TracingSettings | None = Field(auto_default_from_env=True)
-    DATCORE_ADAPTER_LOG_FORMAT_LOCAL_ENABLED: bool = Field(
+    DATCORE_ADAPTER_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         False,
-        env=["DATCORE_ADAPTER_LOG_FORMAT_LOCAL_ENABLED", "LOG_FORMAT_LOCAL_ENABLED"],
-        description="Enables local log format. WARNING: make sure it is disabled if you want to have structured logs!",
+        env=[
+            "DATCORE_ADAPTER_LOG_FORMAT_LOCAL_DEV_ENABLED",
+            "LOG_FORMAT_LOCAL_DEV_ENABLED",
+        ],
+        description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
 
     @cached_property

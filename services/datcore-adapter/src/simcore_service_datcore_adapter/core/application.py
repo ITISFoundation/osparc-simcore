@@ -36,7 +36,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     logging.basicConfig(level=settings.LOG_LEVEL.value)
     logging.root.setLevel(settings.LOG_LEVEL.value)
-    config_all_loggers()
+    config_all_loggers(settings.DATCORE_ADAPTER_LOG_FORMAT_LOCAL_DEV_ENABLED)
 
     # keep mostly quiet noisy loggers
     quiet_level: int = max(
