@@ -237,8 +237,6 @@ async def _start_dynamic_service(
             user_id=user_id, project_uuid=f"{project_uuid}", permission="write"
         )
 
-    # NOTE: locking for as little as possible to avoid extra delays since this is
-    # using a global distributed lock
     lock_key = _nodes_utils.get_service_start_lock_key(user_id, project_uuid)
     redis_client_sdk = get_redis_lock_manager_client_sdk(request.app)
     project_settings: ProjectsSettings = get_plugin_settings(request.app)
