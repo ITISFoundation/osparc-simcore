@@ -15,10 +15,13 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
     SC_BOOT_MODE: BootModeEnum | None
 
-    AGENT_VOLUMES_LOG_FORMAT_LOCAL_ENABLED: bool = Field(
+    AGENT_VOLUMES_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         False,
-        env=["AGENT_VOLUMES_LOG_FORMAT_LOCAL_ENABLED", "LOG_FORMAT_LOCAL_ENABLED"],
-        description="Enables local log format. WARNING: make sure it is disabled if you want to have structured logs!",
+        env=[
+            "AGENT_VOLUMES_LOG_FORMAT_LOCAL_DEV_ENABLED",
+            "LOG_FORMAT_LOCAL_DEV_ENABLED",
+        ],
+        description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
     AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME: str = Field(
         ..., description="Exactly the same as director-v2's `SWARM_STACK_NAME` env var"
