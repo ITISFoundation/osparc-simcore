@@ -18,13 +18,18 @@ NOISY_LOGGERS = (
 )
 
 
-def setup_logging(*, level: str | int, slow_duration: float | None = None):
+def setup_logging(
+    *,
+    level: str | int,
+    slow_duration: float | None = None,
+    log_format_local_dev_enabled: bool = False
+):
     # service log level
     logging.basicConfig(level=level)
 
     # root
     logging.root.setLevel(level)
-    config_all_loggers()
+    config_all_loggers(log_format_local_dev_enabled)
 
     # Enforces same log-level to aiohttp & gunicorn access loggers
     #
