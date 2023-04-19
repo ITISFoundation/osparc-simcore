@@ -13,6 +13,7 @@ from models_library.users import UserID
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_decorator
+from servicelib.rabbitmq import RabbitMQClient
 from starlette import status
 from starlette.datastructures import URL
 from tenacity import RetryCallState, TryAgain
@@ -39,7 +40,6 @@ from ...modules.dynamic_sidecar.errors import (
     LegacyServiceIsNotSupportedError,
 )
 from ...modules.dynamic_sidecar.scheduler import DynamicSidecarsScheduler
-from ...modules.rabbitmq import RabbitMQClient
 from ...utils.routes import NoContentResponse
 from ..dependencies.director_v0 import DirectorV0Client, get_director_v0_client
 from ..dependencies.dynamic_services import (

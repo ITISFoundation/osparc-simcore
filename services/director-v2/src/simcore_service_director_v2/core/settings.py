@@ -38,7 +38,7 @@ from settings_library.catalog import CatalogSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
-from settings_library.r_clone import RCloneSettings
+from settings_library.r_clone import RCloneSettings as SettingsLibraryRCloneSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from settings_library.tracing import TracingSettings
@@ -92,10 +92,11 @@ class EnvoyLogLevel(StrAutoEnum):
     CRITICAL = auto()
 
     def to_log_level(self) -> str:
-        return self.value.lower()
+        lower_log_level: str = self.value.lower()
+        return lower_log_level
 
 
-class RCloneSettings(RCloneSettings):  # pylint: disable=function-redefined
+class RCloneSettings(SettingsLibraryRCloneSettings):
     R_CLONE_DIR_CACHE_TIME_SECONDS: PositiveInt = Field(
         10,
         description="time to cache directory entries for",
@@ -111,7 +112,7 @@ class RCloneSettings(RCloneSettings):  # pylint: disable=function-redefined
 
     @validator("R_CLONE_POLL_INTERVAL_SECONDS")
     @classmethod
-    def enforce_r_clone_requirement(cls, v, values) -> PositiveInt:
+    def enforce_r_clone_requirement(cls, v: int, values) -> PositiveInt:
         dir_cache_time = values["R_CLONE_DIR_CACHE_TIME_SECONDS"]
         if not v < dir_cache_time:
             raise ValueError(
@@ -128,12 +129,13 @@ class StorageSettings(BaseCustomSettings):
 
     @cached_property
     def endpoint(self) -> str:
-        return AnyHttpUrl.build(
+        url: str = AnyHttpUrl.build(
             scheme="http",
             host=self.STORAGE_HOST,
-            port=f"{self.STORAGE_PORT}",
             path=f"/{self.STORAGE_VTAG}",
+            port=f"{self.STORAGE_PORT}",
         )
+        return url
 
 
 class DirectorV0Settings(BaseCustomSettings):
@@ -147,12 +149,13 @@ class DirectorV0Settings(BaseCustomSettings):
 
     @cached_property
     def endpoint(self) -> str:
-        return AnyHttpUrl.build(
+        url: str = AnyHttpUrl.build(
             scheme="http",
             host=self.DIRECTOR_HOST,
             port=f"{self.DIRECTOR_PORT}",
             path=f"/{self.DIRECTOR_V0_VTAG}",
         )
+        return url
 
 
 class DynamicSidecarProxySettings(BaseCustomSettings):
@@ -385,12 +388,12 @@ class DynamicSidecarSettings(BaseCustomSettings):
 
     @validator("DYNAMIC_SIDECAR_IMAGE", pre=True)
     @classmethod
-    def strip_leading_slashes(cls, v) -> str:
+    def strip_leading_slashes(cls, v: str) -> str:
         return v.lstrip("/")
 
     @validator("DYNAMIC_SIDECAR_LOG_LEVEL")
     @classmethod
-    def validate_log_level(cls, v) -> str:
+    def validate_log_level(cls, v: str) -> str:
         valid_log_levels = {"DEBUG", "INFO", "WARNING", "ERROR"}
         if v not in valid_log_levels:
             raise ValueError(f"Log level must be one of {valid_log_levels} not {v}")
@@ -463,7 +466,7 @@ class ComputationalBackendSettings(BaseCustomSettings):
     )
 
     @cached_property
-    def default_cluster(self):
+    def default_cluster(self) -> Cluster:
         return Cluster(
             id=DEFAULT_CLUSTER_ID,
             name="Default cluster",
@@ -471,7 +474,7 @@ class ComputationalBackendSettings(BaseCustomSettings):
             authentication=self.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH,
             owner=1,  # NOTE: currently this is a soft hack (the group of everyone is the group 1)
             type=ClusterType.ON_PREMISE,
-        )  # type: ignore
+        )
 
     @validator("COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH", pre=True)
     def empty_auth_is_none(v):
@@ -585,5 +588,6 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
 
     @validator("LOG_LEVEL", pre=True)
     @classmethod
-    def _validate_loglevel(cls, value) -> str:
-        return cls.validate_log_level(value)
+    def _validate_loglevel(cls, value: str) -> str:
+        log_level: str = cls.validate_log_level(value)
+        return log_level
