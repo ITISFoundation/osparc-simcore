@@ -1,3 +1,8 @@
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+# pylint:disable=no-value-for-parameter
+
 from typing import Any, Callable, Iterator
 from uuid import uuid4
 
@@ -5,6 +10,7 @@ import pytest
 import sqlalchemy as sa
 from faker import Faker
 from models_library.projects import ProjectAtDB
+from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipeline
 from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
 
@@ -86,3 +92,39 @@ def project(
     with postgres_db.connect() as con:
         con.execute(projects.delete().where(projects.c.uuid.in_(created_project_ids)))
     print(f"<-- delete projects {created_project_ids=}")
+
+
+@pytest.fixture
+def pipeline(
+    postgres_db: sa.engine.Engine,
+) -> Iterator[Callable[..., dict[str, Any]]]:
+    created_pipeline_ids: list[str] = []
+
+    def creator(**pipeline_kwargs) -> dict[str, Any]:
+        pipeline_config = {
+            "project_id": f"{uuid4()}",
+            "dag_adjacency_list": {},
+            "state": StateType.NOT_STARTED,
+        }
+        pipeline_config.update(**pipeline_kwargs)
+        with postgres_db.connect() as conn:
+            result = conn.execute(
+                comp_pipeline.insert()
+                .values(**pipeline_config)
+                .returning(sa.literal_column("*"))
+            )
+            new_pipeline = result.first()
+            assert new_pipeline
+            new_pipeline = dict(new_pipeline)
+            created_pipeline_ids.append(new_pipeline["project_id"])
+            return new_pipeline
+
+    yield creator
+
+    # cleanup
+    with postgres_db.connect() as conn:
+        conn.execute(
+            comp_pipeline.delete().where(
+                comp_pipeline.c.project_id.in_(created_pipeline_ids)
+            )
+        )
