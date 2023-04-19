@@ -477,6 +477,11 @@ async def update_project_node_progress(
     return updated_project
 
 
+async def is_project_hidden(app: web.Application, project_id: ProjectID) -> bool:
+    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    return await db.is_hidden(project_id)
+
+
 async def update_project_node_outputs(
     app: web.Application,
     user_id: int,
@@ -1083,6 +1088,8 @@ async def notify_project_state_update(
     project: dict,
     notify_only_user: int | None = None,
 ) -> None:
+    if await is_project_hidden(app, ProjectID(project["uuid"])):
+        return
     messages: list[SocketMessageDict] = [
         {
             "event_type": SOCKET_IO_PROJECT_UPDATED_EVENT,
@@ -1111,6 +1118,9 @@ async def notify_project_node_update(
     node_id: str,
     errors: list[ErrorDict] | None,
 ) -> None:
+    if await is_project_hidden(app, ProjectID(project["uuid"])):
+        return
+
     rooms_to_notify = [
         f"{gid}" for gid, rights in project["accessRights"].items() if rights["read"]
     ]

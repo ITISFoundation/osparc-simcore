@@ -28,7 +28,6 @@ attrs==21.4.0
     #   aiohttp
     #   hypothesis
     #   jsonschema
-    #   pytest
     #   pytest-docker
 certifi==2022.12.7
     # via
@@ -47,13 +46,13 @@ coverage==7.2.3
     #   pytest-cov
 docker==6.0.1
     # via -r requirements/_test.in
-exceptiongroup==1.1.0
+exceptiongroup==1.1.1
     # via
     #   hypothesis
     #   pytest
 execnet==1.9.0
     # via pytest-xdist
-faker==17.4.0
+faker==18.4.0
     # via -r requirements/_test.in
 flaky==3.7.0
     # via -r requirements/_test.in
@@ -66,7 +65,7 @@ greenlet==2.0.2
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
-hypothesis==6.68.2
+hypothesis==6.72.0
     # via -r requirements/_test.in
 icdiff==2.0.6
     # via pytest-icdiff
@@ -95,7 +94,7 @@ multidict==6.0.2
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-mypy==1.1.1
+mypy==1.2.0
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
@@ -123,7 +122,7 @@ pyrsistent==0.18.1
     # via
     #   -c requirements/_base.txt
     #   jsonschema
-pytest==7.2.1
+pytest==7.3.1
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -137,7 +136,7 @@ pytest==7.2.1
     #   pytest-xdist
 pytest-aiohttp==1.0.4
     # via -r requirements/_test.in
-pytest-asyncio==0.20.3
+pytest-asyncio==0.21.0
     # via pytest-aiohttp
 pytest-cov==4.0.0
     # via -r requirements/_test.in
@@ -145,15 +144,15 @@ pytest-docker==1.0.1
     # via -r requirements/_test.in
 pytest-icdiff==0.6
     # via -r requirements/_test.in
-pytest-instafail==0.4.2
+pytest-instafail==0.5.0
     # via -r requirements/_test.in
 pytest-mock==3.10.0
     # via -r requirements/_test.in
 pytest-runner==6.0.0
     # via -r requirements/_test.in
-pytest-sugar==0.9.6
+pytest-sugar==0.9.7
     # via -r requirements/_test.in
-pytest-xdist==3.2.0
+pytest-xdist==3.2.1
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via
@@ -182,7 +181,7 @@ sqlalchemy==1.4.47
     # via
     #   -r requirements/_test.in
     #   alembic
-sqlalchemy2-stubs==0.0.2a32
+sqlalchemy2-stubs==0.0.2a33
     # via sqlalchemy
 tenacity==8.0.1
     # via -r requirements/_test.in
@@ -205,7 +204,7 @@ urllib3==1.26.11
     #   requests
 websocket-client==1.5.1
     # via docker
-websockets==10.4
+websockets==11.0.1
     # via -r requirements/_test.in
 yarl==1.5.1
     # via

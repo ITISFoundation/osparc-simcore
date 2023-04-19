@@ -7,12 +7,13 @@ import json
 import logging
 from contextlib import suppress
 from pprint import pformat
-from typing import Optional
 
 from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from models_library.errors import ErrorDict
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeIDStr
 from models_library.projects_state import RunningState
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
@@ -37,18 +38,18 @@ async def _get_project_owner(conn: SAConnection, project_uuid: str) -> PositiveI
     return the_project_owner
 
 
-@log_decorator(logger=log)
 async def _update_project_state(
     app: web.Application,
     user_id: PositiveInt,
     project_uuid: str,
     node_uuid: str,
     new_state: RunningState,
-    node_errors: Optional[list[ErrorDict]],
+    node_errors: list[ErrorDict] | None,
 ) -> None:
     project = await projects_api.update_project_node_state(
         app, user_id, project_uuid, node_uuid, new_state
     )
+
     await projects_api.notify_project_node_update(app, project, node_uuid, node_errors)
     await projects_api.notify_project_state_update(app, project)
 
@@ -57,6 +58,7 @@ async def listen(app: web.Application, db_engine: Engine):
     listen_query = f"LISTEN {DB_CHANNEL_NAME};"
     _LISTENING_TASK_BASE_SLEEPING_TIME_S = 1
     async with db_engine.acquire() as conn:
+        assert conn.connection  # nosec
         await conn.execute(listen_query)
 
         while True:
@@ -104,8 +106,8 @@ async def listen(app: web.Application, db_engine: Engine):
                     await update_node_outputs(
                         app,
                         the_project_owner,
-                        project_uuid,
-                        node_uuid,
+                        ProjectID(project_uuid),
+                        NodeIDStr(node_uuid),
                         new_outputs,
                         new_run_hash,
                         node_errors=task_data.get("errors", None),

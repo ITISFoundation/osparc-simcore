@@ -4,13 +4,13 @@
 #
 #    pip-compile --output-file=requirements/_base.txt --resolver=backtracking --strip-extras requirements/_base.in
 #
-aio-pika==9.0.4
+aio-pika==9.0.5
     # via -r requirements/_base.in
 aiodebug==2.3.0
     # via -r requirements/_base.in
 aiofiles==23.1.0
     # via -r requirements/_base.in
-aiormq==6.7.2
+aiormq==6.7.4
     # via aio-pika
 arrow==1.2.3
     # via -r requirements/_base.in
@@ -36,7 +36,7 @@ six==1.16.0
     # via python-dateutil
 tenacity==8.2.2
     # via -r requirements/_base.in
-tqdm==4.64.1
+tqdm==4.65.0
     # via -r requirements/_base.in
 typing-extensions==4.5.0
     # via

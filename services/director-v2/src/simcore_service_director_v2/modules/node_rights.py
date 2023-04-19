@@ -20,14 +20,23 @@ ResourceName = str
 logger = logging.getLogger(__name__)
 
 
+def node_resource_limits_enabled(app: FastAPI) -> bool:
+    dynamic_sidecar_settings: DynamicSidecarSettings = (
+        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+    )
+    return dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED
+
+
 def setup(app: FastAPI):
     async def on_startup() -> None:
-        app.state.node_rights_manager = await NodeRightsManager.create(app)
-        await app.state.node_rights_manager.redis_client_sdk.setup()
+        if node_resource_limits_enabled(app):
+            app.state.node_rights_manager = await NodeRightsManager.create(app)
+            await app.state.node_rights_manager.redis_client_sdk.setup()
 
     async def on_shutdown() -> None:
-        node_rights_manager: NodeRightsManager = app.state.node_rights_manager
-        await node_rights_manager.close()
+        if node_resource_limits_enabled(app):
+            node_rights_manager: NodeRightsManager = app.state.node_rights_manager
+            await node_rights_manager.close()
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)

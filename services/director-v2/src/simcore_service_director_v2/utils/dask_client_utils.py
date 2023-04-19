@@ -12,7 +12,6 @@ from aiohttp import ClientConnectionError, ClientResponseError
 from dask_task_models_library.container_tasks.events import (
     TaskLogEvent,
     TaskProgressEvent,
-    TaskStateEvent,
 )
 from models_library.clusters import (
     ClusterAuthentication,
@@ -38,7 +37,6 @@ DaskGatewayAuths = Union[
 
 @dataclass
 class TaskHandlers:
-    task_change_handler: Callable[[str], Awaitable[None]]
     task_progress_handler: Callable[[str], Awaitable[None]]
     task_log_handler: Callable[[str], Awaitable[None]]
 
@@ -52,14 +50,10 @@ class DaskSubSystem:
     scheduler_id: str
     gateway: dask_gateway.Gateway | None
     gateway_cluster: dask_gateway.GatewayCluster | None
-    state_sub: distributed.Sub = field(init=False)
     progress_sub: distributed.Sub = field(init=False)
     logs_sub: distributed.Sub = field(init=False)
 
     def __post_init__(self) -> None:
-        self.state_sub = distributed.Sub(
-            TaskStateEvent.topic_name(), client=self.client
-        )
         self.progress_sub = distributed.Sub(
             TaskProgressEvent.topic_name(), client=self.client
         )
@@ -90,7 +84,7 @@ async def _connect_to_dask_scheduler(endpoint: AnyUrl) -> DaskSubSystem:
             gateway=None,
             gateway_cluster=None,
         )
-    except (TypeError) as exc:
+    except TypeError as exc:
         raise ConfigurationError(
             f"Scheduler has invalid configuration: {endpoint=}"
         ) from exc
@@ -145,17 +139,17 @@ async def _connect_with_gateway_and_create_cluster(
                 await gateway.close()
             raise exc
 
-    except (TypeError) as exc:
+    except TypeError as exc:
         raise ConfigurationError(
             f"Cluster has invalid configuration: {endpoint=}, {auth_params=}"
         ) from exc
-    except (ValueError) as exc:
+    except ValueError as exc:
         # this is when a 404=NotFound,422=MalformedData comes up
         raise DaskClientRequestError(endpoint=endpoint, error=exc) from exc
-    except (dask_gateway.GatewayClusterError) as exc:
+    except dask_gateway.GatewayClusterError as exc:
         # this is when a 409=Conflict/Cannot complete request comes up
         raise DaskClusterError(endpoint=endpoint, error=exc) from exc
-    except (dask_gateway.GatewayServerError) as exc:
+    except dask_gateway.GatewayServerError as exc:
         # this is when a 500 comes up
         raise DaskGatewayServerError(endpoint=endpoint, error=exc) from exc
 

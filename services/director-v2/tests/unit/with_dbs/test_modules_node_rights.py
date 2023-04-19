@@ -70,6 +70,7 @@ async def minimal_app(
 ) -> AsyncIterable[FastAPI]:
     monkeypatch.setenv("REDIS_HOST", redis_settings.REDIS_HOST)
     monkeypatch.setenv("REDIS_PORT", f"{redis_settings.REDIS_PORT}")
+    monkeypatch.setenv("DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED", "true")
 
     app = FastAPI()
 

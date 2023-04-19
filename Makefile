@@ -88,8 +88,10 @@ endif
 get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
 
 # NOTE: this is only for WSL2 as the WSL2 subsystem IP is changing on each reboot
+ifeq ($(IS_WSL2),WSL2)
 S3_ENDPOINT := $(get_my_ip):9001
 export S3_ENDPOINT
+endif
 
 # Check that given variables are set and all have non-empty values,
 # die with an error otherwise.
