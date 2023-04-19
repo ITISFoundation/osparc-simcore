@@ -9,11 +9,11 @@
 
 import asyncio
 import contextlib
+import datetime
 import json
 import logging
 from collections import defaultdict
 from contextlib import suppress
-from datetime import datetime
 from pprint import pformat
 from typing import Any
 from uuid import UUID, uuid4
@@ -51,8 +51,8 @@ from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_postgres_database.webserver_models import ProjectType
 
 from .. import catalog_client, director_v2_api, storage_api
-from ..application_settings import get_settings
 from ..products import get_product_name
+from ..redis import get_redis_lock_manager_client_sdk
 from ..resource_manager.websocket_manager import (
     PROJECT_ID_KEY,
     UserSessionID,
@@ -67,7 +67,7 @@ from ..socketio.events import (
 )
 from ..users_api import UserRole, get_user_name, get_user_role
 from ..users_exceptions import UserNotFoundError
-from . import _delete
+from . import _delete, _nodes_utils
 from .project_lock import (
     UserNameDict,
     get_project_locked_state,
@@ -81,6 +81,7 @@ from .projects_exceptions import (
     ProjectStartsTooManyDynamicNodes,
     ProjectTooManyProjectOpened,
 )
+from .projects_settings import ProjectsSettings, get_plugin_settings
 from .projects_utils import extract_dns_without_default_port
 
 log = logging.getLogger(__name__)
@@ -221,50 +222,57 @@ async def _start_dynamic_service(
     user_id: UserID,
     project_uuid: ProjectID,
     node_uuid: NodeID,
-):
+) -> None:
     if not _is_node_dynamic(service_key):
         return
-    project_running_nodes = await director_v2_api.list_dynamic_services(
-        request.app, user_id, f"{project_uuid}"
-    )
-
-    project_settings = get_settings(request.app).WEBSERVER_PROJECTS
-    assert project_settings  # nosec
-    if project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES > 0 and (
-        len(project_running_nodes)
-        >= project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
-    ):
-        raise ProjectStartsTooManyDynamicNodes(
-            user_id=user_id, project_uuid=project_uuid
-        )
 
     # this is a dynamic node, let's gather its resources and start it
-    service_resources: ServiceResourcesDict = await get_project_node_resources(
-        request.app,
-        user_id=user_id,
-        project={
-            "workbench": {
-                f"{node_uuid}": {"key": service_key, "version": service_version}
-            }
-        },
-        node_id=node_uuid,
-    )
 
-    await director_v2_api.run_dynamic_service(
-        app=request.app,
-        product_name=product_name,
-        project_id=f"{project_uuid}",
-        user_id=user_id,
-        service_key=service_key,
-        service_version=service_version,
-        service_uuid=f"{node_uuid}",
-        request_dns=extract_dns_without_default_port(request.url),
-        request_scheme=request.headers.get(X_FORWARDED_PROTO, request.url.scheme),
-        simcore_user_agent=request.headers.get(
-            X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+    lock_key = _nodes_utils.get_service_start_lock_key(user_id, project_uuid)
+    redis_client_sdk = get_redis_lock_manager_client_sdk(request.app)
+    project_settings: ProjectsSettings = get_plugin_settings(request.app)
+
+    async with redis_client_sdk.lock_context(
+        lock_key,
+        blocking=True,
+        blocking_timeout_s=_nodes_utils.get_total_project_dynamic_nodes_creation_interval(
+            project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
         ),
-        service_resources=service_resources,
-    )
+    ):
+        project_running_nodes = await director_v2_api.list_dynamic_services(
+            request.app, user_id, f"{project_uuid}"
+        )
+        _nodes_utils.check_num_service_per_projects_limit(
+            app=request.app,
+            number_of_services=len(project_running_nodes),
+            user_id=user_id,
+            project_uuid=project_uuid,
+        )
+        service_resources: ServiceResourcesDict = await get_project_node_resources(
+            request.app,
+            user_id=user_id,
+            project={
+                "workbench": {
+                    f"{node_uuid}": {"key": service_key, "version": service_version}
+                }
+            },
+            node_id=node_uuid,
+        )
+        await director_v2_api.run_dynamic_service(
+            app=request.app,
+            product_name=product_name,
+            project_id=f"{project_uuid}",
+            user_id=user_id,
+            service_key=service_key,
+            service_version=service_version,
+            service_uuid=f"{node_uuid}",
+            request_dns=extract_dns_without_default_port(request.url),
+            request_scheme=request.headers.get(X_FORWARDED_PROTO, request.url.scheme),
+            simcore_user_agent=request.headers.get(
+                X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+            ),
+            service_resources=service_resources,
+        )
 
 
 async def add_project_node(
@@ -891,8 +899,8 @@ async def is_service_deprecated(
         app, user_id, service_key, service_version, product_name
     )
     if deprecation_date := service.get("deprecated"):
-        deprecation_date = parse_obj_as(datetime, deprecation_date)
-        return datetime.utcnow() > deprecation_date
+        deprecation_date = parse_obj_as(datetime.datetime, deprecation_date)
+        return datetime.datetime.utcnow() > deprecation_date
     return False
 
 
@@ -944,8 +952,7 @@ async def run_project_dynamic_services(
     product_name: str,
 ) -> None:
     # first get the services if they already exist
-    project_settings = get_settings(request.app).WEBSERVER_PROJECTS
-    assert project_settings  # nosec
+    project_settings: ProjectsSettings = get_plugin_settings(request.app)
     running_service_uuids: list[NodeIDStr] = [
         d["service_uuid"]
         for d in await director_v2_api.list_dynamic_services(

@@ -186,7 +186,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         self._schedule_all_ports_for_upload = True
 
     async def start(self) -> None:
-        self._task_scheduler_worker = await start_periodic_task(
+        self._task_scheduler_worker = start_periodic_task(
             self._scheduler_worker,
             interval=timedelta(seconds=self.task_monitor_interval_s),
             task_name="outputs_manager_scheduler_worker",
