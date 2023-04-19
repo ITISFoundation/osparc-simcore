@@ -11,7 +11,7 @@ from simcore_service_autoscaling.core.settings import ApplicationSettings
 the_settings = ApplicationSettings.create_from_envs()
 logging.basicConfig(level=the_settings.log_level)
 logging.root.setLevel(the_settings.log_level)
-config_all_loggers()
+config_all_loggers(the_settings.AUTOSCALING_LOG_FORMAT_LOCAL_DEV_ENABLED)
 
 # SINGLETON FastAPI app
 the_app: FastAPI = create_app(the_settings)

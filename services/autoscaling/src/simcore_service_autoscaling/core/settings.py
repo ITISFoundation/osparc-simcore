@@ -167,10 +167,13 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     AUTOSCALING_LOGLEVEL: LogLevel = Field(
         LogLevel.INFO, env=["AUTOSCALING_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
     )
-    AUTOSCALING_LOG_FORMAT_LOCAL_ENABLED: bool = Field(
+    AUTOSCALING_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         False,
-        env=["AUTOSCALING_LOG_FORMAT_LOCAL_ENABLED", "LOG_FORMAT_LOCAL_ENABLED"],
-        description="Enables local log format. WARNING: make sure it is disabled if you want to have structured logs!",
+        env=[
+            "AUTOSCALING_LOG_FORMAT_LOCAL_DEV_ENABLED",
+            "LOG_FORMAT_LOCAL_DEV_ENABLED",
+        ],
+        description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
 
     AUTOSCALING_EC2_ACCESS: EC2Settings | None = Field(auto_default_from_env=True)
