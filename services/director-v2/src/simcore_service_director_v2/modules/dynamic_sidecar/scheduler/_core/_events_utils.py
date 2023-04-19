@@ -195,6 +195,7 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
                 rabbitmq_client=rabbitmq_client,
                 volume_names=unique_volume_names,
                 docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,
+                swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
                 volume_remove_timeout_s=dynamic_sidecar_settings.DYNAMIC_SIDECAR_VOLUME_REMOVE_TIMEOUT_S,
                 connection_error_timeout_s=dynamic_sidecar_settings.DYNAMIC_SIDECAR_RABBITMQ_CONNECTION_ERROR_TIMEOUT_S,
             )

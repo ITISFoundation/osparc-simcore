@@ -37,6 +37,11 @@ async def target_node_id(async_docker_client: aiodocker.Docker) -> str:
 
 
 @pytest.fixture
+def swarm_stack_name() -> str:
+    return "test_stack_name"
+
+
+@pytest.fixture
 async def named_volumes(
     async_docker_client: aiodocker.Docker, faker: Faker
 ) -> AsyncIterator[list[str]]:
@@ -90,6 +95,7 @@ async def test_remove_volume_from_node_ok(
     async_docker_client: aiodocker.Docker,
     named_volumes: list[str],
     target_node_id: str,
+    swarm_stack_name: str,
 ):
     for named_volume in named_volumes:
         assert await is_volume_present(async_docker_client, named_volume) is True
@@ -98,6 +104,7 @@ async def test_remove_volume_from_node_ok(
         rabbitmq_client=rabbitmq_client,
         volume_names=named_volumes,
         docker_node_id=target_node_id,
+        swarm_stack_name=swarm_stack_name,
         volume_remove_timeout_s=DEFAULT_VOLUME_REMOVE_TIMEOUT_S,
         connection_error_timeout_s=DEFAULT_CONNECTION_ERROR_TIMEOUT_S,
     )
@@ -112,6 +119,7 @@ async def test_remove_volume_from_node_no_volume_found(
     async_docker_client: aiodocker.Docker,
     named_volumes: list[str],
     target_node_id: str,
+    swarm_stack_name: str,
 ):
     missing_volume_name = "nope-i-am-fake-and-do-not-exist"
     assert await is_volume_present(async_docker_client, missing_volume_name) is False
@@ -131,6 +139,7 @@ async def test_remove_volume_from_node_no_volume_found(
             rabbitmq_client=rabbitmq_client,
             volume_names=volumes_to_remove,
             docker_node_id=target_node_id,
+            swarm_stack_name=swarm_stack_name,
             volume_remove_timeout_s=DEFAULT_VOLUME_REMOVE_TIMEOUT_S,
             connection_error_timeout_s=DEFAULT_CONNECTION_ERROR_TIMEOUT_S,
         )

@@ -4,7 +4,11 @@ from typing import Optional, cast
 
 from fastapi import FastAPI
 from servicelib.rabbitmq import RabbitMQClient
-from servicelib.rabbitmq_utils import RPCNamespace, wait_till_rabbitmq_responsive
+from servicelib.rabbitmq_utils import (
+    RPCMethodName,
+    RPCNamespace,
+    wait_till_rabbitmq_responsive,
+)
 from settings_library.rabbit import RabbitSettings
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -96,11 +100,15 @@ def setup(app: FastAPI) -> None:
         rabbit_client = _get_rabbitmq_client(app)
 
         namespace = RPCNamespace.from_entries(
-            {"service": "agent", "docker_node_id": settings.AGENT_DOCKER_NODE_ID}
+            {
+                "service": "agent",
+                "docker_node_id": settings.AGENT_DOCKER_NODE_ID,
+                "swarm_stack_name": settings.AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME,
+            }
         )
         await rabbit_client.rpc_register_handler(
             namespace=namespace,
-            method_name="remove_volumes",
+            method_name=RPCMethodName("remove_volumes"),
             handler=remove_volumes,
         )
 
