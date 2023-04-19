@@ -22,7 +22,7 @@ def setup_logging(
     *,
     level: str | int,
     slow_duration: float | None = None,
-    log_format_local_dev_enabled: bool = False
+    log_format_local_dev_enabled: bool
 ):
     # service log level
     logging.basicConfig(level=level)
