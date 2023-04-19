@@ -220,7 +220,7 @@ pyyaml==5.4.1
     #   moto
     #   openapi-spec-validator
     #   responses
-redis==4.5.1
+redis==4.5.4
     # via
     #   -c requirements/_base.txt
     #   fakeredis

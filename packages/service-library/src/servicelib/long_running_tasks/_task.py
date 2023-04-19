@@ -23,7 +23,7 @@ from ._models import TaskId, TaskName, TaskProgress, TaskResult, TaskStatus, Tra
 logger = logging.getLogger(__name__)
 
 
-async def _await_task(task: asyncio.Task):
+async def _await_task(task: asyncio.Task) -> None:
     await task
 
 

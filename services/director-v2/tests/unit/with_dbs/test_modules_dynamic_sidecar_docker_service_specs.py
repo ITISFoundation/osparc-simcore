@@ -116,7 +116,7 @@ def expected_dynamic_sidecar_spec(
                         "is_service_environment_ready": False,
                         "service_removal_state": {
                             "can_remove": False,
-                            "can_save": None,
+                            "can_save": True,
                             "was_removed": False,
                         },
                         "status": {"current": "ok", "info": ""},

@@ -20,6 +20,10 @@ from ..models.shared_store import SharedStore, setup_shared_store
 from ..modules.attribute_monitor import setup_attribute_monitor
 from ..modules.mounted_fs import MountedVolumes, setup_mounted_fs
 from ..modules.outputs import setup_outputs
+from ..modules.volume_files import (
+    create_agent_file_on_all_volumes,
+    create_hidden_file_on_all_volumes,
+)
 from .docker_compose_utils import docker_compose_down
 from .docker_logs import setup_background_log_fetcher
 from .error_handlers import http_error_handler, node_not_found_error_handler
@@ -27,7 +31,7 @@ from .errors import BaseDynamicSidecarError
 from .rabbitmq import setup_rabbitmq
 from .remote_debug import setup as remote_debug_setup
 from .settings import ApplicationSettings
-from .utils import login_registry, volumes_fix_permissions
+from .utils import login_registry
 
 logger = logging.getLogger(__name__)
 
@@ -168,7 +172,8 @@ def create_app():
 
         app_state = AppState(app)
         await login_registry(app_state.settings.REGISTRY_SETTINGS)
-        await volumes_fix_permissions(app_state.mounted_volumes)
+        await create_hidden_file_on_all_volumes(app_state.mounted_volumes)
+        await create_agent_file_on_all_volumes(app_state.mounted_volumes)
         # STARTED
         print(APP_STARTED_BANNER_MSG, flush=True)
 

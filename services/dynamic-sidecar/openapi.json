@@ -658,6 +658,50 @@
           }
         }
       }
+    },
+    "/v1/volumes/{id}": {
+      "put": {
+        "tags": [
+          "volumes"
+        ],
+        "summary": "Updates the state of the volume",
+        "operationId": "put_volume_state_v1_volumes__id__put",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/VolumeCategory"
+            },
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PutVolumeItem"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -765,6 +809,18 @@
           "is_enabled": {
             "title": "Is Enabled",
             "type": "boolean"
+          }
+        }
+      },
+      "PutVolumeItem": {
+        "title": "PutVolumeItem",
+        "required": [
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/VolumeStatus"
           }
         }
       },
@@ -926,6 +982,27 @@
             "type": "string"
           }
         }
+      },
+      "VolumeCategory": {
+        "title": "VolumeCategory",
+        "enum": [
+          "OUTPUTS",
+          "INPUTS",
+          "STATES",
+          "SHARED_STORE"
+        ],
+        "type": "string",
+        "description": "These uniquely identify volumes which are mounted by\nthe dynamic-sidecar and user services.\n\nThis is primarily used to keep track of the status of\neach individual volume on the volumes.\n\nThe status is ingested by the agent and processed\nwhen the volume is removed."
+      },
+      "VolumeStatus": {
+        "title": "VolumeStatus",
+        "enum": [
+          "CONTENT_NEEDS_TO_BE_SAVED",
+          "CONTENT_WAS_SAVED",
+          "CONTENT_NO_SAVE_REQUIRED"
+        ],
+        "type": "string",
+        "description": "An enumeration."
       },
       "Widget": {
         "title": "Widget",

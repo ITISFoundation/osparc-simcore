@@ -25,7 +25,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
                 "node_labels": app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
             }
         )
-        app.state.autoscaler_task = await start_periodic_task(
+        app.state.autoscaler_task = start_periodic_task(
             exclusive(get_redis_client(app), lock_key=lock_key, lock_value=lock_value)(
                 cluster_scaling_from_labelled_services
             ),
