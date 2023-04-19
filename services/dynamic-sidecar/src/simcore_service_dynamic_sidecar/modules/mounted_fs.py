@@ -100,9 +100,15 @@ class MountedVolumes:
         """
         Creates directories on its file system, these will be mounted by the user services.
         """
-        _ensure_path(self._dy_volumes)
-        for path in self.all_disk_paths():
+        for path in (
+            self._dy_volumes,
+            self.disk_shared_store_path,
+            self.disk_inputs_path,
+            self.disk_outputs_path,
+        ):
             _ensure_path(path)
+        for state_path in self.disk_state_paths():
+            _ensure_path(state_path)
 
     @staticmethod
     async def _get_bind_path_from_label(label: str, run_id: RunID) -> Path:
