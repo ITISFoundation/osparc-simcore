@@ -36,7 +36,11 @@ from .....utils.db import get_repository
 from ....db.repositories.projects import ProjectsRepository
 from ....db.repositories.projects_networks import ProjectsNetworksRepository
 from ....director_v0 import DirectorV0Client
-from ....node_rights import NodeRightsManager, ResourceName
+from ....node_rights import (
+    NodeRightsManager,
+    ResourceName,
+    node_resource_limits_enabled,
+)
 from ....rabbitmq import RabbitMQClient
 from ...api_client import (
     BaseClientHTTPError,
@@ -300,8 +304,8 @@ async def attempt_pod_removal_and_data_saving(
                 )
                 raise e
 
-    if dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED:
-        node_rights_manager = NodeRightsManager.instance(app)
+    if node_resource_limits_enabled(app):
+        node_rights_manager = await NodeRightsManager.instance(app)
         assert scheduler_data.dynamic_sidecar.docker_node_id  # nosec
         try:
             async with node_rights_manager.acquire(
@@ -403,9 +407,6 @@ async def prepare_services_environment(
     app_settings: AppSettings = app.state.settings
     dynamic_sidecar_client = get_dynamic_sidecar_client(app, scheduler_data.node_uuid)
     dynamic_sidecar_endpoint = scheduler_data.endpoint
-    dynamic_sidecar_settings: DynamicSidecarSettings = (
-        app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-    )
 
     async def _pull_outputs_and_state():
         tasks = [
@@ -442,8 +443,8 @@ async def prepare_services_environment(
 
         scheduler_data.dynamic_sidecar.is_service_environment_ready = True
 
-    if dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED:
-        node_rights_manager = NodeRightsManager.instance(app)
+    if node_resource_limits_enabled(app):
+        node_rights_manager = await NodeRightsManager.instance(app)
         assert scheduler_data.dynamic_sidecar.docker_node_id  # nosec
         try:
             async with node_rights_manager.acquire(
