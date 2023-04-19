@@ -1,9 +1,9 @@
 import asyncio
 import logging
-from typing import Coroutine, Optional, Union, cast
+from typing import Coroutine, cast
 
 import httpx
-from fastapi import APIRouter, Depends, Header, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
@@ -12,6 +12,7 @@ from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.json_serialization import json_dumps
+from servicelib.rabbitmq import RabbitMQClient
 from starlette import status
 from starlette.datastructures import URL
 from tenacity import RetryCallState, TryAgain
@@ -38,7 +39,6 @@ from ...modules.dynamic_sidecar.errors import (
     LegacyServiceIsNotSupportedError,
 )
 from ...modules.dynamic_sidecar.scheduler import DynamicSidecarsScheduler
-from ...modules.rabbitmq import RabbitMQClient
 from ...utils.logging_utils import log_decorator
 from ...utils.routes import NoContentResponse
 from ..dependencies.director_v0 import DirectorV0Client, get_director_v0_client
@@ -65,8 +65,8 @@ logger = logging.getLogger(__name__)
     ),
 )
 async def list_tracked_dynamic_services(
-    user_id: Optional[UserID] = None,
-    project_id: Optional[ProjectID] = None,
+    user_id: UserID | None = None,
+    project_id: ProjectID | None = None,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
 ) -> list[DynamicServiceGet]:
@@ -101,13 +101,13 @@ async def create_dynamic_service(
     service: DynamicServiceCreate,
     x_dynamic_sidecar_request_dns: str = Header(...),
     x_dynamic_sidecar_request_scheme: str = Header(...),
+    x_simcore_user_agent: str = Header(...),
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     dynamic_services_settings: DynamicServicesSettings = Depends(
         get_dynamic_services_settings
     ),
     scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
-) -> Union[DynamicServiceGet, RedirectResponse]:
-
+) -> DynamicServiceGet | RedirectResponse:
     simcore_service_labels: SimcoreServiceLabels = (
         await director_v0_client.get_service_labels(
             service=ServiceKeyVersion(key=service.key, version=service.version)
@@ -141,6 +141,8 @@ async def create_dynamic_service(
             port=dynamic_services_settings.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_PORT,
             request_dns=x_dynamic_sidecar_request_dns,
             request_scheme=x_dynamic_sidecar_request_scheme,
+            request_simcore_user_agent=x_simcore_user_agent,
+            can_save=service.can_save,
         )
 
     return cast(DynamicServiceGet, await scheduler.get_stack_status(service.node_uuid))
@@ -155,8 +157,7 @@ async def get_dynamic_sidecar_status(
     node_uuid: NodeID,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
-) -> Union[DynamicServiceGet, RedirectResponse]:
-
+) -> DynamicServiceGet | RedirectResponse:
     try:
         return cast(DynamicServiceGet, await scheduler.get_stack_status(node_uuid))
     except DynamicSidecarNotFoundError:
@@ -171,20 +172,21 @@ async def get_dynamic_sidecar_status(
 
 @router.delete(
     "/{node_uuid}",
-    responses={204: {"model": None}},
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
     summary="stops previously spawned dynamic-sidecar",
 )
 @cancel_on_disconnect
 async def stop_dynamic_service(
     request: Request,
     node_uuid: NodeID,
-    can_save: Optional[bool] = True,
+    can_save: bool | None = True,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
     dynamic_services_settings: DynamicServicesSettings = Depends(
         get_dynamic_services_settings
     ),
-) -> Union[NoContentResponse, RedirectResponse]:
+) -> NoContentResponse | RedirectResponse:
     assert request  # nosec
 
     try:
@@ -198,6 +200,9 @@ async def stop_dynamic_service(
         )
 
         return RedirectResponse(str(redirection_url))
+
+    if await scheduler.is_service_awaiting_manual_intervention(node_uuid):
+        raise HTTPException(status.HTTP_409_CONFLICT, detail="waiting_for_intervention")
 
     # Service was marked for removal, the scheduler will
     # take care of stopping cleaning up all allocated resources:
@@ -317,7 +322,6 @@ async def update_projects_networks(
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     rabbitmq_client: RabbitMQClient = Depends(get_rabbitmq_client),
 ) -> None:
-
     await projects_networks.update_from_workbench(
         projects_networks_repository=projects_networks_repository,
         projects_repository=projects_repository,

@@ -1,6 +1,7 @@
 import asyncio
 import contextlib
 import json
+import logging
 import re
 import socket
 from pathlib import Path
@@ -13,7 +14,6 @@ from typing import (
     Callable,
     Coroutine,
     Final,
-    Optional,
     cast,
 )
 
@@ -24,13 +24,14 @@ from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from distributed.pubsub import Pub
+from models_library.services_resources import BootMode
 from packaging import version
 from pydantic import ByteSize
 from pydantic.networks import AnyUrl
 from servicelib.docker_utils import to_datetime
+from servicelib.logging_utils import log_catch, log_context
 from settings_library.s3 import S3Settings
 
-from ..boot_mode import BootMode
 from ..dask_utils import LogType, create_dask_worker_logger, publish_task_logs
 from ..file_utils import push_file_to_remote
 from ..settings import Settings
@@ -90,26 +91,32 @@ async def create_container_config(
 
 @contextlib.asynccontextmanager
 async def managed_container(
-    docker_client: Docker, config: DockerContainerConfig, *, name: Optional[str] = None
+    docker_client: Docker, config: DockerContainerConfig, *, name: str | None = None
 ) -> AsyncIterator[DockerContainer]:
     container = None
     try:
-        logger.debug("Creating container...")
-        container = await docker_client.containers.create(
-            config.dict(by_alias=True), name=name
-        )
-        logger.debug("container %s created", container.id)
-        yield container
+        with log_context(
+            logger, logging.DEBUG, msg=f"managing container {name} for {config.image}"
+        ):
+            container = await docker_client.containers.create(
+                config.dict(by_alias=True), name=name
+            )
+            yield container
     except asyncio.CancelledError:
         if container:
-            logger.warning("Stopping container %s", container.id)
+            logger.warning(
+                "Cancelling run of container %s, for %s", container.id, config.image
+            )
         raise
     finally:
         try:
             if container:
-                logger.debug("Removing container %s...", container.id)
-                await container.delete(remove=True, v=True, force=True)
-                logger.debug("container removed")
+                with log_context(
+                    logger,
+                    logging.DEBUG,
+                    msg=f"Removing container {name}:{container.id} for {config.image}",
+                ):
+                    await container.delete(remove=True, v=True, force=True)
             logger.info("Completed run of %s", config.image)
         except DockerError:
             logger.exception(
@@ -120,10 +127,11 @@ async def managed_container(
 
 
 _DOCKER_LOG_REGEXP: re.Pattern[str] = re.compile(
-    r"^(?P<timestamp>\d+-\d+-\d+T\d+:\d+:\d+\.\d+[^\s]+) (?P<log>.+)$"
+    r"^(?P<timestamp>(?:(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}:\d{2}(?:\.\d+)?))(Z|[\+-]\d{2}:\d{2})?)"
+    r"\s(?P<log>.*)$"
 )
 _PROGRESS_REGEXP: re.Pattern[str] = re.compile(
-    r"\[?progress[\]:]?\s*([0-1]?\.\d+|\d+(%)|\d+\s*(percent)|(\d+\/\d+))"
+    r"\[?progress\]?:?\s*([0-1]?\.\d+|\d+(%)|\d+\s*(percent)|(\d+\/\d+))"
 )
 DEFAULT_TIME_STAMP = "2000-01-01T00:00:00.000000000Z"
 
@@ -195,7 +203,7 @@ async def _parse_container_log_file(
     task_volumes: TaskSharedVolumes,
     log_file_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
-    s3_settings: Optional[S3Settings],
+    s3_settings: S3Settings | None,
 ) -> None:
     log_file = task_volumes.logs_folder / LEGACY_SERVICE_LOG_FILE_NAME
     logger.debug("monitoring legacy-style container log file in %s", log_file)
@@ -261,7 +269,7 @@ async def _parse_container_docker_logs(
     logs_pub: Pub,
     log_file_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
-    s3_settings: Optional[S3Settings],
+    s3_settings: S3Settings | None,
 ) -> None:
     latest_log_timestamp = DEFAULT_TIME_STAMP
     logger.debug(
@@ -361,14 +369,14 @@ async def monitor_container_logs(
     task_volumes: TaskSharedVolumes,
     log_file_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
-    s3_settings: Optional[S3Settings],
+    s3_settings: S3Settings | None,
 ) -> None:
     """Services running with integration version 0.0.0 are logging into a file
     that must be available in task_volumes.log / log.dat
     Services above are not creating a file and use the usual docker logging. These logs
     are retrieved using the usual cli 'docker logs CONTAINERID'
     """
-    try:
+    with log_catch(logger, reraise=False):
         container_info = await container.show()
         container_name = container_info.get("Name", "undefined")
         logger.info(
@@ -412,14 +420,6 @@ async def monitor_container_logs(
             container.id,
             container_name,
         )
-    except DockerError as exc:
-        logger.exception(
-            "log monitoring of [%s:%s - %s] stopped with unexpected error:\n%s",
-            service_key,
-            service_version,
-            container.id,
-            exc,
-        )
 
 
 @contextlib.asynccontextmanager
@@ -433,7 +433,7 @@ async def managed_monitor_container_log_task(
     task_volumes: TaskSharedVolumes,
     log_file_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
-    s3_settings: Optional[S3Settings],
+    s3_settings: S3Settings | None,
 ) -> AsyncIterator[Awaitable[None]]:
     monitoring_task = None
     try:

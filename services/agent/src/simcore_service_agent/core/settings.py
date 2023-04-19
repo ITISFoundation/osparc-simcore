@@ -1,7 +1,8 @@
-from typing import Final, Optional
+from typing import Final
 
 from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import Field, NonNegativeInt, validator
+from servicelib.file_constants import AGENT_FILE_NAME, HIDDEN_FILE_NAME
 from settings_library.base import BaseCustomSettings
 from settings_library.r_clone import S3Provider
 from settings_library.rabbit import RabbitSettings
@@ -14,7 +15,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     LOGLEVEL: LogLevel = Field(
         LogLevel.WARNING.value, env=["WEBSERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
     )
-    SC_BOOT_MODE: Optional[BootModeEnum]
+    SC_BOOT_MODE: BootModeEnum | None
 
     AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME: str = Field(
         ..., description="Exactly the same as director-v2's `SWARM_STACK_NAME` env var"
@@ -33,7 +34,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         5, description="parallel transfers to s3"
     )
     AGENT_VOLUMES_CLEANUP_EXCLUDE_FILES: list[str] = Field(
-        [".hidden_do_not_remove", "key_values.json"],
+        [AGENT_FILE_NAME, HIDDEN_FILE_NAME, "key_values.json"],
         description="Files to ignore when syncing to s3",
     )
     AGENT_VOLUMES_CLEANUP_INTERVAL_S: NonNegativeInt = Field(
@@ -41,7 +42,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     AGENT_DOCKER_NODE_ID: str = Field(..., description="used by the rabbitmq module")
-    AGENT_RABBITMQ: Optional[RabbitSettings] = Field(auto_default_from_env=True)
+    AGENT_RABBITMQ: RabbitSettings | None = Field(auto_default_from_env=True)
 
     @validator("AGENT_VOLUMES_CLEANUP_S3_ENDPOINT", pre=True)
     @classmethod

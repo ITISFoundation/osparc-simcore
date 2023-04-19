@@ -7,7 +7,7 @@ import asyncio
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from random import choice
-from typing import Any, Awaitable, Callable
+from typing import Any, Awaitable, Callable, Final
 from unittest import mock
 from uuid import uuid4
 
@@ -16,7 +16,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
-from pytest_mock import MockerFixture
+from pydantic import NonNegativeFloat, NonNegativeInt
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_webserver_unit_with_db import (
@@ -24,6 +24,7 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     MockedStorageSubsystem,
     standard_role_response,
 )
+from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.projects import projects as projects_db_model
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects.project_models import ProjectDict
@@ -163,14 +164,13 @@ async def test_create_node(
     faker: Faker,
     mocked_director_v2_api: dict[str, mock.MagicMock],
     mock_catalog_api: dict[str, mock.Mock],
-    mocker: MockerFixture,
     postgres_db: sa.engine.Engine,
 ):
     assert client.app
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
 
     body = {
-        "service_key": f"simcore/services/{node_class}/{faker.pystr()}",
+        "service_key": f"simcore/services/{node_class}/{faker.pystr().lower()}",
         "service_version": faker.numerify("%.#.#"),
     }
     response = await client.post(url.path, json=body)
@@ -222,6 +222,7 @@ async def test_create_and_delete_many_nodes_in_parallel(
     faker: Faker,
     postgres_db: sa.engine.Engine,
     storage_subsystem_mock: MockedStorageSubsystem,
+    mock_get_total_project_dynamic_nodes_creation_interval: None,
 ):
     assert client.app
 
@@ -252,7 +253,7 @@ async def test_create_and_delete_many_nodes_in_parallel(
     num_services_in_project = len(user_project["workbench"])
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
     body = {
-        "service_key": f"simcore/services/dynamic/{faker.pystr()}",
+        "service_key": f"simcore/services/dynamic/{faker.pystr().lower()}",
         "service_version": faker.numerify("%.#.#"),
     }
     NUM_DY_SERVICES = 250
@@ -313,7 +314,7 @@ async def test_create_node_does_not_start_dynamic_node_if_there_are_already_too_
     ]
     url = client.app.router["create_node"].url_for(project_id=project["uuid"])
     body = {
-        "service_key": f"simcore/services/dynamic/{faker.pystr()}",
+        "service_key": f"simcore/services/dynamic/{faker.pystr().lower()}",
         "service_version": faker.numerify("%.#.#"),
     }
     response = await client.post(f"{ url}", json=body)
@@ -331,22 +332,28 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
     faker: Faker,
     max_amount_of_auto_started_dyn_services: int,
     postgres_db: sa.engine.Engine,
+    mock_get_total_project_dynamic_nodes_creation_interval: None,
 ):
     assert client.app
     # create a starting project with no dy-services
     project = await user_project_with_num_dynamic_services(0)
 
+    SERVICE_IS_RUNNING_AFTER_S: Final[NonNegativeFloat] = 0.1
+
     @dataclass
     class _RunninServices:
         running_services_uuids: list[str] = field(default_factory=list)
 
-        def num_services(self, *args, **kwargs) -> list[dict[str, Any]]:
+        async def num_services(self, *args, **kwargs) -> list[dict[str, Any]]:
             return [
                 {"service_uuid": service_uuid}
                 for service_uuid in self.running_services_uuids
             ]
 
-        def inc_running_services(self, *args, **kwargs):
+        async def inc_running_services(self, *args, **kwargs):
+            # simulate delay when service is starting
+            # reproduces real world conditions and makes test to fail
+            await asyncio.sleep(SERVICE_IS_RUNNING_AFTER_S)
             self.running_services_uuids.append(kwargs["service_uuid"])
 
     # let's count the started services
@@ -362,10 +369,10 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
     # let's create more than the allowed max amount in parallel
     url = client.app.router["create_node"].url_for(project_id=project["uuid"])
     body = {
-        "service_key": f"simcore/services/dynamic/{faker.pystr()}",
+        "service_key": f"simcore/services/dynamic/{faker.pystr().lower()}",
         "service_version": faker.numerify("%.#.#"),
     }
-    NUM_DY_SERVICES = 250
+    NUM_DY_SERVICES: Final[NonNegativeInt] = 250
     responses = await asyncio.gather(
         *(client.post(f"{url}", json=body) for _ in range(NUM_DY_SERVICES))
     )
@@ -413,7 +420,7 @@ async def test_create_node_does_start_dynamic_node_if_max_num_set_to_0(
 
     # Use-case 1.: not passing a service UUID will generate a new one on the fly
     body = {
-        "service_key": f"simcore/services/dynamic/{faker.pystr()}",
+        "service_key": f"simcore/services/dynamic/{faker.pystr().lower()}",
         "service_version": faker.numerify("%.#.#"),
     }
     response = await client.post(f"{ url}", json=body)
@@ -443,7 +450,7 @@ async def test_creating_deprecated_node_returns_406_not_acceptable(
 
     # Use-case 1.: not passing a service UUID will generate a new one on the fly
     body = {
-        "service_key": f"simcore/services/{node_class}/{faker.pystr()}",
+        "service_key": f"simcore/services/{node_class}/{faker.pystr().lower()}",
         "service_version": f"{faker.random_int()}.{faker.random_int()}.{faker.random_int()}",
     }
     response = await client.post(url.path, json=body)
@@ -502,7 +509,12 @@ async def test_delete_node(
         if node_id in running_dy_services:
             mocked_director_v2_api[
                 "director_v2_api.stop_dynamic_service"
-            ].assert_called_once_with(mock.ANY, node_id, save_state=False)
+            ].assert_called_once_with(
+                mock.ANY,
+                node_id,
+                simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                save_state=False,
+            )
             mocked_director_v2_api["director_v2_api.stop_dynamic_service"].reset_mock()
         else:
             mocked_director_v2_api[

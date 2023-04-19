@@ -19,6 +19,7 @@ from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from models_library.projects import Node, Workbench
 from pytest import MonkeyPatch
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict, setenvs_from_envfile
 from simcore_service_director_v2.core.application import init_app
@@ -268,3 +269,13 @@ def disable_rabbitmq(mocker) -> None:
 async def async_docker_client() -> AsyncIterable[aiodocker.Docker]:
     async with aiodocker.Docker() as docker_client:
         yield docker_client
+
+
+@pytest.fixture
+def mocked_service_awaits_manual_interventions(mocker: MockerFixture) -> None:
+    module_base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler"
+    mocker.patch(
+        f"{module_base}._core._scheduler.Scheduler.is_service_awaiting_manual_intervention",
+        autospec=True,
+        return_value=False,
+    )

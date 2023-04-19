@@ -4,14 +4,14 @@ import logging
 from collections import deque
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncGenerator, Final, NamedTuple, Optional
+from typing import Any, AsyncGenerator, Final, Mapping, NamedTuple, cast
 
 import aiodocker
 from aiodocker import Docker
 from dask_gateway_server.backends.db_base import Cluster, DBBackendBase
 from yarl import URL
 
-from .errors import NoHostFoundError, NoServiceTasksError, TaskNotAssignedError
+from .errors import NoHostFoundError
 from .models import ClusterInformation, Hostname, cluster_information_from_docker_nodes
 from .settings import AppSettings
 
@@ -68,9 +68,9 @@ def create_service_config(
     service_name: str,
     network_id: str,
     service_secrets: list[DockerSecret],
-    cmd: Optional[list[str]],
+    cmd: list[str] | None,
     labels: dict[str, str],
-    placement: Optional[dict[str, Any]],
+    placement: dict[str, Any] | None,
     **service_kwargs,
 ) -> dict[str, Any]:
     env = deepcopy(service_env)
@@ -145,8 +145,8 @@ async def create_or_update_secret(
     target_file_name: str,
     cluster: Cluster,
     *,
-    file_path: Optional[Path] = None,
-    secret_data: Optional[str] = None,
+    file_path: Path | None = None,
+    secret_data: str | None = None,
 ) -> DockerSecret:
     if file_path is None and secret_data is None:
         raise ValueError(
@@ -163,6 +163,7 @@ async def create_or_update_secret(
         # we must first delete it as only labels may be updated
         secret = secrets[0]
         await docker_client.secrets.delete(secret["ID"])
+    assert data  # nosec
     secret = await docker_client.secrets.create(
         name=docker_secret_name,
         data=data,
@@ -190,10 +191,10 @@ async def start_service(
     service_name: str,
     base_env: dict[str, str],
     cluster_secrets: list[DockerSecret],
-    cmd: Optional[list[str]],
+    cmd: list[str] | None,
     labels: dict[str, str],
     gateway_api_url: str,
-    placement: Optional[dict[str, Any]] = None,
+    placement: dict[str, Any] | None = None,
     **service_kwargs,
 ) -> AsyncGenerator[dict[str, Any], None]:
     service_parameters = {}
@@ -209,8 +210,12 @@ async def start_service(
                 "SIDECAR_COMP_SERVICES_SHARED_FOLDER": _SHARED_COMPUTATIONAL_FOLDER_IN_SIDECAR,
                 "SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME": settings.COMPUTATIONAL_SIDECAR_VOLUME_NAME,
                 "LOG_LEVEL": settings.COMPUTATIONAL_SIDECAR_LOG_LEVEL,
+                "DASK_SIDECAR_NUM_NON_USABLE_CPUS": f"{settings.COMPUTATION_SIDECAR_NUM_NON_USABLE_CPUS}",
+                "DASK_SIDECAR_NON_USABLE_RAM": f"{settings.COMPUTATION_SIDECAR_NON_USABLE_RAM}",
             }
         )
+        if settings.COMPUTATION_SIDECAR_DASK_NTHREADS:
+            env["DASK_NTHREADS"] = f"{settings.COMPUTATION_SIDECAR_DASK_NTHREADS}"
 
         # find service parameters
         network_id = await get_network_id(
@@ -342,6 +347,31 @@ async def get_cluster_information(docker_client: Docker) -> ClusterInformation:
     return cluster_information
 
 
+def _find_service_node_assignment(service_tasks: list[Mapping[str, Any]]) -> str | None:
+    for task in service_tasks:
+        if task["Status"]["State"] in ("new", "pending"):
+            # some task is not running yet. that is a bit weird
+            service_constraints = (
+                task.get("Spec", {}).get("Placement", {}).get("Constraints", [])
+            )
+            filtered_service_constraints = list(
+                filter(lambda x: "node.hostname" in x, service_constraints)
+            )
+            if len(filtered_service_constraints) > 1:
+                continue
+            service_placement: str = filtered_service_constraints[0]
+            return service_placement.split("==")[1]
+
+        if task["Status"]["State"] in (
+            "assigned",
+            "preparing",
+            "starting",
+            "running",
+        ):
+            return cast(str, task["NodeID"])  # mypy
+    return None
+
+
 async def get_next_empty_node_hostname(
     docker_client: Docker, cluster: Cluster
 ) -> Hostname:
@@ -358,18 +388,9 @@ async def get_next_empty_node_hostname(
         service_tasks = await docker_client.tasks.list(
             filters={"service": service["ID"]}
         )
-        if not service_tasks:
-            raise NoServiceTasksError(f"service {service} has no tasks attached")
-        for task in service_tasks:
-            if task["Status"]["State"] in ("new", "pending"):
-                raise TaskNotAssignedError(f"task {task} is not assigned to a host yet")
-            if task["Status"]["State"] in (
-                "assigned",
-                "preparing",
-                "starting",
-                "running",
-            ):
-                used_docker_node_ids.add(task["NodeID"])
+        if assigned_node := _find_service_node_assignment(service_tasks):
+            used_docker_node_ids.add(assigned_node)
+
     cluster_nodes.rotate(current_count)
     for node in cluster_nodes:
         if node["ID"] in used_docker_node_ids:

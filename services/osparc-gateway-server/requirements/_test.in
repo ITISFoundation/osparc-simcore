@@ -10,7 +10,6 @@
 --constraint ../../dask-sidecar/requirements/_dask-distributed.txt
 
 coverage
-coveralls
 dask-gateway
 debugpy
 docker
@@ -23,3 +22,4 @@ pytest-instafail
 pytest-mock
 pytest-sugar
 tenacity
+sqlalchemy[mypy] # adds Mypy / Pep-484 Support for ORM Mappings SEE https://docs.sqlalchemy.org/en/20/orm/extensions/mypy.html

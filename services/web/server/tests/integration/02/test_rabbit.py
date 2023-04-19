@@ -30,6 +30,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from redis import Redis
 from servicelib.aiohttp.application import create_safe_application
+from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_service_webserver.application_settings import setup_settings
@@ -134,6 +135,7 @@ async def _publish_in_rabbit(
         service_type=NodeClass.COMPUTATIONAL.value,
         service_key="some/service/awesome/key",
         service_tag="some-awesome-tag",
+        simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     )
     instrumentation_stop_message.metrics = "service_stopped"
     instrumentation_stop_message.result = RunningState.SUCCESS

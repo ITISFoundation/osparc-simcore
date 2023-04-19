@@ -17,7 +17,7 @@
 
 
 qx.Class.define("osparc.info.ServiceLarge", {
-  extend: qx.ui.core.Widget,
+  extend: osparc.info.CardLarge,
 
   /**
     * @param serviceData {Object} Serialized Service Object
@@ -26,12 +26,6 @@ qx.Class.define("osparc.info.ServiceLarge", {
     */
   construct: function(serviceData, instance = null, openOptions = true) {
     this.base(arguments);
-
-    this.set({
-      minHeight: 350,
-      padding: this.self().PADDING
-    });
-    this._setLayout(new qx.ui.layout.VBox(8));
 
     this.setService(serviceData);
 
@@ -51,14 +45,10 @@ qx.Class.define("osparc.info.ServiceLarge", {
       this.setOpenOptions(openOptions);
     }
 
-    this.addListenerOnce("appear", () => this.__rebuildLayout(), this);
-    this.addListener("resize", () => this.__rebuildLayout(), this);
+    this._attachHandlers();
   },
 
   events: {
-    "openAccessRights": "qx.event.type.Event",
-    "openClassifiers": "qx.event.type.Event",
-    "openQuality": "qx.event.type.Event",
     "updateService": "qx.event.type.Data"
   },
 
@@ -67,7 +57,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
       check: "Object",
       init: null,
       nullable: false,
-      apply: "__rebuildLayout"
+      apply: "_rebuildLayout"
     },
 
     nodeId: {
@@ -86,24 +76,11 @@ qx.Class.define("osparc.info.ServiceLarge", {
       check: "String",
       init: null,
       nullable: true
-    },
-
-    openOptions: {
-      check: "Boolean",
-      init: true,
-      nullable: false
     }
   },
 
-  statics: {
-    PADDING: 5,
-    EXTRA_INFO_WIDTH: 300,
-    THUMBNAIL_MIN_WIDTH: 140,
-    THUMBNAIL_MAX_WIDTH: 280
-  },
-
   members: {
-    __rebuildLayout: function() {
+    _rebuildLayout: function() {
       this._removeAll();
 
       const deprecated = this.__createDeprecated();
@@ -122,8 +99,8 @@ qx.Class.define("osparc.info.ServiceLarge", {
       const offset = 30;
       const maxThumbnailHeight = extraInfo.length*20;
       let widgetWidth = bounds ? bounds.width - offset : 500 - offset;
-      let thumbnailWidth = widgetWidth - 2*this.self().PADDING - this.self().EXTRA_INFO_WIDTH;
-      thumbnailWidth = Math.min(thumbnailWidth - 20, this.self().THUMBNAIL_MAX_WIDTH);
+      let thumbnailWidth = widgetWidth - 2 * osparc.info.CardLarge.PADDING - osparc.info.CardLarge.EXTRA_INFO_WIDTH;
+      thumbnailWidth = Math.min(thumbnailWidth - 20, osparc.info.CardLarge.THUMBNAIL_MAX_WIDTH);
       const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
       const thumbnailLayout = this.__createViewWithEdit(thumbnail, this.__openThumbnailEditor);
       thumbnailLayout.getLayout().set({
@@ -278,9 +255,8 @@ qx.Class.define("osparc.info.ServiceLarge", {
 
     __createExtraInfo: function(extraInfo) {
       const moreInfo = osparc.info.ServiceUtils.createExtraInfo(extraInfo).set({
-        width: this.self().EXTRA_INFO_WIDTH
+        width: osparc.info.CardLarge.EXTRA_INFO_WIDTH
       });
-
       return moreInfo;
     },
 

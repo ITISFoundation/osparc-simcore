@@ -9,7 +9,8 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
-from pydantic import AnyUrl, BaseModel, EmailStr, Extra, Field, confloat, constr
+from models_library.emails import LowerCaseEmailStr
+from pydantic import AnyUrl, BaseModel, Extra, Field, confloat, constr
 
 
 class AccessRights(BaseModel):
@@ -354,7 +355,7 @@ class SimcoreProject(BaseModel):
         description="longer one-line description about the project",
         examples=["Dabbling in temporal transitions ..."],
     )
-    prj_owner: EmailStr = Field(..., alias="prjOwner", description="user email")
+    prj_owner: LowerCaseEmailStr = Field(..., alias="prjOwner", description="user email")
     access_rights: Dict[constr(regex=r"^\S+$"), AccessRights] = Field(
         ...,
         alias="accessRights",

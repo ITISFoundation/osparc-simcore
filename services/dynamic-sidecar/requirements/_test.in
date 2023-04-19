@@ -13,7 +13,7 @@ pytest-mock
 types-aiofiles # missing mypy stubs
 types-pkg_resources # missing mypy stubs
 types-PyYAML # missing mypy stubs
-
+sqlalchemy[mypy] # adds Mypy / Pep-484 Support for ORM Mappings SEE https://docs.sqlalchemy.org/en/20/orm/extensions/mypy.html
 
 
 # NOTE: What test client to use for fastapi-based apps?

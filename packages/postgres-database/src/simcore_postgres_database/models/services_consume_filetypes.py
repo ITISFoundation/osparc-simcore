@@ -20,7 +20,6 @@ from .base import metadata
 services_consume_filetypes = sa.Table(
     "services_consume_filetypes",
     metadata,
-    # TODO: add regex to key and version?
     sa.Column(
         "service_key",
         sa.String,
@@ -48,8 +47,12 @@ services_consume_filetypes = sa.Table(
     sa.Column(
         "filetype",
         sa.String,
+        sa.CheckConstraint(
+            "filetype = upper(filetype)",
+            name="ck_filetype_is_upper",
+        ),
         nullable=False,
-        doc="A filetype supported by this service, e.g. CSV, Excel, ect."
+        doc="An extension supported by this service, e.g. CSV, VTK, etc."
         "The filetype identifiers are not well defined, so we avoided using enums"
         "Temptative list in https://en.wikipedia.org/wiki/List_of_file_formats",
     ),

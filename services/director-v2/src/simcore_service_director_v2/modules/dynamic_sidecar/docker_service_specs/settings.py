@@ -1,7 +1,7 @@
 import json
 import logging
 from collections import deque
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from models_library.boot_options import BootOption, EnvVarKey
 from models_library.service_settings_labels import (
@@ -78,8 +78,8 @@ def update_service_params_from_settings(
     labels_service_settings: SimcoreServiceSettingsLabel,
     create_service_params: dict[str, Any],
 ) -> None:
+    param: SimcoreServiceSettingLabelEntry
     for param in labels_service_settings:
-        param: SimcoreServiceSettingLabelEntry = param
         # NOTE: the below capitalize addresses a bug in a lot of already in use services
         # where Resources was written in lower case
         if param.setting_type.capitalize() == "Resources":
@@ -123,13 +123,11 @@ def update_service_params_from_settings(
 
         # placement constraints
         elif param.name == "constraints":  # python-API compatible
-
             create_service_params["task_template"]["Placement"][
                 "Constraints"
             ] += param.value
 
         elif param.setting_type == "Constraints":  # REST-API compatible
-
             create_service_params["task_template"]["Placement"][
                 "Constraints"
             ] += param.value
@@ -198,7 +196,7 @@ async def _extract_osparc_involved_service_labels(
         # remaps from image_name as key to compose_spec key
         return {reverse_mapping[k]: v for k, v in docker_image_name_by_services.items()}
 
-    compose_spec: Optional[ComposeSpecLabel] = cast(
+    compose_spec: ComposeSpecLabel | None = cast(
         ComposeSpecLabel, service_labels.compose_spec
     )
     if compose_spec is None:
@@ -274,8 +272,8 @@ def _merge_resources_in_settings(
 
     result: deque[SimcoreServiceSettingLabelEntry] = deque()
 
+    entry: SimcoreServiceSettingLabelEntry
     for entry in settings:
-        entry: SimcoreServiceSettingLabelEntry = entry
         if entry.name == "Resources" and entry.setting_type == "Resources":
             # skipping resources
             continue
@@ -354,8 +352,8 @@ def _patch_target_service_into_env_vars(
         )
         return f"{var_name}={json_encoded}"
 
+    entry: SimcoreServiceSettingLabelEntry
     for entry in settings:
-        entry: SimcoreServiceSettingLabelEntry = entry
         if entry.name == "env" and entry.setting_type == "string":
             # process entry
             list_of_env_vars = entry.value if entry.value else []
@@ -375,7 +373,7 @@ def _patch_target_service_into_env_vars(
 
 def _get_boot_options(
     service_labels: SimcoreServiceLabels,
-) -> Optional[dict[EnvVarKey, BootOption]]:
+) -> dict[EnvVarKey, BootOption] | None:
     as_dict = service_labels.dict()
     boot_options_encoded = as_dict.get("io.simcore.boot-options", None)
     if boot_options_encoded is None:
@@ -390,7 +388,6 @@ def _assemble_env_vars_for_boot_options(
     boot_options: dict[EnvVarKey, BootOption],
     service_user_selection_boot_options: dict[EnvVarKey, str],
 ) -> SimcoreServiceSettingsLabel:
-
     env_vars: deque[str] = deque()
     for env_var_key, boot_option in boot_options.items():
         # fetch value selected by the user or use default if not present
@@ -451,7 +448,7 @@ async def merge_settings_before_use(
 
     settings: deque[SimcoreServiceSettingLabelEntry] = deque()  # TODO: fix typing here
 
-    boot_options_settings_env_vars: Optional[SimcoreServiceSettingsLabel] = None
+    boot_options_settings_env_vars: SimcoreServiceSettingsLabel | None = None
     # search for boot options first and inject to all containers
     for compose_spec_key, service_labels in labels_for_involved_services.items():
         labels_boot_options = _get_boot_options(service_labels)

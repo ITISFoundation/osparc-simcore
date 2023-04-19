@@ -1,15 +1,15 @@
-from typing import Dict, Optional
-
 from models_library.basic_regex import VERSION_RE
-from pydantic import BaseModel, Field, constr
+from pydantic import BaseModel, ConstrainedStr, Field
 
-VersionStr = constr(regex=VERSION_RE)
+
+class VersionStr(ConstrainedStr):
+    regex = VERSION_RE
 
 
 class Meta(BaseModel):
     name: str
     version: VersionStr
-    released: Optional[Dict[str, VersionStr]] = Field(
+    released: dict[str, VersionStr] | None = Field(
         None, description="Maps every route's path tag with a released version"
     )
 

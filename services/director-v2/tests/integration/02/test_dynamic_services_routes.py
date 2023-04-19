@@ -25,6 +25,11 @@ from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
+from servicelib.common_headers import (
+    X_DYNAMIC_SIDECAR_REQUEST_DNS,
+    X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
+    X_SIMCORE_USER_AGENT,
+)
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_service_director_v2.core.application import init_app
@@ -114,6 +119,7 @@ def start_request_data(
         service_version=dy_static_file_server_dynamic_sidecar_service["image"]["tag"],
         request_scheme="http",
         request_dns="localhost:50000",
+        can_save=True,
         settings=[
             {
                 "name": "resources",
@@ -244,7 +250,6 @@ async def key_version_expected(
     dy_static_file_server_service: dict,
     docker_registry_image_injector: Callable,
 ) -> list[tuple[ServiceKeyVersion, bool]]:
-
     results: list[tuple[ServiceKeyVersion, bool]] = []
 
     sleeper_service = docker_registry_image_injector(
@@ -273,6 +278,7 @@ async def test_start_status_stop(
     mock_dynamic_sidecar_api_calls: None,
     mock_projects_networks_repository: None,
     mock_projects_repository: None,
+    mocked_service_awaits_manual_interventions: None,
 ):
     # NOTE: this test does not like it when the catalog is not fully ready!!!
 
@@ -281,8 +287,9 @@ async def test_start_status_stop(
         "/v2/dynamic_services",
         json=start_request_data,
         headers={
-            "x-dynamic-sidecar-request-dns": start_request_data["request_dns"],
-            "x-dynamic-sidecar-request-scheme": start_request_data["request_scheme"],
+            X_DYNAMIC_SIDECAR_REQUEST_DNS: start_request_data["request_dns"],
+            X_DYNAMIC_SIDECAR_REQUEST_SCHEME: start_request_data["request_scheme"],
+            X_SIMCORE_USER_AGENT: "",
         },
     )
     assert response.status_code == 201, response.text

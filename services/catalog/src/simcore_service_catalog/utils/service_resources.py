@@ -10,7 +10,7 @@ _DOCKER_TO_OSPARC_RESOURCE_CONVERTER = {"NanoCPUs": 1 / (10**9), "MemoryBytes": 
 
 
 def parse_generic_resource(generic_resources: list[Any]) -> ResourcesDict:
-    service_resources = {}
+    service_resources: ResourcesDict = {}
     for res in generic_resources:
         if not isinstance(res, dict):
             continue

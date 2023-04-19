@@ -11,10 +11,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
   construct: function(node) {
     this.base(arguments, this.tr("Idle"), "@FontAwesome5Solid/clock/12");
 
-    this.__label = this.getChildControl("label");
-    this.__icon = this.getChildControl("icon");
-
-    this.__setupBlank();
+    this.exclude();
     if (node) {
       this.setNode(node);
     }
@@ -35,10 +32,6 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
   },
 
   members: {
-    __node: null,
-    __label: null,
-    __icon: null,
-
     __applyNode: function(node) {
       this.show();
       if (node.isFilePicker()) {
@@ -48,7 +41,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
       } else if (node.isDynamic()) {
         this.__setupInteractive();
       } else {
-        this.__setupBlank();
+        this.exclude();
       }
       node.bind("errors", this, "toolTipText", {
         converter: errors => {
@@ -62,7 +55,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
     },
 
     __setupComputational: function() {
-      this.getNode().getStatus().bind("running", this.__label, "value", {
+      this.getNode().getStatus().bind("running", this.getChildControl("label"), "value", {
         converter: state => {
           if (state) {
             this.show();
@@ -78,7 +71,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
         }
       });
 
-      this.getNode().getStatus().bind("running", this.__icon, "source", {
+      this.getNode().getStatus().bind("running", this.getChildControl("icon"), "source", {
         converter: state => osparc.utils.StatusUI.getIconSource(state),
         onUpdate: (source, target) => {
           target.show();
@@ -87,14 +80,14 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
             case "SUCCESS":
             case "FAILED":
             case "ABORTED":
-              osparc.utils.Utils.removeClass(this.__icon.getContentElement(), "rotate");
+              osparc.utils.Utils.removeClass(this.getChildControl("icon").getContentElement(), "rotate");
               target.setTextColor(osparc.utils.StatusUI.getColor(state));
               return;
             case "PENDING":
             case "PUBLISHED":
             case "STARTED":
             case "RETRY":
-              osparc.utils.Utils.addClass(this.__icon.getContentElement(), "rotate");
+              osparc.utils.Utils.addClass(this.getChildControl("icon").getContentElement(), "rotate");
               target.setTextColor(osparc.utils.StatusUI.getColor(state));
               return;
             case "UNKNOWN":
@@ -108,7 +101,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
     },
 
     __setupInteractive: function() {
-      this.getNode().getStatus().bind("interactive", this.__label, "value", {
+      this.getNode().getStatus().bind("interactive", this.getChildControl("label"), "value", {
         converter: state => osparc.utils.StatusUI.getLabelValue(state),
         onUpdate: (source, target) => {
           const state = source.getInteractive();
@@ -116,10 +109,10 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
         }
       });
 
-      this.getNode().getStatus().bind("interactive", this.__icon, "source", {
+      this.getNode().getStatus().bind("interactive", this.getChildControl("icon"), "source", {
         converter: state => osparc.utils.StatusUI.getIconSource(state),
         onUpdate: (source, target) => {
-          osparc.utils.StatusUI.updateCircleAnimation(this.__icon);
+          osparc.utils.StatusUI.updateCircleAnimation(this.getChildControl("icon"));
           const props = qx.util.PropertyUtil.getProperties(osparc.data.model.NodeStatus);
           const state = source.getInteractive();
           if (props["interactive"]["check"].includes(state)) {
@@ -132,9 +125,9 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
     },
 
     __setupFilePicker: function() {
-      osparc.utils.StatusUI.setupFilePickerIcon(this.getNode(), this.__icon);
+      osparc.utils.StatusUI.setupFilePickerIcon(this.getNode(), this.getChildControl("icon"));
 
-      this.getNode().bind("outputs", this.__label, "value", {
+      this.getNode().bind("outputs", this.getChildControl("label"), "value", {
         converter: outputs => {
           if (osparc.file.FilePicker.getOutput(outputs)) {
             let outputLabel = osparc.file.FilePicker.getOutputLabel(outputs);
@@ -150,13 +143,9 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
       this.getNode().getStatus().addListener("changeProgress", e => {
         const progress = e.getData();
         if (progress > 0 && progress < 100) {
-          this.__label.setValue(this.tr("Uploading"));
+          this.getChildControl("label").setValue(this.tr("Uploading"));
         }
       });
-    },
-
-    __setupBlank: function() {
-      this.exclude();
     }
   }
 });

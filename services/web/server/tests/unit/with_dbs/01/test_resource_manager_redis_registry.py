@@ -40,12 +40,13 @@ def redis_enabled_app(
 ) -> web.Application:
 
     # app.cleanup_ctx.append(redis_client) in setup_redis would create a client and connect
-    # to a real redis service. Instead, we mock the get_redis_client access
+    # to a real redis service. Instead, we mock the get_redis_resources_client access
     mocker.patch(
-        "simcore_service_webserver.redis.get_redis_client", return_value=redis_client
+        "simcore_service_webserver.redis.get_redis_resources_client",
+        return_value=redis_client,
     )
     mocker.patch(
-        "simcore_service_webserver.resource_manager.registry.get_redis_client",
+        "simcore_service_webserver.resource_manager.registry.get_redis_resources_client",
         return_value=redis_client,
     )
     # ------------------

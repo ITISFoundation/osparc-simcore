@@ -146,7 +146,6 @@ def minimal_configuration(  # pylint:disable=too-many-arguments
     ensure_swarm_and_networks: None,
     osparc_product_name: str,
 ) -> Iterator[None]:
-
     with postgres_db.connect() as conn:
         # pylint: disable=no-value-for-parameter
         conn.execute(comp_tasks.delete())
@@ -267,7 +266,6 @@ async def current_study(
     osparc_product_name: str,
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ) -> ProjectAtDB:
-
     project_at_db = project(current_user, workbench=fake_dy_workbench)
 
     # create entries in comp_task table in order to pull output ports
@@ -494,7 +492,7 @@ async def _assert_port_values(
 
     # files
 
-    async def _int_value_port(port: Port) -> Optional[int]:
+    async def _int_value_port(port: Port) -> int | None:
         file_path = cast(Optional[Path], await port.get())
         if file_path is None:
             return None
@@ -846,6 +844,7 @@ async def test_nodeports_integration(
     minimal_configuration: None,
     cleanup_services_and_networks: None,
     projects_networks_db: None,
+    mocked_service_awaits_manual_interventions: None,
     initialized_app: FastAPI,
     update_project_workbench_with_comp_tasks: Callable,
     async_client: httpx.AsyncClient,
@@ -918,15 +917,6 @@ async def test_nodeports_integration(
         exp_pipeline_details=PipelineDetails.parse_obj(fake_dy_published),
         iteration=1,
         cluster_id=DEFAULT_CLUSTER_ID,
-    )
-
-    # wait for the computation to start
-    await assert_and_wait_for_pipeline_status(
-        async_client,
-        task_out.url,
-        current_user["id"],
-        current_study.uuid,
-        wait_for_states=[RunningState.STARTED],
     )
 
     # wait for the computation to finish (either by failing, success or abort)

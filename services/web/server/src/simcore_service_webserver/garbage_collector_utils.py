@@ -1,6 +1,4 @@
 import logging
-from contextlib import contextmanager
-from typing import Callable, Optional
 
 import asyncpg.exceptions
 from aiohttp import web
@@ -22,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 async def _fetch_new_project_owner_from_groups(
     app: web.Application, standard_groups: dict, user_id: UserID
-) -> Optional[UserID]:
+) -> UserID | None:
     """Iterate over all the users in a group and if the users exists in the db
     return its gid
     """
@@ -54,7 +52,7 @@ async def get_new_project_owner_gid(
     user_id: UserID,
     user_primary_gid: GroupID,
     project: dict,
-) -> Optional[GroupID]:
+) -> GroupID | None:
     """Goes through the access rights and tries to find a new suitable owner.
     The first viable user is selected as a new owner.
     In order to become a new owner the user must have write access right.
@@ -76,9 +74,7 @@ async def get_new_project_owner_gid(
     standard_groups = {}  # groups of users, multiple users can be part of this
     primary_groups = {}  # each individual user has a unique primary group
     for other_gid in other_users_access_rights:
-        group: Optional[RowProxy] = await get_group_from_gid(
-            app=app, gid=int(other_gid)
-        )
+        group: RowProxy | None = await get_group_from_gid(app=app, gid=int(other_gid))
 
         # only process for users and groups with write access right
         if group is None:
@@ -174,21 +170,3 @@ async def replace_current_owner(
             "Could not remove old owner and replaced it with user %s",
             new_project_owner_id,
         )
-
-
-@contextmanager
-def log_context(log: Callable, message: str):
-    """Logs entering/existing context as start/done and informs if exited with error"""
-    # NOTE: could have been done with a LoggerAdapter but wonder if it would work
-    # with a global logger and asyncio context switches
-    # PC: I still do not find useful enought to move it to e.g. servicelib.logging_utils
-    try:
-        log("%s [STARTING]", message)
-
-        yield
-
-        log("%s [DONE w/ SUCCESS]", message)
-
-    except Exception as e:  # pylint: disable=broad-except
-        log("%s [DONE w/ ERROR %s]", message, type(e))
-        raise

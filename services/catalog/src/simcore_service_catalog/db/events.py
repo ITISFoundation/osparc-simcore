@@ -2,6 +2,7 @@ import logging
 
 from fastapi import FastAPI
 from servicelib.retry_policies import PostgresRetryPolicyUponInitialization
+from settings_library.postgres import PostgresSettings
 from simcore_postgres_database.utils_aiosqlalchemy import (
     get_pg_engine_stateinfo,
     raise_if_migration_not_ready,
@@ -9,7 +10,6 @@ from simcore_postgres_database.utils_aiosqlalchemy import (
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from tenacity import retry
 
-from ..core.settings import PostgresSettings
 from .repositories.products import ProductsRepository
 
 logger = logging.getLogger(__name__)

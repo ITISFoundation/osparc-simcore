@@ -59,7 +59,7 @@ services:
     environment:
       - CATALOG_BACKGROUND_TASK_REST_TIME=${CATALOG_BACKGROUND_TASK_REST_TIME:-60}
       - CATALOG_DEV_FEATURES_ENABLED=${CATALOG_DEV_FEATURES_ENABLED}
-      - CATALOG_SERVICES_DEFAULT_RESOURCE=${CATALOG_SERVICES_DEFAULT_RESOURCE}
+      - CATALOG_SERVICES_DEFAULT_RESOURCES=${CATALOG_SERVICES_DEFAULT_RESOURCES}
       - CATALOG_SERVICES_DEFAULT_SPECIFICATIONS=${CATALOG_SERVICES_DEFAULT_SPECIFICATIONS}
       - DIRECTOR_HOST=${DIRECTOR_HOST:-director}
       - DIRECTOR_PORT=${DIRECTOR_PORT:-8080}
@@ -290,7 +290,6 @@ services:
     env_file:
       - ../.env
       - ../.env-wb-garbage-collector
-
     deploy:
       placement:
         constraints:
@@ -308,7 +307,8 @@ services:
       resources:
         limits:
           cpus: "1.0"
-          memory: 200M
+          memory: 1024M
+
     networks:
       - default
     volumes:
@@ -523,7 +523,7 @@ services:
       retries: 50
 
   traefik:
-    image: "traefik:v2.9.5@sha256:6c37f2135af79e0c2e387653ff3ab9abf95eb393439f07cfcfa5e06fd4bb10bb"
+    image: "traefik:v2.9.8@sha256:553239e27c4614d0477651415205b9b119f7a98f698e6562ef383c9d8ff3b6e6"
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     command:
@@ -581,6 +581,7 @@ services:
     #  timeout: 1s
     #  retries: 3
     #  start_period: 20s
+
 
 volumes:
   postgres_data:

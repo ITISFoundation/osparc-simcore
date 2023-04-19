@@ -8,7 +8,7 @@ import logging
 import uuid as uuidlib
 from collections import deque
 from contextlib import AsyncExitStack
-from typing import Any, Optional
+from typing import Any
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -35,8 +35,9 @@ from ..db_models import study_tags
 from ..utils import now_str
 from .project_models import ProjectDict
 from .projects_db_utils import (
+    ANY_USER_ID_SENTINEL,
     BaseProjectDB,
-    Permission,
+    PermissionStr,
     ProjectAccessRights,
     assemble_array_groups,
     check_project_permissions,
@@ -55,7 +56,7 @@ from .projects_utils import find_changed_node_keys
 log = logging.getLogger(__name__)
 
 APP_PROJECT_DBAPI = __name__ + ".ProjectDBAPI"
-
+ANY_USER = ANY_USER_ID_SENTINEL
 
 # pylint: disable=too-many-public-methods
 # NOTE: https://github.com/ITISFoundation/osparc-simcore/issues/3516
@@ -99,7 +100,7 @@ class ProjectDBAPI(BaseProjectDB):
     async def insert_project(
         self,
         project: dict[str, Any],
-        user_id: Optional[int],
+        user_id: int | None,
         *,
         product_name: str,
         force_project_uuid: bool = False,
@@ -221,7 +222,7 @@ class ProjectDBAPI(BaseProjectDB):
         self,
         project_uuid: ProjectID,
         product_name: str,
-        conn: Optional[SAConnection] = None,
+        conn: SAConnection | None = None,
     ) -> None:
         async with AsyncExitStack() as stack:
             if not conn:
@@ -238,12 +239,12 @@ class ProjectDBAPI(BaseProjectDB):
         user_id: PositiveInt,
         *,
         product_name: str,
-        filter_by_project_type: Optional[ProjectType] = None,
-        filter_by_services: Optional[list[dict]] = None,
-        only_published: Optional[bool] = False,
-        include_hidden: Optional[bool] = False,
-        offset: Optional[int] = 0,
-        limit: Optional[int] = None,
+        filter_by_project_type: ProjectType | None = None,
+        filter_by_services: list[dict] | None = None,
+        only_published: bool | None = False,
+        include_hidden: bool | None = False,
+        offset: int | None = 0,
+        limit: int | None = None,
     ) -> tuple[list[dict[str, Any]], list[ProjectType], int]:
         async with self.engine.acquire() as conn:
             user_groups: list[RowProxy] = await self._list_user_groups(conn, user_id)
@@ -316,7 +317,7 @@ class ProjectDBAPI(BaseProjectDB):
         *,
         only_published: bool = False,
         only_templates: bool = False,
-        check_permissions: Permission = "read",
+        check_permissions: PermissionStr = "read",
     ) -> tuple[ProjectDict, ProjectType]:
         """Returns all projects *owned* by the user
 
@@ -325,6 +326,7 @@ class ProjectDBAPI(BaseProjectDB):
             - Notice that a user can have access to a project where he/she has read access
 
         :raises ProjectNotFoundError: project is not assigned to user
+        raises ProjectInvalidRightsError: if user has no access rights to do check_permissions
         """
         async with self.engine.acquire() as conn:
             project = await self._get_project(
@@ -441,7 +443,7 @@ class ProjectDBAPI(BaseProjectDB):
         project_data: dict,
         project_uuid: ProjectIDStr,
         *,
-        hidden: Optional[bool] = None,
+        hidden: bool | None = None,
     ) -> bool:
         """The garbage collector needs to alter the row without passing through the
         permissions layer."""
@@ -459,6 +461,17 @@ class ProjectDBAPI(BaseProjectDB):
                 .where(projects.c.uuid == project_uuid)
             )
             return result.rowcount == 1
+
+    async def update_project_last_change_timestamp(self, project_uuid: ProjectIDStr):
+        async with self.engine.acquire() as conn:
+            result = await conn.execute(
+                # pylint: disable=no-value-for-parameter
+                projects.update()
+                .values(last_change_date=now_str())
+                .where(projects.c.uuid == f"{project_uuid}")
+            )
+            if result.rowcount == 0:
+                raise ProjectNotFoundError(project_uuid=project_uuid)
 
     async def delete_project(self, user_id: int, project_uuid: str):
         log.info(
@@ -491,7 +504,7 @@ class ProjectDBAPI(BaseProjectDB):
         partial_workbench_data: dict[str, Any],
         user_id: int,
         project_uuid: str,
-        product_name: Optional[str] = None,
+        product_name: str | None = None,
     ) -> tuple[ProjectDict, dict[str, Any]]:
         """patches an EXISTING project from a user
         new_project_data only contains the entries to modify
@@ -634,7 +647,7 @@ class ProjectDBAPI(BaseProjectDB):
     #
 
     async def has_permission(
-        self, user_id: UserID, project_uuid: str, permission: Permission
+        self, user_id: UserID, project_uuid: str, permission: PermissionStr
     ) -> bool:
         """
         NOTE: this function should never raise
@@ -716,6 +729,14 @@ class ProjectDBAPI(BaseProjectDB):
     #
     # Project HIDDEN column
     #
+    async def is_hidden(self, project_uuid: ProjectID) -> bool:
+        async with self.engine.acquire() as conn:
+            result = await conn.scalar(
+                sa.select([projects.c.hidden]).where(
+                    projects.c.uuid == f"{project_uuid}"
+                )
+            )
+        return bool(result)
 
     async def set_hidden_flag(self, project_uuid: ProjectID, enabled: bool):
         async with self.engine.acquire() as conn:

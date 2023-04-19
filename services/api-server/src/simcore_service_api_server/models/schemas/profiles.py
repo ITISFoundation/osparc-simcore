@@ -1,39 +1,45 @@
-from enum import Enum
-from typing import Optional
+from enum import auto
 
-from pydantic import BaseModel, EmailStr, Field
+from models_library.emails import LowerCaseEmailStr
+from models_library.utils.enums import StrAutoEnum
+from pydantic import BaseModel, Field, validator
 
 from ..domain.groups import Groups
 
 
 class ProfileCommon(BaseModel):
-    first_name: Optional[str] = Field(None, example="James")
-    last_name: Optional[str] = Field(None, example="Maxwell")
+    first_name: str | None = Field(None, example="James")
+    last_name: str | None = Field(None, example="Maxwell")
 
 
 class ProfileUpdate(ProfileCommon):
     pass
 
 
-# from simcore_postgres_database.models.users import UserRole
-class UserRoleEnum(str, Enum):
-    # TODO: build from UserRole! or assert Role == UserRole
-    ANONYMOUS = "ANONYMOUS"
-    GUEST = "GUEST"
-    USER = "USER"
-    TESTER = "TESTER"
-    ADMIN = "ADMIN"
+class UserRoleEnum(StrAutoEnum):
+    ANONYMOUS = auto()
+    GUEST = auto()
+    USER = auto()
+    TESTER = auto()
+    ADMIN = auto()
 
 
 class Profile(ProfileCommon):
-    login: EmailStr
+    login: LowerCaseEmailStr
     role: UserRoleEnum
-    groups: Optional[Groups] = None
-    gravatar_id: Optional[str] = Field(
+    groups: Groups | None = None
+    gravatar_id: str | None = Field(
         None,
         description="md5 hash value of email to retrieve an avatar image from https://www.gravatar.com",
         max_length=40,
     )
+
+    @validator("role", pre=True)
+    @classmethod
+    def enforce_role_upper(cls, v):
+        if v:
+            return v.upper()
+        return v
 
     class Config:
         schema_extra = {

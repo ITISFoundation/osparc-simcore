@@ -11,4 +11,5 @@ def _get_app(request: Request) -> FastAPI:
 def get_director_api(
     app: FastAPI = Depends(_get_app),
 ) -> DirectorApi:
-    return app.state.director_api
+    director: DirectorApi = app.state.director_api
+    return director

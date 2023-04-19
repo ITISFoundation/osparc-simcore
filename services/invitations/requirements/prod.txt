@@ -12,5 +12,6 @@
 # installs this repo's packages
 ../../packages/service-library[fastapi]
 ../../packages/settings-library
+../../packages/models-library
 # installs current package
 .

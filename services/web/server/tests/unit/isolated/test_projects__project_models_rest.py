@@ -23,7 +23,7 @@ from simcore_service_webserver.projects.projects_db import projects as projects_
 
 @pytest.fixture
 def project_jsonschema():
-    with resources.stream(f"api/{API_VTAG}/schemas/project-v0.0.1.json") as fh:
+    with resources.stream(f"api/{API_VTAG}/schemas/project-v0.0.1-pydantic.json") as fh:
         return json.load(fh)
 
 

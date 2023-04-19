@@ -21,18 +21,32 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
   construct: function() {
     this.base(arguments);
 
-    const userEmail = osparc.auth.Data.getInstance().getEmail() || "bizzy@itis.ethz.ch";
+    const authData = osparc.auth.Data.getInstance();
+
+    const userEmail = authData.getEmail() || "bizzy@itis.ethz.ch";
     const menu = new qx.ui.menu.Menu().set({
       font: "text-14"
     });
+    osparc.utils.Utils.setIdToWidget(menu, "userMenuMenu");
     this.set({
       font: "text-14",
       icon: osparc.utils.Avatar.getUrl(userEmail, 32),
       label: "bizzy",
       menu
     });
-    osparc.auth.Data.getInstance().bind("firstName", this, "label");
-    osparc.utils.Utils.setIdToWidget(this, "userMenuMainBtn");
+    authData.bind("firstName", this, "label");
+    authData.bind("role", this, "label", {
+      converter: role => {
+        if (role === "anonymous") {
+          return "Anonymous";
+        }
+        if (role === "guest") {
+          return "Guest";
+        }
+        return authData.getFirstName();
+      }
+    });
+    osparc.utils.Utils.setIdToWidget(this, "userMenuBtn");
 
     this.getChildControl("icon").getContentElement().setStyles({
       "border-radius": "16px"
@@ -68,6 +82,11 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           control = new osparc.ui.switch.ThemeSwitcherMenuBtn();
           this.getMenu().add(control);
           break;
+        case "register":
+          control = new qx.ui.menu.Button(this.tr("Register"));
+          control.addListener("execute", () => window.open(window.location.href, "_blank"));
+          this.getMenu().add(control);
+          break;
         case "preferences":
           control = new qx.ui.menu.Button(this.tr("Preferences"));
           control.addListener("execute", () => osparc.navigation.UserMenuButton.openPreferences(), this);
@@ -94,19 +113,6 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           control.addListener("execute", () => osparc.utils.Clusters.popUpClustersDetails(), this);
           this.getMenu().add(control);
           break;
-        case "quick-start": {
-          control = new qx.ui.menu.Button(this.tr("Quick Start"));
-          const tutorial = osparc.product.tutorial.Utils.getTutorial();
-          if (tutorial) {
-            control.addListener("execute", () => {
-              const tutorialWindow = tutorial.tutorial();
-              tutorialWindow.center();
-              tutorialWindow.open();
-            });
-            this.getMenu().add(control);
-          }
-          break;
-        }
         case "license":
           control = new qx.ui.menu.Button(this.tr("License"));
           osparc.store.Support.getLicenseURL()
@@ -141,12 +147,19 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
 
     populateMenu: function() {
       this.getMenu().removeAll();
-      this.getChildControl("preferences");
-      this.getChildControl("organizations");
-      this.getChildControl("clusters");
+
+      const authData = osparc.auth.Data.getInstance();
+      if (["anonymous", "guest"].includes(authData.getRole())) {
+        this.getChildControl("register");
+      } else {
+        this.getChildControl("preferences");
+        this.getChildControl("organizations");
+        this.getChildControl("clusters");
+      }
       if (osparc.product.tutorial.Utils.getTutorial()) {
         this.getMenu().addSeparator();
-        this.getChildControl("quick-start");
+        osparc.store.Support.addQuickStartToMenu(this.getMenu());
+        osparc.store.Support.addPanddyToMenu(this.getMenu());
       }
       this.getMenu().addSeparator();
       this.getChildControl("about");
@@ -162,9 +175,14 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       this.getMenu().removeAll();
       osparc.data.Resources.get("statics")
         .then(async () => {
-          this.getChildControl("preferences");
-          this.getChildControl("organizations");
-          this.getChildControl("clusters");
+          const authData = osparc.auth.Data.getInstance();
+          if (["anonymous", "guest"].includes(authData.getRole())) {
+            this.getChildControl("register");
+          } else {
+            this.getChildControl("preferences");
+            this.getChildControl("organizations");
+            this.getChildControl("clusters");
+          }
           this.getMenu().addSeparator();
 
           // this part gets injected
@@ -189,6 +207,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
     __addQuickStartToMenu: function() {
       const menu = this.getMenu();
       osparc.store.Support.addQuickStartToMenu(menu);
+      osparc.store.Support.addPanddyToMenu(menu);
     },
 
     __addManualsToMenu: async function() {

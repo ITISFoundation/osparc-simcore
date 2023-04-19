@@ -8,8 +8,8 @@
 #
 --constraint _base.txt
 
+
 coverage
-coveralls
 pytest
 pytest-cov
 pytest-instafail

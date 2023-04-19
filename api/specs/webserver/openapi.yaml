@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: "osparc-simcore web API"
-  version: 0.16.0
+  version: 0.17.2
   description: "API designed for the front-end app"
   contact:
     name: IT'IS Foundation
@@ -24,31 +24,22 @@ servers:
           - v0
         default: v0
 tags:
+  - name: activity
   - name: admin
   - name: authentication
-  - name: user
-  - name: project
-  - name: cluster
   - name: catalog
-  - name: storage
-  - name: activity
-  - name: tag
-  - name: tasks
-    description: |
-      Asynchronously running tasks
-  - name: node
-    description: |
-      The simcore frontend provides a bunch of custom ui elements for nodes to interact with users.
-      The frontend uses these api calls to query the nodes about the gui elemets they want to use, and it
-      defines the protocol for the frontend to interact with the node.
+  - name: cluster
   - name: configuration
   - name: maintenance
+  - name: nih-sparc
+  - name: node
+  - name: project
   - name: publication
-    description: |
-      oSPARC users can make publications. Starting from submission of new service candidates, but this could
-      end up accepting other types of publications.
-  - name: viewer
   - name: repository
+  - name: storage
+  - name: tag
+  - name: tasks
+  - name: user
 
 paths:
   # ADMIN -------------
@@ -117,6 +108,7 @@ paths:
 
   /auth/api-keys:
     $ref: "./openapi-auth.yaml#/paths/~1auth~1api-keys"
+
   # USER SETTINGS ------------------------------------------------------------------
 
   /me:
@@ -131,8 +123,8 @@ paths:
   /me/notifications:
     $ref: "./openapi-user.yaml#/paths/~1me~1notifications"
 
-  /me/notifications/{nid}:
-    $ref: "./openapi-user.yaml#/paths/~1me~1notifications~1{nid}"
+  /me/notifications/{id}:
+    $ref: "./openapi-user.yaml#/paths/~1me~1notifications~1{id}"
 
   # GROUP SETTINGS ------------------------------------------------------------------
 
@@ -363,12 +355,21 @@ paths:
   /tasks/{task_id}/result:
     $ref: "./openapi-tasks.yaml#/paths/~1tasks~1{task_id}~1result"
 
-  # VIEWER -------------------------------------------------------------------------
+  # SPARC -------------------------------------------------------------------------
+  /services:
+    $ref: "./openapi-nih-sparc.yaml#/paths/~1services"
+
   /viewers:
-    $ref: "./openapi-viewer.yaml#/paths/~1viewers"
+    $ref: "./openapi-nih-sparc.yaml#/paths/~1viewers"
 
   /viewers/default:
-    $ref: "./openapi-viewer.yaml#/paths/~1viewers~1default"
+    $ref: "./openapi-nih-sparc.yaml#/paths/~1viewers~1default"
+
+  /view:
+    $ref: "./openapi-nih-sparc.yaml#/paths/~1view"
+
+  /study/{study_id}:
+    $ref: "./openapi-nih-sparc.yaml#/paths/~1study~1{study_id}"
 
 components:
   responses:

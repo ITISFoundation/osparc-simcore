@@ -8,9 +8,7 @@
 #
 --constraint _base.txt
 
---requirement ../../../packages/postgres-database/requirements/_base.in
 coverage
-coveralls
 faker
 pint
 pytest

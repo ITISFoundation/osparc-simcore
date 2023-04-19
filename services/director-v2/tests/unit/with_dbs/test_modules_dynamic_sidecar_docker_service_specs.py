@@ -88,7 +88,7 @@ def simcore_service_labels() -> SimcoreServiceLabels:
 
 @pytest.fixture
 def expected_dynamic_sidecar_spec(
-    run_id: RunID, osparc_product_name: str
+    run_id: RunID, osparc_product_name: str, request_simcore_user_agent: str
 ) -> dict[str, Any]:
     return {
         "endpoint_spec": {},
@@ -116,7 +116,7 @@ def expected_dynamic_sidecar_spec(
                         "is_service_environment_ready": False,
                         "service_removal_state": {
                             "can_remove": False,
-                            "can_save": None,
+                            "can_save": True,
                             "was_removed": False,
                         },
                         "status": {"current": "ok", "info": ""},
@@ -141,6 +141,7 @@ def expected_dynamic_sidecar_spec(
                     "proxy_service_name": "dy-proxy_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                     "request_dns": "test-endpoint",
                     "request_scheme": "http",
+                    "request_simcore_user_agent": request_simcore_user_agent,
                     "restart_policy": "on-inputs-downloaded",
                     "service_name": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                     "service_port": 65534,

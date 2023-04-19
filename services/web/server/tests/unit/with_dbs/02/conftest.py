@@ -8,7 +8,7 @@ import re
 from contextlib import AsyncExitStack
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncIterator, Awaitable, Callable
+from typing import Any, AsyncIterator, Awaitable, Callable, Final
 from unittest import mock
 
 import pytest
@@ -287,7 +287,7 @@ async def user_project_with_num_dynamic_services(
             project_data = {
                 "workbench": {
                     faker.uuid4(): {
-                        "key": f"simcore/services/dynamic/{faker.pystr()}",
+                        "key": f"simcore/services/dynamic/{faker.pystr().lower()}",
                         "version": faker.numerify("#.#.#"),
                         "label": faker.name(),
                     }
@@ -347,4 +347,16 @@ def mock_catalog_service_api_responses(client, aioresponses_mocker):
     aioresponses_mocker.delete(
         url_pattern,
         repeat=True,
+    )
+
+
+@pytest.fixture
+def mock_get_total_project_dynamic_nodes_creation_interval(
+    mocker: MockerFixture,
+) -> None:
+    _VERY_LONG_LOCK_TIMEOUT_S: Final[float] = 300
+    mocker.patch(
+        "simcore_service_webserver.projects.projects_api._nodes_utils"
+        ".get_total_project_dynamic_nodes_creation_interval",
+        return_value=_VERY_LONG_LOCK_TIMEOUT_S,
     )

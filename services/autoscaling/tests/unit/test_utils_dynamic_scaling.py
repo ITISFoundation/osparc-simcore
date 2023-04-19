@@ -213,8 +213,6 @@ def enabled_pre_pull_images(
     images = parse_obj_as(
         list[DockerGenericTag],
         [
-            "io.simcore.some234.cool.label",
-            "com.example.some-label",
             "nginx:latest",
             "itisfoundation/my-very-nice-service:latest",
             "simcore/services/dynamic/another-nice-one:2.4.5",

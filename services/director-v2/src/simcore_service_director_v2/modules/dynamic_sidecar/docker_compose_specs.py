@@ -1,9 +1,10 @@
 import logging
 from copy import deepcopy
-from typing import Optional, Union
+from typing import Optional
 
 from fastapi.applications import FastAPI
 from models_library.docker import SimcoreServiceDockerLabelKeys
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import (
@@ -76,14 +77,12 @@ class _environment_section:
     """
 
     @staticmethod
-    def parse(environment: Union[EnvVarsMap, EnvKeyEqValueList]) -> EnvVarsMap:
+    def parse(environment: EnvVarsMap | EnvKeyEqValueList) -> EnvVarsMap:
         envs = {}
         if isinstance(environment, list):
             for key_eq_value in environment:
                 assert isinstance(key_eq_value, str)  # nosec
-                key, value, *_ = key_eq_value.split("=", maxsplit=1) + [
-                    None,
-                ]  # type: ignore
+                key, value, *_ = key_eq_value.split("=", maxsplit=1) + [None]
                 envs[key] = value
         else:
             assert isinstance(environment, dict)  # nosec
@@ -192,12 +191,18 @@ def _update_container_labels(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
+    simcore_user_agent: str,
+    product_name: ProductName,
 ) -> None:
     for spec in service_spec["services"].values():
         labels: list[str] = spec.setdefault("labels", [])
 
         label_keys = SimcoreServiceDockerLabelKeys(
-            user_id=user_id, study_id=project_id, uuid=node_id
+            user_id=user_id,
+            study_id=project_id,
+            uuid=node_id,
+            simcore_user_agent=simcore_user_agent,
+            product_name=product_name,
         )
         docker_labels = [f"{k}={v}" for k, v in label_keys.to_docker_labels().items()]
 
@@ -212,17 +217,18 @@ def assemble_spec(
     service_key: ServiceKey,
     service_version: ServiceVersion,
     paths_mapping: PathMappingsLabel,
-    compose_spec: Optional[ComposeSpecLabel],
-    container_http_entry: Optional[str],
+    compose_spec: ComposeSpecLabel | None,
+    container_http_entry: str | None,
     dynamic_sidecar_network_name: str,
     swarm_network_name: str,
     service_resources: ServiceResourcesDict,
     simcore_service_labels: SimcoreServiceLabels,
     allow_internet_access: bool,
-    product_name: str,
+    product_name: ProductName,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
+    simcore_user_agent: str,
 ) -> str:
     """
     returns a docker-compose spec used by
@@ -286,12 +292,14 @@ def assemble_spec(
         user_id=user_id,
         project_id=project_id,
         node_id=node_id,
+        product_name=product_name,
+        simcore_user_agent=simcore_user_agent,
     )
 
     # TODO: will be used in next PR
     assert product_name  # nosec
 
-    stringified_service_spec = replace_env_vars_in_compose_spec(
+    stringified_service_spec: str = replace_env_vars_in_compose_spec(
         service_spec=service_spec,
         replace_simcore_registry=docker_registry_settings.resolved_registry_url,
         replace_service_version=service_version,

@@ -27,7 +27,7 @@ RUNNING_STATE_TO_DB = {
 
 
 def to_clusters_db(cluster: BaseCluster, only_update: bool) -> dict[str, Any]:
-    db_model = json.loads(
+    db_model: dict[str, Any] = json.loads(
         cluster.json(
             by_alias=True,
             exclude={"id", "access_rights"},

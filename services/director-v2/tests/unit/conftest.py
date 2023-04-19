@@ -24,12 +24,13 @@ from dask_gateway_server.app import DaskGateway
 from dask_gateway_server.backends.local import UnsafeLocalBackend
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
+from models_library.clusters import ClusterID
 from models_library.generated_models.docker_rest_api import (
     ServiceSpec as DockerServiceSpec,
 )
 from models_library.service_settings_labels import SimcoreServiceLabels
-from models_library.services import RunID, ServiceKeyVersion
-from pydantic.types import NonNegativeInt
+from models_library.services import RunID, ServiceKey, ServiceKeyVersion, ServiceVersion
+from pydantic import parse_obj_as
 from pytest import LogCaptureFixture, MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -90,12 +91,24 @@ def request_scheme() -> str:
 
 
 @pytest.fixture
+def can_save() -> bool:
+    return True
+
+
+@pytest.fixture
+def request_simcore_user_agent() -> str:
+    return "python/test"
+
+
+@pytest.fixture
 def scheduler_data_from_http_request(
     dynamic_service_create: DynamicServiceCreate,
     simcore_service_labels: SimcoreServiceLabels,
     dynamic_sidecar_port: int,
     request_dns: str,
     request_scheme: str,
+    request_simcore_user_agent: str,
+    can_save: bool,
     run_id: RunID,
 ) -> SchedulerData:
     return SchedulerData.from_http_request(
@@ -104,6 +117,8 @@ def scheduler_data_from_http_request(
         port=dynamic_sidecar_port,
         request_dns=request_dns,
         request_scheme=request_scheme,
+        request_simcore_user_agent=request_simcore_user_agent,
+        can_save=can_save,
         run_id=run_id,
     )
 
@@ -148,7 +163,7 @@ def scheduler_data(
 
 
 @pytest.fixture
-def cluster_id() -> NonNegativeInt:
+def cluster_id() -> ClusterID:
     return random.randint(0, 10)
 
 
@@ -177,24 +192,12 @@ async def dask_spec_local_cluster(
                 },
             },
         },
-        "mpi-worker": {
+        "bigcpu-worker": {
             "cls": Worker,
             "options": {
                 "nthreads": 1,
                 "resources": {
                     "CPU": 8,
-                    "MPI": 1,
-                    "RAM": 768e9,
-                },
-            },
-        },
-        "gpu-mpi-worker": {
-            "cls": Worker,
-            "options": {
-                "nthreads": 1,
-                "resources": {
-                    "GPU": 1,
-                    "MPI": 1,
                     "RAM": 768e9,
                 },
             },
@@ -232,7 +235,7 @@ def local_dask_gateway_server_config(
     c.ClusterConfig.worker_cmd = [  # type: ignore
         "dask-worker",
         "--resources",
-        f"CPU=12,GPU=1,MPI=1,RAM={16e9}",
+        f"CPU=12,GPU=1,RAM={16e9}",
     ]
     # NOTE: This must be set such that the local unsafe backend creates a worker with enough cores/memory
     c.ClusterConfig.worker_cores = 12  # type: ignore
@@ -312,7 +315,10 @@ def mocked_storage_service_api(
 
 @pytest.fixture
 def mock_service_key_version() -> ServiceKeyVersion:
-    return ServiceKeyVersion(key="simcore/services/dynamic/myservice", version="1.4.5")
+    return ServiceKeyVersion(
+        key=parse_obj_as(ServiceKey, "simcore/services/dynamic/myservice"),
+        version=parse_obj_as(ServiceVersion, "1.4.5"),
+    )
 
 
 @pytest.fixture

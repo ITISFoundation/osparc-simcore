@@ -36,6 +36,7 @@ class Vendor(TypedDict, total=False):
     url: str
     license_url: str  # Which are the license terms? (if applies)
     invitation_url: str  # How to request a trial invitation? (if applies)
+    has_landing_page: bool  # Landing page enabled
 
 
 class IssueTracker(TypedDict, total=True):

@@ -1,7 +1,6 @@
 import datetime
 from collections import deque
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 import magic
 from pydantic import BaseModel, Field, StrictStr, validator
@@ -11,13 +10,13 @@ from ..xlsx_base import BaseXLSXCellData, BaseXLSXDocument, BaseXLSXSheet
 from .utils import column_iter, ensure_correct_instance, get_max_array_length
 
 # replaces lib-magic's description with these
-DESCRIPTION_OVERWRITES: Dict[str, str] = {
+DESCRIPTION_OVERWRITES: dict[str, str] = {
     "project.json": "serialized pipeline service list and connections",
     "README": "file containing information on this directory's content",
 }
 
 
-def get_files_in_dir(dir_path: Path) -> List[Tuple[Path, str]]:
+def get_files_in_dir(dir_path: Path) -> list[tuple[Path, str]]:
     str_dir_path = str(dir_path) + "/"
     for entry in dir_path.rglob("*"):
         if entry.is_file():
@@ -31,7 +30,7 @@ class FileEntryModel(BaseModel):
     description: StrictStr = Field("", description="additional information on the file")
     file_type: StrictStr = Field(..., description="mime type of the file")
 
-    additional_metadata: List[StrictStr] = Field(
+    additional_metadata: list[StrictStr] = Field(
         [], description="optional field containing Additional metadata fields the file"
     )
 
@@ -43,13 +42,12 @@ class FileEntryModel(BaseModel):
 
 
 class DirectoryManifestParams(BaseModel):
-    file_entries: List[FileEntryModel] = Field(description="list of file entries")
+    file_entries: list[FileEntryModel] = Field(description="list of file entries")
 
     @classmethod
     def compose_from_directory(
         cls, start_path: Path
-    ) -> List["DirectoryManifestParams"]:
-
+    ) -> list["DirectoryManifestParams"]:
         file_entries = deque()
         for file_entry in get_files_in_dir(start_path):
             full_file_path, relative_file_name = file_entry
@@ -90,11 +88,11 @@ class SheetFirstDirectoryManifest(BaseXLSXSheet):
 
     def assemble_data_for_template(
         self, template_data: BaseModel
-    ) -> List[Tuple[str, Dict[str, BaseXLSXCellData]]]:
+    ) -> list[tuple[str, dict[str, BaseXLSXCellData]]]:
         params: DirectoryManifestParams = ensure_correct_instance(
             template_data, DirectoryManifestParams
         )
-        file_entries: List[FileEntryModel] = params.file_entries
+        file_entries: list[FileEntryModel] = params.file_entries
 
         # it is important for cells to be added to the list left to right and top to bottom
         # this is done to ensure styling is applied consistently, read more inside xlsx_base
@@ -113,9 +111,8 @@ class SheetFirstDirectoryManifest(BaseXLSXSheet):
             )
             cells.append(cell_entry)
 
+        file_entry: FileEntryModel
         for row_index, file_entry in zip(range(2, len(file_entries) + 2), file_entries):
-            file_entry: FileEntryModel = file_entry
-
             cells.append((f"A{row_index}", T(file_entry.filename) | Borders.light_grid))
             cells.append(
                 (f"B{row_index}", T(file_entry.timestamp) | Borders.light_grid)

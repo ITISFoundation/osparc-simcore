@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Iterable, List, Optional
+from typing import Iterable
 
 import psycopg2
 import sqlalchemy as sa
@@ -37,9 +37,9 @@ async def _clusters_from_cluster_ids(
     conn: connection.SAConnection,
     cluster_ids: Iterable[PositiveInt],
     offset: int = 0,
-    limit: Optional[int] = None,
-) -> List[Cluster]:
-    cluster_id_to_cluster: Dict[PositiveInt, Cluster] = {}
+    limit: int | None = None,
+) -> list[Cluster]:
+    cluster_id_to_cluster: dict[PositiveInt, Cluster] = {}
     async for row in conn.execute(
         sa.select(
             [
@@ -132,7 +132,7 @@ class ClustersRepository(BaseRepository):
         assert new_cluster_id  # nosec
         return await self.get_cluster(user_id, new_cluster_id)
 
-    async def list_clusters(self, user_id: UserID) -> List[Cluster]:
+    async def list_clusters(self, user_id: UserID) -> list[Cluster]:
         async with self.db_engine.acquire() as conn:
             result = await conn.execute(
                 sa.select([clusters.c.id], distinct=True)
@@ -140,7 +140,7 @@ class ClustersRepository(BaseRepository):
                     cluster_to_groups.c.gid.in_(
                         # get the groups of the user where he/she has read access
                         sa.select([groups.c.gid])
-                        .where((user_to_groups.c.uid == user_id))
+                        .where(user_to_groups.c.uid == user_id)
                         .order_by(groups.c.gid)
                         .select_from(groups.join(user_to_groups))
                     )
@@ -175,7 +175,9 @@ class ClustersRepository(BaseRepository):
         self, user_id: UserID, cluster_id: ClusterID, updated_cluster: ClusterPatch
     ) -> Cluster:
         async with self.db_engine.acquire() as conn:
-            clusters_list = await _clusters_from_cluster_ids(conn, {cluster_id})
+            clusters_list: list[Cluster] = await _clusters_from_cluster_ids(
+                conn, {cluster_id}
+            )
             if len(clusters_list) != 1:
                 raise ClusterNotFoundError(cluster_id=cluster_id)
             the_cluster = clusters_list[0]
@@ -255,9 +257,7 @@ class ClustersRepository(BaseRepository):
                     )
                     await conn.execute(on_update_stmt)
 
-            clusters_list: List[Cluster] = await _clusters_from_cluster_ids(
-                conn, {cluster_id}
-            )
+            clusters_list = await _clusters_from_cluster_ids(conn, {cluster_id})
             if not clusters_list:
                 raise ClusterNotFoundError(cluster_id=cluster_id)
             the_cluster = clusters_list[0]
