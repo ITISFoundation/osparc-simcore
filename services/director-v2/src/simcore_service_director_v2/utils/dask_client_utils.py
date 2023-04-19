@@ -21,7 +21,6 @@ from models_library.clusters import (
     SimpleAuthentication,
 )
 from pydantic import AnyUrl
-from simcore_service_director_v2.utils.dask import check_maximize_workers
 
 from ..core.errors import (
     ConfigurationError,
@@ -30,6 +29,7 @@ from ..core.errors import (
     DaskGatewayServerError,
     SchedulerError,
 )
+from .dask import check_maximize_workers
 
 DaskGatewayAuths = Union[
     dask_gateway.BasicAuth, dask_gateway.KerberosAuth, dask_gateway.JupyterHubAuth
