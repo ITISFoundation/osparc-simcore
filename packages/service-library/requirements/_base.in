@@ -4,14 +4,13 @@
 --constraint ../../../requirements/constraints.txt
 --constraint ./constraints.txt
 
-
-aio-pika
 aiodebug
 aiofiles
+aio-pika
 arrow # date/time
+redis
 pydantic
 pyinstrument
 pyyaml
-redis
 tenacity
 tqdm
