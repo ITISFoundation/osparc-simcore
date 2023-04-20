@@ -52,7 +52,7 @@ class CustomFormatter(logging.Formatter):
     2. Overrides 'filename' with the value of 'file_name_override', if it exists.
     """
 
-    def __init__(self, fmt, log_format_local_dev_enabled):
+    def __init__(self, fmt: str, log_format_local_dev_enabled: bool):
         super().__init__(fmt)
         self.log_format_local_dev_enabled = log_format_local_dev_enabled
 
