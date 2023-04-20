@@ -1,4 +1,4 @@
-from typing import Final, Optional
+from typing import Final
 
 from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import Field, NonNegativeInt, validator
@@ -13,8 +13,16 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     LOGLEVEL: LogLevel = Field(
         LogLevel.WARNING.value, env=["WEBSERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
     )
-    SC_BOOT_MODE: Optional[BootModeEnum]
+    SC_BOOT_MODE: BootModeEnum | None
 
+    AGENT_VOLUMES_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
+        False,
+        env=[
+            "AGENT_VOLUMES_LOG_FORMAT_LOCAL_DEV_ENABLED",
+            "LOG_FORMAT_LOCAL_DEV_ENABLED",
+        ],
+        description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
+    )
     AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME: str = Field(
         ..., description="Exactly the same as director-v2's `SWARM_STACK_NAME` env var"
     )
