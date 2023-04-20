@@ -33,7 +33,7 @@ class _StatusGet(BaseModel):
     rabbitmq: _ComponentStatus
     ec2: _ComponentStatus
     docker: _ComponentStatus
-    redis: _ComponentStatus
+    redis_client_sdk: _ComponentStatus
 
 
 @router.get("/status", include_in_schema=True, response_model=_StatusGet)
@@ -56,8 +56,8 @@ async def get_status(app: FastAPI = Depends(get_app)) -> _StatusGet:
             is_enabled=bool(app.state.docker_client),
             is_responsive=await get_docker_client(app).ping(),
         ),
-        redis=_ComponentStatus(
-            is_enabled=bool(app.state.redis),
+        redis_client_sdk=_ComponentStatus(
+            is_enabled=bool(app.state.redis_client_sdk),
             is_responsive=await get_redis_client(app).ping(),
         ),
     )

@@ -195,7 +195,7 @@ qx.Class.define("osparc.component.share.Collaborators", {
           });
           item.addListener("demoteToCollaborator", e => {
             const orgMember = e.getData();
-            this._demoteToCollaborator(orgMember);
+            this._demoteToCollaborator(orgMember, item);
           });
           item.addListener("removeMember", e => {
             const orgMember = e.getData();

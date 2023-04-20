@@ -13,9 +13,10 @@ import asyncio
 import logging
 from contextlib import suppress
 from pprint import pformat
-from typing import Final
+from typing import Any, Final, cast
 
 from fastapi import FastAPI
+from models_library.function_services_catalog.api import iter_service_docker_data
 from models_library.services import ServiceDockerData
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from packaging.version import Version
@@ -27,42 +28,43 @@ from ..db.repositories.groups import GroupsRepository
 from ..db.repositories.projects import ProjectsRepository
 from ..db.repositories.services import ServicesRepository
 from ..services import access_rights
-from ..services.function_services import iter_service_docker_data
 
 logger = logging.getLogger(__name__)
 
-
+# NOTE: by PC I tried to unify with models_library.services but there are other inconsistencies so I leave if for another time!
 ServiceKey = str
 ServiceVersion = str
 ServiceDockerDataMap = dict[tuple[ServiceKey, ServiceVersion], ServiceDockerData]
 
 
-async def _list_registry_services(
+async def _list_services_in_registry(
     app: FastAPI,
 ) -> ServiceDockerDataMap:
-
     client = get_director_api(app)
-    data = await client.get("/services")
+    registry_services = cast(list[dict[str, Any]], await client.get("/services"))
+
     services: ServiceDockerDataMap = {
-        (s.key, s.version): s for s in iter_service_docker_data()
+        # services w/o associated image
+        (s.key, s.version): s
+        for s in iter_service_docker_data()
     }
-    for x in data:
+    for service in registry_services:
         try:
-            service_data = ServiceDockerData.parse_obj(x)
+            service_data = ServiceDockerData.parse_obj(service)
             services[(service_data.key, service_data.version)] = service_data
 
         except ValidationError as exc:
             logger.warning(
-                "Skip service %s:%s with invalid fields\n%s",
-                x.get("key"),
-                x.get("version"),
+                "Skipping %s:%s from the catalog of services:\n%s",
+                service.get("key"),
+                service.get("version"),
                 exc,
             )
 
     return services
 
 
-async def _list_db_services(
+async def _list_services_in_database(
     db_engine: AsyncEngine,
 ) -> set[tuple[ServiceKey, ServiceVersion]]:
     services_repo = ServicesRepository(db_engine=db_engine)
@@ -72,18 +74,22 @@ async def _list_db_services(
     }
 
 
-async def _create_services_in_db(
+async def _create_services_in_database(
     app: FastAPI,
     service_keys: set[tuple[ServiceKey, ServiceVersion]],
     services_in_registry: dict[tuple[ServiceKey, ServiceVersion], ServiceDockerData],
 ) -> None:
     """Adds a new service in the database
 
-    Determines the access rights of each service and adds it to the database"""
+    Determines the access rights of each service and adds it to the database
+    """
 
     services_repo = ServicesRepository(app.state.engine)
 
-    sorted_services = sorted(service_keys, key=lambda t: Version(t[1]))
+    def _by_version(t: tuple[ServiceKey, ServiceVersion]) -> Version:
+        return Version(t[1])
+
+    sorted_services = sorted(service_keys, key=_by_version)
 
     for service_key, service_version in sorted_services:
         service_metadata: ServiceDockerData = services_in_registry[
@@ -115,17 +121,18 @@ async def _create_services_in_db(
         )
 
 
-async def _ensure_registry_insync_with_db(app: FastAPI) -> None:
+async def _ensure_registry_and_database_are_synced(app: FastAPI) -> None:
     """Ensures that the services listed in the database is in sync with the registry
 
     Notice that a services here refers to a 2-tuple (key, version)
     """
     services_in_registry: dict[
         tuple[ServiceKey, ServiceVersion], ServiceDockerData
-    ] = await _list_registry_services(app)
-    services_in_db: set[tuple[ServiceKey, ServiceVersion]] = await _list_db_services(
-        app.state.engine
-    )
+    ] = await _list_services_in_registry(app)
+
+    services_in_db: set[
+        tuple[ServiceKey, ServiceVersion]
+    ] = await _list_services_in_database(app.state.engine)
 
     # check that the db has all the services at least once
     missing_services_in_db = set(services_in_registry.keys()) - services_in_db
@@ -136,7 +143,9 @@ async def _ensure_registry_insync_with_db(app: FastAPI) -> None:
         )
 
         # update db
-        await _create_services_in_db(app, missing_services_in_db, services_in_registry)
+        await _create_services_in_database(
+            app, missing_services_in_db, services_in_registry
+        )
 
 
 async def _ensure_published_templates_accessible(
@@ -180,7 +189,7 @@ async def _ensure_published_templates_accessible(
         await services_repo.upsert_service_access_rights(missing_services_access_rights)
 
 
-async def sync_registry_task(app: FastAPI) -> None:
+async def _sync_services_task(app: FastAPI) -> None:
     default_product: Final[str] = app.state.default_product_name
     engine: AsyncEngine = app.state.engine
 
@@ -189,7 +198,7 @@ async def sync_registry_task(app: FastAPI) -> None:
             logger.debug("Syncing services between registry and database...")
 
             # check that the list of services is in sync with the registry
-            await _ensure_registry_insync_with_db(app)
+            await _ensure_registry_and_database_are_synced(app)
 
             # check that the published services are available to everyone
             # (templates are published to GUESTs, so their services must be also accessible)
@@ -221,7 +230,7 @@ async def start_registry_sync_task(app: FastAPI) -> None:
     # that never stops the background task. This flag is an additional
     # mechanism to enforce stopping the background task
     app.state.registry_syncer_running = True
-    task = asyncio.create_task(sync_registry_task(app))
+    task = asyncio.create_task(_sync_services_task(app))
     app.state.registry_sync_task = task
     logger.info("registry syncing task started")
 

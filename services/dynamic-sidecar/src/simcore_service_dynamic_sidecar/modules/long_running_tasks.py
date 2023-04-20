@@ -1,7 +1,7 @@
 import functools
 import logging
 from pathlib import Path
-from typing import Final, Optional
+from typing import Final
 
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import ProgressType
@@ -145,14 +145,20 @@ async def task_create_service_containers(
         _raise_for_errors(result, "rm")
 
         progress.update(message="pulling images", percent=0.01)
-        await post_sidecar_log_message(app, "pulling service images")
+        await post_sidecar_log_message(
+            app, "pulling service images", log_level=logging.INFO
+        )
         await post_progress_message(app, ProgressType.SERVICE_IMAGES_PULLING, 0)
         await docker_compose_pull(app, shared_store.compose_spec)
-        await post_sidecar_log_message(app, "service images ready")
+        await post_sidecar_log_message(
+            app, "service images ready", log_level=logging.INFO
+        )
         await post_progress_message(app, ProgressType.SERVICE_IMAGES_PULLING, 1)
 
         progress.update(message="creating and starting containers", percent=0.90)
-        await post_sidecar_log_message(app, "starting service containers")
+        await post_sidecar_log_message(
+            app, "starting service containers", log_level=logging.INFO
+        )
         await _retry_docker_compose_create(shared_store.compose_spec, settings)
 
         progress.update(message="ensure containers are started", percent=0.95)
@@ -161,7 +167,9 @@ async def task_create_service_containers(
     message = f"Finished docker-compose start with output\n{r.message}"
 
     if r.success:
-        await post_sidecar_log_message(app, "service containers started")
+        await post_sidecar_log_message(
+            app, "service containers started", log_level=logging.INFO
+        )
         logger.debug(message)
         for container_name in shared_store.container_names:
             await start_log_fetching(app, container_name)
@@ -169,7 +177,9 @@ async def task_create_service_containers(
         application_health.is_healthy = False
         application_health.error_message = message
         logger.error("Marked sidecar as unhealthy, see below for details\n:%s", message)
-        await post_sidecar_log_message(app, "could not start service containers")
+        await post_sidecar_log_message(
+            app, "could not start service containers", log_level=logging.INFO
+        )
 
     return shared_store.container_names
 
@@ -231,6 +241,7 @@ async def task_restore_state(
     await post_sidecar_log_message(
         app,
         f"Downloading state files for {effective_paths}...",
+        log_level=logging.INFO,
     )
     async with ProgressBarData(
         steps=len(effective_paths),
@@ -245,7 +256,9 @@ async def task_restore_state(
                     project_id=str(settings.DY_SIDECAR_PROJECT_ID),
                     node_uuid=str(settings.DY_SIDECAR_NODE_ID),
                     file_or_folder=path,
-                    io_log_redirect_cb=functools.partial(post_sidecar_log_message, app),
+                    io_log_redirect_cb=functools.partial(
+                        post_sidecar_log_message, app, log_level=logging.INFO
+                    ),
                     progress_bar=root_progress,
                 )
                 for path in effective_paths
@@ -254,7 +267,9 @@ async def task_restore_state(
             reraise=True,  # this should raise if there is an issue
         )
 
-    await post_sidecar_log_message(app, "Finished state downloading")
+    await post_sidecar_log_message(
+        app, "Finished state downloading", log_level=logging.INFO
+    )
     progress.update(message="state restored", percent=0.99)
 
 
@@ -280,7 +295,9 @@ async def task_save_state(
                     file_or_folder=state_path,
                     r_clone_settings=settings.rclone_settings_for_nodeports,
                     archive_exclude_patterns=mounted_volumes.state_exclude,
-                    io_log_redirect_cb=functools.partial(post_sidecar_log_message, app),
+                    io_log_redirect_cb=functools.partial(
+                        post_sidecar_log_message, app, log_level=logging.INFO
+                    ),
                     progress_bar=root_progress,
                 )
                 for state_path in mounted_volumes.disk_state_paths()
@@ -288,19 +305,21 @@ async def task_save_state(
             max_concurrency=CONCURRENCY_STATE_SAVE_RESTORE,
         )
 
-    await post_sidecar_log_message(app, "Finished state saving")
+    await post_sidecar_log_message(app, "Finished state saving", log_level=logging.INFO)
     progress.update(message="finished state saving", percent=0.99)
 
 
 async def task_ports_inputs_pull(
     progress: TaskProgress,
-    port_keys: Optional[list[str]],
+    port_keys: list[str] | None,
     mounted_volumes: MountedVolumes,
     app: FastAPI,
 ) -> int:
     progress.update(message="starting inputs pulling", percent=0.0)
     port_keys = [] if port_keys is None else port_keys
-    await post_sidecar_log_message(app, f"Pulling inputs for {port_keys}")
+    await post_sidecar_log_message(
+        app, f"Pulling inputs for {port_keys}", log_level=logging.INFO
+    )
     progress.update(message="pulling inputs", percent=0.1)
     async with ProgressBarData(
         steps=1,
@@ -312,23 +331,29 @@ async def task_ports_inputs_pull(
             nodeports.PortTypeName.INPUTS,
             mounted_volumes.disk_inputs_path,
             port_keys=port_keys,
-            io_log_redirect_cb=functools.partial(post_sidecar_log_message, app),
+            io_log_redirect_cb=functools.partial(
+                post_sidecar_log_message, app, log_level=logging.INFO
+            ),
             progress_bar=root_progress,
         )
-    await post_sidecar_log_message(app, "Finished pulling inputs")
+    await post_sidecar_log_message(
+        app, "Finished pulling inputs", log_level=logging.INFO
+    )
     progress.update(message="finished inputs pulling", percent=0.99)
     return int(transferred_bytes)
 
 
 async def task_ports_outputs_pull(
     progress: TaskProgress,
-    port_keys: Optional[list[str]],
+    port_keys: list[str] | None,
     mounted_volumes: MountedVolumes,
     app: FastAPI,
 ) -> int:
     progress.update(message="starting outputs pulling", percent=0.0)
     port_keys = [] if port_keys is None else port_keys
-    await post_sidecar_log_message(app, f"Pulling output for {port_keys}")
+    await post_sidecar_log_message(
+        app, f"Pulling output for {port_keys}", log_level=logging.INFO
+    )
     async with ProgressBarData(
         steps=1,
         progress_report_cb=functools.partial(
@@ -339,10 +364,14 @@ async def task_ports_outputs_pull(
             nodeports.PortTypeName.OUTPUTS,
             mounted_volumes.disk_outputs_path,
             port_keys=port_keys,
-            io_log_redirect_cb=functools.partial(post_sidecar_log_message, app),
+            io_log_redirect_cb=functools.partial(
+                post_sidecar_log_message, app, log_level=logging.INFO
+            ),
             progress_bar=root_progress,
         )
-    await post_sidecar_log_message(app, "Finished pulling outputs")
+    await post_sidecar_log_message(
+        app, "Finished pulling outputs", log_level=logging.INFO
+    )
     progress.update(message="finished outputs pulling", percent=0.99)
     return int(transferred_bytes)
 
@@ -354,11 +383,14 @@ async def task_ports_outputs_push(
     await post_sidecar_log_message(
         app,
         f"waiting for outputs {outputs_manager.outputs_context.file_type_port_keys} to be pushed",
+        log_level=logging.INFO,
     )
 
     await outputs_manager.wait_for_all_uploads_to_finish()
 
-    await post_sidecar_log_message(app, "finished outputs pushing")
+    await post_sidecar_log_message(
+        app, "finished outputs pushing", log_level=logging.INFO
+    )
     progress.update(message="finished outputs pushing", percent=0.99)
 
 
@@ -394,7 +426,7 @@ async def task_containers_restart(
         progress.update(message="started log fetching", percent=0.9)
 
         await post_sidecar_log_message(
-            app, "Service was restarted please reload the UI"
+            app, "Service was restarted please reload the UI", log_level=logging.INFO
         )
         await post_event_reload_iframe(app)
         progress.update(message="started log fetching", percent=0.99)

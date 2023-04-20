@@ -20,11 +20,13 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     MockedStorageSubsystem,
     standard_role_response,
 )
+from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects import _delete
+from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.projects.projects_api import lock_with_notification
 from socketio.exceptions import ConnectionError as SocketConnectionError
 
@@ -47,7 +49,7 @@ async def test_delete_project(
     expected: ExpectedResponse,
     storage_subsystem_mock: MockedStorageSubsystem,
     mocked_director_v2_api: dict[str, MagicMock],
-    catalog_subsystem_mock: Callable,
+    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     fake_services: Callable,
     assert_get_same_project_caller: Callable,
     mock_rabbitmq: None,
@@ -83,6 +85,7 @@ async def test_delete_project(
             call(
                 app=client.app,
                 service_uuid=service["service_uuid"],
+                simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                 save_state=True,
                 progress=mock_progress_bar.sub_progress(1),
             )

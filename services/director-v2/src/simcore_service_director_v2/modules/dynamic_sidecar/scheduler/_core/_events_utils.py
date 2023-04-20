@@ -3,7 +3,7 @@
 import json
 import logging
 from collections import deque
-from typing import Any, Deque, Final, Optional, cast
+from typing import Any, Deque, Final, cast
 
 from fastapi import FastAPI
 from models_library.projects_networks import ProjectsNetworks
@@ -36,13 +36,18 @@ from .....utils.db import get_repository
 from ....db.repositories.projects import ProjectsRepository
 from ....db.repositories.projects_networks import ProjectsNetworksRepository
 from ....director_v0 import DirectorV0Client
-from ....node_rights import NodeRightsManager, ResourceName
+from ....node_rights import (
+    NodeRightsManager,
+    ResourceName,
+    node_resource_limits_enabled,
+)
 from ....rabbitmq import RabbitMQClient
 from ...api_client import (
     BaseClientHTTPError,
     DynamicSidecarClient,
     get_dynamic_sidecar_client,
     get_dynamic_sidecar_service_health,
+    remove_dynamic_sidecar_client,
 )
 from ...docker_api import (
     get_projects_networks_containers,
@@ -70,7 +75,7 @@ def get_director_v0_client(app: FastAPI) -> DirectorV0Client:
 
 
 def parse_containers_inspect(
-    containers_inspect: Optional[dict[str, Any]]
+    containers_inspect: dict[str, Any] | None
 ) -> list[DockerContainerInspect]:
     results: Deque[DockerContainerInspect] = deque()
 
@@ -103,7 +108,7 @@ async def service_remove_containers(
     app: FastAPI,
     node_uuid: NodeID,
     dynamic_sidecar_client: DynamicSidecarClient,
-    progress_callback: Optional[ProgressCallback] = None,
+    progress_callback: ProgressCallback | None = None,
 ) -> None:
     scheduler_data: SchedulerData = _get_scheduler_data(app, node_uuid)
 
@@ -126,7 +131,7 @@ async def service_save_state(
     app: FastAPI,
     node_uuid: NodeID,
     dynamic_sidecar_client: DynamicSidecarClient,
-    progress_callback: Optional[ProgressCallback] = None,
+    progress_callback: ProgressCallback | None = None,
 ) -> None:
     scheduler_data: SchedulerData = _get_scheduler_data(app, node_uuid)
     await dynamic_sidecar_client.save_service_state(
@@ -138,7 +143,7 @@ async def service_push_outputs(
     app: FastAPI,
     node_uuid: NodeID,
     dynamic_sidecar_client: DynamicSidecarClient,
-    progress_callback: Optional[ProgressCallback] = None,
+    progress_callback: ProgressCallback | None = None,
 ) -> None:
     scheduler_data: SchedulerData = _get_scheduler_data(app, node_uuid)
     await dynamic_sidecar_client.push_service_output_ports(
@@ -151,7 +156,7 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
     app: FastAPI,
     node_uuid: NodeID,
     dynamic_sidecar_settings: DynamicSidecarSettings,
-    set_were_state_and_outputs_saved: Optional[bool] = None,
+    set_were_state_and_outputs_saved: bool | None = None,
 ) -> None:
     scheduler_data: SchedulerData = _get_scheduler_data(app, node_uuid)
 
@@ -234,7 +239,9 @@ async def attempt_pod_removal_and_data_saving(
     )
 
     async def _remove_containers_save_state_and_outputs() -> None:
-        dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(app)
+        dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
+            app, scheduler_data.node_uuid
+        )
 
         await service_remove_containers(
             app, scheduler_data.node_uuid, dynamic_sidecar_client
@@ -258,8 +265,6 @@ async def attempt_pod_removal_and_data_saving(
             )
 
         if can_really_save and scheduler_data.dynamic_sidecar.were_containers_created:
-            dynamic_sidecar_client = get_dynamic_sidecar_client(app)
-
             logger.info("Calling into dynamic-sidecar to save: state and output ports")
             try:
                 tasks = [
@@ -299,8 +304,8 @@ async def attempt_pod_removal_and_data_saving(
                 )
                 raise e
 
-    if dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED:
-        node_rights_manager = NodeRightsManager.instance(app)
+    if node_resource_limits_enabled(app):
+        node_rights_manager = await NodeRightsManager.instance(app)
         assert scheduler_data.dynamic_sidecar.docker_node_id  # nosec
         try:
             async with node_rights_manager.acquire(
@@ -323,6 +328,9 @@ async def attempt_pod_removal_and_data_saving(
         TaskProgress.create(), app, scheduler_data.node_uuid, dynamic_sidecar_settings
     )
 
+    # remove sidecar's api client
+    remove_dynamic_sidecar_client(app, scheduler_data.node_uuid)
+
     # instrumentation
     message = InstrumentationRabbitMessage(
         metrics="service_stopped",
@@ -333,6 +341,7 @@ async def attempt_pod_removal_and_data_saving(
         service_type=NodeClass.INTERACTIVE.value,
         service_key=scheduler_data.key,
         service_tag=scheduler_data.version,
+        simcore_user_agent=scheduler_data.request_simcore_user_agent,
     )
     rabbitmq_client: RabbitMQClient = app.state.rabbitmq_client
     await rabbitmq_client.publish(message.channel_name, message.json())
@@ -341,7 +350,7 @@ async def attempt_pod_removal_and_data_saving(
 async def attach_project_networks(app: FastAPI, scheduler_data: SchedulerData) -> None:
     logger.debug("Attaching project networks for %s", scheduler_data.service_name)
 
-    dynamic_sidecar_client = get_dynamic_sidecar_client(app)
+    dynamic_sidecar_client = get_dynamic_sidecar_client(app, scheduler_data.node_uuid)
     dynamic_sidecar_endpoint = scheduler_data.endpoint
 
     projects_networks_repository: ProjectsNetworksRepository = cast(
@@ -396,11 +405,8 @@ async def prepare_services_environment(
     app: FastAPI, scheduler_data: SchedulerData
 ) -> None:
     app_settings: AppSettings = app.state.settings
-    dynamic_sidecar_client = get_dynamic_sidecar_client(app)
+    dynamic_sidecar_client = get_dynamic_sidecar_client(app, scheduler_data.node_uuid)
     dynamic_sidecar_endpoint = scheduler_data.endpoint
-    dynamic_sidecar_settings: DynamicSidecarSettings = (
-        app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-    )
 
     async def _pull_outputs_and_state():
         tasks = [
@@ -437,8 +443,8 @@ async def prepare_services_environment(
 
         scheduler_data.dynamic_sidecar.is_service_environment_ready = True
 
-    if dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED:
-        node_rights_manager = NodeRightsManager.instance(app)
+    if node_resource_limits_enabled(app):
+        node_rights_manager = await NodeRightsManager.instance(app)
         assert scheduler_data.dynamic_sidecar.docker_node_id  # nosec
         try:
             async with node_rights_manager.acquire(

@@ -95,6 +95,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __infoPage: null,
     __settingsPage: null,
     __outputsPage: null,
+    __nodeOptionsPage: null,
     __workbenchPanel: null,
     __workbenchPanelPage: null,
     __workbenchUI: null,
@@ -400,6 +401,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       osparc.utils.Utils.setIdToWidget(outputsPage.getChildControl("button"), "outputsTabButton");
       outputsPage.exclude();
       tabViewSecondary.add(outputsPage);
+
+      const nodeOptionsPage = this.__nodeOptionsPage = this.__createTabPage("@FontAwesome5Solid/cogs", this.tr("Options"));
+      osparc.utils.Utils.setIdToWidget(nodeOptionsPage.getChildControl("button"), "nodeOptionsTabButton");
+      nodeOptionsPage.exclude();
+      tabViewSecondary.add(nodeOptionsPage);
 
       this.__addTopBarSpacer(topBar);
 
@@ -824,7 +830,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__studyOptionsPage,
         this.__infoPage,
         this.__settingsPage,
-        this.__outputsPage
+        this.__outputsPage,
+        this.__nodeOptionsPage
       ].forEach(page => {
         page.removeAll();
         page.getChildControl("button").exclude();
@@ -1082,26 +1089,22 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       outputFilesBtn.addListener("execute", () => osparc.component.node.BaseNodeView.openNodeDataManager(node));
       this.__outputsPage.add(outputFilesBtn);
 
+      if (node.isDynamic() && (node.isDeprecated() || node.isRetired())) {
+        this.__nodeOptionsPage.getChildControl("button").show();
+        const lifeCycleView = new osparc.component.node.LifeCycleView(node);
+        node.addListener("versionChanged", () => this.__populateSecondPanel(node));
+        this.__nodeOptionsPage.add(lifeCycleView);
+      }
+
+      if (node.hasBootModes()) {
+        this.__nodeOptionsPage.getChildControl("button").show();
+        const bootOptionsView = new osparc.component.node.BootOptionsView(node);
+        node.addListener("bootModeChanged", () => this.__populateSecondPanel(node));
+        this.__nodeOptionsPage.add(bootOptionsView);
+      }
+
       if (node.hasOutputs() && node.isDynamic() && (node.isDeprecated() || node.isRetired())) {
-        this.__outputsPage.add(new qx.ui.core.Spacer(null, 20));
-
-        const chip = node.isDeprecated() ? osparc.utils.StatusUI.createServiceDeprecatedChip() : osparc.utils.StatusUI.createServiceRetiredChip();
-        this.__outputsPage.add(chip);
-
-        if (node.isDeprecated()) {
-          const deprecateDateLabel = new qx.ui.basic.Label(osparc.utils.Services.getDeprecationDateText(node.getMetaData())).set({
-            rich: true
-          });
-          this.__outputsPage.add(deprecateDateLabel);
-        }
-
-        const instructionsMsg = node.isDeprecated() ? osparc.utils.Services.DEPRECATED_DYNAMIC_INSTRUCTIONS : osparc.utils.Services.RETIRED_DYNAMIC_INSTRUCTIONS;
-        const instructionsLabel = new qx.ui.basic.Label(instructionsMsg).set({
-          rich: true
-        });
-        this.__outputsPage.add(instructionsLabel);
-
-        this.getChildControl("side-panel-right-tabs").setSelection([this.__outputsPage]);
+        this.getChildControl("side-panel-right-tabs").setSelection([this.__nodeOptionsPage]);
       }
     },
 
@@ -1133,24 +1136,28 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }, this);
     },
 
-
     __removeNode: function(nodeId) {
-      const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
-      if (preferencesSettings.getConfirmDeleteNode()) {
-        const msg = this.tr("Are you sure you want to delete the selected node?");
-        const win = new osparc.ui.window.Confirmation(msg).set({
-          confirmText: this.tr("Delete"),
-          confirmAction: "delete"
-        });
-        win.center();
-        win.open();
-        win.addListener("close", () => {
-          if (win.getConfirmed()) {
-            this.__doRemoveNode(nodeId);
-          }
-        }, this);
-      } else {
-        this.__doRemoveNode(nodeId);
+      const workbench = this.getStudy().getWorkbench();
+      const node = workbench.getNode(nodeId);
+      if (node) {
+        const avoidConfirmation = node.isFilePicker() && !osparc.file.FilePicker.hasOutputAssigned(node.getOutputs());
+        const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+        if (!avoidConfirmation && preferencesSettings.getConfirmDeleteNode()) {
+          const msg = this.tr("Are you sure you want to delete the selected node?");
+          const win = new osparc.ui.window.Confirmation(msg).set({
+            confirmText: this.tr("Delete"),
+            confirmAction: "delete"
+          });
+          win.center();
+          win.open();
+          win.addListener("close", () => {
+            if (win.getConfirmed()) {
+              this.__doRemoveNode(nodeId);
+            }
+          }, this);
+        } else {
+          this.__doRemoveNode(nodeId);
+        }
       }
     },
 

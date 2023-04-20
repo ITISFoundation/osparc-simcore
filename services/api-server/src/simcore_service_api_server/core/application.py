@@ -1,9 +1,9 @@
 import logging
-from typing import Optional
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from httpx import HTTPStatusError
+from models_library.basic_types import BootModeEnum
 from servicelib.fastapi.tracing import setup_tracing
 from servicelib.logging_utils import config_all_loggers
 from starlette import status
@@ -22,12 +22,12 @@ from ..modules import catalog, director_v2, remote_debug, storage, webserver
 from .events import create_start_app_handler, create_stop_app_handler
 from .openapi import override_openapi_method, use_route_names_as_operation_ids
 from .redoc import create_redoc_handler
-from .settings import ApplicationSettings, BootModeEnum
+from .settings import ApplicationSettings
 
 logger = logging.getLogger(__name__)
 
 
-def init_app(settings: Optional[ApplicationSettings] = None) -> FastAPI:
+def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     if settings is None:
         settings = ApplicationSettings.create_from_envs()
     assert settings  # nosec

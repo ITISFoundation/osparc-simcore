@@ -6,7 +6,6 @@ from aiohttp import web
 from aiohttp.web import RouteTableDef
 from models_library.api_schemas_storage import FileLocation
 from models_library.projects_nodes_io import StorageFileID
-from models_library.utils.fastapi_encoders import jsonable_encoder
 from servicelib.aiohttp.application_keys import (
     APP_CONFIG_KEY,
     APP_FIRE_AND_FORGET_TASKS_KEY,
@@ -15,6 +14,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
+from servicelib.json_serialization import json_dumps
 from servicelib.utils import fire_and_forget_task
 
 # Exclusive for simcore-s3 storage -----------------------
@@ -30,8 +30,8 @@ routes = RouteTableDef()
 
 
 # HANDLERS ---------------------------------------------------
-@routes.get(f"/{api_vtag}/locations", name="get_storage_locations")  # type: ignore
-async def get_storage_locations(request: web.Request):
+@routes.get(f"/{api_vtag}/locations", name="get_storage_locations")
+async def get_storage_locations(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
     log.debug(
         "received call to get_storage_locations with %s",
@@ -45,11 +45,13 @@ async def get_storage_locations(request: web.Request):
         if await dsm.authorized(query_params.user_id):
             locs.append(FileLocation(name=dsm.location_name, id=dsm.location_id))
 
-    return {"error": None, "data": jsonable_encoder(locs)}
+    return web.json_response({"error": None, "data": locs}, dumps=json_dumps)
 
 
-@routes.post(f"/{api_vtag}/locations/{{location_id}}:sync", name="synchronise_meta_data_table")  # type: ignore
-async def synchronise_meta_data_table(request: web.Request):
+@routes.post(
+    f"/{api_vtag}/locations/{{location_id}}:sync", name="synchronise_meta_data_table"
+)
+async def synchronise_meta_data_table(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(SyncMetadataQueryParams, request)
     path_params = parse_request_path_parameters_as(LocationPathParams, request)
     log.debug(
@@ -86,11 +88,14 @@ async def synchronise_meta_data_table(request: web.Request):
     else:
         sync_results = await sync_coro
 
-    return {
-        "error": None,
-        "data": {
-            "removed": sync_results,
-            "fire_and_forget": query_params.fire_and_forget,
-            "dry_run": query_params.dry_run,
+    return web.json_response(
+        {
+            "error": None,
+            "data": {
+                "removed": sync_results,
+                "fire_and_forget": query_params.fire_and_forget,
+                "dry_run": query_params.dry_run,
+            },
         },
-    }
+        dumps=json_dumps,
+    )

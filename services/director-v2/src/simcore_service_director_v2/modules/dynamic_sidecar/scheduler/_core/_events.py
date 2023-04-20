@@ -1,7 +1,7 @@
 # pylint: disable=relative-beyond-top-level
 
 import logging
-from typing import Any, Final, Optional, cast
+from typing import Any, Final, cast
 from uuid import uuid4
 
 from fastapi import FastAPI
@@ -106,7 +106,6 @@ class CreateSidecars(DynamicSchedulerEvent):
 
     @classmethod
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
-
         # instrumentation
         message = InstrumentationRabbitMessage(
             metrics="service_started",
@@ -117,6 +116,7 @@ class CreateSidecars(DynamicSchedulerEvent):
             service_type=NodeClass.INTERACTIVE.value,
             service_key=scheduler_data.key,
             service_tag=scheduler_data.version,
+            simcore_user_agent=scheduler_data.request_simcore_user_agent,
         )
         rabbitmq_client: RabbitMQClient = app.state.rabbitmq_client
         await rabbitmq_client.publish(message.channel_name, message.json())
@@ -138,7 +138,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         )
 
         node_uuid_str = NodeIDStr(scheduler_data.node_uuid)
-        node: Optional[Node] = project.workbench.get(node_uuid_str)
+        node: Node | None = project.workbench.get(node_uuid_str)
         boot_options = (
             node.boot_options
             if node is not None and node.boot_options is not None
@@ -321,7 +321,9 @@ class GetStatus(DynamicSchedulerEvent):
 
     @classmethod
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
-        dynamic_sidecar_client = get_dynamic_sidecar_client(app)
+        dynamic_sidecar_client = get_dynamic_sidecar_client(
+            app, scheduler_data.node_uuid
+        )
         dynamic_sidecar_endpoint = scheduler_data.endpoint
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
@@ -426,7 +428,9 @@ class CreateUserServices(DynamicSchedulerEvent):
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
-        dynamic_sidecar_client = get_dynamic_sidecar_client(app)
+        dynamic_sidecar_client = get_dynamic_sidecar_client(
+            app, scheduler_data.node_uuid
+        )
         dynamic_sidecar_endpoint = scheduler_data.endpoint
 
         # check values have been set by previous step
@@ -482,6 +486,7 @@ class CreateUserServices(DynamicSchedulerEvent):
             user_id=scheduler_data.user_id,
             project_id=scheduler_data.project_id,
             node_id=scheduler_data.node_uuid,
+            simcore_user_agent=scheduler_data.request_simcore_user_agent,
         )
 
         logger.debug(

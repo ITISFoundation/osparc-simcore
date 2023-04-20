@@ -94,8 +94,10 @@ services:
       - simcore_default
 
 volumes:
-  minio_data: {}
-  portainer_data: {}
+  minio_data:
+    name: ops_minio_data
+  portainer_data:
+    name: ops_portainer_data
 
 networks:
   simcore_default:

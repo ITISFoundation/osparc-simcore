@@ -27,6 +27,7 @@ from simcore_service_autoscaling.models import Resources
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
 from simcore_service_autoscaling.utils.utils_docker import (
     Node,
+    _by_created_dt,
     compute_cluster_total_resources,
     compute_cluster_used_resources,
     compute_node_used_resources,
@@ -397,12 +398,33 @@ async def test_pending_service_task_with_insufficient_resources_properly_sorts_t
         days=1
     )
     for task in pending_tasks:
-        assert task.CreatedAt
+        assert task.CreatedAt  # NOTE: in this case they are but they might be None
         assert (
             to_datetime(task.CreatedAt).replace(tzinfo=datetime.timezone.utc)
             > last_date
         )
         last_date = to_datetime(task.CreatedAt).replace(tzinfo=datetime.timezone.utc)
+
+
+def test_safe_sort_key_callback():
+    tasks_with_faulty_timestamp = [
+        Task(ID=n, CreatedAt=value)  # type: ignore
+        for n, value in enumerate(
+            [
+                # SEE test_to_datetime_conversion_known_errors
+                None,
+                "2023-03-15 09:20:58.123456",
+                "2023-03-15T09:20:58.123456",
+                "2023-03-15T09:20:58.123456Z",
+                f"{datetime.datetime.now(datetime.timezone.utc)}",
+                "corrupted string",
+            ]
+        )
+    ]
+    sorted_tasks = sorted(tasks_with_faulty_timestamp, key=_by_created_dt)
+
+    assert len(sorted_tasks) == len(tasks_with_faulty_timestamp)
+    assert {t.ID for t in sorted_tasks} == {t.ID for t in tasks_with_faulty_timestamp}
 
 
 def test_get_node_total_resources(host_node: Node):

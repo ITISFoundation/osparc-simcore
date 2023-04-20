@@ -27,3 +27,13 @@ INDEX_RESOURCE_NAME: Final[str] = "statics.index"
 
 # Public config per product returned in /config
 APP_PUBLIC_CONFIG_PER_PRODUCT: Final[str] = f"{__name__}.APP_PUBLIC_CONFIG_PER_PRODUCT"
+
+
+__all__: tuple[str, ...] = (
+    "APP_CONFIG_KEY",
+    "APP_DB_ENGINE_KEY",
+    "APP_FIRE_AND_FORGET_TASKS_KEY",
+    "APP_JSONSCHEMA_SPECS_KEY",
+    "APP_OPENAPI_SPECS_KEY",
+    "APP_SETTINGS_KEY",
+)

@@ -4,7 +4,8 @@ from typing import Literal, Optional
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
-from pydantic import BaseModel, EmailStr, Field, PositiveInt, SecretStr, validator
+from models_library.emails import LowerCaseEmailStr
+from pydantic import BaseModel, Field, PositiveInt, SecretStr, validator
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.error_codes import create_error_code
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -69,7 +70,7 @@ class InvitationCheck(InputSchema):
 
 
 class InvitationInfo(InputSchema):
-    email: Optional[EmailStr] = Field(
+    email: Optional[LowerCaseEmailStr] = Field(
         None, description="Email associated to invitation or None"
     )
 
@@ -109,7 +110,7 @@ async def check_registration_invitation(request: web.Request):
 
 
 class RegisterBody(InputSchema):
-    email: EmailStr
+    email: LowerCaseEmailStr
     password: SecretStr
     confirm: Optional[SecretStr] = Field(None, description="Password confirmation")
     invitation: Optional[str] = Field(None, description="Invitation code")
@@ -150,7 +151,7 @@ async def register(request: web.Request):
 
     await check_other_registrations(email=registration.email, db=db, cfg=cfg)
 
-    expires_at = None  # = does not expire
+    expires_at: Optional[datetime] = None  # = does not expire
     if settings.LOGIN_REGISTRATION_INVITATION_REQUIRED:
         # Only requests with INVITATION can register user
         # to either a permanent or to a trial account
@@ -249,7 +250,7 @@ async def register(request: web.Request):
 
 
 class RegisterPhoneBody(InputSchema):
-    email: EmailStr
+    email: LowerCaseEmailStr
     phone: str = Field(
         ..., description="Phone number E.164, needed on the deployments with 2FA"
     )

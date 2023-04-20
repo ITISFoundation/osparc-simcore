@@ -9,9 +9,7 @@
 --constraint _base.txt
 
 # testing
-
 coverage
-coveralls
 faker
 pint
 pytest

@@ -11,7 +11,7 @@
      MIT: https://opensource.org/licenses/MIT
 
    Authors:
-     * Odei Maiz (ignapas)
+     * Odei Maiz (odeimaiz)
 
 ************************************************************************ */
 
@@ -22,6 +22,7 @@ qx.Class.define("osparc.component.service.SortServicesButtons", {
     this.base(arguments, this.tr("Sort"), "@FontAwesome5Solid/chevron-down/10");
 
     this.set({
+      iconPosition: "left",
       marginRight: 8
     });
 
@@ -30,32 +31,37 @@ qx.Class.define("osparc.component.service.SortServicesButtons", {
     });
     this.setMenu(sortByMenu);
 
-    const hitsDesc = new qx.ui.menu.RadioButton(this.tr("Hits Desc"));
+    const hitsDesc = new qx.ui.menu.Button().set({
+      label: this.tr("Hits"),
+      icon: "@FontAwesome5Solid/sort-numeric-down/14"
+    });
     hitsDesc["sortBy"] = "hits";
     hitsDesc["orderBy"] = "down";
-    const hitsAsc = new qx.ui.menu.RadioButton(this.tr("Hits Asc"));
-    hitsAsc["sortBy"] = "hits";
-    hitsAsc["orderBy"] = "up";
-    const nameAsc = new qx.ui.menu.RadioButton(this.tr("Name Asc"));
+    const nameAsc = new qx.ui.menu.Button().set({
+      label: this.tr("Name Asc"),
+      icon: "@FontAwesome5Solid/sort-alpha-down/14"
+    });
     nameAsc["sortBy"] = "name";
     nameAsc["orderBy"] = "down";
-    const nameDesc = new qx.ui.menu.RadioButton(this.tr("Name Desc"));
+    const nameDesc = new qx.ui.menu.Button().set({
+      label: this.tr("Name Desc"),
+      icon: "@FontAwesome5Solid/sort-alpha-up/14"
+    });
     nameDesc["sortBy"] = "name";
     nameDesc["orderBy"] = "up";
-    hitsDesc.addListener("execute", () => this.__btnExecuted(hitsDesc));
-    hitsAsc.addListener("execute", () => this.__btnExecuted(hitsAsc));
-    nameAsc.addListener("execute", () => this.__btnExecuted(nameAsc));
-    nameDesc.addListener("execute", () => this.__btnExecuted(nameDesc));
 
-    const sortByGroup = new qx.ui.form.RadioGroup();
     [
       hitsDesc,
-      hitsAsc,
       nameAsc,
       nameDesc
-    ].forEach(btn => {
+    ].forEach((btn, idx) => {
       sortByMenu.add(btn);
-      sortByGroup.add(btn);
+
+      btn.addListener("execute", () => this.__buttonExecuted(btn));
+
+      if (idx === 0) {
+        btn.execute();
+      }
     });
   },
 
@@ -71,7 +77,12 @@ qx.Class.define("osparc.component.service.SortServicesButtons", {
   },
 
   members: {
-    __btnExecuted: function(btn) {
+    __buttonExecuted: function(btn) {
+      this.set({
+        label: btn.getLabel(),
+        icon: btn.getIcon()
+      });
+
       const data = {
         "sort": btn["sortBy"],
         "order": btn["orderBy"]

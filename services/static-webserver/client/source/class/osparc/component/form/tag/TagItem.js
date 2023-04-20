@@ -10,18 +10,21 @@
  */
 qx.Class.define("osparc.component.form.tag.TagItem", {
   extend: qx.ui.core.Widget,
+
   construct: function() {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.HBox(5));
     this.__validationManager = new qx.ui.form.validation.Manager();
     this.__renderLayout();
   },
+
   statics: {
     modes: {
       DISPLAY: "display",
       EDIT: "edit"
     }
   },
+
   properties: {
     id: {
       check: "Integer"
@@ -59,10 +62,13 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
       refine: true
     }
   },
+
   events: {
+    "tagSaved": "qx.event.type.Event",
     "cancelNewTag": "qx.event.type.Event",
     "deleteTag": "qx.event.type.Event"
   },
+
   members: {
     __tag: null,
     __description: null,
@@ -236,10 +242,14 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
     __tagItemEditButtons: function() {
       const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
       const saveButton = new osparc.ui.form.FetchButton(null, "@FontAwesome5Solid/check/12").set({
-        appearance: "link-button"
+        appearance: "link-button",
+        paddingTop: 15, // avoid buddy text
+        alignY: "middle"
       });
       const cancelButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/times/12").set({
-        appearance: "link-button"
+        appearance: "link-button",
+        paddingTop: 15, // avoid buddy text
+        alignY: "middle"
       });
       buttonContainer.add(saveButton);
       buttonContainer.add(cancelButton);
@@ -263,6 +273,7 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
             .then(tag => this.set(tag))
             .catch(console.error)
             .finally(() => {
+              this.fireEvent("tagSaved");
               this.setMode(this.self().modes.DISPLAY);
               saveButton.setFetching(false);
             });

@@ -5,10 +5,9 @@ in a AIOHTTP application.
 The server only has to return a `TaskId` in the handler creating the long
 running task.
 """
+from ...long_running_tasks._errors import TaskAlreadyRunningError, TaskCancelledError
 from ...long_running_tasks._models import ProgressMessage, ProgressPercent
 from ...long_running_tasks._task import (
-    TaskAlreadyRunningError,
-    TaskCancelledError,
     TaskId,
     TaskProgress,
     TaskProtocol,

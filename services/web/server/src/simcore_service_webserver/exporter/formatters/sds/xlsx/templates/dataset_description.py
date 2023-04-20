@@ -1,5 +1,3 @@
-from typing import Dict, List, Tuple
-
 from pydantic import BaseModel, Field, StrictStr
 
 from ..styling_components import TB, Backgrounds, Borders, Comment, Link, T
@@ -101,7 +99,7 @@ class DatasetDescriptionParams(BaseModel):
         description="A set of 3-5 keywords other than the above that will aid in search",
     )
 
-    contributor_entries: List[ContributorEntryModel] = Field(
+    contributor_entries: list[ContributorEntryModel] = Field(
         [], description="list of contributor data"
     )
 
@@ -111,10 +109,10 @@ class DatasetDescriptionParams(BaseModel):
     )
     funding = Field("", description="Funding sources")
 
-    doi_entries: List[DoiEntryModel] = Field(
+    doi_entries: list[DoiEntryModel] = Field(
         [], description="data relative to doi entries"
     )
-    link_entries: List[LinkEntryModel] = Field(
+    link_entries: list[LinkEntryModel] = Field(
         [], description="data relative to link entries"
     )
 
@@ -320,7 +318,7 @@ class SheetFirstDatasetDescription(BaseXLSXSheet):
 
     def assemble_data_for_template(
         self, template_data: BaseModel
-    ) -> List[Tuple[str, Dict[str, BaseXLSXCellData]]]:
+    ) -> list[tuple[str, dict[str, BaseXLSXCellData]]]:
         params: DatasetDescriptionParams = ensure_correct_instance(
             template_data, DatasetDescriptionParams
         )
@@ -353,11 +351,11 @@ class SheetFirstDatasetDescription(BaseXLSXSheet):
         cells.extend(static_cells_first_batch)
 
         # adding contributors entries horizontally
+        contributor_entry: ContributorEntryModel
         for column_letter, contributor_entry in zip(
             column_iter(4, len(params.contributor_entries)),
             params.contributor_entries,
         ):
-            contributor_entry: ContributorEntryModel = contributor_entry
             cells.append(
                 (
                     f"{column_letter}5",
@@ -394,10 +392,10 @@ class SheetFirstDatasetDescription(BaseXLSXSheet):
         cells.extend(static_cells_second_batch)
 
         # adding doi entries horizontally
+        doi_entry: DoiEntryModel
         for column_letter, doi_entry in zip(
             column_iter(4, len(params.doi_entries)), params.doi_entries
         ):
-            doi_entry: DoiEntryModel = doi_entry
             cells.append(
                 (
                     f"{column_letter}12",
@@ -412,10 +410,10 @@ class SheetFirstDatasetDescription(BaseXLSXSheet):
             )
 
         # adding link entries horizontally
+        link_entry: LinkEntryModel
         for column_letter, link_entry in zip(
             column_iter(4, len(params.link_entries)), params.link_entries
         ):
-            link_entry: LinkEntryModel = link_entry
             cells.append(
                 (
                     f"{column_letter}14",

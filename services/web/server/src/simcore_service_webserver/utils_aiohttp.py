@@ -8,6 +8,7 @@ from aiohttp.web_routedef import RouteDef, RouteTableDef
 from models_library.generics import Envelope
 from pydantic import Field
 from pydantic.generics import GenericModel
+from servicelib.common_headers import X_FORWARDED_PROTO
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
@@ -46,7 +47,7 @@ def create_url_for_function(request: web.Request) -> Callable:
                 .with_scheme(
                     # Custom header by traefik. See labels in docker-compose as:
                     # - traefik.http.middlewares.${SWARM_STACK_NAME_NO_HYPHEN}_sslheader.headers.customrequestheaders.X-Forwarded-Proto=http
-                    request.headers.get("X-Forwarded-Proto", request.url.scheme)
+                    request.headers.get(X_FORWARDED_PROTO, request.url.scheme)
                 )
                 .with_path(str(rel_url))
             )

@@ -12,7 +12,7 @@ from copy import deepcopy
 from itertools import combinations
 from random import randint
 from secrets import choice
-from typing import Any, AsyncIterator, Iterator, Optional, get_args
+from typing import Any, AsyncIterator, Iterator, get_args
 from uuid import UUID, uuid5
 
 import pytest
@@ -22,13 +22,17 @@ from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from psycopg2.errors import UniqueViolation
+from pytest import MonkeyPatch
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_dict import copy_from_dict_ex
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
 from simcore_postgres_database.models.groups import GroupType
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.projects.projects_db import (
+    ANY_USER,
     ProjectAccessRights,
     ProjectDBAPI,
     ProjectInvalidRightsError,
@@ -40,7 +44,7 @@ from simcore_service_webserver.projects.projects_db import (
 from simcore_service_webserver.projects.projects_db_utils import (
     DB_EXCLUSIVE_COLUMNS,
     SCHEMA_NON_NULL_KEYS,
-    Permission,
+    PermissionStr,
 )
 from simcore_service_webserver.projects.projects_exceptions import (
     NodeNotFoundError,
@@ -49,6 +53,19 @@ from simcore_service_webserver.projects.projects_exceptions import (
 from simcore_service_webserver.users_exceptions import UserNotFoundError
 from simcore_service_webserver.utils import to_datetime
 from sqlalchemy.engine.result import Row
+
+
+@pytest.fixture
+def app_environment(
+    app_environment: EnvVarsDict, monkeypatch: MonkeyPatch
+) -> EnvVarsDict:
+    envs_plugins = setenvs_from_dict(
+        monkeypatch,
+        {
+            "WEBSERVER_RABBITMQ": "null",
+        },
+    )
+    return app_environment | envs_plugins
 
 
 def test_convert_to_db_names(fake_project: dict[str, Any]):
@@ -127,6 +144,18 @@ def all_permission_combinations() -> list[str]:
     for el in temp:
         res.append("|".join(el))
     return res
+
+
+@pytest.mark.testit
+def test_check_project_permissions_for_any_user():
+    project = {"access_rights": {"1": {"read": True, "write": False, "delete": False}}}
+
+    check_project_permissions(
+        project,
+        user_id=ANY_USER,
+        user_groups=[{"gid": 1, "type": GroupType.EVERYONE}],
+        permission="read",
+    )
 
 
 @pytest.mark.parametrize("wanted_permissions", all_permission_combinations())
@@ -305,7 +334,7 @@ def _assert_projects_to_product_db_row(
 def _assert_project_db_row(
     postgres_db: sa.engine.Engine, project: dict[str, Any], **kwargs
 ):
-    row: Optional[Row] = postgres_db.execute(
+    row: Row | None = postgres_db.execute(
         f"SELECT * FROM projects WHERE \"uuid\"='{project['uuid']}'"
     ).fetchone()
 
@@ -348,7 +377,6 @@ async def test_insert_project_to_db(
     db_api: ProjectDBAPI,
     osparc_product_name: str,
 ):
-
     original_project = deepcopy(fake_project)
 
     # add project without user id -> by default creates a template
@@ -534,7 +562,7 @@ async def test_patch_user_project_workbench_creates_nodes(
     )
     partial_workbench_data = {
         faker.uuid4(): {
-            "key": f"simcore/services/comp/{faker.pystr()}",
+            "key": f"simcore/services/comp/{faker.pystr().lower()}",
             "version": faker.numerify("%.#.#"),
             "label": faker.text(),
         }
@@ -949,7 +977,7 @@ async def test_has_permission(
         product_name=osparc_product_name,
     )
 
-    for permission in get_args(Permission):
+    for permission in get_args(PermissionStr):
         assert permission in access_rights
 
         # owner always is allowed to do everything

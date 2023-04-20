@@ -11,9 +11,9 @@ from typing import Iterator, Literal, Optional
 
 from aiohttp import web
 from models_library.basic_types import IdInt
+from models_library.emails import LowerCaseEmailStr
 from pydantic import (
     BaseModel,
-    EmailStr,
     Field,
     Json,
     PositiveInt,
@@ -131,7 +131,7 @@ async def create_invitation_token(
     db: AsyncpgStorage,
     *,
     user_id: IdInt,
-    user_email: Optional[EmailStr] = None,
+    user_email: Optional[LowerCaseEmailStr] = None,
     tag: Optional[str] = None,
     trial_days: Optional[PositiveInt] = None,
 ) -> ConfirmationTokenDict:
@@ -194,7 +194,7 @@ def _invitations_request_context(invitation_code: str) -> Iterator[URL]:
 async def extract_email_from_invitation(
     app: web.Application,
     invitation_code: str,
-) -> EmailStr:
+) -> LowerCaseEmailStr:
     """Returns associated email"""
     with _invitations_request_context(invitation_code=invitation_code) as url:
         content = await extract_invitation(app, invitation_url=f"{url}")

@@ -1,5 +1,4 @@
 import logging
-import re
 from datetime import datetime
 from typing import Any
 
@@ -75,7 +74,6 @@ def get_pipeline_state_from_task_states(tasks: list[CompTaskAtDB]) -> RunningSta
     return RunningState.UNKNOWN
 
 
-_node_key_re = re.compile(SERVICE_KEY_RE)
 _STR_TO_NODECLASS = {
     "comp": NodeClass.COMPUTATIONAL,
     "dynamic": NodeClass.INTERACTIVE,
@@ -84,9 +82,9 @@ _STR_TO_NODECLASS = {
 
 
 def to_node_class(service_key: str) -> NodeClass:
-    match = _node_key_re.match(service_key)
+    match = SERVICE_KEY_RE.match(service_key)
     if match:
-        node_class = _STR_TO_NODECLASS.get(match.group(3))
+        node_class = _STR_TO_NODECLASS.get(match.group("type"))
         if node_class:
             return node_class
     raise ValueError
@@ -107,7 +105,7 @@ async def find_deprecated_tasks(
     catalog_client: CatalogClient,
 ) -> list[ServiceKeyVersion]:
 
-    task_services = await logged_gather(
+    services_details = await logged_gather(
         *(
             catalog_client.get_service(
                 user_id=user_id,
@@ -115,9 +113,15 @@ async def find_deprecated_tasks(
                 service_version=key_version.version,
                 product_name=product_name,
             )
-            for key_version in task_key_versions
+            for key_version in set(task_key_versions)
         )
     )
+    service_key_version_to_details = {
+        ServiceKeyVersion.construct(
+            key=details["key"], version=details["version"]
+        ): details
+        for details in services_details
+    }
     today = datetime.utcnow()
 
     def _is_service_deprecated(service: dict[str, Any]) -> bool:
@@ -128,8 +132,8 @@ async def find_deprecated_tasks(
 
     deprecated_tasks = [
         task
-        for task, service in zip(task_key_versions, task_services)
-        if _is_service_deprecated(service)
+        for task in task_key_versions
+        if _is_service_deprecated(service_key_version_to_details[task])
     ]
 
     return deprecated_tasks

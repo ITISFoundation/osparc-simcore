@@ -2,20 +2,16 @@ import logging
 import urllib.parse
 from dataclasses import dataclass
 from operator import attrgetter
-from typing import Callable, Optional
+from typing import Callable
 
 from fastapi import FastAPI
+from models_library.emails import LowerCaseEmailStr
 from models_library.services import ServiceDockerData, ServiceType
-from pydantic import EmailStr, Extra, ValidationError, parse_obj_as
+from pydantic import Extra, ValidationError, parse_obj_as
 from settings_library.catalog import CatalogSettings
 
-from ..models.schemas.solvers import (
-    LATEST_VERSION,
-    Solver,
-    SolverKeyId,
-    SolverPort,
-    VersionStr,
-)
+from ..models.basic_types import VersionStr
+from ..models.schemas.solvers import LATEST_VERSION, Solver, SolverKeyId, SolverPort
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
 ## from ..utils.client_decorators import JSON, handle_errors, handle_retry
@@ -41,7 +37,7 @@ class TruncatedCatalogServiceOut(ServiceDockerData):
     that asks only what is needed.
     """
 
-    owner: Optional[EmailStr]
+    owner: LowerCaseEmailStr | None
 
     class Config:
         extra = Extra.ignore
@@ -86,7 +82,7 @@ class CatalogApi(BaseServiceClientApi):
         user_id: int,
         *,
         product_name: str,
-        predicate: Optional[Callable[[Solver], bool]] = None,
+        predicate: Callable[[Solver], bool] | None = None,
     ) -> list[Solver]:
         resp = await self.client.get(
             "/services",
@@ -137,7 +133,8 @@ class CatalogApi(BaseServiceClientApi):
             service.service_type == ServiceType.COMPUTATIONAL
         ), "Expected by SolverName regex"
 
-        return service.to_solver()
+        solver: Solver = service.to_solver()
+        return solver
 
     async def get_solver_ports(
         self, user_id: int, name: SolverKeyId, version: VersionStr, *, product_name: str
@@ -165,7 +162,7 @@ class CatalogApi(BaseServiceClientApi):
             user_id, product_name=product_name
         )
 
-        latest_releases = {}
+        latest_releases: dict[SolverKeyId, Solver] = {}
         for solver in solvers:
             latest = latest_releases.setdefault(solver.id, solver)
             if latest.pep404_version < solver.pep404_version:

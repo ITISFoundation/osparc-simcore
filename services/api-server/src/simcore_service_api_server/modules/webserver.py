@@ -4,19 +4,19 @@ import logging
 from collections import deque
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any, cast
 from uuid import UUID
 
 from cryptography import fernet
 from fastapi import FastAPI, HTTPException
 from httpx import AsyncClient, Response
 from models_library.projects import ProjectID
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ValidationError
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
 from starlette import status
 from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
-from tenacity.after import after_log
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -43,10 +43,10 @@ class AuthSession:
 
     client: AsyncClient  # Its lifetime is attached to app
     vtag: str
-    session_cookies: Optional[dict] = None
+    session_cookies: dict | None = None
 
     @classmethod
-    def create(cls, app: FastAPI, session_cookies: dict):
+    def create(cls, app: FastAPI, session_cookies: dict) -> "AuthSession":
         return cls(
             client=app.state.webserver_client,
             vtag=app.state.settings.API_SERVER_WEBSERVER.WEBSERVER_VTAG,
@@ -54,9 +54,10 @@ class AuthSession:
         )
 
     @classmethod
-    def _postprocess(cls, resp: Response) -> Optional[JSON]:
+    def _postprocess(cls, resp: Response) -> JSON | None:
         # enveloped answer
-        data, error = None, None
+        data: JSON | None = None
+        error: JSON | None = None
 
         if resp.status_code != status.HTTP_204_NO_CONTENT:
             try:
@@ -89,7 +90,7 @@ class AuthSession:
     # TODO: policy to retry if NetworkError/timeout?
     # TODO: add ping to healthcheck
 
-    async def get(self, path: str) -> Optional[JSON]:
+    async def get(self, path: str) -> JSON | None:
         url = path.lstrip("/")
         try:
             resp = await self.client.get(url, cookies=self.session_cookies)
@@ -100,7 +101,7 @@ class AuthSession:
 
         return self._postprocess(resp)
 
-    async def put(self, path: str, body: dict) -> Optional[JSON]:
+    async def put(self, path: str, body: dict) -> JSON | None:
         url = path.lstrip("/")
         try:
             resp = await self.client.put(url, json=body, cookies=self.session_cookies)
@@ -118,14 +119,13 @@ class AuthSession:
         resp = await self.client.post(
             "/projects",
             params={"hidden": True},
-            data=project.json(
-                by_alias=True, exclude={"state"}
-            ),  ## FIXME: REEAAAALY HACKY!
+            json=jsonable_encoder(project, by_alias=True, exclude={"state"}),
             cookies=self.session_cookies,
         )
-        data: Optional[JSON] = self._postprocess(resp)
+        data: JSON | None = self._postprocess(resp)
         assert data  # nosec
         assert isinstance(data, dict)  # nosec
+
         # NOTE: /v0 is already included in the http client base_url
         status_url = data["status_href"].lstrip(f"/{self.vtag}")
         result_url = data["result_href"].lstrip(f"/{self.vtag}")
@@ -135,20 +135,15 @@ class AuthSession:
             stop=stop_after_delay(60),
             reraise=True,
             before_sleep=before_sleep_log(logger, logging.INFO),
-            after=after_log(logger, log_level=logging.ERROR),
         ):
             with attempt:
-                data: Optional[JSON] = await self.get(
-                    status_url,
-                )
+                data = await self.get(status_url)
                 task_status = TaskStatus.parse_obj(data)
                 if not task_status.done:
                     raise TryAgain(
                         "Timed out creating project. TIP: Try again, or contact oSparc support if this is happening repeatedly"
                     )
-        data: Optional[JSON] = await self.get(
-            f"{result_url}",
-        )
+        data = await self.get(f"{result_url}")
         return Project.parse_obj(data)
 
     async def get_project(self, project_id: UUID) -> Project:
@@ -156,7 +151,7 @@ class AuthSession:
             f"/projects/{project_id}", cookies=self.session_cookies
         )
 
-        data: Optional[JSON] = self._postprocess(resp)
+        data: JSON | None = self._postprocess(resp)
         return Project.parse_obj(data)
 
     async def list_projects(self, solver_name: str) -> list[Project]:
@@ -167,7 +162,7 @@ class AuthSession:
             cookies=self.session_cookies,
         )
 
-        data: ListAnyDict = self._postprocess(resp) or []
+        data: ListAnyDict = cast(ListAnyDict, self._postprocess(resp)) or []
 
         # FIXME: move filter to webserver API (next PR)
         projects: deque[Project] = deque()
@@ -226,7 +221,7 @@ class WebserverApi(BaseServiceClientApi):
 # MODULES APP SETUP -------------------------------------------------------------
 
 
-def setup(app: FastAPI, settings: Optional[WebServerSettings] = None) -> None:
+def setup(app: FastAPI, settings: WebServerSettings | None = None) -> None:
     if not settings:
         settings = WebServerSettings.create_from_envs()
 

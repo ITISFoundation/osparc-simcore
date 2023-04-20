@@ -7,7 +7,7 @@ import logging
 import os
 import urllib.parse
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Iterator, NamedTuple, Optional
+from typing import Any, AsyncIterator, Iterator, NamedTuple
 from uuid import UUID
 
 import pytest
@@ -20,6 +20,11 @@ from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx import MockRouter
+from servicelib.common_headers import (
+    X_DYNAMIC_SIDECAR_REQUEST_DNS,
+    X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
+    X_SIMCORE_USER_AGENT,
+)
 from simcore_service_director_v2.models.domains.dynamic_services import (
     DynamicServiceCreate,
     RetrieveDataOutEnveloped,
@@ -32,6 +37,9 @@ from simcore_service_director_v2.models.schemas.dynamic_services.scheduler impor
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     DynamicSidecarNotFoundError,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
+    DynamicSidecarsScheduler,
 )
 from starlette import status
 from starlette.testclient import TestClient
@@ -72,8 +80,9 @@ def minimal_config(
 @pytest.fixture(scope="session")
 def dynamic_sidecar_headers() -> dict[str, str]:
     return {
-        "X-Dynamic-Sidecar-Request-DNS": "",
-        "X-Dynamic-Sidecar-Request-Scheme": "",
+        X_DYNAMIC_SIDECAR_REQUEST_DNS: "",
+        X_DYNAMIC_SIDECAR_REQUEST_SCHEME: "",
+        X_SIMCORE_USER_AGENT: "",
     }
 
 
@@ -130,7 +139,7 @@ async def mock_retrieve_features(
     is_legacy: bool,
     scheduler_data_from_http_request: SchedulerData,
     mocker: MockerFixture,
-) -> AsyncIterator[Optional[MockRouter]]:
+) -> AsyncIterator[MockRouter | None]:
     # pylint: disable=not-context-manager
     with respx.mock(
         assert_all_called=False,
@@ -226,19 +235,20 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
         f"{module_base}._task.DynamicSidecarsScheduler.get_stack_status",
         side_effect=get_stack_status,
     )
-
     # MOCKING remove_service
-    def remove_service(node_uuid: NodeID, can_save: Optional[bool]) -> None:
+    def remove_service(node_uuid: NodeID, *ars: Any, **kwargs: Any) -> None:
         if exp_status_code == status.HTTP_307_TEMPORARY_REDIRECT:
             raise DynamicSidecarNotFoundError(node_uuid)
 
     mocker.patch(
         f"{module_base}._task.DynamicSidecarsScheduler.mark_service_for_removal",
+        autospec=True,
         side_effect=remove_service,
     )
 
     mocker.patch(
         f"{module_base}._core._scheduler.Scheduler._discover_running_services",
+        autospec=True,
         return_value=None,
     )
 
@@ -408,13 +418,15 @@ def test_get_service_status(
     "can_save, exp_save_state", [(None, True), (True, True), (False, False)]
 )
 def test_delete_service(
+    docker_swarm: None,
     mocked_director_v0_service_api: MockRouter,
     mocked_director_v2_scheduler: None,
+    mocked_service_awaits_manual_interventions: None,
     client: TestClient,
     service: dict[str, Any],
     exp_status_code: int,
     is_legacy: bool,
-    can_save: Optional[bool],
+    can_save: bool | None,
     exp_save_state: bool,
 ):
     url = URL(f"/v2/dynamic_services/{service['node_uuid']}")
@@ -435,6 +447,60 @@ def test_delete_service(
             == f"/v0/running_interactive_services/{service['node_uuid']}"
         )
         assert redirect_url.params == QueryParams(can_save=exp_save_state)
+
+
+@pytest.fixture
+def dynamic_sidecar_scheduler(minimal_app: FastAPI) -> DynamicSidecarsScheduler:
+    return minimal_app.state.dynamic_sidecar_scheduler
+
+
+@pytest.mark.parametrize(
+    "service, service_labels, exp_status_code, is_legacy",
+    [
+        pytest.param(
+            *ServiceParams(
+                service=DynamicServiceCreate.Config.schema_extra["example"],
+                service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][1],
+                exp_status_code=status.HTTP_201_CREATED,
+                is_legacy=False,
+            )
+        ),
+    ],
+)
+def test_delete_service_waiting_for_manual_intervention(
+    minimal_config: None,
+    mocked_director_v0_service_api: MockRouter,
+    mocked_director_v2_scheduler: None,
+    client: TestClient,
+    dynamic_sidecar_headers: dict[str, str],
+    service: dict[str, Any],
+    exp_status_code: int,
+    is_legacy: bool,
+    dynamic_sidecar_scheduler: DynamicSidecarsScheduler,
+):
+    post_data = DynamicServiceCreate.parse_obj(service)
+
+    response = client.post(
+        "/v2/dynamic_services",
+        headers=dynamic_sidecar_headers,
+        json=json.loads(post_data.json()),
+    )
+    assert (
+        response.status_code == exp_status_code
+    ), f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
+
+    # mark service as failed and waiting for human intervention
+    node_uuid = UUID(service["node_uuid"])
+    scheduler_data = dynamic_sidecar_scheduler._scheduler.get_scheduler_data(  # pylint: disable=protected-access
+        node_uuid
+    )
+    scheduler_data.dynamic_sidecar.status.update_failing_status("failed")
+    scheduler_data.dynamic_sidecar.wait_for_manual_intervention_after_error = True
+
+    # check response
+    url = URL(f"/v2/dynamic_services/{node_uuid}")
+    stop_response = client.delete(str(url), allow_redirects=False)
+    assert stop_response.json()["errors"][0] == "waiting_for_intervention"
 
 
 @pytest.mark.parametrize(
@@ -471,7 +537,7 @@ def test_delete_service(
 )
 def test_retrieve(
     minimal_config: None,
-    mock_retrieve_features: Optional[MockRouter],
+    mock_retrieve_features: MockRouter | None,
     mocked_director_v0_service_api: MockRouter,
     mocked_director_v2_scheduler: None,
     client: TestClient,

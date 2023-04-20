@@ -65,6 +65,7 @@ jobs:
       dynamic-sidecar: ${{ steps.filter.outputs.dynamic-sidecar }}
       invitations: ${{ steps.filter.outputs.invitations }}
       migration: ${{ steps.filter.outputs.migration }}
+      osparc-gateway-server: ${{ steps.filter.outputs.osparc-gateway-server }}
       static-webserver: ${{ steps.filter.outputs.static-webserver }}
       storage: ${{ steps.filter.outputs.storage }}
       webserver: ${{ steps.filter.outputs.webserver }}
@@ -83,6 +84,8 @@ jobs:
               - 'packages/dask-task-models-library/**'
               - 'packages/pytest-simcore/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             models-library:
               - 'packages/models-library/**'
               - 'packages/postgres-database/**'
@@ -92,6 +95,8 @@ jobs:
               - 'packages/postgres-database/**'
               - 'packages/pytest-simcore/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             service-integration:
               - 'packages/models-library/**'
               - 'packages/pytest-simcore/**'
@@ -112,28 +117,40 @@ jobs:
               - 'packages/**'
               - 'services/agent/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             api:
               - 'api/**'
             api-server:
               - 'packages/**'
               - 'services/api-server/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             autoscaling:
               - 'packages/**'
               - 'services/autoscaling/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             catalog:
               - 'packages/**'
               - 'services/catalog/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             dask-sidecar:
               - 'packages/**'
               - 'services/dask-sidecar/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             datcore-adapter:
               - 'packages/**'
               - 'services/datcore-adapter/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             director:
               - 'packages/**'
               - 'services/director/**'
@@ -146,14 +163,24 @@ jobs:
               - 'packages/**'
               - 'services/dynamic-sidecar/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             invitations:
               - 'packages/**'
               - 'services/invitations/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             migration:
               - 'packages/**'
               - 'services/migration/**'
               - 'services/docker-compose*'
+            osparc-gateway-server:
+              - 'packages/**'
+              - 'services/osparc-gateway-server/**'
+              - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             static-webserver:
               - 'services/static-webserver/**'
               - 'services/docker-compose*'
@@ -161,6 +188,8 @@ jobs:
               - 'packages/**'
               - 'services/storage/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             webserver:
               - 'packages/**'
               - 'services/web/**'
@@ -181,9 +210,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -223,9 +252,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -255,7 +284,7 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash test_isolated
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 01
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -267,9 +296,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -297,7 +326,7 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 02
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -309,9 +338,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -339,7 +368,7 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 03
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -351,9 +380,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -379,9 +408,12 @@ jobs:
         run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/storage.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/storage.bash typecheck
       - name: test
+        if: always()
         run: ./ci/github/unit-testing/storage.bash test
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -393,9 +425,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -428,7 +460,7 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/agent.bash test
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -440,9 +472,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -479,9 +511,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -507,9 +539,12 @@ jobs:
         run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/api-server.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/api-server.bash typecheck
       - name: test
+        if: always()
         run: ./ci/github/unit-testing/api-server.bash test
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -521,9 +556,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -554,7 +589,7 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/autoscaling.bash test
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -566,9 +601,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -594,7 +629,10 @@ jobs:
         run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/catalog.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/catalog.bash typecheck
       - name: test
+        if: always()
         run: ./ci/github/unit-testing/catalog.bash test
       - name: upload failed tests logs
         if: failure()
@@ -602,7 +640,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/catalog/test_failures
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -614,9 +652,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -653,7 +691,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/datcore-adapter/test_failures
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -666,9 +704,10 @@ jobs:
     strategy:
       matrix:
         # KEEP 3.6 Development of this service is frozen
+        # KEEP ubuntu 20.04, else no python 3.6
         python: [3.6]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -696,7 +735,7 @@ jobs:
         run: ./ci/github/unit-testing/director.bash install
       - name: test
         run: ./ci/github/unit-testing/director.bash test
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -708,9 +747,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -744,7 +783,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -756,9 +795,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -789,7 +828,7 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/dask-task-models-library.bash test
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -801,9 +840,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -832,8 +871,64 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/dask-sidecar.bash typecheck
       - name: test
+        if: always()
         run: ./ci/github/unit-testing/dask-sidecar.bash test
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
+        with:
+          flags: unittests #optional
+
+  unit-test-osparc-gateway-server:
+    needs: changes
+    if: ${{ needs.changes.outputs.osparc-gateway-server == 'true' || github.event_name == 'push' }}
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] osparc-gateway-server"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker-container
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: setup python environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/osparc-gateway-server/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - name: install
+        run: |
+          make devenv
+          source .venv/bin/activate && \
+          pushd services/osparc-gateway-server && \
+          make install-ci
+      - name: typecheck
+        run: |
+          source .venv/bin/activate && \
+          pushd services/osparc-gateway-server && \
+          make mypy
+      - name: test
+        if: always()
+        run: |
+          source .venv/bin/activate && \
+          pushd services/osparc-gateway-server && \
+          make test-ci-unit
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -845,9 +940,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -878,7 +973,7 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/dynamic-sidecar.bash test
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -891,8 +986,8 @@ jobs:
     strategy:
       matrix:
         node: [14]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -918,10 +1013,6 @@ jobs:
         run: ./ci/github/unit-testing/frontend.bash install
       - name: test
         run: ./ci/github/unit-testing/frontend.bash test
-    # no coverage here??
-    # - uses: codecov/codecov-action@v3.1.1
-    #   with:
-    #     flags: unittests #optional
 
   unit-test-python-linting:
     needs: changes
@@ -931,9 +1022,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9", "3.10", "3.11"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10", "3.11"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -970,9 +1061,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1003,7 +1094,7 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/postgres-database.bash test
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -1015,9 +1106,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1048,7 +1139,7 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/invitations.bash test
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -1060,9 +1151,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1090,7 +1181,7 @@ jobs:
         run: ./ci/github/unit-testing/service-integration.bash install
       - name: test
         run: ./ci/github/unit-testing/service-integration.bash test
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -1102,9 +1193,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1132,7 +1223,7 @@ jobs:
         run: ./ci/github/unit-testing/service-library.bash install_all
       - name: test
         run: ./ci/github/unit-testing/service-library.bash test_all
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -1144,9 +1235,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1174,7 +1265,7 @@ jobs:
         run: ./ci/github/unit-testing/settings-library.bash install
       - name: test
         run: ./ci/github/unit-testing/settings-library.bash test
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -1186,9 +1277,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1216,7 +1307,7 @@ jobs:
         run: ./ci/github/unit-testing/models-library.bash install
       - name: test
         run: ./ci/github/unit-testing/models-library.bash test
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -1228,9 +1319,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1260,7 +1351,7 @@ jobs:
         run: ./ci/github/unit-testing/simcore-sdk.bash install
       - name: test
         run: ./ci/github/unit-testing/simcore-sdk.bash test
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: unittests #optional
 
@@ -1282,6 +1373,7 @@ jobs:
         unit-test-dynamic-sidecar,
         unit-test-frontend,
         unit-test-models-library,
+        unit-test-osparc-gateway-server,
         unit-test-postgres-database,
         unit-test-python-linting,
         unit-test-service-integration,
@@ -1313,9 +1405,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1359,7 +1451,7 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/webserver.bash clean_up
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: integrationtests #optional
 
@@ -1371,9 +1463,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1419,7 +1511,7 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/webserver.bash clean_up
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: integrationtests #optional
 
@@ -1431,9 +1523,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1479,7 +1571,7 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/director-v2.bash clean_up
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: integrationtests #optional
 
@@ -1491,9 +1583,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1542,7 +1634,82 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/director-v2.bash clean_up
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
+        with:
+          flags: integrationtests #optional
+
+  integration-test-osparc-gateway-server:
+    needs: [changes, build-test-images]
+    if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.osparc-gateway-server == 'true' || github.event_name == 'push' }}
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
+    name: "[int] osparc-gateway-server"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker-container
+
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: setup python environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/osparc-gateway-server/requirements/ci.txt"
+      - name: expose github runtime for buildx
+        uses: crazy-max/ghaction-github-runtime@v2
+      - name: download docker images
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+          path: /${{ runner.temp }}/build
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - name: install
+        run: |
+          make devenv && \
+          source .venv/bin/activate && \
+          pushd services/osparc-gateway-server && \
+          make install-ci
+      - name: integration-test
+        run: |
+          source .venv/bin/activate && \
+          pushd services/osparc-gateway-server && \
+          make test-ci-integration
+      - name: system-test
+        run: |
+          source .venv/bin/activate && \
+          pushd services/osparc-gateway-server && \
+          make test-system
+      - name: upload failed tests logs
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ github.job }}_docker_logs
+          path: ./services/director-v2/test_failures
+      - name: cleanup
+        if: always()
+        run: |
+          pushd services/osparc-gateway-server && \
+          make down
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: integrationtests #optional
 
@@ -1554,9 +1721,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1602,7 +1769,7 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/simcore-sdk.bash clean_up
-      - uses: codecov/codecov-action@v3.1.1
+      - uses: codecov/codecov-action@v3.1.2
         with:
           flags: integrationtests
 
@@ -1613,6 +1780,7 @@ jobs:
       [
         integration-test-director-v2-01,
         integration-test-director-v2-02,
+        integration-test-osparc-gateway-server,
         integration-test-simcore-sdk,
         integration-test-webserver-01,
         integration-test-webserver-02,
@@ -1636,9 +1804,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1693,9 +1861,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1757,10 +1925,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
+        python: ["3.10"]
         node: [14]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1834,9 +2002,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1896,9 +2064,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1

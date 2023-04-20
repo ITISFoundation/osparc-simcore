@@ -9,7 +9,7 @@ from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import ResourcesDict
 from pydantic import ValidationError
 
-from ...core.settings import AppSettings
+from ...core.settings import ApplicationSettings
 from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
 from ...models.schemas.services import ServiceGet
@@ -17,16 +17,16 @@ from ...models.schemas.services_specifications import ServiceSpecifications
 from ...services.director import DirectorApi
 from ...services.function_services import get_function_service, is_function_service
 from .database import get_repository
-from .director import DirectorApi, get_director_api
+from .director import get_director_api
 
 
 def get_default_service_resources(request: Request) -> ResourcesDict:
-    app_settings: AppSettings = request.app.state.settings
+    app_settings: ApplicationSettings = request.app.state.settings
     return app_settings.CATALOG_SERVICES_DEFAULT_RESOURCES
 
 
 def get_default_service_specifications(request: Request) -> ServiceSpecifications:
-    app_settings: AppSettings = request.app.state.settings
+    app_settings: ApplicationSettings = request.app.state.settings
     return app_settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS
 
 
@@ -45,7 +45,6 @@ async def check_service_read_access(
     services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
     x_simcore_products_name: str = Header(None),
 ) -> AccessInfo:
-
     # get the user's groups
     user_groups = await groups_repository.list_user_groups(user_id)
     if not user_groups:

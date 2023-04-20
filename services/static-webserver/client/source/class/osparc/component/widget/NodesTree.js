@@ -272,11 +272,11 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       }
       if (nodeId) {
         const study = this.getStudy();
+        const width = osparc.info.CardLarge.WIDTH;
+        const height = osparc.info.CardLarge.HEIGHT;
         if (nodeId === study.getUuid()) {
           const studyDetails = new osparc.info.StudyLarge(study);
           const title = this.tr("Study Information");
-          const width = 500;
-          const height = 500;
           osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height);
         } else {
           const node = study.getWorkbench().getNode(nodeId);
@@ -286,8 +286,6 @@ qx.Class.define("osparc.component.widget.NodesTree", {
             studyId: study.getUuid()
           });
           const title = this.tr("Service information");
-          const width = 600;
-          const height = 700;
           osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height);
         }
       }

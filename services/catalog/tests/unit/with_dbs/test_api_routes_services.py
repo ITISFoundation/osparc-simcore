@@ -32,7 +32,7 @@ def disable_service_caching(monkeypatch):
 
 
 async def test_list_services_with_details(
-    mock_catalog_background_task,
+    mock_catalog_background_task: None,
     director_mockup: MockRouter,
     client: TestClient,
     user_id: int,
@@ -85,7 +85,7 @@ async def test_list_services_with_details(
 
 
 async def test_list_services_without_details(
-    mock_catalog_background_task,
+    mock_catalog_background_task: None,
     director_mockup: MockRouter,
     client: TestClient,
     user_id: int,
@@ -128,7 +128,7 @@ async def test_list_services_without_details(
 
 async def test_list_services_without_details_with_wrong_user_id_returns_403(
     disable_service_caching,
-    mock_catalog_background_task,
+    mock_catalog_background_task: None,
     director_mockup: MockRouter,
     client: TestClient,
     user_id: int,
@@ -158,8 +158,8 @@ async def test_list_services_without_details_with_wrong_user_id_returns_403(
 
 
 async def test_list_services_without_details_with_another_product_returns_other_services(
-    disable_service_caching,
-    mock_catalog_background_task,
+    disable_service_caching: None,
+    mock_catalog_background_task: None,
     director_mockup: MockRouter,
     client: TestClient,
     user_id: int,

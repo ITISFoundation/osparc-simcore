@@ -41,7 +41,7 @@ qx.Class.define("osparc.MaintenanceTracker", {
 
   statics: {
     CHECK_INTERVAL: 15*60*1000, // Check every 15'
-    CLOSABLE_WARN_IN_ADVANCE: 12*60*60*1000, // Show Ribbon Closable Message 12h in advance
+    CLOSABLE_WARN_IN_ADVANCE: 24*60*60*1000, // Show Ribbon Closable Message 24h in advance
     PERMANENT_WARN_IN_ADVANCE: 30*60*1000 // Show Ribbon Permament Message 30' in advance
   },
 
@@ -87,6 +87,7 @@ qx.Class.define("osparc.MaintenanceTracker", {
           text += " - " + osparc.utils.Utils.formatDateAndTime(this.getEnd());
         }
       }
+      text += " (local time)";
       if (this.getReason()) {
         text += ": " + this.getReason();
       }

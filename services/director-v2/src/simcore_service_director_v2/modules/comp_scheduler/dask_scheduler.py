@@ -2,13 +2,12 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import AsyncIterator, Union
+from typing import AsyncIterator
 
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import (
     TaskLogEvent,
     TaskProgressEvent,
-    TaskStateEvent,
 )
 from dask_task_models_library.container_tasks.io import TaskOutputData
 from models_library.clusters import DEFAULT_CLUSTER_ID, Cluster, ClusterID
@@ -21,6 +20,7 @@ from models_library.rabbitmq_messages import (
     ProgressRabbitMessageNode,
 )
 from models_library.users import UserID
+from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_service_director_v2.core.errors import TaskSchedulingError
 
@@ -36,7 +36,6 @@ from ...utils.dask import (
 )
 from ...utils.scheduler import get_repository
 from ..db.repositories.comp_tasks import CompTasksRepository
-from ..rabbitmq import RabbitMQClient
 from .base_scheduler import BaseCompScheduler
 
 logger = logging.getLogger(__name__)
@@ -60,12 +59,10 @@ async def _cluster_dask_client(
 class DaskScheduler(BaseCompScheduler):
     settings: ComputationalBackendSettings
     dask_clients_pool: DaskClientsPool
-    rabbitmq_client: RabbitMQClient
 
     def __post_init__(self):
         self.dask_clients_pool.register_handlers(
             TaskHandlers(
-                self._task_state_change_handler,
                 self._task_progress_change_handler,
                 self._task_log_change_handler,
             )
@@ -141,7 +138,7 @@ class DaskScheduler(BaseCompScheduler):
                 )
 
     async def _process_task_result(
-        self, task: CompTaskAtDB, result: Union[Exception, TaskOutputData]
+        self, task: CompTaskAtDB, result: Exception | TaskOutputData
     ) -> None:
         logger.debug("received %s result: %s", f"{task=}", f"{result=}")
         task_final_state = RunningState.FAILED
@@ -188,7 +185,7 @@ class DaskScheduler(BaseCompScheduler):
                 )
 
             # instrumentation
-            message = InstrumentationRabbitMessage(
+            message = InstrumentationRabbitMessage.construct(
                 metrics="service_stopped",
                 user_id=user_id,
                 project_id=task.project_id,
@@ -198,6 +195,7 @@ class DaskScheduler(BaseCompScheduler):
                 service_key=service_key,
                 service_tag=service_version,
                 result=task_final_state,
+                simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             )
             await self.rabbitmq_client.publish(message.channel_name, message.json())
 
@@ -205,38 +203,11 @@ class DaskScheduler(BaseCompScheduler):
             task.project_id, [task.node_id], task_final_state, errors=errors
         )
 
-    async def _task_state_change_handler(self, event: str) -> None:
-        task_state_event = TaskStateEvent.parse_raw(event)
-        logger.debug(
-            "received task state update: %s",
-            task_state_event,
-        )
-        service_key, service_version, user_id, project_id, node_id = parse_dask_job_id(
-            task_state_event.job_id
-        )
-
-        if task_state_event.state == RunningState.STARTED:
-            message = InstrumentationRabbitMessage(
-                metrics="service_started",
-                user_id=user_id,
-                project_id=project_id,
-                node_id=node_id,
-                service_uuid=node_id,
-                service_type=NodeClass.COMPUTATIONAL.value,
-                service_key=service_key,
-                service_tag=service_version,
-            )
-            await self.rabbitmq_client.publish(message.channel_name, message.json())
-
-        await CompTasksRepository(self.db_engine).set_project_tasks_state(
-            project_id, [node_id], task_state_event.state
-        )
-
     async def _task_progress_change_handler(self, event: str) -> None:
         task_progress_event = TaskProgressEvent.parse_raw(event)
         logger.debug("received task progress update: %s", task_progress_event)
         *_, user_id, project_id, node_id = parse_dask_job_id(task_progress_event.job_id)
-        message = ProgressRabbitMessageNode(
+        message = ProgressRabbitMessageNode.construct(
             user_id=user_id,
             project_id=project_id,
             node_id=node_id,
@@ -248,12 +219,12 @@ class DaskScheduler(BaseCompScheduler):
         task_log_event = TaskLogEvent.parse_raw(event)
         logger.debug("received task log update: %s", task_log_event)
         *_, user_id, project_id, node_id = parse_dask_job_id(task_log_event.job_id)
-        message = LoggerRabbitMessage(
+        message = LoggerRabbitMessage.construct(
             user_id=user_id,
             project_id=project_id,
             node_id=node_id,
             messages=[task_log_event.log],
-            log_level=logging.INFO,
+            log_level=task_log_event.log_level,
         )
 
         await self.rabbitmq_client.publish(message.channel_name, message.json())

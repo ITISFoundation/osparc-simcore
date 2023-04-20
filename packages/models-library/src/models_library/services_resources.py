@@ -1,13 +1,15 @@
 import logging
-from typing import Any, Final, Union
+from enum import auto
+from typing import Any, Final, Optional, Union
 
+from models_library.docker import DockerGenericTag
+from models_library.utils.enums import StrAutoEnum
 from pydantic import (
     BaseModel,
     ByteSize,
     Field,
     StrictFloat,
     StrictInt,
-    constr,
     parse_obj_as,
     root_validator,
 )
@@ -16,13 +18,14 @@ from .utils.fastapi_encoders import jsonable_encoder
 
 logger = logging.getLogger(__name__)
 
-DockerImage = constr(regex=r"[\w/-]+:[\w.@]+")
-DockerComposeServiceName = constr(regex=r"^[a-zA-Z0-9._-]+$")
+
 ResourceName = str
 
 # NOTE: replace hard coded `container` with function which can
 # extract the name from the `service_key` or `registry_address/service_key`
-DEFAULT_SINGLE_SERVICE_NAME: Final[DockerComposeServiceName] = "container"
+DEFAULT_SINGLE_SERVICE_NAME: Final[DockerGenericTag] = parse_obj_as(
+    DockerGenericTag, "container"
+)
 
 MEMORY_50MB: Final[int] = parse_obj_as(ByteSize, "50mib")
 MEMORY_250MB: Final[int] = parse_obj_as(ByteSize, "250mib")
@@ -57,8 +60,14 @@ class ResourceValue(BaseModel):
 ResourcesDict = dict[ResourceName, ResourceValue]
 
 
+class BootMode(StrAutoEnum):
+    CPU = auto()
+    GPU = auto()
+    MPI = auto()
+
+
 class ImageResources(BaseModel):
-    image: DockerImage = Field(
+    image: DockerGenericTag = Field(
         ...,
         description=(
             "Used by the frontend to provide a context for the users."
@@ -68,6 +77,10 @@ class ImageResources(BaseModel):
         ),
     )
     resources: ResourcesDict
+    boot_modes: list[BootMode] = Field(
+        default=[BootMode.CPU],
+        description="describe how a service shall be booted, using CPU, MPI, openMP or GPU",
+    )
 
     class Config:
         schema_extra = {
@@ -87,23 +100,33 @@ class ImageResources(BaseModel):
         }
 
 
-ServiceResourcesDict = dict[DockerComposeServiceName, ImageResources]
+ServiceResourcesDict = dict[DockerGenericTag, ImageResources]
 
 
 class ServiceResourcesDictHelpers:
     @staticmethod
     def create_from_single_service(
-        image: DockerComposeServiceName, resources: ResourcesDict
+        image: DockerGenericTag,
+        resources: ResourcesDict,
+        boot_modes: Optional[list[BootMode]] = None,
     ) -> ServiceResourcesDict:
+        if boot_modes is None:
+            boot_modes = [BootMode.CPU]
         return parse_obj_as(
             ServiceResourcesDict,
-            {DEFAULT_SINGLE_SERVICE_NAME: {"image": image, "resources": resources}},
+            {
+                DEFAULT_SINGLE_SERVICE_NAME: {
+                    "image": image,
+                    "resources": resources,
+                    "boot_modes": boot_modes,
+                }
+            },
         )
 
     @staticmethod
     def create_jsonable(
         service_resources: ServiceResourcesDict,
-    ) -> dict[DockerComposeServiceName, Any]:
+    ) -> dict[DockerGenericTag, Any]:
         return jsonable_encoder(service_resources)
 
     class Config:
@@ -120,6 +143,7 @@ class ServiceResourcesDictHelpers:
                                 "reservation": parse_obj_as(ByteSize, "2Gib"),
                             },
                         },
+                        "boot_modes": [BootMode.CPU],
                     },
                 },
                 # service with a compose spec
@@ -130,6 +154,7 @@ class ServiceResourcesDictHelpers:
                             "CPU": {"limit": 0.3, "reservation": 0.3},
                             "RAM": {"limit": 53687091232, "reservation": 53687091232},
                         },
+                        "boot_modes": [BootMode.CPU],
                     },
                     "s4l-core": {
                         "image": "simcore/services/dynamic/s4l-core-dy:3.0.0",
@@ -138,6 +163,7 @@ class ServiceResourcesDictHelpers:
                             "RAM": {"limit": 17179869184, "reservation": 536870912},
                             "VRAM": {"limit": 1, "reservation": 1},
                         },
+                        "boot_modes": [BootMode.GPU],
                     },
                     "sym-server": {
                         "image": "simcore/services/dynamic/sym-server:3.0.0",
@@ -148,6 +174,7 @@ class ServiceResourcesDictHelpers:
                                 "reservation": parse_obj_as(ByteSize, "2Gib"),
                             },
                         },
+                        "boot_modes": [BootMode.CPU],
                     },
                 },
                 # compose spec with image outside the platform
@@ -161,6 +188,7 @@ class ServiceResourcesDictHelpers:
                                 "reservation": parse_obj_as(ByteSize, "2Gib"),
                             },
                         },
+                        "boot_modes": [BootMode.CPU],
                     },
                     "proxy": {
                         "image": "traefik:v2.6.6",
@@ -171,6 +199,7 @@ class ServiceResourcesDictHelpers:
                                 "reservation": parse_obj_as(ByteSize, "2Gib"),
                             },
                         },
+                        "boot_modes": [BootMode.CPU],
                     },
                 },
             ]

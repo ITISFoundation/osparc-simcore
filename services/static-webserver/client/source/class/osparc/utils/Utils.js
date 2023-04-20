@@ -84,6 +84,18 @@ qx.Class.define("osparc.utils.Utils", {
       }
     },
 
+    resourceTypeToAlias: function(resourceType, options) {
+      switch (resourceType) {
+        case "study":
+          return osparc.product.Utils.getStudyAlias(options);
+        case "template":
+          return osparc.product.Utils.getTemplateAlias(options);
+        case "service":
+          return osparc.product.Utils.getServiceAlias(options);
+      }
+      return resourceType;
+    },
+
     hardRefresh: function() {
       // https://stackoverflow.com/questions/5721704/window-location-reload-with-clear-cache
       // No cigar. Tried:
@@ -335,6 +347,10 @@ qx.Class.define("osparc.utils.Utils", {
       return window.location.hostname.includes("speag");
     },
 
+    isDevelEnv: function() {
+      return window.location.hostname.includes("master.speag") || window.location.port === "9081";
+    },
+
     addBorder: function(widget, width = 1, color = "transparent") {
       widget.getContentElement().setStyle("border", width+"px solid " + color);
     },
@@ -345,6 +361,20 @@ qx.Class.define("osparc.utils.Utils", {
 
     hideBorder: function(widget) {
       widget.getContentElement().setStyle("border", "1px solid transparent");
+    },
+
+    addBorderLeftRadius: function(widget) {
+      widget.getContentElement().setStyles({
+        "border-top-left-radius": "4px",
+        "border-bottom-left-radius": "4px"
+      });
+    },
+
+    addBorderRightRadius: function(widget) {
+      widget.getContentElement().setStyles({
+        "border-top-right-radius": "4px",
+        "border-bottom-right-radius": "4px"
+      });
     },
 
     __setStyleToIFrame: function(domEl) {
@@ -433,28 +463,35 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     retrieveURLAndDownload: function(locationId, fileId) {
-      let fileName = fileId.split("/");
-      fileName = fileName[fileName.length-1];
-      const download = true;
-      const dataStore = osparc.store.Data.getInstance();
-      dataStore.getPresignedLink(download, locationId, fileId)
-        .then(presignedLinkData => {
-          if (presignedLinkData.resp) {
-            const link = presignedLinkData.resp.link;
-            const fileNameFromLink = this.fileNameFromPresignedLink(link);
-            fileName = fileNameFromLink ? fileNameFromLink : fileName;
-            this.downloadLink(link, "GET", fileName);
-          }
-        });
+      return new Promise((resolve, reject) => {
+        let fileName = fileId.split("/");
+        fileName = fileName[fileName.length-1];
+        const download = true;
+        const dataStore = osparc.store.Data.getInstance();
+        dataStore.getPresignedLink(download, locationId, fileId)
+          .then(presignedLinkData => {
+            if (presignedLinkData.resp) {
+              const link = presignedLinkData.resp.link;
+              const fileNameFromLink = this.fileNameFromPresignedLink(link);
+              fileName = fileNameFromLink ? fileNameFromLink : fileName;
+              resolve({
+                link,
+                fileName
+              });
+            } else {
+              resolve(null);
+            }
+          })
+          .catch(err => reject(err));
+      });
     },
 
-    downloadLink: function(url, method, fileName, downloadStartedCB) {
+    downloadLink: function(url, method, fileName, progressCb, loadedCb) {
       return new Promise((resolve, reject) => {
         let xhr = new XMLHttpRequest();
         xhr.open(method, url, true);
         xhr.responseType = "blob";
         xhr.addEventListener("readystatechange", () => {
-        // xhr.onreadystatechange = () => {
           if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
             // The responseType value can be changed at any time before the readyState reaches 3.
             // When the readyState reaches 2, we have access to the response headers to make that decision with.
@@ -466,19 +503,22 @@ qx.Class.define("osparc.utils.Utils", {
             }
           }
         });
-        xhr.addEventListener("progress", () => {
+        xhr.addEventListener("progress", e => {
           if (xhr.readyState === XMLHttpRequest.LOADING) {
             if (xhr.status === 0 || (xhr.status >= 200 && xhr.status < 400)) {
-              if (downloadStartedCB) {
-                downloadStartedCB();
+              if (e["type"] === "progress" && progressCb) {
+                progressCb(e.loaded / e.total);
               }
             }
           }
         });
         xhr.addEventListener("load", () => {
           if (xhr.status == 200) {
-            let blob = new Blob([xhr.response]);
-            let urlBlob = window.URL.createObjectURL(blob);
+            if (loadedCb) {
+              loadedCb();
+            }
+            const blob = new Blob([xhr.response]);
+            const urlBlob = window.URL.createObjectURL(blob);
             if (!fileName) {
               fileName = this.self().filenameFromContentDisposition(xhr);
             }

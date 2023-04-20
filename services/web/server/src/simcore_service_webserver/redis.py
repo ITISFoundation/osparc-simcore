@@ -1,35 +1,24 @@
-import json
 import logging
-from typing import Optional
 
 import redis.asyncio as aioredis
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
-from settings_library.redis import RedisSettings
-from tenacity._asyncio import AsyncRetrying
-from tenacity.before_sleep import before_sleep_log
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
+from servicelib.redis import RedisClientSDK, RedisClientsManager
+from settings_library.redis import RedisDatabase, RedisSettings
 
 from ._constants import APP_SETTINGS_KEY
-from .redis_constants import (
-    APP_CLIENT_REDIS_CLIENT_KEY,
-    APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY,
-    APP_CLIENT_REDIS_SCHEDULED_MAINTENANCE_CLIENT_KEY,
-    APP_CLIENT_REDIS_VALIDATION_CODE_CLIENT_KEY,
-    APP_CLIENT_REDIS_USER_NOTIFICATIONS_CLIENT_KEY,
-)
 
 log = logging.getLogger(__name__)
 
-_MINUTE = 60
-_WAIT_SECS = 2
+
+APP_REDIS_CLIENTS_MANAGER = f"{__name__}.redis_clients_manager"
+
 
 # SETTINGS --------------------------------------------------------------------------
 
 
 def get_plugin_settings(app: web.Application) -> RedisSettings:
-    settings: Optional[RedisSettings] = app[APP_SETTINGS_KEY].WEBSERVER_REDIS
+    settings: RedisSettings | None = app[APP_SETTINGS_KEY].WEBSERVER_REDIS
     assert settings, "setup_settings not called?"  # nosec
     assert isinstance(settings, RedisSettings)  # nosec
     return settings
@@ -42,74 +31,51 @@ async def setup_redis_client(app: web.Application):
     raises builtin ConnectionError
     """
     redis_settings: RedisSettings = get_plugin_settings(app)
+    app[APP_REDIS_CLIENTS_MANAGER] = manager = RedisClientsManager(
+        databases={
+            RedisDatabase.RESOURCES,
+            RedisDatabase.LOCKS,
+            RedisDatabase.VALIDATION_CODES,
+            RedisDatabase.SCHEDULED_MAINTENANCE,
+            RedisDatabase.USER_NOTIFICATIONS,
+        },
+        settings=redis_settings,
+    )
 
-    async def _create_client(address: str) -> aioredis.Redis:
-        """raises ConnectionError if fails"""
-        async for attempt in AsyncRetrying(
-            stop=stop_after_delay(1 * _MINUTE),
-            wait=wait_fixed(_WAIT_SECS),
-            before_sleep=before_sleep_log(log, logging.WARNING),
-            reraise=True,
-        ):
-            with attempt:
-                client = aioredis.from_url(
-                    address, encoding="utf-8", decode_responses=True
-                )
-                if not await client.ping():
-                    await client.close(close_connection_pool=True)
-                    raise ConnectionError(f"Connection to {address!r} failed")
-                log.info(
-                    "Connection to %s succeeded with %s [%s]",
-                    f"redis at {address=}",
-                    f"{client=}",
-                    json.dumps(attempt.retry_state.retry_object.statistics),
-                )
-            assert client  # nosec
-            return client
-
-    REDIS_DSN_MAP = {
-        APP_CLIENT_REDIS_CLIENT_KEY: redis_settings.dsn_resources,
-        APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY: redis_settings.dsn_locks,
-        APP_CLIENT_REDIS_VALIDATION_CODE_CLIENT_KEY: redis_settings.dsn_validation_codes,
-        APP_CLIENT_REDIS_SCHEDULED_MAINTENANCE_CLIENT_KEY: redis_settings.dsn_scheduled_maintenance,
-        APP_CLIENT_REDIS_USER_NOTIFICATIONS_CLIENT_KEY: redis_settings.dsn_user_notifications,
-    }
-
-    for app_key, dsn in REDIS_DSN_MAP.items():
-        assert app.get(app_key) is None  # nosec
-        app[app_key] = await _create_client(dsn)
+    await manager.setup()
 
     yield
 
-    for app_key in REDIS_DSN_MAP.keys():
-        if redis_client := app.get(app_key):
-            await redis_client.close(close_connection_pool=True)
+    await manager.shutdown()
 
 
-def _get_redis_client(app: web.Application, app_key: str) -> aioredis.Redis:
-    redis_client = app[app_key]
-    assert redis_client is not None, f"redis plugin was not init for {app_key}"  # nosec
-    return redis_client
+def _get_redis_client(app: web.Application, database: RedisDatabase) -> RedisClientSDK:
+    redis_client: RedisClientsManager = app[APP_REDIS_CLIENTS_MANAGER]
+    return redis_client.client(database)
 
 
-def get_redis_client(app: web.Application) -> aioredis.Redis:
-    return _get_redis_client(app, APP_CLIENT_REDIS_CLIENT_KEY)
+def get_redis_resources_client(app: web.Application) -> aioredis.Redis:
+    return _get_redis_client(app, RedisDatabase.RESOURCES).redis
 
 
 def get_redis_lock_manager_client(app: web.Application) -> aioredis.Redis:
-    return _get_redis_client(app, APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY)
+    return _get_redis_client(app, RedisDatabase.LOCKS).redis
+
+
+def get_redis_lock_manager_client_sdk(app: web.Application) -> RedisClientSDK:
+    return _get_redis_client(app, RedisDatabase.LOCKS)
 
 
 def get_redis_validation_code_client(app: web.Application) -> aioredis.Redis:
-    return _get_redis_client(app, APP_CLIENT_REDIS_VALIDATION_CODE_CLIENT_KEY)
+    return _get_redis_client(app, RedisDatabase.VALIDATION_CODES).redis
 
 
 def get_redis_scheduled_maintenance_client(app: web.Application) -> aioredis.Redis:
-    return _get_redis_client(app, APP_CLIENT_REDIS_SCHEDULED_MAINTENANCE_CLIENT_KEY)
+    return _get_redis_client(app, RedisDatabase.SCHEDULED_MAINTENANCE).redis
 
 
 def get_redis_user_notifications_client(app: web.Application) -> aioredis.Redis:
-    return _get_redis_client(app, APP_CLIENT_REDIS_USER_NOTIFICATIONS_CLIENT_KEY)
+    return _get_redis_client(app, RedisDatabase.USER_NOTIFICATIONS).redis
 
 
 # PLUGIN SETUP --------------------------------------------------------------------------
