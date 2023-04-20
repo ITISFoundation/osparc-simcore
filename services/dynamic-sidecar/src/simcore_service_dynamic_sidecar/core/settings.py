@@ -1,7 +1,7 @@
 import warnings
 from functools import lru_cache
 from pathlib import Path
-from typing import Optional, cast
+from typing import cast
 
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.projects import ProjectID
@@ -93,6 +93,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     DY_SIDECAR_STATE_EXCLUDE: set[str] = Field(
         ..., description="list of patterns to exclude files when saving states"
     )
+    DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
+        False,
+        env=["DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"],
+        description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
+    )
     DY_SIDECAR_USER_ID: UserID
     DY_SIDECAR_PROJECT_ID: ProjectID
     DY_SIDECAR_NODE_ID: NodeID
@@ -101,7 +106,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     REGISTRY_SETTINGS: RegistrySettings = Field(auto_default_from_env=True)
 
-    RABBIT_SETTINGS: Optional[RabbitSettings] = Field(auto_default_from_env=True)
+    RABBIT_SETTINGS: RabbitSettings | None = Field(auto_default_from_env=True)
     DY_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
 
     @validator("LOG_LEVEL")
@@ -110,7 +115,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         return cls.validate_log_level(value)
 
     @property
-    def rclone_settings_for_nodeports(self) -> Optional[RCloneSettings]:
+    def rclone_settings_for_nodeports(self) -> RCloneSettings | None:
         """
         If R_CLONE_ENABLED is False it returns None which indicates
         nodeports to disable rclone and fallback to the previous storage mechanim.

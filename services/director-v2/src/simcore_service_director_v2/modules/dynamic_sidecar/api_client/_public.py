@@ -17,13 +17,12 @@ from servicelib.fastapi.long_running_tasks.client import (
     TaskId,
     periodic_task_result,
 )
-from servicelib.logging_utils import log_context
+from servicelib.logging_utils import log_context, log_decorator
 from servicelib.utils import logged_gather
 from simcore_service_director_v2.core.settings import DynamicSidecarSettings
 
 from ....models.schemas.dynamic_services import SchedulerData
 from ....modules.dynamic_sidecar.docker_api import get_or_create_networks_ids
-from ....utils.logging_utils import log_decorator
 from ..errors import EntrypointContainerNotFoundError
 from ._errors import BaseClientHTTPError, UnexpectedStatusError
 from ._thin import ThinDynamicSidecarClient

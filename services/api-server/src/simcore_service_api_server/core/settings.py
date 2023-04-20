@@ -84,6 +84,11 @@ class BasicSettings(BaseCustomSettings, MixinLoggingSettings):
         LogLevel.INFO.value,
         env=["API_SERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
     )
+    API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
+        False,
+        env=["API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"],
+        description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
+    )
 
     # DEBUGGING
     API_SERVER_REMOTE_DEBUG_PORT: int = 3000
