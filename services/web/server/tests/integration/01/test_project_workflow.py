@@ -207,7 +207,6 @@ async def _request_delete(client, pid):
     await assert_status(resp, web.HTTPNoContent)
 
 
-@pytest.mark.testit
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_workflow(
     postgres_db: sa.engine.Engine,

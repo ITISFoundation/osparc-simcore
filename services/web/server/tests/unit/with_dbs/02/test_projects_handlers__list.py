@@ -165,7 +165,6 @@ async def test_list_projects_with_invalid_pagination_parameters(
     )
 
 
-@pytest.mark.testit
 @pytest.mark.parametrize("limit", [7, 20, 43])
 @pytest.mark.parametrize(*standard_user_role())
 async def test_list_projects_with_pagination(
