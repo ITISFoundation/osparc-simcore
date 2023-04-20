@@ -50,7 +50,7 @@ def create_routes(validated_specs: openapi.Spec) -> list[web.RouteDef]:
         "list_api_keys": api_keys_handlers.list_api_keys,
     }
 
-    routes = map_handlers_with_operations(
+    routes: list[web.RouteDef] = map_handlers_with_operations(
         handlers_map,
         filter(include_path, iter_path_operations(validated_specs)),
         strict=True,
