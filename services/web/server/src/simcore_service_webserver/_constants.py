@@ -36,4 +36,5 @@ __all__: tuple[str, ...] = (
     "APP_JSONSCHEMA_SPECS_KEY",
     "APP_OPENAPI_SPECS_KEY",
     "APP_SETTINGS_KEY",
+    "RQT_USERID_KEY",
 )
