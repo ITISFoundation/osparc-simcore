@@ -83,7 +83,7 @@ python-dateutil==2.8.2
     # via arrow
 pyyaml==5.4.1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-redis==4.4.0
+redis==4.5.4
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 six==1.16.0
     # via
