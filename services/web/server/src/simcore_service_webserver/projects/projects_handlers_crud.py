@@ -139,7 +139,11 @@ async def create_project(request: web.Request):
             ProjectCreateNew | ProjectCopyOverride | EmptyModel, request
         )
         predefined_project = (
-            project_create.dict(exclude_unset=True, by_alias=True, exclude_none=True)
+            project_create.dict(
+                exclude_unset=True,
+                by_alias=True,
+                exclude_none=True,
+            )
             or None
         )
 

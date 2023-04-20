@@ -118,7 +118,7 @@ def project_nodes():
 
 @pytest.fixture
 def mock_director_service(
-    model_fake_factory,
+    model_fake_factory: Callable,
     running_service_model_schema,
     registry_service_model_schema,
     user_id: int,
@@ -134,7 +134,8 @@ def mock_director_service(
 
     # fake director service "state" variables
     _fake_project_services = [
-        fake_registry_service_model(key=s[0], version=s[1]) for s in project_nodes
+        fake_registry_service_model(key=node[0], version=node[1])
+        for node in project_nodes
     ]
 
     _fake_running_services = []

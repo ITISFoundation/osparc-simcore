@@ -6,7 +6,6 @@ SEE rationale in https://fastapi.tiangolo.com/tutorial/extra-models/#multiple-mo
 """
 
 from typing import Any, Literal, TypeAlias
-from uuid import uuid4
 
 from models_library.emails import LowerCaseEmailStr
 from models_library.projects import ClassifierID, DateTimeStr, NodesDict, ProjectID
@@ -20,6 +19,8 @@ from servicelib.aiohttp.long_running_tasks.server import TaskGet
 
 from ..rest_schemas_base import InputSchema, OutputSchema
 
+NOT_REQUIRED = Field(default=None)
+
 
 class EmptyModel(BaseModel):
     # Used to represent body={}
@@ -28,7 +29,7 @@ class EmptyModel(BaseModel):
 
 
 class ProjectCreateNew(InputSchema):
-    uuid: ProjectID  # NOTE: suggested uuid! but could be different!
+    uuid: ProjectID | None = None  # NOTE: suggested uuid! but could be different!
     name: str
     description: str | None
     thumbnail: HttpUrlWithCustomMinLength | None
@@ -38,16 +39,9 @@ class ProjectCreateNew(InputSchema):
     classifiers: list[ClassifierID] = Field(default_factory=list)
     ui: StudyUI | None = None
 
-    _empty_is_none = validator("thumbnail", "description", allow_reuse=True, pre=True)(
-        empty_str_to_none
-    )
-
-    @validator("uuid", pre=True)
-    @classmethod
-    def auto_generate_id(cls, value):
-        if not value:
-            value = uuid4()
-        return value
+    _empty_is_none = validator(
+        "uuid", "thumbnail", "description", allow_reuse=True, pre=True
+    )(empty_str_to_none)
 
 
 # NOTE: based on OVERRIDABLE_DOCUMENT_KEYS
@@ -112,9 +106,6 @@ class ProjectReplace(InputSchema):
     _empty_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
         empty_str_to_none
     )
-
-
-NOT_REQUIRED = Field(default=None)
 
 
 class ProjectUpdate(InputSchema):
