@@ -9,26 +9,24 @@ import sys
 from copy import deepcopy
 from pathlib import Path
 from typing import AsyncIterator, Awaitable, Callable
-from uuid import UUID
 
 import pytest
 import simcore_service_webserver
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from models_library.projects_networks import PROJECT_NETWORK_PREFIX
 from models_library.projects_state import ProjectState
 from pytest import MonkeyPatch
-from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
+from pytest_simcore.simcore_webserver_projects_rest_api import NEW_PROJECT
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
 from servicelib.json_serialization import json_dumps
 from simcore_service_webserver.application_settings_utils import convert_to_environ_vars
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects._create_utils import OVERRIDABLE_DOCUMENT_KEYS
 from simcore_service_webserver.projects.project_models import ProjectDict
-from simcore_service_webserver.utils import now_str, to_datetime
+from simcore_service_webserver.utils import to_datetime
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -160,34 +158,6 @@ def monkeypatch_setenv_from_app_config(
 
 
 @pytest.fixture
-def mock_projects_networks_network_name(mocker: MockerFixture) -> None:
-    remove_orphaned_services = mocker.patch(
-        "simcore_service_webserver.projects_networks._network_name",
-        return_value=f"{PROJECT_NETWORK_PREFIX}_{UUID(int=0)}_mocked",
-    )
-    return remove_orphaned_services
-
-
-def _minimal_project() -> ProjectDict:
-    return {
-        "uuid": "0000000-invalid-uuid",
-        "name": "Minimal name",
-        "description": "this description should not change",
-        "prjOwner": "me but I will be removed anyway",
-        "creationDate": now_str(),
-        "lastChangeDate": now_str(),
-        "thumbnail": "",
-        "accessRights": {},
-        "workbench": {},
-        "tags": [],
-        "classifiers": [],
-        "ui": {},
-        "dev": {},
-        "quality": {},
-    }
-
-
-@pytest.fixture
 def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
     """this fixture allows to create projects through the webserver interface
 
@@ -217,7 +187,8 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
                 expected_data["name"] = f"{from_study['name']} (Copy)"
 
         if not from_study or project:
-            project_data = _minimal_project()
+            project_data = deepcopy(NEW_PROJECT.request_payload)
+
             if project:
                 project_data.update(project)
 

@@ -5,13 +5,16 @@
 
 import asyncio
 from math import ceil
-from typing import Any, Awaitable, Callable, Optional
+from typing import Any, Awaitable, Callable
 
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
+from pytest import MonkeyPatch
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     ExpectedResponse,
     standard_role_response,
@@ -23,6 +26,19 @@ from simcore_service_webserver.utils import to_datetime
 from yarl import URL
 
 API_PREFIX = "/" + api_version_prefix
+
+
+@pytest.fixture
+def app_environment(
+    app_environment: EnvVarsDict, monkeypatch: MonkeyPatch
+) -> EnvVarsDict:
+    envs_plugins = setenvs_from_dict(
+        monkeypatch,
+        {
+            "WEBSERVER_RABBITMQ": "null",
+        },
+    )
+    return app_environment | envs_plugins
 
 
 def assert_replaced(current_project, update_data):
@@ -43,9 +59,9 @@ def assert_replaced(current_project, update_data):
 async def _list_projects(
     client,
     expected: type[web.HTTPException],
-    query_parameters: Optional[dict] = None,
-    expected_error_msg: Optional[str] = None,
-    expected_error_code: Optional[str] = None,
+    query_parameters: dict | None = None,
+    expected_error_msg: str | None = None,
+    expected_error_code: str | None = None,
 ) -> tuple[list[dict], dict[str, Any], dict[str, Any]]:
     if not query_parameters:
         query_parameters = {}
@@ -149,6 +165,7 @@ async def test_list_projects_with_invalid_pagination_parameters(
     )
 
 
+@pytest.mark.testit
 @pytest.mark.parametrize("limit", [7, 20, 43])
 @pytest.mark.parametrize(*standard_user_role())
 async def test_list_projects_with_pagination(
@@ -163,7 +180,6 @@ async def test_list_projects_with_pagination(
     limit: int,
     request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):
-
     NUM_PROJECTS = 90
     # let's create a few projects here
     created_projects = await asyncio.gather(
