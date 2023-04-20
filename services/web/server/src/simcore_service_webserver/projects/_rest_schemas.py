@@ -6,6 +6,7 @@ SEE rationale in https://fastapi.tiangolo.com/tutorial/extra-models/#multiple-mo
 """
 
 from typing import Any, Literal, TypeAlias
+from uuid import uuid4
 
 from models_library.emails import LowerCaseEmailStr
 from models_library.projects import ClassifierID, DateTimeStr, NodesDict, ProjectID
@@ -27,6 +28,7 @@ class EmptyModel(BaseModel):
 
 
 class ProjectCreateNew(InputSchema):
+    uuid: ProjectID  # NOTE: suggested uuid! but could be different!
     name: str
     description: str | None
     thumbnail: HttpUrlWithCustomMinLength | None
@@ -39,6 +41,13 @@ class ProjectCreateNew(InputSchema):
     _empty_is_none = validator("thumbnail", "description", allow_reuse=True, pre=True)(
         empty_str_to_none
     )
+
+    @validator("uuid", pre=True)
+    @classmethod
+    def auto_generate_id(cls, value):
+        if not value:
+            value = uuid4()
+        return value
 
 
 # NOTE: based on OVERRIDABLE_DOCUMENT_KEYS
