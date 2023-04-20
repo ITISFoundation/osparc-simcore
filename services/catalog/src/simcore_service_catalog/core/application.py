@@ -7,6 +7,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.gzip import GZipMiddleware
 from models_library.basic_types import BootModeEnum
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
+from servicelib.logging_utils import config_all_loggers
 from starlette import status
 from starlette.exceptions import HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -39,6 +40,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     assert settings  # nosec
     logging.basicConfig(level=settings.CATALOG_LOG_LEVEL.value)
     logging.root.setLevel(settings.CATALOG_LOG_LEVEL.value)
+    config_all_loggers(settings.CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED)
     logger.debug(settings.json(indent=2))
 
     app = FastAPI(

@@ -1,6 +1,6 @@
 import datetime
 from functools import cached_property
-from typing import Optional, cast
+from typing import cast
 
 from fastapi import FastAPI
 from models_library.basic_types import (
@@ -23,7 +23,7 @@ from .._meta import API_VERSION, API_VTAG, APP_NAME
 
 class EC2Settings(BaseCustomSettings):
     EC2_ACCESS_KEY_ID: str
-    EC2_ENDPOINT: Optional[str] = Field(
+    EC2_ENDPOINT: str | None = Field(
         default=None, description="do not define if using standard AWS"
     )
     EC2_REGION_NAME: str = "us-east-1"
@@ -142,22 +142,22 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # IMAGE BUILDTIME ------------------------------------------------------
     # @Makefile
-    SC_BUILD_DATE: Optional[str] = None
-    SC_BUILD_TARGET: Optional[BuildTargetEnum] = None
-    SC_VCS_REF: Optional[str] = None
-    SC_VCS_URL: Optional[str] = None
+    SC_BUILD_DATE: str | None = None
+    SC_BUILD_TARGET: BuildTargetEnum | None = None
+    SC_VCS_REF: str | None = None
+    SC_VCS_URL: str | None = None
 
     # @Dockerfile
-    SC_BOOT_MODE: Optional[BootModeEnum] = None
-    SC_BOOT_TARGET: Optional[BuildTargetEnum] = None
-    SC_HEALTHCHECK_TIMEOUT: Optional[PositiveInt] = Field(
+    SC_BOOT_MODE: BootModeEnum | None = None
+    SC_BOOT_TARGET: BuildTargetEnum | None = None
+    SC_HEALTHCHECK_TIMEOUT: PositiveInt | None = Field(
         None,
         description="If a single run of the check takes longer than timeout seconds "
         "then the check is considered to have failed."
         "It takes retries consecutive failures of the health check for the container to be considered unhealthy.",
     )
-    SC_USER_ID: Optional[int] = None
-    SC_USER_NAME: Optional[str] = None
+    SC_USER_ID: int | None = None
+    SC_USER_NAME: str | None = None
 
     # RUNTIME  -----------------------------------------------------------
     AUTOSCALING_DEBUG: bool = Field(
@@ -167,14 +167,22 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     AUTOSCALING_LOGLEVEL: LogLevel = Field(
         LogLevel.INFO, env=["AUTOSCALING_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
     )
+    AUTOSCALING_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
+        False,
+        env=[
+            "AUTOSCALING_LOG_FORMAT_LOCAL_DEV_ENABLED",
+            "LOG_FORMAT_LOCAL_DEV_ENABLED",
+        ],
+        description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
+    )
 
-    AUTOSCALING_EC2_ACCESS: Optional[EC2Settings] = Field(auto_default_from_env=True)
+    AUTOSCALING_EC2_ACCESS: EC2Settings | None = Field(auto_default_from_env=True)
 
-    AUTOSCALING_EC2_INSTANCES: Optional[EC2InstancesSettings] = Field(
+    AUTOSCALING_EC2_INSTANCES: EC2InstancesSettings | None = Field(
         auto_default_from_env=True
     )
 
-    AUTOSCALING_NODES_MONITORING: Optional[NodesMonitoringSettings] = Field(
+    AUTOSCALING_NODES_MONITORING: NodesMonitoringSettings | None = Field(
         auto_default_from_env=True
     )
 
@@ -183,11 +191,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="interval between each resource check (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
 
-    AUTOSCALING_RABBITMQ: Optional[RabbitSettings] = Field(auto_default_from_env=True)
+    AUTOSCALING_RABBITMQ: RabbitSettings | None = Field(auto_default_from_env=True)
 
     AUTOSCALING_REDIS: RedisSettings = Field(auto_default_from_env=True)
 
-    AUTOSCALING_REGISTRY: Optional[RegistrySettings] = Field(auto_default_from_env=True)
+    AUTOSCALING_REGISTRY: RegistrySettings | None = Field(auto_default_from_env=True)
 
     @cached_property
     def LOG_LEVEL(self):
