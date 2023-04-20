@@ -154,10 +154,8 @@ pyyaml==5.4.1
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   aiohttp-swagger
     #   openapi-spec-validator
-redis==4.4.0
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.in
-    #   -r requirements/../../../packages/service-library/requirements/_base.in
+redis==4.5.4
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 s3transfer==0.5.2
     # via boto3
 semantic-version==2.9.0
