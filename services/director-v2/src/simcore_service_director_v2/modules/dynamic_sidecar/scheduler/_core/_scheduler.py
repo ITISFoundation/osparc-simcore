@@ -149,7 +149,6 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
         request_dns: str,
         request_scheme: str,
         request_simcore_user_agent: str,
-        can_save: bool,
     ) -> None:
         """Invoked before the service is started"""
         scheduler_data = SchedulerData.from_http_request(
@@ -159,7 +158,6 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
             request_dns=request_dns,
             request_scheme=request_scheme,
             request_simcore_user_agent=request_simcore_user_agent,
-            can_save=can_save,
         )
         await self._add_service(scheduler_data)
 

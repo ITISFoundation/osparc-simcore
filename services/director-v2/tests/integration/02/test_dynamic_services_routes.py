@@ -119,7 +119,6 @@ def start_request_data(
         service_version=dy_static_file_server_dynamic_sidecar_service["image"]["tag"],
         request_scheme="http",
         request_dns="localhost:50000",
-        can_save=True,
         settings=[
             {
                 "name": "resources",

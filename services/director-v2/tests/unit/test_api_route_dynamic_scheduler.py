@@ -83,7 +83,6 @@ async def observed_service(
     dynamic_sidecar_port: int,
     request_dns: str,
     request_scheme: str,
-    can_save: bool,
 ) -> SchedulerData:
     await dynamic_sidecar_scheduler.add_service(
         dynamic_service_create,
@@ -91,8 +90,7 @@ async def observed_service(
         dynamic_sidecar_port,
         request_dns,
         request_scheme,
-        "",
-        can_save,
+        request_simcore_user_agent="",
     )
     # pylint:disable=protected-access
     return dynamic_sidecar_scheduler._scheduler.get_scheduler_data(
