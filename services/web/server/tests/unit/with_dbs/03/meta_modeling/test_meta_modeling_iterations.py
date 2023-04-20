@@ -42,7 +42,6 @@ REQUEST_MODEL_POLICY = {
 
 @pytest.fixture
 async def context_with_logged_user(client: TestClient, logged_user: UserInfoDict):
-
     yield
 
     assert client.app
@@ -52,6 +51,7 @@ async def context_with_logged_user(client: TestClient, logged_user: UserInfoDict
         await conn.execute(projects.delete())
 
 
+@pytest.mark.testit
 @pytest.mark.acceptance_test
 async def test_iterators_workflow(
     client: TestClient,

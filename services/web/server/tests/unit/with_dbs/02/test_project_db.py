@@ -22,10 +22,7 @@ from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from psycopg2.errors import UniqueViolation
-from pytest import MonkeyPatch
-from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_dict import copy_from_dict_ex
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
 from simcore_postgres_database.models.groups import GroupType
 from simcore_postgres_database.models.projects_to_products import projects_to_products
@@ -53,19 +50,6 @@ from simcore_service_webserver.projects.projects_exceptions import (
 from simcore_service_webserver.users_exceptions import UserNotFoundError
 from simcore_service_webserver.utils import to_datetime
 from sqlalchemy.engine.result import Row
-
-
-@pytest.fixture
-def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: MonkeyPatch
-) -> EnvVarsDict:
-    envs_plugins = setenvs_from_dict(
-        monkeypatch,
-        {
-            "WEBSERVER_RABBITMQ": "null",
-        },
-    )
-    return app_environment | envs_plugins
 
 
 def test_convert_to_db_names(fake_project: dict[str, Any]):

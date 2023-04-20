@@ -22,8 +22,11 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from pydantic import parse_obj_as
+from pytest import MonkeyPatch
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from settings_library.catalog import CatalogSettings
@@ -257,6 +260,19 @@ def assert_get_same_project_caller() -> Callable:
 
 
 @pytest.fixture
+def app_environment(
+    app_environment: EnvVarsDict, monkeypatch: MonkeyPatch
+) -> EnvVarsDict:
+    envs_plugins = setenvs_from_dict(
+        monkeypatch,
+        {
+            "WEBSERVER_RABBITMQ": "null",
+        },
+    )
+    return app_environment | envs_plugins
+
+
+@pytest.fixture
 def disable_max_number_of_running_dynamic_nodes(
     app_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch
 ) -> dict[str, str]:
@@ -280,7 +296,6 @@ async def user_project_with_num_dynamic_services(
     osparc_product_name: str,
     faker: Faker,
 ) -> AsyncIterator[Callable[[int], Awaitable[ProjectDict]]]:
-
     async with AsyncExitStack() as stack:
 
         async def _creator(num_dyn_services: int) -> ProjectDict:

@@ -11,10 +11,7 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
-from pytest import MonkeyPatch
-from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     ExpectedResponse,
     standard_role_response,
@@ -24,21 +21,6 @@ from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.utils import to_datetime
 from yarl import URL
-
-API_PREFIX = "/" + api_version_prefix
-
-
-@pytest.fixture
-def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: MonkeyPatch
-) -> EnvVarsDict:
-    envs_plugins = setenvs_from_dict(
-        monkeypatch,
-        {
-            "WEBSERVER_RABBITMQ": "null",
-        },
-    )
-    return app_environment | envs_plugins
 
 
 def assert_replaced(current_project, update_data):
@@ -67,7 +49,7 @@ async def _list_projects(
         query_parameters = {}
     # GET /v0/projects
     url = client.app.router["list_projects"].url_for()
-    assert str(url) == API_PREFIX + "/projects"
+    assert f"{url}" == f"{api_version_prefix}/projects"
     if query_parameters:
         url = url.with_query(**query_parameters)
 
