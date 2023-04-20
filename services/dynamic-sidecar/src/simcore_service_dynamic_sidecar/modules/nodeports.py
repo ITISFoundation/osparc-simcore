@@ -18,7 +18,6 @@ from models_library.projects_nodes_io import NodeIDStr
 from pydantic import ByteSize
 from servicelib.archiving_utils import PrunableFolder, archive_dir, unarchive_dir
 from servicelib.async_utils import run_sequentially_in_context
-from servicelib.file_constants import KEY_VALUE_FILE_NAME
 from servicelib.file_utils import remove_directory
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
@@ -41,6 +40,7 @@ class PortTypeName(str, Enum):
 
 
 _FILE_TYPE_PREFIX = "data:"
+_KEY_VALUE_FILE_NAME = "key_values.json"
 
 logger = logging.getLogger(__name__)
 
@@ -161,7 +161,7 @@ async def upload_outputs(
                     ),
                 )
             else:
-                data_file = outputs_path / KEY_VALUE_FILE_NAME
+                data_file = outputs_path / _KEY_VALUE_FILE_NAME
                 if data_file.exists():
                     data = json.loads(data_file.read_text())
                     if port.key in data and data[port.key] is not None:
@@ -299,7 +299,7 @@ async def download_target_ports(
 
     # create/update the json file with the new values
     if data:
-        data_file = target_dir / KEY_VALUE_FILE_NAME
+        data_file = target_dir / _KEY_VALUE_FILE_NAME
         if data_file.exists():
             current_data = json.loads(data_file.read_text())
             # merge data

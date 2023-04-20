@@ -438,13 +438,12 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         request_dns: str,
         request_scheme: str,
         request_simcore_user_agent: str,
-        can_save: bool,
         run_id: UUID | None = None,
     ) -> "SchedulerData":
         # This constructor method sets current product
         names_helper = DynamicSidecarNamesHelper.make(service.node_uuid)
 
-        obj_dict: dict[str, Any] = dict(
+        obj_dict = dict(
             service_name=names_helper.service_name_dynamic_sidecar,
             hostname=names_helper.service_name_dynamic_sidecar,
             port=port,
@@ -465,7 +464,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             request_scheme=request_scheme,
             proxy_service_name=names_helper.proxy_service_name,
             request_simcore_user_agent=request_simcore_user_agent,
-            dynamic_sidecar={"service_removal_state": {"can_save": can_save}},
+            dynamic_sidecar={},
         )
         if run_id:
             obj_dict["run_id"] = run_id
