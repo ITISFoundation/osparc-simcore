@@ -177,8 +177,24 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
         copy_data: bool | None = None,
     ):
         # Pre-defined fields imposed by required properties in schema
-        project_data = {}
-        expected_data = {}
+        project_data: ProjectDict = {}
+        expected_data: ProjectDict = {
+            "classifiers": [],
+            "accessRights": [],
+            "tags": [],
+            "lastChangeDate": None,
+            "creationDate": None,
+            "quality": {},
+            "dev": {},
+            "ui": {},
+            "workbench": None,
+            "description": None,
+            "uuid": None,
+            "state": None,
+            "thumbnail": None,
+            "name": None,
+            "prjOwner": None,
+        }
         if from_study:
             # access rights are replaced
             expected_data = deepcopy(from_study)
