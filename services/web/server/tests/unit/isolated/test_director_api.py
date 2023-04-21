@@ -75,8 +75,8 @@ def registry_service_model_schema(osparc_simcore_root_dir: Path) -> SchemaDict:
         return re.sub(r"\(\?P<[^>]+>", "(", regex)
 
     for property_name in ("key", "version"):
-        property = schema["properties"][property_name]
-        property["pattern"] = _remove_named_groups(property["pattern"])
+        prop = schema["properties"][property_name]
+        prop["pattern"] = _remove_named_groups(prop["pattern"])
 
     # Check dump manually in https://json-schema-faker.js.org/
     print(json.dumps(schema))
