@@ -78,6 +78,7 @@ async def _track_and_display(
 
 async def async_close_and_save_service(
     node_id: NodeID,
+    skip_observation_toggle: bool,
     skip_container_removal: bool,
     skip_state_saving: bool,
     skip_outputs_pushing: bool,
@@ -94,17 +95,18 @@ async def async_close_and_save_service(
 
         thin_dv2_localhost_client = ThinDV2LocalhostClient()
 
-        rich.print(f"{HEADING} disabling service observation")
-        async for attempt in AsyncRetrying(
-            wait=wait_fixed(1),
-            stop=stop_after_attempt(disable_observation_attempts),
-            retry=retry_if_exception_type(UnexpectedStatusError),
-            reraise=True,
-        ):
-            with attempt:
-                await thin_dv2_localhost_client.toggle_service_observation(
-                    f"{node_id}", is_disabled=True
-                )
+        if not skip_observation_toggle:
+            rich.print(f"{HEADING} disabling service observation")
+            async for attempt in AsyncRetrying(
+                wait=wait_fixed(1),
+                stop=stop_after_attempt(disable_observation_attempts),
+                retry=retry_if_exception_type(UnexpectedStatusError),
+                reraise=True,
+            ):
+                with attempt:
+                    await thin_dv2_localhost_client.toggle_service_observation(
+                        f"{node_id}", is_disabled=True
+                    )
 
         client = Client(
             app=app,

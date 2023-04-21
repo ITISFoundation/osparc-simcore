@@ -53,6 +53,7 @@ def project_state(
 @main.command()
 def close_and_save_service(
     node_id: NodeID,
+    skip_observation_toggle: bool = False,
     skip_container_removal: bool = False,
     skip_state_saving: bool = False,
     skip_outputs_pushing: bool = False,
@@ -91,6 +92,7 @@ def close_and_save_service(
     asyncio.run(
         async_close_and_save_service(
             node_id,
+            skip_observation_toggle,
             skip_container_removal,
             skip_state_saving,
             skip_outputs_pushing,
