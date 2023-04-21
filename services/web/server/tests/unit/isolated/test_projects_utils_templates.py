@@ -3,28 +3,13 @@
 # pylint:disable=redefined-outer-name
 
 import json
-from pathlib import Path
-from typing import Any, AsyncIterator, Dict
 
 import pytest
-from jsonschema import SchemaError
-from servicelib.aiohttp.jsonschema_specs import create_jsonschema_specs
 from simcore_service_webserver.projects.projects_utils import (
     VARIABLE_PATTERN,
     substitute_parameterized_inputs,
 )
 from yarl import URL
-
-
-@pytest.fixture
-async def project_specs(project_schema_file: Path) -> AsyncIterator[Dict[str, Any]]:
-    # should not raise any exception
-    try:
-        specs = await create_jsonschema_specs(project_schema_file, session=None)
-    except SchemaError:
-        pytest.fail("validation of schema {} failed".format(project_schema_file))
-    else:
-        yield specs
 
 
 @pytest.fixture

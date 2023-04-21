@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, call
 from uuid import UUID, uuid4
 
 import pytest
-from models_library.projects import ProjectID, Workbench
+from models_library.projects import NodesDict, ProjectID
 from models_library.projects_networks import NetworksWithAliases
 from models_library.projects_nodes import Node
 from pydantic import BaseModel, PositiveInt
@@ -174,13 +174,13 @@ def project_id() -> ProjectID:
 
 
 @pytest.fixture
-def dy_workbench_with_networkable_labels(mocks_dir: Path) -> Workbench:
+def dy_workbench_with_networkable_labels(mocks_dir: Path) -> NodesDict:
     dy_workbench_template = mocks_dir / "fake_dy_workbench_template.json"
     assert dy_workbench_template.exists()
 
     dy_workbench = json.loads(dy_workbench_template.read_text())
 
-    parsed_workbench: Workbench = {}
+    parsed_workbench: NodesDict = {}
 
     for node_uuid, node_data in dy_workbench.items():
         node_data["label"] = f"label_{uuid4()}"

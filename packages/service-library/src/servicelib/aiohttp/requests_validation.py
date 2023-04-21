@@ -1,6 +1,10 @@
 """ Parses and validation aiohttp requests against pydantic models
 
-These functions are analogous to `pydantic.tools.parse_obj_as(model_class, obj)` for aiohttp's requests
+Rationale: These functions follow an interface analogous to ``pydantic.tools``'s
+
+   parse_obj_as(model_class, obj)
+
+but adapted to parse&validate path, query and body of an aiohttp's request
 """
 
 import json.decoder
@@ -21,9 +25,18 @@ ModelOrListType = TypeVar("ModelOrListType", bound=Union[BaseModel, list])
 def handle_validation_as_http_error(
     *, error_msg_template: str, resource_name: str, use_error_v1: bool
 ) -> Iterator[None]:
+    """Context manager to handle ValidationError and reraise them as HTTPUnprocessableEntity error
+
+    Arguments:
+        error_msg_template -- _description_
+        resource_name --
+        use_error_v1 -- If True, it uses new error response
+
+    Raises:
+        web.HTTPUnprocessableEntity: (422) raised from a ValidationError
+
     """
-    Transforms ValidationError into HTTP error
-    """
+
     try:
 
         yield
@@ -96,8 +109,17 @@ def parse_request_path_parameters_as(
 ) -> ModelType:
     """Parses path parameters from 'request' and validates against 'parameters_schema'
 
-    :raises HTTPUnprocessableEntity (422) if validation of parameters  fail
+
+    Keyword Arguments:
+        use_enveloped_error_v1 -- new enveloped error model (default: {True})
+
+    Raises:
+        web.HTTPUnprocessableEntity: (422) if validation of parameters  fail
+
+    Returns:
+        Validated model of path parameters
     """
+
     with handle_validation_as_http_error(
         error_msg_template="Invalid parameter/s '{failed}' in request path",
         resource_name=request.rel_url.path,
@@ -115,7 +137,15 @@ def parse_request_query_parameters_as(
 ) -> ModelType:
     """Parses query parameters from 'request' and validates against 'parameters_schema'
 
-    :raises HTTPUnprocessableEntity (422) if validation of queries fail
+
+    Keyword Arguments:
+        use_enveloped_error_v1 -- new enveloped error model (default: {True})
+
+    Raises:
+        web.HTTPUnprocessableEntity: (422) if validation of parameters  fail
+
+    Returns:
+        Validated model of query parameters
     """
 
     with handle_validation_as_http_error(
@@ -135,7 +165,15 @@ async def parse_request_body_as(
 ) -> ModelOrListType:
     """Parses and validates request body against schema
 
-    :raises HTTPUnprocessableEntity (422), HTTPBadRequest(400)
+    Keyword Arguments:
+        use_enveloped_error_v1 -- new enveloped error model (default: {True})
+
+    Raises:
+        web.HTTPBadRequest: (400) if invalid json body
+        web.HTTPUnprocessableEntity: (422) if does not validates against schema
+
+    Returns:
+        Validated model of request body
     """
     with handle_validation_as_http_error(
         error_msg_template="Invalid field/s '{failed}' in request body",

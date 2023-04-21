@@ -2,12 +2,18 @@
     Ownership and access rights
 """
 
+import re
 from enum import Enum
 
-from pydantic import BaseModel, Extra, Field, constr
-from pydantic.types import PositiveInt
+from pydantic import BaseModel, Extra, Field
+from pydantic.types import ConstrainedStr, PositiveInt
 
-GroupIDStr = constr(regex=r"^\S+$")
+
+class GroupIDStr(ConstrainedStr):
+    regex = re.compile(r"^\S+$")
+
+    class Config:
+        frozen = True
 
 
 class AccessEnum(str, Enum):
