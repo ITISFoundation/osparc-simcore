@@ -49,7 +49,7 @@ async def _list_projects(
         query_parameters = {}
     # GET /v0/projects
     url = client.app.router["list_projects"].url_for()
-    assert f"{url}" == f"{api_version_prefix}/projects"
+    assert f"{url}" == f"/{api_version_prefix}/projects"
     if query_parameters:
         url = url.with_query(**query_parameters)
 
