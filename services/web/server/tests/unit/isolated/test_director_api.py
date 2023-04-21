@@ -11,12 +11,13 @@
 import json
 import re
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, TypeAlias
 
 import pytest
 import yaml
 from aioresponses.core import CallbackResult, aioresponses
 from models_library.services import ServiceDockerData
+from models_library.users import UserID
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.director.director_api import (
@@ -28,6 +29,9 @@ from simcore_service_webserver.director.director_api import (
 from simcore_service_webserver.director.plugin import setup_director
 from yarl import URL
 
+SchemaDict: TypeAlias = dict[str, Any]
+OpenApiSpecsDict: TypeAlias = dict[str, Any]
+
 
 @pytest.fixture(scope="session")
 def director_openapi_dir(osparc_simcore_root_dir: Path) -> Path:
@@ -37,14 +41,14 @@ def director_openapi_dir(osparc_simcore_root_dir: Path) -> Path:
 
 
 @pytest.fixture(scope="session")
-def director_openapi_specs(director_openapi_dir: Path) -> dict[str, Any]:
+def director_openapi_specs(director_openapi_dir: Path) -> OpenApiSpecsDict:
     openapi_path = director_openapi_dir / "openapi.yaml"
     openapi_specs = yaml.safe_load(openapi_path.read_text())
     return openapi_specs
 
 
 @pytest.fixture(scope="session")
-def running_service_model_schema(osparc_simcore_root_dir: Path) -> dict:
+def running_service_model_schema(osparc_simcore_root_dir: Path) -> SchemaDict:
     # SEE: https://github.com/ITISFoundation/osparc-simcore/tree/master/api/specs/common/schemas/running_service.yaml#L30
     content = yaml.safe_load(
         (
@@ -61,8 +65,18 @@ def running_service_model_schema(osparc_simcore_root_dir: Path) -> dict:
 
 
 @pytest.fixture(scope="session")
-def registry_service_model_schema(osparc_simcore_root_dir: Path) -> dict:
+def registry_service_model_schema(osparc_simcore_root_dir: Path) -> SchemaDict:
     schema = ServiceDockerData.schema()
+
+    #
+    # NOTE: https://json-schema-faker.js.org/ does not support named groups
+    #
+    def _remove_named_groups(regex: str) -> str:
+        return re.sub(r"\(\?P<[^>]+>", "(", regex)
+
+    for property_name in ("key", "version"):
+        property = schema["properties"][property_name]
+        property["pattern"] = _remove_named_groups(property["pattern"])
 
     # Check dump manually in https://json-schema-faker.js.org/
     print(json.dumps(schema))
@@ -95,7 +109,7 @@ def model_fake_factory(random_json_from_schema: Callable) -> Callable:
 
 
 @pytest.fixture(scope="module")
-def user_id():
+def user_id() -> UserID:
     return 1
 
 
@@ -119,9 +133,9 @@ def project_nodes():
 @pytest.fixture
 def mock_director_service(
     model_fake_factory: Callable,
-    running_service_model_schema,
-    registry_service_model_schema,
-    user_id: int,
+    running_service_model_schema: SchemaDict,
+    registry_service_model_schema: SchemaDict,
+    user_id: UserID,
     project_id: str,
     project_nodes: list[tuple[str, ...]],
 ):
