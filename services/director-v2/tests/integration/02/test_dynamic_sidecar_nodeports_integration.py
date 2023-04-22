@@ -32,7 +32,7 @@ from aiodocker.containers import DockerContainer
 from aiopg.sa import Engine
 from fastapi import FastAPI
 from models_library.clusters import DEFAULT_CLUSTER_ID
-from models_library.projects import Node, ProjectAtDB, ProjectID, Workbench
+from models_library.projects import Node, NodesDict, ProjectAtDB, ProjectID
 from models_library.projects_networks import (
     PROJECT_NETWORK_PREFIX,
     ContainerAliases,
@@ -438,7 +438,7 @@ async def projects_networks_db(
 
 
 async def _get_mapped_nodeports_values(
-    user_id: UserID, project_id: str, workbench: Workbench, db_manager: DBManager
+    user_id: UserID, project_id: str, workbench: NodesDict, db_manager: DBManager
 ) -> dict[str, InputsOutputs]:
     result: dict[str, InputsOutputs] = {}
 

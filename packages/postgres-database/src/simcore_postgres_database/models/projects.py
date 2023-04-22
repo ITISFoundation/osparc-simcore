@@ -54,7 +54,12 @@ projects = sa.Table(
         nullable=True,
         doc="Markdown-compatible display description",
     ),
-    sa.Column("thumbnail", sa.String, nullable=True, doc="Link to thumbnail image"),
+    sa.Column(
+        "thumbnail",
+        sa.String,
+        nullable=True,
+        doc="Link to thumbnail image",
+    ),
     sa.Column(
         "prj_owner",
         sa.BigInteger,
@@ -106,7 +111,7 @@ projects = sa.Table(
         "classifiers",
         ARRAY(sa.String, dimensions=1),
         nullable=False,
-        server_default="{}",
+        server_default="{}",  # NOTE: I found this strange but https://stackoverflow.com/questions/30933266/empty-array-as-postgresql-array-column-default-value
         doc="A list of standard labels to classify this project",
     ),
     sa.Column(

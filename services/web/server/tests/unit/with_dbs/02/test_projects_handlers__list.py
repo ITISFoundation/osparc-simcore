@@ -5,7 +5,7 @@
 
 import asyncio
 from math import ceil
-from typing import Any, Awaitable, Callable, Optional
+from typing import Any, Awaitable, Callable
 
 import pytest
 from aiohttp import web
@@ -21,8 +21,6 @@ from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.utils import to_datetime
 from yarl import URL
-
-API_PREFIX = "/" + api_version_prefix
 
 
 def assert_replaced(current_project, update_data):
@@ -43,15 +41,15 @@ def assert_replaced(current_project, update_data):
 async def _list_projects(
     client,
     expected: type[web.HTTPException],
-    query_parameters: Optional[dict] = None,
-    expected_error_msg: Optional[str] = None,
-    expected_error_code: Optional[str] = None,
+    query_parameters: dict | None = None,
+    expected_error_msg: str | None = None,
+    expected_error_code: str | None = None,
 ) -> tuple[list[dict], dict[str, Any], dict[str, Any]]:
     if not query_parameters:
         query_parameters = {}
     # GET /v0/projects
     url = client.app.router["list_projects"].url_for()
-    assert str(url) == API_PREFIX + "/projects"
+    assert f"{url}" == f"/{api_version_prefix}/projects"
     if query_parameters:
         url = url.with_query(**query_parameters)
 
@@ -163,7 +161,6 @@ async def test_list_projects_with_pagination(
     limit: int,
     request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):
-
     NUM_PROJECTS = 90
     # let's create a few projects here
     created_projects = await asyncio.gather(

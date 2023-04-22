@@ -1,5 +1,5 @@
 from functools import cached_property
-from typing import Optional, cast
+from typing import cast
 
 from pydantic import Field, HttpUrl, PositiveInt, SecretStr, validator
 from settings_library.base import BaseCustomSettings
@@ -19,26 +19,34 @@ class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # IMAGE BUILDTIME ------------------------------------------------------
     # @Makefile
-    SC_BUILD_DATE: Optional[str] = None
-    SC_BUILD_TARGET: Optional[BuildTargetEnum] = None
-    SC_VCS_REF: Optional[str] = None
-    SC_VCS_URL: Optional[str] = None
+    SC_BUILD_DATE: str | None = None
+    SC_BUILD_TARGET: BuildTargetEnum | None = None
+    SC_VCS_REF: str | None = None
+    SC_VCS_URL: str | None = None
 
     # @Dockerfile
-    SC_BOOT_TARGET: Optional[BuildTargetEnum] = None
-    SC_HEALTHCHECK_TIMEOUT: Optional[PositiveInt] = Field(
+    SC_BOOT_TARGET: BuildTargetEnum | None = None
+    SC_HEALTHCHECK_TIMEOUT: PositiveInt | None = Field(
         default=None,
         description="If a single run of the check takes longer than timeout seconds "
         "then the check is considered to have failed."
         "It takes retries consecutive failures of the health check for the container to be considered unhealthy.",
     )
-    SC_USER_ID: Optional[int] = None
-    SC_USER_NAME: Optional[str] = None
+    SC_USER_ID: int | None = None
+    SC_USER_NAME: str | None = None
 
     # RUNTIME  -----------------------------------------------------------
 
     INVITATIONS_LOGLEVEL: LogLevel = Field(
         default=LogLevel.INFO, env=["INVITATIONS_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
+    )
+    INVITATIONS_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
+        False,
+        env=[
+            "INVITATIONS_LOG_FORMAT_LOCAL_DEV_ENABLED",
+            "LOG_FORMAT_LOCAL_DEV_ENABLED",
+        ],
+        description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
 
     @cached_property

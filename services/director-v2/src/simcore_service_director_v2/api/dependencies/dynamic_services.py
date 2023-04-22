@@ -2,13 +2,13 @@ import logging
 
 from fastapi import Depends, Request
 from models_library.projects_nodes import NodeID
+from servicelib.logging_utils import log_decorator
 from starlette.datastructures import URL
 
 from ...core.settings import DynamicServicesSettings
 from ...models.schemas.dynamic_services import RunningDynamicServiceDetails
 from ...modules.dynamic_services import ServicesClient
 from ...modules.dynamic_sidecar.scheduler import DynamicSidecarsScheduler
-from ...utils.logging_utils import log_decorator
 from .director_v0 import DirectorV0Client, get_director_v0_client
 
 logger = logging.getLogger(__name__)

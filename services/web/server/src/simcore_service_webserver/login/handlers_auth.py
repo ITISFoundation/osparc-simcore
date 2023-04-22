@@ -1,5 +1,5 @@
 import logging
-from typing import Final, Optional
+from typing import Final
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
@@ -9,6 +9,7 @@ from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.error_codes import create_error_code
 from servicelib.logging_utils import log_context
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.models.users import UserRole
 
 from .._meta import API_VTAG
@@ -38,7 +39,7 @@ from ._constants import (
 )
 from ._models import InputSchema
 from ._security import login_granted_response
-from .decorators import RQT_USERID_KEY, login_required
+from .decorators import login_required
 from .settings import LoginSettingsForProduct, get_plugin_settings
 from .storage import AsyncpgStorage, get_plugin_storage
 from .utils import (
@@ -62,8 +63,8 @@ class LoginBody(InputSchema):
 
 class CodePageParams(BaseModel):
     message: str
-    retry_2fa_after: Optional[PositiveInt] = None
-    next_url: Optional[str] = None
+    retry_2fa_after: PositiveInt | None = None
+    next_url: str | None = None
 
 
 class LoginNextPage(NextPage[CodePageParams]):
@@ -240,7 +241,7 @@ async def login_2fa(request: web.Request):
 
 
 class LogoutBody(InputSchema):
-    client_session_id: Optional[str] = Field(
+    client_session_id: str | None = Field(
         None, example="5ac57685-c40f-448f-8711-70be1936fd63"
     )
 
