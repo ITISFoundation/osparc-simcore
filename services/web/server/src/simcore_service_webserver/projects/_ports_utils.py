@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Iterator, Literal, Optional
+from typing import Any, Iterator, Literal
 
 from models_library.function_services_catalog.api import catalog
 from models_library.projects_nodes import Node, NodeID
@@ -23,7 +23,7 @@ class ProjectPortData:
     def key(self):
         return f"{self.node_id}.{self.io_key}"
 
-    def get_schema(self) -> Optional[JsonSchemaDict]:
+    def get_schema(self) -> JsonSchemaDict | None:
         node_meta = catalog.get_metadata(self.node.key, self.node.version)
         if self.kind == "input" and node_meta.outputs:
             if input_meta := node_meta.outputs[self.io_key]:
@@ -45,7 +45,7 @@ class ProjectPortData:
 
 def iter_project_ports(
     workbench: dict[NodeID, Node],
-    filter_kind: Optional[Literal["input", "output"]] = None,
+    filter_kind: Literal["input", "output"] | None = None,
 ) -> Iterator[ProjectPortData]:
     """Iterates the nodes in a workbench that define the input/output ports of a project
 

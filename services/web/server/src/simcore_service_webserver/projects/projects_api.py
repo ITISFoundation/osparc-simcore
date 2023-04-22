@@ -20,7 +20,7 @@ from uuid import UUID, uuid4
 
 from aiohttp import web
 from models_library.errors import ErrorDict
-from models_library.projects import ProjectID
+from models_library.projects import Project, ProjectID
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import (
@@ -35,11 +35,7 @@ from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import parse_obj_as
-from servicelib.aiohttp.application_keys import (
-    APP_FIRE_AND_FORGET_TASKS_KEY,
-    APP_JSONSCHEMA_SPECS_KEY,
-)
-from servicelib.aiohttp.jsonschema_validation import validate_instance
+from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_FORWARDED_PROTO,
@@ -67,13 +63,14 @@ from ..socketio.events import (
 )
 from ..users_api import UserRole, get_user_name, get_user_role
 from ..users_exceptions import UserNotFoundError
-from . import _delete, _nodes_utils
+from . import _delete_utils, _nodes_utils
 from .project_lock import (
     UserNameDict,
     get_project_locked_state,
     is_project_locked,
     lock_project,
 )
+from .project_models import ProjectDict
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .projects_exceptions import (
     NodeNotFoundError,
@@ -93,13 +90,6 @@ def _is_node_dynamic(node_key: str) -> bool:
     return "/dynamic/" in node_key
 
 
-async def validate_project(app: web.Application, project: dict):
-    project_schema = app[APP_JSONSCHEMA_SPECS_KEY]["projects"]
-    await asyncio.get_event_loop().run_in_executor(
-        None, validate_instance, project, project_schema
-    )
-
-
 #
 # GET project -----------------------------------------------------
 #
@@ -112,10 +102,11 @@ async def get_project_for_user(
     *,
     include_state: bool | None = False,
     check_permissions: str = "read",
-) -> dict:
+) -> ProjectDict:
     """Returns a VALID project accessible to user
 
     :raises ProjectNotFoundError: if no match found
+    :
     :return: schema-compliant project data
     :rtype: Dict
     """
@@ -133,7 +124,7 @@ async def get_project_for_user(
             user_id, project, project_type is ProjectType.TEMPLATE, app
         )
 
-    await validate_project(app, project)
+    Project.parse_obj(project)  # NOTE: only validates
     return project
 
 
@@ -182,12 +173,12 @@ async def submit_delete_project_task(
     raises ProjectInvalidRightsError
     raises ProjectNotFoundError
     """
-    await _delete.mark_project_as_deleted(app, project_uuid, user_id)
+    await _delete_utils.mark_project_as_deleted(app, project_uuid, user_id)
 
     # Ensures ONE delete task per (project,user) pair
     task = get_delete_project_task(project_uuid, user_id)
     if not task:
-        task = _delete.schedule_task(
+        task = _delete_utils.schedule_task(
             app,
             project_uuid,
             user_id,
@@ -201,7 +192,7 @@ async def submit_delete_project_task(
 def get_delete_project_task(
     project_uuid: ProjectID, user_id: UserID
 ) -> asyncio.Task | None:
-    if tasks := _delete.get_scheduled_tasks(project_uuid, user_id):
+    if tasks := _delete_utils.get_scheduled_tasks(project_uuid, user_id):
         assert len(tasks) == 1, f"{tasks=}"  # nosec
         task = tasks[0]
         return task
@@ -847,10 +838,10 @@ async def get_project_states_for_user(
 
 async def add_project_states_for_user(
     user_id: int,
-    project: dict[str, Any],
+    project: ProjectDict,
     is_template: bool,
     app: web.Application,
-) -> dict[str, Any]:
+) -> ProjectDict:
     log.debug(
         "adding project states for %s with project %s",
         f"{user_id=}",

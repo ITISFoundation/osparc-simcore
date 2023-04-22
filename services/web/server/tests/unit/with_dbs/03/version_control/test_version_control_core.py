@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import Any, Awaitable, Callable
+from typing import Awaitable, Callable
 from uuid import UUID
 
 import pytest
@@ -11,6 +11,7 @@ from aiohttp.test_utils import TestClient, make_mocked_request
 from faker import Faker
 from simcore_service_webserver._constants import RQT_USERID_KEY
 from simcore_service_webserver.projects import projects_api
+from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.version_control._core import (
     checkout_checkpoint,
     create_checkpoint,
@@ -18,8 +19,6 @@ from simcore_service_webserver.version_control._core import (
     update_checkpoint,
 )
 from simcore_service_webserver.version_control.db import HEAD, VersionControlRepository
-
-ProjectDict = dict[str, Any]
 
 
 @pytest.fixture
