@@ -8,7 +8,7 @@ from typing import Any
 import pytest
 from pydantic import BaseModel
 from servicelib.json_serialization import json_dumps
-from simcore_service_webserver.products_db import Product
+from simcore_service_webserver.products._db import Product
 
 
 @pytest.mark.parametrize(

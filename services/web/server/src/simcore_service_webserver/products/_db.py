@@ -1,14 +1,14 @@
 import logging
-from typing import AsyncIterator, Optional
+from typing import AsyncIterator
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from simcore_postgres_database.models.products import jinja2_templates
 
-from .db_base_repository import BaseRepository
-from .db_models import products
-from .products_model import Product
+from ..db_base_repository import BaseRepository
+from ..db_models import products
+from ._model import Product
 
 log = logging.getLogger(__name__)
 
@@ -31,30 +31,31 @@ async def iter_products(conn: SAConnection) -> AsyncIterator[ResultProxy]:
 
 
 class ProductRepository(BaseRepository):
-    async def get_product(self, product_name: str) -> Optional[Product]:
+    async def get_product(self, product_name: str) -> Product | None:
         async with self.engine.acquire() as conn:
             result: ResultProxy = await conn.execute(
                 sa.select(_COLUMNS_IN_MODEL).where(products.c.name == product_name)
             )
-            row: Optional[RowProxy] = await result.first()
+            row: RowProxy | None = await result.first()
             return Product.from_orm(row) if row else None
 
     async def get_template_content(
         self,
         template_name: str,
-    ) -> Optional[str]:
+    ) -> str | None:
         async with self.engine.acquire() as conn:
-            return await conn.scalar(
+            template_content: str | None = await conn.scalar(
                 sa.select([jinja2_templates.c.content]).where(
                     jinja2_templates.c.name == template_name
                 )
             )
+            return template_content
 
     async def get_product_template_content(
         self,
         product_name: str,
         product_template: sa.Column = products.c.registration_email_template,
-    ) -> Optional[str]:
+    ) -> str | None:
         async with self.engine.acquire() as conn:
             oj = sa.join(
                 products,

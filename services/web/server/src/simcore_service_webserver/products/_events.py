@@ -11,10 +11,10 @@ from simcore_postgres_database.utils_products import (
     get_or_create_product_group,
 )
 
-from ._constants import APP_DB_ENGINE_KEY, APP_PRODUCTS_KEY
-from .products_db import iter_products
-from .products_model import Product
-from .statics_constants import FRONTEND_APP_DEFAULT, FRONTEND_APPS_AVAILABLE
+from .._constants import APP_DB_ENGINE_KEY, APP_PRODUCTS_KEY
+from ..products_db import iter_products
+from ..products_model import Product
+from ..statics_constants import FRONTEND_APP_DEFAULT, FRONTEND_APPS_AVAILABLE
 
 log = logging.getLogger(__name__)
 
@@ -76,7 +76,7 @@ async def load_products_on_startup(app: web.Application):
     async with engine.acquire() as conn:
         async for row in iter_products(conn):
             try:
-                name = row.name  # type:ignore
+                name = row.name
                 app_products[name] = Product.from_orm(row)
 
                 assert name in FRONTEND_APPS_AVAILABLE  # nosec
