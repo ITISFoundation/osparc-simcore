@@ -1,7 +1,7 @@
 name: 🚀 Release to production (developers-only)
 description: Creates an issue to plan and log the release from staging to production
 title: "🚀 Release v<M.m.0>"
-labels: ["t:maintenance", "release"]
+labels: ["t:maintenance", "Release"]
 assignees: ["matusdrobuliak66"]
 body:
   - type: input
@@ -17,7 +17,7 @@ body:
     attributes:
       label: Commit SHA
       description: |
-        Selets the commit from which the release takes placeholder. Check [commits](https://github.com/ITISFoundation/osparc-simcore/commits/master)
+        Selects the commit from which the release takes placeholder. Check [commits](https://github.com/ITISFoundation/osparc-simcore/commits/master)
         IMPORTANT: make sure t (i.e. tests passed and images were built and pushed)
       placeholder: 7d9dcc313f9ced0bd1e6508363148841683b6d7c
     validations:
@@ -58,7 +58,7 @@ body:
       description: |
         Changes introduced by this release.
         List links to the PRs associated to every commit in the release. This will automatically create references between PRs and this release that will be very valuable for traceability.
-        TIP: use the autogenerate changelog feature during the draft release.
+        TIP: use the autogenerate changelog feature during the draft release. (TIP: use regex replace for better visualization ``\*.+ by (@\w+) in (https:.*)`` -> ``* $2 by $1``)
     validations:
       required: false
   - type: textarea
@@ -70,7 +70,7 @@ body:
         Log below completed steps and issues
       value: |
         - [ ] Add changes (if any) and release tags in https://github.com/ITISFoundation/osparc-ops-environments/tags
-        - [ ] Add changes (if any) and release tags in **osparc-ops-deployment-configuration** (osparc.io & speag.com)
+        - [ ] Add changes (if any) and release tags in **osparc-ops-deployment-configuration** (osparc.io & osparc.speag.com & tip.itis.swiss)
         - [ ] ...
     validations:
       required: false
