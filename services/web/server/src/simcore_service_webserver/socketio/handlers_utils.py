@@ -1,7 +1,7 @@
 import inspect
 from functools import wraps
 from types import ModuleType
-from typing import Any, Awaitable, Callable, Union
+from typing import Any, Awaitable, Callable
 
 from aiohttp import web
 
@@ -9,8 +9,10 @@ from .server import APP_CLIENT_SOCKET_DECORATED_HANDLERS_KEY, get_socket_server
 
 # The socket ID that was assigned to the client
 SocketID = str
+
 # The environ argument is a dictionary in standard WSGI format containing the request information, including HTTP headers
 EnvironDict = dict[str, Any]
+
 # Connect event
 SocketioConnectEventHandler = Callable[
     [SocketID, EnvironDict, web.Application], Awaitable[None]
@@ -24,17 +26,19 @@ AnyData = Any
 SocketioEventHandler = Callable[[SocketID, AnyData, web.Application], Awaitable[None]]
 
 _socketio_handlers_registry: list[
-    Union[
-        SocketioEventHandler,
-        SocketioConnectEventHandler,
-        SocketioDisconnectEventHandler,
-    ]
+    (
+        SocketioEventHandler
+        | SocketioConnectEventHandler
+        | SocketioDisconnectEventHandler
+    )
 ] = []
 
 
 def socket_io_handler(app: web.Application):
-    """this decorator allows passing additional paramters to python-socketio compatible handlers.
-    I.e. python-socketio handler expect functions of type `async def function(sid, *args, **kwargs)`
+    """This decorator allows passing additional paramters to python-socketio compatible handlers.
+
+    i.e. python-socketio handler expect functions of type `async def function(sid, *args, **kwargs)`
+
     This allows to create a function of type `async def function(sid, *args, **kwargs, app: web.Application)
     """
 
@@ -73,13 +77,18 @@ def register_handlers(app: web.Application, module: ModuleType):
 
 
 def register_socketio_handler(func: Callable) -> Callable:
-    """this decorator appends handlers to a registry if they fit certain rules
+    """This decorator appends handlers to a registry if they fit certain rules
 
-    :param func: the function to call
-    :type func: callable
-    :return: the function to call
-    :rtype: callable
+    Arguments:
+        func the function to call
+
+    Raises:
+        SyntaxError if invalid handler
+
+    Returns:
+        the function to call
     """
+
     is_handler = (
         inspect.isfunction(func)
         and has_socket_io_handler_signature(func)

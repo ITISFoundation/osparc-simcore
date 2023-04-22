@@ -4,6 +4,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.tracing import setup_tracing
+from servicelib.logging_utils import config_all_loggers
 
 from .._meta import API_VERSION, API_VTAG
 from ..api.errors.http_error import http_error_handler
@@ -35,6 +36,8 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     logging.basicConfig(level=settings.LOG_LEVEL.value)
     logging.root.setLevel(settings.LOG_LEVEL.value)
+    config_all_loggers(settings.DATCORE_ADAPTER_LOG_FORMAT_LOCAL_DEV_ENABLED)
+
     # keep mostly quiet noisy loggers
     quiet_level: int = max(
         min(logging.root.level + LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING

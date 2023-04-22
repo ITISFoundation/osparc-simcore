@@ -152,7 +152,7 @@ def create_new_project_for_job(
         uuid=project_id,
         name=job.name,  # NOTE: this IS an identifier as well. MUST NOT be changed in the case of project APIs!
         description=f"Study associated to solver job:\n{job_info}",
-        thumbnail="https://2xx2gy2ovf3r21jclkjio3x8-wpengine.netdna-ssl.com/wp-content/uploads/2018/12/API-Examples.jpg",  # https://placeimg.com/171/96/tech/grayscale/?0.jpg",
+        thumbnail="https://via.placeholder.com/170x120.png",
         workbench={solver_id: solver_service},
         ui=StudyUI(
             workbench={

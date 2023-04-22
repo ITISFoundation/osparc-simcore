@@ -68,7 +68,7 @@ def app_cfg(default_app_cfg, unused_tcp_port_factory, monkeypatch) -> dict[str, 
         cfg[section]["enabled"] = False
 
     # NOTE: To see logs, use pytest -s --log-cli-level=DEBUG
-    setup_logging(level=logging.DEBUG)
+    setup_logging(level=logging.DEBUG, log_format_local_dev_enabled=True)
 
     # Enforces smallest GC in the background task
     cfg["resource_manager"]["garbage_collection_interval_seconds"] = 1
