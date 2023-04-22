@@ -5,7 +5,7 @@
 import logging
 import urllib.parse
 from dataclasses import dataclass
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import httpx
 import yarl
@@ -20,6 +20,7 @@ from models_library.services import (
     ServiceVersion,
 )
 from models_library.users import UserID
+from servicelib.logging_utils import log_decorator
 
 # Module's business logic ---------------------------------------------
 from starlette import status
@@ -30,14 +31,13 @@ from ..models.schemas.dynamic_services import RunningDynamicServiceDetails
 from ..models.schemas.services import ServiceExtras
 from ..utils.client_decorators import handle_errors, handle_retry
 from ..utils.clients import unenvelope_or_raise_error
-from ..utils.logging_utils import log_decorator
 
 logger = logging.getLogger(__name__)
 
 # Module's setup logic ---------------------------------------------
 
 
-def setup(app: FastAPI, settings: Optional[DirectorV0Settings]):
+def setup(app: FastAPI, settings: DirectorV0Settings | None):
     if not settings:
         settings = DirectorV0Settings()
 
@@ -152,7 +152,7 @@ class DirectorV0Client:
 
     @log_decorator(logger=logger)
     async def get_running_services(
-        self, user_id: Optional[UserID] = None, project_id: Optional[ProjectID] = None
+        self, user_id: UserID | None = None, project_id: ProjectID | None = None
     ) -> list[RunningDynamicServiceDetails]:
         query_params = {}
         if user_id is not None:

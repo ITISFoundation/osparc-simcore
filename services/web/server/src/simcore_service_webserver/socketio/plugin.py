@@ -1,6 +1,7 @@
-""" socketio subsystem based on socket-io
-    and https://github.com/miguelgrinberg/python-socketio
+""" plugin socket-io
 
+
+    SEE https://github.com/miguelgrinberg/python-socketio
 """
 import logging
 

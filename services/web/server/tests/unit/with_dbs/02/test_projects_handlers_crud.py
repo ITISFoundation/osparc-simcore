@@ -7,7 +7,7 @@
 import uuid as uuidlib
 from copy import deepcopy
 from math import ceil
-from typing import Any, Awaitable, Callable, Iterator, Optional
+from typing import Any, Awaitable, Callable, Iterator
 
 import pytest
 import sqlalchemy as sa
@@ -51,10 +51,10 @@ def assert_replaced(current_project, update_data):
 async def _list_projects(
     client,
     expected: type[web.HTTPException],
-    query_parameters: Optional[dict] = None,
-    headers: Optional[dict] = None,
-    expected_error_msg: Optional[str] = None,
-    expected_error_code: Optional[str] = None,
+    query_parameters: dict | None = None,
+    headers: dict | None = None,
+    expected_error_msg: str | None = None,
+    expected_error_code: str | None = None,
 ) -> tuple[list[dict], dict[str, Any], dict[str, Any]]:
     if not query_parameters:
         query_parameters = {}
@@ -307,6 +307,8 @@ async def test_get_project(
 
 
 # POST --------
+
+
 @pytest.mark.parametrize(*standard_role_response())
 async def test_new_project(
     client,

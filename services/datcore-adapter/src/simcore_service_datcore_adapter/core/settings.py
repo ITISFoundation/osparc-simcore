@@ -1,5 +1,5 @@
 from functools import cached_property
-from typing import Optional, cast
+from typing import cast
 
 from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import Field, parse_obj_as, validator
@@ -19,7 +19,7 @@ class PennsieveSettings(BaseCustomSettings):
 
 class Settings(BaseCustomSettings, MixinLoggingSettings):
     # DOCKER
-    SC_BOOT_MODE: Optional[BootModeEnum]
+    SC_BOOT_MODE: BootModeEnum | None
 
     LOG_LEVEL: LogLevel = Field(
         LogLevel.INFO.value,
@@ -33,8 +33,14 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
 
     PENNSIEVE: PennsieveSettings = Field(auto_default_from_env=True)
 
-    DATCORE_ADAPTER_TRACING: Optional[TracingSettings] = Field(
-        auto_default_from_env=True
+    DATCORE_ADAPTER_TRACING: TracingSettings | None = Field(auto_default_from_env=True)
+    DATCORE_ADAPTER_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
+        False,
+        env=[
+            "DATCORE_ADAPTER_LOG_FORMAT_LOCAL_DEV_ENABLED",
+            "LOG_FORMAT_LOCAL_DEV_ENABLED",
+        ],
+        description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
 
     @cached_property

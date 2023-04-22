@@ -11,6 +11,7 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.json_serialization import json_dumps
+from servicelib.request_keys import RQT_USERID_KEY
 
 from .. import director_v2_api
 from .._meta import api_version_prefix
@@ -21,7 +22,7 @@ from ..director_v2_exceptions import (
     DirectorServiceError,
 )
 from ..director_v2_models import ClusterCreate, ClusterPatch, ClusterPing
-from ..login.decorators import RQT_USERID_KEY, login_required
+from ..login.decorators import login_required
 from ..security_decorators import permission_required
 
 logger = logging.getLogger(__name__)
