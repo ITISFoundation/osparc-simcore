@@ -52,9 +52,9 @@ class CustomFormatter(logging.Formatter):
     2. Overrides 'filename' with the value of 'file_name_override', if it exists.
     """
 
-    def __init__(self, fmt, color_log_enabled: bool = False):
+    def __init__(self, fmt: str, log_format_local_dev_enabled: bool):
         super().__init__(fmt)
-        self.color_log_enabled = color_log_enabled
+        self.log_format_local_dev_enabled = log_format_local_dev_enabled
 
     def format(self, record):
         if hasattr(record, "func_name_override"):
@@ -62,11 +62,13 @@ class CustomFormatter(logging.Formatter):
         if hasattr(record, "file_name_override"):
             record.filename = record.file_name_override
 
-        if self.color_log_enabled:
+        if self.log_format_local_dev_enabled:
             levelname = record.levelname
             if levelname in COLORS:
                 levelname_color = COLORS[levelname] + levelname + NORMAL
                 record.levelname = levelname_color
+            return super().format(record)
+
         return super().format(record).replace("\n", "\\n")
 
 
@@ -77,7 +79,7 @@ DEFAULT_FORMATTING = "log_level=%(levelname)s | log_timestamp=%(asctime)s | log_
 # log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{DATA:log_source} \| log_msg=%{GREEDYDATA:log_msg}
 
 
-def config_all_loggers():
+def config_all_loggers(log_format_local_dev_enabled: bool):
     """
     Applies common configuration to ALL registered loggers
     """
@@ -88,15 +90,16 @@ def config_all_loggers():
     ]
 
     for logger in loggers:
-        set_logging_handler(logger, DEFAULT_FORMATTING)
+        set_logging_handler(logger, DEFAULT_FORMATTING, log_format_local_dev_enabled)
 
 
 def set_logging_handler(
     logger: logging.Logger,
     fmt: str,
+    log_format_local_dev_enabled: bool,
 ) -> None:
     for handler in logger.handlers:
-        handler.setFormatter(CustomFormatter(fmt))
+        handler.setFormatter(CustomFormatter(fmt, log_format_local_dev_enabled))
 
 
 def test_logger_propagation(logger: logging.Logger):

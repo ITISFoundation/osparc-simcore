@@ -21,6 +21,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from faker import Faker
 from models_library.projects_state import ProjectState
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.long_running_tasks.client import LRTask
@@ -103,7 +104,7 @@ def client(
 
 
 @pytest.fixture
-async def storage_subsystem_mock(mocker):
+async def storage_subsystem_mock(mocker: MockerFixture):
     """
     Patches client calls to storage service
 
@@ -128,14 +129,14 @@ async def storage_subsystem_mock(mocker):
         )
 
     mock = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers_crud.copy_data_folders_from_project",
+        "simcore_service_webserver.projects._create_utils.copy_data_folders_from_project",
         autospec=True,
         side_effect=_mock_copy_data_from_project,
     )
 
     # requests storage to delete data
     mock1 = mocker.patch(
-        "simcore_service_webserver.projects._delete.delete_data_folders_of_project",
+        "simcore_service_webserver.projects._delete_utils.delete_data_folders_of_project",
         return_value="",
     )
     return mock, mock1
@@ -189,7 +190,7 @@ async def _request_get(client, pid) -> dict:
     return project
 
 
-async def _request_update(client, project, pid):
+async def _request_replace(client, project, pid):
     # PUT /v0/projects/{project_id}
     url = client.app.router["replace_project"].url_for(project_id=pid)
     resp = await client.put(url, json=project)
@@ -271,7 +272,7 @@ async def test_workflow(
     )
     # modify
     pid = modified_project["uuid"]
-    await _request_update(client, modified_project, pid)
+    await _request_replace(client, modified_project, pid)
 
     # list not empty
     projects = await _request_list(client)

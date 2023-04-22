@@ -21,7 +21,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
-from pytest_mock.plugin import MockerFixture
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_projects import NewProject
 from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
@@ -153,9 +153,9 @@ def client(
 
 
 @pytest.fixture
-def mock_storage_delete_data_folders(mocker) -> mock.Mock:
+def mock_storage_delete_data_folders(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
-        "simcore_service_webserver.projects._delete.delete_data_folders_of_project",
+        "simcore_service_webserver.projects._delete_utils.delete_data_folders_of_project",
         return_value=None,
     )
 
