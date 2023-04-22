@@ -1,5 +1,5 @@
 from functools import cached_property
-from typing import Optional, cast
+from typing import cast
 
 from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import Field, parse_obj_as, validator
@@ -17,9 +17,9 @@ class PennsieveSettings(BaseCustomSettings):
     PENNSIEVE_HEALTCHCHECK_TIMEOUT: float = 1.0
 
 
-class Settings(BaseCustomSettings, MixinLoggingSettings):
+class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     # DOCKER
-    SC_BOOT_MODE: Optional[BootModeEnum]
+    SC_BOOT_MODE: BootModeEnum | None
 
     LOG_LEVEL: LogLevel = Field(
         LogLevel.INFO.value,
@@ -33,9 +33,7 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
 
     PENNSIEVE: PennsieveSettings = Field(auto_default_from_env=True)
 
-    DATCORE_ADAPTER_TRACING: Optional[TracingSettings] = Field(
-        auto_default_from_env=True
-    )
+    DATCORE_ADAPTER_TRACING: TracingSettings | None = Field(auto_default_from_env=True)
 
     @cached_property
     def debug(self) -> bool:

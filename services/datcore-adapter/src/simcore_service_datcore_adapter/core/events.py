@@ -4,7 +4,7 @@ from typing import Callable
 from fastapi import FastAPI
 from models_library.basic_types import BootModeEnum
 
-from ..meta import __version__, project_name
+from .._meta import __version__, project_name
 from ..modules.remote_debug import setup_remote_debugging
 
 logger = logging.getLogger(__name__)
