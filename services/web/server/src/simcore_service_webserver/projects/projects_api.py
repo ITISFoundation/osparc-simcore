@@ -51,7 +51,7 @@ from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_postgres_database.webserver_models import ProjectType
 
 from .. import catalog_client, director_v2_api, storage_api
-from ..products import get_product_name
+from ..products.plugin import get_product_name
 from ..redis import get_redis_lock_manager_client_sdk
 from ..resource_manager.websocket_manager import (
     PROJECT_ID_KEY,

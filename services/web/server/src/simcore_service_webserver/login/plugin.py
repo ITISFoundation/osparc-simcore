@@ -1,7 +1,6 @@
 import asyncio
 import json
 import logging
-from typing import Optional
 
 import asyncpg
 from aiohttp import web
@@ -21,7 +20,7 @@ from ..email import setup_email
 from ..email_settings import SMTPSettings
 from ..email_settings import get_plugin_settings as get_email_plugin_settings
 from ..invitations import setup_invitations
-from ..products import ProductName, list_products, setup_products
+from ..products.plugin import ProductName, list_products, setup_products
 from ..redis import setup_redis
 from ..rest import setup_rest
 from ._constants import APP_LOGIN_SETTINGS_PER_PRODUCT_KEY
@@ -83,7 +82,7 @@ async def _resolve_login_settings_per_product(app: web.Application):
     for the login plugin. Note that product settings override app settings.
     """
     # app plugin settings
-    app_login_settings: Optional[LoginSettings]
+    app_login_settings: LoginSettings | None
     login_settings_per_product: dict[ProductName, LoginSettingsForProduct] = {}
 
     if app_login_settings := app[APP_SETTINGS_KEY].WEBSERVER_LOGIN:

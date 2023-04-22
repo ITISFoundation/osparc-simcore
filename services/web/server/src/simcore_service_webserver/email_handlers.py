@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from aiohttp import web
 from models_library.emails import LowerCaseEmailStr
@@ -13,7 +13,7 @@ from .email_core import (
     send_email_from_template,
 )
 from .login.decorators import login_required
-from .products import Product, get_current_product, get_product_template_path
+from .products.plugin import Product, get_current_product, get_product_template_path
 from .security_decorators import permission_required
 from .utils import get_traceback_string
 from .utils_aiohttp import envelope_json_response
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 class TestEmail(BaseModel):
-    from_: Optional[LowerCaseEmailStr] = Field(None, description="Email sender")
+    from_: LowerCaseEmailStr | None = Field(None, description="Email sender")
     to: LowerCaseEmailStr = Field(..., description="Email receiver")
     template_name: Literal[
         "change_email_email.jinja2",

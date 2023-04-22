@@ -8,7 +8,7 @@ from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 from .._meta import API_VTAG
-from ..products import Product, get_current_product
+from ..products.plugin import Product, get_current_product
 from ..security_api import check_password, encrypt_password
 from ..utils import HOUR
 from ..utils_rate_limiting import global_rate_limit_route

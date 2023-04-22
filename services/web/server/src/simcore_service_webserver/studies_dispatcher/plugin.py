@@ -4,7 +4,7 @@ from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from ..login.decorators import login_required
-from ..products import setup_products
+from ..products.plugin import setup_products
 from . import handlers_rest
 from ._studies_access import get_redirection_to_study_page
 from .handlers_redirects import get_redirection_to_viewer
