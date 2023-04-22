@@ -237,5 +237,6 @@ class Product(BaseModel):
         template_name = filename.removesuffix(".jinja2")
         for field in self.__fields__.values():
             if field.field_info.extra.get("x_template_name") == template_name:
-                return f"{getattr(self, field.name)}"
+                template_name_attribute: str = getattr(self, field.name)
+                return template_name_attribute
         return None
