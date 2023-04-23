@@ -5,9 +5,10 @@ import re
 from copy import deepcopy
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import Any, TypeAlias
 from uuid import UUID
 
+from models_library.utils.common_validators import empty_str_to_none, none_to_empty_str
 from pydantic import BaseModel, ConstrainedStr, Extra, Field, validator
 
 from .basic_regex import DATE_RE, UUID_RE_BASE
@@ -18,26 +19,28 @@ from .projects_nodes_io import NodeIDStr
 from .projects_state import ProjectState
 from .projects_ui import StudyUI
 
-ProjectID = UUID
+ProjectID: TypeAlias = UUID
+ClassifierID: TypeAlias = str
+
+NodesDict: TypeAlias = dict[NodeIDStr, Node]
 
 
 class ProjectIDStr(ConstrainedStr):
     regex = re.compile(UUID_RE_BASE)
 
+    class Config:
+        frozen = True
 
-ClassifierID = str
 
-# TODO: for some reason class Workbench(BaseModel): __root__= does not work as I thought ... investigate!
-Workbench = dict[NodeIDStr, Node]
+class DateTimeStr(ConstrainedStr):
+    regex = re.compile(DATE_RE)
+
+    class Config:
+        frozen = True
 
 
 # NOTE: careful this is in sync with packages/postgres-database/src/simcore_postgres_database/models/projects.py!!!
 class ProjectType(str, Enum):
-    """
-    template: template project
-    standard: standard project
-    """
-
     TEMPLATE = "TEMPLATE"
     STANDARD = "STANDARD"
 
@@ -70,14 +73,16 @@ class BaseProjectModel(BaseModel):
     last_change_date: datetime = Field(...)
 
     # Pipeline of nodes (SEE projects_nodes.py)
-    workbench: Workbench = Field(..., description="Project's pipeline")
+    workbench: NodesDict = Field(..., description="Project's pipeline")
 
-    @validator("thumbnail", always=True, pre=True)
-    @classmethod
-    def convert_empty_str_to_none(cls, v):
-        if isinstance(v, str) and v == "":
-            return None
-        return v
+    # validators
+    _empty_thumbnail_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
+        empty_str_to_none
+    )
+
+    _none_description_is_empty = validator("description", allow_reuse=True, pre=True)(
+        none_to_empty_str
+    )
 
 
 class ProjectAtDB(BaseProjectModel):
@@ -115,17 +120,15 @@ class Project(BaseProjectModel):
         ..., description="user email", alias="prjOwner"
     )
 
-    # Timestamps   TODO: should we use datetime??
-    creation_date: str = Field(
+    # Timestamps
+    creation_date: DateTimeStr = Field(
         ...,
-        regex=DATE_RE,
         description="project creation date",
         examples=["2018-07-01T11:13:43Z"],
         alias="creationDate",
     )
-    last_change_date: str = Field(
+    last_change_date: DateTimeStr = Field(
         ...,
-        regex=DATE_RE,
         description="last save date",
         examples=["2018-07-01T11:13:43Z"],
         alias="lastChangeDate",

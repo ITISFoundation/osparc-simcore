@@ -17,7 +17,7 @@ from .. import director_v2_api
 from ..storage_api import delete_data_folders_of_project
 from ..users_api import UserNameDict
 from ..users_exceptions import UserNotFoundError
-from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
+from .projects_db import ProjectDBAPI
 from .projects_exceptions import (
     ProjectDeleteError,
     ProjectInvalidRightsError,
@@ -31,7 +31,7 @@ DELETE_PROJECT_TASK_NAME = "background-task.delete_project/project_uuid={0}.user
 
 
 class RemoveProjectServicesCallable(Protocol):
-    # TODO: this function was tmp added here to avoid refactoring all projects_api in a single PR
+    # NOTE: this function was tmp added here to avoid refactoring all projects_api in a single PR
     async def __call__(
         self,
         user_id: int,
@@ -51,15 +51,13 @@ async def mark_project_as_deleted(
     ::raises ProjectInvalidRightsError
     ::raises ProjectNotFoundError
     """
-    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-    # TODO: tmp using invisible as a "deletion mark"
-    # Even if any of the steps below fail, the project will remain invisible
-    # TODO: see https://github.com/ITISFoundation/osparc-simcore/pull/2522
+    # NOTE: https://github.com/ITISFoundation/osparc-issues/issues/468
+    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
     await db.check_delete_project_permission(user_id, f"{project_uuid}")
 
     await db.check_project_has_only_one_product(project_uuid)
 
-    # TODO: note that if any of the steps below fail, it might results in a
+    # NOTE: if any of the steps below fail, it might results in a
     # services/projects/data that might be incosistent. The GC should
     # be able to detect that and resolve it.
     await db.set_hidden_flag(project_uuid, enabled=True)
@@ -85,7 +83,7 @@ async def delete_project(
         f"{project_uuid=}",
         f"{user_id=}",
     )
-    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
 
     try:
         await mark_project_as_deleted(app, project_uuid, user_id)
