@@ -5,12 +5,11 @@ from cryptography.fernet import Fernet
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.requests import Request
 
+from ..._constants import MSG_BACKEND_SERVICE_UNAVAILABLE
 from ...core.settings import ApplicationSettings, WebServerSettings
 from ...modules.webserver import AuthSession
 from .application import get_app, get_settings
 from .authentication import get_active_user_email
-
-UNAVAILBLE_MSG = "backend service is disabled or unreachable"
 
 
 def _get_settings(
@@ -19,7 +18,7 @@ def _get_settings(
     settings = app_settings.API_SERVER_WEBSERVER
     if not settings:
         raise HTTPException(
-            status.HTTP_503_SERVICE_UNAVAILABLE, detail="web-server currently disabled"
+            status.HTTP_503_SERVICE_UNAVAILABLE, detail=MSG_BACKEND_SERVICE_UNAVAILABLE
         )
     assert isinstance(settings, WebServerSettings)  # nosec
     return settings
@@ -39,7 +38,9 @@ def get_session_cookie(
     # SEE services/web/server/tests/unit/with_dbs/test_login.py
 
     if fernet is None:
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail=UNAVAILBLE_MSG)
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE, detail=MSG_BACKEND_SERVICE_UNAVAILABLE
+        )
 
     # builds session cookie
     cookie_name = settings.WEBSERVER_SESSION_NAME
