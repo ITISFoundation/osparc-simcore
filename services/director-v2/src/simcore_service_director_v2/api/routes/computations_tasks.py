@@ -81,7 +81,6 @@ async def _get_task_log_file(
     user_id: UserID, project_id: ProjectID, node_id: NodeID
 ) -> TaskLogFileGet:
     try:
-
         log_file_url = await get_service_log_file_download_link(
             user_id, project_id, node_id, file_link_type=FileLinkType.PRESIGNED
         )

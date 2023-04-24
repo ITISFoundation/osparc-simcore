@@ -56,7 +56,6 @@ _TASK_TO_PIPELINE_CONVERSIONS = {
 
 
 def get_pipeline_state_from_task_states(tasks: list[CompTaskAtDB]) -> RunningState:
-
     # compute pipeline state from task states
     if not tasks:
         return RunningState.UNKNOWN
@@ -105,7 +104,6 @@ async def find_deprecated_tasks(
     task_key_versions: list[ServiceKeyVersion],
     catalog_client: CatalogClient,
 ) -> list[ServiceKeyVersion]:
-
     services_details = await logged_gather(
         *(
             catalog_client.get_service(

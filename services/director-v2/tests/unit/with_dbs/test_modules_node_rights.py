@@ -86,7 +86,6 @@ async def minimal_app(
 
 @pytest.fixture
 async def node_rights_manager(minimal_app: FastAPI) -> AsyncIterable[NodeRightsManager]:
-
     redis_lock_manger = await NodeRightsManager.instance(minimal_app)
     await redis_lock_manger.redis_client_sdk.redis.flushall()
     yield redis_lock_manger

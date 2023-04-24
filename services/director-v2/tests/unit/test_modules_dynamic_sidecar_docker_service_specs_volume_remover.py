@@ -24,7 +24,6 @@ def _get_source(run_id: str, node_uuid: str, volume_path: Path) -> str:
 async def run_command(
     async_docker_client: Docker, docker_version: DockerVersion, volume_names: list[str]
 ) -> str:
-
     volume_names_seq = " ".join(volume_names)
     formatted_command = SH_SCRIPT_REMOVE_VOLUMES.format(
         volume_names_seq=volume_names_seq, retries=3, sleep=0.1

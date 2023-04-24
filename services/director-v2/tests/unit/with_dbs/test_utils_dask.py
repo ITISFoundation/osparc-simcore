@@ -307,6 +307,7 @@ async def test_compute_input_data(
     await set_comp_task_inputs(
         aiopg_engine, sleeper_task.node_id, fake_io_schema, fake_inputs
     )
+
     # mock the get_value function so we can test it is called correctly
     def return_fake_input_value(*args, **kwargs):
         for value, value_type in zip(fake_inputs.values(), fake_io_schema.values()):
