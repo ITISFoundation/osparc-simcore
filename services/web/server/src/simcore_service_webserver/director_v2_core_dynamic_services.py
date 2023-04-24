@@ -34,7 +34,7 @@ from .director_v2_exceptions import (
     ServiceWaitingForManualIntervention,
 )
 from .director_v2_settings import DirectorV2Settings, get_plugin_settings
-from .rabbitmq.rabbitmq import get_rabbitmq_client
+from .notifications.rabbitmq import get_rabbitmq_client
 
 log = logging.getLogger(__name__)
 

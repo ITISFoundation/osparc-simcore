@@ -21,8 +21,6 @@ from simcore_postgres_database.utils_aiopg import (
 )
 from tenacity import retry
 
-from .application_settings import get_settings
-from .computation_comp_tasks_listening_task import create_comp_tasks_listening_task
 from .db_settings import PostgresSettings, get_plugin_settings
 
 log = logging.getLogger(__name__)
@@ -102,7 +100,3 @@ def setup_db(app: web.Application) -> None:
 
     # async connection to db
     app.cleanup_ctx.append(postgres_cleanup_ctx)
-
-    app_settings = get_settings(app)
-    if app_settings.WEBSERVER_COMPUTATION:
-        app.cleanup_ctx.append(create_comp_tasks_listening_task)

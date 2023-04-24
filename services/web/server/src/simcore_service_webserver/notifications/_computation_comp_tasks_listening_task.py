@@ -22,9 +22,9 @@ from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.webserver_models import DB_CHANNEL_NAME, projects
 from sqlalchemy.sql import select
 
+from ..projects import projects_api, projects_exceptions
+from ..projects.projects_nodes_utils import update_node_outputs
 from .computation_utils import convert_state_from_db
-from .projects import projects_api, projects_exceptions
-from .projects.projects_nodes_utils import update_node_outputs
 
 log = logging.getLogger(__name__)
 

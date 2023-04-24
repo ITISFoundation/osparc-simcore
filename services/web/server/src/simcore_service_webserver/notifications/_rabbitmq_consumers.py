@@ -12,7 +12,6 @@ from models_library.rabbitmq_messages import (
     ProgressType,
 )
 from pydantic import parse_raw_as
-from servicelib.aiohttp.application_keys import APP_RABBITMQ_CLIENT_KEY
 from servicelib.aiohttp.monitor_services import (
     SERVICE_STARTED_LABELS,
     SERVICE_STOPPED_LABELS,
@@ -25,6 +24,7 @@ from servicelib.rabbitmq import RabbitMQClient
 
 from ..projects import projects_api
 from ..projects.projects_exceptions import NodeNotFoundError, ProjectNotFoundError
+from ..rabbitmq import get_rabbitmq_client
 from ..socketio.events import (
     SOCKET_IO_EVENT,
     SOCKET_IO_LOG_EVENT,
@@ -179,7 +179,7 @@ EXCHANGE_TO_PARSER_CONFIG = (
 
 async def setup_rabbitmq_consumers(app: web.Application) -> AsyncIterator[None]:
     with log_context(logger, logging.INFO, msg="Subscribing to rabbitmq channels"):
-        rabbit_client: RabbitMQClient = app[APP_RABBITMQ_CLIENT_KEY]
+        rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
 
         for exchange_name, parser_fct, queue_kwargs in EXCHANGE_TO_PARSER_CONFIG:
             await rabbit_client.subscribe(

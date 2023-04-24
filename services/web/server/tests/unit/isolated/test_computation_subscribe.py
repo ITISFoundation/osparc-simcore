@@ -13,7 +13,7 @@ from models_library.rabbitmq_messages import (
 )
 from pydantic import BaseModel
 from pytest_mock import MockerFixture
-from simcore_service_webserver.rabbitmq import consumers
+from simcore_service_webserver.notifications import _rabbitmq_consumers
 
 _faker = Faker()
 
@@ -25,7 +25,9 @@ def mock_send_messages(mocker: MockerFixture) -> Iterator[dict]:
     async def mock_send_message(*args) -> None:
         reference["args"] = args
 
-    mocker.patch.object(consumers, "send_messages", side_effect=mock_send_message)
+    mocker.patch.object(
+        _rabbitmq_consumers, "send_messages", side_effect=mock_send_message
+    )
 
     yield reference
 
@@ -63,7 +65,7 @@ def mock_send_messages(mocker: MockerFixture) -> Iterator[dict]:
 async def test_regression_progress_message_parser(
     mock_send_messages: dict, raw_data: bytes, class_type: type[BaseModel]
 ):
-    await consumers._progress_message_parser(AsyncMock(), raw_data)
+    await _rabbitmq_consumers._progress_message_parser(AsyncMock(), raw_data)
     serialized_sent_data = mock_send_messages["args"][2][0]["data"]
     # check that all fields are sent as expected
     assert class_type.parse_obj(serialized_sent_data)
