@@ -215,6 +215,10 @@ async def _to_render_data(
     )
 
 
+def _get_node_id(x: RenderData) -> NodeIDStr:
+    return x.node_uuid
+
+
 async def _get_nodes_render_data(
     app: FastAPI,
     project_id: ProjectID,
@@ -232,9 +236,7 @@ async def _get_nodes_render_data(
                     client, node_uuid, node_content.label, service_type
                 )
             )
-    sorted_render_data: list[RenderData] = sorted(
-        render_data, key=lambda x: x.node_uuid  # type:ignore
-    )
+    sorted_render_data: list[RenderData] = sorted(render_data, key=_get_node_id)
     return sorted_render_data
 
 
