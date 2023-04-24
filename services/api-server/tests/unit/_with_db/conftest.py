@@ -23,10 +23,13 @@ import yaml
 from aiopg.sa.result import RowProxy
 from faker import Faker
 from fastapi import FastAPI
+from pytest import MonkeyPatch
 from pytest_simcore.helpers.rawdata_fakers import random_user
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from simcore_postgres_database.models.base import metadata
 from simcore_service_api_server.core.application import init_app
+from simcore_service_api_server.core.settings import PostgresSettings
 from simcore_service_api_server.db.repositories import BaseRepository
 from simcore_service_api_server.db.repositories.users import UsersRepository
 from simcore_service_api_server.models.domain.api_keys import ApiKeyInDB
@@ -134,6 +137,21 @@ def migrated_db(postgres_service: dict, make_engine: Callable):
     # FIXME: deletes all because downgrade is not reliable!
     engine = make_engine(is_async=False)
     metadata.drop_all(engine)
+
+
+@pytest.fixture
+def app_environment(
+    monkeypatch: MonkeyPatch, default_app_env_vars: EnvVarsDict
+) -> EnvVarsDict:
+    """app environments WITH database settings"""
+
+    envs = setenvs_from_dict(monkeypatch, default_app_env_vars)
+    assert "API_SERVER_POSTGRES" not in envs
+
+    # Should be sufficient to create settings
+    print(PostgresSettings.create_from_envs().json(indent=1))
+
+    return envs
 
 
 @pytest.fixture

@@ -3,7 +3,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from pprint import pprint
 from typing import AsyncIterator, Iterator
 
 import aiohttp.test_utils
@@ -16,6 +15,7 @@ from fastapi import FastAPI
 from httpx._transports.asgi import ASGITransport
 from moto.server import ThreadedMotoServer
 from pydantic import HttpUrl, parse_obj_as
+from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from requests.auth import HTTPBasicAuth
@@ -27,38 +27,26 @@ from simcore_service_api_server.core.settings import ApplicationSettings
 
 @pytest.fixture
 def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+    monkeypatch: MonkeyPatch, default_app_env_vars: EnvVarsDict
 ) -> EnvVarsDict:
     """Config that disables many plugins e.g. database or tracing"""
 
-    env_vars = {}
-    env_vars.update(app_environment)
-
-    pprint(list(ApplicationSettings.schema()["properties"].keys()))
-    # [
-    # 'SC_BOOT_MODE',
-    # 'LOG_LEVEL',
-    # 'API_SERVER_POSTGRES',
-    # 'API_SERVER_WEBSERVER',
-    # 'API_SERVER_CATALOG',
-    # 'API_SERVER_STORAGE',
-    # 'API_SERVER_DIRECTOR_V2',
-    # 'API_SERVER_TRACING',
-    # 'API_SERVER_DEV_FEATURES_ENABLED',
-    # 'API_SERVER_REMOTE_DEBUG_PORT'
-    # ]
-    #
-    env_vars.update(
+    env_vars = setenvs_from_dict(
+        monkeypatch,
         {
+            **default_app_env_vars,
             "WEBSERVER_HOST": "webserver",
             "WEBSERVER_SESSION_SECRET_KEY": Fernet.generate_key().decode("utf-8"),
             "API_SERVER_POSTGRES": "null",
             "API_SERVER_TRACING": "null",
             "LOG_LEVEL": "debug",
             "SC_BOOT_MODE": "production",
-        }
+        },
     )
-    setenvs_from_dict(monkeypatch, env_vars)
+
+    # should be sufficient to create settings
+    print(ApplicationSettings.create_from_envs().json(indent=1))
+
     return env_vars
 
 

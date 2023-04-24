@@ -8,8 +8,7 @@ from pathlib import Path
 import pytest
 import simcore_service_api_server
 from dotenv import dotenv_values
-from pytest import MonkeyPatch
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.utils_envs import EnvVarsDict
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -56,16 +55,6 @@ def default_app_env_vars(
     env_vars["API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED"] = "1"
 
     return env_vars
-
-
-@pytest.fixture
-def app_environment(
-    monkeypatch: MonkeyPatch, default_app_env_vars: EnvVarsDict
-) -> EnvVarsDict:
-    """default environment for testing"""
-
-    setenvs_from_dict(monkeypatch, default_app_env_vars)
-    return default_app_env_vars
 
 
 ## FOLDER LAYOUT ----
