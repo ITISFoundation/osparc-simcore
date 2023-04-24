@@ -7,6 +7,7 @@ import json
 import logging
 from contextlib import suppress
 from pprint import pformat
+from typing import AsyncIterator
 
 from aiohttp import web
 from aiopg.sa import Engine
@@ -167,7 +168,7 @@ async def comp_tasks_listening_task(app: web.Application) -> None:
             await asyncio.sleep(3)
 
 
-async def create_comp_tasks_listening_task(app: web.Application):
+async def create_comp_tasks_listening_task(app: web.Application) -> AsyncIterator[None]:
     task = asyncio.create_task(
         comp_tasks_listening_task(app), name="computation db listener"
     )
