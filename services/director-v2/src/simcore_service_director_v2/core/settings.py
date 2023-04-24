@@ -22,7 +22,7 @@ from models_library.clusters import (
     NoAuthentication,
 )
 from models_library.docker import DockerGenericTag
-from models_library.projects_networks import SERVICE_NETWORK_RE
+from models_library.projects_networks import DockerNetworkName
 from models_library.utils.enums import StrAutoEnum
 from pydantic import (
     AnyHttpUrl,
@@ -31,6 +31,7 @@ from pydantic import (
     Field,
     PositiveFloat,
     PositiveInt,
+    parse_obj_as,
     validator,
 )
 from settings_library.base import BaseCustomSettings
@@ -170,7 +171,7 @@ class DynamicSidecarEgressSettings(BaseCustomSettings):
         description="envoy image to use",
     )
     DYNAMIC_SIDECAR_ENVOY_LOG_LEVEL: EnvoyLogLevel = Field(
-        EnvoyLogLevel.ERROR, description="log level for envoy proxy service"
+        default=EnvoyLogLevel.ERROR, description="log level for envoy proxy service"
     )
 
 
@@ -195,9 +196,8 @@ class DynamicSidecarSettings(BaseCustomSettings):
         description="used by the director to start a specific version of the dynamic-sidecar",
     )
 
-    SIMCORE_SERVICES_NETWORK_NAME: str = Field(
+    SIMCORE_SERVICES_NETWORK_NAME: DockerNetworkName = Field(
         ...,
-        regex=SERVICE_NETWORK_RE,
         description="network all dynamic services are connected to",
     )
 
@@ -444,7 +444,7 @@ class ComputationalBackendSettings(BaseCustomSettings):
         True,
     )
     COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL: AnyUrl = Field(
-        "tcp://dask-scheduler:8786",
+        parse_obj_as(AnyUrl, "tcp://dask-scheduler:8786"),
         description="This is the cluster that will be used by default"
         " when submitting computational services (typically "
         "tcp://dask-scheduler:8786 for the internal cluster, or "

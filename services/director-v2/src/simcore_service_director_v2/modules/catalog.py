@@ -1,7 +1,7 @@
 import logging
 import urllib.parse
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, TypeAlias
 
 import httpx
 from fastapi import FastAPI, HTTPException, status
@@ -12,6 +12,8 @@ from settings_library.catalog import CatalogSettings
 from ..utils.client_decorators import handle_errors, handle_retry
 
 logger = logging.getLogger(__name__)
+
+ServiceResources: TypeAlias = dict[str, Any]
 
 
 def setup(app: FastAPI, settings: CatalogSettings) -> None:
@@ -80,7 +82,7 @@ class CatalogClient:
 
     async def get_service_resources(
         self, user_id: UserID, service_key: ServiceKey, service_version: ServiceVersion
-    ) -> dict[str, Any]:
+    ) -> ServiceResources:
         resp = await self.request(
             "GET",
             f"/services/{urllib.parse.quote( service_key, safe='')}/{service_version}/resources",
@@ -88,7 +90,7 @@ class CatalogClient:
         )
         resp.raise_for_status()
         if resp.status_code == status.HTTP_200_OK:
-            json_response: dict[str, Any] = resp.json()
+            json_response: ServiceResources = resp.json()
             return json_response
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 

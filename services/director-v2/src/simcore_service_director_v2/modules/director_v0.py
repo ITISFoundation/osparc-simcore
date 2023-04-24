@@ -66,13 +66,14 @@ class DirectorV0Client:
     client: httpx.AsyncClient
 
     @classmethod
-    def create(cls, app: FastAPI, **kwargs):
+    def create(cls, app: FastAPI, **kwargs) -> "DirectorV0Client":
         app.state.director_v0_client = cls(**kwargs)
         return cls.instance(app)
 
     @classmethod
-    def instance(cls, app: FastAPI):
-        return app.state.director_v0_client
+    def instance(cls, app: FastAPI) -> "DirectorV0Client":
+        client: DirectorV0Client = app.state.director_v0_client
+        return client
 
     @handle_errors("Director", logger)
     @handle_retry(logger)

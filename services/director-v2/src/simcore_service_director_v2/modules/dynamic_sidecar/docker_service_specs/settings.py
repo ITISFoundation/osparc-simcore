@@ -24,7 +24,7 @@ from models_library.utils.docker_compose import (
     MATCH_SERVICE_VERSION,
 )
 
-from ....api.dependencies.director_v0 import DirectorV0Client
+from ....modules.director_v0 import DirectorV0Client
 from ..errors import DynamicSidecarError
 
 BOOT_OPTION_PREFIX = "DY_BOOT_OPTION"

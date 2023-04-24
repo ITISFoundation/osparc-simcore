@@ -11,14 +11,16 @@ from models_library.projects_state import RunningState
 from models_library.utils.nodes import compute_node_hash
 from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
 
-from .computations import NodeClass, to_node_class
+from ..modules.db.tables import NodeClass
+from .computations import to_node_class
 
 logger = logging.getLogger(__name__)
 
 
 def _is_node_computational(node_key: str) -> bool:
     try:
-        return to_node_class(node_key) == NodeClass.COMPUTATIONAL
+        result: bool = to_node_class(node_key) == NodeClass.COMPUTATIONAL
+        return result
     except ValueError:
         return False
 
@@ -84,7 +86,8 @@ async def compute_node_modified_state(
 
     # maybe our inputs changed? let's compute the node hash and compare with the saved one
     async def get_node_io_payload_cb(node_id: NodeID) -> dict[str, Any]:
-        return nodes_data_view[str(node_id)]
+        result: dict[str, Any] = nodes_data_view[str(node_id)]
+        return result
 
     computed_hash = await compute_node_hash(node_id, get_node_io_payload_cb)
     if computed_hash != node["run_hash"]:
@@ -124,9 +127,10 @@ def node_needs_computation(
     nodes_data_view: nx.classes.reportviews.NodeDataView, node_id: NodeID
 ) -> bool:
     node = nodes_data_view[str(node_id)]
-    return node.get(kNODE_MODIFIED_STATE, False) or node.get(
+    needs_computation: bool = node.get(kNODE_MODIFIED_STATE, False) or node.get(
         kNODE_DEPENDENCIES_TO_COMPUTE, None
     )
+    return needs_computation
 
 
 async def _set_computational_nodes_states(complete_dag: nx.DiGraph) -> None:

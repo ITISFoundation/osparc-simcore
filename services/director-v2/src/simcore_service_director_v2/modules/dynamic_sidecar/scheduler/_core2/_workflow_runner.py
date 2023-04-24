@@ -64,14 +64,14 @@ async def workflow_runner(
 
                 # fetching inputs from context
                 inputs: dict[str, Any] = {}
-                if step.input_types:  # type: ignore
+                if step.input_types:
                     get_inputs_results = await logged_gather(
                         *[
                             workflow_context.get(var_name, var_type)
-                            for var_name, var_type in step.input_types.items()  # type: ignore
+                            for var_name, var_type in step.input_types.items()
                         ]
                     )
-                    inputs = dict(zip(step.input_types, get_inputs_results))  # type: ignore
+                    inputs = dict(zip(step.input_types, get_inputs_results))
                 logger.debug("step='%s' inputs=%s", step_name, inputs)
 
                 # running event handler

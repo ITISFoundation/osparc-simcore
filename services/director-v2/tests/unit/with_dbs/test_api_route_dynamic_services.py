@@ -235,6 +235,7 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
         f"{module_base}._task.DynamicSidecarsScheduler.get_stack_status",
         side_effect=get_stack_status,
     )
+
     # MOCKING remove_service
     def remove_service(node_uuid: NodeID, *ars: Any, **kwargs: Any) -> None:
         if exp_status_code == status.HTTP_307_TEMPORARY_REDIRECT:

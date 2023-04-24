@@ -3,7 +3,7 @@
 import json
 import logging
 from collections import deque
-from typing import Any, Deque, Final, cast
+from typing import Any, Deque, Final
 
 from fastapi import FastAPI
 from models_library.projects_networks import ProjectsNetworks
@@ -17,6 +17,7 @@ from servicelib.fastapi.long_running_tasks.client import (
     TaskClientResultError,
 )
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
+from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from tenacity import TryAgain
@@ -41,7 +42,6 @@ from ....node_rights import (
     ResourceName,
     node_resource_limits_enabled,
 )
-from ....rabbitmq import RabbitMQClient
 from ...api_client import (
     BaseClientHTTPError,
     DynamicSidecarClient,
@@ -97,11 +97,14 @@ def are_all_user_services_containers_running(
 
 
 def _get_scheduler_data(app: FastAPI, node_uuid: NodeID) -> SchedulerData:
-    dynamic_sidecars_scheduler: "DynamicSidecarsScheduler" = (
+    dynamic_sidecars_scheduler: "DynamicSidecarsScheduler" = (  # type: ignore
         app.state.dynamic_sidecar_scheduler
     )
     # pylint: disable=protected-access
-    return dynamic_sidecars_scheduler._scheduler.get_scheduler_data(node_uuid)
+    scheduler_data: SchedulerData = (
+        dynamic_sidecars_scheduler._scheduler.get_scheduler_data(node_uuid)
+    )
+    return scheduler_data
 
 
 async def service_remove_containers(
@@ -257,9 +260,10 @@ async def attempt_pod_removal_and_data_saving(
             # to try and save the data, nodeports will raise errors
             # and sidecar will hang
 
-            projects_repository = cast(
-                ProjectsRepository, get_repository(app, ProjectsRepository)
+            projects_repository: ProjectsRepository = get_repository(
+                app, ProjectsRepository
             )
+
             can_really_save = await projects_repository.is_node_present_in_workbench(
                 project_id=scheduler_data.project_id, node_uuid=scheduler_data.node_uuid
             )
@@ -353,9 +357,8 @@ async def attach_project_networks(app: FastAPI, scheduler_data: SchedulerData) -
     dynamic_sidecar_client = get_dynamic_sidecar_client(app, scheduler_data.node_uuid)
     dynamic_sidecar_endpoint = scheduler_data.endpoint
 
-    projects_networks_repository: ProjectsNetworksRepository = cast(
-        ProjectsNetworksRepository,
-        get_repository(app, ProjectsNetworksRepository),
+    projects_networks_repository: ProjectsNetworksRepository = get_repository(
+        app, ProjectsNetworksRepository
     )
 
     projects_networks: ProjectsNetworks = (

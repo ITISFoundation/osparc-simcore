@@ -34,7 +34,6 @@ class RetrieveDataOutEnveloped(BaseModel):
 
 
 class DynamicServiceCreate(ServiceDetails):
-
     service_resources: ServiceResourcesDict
 
     product_name: str = Field(..., description="Current product name")
