@@ -13,7 +13,6 @@ from .activity.plugin import setup_activity
 from .application_settings import setup_settings
 from .catalog import setup_catalog
 from .clusters.plugin import setup_clusters
-from .computation import setup_computation
 from .db import setup_db
 from .diagnostics import setup_diagnostics
 from .director.plugin import setup_director
@@ -79,7 +78,6 @@ def create_application() -> web.Application:
     # monitoring
     setup_diagnostics(app)
     setup_activity(app)
-    setup_computation(app)
     setup_socketio(app)
 
     # login

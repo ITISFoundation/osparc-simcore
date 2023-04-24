@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=protected-access
 
+from typing import Iterator
 from unittest.mock import AsyncMock
 
 import pytest
@@ -10,22 +11,21 @@ from models_library.rabbitmq_messages import (
     ProgressRabbitMessageProject,
     ProgressType,
 )
+from pydantic import BaseModel
 from pytest_mock import MockerFixture
-from simcore_service_webserver import computation_subscribe
+from simcore_service_webserver.rabbitmq import consumers
 
 _faker = Faker()
 
 
 @pytest.fixture
-def mock_send_messages(mocker: MockerFixture) -> dict:
+def mock_send_messages(mocker: MockerFixture) -> Iterator[dict]:
     reference = {}
 
     async def mock_send_message(*args) -> None:
         reference["args"] = args
 
-    mocker.patch.object(
-        computation_subscribe, "send_messages", side_effect=mock_send_message
-    )
+    mocker.patch.object(consumers, "send_messages", side_effect=mock_send_message)
 
     yield reference
 
@@ -61,9 +61,9 @@ def mock_send_messages(mocker: MockerFixture) -> dict:
     ],
 )
 async def test_regression_progress_message_parser(
-    mock_send_messages: dict, raw_data: bytes, class_type: type
+    mock_send_messages: dict, raw_data: bytes, class_type: type[BaseModel]
 ):
-    await computation_subscribe._progress_message_parser(AsyncMock(), raw_data)
+    await consumers._progress_message_parser(AsyncMock(), raw_data)
     serialized_sent_data = mock_send_messages["args"][2][0]["data"]
     # check that all fields are sent as expected
     assert class_type.parse_obj(serialized_sent_data)

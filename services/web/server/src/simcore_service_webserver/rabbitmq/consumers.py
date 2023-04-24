@@ -12,6 +12,7 @@ from models_library.rabbitmq_messages import (
     ProgressType,
 )
 from pydantic import parse_raw_as
+from servicelib.aiohttp.application_keys import APP_RABBITMQ_CLIENT_KEY
 from servicelib.aiohttp.monitor_services import (
     SERVICE_STARTED_LABELS,
     SERVICE_STOPPED_LABELS,
@@ -33,7 +34,6 @@ from ..socketio.events import (
     SocketMessageDict,
     send_messages,
 )
-from .rabbitmq import get_rabbitmq_client
 
 logger = logging.getLogger(__name__)
 
@@ -179,7 +179,7 @@ EXCHANGE_TO_PARSER_CONFIG = (
 
 async def setup_rabbitmq_consumers(app: web.Application) -> AsyncIterator[None]:
     with log_context(logger, logging.INFO, msg="Subscribing to rabbitmq channels"):
-        rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
+        rabbit_client: RabbitMQClient = app[APP_RABBITMQ_CLIENT_KEY]
 
         for exchange_name, parser_fct, queue_kwargs in EXCHANGE_TO_PARSER_CONFIG:
             await rabbit_client.subscribe(
