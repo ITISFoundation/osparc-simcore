@@ -151,7 +151,7 @@ class RunningDynamicServiceDetails(ServiceDetails):
     def from_scheduler_data(
         cls,
         node_uuid: NodeID,
-        scheduler_data: "SchedulerData",
+        scheduler_data: "SchedulerData",  # type: ignore
         service_state: ServiceState,
         service_message: str,
     ) -> "RunningDynamicServiceDetails":

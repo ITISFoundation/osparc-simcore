@@ -435,7 +435,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     def from_http_request(
         # pylint: disable=too-many-arguments
         cls,
-        service: "DynamicServiceCreate",
+        service: "DynamicServiceCreate",  # type: ignore
         simcore_service_labels: SimcoreServiceLabels,
         port: PortInt,
         request_dns: str,
