@@ -215,7 +215,6 @@ def solver_version() -> str:
     return "1.2.3"
 
 
-@pytest.mark.testit
 @pytest.mark.acceptance_test(
     "New feature https://github.com/ITISFoundation/osparc-simcore/issues/3940"
 )
@@ -267,10 +266,12 @@ async def test_run_solver_job(
             "result": "string",
             "pipeline_details": {
                 "adjacency_list": {
-                    "additionalProp1": ["3fa85f64-5717-4562-b3fc-2c963f66afa6"],
+                    "3fa85f64-5717-4562-b3fc-2c963f66afa6": [
+                        "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                    ],
                 },
                 "node_states": {
-                    "additionalProp1": {
+                    "3fa85f64-5717-4562-b3fc-2c963f66afa6": {
                         "modified": True,
                         "dependencies": ["3fa85f64-5717-4562-b3fc-2c963f66afa6"],
                         "currentStatus": "NOT_STARTED",
@@ -279,8 +280,8 @@ async def test_run_solver_job(
             },
             "iteration": 1,
             "cluster_id": 0,
-            "url": "string",
-            "stop_url": "string",
+            "url": "http://test.com",
+            "stop_url": "http://test.com",
         },
     )
 
@@ -350,7 +351,7 @@ async def test_run_solver_job(
 
     # Start Job
     resp = await client.post(
-        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs/{job.id}",
+        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs/{job.id}:start",
         auth=auth,
         params={"cluster_id": 1},
     )
