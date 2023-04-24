@@ -37,18 +37,18 @@ class SchedulerInternalsMixin(  # pylint: disable=too-many-instance-attributes
         logger.info("Starting dynamic-sidecar scheduler")
         self._keep_running = True
         self._scheduler_task = asyncio.create_task(
-            self._run_scheduler_task(), name="dynamic-scheduler"  # type: ignore
+            self._run_scheduler_task(), name="dynamic-scheduler"
         )
         self._trigger_observation_queue_task = asyncio.create_task(
-            self._run_trigger_observation_queue_task(),  # type: ignore
+            self._run_trigger_observation_queue_task(),
             name="dynamic-scheduler-trigger-obs-queue",
         )
 
         self._cleanup_volume_removal_services_task = asyncio.create_task(
-            self._cleanup_volume_removal_services(),  # type: ignore
+            self._cleanup_volume_removal_services(),
             name="dynamic-scheduler-cleanup-volume-removal-services",
         )
-        await self._discover_running_services()  # type: ignore
+        await self._discover_running_services()
 
     async def shutdown(self) -> None:
         logger.info("Shutting down dynamic-sidecar scheduler")
