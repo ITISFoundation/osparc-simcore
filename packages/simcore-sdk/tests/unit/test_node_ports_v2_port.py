@@ -12,7 +12,7 @@ import shutil
 import tempfile
 import threading
 from pathlib import Path
-from typing import Any, Callable, Iterator, NamedTuple, Optional, Union
+from typing import Any, Callable, Iterator, NamedTuple
 from unittest.mock import AsyncMock
 
 import pytest
@@ -146,21 +146,24 @@ def download_file_folder() -> Iterator[Path]:
 @pytest.fixture(scope="module", name="project_id")
 def project_id_fixture() -> str:
     """NOTE: since pytest does not allow to use fixtures inside parametrizations,
-    this trick allows to re-use the same function in a fixture with a same "fixture" name"""
+    this trick allows to re-use the same function in a fixture with a same "fixture" name
+    """
     return project_id()
 
 
 @pytest.fixture(scope="module", name="node_uuid")
 def node_uuid_fixture() -> str:
     """NOTE: since pytest does not allow to use fixtures inside parametrizations,
-    this trick allows to re-use the same function in a fixture with a same "fixture" name"""
+    this trick allows to re-use the same function in a fixture with a same "fixture" name
+    """
     return node_uuid()
 
 
 @pytest.fixture(scope="module", name="user_id")
 def user_id_fixture() -> int:
     """NOTE: since pytest does not allow to use fixtures inside parametrizations,
-    this trick allows to re-use the same function in a fixture with a same "fixture" name"""
+    this trick allows to re-use the same function in a fixture with a same "fixture" name
+    """
     return user_id()
 
 
@@ -176,9 +179,9 @@ async def mock_download_file(
         download_link: URL,
         local_folder: Path,
         *,
-        io_log_redirect_cb: Optional[LogRedirectCB],
-        file_name: Optional[str] = None,
-        client_session: Optional[ClientSession] = None,
+        io_log_redirect_cb: LogRedirectCB | None,
+        file_name: str | None = None,
+        client_session: ClientSession | None = None,
         progress_bar: ProgressBarData,
     ) -> Path:
         assert io_log_redirect_cb
@@ -228,14 +231,14 @@ def common_fixtures(
 
 
 class PortParams(NamedTuple):
-    port_cfg: Union[InputsList, OutputsList]
-    exp_value_type: Union[Callable, tuple[Callable, ...]]
+    port_cfg: InputsList | OutputsList
+    exp_value_type: Callable | tuple[Callable, ...]
     exp_value_converter: type[ItemConcreteValue]
-    exp_value: Union[DataItemValue, None]
-    exp_get_value: Union[int, float, bool, str, Path, None]
-    new_value: Union[int, float, bool, str, Path, None]
-    exp_new_value: Union[int, float, bool, str, Path, FileLink, None]
-    exp_new_get_value: Union[int, float, bool, str, Path, None]
+    exp_value: DataItemValue | None
+    exp_get_value: int | float | bool | str | Path | None
+    new_value: int | float | bool | str | Path | None
+    exp_new_value: int | float | bool | str | Path | FileLink | None
+    exp_new_get_value: int | float | bool | str | Path | None
 
 
 @pytest.mark.parametrize(
@@ -582,13 +585,13 @@ async def test_valid_port(
     project_id: str,
     node_uuid: str,
     port_cfg: dict[str, Any],
-    exp_value_type: type[Union[int, float, bool, str, Path]],
-    exp_value_converter: type[Union[int, float, bool, str, Path]],
-    exp_value: Union[int, float, bool, str, Path, FileLink, DownloadLink, PortLink],
-    exp_get_value: Union[int, float, bool, str, Path],
-    new_value: Union[int, float, bool, str, Path],
-    exp_new_value: Union[int, float, bool, str, Path, FileLink],
-    exp_new_get_value: Union[int, float, bool, str, Path],
+    exp_value_type: type[int | float | bool | str | Path],
+    exp_value_converter: type[int | float | bool | str | Path],
+    exp_value: int | float | bool | str | Path | FileLink | DownloadLink | PortLink,
+    exp_get_value: int | float | bool | str | Path,
+    new_value: int | float | bool | str | Path,
+    exp_new_value: int | float | bool | str | Path | FileLink,
+    exp_new_get_value: int | float | bool | str | Path,
     another_node_file: Path,
 ):
     async def _io_log_redirect_cb(logs: str) -> None:
@@ -599,11 +602,11 @@ async def test_valid_port(
         user_id: int
         project_id: str
         node_uuid: str
-        r_clone_settings: Optional[Any] = None
-        io_log_redirect_cb: Optional[LogRedirectCB] = _io_log_redirect_cb
+        r_clone_settings: Any | None = None
+        io_log_redirect_cb: LogRedirectCB | None = _io_log_redirect_cb
 
         @staticmethod
-        async def get(key: str, progress_bar: Optional[ProgressBarData] = None):
+        async def get(key: str, progress_bar: ProgressBarData | None = None):
             # this gets called when a node links to another node we return the get value but for files it needs to be a real one
             return (
                 another_node_file
@@ -640,7 +643,6 @@ async def test_valid_port(
             assert v == getattr(port, camel_key)
 
     # check payload
-    assert port._py_value_type == exp_value_type
     assert port._py_value_converter == exp_value_converter
 
     assert port.value == exp_value

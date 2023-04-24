@@ -1,6 +1,6 @@
 from functools import lru_cache, wraps
 from json import JSONDecodeError
-from typing import Callable
+from typing import Any, Awaitable, Callable
 from urllib.parse import quote
 
 from aiohttp import ClientSession, web
@@ -23,7 +23,7 @@ from . import exceptions
 from .settings import NodePortsSettings
 
 
-def handle_client_exception(handler: Callable):
+def handle_client_exception(handler: Callable) -> Callable[..., Awaitable[Any]]:
     @wraps(handler)
     async def wrapped(*args, **kwargs):
         try:
@@ -53,7 +53,8 @@ def handle_client_exception(handler: Callable):
 @lru_cache
 def _base_url() -> str:
     settings = NodePortsSettings.create_from_envs()
-    return settings.NODE_PORTS_STORAGE.api_base_url
+    base_url: str = settings.NODE_PORTS_STORAGE.api_base_url
+    return base_url
 
 
 @handle_client_exception
@@ -101,7 +102,8 @@ async def get_download_file_link(
             raise exceptions.S3InvalidPathError(
                 f"file {location_id}@{file_id} not found"
             )
-        return presigned_link_enveloped.data.link
+        url: AnyUrl = presigned_link_enveloped.data.link
+        return url
 
 
 @handle_client_exception
@@ -173,7 +175,8 @@ async def list_file_metadata(
         resp.raise_for_status()
         envelope = Envelope[list[FileMetaDataGet]].parse_obj(await resp.json())
         assert envelope.data is not None  # nosec
-        return envelope.data
+        file_meta_data: list[FileMetaDataGet] = envelope.data
+        return file_meta_data
 
 
 @handle_client_exception
