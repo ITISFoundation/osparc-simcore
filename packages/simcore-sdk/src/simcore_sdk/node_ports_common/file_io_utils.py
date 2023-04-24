@@ -4,15 +4,7 @@ import logging
 from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from pathlib import Path
-from typing import (
-    IO,
-    AsyncGenerator,
-    Optional,
-    Protocol,
-    Union,
-    cast,
-    runtime_checkable,
-)
+from typing import IO, AsyncGenerator, Protocol, runtime_checkable
 
 import aiofiles
 from aiohttp import (
@@ -59,10 +51,10 @@ class ExtendedClientResponseError(ClientResponseError):
         history: tuple[ClientResponse, ...],
         body: str,
         *,
-        code: Optional[int] = None,
-        status: Optional[int] = None,
+        code: int | None = None,
+        status: int | None = None,
         message: str = "",
-        headers: Optional[LooseHeaders] = None,
+        headers: LooseHeaders | None = None,
     ):
         super().__init__(
             request_info,
@@ -147,7 +139,7 @@ async def _file_chunk_writer(
     file: Path,
     response: ClientResponse,
     pbar: tqdm,
-    io_log_redirect_cb: Optional[LogRedirectCB],
+    io_log_redirect_cb: LogRedirectCB | None,
     progress_bar: ProgressBarData,
 ):
     async with aiofiles.open(file, "wb") as file_pointer:
@@ -175,7 +167,7 @@ async def download_link_to_file(
     file_path: Path,
     *,
     num_retries: int,
-    io_log_redirect_cb: Optional[LogRedirectCB],
+    io_log_redirect_cb: LogRedirectCB | None,
     progress_bar: ProgressBarData,
 ):
     log.debug("Downloading from %s to %s", url, file_path)
@@ -234,12 +226,10 @@ def _check_for_aws_http_errors(exc: BaseException) -> bool:
     if not isinstance(exc, ExtendedClientResponseError):
         return False
 
-    client_error = cast(ExtendedClientResponseError, exc)
-
     # Sometimes AWS responds with a 500 or 503 which shall be retried,
     # form more information see:
     # https://aws.amazon.com/premiumsupport/knowledge-center/http-5xx-errors-s3/
-    if client_error.status in (
+    if exc.status in (
         web.HTTPInternalServerError.status_code,
         web.HTTPServiceUnavailable.status_code,
     ):
@@ -249,10 +239,7 @@ def _check_for_aws_http_errors(exc: BaseException) -> bool:
     # reason in the body will be received. This also needs retrying,
     # for more information see:
     # see https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html
-    if (
-        client_error.status == web.HTTPBadRequest.status_code
-        and "RequestTimeout" in client_error.body
-    ):
+    if exc.status == web.HTTPBadRequest.status_code and "RequestTimeout" in exc.body:
         return True
 
     return False
@@ -260,7 +247,7 @@ def _check_for_aws_http_errors(exc: BaseException) -> bool:
 
 async def _upload_file_part(
     session: ClientSession,
-    file_to_upload: Union[Path, UploadableFileObject],
+    file_to_upload: Path | UploadableFileObject,
     part_index: int,
     file_offset: int,
     file_part_size: int,
@@ -268,7 +255,7 @@ async def _upload_file_part(
     pbar: tqdm,
     num_retries: int,
     *,
-    io_log_redirect_cb: Optional[LogRedirectCB],
+    io_log_redirect_cb: LogRedirectCB | None,
     progress_bar: ProgressBarData,
 ) -> tuple[int, ETag]:
     file_uploader = _file_chunk_reader(
@@ -320,10 +307,10 @@ async def _upload_file_part(
 async def upload_file_to_presigned_links(
     session: ClientSession,
     file_upload_links: FileUploadSchema,
-    file_to_upload: Union[Path, UploadableFileObject],
+    file_to_upload: Path | UploadableFileObject,
     *,
     num_retries: int,
-    io_log_redirect_cb: Optional[LogRedirectCB],
+    io_log_redirect_cb: LogRedirectCB | None,
     progress_bar: ProgressBarData,
 ) -> list[UploadedPart]:
     file_size = 0

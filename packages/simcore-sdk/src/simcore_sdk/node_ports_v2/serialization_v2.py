@@ -2,17 +2,17 @@ import functools
 import json
 import logging
 from pprint import pformat
-from typing import Any, Optional
+from typing import Any
 
 import pydantic
 from models_library.projects_nodes import NodeID
 from models_library.utils.nodes import compute_node_hash
 from packaging import version
 from settings_library.r_clone import RCloneSettings
-from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 
 from ..node_ports_common.dbmanager import DBManager
 from ..node_ports_common.exceptions import InvalidProtocolError
+from ..node_ports_common.file_io_utils import LogRedirectCB
 from .nodeports_v2 import Nodeports
 
 # NOTE: Keeps backwards compatibility with pydantic
@@ -34,9 +34,9 @@ async def load(
     user_id: int,
     project_id: str,
     node_uuid: str,
-    io_log_redirect_cb: Optional[LogRedirectCB],
+    io_log_redirect_cb: LogRedirectCB | None,
     auto_update: bool = False,
-    r_clone_settings: Optional[RCloneSettings] = None,
+    r_clone_settings: RCloneSettings | None = None,
 ) -> Nodeports:
     """creates a nodeport object from a row from comp_tasks"""
     log.debug(
@@ -56,9 +56,10 @@ async def load(
         )
 
     # convert to our internal node ports
+    node_ports_cfg: dict[str, dict[str, Any]] = {}
     if _PYDANTIC_NEEDS_ROOT_SPECIFIED:
         _PY_INT = "__root__"
-        node_ports_cfg: dict[str, dict[str, Any]] = {
+        node_ports_cfg = {
             "inputs": {_PY_INT: {}},
             "outputs": {_PY_INT: {}},
         }
@@ -74,7 +75,7 @@ async def load(
                 port_value["key"] = key
                 port_value["value"] = port_cfg[port_type].get(key, None)
     else:
-        node_ports_cfg: dict[str, dict[str, Any]] = {}
+        node_ports_cfg = {}
         for port_type in ["inputs", "outputs"]:
             # schemas first
             node_ports_cfg[port_type] = port_cfg["schema"][port_type]
