@@ -35,7 +35,7 @@ from .socketio.events import (
     send_messages,
 )
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 async def _handle_computation_running_progress(
@@ -65,13 +65,13 @@ async def _handle_computation_running_progress(
             await send_messages(app, f"{message.user_id}", messages)
             return True
     except ProjectNotFoundError:
-        log.warning(
+        logger.warning(
             "project related to received rabbitMQ progress message not found: '%s'",
             json_dumps(message, indent=2),
         )
         return True
     except NodeNotFoundError:
-        log.warning(
+        logger.warning(
             "node related to received rabbitMQ progress message not found: '%s'",
             json_dumps(message, indent=2),
         )
@@ -79,7 +79,7 @@ async def _handle_computation_running_progress(
     return False
 
 
-async def progress_message_parser(app: web.Application, data: bytes) -> bool:
+async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
     # update corresponding project, node, progress value
     rabbit_message = parse_raw_as(
         Union[ProgressRabbitMessageNode, ProgressRabbitMessageProject], data
@@ -110,7 +110,7 @@ async def progress_message_parser(app: web.Application, data: bytes) -> bool:
     return True
 
 
-async def log_message_parser(app: web.Application, data: bytes) -> bool:
+async def _log_message_parser(app: web.Application, data: bytes) -> bool:
     rabbit_message = LoggerRabbitMessage.parse_raw(data)
 
     if not await projects_api.is_project_hidden(app, rabbit_message.project_id):
@@ -124,7 +124,7 @@ async def log_message_parser(app: web.Application, data: bytes) -> bool:
     return True
 
 
-async def instrumentation_message_parser(app: web.Application, data: bytes) -> bool:
+async def _instrumentation_message_parser(app: web.Application, data: bytes) -> bool:
     rabbit_message = InstrumentationRabbitMessage.parse_raw(data)
     if rabbit_message.metrics == "service_started":
         service_started(
@@ -137,7 +137,7 @@ async def instrumentation_message_parser(app: web.Application, data: bytes) -> b
     return True
 
 
-async def events_message_parser(app: web.Application, data: bytes) -> bool:
+async def _events_message_parser(app: web.Application, data: bytes) -> bool:
     rabbit_message = EventRabbitMessage.parse_raw(data)
 
     socket_messages: list[SocketMessageDict] = [
@@ -156,29 +156,29 @@ async def events_message_parser(app: web.Application, data: bytes) -> bool:
 EXCHANGE_TO_PARSER_CONFIG = (
     (
         LoggerRabbitMessage.get_channel_name(),
-        log_message_parser,
+        _log_message_parser,
         {},
     ),
     (
         ProgressRabbitMessageNode.get_channel_name(),
-        progress_message_parser,
+        _progress_message_parser,
         {},
     ),
     (
         InstrumentationRabbitMessage.get_channel_name(),
-        instrumentation_message_parser,
+        _instrumentation_message_parser,
         dict(exclusive_queue=False),
     ),
     (
         EventRabbitMessage.get_channel_name(),
-        events_message_parser,
+        _events_message_parser,
         {},
     ),
 )
 
 
 async def setup_rabbitmq_consumers(app: web.Application) -> None:
-    with log_context(log, logging.INFO, msg="Subscribing to rabbitmq channels"):
+    with log_context(logger, logging.INFO, msg="Subscribing to rabbitmq channels"):
         rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
 
         for exchange_name, parser_fct, queue_kwargs in EXCHANGE_TO_PARSER_CONFIG:

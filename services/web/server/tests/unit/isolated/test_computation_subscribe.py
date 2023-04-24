@@ -1,4 +1,5 @@
 # pylint: disable=redefined-outer-name
+# pylint: disable=protected-access
 
 from unittest.mock import AsyncMock
 
@@ -62,7 +63,7 @@ def mock_send_messages(mocker: MockerFixture) -> dict:
 async def test_regression_progress_message_parser(
     mock_send_messages: dict, raw_data: bytes, class_type: type
 ):
-    await computation_subscribe.progress_message_parser(AsyncMock(), raw_data)
+    await computation_subscribe._progress_message_parser(AsyncMock(), raw_data)
     serialized_sent_data = mock_send_messages["args"][2][0]["data"]
     # check that all fields are sent as expected
     assert class_type.parse_obj(serialized_sent_data)
