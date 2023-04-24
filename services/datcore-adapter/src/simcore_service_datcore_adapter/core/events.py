@@ -4,7 +4,7 @@ from typing import Callable
 from fastapi import FastAPI
 from models_library.basic_types import BootModeEnum
 
-from ..meta import __version__, project_name
+from .._meta import PROJECT_NAME, __version__
 from ..modules.remote_debug import setup_remote_debugging
 
 logger = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ def on_startup() -> None:
 
 
 def on_shutdown() -> None:
-    msg = project_name + f" v{__version__} SHUT DOWN"
+    msg = PROJECT_NAME + f" v{__version__} SHUT DOWN"
     print(f"{msg:=^100}", flush=True)
 
 
