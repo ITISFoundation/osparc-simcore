@@ -15,6 +15,7 @@ from . import groups_handlers
 from ._constants import APP_OPENAPI_SPECS_KEY, APP_SETTINGS_KEY
 from .products.plugin import setup_products
 
+
 logger = logging.getLogger(__name__)
 
 
