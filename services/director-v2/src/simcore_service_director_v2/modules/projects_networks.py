@@ -69,7 +69,7 @@ async def requires_dynamic_sidecar(
             )
         )
     )
-    return simcore_service_labels.needs_dynamic_sidecar  # type: ignore
+    return simcore_service_labels.needs_dynamic_sidecar
 
 
 async def _send_network_configuration_to_dynamic_sidecar(
