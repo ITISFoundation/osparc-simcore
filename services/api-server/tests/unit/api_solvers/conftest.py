@@ -88,7 +88,7 @@ def mocked_webserver_service_api(
             status.HTTP_200_OK,
             json={
                 "data": {
-                    "task_progress": 1,
+                    "task_progress": {"message": "fake job done", "percent": 1},
                     "done": True,
                     "started": "2018-07-01T11:13:43Z",
                 }
@@ -113,8 +113,8 @@ def mocked_webserver_service_api(
             json={
                 "data": {
                     "task_id": "123",
-                    "status_href": f"{settings.API_SERVER_WEBSERVER.base_url}/task/{task_id}",
-                    "result_href": f"{settings.API_SERVER_WEBSERVER.base_url}/task/{task_id}/result",
+                    "status_href": f"{settings.API_SERVER_WEBSERVER.base_url}/tasks/{task_id}",
+                    "result_href": f"{settings.API_SERVER_WEBSERVER.base_url}/tasks/{task_id}/result",
                 }
             },
         )
