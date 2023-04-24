@@ -24,7 +24,7 @@ from servicelib.rabbitmq import RabbitMQClient
 
 from .projects import projects_api
 from .projects.projects_exceptions import NodeNotFoundError, ProjectNotFoundError
-from .rabbitmq import get_rabbitmq_client
+from .rabbitmq.rabbitmq import get_rabbitmq_client
 from .socketio.events import (
     SOCKET_IO_EVENT,
     SOCKET_IO_LOG_EVENT,

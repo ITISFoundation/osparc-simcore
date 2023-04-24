@@ -9,7 +9,7 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 
 from .computation_comp_tasks_listening_task import create_comp_tasks_listening_task
 from .computation_subscribe import setup_rabbitmq_consumers
-from .rabbitmq import setup_rabbitmq
+from .rabbitmq.rabbitmq import setup_rabbitmq
 
 log = logging.getLogger(__name__)
 

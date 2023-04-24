@@ -29,7 +29,7 @@ from .meta_modeling.plugin import setup_meta_modeling
 from .products import setup_products
 from .projects.plugin import setup_projects
 from .publications import setup_publications
-from .rabbitmq import setup_rabbitmq
+from .rabbitmq.rabbitmq import setup_rabbitmq
 from .redis import setup_redis
 from .remote_debug import setup_remote_debugging
 from .resource_manager.plugin import setup_resource_manager
