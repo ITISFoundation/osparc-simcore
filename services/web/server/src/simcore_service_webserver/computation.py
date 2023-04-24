@@ -23,7 +23,7 @@ log = logging.getLogger(__name__)
         "simcore_service_webserver.diagnostics",
     ],  # depends on diagnostics for setting the instrumentation
 )
-def setup_computation(app: web.Application):
+def setup_computation(app: web.Application) -> None:
     setup_rabbitmq(app)
     # Subscribe to rabbit upon startup for logs, progress and other
     # metrics on the execution reported by sidecars
