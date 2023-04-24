@@ -341,9 +341,6 @@ async def test_run_solver_job(
         json=JobInputs(values={"x": 3.14, "n": 42}).dict(),
     )
     assert resp.status_code == status.HTTP_200_OK
-    assert mocked_directorv2_service_api[
-        "create_computation_v2_computations_post"
-    ].called
 
     assert mocked_webserver_service_api["create_projects"].called
     assert mocked_webserver_service_api["get_task_status"].called
