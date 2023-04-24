@@ -9,7 +9,7 @@ from .projects_nodes_io import NodeIDStr
 
 SERVICE_NETWORK_RE: Final[re.Pattern] = re.compile(r"^[a-zA-Z]([a-zA-Z0-9_-]{0,63})$")
 
-PROJECT_NETWORK_PREFIX = "prj-ntwrk"
+PROJECT_NETWORK_PREFIX: Final[str] = "prj-ntwrk"
 
 
 class DockerNetworkName(ConstrainedStr):
