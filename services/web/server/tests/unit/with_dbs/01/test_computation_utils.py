@@ -19,5 +19,5 @@ from simcore_service_webserver.computation_utils import convert_state_from_db
         (StateType.NOT_STARTED, RunningState.NOT_STARTED),
     ],
 )
-def test_convert_state_from_db(db_state: int, expected_state: RunningState):
+def test_convert_state_from_db(db_state: StateType, expected_state: RunningState):
     assert convert_state_from_db(db_state) == expected_state
