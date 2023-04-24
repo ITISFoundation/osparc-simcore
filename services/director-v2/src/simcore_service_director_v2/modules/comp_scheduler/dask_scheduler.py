@@ -49,7 +49,7 @@ async def _cluster_dask_client(
     if cluster_id != DEFAULT_CLUSTER_ID:
         clusters_repo: ClustersRepository = get_repository(
             scheduler.db_engine, ClustersRepository
-        )  # type: ignore
+        )
         cluster = await clusters_repo.get_cluster(user_id, cluster_id)
     async with scheduler.dask_clients_pool.acquire(cluster) as client:
         yield client
@@ -94,7 +94,7 @@ class DaskScheduler(BaseCompScheduler):
         # update the database so we do have the correct job_ids there
         comp_tasks_repo: CompTasksRepository = get_repository(
             self.db_engine, CompTasksRepository
-        )  # type: ignore
+        )
         await asyncio.gather(
             *[
                 comp_tasks_repo.set_project_task_job_id(project_id, node_id, job_id)

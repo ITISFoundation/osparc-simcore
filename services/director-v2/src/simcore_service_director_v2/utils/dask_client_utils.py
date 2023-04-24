@@ -29,6 +29,7 @@ from ..core.errors import (
     DaskGatewayServerError,
     SchedulerError,
 )
+from .dask import check_maximize_workers, wrap_client_async_routine
 
 DaskGatewayAuths = Union[
     dask_gateway.BasicAuth, dask_gateway.KerberosAuth, dask_gateway.JupyterHubAuth
@@ -64,11 +65,11 @@ class DaskSubSystem:
         # then the dask-scheduler goes in a bad state [https://github.com/dask/distributed/issues/3276]
         # closing the client appears to fix the issue and the dask-scheduler remains happy
         if self.client:
-            await self.client.close()
+            await wrap_client_async_routine(self.client.close())
         if self.gateway_cluster:
-            await self.gateway_cluster.close()
+            await wrap_client_async_routine(self.gateway_cluster.close())
         if self.gateway:
-            await self.gateway.close()
+            await wrap_client_async_routine(self.gateway.close())
 
 
 async def _connect_to_dask_scheduler(endpoint: AnyUrl) -> DaskSubSystem:
@@ -123,8 +124,7 @@ async def _connect_with_gateway_and_create_cluster(
                 logger.debug("created %s", f"{cluster=}")
             assert cluster  # nosec
             logger.info("Cluster dashboard available: %s", cluster.dashboard_link)
-            # NOTE: we scale to 1 worker as they are global
-            await cluster.adapt(active=True)
+            await check_maximize_workers(cluster)
             client = await cluster.get_client()
             assert client  # nosec
             return DaskSubSystem(
@@ -136,7 +136,7 @@ async def _connect_with_gateway_and_create_cluster(
         except Exception as exc:
             # cleanup
             with suppress(Exception):
-                await gateway.close()
+                await wrap_client_async_routine(gateway.close())
             raise exc
 
     except TypeError as exc:
@@ -203,7 +203,7 @@ async def test_scheduler_endpoint(
     try:
         if _is_internal_scheduler(authentication):
             async with distributed.Client(
-                address=endpoint, timeout=_PING_TIMEOUT_S, asynchronous=True
+                address=endpoint, timeout=f"{_PING_TIMEOUT_S}", asynchronous=True
             ) as dask_client:
                 if not dask_client.status == _DASK_SCHEDULER_RUNNING_STATE:
                     raise SchedulerError("internal scheduler is not running!")

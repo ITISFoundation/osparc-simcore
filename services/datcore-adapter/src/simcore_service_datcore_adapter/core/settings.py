@@ -17,7 +17,7 @@ class PennsieveSettings(BaseCustomSettings):
     PENNSIEVE_HEALTCHCHECK_TIMEOUT: float = 1.0
 
 
-class Settings(BaseCustomSettings, MixinLoggingSettings):
+class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     # DOCKER
     SC_BOOT_MODE: BootModeEnum | None
 
@@ -34,6 +34,7 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
     PENNSIEVE: PennsieveSettings = Field(auto_default_from_env=True)
 
     DATCORE_ADAPTER_TRACING: TracingSettings | None = Field(auto_default_from_env=True)
+
     DATCORE_ADAPTER_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         False,
         env=[

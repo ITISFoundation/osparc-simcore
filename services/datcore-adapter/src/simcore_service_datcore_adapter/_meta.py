@@ -2,17 +2,18 @@
 
 """
 from contextlib import suppress
+from typing import Final
 
 import pkg_resources
 
 current_distribution = pkg_resources.get_distribution("simcore_service_datcore_adapter")
 
 __version__ = current_distribution.version
-api_version: str = __version__
-major, minor, patch = __version__.split(".")
-api_vtag: str = f"v{major}"
 
-project_name: str = current_distribution.project_name
+API_VERSION: Final[str] = __version__
+MAJOR, MINOR, PATCH = __version__.split(".")
+API_VTAG: Final[str] = f"v{MAJOR}"
+PROJECT_NAME: Final[str] = current_distribution.project_name
 
 
 def get_summary() -> str:

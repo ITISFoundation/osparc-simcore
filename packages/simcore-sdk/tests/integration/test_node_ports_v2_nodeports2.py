@@ -12,21 +12,29 @@ import tempfile
 import threading
 from asyncio import gather
 from pathlib import Path
-from typing import Any, Awaitable, Callable, Iterable, Optional, Union
+from typing import Any, Awaitable, Callable, Iterable
 from uuid import uuid4
 
 import np_helpers
 import pytest
 import sqlalchemy as sa
-from models_library.projects_nodes_io import LocationID, NodeIDStr, SimcoreS3FileID
+from models_library.projects import ProjectIDStr
+from models_library.projects_nodes_io import (
+    BaseFileLink,
+    DownloadLink,
+    LocationID,
+    NodeIDStr,
+    SimcoreS3FileID,
+)
 from servicelib.progress_bar import ProgressBarData
 from settings_library.r_clone import RCloneSettings
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_common.exceptions import UnboundPortError
 from simcore_sdk.node_ports_v2 import exceptions
-from simcore_sdk.node_ports_v2.links import ItemConcreteValue
+from simcore_sdk.node_ports_v2.links import ItemConcreteValue, PortLink
 from simcore_sdk.node_ports_v2.nodeports_v2 import Nodeports
 from simcore_sdk.node_ports_v2.port import Port
+from simcore_sdk.node_ports_v2.ports_mapping import PortKey
 
 pytest_simcore_core_services_selection = [
     "migration",
@@ -45,7 +53,7 @@ async def _check_port_valid(
     config_dict: dict,
     port_type: str,
     key_name: str,
-    key: Union[str, int],
+    key: str | int,
 ):
     port: Port = (await getattr(ports, port_type))[key]
     assert isinstance(port, Port)
@@ -76,6 +84,8 @@ async def _check_port_valid(
     port_values = config_dict[port_type]
     if key_name in port_values:
         if isinstance(port_values[key_name], dict):
+            assert port.value
+            assert isinstance(port.value, (DownloadLink, PortLink, BaseFileLink))
             assert (
                 port.value.dict(by_alias=True, exclude_unset=True)
                 == port_values[key_name]
@@ -138,7 +148,7 @@ def config_value_symlink_path(symlink_path: Path) -> dict[str, Any]:
 @pytest.fixture(params=[True, False])
 async def option_r_clone_settings(
     request, r_clone_settings_factory: Awaitable[RCloneSettings]
-) -> Optional[RCloneSettings]:
+) -> RCloneSettings | None:
     if request.param:
         return await r_clone_settings_factory
     return None
@@ -149,13 +159,13 @@ async def test_default_configuration(
     project_id: str,
     node_uuid: NodeIDStr,
     default_configuration: dict[str, Any],
-    option_r_clone_settings: Optional[RCloneSettings],
+    option_r_clone_settings: RCloneSettings | None,
 ):
     config_dict = default_configuration
     await check_config_valid(
         await node_ports_v2.ports(
             user_id=user_id,
-            project_id=project_id,
+            project_id=ProjectIDStr(project_id),
             node_uuid=node_uuid,
             r_clone_settings=option_r_clone_settings,
         ),
@@ -168,12 +178,12 @@ async def test_invalid_ports(
     project_id: str,
     node_uuid: NodeIDStr,
     create_special_configuration: Callable,
-    option_r_clone_settings: Optional[RCloneSettings],
+    option_r_clone_settings: RCloneSettings | None,
 ):
     config_dict, _, _ = create_special_configuration()
     PORTS = await node_ports_v2.ports(
         user_id=user_id,
-        project_id=project_id,
+        project_id=ProjectIDStr(project_id),
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
     )
@@ -209,9 +219,9 @@ async def test_port_value_accessors(
     item_type: str,
     item_value: ItemConcreteValue,
     item_pytype: type,
-    option_r_clone_settings: Optional[RCloneSettings],
+    option_r_clone_settings: RCloneSettings | None,
 ):  # pylint: disable=W0613, W0621
-    item_key = "some_key"
+    item_key = PortKey("some_key")
     config_dict, _, _ = create_special_configuration(
         inputs=[(item_key, item_type, item_value)],
         outputs=[(item_key, item_type, None)],
@@ -219,7 +229,7 @@ async def test_port_value_accessors(
 
     PORTS = await node_ports_v2.ports(
         user_id=user_id,
-        project_id=project_id,
+        project_id=ProjectIDStr(project_id),
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
     )
@@ -263,7 +273,7 @@ async def test_port_file_accessors(
     project_id: str,
     node_uuid: NodeIDStr,
     e_tag: str,
-    option_r_clone_settings: Optional[RCloneSettings],
+    option_r_clone_settings: RCloneSettings | None,
 ):  # pylint: disable=W0613, W0621
     config_value["path"] = f"{project_id}/{node_uuid}/{Path(config_value['path']).name}"
 
@@ -277,21 +287,23 @@ async def test_port_file_accessors(
 
     PORTS = await node_ports_v2.ports(
         user_id=user_id,
-        project_id=project_id,
+        project_id=ProjectIDStr(project_id),
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
     )
     await check_config_valid(PORTS, config_dict)
-    assert await (await PORTS.outputs)["out_34"].get() is None  # check emptyness
+    assert (
+        await (await PORTS.outputs)[PortKey("out_34")].get() is None
+    )  # check emptyness
     with pytest.raises(exceptions.S3InvalidPathError):
-        await (await PORTS.inputs)["in_1"].get()
+        await (await PORTS.inputs)[PortKey("in_1")].get()
 
     # this triggers an upload to S3 + configuration change
-    await (await PORTS.outputs)["out_34"].set(item_value)
+    await (await PORTS.outputs)[PortKey("out_34")].set(item_value)
     # this is the link to S3 storage
-    received_file_link = (await PORTS.outputs)["out_34"].value.dict(
-        by_alias=True, exclude_unset=True
-    )
+    value = (await PORTS.outputs)[PortKey("out_34")].value
+    assert isinstance(value, (DownloadLink, PortLink, BaseFileLink))
+    received_file_link = value.dict(by_alias=True, exclude_unset=True)
     assert received_file_link["store"] == s3_simcore_location
     assert (
         received_file_link["path"]
@@ -303,11 +315,11 @@ async def test_port_file_accessors(
     assert received_file_link["eTag"]
 
     # this triggers a download from S3 to a location in /tempdir/simcorefiles/item_key
-    assert isinstance(await (await PORTS.outputs)["out_34"].get(), item_pytype)
-    downloaded_file = await (await PORTS.outputs)["out_34"].get()
+    assert isinstance(await (await PORTS.outputs)[PortKey("out_34")].get(), item_pytype)
+    downloaded_file = await (await PORTS.outputs)[PortKey("out_34")].get()
     assert isinstance(downloaded_file, Path)
     assert downloaded_file.exists()
-    assert str(await (await PORTS.outputs)["out_34"].get()).startswith(
+    assert str(await (await PORTS.outputs)[PortKey("out_34")].get()).startswith(
         str(
             Path(
                 tempfile.gettempdir(),
@@ -327,12 +339,12 @@ async def test_adding_new_ports(
     node_uuid: NodeIDStr,
     create_special_configuration: Callable,
     postgres_db: sa.engine.Engine,
-    option_r_clone_settings: Optional[RCloneSettings],
+    option_r_clone_settings: RCloneSettings | None,
 ):
     config_dict, project_id, node_uuid = create_special_configuration()
     PORTS = await node_ports_v2.ports(
         user_id=user_id,
-        project_id=project_id,
+        project_id=ProjectIDStr(project_id),
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
     )
@@ -378,7 +390,7 @@ async def test_removing_ports(
     node_uuid: NodeIDStr,
     create_special_configuration: Callable,
     postgres_db: sa.engine.Engine,
-    option_r_clone_settings: Optional[RCloneSettings],
+    option_r_clone_settings: RCloneSettings | None,
 ):
     config_dict, project_id, node_uuid = create_special_configuration(
         inputs=[("in_14", "integer", 15), ("in_17", "boolean", False)],
@@ -386,7 +398,7 @@ async def test_removing_ports(
     )  # pylint: disable=W0612
     PORTS = await node_ports_v2.ports(
         user_id=user_id,
-        project_id=project_id,
+        project_id=ProjectIDStr(project_id),
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
     )
@@ -432,7 +444,7 @@ async def test_get_value_from_previous_node(
     item_type: str,
     item_value: ItemConcreteValue,
     item_pytype: type,
-    option_r_clone_settings: Optional[RCloneSettings],
+    option_r_clone_settings: RCloneSettings | None,
 ):
     config_dict, _, _ = create_2nodes_configuration(
         prev_node_inputs=None,
@@ -446,15 +458,15 @@ async def test_get_value_from_previous_node(
 
     PORTS = await node_ports_v2.ports(
         user_id=user_id,
-        project_id=project_id,
+        project_id=ProjectIDStr(project_id),
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
     )
 
     await check_config_valid(PORTS, config_dict)
-    input_value = await (await PORTS.inputs)["in_15"].get()
+    input_value = await (await PORTS.inputs)[PortKey("in_15")].get()
     assert isinstance(input_value, item_pytype)
-    assert await (await PORTS.inputs)["in_15"].get() == item_value
+    assert await (await PORTS.inputs)[PortKey("in_15")].get() == item_value
 
 
 @pytest.mark.parametrize(
@@ -475,7 +487,7 @@ async def test_get_file_from_previous_node(
     item_type: str,
     item_value: str,
     item_pytype: type,
-    option_r_clone_settings: Optional[RCloneSettings],
+    option_r_clone_settings: RCloneSettings | None,
 ):
     config_dict, _, _ = create_2nodes_configuration(
         prev_node_inputs=None,
@@ -490,12 +502,12 @@ async def test_get_file_from_previous_node(
     )
     PORTS = await node_ports_v2.ports(
         user_id=user_id,
-        project_id=project_id,
+        project_id=ProjectIDStr(project_id),
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
     )
     await check_config_valid(PORTS, config_dict)
-    file_path = await (await PORTS.inputs)["in_15"].get()
+    file_path = await (await PORTS.inputs)[PortKey("in_15")].get()
     assert isinstance(file_path, item_pytype)
     assert file_path == Path(
         tempfile.gettempdir(),
@@ -531,7 +543,7 @@ async def test_get_file_from_previous_node_with_mapping_of_same_key_name(
     item_value: str,
     item_alias: str,
     item_pytype: type,
-    option_r_clone_settings: Optional[RCloneSettings],
+    option_r_clone_settings: RCloneSettings | None,
 ):
     config_dict, _, this_node_uuid = create_2nodes_configuration(
         prev_node_inputs=None,
@@ -544,7 +556,7 @@ async def test_get_file_from_previous_node_with_mapping_of_same_key_name(
     )
     PORTS = await node_ports_v2.ports(
         user_id=user_id,
-        project_id=project_id,
+        project_id=ProjectIDStr(project_id),
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
     )
@@ -555,7 +567,7 @@ async def test_get_file_from_previous_node_with_mapping_of_same_key_name(
         postgres_db, project_id, this_node_uuid, config_dict
     )  # pylint: disable=E1101
     await check_config_valid(PORTS, config_dict)
-    file_path = await (await PORTS.inputs)["in_15"].get()
+    file_path = await (await PORTS.inputs)[PortKey("in_15")].get()
     assert isinstance(file_path, item_pytype)
     assert file_path == Path(
         tempfile.gettempdir(),
@@ -591,7 +603,7 @@ async def test_file_mapping(
     item_value: str,
     item_alias: str,
     item_pytype: type,
-    option_r_clone_settings: Optional[RCloneSettings],
+    option_r_clone_settings: RCloneSettings | None,
     create_valid_file_uuid: Callable[[str, Path], SimcoreS3FileID],
 ):
     config_dict, project_id, node_uuid = create_special_configuration(
@@ -602,7 +614,7 @@ async def test_file_mapping(
     )
     PORTS = await node_ports_v2.ports(
         user_id=user_id,
-        project_id=project_id,
+        project_id=ProjectIDStr(project_id),
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
     )
@@ -614,7 +626,7 @@ async def test_file_mapping(
         postgres_db, project_id, node_uuid, config_dict
     )  # pylint: disable=E1101
     await check_config_valid(PORTS, config_dict)
-    file_path = await (await PORTS.inputs)["in_1"].get()
+    file_path = await (await PORTS.inputs)[PortKey("in_1")].get()
     assert isinstance(file_path, item_pytype)
     assert file_path == Path(
         tempfile.gettempdir(),
@@ -625,7 +637,7 @@ async def test_file_mapping(
     )
 
     # let's get it a second time to see if replacing works
-    file_path = await (await PORTS.inputs)["in_1"].get()
+    file_path = await (await PORTS.inputs)[PortKey("in_1")].get()
     assert isinstance(file_path, item_pytype)
     assert file_path == Path(
         tempfile.gettempdir(),
@@ -642,9 +654,9 @@ async def test_file_mapping(
     assert isinstance(file_path, Path)
     await PORTS.set_file_by_keymap(file_path)
     file_id = create_valid_file_uuid("out_1", file_path)
-    received_file_link = (await PORTS.outputs)["out_1"].value.dict(
-        by_alias=True, exclude_unset=True
-    )
+    value = (await PORTS.outputs)[PortKey("out_1")].value
+    assert isinstance(value, (DownloadLink, PortLink, BaseFileLink))
+    received_file_link = value.dict(by_alias=True, exclude_unset=True)
     assert received_file_link["store"] == s3_simcore_location
     assert received_file_link["path"] == file_id
     # received a new eTag
@@ -677,7 +689,7 @@ async def test_regression_concurrent_port_update_fails(
     int_item_value: int,
     parallel_int_item_value: int,
     port_count: int,
-    option_r_clone_settings: Optional[RCloneSettings],
+    option_r_clone_settings: RCloneSettings | None,
 ) -> None:
     """
     when using `await PORTS.outputs` test will fail
@@ -689,7 +701,7 @@ async def test_regression_concurrent_port_update_fails(
 
     PORTS = await node_ports_v2.ports(
         user_id=user_id,
-        project_id=project_id,
+        project_id=ProjectIDStr(project_id),
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
     )
@@ -697,13 +709,13 @@ async def test_regression_concurrent_port_update_fails(
 
     # when writing in serial these are expected to work
     for item_key, _, _ in outputs:
-        await (await PORTS.outputs)[item_key].set(int_item_value)
-        assert (await PORTS.outputs)[item_key].value == int_item_value
+        await (await PORTS.outputs)[PortKey(item_key)].set(int_item_value)
+        assert (await PORTS.outputs)[PortKey(item_key)].value == int_item_value
 
     # when writing in parallel and reading back,
     # they fail, with enough concurrency
     async def _upload_create_task(item_key: str) -> None:
-        await (await PORTS.outputs)[item_key].set(parallel_int_item_value)
+        await (await PORTS.outputs)[PortKey(item_key)].set(parallel_int_item_value)
 
     # updating in parallel creates a race condition
     results = await gather(
@@ -715,7 +727,9 @@ async def test_regression_concurrent_port_update_fails(
     # it is expected to find at least one mismatching value here
     with pytest.raises(AssertionError) as exc_info:
         for item_key, _, _ in outputs:
-            assert (await PORTS.outputs)[item_key].value == parallel_int_item_value
+            assert (await PORTS.outputs)[
+                PortKey(item_key)
+            ].value == parallel_int_item_value
 
     assert exc_info.value.args[0].startswith(
         f"assert {int_item_value} == {parallel_int_item_value}\n +  where {int_item_value} = Port("
@@ -728,7 +742,7 @@ async def test_batch_update_inputs_outputs(
     node_uuid: NodeIDStr,
     create_special_configuration: Callable,
     port_count: int,
-    option_r_clone_settings: Optional[RCloneSettings],
+    option_r_clone_settings: RCloneSettings | None,
 ) -> None:
     outputs = [(f"value_out_{i}", "integer", None) for i in range(port_count)]
     inputs = [(f"value_in_{i}", "integer", None) for i in range(port_count)]
@@ -736,7 +750,7 @@ async def test_batch_update_inputs_outputs(
 
     PORTS = await node_ports_v2.ports(
         user_id=user_id,
-        project_id=project_id,
+        project_id=ProjectIDStr(project_id),
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
     )
@@ -745,7 +759,7 @@ async def test_batch_update_inputs_outputs(
     async with ProgressBarData(steps=2) as progress_bar:
         await PORTS.set_multiple(
             {
-                port.key: (k, None)
+                PortKey(port.key): (k, None)
                 for k, port in enumerate((await PORTS.outputs).values())
             },
             progress_bar=progress_bar,
@@ -754,7 +768,7 @@ async def test_batch_update_inputs_outputs(
         assert progress_bar._continuous_progress_value == pytest.approx(1)
         await PORTS.set_multiple(
             {
-                port.key: (k, None)
+                PortKey(port.key): (k, None)
                 for k, port in enumerate((await PORTS.inputs).values(), start=1000)
             },
             progress_bar=progress_bar,
@@ -765,18 +779,19 @@ async def test_batch_update_inputs_outputs(
     ports_inputs = await PORTS.inputs
     for k, asd in enumerate(outputs):
         item_key, _, _ = asd
-        assert ports_outputs[item_key].value == k
-        assert await ports_outputs[item_key].get() == k
+        assert ports_outputs[PortKey(item_key)].value == k
+        assert await ports_outputs[PortKey(item_key)].get() == k
 
     for k, asd in enumerate(inputs, start=1000):
         item_key, _, _ = asd
-        assert ports_inputs[item_key].value == k
-        assert await ports_inputs[item_key].get() == k
+        assert ports_inputs[PortKey(item_key)].value == k
+        assert await ports_inputs[PortKey(item_key)].get() == k
 
     # test missing key raises error
     with pytest.raises(UnboundPortError):
         async with ProgressBarData(steps=1) as progress_bar:
             await PORTS.set_multiple(
-                {"missing_key_in_both": (123132, None)}, progress_bar=progress_bar
+                {PortKey("missing_key_in_both"): (123132, None)},
+                progress_bar=progress_bar,
             )
             assert progress_bar._continuous_progress_value == pytest.approx(0)
