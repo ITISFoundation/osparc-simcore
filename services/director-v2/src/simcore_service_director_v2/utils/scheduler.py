@@ -1,8 +1,8 @@
-from typing import TypeVar
-
 from aiopg.sa.engine import Engine
 from models_library.projects_state import RunningState
 from pydantic import PositiveInt
+
+from ..api.dependencies.database import RepoType
 
 SCHEDULED_STATES: set[RunningState] = {
     RunningState.PUBLISHED,
@@ -29,11 +29,9 @@ COMPLETED_STATES: set[RunningState] = {
     RunningState.UNKNOWN,
 }
 
-RepoType = TypeVar("RepoType")
-
 
 def get_repository(db_engine: Engine, repo_cls: type[RepoType]) -> RepoType:
-    return repo_cls(db_engine=db_engine)  # type: ignore
+    return repo_cls(db_engine=db_engine)
 
 
 Iteration = PositiveInt

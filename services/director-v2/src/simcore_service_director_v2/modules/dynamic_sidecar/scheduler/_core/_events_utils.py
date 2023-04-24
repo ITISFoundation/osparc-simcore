@@ -3,7 +3,7 @@
 import json
 import logging
 from collections import deque
-from typing import Any, Deque, Final, cast
+from typing import Any, Deque, Final
 
 from fastapi import FastAPI
 from models_library.projects_networks import ProjectsNetworks
@@ -260,9 +260,10 @@ async def attempt_pod_removal_and_data_saving(
             # to try and save the data, nodeports will raise errors
             # and sidecar will hang
 
-            projects_repository = cast(
-                ProjectsRepository, get_repository(app, ProjectsRepository)
+            projects_repository: ProjectsRepository = get_repository(
+                app, ProjectsRepository
             )
+
             can_really_save = await projects_repository.is_node_present_in_workbench(
                 project_id=scheduler_data.project_id, node_uuid=scheduler_data.node_uuid
             )
@@ -356,9 +357,8 @@ async def attach_project_networks(app: FastAPI, scheduler_data: SchedulerData) -
     dynamic_sidecar_client = get_dynamic_sidecar_client(app, scheduler_data.node_uuid)
     dynamic_sidecar_endpoint = scheduler_data.endpoint
 
-    projects_networks_repository: ProjectsNetworksRepository = cast(
-        ProjectsNetworksRepository,
-        get_repository(app, ProjectsNetworksRepository),
+    projects_networks_repository: ProjectsNetworksRepository = get_repository(
+        app, ProjectsNetworksRepository
     )
 
     projects_networks: ProjectsNetworks = (

@@ -1,7 +1,7 @@
 # pylint: disable=relative-beyond-top-level
 
 import logging
-from typing import Any, Final, cast
+from typing import Any, Final
 from uuid import uuid4
 
 from fastapi import FastAPI
@@ -131,9 +131,8 @@ class CreateSidecars(DynamicSchedulerEvent):
         # also other encodes the env vars to target the proper container
         director_v0_client: DirectorV0Client = get_director_v0_client(app)
         # fetching project form DB and fetching user settings
-        projects_repository = cast(
-            ProjectsRepository, get_repository(app, ProjectsRepository)
-        )
+        projects_repository = get_repository(app, ProjectsRepository)
+
         project: ProjectAtDB = await projects_repository.get_project(
             project_id=scheduler_data.project_id
         )
@@ -155,10 +154,8 @@ class CreateSidecars(DynamicSchedulerEvent):
             service_resources=scheduler_data.service_resources,
         )
 
-        groups_extra_properties = cast(
-            GroupsExtraPropertiesRepository,
-            get_repository(app, GroupsExtraPropertiesRepository),
-        )
+        groups_extra_properties = get_repository(app, GroupsExtraPropertiesRepository)
+
         assert scheduler_data.product_name is not None  # nosec
         allow_internet_access: bool = await groups_extra_properties.has_internet_access(
             user_id=scheduler_data.user_id, product_name=scheduler_data.product_name
@@ -462,10 +459,7 @@ class CreateUserServices(DynamicSchedulerEvent):
             )
         )
 
-        groups_extra_properties = cast(
-            GroupsExtraPropertiesRepository,
-            get_repository(app, GroupsExtraPropertiesRepository),
-        )
+        groups_extra_properties = get_repository(app, GroupsExtraPropertiesRepository)
         assert scheduler_data.product_name is not None  # nosec
         allow_internet_access: bool = await groups_extra_properties.has_internet_access(
             user_id=scheduler_data.user_id, product_name=scheduler_data.product_name
