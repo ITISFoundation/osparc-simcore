@@ -1,4 +1,5 @@
 import re
+from typing import Final
 
 from models_library.projects import ProjectID
 from pydantic import BaseModel, ConstrainedStr, Field
@@ -6,7 +7,7 @@ from pydantic import BaseModel, ConstrainedStr, Field
 from .generics import DictModel
 from .projects_nodes_io import NodeIDStr
 
-SERVICE_NETWORK_RE = re.compile(r"^[a-zA-Z]([a-zA-Z0-9_-]{0,63})$")
+SERVICE_NETWORK_RE: Final[re.Pattern] = re.compile(r"^[a-zA-Z]([a-zA-Z0-9_-]{0,63})$")
 
 PROJECT_NETWORK_PREFIX = "prj-ntwrk"
 
