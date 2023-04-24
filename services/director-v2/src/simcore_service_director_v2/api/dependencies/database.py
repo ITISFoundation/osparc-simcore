@@ -1,5 +1,5 @@
 import logging
-from typing import AsyncGenerator, Callable, Type
+from typing import AsyncGenerator, Callable
 
 from aiopg.sa import Engine
 from fastapi import Depends
@@ -15,7 +15,7 @@ def _get_db_engine(request: Request) -> Engine:
 
 
 def get_base_repository(
-    engine: Engine, repo_type: Type[BaseRepository]
+    engine: Engine, repo_type: type[BaseRepository]
 ) -> BaseRepository:
     # NOTE: 2 different ideas were tried here with not so good
     # 1st one was acquiring a connection per repository which lead to the following issue https://github.com/ITISFoundation/osparc-simcore/pull/1966
@@ -36,7 +36,9 @@ def get_base_repository(
     return repo_type(db_engine=engine)
 
 
-def get_repository(repo_type: Type[BaseRepository]) -> Callable:
+def get_repository(
+    repo_type: type[BaseRepository],
+) -> Callable[..., AsyncGenerator[BaseRepository, None]]:
     async def _get_repo(
         engine: Engine = Depends(_get_db_engine),
     ) -> AsyncGenerator[BaseRepository, None]:
