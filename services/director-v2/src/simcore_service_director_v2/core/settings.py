@@ -171,7 +171,7 @@ class DynamicSidecarEgressSettings(BaseCustomSettings):
         description="envoy image to use",
     )
     DYNAMIC_SIDECAR_ENVOY_LOG_LEVEL: EnvoyLogLevel = Field(  # type: ignore
-        EnvoyLogLevel.ERROR, description="log level for envoy proxy service"
+        default=EnvoyLogLevel.ERROR, description="log level for envoy proxy service"
     )
 
 
