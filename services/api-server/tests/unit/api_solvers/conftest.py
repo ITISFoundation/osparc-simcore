@@ -107,12 +107,13 @@ def mocked_webserver_service_api(
         # create_projects
         task_id = "abc"
         # http://webserver:8080/v0/projects?hidden=true
-        respx_mock.post(path__regex="/projects$", name="create_projects").respond(
+
+        respx_mock.post(path__regex="/projects$", name="create_projects",).respond(
             status.HTTP_202_ACCEPTED,
             json={
                 "data": {
                     "task_id": "123",
-                    "status_hef": f"{settings.API_SERVER_WEBSERVER.base_url}/task/{task_id}",
+                    "status_href": f"{settings.API_SERVER_WEBSERVER.base_url}/task/{task_id}",
                     "result_href": f"{settings.API_SERVER_WEBSERVER.base_url}/task/{task_id}/result",
                 }
             },

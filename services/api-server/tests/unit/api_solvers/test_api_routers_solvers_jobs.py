@@ -100,7 +100,7 @@ def mocked_directorv2_service_api(
     with respx.mock(
         base_url=settings.API_SERVER_DIRECTOR_V2.base_url,
         assert_all_called=False,
-        assert_all_mocked=False,
+        assert_all_mocked=True,  # IMPORTANT: KEEP always True!
     ) as respx_mock:
 
         # check that what we emulate, actually still exists
@@ -121,7 +121,7 @@ def mocked_directorv2_service_api(
 
         respx_mock.get(
             path__regex=r"/computations/(?P<project_id>[\w-]+)/tasks/-/logfile",
-            name="get_computation_logs",
+            name="get_computation_logs",  # = operation_id
         ).respond(
             status.HTTP_200_OK,
             json=[
@@ -215,10 +215,10 @@ def solver_version() -> str:
     return "1.2.3"
 
 
+@pytest.mark.testit
 @pytest.mark.acceptance_test(
     "New feature https://github.com/ITISFoundation/osparc-simcore/issues/3940"
 )
-@pytest.mark.xfail  # TODO: will fix in next PR
 async def test_run_solver_job(
     client: httpx.AsyncClient,
     directorv2_service_openapi_specs: dict[str, Any],
@@ -355,7 +355,7 @@ async def test_run_solver_job(
     resp = await client.post(
         f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs/{job.id}",
         auth=auth,
-        params={"cluster_id", 1},
+        params={"cluster_id": 1},
     )
     assert resp.status_code == status.HTTP_200_OK
     assert mocked_directorv2_service_api[
