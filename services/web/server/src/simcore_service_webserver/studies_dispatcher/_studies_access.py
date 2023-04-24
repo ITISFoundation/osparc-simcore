@@ -28,7 +28,7 @@ from servicelib.error_codes import create_error_code
 
 from .._constants import INDEX_RESOURCE_NAME
 from ..garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
-from ..products import get_product_name
+from ..products.plugin import get_product_name
 from ..projects.project_models import ProjectDict
 from ..projects.projects_db import ANY_USER, ProjectDBAPI
 from ..projects.projects_exceptions import (

@@ -9,7 +9,7 @@ from ._meta import api_version_prefix as vx
 from .login.decorators import login_required
 from .login.storage import AsyncpgStorage, get_plugin_storage
 from .login.utils_email import themed
-from .products import get_current_product
+from .products.plugin import get_current_product
 
 log = logging.getLogger(__name__)
 

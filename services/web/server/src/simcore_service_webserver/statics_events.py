@@ -14,7 +14,7 @@ from tenacity.wait import wait_fixed
 from yarl import URL
 
 from ._constants import APP_SETTINGS_KEY
-from .products import APP_PRODUCTS_KEY, Product
+from .products.plugin import APP_PRODUCTS_KEY, Product
 from .statics_constants import (
     APP_FRONTEND_CACHED_INDEXES_KEY,
     APP_FRONTEND_CACHED_STATICS_JSON_KEY,

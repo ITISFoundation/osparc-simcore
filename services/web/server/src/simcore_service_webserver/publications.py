@@ -9,7 +9,7 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 
 from . import publication_handlers
 from .email import setup_email
-from .products import setup_products
+from .products.plugin import setup_products
 
 logger = logging.getLogger(__name__)
 

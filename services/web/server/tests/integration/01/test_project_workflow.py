@@ -36,7 +36,7 @@ from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.garbage_collector import setup_garbage_collector
 from simcore_service_webserver.login.plugin import setup_login
-from simcore_service_webserver.products import setup_products
+from simcore_service_webserver.products.plugin import setup_products
 from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager

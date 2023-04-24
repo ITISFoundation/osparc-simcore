@@ -9,7 +9,7 @@ import json
 import time
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Callable, NamedTuple, Union
+from typing import Any, Callable, NamedTuple
 
 import pytest
 import sqlalchemy as sa
@@ -37,7 +37,7 @@ from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.diagnostics import setup_diagnostics
 from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.login.plugin import setup_login
-from simcore_service_webserver.products import setup_products
+from simcore_service_webserver.products.plugin import setup_products
 from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
@@ -81,17 +81,14 @@ class ExpectedResponse(NamedTuple):
     will have no access, therefore ExpectedResponse.ok = HTTPUnauthorized
     """
 
-    ok: Union[type[web.HTTPUnauthorized], type[web.HTTPForbidden], type[web.HTTPOk]]
-    created: Union[
-        type[web.HTTPUnauthorized], type[web.HTTPForbidden], type[web.HTTPCreated]
-    ]
-    no_content: Union[
-        type[web.HTTPUnauthorized], type[web.HTTPForbidden], type[web.HTTPNoContent]
-    ]
-    forbidden: Union[
-        type[web.HTTPUnauthorized],
-        type[web.HTTPForbidden],
-    ]
+    ok: type[web.HTTPUnauthorized] | type[web.HTTPForbidden] | type[web.HTTPOk]
+    created: (
+        type[web.HTTPUnauthorized] | type[web.HTTPForbidden] | type[web.HTTPCreated]
+    )
+    no_content: (
+        type[web.HTTPUnauthorized] | type[web.HTTPForbidden] | type[web.HTTPNoContent]
+    )
+    forbidden: (type[web.HTTPUnauthorized] | type[web.HTTPForbidden])
     # pylint: disable=no-member
     def __str__(self) -> str:
         items = ", ".join(f"{k}={v.__name__}" for k, v in self._asdict().items())
