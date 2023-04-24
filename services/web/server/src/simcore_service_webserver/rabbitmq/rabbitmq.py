@@ -8,6 +8,8 @@ from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq_utils import wait_till_rabbitmq_responsive
 
+from ..application_settings import get_settings
+from .consumers import setup_rabbitmq_consumers
 from .rabbitmq_settings import RabbitSettings, get_plugin_settings
 
 log = logging.getLogger(__name__)
@@ -41,6 +43,9 @@ async def _rabbitmq_client_cleanup_ctx(app: web.Application) -> AsyncIterator[No
 )
 def setup_rabbitmq(app: web.Application) -> None:
     app.cleanup_ctx.append(_rabbitmq_client_cleanup_ctx)
+    app_settings = get_settings(app)
+    if app_settings.WEBSERVER_COMPUTATION:
+        app.cleanup_ctx.append(setup_rabbitmq_consumers)
 
 
 def get_rabbitmq_client(app: web.Application) -> RabbitMQClient:

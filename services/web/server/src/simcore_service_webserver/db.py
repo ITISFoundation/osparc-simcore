@@ -3,7 +3,7 @@
 """
 
 import logging
-from typing import Any, AsyncIterator, Optional
+from typing import Any, AsyncIterator
 
 from aiohttp import web
 from aiopg.sa import Engine, create_engine
@@ -21,6 +21,8 @@ from simcore_postgres_database.utils_aiopg import (
 )
 from tenacity import retry
 
+from .application_settings import get_settings
+from .computation_comp_tasks_listening_task import create_comp_tasks_listening_task
 from .db_settings import PostgresSettings, get_plugin_settings
 
 log = logging.getLogger(__name__)
@@ -28,7 +30,6 @@ log = logging.getLogger(__name__)
 
 @retry(**PostgresRetryPolicyUponInitialization(log).kwargs)
 async def _ensure_pg_ready(settings: PostgresSettings) -> Engine:
-
     log.info("Connecting to postgres with %s", f"{settings=}")
     engine = await create_engine(
         settings.dsn,
@@ -48,7 +49,6 @@ async def _ensure_pg_ready(settings: PostgresSettings) -> Engine:
 
 
 async def postgres_cleanup_ctx(app: web.Application) -> AsyncIterator[None]:
-
     settings = get_plugin_settings(app)
     aiopg_engine = await _ensure_pg_ready(settings)
     app[APP_DB_ENGINE_KEY] = aiopg_engine
@@ -83,7 +83,7 @@ async def is_service_responsive(app: web.Application):
 
 
 def get_engine_state(app: web.Application) -> dict[str, Any]:
-    engine: Optional[Engine] = app.get(APP_DB_ENGINE_KEY)
+    engine: Engine | None = app.get(APP_DB_ENGINE_KEY)
     if engine:
         return get_pg_engine_stateinfo(engine)
     return {}
@@ -96,10 +96,13 @@ def get_database_engine(app: web.Application) -> Engine:
 @app_module_setup(
     __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_DB", logger=log
 )
-def setup_db(app: web.Application):
-
+def setup_db(app: web.Application) -> None:
     # ensures keys exist
     app[APP_DB_ENGINE_KEY] = None
 
     # async connection to db
     app.cleanup_ctx.append(postgres_cleanup_ctx)
+
+    app_settings = get_settings(app)
+    if app_settings.WEBSERVER_COMPUTATION:
+        app.cleanup_ctx.append(create_comp_tasks_listening_task)

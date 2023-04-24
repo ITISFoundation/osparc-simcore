@@ -22,10 +22,9 @@ from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQClient
 
-from .projects import projects_api
-from .projects.projects_exceptions import NodeNotFoundError, ProjectNotFoundError
-from .rabbitmq.rabbitmq import get_rabbitmq_client
-from .socketio.events import (
+from ..projects import projects_api
+from ..projects.projects_exceptions import NodeNotFoundError, ProjectNotFoundError
+from ..socketio.events import (
     SOCKET_IO_EVENT,
     SOCKET_IO_LOG_EVENT,
     SOCKET_IO_NODE_PROGRESS_EVENT,
@@ -34,6 +33,7 @@ from .socketio.events import (
     SocketMessageDict,
     send_messages,
 )
+from .rabbitmq import get_rabbitmq_client
 
 logger = logging.getLogger(__name__)
 
