@@ -8,6 +8,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, Iterator
 
+import httpx
 import pytest
 import respx
 import yaml
@@ -80,6 +81,53 @@ def mocked_webserver_service_api(
             status.HTTP_200_OK, json=response_body
         )
 
+        class _SideEffects:
+            def __init__(self):
+                # cached
+                self._task_id = "123456789"
+                self._project_id = None
+
+            def create_project(self, request: httpx.Request):
+                task_id = self._task_id
+                body = json.load(request.stream)
+                self._project_id = body["uuid"]
+
+                return httpx.Response(
+                    status.HTTP_202_ACCEPTED,
+                    json={
+                        "data": {
+                            "task_id": task_id,
+                            "status_href": f"{settings.API_SERVER_WEBSERVER.base_url}/tasks/{task_id}",
+                            "result_href": f"{settings.API_SERVER_WEBSERVER.base_url}/tasks/{task_id}/result",
+                        }
+                    },
+                )
+
+            def get_result(self, request: httpx.Request, *, task_id: str):
+                assert GET_PROJECT.response_body
+                reponse_body = deepcopy(GET_PROJECT.response_body)
+                reponse_body["data"]["uuid"] = self._project_id
+                return httpx.Response(
+                    status.HTTP_200_OK,
+                    json=reponse_body,
+                )
+
+        fake_workflow = _SideEffects()
+
+        # create_projects
+        # http://webserver:8080/v0/projects?hidden=true
+
+        respx_mock.post(
+            path__regex="/projects$",
+            name="create_projects",
+        ).mock(side_effect=fake_workflow.create_project)
+
+        # get_task_result
+        respx_mock.get(
+            path__regex=r"/tasks/(?P<task_id>[\w/%]+)/result$",
+            name="get_task_result",
+        ).mock(side_effect=fake_workflow.get_result)
+
         # get_task_status
         respx_mock.get(
             path__regex=r"/tasks/(?P<task_id>[\w/%]+)",
@@ -95,29 +143,6 @@ def mocked_webserver_service_api(
             },
         )
 
-        # get_task_result
-        respx_mock.get(
-            path__regex=r"/tasks/(?P<task_id>[\w/%]+)/result",
-            name="get_task_result",
-        ).respond(
-            status.HTTP_200_OK,
-            json=GET_PROJECT.response_body,
-        )
-
-        # create_projects
-        task_id = "abc"
-        # http://webserver:8080/v0/projects?hidden=true
-
-        respx_mock.post(path__regex="/projects$", name="create_projects",).respond(
-            status.HTTP_202_ACCEPTED,
-            json={
-                "data": {
-                    "task_id": "123",
-                    "status_href": f"{settings.API_SERVER_WEBSERVER.base_url}/tasks/{task_id}",
-                    "result_href": f"{settings.API_SERVER_WEBSERVER.base_url}/tasks/{task_id}/result",
-                }
-            },
-        )
         yield respx_mock
 
 
