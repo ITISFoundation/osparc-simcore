@@ -155,18 +155,19 @@ class RunningDynamicServiceDetails(ServiceDetails):
         service_state: ServiceState,
         service_message: str,
     ) -> "RunningDynamicServiceDetails":
-        return cls(
-            boot_type=ServiceBootType.V2,
-            user_id=scheduler_data.user_id,
-            project_id=scheduler_data.project_id,
-            # type: ignore
-            service_uuid=node_uuid,
-            service_key=scheduler_data.key,
-            service_version=scheduler_data.version,
-            service_host=scheduler_data.service_name,
-            service_port=scheduler_data.service_port,
-            service_state=service_state.value,
-            service_message=service_message,
+        return cls.parse_obj(
+            {
+                "boot_type": ServiceBootType.V2,
+                "user_id": scheduler_data.user_id,
+                "project_id": scheduler_data.project_id,
+                "service_uuid": node_uuid,
+                "service_key": scheduler_data.key,
+                "service_version": scheduler_data.version,
+                "service_host": scheduler_data.service_name,
+                "service_port": scheduler_data.service_port,
+                "service_state": service_state.value,
+                "service_message": service_message,
+            }
         )
 
     class Config(ServiceDetails.Config):
