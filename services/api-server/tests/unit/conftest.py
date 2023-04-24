@@ -26,13 +26,13 @@ from simcore_service_api_server.core.settings import ApplicationSettings
 
 
 @pytest.fixture
-def patched_light_app_environ(
-    patched_default_app_environ: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+def app_environment(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ) -> EnvVarsDict:
     """Config that disables many plugins e.g. database or tracing"""
 
     env_vars = {}
-    env_vars.update(patched_default_app_environ)
+    env_vars.update(app_environment)
 
     pprint(list(ApplicationSettings.schema()["properties"].keys()))
     # [
@@ -63,7 +63,7 @@ def patched_light_app_environ(
 
 
 @pytest.fixture
-def app(patched_light_app_environ: EnvVarsDict) -> FastAPI:
+def app(app_environment: EnvVarsDict) -> FastAPI:
     """Inits app on a light environment"""
     the_app = init_app()
     return the_app

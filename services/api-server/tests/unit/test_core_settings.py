@@ -10,7 +10,7 @@ from simcore_service_api_server.core.settings import ApplicationSettings, BootMo
 from yarl import URL
 
 
-def test_default_app_environ(patched_default_app_environ: EnvVarsDict):
+def test_default_app_environ(app_environment: EnvVarsDict):
     # loads from environ
     settings = ApplicationSettings.create_from_envs()
     print("captured settings: \n", settings.json(indent=2))

@@ -9,7 +9,7 @@ import shutil
 import subprocess
 from pathlib import Path
 from pprint import pformat
-from typing import Callable, Dict, Union
+from typing import Callable
 
 import aiopg.sa
 import aiopg.sa.engine as aiopg_sa_engine
@@ -64,7 +64,7 @@ def docker_compose_file(
 
 
 @pytest.fixture(scope="session")
-def postgres_service(docker_services, docker_ip, docker_compose_file: Path) -> Dict:
+def postgres_service(docker_services, docker_ip, docker_compose_file: Path) -> dict:
 
     # check docker-compose's environ is resolved properly
     config = yaml.safe_load(docker_compose_file.read_text())
@@ -108,7 +108,7 @@ def postgres_service(docker_services, docker_ip, docker_compose_file: Path) -> D
 def make_engine(postgres_service: dict) -> Callable:
     dsn = postgres_service["dsn"]  # session scope freezes dsn
 
-    def maker(*, is_async=True) -> Union[aiopg_sa_engine.Engine, sa_engine.Engine]:
+    def maker(*, is_async=True) -> aiopg_sa_engine.Engine | sa_engine.Engine:
         if is_async:
             return aiopg.sa.create_engine(dsn)
         return sa.create_engine(dsn)
@@ -137,7 +137,7 @@ def migrated_db(postgres_service: dict, make_engine: Callable):
 
 
 @pytest.fixture
-def app(patched_default_app_environ: EnvVarsDict, migrated_db: None) -> FastAPI:
+def app(app_environment: EnvVarsDict, migrated_db: None) -> FastAPI:
     """Overrides app to ensure that:
     - it uses default environ as pg
     - db is started and initialized
