@@ -248,7 +248,6 @@ async def dask_clients_pool(
     default_scheduler,
     client: TestClient,
 ) -> AsyncIterator[DaskClientsPool]:
-
     clients_pool = DaskClientsPool.instance(client.app)
     assert clients_pool
     yield clients_pool

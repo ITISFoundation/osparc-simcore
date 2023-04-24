@@ -315,7 +315,6 @@ async def test_scheduler_health_timing_out(
     mock_max_status_api_duration: None,
     mocked_dynamic_scheduler_events: None,
 ):
-
     await manually_trigger_scheduler()
     await scheduler._scheduler._add_service(scheduler_data)
     await manually_trigger_scheduler()

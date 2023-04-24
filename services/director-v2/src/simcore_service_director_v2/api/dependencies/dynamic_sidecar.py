@@ -5,8 +5,12 @@ from ...modules.dynamic_sidecar.scheduler import DynamicSidecarsScheduler
 
 
 def get_dynamic_sidecar_scheduler(request: Request) -> DynamicSidecarsScheduler:
-    return request.app.state.dynamic_sidecar_scheduler
+    scheduler: DynamicSidecarsScheduler = request.app.state.dynamic_sidecar_scheduler
+    return scheduler
 
 
 def get_dynamic_sidecar_settings(request: Request) -> DynamicSidecarSettings:
-    return request.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+    settings: DynamicSidecarSettings = (
+        request.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+    )
+    return settings

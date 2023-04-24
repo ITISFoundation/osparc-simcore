@@ -8,8 +8,7 @@ from typing import Any, Mapping, TypeAlias
 from uuid import UUID, uuid4
 
 from models_library.basic_types import PortInt
-from models_library.generated_models.docker_rest_api import ContainerState
-from models_library.generated_models.docker_rest_api import Status2 as DockerStatus
+from models_library.generated_models.docker_rest_api import ContainerState, Status2
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import (
     DynamicSidecarServiceLabels,
@@ -42,6 +41,9 @@ from .service import CommonServiceDetails
 TEMPORARY_PORT_NUMBER = 65_534
 
 MAX_ALLOWED_SERVICE_NAME_LENGTH: int = 63
+
+
+DockerStatus: TypeAlias = Status2
 
 
 class DockerId(ConstrainedStr):
@@ -119,7 +121,8 @@ class DockerContainerInspect(BaseModel):
     @cached_property
     def status(self) -> DockerStatus:
         assert self.container_state.Status  # nosec
-        return self.container_state.Status
+        result: DockerStatus = self.container_state.Status
+        return result
 
     @classmethod
     def from_container(cls, container: dict[str, Any]) -> "DockerContainerInspect":
@@ -432,7 +435,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     def from_http_request(
         # pylint: disable=too-many-arguments
         cls,
-        service: "DynamicServiceCreate",
+        service: "DynamicServiceCreate",  # type: ignore
         simcore_service_labels: SimcoreServiceLabels,
         port: PortInt,
         request_dns: str,

@@ -55,5 +55,4 @@ def fake_failing_sidecar_fct(
     log_file_url: AnyUrl,
     command: list[str],
 ) -> TaskOutputData:
-
     raise ValueError("sadly we are failing to execute anything cause we are dumb...")

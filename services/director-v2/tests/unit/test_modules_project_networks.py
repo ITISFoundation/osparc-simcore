@@ -223,7 +223,6 @@ async def test_send_network_configuration_to_dynamic_sidecar(
     mock_docker_calls: dict[str, AsyncMock],
 ) -> None:
     for example in examples_factory:
-
         await _send_network_configuration_to_dynamic_sidecar(
             scheduler=mock_scheduler,
             project_id=project_id,

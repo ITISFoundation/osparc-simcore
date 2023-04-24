@@ -257,7 +257,7 @@ async def compute_output_data_schema(
             node_id=node_id,
         )
 
-    output_data_schema = {}
+    output_data_schema: dict[str, Any] = {}
     for port in (await ports.outputs).values():
         output_data_schema[port.key] = {"required": port.default_value is None}
 

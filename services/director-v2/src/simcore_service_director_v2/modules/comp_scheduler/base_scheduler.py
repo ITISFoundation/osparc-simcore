@@ -451,7 +451,9 @@ class BaseCompScheduler(ABC):
                 if t.state == RunningState.SUCCESS
             }
         )
-        next_task_node_ids = [node_id for node_id, degree in dag.in_degree() if degree == 0]  # type: ignore
+        next_task_node_ids = [
+            node_id for node_id, degree in dag.in_degree() if degree == 0
+        ]
 
         # get the tasks to start
         tasks_ready_to_start: dict[NodeID, CompTaskAtDB] = {

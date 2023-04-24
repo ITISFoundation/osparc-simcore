@@ -3,7 +3,7 @@ import logging
 from asyncio import Task
 from contextlib import suppress
 from functools import partial
-from typing import Any, Awaitable, Callable, Optional
+from typing import Any, Awaitable, Callable, Coroutine
 
 from fastapi import FastAPI
 
@@ -23,7 +23,7 @@ from ._workflow_runner import workflow_runner
 logger = logging.getLogger(__name__)
 
 
-async def _cancel_task(task: Optional[Task]) -> None:
+async def _cancel_task(task: Task | None) -> None:
     if task is None:
         return
 
@@ -48,16 +48,14 @@ class WorkflowRunnerManager:
 
     def __init__(
         self,
-        context_factory: Awaitable[ContextInterface],
+        context_factory: Callable[[], Awaitable[ContextInterface]],
         app: FastAPI,
         workflow: Workflow,
         *,
-        before_step_hook: Optional[
-            Callable[[ActionName, StepName], Awaitable[None]]
-        ] = None,
-        after_step_hook: Optional[
-            Callable[[ActionName, StepName], Awaitable[None]]
-        ] = None,
+        before_step_hook: None
+        | (Callable[[ActionName, StepName], Awaitable[None]]) = None,
+        after_step_hook: None
+        | (Callable[[ActionName, StepName], Awaitable[None]]) = None,
     ) -> None:
         self.context_factory = context_factory
         self.app = app
@@ -70,7 +68,7 @@ class WorkflowRunnerManager:
         self._workflow_context_shutdown_tasks: dict[WorkflowName, Task] = {}
 
     def _add_workflow_runner_task(
-        self, workflow_runner_awaitable: Awaitable, workflow_name: WorkflowName
+        self, workflow_runner_awaitable: Coroutine, workflow_name: WorkflowName
     ) -> None:
         workflow_task = self._workflow_tasks[workflow_name] = asyncio.create_task(
             workflow_runner_awaitable, name=f"workflow_task_{workflow_name}"
@@ -78,7 +76,7 @@ class WorkflowRunnerManager:
 
         def workflow_runner_complete(_: Task) -> None:
             self._workflow_tasks.pop(workflow_name, None)
-            workflow_context: Optional[WorkflowContext] = self._workflow_context.pop(
+            workflow_context: WorkflowContext | None = self._workflow_context.pop(
                 workflow_name, None
             )
             if workflow_context:
@@ -127,7 +125,7 @@ class WorkflowRunnerManager:
         if workflow_name not in self._workflow_context:
             raise WorkflowNotInitializedException(workflow_name=workflow_name)
 
-        workflow_runner_awaitable: Awaitable = workflow_runner(
+        workflow_runner_awaitable: Coroutine = workflow_runner(
             workflow=self.workflow,
             workflow_context=self._workflow_context[workflow_name],
             before_step_hook=self.before_step_hook,
@@ -177,7 +175,7 @@ class WorkflowRunnerManager:
     async def teardown(self) -> None:
         # NOTE: content can change while iterating
         for key in set(self._workflow_context.keys()):
-            workflow_context: Optional[WorkflowContext] = self._workflow_context.get(
+            workflow_context: WorkflowContext | None = self._workflow_context.get(
                 key, None
             )
             if workflow_context:
@@ -185,7 +183,7 @@ class WorkflowRunnerManager:
 
         # NOTE: content can change while iterating
         for key in set(self._workflow_context_shutdown_tasks.keys()):
-            task: Optional[Task] = self._workflow_context_shutdown_tasks.get(key, None)
+            task: Task | None = self._workflow_context_shutdown_tasks.get(key, None)
             await _cancel_task(task)
 
     async def setup(self) -> None:

@@ -111,7 +111,6 @@ async def test_workflow_runs_in_expected_order_without_errors(
     async with workflow_runner_manager_lifecycle(
         app, context_interface_factory, workflow
     ) as workflow_runner_manager:
-
         await workflow_runner_manager.initialize_workflow_runner(
             workflow_name=workflow_name, action_name="initialize"
         )
@@ -262,7 +261,6 @@ async def test_cancellation_of_current_workflow_and_changing_to_a_different_one(
         context_interface_factory=context_interface_factory,
         workflow=workflow_pending + workflow_finishing,
     ) as workflow_runner_manager:
-
         # start the first workflow and cancel it immediately
         await workflow_runner_manager.initialize_workflow_runner(
             workflow_name="pending_workflow", action_name="pending"
