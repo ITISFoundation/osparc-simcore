@@ -1,6 +1,6 @@
 import functools
 import logging
-from typing import Union
+from typing import AsyncIterator, Union
 
 from aiohttp import web
 from models_library.rabbitmq_messages import (
@@ -177,7 +177,7 @@ EXCHANGE_TO_PARSER_CONFIG = (
 )
 
 
-async def setup_rabbitmq_consumers(app: web.Application) -> None:
+async def setup_rabbitmq_consumers(app: web.Application) -> AsyncIterator[None]:
     with log_context(logger, logging.INFO, msg="Subscribing to rabbitmq channels"):
         rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
 
@@ -185,3 +185,6 @@ async def setup_rabbitmq_consumers(app: web.Application) -> None:
             await rabbit_client.subscribe(
                 exchange_name, functools.partial(parser_fct, app), **queue_kwargs
             )
+    yield
+
+    # cleanup?
