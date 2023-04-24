@@ -15,7 +15,6 @@ import logging
 import traceback
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import cast
 
 import networkx as nx
 from aiopg.sa.engine import Engine
@@ -93,7 +92,7 @@ class BaseCompScheduler(ABC):
 
         runs_repo: CompRunsRepository = get_repository(
             self.db_engine, CompRunsRepository
-        )  # type: ignore
+        )
         new_run: CompRunsAtDB = await runs_repo.create(
             user_id=user_id,
             project_id=project_id,
@@ -153,7 +152,7 @@ class BaseCompScheduler(ABC):
     async def _get_pipeline_dag(self, project_id: ProjectID) -> nx.DiGraph:
         comp_pipeline_repo: CompPipelinesRepository = get_repository(
             self.db_engine, CompPipelinesRepository
-        )  # type: ignore
+        )
         pipeline_at_db: CompPipelineAtDB = await comp_pipeline_repo.get_pipeline(
             project_id
         )
@@ -166,7 +165,7 @@ class BaseCompScheduler(ABC):
     ) -> dict[str, CompTaskAtDB]:
         comp_tasks_repo: CompTasksRepository = get_repository(
             self.db_engine, CompTasksRepository
-        )  # type: ignore
+        )
         pipeline_comp_tasks: dict[str, CompTaskAtDB] = {
             f"{t.node_id}": t
             for t in await comp_tasks_repo.get_comp_tasks(project_id)
@@ -203,7 +202,7 @@ class BaseCompScheduler(ABC):
     ) -> None:
         comp_runs_repo: CompRunsRepository = get_repository(
             self.db_engine, CompRunsRepository
-        )  # type: ignore
+        )
         await comp_runs_repo.set_run_result(
             user_id=user_id,
             project_id=project_id,
@@ -225,9 +224,8 @@ class BaseCompScheduler(ABC):
             tasks[f"{task}"].state = RunningState.ABORTED
         if tasks_to_set_aborted:
             # update the current states back in DB
-            comp_tasks_repo: CompTasksRepository = cast(
-                CompTasksRepository,
-                get_repository(self.db_engine, CompTasksRepository),
+            comp_tasks_repo: CompTasksRepository = get_repository(
+                self.db_engine, CompTasksRepository
             )
             await comp_tasks_repo.set_project_tasks_state(
                 project_id,
@@ -426,7 +424,7 @@ class BaseCompScheduler(ABC):
         # get any running task and stop them
         comp_tasks_repo: CompTasksRepository = get_repository(
             self.db_engine, CompTasksRepository
-        )  # type: ignore
+        )
         await comp_tasks_repo.mark_project_published_tasks_as_aborted(project_id)
         # stop any remaining running task, these are already submitted
         tasks_to_stop = [
@@ -469,7 +467,7 @@ class BaseCompScheduler(ABC):
         # Change the tasks state to PENDING
         comp_tasks_repo: CompTasksRepository = get_repository(
             self.db_engine, CompTasksRepository
-        )  # type: ignore
+        )
         await comp_tasks_repo.set_project_tasks_state(
             project_id, list(tasks_ready_to_start.keys()), RunningState.PENDING
         )

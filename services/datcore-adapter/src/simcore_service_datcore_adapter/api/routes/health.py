@@ -7,7 +7,7 @@ from models_library.app_diagnostics import AppStatusCheck
 from starlette import status
 from starlette.responses import PlainTextResponse
 
-from ...meta import api_version, project_name
+from ..._meta import API_VERSION, PROJECT_NAME
 from ...modules.pennsieve import PennsieveApiClient
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.pennsieve import get_pennsieve_api_client
@@ -33,8 +33,8 @@ async def get_service_ready(
 ):
     pennsieve_health_ok = await pennsieve_client.is_responsive()
     return AppStatusCheck(
-        app_name=project_name,
-        version=api_version,
+        app_name=PROJECT_NAME,
+        version=API_VERSION,
         services={"pennsieve": pennsieve_health_ok},
         url=url_for("get_service_ready"),
     )

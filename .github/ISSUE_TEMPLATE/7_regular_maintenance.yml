@@ -1,0 +1,28 @@
+name: ⬆️ Regular maintenance (developers-only)
+description: Creates an issue to plan a regular maintenance each sprint
+title: " ⬆️ Regular maintenance <sprint_name>"
+labels: ["t:maintenance"]
+assignees: ["matusdrobuliak66"]
+body:
+  - type: input
+    id: sprint
+    attributes:
+      label: Sprint name
+      placeholder: e.g. JellyBeans
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: ⬆️  Requirements
+      description: |
+        Upgrade of Requirements
+      value: |
+        - Update of test & tools dependencies repository-wise
+            - [ ] ``make reqs``
+        - Update of most important libraries repository-wise  make ``reqs-all upgrade=foo==1.2.3``
+            - [ ] fastapi
+            - [ ] pydantic
+            - [ ] aio-pika
+            - [ ] aiohttp
+            - [ ] redis
+            - [ ] sqlalchemy
