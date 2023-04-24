@@ -1,7 +1,7 @@
 name: 🚀 Release to production (developers-only)
 description: Creates an issue to plan and log the release from staging to production
 title: "🚀 Release v<M.m.0>"
-labels: ["t:maintenance", "Release"]
+labels: ["t:maintenance", "release"]
 assignees: ["matusdrobuliak66"]
 body:
   - type: input

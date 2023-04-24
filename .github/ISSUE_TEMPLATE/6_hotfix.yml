@@ -1,7 +1,7 @@
 name: 🚑️ Hotfix (developers-only)
 description: Critical hotfix to staging or production
 title: "🚑️ Release hotfix/v<version> (hotfix)"
-labels: ["t:maintenance", "Release"]
+labels: ["t:maintenance", "release"]
 assignees: ["matusdrobuliak66"]
 body:
   - type: input
