@@ -42,7 +42,6 @@ from ....node_rights import (
     ResourceName,
     node_resource_limits_enabled,
 )
-from ....rabbitmq import RabbitMQClient
 from ...api_client import (
     BaseClientHTTPError,
     DynamicSidecarClient,

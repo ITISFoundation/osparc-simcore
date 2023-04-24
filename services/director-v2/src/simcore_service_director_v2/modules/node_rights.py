@@ -138,7 +138,7 @@ class NodeRightsManager:
         """
 
         node_slots_key = self._get_key(docker_node_id, resource_name)
-        slots: bytes | None = await self._redis.get(node_slots_key)
+        slots: bytes | None = await self.redis_client_sdk.redis.get(node_slots_key)
         if slots is not None:
             return int(slots)
 

@@ -33,7 +33,7 @@ RepoType = TypeVar("RepoType")
 
 
 def get_repository(db_engine: Engine, repo_cls: type[RepoType]) -> RepoType:
-    return repo_cls(db_engine=db_engine)
+    return repo_cls(db_engine=db_engine)  # type: ignore
 
 
 Iteration = PositiveInt
