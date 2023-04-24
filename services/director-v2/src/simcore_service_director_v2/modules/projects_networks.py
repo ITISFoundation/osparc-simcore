@@ -3,7 +3,7 @@ import urllib.parse
 from typing import NamedTuple
 from uuid import UUID
 
-from models_library.projects import ProjectAtDB, ProjectID, Workbench
+from models_library.projects import NodesDict, ProjectAtDB, ProjectID
 from models_library.projects_networks import (
     PROJECT_NETWORK_PREFIX,
     ContainerAliases,
@@ -174,7 +174,7 @@ async def _send_network_configuration_to_dynamic_sidecar(
 async def _get_networks_with_aliases_for_default_network(
     project_id: ProjectID,
     user_id: UserID,
-    new_workbench: Workbench,
+    new_workbench: NodesDict,
     director_v0_client: DirectorV0Client,
     rabbitmq_client: RabbitMQClient,
 ) -> NetworksWithAliases:

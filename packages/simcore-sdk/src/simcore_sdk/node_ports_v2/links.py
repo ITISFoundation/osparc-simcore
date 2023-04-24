@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Union
 
 from models_library.basic_regex import UUID_RE
 from models_library.projects_nodes_io import BaseFileLink, DownloadLink
@@ -27,8 +27,8 @@ DataItemValue = Union[
     DownloadLink,
     PortLink,
     FileLink,
-    List[Any],  # arrays
-    Dict[str, Any],  # object
+    list[Any],  # arrays
+    dict[str, Any],  # object
 ]
 
 #
@@ -39,13 +39,22 @@ DataItemValue = Union[
 # - ItemConcreteValue are the types finally consumed by the actual service port
 #
 SchemaValidatedTypes = Union[
-    StrictBool, StrictInt, StrictFloat, StrictStr, List[Any], Dict[str, Any]
+    StrictBool, StrictInt, StrictFloat, StrictStr, list[Any], dict[str, Any]
 ]
 ItemValue = Union[SchemaValidatedTypes, AnyUrl]
 ItemConcreteValue = Union[SchemaValidatedTypes, Path]
+ItemConcreteValueTypes = (
+    type[StrictBool]
+    | type[StrictInt]
+    | type[StrictFloat]
+    | type[StrictStr]
+    | type[list[Any]]
+    | type[dict[str, Any]]
+    | type[Path]
+)
 
 
-__all__: Tuple[str, ...] = (
+__all__: tuple[str, ...] = (
     "DataItemValue",
     "DownloadLink",
     "FileLink",

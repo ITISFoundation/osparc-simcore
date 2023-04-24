@@ -155,7 +155,6 @@ async def phone_confirmation(request: web.Request):
     )
 
     db: AsyncpgStorage = get_plugin_storage(request.app)
-    product: Product = get_current_product(request)
 
     if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(

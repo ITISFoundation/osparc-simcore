@@ -8,6 +8,7 @@ from dataclasses import dataclass
 import httpx
 from fastapi import FastAPI, HTTPException
 from models_library.users import UserID
+from servicelib.logging_utils import log_decorator
 from settings_library.s3 import S3Settings
 
 # Module's business logic ---------------------------------------------
@@ -16,7 +17,6 @@ from starlette import status
 from ..core.settings import StorageSettings
 from ..utils.client_decorators import handle_errors, handle_retry
 from ..utils.clients import unenvelope_or_raise_error
-from ..utils.logging_utils import log_decorator
 
 logger = logging.getLogger(__name__)
 

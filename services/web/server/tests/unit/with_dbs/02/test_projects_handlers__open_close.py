@@ -564,6 +564,7 @@ async def test_open_project_with_large_amount_of_dynamic_services_does_not_start
 
 @pytest.mark.parametrize(*standard_user_role())
 async def test_open_project_with_large_amount_of_dynamic_services_starts_them_if_setting_disabled(
+    mock_get_total_project_dynamic_nodes_creation_interval: None,
     disable_max_number_of_running_dynamic_nodes: dict[str, str],
     client: TestClient,
     logged_user: UserInfoDict,
@@ -577,7 +578,11 @@ async def test_open_project_with_large_amount_of_dynamic_services_starts_them_if
 ):
     assert client.app
     assert max_amount_of_auto_started_dyn_services == 0, "setting not disabled!"
-    num_of_dyn_services = faker.pyint(min_value=20, max_value=250)
+    # NOTE: reduced the amount of services in the test:
+    # - services start in a sequence with  a lock
+    # - lock is a bit slower to acquire and release then without the non locking version
+    # 20 services ~ 55 second runtime
+    num_of_dyn_services = faker.pyint(min_value=10, max_value=20)
     project = await user_project_with_num_dynamic_services(num_of_dyn_services + 1)
     all_service_uuids = list(project["workbench"])
     for num_service_already_running in range(num_of_dyn_services):

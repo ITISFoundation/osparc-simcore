@@ -7,7 +7,7 @@ import asyncio
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from random import choice
-from typing import Any, Awaitable, Callable
+from typing import Any, Awaitable, Callable, Final
 from unittest import mock
 from uuid import uuid4
 
@@ -16,7 +16,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
-from pytest_mock import MockerFixture
+from pydantic import NonNegativeFloat, NonNegativeInt
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_webserver_unit_with_db import (
@@ -164,7 +164,6 @@ async def test_create_node(
     faker: Faker,
     mocked_director_v2_api: dict[str, mock.MagicMock],
     mock_catalog_api: dict[str, mock.Mock],
-    mocker: MockerFixture,
     postgres_db: sa.engine.Engine,
 ):
     assert client.app
@@ -223,6 +222,7 @@ async def test_create_and_delete_many_nodes_in_parallel(
     faker: Faker,
     postgres_db: sa.engine.Engine,
     storage_subsystem_mock: MockedStorageSubsystem,
+    mock_get_total_project_dynamic_nodes_creation_interval: None,
 ):
     assert client.app
 
@@ -332,22 +332,28 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
     faker: Faker,
     max_amount_of_auto_started_dyn_services: int,
     postgres_db: sa.engine.Engine,
+    mock_get_total_project_dynamic_nodes_creation_interval: None,
 ):
     assert client.app
     # create a starting project with no dy-services
     project = await user_project_with_num_dynamic_services(0)
 
+    SERVICE_IS_RUNNING_AFTER_S: Final[NonNegativeFloat] = 0.1
+
     @dataclass
     class _RunninServices:
         running_services_uuids: list[str] = field(default_factory=list)
 
-        def num_services(self, *args, **kwargs) -> list[dict[str, Any]]:
+        async def num_services(self, *args, **kwargs) -> list[dict[str, Any]]:
             return [
                 {"service_uuid": service_uuid}
                 for service_uuid in self.running_services_uuids
             ]
 
-        def inc_running_services(self, *args, **kwargs):
+        async def inc_running_services(self, *args, **kwargs):
+            # simulate delay when service is starting
+            # reproduces real world conditions and makes test to fail
+            await asyncio.sleep(SERVICE_IS_RUNNING_AFTER_S)
             self.running_services_uuids.append(kwargs["service_uuid"])
 
     # let's count the started services
@@ -366,7 +372,7 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
         "service_key": f"simcore/services/dynamic/{faker.pystr().lower()}",
         "service_version": faker.numerify("%.#.#"),
     }
-    NUM_DY_SERVICES = 250
+    NUM_DY_SERVICES: Final[NonNegativeInt] = 250
     responses = await asyncio.gather(
         *(client.post(f"{url}", json=body) for _ in range(NUM_DY_SERVICES))
     )

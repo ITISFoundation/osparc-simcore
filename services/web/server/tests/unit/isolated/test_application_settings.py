@@ -161,7 +161,6 @@ def mock_webserver_service_environment(
 def app_settings(
     mock_webserver_service_environment: EnvVarsDict,
 ) -> ApplicationSettings:
-
     app = web.Application()
 
     # init and validation happens here
@@ -202,7 +201,7 @@ def test_settings_to_client_statics(app_settings: ApplicationSettings):
 
     # special alias
     assert statics["stackName"] == "master-simcore"
-    assert not statics["pluginsDisabled"]
+    assert statics["pluginsDisabled"] == ["WEBSERVER_CLUSTERS"]
 
 
 def test_settings_to_client_statics_plugins(
@@ -220,7 +219,7 @@ def test_settings_to_client_statics_plugins(
 
     print("STATICS:\n", json_dumps(statics, indent=1))
 
-    assert set(statics["pluginsDisabled"]) == disable_plugins
+    assert set(statics["pluginsDisabled"]) == (disable_plugins | {"WEBSERVER_CLUSTERS"})
 
 
 def test_avoid_sensitive_info_in_public(app_settings: ApplicationSettings):

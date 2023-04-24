@@ -6,7 +6,7 @@
 
 import json
 import urllib.parse
-from pathlib import Path
+from typing import Any
 from urllib.parse import parse_qs
 
 import pytest
@@ -18,8 +18,6 @@ from pydantic.main import BaseModel
 from pydantic.networks import HttpUrl
 from pytest_simcore.helpers.utils_services import list_fake_file_consumers
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
-from simcore_service_webserver._constants import APP_JSONSCHEMA_SPECS_KEY
-from simcore_service_webserver.projects import projects_api
 from simcore_service_webserver.studies_dispatcher._projects import (
     UserInfo,
     ViewerInfo,
@@ -29,11 +27,6 @@ from simcore_service_webserver.studies_dispatcher.handlers_redirects import (
     RedirectionQueryParams,
 )
 from yarl import URL
-
-
-@pytest.fixture
-def project_jsonschema(project_schema_file: Path) -> dict:
-    return json.loads(project_schema_file.read_text())
 
 
 def test_download_link_validators():
@@ -63,7 +56,7 @@ def test_download_link_validators():
 
 
 @pytest.mark.parametrize("view", list_fake_file_consumers())
-async def test_create_project_with_viewer(project_jsonschema, view):
+async def test_create_project_with_viewer(project_jsonschema: dict[str, Any], view):
 
     view["label"] = view.pop("display_name")
     viewer = ViewerInfo(**view)
@@ -88,12 +81,7 @@ async def test_create_project_with_viewer(project_jsonschema, view):
     print(json.dumps(project_in, indent=2))
 
     # This operation is done exactly before adding to the database in projects_handlers.create_projects
-    await projects_api.validate_project(
-        app={  # type: ignore
-            APP_JSONSCHEMA_SPECS_KEY: {"projects": project_jsonschema},
-        },
-        project=project_in,
-    )
+    Project.parse_obj(project_in)
 
 
 @pytest.mark.parametrize(

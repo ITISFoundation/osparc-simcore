@@ -5,14 +5,16 @@ from typing import (
     Any,
     Awaitable,
     Callable,
-    Counter,
+    Coroutine,
     Final,
     Iterable,
+    NoReturn,
     Optional,
     get_args,
 )
 from uuid import uuid4
 
+import dask_gateway
 import distributed
 from aiopg.sa.engine import Engine
 from dask_task_models_library.container_tasks.io import (
@@ -26,7 +28,7 @@ from fastapi import FastAPI
 from models_library.clusters import ClusterID
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID
+from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, ValidationError
 from servicelib.json_serialization import json_dumps
@@ -117,7 +119,7 @@ async def create_node_ports(
         return await node_ports_v2.ports(
             user_id=user_id,
             project_id=f"{project_id}",
-            node_uuid=f"{node_id}",
+            node_uuid=NodeIDStr(f"{node_id}"),
             db_manager=db_manager,
         )
     except ValidationError as err:
@@ -393,7 +395,7 @@ _REST_TIMEOUT_S: Final[int] = 1
 async def dask_sub_consumer_task(
     dask_sub: distributed.Sub,
     handler: Callable[[str], Awaitable[None]],
-):
+) -> NoReturn:
     while True:
         try:
             logger.info("starting dask consumer task for topic '%s'", dask_sub.name)
@@ -459,6 +461,14 @@ def check_scheduler_status(client: distributed.Client):
         raise ComputationalBackendNotConnectedError()
 
 
+_LARGE_NUMBER_OF_WORKERS: Final[int] = 10000
+
+
+async def check_maximize_workers(cluster: dask_gateway.GatewayCluster | None) -> None:
+    if cluster:
+        await cluster.scale(_LARGE_NUMBER_OF_WORKERS)
+
+
 def check_if_cluster_is_able_to_run_pipeline(
     project_id: ProjectID,
     node_id: NodeID,
@@ -491,7 +501,7 @@ def check_if_cluster_is_able_to_run_pipeline(
     ) -> list[str]:
         return [r for r in task_resources if r not in cluster_resources]
 
-    cluster_resources_counter: Counter = collections.Counter()
+    cluster_resources_counter: collections.Counter = collections.Counter()
     can_a_worker_run_task = False
     for worker in workers:
         worker_resources = workers[worker].get("resources", {})
@@ -537,3 +547,13 @@ def check_if_cluster_is_able_to_run_pipeline(
         f"cluster has '{all_available_resources_in_cluster}', cluster has no worker with the"
         " necessary computational resources for running the service! TIP: contact oSparc support",
     )
+
+
+async def wrap_client_async_routine(
+    client_coroutine: Coroutine[Any, Any, Any] | Any | None
+) -> Any:
+    """Dask async behavior does not go well with Pylance as it returns
+    a union of types. this wrapper makes both mypy and pylance happy"""
+    assert client_coroutine  # nosec
+    ret = await client_coroutine
+    return ret

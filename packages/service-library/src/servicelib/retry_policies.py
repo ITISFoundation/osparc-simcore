@@ -4,7 +4,6 @@
 """
 
 import logging
-from typing import Optional
 
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_attempt
@@ -19,7 +18,7 @@ class PostgresRetryPolicyUponInitialization:
     WAIT_SECS = 5
     ATTEMPTS_COUNT = 20
 
-    def __init__(self, logger: Optional[logging.Logger] = None):
+    def __init__(self, logger: logging.Logger | None = None):
         logger = logger or log
 
         self.kwargs = dict(
@@ -28,3 +27,7 @@ class PostgresRetryPolicyUponInitialization:
             before_sleep=before_sleep_log(logger, logging.WARNING),
             reraise=True,
         )
+
+
+class RedisRetryPolicyUponInitialization(PostgresRetryPolicyUponInitialization):
+    ...

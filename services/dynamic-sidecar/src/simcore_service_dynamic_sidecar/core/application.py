@@ -101,7 +101,7 @@ def setup_logger(settings: ApplicationSettings):
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3148
     logging.basicConfig(level=settings.log_level)
     logging.root.setLevel(settings.log_level)
-    config_all_loggers()
+    config_all_loggers(settings.DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED)
 
 
 def create_base_app() -> FastAPI:

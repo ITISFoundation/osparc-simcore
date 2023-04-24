@@ -6,12 +6,9 @@ from typing import AsyncIterator
 
 from fastapi import FastAPI
 from pydantic import NonNegativeInt, PositiveFloat, PositiveInt
-from redis.asyncio import Redis
 from redis.asyncio.lock import Lock
-from settings_library.redis import RedisSettings
-from tenacity import retry
-from tenacity.before_sleep import before_sleep_log
-from tenacity.wait import wait_random
+from servicelib.redis import RedisClientSDK
+from settings_library.redis import RedisDatabase, RedisSettings
 
 from ..core.errors import ConfigurationError, NodeRightsAcquireError
 from ..core.settings import DynamicSidecarSettings
@@ -22,21 +19,24 @@ ResourceName = str
 
 logger = logging.getLogger(__name__)
 
-redis_retry_policy = dict(
-    wait=wait_random(5, 10),
-    before_sleep=before_sleep_log(logger, logging.WARNING),
-    reraise=True,
-)
+
+def node_resource_limits_enabled(app: FastAPI) -> bool:
+    dynamic_sidecar_settings: DynamicSidecarSettings = (
+        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+    )
+    return dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED
 
 
 def setup(app: FastAPI):
-    @retry(**redis_retry_policy)
     async def on_startup() -> None:
-        app.state.node_rights_manager = await NodeRightsManager.create(app)
+        if node_resource_limits_enabled(app):
+            app.state.node_rights_manager = await NodeRightsManager.create(app)
+            await app.state.node_rights_manager.redis_client_sdk.setup()
 
     async def on_shutdown() -> None:
-        node_rights_manager: NodeRightsManager = app.state.node_rights_manager
-        await node_rights_manager.close()
+        if node_resource_limits_enabled(app):
+            node_rights_manager: NodeRightsManager = app.state.node_rights_manager
+            await node_rights_manager.close()
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
@@ -86,7 +86,7 @@ class NodeRightsManager:
     """
 
     app: FastAPI
-    _redis: Redis
+    redis_client_sdk: RedisClientSDK
     is_enabled: bool
     lock_timeout_s: PositiveFloat
     concurrent_resource_slots: PositiveInt
@@ -99,20 +99,22 @@ class NodeRightsManager:
         )
         return cls(
             app=app,
-            _redis=Redis.from_url(redis_settings.dsn_locks),
+            redis_client_sdk=RedisClientSDK(
+                redis_settings.build_redis_dsn(RedisDatabase.LOCKS)
+            ),
             is_enabled=dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED,
             concurrent_resource_slots=dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_CONCURRENT_RESOURCE_SLOTS,
             lock_timeout_s=dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_SAVES_LOCK_TIMEOUT_S,
         )
 
     @classmethod
-    def instance(cls, app: FastAPI) -> "NodeRightsManager":
+    async def instance(cls, app: FastAPI) -> "NodeRightsManager":
         if not hasattr(app.state, "node_rights_manager"):
             raise ConfigurationError(
                 "RedisLockManager client is not available. Please check the configuration."
             )
-        manager: NodeRightsManager = app.state.node_rights_manager
-        return manager
+        node_rights_manager: NodeRightsManager = app.state.node_rights_manager
+        return node_rights_manager
 
     @classmethod
     def _get_key(cls, docker_node_id: DockerNodeId, resource_name: ResourceName) -> str:
@@ -140,7 +142,9 @@ class NodeRightsManager:
         if slots is not None:
             return int(slots)
 
-        await self._redis.set(node_slots_key, self.concurrent_resource_slots)
+        await self.redis_client_sdk.redis.set(
+            node_slots_key, self.concurrent_resource_slots
+        )
         return self.concurrent_resource_slots
 
     @staticmethod
@@ -202,7 +206,9 @@ class NodeRightsManager:
         for slot in range(slots):
             node_lock_name = self._get_lock_name(docker_node_id, resource_name, slot)
 
-            lock = self._redis.lock(name=node_lock_name, timeout=self.lock_timeout_s)
+            lock = self.redis_client_sdk.redis.lock(
+                name=node_lock_name, timeout=self.lock_timeout_s
+            )
             lock_acquired = await lock.acquire(blocking=False)
 
             if lock_acquired:
@@ -234,4 +240,4 @@ class NodeRightsManager:
             await self._release_extend_lock(extend_lock)
 
     async def close(self) -> None:
-        await self._redis.close(close_connection_pool=True)
+        await self.redis_client_sdk.shutdown()

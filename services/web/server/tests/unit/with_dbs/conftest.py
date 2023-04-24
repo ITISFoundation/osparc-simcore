@@ -30,7 +30,7 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 from pydantic import ByteSize, parse_obj_as
 from pytest import MonkeyPatch
-from pytest_mock.plugin import MockerFixture
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict
@@ -41,7 +41,7 @@ from servicelib.aiohttp.long_running_tasks.client import LRTask
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.common_aiopg_utils import DSN
 from settings_library.email import SMTPSettings
-from settings_library.redis import RedisSettings
+from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_service_webserver import catalog
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
@@ -108,6 +108,7 @@ def app_cfg(default_app_cfg: ConfigDict, unused_tcp_port_factory) -> ConfigDict:
 @pytest.fixture
 def app_environment(
     app_cfg: ConfigDict,
+    monkeypatch: MonkeyPatch,
     monkeypatch_setenv_from_app_config: Callable[[ConfigDict], dict[str, str]],
 ) -> EnvVarsDict:
     # WARNING: this fixture is commonly overriden. Check before renaming.
@@ -122,7 +123,8 @@ def app_environment(
     """
     print("+ web_server:")
     cfg = deepcopy(app_cfg)
-    return monkeypatch_setenv_from_app_config(cfg)
+    env = monkeypatch_setenv_from_app_config(cfg)
+    return env
 
 
 @pytest.fixture
@@ -269,7 +271,7 @@ def disable_static_webserver(monkeypatch: MonkeyPatch) -> Callable:
 
 
 @pytest.fixture
-async def storage_subsystem_mock(mocker: MonkeyPatch) -> MockedStorageSubsystem:
+async def storage_subsystem_mock(mocker: MockerFixture) -> MockedStorageSubsystem:
     """
     Patches client calls to storage service
 
@@ -293,14 +295,14 @@ async def storage_subsystem_mock(mocker: MonkeyPatch) -> MockedStorageSubsystem:
         )
 
     mock = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers_crud.copy_data_folders_from_project",
+        "simcore_service_webserver.projects._create_utils.copy_data_folders_from_project",
         autospec=True,
         side_effect=_mock_copy_data_from_project,
     )
 
     async_mock = mocker.AsyncMock(return_value="")
     mock1 = mocker.patch(
-        "simcore_service_webserver.projects._delete.delete_data_folders_of_project",
+        "simcore_service_webserver.projects._delete_utils.delete_data_folders_of_project",
         autospec=True,
         side_effect=async_mock,
     )
@@ -312,7 +314,7 @@ async def storage_subsystem_mock(mocker: MonkeyPatch) -> MockedStorageSubsystem:
     )
 
     mock3 = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers_crud.get_project_total_size_simcore_s3",
+        "simcore_service_webserver.projects._create_utils.get_project_total_size_simcore_s3",
         autospec=True,
         return_value=parse_obj_as(ByteSize, "1Gib"),
     )
@@ -489,7 +491,9 @@ def redis_service(docker_services, docker_ip) -> RedisSettings:
 @pytest.fixture
 async def redis_client(redis_service: RedisSettings):
     client = aioredis.from_url(
-        redis_service.dsn_resources, encoding="utf-8", decode_responses=True
+        redis_service.build_redis_dsn(RedisDatabase.RESOURCES),
+        encoding="utf-8",
+        decode_responses=True,
     )
     yield client
 
@@ -503,7 +507,9 @@ async def redis_locks_client(
 ) -> AsyncIterator[aioredis.Redis]:
     """Creates a redis client to communicate with a redis service ready"""
     client = aioredis.from_url(
-        redis_service.dsn_locks, encoding="utf-8", decode_responses=True
+        redis_service.build_redis_dsn(RedisDatabase.LOCKS),
+        encoding="utf-8",
+        decode_responses=True,
     )
 
     yield client
@@ -533,7 +539,6 @@ async def standard_groups(
     client: TestClient,
     logged_user: UserInfoDict,
 ) -> AsyncIterator[list[dict[str, Any]]]:
-
     sparc_group = {
         "gid": "5",  # this will be replaced
         "label": "SPARC",
@@ -553,7 +558,6 @@ async def standard_groups(
     async with NewUser(
         {"name": f"{logged_user['name']}_groups_owner", "role": "USER"}, client.app
     ) as owner_user:
-
         # creates two groups
         sparc_group = await create_user_group(
             app=client.app,
@@ -609,7 +613,6 @@ def mock_rabbitmq(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def mock_progress_bar(mocker: MockerFixture) -> Any:
-
     sub_progress = Mock()
 
     class MockedProgress:

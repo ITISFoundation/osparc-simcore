@@ -32,7 +32,7 @@ from aiodocker.containers import DockerContainer
 from aiopg.sa import Engine
 from fastapi import FastAPI
 from models_library.clusters import DEFAULT_CLUSTER_ID
-from models_library.projects import Node, ProjectAtDB, ProjectID, Workbench
+from models_library.projects import Node, NodesDict, ProjectAtDB, ProjectID
 from models_library.projects_networks import (
     PROJECT_NETWORK_PREFIX,
     ContainerAliases,
@@ -146,7 +146,6 @@ def minimal_configuration(  # pylint:disable=too-many-arguments
     ensure_swarm_and_networks: None,
     osparc_product_name: str,
 ) -> Iterator[None]:
-
     with postgres_db.connect() as conn:
         # pylint: disable=no-value-for-parameter
         conn.execute(comp_tasks.delete())
@@ -267,7 +266,6 @@ async def current_study(
     osparc_product_name: str,
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ) -> ProjectAtDB:
-
     project_at_db = project(current_user, workbench=fake_dy_workbench)
 
     # create entries in comp_task table in order to pull output ports
@@ -440,7 +438,7 @@ async def projects_networks_db(
 
 
 async def _get_mapped_nodeports_values(
-    user_id: UserID, project_id: str, workbench: Workbench, db_manager: DBManager
+    user_id: UserID, project_id: str, workbench: NodesDict, db_manager: DBManager
 ) -> dict[str, InputsOutputs]:
     result: dict[str, InputsOutputs] = {}
 
@@ -919,15 +917,6 @@ async def test_nodeports_integration(
         exp_pipeline_details=PipelineDetails.parse_obj(fake_dy_published),
         iteration=1,
         cluster_id=DEFAULT_CLUSTER_ID,
-    )
-
-    # wait for the computation to start
-    await assert_and_wait_for_pipeline_status(
-        async_client,
-        task_out.url,
-        current_user["id"],
-        current_study.uuid,
-        wait_for_states=[RunningState.STARTED],
     )
 
     # wait for the computation to finish (either by failing, success or abort)

@@ -10,35 +10,34 @@ anyio==3.6.1
     # via
     #   -c requirements/_base.txt
     #   httpcore
-asgi-lifespan==2.0.0
+asgi-lifespan==2.1.0
     # via -r requirements/_test.in
 attrs==21.4.0
     # via
     #   -c requirements/_base.txt
     #   jschema-to-python
     #   jsonschema
-    #   pytest
     #   pytest-docker
     #   sarif-om
 aws-sam-translator==1.55.0
     # via
     #   -c requirements/./constraints.txt
     #   cfn-lint
-aws-xray-sdk==2.11.0
+aws-xray-sdk==2.12.0
     # via moto
-boto3==1.26.82
+boto3==1.26.114
     # via
     #   aws-sam-translator
     #   moto
-boto3-stubs==1.26.82
+boto3-stubs==1.26.114
     # via types-boto3
-botocore==1.29.82
+botocore==1.29.114
     # via
     #   aws-xray-sdk
     #   boto3
     #   moto
     #   s3transfer
-botocore-stubs==1.29.82
+botocore-stubs==1.29.114
     # via boto3-stubs
 certifi==2022.12.7
     # via
@@ -79,9 +78,9 @@ ecdsa==0.18.0
     #   moto
     #   python-jose
     #   sshpubkeys
-exceptiongroup==1.1.0
+exceptiongroup==1.1.1
     # via pytest
-faker==17.5.0
+faker==18.4.0
     # via -r requirements/_test.in
 flask==2.1.3
     # via
@@ -160,7 +159,7 @@ markupsafe==2.1.1
     #   moto
 moto==4.0.1
     # via -r requirements/_test.in
-mypy==1.1.1
+mypy==1.2.0
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
@@ -200,14 +199,14 @@ pyrsistent==0.18.1
     # via
     #   -c requirements/_base.txt
     #   jsonschema
-pytest==7.2.1
+pytest==7.3.1
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-docker
     #   pytest-mock
-pytest-asyncio==0.20.3
+pytest-asyncio==0.21.0
     # via -r requirements/_test.in
 pytest-cov==4.0.0
     # via -r requirements/_test.in
@@ -225,7 +224,7 @@ python-dateutil==2.8.2
     #   moto
 python-jose==3.3.0
     # via moto
-pytz==2022.7.1
+pytz==2023.3
     # via moto
 pyyaml==5.4.1
     # via
@@ -233,13 +232,14 @@ pyyaml==5.4.1
     #   cfn-lint
     #   moto
     #   openapi-spec-validator
+    #   responses
 requests==2.27.1
     # via
     #   -c requirements/_base.txt
     #   docker
     #   moto
     #   responses
-responses==0.22.0
+responses==0.23.1
     # via moto
 respx==0.20.1
     # via -r requirements/_test.in
@@ -274,31 +274,28 @@ sqlalchemy==1.4.47
     # via
     #   -r requirements/_test.in
     #   alembic
-sqlalchemy2-stubs==0.0.2a32
+sqlalchemy2-stubs==0.0.2a33
     # via sqlalchemy
 sshpubkeys==3.3.1
     # via moto
-toml==0.10.2
-    # via responses
 tomli==2.0.1
     # via
     #   coverage
     #   mypy
     #   pytest
-types-awscrt==0.16.10
+types-awscrt==0.16.14
     # via
     #   botocore-stubs
     #   types-s3transfer
 types-boto3==1.0.2
     # via -r requirements/_test.in
-types-s3transfer==0.6.0.post5
-    # via boto3-stubs
-types-toml==0.10.8.5
+types-pyyaml==6.0.12.9
     # via responses
+types-s3transfer==0.6.0.post7
+    # via boto3-stubs
 typing-extensions==4.3.0
     # via
     #   -c requirements/_base.txt
-    #   boto3-stubs
     #   mypy
     #   sqlalchemy2-stubs
 urllib3==1.26.9

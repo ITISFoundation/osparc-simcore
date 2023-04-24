@@ -2,7 +2,6 @@ import json
 import logging
 import os
 import socket
-from typing import Optional
 
 import aiopg.sa
 import tenacity
@@ -41,7 +40,7 @@ async def _get_node_from_db(
     )
     if result.rowcount > 1:
         log.error("the node id %s is not unique", node_uuid)
-    node: Optional[RowProxy] = await result.first()
+    node: RowProxy | None = await result.first()
     if not node:
         log.error("the node id %s was not found", node_uuid)
         raise NodeNotFound(node_uuid)
@@ -60,8 +59,8 @@ async def _ensure_postgres_ready(dsn: DataSourceName) -> Engine:
 
 
 class DBContextManager:
-    def __init__(self, db_engine: Optional[aiopg.sa.Engine] = None):
-        self._db_engine: Optional[aiopg.sa.Engine] = db_engine
+    def __init__(self, db_engine: aiopg.sa.Engine | None = None):
+        self._db_engine: aiopg.sa.Engine | None = db_engine
         self._db_engine_created: bool = False
 
     @staticmethod
@@ -74,7 +73,7 @@ class DBContextManager:
             password=settings.POSTGRES_SETTINGS.POSTGRES_PASSWORD.get_secret_value(),
             host=settings.POSTGRES_SETTINGS.POSTGRES_HOST,
             port=settings.POSTGRES_SETTINGS.POSTGRES_PORT,
-        )  # type: ignore
+        )
 
         engine = await _ensure_postgres_ready(dsn)
         return engine
@@ -97,7 +96,7 @@ class DBContextManager:
 
 
 class DBManager:
-    def __init__(self, db_engine: Optional[aiopg.sa.Engine] = None):
+    def __init__(self, db_engine: aiopg.sa.Engine | None = None):
         self._db_engine = db_engine
 
     async def write_ports_configuration(

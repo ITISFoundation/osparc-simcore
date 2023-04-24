@@ -9,11 +9,12 @@ from aiohttp import web
 from models_library.generics import Envelope
 from pydantic import BaseModel
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from . import users_api
 from ._meta import API_VTAG
-from .login.decorators import RQT_USERID_KEY, login_required
+from .login.decorators import login_required
 from .redis import get_redis_user_notifications_client
 from .security_decorators import permission_required
 from .user_notifications import (

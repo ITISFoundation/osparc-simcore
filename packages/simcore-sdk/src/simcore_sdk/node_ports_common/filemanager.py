@@ -1,7 +1,6 @@
 import logging
 from asyncio import CancelledError
 from pathlib import Path
-from typing import Optional, Union
 
 from aiohttp import ClientError, ClientSession
 from models_library.api_schemas_storage import (
@@ -12,6 +11,7 @@ from models_library.api_schemas_storage import (
     FileUploadCompleteState,
     FileUploadCompletionBody,
     FileUploadSchema,
+    LinkType,
     LocationID,
     LocationName,
     UploadedPart,
@@ -118,11 +118,11 @@ async def _complete_upload(
 async def get_download_link_from_s3(
     *,
     user_id: UserID,
-    store_name: Optional[LocationName],
-    store_id: Optional[LocationID],
+    store_name: LocationName | None,
+    store_id: LocationID | None,
     s3_object: StorageFileID,
-    link_type: storage_client.LinkType,
-    client_session: Optional[ClientSession] = None,
+    link_type: LinkType,
+    client_session: ClientSession | None = None,
 ) -> URL:
     """
     :raises exceptions.NodeportsException
@@ -139,25 +139,24 @@ async def get_download_link_from_s3(
                 user_id, store_name, session
             )
         assert store_id is not None  # nosec
-        return URL(
-            await storage_client.get_download_file_link(
-                session=session,
-                file_id=s3_object,
-                location_id=store_id,
-                user_id=user_id,
-                link_type=link_type,
-            )
+        file_link = await storage_client.get_download_file_link(
+            session=session,
+            file_id=s3_object,
+            location_id=store_id,
+            user_id=user_id,
+            link_type=link_type,
         )
+        return URL(f"{file_link}")
 
 
 async def get_upload_links_from_s3(
     *,
     user_id: UserID,
-    store_name: Optional[LocationName],
-    store_id: Optional[LocationID],
+    store_name: LocationName | None,
+    store_id: LocationID | None,
     s3_object: StorageFileID,
-    link_type: storage_client.LinkType,
-    client_session: Optional[ClientSession] = None,
+    link_type: LinkType,
+    client_session: ClientSession | None = None,
     file_size: ByteSize,
 ) -> tuple[LocationID, FileUploadSchema]:
     if store_name is None and store_id is None:
@@ -169,28 +168,26 @@ async def get_upload_links_from_s3(
                 user_id, store_name, session
             )
         assert store_id is not None  # nosec
-        return (
-            store_id,
-            await storage_client.get_upload_file_links(
-                session=session,
-                file_id=s3_object,
-                location_id=store_id,
-                user_id=user_id,
-                link_type=link_type,
-                file_size=file_size,
-            ),
+        file_links = await storage_client.get_upload_file_links(
+            session=session,
+            file_id=s3_object,
+            location_id=store_id,
+            user_id=user_id,
+            link_type=link_type,
+            file_size=file_size,
         )
+        return (store_id, file_links)
 
 
 async def download_file_from_s3(
     *,
     user_id: UserID,
-    store_name: Optional[LocationName],
-    store_id: Optional[LocationID],
+    store_name: LocationName | None,
+    store_id: LocationID | None,
     s3_object: StorageFileID,
     local_folder: Path,
-    io_log_redirect_cb: Optional[LogRedirectCB],
-    client_session: Optional[ClientSession] = None,
+    io_log_redirect_cb: LogRedirectCB | None,
+    client_session: ClientSession | None = None,
     progress_bar: ProgressBarData,
 ) -> Path:
     """Downloads a file from S3
@@ -217,7 +214,7 @@ async def download_file_from_s3(
             store_id=store_id,
             s3_object=s3_object,
             client_session=session,
-            link_type=storage_client.LinkType.PRESIGNED,
+            link_type=LinkType.PRESIGNED,
         )
 
         # the link contains the file name
@@ -237,9 +234,9 @@ async def download_file_from_link(
     download_link: URL,
     destination_folder: Path,
     *,
-    io_log_redirect_cb: Optional[LogRedirectCB],
-    file_name: Optional[str] = None,
-    client_session: Optional[ClientSession] = None,
+    io_log_redirect_cb: LogRedirectCB | None,
+    file_name: str | None = None,
+    client_session: ClientSession | None = None,
     progress_bar: ProgressBarData,
 ) -> Path:
     # a download link looks something like:
@@ -283,14 +280,14 @@ async def _abort_upload(
 async def upload_file(
     *,
     user_id: UserID,
-    store_id: Optional[LocationID],
-    store_name: Optional[LocationName],
+    store_id: LocationID | None,
+    store_name: LocationName | None,
     s3_object: StorageFileID,
-    file_to_upload: Union[Path, UploadableFileObject],
-    io_log_redirect_cb: Optional[LogRedirectCB],
-    client_session: Optional[ClientSession] = None,
-    r_clone_settings: Optional[RCloneSettings] = None,
-    progress_bar: Optional[ProgressBarData] = None,
+    file_to_upload: Path | UploadableFileObject,
+    io_log_redirect_cb: LogRedirectCB | None,
+    client_session: ClientSession | None = None,
+    r_clone_settings: RCloneSettings | None = None,
+    progress_bar: ProgressBarData | None = None,
 ) -> tuple[LocationID, ETag]:
     """Uploads a file (potentially in parallel) or a file object (sequential in any case) to S3
 
@@ -328,9 +325,7 @@ async def upload_file(
                 store_id=store_id,
                 s3_object=s3_object,
                 client_session=session,
-                link_type=storage_client.LinkType.S3
-                if use_rclone
-                else storage_client.LinkType.PRESIGNED,
+                link_type=LinkType.S3 if use_rclone else LinkType.PRESIGNED,
                 file_size=ByteSize(
                     file_to_upload.stat().st_size
                     if isinstance(file_to_upload, Path)
@@ -382,7 +377,7 @@ async def entry_exists(
     user_id: UserID,
     store_id: LocationID,
     s3_object: StorageFileID,
-    client_session: Optional[ClientSession] = None,
+    client_session: ClientSession | None = None,
 ) -> bool:
     """Returns True if metadata for s3_object is present"""
     try:
@@ -409,7 +404,7 @@ async def get_file_metadata(
     user_id: UserID,
     store_id: LocationID,
     s3_object: StorageFileID,
-    client_session: Optional[ClientSession] = None,
+    client_session: ClientSession | None = None,
 ) -> tuple[LocationID, ETag]:
     """
     :raises S3InvalidPathError
@@ -432,7 +427,7 @@ async def delete_file(
     user_id: UserID,
     store_id: LocationID,
     s3_object: StorageFileID,
-    client_session: Optional[ClientSession] = None,
+    client_session: ClientSession | None = None,
 ) -> None:
     async with ClientSessionContextManager(client_session) as session:
         log.debug("Will delete file for s3_object=%s", s3_object)
