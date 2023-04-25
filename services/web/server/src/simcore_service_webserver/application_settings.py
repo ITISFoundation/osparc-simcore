@@ -203,7 +203,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # These plugins only require (for the moment) an entry to toggle between enabled/disabled
     WEBSERVER_CLUSTERS: bool = False
-    WEBSERVER_COMPUTATION: bool = True
+    WEBSERVER_NOTIFICATIONS: bool = Field(
+        default=True, env=["WEBSERVER_NOTIFICATIONS", "WEBSERVER_COMPUTATION"]
+    )
     WEBSERVER_GROUPS: bool = True
     WEBSERVER_META_MODELING: bool = True
     WEBSERVER_PRODUCTS: bool = True
