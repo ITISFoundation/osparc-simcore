@@ -183,7 +183,7 @@ class RabbitMQClient:
             await queue.consume(_on_message)
 
     async def publish(
-        self, exchange_name: str, message: Message, topic: str | None = None
+        self, exchange_name: str, message: Message, *, topic: str | None = None
     ) -> None:
         """publish message in the exchange exchange_name.
         specifying a topic will use a TOPIC type of RabbitMQ Exchange instead of FANOUT
