@@ -67,8 +67,17 @@ async def _handle_db_notification(
     task_data = payload.data
     task_changes = payload.changes
 
-    project_uuid = task_data.get("project_id", "undefined")
-    node_uuid = task_data.get("node_id", "undefined")
+    project_uuid = task_data.get("project_id", None)
+    node_uuid = task_data.get("node_id", None)
+    if any(x is None for x in [project_uuid, node_uuid]):
+        _logger.warning(
+            "comp_tasks row is corrupted. TIP: please check DB entry containing '%s'",
+            f"{task_data=}",
+        )
+        return
+
+    assert project_uuid  # nosec
+    assert node_uuid  # nosec
 
     try:
         # NOTE: we need someone with the rights to modify that project. the owner is one.
