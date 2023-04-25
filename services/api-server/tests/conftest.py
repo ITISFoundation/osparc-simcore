@@ -13,6 +13,7 @@ from pytest_simcore.helpers.utils_envs import EnvVarsDict
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 pytest_plugins = [
+    "pytest_simcore.cli_runner",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.repository_paths",
