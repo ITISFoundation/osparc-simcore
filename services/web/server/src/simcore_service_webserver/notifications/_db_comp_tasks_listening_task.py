@@ -29,7 +29,7 @@ _logger = logging.getLogger(__name__)
 
 
 async def _get_project_owner(conn: SAConnection, project_uuid: str) -> PositiveInt:
-    the_project_owner = await conn.scalar(
+    the_project_owner: PositiveInt | None = await conn.scalar(
         select([projects.c.prj_owner]).where(projects.c.uuid == project_uuid)
     )
     if not the_project_owner:
