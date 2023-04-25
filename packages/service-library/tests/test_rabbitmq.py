@@ -244,19 +244,23 @@ def test_rabbit_pub_sub_performance(
     mocker: MockerFixture,
     faker: Faker,
 ):
+    consumer = rabbitmq_client("consumer")
+    publisher = rabbitmq_client("publisher")
+
+    message = faker.text()
+
+    mocked_message_parser = mocker.AsyncMock(return_value=True)
+    exchange_name = random_exchange_name()
+    asyncio.get_event_loop().run_until_complete(
+        consumer.subscribe(exchange_name, mocked_message_parser)
+    )
+
     async def async_fct_to_test():
-        consumer = rabbitmq_client("consumer")
-        publisher = rabbitmq_client("publisher")
-
-        message = faker.text()
-
-        mocked_message_parser = mocker.AsyncMock(return_value=True)
-        exchange_name = random_exchange_name()
-        await consumer.subscribe(exchange_name, mocked_message_parser)
         await publisher.publish(exchange_name, message)
         await _assert_message_received(mocked_message_parser, 1, message)
+        mocked_message_parser.reset_mock()
 
     def run_test_async():
         asyncio.get_event_loop().run_until_complete(async_fct_to_test())
 
-    benchmark.pedantic(run_test_async, iterations=1, rounds=10)
+    benchmark.pedantic(run_test_async, iterations=1, rounds=100)
