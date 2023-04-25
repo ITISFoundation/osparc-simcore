@@ -35,7 +35,7 @@ from ..socketio.events import (
     send_messages,
 )
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 async def _handle_computation_running_progress(
@@ -65,13 +65,13 @@ async def _handle_computation_running_progress(
             await send_messages(app, f"{message.user_id}", messages)
             return True
     except ProjectNotFoundError:
-        logger.warning(
+        _logger.warning(
             "project related to received rabbitMQ progress message not found: '%s'",
             json_dumps(message, indent=2),
         )
         return True
     except NodeNotFoundError:
-        logger.warning(
+        _logger.warning(
             "node related to received rabbitMQ progress message not found: '%s'",
             json_dumps(message, indent=2),
         )
@@ -179,7 +179,7 @@ EXCHANGE_TO_PARSER_CONFIG = (
 
 
 async def setup_rabbitmq_consumers(app: web.Application) -> AsyncIterator[None]:
-    with log_context(logger, logging.INFO, msg="Subscribing to rabbitmq channels"):
+    with log_context(_logger, logging.INFO, msg="Subscribing to rabbitmq channels"):
         rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
 
         for exchange_name, parser_fct, queue_kwargs in EXCHANGE_TO_PARSER_CONFIG:
