@@ -2,6 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 # pylint:disable=protected-access
+# pylint:disable=too-many-statements
 
 
 import asyncio
@@ -281,13 +282,13 @@ async def test_rabbit_pub_sub_with_topic(
     all_receiving_consumer = rabbitmq_client("all_receiving_consumer")
     all_receiving_mocked_message_parser = mocker.AsyncMock(return_value=True)
     await all_receiving_consumer.subscribe(
-        exchange_name, all_receiving_mocked_message_parser, topic="#"
+        exchange_name, all_receiving_mocked_message_parser, topics=["#"]
     )
 
     only_critical_consumer = rabbitmq_client("only_critical_consumer")
     only_critical_mocked_message_parser = mocker.AsyncMock(return_value=True)
     await only_critical_consumer.subscribe(
-        exchange_name, only_critical_mocked_message_parser, topic="*.*.critical"
+        exchange_name, only_critical_mocked_message_parser, topics=["*.*.critical"]
     )
 
     orange_and_critical_consumer = rabbitmq_client("orange_and_critical_consumer")
@@ -295,12 +296,7 @@ async def test_rabbit_pub_sub_with_topic(
     await orange_and_critical_consumer.subscribe(
         exchange_name,
         orange_and_critical_mocked_message_parser,
-        topic="*.*.critical",
-    )
-    await orange_and_critical_consumer.subscribe(
-        exchange_name,
-        orange_and_critical_mocked_message_parser,
-        topic="*.orange.*",
+        topics=["*.*.critical", "*.orange.*"],
     )
 
     # check now that topic is working
@@ -314,7 +310,7 @@ async def test_rabbit_pub_sub_with_topic(
     )
 
 
-async def test_pub_sub_bind_and_unbind_topics(
+async def test_rabbit_pub_sub_bind_and_unbind_topics(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocker: MockerFixture,
