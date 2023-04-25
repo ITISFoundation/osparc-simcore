@@ -6,7 +6,7 @@ import asyncio
 import json
 import logging
 from contextlib import suppress
-from pprint import pformat
+from dataclasses import dataclass
 from typing import AsyncIterator, NoReturn
 
 from aiohttp import web
@@ -53,6 +53,72 @@ async def _update_project_state(
     await projects_api.notify_project_state_update(app, project)
 
 
+@dataclass(frozen=True)
+class _CompTaskNotificationPayload:
+    data: dict
+    changes: dict
+
+
+async def _handle_db_notification(
+    app: web.Application, payload: _CompTaskNotificationPayload, conn: SAConnection
+) -> None:
+    task_data = payload.data
+    task_changes = payload.changes
+
+    project_uuid = task_data.get("project_id", "undefined")
+    node_uuid = task_data.get("node_id", "undefined")
+
+    # FIXME: we do not know who triggered these changes. we assume the user had the rights to do so
+    # therefore we'll use the prj_owner user id. This should be fixed when the new sidecar comes in
+    # and comp_tasks/comp_pipeline get deprecated.
+    try:
+        # find the user(s) linked to that project
+        the_project_owner = await _get_project_owner(conn, project_uuid)
+
+        if any(f in task_changes for f in ["outputs", "run_hash"]):
+            new_outputs = task_data.get("outputs", {})
+            new_run_hash = task_data.get("run_hash", None)
+
+            await update_node_outputs(
+                app,
+                the_project_owner,
+                ProjectID(project_uuid),
+                NodeIDStr(node_uuid),
+                new_outputs,
+                new_run_hash,
+                node_errors=task_data.get("errors", None),
+                ui_changed_keys=None,
+            )
+
+        if "state" in task_changes:
+            new_state = convert_state_from_db(task_data["state"]).value
+            await _update_project_state(
+                app,
+                the_project_owner,
+                project_uuid,
+                node_uuid,
+                new_state,
+                node_errors=task_data.get("errors", None),
+            )
+
+    except projects_exceptions.ProjectNotFoundError as exc:
+        log.warning(
+            "Project %s was not found and cannot be updated. Maybe was it deleted?",
+            exc.project_uuid,
+        )
+    except projects_exceptions.ProjectOwnerNotFoundError as exc:
+        log.warning(
+            "Project owner of project %s could not be found, is the project valid?",
+            exc.project_uuid,
+        )
+    except projects_exceptions.NodeNotFoundError as exc:
+        log.warning(
+            "Node %s of project %s not found and cannot be updated. Maybe was it deleted?",
+            exc.node_uuid,
+            exc.project_uuid,
+        )
+
+
 async def _listen(app: web.Application, db_engine: Engine) -> NoReturn:
     listen_query = f"LISTEN {DB_CHANNEL_NAME};"
     _LISTENING_TASK_BASE_SLEEPING_TIME_S = 1
@@ -70,79 +136,10 @@ async def _listen(app: web.Application, db_engine: Engine) -> NoReturn:
                 await asyncio.sleep(_LISTENING_TASK_BASE_SLEEPING_TIME_S)
                 continue
             notification = conn.connection.notifies.get_nowait()
-            log.debug(
-                "received update from database: %s", pformat(notification.payload)
-            )
             # get the data and the info on what changed
-            payload: dict = json.loads(notification.payload)
-
-            # FIXME: all this should move to rabbitMQ instead of this
-            task_data = payload.get("data", {})
-            task_changes = payload.get("changes", [])
-
-            if not task_data:
-                log.error("task data invalid: %s", pformat(payload))
-                continue
-
-            if not task_changes:
-                log.error("no changes but still triggered: %s", pformat(payload))
-                continue
-
-            project_uuid = task_data.get("project_id", "undefined")
-            node_uuid = task_data.get("node_id", "undefined")
-
-            # FIXME: we do not know who triggered these changes. we assume the user had the rights to do so
-            # therefore we'll use the prj_owner user id. This should be fixed when the new sidecar comes in
-            # and comp_tasks/comp_pipeline get deprecated.
-            try:
-                # find the user(s) linked to that project
-                the_project_owner = await _get_project_owner(conn, project_uuid)
-
-                if any(f in task_changes for f in ["outputs", "run_hash"]):
-                    new_outputs = task_data.get("outputs", {})
-                    new_run_hash = task_data.get("run_hash", None)
-
-                    await update_node_outputs(
-                        app,
-                        the_project_owner,
-                        ProjectID(project_uuid),
-                        NodeIDStr(node_uuid),
-                        new_outputs,
-                        new_run_hash,
-                        node_errors=task_data.get("errors", None),
-                        ui_changed_keys=None,
-                    )
-
-                if "state" in task_changes:
-                    new_state = convert_state_from_db(task_data["state"]).value
-                    await _update_project_state(
-                        app,
-                        the_project_owner,
-                        project_uuid,
-                        node_uuid,
-                        new_state,
-                        node_errors=task_data.get("errors", None),
-                    )
-
-            except projects_exceptions.ProjectNotFoundError as exc:
-                log.warning(
-                    "Project %s was not found and cannot be updated. Maybe was it deleted?",
-                    exc.project_uuid,
-                )
-                continue
-            except projects_exceptions.ProjectOwnerNotFoundError as exc:
-                log.warning(
-                    "Project owner of project %s could not be found, is the project valid?",
-                    exc.project_uuid,
-                )
-                continue
-            except projects_exceptions.NodeNotFoundError as exc:
-                log.warning(
-                    "Node %s of project %s not found and cannot be updated. Maybe was it deleted?",
-                    exc.node_uuid,
-                    exc.project_uuid,
-                )
-                continue
+            payload = _CompTaskNotificationPayload(**json.loads(notification.payload))
+            log.debug("received update from database: %s", f"{payload=}")
+            await _handle_db_notification(app, payload, conn)
 
 
 async def _comp_tasks_listening_task(app: web.Application) -> None:

@@ -40,16 +40,16 @@ async def mock_project_subsystem(
     mocked_project_calls = {}
 
     mocked_project_calls["update_node_outputs"] = mocker.patch(
-        "simcore_service_webserver.computation_comp_tasks_listening_task.update_node_outputs",
+        "simcore_service_webserver.notifications._db_comp_tasks_listening_task.update_node_outputs",
         return_value="",
     )
 
     mocked_project_calls["_get_project_owner"] = mocker.patch(
-        "simcore_service_webserver.computation_comp_tasks_listening_task._get_project_owner",
+        "simcore_service_webserver.notifications._db_comp_tasks_listening_task._get_project_owner",
         return_value="",
     )
     mocked_project_calls["_update_project_state"] = mocker.patch(
-        "simcore_service_webserver.computation_comp_tasks_listening_task._update_project_state",
+        "simcore_service_webserver.notifications._db_comp_tasks_listening_task._update_project_state",
         return_value="",
     )
 

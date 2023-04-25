@@ -1,4 +1,5 @@
 # pylint: disable=redefined-outer-name
+# pylint: disable=protected-access
 
 from typing import Iterator
 from unittest.mock import AsyncMock
