@@ -68,10 +68,8 @@ async def _handle_db_notification(
     project_uuid = task_data.get("project_id", "undefined")
     node_uuid = task_data.get("node_id", "undefined")
 
-    # FIXME: we do not know who triggered these changes. we assume the user had the rights to do so
-    # therefore we'll use the prj_owner user id. This should be fixed when the new sidecar comes in
-    # and comp_tasks/comp_pipeline get deprecated.
     try:
+        # NOTE: we need someone with the rights to modify that project. the owner is one.
         # find the user(s) linked to that project
         the_project_owner = await _get_project_owner(conn, project_uuid)
 
