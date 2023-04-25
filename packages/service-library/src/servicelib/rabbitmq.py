@@ -191,7 +191,7 @@ class RabbitMQClient:
         method_name: RPCMethodName,
         *,
         timeout_s: PositiveInt | None = 5,
-        **kwargs: dict[str, Any],
+        **kwargs,
     ) -> Any:
         """
         Call a remote registered `handler` by providing it's `namespace`, `method_name`
@@ -226,7 +226,10 @@ class RabbitMQClient:
             raise e
 
     async def rpc_register_handler(
-        self, namespace: RPCNamespace, method_name: RPCMethodName, handler: Awaitable
+        self,
+        namespace: RPCNamespace,
+        method_name: RPCMethodName,
+        handler: Callable[..., Any],
     ) -> None:
         """
         Bind a local `handler` to a `namespace` and `method_name`.
@@ -245,7 +248,7 @@ class RabbitMQClient:
             auto_delete=True,
         )
 
-    async def rpc_unregister_handler(self, handler: Awaitable) -> None:
+    async def rpc_unregister_handler(self, handler: Callable[..., Any]) -> None:
         """Unbind a locally added `handler`"""
 
         if self._rpc is None:
