@@ -23,9 +23,11 @@ from simcore_postgres_database.models.products import (
     products,
 )
 from simcore_service_webserver.db import APP_DB_ENGINE_KEY
-from simcore_service_webserver.products_db import ProductRepository
-from simcore_service_webserver.products_middlewares import _get_app_default_product_name
-from simcore_service_webserver.products_model import Product
+from simcore_service_webserver.products._db import ProductRepository
+from simcore_service_webserver.products._middlewares import (
+    _get_app_default_product_name,
+)
+from simcore_service_webserver.products._model import Product
 
 
 @pytest.fixture

@@ -6,7 +6,7 @@ from aiohttp import web
 
 from .._resources import resources
 from ..email_core import AttachmentTuple, send_email_from_template
-from ..products import get_product_template_path
+from ..products.plugin import get_product_template_path
 
 log = logging.getLogger(__name__)
 

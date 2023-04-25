@@ -4,7 +4,7 @@
 import functools
 import logging
 import urllib.parse
-from typing import Optional, cast
+from typing import cast
 
 from aiohttp import web
 from models_library.services import ServiceKey, ServiceVersion
@@ -14,7 +14,7 @@ from servicelib.aiohttp.requests_validation import parse_request_query_parameter
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.error_codes import create_error_code
 
-from ..products import get_product_name
+from ..products.plugin import get_product_name
 from ..utils import compose_support_error_msg
 from ..utils_aiohttp import create_redirect_response
 from ._catalog import validate_requested_service
@@ -29,7 +29,7 @@ _SPACE = " "
 
 
 class ViewerQueryParams(BaseModel):
-    file_type: Optional[str] = None
+    file_type: str | None = None
     viewer_key: ServiceKey
     viewer_version: ServiceVersion
 
@@ -54,8 +54,8 @@ class ViewerQueryParams(BaseModel):
 
 class RedirectionQueryParams(ViewerQueryParams):
     file_name: str = "unknown"
-    file_size: Optional[PositiveInt] = None
-    download_link: Optional[HttpUrl] = None
+    file_size: PositiveInt | None = None
+    download_link: HttpUrl | None = None
 
     @validator("download_link", pre=True)
     @classmethod

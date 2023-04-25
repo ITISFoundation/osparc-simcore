@@ -3,9 +3,9 @@ import logging
 from aiohttp import web
 from servicelib.aiohttp.typing_extension import Handler
 
-from ._constants import APP_PRODUCTS_KEY, RQ_PRODUCT_KEY, X_PRODUCT_NAME_HEADER
-from ._meta import API_VTAG
-from .products_model import Product
+from .._constants import APP_PRODUCTS_KEY, RQ_PRODUCT_KEY, X_PRODUCT_NAME_HEADER
+from .._meta import API_VTAG
+from ._model import Product
 
 log = logging.getLogger(__name__)
 

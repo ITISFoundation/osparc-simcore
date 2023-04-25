@@ -1,6 +1,6 @@
 import logging
 import string
-from typing import Any, Optional, Pattern, Union
+from typing import Any, Pattern
 
 from models_library.basic_regex import (
     PUBLIC_VARIABLE_NAME_RE,
@@ -20,8 +20,8 @@ from simcore_postgres_database.models.products import (
     WebFeedback,
 )
 
-from .db_models import products
-from .statics_constants import FRONTEND_APPS_AVAILABLE
+from ..db_models import products
+from ..statics_constants import FRONTEND_APPS_AVAILABLE
 
 log = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ class Product(BaseModel):
     name: ProductName = Field(regex=PUBLIC_VARIABLE_NAME_RE)
 
     display_name: str = Field(..., description="Long display name")
-    short_name: Optional[str] = Field(
+    short_name: str | None = Field(
         None,
         regex=TWILIO_ALPHANUMERIC_SENDER_ID_RE,
         min_length=2,
@@ -58,20 +58,20 @@ class Product(BaseModel):
         " Other support emails can be defined under 'support' field",
     )
 
-    twilio_messaging_sid: Optional[str] = Field(
+    twilio_messaging_sid: str | None = Field(
         default=None, min_length=34, max_length=34, description="Identifier for SMS"
     )
 
-    vendor: Optional[Vendor] = Field(
+    vendor: Vendor | None = Field(
         None,
         description="Vendor information such as company name, address, copyright, ...",
     )
 
-    issues: Optional[list[IssueTracker]] = None
+    issues: list[IssueTracker] | None = None
 
-    manuals: Optional[list[Manual]] = None
+    manuals: list[Manual] | None = None
 
-    support: Optional[list[Union[Forum, EmailFeedback, WebFeedback]]] = Field(None)
+    support: list[Forum | EmailFeedback | WebFeedback] | None = Field(None)
 
     login_settings: ProductLoginSettingsDict = Field(
         ...,
@@ -79,16 +79,16 @@ class Product(BaseModel):
         "Note that these are NOT the final plugin settings but those are obtained from login.settings.get_plugin_settings",
     )
 
-    registration_email_template: Optional[str] = Field(
+    registration_email_template: str | None = Field(
         None, x_template_name="registration_email"
     )
 
-    max_open_studies_per_user: Optional[PositiveInt] = Field(
+    max_open_studies_per_user: PositiveInt | None = Field(
         default=None,
         description="Limits the number of studies a user may have open concurently (disabled if NULL)",
     )
 
-    group_id: Optional[int] = Field(
+    group_id: int | None = Field(
         default=None, description="Groups associated to this product"
     )
 
@@ -232,10 +232,11 @@ class Product(BaseModel):
             by_alias=True,
         )
 
-    def get_template_name_for(self, filename: str) -> Optional[str]:
+    def get_template_name_for(self, filename: str) -> str | None:
         """Checks for field marked with 'x_template_name' that fits the argument"""
         template_name = filename.removesuffix(".jinja2")
         for field in self.__fields__.values():
             if field.field_info.extra.get("x_template_name") == template_name:
-                return getattr(self, field.name)
+                template_name_attribute: str = getattr(self, field.name)
+                return template_name_attribute
         return None

@@ -12,23 +12,23 @@ At every request to this service API, a middleware discovers which product is th
 import logging
 import os.path
 from pathlib import Path
-from typing import Optional
 
 import aiofiles
 from aiohttp import web
+from models_library.products import ProductName
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from ._constants import APP_PRODUCTS_KEY, APP_SETTINGS_KEY, RQ_PRODUCT_KEY
-from ._resources import resources
-from .products_db import ProductRepository
-from .products_events import (
+from .._constants import APP_PRODUCTS_KEY, APP_SETTINGS_KEY, RQ_PRODUCT_KEY
+from .._resources import resources
+from ._db import ProductRepository
+from ._events import (
     APP_PRODUCTS_TEMPLATES_DIR_KEY,
     auto_create_products_groups,
     load_products_on_startup,
     setup_product_templates,
 )
-from .products_middlewares import discover_product_middleware
-from .products_model import Product, ProductName
+from ._middlewares import discover_product_middleware
+from ._model import Product
 
 log = logging.getLogger(__name__)
 
@@ -62,22 +62,26 @@ def setup_products(app: web.Application):
 
 
 def get_product_name(request: web.Request) -> str:
-    return request[RQ_PRODUCT_KEY]
+    product_name: str = request[RQ_PRODUCT_KEY]
+    return product_name
 
 
 def get_current_product(request: web.Request) -> Product:
     """Returns product associated to current request"""
     product_name: ProductName = get_product_name(request)
-    return request.app[APP_PRODUCTS_KEY][product_name]
+    current_product: Product = request.app[APP_PRODUCTS_KEY][product_name]
+    return current_product
 
 
 def list_products(app: web.Application) -> list[Product]:
-    return app[APP_PRODUCTS_KEY].values()
+    products: list[Product] = app[APP_PRODUCTS_KEY].values()
+    return products
 
 
 async def get_product_template_path(request: web.Request, filename: str) -> Path:
     def _themed(dirname, template) -> Path:
-        return resources.get_path(os.path.join(dirname, template))
+        path: Path = resources.get_path(os.path.join(dirname, template))
+        return path
 
     async def _get_content(template_name: str):
         repo = ProductRepository(request)
@@ -86,7 +90,7 @@ async def get_product_template_path(request: web.Request, filename: str) -> Path
             raise ValueError(f"Missing template {template_name} for product")
         return content
 
-    def _safe_get_current_product(request: web.Request) -> Optional[Product]:
+    def _safe_get_current_product(request: web.Request) -> Product | None:
         try:
             product: Product = get_current_product(request)
             return product
@@ -95,8 +99,8 @@ async def get_product_template_path(request: web.Request, filename: str) -> Path
 
     # ---
     if product := _safe_get_current_product(request):
-        if template_name := product.get_template_name_for(filename):  # type: ignore
-            template_dir = request.app[APP_PRODUCTS_TEMPLATES_DIR_KEY]
+        if template_name := product.get_template_name_for(filename):
+            template_dir: Path = request.app[APP_PRODUCTS_TEMPLATES_DIR_KEY]
             template_path = template_dir / template_name
             if not template_path.exists():
                 # cache
