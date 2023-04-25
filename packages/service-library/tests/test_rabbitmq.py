@@ -312,3 +312,78 @@ async def test_rabbit_pub_sub_with_topic(
     await _assert_message_received(
         orange_and_critical_mocked_message_parser, 2, message
     )
+
+
+async def test_pub_sub_bind_and_unbind_topics(
+    rabbitmq_client: Callable[[str], RabbitMQClient],
+    random_exchange_name: Callable[[], str],
+    mocker: MockerFixture,
+    faker: Faker,
+):
+    exchange_name = f"{random_exchange_name()}_topic"
+    message = faker.text()
+    publisher = rabbitmq_client("publisher")
+    consumer = rabbitmq_client("consumer")
+    # send some messages
+    await publisher.publish(exchange_name, message, topic="faker.debug")
+    await publisher.publish(exchange_name, message, topic="faker.info")
+    await publisher.publish(exchange_name, message, topic="faker.warning")
+    await publisher.publish(exchange_name, message, topic="faker.critical")
+
+    # we should get no messages since no one was subscribed
+    mocked_message_parser = mocker.AsyncMock(return_value=True)
+    queue_name = await consumer.subscribe(
+        exchange_name, mocked_message_parser, topics=[]
+    )
+    await _assert_message_received(mocked_message_parser, 0, message)
+
+    # now we should also not get anything since we are not interested in any topic
+    await publisher.publish(exchange_name, message, topic="faker.debug")
+    await publisher.publish(exchange_name, message, topic="faker.info")
+    await publisher.publish(exchange_name, message, topic="faker.warning")
+    await publisher.publish(exchange_name, message, topic="faker.critical")
+    await _assert_message_received(mocked_message_parser, 0, message)
+
+    await consumer.add_topics(
+        exchange_name, queue_name, topics=["*.warning", "*.critical"]
+    )
+    await publisher.publish(exchange_name, message, topic="faker.debug")
+    await publisher.publish(exchange_name, message, topic="faker.info")
+    await publisher.publish(exchange_name, message, topic="faker.warning")
+    await publisher.publish(exchange_name, message, topic="faker.critical")
+    await _assert_message_received(mocked_message_parser, 2, message)
+    mocked_message_parser.reset_mock()
+    # adding again the same topics makes no difference, we should still have 2 messages
+    await consumer.add_topics(exchange_name, queue_name, topics=["*.warning"])
+    await publisher.publish(exchange_name, message, topic="faker.debug")
+    await publisher.publish(exchange_name, message, topic="faker.info")
+    await publisher.publish(exchange_name, message, topic="faker.warning")
+    await publisher.publish(exchange_name, message, topic="faker.critical")
+    await _assert_message_received(mocked_message_parser, 2, message)
+    mocked_message_parser.reset_mock()
+
+    # after unsubscribing, we do not receive warnings anymore
+    await consumer.remove_topics(exchange_name, queue_name, topics=["*.warning"])
+    await publisher.publish(exchange_name, message, topic="faker.debug")
+    await publisher.publish(exchange_name, message, topic="faker.info")
+    await publisher.publish(exchange_name, message, topic="faker.warning")
+    await publisher.publish(exchange_name, message, topic="faker.critical")
+    await _assert_message_received(mocked_message_parser, 1, message)
+    mocked_message_parser.reset_mock()
+
+    # after unsubscribing something that does not exist, we still receive the same things
+    await consumer.remove_topics(exchange_name, queue_name, topics=[])
+    await publisher.publish(exchange_name, message, topic="faker.debug")
+    await publisher.publish(exchange_name, message, topic="faker.info")
+    await publisher.publish(exchange_name, message, topic="faker.warning")
+    await publisher.publish(exchange_name, message, topic="faker.critical")
+    await _assert_message_received(mocked_message_parser, 1, message)
+    mocked_message_parser.reset_mock()
+
+    # after unsubscribing we receive nothing anymore
+    await consumer.unsubscribe(queue_name)
+    await publisher.publish(exchange_name, message, topic="faker.debug")
+    await publisher.publish(exchange_name, message, topic="faker.info")
+    await publisher.publish(exchange_name, message, topic="faker.warning")
+    await publisher.publish(exchange_name, message, topic="faker.critical")
+    await _assert_message_received(mocked_message_parser, 0, message)

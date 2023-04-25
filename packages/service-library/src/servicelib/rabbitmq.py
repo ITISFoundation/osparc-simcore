@@ -131,8 +131,8 @@ class RabbitMQClient:
         message_handler: MessageHandler,
         *,
         exclusive_queue: bool = True,
-        topic: str | None = None,
-    ) -> None:
+        topics: list[str] | None = None,
+    ) -> str:
         """subscribe to exchange_name calling message_handler for every incoming message
         - exclusive_queue: True means that every instance of this application will receive the incoming messages
         - exclusive_queue: False means that only one instance of this application will reveice the incoming message
@@ -153,7 +153,7 @@ class RabbitMQClient:
             exchange = await channel.declare_exchange(
                 exchange_name,
                 aio_pika.ExchangeType.FANOUT
-                if topic is None
+                if topics is None
                 else aio_pika.ExchangeType.TOPIC,
                 durable=True,
             )
@@ -171,7 +171,13 @@ class RabbitMQClient:
                 # NOTE: setting a name will ensure multiple instance will take their data here
                 queue_parameters |= {"name": exchange_name}
             queue = await channel.declare_queue(**queue_parameters)
-            await queue.bind(exchange, routing_key=topic)
+            if topics is None:
+                await queue.bind(exchange)
+            else:
+                await asyncio.gather(
+                    *(queue.bind(exchange, routing_key=topic) for topic in topics)
+                )
+            # await queue.bind(exchange, routing_key=topic)
 
             async def _on_message(
                 message: aio_pika.abc.AbstractIncomingMessage,
@@ -184,6 +190,52 @@ class RabbitMQClient:
                             await message.nack()
 
             await queue.consume(_on_message)
+            return queue.name
+
+    async def add_topics(
+        self,
+        exchange_name: str,
+        queue_name: str,
+        *,
+        topics: list[str],
+    ) -> None:
+        assert self._channel_pool  # nosec
+        async with self._channel_pool.acquire() as channel:
+            channel: aio_pika.RobustChannel
+            exchange = await channel.get_exchange(exchange_name)
+            queue = await channel.get_queue(queue_name)
+
+            await asyncio.gather(
+                *(queue.bind(exchange, routing_key=topic) for topic in topics)
+            )
+
+    async def remove_topics(
+        self,
+        exchange_name: str,
+        queue_name: str,
+        *,
+        topics: list[str],
+    ) -> None:
+        assert self._channel_pool  # nosec
+        async with self._channel_pool.acquire() as channel:
+            channel: aio_pika.RobustChannel
+            exchange = await channel.get_exchange(exchange_name)
+            queue = await channel.get_queue(queue_name)
+
+            await asyncio.gather(
+                *(queue.unbind(exchange, routing_key=topic) for topic in topics)
+            )
+
+    async def unsubscribe(
+        self,
+        queue_name: str,
+    ) -> None:
+        assert self._channel_pool  # nosec
+        async with self._channel_pool.acquire() as channel:
+            channel: aio_pika.RobustChannel
+            queue = await channel.get_queue(queue_name)
+            # NOTE: we force delete here
+            await queue.delete(if_unused=False, if_empty=False)
 
     async def publish(
         self, exchange_name: str, message: Message, *, topic: str | None = None
