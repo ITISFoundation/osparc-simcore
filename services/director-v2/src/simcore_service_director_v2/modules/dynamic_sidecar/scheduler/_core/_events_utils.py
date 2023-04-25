@@ -225,10 +225,10 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
     )
 
     # pylint: disable=protected-access
+    scheduler_data.dynamic_sidecar.service_removal_state.mark_removed()
     await app.state.dynamic_sidecar_scheduler._scheduler.remove_service_from_observation(
         scheduler_data.node_uuid
     )
-    scheduler_data.dynamic_sidecar.service_removal_state.mark_removed()
     task_progress.update(message="finished removing resources", percent=1)
 
 

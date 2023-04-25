@@ -29,6 +29,7 @@ from models_library.users import UserID
 from pydantic import AnyHttpUrl
 from servicelib.fastapi.long_running_tasks.client import ProgressCallback
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
+from servicelib.logging_utils import log_context
 from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
     ServiceName,
 )
@@ -301,23 +302,24 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
         directly invoked from RemoveMarkedService once it's finished
         and removes the service from the observation cycle
         """
-        async with self._lock:
-            if node_uuid not in self._inverse_search_mapping:
-                raise DynamicSidecarNotFoundError(node_uuid)
+        with log_context(
+            logger, logging.DEBUG, f"service '{node_uuid}' removal from scheduler"
+        ):
+            async with self._lock:
+                if node_uuid not in self._inverse_search_mapping:
+                    raise DynamicSidecarNotFoundError(node_uuid)
 
-            service_name = self._inverse_search_mapping[node_uuid]
-            if service_name not in self._to_observe:
-                logger.warning(
-                    "Unexpected: '%s' not found in %s, but found in %s",
-                    f"{service_name}",
-                    f"{self._to_observe=}",
-                    f"{self._inverse_search_mapping=}",
-                )
+                service_name = self._inverse_search_mapping[node_uuid]
+                if service_name not in self._to_observe:
+                    logger.warning(
+                        "Unexpected: '%s' not found in %s, but found in %s",
+                        f"{service_name}",
+                        f"{self._to_observe=}",
+                        f"{self._inverse_search_mapping=}",
+                    )
 
-            del self._inverse_search_mapping[node_uuid]
-            self._to_observe.pop(service_name, None)
-
-        logger.debug("Removed service '%s' from scheduler", service_name)
+                del self._inverse_search_mapping[node_uuid]
+                self._to_observe.pop(service_name, None)
 
     async def get_stack_status(self, node_uuid: NodeID) -> RunningDynamicServiceDetails:
         # pylint: disable=too-many-return-statements

@@ -41,7 +41,6 @@ async def _apply_observation_cycle(
     dynamic_services_settings: DynamicServicesSettings = (
         app.state.settings.DYNAMIC_SERVICES
     )
-    # TODO: PC-> ANE: custom settings are frozen. in principle, no need to create copies.
     initial_status = deepcopy(scheduler_data.dynamic_sidecar.status)
 
     if (  # do not refactor, second part of "and condition" is skipped most times
