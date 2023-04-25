@@ -278,16 +278,29 @@ async def test_rabbit_pub_sub_with_topic(
     message2_topic = "pytest.orange.debug"
     publisher = rabbitmq_client("publisher")
 
-    all_receiving_consumer = rabbitmq_client("consumer")
+    all_receiving_consumer = rabbitmq_client("all_receiving_consumer")
     all_receiving_mocked_message_parser = mocker.AsyncMock(return_value=True)
     await all_receiving_consumer.subscribe(
         exchange_name, all_receiving_mocked_message_parser, topic="#"
     )
 
-    only_critical_consumer = rabbitmq_client("consumer")
+    only_critical_consumer = rabbitmq_client("only_critical_consumer")
     only_critical_mocked_message_parser = mocker.AsyncMock(return_value=True)
     await only_critical_consumer.subscribe(
         exchange_name, only_critical_mocked_message_parser, topic="*.*.critical"
+    )
+
+    orange_and_critical_consumer = rabbitmq_client("orange_and_critical_consumer")
+    orange_and_critical_mocked_message_parser = mocker.AsyncMock(return_value=True)
+    await orange_and_critical_consumer.subscribe(
+        exchange_name,
+        orange_and_critical_mocked_message_parser,
+        topic="*.*.critical",
+    )
+    await orange_and_critical_consumer.subscribe(
+        exchange_name,
+        orange_and_critical_mocked_message_parser,
+        topic="*.orange.*",
     )
 
     # check now that topic is working
@@ -296,3 +309,6 @@ async def test_rabbit_pub_sub_with_topic(
 
     await _assert_message_received(all_receiving_mocked_message_parser, 2, message)
     await _assert_message_received(only_critical_mocked_message_parser, 1, message)
+    await _assert_message_received(
+        orange_and_critical_mocked_message_parser, 2, message
+    )
