@@ -131,10 +131,15 @@ class RabbitMQClient:
         message_handler: MessageHandler,
         *,
         exclusive_queue: bool = True,
+        topic: str | None = None,
     ) -> None:
         """subscribe to exchange_name calling message_handler for every incoming message
         - exclusive_queue: True means that every instance of this application will receive the incoming messages
         - exclusive_queue: False means that only one instance of this application will reveice the incoming message
+
+        specifying a topic will use a TOPIC type of RabbitMQ Exchange instead of FANOUT
+
+        NOTE: changing the type of Exchange will create issues if the name is not changed!
         """
         assert self._channel_pool  # nosec
         async with self._channel_pool.acquire() as channel:
@@ -143,7 +148,11 @@ class RabbitMQClient:
             await channel.set_qos(_DEFAULT_PREFETCH_VALUE)
 
             exchange = await channel.declare_exchange(
-                exchange_name, aio_pika.ExchangeType.FANOUT, durable=True
+                exchange_name,
+                aio_pika.ExchangeType.FANOUT
+                if topic is None
+                else aio_pika.ExchangeType.TOPIC,
+                durable=True,
             )
 
             # NOTE: durable=True makes the queue persistent between RabbitMQ restarts/crashes
@@ -159,7 +168,7 @@ class RabbitMQClient:
                 # NOTE: setting a name will ensure multiple instance will take their data here
                 queue_parameters |= {"name": exchange_name}
             queue = await channel.declare_queue(**queue_parameters)
-            await queue.bind(exchange)
+            await queue.bind(exchange, routing_key=topic)
 
             async def _on_message(
                 message: aio_pika.abc.AbstractIncomingMessage,
@@ -173,16 +182,27 @@ class RabbitMQClient:
 
             await queue.consume(_on_message)
 
-    async def publish(self, exchange_name: str, message: Message) -> None:
+    async def publish(
+        self, exchange_name: str, message: Message, topic: str | None = None
+    ) -> None:
+        """publish message in the exchange exchange_name.
+        specifying a topic will use a TOPIC type of RabbitMQ Exchange instead of FANOUT
+
+        NOTE: changing the type of Exchange will create issues if the name is not changed!
+        """
         assert self._channel_pool  # nosec
         async with self._channel_pool.acquire() as channel:
             channel: aio_pika.RobustChannel
             exchange = await channel.declare_exchange(
-                exchange_name, aio_pika.ExchangeType.FANOUT, durable=True
+                exchange_name,
+                aio_pika.ExchangeType.FANOUT
+                if topic is None
+                else aio_pika.ExchangeType.TOPIC,
+                durable=True,
             )
             await exchange.publish(
                 aio_pika.Message(message.encode()),
-                routing_key="",
+                routing_key=topic or "",
             )
 
     async def rpc_request(
