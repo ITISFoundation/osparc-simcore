@@ -26,7 +26,7 @@ from fastapi import FastAPI
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.rawdata_fakers import random_user
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_postgres_database.models.base import metadata
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import PostgresSettings
