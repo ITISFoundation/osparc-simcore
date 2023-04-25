@@ -1,6 +1,6 @@
 import functools
 import logging
-from typing import AsyncIterator, Union
+from typing import Any, AsyncIterator, Callable, Coroutine, Final, Union
 
 from aiohttp import web
 from models_library.rabbitmq_messages import (
@@ -81,7 +81,9 @@ async def _handle_computation_running_progress(
 
 async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
     # update corresponding project, node, progress value
-    rabbit_message = parse_raw_as(
+    rabbit_message: (
+        ProgressRabbitMessageNode | ProgressRabbitMessageProject
+    ) = parse_raw_as(
         Union[ProgressRabbitMessageNode, ProgressRabbitMessageProject], data
     )
 
@@ -154,7 +156,16 @@ async def _events_message_parser(app: web.Application, data: bytes) -> bool:
     return True
 
 
-EXCHANGE_TO_PARSER_CONFIG = (
+EXCHANGE_TO_PARSER_CONFIG: Final[
+    tuple[
+        tuple[
+            str,
+            Callable[[web.Application, bytes], Coroutine[Any, Any, bool]],
+            dict[str, Any],
+        ],
+        ...,
+    ]
+] = (
     (
         LoggerRabbitMessage.get_channel_name(),
         _log_message_parser,
