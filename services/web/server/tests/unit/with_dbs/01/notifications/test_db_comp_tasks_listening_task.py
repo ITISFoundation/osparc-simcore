@@ -21,7 +21,7 @@ from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.computation_comp_tasks_listening_task import (
+from simcore_service_webserver.notifications._db_comp_tasks_listening_task import (
     create_comp_tasks_listening_task,
 )
 from tenacity._asyncio import AsyncRetrying

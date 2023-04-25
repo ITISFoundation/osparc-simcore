@@ -7,6 +7,7 @@ import json
 import logging
 from contextlib import suppress
 from pprint import pformat
+from typing import AsyncIterator, NoReturn
 
 from aiohttp import web
 from aiopg.sa import Engine
@@ -17,18 +18,16 @@ from models_library.projects_nodes_io import NodeIDStr
 from models_library.projects_state import RunningState
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
-from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.webserver_models import DB_CHANNEL_NAME, projects
 from sqlalchemy.sql import select
 
-from .computation_utils import convert_state_from_db
-from .projects import projects_api, projects_exceptions
-from .projects.projects_nodes_utils import update_node_outputs
+from ..projects import projects_api, projects_exceptions
+from ..projects.projects_nodes_utils import update_node_outputs
+from ._utils import convert_state_from_db
 
 log = logging.getLogger(__name__)
 
 
-@log_decorator(logger=log)
 async def _get_project_owner(conn: SAConnection, project_uuid: str) -> PositiveInt:
     the_project_owner = await conn.scalar(
         select([projects.c.prj_owner]).where(projects.c.uuid == project_uuid)
@@ -54,7 +53,7 @@ async def _update_project_state(
     await projects_api.notify_project_state_update(app, project)
 
 
-async def listen(app: web.Application, db_engine: Engine):
+async def _listen(app: web.Application, db_engine: Engine) -> NoReturn:
     listen_query = f"LISTEN {DB_CHANNEL_NAME};"
     _LISTENING_TASK_BASE_SLEEPING_TIME_S = 1
     async with db_engine.acquire() as conn:
@@ -146,14 +145,14 @@ async def listen(app: web.Application, db_engine: Engine):
                 continue
 
 
-async def comp_tasks_listening_task(app: web.Application) -> None:
+async def _comp_tasks_listening_task(app: web.Application) -> None:
     log.info("starting comp_task db listening task...")
     while True:
         try:
             # create a special connection here
             db_engine = app[APP_DB_ENGINE_KEY]
             log.info("listening to comp_task events...")
-            await listen(app, db_engine)
+            await _listen(app, db_engine)
         except asyncio.CancelledError:
             # we are closing the app..
             log.info("cancelled comp_tasks events")
@@ -167,9 +166,9 @@ async def comp_tasks_listening_task(app: web.Application) -> None:
             await asyncio.sleep(3)
 
 
-async def create_comp_tasks_listening_task(app: web.Application):
+async def create_comp_tasks_listening_task(app: web.Application) -> AsyncIterator[None]:
     task = asyncio.create_task(
-        comp_tasks_listening_task(app), name="computation db listener"
+        _comp_tasks_listening_task(app), name="computation db listener"
     )
     log.debug("comp_tasks db listening task created %s", f"{task=}")
 

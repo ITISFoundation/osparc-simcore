@@ -145,7 +145,7 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
             ),
         },
         "clusters": {"enabled": app_settings.WEBSERVER_CLUSTERS},
-        "computation": {"enabled": app_settings.is_enabled("WEBSERVER_COMPUTATION")},
+        "computation": {"enabled": app_settings.is_enabled("WEBSERVER_NOTIFICATIONS")},
         "diagnostics": {"enabled": app_settings.is_enabled("WEBSERVER_DIAGNOSTICS")},
         "director-v2": {"enabled": app_settings.is_enabled("WEBSERVER_DIRECTOR_V2")},
         "exporter": {"enabled": app_settings.WEBSERVER_EXPORTER is not None},
@@ -206,7 +206,6 @@ def convert_to_environ_vars(cfg: dict[str, Any]) -> dict[str, Any]:
 
     if db := cfg.get("db"):
         if section := db.get("postgres"):
-
             envs["POSTGRES_DB"] = section.get("database")
             envs["POSTGRES_HOST"] = section.get("host")
             envs["POSTGRES_MAXSIZE"] = section.get("maxsize")
@@ -275,7 +274,7 @@ def convert_to_environ_vars(cfg: dict[str, Any]) -> dict[str, Any]:
         envs["PROMETHEUS_VTAG"] = section.get("prometheus_api_version")
 
     if section := cfg.get("computation"):
-        _set_if_disabled("WEBSERVER_COMPUTATION", section)
+        _set_if_disabled("WEBSERVER_NOTIFICATIONS", section)
 
     if section := cfg.get("diagnostics"):
         _set_if_disabled("WEBSERVER_DIAGNOSTICS", section)

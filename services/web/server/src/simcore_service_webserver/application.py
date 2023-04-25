@@ -13,7 +13,6 @@ from .activity.plugin import setup_activity
 from .application_settings import setup_settings
 from .catalog import setup_catalog
 from .clusters.plugin import setup_clusters
-from .computation import setup_computation
 from .db import setup_db
 from .diagnostics import setup_diagnostics
 from .director.plugin import setup_director
@@ -26,6 +25,7 @@ from .invitations import setup_invitations
 from .login.plugin import setup_login
 from .long_running_tasks import setup_long_running_tasks
 from .meta_modeling.plugin import setup_meta_modeling
+from .notifications.plugin import setup_notifications
 from .products.plugin import setup_products
 from .projects.plugin import setup_projects
 from .publications import setup_publications
@@ -79,7 +79,7 @@ def create_application() -> web.Application:
     # monitoring
     setup_diagnostics(app)
     setup_activity(app)
-    setup_computation(app)
+    setup_notifications(app)
     setup_socketio(app)
 
     # login
