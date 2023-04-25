@@ -138,6 +138,9 @@ class RabbitMQClient:
         - exclusive_queue: False means that only one instance of this application will reveice the incoming message
 
         specifying a topic will use a TOPIC type of RabbitMQ Exchange instead of FANOUT
+        - topic = "#" will receive every message as # substitutes for 0 or more words
+        - topic = "*.critical" will receive any message with second word set to "critical" (* subsitutes for exactly 1 word)
+        - topic = "red.critical" will receive only messages that are set with key "red.critical"
 
         NOTE: changing the type of Exchange will create issues if the name is not changed!
         """

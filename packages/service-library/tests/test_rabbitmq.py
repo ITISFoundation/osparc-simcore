@@ -272,13 +272,27 @@ async def test_rabbit_pub_sub_with_topic(
     mocker: MockerFixture,
     faker: Faker,
 ):
-    consumer = rabbitmq_client("consumer")
-    publisher = rabbitmq_client("publisher")
-    message = faker.text()
-    topic = "pytest.critical"
-
-    mocked_message_parser = mocker.AsyncMock(return_value=True)
     exchange_name = f"{random_exchange_name()}_topic"
-    await consumer.subscribe(exchange_name, mocked_message_parser, topic="#")
-    await publisher.publish(exchange_name, message, topic=topic)
-    await _assert_message_received(mocked_message_parser, 1, message)
+    message = faker.text()
+    message1_topic = "pytest.red.critical"
+    message2_topic = "pytest.orange.debug"
+    publisher = rabbitmq_client("publisher")
+
+    all_receiving_consumer = rabbitmq_client("consumer")
+    all_receiving_mocked_message_parser = mocker.AsyncMock(return_value=True)
+    await all_receiving_consumer.subscribe(
+        exchange_name, all_receiving_mocked_message_parser, topic="#"
+    )
+
+    only_critical_consumer = rabbitmq_client("consumer")
+    only_critical_mocked_message_parser = mocker.AsyncMock(return_value=True)
+    await only_critical_consumer.subscribe(
+        exchange_name, only_critical_mocked_message_parser, topic="*.*.critical"
+    )
+
+    # check now that topic is working
+    await publisher.publish(exchange_name, message, topic=message1_topic)
+    await publisher.publish(exchange_name, message, topic=message2_topic)
+
+    await _assert_message_received(all_receiving_mocked_message_parser, 2, message)
+    await _assert_message_received(only_critical_mocked_message_parser, 1, message)
