@@ -143,7 +143,10 @@ async def test_listen_comp_tasks_task(
     some_project = project(logged_user)
     pipeline(project_id=f"{some_project.uuid}")
     task = comp_task(
-        project_id=f"{some_project.uuid}", outputs=json.dumps({}), node_class=task_class
+        project_id=f"{some_project.uuid}",
+        node_id=faker.uuid4(),
+        outputs=json.dumps({}),
+        node_class=task_class,
     )
     async with db_engine.acquire() as conn:
         # let's update some values
@@ -153,7 +156,7 @@ async def test_listen_comp_tasks_task(
             .where(comp_tasks.c.task_id == task["task_id"])
         )
 
-        # tests whether listener gets hooked calls executed
+        # tests whether listener gets executed
         for call_name, mocked_call in mock_project_subsystem.items():
             if call_name in expected_calls:
                 async for attempt in AsyncRetrying(

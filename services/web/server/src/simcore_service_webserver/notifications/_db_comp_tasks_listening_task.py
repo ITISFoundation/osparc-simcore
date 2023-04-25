@@ -55,8 +55,10 @@ async def _update_project_state(
 
 @dataclass(frozen=True)
 class _CompTaskNotificationPayload:
+    action: str
     data: dict
     changes: dict
+    table: str
 
 
 async def _handle_db_notification(
