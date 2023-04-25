@@ -25,7 +25,7 @@ from ..projects import projects_api, projects_exceptions
 from ..projects.projects_nodes_utils import update_node_outputs
 from ._utils import convert_state_from_db
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 async def _get_project_owner(conn: SAConnection, project_uuid: str) -> PositiveInt:
@@ -102,17 +102,17 @@ async def _handle_db_notification(
             )
 
     except projects_exceptions.ProjectNotFoundError as exc:
-        log.warning(
+        _logger.warning(
             "Project %s was not found and cannot be updated. Maybe was it deleted?",
             exc.project_uuid,
         )
     except projects_exceptions.ProjectOwnerNotFoundError as exc:
-        log.warning(
+        _logger.warning(
             "Project owner of project %s could not be found, is the project valid?",
             exc.project_uuid,
         )
     except projects_exceptions.NodeNotFoundError as exc:
-        log.warning(
+        _logger.warning(
             "Node %s of project %s not found and cannot be updated. Maybe was it deleted?",
             exc.node_uuid,
             exc.project_uuid,
@@ -138,24 +138,24 @@ async def _listen(app: web.Application, db_engine: Engine) -> NoReturn:
             notification = conn.connection.notifies.get_nowait()
             # get the data and the info on what changed
             payload = _CompTaskNotificationPayload(**json.loads(notification.payload))
-            log.debug("received update from database: %s", f"{payload=}")
+            _logger.debug("received update from database: %s", f"{payload=}")
             await _handle_db_notification(app, payload, conn)
 
 
 async def _comp_tasks_listening_task(app: web.Application) -> None:
-    log.info("starting comp_task db listening task...")
+    _logger.info("starting comp_task db listening task...")
     while True:
         try:
             # create a special connection here
             db_engine = app[APP_DB_ENGINE_KEY]
-            log.info("listening to comp_task events...")
+            _logger.info("listening to comp_task events...")
             await _listen(app, db_engine)
         except asyncio.CancelledError:
             # we are closing the app..
-            log.info("cancelled comp_tasks events")
+            _logger.info("cancelled comp_tasks events")
             raise
         except Exception:  # pylint: disable=broad-except
-            log.exception(
+            _logger.exception(
                 "caught unhandled comp_task db listening task exception, restarting...",
                 exc_info=True,
             )
@@ -167,13 +167,15 @@ async def create_comp_tasks_listening_task(app: web.Application) -> AsyncIterato
     task = asyncio.create_task(
         _comp_tasks_listening_task(app), name="computation db listener"
     )
-    log.debug("comp_tasks db listening task created %s", f"{task=}")
+    _logger.debug("comp_tasks db listening task created %s", f"{task=}")
 
     yield
 
-    log.debug("cancelling comp_tasks db listening %s task...", f"{task=}")
+    _logger.debug("cancelling comp_tasks db listening %s task...", f"{task=}")
     task.cancel()
-    log.debug("waiting for comp_tasks db listening %s to stop", f"{task=}")
+    _logger.debug("waiting for comp_tasks db listening %s to stop", f"{task=}")
     with suppress(asyncio.CancelledError):
         await task
-    log.debug("waiting for comp_tasks db listening %s to stop completed", f"{task=}")
+    _logger.debug(
+        "waiting for comp_tasks db listening %s to stop completed", f"{task=}"
+    )
