@@ -3,7 +3,7 @@ import logging
 import os
 import socket
 from dataclasses import dataclass, field
-from typing import Any, Awaitable, Callable, Final, Optional
+from typing import Any, Awaitable, Callable, Final
 
 import aio_pika
 from aio_pika.exceptions import ChannelClosed
@@ -18,7 +18,7 @@ from .rabbitmq_utils import RPCMethodName, RPCNamespace, RPCNamespacedMethodName
 log = logging.getLogger(__name__)
 
 
-def _connection_close_callback(sender: Any, exc: Optional[BaseException]) -> None:
+def _connection_close_callback(sender: Any, exc: BaseException | None) -> None:
     if exc:
         if isinstance(exc, asyncio.CancelledError):
             log.info("Rabbit connection was cancelled")
@@ -30,7 +30,7 @@ def _connection_close_callback(sender: Any, exc: Optional[BaseException]) -> Non
             )
 
 
-def _channel_close_callback(sender: Any, exc: Optional[BaseException]) -> None:
+def _channel_close_callback(sender: Any, exc: BaseException | None) -> None:
     if exc:
         if isinstance(exc, asyncio.CancelledError):
             log.info("Rabbit channel was cancelled")
@@ -69,12 +69,12 @@ _RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_S: Final[int] = 15 * _MINUTE
 class RabbitMQClient:
     client_name: str
     settings: RabbitSettings
-    _connection_pool: Optional[aio_pika.pool.Pool] = field(init=False, default=None)
-    _channel_pool: Optional[aio_pika.pool.Pool] = field(init=False, default=None)
+    _connection_pool: aio_pika.pool.Pool | None = field(init=False, default=None)
+    _channel_pool: aio_pika.pool.Pool | None = field(init=False, default=None)
 
-    _rpc_connection: Optional[aio_pika.RobustConnection] = None
-    _rpc_channel: Optional[aio_pika.RobustChannel] = None
-    _rpc: Optional[RPC] = None
+    _rpc_connection: aio_pika.abc.AbstractConnection | None = None
+    _rpc_channel: aio_pika.abc.AbstractChannel | None = None
+    _rpc: RPC | None = None
 
     def __post_init__(self):
         # recommendations are 1 connection per process
@@ -93,7 +93,7 @@ class RabbitMQClient:
         )
         self._rpc_channel = await self._rpc_connection.channel()
 
-        self._rpc = RPC(self._rpc_channel, host_exceptions=True)
+        self._rpc = RPC(self._rpc_channel)
         await self._rpc.initialize()
 
     async def close(self) -> None:
@@ -190,7 +190,7 @@ class RabbitMQClient:
         namespace: RPCNamespace,
         method_name: RPCMethodName,
         *,
-        timeout_s: Optional[PositiveInt] = 5,
+        timeout_s: PositiveInt | None = 5,
         **kwargs: dict[str, Any],
     ) -> Any:
         """
