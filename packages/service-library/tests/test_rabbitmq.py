@@ -394,10 +394,40 @@ async def test_rabbit_not_using_the_same_exchange_type_raises(
 ):
     exchange_name = f"{random_exchange_name()}_fanout"
     mocked_message_parser = mocker.AsyncMock(return_value=True)
-    message = faker.text()
-    client = rabbitmq_client("publisher")
+    client = rabbitmq_client("consumer")
     # this will create a FANOUT exchange
     await client.subscribe(exchange_name, mocked_message_parser)
     # now do a second subscribtion wiht topics, will create a TOPICS exchange
     with pytest.raises(aio_pika.exceptions.ChannelPreconditionFailed):
         await client.subscribe(exchange_name, mocked_message_parser, topics=[])
+
+
+async def test_rabbit_adding_topics_to_a_fanout_exchange(
+    rabbitmq_client: Callable[[str], RabbitMQClient],
+    random_exchange_name: Callable[[], str],
+    mocker: MockerFixture,
+    faker: Faker,
+):
+    exchange_name = f"{random_exchange_name()}_fanout"
+    mocked_message_parser = mocker.AsyncMock(return_value=True)
+    message = faker.text()
+    publisher = rabbitmq_client("publisher")
+    consumer = rabbitmq_client("consumer")
+    queue_name = await consumer.subscribe(exchange_name, mocked_message_parser)
+    await publisher.publish(exchange_name, message)
+    await _assert_message_received(mocked_message_parser, 1, message)
+    mocked_message_parser.reset_mock()
+    # this changes nothing on a FANOUT exchange
+    await consumer.add_topics(exchange_name, queue_name, topics=["some_topics"])
+    await publisher.publish(exchange_name, message)
+    await _assert_message_received(mocked_message_parser, 1, message)
+    mocked_message_parser.reset_mock()
+    # this changes nothing on a FANOUT exchange
+    await consumer.remove_topics(exchange_name, queue_name, topics=["some_topics"])
+    await publisher.publish(exchange_name, message)
+    await _assert_message_received(mocked_message_parser, 1, message)
+    mocked_message_parser.reset_mock()
+    # this will do something
+    await consumer.unsubscribe(queue_name)
+    await publisher.publish(exchange_name, message)
+    await _assert_message_received(mocked_message_parser, 0, message)
