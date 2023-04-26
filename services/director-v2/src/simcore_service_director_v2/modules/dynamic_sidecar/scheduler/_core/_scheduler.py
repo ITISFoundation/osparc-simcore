@@ -263,9 +263,9 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
 
             # cancel current observation task
             if service_name in self._service_observation_task:
-                service_task: None | (
-                    asyncio.Task | object
-                ) = self._service_observation_task[service_name]
+                service_task: None | asyncio.Task | object = (
+                    self._service_observation_task[service_name]
+                )
                 if isinstance(service_task, asyncio.Task):
                     await cancel_task(service_task, timeout=10)
 
