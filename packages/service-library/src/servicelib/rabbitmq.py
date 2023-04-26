@@ -137,13 +137,17 @@ class RabbitMQClient:
         - exclusive_queue: True means that every instance of this application will receive the incoming messages
         - exclusive_queue: False means that only one instance of this application will reveice the incoming message
 
-        specifying a topic will use a TOPIC type of RabbitMQ Exchange instead of FANOUT
-        - topic = "#" will receive every message as # substitutes for 0 or more words
-        - topic = "*.critical" will receive any message with second word set to "critical" (* subsitutes for exactly 1 word)
-        - topic = "red.critical" will receive only messages that are set with key "red.critical"
+        specifying a topic will make the client declare a TOPIC type of RabbitMQ Exchange instead of FANOUT
+        - a FANOUT exchange transmit messages to any connected queue regardless of the routing key
+        - a TOPIC exchange transmit messages to any connected queue provided it is bound with the message routing key
+          - topic = "#" is equivalent to the FANOUT effect
+          - a queue bound with topic "director-v2.*" will receive any message that uses a routing key such as "director-v2.event.service_started"
+          - a queue bound with topic "director-v2.event.specific_event" will only receive messages with that exact routing key (same as DIRECT exchanges behavior)
 
-        NOTE: changing the type of Exchange will create issues if the name is not changed!
+        Raises:
+            aio_pika.exceptions.ChannelPreconditionFailed: In case an existing exchange with different type is used
         """
+
         assert self._channel_pool  # nosec
         async with self._channel_pool.acquire() as channel:
             channel: aio_pika.RobustChannel
