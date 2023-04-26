@@ -20,7 +20,6 @@ from settings_library.utils_service import (
 from settings_library.utils_session import MixinSessionSettings
 
 
-# SERVICES CLIENTS --------------------------------------------
 class WebServerSettings(BaseCustomSettings, MixinServiceSettings, MixinSessionSettings):
     WEBSERVER_HOST: str = "webserver"
     WEBSERVER_PORT: PortInt = DEFAULT_AIOHTTP_PORT
@@ -38,11 +37,12 @@ class WebServerSettings(BaseCustomSettings, MixinServiceSettings, MixinSessionSe
     @cached_property
     def api_base_url(self) -> str:
         # http://webserver:8080/v0
-        return self._compose_url(
+        url_with_vtag: str = self._compose_url(
             prefix="WEBSERVER",
             port=URLPart.REQUIRED,
             vtag=URLPart.REQUIRED,
         )
+        return url_with_vtag
 
     @validator("WEBSERVER_SESSION_SECRET_KEY")
     @classmethod
@@ -58,11 +58,12 @@ class DirectorV2Settings(BaseCustomSettings, MixinServiceSettings):
     @cached_property
     def api_base_url(self) -> str:
         # http://direvor-v2:8000/v2
-        return self._compose_url(
+        url_with_vtag: str = self._compose_url(
             prefix="DIRECTOR_V2",
             port=URLPart.REQUIRED,
             vtag=URLPart.REQUIRED,
         )
+        return url_with_vtag
 
 
 # MAIN SETTINGS --------------------------------------------
@@ -139,3 +140,13 @@ class ApplicationSettings(BasicSettings):
         ):
             return v
         raise ValueError("API_SERVER_CAPTURE_PATH only allowed in devel mode")
+
+
+__all__: tuple[str, ...] = (
+    "ApplicationSettings",
+    "BasicSettings",
+    "CatalogSettings",
+    "DirectorV2Settings",
+    "StorageSettings",
+    "WebServerSettings",
+)
