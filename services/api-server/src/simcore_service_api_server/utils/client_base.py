@@ -64,16 +64,21 @@ class _AsyncClientWithCaptures(httpx.AsyncClient):
 _capture_logger = logging.getLogger(f"{__name__}.capture")
 
 
-def _setup_capture_logger(capture_path: Path) -> None:
+def _setup_capture_logger_once(capture_path: Path) -> None:
     """NOTE: this is only to capture during developmetn"""
-    file_handler = logging.FileHandler(filename=f"{capture_path}")
-    file_handler.setLevel(logging.INFO)
 
-    formatter = logging.Formatter("%(asctime)s - %(message)s")
-    file_handler.setFormatter(formatter)
+    if not any(
+        isinstance(hnd, logging.FileHandler) for hnd in _capture_logger.handlers
+    ):
+        file_handler = logging.FileHandler(filename=f"{capture_path}")
+        file_handler.setLevel(logging.INFO)
 
-    _capture_logger.addHandler(file_handler)
-    _capture_logger.info("Started capture session")
+        formatter = logging.Formatter("%(asctime)s - %(message)s")
+        file_handler.setFormatter(formatter)
+
+        _capture_logger.addHandler(file_handler)
+        _logger.info("Setup capture logger at %s", capture_path)
+        _capture_logger.info("Started capture session ...")
 
 
 def setup_client_instance(
@@ -91,7 +96,7 @@ def setup_client_instance(
     client_class: type = httpx.AsyncClient
     with suppress(AttributeError):  # State not having settings
         if capture_path := app.state.settings.API_SERVER_HTTP_CALLS_CAPTURE_LOGS_PATH:
-            _setup_capture_logger(capture_path)
+            _setup_capture_logger_once(capture_path)
             client_class = _AsyncClientWithCaptures
 
     # events
