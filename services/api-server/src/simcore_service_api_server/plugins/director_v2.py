@@ -225,6 +225,6 @@ def setup(app: FastAPI, settings: DirectorV2Settings) -> None:
         app,
         DirectorV2Api,
         # WARNING: it has /v0 and /v2 prefixes
-        api_baseurl=f"http://{settings.DIRECTOR_V2_HOST}:{settings.DIRECTOR_V2_PORT}",
+        api_baseurl=settings.base_url,
         service_name="director_v2",
     )

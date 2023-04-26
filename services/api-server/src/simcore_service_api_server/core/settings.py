@@ -57,13 +57,23 @@ class DirectorV2Settings(BaseCustomSettings, MixinServiceSettings):
 
     @cached_property
     def api_base_url(self) -> str:
-        # http://direvor-v2:8000/v2
+        # http://director-v2:8000/v2
         url_with_vtag: str = self._compose_url(
             prefix="DIRECTOR_V2",
             port=URLPart.REQUIRED,
             vtag=URLPart.REQUIRED,
         )
         return url_with_vtag
+
+    @cached_property
+    def base_url(self) -> str:
+        # http://director-v2:8000
+        origin: str = self._compose_url(
+            prefix="CATALOG",
+            port=URLPart.REQUIRED,
+            vtag=URLPart.EXCLUDE,
+        )
+        return origin
 
 
 # MAIN SETTINGS --------------------------------------------
