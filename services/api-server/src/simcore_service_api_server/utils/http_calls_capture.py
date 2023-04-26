@@ -51,4 +51,4 @@ def get_capture_msg(name: str, response: httpx.Response) -> str:
     capture_json: str = HttpApiCallCaptureModel.create_from_response(
         response, name=name
     ).json(indent=1)
-    return f"CAPTURE: {capture_json}"
+    return f"{capture_json}"

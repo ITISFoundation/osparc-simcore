@@ -1,4 +1,5 @@
 from functools import cached_property
+from pathlib import Path
 
 from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import AnyHttpUrl, Field, SecretStr
@@ -85,7 +86,7 @@ class BasicSettings(BaseCustomSettings, MixinLoggingSettings):
         env=["API_SERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
     )
     API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
-        False,
+        default=False,
         env=["API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"],
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
@@ -119,11 +120,27 @@ class ApplicationSettings(BasicSettings):
     # DIAGNOSTICS
     API_SERVER_TRACING: TracingSettings | None = Field(auto_default_from_env=True)
 
+    # DEV-TOOLS
+    API_SERVER_HTTP_CALLS_CAPTURE_LOGS_PATH: Path | None = Field(
+        default=None,
+        description="If set, it activates http calls capture mechanism used to generate mock data"
+        "Path to store captured client calls."
+        "TIP: use 'API_SERVER_HTTP_CALLS_CAPTURE_LOGS_PATH=captures.ignore.keep.log'"
+        "NOTE: only available in devel mode",
+    )
+
     @cached_property
     def debug(self) -> bool:
         """If True, debug tracebacks should be returned on errors."""
-        return self.SC_BOOT_MODE in [
-            BootModeEnum.DEBUG,
-            BootModeEnum.DEVELOPMENT,
-            BootModeEnum.LOCAL,
-        ]
+        return self.SC_BOOT_MODE is not None and self.SC_BOOT_MODE.is_devel_mode()
+
+    @validator("API_SERVER_HTTP_CALLS_CAPTURE_LOGS_PATH")
+    @classmethod
+    def _only_in_devel_mode(cls, v, values):
+        if (
+            values
+            and (boot_mode := values.get("SC_BOOT_MODE"))
+            and boot_mode.is_devel_mode()
+        ):
+            return v
+        raise ValueError("API_SERVER_CAPTURE_PATH only allowed in devel mode")

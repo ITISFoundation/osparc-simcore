@@ -89,8 +89,6 @@ class CatalogApi(BaseServiceClientApi):
             params={"user_id": user_id, "details": True},
             headers={"x-simcore-products-name": product_name},
         )
-        self.capture_api_call("list_services_v0_services_get", response)
-
         response.raise_for_status()
 
         # TODO: move this sorting down to catalog service?
@@ -128,9 +126,6 @@ class CatalogApi(BaseServiceClientApi):
             params={"user_id": user_id},
             headers={"x-simcore-products-name": product_name},
         )
-        self.capture_api_call(
-            "get_service_v0_services__service_key___service_version__get", response
-        )
         response.raise_for_status()
 
         service = TruncatedCatalogServiceOut.parse_obj(response.json())
@@ -156,10 +151,6 @@ class CatalogApi(BaseServiceClientApi):
             headers={"x-simcore-products-name": product_name},
         )
 
-        self.capture_api_call(
-            "list_service_ports_v0_services__service_key___service_version__ports_get",
-            response,
-        )
         response.raise_for_status()
 
         solver_ports = parse_obj_as(list[SolverPort], response.json())

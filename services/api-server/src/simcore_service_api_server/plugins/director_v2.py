@@ -116,7 +116,6 @@ class DirectorV2Api(BaseServiceClientApi):
                 "product_name": product_name,
             },
         )
-        self.capture_api_call("create_computation_v2_computations_post", response)
         response.raise_for_status()
         computation_task = ComputationTaskGet(**response.json())
         return computation_task
@@ -143,7 +142,6 @@ class DirectorV2Api(BaseServiceClientApi):
                     **extras,
                 },
             )
-            self.capture_api_call("create_computation_v2_computations_post", response)
             response.raise_for_status()
             computation_task = ComputationTaskGet(**response.json())
             return computation_task
@@ -156,9 +154,6 @@ class DirectorV2Api(BaseServiceClientApi):
             params={
                 "user_id": user_id,
             },
-        )
-        self.capture_api_call(
-            "get_computation_v2_computations__project_id__get", response
         )
         response.raise_for_status()
         computation_task = ComputationTaskGet(**response.json())
@@ -173,9 +168,6 @@ class DirectorV2Api(BaseServiceClientApi):
                 "user_id": user_id,
             },
         )
-        self.capture_api_call(
-            "stop_computation_v2_computations__project_id__stop_post", response
-        )
 
         computation_task = ComputationTaskGet(**response.json())
         return computation_task
@@ -189,9 +181,6 @@ class DirectorV2Api(BaseServiceClientApi):
                 "force": True,
             },
         )
-        self.capture_api_call(
-            "stop_dynamic_service_v2_dynamic_services__node_uuid__delete", response
-        )
 
     async def get_computation_logs(
         self, user_id: PositiveInt, project_id: UUID
@@ -201,10 +190,6 @@ class DirectorV2Api(BaseServiceClientApi):
             params={
                 "user_id": user_id,
             },
-        )
-        self.capture_api_call(
-            "get_all_tasks_log_files_v2_computations__project_id__tasks___logfile_get",
-            response,
         )
 
         # probably not found

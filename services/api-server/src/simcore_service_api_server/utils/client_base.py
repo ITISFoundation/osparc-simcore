@@ -1,11 +1,13 @@
 import logging
 from dataclasses import dataclass
+from pathlib import Path
 
 import httpx
 from fastapi import FastAPI
+from pydantic import ValidationError
 
 from .app_data import AppDataMixin
-from .logging import get_capture_msg
+from .http_calls_capture import get_capture_msg
 
 _logger = logging.getLogger(__name__)
 
@@ -23,7 +25,6 @@ class BaseServiceClientApi(AppDataMixin):
     client: httpx.AsyncClient
     service_name: str
     health_check_path: str = "/"
-    capture_enabled: bool = False
 
     async def is_responsive(self) -> bool:
         try:
@@ -36,12 +37,40 @@ class BaseServiceClientApi(AppDataMixin):
 
     ping = is_responsive  # alias
 
-    def capture_api_call(self, operation_id: str, response: httpx.Response):
-        if self.capture_enabled:
-            _logger.info("%s", get_capture_msg(name=operation_id, response=response))
+
+class _AsyncClientWithCaptures(httpx.AsyncClient):
+    """
+    Adds captures mechanism
+    """
+
+    async def request(self, method: str, url: "URLTypes", **kwargs):
+        response: httpx.Response = await super().request(method, url, **kwargs)
+
+        capture_name = f"{method} {url}"
+        _logger.info("Capturing %s ... [might be slow]", capture_name)
+        try:
+            capture_json = get_capture_msg(name=capture_name, response=response)
+            _capture_logger.info("%s", capture_json)
+        except ValidationError:
+            _capture_logger.exception("Failed capturing %s", capture_name)
+
+        return response
 
 
 # HELPERS -------------------------------------------------------------
+
+_capture_logger = logging.getLogger(f"{__name__}.capture")
+
+
+def _setup_capture_logger(capture_path: Path) -> None:
+    """NOTE: this is only to capture during developmetn"""
+    file_handler = logging.FileHandler(filename=f"{capture_path}")
+    file_handler.setLevel(logging.INFO)
+
+    formatter = logging.Formatter("%(asctime)s - %(message)s")
+    file_handler.setFormatter(formatter)
+
+    _capture_logger.addHandler(file_handler)
 
 
 def setup_client_instance(
@@ -49,18 +78,28 @@ def setup_client_instance(
     api_cls: type[BaseServiceClientApi],
     api_baseurl,
     service_name: str,
-    **extra_fields
+    **extra_fields,
 ) -> None:
     """Helper to add init/cleanup of ServiceClientApi instances in the app lifespam"""
 
     assert issubclass(api_cls, BaseServiceClientApi)  # nosec
 
+    # Http client class
+    client_class: type[httpx.AsyncClient] = httpx.AsyncClient
+    capture_path: Path or None = (
+        app.state.settings.API_SERVER_HTTP_CALLS_CAPTURE_LOGS_PATH
+    )
+    if capture_path:
+        _setup_capture_logger(capture_path)
+        client_class = _AsyncClientWithCaptures
+
+    # events
     def _create_instance() -> None:
         api_cls.create_once(
             app,
-            client=httpx.AsyncClient(base_url=api_baseurl),
+            client=client_class(base_url=api_baseurl),
             service_name=service_name,
-            **extra_fields
+            **extra_fields,
         )
 
     async def _cleanup_instance() -> None:

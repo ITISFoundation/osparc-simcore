@@ -62,7 +62,6 @@ class StorageApi(BaseServiceClientApi):
                 "startswith": "api/",
             },
         )
-        self.capture_api_call("search_files_starting_with", response)
 
         # FIXME: handle HTTPStatusError
         response.raise_for_status()
@@ -84,7 +83,6 @@ class StorageApi(BaseServiceClientApi):
                 "startswith": f"api/{file_id}",
             },
         )
-        self.capture_api_call("search_files_starting_with_2", response)
 
         files_metadata = FileMetaDataArray(__root__=response.json()["data"] or [])
         files: list[StorageFileMetaData] = files_metadata.__root__
@@ -99,7 +97,6 @@ class StorageApi(BaseServiceClientApi):
             f"/locations/{self.SIMCORE_S3_ID}/files/{object_path}",
             params={"user_id": str(user_id)},
         )
-        self.capture_api_call("download_file", response)
 
         presigned_link: PresignedLink = PresignedLink.parse_obj(response.json()["data"])
         link: AnyUrl = presigned_link.link
@@ -114,7 +111,6 @@ class StorageApi(BaseServiceClientApi):
             f"/locations/{self.SIMCORE_S3_ID}/files/{object_path}",
             params={"user_id": user_id, "file_size": 0},
         )
-        self.capture_api_call("upload_file", response)
 
         enveloped_data = Envelope[FileUploadSchema].parse_obj(response.json())
         assert enveloped_data.data  # nosec
@@ -139,7 +135,6 @@ class StorageApi(BaseServiceClientApi):
             params={"user_id": user_id},
             json={"link_id": link_path},
         )
-        self.capture_api_call("copy_as_soft_link", response)
 
         # FIXME: handle errors properly
         response.raise_for_status()

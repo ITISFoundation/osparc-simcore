@@ -17,7 +17,7 @@ import respx
 from docker.errors import APIError
 from faker import Faker
 from models_library.basic_regex import UUID_RE_BASE
-from simcore_service_api_server.utils.logging import HttpApiCallCaptureModel
+from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
 from tenacity import retry
 from tenacity.after import after_log
 from tenacity.retry import retry_if_exception_type
