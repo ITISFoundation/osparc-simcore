@@ -73,6 +73,7 @@ def _setup_capture_logger(capture_path: Path) -> None:
     file_handler.setFormatter(formatter)
 
     _capture_logger.addHandler(file_handler)
+    _capture_logger.info("Started capture session")
 
 
 def setup_client_instance(
