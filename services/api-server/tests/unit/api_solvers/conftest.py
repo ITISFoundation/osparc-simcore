@@ -60,13 +60,13 @@ def mocked_webserver_service_api(
 
     # pylint: disable=not-context-manager
     with respx.mock(
-        base_url=settings.API_SERVER_WEBSERVER.base_url,
+        base_url=settings.API_SERVER_WEBSERVER.api_base_url,
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
 
         # include /v0
-        assert settings.API_SERVER_WEBSERVER.base_url.endswith("/v0")
+        assert settings.API_SERVER_WEBSERVER.api_base_url.endswith("/v0")
 
         # healthcheck_readiness_probe, healthcheck_liveness_probe
         response_body = {
@@ -102,8 +102,8 @@ def mocked_webserver_service_api(
                     json={
                         "data": {
                             "task_id": task_id,
-                            "status_href": f"{settings.API_SERVER_WEBSERVER.base_url}/tasks/{task_id}",
-                            "result_href": f"{settings.API_SERVER_WEBSERVER.base_url}/tasks/{task_id}/result",
+                            "status_href": f"{settings.API_SERVER_WEBSERVER.api_base_url}/tasks/{task_id}",
+                            "result_href": f"{settings.API_SERVER_WEBSERVER.api_base_url}/tasks/{task_id}/result",
                         }
                     },
                 )

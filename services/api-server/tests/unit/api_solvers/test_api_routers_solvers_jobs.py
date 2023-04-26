@@ -98,7 +98,7 @@ def mocked_directorv2_service_api(
 
     # pylint: disable=not-context-manager
     with respx.mock(
-        base_url=settings.API_SERVER_DIRECTOR_V2.base_url,
+        base_url=settings.API_SERVER_DIRECTOR_V2.api_base_url,
         assert_all_called=False,
         assert_all_mocked=True,  # IMPORTANT: KEEP always True!
     ) as respx_mock:

@@ -228,7 +228,7 @@ def setup(app: FastAPI, settings: WebServerSettings | None = None) -> None:
     assert settings is not None  # nosec
 
     setup_client_instance(
-        app, WebserverApi, api_baseurl=settings.base_url, service_name="webserver"
+        app, WebserverApi, api_baseurl=settings.api_base_url, service_name="webserver"
     )
 
     # TODO: old startup. need to integrat
@@ -240,9 +240,9 @@ def setup(app: FastAPI, settings: WebServerSettings | None = None) -> None:
         app.state.webserver_fernet = fernet.Fernet(secret_key)
 
         # init client
-        logger.debug("Setup webserver at %s...", settings.base_url)
+        logger.debug("Setup webserver at %s...", settings.api_base_url)
 
-        client = AsyncClient(base_url=settings.base_url)
+        client = AsyncClient(base_url=settings.api_base_url)
         app.state.webserver_client = client
 
     async def on_shutdown() -> None:
