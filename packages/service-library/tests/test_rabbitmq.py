@@ -81,6 +81,11 @@ def random_exchange_name(faker: Faker) -> Callable[[], str]:
     return _creator
 
 
+@pytest.fixture
+def mocked_message_parser(mocker: MockerFixture) -> mock.AsyncMock:
+    return mocker.AsyncMock(return_value=True)
+
+
 async def _assert_message_received(
     mocked_message_parser: mock.AsyncMock,
     expected_call_count: int,
@@ -107,7 +112,7 @@ async def _assert_message_received(
 async def test_rabbit_client_pub_sub_message_is_lost_if_no_consumer_present(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
-    mocker: MockerFixture,
+    mocked_message_parser: mock.AsyncMock,
     faker: Faker,
 ):
     consumer = rabbitmq_client("consumer")
@@ -115,7 +120,6 @@ async def test_rabbit_client_pub_sub_message_is_lost_if_no_consumer_present(
 
     message = faker.text()
 
-    mocked_message_parser = mocker.AsyncMock(return_value=True)
     exchange_name = random_exchange_name()
     await publisher.publish(exchange_name, message)
     await asyncio.sleep(0)  # ensure context switch
@@ -126,7 +130,7 @@ async def test_rabbit_client_pub_sub_message_is_lost_if_no_consumer_present(
 async def test_rabbit_client_pub_sub(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
-    mocker: MockerFixture,
+    mocked_message_parser: mock.AsyncMock,
     faker: Faker,
 ):
     consumer = rabbitmq_client("consumer")
@@ -134,7 +138,6 @@ async def test_rabbit_client_pub_sub(
 
     message = faker.text()
 
-    mocked_message_parser = mocker.AsyncMock(return_value=True)
     exchange_name = random_exchange_name()
     await consumer.subscribe(exchange_name, mocked_message_parser)
     await publisher.publish(exchange_name, message)
@@ -176,7 +179,7 @@ async def test_rabbit_client_pub_many_subs(
 async def test_rabbit_client_pub_sub_republishes_if_exception_raised(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
-    mocker: MockerFixture,
+    mocked_message_parser: mock.AsyncMock,
     faker: Faker,
 ):
     publisher = rabbitmq_client("publisher")
@@ -195,7 +198,7 @@ async def test_rabbit_client_pub_sub_republishes_if_exception_raised(
 
     exchange_name = random_exchange_name()
     _raise_once_then_true.calls = 0
-    mocked_message_parser = mocker.AsyncMock(side_effect=_raise_once_then_true)
+    mocked_message_parser.side_effect = _raise_once_then_true
     await consumer.subscribe(exchange_name, mocked_message_parser)
     await publisher.publish(exchange_name, message)
     await _assert_message_received(mocked_message_parser, 3, message)
@@ -243,7 +246,7 @@ def test_rabbit_pub_sub_performance(
     benchmark,
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
-    mocker: MockerFixture,
+    mocked_message_parser: mock.AsyncMock,
     faker: Faker,
 ):
     consumer = rabbitmq_client("consumer")
@@ -251,7 +254,6 @@ def test_rabbit_pub_sub_performance(
 
     message = faker.text()
 
-    mocked_message_parser = mocker.AsyncMock(return_value=True)
     exchange_name = random_exchange_name()
     asyncio.get_event_loop().run_until_complete(
         consumer.subscribe(exchange_name, mocked_message_parser)
@@ -314,7 +316,7 @@ async def test_rabbit_pub_sub_with_topic(
 async def test_rabbit_pub_sub_bind_and_unbind_topics(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
-    mocker: MockerFixture,
+    mocked_message_parser: mock.AsyncMock,
     faker: Faker,
 ):
     exchange_name = f"{random_exchange_name()}_topic"
@@ -328,7 +330,6 @@ async def test_rabbit_pub_sub_bind_and_unbind_topics(
     await publisher.publish(exchange_name, message, topic="faker.critical")
 
     # we should get no messages since no one was subscribed
-    mocked_message_parser = mocker.AsyncMock(return_value=True)
     queue_name = await consumer.subscribe(
         exchange_name, mocked_message_parser, topics=[]
     )
@@ -389,11 +390,9 @@ async def test_rabbit_pub_sub_bind_and_unbind_topics(
 async def test_rabbit_not_using_the_same_exchange_type_raises(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
-    mocker: MockerFixture,
-    faker: Faker,
+    mocked_message_parser: mock.AsyncMock,
 ):
     exchange_name = f"{random_exchange_name()}_fanout"
-    mocked_message_parser = mocker.AsyncMock(return_value=True)
     client = rabbitmq_client("consumer")
     # this will create a FANOUT exchange
     await client.subscribe(exchange_name, mocked_message_parser)
@@ -405,11 +404,10 @@ async def test_rabbit_not_using_the_same_exchange_type_raises(
 async def test_rabbit_adding_topics_to_a_fanout_exchange(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
-    mocker: MockerFixture,
+    mocked_message_parser: mock.AsyncMock,
     faker: Faker,
 ):
     exchange_name = f"{random_exchange_name()}_fanout"
-    mocked_message_parser = mocker.AsyncMock(return_value=True)
     message = faker.text()
     publisher = rabbitmq_client("publisher")
     consumer = rabbitmq_client("consumer")
