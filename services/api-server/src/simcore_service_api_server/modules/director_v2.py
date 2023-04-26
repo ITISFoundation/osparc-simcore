@@ -107,7 +107,7 @@ class DirectorV2Api(BaseServiceClientApi):
         user_id: PositiveInt,
         product_name: str,
     ) -> ComputationTaskGet:
-        resp = await self.client.post(
+        response = await self.client.post(
             "/v2/computations",
             json={
                 "user_id": user_id,
@@ -116,9 +116,9 @@ class DirectorV2Api(BaseServiceClientApi):
                 "product_name": product_name,
             },
         )
-
-        resp.raise_for_status()
-        computation_task = ComputationTaskGet(**resp.json())
+        self.capture_api_call("create_computation_v2_computations_post", response)
+        response.raise_for_status()
+        computation_task = ComputationTaskGet(**response.json())
         return computation_task
 
     async def start_computation(
@@ -133,7 +133,7 @@ class DirectorV2Api(BaseServiceClientApi):
             if cluster_id is not None:
                 extras["cluster_id"] = cluster_id
 
-            resp = await self.client.post(
+            response = await self.client.post(
                 "/v2/computations",
                 json={
                     "user_id": user_id,
@@ -143,38 +143,45 @@ class DirectorV2Api(BaseServiceClientApi):
                     **extras,
                 },
             )
-            resp.raise_for_status()
-            computation_task = ComputationTaskGet(**resp.json())
+            self.capture_api_call("create_computation_v2_computations_post", response)
+            response.raise_for_status()
+            computation_task = ComputationTaskGet(**response.json())
             return computation_task
 
     async def get_computation(
         self, project_id: UUID, user_id: PositiveInt
     ) -> ComputationTaskGet:
-        resp = await self.client.get(
+        response = await self.client.get(
             f"/v2/computations/{project_id}",
             params={
                 "user_id": user_id,
             },
         )
-        resp.raise_for_status()
-        computation_task = ComputationTaskGet(**resp.json())
+        self.capture_api_call(
+            "get_computation_v2_computations__project_id__get", response
+        )
+        response.raise_for_status()
+        computation_task = ComputationTaskGet(**response.json())
         return computation_task
 
     async def stop_computation(
         self, project_id: UUID, user_id: PositiveInt
     ) -> ComputationTaskGet:
-        data = await self.client.post(
+        response = await self.client.post(
             f"/v2/computations/{project_id}:stop",
             json={
                 "user_id": user_id,
             },
         )
+        self.capture_api_call(
+            "stop_computation_v2_computations__project_id__stop_post", response
+        )
 
-        computation_task = ComputationTaskGet(**data.json())
+        computation_task = ComputationTaskGet(**response.json())
         return computation_task
 
     async def delete_computation(self, project_id: UUID, user_id: PositiveInt):
-        await self.client.request(
+        response = await self.client.request(
             "DELETE",
             f"/v2/computations/{project_id}",
             json={
@@ -182,20 +189,33 @@ class DirectorV2Api(BaseServiceClientApi):
                 "force": True,
             },
         )
+        self.capture_api_call(
+            "stop_dynamic_service_v2_dynamic_services__node_uuid__delete", response
+        )
 
     async def get_computation_logs(
         self, user_id: PositiveInt, project_id: UUID
     ) -> dict[NodeName, DownloadLink]:
-        resp = await self.client.get(
+        response = await self.client.get(
             f"/v2/computations/{project_id}/tasks/-/logfile",
             params={
                 "user_id": user_id,
             },
         )
+        self.capture_api_call(
+            "get_all_tasks_log_files_v2_computations__project_id__tasks___logfile_get",
+            response,
+        )
+
         # probably not found
-        resp.raise_for_status()
-        payload = parse_raw_as(list[TaskLogFileGet], resp.text or "[]")
-        return {r.task_id: r.download_link for r in payload}
+        response.raise_for_status()
+
+        node_to_links: dict[NodeName, DownloadLink] = {}
+        for r in parse_raw_as(list[TaskLogFileGet], response.text or "[]"):
+            if r.download_link:
+                node_to_links[f"{r.task_id}"] = r.download_link
+
+        return node_to_links
 
     # TODO: HIGHER lever interface with job* resources
     # or better in another place?
