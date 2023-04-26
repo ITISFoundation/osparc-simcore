@@ -22,7 +22,7 @@ from starlette.responses import RedirectResponse
 
 from ..._meta import API_VTAG
 from ...models.schemas.files import File
-from ...modules.storage import StorageApi, StorageFileMetaData, to_file_api_model
+from ...plugins.storage import StorageApi, StorageFileMetaData, to_file_api_model
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
 

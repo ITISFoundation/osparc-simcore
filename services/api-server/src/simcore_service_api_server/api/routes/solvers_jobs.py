@@ -18,9 +18,9 @@ from ...models.domain.projects import NewProjectIn, Project
 from ...models.schemas.files import File
 from ...models.schemas.jobs import ArgumentType, Job, JobInputs, JobOutputs, JobStatus
 from ...models.schemas.solvers import Solver, SolverKeyId
-from ...modules.catalog import CatalogApi
-from ...modules.director_v2 import DirectorV2Api, DownloadLink, NodeName
-from ...modules.storage import StorageApi, to_file_api_model
+from ...plugins.catalog import CatalogApi
+from ...plugins.director_v2 import DirectorV2Api, DownloadLink, NodeName
+from ...plugins.storage import StorageApi, to_file_api_model
 from ...utils.solver_job_models_converters import (
     create_job_from_project,
     create_jobstatus_from_task,

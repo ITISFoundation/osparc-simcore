@@ -11,7 +11,7 @@ from servicelib.error_codes import create_error_code
 from ...core.settings import BasicSettings
 from ...models.basic_types import VersionStr
 from ...models.schemas.solvers import Solver, SolverKeyId, SolverPort
-from ...modules.catalog import CatalogApi
+from ...plugins.catalog import CatalogApi
 from ..dependencies.application import get_product_name, get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client

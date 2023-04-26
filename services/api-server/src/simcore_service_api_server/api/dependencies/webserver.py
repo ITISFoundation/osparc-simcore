@@ -7,7 +7,7 @@ from fastapi.requests import Request
 
 from ..._constants import MSG_BACKEND_SERVICE_UNAVAILABLE
 from ...core.settings import ApplicationSettings, WebServerSettings
-from ...modules.webserver import AuthSession
+from ...plugins.webserver import AuthSession
 from .application import get_app, get_settings
 from .authentication import get_active_user_email
 
