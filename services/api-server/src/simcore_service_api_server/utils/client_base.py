@@ -36,9 +36,9 @@ class BaseServiceClientApi(AppDataMixin):
 
     ping = is_responsive  # alias
 
-    def capture_api_call(self, name: str, response: httpx.Response):
+    def capture_api_call(self, operation_id: str, response: httpx.Response):
         if self.capture_enabled:
-            _logger.info("%s", get_capture_msg(name, response))
+            _logger.info("%s", get_capture_msg(name=operation_id, response=response))
 
 
 # HELPERS -------------------------------------------------------------
