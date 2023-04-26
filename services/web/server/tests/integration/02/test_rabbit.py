@@ -34,11 +34,11 @@ from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.computation import setup_computation
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.diagnostics import setup_diagnostics
 from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.login.plugin import setup_login
+from simcore_service_webserver.notifications.plugin import setup_notifications
 from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
@@ -97,7 +97,6 @@ async def _publish_in_rabbit(
     num_messages: int,
     rabbit_exchanges: RabbitExchanges,
 ) -> tuple[LogMessages, ProgressMessages, InstrumMessages, EventMessages]:
-
     log_messages = [
         LoggerRabbitMessage(
             user_id=user_id,
@@ -207,7 +206,7 @@ def client(
     setup_diagnostics(app)
     setup_login(app)
     setup_projects(app)
-    setup_computation(app)
+    setup_notifications(app)
     setup_director_v2(app)
     setup_socketio(app)
     setup_resource_manager(app)
@@ -261,7 +260,6 @@ async def socketio_subscriber_handlers(
     client_session_id: UUIDStr,
     mocker: MockerFixture,
 ) -> AsyncIterator[SocketIoHandlers]:
-
     """socketio SUBSCRIBER
 
     Somehow this emulates the logic of the front-end:
@@ -323,7 +321,6 @@ async def rabbit_exchanges(
     rabbit_settings: RabbitSettings,
     rabbit_channel: aio_pika.Channel,
 ) -> AsyncIterator[RabbitExchanges]:
-
     logs_exchange = await rabbit_channel.declare_exchange(
         LoggerRabbitMessage.get_channel_name(),
         aio_pika.ExchangeType.FANOUT,
@@ -403,7 +400,6 @@ async def test_publish_to_other_user(
         Awaitable[tuple[LogMessages, ProgressMessages, InstrumMessages, EventMessages]],
     ],
 ):
-
     # Some other client publishes messages with wrong user id
     await publish_some_messages_in_rabbit(
         not_logged_user_id,

@@ -21,7 +21,7 @@ from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.computation_comp_tasks_listening_task import (
+from simcore_service_webserver.notifications._db_comp_tasks_listening_task import (
     create_comp_tasks_listening_task,
 )
 from tenacity._asyncio import AsyncRetrying
@@ -40,16 +40,16 @@ async def mock_project_subsystem(
     mocked_project_calls = {}
 
     mocked_project_calls["update_node_outputs"] = mocker.patch(
-        "simcore_service_webserver.computation_comp_tasks_listening_task.update_node_outputs",
+        "simcore_service_webserver.notifications._db_comp_tasks_listening_task.update_node_outputs",
         return_value="",
     )
 
     mocked_project_calls["_get_project_owner"] = mocker.patch(
-        "simcore_service_webserver.computation_comp_tasks_listening_task._get_project_owner",
+        "simcore_service_webserver.notifications._db_comp_tasks_listening_task._get_project_owner",
         return_value="",
     )
     mocked_project_calls["_update_project_state"] = mocker.patch(
-        "simcore_service_webserver.computation_comp_tasks_listening_task._update_project_state",
+        "simcore_service_webserver.notifications._db_comp_tasks_listening_task._update_project_state",
         return_value="",
     )
 
@@ -143,7 +143,10 @@ async def test_listen_comp_tasks_task(
     some_project = project(logged_user)
     pipeline(project_id=f"{some_project.uuid}")
     task = comp_task(
-        project_id=f"{some_project.uuid}", outputs=json.dumps({}), node_class=task_class
+        project_id=f"{some_project.uuid}",
+        node_id=faker.uuid4(),
+        outputs=json.dumps({}),
+        node_class=task_class,
     )
     async with db_engine.acquire() as conn:
         # let's update some values
@@ -153,7 +156,7 @@ async def test_listen_comp_tasks_task(
             .where(comp_tasks.c.task_id == task["task_id"])
         )
 
-        # tests whether listener gets hooked calls executed
+        # tests whether listener gets executed
         for call_name, mocked_call in mock_project_subsystem.items():
             if call_name in expected_calls:
                 async for attempt in AsyncRetrying(
