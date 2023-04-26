@@ -69,7 +69,7 @@ class DirectorV2Settings(BaseCustomSettings, MixinServiceSettings):
     def base_url(self) -> str:
         # http://director-v2:8000
         origin: str = self._compose_url(
-            prefix="CATALOG",
+            prefix="DIRECTOR_V2",
             port=URLPart.REQUIRED,
             vtag=URLPart.EXCLUDE,
         )
