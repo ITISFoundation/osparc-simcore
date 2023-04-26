@@ -249,6 +249,15 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
                 return
 
             current: SchedulerData = self._to_observe[service_name]
+
+            # if service is already being removed no need to force a cancellation and removal of the service
+            if current.dynamic_sidecar.service_removal_state.can_remove:
+                logger.info(
+                    "Service %s is already being removed, will not cancel observation",
+                    node_uuid,
+                )
+                return
+
             current.dynamic_sidecar.service_removal_state.mark_to_remove(can_save)
             await update_scheduler_data_label(current)
 
@@ -526,6 +535,7 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
                 continue
 
             if self._service_observation_task.get(service_name) is None:
+                logger.info("Create observation task for service %s", service_name)
                 self._service_observation_task[
                     service_name
                 ] = self.__create_observation_task(
