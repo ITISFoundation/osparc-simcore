@@ -23,7 +23,7 @@ RUN apt-get update \
 
 
 RUN pip --no-cache-dir install --upgrade \
-  pip~=23.0  \
+  pip~=23.1  \
   wheel \
   setuptools
 

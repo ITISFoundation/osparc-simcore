@@ -7,6 +7,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pydantic import parse_obj_as
 from servicelib.docker_utils import to_datetime
+from servicelib.logging_utils import log_context
 from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -95,13 +96,18 @@ async def remove_volumes_from_node(
                 reraise=True,
             ):
                 with attempt:
+                    log.debug(
+                        "Waiting for removal of %s, with service id %s",
+                        node_uuid,
+                        service_id,
+                    )
                     tasks = await client.tasks.list(filters={"service": service_id})
                     # NOTE: the service will have at most 1 task, since there is no restart
                     # policy present
                     if len(tasks) != 1:
                         # Docker swarm needs a bit of time to startup the tasks
                         raise TryAgain(
-                            f"Expected 1 task for service {service_id}, found {tasks=}"
+                            f"Expected 1 task for service {service_id} on node {node_uuid}, found {tasks=}"
                         )
 
                     task = tasks[0]
@@ -109,14 +115,19 @@ async def remove_volumes_from_node(
                     log.debug("Service %s, %s", service_id, f"{task_status=}")
                     task_state = task_status["State"]
                     if task_state not in SERVICE_FINISHED_STATES:
-                        raise TryAgain(f"Waiting for task to finish: {task_status=}")
+                        raise TryAgain(
+                            f"Waiting for task to finish for service {service_id} on node {node_uuid}: {task_status=}"
+                        )
 
                     if not (
                         task_state == "complete"
                         and task_status["ContainerStatus"]["ExitCode"] == 0
                     ):
                         log.error(
-                            "Service %s status: %s", service_id, f"{task_status=}"
+                            "Service %s on node %s status: %s",
+                            service_id,
+                            node_uuid,
+                            f"{task_status=}",
                         )
                         # NOTE: above implies the volumes will remain in the system and
                         # have to be manually removed.
@@ -125,8 +136,12 @@ async def remove_volumes_from_node(
             # NOTE: services created in swarm need to be removed, there is no way
             # to instruct swarm to remove a service after it's created
             # container/task finished
-            await client.services.delete(service_id)
+            with log_context(
+                log, logging.DEBUG, f"deleting service {service_id} on node {node_uuid}"
+            ):
+                await client.services.delete(service_id)
 
+        log.debug("Finished removing volumes for service %s", node_uuid)
         return True
 
 
