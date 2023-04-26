@@ -17,6 +17,7 @@ from servicelib.fastapi.long_running_tasks.client import (
     TaskClientResultError,
 )
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
+from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 from simcore_postgres_database.models.comp_tasks import NodeClass
@@ -198,14 +199,17 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
                 ]
                 + scheduler_data.paths_mapping.state_paths
             ]
-            await remove_volumes_from_node(
-                dynamic_sidecar_settings=dynamic_sidecar_settings,
-                volume_names=unique_volume_names,
-                docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,
-                user_id=scheduler_data.user_id,
-                project_id=scheduler_data.project_id,
-                node_uuid=scheduler_data.node_uuid,
-            )
+            with log_context(
+                logger, logging.DEBUG, f"removing volumes via service for {node_uuid}"
+            ):
+                await remove_volumes_from_node(
+                    dynamic_sidecar_settings=dynamic_sidecar_settings,
+                    volume_names=unique_volume_names,
+                    docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,
+                    user_id=scheduler_data.user_id,
+                    project_id=scheduler_data.project_id,
+                    node_uuid=scheduler_data.node_uuid,
+                )
 
     logger.debug(
         "Removed dynamic-sidecar services and crated container for '%s'",
