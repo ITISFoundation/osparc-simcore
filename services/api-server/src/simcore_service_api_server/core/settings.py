@@ -133,13 +133,16 @@ class ApplicationSettings(BasicSettings):
     @validator("API_SERVER_HTTP_CALLS_CAPTURE_LOGS_PATH")
     @classmethod
     def _only_in_devel_mode(cls, v, values):
-        if (
-            values
-            and (boot_mode := values.get("SC_BOOT_MODE"))
-            and boot_mode.is_devel_mode()
-        ):
-            return v
-        raise ValueError("API_SERVER_CAPTURE_PATH only allowed in devel mode")
+        if v:
+            if not (
+                values
+                and (boot_mode := values.get("SC_BOOT_MODE"))
+                and boot_mode.is_devel_mode()
+            ):
+                raise ValueError(
+                    "API_SERVER_HTTP_CALLS_CAPTURE_LOGS_PATH only allowed in devel mode"
+                )
+        return v
 
 
 __all__: tuple[str, ...] = (

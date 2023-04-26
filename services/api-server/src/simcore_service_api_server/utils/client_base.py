@@ -1,4 +1,5 @@
 import logging
+from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -87,12 +88,10 @@ def setup_client_instance(
 
     # Http client class
     client_class: type = httpx.AsyncClient
-    capture_path: Path | None = (
-        app.state.settings.API_SERVER_HTTP_CALLS_CAPTURE_LOGS_PATH
-    )
-    if capture_path:
-        _setup_capture_logger(capture_path)
-        client_class = _AsyncClientWithCaptures
+    with suppress(AttributeError):  # State not having settings
+        if capture_path := app.state.settings.API_SERVER_HTTP_CALLS_CAPTURE_LOGS_PATH:
+            _setup_capture_logger(capture_path)
+            client_class = _AsyncClientWithCaptures
 
     # events
     def _create_instance() -> None:
