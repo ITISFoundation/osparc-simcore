@@ -9,6 +9,7 @@ import asyncio
 from typing import AsyncIterator, Callable
 from unittest import mock
 
+import aio_pika
 import pytest
 from faker import Faker
 from pytest_mock.plugin import MockerFixture
@@ -383,3 +384,20 @@ async def test_rabbit_pub_sub_bind_and_unbind_topics(
     await publisher.publish(exchange_name, message, topic="faker.warning")
     await publisher.publish(exchange_name, message, topic="faker.critical")
     await _assert_message_received(mocked_message_parser, 0, message)
+
+
+async def test_rabbit_not_using_the_same_exchange_type_raises(
+    rabbitmq_client: Callable[[str], RabbitMQClient],
+    random_exchange_name: Callable[[], str],
+    mocker: MockerFixture,
+    faker: Faker,
+):
+    exchange_name = f"{random_exchange_name()}_fanout"
+    mocked_message_parser = mocker.AsyncMock(return_value=True)
+    message = faker.text()
+    client = rabbitmq_client("publisher")
+    # this will create a FANOUT exchange
+    await client.subscribe(exchange_name, mocked_message_parser)
+    # now do a second subscribtion wiht topics, will create a TOPICS exchange
+    with pytest.raises(aio_pika.exceptions.ChannelPreconditionFailed):
+        await client.subscribe(exchange_name, mocked_message_parser, topics=[])
