@@ -266,7 +266,7 @@ class RabbitMQClient:
         method_name: RPCMethodName,
         *,
         timeout_s: PositiveInt | None = 5,
-        **kwargs,
+        **kwargs: dict[str, Any],
     ) -> Any:
         """
         Call a remote registered `handler` by providing it's `namespace`, `method_name`
