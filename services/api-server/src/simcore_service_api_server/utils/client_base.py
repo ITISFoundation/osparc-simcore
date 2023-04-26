@@ -1,15 +1,19 @@
 import logging
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TypeVar
 
 import httpx
 from fastapi import FastAPI
+from httpx._types import URLTypes
 from pydantic import ValidationError
 
 from .app_data import AppDataMixin
 from .http_calls_capture import get_capture_msg
 
 _logger = logging.getLogger(__name__)
+
+HttpxAsyncClient = TypeVar("HttpxAsyncClient", bound=httpx.AsyncClient)
 
 
 @dataclass
@@ -22,7 +26,7 @@ class BaseServiceClientApi(AppDataMixin):
     - helpers to create a unique client instance per application and service
     """
 
-    client: httpx.AsyncClient
+    client: HttpxAsyncClient
     service_name: str
     health_check_path: str = "/"
 
@@ -43,7 +47,7 @@ class _AsyncClientWithCaptures(httpx.AsyncClient):
     Adds captures mechanism
     """
 
-    async def request(self, method: str, url: "URLTypes", **kwargs):
+    async def request(self, method: str, url: URLTypes, **kwargs):
         response: httpx.Response = await super().request(method, url, **kwargs)
 
         capture_name = f"{method} {url}"
@@ -85,7 +89,7 @@ def setup_client_instance(
     assert issubclass(api_cls, BaseServiceClientApi)  # nosec
 
     # Http client class
-    client_class: type[httpx.AsyncClient] = httpx.AsyncClient
+    client_class: type[HttpxAsyncClient] = httpx.AsyncClient
     capture_path: Path or None = (
         app.state.settings.API_SERVER_HTTP_CALLS_CAPTURE_LOGS_PATH
     )
