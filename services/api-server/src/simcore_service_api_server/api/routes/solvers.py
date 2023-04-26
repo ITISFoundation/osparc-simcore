@@ -16,7 +16,7 @@ from ..dependencies.application import get_product_name, get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 router = APIRouter()
 settings = BasicSettings.create_from_envs()
@@ -193,7 +193,7 @@ async def list_solver_ports(
 
     except ValidationError as err:
         error_code = create_error_code(err)
-        logger.exception(
+        _logger.exception(
             "Corrupted port data for service %s [%s]",
             f"{solver_key}:{version}",
             f"{error_code}",

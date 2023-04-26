@@ -24,7 +24,7 @@ from .openapi import override_openapi_method, use_route_names_as_operation_ids
 from .redoc import create_redoc_handler
 from .settings import ApplicationSettings
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
@@ -35,7 +35,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     logging.basicConfig(level=settings.LOG_LEVEL.value)
     logging.root.setLevel(settings.LOG_LEVEL.value)
     config_all_loggers(settings.API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED)
-    logger.debug("App settings:\n%s", settings.json(indent=2))
+    _logger.debug("App settings:\n%s", settings.json(indent=2))
 
     # creates app instance
     app = FastAPI(

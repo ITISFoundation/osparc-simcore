@@ -44,3 +44,10 @@ class HttpApiCallCaptureModel(BaseModel):
     @property
     def request_desc(self) -> str:
         return f"{self.method} {self.path}"
+
+
+def get_capture_msg(name: str, response: httpx.Response) -> str:
+    capture_json: str = HttpApiCallCaptureModel.create_from_response(
+        response, name=name
+    ).json(indent=1)
+    return f"CAPTURE: {capture_json}"

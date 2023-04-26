@@ -19,7 +19,7 @@ async def test_list_solvers(
     mocker: MockFixture,
 ):
     warn = mocker.patch.object(
-        simcore_service_api_server.api.routes.solvers.logger, "warning"
+        simcore_service_api_server.api.routes.solvers._logger, "warning"
     )
 
     # list solvers latest releases
