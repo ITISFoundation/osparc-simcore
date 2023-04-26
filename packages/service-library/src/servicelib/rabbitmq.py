@@ -172,12 +172,11 @@ class RabbitMQClient:
                 queue_parameters |= {"name": exchange_name}
             queue = await channel.declare_queue(**queue_parameters)
             if topics is None:
-                await queue.bind(exchange)
+                await queue.bind(exchange, routing_key="")
             else:
                 await asyncio.gather(
                     *(queue.bind(exchange, routing_key=topic) for topic in topics)
                 )
-            # await queue.bind(exchange, routing_key=topic)
 
             async def _on_message(
                 message: aio_pika.abc.AbstractIncomingMessage,
