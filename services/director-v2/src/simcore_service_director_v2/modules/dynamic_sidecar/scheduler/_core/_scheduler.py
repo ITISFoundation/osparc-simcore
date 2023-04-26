@@ -17,7 +17,6 @@ import asyncio
 import functools
 import logging
 from asyncio import sleep
-from contextlib import suppress
 from dataclasses import dataclass
 
 from models_library.basic_types import PortInt
@@ -27,6 +26,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import RestartPolicy, SimcoreServiceLabels
 from models_library.users import UserID
 from pydantic import AnyHttpUrl
+from servicelib.background_task import cancel_task
 from servicelib.fastapi.long_running_tasks.client import ProgressCallback
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
@@ -249,27 +249,25 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
                 return
 
             current: SchedulerData = self._to_observe[service_name]
+
+            # if service is already being removed no need to force a cancellation and removal of the service
+            if current.dynamic_sidecar.service_removal_state.can_remove:
+                logger.info(
+                    "Service %s is already being removed, will not cancel observation",
+                    node_uuid,
+                )
+                return
+
             current.dynamic_sidecar.service_removal_state.mark_to_remove(can_save)
             await update_scheduler_data_label(current)
 
             # cancel current observation task
             if service_name in self._service_observation_task:
-                service_task: None | (
-                    asyncio.Task | object
-                ) = self._service_observation_task[service_name]
+                service_task: None | asyncio.Task | object = (
+                    self._service_observation_task[service_name]
+                )
                 if isinstance(service_task, asyncio.Task):
-                    service_task.cancel()
-
-                    async def _await_task(task: asyncio.Task) -> None:
-                        await task
-
-                    with suppress(asyncio.CancelledError):
-                        try:
-                            await asyncio.wait_for(
-                                _await_task(service_task), timeout=10
-                            )
-                        except asyncio.TimeoutError:
-                            pass
+                    await cancel_task(service_task, timeout=10)
 
             if skip_observation_recreation:
                 return
@@ -526,6 +524,7 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
                 continue
 
             if self._service_observation_task.get(service_name) is None:
+                logger.info("Create observation task for service %s", service_name)
                 self._service_observation_task[
                     service_name
                 ] = self.__create_observation_task(
