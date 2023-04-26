@@ -13,7 +13,6 @@ from settings_library.catalog import CatalogSettings
 from ..models.basic_types import VersionStr
 from ..models.schemas.solvers import LATEST_VERSION, Solver, SolverKeyId, SolverPort
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
-from ..utils.logging import get_capture_msg
 
 _logger = logging.getLogger(__name__)
 
@@ -90,8 +89,7 @@ class CatalogApi(BaseServiceClientApi):
             params={"user_id": user_id, "details": True},
             headers={"x-simcore-products-name": product_name},
         )
-
-        _logger.debug("%s", get_capture_msg("list_services_v0_services_get", response))
+        self.capture_api_call("list_services_v0_services_get", response)
 
         response.raise_for_status()
 
@@ -130,11 +128,8 @@ class CatalogApi(BaseServiceClientApi):
             params={"user_id": user_id},
             headers={"x-simcore-products-name": product_name},
         )
-        _logger.debug(
-            "%s",
-            get_capture_msg(
-                "get_service_v0_services__service_key___service_version__get", response
-            ),
+        self.capture_api_call(
+            "get_service_v0_services__service_key___service_version__get", response
         )
         response.raise_for_status()
 
@@ -160,12 +155,10 @@ class CatalogApi(BaseServiceClientApi):
             params={"user_id": user_id},
             headers={"x-simcore-products-name": product_name},
         )
-        _logger.debug(
-            "%s",
-            get_capture_msg(
-                "list_service_ports_v0_services__service_key___service_version__ports_get",
-                response,
-            ),
+
+        self.capture_api_call(
+            "list_service_ports_v0_services__service_key___service_version__ports_get",
+            response,
         )
         response.raise_for_status()
 

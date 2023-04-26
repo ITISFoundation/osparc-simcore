@@ -17,7 +17,7 @@ class HttpApiCallCaptureModel(BaseModel):
     path: str
     query: str | None = None
     request_payload: dict[str, Any] | None = None
-    response_body: dict[str, Any] | None = None
+    response_body: dict[str, Any] | list | None = None
     status_code: HTTPStatus = HTTPStatus.OK
 
     @classmethod
@@ -25,6 +25,7 @@ class HttpApiCallCaptureModel(BaseModel):
         cls, response: httpx.Response, name: str, description: str = ""
     ) -> "HttpApiCallCaptureModel":
         request = response.request
+
         return cls(
             name=name,
             description=description or f"{request}",

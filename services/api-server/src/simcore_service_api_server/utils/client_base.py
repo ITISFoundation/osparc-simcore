@@ -1,13 +1,13 @@
 import logging
 from dataclasses import dataclass
-from typing import Optional
 
 import httpx
 from fastapi import FastAPI
 
 from .app_data import AppDataMixin
+from .logging import get_capture_msg
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -23,6 +23,7 @@ class BaseServiceClientApi(AppDataMixin):
     client: httpx.AsyncClient
     service_name: str
     health_check_path: str = "/"
+    capture_enabled: bool = False
 
     async def is_responsive(self) -> bool:
         try:
@@ -30,10 +31,14 @@ class BaseServiceClientApi(AppDataMixin):
             resp.raise_for_status()
             return True
         except (httpx.HTTPStatusError, httpx.RequestError) as err:
-            log.error("%s not responsive: %s", self.service_name, err)
+            _logger.error("%s not responsive: %s", self.service_name, err)
             return False
 
     ping = is_responsive  # alias
+
+    def capture_api_call(self, name: str, response: httpx.Response):
+        if self.capture_enabled:
+            _logger.info("%s", get_capture_msg(name, response))
 
 
 # HELPERS -------------------------------------------------------------
@@ -59,7 +64,7 @@ def setup_client_instance(
         )
 
     async def _cleanup_instance() -> None:
-        api_obj: Optional[BaseServiceClientApi] = api_cls.pop_instance(app)
+        api_obj: BaseServiceClientApi | None = api_cls.pop_instance(app)
         if api_obj:
             await api_obj.client.aclose()
 
