@@ -120,7 +120,7 @@ async def iter_latest_product_services(
 
 
 @dataclass
-class ServiceValidated:
+class ValidService:
     key: str
     version: str
     title: str
@@ -134,7 +134,7 @@ async def validate_requested_service(
     *,
     service_key: ServiceKey,
     service_version: ServiceVersion,
-) -> ServiceValidated:
+) -> ValidService:
     engine: Engine = get_database_engine(app)
 
     async with engine.acquire() as conn:
@@ -175,7 +175,7 @@ async def validate_requested_service(
             with suppress(ValidationError):
                 thumbnail_or_none = parse_obj_as(HttpUrl, row.thumbnail)
 
-        return ServiceValidated(
+        return ValidService(
             key=service_key,
             version=service_version,
             is_public=bool(is_guest_allowed),

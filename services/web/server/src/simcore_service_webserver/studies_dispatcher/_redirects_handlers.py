@@ -19,7 +19,7 @@ from servicelib.error_codes import create_error_code
 from ..products.plugin import get_product_name
 from ..utils import compose_support_error_msg
 from ..utils_aiohttp import create_redirect_response
-from ._catalog import validate_requested_service
+from ._catalog import ValidService, validate_requested_service
 from ._constants import MSG_UNEXPECTED_ERROR
 from ._core import ViewerInfo, validate_requested_viewer
 from ._errors import InvalidRedirectionParams, StudyDispatcherError
@@ -37,7 +37,7 @@ _SPACE = " "
 
 
 #
-# HELPERS to redirect to Front-end pages
+# HELPERS
 #
 
 
@@ -69,6 +69,71 @@ def _create_redirect_response_to_error_page(
         message=message,
         status_code=status_code,
     )
+
+
+def _create_service_info_from(service: ValidService) -> ServiceInfo:
+    values_map = dict(
+        key=service.key,
+        version=service.version,
+        label=service.title,
+        is_guest_allowed=service.is_public,
+    )
+    if service.thumbnail:
+        values_map["thumbnail"] = service.thumbnail
+    return ServiceInfo.construct(_fields_set=set(values_map.keys()), **values_map)
+
+
+def _handle_errors_with_error_page(handler: Handler):
+    @functools.wraps(handler)
+    async def wrapper(request: web.Request) -> web.StreamResponse:
+        try:
+            return await handler(request)
+
+        except StudyDispatcherError as err:
+            raise _create_redirect_response_to_error_page(
+                request.app,
+                message=f"Sorry, we cannot dispatch your study: {err}",
+                status_code=web.HTTPUnprocessableEntity.status_code,  # 422
+            ) from err
+
+        except web.HTTPUnauthorized as err:
+            raise _create_redirect_response_to_error_page(
+                request.app,
+                message=f"{err.reason}. Please reload this page to login/register.",
+                status_code=err.status_code,
+            ) from err
+
+        except web.HTTPUnprocessableEntity as err:
+            raise _create_redirect_response_to_error_page(
+                request.app,
+                message=f"Invalid parameters in link: {err.reason}",
+                status_code=web.HTTPUnprocessableEntity.status_code,  # 422
+            ) from err
+
+        except web.HTTPClientError as err:
+            _logger.exception("Client error with status code %d", err.status_code)
+            raise _create_redirect_response_to_error_page(
+                request.app,
+                message=err.reason,
+                status_code=err.status_code,
+            ) from err
+
+        except (ValidationError, web.HTTPServerError, Exception) as err:
+            error_code = create_error_code(err)
+            _logger.exception(
+                "Unexpected failure while dispatching study [%s]",
+                f"{error_code}",
+                extra={"error_code": error_code},
+            )
+            raise _create_redirect_response_to_error_page(
+                request.app,
+                message=compose_support_error_msg(
+                    msg=MSG_UNEXPECTED_ERROR.format(hint=""), error_code=error_code
+                ),
+                status_code=500,
+            ) from err
+
+    return wrapper
 
 
 #
@@ -150,57 +215,9 @@ class RedirectionQueryParams(ViewerQueryParams):
         }
 
 
-def _handle_errors_with_error_page(handler: Handler):
-    @functools.wraps(handler)
-    async def wrapper(request: web.Request) -> web.StreamResponse:
-        try:
-            return await handler(request)
-
-        except StudyDispatcherError as err:
-            raise _create_redirect_response_to_error_page(
-                request.app,
-                message=f"Sorry, we cannot dispatch your study: {err}",
-                status_code=web.HTTPUnprocessableEntity.status_code,  # 422
-            ) from err
-
-        except web.HTTPUnauthorized as err:
-            raise _create_redirect_response_to_error_page(
-                request.app,
-                message=f"{err.reason}. Please reload this page to login/register.",
-                status_code=err.status_code,
-            ) from err
-
-        except web.HTTPUnprocessableEntity as err:
-            raise _create_redirect_response_to_error_page(
-                request.app,
-                message=f"Invalid parameters in link: {err.reason}",
-                status_code=web.HTTPUnprocessableEntity.status_code,  # 422
-            ) from err
-
-        except web.HTTPClientError as err:
-            _logger.exception("Client error with status code %d", err.status_code)
-            raise _create_redirect_response_to_error_page(
-                request.app,
-                message=err.reason,
-                status_code=err.status_code,
-            ) from err
-
-        except (ValidationError, web.HTTPServerError, Exception) as err:
-            error_code = create_error_code(err)
-            _logger.exception(
-                "Unexpected failure while dispatching study [%s]",
-                f"{error_code}",
-                extra={"error_code": error_code},
-            )
-            raise _create_redirect_response_to_error_page(
-                request.app,
-                message=compose_support_error_msg(
-                    msg=MSG_UNEXPECTED_ERROR.format(hint=""), error_code=error_code
-                ),
-                status_code=500,
-            ) from err
-
-    return wrapper
+#
+# API HANDLERS
+#
 
 
 @_handle_errors_with_error_page
@@ -255,32 +272,23 @@ async def get_redirection_to_viewer(request: web.Request):
 
     elif service_params:
 
-        valid_service = await validate_requested_service(
+        valid_service: ValidService = await validate_requested_service(
             app=request.app,
             service_key=service_params.viewer_key,
             service_version=service_params.viewer_version,
         )
 
-        # Retrieve user or create a temporary guest
         user: UserInfo = await get_or_create_user(
             request, is_guest_allowed=valid_service.is_public
         )
 
-        values_map = dict(
-            key=valid_service.key,
-            version=valid_service.version,
-            label=valid_service.title,
-            is_guest_allowed=valid_service.is_public,
-        )
-        if valid_service.thumbnail:
-            values_map["thumbnail"] = valid_service.thumbnail
+        # Maps ValidService to ServiceInfo
+        service_info = _create_service_info_from(valid_service)
 
         project_id, viewer_id = await get_or_create_project_with_service(
             request.app,
             user,
-            service_info=ServiceInfo.construct(
-                _fields_set=set(values_map.keys()), **values_map
-            ),
+            service_info=service_info,
             product_name=get_product_name(request),
         )
 

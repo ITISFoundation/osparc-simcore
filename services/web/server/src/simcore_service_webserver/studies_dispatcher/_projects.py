@@ -60,7 +60,7 @@ def _create_file_picker(download_link: str):
         inputNodes=[],
         outputs={
             # NOTE: Empty label checked with @odeimaiz
-            output_id: DownloadLink(
+            output_id: DownloadLink(  # type: ignore
                 downloadLink=parse_obj_as(AnyUrl, download_link),
                 label="",
             )
