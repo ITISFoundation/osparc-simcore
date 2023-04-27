@@ -10,7 +10,7 @@ from ._handlers_redirects import get_redirection_to_viewer
 from ._studies_access import get_redirection_to_study_page
 from .settings import StudiesDispatcherSettings, get_plugin_settings
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def _setup_studies_access(app: web.Application, settings: StudiesDispatcherSettings):
@@ -35,7 +35,7 @@ def _setup_studies_access(app: web.Application, settings: StudiesDispatcherSetti
     "simcore_service_webserver.studies_dispatcher",
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_STUDIES_DISPATCHER",
-    logger=logger,
+    logger=_logger,
 )
 def setup_studies_dispatcher(app: web.Application) -> bool:
     settings: StudiesDispatcherSettings = get_plugin_settings(app)
@@ -49,7 +49,7 @@ def setup_studies_dispatcher(app: web.Application) -> bool:
     if settings.is_login_required():
         redirect_handler = login_required(get_redirection_to_viewer)
 
-        logger.info(
+        _logger.info(
             "'%s' config explicitly disables anonymous users from this feature",
             __name__,
         )

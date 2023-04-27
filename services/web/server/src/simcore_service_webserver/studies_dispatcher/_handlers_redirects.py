@@ -4,7 +4,6 @@
 import functools
 import logging
 import urllib.parse
-from typing import cast
 
 from aiohttp import web
 from models_library.services import ServiceKey, ServiceVersion
@@ -31,6 +30,11 @@ from ._users import UserInfo, acquire_user, ensure_authentication
 
 _logger = logging.getLogger(__name__)
 _SPACE = " "
+
+
+#
+# API Models
+#
 
 
 class ViewerQueryParams(BaseModel):
@@ -107,29 +111,6 @@ class RedirectionQueryParams(ViewerQueryParams):
         }
 
 
-def compose_dispatcher_prefix_url(request: web.Request, viewer: ViewerInfo) -> HttpUrl:
-    """This is denoted PREFIX URL because it needs to append extra query
-    parameters added in RedirectionQueryParams
-    """
-    params = ViewerQueryParams.from_viewer(viewer).dict()
-    absolute_url = request.url.join(
-        request.app.router["get_redirection_to_viewer"].url_for().with_query(**params)
-    )
-    return cast(HttpUrl, f"{absolute_url}")
-
-
-def compose_service_dispatcher_prefix_url(
-    request: web.Request, service_key: str, service_version: str
-) -> HttpUrl:
-    params = ViewerQueryParams(
-        viewer_key=service_key, viewer_version=service_version  # type: ignore
-    ).dict(exclude_none=True, exclude_unset=True)
-    absolute_url = request.url.join(
-        request.app.router["get_redirection_to_viewer"].url_for().with_query(**params)
-    )
-    return cast(HttpUrl, f"{absolute_url}")
-
-
 def _handle_errors_with_error_page(handler: Handler):
     @functools.wraps(handler)
     async def wrapper(request: web.Request) -> web.StreamResponse:
@@ -190,6 +171,13 @@ def _handle_errors_with_error_page(handler: Handler):
 
 @_handle_errors_with_error_page
 async def get_redirection_to_viewer(request: web.Request):
+    """
+    - validate request
+    - acquire user
+    - acquire project
+    - create_redirect_response
+    - ensure_authentication
+    """
     query_params = parse_request_query_parameters_as(RedirectionQueryParams, request)
 
     _logger.debug("Requesting viewer %s", query_params)
@@ -234,9 +222,6 @@ async def get_redirection_to_viewer(request: web.Request):
             file_size=file_params.file_size,
         )
 
-        # lastly, ensure auth if any
-        await ensure_authentication(user, request, response)
-
     elif service_params:
 
         valid_service = await validate_requested_service(
@@ -278,8 +263,6 @@ async def get_redirection_to_viewer(request: web.Request):
             file_size=0,
         )
 
-        await ensure_authentication(user, request, response)
-
     elif file_params:
         # Retrieve user or create a temporary guest
         user: UserInfo = await acquire_user(request, is_guest_allowed=False)
@@ -307,10 +290,12 @@ async def get_redirection_to_viewer(request: web.Request):
             file_size=file_params.file_size,
         )
 
-        # lastly, ensure auth if any
-        await ensure_authentication(user, request, response)
     else:
+        # NOTE: if query is done right, this should never happen
         raise StudyDispatcherError(reason=MSG_INVALID_REDIRECTION_PARAMS_ERROR)
+
+    # lastly, ensure auth if any
+    await ensure_authentication(user, request, response)
 
     _logger.debug(
         "Response with redirect '%s' w/ auth cookie in headers %s)",

@@ -11,4 +11,3 @@
         - redirect to main page (passing study information to the front-end in the fragment)
 
 """
-# TODO: move here all studies_access.py
