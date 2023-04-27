@@ -1,6 +1,14 @@
 from typing import Final
 
+#
 # NOTE: MSG_$(ERROR_CODE_NAME) strings MUST be human readable messages
+#       Please keep alphabetical order
+#
+
+
+MSG_INVALID_REDIRECTION_PARAMS_ERROR: Final[
+    str
+] = "Invalid request link: cannot find reference to either file or service"
 
 
 MSG_PROJECT_NOT_FOUND: Final[str] = "Cannot find any study with ID '{project_id}'"

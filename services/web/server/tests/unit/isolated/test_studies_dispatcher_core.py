@@ -1,7 +1,8 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-# pylint: disable=too-many-arguments
 
 
 import json
@@ -18,13 +19,13 @@ from pydantic.main import BaseModel
 from pydantic.networks import HttpUrl
 from pytest_simcore.helpers.utils_services import list_fake_file_consumers
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
+from simcore_service_webserver.studies_dispatcher._handlers_redirects import (
+    RedirectionQueryParams,
+)
 from simcore_service_webserver.studies_dispatcher._projects import (
     UserInfo,
     ViewerInfo,
     _create_project_with_filepicker_and_service,
-)
-from simcore_service_webserver.studies_dispatcher.handlers_redirects import (
-    RedirectionQueryParams,
 )
 from yarl import URL
 

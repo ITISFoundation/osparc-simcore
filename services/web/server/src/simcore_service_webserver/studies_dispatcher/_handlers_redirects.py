@@ -19,7 +19,7 @@ from ..products.plugin import get_product_name
 from ..utils import compose_support_error_msg
 from ..utils_aiohttp import create_redirect_response
 from ._catalog import validate_requested_service
-from ._constants import MSG_UNEXPECTED_ERROR
+from ._constants import MSG_INVALID_REDIRECTION_PARAMS_ERROR, MSG_UNEXPECTED_ERROR
 from ._core import StudyDispatcherError, ViewerInfo, validate_requested_viewer
 from ._models import FileParams, ServiceInfo, ServiceParams
 from ._projects import (
@@ -29,7 +29,7 @@ from ._projects import (
 )
 from ._users import UserInfo, acquire_user, ensure_authentication
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 _SPACE = " "
 
 
@@ -106,18 +106,6 @@ class RedirectionQueryParams(ViewerQueryParams):
             ]
         }
 
-    def file_params(self) -> bool:
-        return (
-            parse_obj_or_none(FileParams, self) is not None
-            and parse_obj_or_none(ServiceParams, self) is None
-        )
-
-    def is_service_only(self) -> bool:
-        return (
-            parse_obj_or_none(FileParams, self) is None
-            and parse_obj_or_none(ServiceParams, self) is not None
-        )
-
 
 def compose_dispatcher_prefix_url(request: web.Request, viewer: ViewerInfo) -> HttpUrl:
     """This is denoted PREFIX URL because it needs to append extra query
@@ -173,7 +161,7 @@ def _handle_errors_with_error_page(handler: Handler):
             ) from err
 
         except web.HTTPClientError as err:
-            logger.exception("Client error with status code %d", err.status_code)
+            _logger.exception("Client error with status code %d", err.status_code)
             raise create_redirect_response(
                 request.app,
                 page="error",
@@ -183,7 +171,7 @@ def _handle_errors_with_error_page(handler: Handler):
 
         except (ValidationError, web.HTTPServerError, Exception) as err:
             error_code = create_error_code(err)
-            logger.exception(
+            _logger.exception(
                 "Unexpected failure while dispatching study [%s]",
                 f"{error_code}",
                 extra={"error_code": error_code},
@@ -202,11 +190,12 @@ def _handle_errors_with_error_page(handler: Handler):
 
 @_handle_errors_with_error_page
 async def get_redirection_to_viewer(request: web.Request):
-    params = parse_request_query_parameters_as(RedirectionQueryParams, request)
-    logger.debug("Requesting viewer %s", params)
+    query_params = parse_request_query_parameters_as(RedirectionQueryParams, request)
 
-    file_params = parse_obj_or_none(FileParams, params)
-    service_params = parse_obj_or_none(ServiceParams, params)
+    _logger.debug("Requesting viewer %s", query_params)
+
+    file_params = parse_obj_or_none(FileParams, query_params)
+    service_params = parse_obj_or_none(ServiceParams, query_params)
 
     if file_params and service_params:
         # TODO: Cannot check file_size from HEAD
@@ -214,28 +203,25 @@ async def get_redirection_to_viewer(request: web.Request):
         # Perhaps can check the header for GET while downloading and retreive file_size??
         viewer: ViewerInfo = await validate_requested_viewer(
             request.app,
-            file_type=params.file_type,
-            file_size=params.file_size,
-            service_key=params.viewer_key,
-            service_version=params.viewer_version,
+            file_type=file_params.file_type,
+            file_size=file_params.file_size,
+            service_key=service_params.viewer_key,
+            service_version=service_params.viewer_version,
         )
-        logger.debug("Validated viewer %s", viewer)
 
         # Retrieve user or create a temporary guest
         user: UserInfo = await acquire_user(
             request, is_guest_allowed=viewer.is_guest_allowed
         )
-        logger.debug("User acquired %s", user)
 
         # Generate one project per user + download_link + viewer
         project_id, viewer_id = await acquire_project_with_viewer(
             request.app,
             user,
             viewer,
-            params.download_link,
+            file_params.download_link,
             product_name=get_product_name(request),
         )
-        logger.debug("Project acquired '%s'", project_id)
 
         # Redirection and creation of cookies (for guests)
         # Produces  /#/view?project_id= & viewer_node_id
@@ -244,34 +230,44 @@ async def get_redirection_to_viewer(request: web.Request):
             page="view",
             project_id=project_id,
             viewer_node_id=viewer_id,
-            file_name=params.file_name or "unkwnown",
-            file_size=params.file_size,
+            file_name=file_params.file_name or "unkwnown",
+            file_size=file_params.file_size,
         )
 
         # lastly, ensure auth if any
         await ensure_authentication(user, request, response)
 
     elif service_params:
+
         valid_service = await validate_requested_service(
             app=request.app,
-            service_key=params.viewer_key,
-            service_version=params.viewer_version,
+            service_key=service_params.viewer_key,
+            service_version=service_params.viewer_version,
         )
-
-        logger.debug("Validated service %s", valid_service)
 
         # Retrieve user or create a temporary guest
         user: UserInfo = await acquire_user(
             request, is_guest_allowed=valid_service.is_public
         )
-        logger.debug("User acquired %s", user)
+
+        values_map = dict(
+            key=valid_service.key,
+            version=valid_service.version,
+            label=valid_service.title,
+            is_guest_allowed=valid_service.is_public,
+        )
+        if valid_service.thumbnail:
+            values_map["thumbnail"] = valid_service.thumbnail
 
         project_id, viewer_id = await acquire_project_with_service(
             request.app,
             user,
+            service_info=ServiceInfo.construct(
+                _fields_set=set(values_map.keys()), **values_map
+            ),
             product_name=get_product_name(request),
         )
-        logger.debug("Project acquired '%s'", project_id)
+        _logger.debug("Project acquired '%s'", project_id)
 
         response = create_redirect_response(
             request.app,
@@ -291,16 +287,32 @@ async def get_redirection_to_viewer(request: web.Request):
         project_id, file_picker_id = await acquire_project_with_file(
             request.app,
             user,
-            service_info=ServiceInfo(
-                key=valid_service.key,  # type: ignore
-                version=valid_service.version,  # type: ignore
-                label=valid_service.title,
-            ),
+            params=file_params,
+            thumbnail="",
             product_name=get_product_name(request),
         )
-        logger.debug("Project acquired '%s'", project_id)
+        _logger.debug("Project acquired '%s'", project_id)
 
-    logger.debug(
+        # Retrieve user or create a temporary guest
+        user: UserInfo = await acquire_user(request, is_guest_allowed=False)
+
+        # Redirection and creation of cookies (for guests)
+        # Produces  /#/view?project_id= & viewer_node_id
+        response = create_redirect_response(
+            request.app,
+            page="view",
+            project_id=project_id,
+            viewer_node_id=file_picker_id,  # FIXME!!!
+            file_name=file_params.file_name or "unkwnown",
+            file_size=file_params.file_size,
+        )
+
+        # lastly, ensure auth if any
+        await ensure_authentication(user, request, response)
+    else:
+        raise StudyDispatcherError(reason=MSG_INVALID_REDIRECTION_PARAMS_ERROR)
+
+    _logger.debug(
         "Response with redirect '%s' w/ auth cookie in headers %s)",
         response,
         response.headers,

@@ -1,13 +1,13 @@
 """ Helper script to generate OAS automatically NIH-sparc portal API section
 """
 
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-# pylint: disable=too-many-arguments
 
 from enum import Enum
-from typing import Optional, Union
 
 from fastapi import FastAPI, status
 from fastapi.responses import RedirectResponse
@@ -15,14 +15,14 @@ from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.services import ServiceKey, ServiceKeyVersion
 from pydantic import HttpUrl, PositiveInt
-from simcore_service_webserver.studies_dispatcher.handlers_rest import (
+from simcore_service_webserver.studies_dispatcher._handlers_rest import (
     ServiceGet,
     Viewer,
 )
 
 app = FastAPI(redoc_url=None)
 
-TAGS: list[Union[str, Enum]] = [
+TAGS: list[str | Enum] = [
     "nih-sparc",
 ]
 
@@ -43,7 +43,7 @@ async def list_services():
     tags=TAGS,
     operation_id="list_viewers",
 )
-async def list_viewers(file_type: Optional[str] = None):
+async def list_viewers(file_type: str | None = None):
     """Lists all publically available viewers
 
     Notice that this might contain multiple services for the same filetype
@@ -58,7 +58,7 @@ async def list_viewers(file_type: Optional[str] = None):
     tags=TAGS,
     operation_id="list_default_viewers",
 )
-async def list_default_viewers(file_type: Optional[str] = None):
+async def list_default_viewers(file_type: str | None = None):
     """Lists the default viewer for each supported filetype
 
     This was interfaced as a subcollection of viewers because it is a very common use-case
@@ -83,7 +83,7 @@ async def get_redirection_to_viewer(
     viewer_version: ServiceKeyVersion,
     file_size: PositiveInt,
     download_link: HttpUrl,
-    file_name: Optional[str] = "unknown",
+    file_name: str | None = "unknown",
 ):
     """Opens a viewer in osparc for data in the NIH-sparc portal"""
 

@@ -17,11 +17,11 @@ from ..products.plugin import get_product_name
 from ..utils_aiohttp import envelope_json_response
 from ._catalog import ServiceMetaData, iter_latest_product_services
 from ._core import list_viewers_info
-from ._models import ViewerInfo
-from .handlers_redirects import (
+from ._handlers_redirects import (
     compose_dispatcher_prefix_url,
     compose_service_dispatcher_prefix_url,
 )
+from ._models import ViewerInfo
 
 logger = logging.getLogger(__name__)
 
