@@ -1,9 +1,6 @@
-import logging
 from datetime import datetime
 
 from pydantic import BaseModel, Field, NonNegativeFloat, PrivateAttr
-
-log = logging.getLogger(__name__)
 
 
 class DelayedExceptionHandler(BaseModel):
