@@ -20,7 +20,7 @@ from simcore_postgres_database.models.services_consume_filetypes import (
 from simcore_postgres_database.utils_services import create_select_latest_services_query
 
 from ..db import get_database_engine
-from ._exceptions import StudyDispatcherError
+from ._errors import StudyDispatcherError
 from .settings import StudiesDispatcherSettings, get_plugin_settings
 
 _EVERYONE_GROUP_ID = 1

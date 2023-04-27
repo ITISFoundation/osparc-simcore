@@ -9,7 +9,7 @@ import urllib.parse
 from typing import Any, AsyncIterator
 
 import pytest
-import simcore_service_webserver.studies_dispatcher._handlers_redirects
+import simcore_service_webserver.studies_dispatcher._redirects_handlers
 import sqlalchemy as sa
 from aiohttp import ClientResponse, ClientSession, web
 from aiohttp.test_utils import TestClient, TestServer
@@ -25,7 +25,7 @@ from servicelib.json_serialization import json_dumps
 from settings_library.redis import RedisSettings
 from simcore_service_webserver import catalog
 from simcore_service_webserver.studies_dispatcher._core import ViewerInfo
-from simcore_service_webserver.studies_dispatcher._handlers_rest import ServiceGet
+from simcore_service_webserver.studies_dispatcher._rest_handlers import ServiceGet
 from sqlalchemy.sql import text
 from yarl import URL
 
@@ -232,7 +232,7 @@ async def test_api_list_supported_filetypes(client: TestClient):
 @pytest.mark.parametrize(
     "model_cls, example_name, example_data",
     iter_model_examples_in_module(
-        simcore_service_webserver.studies_dispatcher._handlers_redirects
+        simcore_service_webserver.studies_dispatcher._redirects_handlers
     ),
 )
 def test_model_examples(

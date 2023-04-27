@@ -16,8 +16,8 @@ from ..products.plugin import get_product_name
 from ..utils_aiohttp import envelope_json_response
 from ._catalog import ServiceMetaData, iter_latest_product_services
 from ._core import list_viewers_info
-from ._handlers_redirects import ViewerQueryParams
 from ._models import ViewerInfo
+from ._redirects_handlers import ViewerQueryParams
 
 _logger = logging.getLogger(__name__)
 

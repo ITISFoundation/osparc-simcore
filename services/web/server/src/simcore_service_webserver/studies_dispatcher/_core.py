@@ -11,7 +11,7 @@ from simcore_postgres_database.models.services_consume_filetypes import (
 )
 
 from .._constants import APP_DB_ENGINE_KEY
-from ._exceptions import StudyDispatcherError
+from ._errors import StudyDispatcherError
 from ._models import ViewerInfo
 
 _MEGABYTES = 1024 * 1024

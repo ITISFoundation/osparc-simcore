@@ -5,8 +5,8 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 
 from ..login.decorators import login_required
 from ..products.plugin import setup_products
-from . import _handlers_rest
-from ._handlers_redirects import get_redirection_to_viewer
+from . import _rest_handlers
+from ._redirects_handlers import get_redirection_to_viewer
 from ._studies_access import get_redirection_to_study_page
 from .settings import StudiesDispatcherSettings, get_plugin_settings
 
@@ -59,6 +59,6 @@ def setup_studies_dispatcher(app: web.Application) -> bool:
     )
 
     # Rest-API routes: maps handlers with routes tags with "viewer" based on OAS operation_id
-    app.router.add_routes(_handlers_rest.routes)
+    app.router.add_routes(_rest_handlers.routes)
 
     return True
