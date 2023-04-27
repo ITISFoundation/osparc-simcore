@@ -63,16 +63,14 @@ httpcore==0.15.0
     # via
     #   -c requirements/_base.txt
     #   httpx
-httpx==0.23.0
-    # via
-    #   -c requirements/_base.txt
-    #   respx
+httpx==0.24.0
+    # via respx
 idna==2.10
     # via
     #   -c requirements/_base.txt
     #   anyio
+    #   httpx
     #   requests
-    #   rfc3986
     #   yarl
 iniconfig==2.0.0
     # via pytest
@@ -147,10 +145,6 @@ requests==2.27.1
     #   docker
 respx==0.20.1
     # via -r requirements/_test.in
-rfc3986==1.4.0
-    # via
-    #   -c requirements/_base.txt
-    #   httpx
 six==1.15.0
     # via
     #   -c requirements/_base.txt
