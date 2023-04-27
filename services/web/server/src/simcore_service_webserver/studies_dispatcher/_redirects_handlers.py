@@ -90,8 +90,7 @@ def _handle_errors_with_error_page(handler: Handler):
             return await handler(request)
 
         except (web.HTTPRedirection, web.HTTPSuccessful):
-            # NOTE: aiohttp/web_protocol.py:
-            #    DeprecationWarning: returning HTTPException object is deprecated (#2415) and will be removed, please raise the exception instead
+            # NOTE: that response is a redirection that is reraised and not returned
             raise
 
         except StudyDispatcherError as err:
@@ -287,13 +286,10 @@ async def get_redirection_to_viewer(request: web.Request):
             request, is_guest_allowed=valid_service.is_public
         )
 
-        # Maps ValidService to ServiceInfo
-        service_info = _create_service_info_from(valid_service)
-
         project_id, viewer_id = await get_or_create_project_with_service(
             request.app,
             user,
-            service_info=service_info,
+            service_info=_create_service_info_from(valid_service),
             product_name=get_product_name(request),
         )
 
@@ -333,7 +329,7 @@ async def get_redirection_to_viewer(request: web.Request):
         # NOTE: if query is done right, this should never happen
         raise InvalidRedirectionParams()
 
-    # add auth cookies to response!
+    # Adds auth cookies (login)
     await ensure_authentication(user, request, response)
 
     _logger.debug(
