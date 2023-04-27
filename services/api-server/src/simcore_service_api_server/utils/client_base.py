@@ -9,7 +9,7 @@ from httpx._types import URLTypes
 from pydantic import ValidationError
 
 from .app_data import AppDataMixin
-from .http_calls_capture import get_capture_msg
+from .http_calls_capture import get_captured_as_json
 
 _logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ class BaseServiceClientApi(AppDataMixin):
     ping = is_responsive  # alias
 
 
-class _AsyncClientWithCaptures(httpx.AsyncClient):
+class _AsyncClientForDevelopmentOnly(httpx.AsyncClient):
     """
     Adds captures mechanism
     """
@@ -51,7 +51,7 @@ class _AsyncClientWithCaptures(httpx.AsyncClient):
         capture_name = f"{method} {url}"
         _logger.info("Capturing %s ... [might be slow]", capture_name)
         try:
-            capture_json = get_capture_msg(name=capture_name, response=response)
+            capture_json = get_captured_as_json(name=capture_name, response=response)
             _capture_logger.info("%s", capture_json)
         except ValidationError:
             _capture_logger.exception("Failed capturing %s", capture_name)
@@ -94,10 +94,12 @@ def setup_client_instance(
 
     # Http client class
     client_class: type = httpx.AsyncClient
-    with suppress(AttributeError):  # State not having settings
+    with suppress(AttributeError):
+        # NOTE that this is a general function with no guarantees as when is going to be used.
+        # Here, 'AttributeError' might be raied when app.state.settings is still not initialized
         if capture_path := app.state.settings.API_SERVER_HTTP_CALLS_CAPTURE_LOGS_PATH:
             _setup_capture_logger_once(capture_path)
-            client_class = _AsyncClientWithCaptures
+            client_class = _AsyncClientForDevelopmentOnly
 
     # events
     def _create_instance() -> None:
