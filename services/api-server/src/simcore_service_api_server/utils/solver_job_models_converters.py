@@ -22,7 +22,7 @@ from ..models.domain.projects import (
 from ..models.schemas.files import File
 from ..models.schemas.jobs import ArgumentType, Job, JobInputs, JobStatus, TaskStates
 from ..models.schemas.solvers import Solver, SolverKeyId
-from ..modules.director_v2 import ComputationTaskGet
+from ..plugins.director_v2 import ComputationTaskGet
 from .typing_extra import get_types
 
 # UTILS ------

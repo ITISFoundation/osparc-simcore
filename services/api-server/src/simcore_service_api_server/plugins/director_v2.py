@@ -21,7 +21,6 @@ logger = logging.getLogger(__name__)
 
 # API MODELS ---------------------------------------------
 # NOTE: as services/director-v2/src/simcore_service_director_v2/models/schemas/comp_tasks.py
-# TODO: shall schemas of internal APIs be in models_library as well?? or is against
 
 
 class ComputationTaskGet(ComputationTask):
@@ -34,7 +33,6 @@ class ComputationTaskGet(ComputationTask):
 
     def guess_progress(self) -> PercentageInt:
         # guess progress based on self.state
-        # FIXME: incomplete!
         if self.state in [RunningState.SUCCESS, RunningState.FAILED]:
             return PercentageInt(100)
         return PercentageInt(0)
@@ -54,7 +52,7 @@ DownloadLink = AnyUrl
 
 
 @contextmanager
-def handle_errors_context(project_id: UUID):
+def _handle_errors_context(project_id: UUID):
     try:
         yield
 
@@ -88,26 +86,13 @@ def handle_errors_context(project_id: UUID):
 
 
 class DirectorV2Api(BaseServiceClientApi):
-    # NOTE: keep here tmp as reference
-    # @handle_errors("director", logger, return_json=True)
-    # @handle_retry(logger)
-    # async def get(self, path: str, *args, **kwargs) -> JSON:
-    #     return await self.client.get(path, *args, **kwargs)
-
-    # director2 API ---------------------------
-    # TODO: error handling
-    #
-    #  HTTPStatusError: 404 Not Found
-    #  ValidationError
-    #  ServiceUnabalabe: 503
-
     async def create_computation(
         self,
         project_id: UUID,
         user_id: PositiveInt,
         product_name: str,
     ) -> ComputationTaskGet:
-        resp = await self.client.post(
+        response = await self.client.post(
             "/v2/computations",
             json={
                 "user_id": user_id,
@@ -116,9 +101,8 @@ class DirectorV2Api(BaseServiceClientApi):
                 "product_name": product_name,
             },
         )
-
-        resp.raise_for_status()
-        computation_task = ComputationTaskGet(**resp.json())
+        response.raise_for_status()
+        computation_task = ComputationTaskGet(**response.json())
         return computation_task
 
     async def start_computation(
@@ -128,12 +112,12 @@ class DirectorV2Api(BaseServiceClientApi):
         product_name: str,
         cluster_id: ClusterID | None = None,
     ) -> ComputationTaskGet:
-        with handle_errors_context(project_id):
+        with _handle_errors_context(project_id):
             extras = {}
             if cluster_id is not None:
                 extras["cluster_id"] = cluster_id
 
-            resp = await self.client.post(
+            response = await self.client.post(
                 "/v2/computations",
                 json={
                     "user_id": user_id,
@@ -143,34 +127,34 @@ class DirectorV2Api(BaseServiceClientApi):
                     **extras,
                 },
             )
-            resp.raise_for_status()
-            computation_task = ComputationTaskGet(**resp.json())
+            response.raise_for_status()
+            computation_task = ComputationTaskGet(**response.json())
             return computation_task
 
     async def get_computation(
         self, project_id: UUID, user_id: PositiveInt
     ) -> ComputationTaskGet:
-        resp = await self.client.get(
+        response = await self.client.get(
             f"/v2/computations/{project_id}",
             params={
                 "user_id": user_id,
             },
         )
-        resp.raise_for_status()
-        computation_task = ComputationTaskGet(**resp.json())
+        response.raise_for_status()
+        computation_task = ComputationTaskGet(**response.json())
         return computation_task
 
     async def stop_computation(
         self, project_id: UUID, user_id: PositiveInt
     ) -> ComputationTaskGet:
-        data = await self.client.post(
+        response = await self.client.post(
             f"/v2/computations/{project_id}:stop",
             json={
                 "user_id": user_id,
             },
         )
 
-        computation_task = ComputationTaskGet(**data.json())
+        computation_task = ComputationTaskGet(**response.json())
         return computation_task
 
     async def delete_computation(self, project_id: UUID, user_id: PositiveInt):
@@ -186,27 +170,22 @@ class DirectorV2Api(BaseServiceClientApi):
     async def get_computation_logs(
         self, user_id: PositiveInt, project_id: UUID
     ) -> dict[NodeName, DownloadLink]:
-        resp = await self.client.get(
+        response = await self.client.get(
             f"/v2/computations/{project_id}/tasks/-/logfile",
             params={
                 "user_id": user_id,
             },
         )
+
         # probably not found
-        resp.raise_for_status()
-        payload = parse_raw_as(list[TaskLogFileGet], resp.text or "[]")
-        return {r.task_id: r.download_link for r in payload}
+        response.raise_for_status()
 
-    # TODO: HIGHER lever interface with job* resources
-    # or better in another place?
-    async def create_job(self):
-        pass
+        node_to_links: dict[NodeName, DownloadLink] = {}
+        for r in parse_raw_as(list[TaskLogFileGet], response.text or "[]"):
+            if r.download_link:
+                node_to_links[f"{r.task_id}"] = r.download_link
 
-    async def list_jobs(self):
-        pass
-
-    async def get_job(self):
-        pass
+        return node_to_links
 
 
 # MODULES APP SETUP -------------------------------------------------------------
@@ -220,6 +199,6 @@ def setup(app: FastAPI, settings: DirectorV2Settings) -> None:
         app,
         DirectorV2Api,
         # WARNING: it has /v0 and /v2 prefixes
-        api_baseurl=f"http://{settings.DIRECTOR_V2_HOST}:{settings.DIRECTOR_V2_PORT}",
+        api_baseurl=settings.base_url,
         service_name="director_v2",
     )

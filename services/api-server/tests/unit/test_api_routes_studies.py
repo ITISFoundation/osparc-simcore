@@ -65,7 +65,7 @@ def mocked_webserver_service_api(
     # ENTRYPOINTS ---------
     # pylint: disable=not-context-manager
     with respx.mock(
-        base_url=settings.API_SERVER_WEBSERVER.base_url,
+        base_url=settings.API_SERVER_WEBSERVER.api_base_url,
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
@@ -114,7 +114,7 @@ def test_mocked_webserver_service_api(
     #
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_WEBSERVER
-    webserver_api_baseurl = settings.API_SERVER_WEBSERVER.base_url
+    webserver_api_baseurl = settings.API_SERVER_WEBSERVER.api_base_url
 
     resp = httpx.get(f"{webserver_api_baseurl}/health")
     assert resp.status_code == status.HTTP_200_OK
