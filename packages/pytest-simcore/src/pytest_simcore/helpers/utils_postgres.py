@@ -22,9 +22,10 @@ _LOG_HEAD_MIGRATION: Final[str] = "Migration service"
 
 def _get_migration_service(docker_client: docker.DockerClient) -> Service | None:
     service: Service
-    for service in docker_client.services.list():
-        if "migration" in service.name:
-            return service
+    for service in docker_client.services.list(
+        filters={"name": "pytest-simcore_migration"}
+    ):
+        return service
 
     return None
 
