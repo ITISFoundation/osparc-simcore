@@ -23,6 +23,7 @@ from ..redis import get_redis_lock_manager_client
 from ..security_api import authorized_userid, encrypt_password, is_anonymous, remember
 from ..users_api import get_user
 from ..users_exceptions import UserNotFoundError
+from ._constants import MSG_GUESTS_NOT_ALLOWED
 from .settings import StudiesDispatcherSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -114,10 +115,16 @@ async def _create_temporary_user(request: web.Request):
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def acquire_user(request: web.Request, *, is_guest_allowed: bool) -> UserInfo:
+async def get_or_create_user(
+    request: web.Request, *, is_guest_allowed: bool
+) -> UserInfo:
     """
-    Identifies request's user and if anonymous, it creates
-    a temporary guest user that is authorized.
+    Arguments:
+        is_guest_allowed -- if True, it will create a temporary GUEST account
+
+    Raises:
+        web.HTTPUnauthorized
+
     """
     user = None
 
@@ -133,7 +140,7 @@ async def acquire_user(request: web.Request, *, is_guest_allowed: bool) -> UserI
         is_anonymous_user = True
 
     if not is_guest_allowed and (not user or user.get("role") == GUEST):
-        raise web.HTTPUnauthorized(reason="Only available for registered users")
+        raise web.HTTPUnauthorized(reason=MSG_GUESTS_NOT_ALLOWED)
 
     assert isinstance(user, dict)  # nosec
 

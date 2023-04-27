@@ -26,7 +26,7 @@ from ._projects import (
     acquire_project_with_service,
     acquire_project_with_viewer,
 )
-from ._users import UserInfo, acquire_user, ensure_authentication
+from ._users import UserInfo, ensure_authentication, get_or_create_user
 
 _logger = logging.getLogger(__name__)
 _SPACE = " "
@@ -198,7 +198,7 @@ async def get_redirection_to_viewer(request: web.Request):
         )
 
         # Retrieve user or create a temporary guest
-        user: UserInfo = await acquire_user(
+        user: UserInfo = await get_or_create_user(
             request, is_guest_allowed=viewer.is_guest_allowed
         )
 
@@ -231,7 +231,7 @@ async def get_redirection_to_viewer(request: web.Request):
         )
 
         # Retrieve user or create a temporary guest
-        user: UserInfo = await acquire_user(
+        user: UserInfo = await get_or_create_user(
             request, is_guest_allowed=valid_service.is_public
         )
 
@@ -265,7 +265,7 @@ async def get_redirection_to_viewer(request: web.Request):
 
     elif file_params:
         # Retrieve user or create a temporary guest
-        user: UserInfo = await acquire_user(request, is_guest_allowed=False)
+        user: UserInfo = await get_or_create_user(request, is_guest_allowed=False)
 
         project_id, file_picker_id = await acquire_project_with_file(
             request.app,
@@ -277,7 +277,7 @@ async def get_redirection_to_viewer(request: web.Request):
         _logger.debug("Project acquired '%s'", project_id)
 
         # Retrieve user or create a temporary guest
-        user: UserInfo = await acquire_user(request, is_guest_allowed=False)
+        user: UserInfo = await get_or_create_user(request, is_guest_allowed=False)
 
         # Redirection and creation of cookies (for guests)
         # Produces  /#/view?project_id= & viewer_node_id

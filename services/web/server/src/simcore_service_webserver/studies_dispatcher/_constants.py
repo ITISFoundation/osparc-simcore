@@ -24,6 +24,10 @@ MSG_PUBLIC_PROJECT_NOT_PUBLISHED: Final[str] = (
     "If you don't have an account, write to the Support email to request one\n"
 )
 
+MSG_GUESTS_NOT_ALLOWED: Final[str] = (
+    "Access restricted to registered users\n"
+    "If you don't have an account, write to the Support email to request one\n"
+)
 
 MSG_UNEXPECTED_ERROR: Final[
     str
