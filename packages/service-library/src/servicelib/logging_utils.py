@@ -62,7 +62,7 @@ class CustomFormatter(logging.Formatter):
         if hasattr(record, "file_name_override"):
             record.filename = record.file_name_override
         if not hasattr(record, "log_uid"):
-            record.log_uid = -1  # Default value if user is not provided in the log
+            record.log_uid = None  # Default value if user is not provided in the log
 
         if self.log_format_local_dev_enabled:
             levelname = record.levelname
@@ -237,8 +237,7 @@ def log_context(logger: logging.Logger, level: int, msg: str, *args, **kwargs):
     logger.log(level, "Finished " + msg, *args, **kwargs)
 
 
-def get_extra(input_dict: dict) -> dict | None:
-    """Returns a dictionary with extra information to be added to the log record"""
-    if "user_id" in input_dict:
-        return {"log_uid": input_dict["user_id"]}
+def get_log_record_extra(user_id: int | str | None = None) -> dict | None:
+    if user_id:
+        return {"log_uid": f"{user_id}"}
     return None

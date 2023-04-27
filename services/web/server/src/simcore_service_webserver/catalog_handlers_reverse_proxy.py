@@ -1,7 +1,7 @@
 import logging
 
 from aiohttp import web
-from servicelib.logging_utils import get_extra
+from servicelib.logging_utils import get_log_record_extra
 from yarl import URL
 
 from . import catalog_client
@@ -40,7 +40,7 @@ async def reverse_proxy_handler(request: web.Request) -> web.Response:
         "Redirecting '%s' -> '%s'",
         request.url,
         backend_url,
-        extra=get_extra({"user_id": user_id}),
+        get_log_record_extra(user_id=user_id),
     )
 
     # body

@@ -12,7 +12,7 @@ from typing import Any
 
 from aiohttp import web
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
-from servicelib.logging_utils import get_extra, log_context
+from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.observer import emit, observe
 from servicelib.utils import fire_and_forget_task, logged_gather
 from socketio import AsyncServer
@@ -94,7 +94,9 @@ async def authenticate_user(
     log.debug("client %s authenticated", user_id)
     client_session_id = request.query.get("client_session_id", None)
     if not client_session_id:
-        log.error("Tab ID is not available!", extra=get_extra({"user_id": user_id}))
+        log.error(
+            "Tab ID is not available!", extra=get_log_record_extra(user_id=user_id)
+        )
         raise web.HTTPUnauthorized(reason="missing tab id")
 
     sio = get_socket_server(app)
@@ -107,7 +109,7 @@ async def authenticate_user(
         log.info(
             "socketio connection from user %s",
             user_id,
-            extra=get_extra({"user_id": user_id}),
+            extra=get_log_record_extra(user_id=user_id),
         )
         await rt.set_socket_id(sid)
 
@@ -157,7 +159,7 @@ async def on_user_logout(
                         "Disconnection of socket id '%s' failed. socket id could not be found: [%s]",
                         socket_id,
                         exc,
-                        extra=get_extra({"user_id": user_id}),
+                        extra=get_log_record_extra(user_id=user_id),
                     )
             # trigger faster gc on disconnect
             await rt.user_pressed_disconnect()
@@ -193,7 +195,7 @@ async def disconnect(sid: str, app: web.Application) -> None:
                 "disconnection of %s for %s",
                 f"{user_id=}",
                 f"{client_session_id=}",
-                extra=get_extra({"user_id": user_id}),
+                extra=get_log_record_extra(user_id=user_id),
             ):
                 with managed_resource(user_id, client_session_id, app) as rt:
                     log.debug("client %s disconnected from room %s", user_id, sid)

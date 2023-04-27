@@ -20,7 +20,7 @@ from dataclasses import dataclass
 from typing import Iterator
 
 from aiohttp import web
-from servicelib.logging_utils import get_extra, log_context
+from servicelib.logging_utils import get_log_record_extra, log_context
 
 from .registry import get_registry
 from .settings import ResourceManagerSettings, get_plugin_settings
@@ -73,7 +73,7 @@ class WebsocketRegistry:
             self.user_id,
             self.client_session_id,
             socket_id,
-            extra=get_extra({"user_id": self.user_id}),
+            extra=get_log_record_extra(user_id=self.user_id),
         )
         registry = get_registry(self.app)
         await registry.set_resource(self._resource_key(), (SOCKET_ID_KEY, socket_id))
@@ -103,7 +103,7 @@ class WebsocketRegistry:
             "user %s/tab %s removing socket from registry...",
             self.user_id,
             self.client_session_id,
-            extra=get_extra({"user_id": self.user_id}),
+            extra=get_log_record_extra(user_id=self.user_id),
         )
         registry = get_registry(self.app)
         await registry.remove_resource(self._resource_key(), SOCKET_ID_KEY)
@@ -124,7 +124,7 @@ class WebsocketRegistry:
             self.user_id,
             self.client_session_id,
             SOCKET_ID_KEY,
-            extra=get_extra({"user_id": self.user_id}),
+            extra=get_log_record_extra(user_id=self.user_id),
         )
         registry = get_registry(self.app)
         user_sockets = await registry.find_resources(
@@ -137,7 +137,7 @@ class WebsocketRegistry:
             log,
             logging.DEBUG,
             msg=f"{self.user_id=} finding all {key} from registry",
-            extra=get_extra({"user_id": self.user_id}),
+            extra=get_log_record_extra(user_id=self.user_id),
         ):
             resources = await get_registry(self.app).find_resources(
                 {"user_id": f"{self.user_id}", "client_session_id": "*"}, key
@@ -150,7 +150,7 @@ class WebsocketRegistry:
             self.user_id,
             self.client_session_id,
             key,
-            extra=get_extra({"user_id": self.user_id}),
+            extra=get_log_record_extra(user_id=self.user_id),
         )
         registry = get_registry(self.app)
         user_resources = await registry.find_resources(self._resource_key(), key)
@@ -163,7 +163,7 @@ class WebsocketRegistry:
             self.client_session_id,
             key,
             value,
-            extra=get_extra({"user_id": self.user_id}),
+            extra=get_log_record_extra(user_id=self.user_id),
         )
         registry = get_registry(self.app)
         await registry.set_resource(self._resource_key(), (key, value))
@@ -174,7 +174,7 @@ class WebsocketRegistry:
             self.user_id,
             self.client_session_id,
             key,
-            extra=get_extra({"user_id": self.user_id}),
+            extra=get_log_record_extra(user_id=self.user_id),
         )
         registry = get_registry(self.app)
         await registry.remove_resource(self._resource_key(), key)
@@ -186,7 +186,7 @@ class WebsocketRegistry:
             self.client_session_id,
             key,
             value,
-            extra=get_extra({"user_id": self.user_id}),
+            extra=get_log_record_extra(user_id=self.user_id),
         )
         registry = get_registry(self.app)
         registry_keys = await registry.find_keys((key, value))
@@ -209,7 +209,7 @@ def managed_resource(
             "Error in web-socket for user:%s, session:%s",
             user_id,
             client_session_id,
-            extra=get_extra({"user_id": user_id}),
+            extra=get_log_record_extra(user_id=user_id),
         )
         raise
 

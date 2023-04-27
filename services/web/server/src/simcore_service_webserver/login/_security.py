@@ -5,7 +5,7 @@ import logging
 from typing import Any
 
 from aiohttp import web
-from servicelib.logging_utils import get_extra, log_context
+from servicelib.logging_utils import get_log_record_extra, log_context
 
 from ..security_api import remember
 from ._constants import MSG_LOGGED_IN
@@ -32,7 +32,7 @@ async def login_granted_response(
         "login of user_id=%s with %s",
         f"{user_id}",
         f"{email=}",
-        extra=get_extra({"user_id": user_id}),
+        extra=get_log_record_extra(user_id=user_id),
     ):
         response = flash_response(MSG_LOGGED_IN, "INFO")
         await remember(

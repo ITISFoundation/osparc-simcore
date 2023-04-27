@@ -22,7 +22,7 @@ from pydantic import ValidationError, parse_obj_as
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.json_serialization import json_dumps
-from servicelib.logging_utils import get_extra, log_context
+from servicelib.logging_utils import get_log_record_extra, log_context
 from simcore_postgres_database.errors import UniqueViolation
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.webserver_models import ProjectType, projects
@@ -546,7 +546,7 @@ class ProjectDBAPI(BaseProjectDB):
             log,
             logging.DEBUG,
             msg=f"Patching project {project_uuid} for user {user_id}",
-            extra=get_extra({"user_id": user_id}),
+            extra=get_log_record_extra(user_id=user_id),
         ):
             async with self.engine.acquire() as conn, conn.begin() as _transaction:
                 current_project: dict = await self._get_project(
