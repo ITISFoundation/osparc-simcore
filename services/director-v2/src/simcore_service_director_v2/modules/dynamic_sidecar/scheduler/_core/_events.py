@@ -251,7 +251,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         await rabbitmq_client.publish(
             rabbit_message.get_channel_name(),
             rabbit_message.json(),
-            rabbit_message.topic(),
+            topic=rabbit_message.topic(),
         )
 
         await constrain_service_to_node(
