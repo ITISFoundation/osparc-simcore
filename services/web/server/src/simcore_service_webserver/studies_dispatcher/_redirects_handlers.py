@@ -89,6 +89,11 @@ def _handle_errors_with_error_page(handler: Handler):
         try:
             return await handler(request)
 
+        except (web.HTTPRedirection, web.HTTPSuccessful):
+            # NOTE: aiohttp/web_protocol.py:
+            #    DeprecationWarning: returning HTTPException object is deprecated (#2415) and will be removed, please raise the exception instead
+            raise
+
         except StudyDispatcherError as err:
             raise _create_redirect_response_to_error_page(
                 request.app,
@@ -337,4 +342,7 @@ async def get_redirection_to_viewer(request: web.Request):
         response.headers,
     )
 
-    return response
+    # NOTE: Why raising the response?
+    #  SEE aiohttp/web_protocol.py: DeprecationWarning: returning HTTPException object is deprecated (#2415) and will be removed, please raise the exception instead
+    assert isinstance(response, web.HTTPFound)  # nosec
+    raise response
