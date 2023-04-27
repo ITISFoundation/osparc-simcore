@@ -5,6 +5,11 @@ from typing import Final
 #       Please keep alphabetical order
 #
 
+MSG_DATA_TOO_BIG: Final[str] = "File size {file_size_in_mb} MB is over allowed limit"
+
+MSG_INCOMPATIBLE_SERVICE_AND_DATA: Final[
+    str
+] = "None of the registered viewers can open file type '{file_type}'"
 
 MSG_INVALID_REDIRECTION_PARAMS_ERROR: Final[
     str

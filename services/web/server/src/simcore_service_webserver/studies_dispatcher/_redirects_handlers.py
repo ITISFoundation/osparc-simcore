@@ -206,10 +206,12 @@ def _handle_errors_with_error_page(handler: Handler):
 async def get_redirection_to_viewer(request: web.Request):
     """
     - validate request
-    - acquire user
-    - acquire project
-    - create_redirect_response
-    - ensure_authentication
+    - get or create user
+    - get or create project
+    - create redirect response
+    - create and set auth cookie
+
+    NOTE: Can be set as login_required programatically with STUDIES_ACCESS_ANONYMOUS_ALLOWED env var.
     """
     query_params = parse_request_query_parameters_as(RedirectionQueryParams, request)
 
@@ -219,9 +221,7 @@ async def get_redirection_to_viewer(request: web.Request):
     service_params = parse_obj_or_none(ServiceParams, query_params)
 
     if file_params and service_params:
-        # TODO: Cannot check file_size from HEAD
-        # removed await params.check_download_link()
-        # Perhaps can check the header for GET while downloading and retreive file_size??
+        # NOTE: Cannot check file_size in from HEAD in a AWS download link so file_size is just infomative
         viewer: ViewerInfo = await validate_requested_viewer(
             request.app,
             file_type=file_params.file_type,
