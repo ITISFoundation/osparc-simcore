@@ -362,7 +362,7 @@ async def test_port_key_sequential_event_generation(
     # Waiting for events to finish propagation and changes to be uploaded
     MARGIN_FOR_ALL_EVENT_PROCESSORS_TO_TRIGGER = 1
     sleep_for = max(
-        [max(wait_interval_for_port) + MARGIN_FOR_ALL_EVENT_PROCESSORS_TO_TRIGGER, 3]
+        max(wait_interval_for_port) + MARGIN_FOR_ALL_EVENT_PROCESSORS_TO_TRIGGER, 3
     )
     print(f"Waiting {sleep_for} seconds for events to be processed")
     await asyncio.sleep(sleep_for)
