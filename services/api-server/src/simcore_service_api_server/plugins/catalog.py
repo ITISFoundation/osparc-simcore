@@ -60,12 +60,6 @@ class TruncatedCatalogServiceOut(ServiceDockerData):
 #
 # - Error handling: What do we reraise, suppress, transform???
 #
-#
-# TODO: handlers should not capture outputs
-# @handle_errors("catalog", logger, return_json=True)
-# @handle_retry(logger)
-# async def get(self, path: str, *args, **kwargs) -> JSON:
-#     return await self.client.get(path, *args, **kwargs)
 
 
 @dataclass
@@ -91,7 +85,6 @@ class CatalogApi(BaseServiceClientApi):
         )
         response.raise_for_status()
 
-        # TODO: move this sorting down to catalog service?
         solvers = []
         for data in response.json():
             try:
