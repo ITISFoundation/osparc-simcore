@@ -14,6 +14,7 @@ import redis.asyncio as aioredis
 from aiohttp import web
 from models_library.emails import LowerCaseEmailStr
 from pydantic import BaseModel, parse_obj_as
+from servicelib.logging_utils import log_decorator
 
 from ..garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
 from ..login.storage import AsyncpgStorage, get_plugin_storage
@@ -24,7 +25,7 @@ from ..users_api import get_user
 from ..users_exceptions import UserNotFoundError
 from .settings import StudiesDispatcherSettings, get_plugin_settings
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class UserInfo(BaseModel):
@@ -112,6 +113,7 @@ async def _create_temporary_user(request: web.Request):
     return user
 
 
+@log_decorator(_logger, level=logging.DEBUG)
 async def acquire_user(request: web.Request, *, is_guest_allowed: bool) -> UserInfo:
     """
     Identifies request's user and if anonymous, it creates
@@ -126,7 +128,7 @@ async def acquire_user(request: web.Request, *, is_guest_allowed: bool) -> UserI
         user = await _get_authorized_user(request)
 
     if not user and is_guest_allowed:
-        log.debug("Creating temporary GUEST user ...")
+        _logger.debug("Creating temporary GUEST user ...")
         user = await _create_temporary_user(request)
         is_anonymous_user = True
 
@@ -149,6 +151,6 @@ async def ensure_authentication(
     user: UserInfo, request: web.Request, response: web.Response
 ):
     if user.needs_login:
-        log.debug("Auto login for anonymous user %s", user.name)
+        _logger.debug("Auto login for anonymous user %s", user.name)
         identity = user.email
         await remember(request, response, identity)

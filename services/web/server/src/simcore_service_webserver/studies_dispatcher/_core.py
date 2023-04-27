@@ -2,10 +2,10 @@ import logging
 import uuid
 from collections import deque
 from functools import lru_cache
-from typing import Optional
 
 from aiohttp import web
 from pydantic import ValidationError
+from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.models.services_consume_filetypes import (
     services_consume_filetypes,
 )
@@ -18,7 +18,7 @@ MEGABYTES = 1024 * 1024
 _BASE_UUID = uuid.UUID("ca2144da-eabb-4daf-a1df-a3682050e25f")
 
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @lru_cache
@@ -29,7 +29,7 @@ def compose_uuid_from(*values) -> uuid.UUID:
 
 
 async def list_viewers_info(
-    app: web.Application, file_type: Optional[str] = None, *, only_default: bool = False
+    app: web.Application, file_type: str | None = None, *, only_default: bool = False
 ) -> list[ViewerInfo]:
     #
     # TODO: These services MUST be shared with EVERYBODY! Setup check on startup and fill
@@ -49,7 +49,7 @@ async def list_viewers_info(
         if file_type and only_default:
             stmt = stmt.limit(1)
 
-        logger.debug("Listing viewers:\n%s", stmt)
+        _logger.debug("Listing viewers:\n%s", stmt)
 
         listed_filetype = set()
         async for row in await conn.execute(stmt):
@@ -63,7 +63,7 @@ async def list_viewers_info(
                 consumers.append(consumer)
 
             except ValidationError as err:
-                logger.warning("Review invalid service metadata %s: %s", row, err)
+                _logger.warning("Review invalid service metadata %s: %s", row, err)
 
     return list(consumers)
 
@@ -71,7 +71,7 @@ async def list_viewers_info(
 async def get_default_viewer(
     app: web.Application,
     file_type: str,
-    file_size: Optional[int] = None,
+    file_size: int | None = None,
 ) -> ViewerInfo:
     try:
         viewers = await list_viewers_info(app, file_type, only_default=True)
@@ -90,12 +90,13 @@ async def get_default_viewer(
     return viewer
 
 
+@log_decorator(_logger, level=logging.DEBUG)
 async def validate_requested_viewer(
     app: web.Application,
     file_type: str,
-    file_size: Optional[int] = None,
-    service_key: Optional[str] = None,
-    service_version: Optional[str] = None,
+    file_size: int | None = None,
+    service_key: str | None = None,
+    service_version: str | None = None,
 ) -> ViewerInfo:
 
     if not service_key and not service_version:

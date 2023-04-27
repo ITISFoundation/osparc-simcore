@@ -1,3 +1,4 @@
+import logging
 from contextlib import suppress
 from dataclasses import dataclass
 from typing import AsyncIterator
@@ -8,6 +9,7 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.engine import Engine
 from models_library.services import ServiceKey, ServiceVersion
 from pydantic import HttpUrl, PositiveInt, ValidationError, parse_obj_as
+from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.models.services import (
     services_access_rights,
     services_meta_data,
@@ -23,6 +25,8 @@ from .settings import StudiesDispatcherSettings, get_plugin_settings
 
 _EVERYONE_GROUP_ID = 1
 LARGEST_PAGE_SIZE = 1000
+
+_logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -124,6 +128,7 @@ class ServiceValidated:
     thumbnail: HttpUrl | None  # nullable
 
 
+@log_decorator(_logger, level=logging.DEBUG)
 async def validate_requested_service(
     app: web.Application,
     *,
