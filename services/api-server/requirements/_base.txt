@@ -34,7 +34,7 @@ alembic==1.8.1
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
-anyio==3.6.1
+anyio==3.6.2
     # via
     #   httpcore
     #   starlette
@@ -184,7 +184,9 @@ pyyaml==5.4.1
     #   fastapi
     #   uvicorn
 redis==4.5.4
-    # via -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 requests==2.27.1
     # via fastapi
 rfc3986==1.5.0
