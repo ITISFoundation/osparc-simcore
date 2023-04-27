@@ -20,7 +20,7 @@ from simcore_postgres_database.models.services_consume_filetypes import (
 from simcore_postgres_database.utils_services import create_select_latest_services_query
 
 from ..db import get_database_engine
-from ._errors import StudyDispatcherError
+from ._errors import ServiceNotFound
 from .settings import StudiesDispatcherSettings, get_plugin_settings
 
 _EVERYONE_GROUP_ID = 1
@@ -153,8 +153,8 @@ async def validate_requested_service(
         row = await result.fetchone()
 
         if row is None:
-            raise StudyDispatcherError(
-                f"Service {service_key}:{service_version} not found"
+            raise ServiceNotFound(
+                service_key=service_key, service_version=service_version
             )
 
         assert row.key == service_key  # nosec

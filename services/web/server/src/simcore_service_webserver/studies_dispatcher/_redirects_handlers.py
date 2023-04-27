@@ -20,8 +20,9 @@ from ..products.plugin import get_product_name
 from ..utils import compose_support_error_msg
 from ..utils_aiohttp import create_redirect_response
 from ._catalog import validate_requested_service
-from ._constants import MSG_INVALID_REDIRECTION_PARAMS_ERROR, MSG_UNEXPECTED_ERROR
-from ._core import StudyDispatcherError, ViewerInfo, validate_requested_viewer
+from ._constants import MSG_UNEXPECTED_ERROR
+from ._core import ViewerInfo, validate_requested_viewer
+from ._errors import InvalidRedirectionParams, StudyDispatcherError
 from ._models import FileParams, ServiceInfo, ServiceParams
 from ._projects import (
     get_or_create_project_with_file,
@@ -158,7 +159,7 @@ def _handle_errors_with_error_page(handler: Handler):
         except StudyDispatcherError as err:
             raise _create_redirect_response_to_error_page(
                 request.app,
-                message=f"Sorry, we cannot view this file: {err.reason}",
+                message=f"Sorry, we cannot dispatch your study: {err}",
                 status_code=web.HTTPUnprocessableEntity.status_code,  # 422
             ) from err
 
@@ -317,7 +318,7 @@ async def get_redirection_to_viewer(request: web.Request):
 
     else:
         # NOTE: if query is done right, this should never happen
-        raise StudyDispatcherError(reason=MSG_INVALID_REDIRECTION_PARAMS_ERROR)
+        raise InvalidRedirectionParams()
 
     # add auth cookies to response!
     await ensure_authentication(user, request, response)

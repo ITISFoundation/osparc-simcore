@@ -5,19 +5,8 @@ from typing import Final
 #       Please keep alphabetical order
 #
 
-MSG_DATA_TOO_BIG: Final[str] = "File size {file_size_in_mb} MB is over allowed limit"
-
-MSG_INCOMPATIBLE_SERVICE_AND_DATA: Final[
-    str
-] = "None of the registered viewers can open file type '{file_type}'"
-
-MSG_INVALID_REDIRECTION_PARAMS_ERROR: Final[
-    str
-] = "Invalid request link: cannot find reference to either file or service"
-
 
 MSG_PROJECT_NOT_FOUND: Final[str] = "Cannot find any study with ID '{project_id}'"
-
 
 # This error happens when the linked study ID does not exists OR is not shared with everyone
 MSG_PROJECT_NOT_PUBLISHED: Final[str] = "Cannot find any study with ID '{project_id}'"

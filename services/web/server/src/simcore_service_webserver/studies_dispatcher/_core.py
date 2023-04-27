@@ -11,8 +11,7 @@ from simcore_postgres_database.models.services_consume_filetypes import (
 )
 
 from .._constants import APP_DB_ENGINE_KEY
-from ._constants import MSG_DATA_TOO_BIG, MSG_INCOMPATIBLE_SERVICE_AND_DATA
-from ._errors import StudyDispatcherError
+from ._errors import FileToLarge, IncompatibleService
 from ._models import ViewerInfo
 
 _MEGABYTES = 1024 * 1024
@@ -74,19 +73,21 @@ async def get_default_viewer(
     file_type: str,
     file_size: int | None = None,
 ) -> ViewerInfo:
+    """
+
+    Raises:
+        IncompatibleService
+        FileToLarge
+    """
     try:
         viewers = await list_viewers_info(app, file_type, only_default=True)
         viewer = viewers[0]
     except IndexError as err:
-        raise StudyDispatcherError(
-            MSG_INCOMPATIBLE_SERVICE_AND_DATA.format(file_type=file_type)
-        ) from err
+        raise IncompatibleService(file_type=file_type) from err
 
     # TODO: This is a temporary limitation just for demo purposes.
     if file_size is not None and file_size > 50 * _MEGABYTES:
-        raise StudyDispatcherError(
-            MSG_DATA_TOO_BIG.format(file_size_in_mb=file_size * 1e-6)
-        )
+        raise FileToLarge(file_size_in_mb=file_size * 1e-6)
 
     return viewer
 
@@ -102,7 +103,7 @@ async def validate_requested_viewer(
     """
 
     Raises:
-        StudyDispatcherError: When there is no match
+        IncompatibleService: When there is no match
 
     """
 
@@ -121,6 +122,4 @@ async def validate_requested_viewer(
             if row:
                 return ViewerInfo.create_from_db(row)
 
-    raise StudyDispatcherError(
-        MSG_INCOMPATIBLE_SERVICE_AND_DATA.format(file_type=file_type)
-    )
+    raise IncompatibleService(file_type=file_type)
