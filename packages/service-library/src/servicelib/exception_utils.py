@@ -1,6 +1,5 @@
 import logging
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field, NonNegativeFloat, PrivateAttr
 
@@ -36,7 +35,7 @@ class DelayedExceptionHandler(BaseModel):
             delayed_handler_external_service.else_reset()
     """
 
-    _first_exception_skip: Optional[datetime] = PrivateAttr(None)
+    _first_exception_skip: datetime | None = PrivateAttr(None)
     _failure_counter: int = PrivateAttr(0)
 
     delay_for: NonNegativeFloat = Field(
@@ -58,7 +57,7 @@ class DelayedExceptionHandler(BaseModel):
             raise exception
 
         # ignore if exception inside delay window
-        log.warning("%s skip(s) of exception: %s", self._failure_counter, exception)
+        log.info("%s skip(s) of exception: %s", self._failure_counter, exception)
 
     def else_reset(self) -> None:
         """error no longer occurs reset tracking"""
