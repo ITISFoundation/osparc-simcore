@@ -212,7 +212,7 @@ def test_create_job_from_project():
 @pytest.mark.skip(reason="TODO: next PR")
 def test_create_jobstatus_from_task():
     from simcore_service_api_server.models.schemas.jobs import JobStatus
-    from simcore_service_api_server.modules.director_v2 import ComputationTaskGet
+    from simcore_service_api_server.plugins.director_v2 import ComputationTaskGet
 
     task = ComputationTaskGet.parse_obj({})  # TODO:
     job_status: JobStatus = create_jobstatus_from_task(task)

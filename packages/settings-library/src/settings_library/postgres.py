@@ -1,6 +1,5 @@
 import urllib.parse
 from functools import cached_property
-from typing import Optional
 
 from pydantic import Field, PostgresDsn, SecretStr, conint, validator
 
@@ -30,7 +29,7 @@ class PostgresSettings(BaseCustomSettings):
         50, description="Maximum number of connections in the pool"
     )
 
-    POSTGRES_CLIENT_NAME: Optional[str] = Field(
+    POSTGRES_CLIENT_NAME: str | None = Field(
         None,
         description="Name of the application connecting the postgres database, will default to use the host hostname (hostname on linux)",
         env=[
@@ -87,7 +86,7 @@ class PostgresSettings(BaseCustomSettings):
     class Config(BaseCustomSettings.Config):
         schema_extra = {
             "examples": [
-                # minimal
+                # minimal required
                 {
                     "POSTGRES_HOST": "localhost",
                     "POSTGRES_PORT": "5432",
