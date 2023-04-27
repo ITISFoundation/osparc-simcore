@@ -6,7 +6,7 @@
 
 
 import asyncio
-from typing import AsyncIterator, Callable
+from typing import Any, AsyncIterator, Callable
 from unittest import mock
 
 import aio_pika
@@ -90,18 +90,25 @@ def mocked_message_parser(mocker: MockerFixture) -> mock.AsyncMock:
 @dataclass(frozen=True)
 class PytestRabbitMessage:
     message: str
+    topic: str
 
-    def topic(self) -> str:
-        return "pytest.red"
+    def routing_key(self) -> str:
+        return self.topic
 
     def body(self) -> bytes:
         return self.message.encode()
 
 
 @pytest.fixture
-def random_rabbit_message(faker: Faker) -> Callable[[], PytestRabbitMessage]:
-    def _creator() -> PytestRabbitMessage:
-        return PytestRabbitMessage(message=faker.text())
+def random_rabbit_message(
+    faker: Faker,
+) -> Callable[..., PytestRabbitMessage]:
+    def _creator(**kwargs: dict[str, Any] | None) -> PytestRabbitMessage:
+        msg_config = {"message": faker.text(), "topic": None}
+        if kwargs:
+            msg_config |= kwargs
+
+        return PytestRabbitMessage(**msg_config)
 
     return _creator
 
@@ -109,7 +116,7 @@ def random_rabbit_message(faker: Faker) -> Callable[[], PytestRabbitMessage]:
 async def _assert_message_received(
     mocked_message_parser: mock.AsyncMock,
     expected_call_count: int,
-    expected_message: PytestRabbitMessage,
+    expected_message: PytestRabbitMessage | None = None,
 ) -> None:
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.1),
@@ -122,22 +129,22 @@ async def _assert_message_received(
             await asyncio.sleep(1)
             assert mocked_message_parser.call_count == expected_call_count
             if expected_call_count == 1:
+                assert expected_message
                 mocked_message_parser.assert_called_once_with(
                     expected_message.message.encode()
                 )
             elif expected_call_count == 0:
                 mocked_message_parser.assert_not_called()
             else:
-                mocked_message_parser.assert_called_with(
-                    expected_message.message.encode()
-                )
+                assert expected_message
+                mocked_message_parser.assert_any_call(expected_message.message.encode())
 
 
 async def test_rabbit_client_pub_sub_message_is_lost_if_no_consumer_present(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
-    random_rabbit_message: Callable[[], PytestRabbitMessage],
+    random_rabbit_message: Callable[..., PytestRabbitMessage],
 ):
     consumer = rabbitmq_client("consumer")
     publisher = rabbitmq_client("publisher")
@@ -147,14 +154,14 @@ async def test_rabbit_client_pub_sub_message_is_lost_if_no_consumer_present(
     await publisher.publish(exchange_name, message)
     await asyncio.sleep(0)  # ensure context switch
     await consumer.subscribe(exchange_name, mocked_message_parser)
-    await _assert_message_received(mocked_message_parser, 0, message)
+    await _assert_message_received(mocked_message_parser, 0)
 
 
 async def test_rabbit_client_pub_sub(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
-    random_rabbit_message: Callable[[], PytestRabbitMessage],
+    random_rabbit_message: Callable[..., PytestRabbitMessage],
 ):
     consumer = rabbitmq_client("consumer")
     publisher = rabbitmq_client("publisher")
@@ -171,7 +178,7 @@ async def test_rabbit_client_pub_many_subs(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocker: MockerFixture,
-    random_rabbit_message: Callable[[], PytestRabbitMessage],
+    random_rabbit_message: Callable[..., PytestRabbitMessage],
     num_subs: int,
 ):
     consumers = (rabbitmq_client(f"consumer_{n}") for n in range(num_subs))
@@ -202,7 +209,7 @@ async def test_rabbit_client_pub_sub_republishes_if_exception_raised(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
-    random_rabbit_message: Callable[[], PytestRabbitMessage],
+    random_rabbit_message: Callable[..., PytestRabbitMessage],
 ):
     publisher = rabbitmq_client("publisher")
     consumer = rabbitmq_client("consumer")
@@ -231,7 +238,7 @@ async def test_pub_sub_with_non_exclusive_queue(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocker: MockerFixture,
-    random_rabbit_message: Callable[[], PytestRabbitMessage],
+    random_rabbit_message: Callable[..., PytestRabbitMessage],
     num_subs: int,
 ):
     consumers = (rabbitmq_client(f"consumer_{n}") for n in range(num_subs))
@@ -269,7 +276,7 @@ def test_rabbit_pub_sub_performance(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
-    random_rabbit_message: Callable[[], PytestRabbitMessage],
+    random_rabbit_message: Callable[..., PytestRabbitMessage],
 ):
     consumer = rabbitmq_client("consumer")
     publisher = rabbitmq_client("publisher")
@@ -295,12 +302,11 @@ async def test_rabbit_pub_sub_with_topic(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocker: MockerFixture,
-    random_rabbit_message: Callable[[], PytestRabbitMessage],
+    random_rabbit_message: Callable[..., PytestRabbitMessage],
 ):
     exchange_name = f"{random_exchange_name()}_topic"
-    message = random_rabbit_message()
-    message1_topic = "pytest.red.critical"
-    message2_topic = "pytest.orange.debug"
+    critical_message = random_rabbit_message(topic="pytest.red.critical")
+    debug_message = random_rabbit_message(topic="pytest.orange.debug")
     publisher = rabbitmq_client("publisher")
 
     all_receiving_consumer = rabbitmq_client("all_receiving_consumer")
@@ -324,13 +330,23 @@ async def test_rabbit_pub_sub_with_topic(
     )
 
     # check now that topic is working
-    await publisher.publish(exchange_name, message, topic=message1_topic)
-    await publisher.publish(exchange_name, message, topic=message2_topic)
+    await publisher.publish(exchange_name, critical_message)
+    await publisher.publish(exchange_name, debug_message)
 
-    await _assert_message_received(all_receiving_mocked_message_parser, 2, message)
-    await _assert_message_received(only_critical_mocked_message_parser, 1, message)
     await _assert_message_received(
-        orange_and_critical_mocked_message_parser, 2, message
+        all_receiving_mocked_message_parser, 2, critical_message
+    )
+    await _assert_message_received(
+        all_receiving_mocked_message_parser, 2, debug_message
+    )
+    await _assert_message_received(
+        only_critical_mocked_message_parser, 1, critical_message
+    )
+    await _assert_message_received(
+        orange_and_critical_mocked_message_parser, 2, critical_message
+    )
+    await _assert_message_received(
+        orange_and_critical_mocked_message_parser, 2, debug_message
     )
 
 
@@ -338,74 +354,72 @@ async def test_rabbit_pub_sub_bind_and_unbind_topics(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
-    random_rabbit_message: Callable[[], PytestRabbitMessage],
+    random_rabbit_message: Callable[..., PytestRabbitMessage],
 ):
     exchange_name = f"{random_exchange_name()}_topic"
-    message = random_rabbit_message()
     publisher = rabbitmq_client("publisher")
     consumer = rabbitmq_client("consumer")
-    # send some messages
-    await publisher.publish(exchange_name, message, topic="faker.debug")
-    await publisher.publish(exchange_name, message, topic="faker.info")
-    await publisher.publish(exchange_name, message, topic="faker.warning")
-    await publisher.publish(exchange_name, message, topic="faker.critical")
+    severities = ["debug", "info", "warning", "critical"]
+    messages = {sev: random_rabbit_message(topic=f"pytest.{sev}") for sev in severities}
+
+    # send 1 message of each type
+    await asyncio.gather(
+        *(publisher.publish(exchange_name, m) for m in messages.values())
+    )
 
     # we should get no messages since no one was subscribed
     queue_name = await consumer.subscribe(
         exchange_name, mocked_message_parser, topics=[]
     )
-    await _assert_message_received(mocked_message_parser, 0, message)
+    await _assert_message_received(mocked_message_parser, 0)
 
     # now we should also not get anything since we are not interested in any topic
-    await publisher.publish(exchange_name, message, topic="faker.debug")
-    await publisher.publish(exchange_name, message, topic="faker.info")
-    await publisher.publish(exchange_name, message, topic="faker.warning")
-    await publisher.publish(exchange_name, message, topic="faker.critical")
-    await _assert_message_received(mocked_message_parser, 0, message)
+    await asyncio.gather(
+        *(publisher.publish(exchange_name, m) for m in messages.values())
+    )
+    await _assert_message_received(mocked_message_parser, 0)
 
+    # we are interested in warnings and critical
     await consumer.add_topics(
         exchange_name, queue_name, topics=["*.warning", "*.critical"]
     )
-    await publisher.publish(exchange_name, message, topic="faker.debug")
-    await publisher.publish(exchange_name, message, topic="faker.info")
-    await publisher.publish(exchange_name, message, topic="faker.warning")
-    await publisher.publish(exchange_name, message, topic="faker.critical")
-    await _assert_message_received(mocked_message_parser, 2, message)
+    await asyncio.gather(
+        *(publisher.publish(exchange_name, m) for m in messages.values())
+    )
+    await _assert_message_received(mocked_message_parser, 2, messages["critical"])
+    await _assert_message_received(mocked_message_parser, 2, messages["warning"])
     mocked_message_parser.reset_mock()
     # adding again the same topics makes no difference, we should still have 2 messages
     await consumer.add_topics(exchange_name, queue_name, topics=["*.warning"])
-    await publisher.publish(exchange_name, message, topic="faker.debug")
-    await publisher.publish(exchange_name, message, topic="faker.info")
-    await publisher.publish(exchange_name, message, topic="faker.warning")
-    await publisher.publish(exchange_name, message, topic="faker.critical")
-    await _assert_message_received(mocked_message_parser, 2, message)
+    await asyncio.gather(
+        *(publisher.publish(exchange_name, m) for m in messages.values())
+    )
+    await _assert_message_received(mocked_message_parser, 2, messages["critical"])
+    await _assert_message_received(mocked_message_parser, 2, messages["warning"])
     mocked_message_parser.reset_mock()
 
     # after unsubscribing, we do not receive warnings anymore
     await consumer.remove_topics(exchange_name, queue_name, topics=["*.warning"])
-    await publisher.publish(exchange_name, message, topic="faker.debug")
-    await publisher.publish(exchange_name, message, topic="faker.info")
-    await publisher.publish(exchange_name, message, topic="faker.warning")
-    await publisher.publish(exchange_name, message, topic="faker.critical")
-    await _assert_message_received(mocked_message_parser, 1, message)
+    await asyncio.gather(
+        *(publisher.publish(exchange_name, m) for m in messages.values())
+    )
+    await _assert_message_received(mocked_message_parser, 1, messages["critical"])
     mocked_message_parser.reset_mock()
 
     # after unsubscribing something that does not exist, we still receive the same things
     await consumer.remove_topics(exchange_name, queue_name, topics=[])
-    await publisher.publish(exchange_name, message, topic="faker.debug")
-    await publisher.publish(exchange_name, message, topic="faker.info")
-    await publisher.publish(exchange_name, message, topic="faker.warning")
-    await publisher.publish(exchange_name, message, topic="faker.critical")
-    await _assert_message_received(mocked_message_parser, 1, message)
+    await asyncio.gather(
+        *(publisher.publish(exchange_name, m) for m in messages.values())
+    )
+    await _assert_message_received(mocked_message_parser, 1, messages["critical"])
     mocked_message_parser.reset_mock()
 
     # after unsubscribing we receive nothing anymore
     await consumer.unsubscribe(queue_name)
-    await publisher.publish(exchange_name, message, topic="faker.debug")
-    await publisher.publish(exchange_name, message, topic="faker.info")
-    await publisher.publish(exchange_name, message, topic="faker.warning")
-    await publisher.publish(exchange_name, message, topic="faker.critical")
-    await _assert_message_received(mocked_message_parser, 0, message)
+    await asyncio.gather(
+        *(publisher.publish(exchange_name, m) for m in messages.values())
+    )
+    await _assert_message_received(mocked_message_parser, 0)
 
 
 async def test_rabbit_not_using_the_same_exchange_type_raises(
@@ -426,7 +440,7 @@ async def test_rabbit_adding_topics_to_a_fanout_exchange(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
-    random_rabbit_message: Callable[[], PytestRabbitMessage],
+    random_rabbit_message: Callable[..., PytestRabbitMessage],
 ):
     exchange_name = f"{random_exchange_name()}_fanout"
     message = random_rabbit_message()
@@ -449,4 +463,4 @@ async def test_rabbit_adding_topics_to_a_fanout_exchange(
     # this will do something
     await consumer.unsubscribe(queue_name)
     await publisher.publish(exchange_name, message)
-    await _assert_message_received(mocked_message_parser, 0, message)
+    await _assert_message_received(mocked_message_parser, 0)

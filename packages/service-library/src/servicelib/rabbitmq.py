@@ -65,7 +65,7 @@ class RabbitMessage(Protocol):
     def body(self) -> bytes:
         ...
 
-    def topic(self) -> str:
+    def routing_key(self) -> str | None:
         ...
 
 
@@ -248,15 +248,14 @@ class RabbitMQClient:
             # NOTE: we force delete here
             await queue.delete(if_unused=False, if_empty=False)
 
-    async def publish(
-        self, exchange_name: str, message: RabbitMessage, *, topic: str | None = None
-    ) -> None:
+    async def publish(self, exchange_name: str, message: RabbitMessage) -> None:
         """publish message in the exchange exchange_name.
         specifying a topic will use a TOPIC type of RabbitMQ Exchange instead of FANOUT
 
         NOTE: changing the type of Exchange will create issues if the name is not changed!
         """
         assert self._channel_pool  # nosec
+        topic = message.routing_key()
         async with self._channel_pool.acquire() as channel:
             channel: aio_pika.RobustChannel
             exchange = await channel.declare_exchange(
@@ -268,7 +267,7 @@ class RabbitMQClient:
             )
             await exchange.publish(
                 aio_pika.Message(message.body()),
-                routing_key=topic or "",
+                routing_key=message.routing_key() or "",
             )
 
     async def rpc_request(
