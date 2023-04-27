@@ -1,10 +1,6 @@
-import logging
-
 from aiopg.sa.result import RowProxy
 from models_library.services import ServiceKey, ServiceVersion
 from pydantic import BaseModel, Field, HttpUrl, PositiveInt
-
-_logger = logging.getLogger(__name__)
 
 
 class ServiceInfo(BaseModel):
@@ -72,5 +68,4 @@ class FileParams(BaseModel):
 
     @property
     def footprint(self) -> str:
-        # FIXME
         return f"{self.file_name}.{self.file_type}:{self.file_size}"
