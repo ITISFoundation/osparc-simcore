@@ -22,9 +22,9 @@ from ._constants import MSG_INVALID_REDIRECTION_PARAMS_ERROR, MSG_UNEXPECTED_ERR
 from ._core import StudyDispatcherError, ViewerInfo, validate_requested_viewer
 from ._models import FileParams, ServiceInfo, ServiceParams
 from ._projects import (
-    acquire_project_with_file,
-    acquire_project_with_service,
-    acquire_project_with_viewer,
+    get_or_create_project_with_file,
+    get_or_create_project_with_file_and_service,
+    get_or_create_project_with_service,
 )
 from ._users import UserInfo, ensure_authentication, get_or_create_user
 
@@ -203,7 +203,7 @@ async def get_redirection_to_viewer(request: web.Request):
         )
 
         # Generate one project per user + download_link + viewer
-        project_id, viewer_id = await acquire_project_with_viewer(
+        project_id, viewer_id = await get_or_create_project_with_file_and_service(
             request.app,
             user,
             viewer,
@@ -244,7 +244,7 @@ async def get_redirection_to_viewer(request: web.Request):
         if valid_service.thumbnail:
             values_map["thumbnail"] = valid_service.thumbnail
 
-        project_id, viewer_id = await acquire_project_with_service(
+        project_id, viewer_id = await get_or_create_project_with_service(
             request.app,
             user,
             service_info=ServiceInfo.construct(
@@ -267,7 +267,7 @@ async def get_redirection_to_viewer(request: web.Request):
         # Retrieve user or create a temporary guest
         user: UserInfo = await get_or_create_user(request, is_guest_allowed=False)
 
-        project_id, file_picker_id = await acquire_project_with_file(
+        project_id, file_picker_id = await get_or_create_project_with_file(
             request.app,
             user,
             params=file_params,
