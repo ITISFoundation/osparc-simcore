@@ -1,4 +1,3 @@
-import base64
 import json
 import logging
 from collections import deque
@@ -26,7 +25,7 @@ from ..models.domain.projects import NewProjectIn, Project
 from ..models.types import JSON, ListAnyDict
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -64,14 +63,14 @@ class AuthSession:
                 body = resp.json()
                 data, error = body.get("data"), body.get("error")
             except json.JSONDecodeError:
-                logger.warning(
+                _logger.warning(
                     "Failed to unenvelop webserver response %s",
                     f"{resp.text=}",
                     exc_info=True,
                 )
 
         if resp.is_server_error:
-            logger.error(
+            _logger.error(
                 "webserver error %s [%s]: %s",
                 f"{resp.status_code=}",
                 f"{resp.reason_phrase=}",
@@ -86,17 +85,13 @@ class AuthSession:
         return data
 
     # OPERATIONS
-    # TODO: refactor and code below
-    # TODO: policy to retry if NetworkError/timeout?
-    # TODO: add ping to healthcheck
 
     async def get(self, path: str) -> JSON | None:
         url = path.lstrip("/")
         try:
             resp = await self.client.get(url, cookies=self.session_cookies)
         except Exception as err:
-            # FIXME: error handling
-            logger.exception("Failed to get %s", url)
+            _logger.exception("Failed to get %s", url)
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err
 
         return self._postprocess(resp)
@@ -106,13 +101,12 @@ class AuthSession:
         try:
             resp = await self.client.put(url, json=body, cookies=self.session_cookies)
         except Exception as err:
-            logger.exception("Failed to put %s", url)
+            _logger.exception("Failed to put %s", url)
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err
 
         return self._postprocess(resp)
 
     # PROJECTS resource ---
-    # TODO: error handling!
 
     async def create_project(self, project: NewProjectIn):
         # POST /projects --> 202
@@ -134,7 +128,7 @@ class AuthSession:
             wait=wait_fixed(0.5),
             stop=stop_after_delay(60),
             reraise=True,
-            before_sleep=before_sleep_log(logger, logging.INFO),
+            before_sleep=before_sleep_log(_logger, logging.INFO),
         ):
             with attempt:
                 data = await self.get(status_url)
@@ -155,7 +149,6 @@ class AuthSession:
         return Project.parse_obj(data)
 
     async def list_projects(self, solver_name: str) -> list[Project]:
-        # TODO: pagination?
         resp = await self.client.get(
             "/projects",
             params={"type": "user", "show_hidden": True},
@@ -164,7 +157,6 @@ class AuthSession:
 
         data: ListAnyDict = cast(ListAnyDict, self._postprocess(resp)) or []
 
-        # FIXME: move filter to webserver API (next PR)
         projects: deque[Project] = deque()
         for prj in data:
             possible_job_name = prj.get("name", "")
@@ -172,7 +164,7 @@ class AuthSession:
                 try:
                     projects.append(Project.parse_obj(prj))
                 except ValidationError as err:
-                    logger.warning(
+                    _logger.warning(
                         "Invalid prj %s [%s]: %s", prj.get("uuid"), solver_name, err
                     )
 
@@ -195,27 +187,8 @@ class AuthSession:
         return data
 
 
-def _get_secret_key(settings: WebServerSettings):
-    secret_key_bytes = settings.WEBSERVER_SESSION_SECRET_KEY.get_secret_value().encode(
-        "utf-8"
-    )
-    while len(secret_key_bytes) < 32:
-        secret_key_bytes += secret_key_bytes
-    secret_key = secret_key_bytes[:32]
-
-    if isinstance(secret_key, str):
-        pass
-    elif isinstance(secret_key, (bytes, bytearray)):
-        secret_key = base64.urlsafe_b64encode(secret_key)
-    return secret_key
-
-
 class WebserverApi(BaseServiceClientApi):
     """Access to web-server API"""
-
-    # def create_auth_session(self, session_cookies) -> AuthSession:
-    #     """ Needed per request, so it can perform """
-    #     return AuthSession(client=self.client, vtag="v0", session_cookies=session_cookies)
 
 
 # MODULES APP SETUP -------------------------------------------------------------
@@ -231,16 +204,13 @@ def setup(app: FastAPI, settings: WebServerSettings | None = None) -> None:
         app, WebserverApi, api_baseurl=settings.api_base_url, service_name="webserver"
     )
 
-    # TODO: old startup. need to integrat
-    # TODO: init client and then build sessions from client using depenencies
-
     def on_startup() -> None:
         # normalize & encrypt
         secret_key = settings.WEBSERVER_SESSION_SECRET_KEY.get_secret_value()
         app.state.webserver_fernet = fernet.Fernet(secret_key)
 
         # init client
-        logger.debug("Setup webserver at %s...", settings.api_base_url)
+        _logger.debug("Setup webserver at %s...", settings.api_base_url)
 
         client = AsyncClient(base_url=settings.api_base_url)
         app.state.webserver_client = client
@@ -250,7 +220,7 @@ def setup(app: FastAPI, settings: WebServerSettings | None = None) -> None:
             client: AsyncClient = app.state.webserver_client
             await client.aclose()
             del app.state.webserver_client
-        logger.debug("Webserver closed successfully")
+        _logger.debug("Webserver closed successfully")
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)

@@ -21,7 +21,6 @@ logger = logging.getLogger(__name__)
 
 # API MODELS ---------------------------------------------
 # NOTE: as services/director-v2/src/simcore_service_director_v2/models/schemas/comp_tasks.py
-# TODO: shall schemas of internal APIs be in models_library as well?? or is against
 
 
 class ComputationTaskGet(ComputationTask):
@@ -34,7 +33,6 @@ class ComputationTaskGet(ComputationTask):
 
     def guess_progress(self) -> PercentageInt:
         # guess progress based on self.state
-        # FIXME: incomplete!
         if self.state in [RunningState.SUCCESS, RunningState.FAILED]:
             return PercentageInt(100)
         return PercentageInt(0)
@@ -54,7 +52,7 @@ DownloadLink = AnyUrl
 
 
 @contextmanager
-def handle_errors_context(project_id: UUID):
+def _handle_errors_context(project_id: UUID):
     try:
         yield
 
@@ -88,19 +86,6 @@ def handle_errors_context(project_id: UUID):
 
 
 class DirectorV2Api(BaseServiceClientApi):
-    # NOTE: keep here tmp as reference
-    # @handle_errors("director", logger, return_json=True)
-    # @handle_retry(logger)
-    # async def get(self, path: str, *args, **kwargs) -> JSON:
-    #     return await self.client.get(path, *args, **kwargs)
-
-    # director2 API ---------------------------
-    # TODO: error handling
-    #
-    #  HTTPStatusError: 404 Not Found
-    #  ValidationError
-    #  ServiceUnabalabe: 503
-
     async def create_computation(
         self,
         project_id: UUID,
@@ -127,7 +112,7 @@ class DirectorV2Api(BaseServiceClientApi):
         product_name: str,
         cluster_id: ClusterID | None = None,
     ) -> ComputationTaskGet:
-        with handle_errors_context(project_id):
+        with _handle_errors_context(project_id):
             extras = {}
             if cluster_id is not None:
                 extras["cluster_id"] = cluster_id
@@ -201,17 +186,6 @@ class DirectorV2Api(BaseServiceClientApi):
                 node_to_links[f"{r.task_id}"] = r.download_link
 
         return node_to_links
-
-    # TODO: HIGHER lever interface with job* resources
-    # or better in another place?
-    async def create_job(self):
-        pass
-
-    async def list_jobs(self):
-        pass
-
-    async def get_job(self):
-        pass
 
 
 # MODULES APP SETUP -------------------------------------------------------------

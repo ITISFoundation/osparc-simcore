@@ -15,7 +15,7 @@ from ..core.settings import StorageSettings
 from ..models.schemas.files import File
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 _FILE_ID_PATTERN = re.compile(r"^api\/(?P<file_id>[\w-]+)\/(?P<filename>.+)$")
@@ -32,9 +32,6 @@ def to_file_api_model(stored_file_meta: StorageFileMetaData) -> File:
     meta = File(
         id=file_id,  # type: ignore
         filename=filename,
-        # FIXME: UploadFile gets content from the request header while here is
-        # mimetypes.guess_type used. Sometimes it does not match.
-        # Add column in meta_data table of storage and stop guessing :-)
         content_type=guess_type(filename)[0] or "application/octet-stream",
         checksum=stored_file_meta.entity_tag,
     )
@@ -47,12 +44,6 @@ class StorageApi(BaseServiceClientApi):
     #
     SIMCORE_S3_ID = 0
 
-    # FIXME: error handling and retrying policies?
-    # @handle_errors("storage", logger, return_json=True)
-    # @handle_retry(logger)
-    # async def get(self, path: str, *args, **kwargs) -> JSON:
-    #     return await self.client.get(path, *args, **kwargs)
-
     async def list_files(self, user_id: int) -> list[StorageFileMetaData]:
         """Lists metadata of all s3 objects name as api/* from a given user"""
         response = await self.client.post(
@@ -62,8 +53,6 @@ class StorageApi(BaseServiceClientApi):
                 "startswith": "api/",
             },
         )
-
-        # FIXME: handle HTTPStatusError
         response.raise_for_status()
 
         files_metadata = FileMetaDataArray(__root__=response.json()["data"] or [])
@@ -135,11 +124,8 @@ class StorageApi(BaseServiceClientApi):
             params={"user_id": user_id},
             json={"link_id": link_path},
         )
-
-        # FIXME: handle errors properly
         response.raise_for_status()
 
-        # FIXME: was hanging when resp.join()["data"] -> None
         stored_file_meta = StorageFileMetaData.parse_obj(response.json()["data"])
         file_meta: File = to_file_api_model(stored_file_meta)
         return file_meta

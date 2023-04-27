@@ -8,7 +8,7 @@ from ...models.schemas.studies import StudyID, StudyPort
 from ...plugins.webserver import AuthSession
 from ..dependencies.webserver import get_webserver_session
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 router = APIRouter()
 settings = BasicSettings.create_from_envs()
 

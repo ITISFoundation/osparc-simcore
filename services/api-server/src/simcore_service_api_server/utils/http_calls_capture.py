@@ -3,7 +3,7 @@ from http import HTTPStatus
 from typing import Any, Literal
 
 import httpx
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class HttpApiCallCaptureModel(BaseModel):
@@ -18,7 +18,7 @@ class HttpApiCallCaptureModel(BaseModel):
     query: str | None = None
     request_payload: dict[str, Any] | None = None
     response_body: dict[str, Any] | list | None = None
-    status_code: HTTPStatus = HTTPStatus.OK
+    status_code: HTTPStatus = Field(default=HTTPStatus.OK)
 
     @classmethod
     def create_from_response(
