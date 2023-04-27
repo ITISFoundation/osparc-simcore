@@ -127,11 +127,11 @@ class ApplicationSettings(BasicSettings):
     API_SERVER_TRACING: TracingSettings | None = Field(auto_default_from_env=True)
 
     # DEV-TOOLS
-    API_SERVER_HTTP_CALLS_CAPTURE_LOGS_PATH: Path | None = Field(
+    API_SERVER_DEV_HTTP_CALLS_LOGS_PATH: Path | None = Field(
         default=None,
         description="If set, it activates http calls capture mechanism used to generate mock data"
         "Path to store captured client calls."
-        "TIP: use 'API_SERVER_HTTP_CALLS_CAPTURE_LOGS_PATH=captures.ignore.keep.log'"
+        "TIP: use 'API_SERVER_DEV_HTTP_CALLS_LOGS_PATH=captures.ignore.keep.log'"
         "NOTE: only available in devel mode",
     )
 
@@ -140,7 +140,7 @@ class ApplicationSettings(BasicSettings):
         """If True, debug tracebacks should be returned on errors."""
         return self.SC_BOOT_MODE is not None and self.SC_BOOT_MODE.is_devel_mode()
 
-    @validator("API_SERVER_HTTP_CALLS_CAPTURE_LOGS_PATH")
+    @validator("API_SERVER_DEV_HTTP_CALLS_LOGS_PATH")
     @classmethod
     def _enable_only_in_devel_mode(cls, v, values):
         if v and not (
@@ -149,7 +149,7 @@ class ApplicationSettings(BasicSettings):
             and boot_mode.is_devel_mode()
         ):
             raise ValueError(
-                "API_SERVER_HTTP_CALLS_CAPTURE_LOGS_PATH only allowed in devel mode"
+                "API_SERVER_DEV_HTTP_CALLS_LOGS_PATH only allowed in devel mode"
             )
         return v
 

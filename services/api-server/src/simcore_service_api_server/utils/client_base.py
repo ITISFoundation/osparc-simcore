@@ -97,7 +97,7 @@ def setup_client_instance(
     with suppress(AttributeError):
         # NOTE that this is a general function with no guarantees as when is going to be used.
         # Here, 'AttributeError' might be raied when app.state.settings is still not initialized
-        if capture_path := app.state.settings.API_SERVER_HTTP_CALLS_CAPTURE_LOGS_PATH:
+        if capture_path := app.state.settings.API_SERVER_DEV_HTTP_CALLS_LOGS_PATH:
             _setup_capture_logger_once(capture_path)
             client_class = _AsyncClientForDevelopmentOnly
 
