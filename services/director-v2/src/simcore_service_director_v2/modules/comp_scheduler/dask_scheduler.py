@@ -198,7 +198,9 @@ class DaskScheduler(BaseCompScheduler):
                 result=task_final_state,
                 simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             )
-            await self.rabbitmq_client.publish(message.channel_name, message.json())
+            await self.rabbitmq_client.publish(
+                message.channel_name, message.json(), topic=message.topic()
+            )
 
         await CompTasksRepository(self.db_engine).set_project_tasks_state(
             task.project_id, [task.node_id], task_final_state, errors=errors
@@ -214,7 +216,9 @@ class DaskScheduler(BaseCompScheduler):
             node_id=node_id,
             progress=task_progress_event.progress,
         )
-        await self.rabbitmq_client.publish(message.channel_name, message.json())
+        await self.rabbitmq_client.publish(
+            message.channel_name, message.json(), topic=message.topic()
+        )
 
     async def _task_log_change_handler(self, event: str) -> None:
         task_log_event = TaskLogEvent.parse_raw(event)
@@ -228,4 +232,8 @@ class DaskScheduler(BaseCompScheduler):
             log_level=task_log_event.log_level,
         )
 
-        await self.rabbitmq_client.publish(message.channel_name, message.json())
+        await self.rabbitmq_client.publish(
+            message.channel_name,
+            message.json(),
+            topic=message.topic(),
+        )

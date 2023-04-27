@@ -1,4 +1,5 @@
 import logging
+from abc import abstractmethod
 from enum import Enum, auto
 from typing import Any, Literal
 
@@ -24,6 +25,13 @@ class RabbitMessageBase(BaseModel):
         name: str = cls.__fields__["channel_name"].default
         return name
 
+    @abstractmethod
+    def topic(self) -> str | None:
+        """this is used to define the topic of the message
+
+        :return: the topic or None (NOTE: None will implicitely use a FANOUT exchange)
+        """
+
 
 class ProjectMessageBase(BaseModel):
     user_id: UserID
@@ -35,14 +43,20 @@ class NodeMessageBase(ProjectMessageBase):
 
 
 class LoggerRabbitMessage(RabbitMessageBase, NodeMessageBase):
-    channel_name: Literal["simcore.services.logs"] = "simcore.services.logs"
+    channel_name: Literal["simcore.services.logs.v2"] = "simcore.services.logs.v2"
     messages: list[str]
     log_level: int = logging.INFO
+
+    def topic(self) -> str:
+        return f"{self.project_id}.{self.log_level}"
 
 
 class EventRabbitMessage(RabbitMessageBase, NodeMessageBase):
     channel_name: Literal["simcore.services.events"] = "simcore.services.events"
     action: RabbitEventMessageType
+
+    def topic(self) -> str | None:
+        return None
 
 
 class ProgressType(StrAutoEnum):
@@ -68,6 +82,9 @@ class ProgressMessageMixin(RabbitMessageBase):
     )  # NOTE: backwards compatible
     progress: NonNegativeFloat
 
+    def topic(self) -> str | None:
+        return None
+
 
 class ProgressRabbitMessageNode(ProgressMessageMixin, NodeMessageBase):
     ...
@@ -89,6 +106,9 @@ class InstrumentationRabbitMessage(RabbitMessageBase, NodeMessageBase):
     result: RunningState | None = None
     simcore_user_agent: str
 
+    def topic(self) -> str | None:
+        return None
+
 
 class _RabbitAutoscalingBaseMessage(RabbitMessageBase):
     channel_name: Literal["io.simcore.autoscaling"] = Field(
@@ -97,6 +117,9 @@ class _RabbitAutoscalingBaseMessage(RabbitMessageBase):
     origin: str = Field(
         ..., description="autoscaling app type, in case there would be more than one"
     )
+
+    def topic(self) -> str | None:
+        return None
 
 
 class RabbitAutoscalingStatusMessage(_RabbitAutoscalingBaseMessage):
