@@ -1,7 +1,7 @@
 import logging
-from typing import Optional
 
 from aiohttp import web
+from servicelib.logging_utils import get_extra
 from yarl import URL
 
 from . import catalog_client
@@ -36,10 +36,15 @@ async def reverse_proxy_handler(request: web.Request) -> web.Response:
     # FIXME: hack
     if "/services" in backend_url.path:
         backend_url = backend_url.update_query({"user_id": user_id})
-    logger.debug("Redirecting '%s' -> '%s'", request.url, backend_url)
+    logger.debug(
+        "Redirecting '%s' -> '%s'",
+        request.url,
+        backend_url,
+        extra=get_extra({"user_id": user_id}),
+    )
 
     # body
-    raw: Optional[bytes] = None
+    raw: bytes | None = None
     if request.can_read_body:
         raw = await request.read()
 
