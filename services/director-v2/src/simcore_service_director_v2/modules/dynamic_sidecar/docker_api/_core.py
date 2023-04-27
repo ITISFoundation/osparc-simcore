@@ -494,7 +494,7 @@ async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
         )
     except GenericDockerError as e:
         if e.original_exception.status == status.HTTP_404_NOT_FOUND:
-            log.warning(
+            log.info(
                 "Skipped labels update for service '%s' which could not be found.",
                 scheduler_data.service_name,
             )
