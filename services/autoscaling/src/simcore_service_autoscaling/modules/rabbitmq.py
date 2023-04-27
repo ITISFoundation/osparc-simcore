@@ -45,6 +45,4 @@ def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
 async def post_message(app: FastAPI, message: RabbitMessageBase) -> None:
     with log_catch(logger, reraise=False), contextlib.suppress(ConfigurationError):
         # NOTE: if rabbitmq was not initialized the error does not need to flood the logs
-        await get_rabbitmq_client(app).publish(
-            message.channel_name, message.json(), topic=message.topic()
-        )
+        await get_rabbitmq_client(app).publish(message.channel_name, message)
