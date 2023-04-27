@@ -61,9 +61,7 @@ class CustomFormatter(logging.Formatter):
             record.funcName = record.func_name_override
         if hasattr(record, "file_name_override"):
             record.filename = record.file_name_override
-        if hasattr(record, "log_uid"):
-            record.log_uid = record.log_uid
-        else:
+        if not hasattr(record, "log_uid"):
             record.log_uid = -1  # Default value if user is not provided in the log
 
         if self.log_format_local_dev_enabled:
