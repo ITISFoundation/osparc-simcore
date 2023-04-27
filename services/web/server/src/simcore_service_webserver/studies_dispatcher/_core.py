@@ -4,7 +4,8 @@ from collections import deque
 from functools import lru_cache
 
 from aiohttp import web
-from pydantic import ValidationError
+from models_library.utils.pydantic_tools_extension import parse_obj_or_none
+from pydantic import ByteSize, ValidationError
 from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.models.services_consume_filetypes import (
     services_consume_filetypes,
@@ -13,6 +14,7 @@ from simcore_postgres_database.models.services_consume_filetypes import (
 from .._constants import APP_DB_ENGINE_KEY
 from ._errors import FileToLarge, IncompatibleService
 from ._models import ViewerInfo
+from .settings import get_plugin_settings
 
 _MEGABYTES = 1024 * 1024
 _BASE_UUID = uuid.UUID("ca2144da-eabb-4daf-a1df-a3682050e25f")
@@ -85,9 +87,10 @@ async def get_default_viewer(
     except IndexError as err:
         raise IncompatibleService(file_type=file_type) from err
 
-    # TODO: This is a temporary limitation just for demo purposes.
-    if file_size is not None and file_size > 50 * _MEGABYTES:
-        raise FileToLarge(file_size_in_mb=file_size * 1e-6)
+    if current_size := parse_obj_or_none(ByteSize, file_size):
+        max_size: ByteSize = get_plugin_settings(app).STUDIES_MAX_FILE_SIZE_ALLOWED
+        if current_size > max_size:
+            raise FileToLarge(file_size_in_mb=current_size.to("MiB"))
 
     return viewer
 

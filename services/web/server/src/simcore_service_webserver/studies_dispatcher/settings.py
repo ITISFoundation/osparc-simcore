@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from aiohttp import web
-from pydantic import HttpUrl, validator
+from pydantic import ByteSize, HttpUrl, parse_obj_as, validator
 from pydantic.fields import Field
 from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from settings_library.base import BaseCustomSettings
@@ -28,6 +28,12 @@ class StudiesDispatcherSettings(BaseCustomSettings):
     STUDIES_DEFAULT_DATA_THUMBNAIL: HttpUrl = Field(
         default="https://via.placeholder.com/170x120.png",
         description="Default thumbnail for dispatch projects with only data (i.e. file-picker)",
+    )
+
+    STUDIES_MAX_FILE_SIZE_ALLOWED: ByteSize = Field(
+        default=parse_obj_as(ByteSize, "50Mib"),
+        description="Limits the size of the files that can be dispatched"
+        "Note that the accuracy of the file size is not guaranteed and this limit might be surpassed",
     )
 
     @validator("STUDIES_GUEST_ACCOUNT_LIFETIME")
