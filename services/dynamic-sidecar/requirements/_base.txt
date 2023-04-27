@@ -113,16 +113,14 @@ h11==0.12.0
     #   uvicorn
 httpcore==0.15.0
     # via httpx
-httpx==0.23.0
-    # via
-    #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
-    #   -r requirements/_base.in
+httpx==0.24.0
+    # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 idna==2.10
     # via
     #   anyio
     #   email-validator
+    #   httpx
     #   requests
-    #   rfc3986
     #   yarl
 jaeger-client==4.8.0
     # via fastapi-contrib
@@ -192,13 +190,13 @@ pyyaml==5.4.1
     #   -r requirements/_base.in
     #   docker-compose
 redis==4.5.4
-    # via -r requirements/../../../packages/service-library/requirements/_base.in
+    # via
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
 requests==2.27.1
     # via
     #   docker
     #   docker-compose
-rfc3986==1.5.0
-    # via httpx
 six==1.16.0
     # via
     #   bcrypt
