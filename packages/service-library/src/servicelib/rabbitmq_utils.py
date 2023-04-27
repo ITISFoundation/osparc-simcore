@@ -2,7 +2,7 @@
 
 import logging
 import re
-from typing import Awaitable, Final, Optional, Pattern
+from typing import Any, Callable, Final, Pattern
 
 import aio_pika
 from pydantic import ConstrainedStr, parse_obj_as
@@ -24,13 +24,13 @@ REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS: Final[str] = r"^[\w\-\.]*$"
 class RPCMethodName(ConstrainedStr):
     min_length: int = 1
     max_length: int = 252
-    regex: Optional[Pattern[str]] = re.compile(REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS)
+    regex: Pattern[str] | None = re.compile(REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS)
 
 
 class RPCNamespace(ConstrainedStr):
     min_length: int = 1
     max_length: int = 252
-    regex: Optional[Pattern[str]] = re.compile(REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS)
+    regex: Pattern[str] | None = re.compile(REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS)
 
     @classmethod
     def from_entries(cls, entries: dict[str, str]) -> "RPCNamespace":
@@ -45,7 +45,7 @@ class RPCNamespace(ConstrainedStr):
 class RPCNamespacedMethodName(ConstrainedStr):
     min_length: int = 1
     max_length: int = 255
-    regex: Optional[Pattern[str]] = re.compile(REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS)
+    regex: Pattern[str] | None = re.compile(REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS)
 
     @classmethod
     def from_namespace_and_method(
@@ -58,7 +58,7 @@ class RPCNamespacedMethodName(ConstrainedStr):
 class RabbitMQRetryPolicyUponInitialization:
     """Retry policy upon service initialization"""
 
-    def __init__(self, logger: Optional[logging.Logger] = None):
+    def __init__(self, logger: logging.Logger | None = None):
         logger = logger or log
 
         self.kwargs = {
@@ -80,7 +80,9 @@ async def wait_till_rabbitmq_responsive(url: str) -> bool:
 
 
 async def rpc_register_entries(
-    rabbit_client: "RabbitMQClient", entries: dict[str, str], handler: Awaitable
+    rabbit_client: "RabbitMQClient",
+    entries: dict[str, str],
+    handler: Callable[..., Any],
 ) -> None:
     """
     Bind a local `handler` to a `namespace` derived from the provided `entries`
