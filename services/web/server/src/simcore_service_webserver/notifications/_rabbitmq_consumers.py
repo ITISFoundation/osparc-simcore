@@ -21,6 +21,7 @@ from servicelib.aiohttp.monitor_services import (
 from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQClient
+from servicelib.utils import logged_gather
 
 from ..projects import projects_api
 from ..projects.projects_exceptions import NodeNotFoundError, ProjectNotFoundError
@@ -169,7 +170,7 @@ EXCHANGE_TO_PARSER_CONFIG: Final[
     (
         LoggerRabbitMessage.get_channel_name(),
         _log_message_parser,
-        {},
+        dict(topics=["#"]),
     ),
     (
         ProgressRabbitMessageNode.get_channel_name(),
@@ -192,11 +193,24 @@ EXCHANGE_TO_PARSER_CONFIG: Final[
 async def setup_rabbitmq_consumers(app: web.Application) -> AsyncIterator[None]:
     with log_context(_logger, logging.INFO, msg="Subscribing to rabbitmq channels"):
         rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
-
-        for exchange_name, parser_fct, queue_kwargs in EXCHANGE_TO_PARSER_CONFIG:
-            await rabbit_client.subscribe(
-                exchange_name, functools.partial(parser_fct, app), **queue_kwargs
+        subscribed_queues = await logged_gather(
+            *(
+                rabbit_client.subscribe(
+                    exchange_name, functools.partial(parser_fct, app), **queue_kwargs
+                )
+                for exchange_name, parser_fct, queue_kwargs in EXCHANGE_TO_PARSER_CONFIG
             )
+        )
+
     yield
 
     # cleanup?
+    with log_context(_logger, logging.INFO, msg="Subscribing to rabbitmq channels"):
+        rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
+        await logged_gather(
+            *(
+                rabbit_client.unsubscribe(queue_name)
+                for queue_name in subscribed_queues
+            ),
+            reraise=False,
+        )

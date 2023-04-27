@@ -183,7 +183,9 @@ async def _post_progress_message(
     )
 
     await rabbitmq_client.publish(
-        ProgressRabbitMessageProject.get_channel_name(), progress_message.json()
+        ProgressRabbitMessageProject.get_channel_name(),
+        progress_message.json(),
+        topic=progress_message.topic(),
     )
 
 
