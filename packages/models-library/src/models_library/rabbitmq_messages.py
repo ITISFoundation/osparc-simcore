@@ -3,7 +3,7 @@ from enum import Enum, auto
 from typing import Any, Literal
 
 from models_library.projects import ProjectID
-from models_library.projects_nodes import NodeID
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
 from models_library.utils.enums import StrAutoEnum
@@ -21,7 +21,8 @@ class RabbitMessageBase(BaseModel):
     @classmethod
     def get_channel_name(cls) -> str:
         # NOTE: this returns the channel type name
-        return cls.__fields__["channel_name"].default
+        name: str = cls.__fields__["channel_name"].default
+        return name
 
 
 class ProjectMessageBase(BaseModel):
