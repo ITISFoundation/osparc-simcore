@@ -40,7 +40,7 @@ async def reverse_proxy_handler(request: web.Request) -> web.Response:
         "Redirecting '%s' -> '%s'",
         request.url,
         backend_url,
-        get_log_record_extra(user_id=user_id),
+        extra=get_log_record_extra(user_id=user_id),
     )
 
     # body
