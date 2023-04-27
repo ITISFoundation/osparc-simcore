@@ -11,6 +11,7 @@ from unittest import mock
 
 import aio_pika
 import pytest
+from attr import dataclass
 from faker import Faker
 from pytest_mock.plugin import MockerFixture
 from servicelib.rabbitmq import RabbitMQClient
@@ -86,10 +87,29 @@ def mocked_message_parser(mocker: MockerFixture) -> mock.AsyncMock:
     return mocker.AsyncMock(return_value=True)
 
 
+@dataclass(frozen=True)
+class PytestRabbitMessage:
+    message: str
+
+    def topic(self) -> str:
+        return "pytest.red"
+
+    def body(self) -> bytes:
+        return self.message.encode()
+
+
+@pytest.fixture
+def random_rabbit_message(faker: Faker) -> Callable[[], PytestRabbitMessage]:
+    def _creator() -> PytestRabbitMessage:
+        return PytestRabbitMessage(message=faker.text())
+
+    return _creator
+
+
 async def _assert_message_received(
     mocked_message_parser: mock.AsyncMock,
     expected_call_count: int,
-    expected_message: str,
+    expected_message: PytestRabbitMessage,
 ) -> None:
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.1),
@@ -102,41 +122,43 @@ async def _assert_message_received(
             await asyncio.sleep(1)
             assert mocked_message_parser.call_count == expected_call_count
             if expected_call_count == 1:
-                mocked_message_parser.assert_called_once_with(expected_message.encode())
+                mocked_message_parser.assert_called_once_with(
+                    expected_message.message.encode()
+                )
             elif expected_call_count == 0:
                 mocked_message_parser.assert_not_called()
             else:
-                mocked_message_parser.assert_called_with(expected_message.encode())
+                mocked_message_parser.assert_called_with(
+                    expected_message.message.encode()
+                )
 
 
 async def test_rabbit_client_pub_sub_message_is_lost_if_no_consumer_present(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
-    faker: Faker,
+    random_rabbit_message: Callable[[], PytestRabbitMessage],
 ):
     consumer = rabbitmq_client("consumer")
     publisher = rabbitmq_client("publisher")
-
-    message = faker.text()
+    message = random_rabbit_message()
 
     exchange_name = random_exchange_name()
     await publisher.publish(exchange_name, message)
     await asyncio.sleep(0)  # ensure context switch
     await consumer.subscribe(exchange_name, mocked_message_parser)
-    await _assert_message_received(mocked_message_parser, 0, "")
+    await _assert_message_received(mocked_message_parser, 0, message)
 
 
 async def test_rabbit_client_pub_sub(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
-    faker: Faker,
+    random_rabbit_message: Callable[[], PytestRabbitMessage],
 ):
     consumer = rabbitmq_client("consumer")
     publisher = rabbitmq_client("publisher")
-
-    message = faker.text()
+    message = random_rabbit_message()
 
     exchange_name = random_exchange_name()
     await consumer.subscribe(exchange_name, mocked_message_parser)
@@ -149,7 +171,7 @@ async def test_rabbit_client_pub_many_subs(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocker: MockerFixture,
-    faker: Faker,
+    random_rabbit_message: Callable[[], PytestRabbitMessage],
     num_subs: int,
 ):
     consumers = (rabbitmq_client(f"consumer_{n}") for n in range(num_subs))
@@ -158,7 +180,7 @@ async def test_rabbit_client_pub_many_subs(
     ]
 
     publisher = rabbitmq_client("publisher")
-    message = faker.text()
+    message = random_rabbit_message()
     exchange_name = random_exchange_name()
     await asyncio.gather(
         *(
@@ -180,12 +202,12 @@ async def test_rabbit_client_pub_sub_republishes_if_exception_raised(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
-    faker: Faker,
+    random_rabbit_message: Callable[[], PytestRabbitMessage],
 ):
     publisher = rabbitmq_client("publisher")
     consumer = rabbitmq_client("consumer")
 
-    message = faker.text()
+    message = random_rabbit_message()
 
     def _raise_once_then_true(*args, **kwargs):
         _raise_once_then_true.calls += 1
@@ -209,7 +231,7 @@ async def test_pub_sub_with_non_exclusive_queue(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocker: MockerFixture,
-    faker: Faker,
+    random_rabbit_message: Callable[[], PytestRabbitMessage],
     num_subs: int,
 ):
     consumers = (rabbitmq_client(f"consumer_{n}") for n in range(num_subs))
@@ -218,7 +240,7 @@ async def test_pub_sub_with_non_exclusive_queue(
     ]
 
     publisher = rabbitmq_client("publisher")
-    message = faker.text()
+    message = random_rabbit_message()
     exchange_name = random_exchange_name()
     await asyncio.gather(
         *(
@@ -247,12 +269,11 @@ def test_rabbit_pub_sub_performance(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
-    faker: Faker,
+    random_rabbit_message: Callable[[], PytestRabbitMessage],
 ):
     consumer = rabbitmq_client("consumer")
     publisher = rabbitmq_client("publisher")
-
-    message = faker.text()
+    message = random_rabbit_message()
 
     exchange_name = random_exchange_name()
     asyncio.get_event_loop().run_until_complete(
@@ -274,10 +295,10 @@ async def test_rabbit_pub_sub_with_topic(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocker: MockerFixture,
-    faker: Faker,
+    random_rabbit_message: Callable[[], PytestRabbitMessage],
 ):
     exchange_name = f"{random_exchange_name()}_topic"
-    message = faker.text()
+    message = random_rabbit_message()
     message1_topic = "pytest.red.critical"
     message2_topic = "pytest.orange.debug"
     publisher = rabbitmq_client("publisher")
@@ -317,10 +338,10 @@ async def test_rabbit_pub_sub_bind_and_unbind_topics(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
-    faker: Faker,
+    random_rabbit_message: Callable[[], PytestRabbitMessage],
 ):
     exchange_name = f"{random_exchange_name()}_topic"
-    message = faker.text()
+    message = random_rabbit_message()
     publisher = rabbitmq_client("publisher")
     consumer = rabbitmq_client("consumer")
     # send some messages
@@ -405,10 +426,10 @@ async def test_rabbit_adding_topics_to_a_fanout_exchange(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
-    faker: Faker,
+    random_rabbit_message: Callable[[], PytestRabbitMessage],
 ):
     exchange_name = f"{random_exchange_name()}_fanout"
-    message = faker.text()
+    message = random_rabbit_message()
     publisher = rabbitmq_client("publisher")
     consumer = rabbitmq_client("consumer")
     queue_name = await consumer.subscribe(exchange_name, mocked_message_parser)

@@ -3,7 +3,7 @@ import logging
 import os
 import socket
 from dataclasses import dataclass, field
-from typing import Any, Awaitable, Callable, Final
+from typing import Any, Awaitable, Callable, Final, Protocol
 
 import aio_pika
 from aio_pika.exceptions import ChannelClosed
@@ -59,7 +59,15 @@ async def _get_connection(
 
 
 MessageHandler = Callable[[Any], Awaitable[bool]]
-Message = str
+
+
+class RabbitMessage(Protocol):
+    def body(self) -> bytes:
+        ...
+
+    def topic(self) -> str:
+        ...
+
 
 _MINUTE: Final[int] = 60
 _RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_S: Final[int] = 15 * _MINUTE
@@ -241,7 +249,7 @@ class RabbitMQClient:
             await queue.delete(if_unused=False, if_empty=False)
 
     async def publish(
-        self, exchange_name: str, message: Message, *, topic: str | None = None
+        self, exchange_name: str, message: RabbitMessage, *, topic: str | None = None
     ) -> None:
         """publish message in the exchange exchange_name.
         specifying a topic will use a TOPIC type of RabbitMQ Exchange instead of FANOUT
@@ -259,7 +267,7 @@ class RabbitMQClient:
                 durable=True,
             )
             await exchange.publish(
-                aio_pika.Message(message.encode()),
+                aio_pika.Message(message.body()),
                 routing_key=topic or "",
             )
 
