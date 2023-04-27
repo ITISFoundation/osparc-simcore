@@ -22,7 +22,12 @@ class StudiesDispatcherSettings(BaseCustomSettings):
 
     STUDIES_DEFAULT_SERVICE_THUMBNAIL: HttpUrl = Field(
         default="https://via.placeholder.com/170x120.png",
-        description="Default servcie thumbnails in the service response",
+        description="Default thumbnail for services or dispatch project with a service",
+    )
+
+    STUDIES_DEFAULT_DATA_THUMBNAIL: HttpUrl = Field(
+        default="https://via.placeholder.com/170x120.png",
+        description="Default thumbnail for dispatch projects with only data (i.e. file-picker)",
     )
 
     @validator("STUDIES_GUEST_ACCOUNT_LIFETIME")

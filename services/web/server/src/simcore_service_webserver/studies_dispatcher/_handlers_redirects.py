@@ -27,6 +27,7 @@ from ._projects import (
     get_or_create_project_with_service,
 )
 from ._users import UserInfo, ensure_authentication, get_or_create_user
+from .settings import StudiesDispatcherSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
 _SPACE = " "
@@ -264,20 +265,20 @@ async def get_redirection_to_viewer(request: web.Request):
         )
 
     elif file_params:
-        # Retrieve user or create a temporary guest
+
+        # TODO: validate_requested_file ??!!
+
         user: UserInfo = await get_or_create_user(request, is_guest_allowed=False)
+
+        settings: StudiesDispatcherSettings = get_plugin_settings(app=request.app)
 
         project_id, file_picker_id = await get_or_create_project_with_file(
             request.app,
             user,
-            params=file_params,
-            thumbnail="",
+            file_params=file_params,
+            project_thumbnail=settings.STUDIES_DEFAULT_DATA_THUMBNAIL,
             product_name=get_product_name(request),
         )
-        _logger.debug("Project acquired '%s'", project_id)
-
-        # Retrieve user or create a temporary guest
-        user: UserInfo = await get_or_create_user(request, is_guest_allowed=False)
 
         # Redirection and creation of cookies (for guests)
         # Produces  /#/view?project_id= & viewer_node_id
