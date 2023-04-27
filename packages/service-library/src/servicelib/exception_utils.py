@@ -56,9 +56,6 @@ class DelayedExceptionHandler(BaseModel):
         ).total_seconds() > self.delay_for:
             raise exception
 
-        # ignore if exception inside delay window
-        log.info("%s skip(s) of exception: %s", self._failure_counter, exception)
-
     def else_reset(self) -> None:
         """error no longer occurs reset tracking"""
         self._first_exception_skip = None
