@@ -7,13 +7,16 @@ import logging
 
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_service_api_server.core.settings import ApplicationSettings, BootModeEnum
+from yarl import URL
 
 
-def test_unit_app_environment(app_environment: EnvVarsDict):
+def test_unit_with_db_app_environment(app_environment: EnvVarsDict):
     settings = ApplicationSettings.create_from_envs()
     print("captured settings: \n", settings.json(indent=2))
 
     assert settings.SC_BOOT_MODE == BootModeEnum.PRODUCTION
     assert settings.log_level == logging.DEBUG
 
-    assert settings.API_SERVER_POSTGRES is None
+    assert URL(settings.API_SERVER_POSTGRES.dsn) == URL(
+        "postgresql://test:test@127.0.0.1:5432/test"
+    )
