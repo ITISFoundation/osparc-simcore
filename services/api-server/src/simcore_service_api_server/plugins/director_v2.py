@@ -173,7 +173,7 @@ class DirectorV2Api(BaseServiceClientApi):
         return computation_task
 
     async def delete_computation(self, project_id: UUID, user_id: PositiveInt):
-        response = await self.client.request(
+        await self.client.request(
             "DELETE",
             f"/v2/computations/{project_id}",
             json={
