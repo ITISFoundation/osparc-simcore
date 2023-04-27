@@ -3,7 +3,7 @@ import logging
 import os
 import socket
 from dataclasses import dataclass, field
-from typing import Any, Awaitable, Callable, Final, Optional
+from typing import Any, Awaitable, Callable, Final
 
 import aio_pika
 from aio_pika.exceptions import ChannelClosed
@@ -18,7 +18,7 @@ from .rabbitmq_utils import RPCMethodName, RPCNamespace, RPCNamespacedMethodName
 log = logging.getLogger(__name__)
 
 
-def _connection_close_callback(sender: Any, exc: Optional[BaseException]) -> None:
+def _connection_close_callback(sender: Any, exc: BaseException | None) -> None:
     if exc:
         if isinstance(exc, asyncio.CancelledError):
             log.info("Rabbit connection was cancelled")
@@ -30,7 +30,7 @@ def _connection_close_callback(sender: Any, exc: Optional[BaseException]) -> Non
             )
 
 
-def _channel_close_callback(sender: Any, exc: Optional[BaseException]) -> None:
+def _channel_close_callback(sender: Any, exc: BaseException | None) -> None:
     if exc:
         if isinstance(exc, asyncio.CancelledError):
             log.info("Rabbit channel was cancelled")
@@ -69,12 +69,12 @@ _RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_S: Final[int] = 15 * _MINUTE
 class RabbitMQClient:
     client_name: str
     settings: RabbitSettings
-    _connection_pool: Optional[aio_pika.pool.Pool] = field(init=False, default=None)
-    _channel_pool: Optional[aio_pika.pool.Pool] = field(init=False, default=None)
+    _connection_pool: aio_pika.pool.Pool | None = field(init=False, default=None)
+    _channel_pool: aio_pika.pool.Pool | None = field(init=False, default=None)
 
-    _rpc_connection: Optional[aio_pika.RobustConnection] = None
-    _rpc_channel: Optional[aio_pika.RobustChannel] = None
-    _rpc: Optional[RPC] = None
+    _rpc_connection: aio_pika.abc.AbstractConnection | None = None
+    _rpc_channel: aio_pika.abc.AbstractChannel | None = None
+    _rpc: RPC | None = None
 
     def __post_init__(self):
         # recommendations are 1 connection per process
@@ -93,7 +93,7 @@ class RabbitMQClient:
         )
         self._rpc_channel = await self._rpc_connection.channel()
 
-        self._rpc = RPC(self._rpc_channel, host_exceptions=True)
+        self._rpc = RPC(self._rpc_channel)
         await self._rpc.initialize()
 
     async def close(self) -> None:
@@ -131,11 +131,23 @@ class RabbitMQClient:
         message_handler: MessageHandler,
         *,
         exclusive_queue: bool = True,
-    ) -> None:
+        topics: list[str] | None = None,
+    ) -> str:
         """subscribe to exchange_name calling message_handler for every incoming message
         - exclusive_queue: True means that every instance of this application will receive the incoming messages
         - exclusive_queue: False means that only one instance of this application will reveice the incoming message
+
+        specifying a topic will make the client declare a TOPIC type of RabbitMQ Exchange instead of FANOUT
+        - a FANOUT exchange transmit messages to any connected queue regardless of the routing key
+        - a TOPIC exchange transmit messages to any connected queue provided it is bound with the message routing key
+          - topic = "#" is equivalent to the FANOUT effect
+          - a queue bound with topic "director-v2.*" will receive any message that uses a routing key such as "director-v2.event.service_started"
+          - a queue bound with topic "director-v2.event.specific_event" will only receive messages with that exact routing key (same as DIRECT exchanges behavior)
+
+        Raises:
+            aio_pika.exceptions.ChannelPreconditionFailed: In case an existing exchange with different type is used
         """
+
         assert self._channel_pool  # nosec
         async with self._channel_pool.acquire() as channel:
             channel: aio_pika.RobustChannel
@@ -143,7 +155,11 @@ class RabbitMQClient:
             await channel.set_qos(_DEFAULT_PREFETCH_VALUE)
 
             exchange = await channel.declare_exchange(
-                exchange_name, aio_pika.ExchangeType.FANOUT, durable=True
+                exchange_name,
+                aio_pika.ExchangeType.FANOUT
+                if topics is None
+                else aio_pika.ExchangeType.TOPIC,
+                durable=True,
             )
 
             # NOTE: durable=True makes the queue persistent between RabbitMQ restarts/crashes
@@ -159,7 +175,12 @@ class RabbitMQClient:
                 # NOTE: setting a name will ensure multiple instance will take their data here
                 queue_parameters |= {"name": exchange_name}
             queue = await channel.declare_queue(**queue_parameters)
-            await queue.bind(exchange)
+            if topics is None:
+                await queue.bind(exchange, routing_key="")
+            else:
+                await asyncio.gather(
+                    *(queue.bind(exchange, routing_key=topic) for topic in topics)
+                )
 
             async def _on_message(
                 message: aio_pika.abc.AbstractIncomingMessage,
@@ -172,17 +193,74 @@ class RabbitMQClient:
                             await message.nack()
 
             await queue.consume(_on_message)
+            return queue.name
 
-    async def publish(self, exchange_name: str, message: Message) -> None:
+    async def add_topics(
+        self,
+        exchange_name: str,
+        queue_name: str,
+        *,
+        topics: list[str],
+    ) -> None:
+        assert self._channel_pool  # nosec
+        async with self._channel_pool.acquire() as channel:
+            channel: aio_pika.RobustChannel
+            exchange = await channel.get_exchange(exchange_name)
+            queue = await channel.get_queue(queue_name)
+
+            await asyncio.gather(
+                *(queue.bind(exchange, routing_key=topic) for topic in topics)
+            )
+
+    async def remove_topics(
+        self,
+        exchange_name: str,
+        queue_name: str,
+        *,
+        topics: list[str],
+    ) -> None:
+        assert self._channel_pool  # nosec
+        async with self._channel_pool.acquire() as channel:
+            channel: aio_pika.RobustChannel
+            exchange = await channel.get_exchange(exchange_name)
+            queue = await channel.get_queue(queue_name)
+
+            await asyncio.gather(
+                *(queue.unbind(exchange, routing_key=topic) for topic in topics)
+            )
+
+    async def unsubscribe(
+        self,
+        queue_name: str,
+    ) -> None:
+        assert self._channel_pool  # nosec
+        async with self._channel_pool.acquire() as channel:
+            channel: aio_pika.RobustChannel
+            queue = await channel.get_queue(queue_name)
+            # NOTE: we force delete here
+            await queue.delete(if_unused=False, if_empty=False)
+
+    async def publish(
+        self, exchange_name: str, message: Message, *, topic: str | None = None
+    ) -> None:
+        """publish message in the exchange exchange_name.
+        specifying a topic will use a TOPIC type of RabbitMQ Exchange instead of FANOUT
+
+        NOTE: changing the type of Exchange will create issues if the name is not changed!
+        """
         assert self._channel_pool  # nosec
         async with self._channel_pool.acquire() as channel:
             channel: aio_pika.RobustChannel
             exchange = await channel.declare_exchange(
-                exchange_name, aio_pika.ExchangeType.FANOUT, durable=True
+                exchange_name,
+                aio_pika.ExchangeType.FANOUT
+                if topic is None
+                else aio_pika.ExchangeType.TOPIC,
+                durable=True,
             )
             await exchange.publish(
                 aio_pika.Message(message.encode()),
-                routing_key="",
+                routing_key=topic or "",
             )
 
     async def rpc_request(
@@ -190,7 +268,7 @@ class RabbitMQClient:
         namespace: RPCNamespace,
         method_name: RPCMethodName,
         *,
-        timeout_s: Optional[PositiveInt] = 5,
+        timeout_s: PositiveInt | None = 5,
         **kwargs: dict[str, Any],
     ) -> Any:
         """
@@ -226,7 +304,10 @@ class RabbitMQClient:
             raise e
 
     async def rpc_register_handler(
-        self, namespace: RPCNamespace, method_name: RPCMethodName, handler: Awaitable
+        self,
+        namespace: RPCNamespace,
+        method_name: RPCMethodName,
+        handler: Callable[..., Any],
     ) -> None:
         """
         Bind a local `handler` to a `namespace` and `method_name`.
@@ -245,7 +326,7 @@ class RabbitMQClient:
             auto_delete=True,
         )
 
-    async def rpc_unregister_handler(self, handler: Awaitable) -> None:
+    async def rpc_unregister_handler(self, handler: Callable[..., Any]) -> None:
         """Unbind a locally added `handler`"""
 
         if self._rpc is None:
