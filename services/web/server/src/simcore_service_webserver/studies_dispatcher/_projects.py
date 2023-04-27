@@ -7,6 +7,7 @@
 """
 import json
 import logging
+from typing import NamedTuple
 
 from aiohttp import web
 from models_library.projects import AccessRights, Project, ProjectID
@@ -221,6 +222,11 @@ async def _project_exists(
         return False
 
 
+class ProjectNodePair(NamedTuple):
+    project_uid: ProjectID
+    node_uid: NodeID
+
+
 @log_decorator(_logger, level=logging.DEBUG)
 async def get_or_create_project_with_file_and_service(
     app: web.Application,
@@ -229,7 +235,7 @@ async def get_or_create_project_with_file_and_service(
     download_link: HttpUrl,
     *,
     product_name: str,
-) -> tuple[str, str]:
+) -> ProjectNodePair:
     #
     # Generate one project per user + download_link + viewer
     #   - if user requests several times, the same project is reused
@@ -279,7 +285,7 @@ async def get_or_create_project_with_file_and_service(
 
         await _add_new_project(app, project, user, product_name=product_name)
 
-    return f"{project_uid}", f"{service_id}"
+    return ProjectNodePair(project_uid=project_uid, node_uid=service_id)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -289,7 +295,7 @@ async def get_or_create_project_with_service(
     service_info: ServiceInfo,
     *,
     product_name: str,
-) -> tuple[str, str]:
+) -> ProjectNodePair:
 
     project_uid: ProjectID = compose_uuid_from(user.id, service_info.footprint)
     _, service_id = _generate_nodeids(project_uid)
@@ -310,7 +316,7 @@ async def get_or_create_project_with_service(
         )
         await _add_new_project(app, project, user, product_name=product_name)
 
-    return f"{project_uid}", f"{service_id}"
+    return ProjectNodePair(project_uid=project_uid, node_uid=service_id)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -321,7 +327,7 @@ async def get_or_create_project_with_file(
     *,
     project_thumbnail: HttpUrl,
     product_name: str,
-) -> tuple[str, str]:
+) -> ProjectNodePair:
 
     project_uid: ProjectID = compose_uuid_from(user.id, file_params.footprint)
     file_picker_id, _ = _generate_nodeids(project_uid)
@@ -351,4 +357,4 @@ async def get_or_create_project_with_file(
 
         await _add_new_project(app, project, user, product_name=product_name)
 
-    return f"{project_uid}", f"{file_picker_id}"
+    return ProjectNodePair(project_uid=project_uid, node_uid=file_picker_id)

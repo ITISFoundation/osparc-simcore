@@ -6,6 +6,8 @@ import logging
 import urllib.parse
 
 from aiohttp import web
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.utils.pydantic_tools_extension import parse_obj_or_none
 from pydantic import BaseModel, HttpUrl, ValidationError, root_validator, validator
@@ -27,10 +29,45 @@ from ._projects import (
     get_or_create_project_with_service,
 )
 from ._users import UserInfo, ensure_authentication, get_or_create_user
-from .settings import StudiesDispatcherSettings, get_plugin_settings
+from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
 _SPACE = " "
+
+
+#
+# HELPERS to redirect to Front-end pages
+#
+
+
+def _create_redirect_response_to_view_page(
+    app: web.Application,
+    project_id: ProjectID,
+    viewer_node_id: NodeID,
+    file_name: str | None,
+    file_size: int | str | None,
+) -> web.HTTPFound:
+    # NOTE: these are 'view' page params and need to be interpreted by front-end correctly!
+    return create_redirect_response(
+        app,
+        page="view",
+        project_id=f"{project_id}",
+        viewer_node_id=f"{viewer_node_id}",
+        file_name=file_name or "unkwnown",
+        file_size=file_size or 0,
+    )
+
+
+def _create_redirect_response_to_error_page(
+    app: web.Application, message: str, status_code: int
+) -> web.HTTPFound:
+    # NOTE: these are 'error' page params and need to be interpreted by front-end correctly!
+    return create_redirect_response(
+        app,
+        page="error",
+        message=message,
+        status_code=status_code,
+    )
 
 
 #
@@ -119,34 +156,30 @@ def _handle_errors_with_error_page(handler: Handler):
             return await handler(request)
 
         except StudyDispatcherError as err:
-            raise create_redirect_response(
+            raise _create_redirect_response_to_error_page(
                 request.app,
-                page="error",
                 message=f"Sorry, we cannot view this file: {err.reason}",
                 status_code=web.HTTPUnprocessableEntity.status_code,  # 422
             ) from err
 
         except web.HTTPUnauthorized as err:
-            raise create_redirect_response(
+            raise _create_redirect_response_to_error_page(
                 request.app,
-                page="error",
                 message=f"{err.reason}. Please reload this page to login/register.",
                 status_code=err.status_code,
             ) from err
 
         except web.HTTPUnprocessableEntity as err:
-            raise create_redirect_response(
+            raise _create_redirect_response_to_error_page(
                 request.app,
-                page="error",
                 message=f"Invalid parameters in link: {err.reason}",
                 status_code=web.HTTPUnprocessableEntity.status_code,  # 422
             ) from err
 
         except web.HTTPClientError as err:
             _logger.exception("Client error with status code %d", err.status_code)
-            raise create_redirect_response(
+            raise _create_redirect_response_to_error_page(
                 request.app,
-                page="error",
                 message=err.reason,
                 status_code=err.status_code,
             ) from err
@@ -158,9 +191,8 @@ def _handle_errors_with_error_page(handler: Handler):
                 f"{error_code}",
                 extra={"error_code": error_code},
             )
-            raise create_redirect_response(
+            raise _create_redirect_response_to_error_page(
                 request.app,
-                page="error",
                 message=compose_support_error_msg(
                     msg=MSG_UNEXPECTED_ERROR.format(hint=""), error_code=error_code
                 ),
@@ -212,14 +244,11 @@ async def get_redirection_to_viewer(request: web.Request):
             product_name=get_product_name(request),
         )
 
-        # Redirection and creation of cookies (for guests)
-        # Produces  /#/view?project_id= & viewer_node_id
-        response = create_redirect_response(
+        response = _create_redirect_response_to_view_page(
             request.app,
-            page="view",
             project_id=project_id,
             viewer_node_id=viewer_id,
-            file_name=file_params.file_name or "unkwnown",
+            file_name=file_params.file_name,
             file_size=file_params.file_size,
         )
 
@@ -253,11 +282,9 @@ async def get_redirection_to_viewer(request: web.Request):
             ),
             product_name=get_product_name(request),
         )
-        _logger.debug("Project acquired '%s'", project_id)
 
-        response = create_redirect_response(
+        response = _create_redirect_response_to_view_page(
             request.app,
-            page="view",
             project_id=project_id,
             viewer_node_id=viewer_id,
             file_name="none",
@@ -270,24 +297,21 @@ async def get_redirection_to_viewer(request: web.Request):
 
         user: UserInfo = await get_or_create_user(request, is_guest_allowed=False)
 
-        settings: StudiesDispatcherSettings = get_plugin_settings(app=request.app)
-
         project_id, file_picker_id = await get_or_create_project_with_file(
             request.app,
             user,
             file_params=file_params,
-            project_thumbnail=settings.STUDIES_DEFAULT_DATA_THUMBNAIL,
+            project_thumbnail=get_plugin_settings(
+                app=request.app
+            ).STUDIES_DEFAULT_DATA_THUMBNAIL,
             product_name=get_product_name(request),
         )
 
-        # Redirection and creation of cookies (for guests)
-        # Produces  /#/view?project_id= & viewer_node_id
-        response = create_redirect_response(
+        response = _create_redirect_response_to_view_page(
             request.app,
-            page="view",
             project_id=project_id,
-            viewer_node_id=file_picker_id,  # FIXME!!!
-            file_name=file_params.file_name or "unkwnown",
+            viewer_node_id=file_picker_id,  # TODO: ask odei about this?
+            file_name=file_params.file_name,
             file_size=file_params.file_size,
         )
 
@@ -295,7 +319,7 @@ async def get_redirection_to_viewer(request: web.Request):
         # NOTE: if query is done right, this should never happen
         raise StudyDispatcherError(reason=MSG_INVALID_REDIRECTION_PARAMS_ERROR)
 
-    # lastly, ensure auth if any
+    # add auth cookies to response!
     await ensure_authentication(user, request, response)
 
     _logger.debug(
