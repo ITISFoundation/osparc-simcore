@@ -36,7 +36,7 @@ alembic==1.8.1
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
-anyio==3.6.1
+anyio==3.6.2
     # via
     #   httpcore
     #   starlette
@@ -192,7 +192,9 @@ pyyaml==5.4.1
     #   -r requirements/_base.in
     #   docker-compose
 redis==4.5.4
-    # via -r requirements/../../../packages/service-library/requirements/_base.in
+    # via
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
 requests==2.27.1
     # via
     #   docker
