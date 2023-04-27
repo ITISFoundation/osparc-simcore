@@ -313,7 +313,7 @@ async def get_redirection_to_viewer(request: web.Request):
             file_params=file_params,
             project_thumbnail=get_plugin_settings(
                 app=request.app
-            ).STUDIES_DEFAULT_DATA_THUMBNAIL,
+            ).STUDIES_DEFAULT_FILE_THUMBNAIL,
             product_name=get_product_name(request),
         )
 
