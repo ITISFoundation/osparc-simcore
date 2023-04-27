@@ -26,11 +26,14 @@ class RabbitMessageBase(BaseModel):
         return name
 
     @abstractmethod
-    def topic(self) -> str | None:
+    def routing_key(self) -> str | None:
         """this is used to define the topic of the message
 
         :return: the topic or None (NOTE: None will implicitely use a FANOUT exchange)
         """
+
+    def body(self) -> bytes:
+        return self.json().encode()
 
 
 class ProjectMessageBase(BaseModel):
@@ -47,7 +50,7 @@ class LoggerRabbitMessage(RabbitMessageBase, NodeMessageBase):
     messages: list[str]
     log_level: int = logging.INFO
 
-    def topic(self) -> str:
+    def routing_key(self) -> str:
         return f"{self.project_id}.{self.log_level}"
 
 
@@ -55,7 +58,7 @@ class EventRabbitMessage(RabbitMessageBase, NodeMessageBase):
     channel_name: Literal["simcore.services.events"] = "simcore.services.events"
     action: RabbitEventMessageType
 
-    def topic(self) -> str | None:
+    def routing_key(self) -> str | None:
         return None
 
 
@@ -82,7 +85,7 @@ class ProgressMessageMixin(RabbitMessageBase):
     )  # NOTE: backwards compatible
     progress: NonNegativeFloat
 
-    def topic(self) -> str | None:
+    def routing_key(self) -> str | None:
         return None
 
 
@@ -106,7 +109,7 @@ class InstrumentationRabbitMessage(RabbitMessageBase, NodeMessageBase):
     result: RunningState | None = None
     simcore_user_agent: str
 
-    def topic(self) -> str | None:
+    def routing_key(self) -> str | None:
         return None
 
 
@@ -118,7 +121,7 @@ class _RabbitAutoscalingBaseMessage(RabbitMessageBase):
         ..., description="autoscaling app type, in case there would be more than one"
     )
 
-    def topic(self) -> str | None:
+    def routing_key(self) -> str | None:
         return None
 
 

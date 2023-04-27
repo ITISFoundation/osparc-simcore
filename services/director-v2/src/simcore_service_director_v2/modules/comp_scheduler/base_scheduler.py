@@ -285,9 +285,7 @@ class BaseCompScheduler(ABC):
                     service_tag=current.image.tag,
                     simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                 )
-                await self.rabbitmq_client.publish(
-                    message.channel_name, message.json(), topic=message.topic()
-                )
+                await self.rabbitmq_client.publish(message.channel_name, message)
 
     async def _update_states_from_comp_backend(
         self,

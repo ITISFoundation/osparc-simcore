@@ -182,11 +182,7 @@ async def _post_progress_message(
         progress=progress_value,
     )
 
-    await rabbitmq_client.publish(
-        ProgressRabbitMessageProject.get_channel_name(),
-        progress_message.json(),
-        topic=progress_message.topic(),
-    )
+    await rabbitmq_client.publish(progress_message.channel_name, progress_message)
 
 
 async def stop_dynamic_services_in_project(
