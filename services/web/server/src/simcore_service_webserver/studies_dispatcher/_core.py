@@ -14,7 +14,7 @@ from .._constants import APP_DB_ENGINE_KEY
 from ._exceptions import StudyDispatcherError
 from ._models import ViewerInfo
 
-MEGABYTES = 1024 * 1024
+_MEGABYTES = 1024 * 1024
 _BASE_UUID = uuid.UUID("ca2144da-eabb-4daf-a1df-a3682050e25f")
 
 
@@ -82,7 +82,7 @@ async def get_default_viewer(
         ) from err
 
     # TODO: This is a temporary limitation just for demo purposes.
-    if file_size is not None and file_size > 50 * MEGABYTES:
+    if file_size is not None and file_size > 50 * _MEGABYTES:
         raise StudyDispatcherError(
             f"File size {file_size*1E-6} MB is over allowed limit"
         )
