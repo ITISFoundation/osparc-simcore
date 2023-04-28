@@ -12,7 +12,7 @@ import sys
 from asyncio import iscoroutinefunction
 from contextlib import contextmanager
 from inspect import getframeinfo, stack
-from typing import Callable
+from typing import Callable, TypedDict
 
 log = logging.getLogger(__name__)
 
@@ -237,7 +237,13 @@ def log_context(logger: logging.Logger, level: int, msg: str, *args, **kwargs):
     logger.log(level, "Finished " + msg, *args, **kwargs)
 
 
-def get_log_record_extra(user_id: int | str | None = None) -> dict | None:
+class LogExtra(TypedDict, total=False):
+    log_uid: str
+
+
+def get_log_record_extra(*, user_id: int | str | None = None) -> LogExtra | None:
+    extra: LogExtra = {}
     if user_id:
-        return {"log_uid": f"{user_id}"}
-    return None
+        assert int(user_id) > 0  # nosec
+        extra["log_uid"] = f"{user_id}"
+    return extra or None
