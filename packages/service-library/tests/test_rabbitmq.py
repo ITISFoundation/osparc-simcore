@@ -14,7 +14,7 @@ import pytest
 from attr import dataclass
 from faker import Faker
 from pytest_mock.plugin import MockerFixture
-from servicelib.rabbitmq import RabbitMQClient
+from servicelib.rabbitmq import BIND_TO_ALL_TOPICS, RabbitMQClient
 from settings_library.rabbit import RabbitSettings
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -310,7 +310,7 @@ async def test_rabbit_pub_sub_with_topic(
     all_receiving_consumer = rabbitmq_client("all_receiving_consumer")
     all_receiving_mocked_message_parser = mocker.AsyncMock(return_value=True)
     await all_receiving_consumer.subscribe(
-        exchange_name, all_receiving_mocked_message_parser, topics=["#"]
+        exchange_name, all_receiving_mocked_message_parser, topics=[BIND_TO_ALL_TOPICS]
     )
 
     only_critical_consumer = rabbitmq_client("only_critical_consumer")

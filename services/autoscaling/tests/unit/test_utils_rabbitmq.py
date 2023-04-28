@@ -18,7 +18,7 @@ from models_library.rabbitmq_messages import (
 )
 from pydantic import parse_obj_as
 from pytest_mock.plugin import MockerFixture
-from servicelib.rabbitmq import RabbitMQClient
+from servicelib.rabbitmq import BIND_TO_ALL_TOPICS, RabbitMQClient
 from settings_library.rabbit import RabbitSettings
 from simcore_service_autoscaling.utils.rabbitmq import (
     post_task_log_message,
@@ -61,7 +61,9 @@ async def test_post_task_log_message(
 ):
     mocked_message_handler = mocker.AsyncMock(return_value=True)
     await rabbit_client.subscribe(
-        LoggerRabbitMessage.get_channel_name(), mocked_message_handler, topics=["#"]
+        LoggerRabbitMessage.get_channel_name(),
+        mocked_message_handler,
+        topics=[BIND_TO_ALL_TOPICS],
     )
 
     service_with_labels = await create_service(
