@@ -204,8 +204,8 @@ async def setup_rabbitmq_consumers(app: web.Application) -> AsyncIterator[None]:
 
     yield
 
-    # cleanup?
-    with log_context(_logger, logging.INFO, msg="Subscribing to rabbitmq channels"):
+    # cleanup
+    with log_context(_logger, logging.INFO, msg="Unsubscribing from rabbitmq channels"):
         rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
         await logged_gather(
             *(
