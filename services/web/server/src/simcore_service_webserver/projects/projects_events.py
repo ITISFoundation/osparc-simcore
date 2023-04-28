@@ -5,10 +5,12 @@
 import logging
 
 from aiohttp import web
+from models_library.projects import ProjectID
 from servicelib.observer import event_registry as _event_registry
 from servicelib.observer import observe
 from servicelib.utils import logged_gather
 
+from ..notifications import project_logs
 from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
 from .projects_api import retrieve_and_notify_project_locked_state
 
@@ -24,6 +26,10 @@ async def _on_user_disconnected(
         list_projects: list[str] = await rt.find(PROJECT_ID_KEY)
 
     await logged_gather(
+        *[project_logs.unsubscribe(app, ProjectID(prj)) for prj in list_projects]
+    )
+
+    await logged_gather(
         *[
             retrieve_and_notify_project_locked_state(
                 user_id, prj, app, notify_only_prj_user=True
@@ -33,7 +39,7 @@ async def _on_user_disconnected(
     )
 
 
-def setup_project_events(_app: web.Application):
+def setup_project_events(_app: web.Application) -> None:
     # For the moment, this is only used as a placeholder to import this file
     # This way the functions above are registered as handlers of a give event
     # using the @observe decorator
