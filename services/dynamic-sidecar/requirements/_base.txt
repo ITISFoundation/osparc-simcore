@@ -36,7 +36,7 @@ alembic==1.8.1
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
-anyio==3.6.1
+anyio==3.6.2
     # via
     #   httpcore
     #   starlette
@@ -114,7 +114,9 @@ h11==0.12.0
 httpcore==0.15.0
     # via httpx
 httpx==0.24.0
-    # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
+    #   -r requirements/_base.in
 idna==2.10
     # via
     #   anyio

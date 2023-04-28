@@ -6,10 +6,8 @@
 #
 alembic==1.8.1
     # via -r requirements/_test.in
-anyio==3.6.1
-    # via
-    #   -c requirements/_base.txt
-    #   httpcore
+anyio==3.6.2
+    # via httpcore
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
 attrs==21.4.0
@@ -103,7 +101,9 @@ httpcore==0.15.0
     #   -c requirements/_base.txt
     #   httpx
 httpx==0.24.0
-    # via respx
+    # via
+    #   -c requirements/_base.txt
+    #   respx
 idna==3.3
     # via
     #   -c requirements/_base.txt
