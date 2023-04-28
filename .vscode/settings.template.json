@@ -58,7 +58,7 @@
     "editor.insertSpaces": false
   },
   "python.testing.pytestEnabled": true,
-  "autoDocstring.docstringFormat": "sphinx",
+  "autoDocstring.docstringFormat": "pep257",
   "hadolint.hadolintPath": "${workspaceFolder}/scripts/hadolint.bash",
   "hadolint.cliOptions": [],
   "shellcheck.executablePath": "${workspaceFolder}/scripts/shellcheck.bash",
