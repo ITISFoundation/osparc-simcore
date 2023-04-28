@@ -281,7 +281,7 @@ async def add_project_node(
         service_version,
         project["uuid"],
         user_id,
-        extra=get_log_record_extra({"user_id": user_id}),
+        extra=get_log_record_extra(user_id=user_id),
     )
     node_uuid = service_id if service_id else f"{uuid4()}"
 
