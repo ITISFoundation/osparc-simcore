@@ -15,15 +15,15 @@ from settings_library.rabbit import RabbitSettings
 from .rabbitmq_errors import RemoteMethodNotRegisteredError, RPCNotInitializedError
 from .rabbitmq_utils import RPCMethodName, RPCNamespace, RPCNamespacedMethodName
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def _connection_close_callback(sender: Any, exc: BaseException | None) -> None:
     if exc:
         if isinstance(exc, asyncio.CancelledError):
-            log.info("Rabbit connection was cancelled")
+            _logger.info("Rabbit connection was cancelled")
         else:
-            log.error(
+            _logger.error(
                 "Rabbit connection closed with exception from %s:%s",
                 sender,
                 exc,
@@ -33,11 +33,11 @@ def _connection_close_callback(sender: Any, exc: BaseException | None) -> None:
 def _channel_close_callback(sender: Any, exc: BaseException | None) -> None:
     if exc:
         if isinstance(exc, asyncio.CancelledError):
-            log.info("Rabbit channel was cancelled")
+            _logger.info("Rabbit channel was cancelled")
         elif isinstance(exc, ChannelClosed):
-            log.info("%s", exc)
+            _logger.info("%s", exc)
         else:
-            log.error(
+            _logger.error(
                 "Rabbit channel closed with exception from %s:%s",
                 sender,
                 exc,
@@ -105,7 +105,7 @@ class RabbitMQClient:
         await self._rpc.initialize()
 
     async def close(self) -> None:
-        with log_context(log, logging.INFO, msg="Closing connection to RabbitMQ"):
+        with log_context(_logger, logging.INFO, msg="Closing connection to RabbitMQ"):
             assert self._channel_pool  # nosec
             await self._channel_pool.close()
             assert self._connection_pool  # nosec
@@ -195,7 +195,7 @@ class RabbitMQClient:
             ) -> None:
                 async with message.process(requeue=True):
                     with log_context(
-                        log, logging.DEBUG, msg=f"Message received {message}"
+                        _logger, logging.DEBUG, msg=f"Message received {message}"
                     ):
                         if not await message_handler(message.body):
                             await message.nack()
