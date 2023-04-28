@@ -147,7 +147,7 @@ async def _publish_in_rabbit(
             body=instrumentation_start_message.json().encode(),
             content_type="text/json",
         ),
-        routing_key="",
+        routing_key=instrumentation_start_message.routing_key() or "",
     )
 
     for n in range(num_messages):
@@ -155,19 +155,19 @@ async def _publish_in_rabbit(
             aio_pika.Message(
                 body=log_messages[n].json().encode(), content_type="text/json"
             ),
-            routing_key="",
+            routing_key=log_messages[n].routing_key() or "",
         )
 
         await rabbit_exchanges.progress.publish(
             aio_pika.Message(
                 body=progress_messages[n].json().encode(), content_type="text/json"
             ),
-            routing_key="",
+            routing_key=progress_messages[n].routing_key() or "",
         )
 
     await rabbit_exchanges.events.publish(
         aio_pika.Message(body=event_message.json().encode(), content_type="text/json"),
-        routing_key="",
+        routing_key=event_message.routing_key() or "",
     )
 
     # indicate container is stopped
@@ -176,7 +176,7 @@ async def _publish_in_rabbit(
             body=instrumentation_stop_message.json().encode(),
             content_type="text/json",
         ),
-        routing_key="",
+        routing_key=instrumentation_stop_message.routing_key() or "",
     )
 
     return (log_messages, progress_messages, instrumentation_messages, [event_message])
@@ -225,7 +225,7 @@ def client(
 
 @pytest.fixture
 def client_session_id(client_session_id_factory: Callable[[], str]) -> UUIDStr:
-    return client_session_id_factory()
+    return UUIDStr(client_session_id_factory())
 
 
 @pytest.fixture
