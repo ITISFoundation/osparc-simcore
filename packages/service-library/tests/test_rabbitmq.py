@@ -103,10 +103,8 @@ class PytestRabbitMessage:
 def random_rabbit_message(
     faker: Faker,
 ) -> Callable[..., PytestRabbitMessage]:
-    def _creator(**kwargs: dict[str, Any] | None) -> PytestRabbitMessage:
-        msg_config = {"message": faker.text(), "topic": None}
-        if kwargs:
-            msg_config |= kwargs
+    def _creator(**kwargs: dict[str, Any]) -> PytestRabbitMessage:
+        msg_config = {"message": faker.text(), "topic": None, **kwargs}
 
         return PytestRabbitMessage(**msg_config)
 
