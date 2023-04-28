@@ -15,7 +15,7 @@ from models_library.rabbitmq_messages import (
     RabbitMessageBase,
 )
 from pytest_mock.plugin import MockerFixture
-from servicelib.rabbitmq import RabbitMQClient
+from servicelib.rabbitmq import BIND_TO_ALL_TOPICS, RabbitMQClient
 from settings_library.rabbit import RabbitSettings
 from simcore_service_autoscaling.core.errors import ConfigurationError
 from simcore_service_autoscaling.modules.rabbitmq import (
@@ -116,7 +116,7 @@ async def test_post_message(
     await rabbit_client.subscribe(
         rabbit_message.channel_name,
         mocked_message_handler,
-        topics=["#"] if rabbit_message.routing_key() else None,
+        topics=[BIND_TO_ALL_TOPICS] if rabbit_message.routing_key() else None,
     )
     await post_message(initialized_app, message=rabbit_message)
 

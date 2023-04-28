@@ -20,7 +20,7 @@ from servicelib.aiohttp.monitor_services import (
 )
 from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_context
-from servicelib.rabbitmq import RabbitMQClient
+from servicelib.rabbitmq import BIND_TO_ALL_TOPICS, RabbitMQClient
 from servicelib.utils import logged_gather
 
 from ..projects import projects_api
@@ -170,7 +170,7 @@ EXCHANGE_TO_PARSER_CONFIG: Final[
     (
         LoggerRabbitMessage.get_channel_name(),
         _log_message_parser,
-        dict(topics=["#"]),
+        dict(topics=[BIND_TO_ALL_TOPICS]),
     ),
     (
         ProgressRabbitMessageNode.get_channel_name(),
