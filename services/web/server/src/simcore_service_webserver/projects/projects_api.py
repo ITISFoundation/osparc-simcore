@@ -42,7 +42,7 @@ from servicelib.common_headers import (
     X_SIMCORE_USER_AGENT,
 )
 from servicelib.json_serialization import json_dumps
-from servicelib.logging_utils import log_context
+from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_postgres_database.webserver_models import ProjectType
 
@@ -281,6 +281,7 @@ async def add_project_node(
         service_version,
         project["uuid"],
         user_id,
+        extra=get_log_record_extra(user_id=user_id),
     )
     node_uuid = service_id if service_id else f"{uuid4()}"
 
@@ -479,6 +480,7 @@ async def update_project_node_outputs(
         user_id,
         json_dumps(new_outputs),
         new_run_hash,
+        extra=get_log_record_extra(user_id=user_id),
     )
     new_outputs = new_outputs or {}
 
@@ -708,6 +710,7 @@ async def try_close_project_for_user(
                 "project [%s] is already closed for user [%s].",
                 project_uuid,
                 user_id,
+                extra=get_log_record_extra(user_id=user_id),
             )
             return
         # remove the project from our list of opened ones

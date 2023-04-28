@@ -138,7 +138,7 @@ def run_service(app: web.Application, config: dict[str, Any]):
         app,
         host=config["main"]["host"],
         port=config["main"]["port"],
-        # this gets overriden by the gunicorn config if any
+        # this gets overriden by the gunicorn config in /docker/boot.sh
         access_log_format='%a %t "%r" %s %b --- [%Dus] "%{Referer}i" "%{User-Agent}i"',
     )
 
