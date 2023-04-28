@@ -61,7 +61,7 @@ async def test_post_task_log_message(
 ):
     mocked_message_handler = mocker.AsyncMock(return_value=True)
     await rabbit_client.subscribe(
-        LoggerRabbitMessage.get_channel_name(), mocked_message_handler
+        LoggerRabbitMessage.get_channel_name(), mocked_message_handler, topics=["#"]
     )
 
     service_with_labels = await create_service(
@@ -144,7 +144,9 @@ async def test_post_task_progress_message(
 ):
     mocked_message_handler = mocker.AsyncMock(return_value=True)
     await rabbit_client.subscribe(
-        ProgressRabbitMessageNode.get_channel_name(), mocked_message_handler
+        ProgressRabbitMessageNode.get_channel_name(),
+        mocked_message_handler,
+        topics=None,
     )
 
     service_with_labels = await create_service(
