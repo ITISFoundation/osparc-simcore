@@ -113,7 +113,11 @@ async def test_post_message(
     mocker: MockerFixture,
 ):
     mocked_message_handler = mocker.AsyncMock(return_value=True)
-    await rabbit_client.subscribe(rabbit_message.channel_name, mocked_message_handler)
+    await rabbit_client.subscribe(
+        rabbit_message.channel_name,
+        mocked_message_handler,
+        topics=["#"] if rabbit_message.routing_key() else None,
+    )
     await post_message(initialized_app, message=rabbit_message)
 
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
