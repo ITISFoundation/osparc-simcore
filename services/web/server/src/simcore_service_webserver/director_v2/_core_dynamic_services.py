@@ -28,13 +28,10 @@ from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 from yarl import URL
 
-from .director_v2_core_base import DataType, request_director_v2
-from .director_v2_exceptions import (
-    DirectorServiceError,
-    ServiceWaitingForManualIntervention,
-)
-from .director_v2_settings import DirectorV2Settings, get_plugin_settings
-from .rabbitmq import get_rabbitmq_client
+from ..rabbitmq import get_rabbitmq_client
+from ._core_base import DataType, request_director_v2
+from .exceptions import DirectorServiceError, ServiceWaitingForManualIntervention
+from .settings import DirectorV2Settings, get_plugin_settings
 
 log = logging.getLogger(__name__)
 

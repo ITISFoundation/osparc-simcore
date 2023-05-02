@@ -45,7 +45,7 @@ def mock_get_workbench_node_ids_from_project_uuid(
 @pytest.fixture
 def mock_list_dynamic_services(mocker: MockerFixture):
     mocker.patch(
-        f"{MODULE_GC_CORE}.director_v2_api.list_dynamic_services",
+        f"{MODULE_GC_CORE}.api.list_dynamic_services",
         autospec=True,
     )
 
@@ -74,9 +74,7 @@ async def test_regression_project_id_recovered_from_the_wrong_data_structure(
         autospec=True,
         return_value=AsyncMock(),
     )
-    mocker.patch(
-        f"{MODULE_GC_CORE}.director_v2_api.stop_dynamic_service", autospec=True
-    )
+    mocker.patch(f"{MODULE_GC_CORE}.api.stop_dynamic_service", autospec=True)
 
     await _remove_single_service_if_orphan(
         app=AsyncMock(),
@@ -112,13 +110,13 @@ async def test_remove_single_service_if_orphan_service_is_waiting_manual_interve
     mocked_settings.base_url = URL("http://director-v2:8000/v2")
     mocked_settings.DIRECTOR_V2_STOP_SERVICE_TIMEOUT = 10
     mocker.patch(
-        "simcore_service_webserver.director_v2_core_dynamic_services.get_plugin_settings",
+        "simcore_service_webserver.director_v2._core_dynamic_services.get_plugin_settings",
         autospec=True,
         return_value=mocked_settings,
     )
 
     mocker.patch(
-        "simcore_service_webserver.director_v2_core_base.get_client_session",
+        "simcore_service_webserver.director_v2._core_base.get_client_session",
         autospec=True,
         return_value=ClientSession(),
     )

@@ -10,7 +10,7 @@ director-v2 rest API common functionality includes
 
 import asyncio
 import logging
-from typing import Any, Optional, Union
+from typing import Any, Union
 
 import aiohttp
 from aiohttp import ClientTimeout, web
@@ -20,8 +20,8 @@ from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_random
 from yarl import URL
 
-from .director_v2_exceptions import DirectorServiceError
-from .director_v2_settings import get_client_session
+from .exceptions import DirectorServiceError
+from .settings import get_client_session
 
 log = logging.getLogger(__name__)
 
@@ -59,11 +59,11 @@ async def request_director_v2(
     url: URL,
     *,
     expected_status: type[web.HTTPSuccessful] = web.HTTPOk,
-    headers: Optional[dict[str, str]] = None,
-    data: Optional[Any] = None,
-    on_error: Optional[_StatusToExceptionMapping] = None,
+    headers: dict[str, str] | None = None,
+    data: Any | None = None,
+    on_error: _StatusToExceptionMapping | None = None,
     **kwargs,
-) -> Union[DataBody, str]:
+) -> DataBody | str:
     """
     helper to make requests to director-v2 API
     SEE OAS in services/director-v2/openapi.json

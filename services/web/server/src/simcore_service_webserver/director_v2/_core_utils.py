@@ -11,12 +11,8 @@ import aiohttp
 from aiohttp import ClientTimeout, web
 from models_library.projects import ProjectID
 
-from .director_v2_abc import AbstractProjectRunPolicy
-from .director_v2_settings import (
-    DirectorV2Settings,
-    get_client_session,
-    get_plugin_settings,
-)
+from ._abc import AbstractProjectRunPolicy
+from .settings import DirectorV2Settings, get_client_session, get_plugin_settings
 
 log = logging.getLogger(__name__)
 

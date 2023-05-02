@@ -7,7 +7,7 @@ Wraps interactions to the director-v2 service
 
 import json
 import logging
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
 from aiohttp import web
@@ -19,16 +19,16 @@ from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_decorator
 from settings_library.utils_cli import create_json_encoder_wo_secrets
 
-from .director_v2_core_base import DataType, request_director_v2
-from .director_v2_exceptions import (
+from ._core_base import DataType, request_director_v2
+from ._models import ClusterCreate, ClusterPatch, ClusterPing
+from .exceptions import (
     ClusterAccessForbidden,
     ClusterDefinedPingError,
     ClusterNotFoundError,
     ClusterPingError,
     DirectorServiceError,
 )
-from .director_v2_models import ClusterCreate, ClusterPatch, ClusterPing
-from .director_v2_settings import DirectorV2Settings, get_plugin_settings
+from .settings import DirectorV2Settings, get_plugin_settings
 
 log = logging.getLogger(__name__)
 
@@ -81,7 +81,7 @@ class ComputationsApi:
 _APP_KEY = f"{__name__}.{ComputationsApi.__name__}"
 
 
-def get_client(app: web.Application) -> Optional[ComputationsApi]:
+def get_client(app: web.Application) -> ComputationsApi | None:
     return app.get(_APP_KEY)
 
 
@@ -98,7 +98,7 @@ def set_client(app: web.Application, obj: ComputationsApi):
 @log_decorator(logger=log)
 async def create_or_update_pipeline(
     app: web.Application, user_id: UserID, project_id: ProjectID, product_name: str
-) -> Optional[DataType]:
+) -> DataType | None:
     settings: DirectorV2Settings = get_plugin_settings(app)
 
     backend_url = settings.base_url / "computations"
@@ -122,7 +122,7 @@ async def create_or_update_pipeline(
 @log_decorator(logger=log)
 async def is_pipeline_running(
     app: web.Application, user_id: PositiveInt, project_id: UUID
-) -> Optional[bool]:
+) -> bool | None:
     # TODO: make it cheaper by /computations/{project_id}/state. First trial shows
     # that the efficiency gain is minimal but should be considered specially if the handler
     # gets heavier with time
@@ -141,7 +141,7 @@ async def is_pipeline_running(
 @log_decorator(logger=log)
 async def get_computation_task(
     app: web.Application, user_id: UserID, project_id: ProjectID
-) -> Optional[ComputationTask]:
+) -> ComputationTask | None:
     settings: DirectorV2Settings = get_plugin_settings(app)
     backend_url = (settings.base_url / f"computations/{project_id}").update_query(
         user_id=int(user_id)

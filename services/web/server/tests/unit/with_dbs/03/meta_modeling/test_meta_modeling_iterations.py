@@ -23,7 +23,7 @@ from pytest_simcore.simcore_webserver_projects_rest_api import (
 from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.models.projects import projects
 from simcore_service_webserver._constants import APP_DB_ENGINE_KEY
-from simcore_service_webserver.director_v2_api import get_project_run_policy
+from simcore_service_webserver.director_v2.api import get_project_run_policy
 from simcore_service_webserver.meta_modeling._projects import (
     meta_project_policy,
     projects_redirection_middleware,
@@ -94,11 +94,11 @@ async def test_iterators_workflow(
 
     # NEW project --------------------------------------------------------------
     mocker.patch(
-        "simcore_service_webserver.director_v2_api.create_or_update_pipeline",
+        "simcore_service_webserver.director_v2.director_v2_api.create_or_update_pipeline",
         return_value=None,
     )
     mocker.patch(
-        "simcore_service_webserver.director_v2_api.get_computation_task",
+        "simcore_service_webserver.director_v2.director_v2_api.get_computation_task",
         return_value=None,
     )
     # ----
@@ -134,7 +134,7 @@ async def test_iterators_workflow(
         return f"{project_id}"
 
     mocker.patch(
-        "simcore_service_webserver.director_v2_core_computations.ComputationsApi.start",
+        "simcore_service_webserver.director_v2._director_v2_core_computations.ComputationsApi.start",
         side_effect=_mock_start,
     )
     # ----
