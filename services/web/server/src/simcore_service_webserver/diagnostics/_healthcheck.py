@@ -25,7 +25,8 @@ kSTART_SENSING_DELAY_SECS = f"{__name__}.start_sensing_delay"
 
 class IncidentsRegistry(LimitedOrderedStack[SlowCallback]):
     def max_delay(self) -> float:
-        return self.max_item.delay_secs if self else 0
+        delay: float = self.max_item.delay_secs or 0.0
+        return delay
 
 
 @dataclass
@@ -48,9 +49,10 @@ class DelayWindowProbe:
                 fifo.pop(0)
 
     def value(self) -> float:
+        delay: float = 0.0
         if self.last_delays:
-            return statistics.mean(self.last_delays)
-        return 0
+            delay = statistics.mean(self.last_delays)
+        return delay
 
 
 logged_once = False

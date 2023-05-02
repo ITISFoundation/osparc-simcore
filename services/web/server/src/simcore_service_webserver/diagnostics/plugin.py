@@ -6,7 +6,7 @@ from aiohttp import web
 from servicelib.aiohttp import monitor_slow_callbacks
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from ..rest import HealthCheck
+from ..rest_healthcheck import HealthCheck
 from . import _handlers
 from ._healthcheck import (
     IncidentsRegistry,
@@ -49,7 +49,7 @@ def setup_diagnostics(
     async def _on_healthcheck_async_adapter(app: web.Application):
         assert_healthy_app(app)
 
-    healthcheck.on_healthcheck.append(_on_healthcheck_async_adapter)
+    healthcheck.on_healthcheck.append(_on_healthcheck_async_adapter)  # type: ignore
 
     # adds other diagnostic routes: healthcheck, etc
     app.router.add_routes(_handlers.routes)
