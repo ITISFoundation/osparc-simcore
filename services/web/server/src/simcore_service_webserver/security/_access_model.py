@@ -93,11 +93,17 @@ class RoleBasedAccessModel:
         if operation in role_access.check.keys():
             check = role_access.check[operation]
             try:
+                is_valid: bool
+
                 if inspect.iscoroutinefunction(check):
-                    return await check(context)
-                return check(context)
+                    is_valid = await check(context)
+                    return is_valid
+
+                is_valid = check(context)
+                return is_valid
+
             except Exception:  # pylint: disable=broad-except
-                _logger.exception(
+                _logger.debug(
                     "Check operation '%s', shall not raise [%s]", operation, check
                 )
                 return False
