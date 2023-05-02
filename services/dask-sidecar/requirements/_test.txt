@@ -23,7 +23,6 @@ attrs==21.4.0
 certifi==2022.12.7
     # via
     #   -c requirements/_base.txt
-    #   minio
     #   requests
 cffi==1.15.1
     # via cryptography
@@ -60,8 +59,6 @@ idna==3.4
     #   yarl
 iniconfig==2.0.0
     # via pytest
-minio==7.0.4
-    # via -r requirements/_test.in
 multidict==6.0.4
     # via
     #   -c requirements/_base.txt
@@ -134,7 +131,6 @@ urllib3==1.26.14
     # via
     #   -c requirements/_base.txt
     #   docker
-    #   minio
     #   requests
 websocket-client==1.5.1
     # via docker
