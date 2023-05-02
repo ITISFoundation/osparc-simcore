@@ -6,7 +6,6 @@
     See login/decorators.py
     Based on https://aiohttp-security.readthedocs.io/en/latest/
 """
-# pylint: disable=assignment-from-no-return
 import logging
 
 import aiohttp_security
@@ -29,9 +28,11 @@ def setup_security(app: web.Application):
     identity_policy = SessionIdentityPolicy()
 
     # TODO: limitations is that it cannot contain checks need to be added here
-    access_model = RoleBasedAccessModel.from_rawdata(ROLES_PERMISSIONS)
+    role_based_access_model = RoleBasedAccessModel.from_rawdata(ROLES_PERMISSIONS)
 
     # TODO: create basic/bearer authentication policy based on tokens instead of cookies!!
     # when you do that, also update the openapi to reflect that
-    authorization_policy = AuthorizationPolicy(app, access_model)
+    authorization_policy = AuthorizationPolicy(
+        app, access_model=role_based_access_model
+    )
     aiohttp_security.setup(app, identity_policy, authorization_policy)
