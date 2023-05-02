@@ -25,13 +25,15 @@ class _UserIdentity(TypedDict, total=True):
     role: UserRole
 
 
+def _create_expiring_dict():
+    return ExpiringDict(max_len=100, max_age_seconds=10)
+
+
 @dataclass(frozen=True)
 class AuthorizationPolicy(AbstractAuthorizationPolicy):
     app: web.Application
     access_model: RoleBasedAccessModel
-    timed_cache: ExpiringDict = field(
-        init=False, default=ExpiringDict(max_len=100, max_age_seconds=10)
-    )
+    timed_cache: ExpiringDict = field(default_factory=_create_expiring_dict)
 
     @property
     def engine(self) -> Engine:
