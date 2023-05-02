@@ -17,9 +17,9 @@ from pydantic import BaseModel, ValidationError, parse_obj_as
 from ..json_serialization import json_dumps
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 
-ModelType = TypeVar("ModelType", bound=BaseModel)
+ModelClass = TypeVar("ModelClass", bound=BaseModel)
 ModelOrListType = TypeVar("ModelOrListType", bound=Union[BaseModel, list])
-UnionOfModelTypes: TypeAlias = Union[type[ModelType], type[ModelType]]
+UnionOfModelTypes: TypeAlias = Union[type[ModelClass], type[ModelClass]]
 
 @contextmanager
 def handle_validation_as_http_error(
@@ -102,11 +102,11 @@ def handle_validation_as_http_error(
 
 
 def parse_request_path_parameters_as(
-    parameters_schema_cls: type[ModelType],
+    parameters_schema_cls: type[ModelClass],
     request: web.Request,
     *,
     use_enveloped_error_v1: bool = True,
-) -> ModelType:
+) -> ModelClass:
     """Parses path parameters from 'request' and validates against 'parameters_schema'
 
 
@@ -130,11 +130,11 @@ def parse_request_path_parameters_as(
 
 
 def parse_request_query_parameters_as(
-    parameters_schema_cls: type[ModelType] | UnionOfModelTypes,
+    parameters_schema_cls: type[ModelClass] | UnionOfModelTypes,
     request: web.Request,
     *,
     use_enveloped_error_v1: bool = True,
-) -> ModelType:
+) -> ModelClass:
     """Parses query parameters from 'request' and validates against 'parameters_schema'
 
 
