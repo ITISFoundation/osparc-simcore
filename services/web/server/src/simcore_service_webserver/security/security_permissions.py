@@ -5,12 +5,11 @@
         e.g. project.template.read => resource='template projects' and action='read'
 """
 import operator
-from typing import List, Tuple
 
-from .security_roles import ROLES_PERMISSIONS
+from ..security_roles import ROLES_PERMISSIONS
 
 
-def named_permissions() -> List[str]:
+def named_permissions() -> list[str]:
     """Lists available named permissions"""
     permissions = []
     for role in ROLES_PERMISSIONS:
@@ -18,7 +17,7 @@ def named_permissions() -> List[str]:
     return permissions
 
 
-def split_permission_name(permission: str) -> Tuple[str, str]:
+def split_permission_name(permission: str) -> tuple[str, str]:
     parts = permission.split(".")
     resource, action = ".".join(parts[:-1]), parts[-1]
     return (resource, action)
