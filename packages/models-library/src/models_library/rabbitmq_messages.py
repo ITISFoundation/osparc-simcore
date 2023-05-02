@@ -97,6 +97,17 @@ class ProgressRabbitMessageProject(ProgressMessageMixin, ProjectMessageBase):
     ...
 
 
+class NodeStateMessage(RabbitMessageBase, NodeMessageBase):
+    channel_name: Literal["simcore.services.state"] = "simcore.services.state"
+
+    state: RunningState
+    progress: int
+    outputs: dict[str, Any]
+
+    def routing_key(self) -> str:
+        return f"{self.project_id}.{self.node_id}"
+
+
 class InstrumentationRabbitMessage(RabbitMessageBase, NodeMessageBase):
     channel_name: Literal[
         "simcore.services.instrumentation"
