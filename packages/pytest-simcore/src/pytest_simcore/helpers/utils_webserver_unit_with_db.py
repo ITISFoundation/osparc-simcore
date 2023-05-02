@@ -3,7 +3,7 @@ from unittest import mock
 
 from aiohttp import web
 from servicelib.aiohttp.web_exceptions_extension import HTTPLocked
-from simcore_service_webserver.security.security_roles import UserRole
+from simcore_service_webserver.security._roles import UserRole
 
 
 class ExpectedResponse(NamedTuple):

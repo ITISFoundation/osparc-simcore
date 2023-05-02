@@ -16,7 +16,7 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 
 from ._access_model import RoleBasedAccessModel
 from ._authorization import AuthorizationPolicy
-from .security_roles import ROLES_PERMISSIONS
+from ._roles import ROLES_PERMISSIONS
 
 log = logging.getLogger(__name__)
 

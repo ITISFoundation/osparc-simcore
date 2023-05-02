@@ -66,7 +66,7 @@ from simcore_service_webserver.exporter.settings import (
 )
 from simcore_service_webserver.garbage_collector import setup_garbage_collector
 from simcore_service_webserver.scicrunch.plugin import setup_scicrunch
-from simcore_service_webserver.security.security_roles import UserRole
+from simcore_service_webserver.security._roles import UserRole
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from yarl import URL
 

@@ -15,7 +15,7 @@ from aiohttp_security.api import (
 )
 
 from ._authorization import AuthorizationPolicy, RoleBasedAccessModel
-from .security_roles import UserRole
+from ._roles import UserRole
 
 log = logging.getLogger(__name__)
 

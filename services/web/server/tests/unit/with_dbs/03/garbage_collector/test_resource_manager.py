@@ -49,8 +49,8 @@ from simcore_service_webserver.resource_manager.registry import (
     get_registry,
 )
 from simcore_service_webserver.rest import setup_rest
+from simcore_service_webserver.security._roles import UserRole
 from simcore_service_webserver.security.plugin import setup_security
-from simcore_service_webserver.security.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.socketio.plugin import setup_socketio
