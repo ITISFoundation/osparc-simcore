@@ -279,8 +279,8 @@ async def get_redirection_to_viewer(request: web.Request):
 
     _logger.debug("Requesting viewer %s", query_params)
 
-    file_params = parse_obj_or_none(FileParams, query_params)
-    service_params = parse_obj_or_none(ServiceParams, query_params)
+    file_params = parse_obj_or_none(FileQueryParams, query_params)
+    service_params = parse_obj_or_none(ServiceQueryParams, query_params)
 
     if file_params and service_params:
         # NOTE: Cannot check file_size in from HEAD in a AWS download link so file_size is just infomative
