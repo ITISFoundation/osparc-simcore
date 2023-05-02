@@ -21,33 +21,26 @@ class PermissionDict(TypedDict, total=False):
 #    - Roles can inherit permitted operations from other role
 #
 #
-# NOTE: keep UI equivalents in the same line
-# NOTE: DO NOT over-granulate permissions. Add permission label ONLY to discrimitate access among roles
-#       If only needed to discrimiate a resource use `resource.sub_resource.*`
+# NOTE:
+#   - keep UI equivalents in the same line
+#   - DO NOT over-granulate permissions. Add permission label ONLY to discrimitate access among roles
+#     If only needed to discrimiate a resource use `resource.sub_resource.*`
+#   - All services* are not necessary since it only requires login and there is no distinction among logged in users.
 #
+
 ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
-    UserRole.ANONYMOUS: PermissionDict(
-        can=[]  # Add only permissions here to handles that do not require login.
-        # Anonymous user can only access
-    ),
+    UserRole.ANONYMOUS: PermissionDict(can=[]),
     UserRole.GUEST: PermissionDict(
         can=[
-            # Anonymous users need access to the filesystem because files are being transferred
             "project.update",
-            "storage.locations.*",  # "storage.datcore.read"
+            "storage.locations.*",
             "storage.files.*",
             "groups.read",
             "project.open",
-            "project.read",  # "studies.user.read",
-            # "studies.templates.read"
+            "project.read",
             "project.node.read",
-            # NOTE: All services* are not necessary since it only requires login
-            # and there is no distinction among logged in users.
-            # TODO: kept temporarily as a way to denote resources
-            "services.pipeline.*",  # "study.update",
-            # "study.start",
-            # "study.stop",
-            "services.interactive.*",  # "study.node.start"
+            "services.pipeline.*",
+            "services.interactive.*",
             "services.catalog.*",
         ]
     ),
@@ -56,33 +49,23 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
             "clusters.delete",
             "clusters.read",
             "clusters.write",
-            "project.create",  # "studies.user.create",
+            "project.create",
             "project.close",
-            "project.delete",  # "study.node.create",
+            "project.delete",
             "project.export",
             "project.duplicate",
             "project.import",
             "project.access_rights.update",
-            # "study.node.delete",
-            # "study.node.rename",
-            # "study.edge.create",
-            # "study.edge.delete"
             "project.node.create",
             "project.node.delete",
             "project.template.create",
-            "project.classifier.*",  # "study.classifier"
-            "project.tag.*",  # "study.tag"
-            "user.profile.update",  # "user.user.update",
-            # "user.role.update"
-            "user.apikey.*",  # "user.apikey.create",
-            # "user.apikey.delete"
-            "user.tokens.*",  # "user.token.create",
-            # "user.token.delete"
+            "project.classifier.*",
+            "project.tag.*",
+            "user.profile.update",
+            "user.apikey.*",
+            "user.tokens.*",
             "groups.*",
-            "tag.crud.*"  # "user.tag"
-            # NOTE: All services* are not necessary since it only requires login
-            # and there is no distinction among logged in users.
-            # TODO: kept temporarily as a way to denote resources
+            "tag.crud.*",
         ],
         inherits=[UserRole.GUEST, UserRole.ANONYMOUS],
     ),

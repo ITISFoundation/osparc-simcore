@@ -64,16 +64,12 @@ class RoleBasedAccessModel:
     def __init__(self, roles: list[_RolePermissions]):
         self.roles: dict[UserRole, _RolePermissions] = {r.role: r for r in roles}
 
-    # TODO: all operations allowed for a given role
-    # TODO: build a tree out of the list of allowed operations
-    # TODO: operations to ADD/REMOVE/EDIT permissions in a role
-
     async def can(
         self, role: UserRole, operation: str, context: ContextType = None
     ) -> bool:
         # pylint: disable=too-many-return-statements
 
-        # undefined operation  TODO: check if such a name is defined??
+        # undefined operation
         if not operation:
             _logger.debug("Checking undefined operation %s in access model", operation)
             return False
@@ -85,7 +81,6 @@ class RoleBasedAccessModel:
             return False
 
         # check named operations
-        # TODO: add wildcards???
         if operation in role_access.allowed:
             return True
 
@@ -131,10 +126,7 @@ class RoleBasedAccessModel:
         ]
         return RoleBasedAccessModel(roles)
 
-    # TODO: print table??
 
-
-# TODO: implement expression parser: reg = re.compile(r'(&|\||\bAND\b|\bOR\b|\(|\))')
 _OPERATORS_REGEX_PATTERN = re.compile(r"(&|\||\bAND\b|\bOR\b)")
 
 
@@ -159,5 +151,6 @@ async def check_access(
             return False
         return can_lhs or (await model.can(role, rhs, context))
 
-    # FIXME: This only works for operators with TWO operands
-    raise NotImplementedError("Invalid expression %s" % operations)
+    raise NotImplementedError(
+        f"Invalid expression '{operations}': only supports at most two operands"
+    )

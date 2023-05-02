@@ -10,10 +10,10 @@ from aiopg.sa.result import ResultProxy
 from expiringdict import ExpiringDict
 from models_library.basic_types import IdInt
 from servicelib.aiohttp.aiopg_utils import PostgresRetryPolicyUponOperation
-from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.models.users import UserRole
 from tenacity import retry
 
+from ..db import get_database_engine
 from ..db_models import UserStatus, users
 from ._access_model import ContextType, RoleBasedAccessModel, check_access
 
@@ -37,13 +37,9 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
 
     @property
     def engine(self) -> Engine:
-        """Lazy getter since the database is not available upon setup
-
-        :return: database's engine
-        """
-        # TODO: what if db is not available?
-        # return self.app.config_dict[APP_DB_ENGINE_KEY]
-        return self.app[APP_DB_ENGINE_KEY]
+        """Lazy getter since the database is not available upon setup"""
+        _engine: Engine = get_database_engine(self.app)
+        return _engine
 
     @retry(**PostgresRetryPolicyUponOperation(_logger).kwargs)
     async def _get_active_user_with(self, identity: str) -> _UserIdentity | None:
@@ -74,7 +70,6 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         Return the user_id of the user identified by the identity
         or "None" if no user exists related to the identity.
         """
-        # TODO: why users.c.user_login_key!=users.c.email
         user: _UserIdentity | None = await self._get_active_user_with(identity)
 
         if user is None:

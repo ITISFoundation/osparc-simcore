@@ -27,11 +27,8 @@ def setup_security(app: web.Application):
     # Once user is identified, an identity string is created for that user
     identity_policy = SessionIdentityPolicy()
 
-    # TODO: limitations is that it cannot contain checks need to be added here
+    # Authorization
     role_based_access_model = RoleBasedAccessModel.from_rawdata(ROLES_PERMISSIONS)
-
-    # TODO: create basic/bearer authentication policy based on tokens instead of cookies!!
-    # when you do that, also update the openapi to reflect that
     authorization_policy = AuthorizationPolicy(
         app, access_model=role_based_access_model
     )
