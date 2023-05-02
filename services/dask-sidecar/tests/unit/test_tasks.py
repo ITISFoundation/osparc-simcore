@@ -142,7 +142,7 @@ class ServiceExampleParam:
 
 
 pytest_simcore_core_services_selection = ["postgres"]
-pytest_simcore_ops_services_selection = ["minio"]
+pytest_simcore_ops_services_selection = []
 
 
 def _bash_check_env_exist(variable_name: str, variable_value: str) -> list[str]:
