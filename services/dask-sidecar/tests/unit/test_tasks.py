@@ -78,7 +78,7 @@ def node_id() -> NodeID:
 
 
 @pytest.fixture()
-def dask_subsystem_mock(mocker: MockerFixture) -> dict[str, MockerFixture]:
+def dask_subsystem_mock(mocker: MockerFixture) -> dict[str, mock.Mock]:
     # mock dask client
     dask_client_mock = mocker.patch("distributed.Client", autospec=True)
 
@@ -372,7 +372,7 @@ def test_run_computational_sidecar_real_fct(
     caplog_info_level: LogCaptureFixture,
     event_loop: asyncio.AbstractEventLoop,
     mock_service_envs: None,
-    dask_subsystem_mock: dict[str, MockerFixture],
+    dask_subsystem_mock: dict[str, mock.Mock],
     ubuntu_task: ServiceExampleParam,
     mocker: MockerFixture,
     s3_settings: S3Settings,
@@ -401,7 +401,7 @@ def test_run_computational_sidecar_real_fct(
         ubuntu_task.service_version,
     )
     for event in [TaskProgressEvent, TaskLogEvent]:
-        dask_subsystem_mock["dask_event_publish"].assert_any_call(  # type: ignore
+        dask_subsystem_mock["dask_event_publish"].assert_any_call(
             name=event.topic_name()
         )
 
@@ -560,7 +560,7 @@ def test_failing_service_raises_exception(
     caplog_info_level: LogCaptureFixture,
     event_loop: asyncio.AbstractEventLoop,
     mock_service_envs: None,
-    dask_subsystem_mock: dict[str, MockerFixture],
+    dask_subsystem_mock: dict[str, mock.Mock],
     ubuntu_task_fail: ServiceExampleParam,
     s3_settings: S3Settings,
 ):
@@ -584,7 +584,7 @@ def test_running_service_that_generates_unexpected_data_raises_exception(
     caplog_info_level: LogCaptureFixture,
     event_loop: asyncio.AbstractEventLoop,
     mock_service_envs: None,
-    dask_subsystem_mock: dict[str, MockerFixture],
+    dask_subsystem_mock: dict[str, mock.Mock],
     ubuntu_task_unexpected_output: ServiceExampleParam,
     s3_settings: S3Settings,
 ):
