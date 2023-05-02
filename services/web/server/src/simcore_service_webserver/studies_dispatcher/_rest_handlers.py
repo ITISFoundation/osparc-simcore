@@ -27,7 +27,9 @@ _logger = logging.getLogger(__name__)
 #
 
 
-def _compose_dispatcher_prefix_url(request: web.Request, viewer: ViewerInfo) -> HttpUrl:
+def _compose_file_and_service_dispatcher_prefix_url(
+    request: web.Request, viewer: ViewerInfo
+) -> HttpUrl:
     """This is denoted PREFIX URL because it needs to append extra query
     parameters added in RedirectionQueryParams
     """
@@ -38,7 +40,7 @@ def _compose_dispatcher_prefix_url(request: web.Request, viewer: ViewerInfo) -> 
     return cast(HttpUrl, f"{absolute_url}")
 
 
-def _compose_service_dispatcher_prefix_url(
+def _compose_service_only_dispatcher_prefix_url(
     request: web.Request, service_key: str, service_version: str
 ) -> HttpUrl:
     params = ViewerQueryParams(
@@ -86,7 +88,7 @@ class Viewer(BaseModel):
         return cls(
             file_type=viewer.filetype,
             title=viewer.title,
-            view_url=_compose_dispatcher_prefix_url(
+            view_url=_compose_file_and_service_dispatcher_prefix_url(
                 request,
                 viewer,
             ),
@@ -115,7 +117,7 @@ class ServiceGet(BaseModel):
     @classmethod
     def create(cls, meta: ServiceMetaData, request: web.Request):
         return cls(
-            view_url=_compose_service_dispatcher_prefix_url(
+            view_url=_compose_service_only_dispatcher_prefix_url(
                 request, service_key=meta.key, service_version=meta.version
             ),
             **asdict(meta),
