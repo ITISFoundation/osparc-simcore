@@ -17,21 +17,11 @@ from simcore_service_webserver.studies_dispatcher._models import (
 )
 from simcore_service_webserver.studies_dispatcher._redirects_handlers import (
     RedirectionQueryParams,
+    ServiceAndFileParams,
 )
 
 _DOWNLOAD_LINK = "https://blackfynn-discover-use1.s3.amazonaws.com/23/2/files/dataset_description.xlsx?AWSAccessKeyId=AKIAQNJEWKCFAOLGQTY6&Signature=K229A0CE5Z5OU2PRi2cfrfgLLEw%3D&x-amz-request-payer=requester&Expires=1605545606"
 _SIZEBYTES = parse_obj_as(ByteSize, "3MiB")
-
-
-class ServiceWithFileParams(FileParams, ServiceParams):
-    class Config:
-        # Optional configuration to exclude duplicates from schema
-        schema_extra = {
-            "allOf": [
-                {"$ref": "#/definitions/FileParams"},
-                {"$ref": "#/definitions/ServiceParams"},
-            ]
-        }
 
 
 @pytest.fixture
@@ -72,9 +62,9 @@ def test_file_and_service_params(file_and_service_params: dict[str, Any]):
     assert service_params
 
     file_and_service_params = parse_obj_or_none(
-        ServiceWithFileParams | FileParams | ServiceParams, request_params
+        ServiceAndFileParams | FileParams | ServiceParams, request_params
     )
-    assert isinstance(file_and_service_params, ServiceWithFileParams)
+    assert isinstance(file_and_service_params, ServiceAndFileParams)
 
 
 def test_file_only_params():
@@ -93,7 +83,7 @@ def test_file_only_params():
     assert not service_params
 
     file_and_service_params = parse_obj_or_none(
-        ServiceWithFileParams | FileParams | ServiceParams, request_params
+        ServiceAndFileParams | FileParams | ServiceParams, request_params
     )
     assert isinstance(file_and_service_params, FileParams)
 
@@ -111,6 +101,6 @@ def test_service_only_params():
     assert service_params
 
     file_and_service_params = parse_obj_or_none(
-        ServiceWithFileParams | FileParams | ServiceParams, request_params
+        ServiceAndFileParams | FileParams | ServiceParams, request_params
     )
     assert isinstance(file_and_service_params, ServiceParams)

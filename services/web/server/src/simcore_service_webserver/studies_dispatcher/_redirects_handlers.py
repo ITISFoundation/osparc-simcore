@@ -141,8 +141,46 @@ def _handle_errors_with_error_page(handler: Handler):
 
 
 #
-# API Models
+# API Schemass
 #
+
+
+class ServiceQueryParams(ServiceParams):
+    ...
+
+
+class FileQueryParams(FileParams):
+    @validator("file_type")
+    @classmethod
+    def ensure_extension_upper_and_dotless(cls, v):
+        # NOTE: see filetype constraint-check
+        if v and isinstance(v, str):
+            w = urllib.parse.unquote(v)
+            return w.upper().lstrip(".")
+        return v
+
+    @validator("download_link", pre=True)
+    @classmethod
+    def unquote_url(cls, v):
+        # NOTE: see test_url_quoting_and_validation
+        # before any change here
+        if v:
+            w = urllib.parse.unquote(v)
+            if _SPACE in w:
+                w = w.replace(_SPACE, "%20")
+            return w
+        return v
+
+
+class ServiceAndFileParams(FileQueryParams, ServiceParams):
+    class Config:
+        # Optional configuration to exclude duplicates from schema
+        schema_extra = {
+            "allOf": [
+                {"$ref": "#/definitions/FileParams"},
+                {"$ref": "#/definitions/ServiceParams"},
+            ]
+        }
 
 
 class ViewerQueryParams(BaseModel):
@@ -235,7 +273,9 @@ async def get_redirection_to_viewer(request: web.Request):
 
     NOTE: Can be set as login_required programatically with STUDIES_ACCESS_ANONYMOUS_ALLOWED env var.
     """
-    query_params = parse_request_query_parameters_as(RedirectionQueryParams, request)
+    query_params = parse_request_query_parameters_as(
+        ServiceAndFileParams | FileQueryParams | ServiceQueryParams, request
+    )
 
     _logger.debug("Requesting viewer %s", query_params)
 
