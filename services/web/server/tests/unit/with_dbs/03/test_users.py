@@ -39,7 +39,7 @@ from simcore_service_webserver.redis import (
     setup_redis,
 )
 from simcore_service_webserver.rest import setup_rest
-from simcore_service_webserver.security import setup_security
+from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.security.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.user_notifications import (
