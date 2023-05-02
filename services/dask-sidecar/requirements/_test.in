@@ -11,6 +11,7 @@
 coverage
 docker
 faker
+moto[server]
 pytest
 pytest-aiohttp
 pytest-cov
