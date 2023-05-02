@@ -126,3 +126,16 @@ async def validate_requested_viewer(
                 return ViewerInfo.create_from_db(row)
 
     raise IncompatibleService(file_type=file_type)
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+def validate_requested_file(
+    app: web.Application, file_type: str, file_size: int | None = None
+):
+    # NOTE in the future we might want to prevent some types to be pulled
+    assert file_type  # nosec
+
+    if current_size := parse_obj_or_none(ByteSize, file_size):
+        max_size: ByteSize = get_plugin_settings(app).STUDIES_MAX_FILE_SIZE_ALLOWED
+        if current_size > max_size:
+            raise FileToLarge(file_size_in_mb=current_size.to("MiB"))

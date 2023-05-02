@@ -21,7 +21,7 @@ from ..utils import compose_support_error_msg
 from ..utils_aiohttp import create_redirect_response
 from ._catalog import ValidService, validate_requested_service
 from ._constants import MSG_UNEXPECTED_ERROR
-from ._core import ViewerInfo, validate_requested_viewer
+from ._core import ViewerInfo, validate_requested_file, validate_requested_viewer
 from ._errors import InvalidRedirectionParams, StudyDispatcherError
 from ._models import FileParams, ServiceInfo, ServiceParams
 from ._projects import (
@@ -303,9 +303,13 @@ async def get_redirection_to_viewer(request: web.Request):
 
     elif file_params:
 
-        # TODO: validate_requested_file ??!!
+        validate_requested_file(
+            app=request.app,
+            file_type=file_params.file_type,
+            file_size=file_params.file_size,
+        )
 
-        user: UserInfo = await get_or_create_user(request, is_guest_allowed=False)
+        user: UserInfo = await get_or_create_user(request, is_guest_allowed=True)
 
         project_id, file_picker_id = await get_or_create_project_with_file(
             request.app,

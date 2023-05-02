@@ -15,7 +15,7 @@ from aiohttp import ClientResponse, ClientSession, web
 from aiohttp.test_utils import TestClient, TestServer
 from aioresponses import aioresponses
 from models_library.projects_state import ProjectLocked, ProjectStatus
-from pydantic import BaseModel, parse_obj_as
+from pydantic import BaseModel, ByteSize, parse_obj_as
 from pytest import FixtureRequest, MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -338,7 +338,7 @@ def redirect_url(request: FixtureRequest, client: TestClient) -> URL:
     if request.param == "service_and_file":
         query = dict(
             file_name="users.csv",
-            file_size=187,
+            file_size=parse_obj_as(ByteSize, "100KB"),
             file_type="CSV",
             viewer_key="simcore/services/dynamic/raw-graphs",
             viewer_version="2.11.1",
@@ -354,14 +354,14 @@ def redirect_url(request: FixtureRequest, client: TestClient) -> URL:
     elif request.param == "file_only":
         query = dict(
             file_name="users.csv",
-            file_size=187,
+            file_size=parse_obj_as(ByteSize, "1MiB"),
             file_type="CSV",
             download_link=urllib.parse.quote(
                 "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/8987c95d0ca0090e14f3a5b52db724fa24114cf5/services/storage/tests/data/users.csv"
             ),
         )
 
-    assert query
+    query: dict[str, str] = {k: f"{v}" for k, v in query.items()}
     url = client.app.router["get_redirection_to_viewer"].url_for().with_query(query)
     return url
 
@@ -382,7 +382,7 @@ async def test_dispatch_study_anonymously(
 
     response = await client.get(f"{redirect_url}")
 
-    expected_prj_id = await assert_redirected_to_study(response, client.session)
+    expected_project_id = await assert_redirected_to_study(response, client.session)
 
     # has auto logged in as guest?
     me_url = client.app.router["get_my_profile"].url_for()
@@ -406,7 +406,7 @@ async def test_dispatch_study_anonymously(
     assert len(projects) == 1
     guest_project = projects[0]
 
-    assert expected_prj_id == guest_project["uuid"]
+    assert expected_project_id == guest_project["uuid"]
     assert guest_project["prjOwner"] == data["login"]
 
     assert mock_client_director_v2_func.called
