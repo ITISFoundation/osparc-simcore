@@ -32,6 +32,7 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputDataSchema,
 )
 from distributed import Client
+from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import BootMode
@@ -175,6 +176,7 @@ def ubuntu_task(
     file_on_s3_server: Callable[..., AnyUrl],
     s3_remote_file_url: Callable[..., AnyUrl],
     boot_mode: BootMode,
+    faker: Faker,
 ) -> ServiceExampleParam:
     """Creates a console task in an ubuntu distro that checks for the expected files and error in case they are missing"""
     # let's have some input files on the file server
@@ -241,6 +243,7 @@ def ubuntu_task(
     )
 
     list_of_commands += [
+        f"echo '{faker.text(max_nb_chars=17216)}'",
         f"(test -f ${{INPUT_FOLDER}}/{input_json_file_name} || (echo ${{INPUT_FOLDER}}/{input_json_file_name} file does not exists && exit 1))",
         f"echo $(cat ${{INPUT_FOLDER}}/{input_json_file_name})",
         f"sleep {randint(1,4)}",
