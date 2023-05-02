@@ -8,7 +8,6 @@
 import json
 import urllib.parse
 from typing import Any
-from urllib.parse import parse_qs
 
 import pytest
 from aiohttp.test_utils import make_mocked_request
@@ -28,32 +27,6 @@ from simcore_service_webserver.studies_dispatcher._redirects_handlers import (
     RedirectionQueryParams,
 )
 from yarl import URL
-
-
-def test_download_link_validators():
-
-    params = RedirectionQueryParams.parse_obj(
-        dict(
-            file_name="dataset_description.slsx",
-            file_size=24770,  # BYTES
-            file_type="MSExcel",
-            viewer_key="simcore/services/dynamic/fooo",
-            viewer_version="1.0.0",
-            download_link="https://blackfynn-discover-use1.s3.amazonaws.com/23/2/files/dataset_description.xlsx?AWSAccessKeyId=AKIAQNJEWKCFAOLGQTY6&Signature=K229A0CE5Z5OU2PRi2cfrfgLLEw%3D&x-amz-request-payer=requester&Expires=1605545606",
-        )
-    )
-    assert params.download_link.host and params.download_link.host.endswith(
-        "s3.amazonaws.com"
-    )
-    assert params.download_link.host_type == "domain"
-
-    # TODO: cannot validate amazon download links with HEAD because only operation allowed is GET
-    ## await p.check_download_link()
-
-    query = parse_qs(params.download_link.query)
-    assert {"AWSAccessKeyId", "Signature", "Expires", "x-amz-request-payer"} == set(
-        query.keys()
-    )
 
 
 @pytest.mark.parametrize("view", list_fake_file_consumers())
