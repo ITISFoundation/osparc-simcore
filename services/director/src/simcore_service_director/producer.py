@@ -454,7 +454,7 @@ async def _pass_port_to_service(
                 port,
                 route,
             )
-            service_url = "http://" + service_name + "/" + route
+            service_url = "http://" + service_name + "/" + route # NOSONAR
             query_string = {
                 "hostname": str(config.PUBLISHED_HOST_NAME),
                 "port": str(port),
@@ -534,17 +534,17 @@ async def _get_service_state(
     log.debug("Getting service %s state", service_name)
     tasks = await client.tasks.list(filters={"service": service_name})
 
-    async def _wait_for_tasks(tasks):
-        task_started_time = datetime.utcnow()
-        while (datetime.utcnow() - task_started_time) < timedelta(seconds=20):
-            tasks = await client.tasks.list(filters={"service": service_name})
-            # only keep the ones with the right service ID (we're being a bit picky maybe)
-            tasks = [x for x in tasks if x["ServiceID"] == service["ID"]]
-            if tasks:
-                return
-            await asyncio.sleep(1)  # let other events happen too
 
-    await _wait_for_tasks(tasks)
+    # wait for tasks
+    task_started_time = datetime.utcnow()
+    while (datetime.utcnow() - task_started_time) < timedelta(seconds=20):
+        tasks = await client.tasks.list(filters={"service": service_name})
+        # only keep the ones with the right service ID (we're being a bit picky maybe)
+        tasks = [x for x in tasks if x["ServiceID"] == service["ID"]]
+        if tasks:
+            break
+        await asyncio.sleep(1)  # let other events happen too
+
     if not tasks:
         return (ServiceState.FAILED, "getting state timed out")
 
@@ -1040,7 +1040,7 @@ async def get_service_details(app: web.Application, node_uuid: str) -> Dict:
 async def _save_service_state(service_host_name: str, session: aiohttp.ClientSession):
     response: ClientResponse
     async with session.post(
-        url=f"http://{service_host_name}/state",
+        url=f"http://{service_host_name}/state", # NOSONAR
         timeout=ServicesCommonSettings().director_dynamic_service_save_timeout,
     ) as response:
         try:

@@ -6,6 +6,7 @@ from typing import Any, Final, Iterator
 import docker
 import simcore_postgres_database.cli
 import sqlalchemy as sa
+from docker.models.containers import Container
 from docker.models.services import Service
 from simcore_postgres_database.models.base import metadata
 from tenacity import TryAgain, retry
@@ -20,29 +21,41 @@ _MINUTE: Final[int] = 60
 _LOG_HEAD_MIGRATION: Final[str] = "Migration service"
 
 
-def _get_migration_service(docker_client: docker.DockerClient) -> Service | None:
+def _get_running_migration_container(
+    docker_client: docker.DockerClient,
+) -> Container | None:
     service: Service
     for service in docker_client.services.list(
         filters={"name": "pytest-simcore_migration"}
     ):
-        return service
+        for task in service.tasks():
+            container_state: str = task["Status"]["State"]
+            container_id: str | None = (
+                task["Status"].get("ContainerStatus", {}).get("ContainerID", None)
+            )
+            if container_state == "running" and container_id is not None:
+                container: Container = docker_client.containers.get(container_id)
+                return container
 
     return None
 
 
 def _was_migration_service_started(docker_client: docker.DockerClient) -> bool:
-    service: Service | None = _get_migration_service(docker_client)
-    return service is not None
+    container: Container | None = _get_running_migration_container(docker_client)
+    return container is not None
 
 
 def _did_migration_service_finished_postgres_migration(
     docker_client: docker.DockerClient,
 ) -> bool:
-    service: Service | None = _get_migration_service(docker_client)
-    assert service is not None
+    container: Container | None = _get_running_migration_container(docker_client)
+    assert container is not None
 
-    logs = [x.decode() for x in service.logs(stdout=True)]
-    return "Migration Done. Wait forever ..." in "\n".join(logs)
+    container_logs = container.logs(stdout=True).decode()
+    log.debug("container logs %s", container_logs)
+    is_migration_completed = "Migration Done. Wait forever ..." in container_logs
+    log.debug("is_migration_completed %s", is_migration_completed)
+    return is_migration_completed
 
 
 @retry(
