@@ -1,3 +1,10 @@
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
+
 import string
 
 import pytest
@@ -14,7 +21,7 @@ def test_encrypt_password_returns_string():
 def test_encrypt_password_returns_valid_sha256_hash():
     password = "password"
     hashed_password = encrypt_password(password)
-    assert sha256_crypt.verify(password, hashed_password)
+    assert check_password(password, hashed_password)
 
 
 def test_encrypt_password_raises_type_error_for_non_string_input():
