@@ -8,36 +8,33 @@
 import inspect
 import logging
 import re
-from typing import Any, Callable, Optional
-
-import attr
+from dataclasses import dataclass, field
+from typing import Any, Callable, Optional, TypeAlias
 
 from ..db_models import UserRole
 
 log = logging.getLogger(__name__)
 
-ContextType = Optional[dict[str, Any]]
+ContextType: TypeAlias = Optional[dict[str, Any]]
 
 
-@attr.s(auto_attribs=True)
-class RolePermissions:
+@dataclass
+class _RolePermissions:
     role: UserRole
-    allowed: list[str] = attr.Factory(list)  # named permissions allowed
-    check: dict[str, Callable[[ContextType], bool]] = attr.Factory(
-        dict
-    )  # checked permissions: permissions with conditions
-    inherits: list[UserRole] = attr.Factory(list)
+    # named permissions allowed
+    allowed: list[str] = field(default_factory=list)
+    # checked permissions: permissions with conditions
+    check: dict[str, Callable[[ContextType], bool]] = field(default_factory=dict)
+    inherits: list[UserRole] = field(default_factory=list)
 
     @classmethod
-    def from_rawdata(cls, role: str | UserRole, value: dict) -> "RolePermissions":
+    def from_rawdata(cls, role: str | UserRole, value: dict) -> "_RolePermissions":
 
         if isinstance(role, str):
             name = role
             role = UserRole[name]
 
-        role_permission = cls(
-            role=role, allowed=[], check=[], inherits=value.get("inherits", [])
-        )
+        role_permission = cls(role=role, inherits=value.get("inherits", []))
 
         allowed = set()
         check = {}
@@ -64,8 +61,8 @@ class RoleBasedAccessModel:
 
     """
 
-    def __init__(self, roles: list[RolePermissions]):
-        self.roles: dict[UserRole, RolePermissions] = {r.role: r for r in roles}
+    def __init__(self, roles: list[_RolePermissions]):
+        self.roles: dict[UserRole, _RolePermissions] = {r.role: r for r in roles}
 
     # TODO: all operations allowed for a given role
     # TODO: build a tree out of the list of allowed operations
@@ -124,7 +121,7 @@ class RoleBasedAccessModel:
     @classmethod
     def from_rawdata(cls, raw: dict):
         roles = [
-            RolePermissions.from_rawdata(role, value) for role, value in raw.items()
+            _RolePermissions.from_rawdata(role, value) for role, value in raw.items()
         ]
         return RoleBasedAccessModel(roles)
 
@@ -132,7 +129,7 @@ class RoleBasedAccessModel:
 
 
 # TODO: implement expression parser: reg = re.compile(r'(&|\||\bAND\b|\bOR\b|\(|\))')
-operators_pattern = re.compile(r"(&|\||\bAND\b|\bOR\b)")
+_OPERATORS_REGEX_PATTERN = re.compile(r"(&|\||\bAND\b|\bOR\b)")
 
 
 async def check_access(
@@ -142,7 +139,7 @@ async def check_access(
 
     Returns True if a user with a role has permission on a given context
     """
-    tokens = operators_pattern.split(operations)
+    tokens = _OPERATORS_REGEX_PATTERN.split(operations)
     if len(tokens) == 1:
         return await model.can(role, tokens[0], context)
 
