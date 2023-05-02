@@ -9,7 +9,7 @@ but adapted to parse&validate path, query and body of an aiohttp's request
 
 import json.decoder
 from contextlib import contextmanager
-from typing import Iterator, TypeVar, Union
+from typing import Iterator, TypeAlias, TypeVar, Union
 
 from aiohttp import web
 from pydantic import BaseModel, ValidationError, parse_obj_as
@@ -19,7 +19,7 @@ from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 ModelType = TypeVar("ModelType", bound=BaseModel)
 ModelOrListType = TypeVar("ModelOrListType", bound=Union[BaseModel, list])
-
+UnionOfModelTypes: TypeAlias = Union[type[ModelType], type[ModelType]]
 
 @contextmanager
 def handle_validation_as_http_error(
@@ -130,7 +130,7 @@ def parse_request_path_parameters_as(
 
 
 def parse_request_query_parameters_as(
-    parameters_schema_cls: type[ModelType] | type[ModelType] | type[ModelType],
+    parameters_schema_cls: type[ModelType] | UnionOfModelTypes,
     request: web.Request,
     *,
     use_enveloped_error_v1: bool = True,
