@@ -436,7 +436,7 @@ push-version: tag-version
 		setuptools
 	@$@/bin/pip3 list --verbose
 
-devenv: .venv ## create a python virtual environment with dev tools (e.g. linters, etc)
+devenv: .venv .vscode/settings.json .vscode/launch.json ## create a development environment (configs, virtual-env, hooks, ...)
 	$</bin/pip3 --quiet install -r requirements/devenv.txt
 	# Installing pre-commit hooks in current .git repo
 	@$</bin/pre-commit install
@@ -465,10 +465,16 @@ nodenv: node_modules ## builds node_modules local environ (TODO)
 	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
 
 
-.vscode/settings.json: .vscode-template/settings.json
-	$(info WARNING: #####  $< is newer than $@ ####)
-	@diff -uN $@ $<
-	@false
+.vscode/settings.json: .vscode/settings.template.json
+	$(if $(wildcard $@), \
+	@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
+	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
+
+
+.vscode/launch.json: .vscode/launch.template.json
+	$(if $(wildcard $@), \
+	@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
+	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
 
 
 
