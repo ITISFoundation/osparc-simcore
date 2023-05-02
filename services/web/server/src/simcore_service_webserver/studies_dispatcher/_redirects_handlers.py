@@ -9,7 +9,6 @@ from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKey, ServiceVersion
-from models_library.utils.pydantic_tools_extension import parse_obj_or_none
 from pydantic import BaseModel, HttpUrl, ValidationError, root_validator, validator
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
@@ -276,13 +275,11 @@ async def get_redirection_to_viewer(request: web.Request):
     query_params = parse_request_query_parameters_as(
         ServiceAndFileParams | FileQueryParams | ServiceQueryParams, request
     )
+    _logger.debug("Requesting viewer %s [%s]", query_params, type(query_params))
 
-    _logger.debug("Requesting viewer %s", query_params)
+    if isinstance(query_params, ServiceAndFileParams):
+        file_params = service_params = query_params
 
-    file_params = parse_obj_or_none(FileQueryParams, query_params)
-    service_params = parse_obj_or_none(ServiceQueryParams, query_params)
-
-    if file_params and service_params:
         # NOTE: Cannot check file_size in from HEAD in a AWS download link so file_size is just infomative
         viewer: ViewerInfo = await validate_requested_viewer(
             request.app,
@@ -314,7 +311,8 @@ async def get_redirection_to_viewer(request: web.Request):
             file_size=file_params.file_size,
         )
 
-    elif service_params:
+    elif isinstance(query_params, ServiceQueryParams):
+        service_params = query_params
 
         valid_service: ValidService = await validate_requested_service(
             app=request.app,
@@ -341,7 +339,8 @@ async def get_redirection_to_viewer(request: web.Request):
             file_size=0,
         )
 
-    elif file_params:
+    elif isinstance(query_params, FileQueryParams):
+        file_params = query_params
 
         validate_requested_file(
             app=request.app,
