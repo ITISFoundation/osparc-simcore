@@ -7,6 +7,7 @@ from servicelib.aiohttp import monitor_slow_callbacks
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from . import diagnostics_handlers
+from .diagnostics.settings import DiagnosticsSettings, get_plugin_settings
 from .diagnostics_healthcheck import (
     IncidentsRegistry,
     assert_healthy_app,
@@ -14,7 +15,6 @@ from .diagnostics_healthcheck import (
     kPLUGIN_START_TIME,
 )
 from .diagnostics_monitoring import setup_monitoring
-from .diagnostics_settings import DiagnosticsSettings, get_plugin_settings
 from .rest import HealthCheck
 
 log = logging.getLogger(__name__)

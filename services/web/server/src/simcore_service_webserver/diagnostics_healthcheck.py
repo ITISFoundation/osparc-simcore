@@ -2,12 +2,11 @@ import logging
 import statistics
 import time
 from dataclasses import dataclass, field
-from typing import List, Optional
 
 from aiohttp import web
 from servicelib.aiohttp.incidents import LimitedOrderedStack, SlowCallback
 
-from .diagnostics_settings import get_plugin_settings
+from .diagnostics.settings import get_plugin_settings
 from .rest_healthcheck import HealthCheckFailed
 
 log = logging.getLogger(__name__)
@@ -38,7 +37,7 @@ class DelayWindowProbe:
 
     min_threshold_secs: float = 0.3
     max_window: int = 100
-    last_delays: List = field(default_factory=list)
+    last_delays: list = field(default_factory=list)
 
     def observe(self, delay: float):
         # Mean latency of the last N request slower than min_threshold_secs sec
@@ -86,9 +85,8 @@ def assert_healthy_app(app: web.Application) -> None:
     settings = get_plugin_settings(app)
 
     # CRITERIA 1:
-    incidents: Optional[IncidentsRegistry] = app.get(kINCIDENTS_REGISTRY)
+    incidents: IncidentsRegistry | None = app.get(kINCIDENTS_REGISTRY)
     if incidents:
-
         if not is_sensing_enabled(app):
             # NOTE: this is the only way to avoid accounting
             # before sensing is enabled
@@ -111,7 +109,7 @@ def assert_healthy_app(app: web.Application) -> None:
             raise HealthCheckFailed(msg)
 
     # CRITERIA 2: Mean latency of the last N request slower than 1 sec
-    probe: Optional[DelayWindowProbe] = app.get(kLATENCY_PROBE)
+    probe: DelayWindowProbe | None = app.get(kLATENCY_PROBE)
     if probe:
         latency = probe.value()
         max_latency_allowed = settings.DIAGNOSTICS_MAX_AVG_LATENCY

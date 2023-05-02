@@ -28,7 +28,7 @@ from settings_library.utils_service import DEFAULT_AIOHTTP_PORT
 from ._constants import APP_SETTINGS_KEY
 from ._meta import API_VERSION, API_VTAG, APP_NAME
 from .catalog_settings import CatalogSettings
-from .diagnostics_settings import DiagnosticsSettings
+from .diagnostics.settings import DiagnosticsSettings
 from .director.settings import DirectorSettings
 from .director_v2_settings import DirectorV2Settings
 from .exporter.settings import ExporterSettings
