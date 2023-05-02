@@ -6,7 +6,7 @@
 """
 import operator
 
-from ._roles import ROLES_PERMISSIONS
+from ._access_roles import ROLES_PERMISSIONS
 
 
 def named_permissions() -> list[str]:

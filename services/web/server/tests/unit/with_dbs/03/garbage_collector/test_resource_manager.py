@@ -29,6 +29,7 @@ from redis.asyncio import Redis
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.application_setup import is_setup_completed
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver import garbage_collector_core
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.application_settings import setup_settings
@@ -49,7 +50,6 @@ from simcore_service_webserver.resource_manager.registry import (
     get_registry,
 )
 from simcore_service_webserver.rest import setup_rest
-from simcore_service_webserver.security._roles import UserRole
 from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT

@@ -23,6 +23,7 @@ from servicelib.json_serialization import json_dumps
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.projects import projects
+from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import (
     NodeClass,
     StateType,
@@ -41,7 +42,6 @@ from simcore_service_webserver.products.plugin import setup_products
 from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
-from simcore_service_webserver.security._roles import UserRole
 from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio.plugin import setup_socketio

@@ -38,6 +38,7 @@ from simcore_postgres_database.models.services import (
     services_access_rights,
     services_meta_data,
 )
+from simcore_postgres_database.models.users import UserRole
 from simcore_sdk.node_ports_common.filemanager import get_download_link_from_s3
 from simcore_service_webserver._constants import X_PRODUCT_NAME_HEADER
 from simcore_service_webserver.application import (
@@ -66,7 +67,6 @@ from simcore_service_webserver.exporter.settings import (
 )
 from simcore_service_webserver.garbage_collector import setup_garbage_collector
 from simcore_service_webserver.scicrunch.plugin import setup_scicrunch
-from simcore_service_webserver.security._roles import UserRole
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from yarl import URL
 

@@ -33,6 +33,7 @@ from servicelib.aiohttp.application import create_safe_application
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.comp_tasks import NodeClass
+from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.diagnostics.plugin import setup_diagnostics
@@ -42,7 +43,6 @@ from simcore_service_webserver.notifications.plugin import setup_notifications
 from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
-from simcore_service_webserver.security._roles import UserRole
 from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio.events import (

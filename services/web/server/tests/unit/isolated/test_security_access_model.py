@@ -19,7 +19,7 @@ from simcore_service_webserver.security._access_model import (
     RoleBasedAccessModel,
     check_access,
 )
-from simcore_service_webserver.security._roles import ROLES_PERMISSIONS, UserRole
+from simcore_service_webserver.security._access_roles import ROLES_PERMISSIONS, UserRole
 
 
 @pytest.fixture
