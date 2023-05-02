@@ -14,8 +14,9 @@ from servicelib.utils import logged_gather
 from .. import catalog_client, db, director_v2_api, storage_api
 from .._meta import API_VERSION, APP_NAME, api_version_prefix
 from ..login.decorators import login_required
-from ..security_decorators import permission_required
+from ..security.security_decorators import permission_required
 from ..utils import get_task_info, get_tracemalloc_info
+from ..utils_aiohttp import envelope_json_response
 
 _logger = logging.getLogger(__name__)
 
@@ -40,7 +41,7 @@ async def get_app_diagnostics(request: web.Request):
         top = int(request.query["top_tracemalloc"])
         data.update(top_tracemalloc=get_tracemalloc_info(top))
 
-    return data
+    return envelope_json_response(data)
 
 
 @routes.get(f"/{api_version_prefix}/status", name="get_app_status")
@@ -60,7 +61,7 @@ async def get_app_status(request: web.Request):
         client: ClientSession = get_client_session(request.app)
         info: dict[str, Any] = {"instance": str(client)}
 
-        if not client.closed:
+        if not client.closed and client.connector:
             info.update(
                 {
                     "limit": client.connector.limit,
@@ -115,7 +116,7 @@ async def get_app_status(request: web.Request):
         reraise=False,
     )
 
-    return check.dict(exclude_unset=True)
+    return envelope_json_response(check.dict(exclude_unset=True))
 
 
 @routes.get(f"/{api_version_prefix}/status/{{service_name}}", name="get_service_status")
@@ -126,6 +127,7 @@ async def get_service_status(request: web.Request):
 
     if service_name == "storage":
         with suppress(ClientError):
-            return await storage_api.get_app_status(request.app)
+            status = await storage_api.get_app_status(request.app)
+            return envelope_json_response(status)
 
     raise web.HTTPNotFound()

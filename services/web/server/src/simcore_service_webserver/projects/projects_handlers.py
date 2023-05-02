@@ -30,7 +30,7 @@ from .._meta import api_version_prefix as VTAG
 from ..director_v2_exceptions import DirectorServiceError
 from ..login.decorators import login_required
 from ..products.plugin import Product, get_current_product
-from ..security_decorators import permission_required
+from ..security.security_decorators import permission_required
 from . import projects_api
 from .projects_exceptions import (
     ProjectInvalidRightsError,

@@ -3,7 +3,7 @@
     Mostly resolves and redirect to storage API
 """
 import logging
-from typing import Any, Final, Optional, Union
+from typing import Any, Final
 
 from aiohttp import ClientResponse, ClientTimeout, web
 from models_library.api_schemas_storage import (
@@ -20,7 +20,7 @@ from servicelib.request_keys import RQT_USERID_KEY
 from yarl import URL
 
 from .login.decorators import login_required
-from .security_decorators import permission_required
+from .security.security_decorators import permission_required
 from .storage_settings import StorageSettings, get_plugin_settings
 
 log = logging.getLogger(__name__)
@@ -93,7 +93,7 @@ def _unresolve_storage_url(request: web.Request, storage_url: AnyUrl) -> AnyUrl:
 
 async def safe_unwrap(
     resp: ClientResponse,
-) -> tuple[Optional[Union[dict[str, Any], list[dict[str, Any]]]], Optional[dict]]:
+) -> tuple[dict[str, Any] | list[dict[str, Any]] | None, dict | None]:
     resp.raise_for_status()
 
     payload = await resp.json()
@@ -105,7 +105,7 @@ async def safe_unwrap(
     return data, error
 
 
-def extract_link(data: Optional[dict]) -> str:
+def extract_link(data: dict | None) -> str:
     if data is None or "link" not in data:
         raise web.HTTPException(reason=f"No url found in response: '{data}'")
 

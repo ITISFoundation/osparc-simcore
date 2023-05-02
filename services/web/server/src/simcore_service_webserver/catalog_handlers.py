@@ -30,7 +30,7 @@ from .catalog_models import (
 )
 from .catalog_units import can_connect
 from .login.decorators import login_required
-from .security_decorators import permission_required
+from .security.security_decorators import permission_required
 
 logger = logging.getLogger(__name__)
 

@@ -23,7 +23,7 @@ from ..director_v2_exceptions import (
 )
 from ..director_v2_models import ClusterCreate, ClusterPatch, ClusterPing
 from ..login.decorators import login_required
-from ..security_decorators import permission_required
+from ..security.security_decorators import permission_required
 
 logger = logging.getLogger(__name__)
 

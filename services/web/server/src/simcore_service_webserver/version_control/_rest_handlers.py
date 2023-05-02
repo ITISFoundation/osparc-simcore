@@ -8,7 +8,7 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._meta import api_version_prefix as VTAG
 from ..login.decorators import login_required
-from ..security_decorators import permission_required
+from ..security.security_decorators import permission_required
 from ..utils_aiohttp import (
     create_url_for_function,
     envelope_json_response,
