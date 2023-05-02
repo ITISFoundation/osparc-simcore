@@ -34,7 +34,10 @@ def test_encrypt_password_raises_type_error_for_non_string_input():
         alphabet=string.ascii_letters + string.digits + string.punctuation, min_size=1
     )
 )
-def test_encrypt_decrypt_old_and_new_method_return_same_values(password):
+@pytest.mark.filterwarnings(
+    "ignore:passing settings to"
+)  # DeprecationWarning of sha256_crypt.hash
+def test_encrypt_decrypt_deprecated_and_new_method_return_same_values(password: str):
     salt = "salt"  # Use a fixed salt value for consistent hash values
 
     hashed_password_new = sha256_crypt.using(rounds=1000).hash(password, salt=salt)
