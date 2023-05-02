@@ -4,10 +4,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 from passlib.hash import sha256_crypt
-from simcore_service_webserver.security.security_api import (
-    check_password,
-    encrypt_password,
-)
+from simcore_service_webserver.security.api import check_password, encrypt_password
 
 
 def test_encrypt_password_returns_string():

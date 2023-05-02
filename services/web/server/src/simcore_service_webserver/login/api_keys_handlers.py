@@ -18,7 +18,7 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.errors import DatabaseError
 from sqlalchemy.sql import func
 
-from ..security.security_api import check_permission
+from ..security.api import check_permission
 from .decorators import login_required
 from .utils import get_random_string
 
