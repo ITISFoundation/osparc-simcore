@@ -24,7 +24,7 @@ aiormq==6.4.2
     # via aio-pika
 alembic==1.8.1
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
-anyio==3.6.1
+anyio==3.6.2
     # via
     #   httpcore
     #   starlette
@@ -79,7 +79,7 @@ httpcore==0.15.0
     # via httpx
 httptools==0.2.0
     # via uvicorn
-httpx==0.23.0
+httpx==0.24.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
@@ -87,8 +87,8 @@ idna==2.10
     # via
     #   anyio
     #   email-validator
+    #   httpx
     #   requests
-    #   rfc3986
     #   yarl
 itsdangerous==1.1.0
     # via fastapi
@@ -154,11 +154,11 @@ pyyaml==5.4.1
     #   fastapi
     #   uvicorn
 redis==4.5.4
-    # via -r requirements/../../../packages/service-library/requirements/_base.in
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
 requests==2.27.1
     # via fastapi
-rfc3986==1.4.0
-    # via httpx
 six==1.15.0
     # via
     #   jsonschema
