@@ -47,7 +47,7 @@ class FilePortSchema(PortSchema):
             "examples": [
                 {
                     "mapping": "some_filename.txt",
-                    "url": "ftp://some_file_url",
+                    "url": "sftp://some_file_url",
                     "required": True,
                 },
                 {

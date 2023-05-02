@@ -89,7 +89,7 @@ def mocked_webserver_service_api(
 
             @staticmethod
             def get_body_as_json(request):
-                return json.load(request.stream)
+                return json.load(request)
 
             def create_project(self, request: httpx.Request):
                 task_id = faker.uuid4()

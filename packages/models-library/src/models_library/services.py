@@ -607,7 +607,7 @@ class ServiceMetaData(_BaseServiceCommonDataModel):
                 "version": "1.0.9",
                 "name": "sim4life",
                 "description": "s4l web",
-                "thumbnail": "http://thumbnailit.org/image",
+                "thumbnail": "https://thumbnailit.org/image",
                 "quality": {
                     "enabled": True,
                     "tsr_target": {

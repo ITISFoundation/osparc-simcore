@@ -198,7 +198,7 @@ def iter_project_iteration(
 # SETUP ------------------------------------------
 class ClientSettings(BaseSettings):
 
-    OSPARC_API_URL: AnyUrl = Field(default="http://127.0.0.1.nip.io:9081/v0")
+    OSPARC_API_URL: AnyUrl = Field(default="http://127.0.0.1.nip.io:9081/v0") #  NOSONAR
     OSPARC_USER_EMAIL: EmailStr
     OSPARC_USER_PASSWORD: SecretStr
 
