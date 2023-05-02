@@ -14,9 +14,7 @@ from ..models.basic_types import VersionStr
 from ..models.schemas.solvers import LATEST_VERSION, Solver, SolverKeyId, SolverPort
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
-## from ..utils.client_decorators import JSON, handle_errors, handle_retry
-
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 SolverNameVersionPair = tuple[SolverKeyId, str]
@@ -62,12 +60,6 @@ class TruncatedCatalogServiceOut(ServiceDockerData):
 #
 # - Error handling: What do we reraise, suppress, transform???
 #
-#
-# TODO: handlers should not capture outputs
-# @handle_errors("catalog", logger, return_json=True)
-# @handle_retry(logger)
-# async def get(self, path: str, *args, **kwargs) -> JSON:
-#     return await self.client.get(path, *args, **kwargs)
 
 
 @dataclass
@@ -75,6 +67,8 @@ class CatalogApi(BaseServiceClientApi):
     """
     This class acts a proxy of the catalog service
     It abstracts request to the catalog API service
+
+    SEE osparc-simcore/services/catalog/openapi.json
     """
 
     async def list_solvers(
@@ -84,16 +78,15 @@ class CatalogApi(BaseServiceClientApi):
         product_name: str,
         predicate: Callable[[Solver], bool] | None = None,
     ) -> list[Solver]:
-        resp = await self.client.get(
+        response = await self.client.get(
             "/services",
             params={"user_id": user_id, "details": True},
             headers={"x-simcore-products-name": product_name},
         )
-        resp.raise_for_status()
+        response.raise_for_status()
 
-        # TODO: move this sorting down to catalog service?
         solvers = []
-        for data in resp.json():
+        for data in response.json():
             try:
                 service = TruncatedCatalogServiceOut.parse_obj(data)
                 if service.service_type == ServiceType.COMPUTATIONAL:
@@ -105,7 +98,7 @@ class CatalogApi(BaseServiceClientApi):
                 # NOTE: For the moment, this is necessary because there are no guarantees
                 #       at the image registry. Therefore we exclude and warn
                 #       invalid items instead of returning error
-                logger.warning(
+                _logger.warning(
                     "Skipping invalid service returned by catalog '%s': %s",
                     data,
                     err,
@@ -121,14 +114,14 @@ class CatalogApi(BaseServiceClientApi):
         service_key = urllib.parse.quote_plus(name)
         service_version = version
 
-        resp = await self.client.get(
+        response = await self.client.get(
             f"/services/{service_key}/{service_version}",
             params={"user_id": user_id},
             headers={"x-simcore-products-name": product_name},
         )
-        resp.raise_for_status()
+        response.raise_for_status()
 
-        service = TruncatedCatalogServiceOut.parse_obj(resp.json())
+        service = TruncatedCatalogServiceOut.parse_obj(response.json())
         assert (  # nosec
             service.service_type == ServiceType.COMPUTATIONAL
         ), "Expected by SolverName regex"
@@ -145,14 +138,15 @@ class CatalogApi(BaseServiceClientApi):
         service_key = urllib.parse.quote_plus(name)
         service_version = version
 
-        resp = await self.client.get(
+        response = await self.client.get(
             f"/services/{service_key}/{service_version}/ports",
             params={"user_id": user_id},
             headers={"x-simcore-products-name": product_name},
         )
-        resp.raise_for_status()
 
-        solver_ports = parse_obj_as(list[SolverPort], resp.json())
+        response.raise_for_status()
+
+        solver_ports = parse_obj_as(list[SolverPort], response.json())
         return solver_ports
 
     async def list_latest_releases(

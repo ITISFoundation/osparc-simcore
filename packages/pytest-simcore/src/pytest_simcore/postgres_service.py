@@ -4,6 +4,7 @@
 
 from typing import AsyncIterator, Final, Iterator, TypedDict
 
+import docker
 import pytest
 import sqlalchemy as sa
 import tenacity
@@ -188,10 +189,11 @@ def postgres_dsn_url(postgres_dsn: PostgresTestConfig) -> str:
 def postgres_db(
     postgres_dsn: PostgresTestConfig,
     postgres_engine: sa.engine.Engine,
+    docker_client: docker.DockerClient,
 ) -> Iterator[sa.engine.Engine]:
     """An postgres database init with empty tables and an sqlalchemy engine connected to it"""
 
-    with migrated_pg_tables_context(postgres_dsn.copy()):
+    with migrated_pg_tables_context(docker_client, postgres_dsn.copy()):
         yield postgres_engine
 
 
