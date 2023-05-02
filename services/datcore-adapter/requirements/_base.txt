@@ -75,17 +75,15 @@ httpcore==0.15.0
     # via httpx
 httptools==0.5.0
     # via uvicorn
-httpx==0.23.0
-    # via
-    #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
-    #   -r requirements/_base.in
+httpx==0.24.0
+    # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 hyperframe==6.0.1
     # via h2
 idna==3.4
     # via
     #   anyio
     #   email-validator
-    #   rfc3986
+    #   httpx
     #   yarl
 jaeger-client==4.8.0
     # via fastapi-contrib
@@ -131,9 +129,9 @@ pyyaml==5.4.1
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   uvicorn
 redis==4.5.4
-    # via -r requirements/../../../packages/service-library/requirements/_base.in
-rfc3986==1.5.0
-    # via httpx
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
 s3transfer==0.6.0
     # via boto3
 six==1.16.0
