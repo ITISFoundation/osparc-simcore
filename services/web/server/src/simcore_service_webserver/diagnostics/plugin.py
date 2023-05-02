@@ -6,14 +6,14 @@ from aiohttp import web
 from servicelib.aiohttp import monitor_slow_callbacks
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from ..diagnostics_healthcheck import (
+from ..rest import HealthCheck
+from . import _handlers
+from ._healthcheck import (
     IncidentsRegistry,
     assert_healthy_app,
     kINCIDENTS_REGISTRY,
     kPLUGIN_START_TIME,
 )
-from ..rest import HealthCheck
-from . import _handlers
 from ._monitoring import setup_monitoring
 from .settings import DiagnosticsSettings, get_plugin_settings
 

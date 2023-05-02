@@ -6,8 +6,8 @@ from dataclasses import dataclass, field
 from aiohttp import web
 from servicelib.aiohttp.incidents import LimitedOrderedStack, SlowCallback
 
-from .diagnostics.settings import get_plugin_settings
-from .rest_healthcheck import HealthCheckFailed
+from ..rest_healthcheck import HealthCheckFailed
+from .settings import get_plugin_settings
 
 log = logging.getLogger(__name__)
 
