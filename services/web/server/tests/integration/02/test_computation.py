@@ -42,7 +42,7 @@ from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
-from simcore_service_webserver.security_roles import UserRole
+from simcore_service_webserver.security.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio.plugin import setup_socketio
 from simcore_service_webserver.users import setup_users

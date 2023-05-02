@@ -1,9 +1,9 @@
-from typing import NamedTuple, Union
+from typing import NamedTuple
 from unittest import mock
 
 from aiohttp import web
 from servicelib.aiohttp.web_exceptions_extension import HTTPLocked
-from simcore_service_webserver.security_roles import UserRole
+from simcore_service_webserver.security.security_roles import UserRole
 
 
 class ExpectedResponse(NamedTuple):
@@ -14,35 +14,34 @@ class ExpectedResponse(NamedTuple):
     will have no access, therefore ExpectedResponse.ok = HTTPUnauthorized
     """
 
-    ok: Union[type[web.HTTPUnauthorized], type[web.HTTPForbidden], type[web.HTTPOk]]
-    created: Union[
-        type[web.HTTPUnauthorized], type[web.HTTPForbidden], type[web.HTTPCreated]
-    ]
-    no_content: Union[
-        type[web.HTTPUnauthorized], type[web.HTTPForbidden], type[web.HTTPNoContent]
-    ]
-    not_found: Union[
-        type[web.HTTPUnauthorized], type[web.HTTPForbidden], type[web.HTTPNotFound]
-    ]
-    forbidden: Union[
-        type[web.HTTPUnauthorized],
-        type[web.HTTPForbidden],
-    ]
-    locked: Union[type[web.HTTPUnauthorized], type[web.HTTPForbidden], type[HTTPLocked]]
-    accepted: Union[
-        type[web.HTTPUnauthorized], type[web.HTTPForbidden], type[web.HTTPAccepted]
-    ]
-    unprocessable: Union[
-        type[web.HTTPUnauthorized],
-        type[web.HTTPForbidden],
-        type[web.HTTPUnprocessableEntity],
-    ]
-    not_acceptable: Union[
-        type[web.HTTPUnauthorized], type[web.HTTPForbidden], type[web.HTTPNotAcceptable]
-    ]
-    conflict: Union[
-        type[web.HTTPUnauthorized], type[web.HTTPForbidden], type[web.HTTPConflict]
-    ]
+    ok: type[web.HTTPUnauthorized] | type[web.HTTPForbidden] | type[web.HTTPOk]
+    created: (
+        type[web.HTTPUnauthorized] | type[web.HTTPForbidden] | type[web.HTTPCreated]
+    )
+    no_content: (
+        type[web.HTTPUnauthorized] | type[web.HTTPForbidden] | type[web.HTTPNoContent]
+    )
+    not_found: (
+        type[web.HTTPUnauthorized] | type[web.HTTPForbidden] | type[web.HTTPNotFound]
+    )
+    forbidden: (type[web.HTTPUnauthorized] | type[web.HTTPForbidden])
+    locked: type[web.HTTPUnauthorized] | type[web.HTTPForbidden] | type[HTTPLocked]
+    accepted: (
+        type[web.HTTPUnauthorized] | type[web.HTTPForbidden] | type[web.HTTPAccepted]
+    )
+    unprocessable: (
+        type[web.HTTPUnauthorized]
+        | type[web.HTTPForbidden]
+        | type[web.HTTPUnprocessableEntity]
+    )
+    not_acceptable: (
+        type[web.HTTPUnauthorized]
+        | type[web.HTTPForbidden]
+        | type[web.HTTPNotAcceptable]
+    )
+    conflict: (
+        type[web.HTTPUnauthorized] | type[web.HTTPForbidden] | type[web.HTTPConflict]
+    )
 
     def __str__(self) -> str:
         # pylint: disable=no-member
