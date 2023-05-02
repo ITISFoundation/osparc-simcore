@@ -25,7 +25,8 @@ from yarl import URL
 
 _SIZEBYTES = parse_obj_as(ByteSize, "3MiB")
 
-
+# SEE https://github.com/ITISFoundation/osparc-simcore/issues/3951#issuecomment-1489992645
+# AWS download links have query arg
 _DOWNLOAD_LINK = "https://discover-use1.s3.amazonaws.com/23/2/files/dataset_description.xlsx?AWSAccessKeyId=AKIAQNJEWKCFAOLGQTY6&Signature=K229A0CE5Z5OU2PRi2cfrfgLLEw%3D&x-amz-request-payer=requester&Expires=1605545606"
 _DOWNLOAD_LINK1 = "https://prod-discover-publish-use1.s3.amazonaws.com/44/2/files/code/model_validation.ipynb?response-content-type=application%2Foctet-stream&AWSAccessKeyId=AKIAVPHN3KJHIM77P4OY&Signature=WPBOqEyTnUIKfxRFaC2YnyO85XI%3D&x-amz-request-payer=requester&Expires=1680171597"
 _DOWNLOAD_LINK2 = "https://raw.githubusercontent.com/pcrespov/osparc-sample-studies/master/files%20samples/sample.ipynb"
@@ -46,7 +47,6 @@ _DOWNLOAD_LINK3 = (
             _DOWNLOAD_LINK2,
         ),
         (
-            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3951#issuecomment-1489992645
             f'{URL("https://123.123.0.1:9000").with_path("/view").with_query(file_type="VTK", file_size="300", download_link=_DOWNLOAD_LINK1)}',
             _DOWNLOAD_LINK1,
         ),
@@ -105,7 +105,6 @@ def test_file_and_service_params(file_and_service_params: dict[str, Any]):
 
 
 def test_file_only_params():
-
     request_params = dict(
         file_name="dataset_description.slsx",
         file_size=_SIZEBYTES,

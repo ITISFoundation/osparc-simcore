@@ -32,8 +32,6 @@ from ._users import UserInfo, ensure_authentication, get_or_create_user
 from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
-_SPACE = " "
-
 
 #
 # HELPERS
@@ -156,18 +154,6 @@ class FileQueryParams(FileParams):
         if v and isinstance(v, str):
             w = urllib.parse.unquote(v)
             return w.upper().lstrip(".")
-        return v
-
-    @validator("download_link", pre=True)
-    @classmethod
-    def unquote_url(cls, v):
-        # NOTE: see test_url_quoting_and_validation
-        # before any change here
-        if v:
-            w = urllib.parse.unquote(v)
-            if _SPACE in w:
-                w = w.replace(_SPACE, "%20")
-            return w
         return v
 
 
