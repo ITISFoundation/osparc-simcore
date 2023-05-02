@@ -102,7 +102,7 @@ def handle_validation_as_http_error(
 
 
 def parse_request_path_parameters_as(
-    parameters_schema: type[ModelType],
+    parameters_schema_cls: type[ModelType],
     request: web.Request,
     *,
     use_enveloped_error_v1: bool = True,
@@ -126,11 +126,11 @@ def parse_request_path_parameters_as(
         use_error_v1=use_enveloped_error_v1,
     ):
         data = dict(request.match_info)
-        return parameters_schema.parse_obj(data)
+        return parameters_schema_cls.parse_obj(data)
 
 
 def parse_request_query_parameters_as(
-    parameters_schema: type[ModelType],
+    parameters_schema_cls: type[ModelType] | type[ModelType] | type[ModelType],
     request: web.Request,
     *,
     use_enveloped_error_v1: bool = True,
@@ -154,11 +154,13 @@ def parse_request_query_parameters_as(
         use_error_v1=use_enveloped_error_v1,
     ):
         data = dict(request.query)
-        return parameters_schema.parse_obj(data)
+        if hasattr(parameters_schema_cls, "parse_obj"):
+            return parameters_schema_cls.parse_obj(data)
+        return parse_obj_as(parameters_schema_cls, data)
 
 
 async def parse_request_body_as(
-    model_schema: type[ModelOrListType],
+    model_schema_cls: type[ModelOrListType],
     request: web.Request,
     *,
     use_enveloped_error_v1: bool = True,
@@ -189,11 +191,11 @@ async def parse_request_body_as(
             except json.decoder.JSONDecodeError as err:
                 raise web.HTTPBadRequest(reason=f"Invalid json in body: {err}")
 
-        if hasattr(model_schema, "parse_obj"):
+        if hasattr(model_schema_cls, "parse_obj"):
             # NOTE: model_schema can be 'list[T]' or 'dict[T]' which raise TypeError
             # with issubclass(model_schema, BaseModel)
-            assert issubclass(model_schema, BaseModel)  # nosec
-            return model_schema.parse_obj(body)
+            assert issubclass(model_schema_cls, BaseModel)  # nosec
+            return model_schema_cls.parse_obj(body)
 
         # used for model_schema like 'list[T]' or 'dict[T]'
-        return parse_obj_as(model_schema, body)
+        return parse_obj_as(model_schema_cls, body)
