@@ -20,7 +20,7 @@ from simcore_postgres_database.utils_tags import (
 
 from ._meta import api_version_prefix as VTAG
 from .login.decorators import RQT_USERID_KEY, login_required
-from .security.security_decorators import permission_required
+from .security.decorators import permission_required
 
 
 def _handle_tags_exceptions(handler: Handler):

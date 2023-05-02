@@ -16,7 +16,7 @@ from . import users_api
 from ._meta import API_VTAG
 from .login.decorators import login_required
 from .redis import get_redis_user_notifications_client
-from .security.security_decorators import permission_required
+from .security.decorators import permission_required
 from .user_notifications import (
     MAX_NOTIFICATIONS_FOR_USER_TO_KEEP,
     MAX_NOTIFICATIONS_FOR_USER_TO_SHOW,

@@ -14,7 +14,7 @@ from .email_core import (
 )
 from .login.decorators import login_required
 from .products.plugin import Product, get_current_product, get_product_template_path
-from .security.security_decorators import permission_required
+from .security.decorators import permission_required
 from .utils import get_traceback_string
 from .utils_aiohttp import envelope_json_response
 

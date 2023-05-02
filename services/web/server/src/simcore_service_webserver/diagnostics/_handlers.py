@@ -14,7 +14,7 @@ from servicelib.utils import logged_gather
 from .. import catalog_client, db, director_v2_api, storage_api
 from .._meta import API_VERSION, APP_NAME, api_version_prefix
 from ..login.decorators import login_required
-from ..security.security_decorators import permission_required
+from ..security.decorators import permission_required
 from ..utils import get_task_info, get_tracemalloc_info
 from ..utils_aiohttp import envelope_json_response
 

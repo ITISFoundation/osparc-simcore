@@ -8,7 +8,7 @@ from aiohttp import web
 
 from .._meta import api_version_prefix as VTAG
 from ..login.decorators import RQT_USERID_KEY, login_required
-from ..security.security_decorators import permission_required
+from ..security.decorators import permission_required
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 
 log = logging.getLogger(__name__)

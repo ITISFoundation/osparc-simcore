@@ -20,7 +20,7 @@ from servicelib.request_keys import RQT_USERID_KEY
 from yarl import URL
 
 from .login.decorators import login_required
-from .security.security_decorators import permission_required
+from .security.decorators import permission_required
 from .storage_settings import StorageSettings, get_plugin_settings
 
 log = logging.getLogger(__name__)

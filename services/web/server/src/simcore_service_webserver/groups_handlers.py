@@ -22,7 +22,7 @@ from .scicrunch.db import ResearchResourceRepository
 from .scicrunch.errors import ScicrunchError
 from .scicrunch.models import ResearchResource, ResourceHit
 from .scicrunch.service_client import InvalidRRID, SciCrunch
-from .security.security_decorators import permission_required
+from .security.decorators import permission_required
 from .users_exceptions import UserNotFoundError
 
 logger = logging.getLogger(__name__)
