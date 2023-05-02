@@ -6,7 +6,7 @@ from aiohttp import web
 from servicelib.aiohttp import monitor_slow_callbacks
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from . import diagnostics_handlers
+from .diagnostics import _handlers
 from .diagnostics.settings import DiagnosticsSettings, get_plugin_settings
 from .diagnostics_healthcheck import (
     IncidentsRegistry,
@@ -52,6 +52,6 @@ def setup_diagnostics(
     healthcheck.on_healthcheck.append(_on_healthcheck_async_adapter)
 
     # adds other diagnostic routes: healthcheck, etc
-    app.router.add_routes(diagnostics_handlers.routes)
+    app.router.add_routes(_handlers.routes)
 
     app[kPLUGIN_START_TIME] = time.time()
