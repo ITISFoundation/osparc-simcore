@@ -17,7 +17,7 @@ from .settings import DirectorV2Settings, get_client_session, get_plugin_setting
 log = logging.getLogger(__name__)
 
 
-SERVICE_HEALTH_CHECK_TIMEOUT = ClientTimeout(total=2, connect=1)  # type:ignore
+SERVICE_HEALTH_CHECK_TIMEOUT = ClientTimeout(total=2, connect=1)
 
 
 async def is_healthy(app: web.Application) -> bool:

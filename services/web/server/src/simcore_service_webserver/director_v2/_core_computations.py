@@ -66,7 +66,8 @@ class ComputationsApi:
             },
         )
         assert isinstance(computation_task_out, dict)  # nosec
-        return computation_task_out["id"]
+        computation_task_out_id: str = computation_task_out["id"]
+        return computation_task_out_id
 
     async def stop(self, project_id: ProjectID, user_id: UserID):
         await request_director_v2(
@@ -82,7 +83,8 @@ _APP_KEY = f"{__name__}.{ComputationsApi.__name__}"
 
 
 def get_client(app: web.Application) -> ComputationsApi | None:
-    return app.get(_APP_KEY)
+    app_key: ComputationsApi | None = app.get(_APP_KEY)
+    return app_key
 
 
 def set_client(app: web.Application, obj: ComputationsApi):
@@ -117,6 +119,7 @@ async def create_or_update_pipeline(
 
     except DirectorServiceError as exc:
         log.error("could not create pipeline from project %s: %s", project_id, exc)
+    return None
 
 
 @log_decorator(logger=log)
@@ -135,7 +138,8 @@ async def is_pipeline_running(
         # if statement casts to False
         return None
 
-    return pipeline.state.is_running()
+    pipeline_state: bool | None = pipeline.state.is_running()
+    return pipeline_state
 
 
 @log_decorator(logger=log)
@@ -158,10 +162,11 @@ async def get_computation_task(
     except DirectorServiceError as exc:
         if exc.status == web.HTTPNotFound.status_code:
             # the pipeline might not exist and that is ok
-            return
+            return None
         log.warning(
             "getting pipeline for project %s failed: %s.", f"{project_id=}", exc
         )
+    raise
 
 
 @log_decorator(logger=log)

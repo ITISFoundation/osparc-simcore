@@ -47,7 +47,8 @@ class AbstractProjectRunPolicy(ABC):
 
 
 def get_project_run_policy(app: web.Application) -> AbstractProjectRunPolicy | None:
-    return app.get(_APP_PROJECT_RUN_POLICY_KEY)
+    app_: AbstractProjectRunPolicy | None = app.get(_APP_PROJECT_RUN_POLICY_KEY)
+    return app_
 
 
 def set_project_run_policy(app: web.Application, policy_obj: AbstractProjectRunPolicy):

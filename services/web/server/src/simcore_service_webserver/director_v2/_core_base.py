@@ -26,7 +26,7 @@ from .settings import get_client_session
 log = logging.getLogger(__name__)
 
 
-SERVICE_HEALTH_CHECK_TIMEOUT = ClientTimeout(total=2, connect=1)  # type:ignore
+SERVICE_HEALTH_CHECK_TIMEOUT = ClientTimeout(total=2, connect=1)
 
 DEFAULT_RETRY_POLICY = dict(
     wait=wait_random(0, 1),
@@ -53,6 +53,10 @@ def _get_exception_from(
     return DirectorServiceError(status=status_code, reason=reason, url=url)
 
 
+class RetryFailedError(Exception):
+    pass
+
+
 async def request_director_v2(
     app: web.Application,
     method: str,
@@ -75,11 +79,10 @@ async def request_director_v2(
     try:
         async for attempt in AsyncRetrying(**DEFAULT_RETRY_POLICY):
             with attempt:
-
                 async with session.request(
                     method, url, headers=headers, json=data, **kwargs
                 ) as response:
-                    payload = (
+                    payload: dict[str, Any] | list[dict[str, Any]] | None | str = (
                         await response.json()
                         if response.content_type == "application/json"
                         else await response.text()
@@ -91,6 +94,11 @@ async def request_director_v2(
                             response.status, on_error, reason=f"{payload}", url=url
                         )
                     return payload
+        raise DirectorServiceError(
+            status=web.HTTPServiceUnavailable.status_code,
+            reason="request to director-v2 maximum number of attempts reached",
+            url=url,
+        )
 
     # TODO: enrich with https://docs.aiohttp.org/en/stable/client_reference.html#hierarchy-of-exceptions
     except asyncio.TimeoutError as err:

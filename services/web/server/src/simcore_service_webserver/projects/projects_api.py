@@ -46,7 +46,8 @@ from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_postgres_database.webserver_models import ProjectType
 
-from .. import catalog_client, director_v2, storage_api
+from .. import catalog_client, storage_api
+from ..director_v2 import api as director_v2_api
 from ..products.plugin import get_product_name
 from ..redis import get_redis_lock_manager_client_sdk
 from ..resource_manager.websocket_manager import (
@@ -230,7 +231,7 @@ async def _start_dynamic_service(
             project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
         ),
     ):
-        project_running_nodes = await director_v2.director_v2_api.list_dynamic_services(
+        project_running_nodes = await director_v2_api.list_dynamic_services(
             request.app, user_id, f"{project_uuid}"
         )
         _nodes_utils.check_num_service_per_projects_limit(
@@ -249,7 +250,7 @@ async def _start_dynamic_service(
             },
             node_id=node_uuid,
         )
-        await director_v2.director_v2_api.run_dynamic_service(
+        await director_v2_api.run_dynamic_service(
             app=request.app,
             product_name=product_name,
             project_id=f"{project_uuid}",
@@ -305,7 +306,7 @@ async def add_project_node(
     )
     # also ensure the project is updated by director-v2 since services
     # are due to access comp_tasks at some point see [https://github.com/ITISFoundation/osparc-simcore/issues/3216]
-    await director_v2.director_v2_api.create_or_update_pipeline(
+    await director_v2_api.create_or_update_pipeline(
         request.app, user_id, project["uuid"], product_name
     )
 
@@ -356,14 +357,12 @@ async def delete_project_node(
         "deleting node %s in project %s for user %s", node_uuid, project_uuid, user_id
     )
 
-    list_running_dynamic_services = (
-        await director_v2.director_v2_api.list_dynamic_services(
-            request.app, project_id=f"{project_uuid}", user_id=user_id
-        )
+    list_running_dynamic_services = await director_v2_api.list_dynamic_services(
+        request.app, project_id=f"{project_uuid}", user_id=user_id
     )
     if any(s["service_uuid"] == node_uuid for s in list_running_dynamic_services):
         # no need to save the state of the node when deleting it
-        await director_v2.director_v2_api.stop_dynamic_service(
+        await director_v2_api.stop_dynamic_service(
             request.app,
             node_uuid,
             simcore_user_agent=request.headers.get(
@@ -388,7 +387,7 @@ async def delete_project_node(
     )
     # also ensure the project is updated by director-v2 since services
     product_name = get_product_name(request)
-    await director_v2.director_v2_api.create_or_update_pipeline(
+    await director_v2_api.create_or_update_pipeline(
         request.app, user_id, project_uuid, product_name
     )
 
@@ -569,7 +568,7 @@ async def _trigger_connected_service_retrieve(
 
     # call /retrieve on the nodes
     update_tasks = [
-        director_v2.director_v2_api.request_retrieve_dyn_service(app, node, keys)
+        director_v2_api.request_retrieve_dyn_service(app, node, keys)
         for node, keys in nodes_keys_to_update.items()
     ]
     await logged_gather(*update_tasks)
@@ -830,9 +829,7 @@ async def get_project_states_for_user(
     running_state = RunningState.UNKNOWN
     lock_state, computation_task = await logged_gather(
         _get_project_lock_state(user_id, project_uuid, app),
-        director_v2.director_v2_api.get_computation_task(
-            app, user_id, UUID(project_uuid)
-        ),
+        director_v2_api.get_computation_task(app, user_id, UUID(project_uuid)),
     )
     if computation_task:
         # get the running state
@@ -859,7 +856,7 @@ async def add_project_states_for_user(
     running_state = RunningState.UNKNOWN
 
     if not is_template:
-        if computation_task := await director_v2.director_v2_api.get_computation_task(
+        if computation_task := await director_v2_api.get_computation_task(
             app, user_id, project["uuid"]
         ):
             # get the running state
@@ -953,7 +950,7 @@ async def run_project_dynamic_services(
     project_settings: ProjectsSettings = get_plugin_settings(request.app)
     running_service_uuids: list[NodeIDStr] = [
         d["service_uuid"]
-        for d in await director_v2.director_v2_api.list_dynamic_services(
+        for d in await director_v2_api.list_dynamic_services(
             request.app, user_id, project["uuid"]
         )
     ]
@@ -1053,9 +1050,9 @@ async def remove_project_dynamic_services(
         notify_users=notify_users,
     ):
         # save the state if the user is not a guest. if we do not know we save in any case.
-        with suppress(director_v2.director_v2_api.DirectorServiceError):
+        with suppress(director_v2_api.DirectorServiceError):
             # here director exceptions are suppressed. in case the service is not found to preserve old behavior
-            await director_v2.director_v2_api.stop_dynamic_services_in_project(
+            await director_v2_api.stop_dynamic_services_in_project(
                 app=app,
                 user_id=user_id,
                 project_id=project_uuid,

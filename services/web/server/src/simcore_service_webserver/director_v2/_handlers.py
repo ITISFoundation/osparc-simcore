@@ -17,7 +17,7 @@ from .._constants import RQ_PRODUCT_KEY
 from .._meta import api_version_prefix as VTAG
 from ..login.decorators import login_required
 from ..security_decorators import permission_required
-from ..version_control.db import CommitID
+from ..version_control.models import CommitID
 from ._abc import get_project_run_policy
 from ._core_computations import ComputationsApi
 from .exceptions import DirectorServiceError
@@ -29,8 +29,8 @@ routes = web.RouteTableDef()
 
 
 class RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore
+    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore
 
 
 @routes.post(f"/{VTAG}/computations/{{project_id}}:start")
