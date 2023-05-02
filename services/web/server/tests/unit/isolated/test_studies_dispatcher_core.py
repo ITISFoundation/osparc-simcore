@@ -10,21 +10,16 @@ import urllib.parse
 from typing import Any
 
 import pytest
-from aiohttp.test_utils import make_mocked_request
 from models_library.projects import Project, ProjectID
 from models_library.projects_nodes_io import NodeID
-from pydantic import ConfigError, ValidationError, validator
+from pydantic import validator
 from pydantic.main import BaseModel
 from pydantic.networks import HttpUrl
 from pytest_simcore.helpers.utils_services import list_fake_file_consumers
-from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from simcore_service_webserver.studies_dispatcher._projects import (
     UserInfo,
     ViewerInfo,
     _create_project_with_filepicker_and_service,
-)
-from simcore_service_webserver.studies_dispatcher._redirects_handlers import (
-    RedirectionQueryParams,
 )
 from yarl import URL
 
@@ -56,35 +51,6 @@ async def test_create_project_with_viewer(project_jsonschema: dict[str, Any], vi
 
     # This operation is done exactly before adding to the database in projects_handlers.create_projects
     Project.parse_obj(project_in)
-
-
-@pytest.mark.parametrize(
-    "url_in,expected_download_link",
-    [
-        (
-            "http://localhost:9081/view?file_type=CSV&download_link=https%253A%252F%252Fraw.githubusercontent.com%252Frawgraphs%252Fraw%252Fmaster%252Fdata%252Forchestra.csv&file_name=orchestra.json&file_size=4&viewer_key=simcore/services/comp/foo&viewer_version=1.0.0",
-            "https://raw.githubusercontent.com/rawgraphs/raw/master/data/orchestra.csv",
-        ),
-        (
-            "http://127.0.0.1:9081/view?file_type=IPYNB&viewer_key=simcore/services/dynamic/jupyter-octave-python-math&viewer_version=1.6.9&file_size=1&download_link=https://raw.githubusercontent.com/pcrespov/osparc-sample-studies/master/files%2520samples/sample.ipynb",
-            "https://raw.githubusercontent.com/pcrespov/osparc-sample-studies/master/files%20samples/sample.ipynb",
-        ),
-    ],
-)
-def test_validation_of_redirection_urls(url_in: str, expected_download_link: str):
-    #
-    #  %  -> %25
-    #  space -> %20
-    #
-    mock_request = make_mocked_request(method="GET", path=f"{URL(url_in).relative()}")
-    params = parse_request_query_parameters_as(RedirectionQueryParams, mock_request)
-
-    assert params.download_link == expected_download_link
-
-    redirected_url = URL(
-        r"http://localhost:9081/#/error?message=Invalid+parameters+%5B%0A+%7B%0A++%22loc%22:+%5B%0A+++%22download_link%22%0A++%5D,%0A++%22msg%22:+%22invalid+or+missing+URL+scheme%22,%0A++%22type%22:+%22value_error.url.scheme%22%0A+%7D%0A%5D&status_code=400"
-    )
-    print(redirected_url.fragment)
 
 
 def test_url_quoting_and_validation():
@@ -134,23 +100,3 @@ def test_url_quoting_and_validation():
         URL(url_with_url_in_query).query["download_link"]
         == "https://raw.githubusercontent.com/pcrespov/osparc-sample-studies/master/files%20samples/sample.ipynb"
     )
-
-    # NOTE: BEFORE we had a decode_download_link-----
-    obj5 = RedirectionQueryParams.parse_obj(
-        {
-            "file_type": "IPYNB",
-            "viewer_key": "simcore/services/dynamic/jupyter-octave-python-math",
-            "viewer_version": "1.6.9",
-            "file_size": "1",
-            "download_link": "https://raw.githubusercontent.com/pcrespov/osparc-sample-studies/master/files%20samples/sample.ipynb",
-        }
-    )
-
-    params = dict(URL(url_with_url_in_query).query)
-
-    RedirectionQueryParams.parse_obj(params)
-
-    with pytest.raises((ConfigError, ValidationError)):
-        RedirectionQueryParams.from_orm(URL(url_with_url_in_query).query)
-
-    assert params == {k: str(v) for k, v in obj5.dict(exclude_unset=True).items()}

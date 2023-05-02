@@ -4,13 +4,13 @@
 import functools
 import logging
 import urllib.parse
+from typing import TypeAlias
 
 from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKey, ServiceVersion
-from pydantic import BaseModel, HttpUrl, ValidationError, root_validator, validator
-from pydantic.types import PositiveInt
+from pydantic import BaseModel, ValidationError, validator
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.error_codes import create_error_code
@@ -140,7 +140,7 @@ def _handle_errors_with_error_page(handler: Handler):
 
 
 #
-# API Schemass
+# API Schemas
 #
 
 
@@ -206,55 +206,9 @@ class ViewerQueryParams(BaseModel):
         return v
 
 
-class RedirectionQueryParams(ViewerQueryParams):
-    file_name: str = "unknown"
-    file_size: PositiveInt | None = None
-    download_link: HttpUrl | None = None
-
-    @validator("download_link", pre=True)
-    @classmethod
-    def unquote_url(cls, v):
-        # NOTE: see test_url_quoting_and_validation
-        # before any change here
-        if v:
-            w = urllib.parse.unquote(v)
-            if _SPACE in w:
-                w = w.replace(_SPACE, "%20")
-            return w
-        return v
-
-    @root_validator
-    @classmethod
-    def file_params_required(cls, values):
-        # A service only does not need file info
-        # If some file-info then
-        file_type = values.get("file_type")
-        download_link = values.get("download_link")
-        file_size = values.get("file_size")
-
-        file_params = (file_type, download_link, file_size)
-
-        if all(p is None for p in file_params) or all(
-            p is not None for p in file_params
-        ):
-            return values
-
-        raise ValueError("One or more file parameters missing")
-
-    class Config:
-        schema_extra = {
-            "examples": [
-                {
-                    "viewer_key": "simcore/services/comp/foo",
-                    "viewer_version": "1.2.3",
-                    "file_type": "lowerUPPER",
-                    "file_name": "filename",
-                    "file_size": "12",
-                    "download_link": "https://download.io/file123",
-                }
-            ]
-        }
-
+RedirectionQueryParams: TypeAlias = (
+    ServiceAndFileParams | FileQueryParams | ServiceQueryParams
+)
 
 #
 # API HANDLERS
@@ -272,9 +226,7 @@ async def get_redirection_to_viewer(request: web.Request):
 
     NOTE: Can be set as login_required programatically with STUDIES_ACCESS_ANONYMOUS_ALLOWED env var.
     """
-    query_params = parse_request_query_parameters_as(
-        ServiceAndFileParams | FileQueryParams | ServiceQueryParams, request
-    )
+    query_params = parse_request_query_parameters_as(RedirectionQueryParams, request)
     _logger.debug("Requesting viewer %s [%s]", query_params, type(query_params))
 
     if isinstance(query_params, ServiceAndFileParams):

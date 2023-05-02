@@ -30,9 +30,7 @@ _logger = logging.getLogger(__name__)
 def _compose_file_and_service_dispatcher_prefix_url(
     request: web.Request, viewer: ViewerInfo
 ) -> HttpUrl:
-    """This is denoted PREFIX URL because it needs to append extra query
-    parameters added in RedirectionQueryParams
-    """
+    """This is denoted PREFIX URL because it needs to append extra query parameters"""
     params = ViewerQueryParams.from_viewer(viewer).dict()
     absolute_url = request.url.join(
         request.app.router["get_redirection_to_viewer"].url_for().with_query(**params)
