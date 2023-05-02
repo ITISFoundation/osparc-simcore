@@ -1,13 +1,15 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
 from unittest.mock import Mock
 
 import pytest
 from servicelib.aiohttp.application_setup import APP_SETUP_COMPLETED_KEY
 from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.diagnostics import _handlers, setup_diagnostics
+from simcore_service_webserver.diagnostics import _handlers
+from simcore_service_webserver.diagnostics.plugin import setup_diagnostics
 from simcore_service_webserver.rest import api_version_prefix, setup_rest
 
 
