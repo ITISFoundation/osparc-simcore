@@ -17,7 +17,7 @@ from ..login.decorators import login_required
 from ..security_decorators import permission_required
 from ..utils import get_task_info, get_tracemalloc_info
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 routes = web.RouteTableDef()
 
@@ -111,7 +111,7 @@ async def get_app_status(request: web.Request):
         _check_storage(),
         _check_director2(),
         _check_catalog(),
-        log=log,
+        log=_logger,
         reraise=False,
     )
 

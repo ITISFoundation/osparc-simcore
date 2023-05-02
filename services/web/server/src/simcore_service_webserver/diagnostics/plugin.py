@@ -17,7 +17,7 @@ from ._healthcheck import (
 from ._monitoring import setup_monitoring
 from .settings import DiagnosticsSettings, get_plugin_settings
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @app_module_setup(
@@ -25,7 +25,7 @@ log = logging.getLogger(__name__)
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_DIAGNOSTICS",
     depends=["simcore_service_webserver.rest"],
-    logger=log,
+    logger=_logger,
 )
 def setup_diagnostics(
     app: web.Application,

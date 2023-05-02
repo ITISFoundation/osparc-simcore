@@ -9,7 +9,7 @@ from servicelib.aiohttp.incidents import LimitedOrderedStack, SlowCallback
 from ..rest_healthcheck import HealthCheckFailed
 from .settings import get_plugin_settings
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 # APP KEYS ---
 kINCIDENTS_REGISTRY = f"{__name__}.incidents_registry"
@@ -68,7 +68,7 @@ def is_sensing_enabled(app: web.Application):
     time_elapsed_since_setup = time.time() - app[kPLUGIN_START_TIME]
     enabled = time_elapsed_since_setup > settings.DIAGNOSTICS_START_SENSING_DELAY
     if enabled and not logged_once:
-        log.debug(
+        _logger.debug(
             "Diagnostics starts sensing after waiting %3.2f secs [> %3.2f secs] since submodule init",
             time_elapsed_since_setup,
             settings.DIAGNOSTICS_START_SENSING_DELAY,
@@ -97,7 +97,7 @@ def assert_healthy_app(app: web.Application) -> None:
         max_delay_allowed: float = settings.DIAGNOSTICS_MAX_TASK_DELAY
         max_delay: float = incidents.max_delay()
 
-        log.debug(
+        _logger.debug(
             "Max. blocking delay was %s secs [max allowed %s secs]",
             max_delay,
             max_delay_allowed,
@@ -116,7 +116,7 @@ def assert_healthy_app(app: web.Application) -> None:
         latency = probe.value()
         max_latency_allowed = settings.DIAGNOSTICS_MAX_AVG_LATENCY
 
-        log.debug(
+        _logger.debug(
             "Mean slow latency of last requests is %s secs [max allowed %s secs]",
             latency,
             max_latency_allowed,

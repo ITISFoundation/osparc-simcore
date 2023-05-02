@@ -12,7 +12,7 @@ from servicelib.aiohttp.monitoring import setup_monitoring as service_lib_setup
 from .. import _meta
 from ._healthcheck import DelayWindowProbe, is_sensing_enabled, kLATENCY_PROBE
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 #
 # CAUTION CAUTION CAUTION NOTE:
