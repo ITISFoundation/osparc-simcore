@@ -12,9 +12,9 @@ from ..diagnostics_healthcheck import (
     kINCIDENTS_REGISTRY,
     kPLUGIN_START_TIME,
 )
-from ..diagnostics_monitoring import setup_monitoring
 from ..rest import HealthCheck
 from . import _handlers
+from ._monitoring import setup_monitoring
 from .settings import DiagnosticsSettings, get_plugin_settings
 
 log = logging.getLogger(__name__)
