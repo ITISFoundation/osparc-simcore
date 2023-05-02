@@ -1,6 +1,6 @@
 """ Defines different user roles and its associated permission
 
-    This definition is consumed by the security_access_model to build an access model for the framework
+    This definition is consumed by the security._access_model to build an access model for the framework
     The access model is created upon setting up of the security subsystem
 """
 

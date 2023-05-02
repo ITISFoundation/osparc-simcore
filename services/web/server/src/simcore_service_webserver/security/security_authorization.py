@@ -15,7 +15,7 @@ from simcore_postgres_database.models.users import UserRole
 from tenacity import retry
 
 from ..db_models import UserStatus, users
-from .security_access_model import RoleBasedAccessModel, check_access
+from ._access_model import RoleBasedAccessModel, check_access
 
 log = logging.getLogger(__name__)
 
