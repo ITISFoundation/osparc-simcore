@@ -6,6 +6,7 @@ from aiohttp import web
 from servicelib.aiohttp import monitor_slow_callbacks
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
+from ..rest import setup_rest
 from ..rest_healthcheck import HealthCheck
 from . import _handlers
 from ._healthcheck import (
@@ -24,15 +25,15 @@ _logger = logging.getLogger(__name__)
     __name__,
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_DIAGNOSTICS",
-    depends=["simcore_service_webserver.rest"],
     logger=_logger,
 )
 def setup_diagnostics(
     app: web.Application,
 ):
+    setup_rest(app)
+
     settings: DiagnosticsSettings = get_plugin_settings(app)
 
-    # TODO: redesign ... too convoluted!!
     incidents_registry = IncidentsRegistry(order_by=attrgetter("delay_secs"))
     app[kINCIDENTS_REGISTRY] = incidents_registry
 
