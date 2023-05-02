@@ -15,7 +15,7 @@ from aiohttp_security.session_identity import SessionIdentityPolicy
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from .security.security_access_model import RoleBasedAccessModel
-from .security_authorization import AuthorizationPolicy
+from .security.security_authorization import AuthorizationPolicy
 from .security_roles import ROLES_PERMISSIONS
 
 log = logging.getLogger(__name__)
