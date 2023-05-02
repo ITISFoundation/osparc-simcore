@@ -17,7 +17,7 @@ from tenacity import retry
 from ..db_models import UserStatus, users
 from ._access_model import RoleBasedAccessModel, check_access
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class _UserIdentity(TypedDict, total=True):
@@ -88,7 +88,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         :return: True if user has permission to execute this operation within the given context
         """
         if identity is None or permission is None:
-            log.debug(
+            _logger.debug(
                 "Invalid %s of %s. Denying access.",
                 f"{identity=}",
                 f"{permission=}",

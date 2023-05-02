@@ -2,7 +2,7 @@
 
 
    References:
-    https://blog.nodeswat.com/implement-access-control-in-node-js-8567e7b484d1
+    https://b_logger.nodeswat.com/implement-access-control-in-node-js-8567e7b484d1
 """
 
 import inspect
@@ -13,7 +13,7 @@ from typing import Any, Callable, Optional, TypeAlias
 
 from ..db_models import UserRole
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 ContextType: TypeAlias = Optional[dict[str, Any]]
 
@@ -75,13 +75,13 @@ class RoleBasedAccessModel:
 
         # undefined operation  TODO: check if such a name is defined??
         if not operation:
-            log.debug("Checking undefined operation %s in access model", operation)
+            _logger.debug("Checking undefined operation %s in access model", operation)
             return False
 
         # undefined role
         role_access = self.roles.get(role, False)
         if not role_access:
-            log.debug("Role %s has no permissions defined in acces model", role)
+            _logger.debug("Role %s has no permissions defined in acces model", role)
             return False
 
         # check named operations
@@ -97,7 +97,7 @@ class RoleBasedAccessModel:
                     return await check(context)
                 return check(context)
             except Exception:  # pylint: disable=broad-except
-                log.exception(
+                _logger.exception(
                     "Check operation '%s', shall not raise [%s]", operation, check
                 )
                 return False

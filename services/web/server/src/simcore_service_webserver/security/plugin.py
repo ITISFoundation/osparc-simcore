@@ -18,11 +18,11 @@ from ._access_model import RoleBasedAccessModel
 from ._access_roles import ROLES_PERMISSIONS
 from ._authorization import AuthorizationPolicy
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @app_module_setup(
-    __name__, ModuleCategory.SYSTEM, settings_name="WEBSERVER_SECURITY", logger=log
+    __name__, ModuleCategory.SYSTEM, settings_name="WEBSERVER_SECURITY", logger=_logger
 )
 def setup_security(app: web.Application):
     # Once user is identified, an identity string is created for that user

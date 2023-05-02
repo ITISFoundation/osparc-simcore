@@ -1,7 +1,6 @@
 """ API for security subsystem.
 
 """
-import logging
 
 import passlib.hash
 from aiohttp import web
@@ -16,8 +15,6 @@ from aiohttp_security.api import (
 
 from ._access_roles import UserRole
 from ._authorization import AuthorizationPolicy, RoleBasedAccessModel
-
-log = logging.getLogger(__name__)
 
 
 def encrypt_password(password: str) -> str:
