@@ -94,11 +94,11 @@ async def test_iterators_workflow(
 
     # NEW project --------------------------------------------------------------
     mocker.patch(
-        "simcore_service_webserver.director_v2.director_v2_api.create_or_update_pipeline",
+        "simcore_service_webserver.director_v2.api.create_or_update_pipeline",
         return_value=None,
     )
     mocker.patch(
-        "simcore_service_webserver.director_v2.director_v2_api.get_computation_task",
+        "simcore_service_webserver.director_v2.api.get_computation_task",
         return_value=None,
     )
     # ----

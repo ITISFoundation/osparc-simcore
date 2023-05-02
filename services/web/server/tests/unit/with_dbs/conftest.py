@@ -346,8 +346,8 @@ async def mocked_director_v2_api(mocker: MockerFixture) -> dict[str, MagicMock]:
         "stop_dynamic_service",
     ):
         for mod_name in (
-            "director_v2.director_v2_api",
-            "director_v2._director_v2_core_dynamic_services",
+            "director_v2.api",
+            "director_v2._core_dynamic_services",
         ):
             name = f"{mod_name}.{func_name}"
             mock[name] = mocker.patch(
@@ -355,8 +355,8 @@ async def mocked_director_v2_api(mocker: MockerFixture) -> dict[str, MagicMock]:
                 autospec=True,
                 return_value={},
             )
-    mock["director_v2.director_v2_api.create_or_update_pipeline"] = mocker.patch(
-        "simcore_service_webserver.director_v2.director_v2_api.create_or_update_pipeline",
+    mock["director_v2.api.create_or_update_pipeline"] = mocker.patch(
+        "simcore_service_webserver.director_v2.api.create_or_update_pipeline",
         autospec=True,
         return_value=None,
     )
@@ -394,10 +394,10 @@ def create_dynamic_service_mock(
         services.append(running_service_dict)
         # reset the future or an invalidStateError will appear as set_result sets the future to done
         mocked_director_v2_api[
-            "director_v2.director_v2_api.list_dynamic_services"
+            "director_v2.api.list_dynamic_services"
         ].return_value = services
         mocked_director_v2_api[
-            "director_v2._director_v2_core_dynamic_services.list_dynamic_services"
+            "director_v2._core_dynamic_services.list_dynamic_services"
         ].return_value = services
         return running_service_dict
 
@@ -608,7 +608,7 @@ async def all_group(
 @pytest.fixture
 def mock_rabbitmq(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_webserver.director_v2._director_v2_core_dynamic_services.get_rabbitmq_client",
+        "simcore_service_webserver.director_v2._core_dynamic_services.get_rabbitmq_client",
         autospec=True,
         return_value=AsyncMock(),
     )
@@ -631,7 +631,7 @@ def mock_progress_bar(mocker: MockerFixture) -> Any:
     mock_bar = MockedProgress()
 
     mocker.patch(
-        "simcore_service_webserver.director_v2._director_v2_core_dynamic_services.ProgressBarData",
+        "simcore_service_webserver.director_v2._core_dynamic_services.ProgressBarData",
         autospec=True,
         return_value=mock_bar,
     )

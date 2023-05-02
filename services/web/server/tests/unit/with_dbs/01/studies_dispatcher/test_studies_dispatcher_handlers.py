@@ -365,7 +365,7 @@ async def test_dispatch_study_anonymously(
 ):
     assert client.app
     mock_client_director_v2_func = mocker.patch(
-        "simcore_service_webserver.director_v2.director_v2_api.create_or_update_pipeline",
+        "simcore_service_webserver.director_v2.api.create_or_update_pipeline",
         return_value=None,
     )
 
