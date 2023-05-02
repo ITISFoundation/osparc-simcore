@@ -209,7 +209,6 @@ async def test_create_checkpoint_without_changes(
     ), "Consecutive create w/o changes shall not add a new checkpoint"
 
 
-@pytest.mark.testit
 async def test_delete_project_and_repo(
     client: TestClient,
     user_id: UserID,
