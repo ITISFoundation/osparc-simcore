@@ -12,17 +12,20 @@ from aiohttp_security.api import (
     is_anonymous,
     remember,
 )
+from simcore_postgres_database.models.users import UserRole
 
-from ._access_roles import UserRole
-from ._authorization import AuthorizationPolicy, RoleBasedAccessModel
+from ._access_model import RoleBasedAccessModel
+from ._authorization import AuthorizationPolicy
 
 
 def encrypt_password(password: str) -> str:
-    return passlib.hash.sha256_crypt.using(rounds=1000).hash(password)
+    hashed: str = passlib.hash.sha256_crypt.using(rounds=1000).hash(password)
+    return hashed
 
 
 def check_password(password: str, password_hash: str) -> bool:
-    return passlib.hash.sha256_crypt.verify(password, password_hash)
+    is_valid: bool = passlib.hash.sha256_crypt.verify(password, password_hash)
+    return is_valid
 
 
 def get_access_model(app: web.Application) -> RoleBasedAccessModel:

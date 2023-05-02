@@ -79,7 +79,7 @@ class RoleBasedAccessModel:
             return False
 
         # undefined role
-        role_access = self.roles.get(role, False)
+        role_access = self.roles.get(role, None)
         if not role_access:
             _logger.debug("Role %s has no permissions defined in acces model", role)
             return False
@@ -111,7 +111,7 @@ class RoleBasedAccessModel:
                 return True
         return False
 
-    async def who_can(self, operation: str, context: dict = None):
+    async def who_can(self, operation: str, context: dict | None = None):
         allowed = []
         for role in self.roles:
             if await self.can(role, operation, context):

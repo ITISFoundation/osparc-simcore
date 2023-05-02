@@ -5,7 +5,15 @@
 """
 
 
+from typing import TypedDict
+
 from simcore_postgres_database.models.users import UserRole
+
+
+class PermissionDict(TypedDict, total=False):
+    can: list[str]
+    inherits: list[UserRole]
+
 
 # A role defines a set of operations that the user *can* perform
 #    - Every operation is named as a resource and an action
@@ -17,13 +25,13 @@ from simcore_postgres_database.models.users import UserRole
 # NOTE: DO NOT over-granulate permissions. Add permission label ONLY to discrimitate access among roles
 #       If only needed to discrimiate a resource use `resource.sub_resource.*`
 #
-ROLES_PERMISSIONS = {
-    UserRole.ANONYMOUS: {
-        "can": []  # Add only permissions here to handles that do not require login.
+ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
+    UserRole.ANONYMOUS: PermissionDict(
+        can=[]  # Add only permissions here to handles that do not require login.
         # Anonymous user can only access
-    },
-    UserRole.GUEST: {
-        "can": [
+    ),
+    UserRole.GUEST: PermissionDict(
+        can=[
             # Anonymous users need access to the filesystem because files are being transferred
             "project.update",
             "storage.locations.*",  # "storage.datcore.read"
@@ -42,9 +50,9 @@ ROLES_PERMISSIONS = {
             "services.interactive.*",  # "study.node.start"
             "services.catalog.*",
         ]
-    },
-    UserRole.USER: {
-        "can": [
+    ),
+    UserRole.USER: PermissionDict(
+        can=[
             "clusters.delete",
             "clusters.read",
             "clusters.write",
@@ -76,25 +84,25 @@ ROLES_PERMISSIONS = {
             # and there is no distinction among logged in users.
             # TODO: kept temporarily as a way to denote resources
         ],
-        "inherits": [UserRole.GUEST, UserRole.ANONYMOUS],
-    },
-    UserRole.TESTER: {
-        "can": [
+        inherits=[UserRole.GUEST, UserRole.ANONYMOUS],
+    ),
+    UserRole.TESTER: PermissionDict(
+        can=[
             "clusters.create",
             "diagnostics.read",
             "project.snapshot.read",
             "project.snapshot.create",
             "project.node.update",
         ],
-        "inherits": [UserRole.USER],
-    },
-    UserRole.ADMIN: {
-        "can": [
+        inherits=[UserRole.USER],
+    ),
+    UserRole.ADMIN: PermissionDict(
+        can=[
             "admin.*",
             "storage.files.sync",
         ],
-        "inherits": [UserRole.TESTER],
-    },
+        inherits=[UserRole.TESTER],
+    ),
 }
 
 
