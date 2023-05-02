@@ -13,7 +13,7 @@ from pathlib import Path
 import jsondiff
 import pytest
 from simcore_service_webserver.projects.project_models import ProjectDict
-from simcore_service_webserver.security_access_model import (
+from simcore_service_webserver.security.security_access_model import (
     RoleBasedAccessModel,
     check_access,
 )

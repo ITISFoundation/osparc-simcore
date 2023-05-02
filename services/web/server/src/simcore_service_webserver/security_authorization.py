@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, TypedDict, Union
+from typing import TypedDict
 
 import attr
 import sqlalchemy as sa
@@ -15,7 +15,7 @@ from simcore_postgres_database.models.users import UserRole
 from tenacity import retry
 
 from .db_models import UserStatus, users
-from .security_access_model import RoleBasedAccessModel, check_access
+from .security.security_access_model import RoleBasedAccessModel, check_access
 
 log = logging.getLogger(__name__)
 
@@ -44,9 +44,9 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         return self.app[APP_DB_ENGINE_KEY]
 
     @retry(**PostgresRetryPolicyUponOperation(log).kwargs)
-    async def _get_active_user_with(self, identity: str) -> Optional[_UserIdentity]:
+    async def _get_active_user_with(self, identity: str) -> _UserIdentity | None:
         # NOTE: Keeps a cache for a few seconds. Observed successive streams of this query
-        user: Optional[_UserIdentity] = self.timed_cache.get(identity)
+        user: _UserIdentity | None = self.timed_cache.get(identity)
         if user is None:
             async with self.engine.acquire() as conn:
                 # NOTE: sometimes it raises psycopg2.DatabaseError in #880 and #1160
@@ -64,21 +64,21 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
 
         return user
 
-    async def authorized_userid(self, identity: str) -> Optional[int]:
+    async def authorized_userid(self, identity: str) -> int | None:
         """Retrieve authorized user id.
 
         Return the user_id of the user identified by the identity
         or "None" if no user exists related to the identity.
         """
         # TODO: why users.c.user_login_key!=users.c.email
-        user: Optional[_UserIdentity] = await self._get_active_user_with(identity)
+        user: _UserIdentity | None = await self._get_active_user_with(identity)
         return user["id"] if user else None
 
     async def permits(
         self,
         identity: str,
-        permission: Union[str, tuple],
-        context: Optional[dict] = None,
+        permission: str | tuple,
+        context: dict | None = None,
     ) -> bool:
         """Determines whether an identified user has permission
 

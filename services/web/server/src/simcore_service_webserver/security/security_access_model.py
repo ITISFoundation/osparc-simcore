@@ -8,28 +8,28 @@
 import inspect
 import logging
 import re
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Optional
 
 import attr
 
-from .db_models import UserRole
+from ..db_models import UserRole
 
 log = logging.getLogger(__name__)
 
-ContextType = Optional[Dict[str, Any]]
+ContextType = Optional[dict[str, Any]]
 
 
 @attr.s(auto_attribs=True)
 class RolePermissions:
     role: UserRole
-    allowed: List[str] = attr.Factory(list)  # named permissions allowed
-    check: Dict[str, Callable[[ContextType], bool]] = attr.Factory(
+    allowed: list[str] = attr.Factory(list)  # named permissions allowed
+    check: dict[str, Callable[[ContextType], bool]] = attr.Factory(
         dict
     )  # checked permissions: permissions with conditions
-    inherits: List[UserRole] = attr.Factory(list)
+    inherits: list[UserRole] = attr.Factory(list)
 
     @classmethod
-    def from_rawdata(cls, role: Union[str, UserRole], value: Dict) -> "RolePermissions":
+    def from_rawdata(cls, role: str | UserRole, value: dict) -> "RolePermissions":
 
         if isinstance(role, str):
             name = role
@@ -64,8 +64,8 @@ class RoleBasedAccessModel:
 
     """
 
-    def __init__(self, roles: List[RolePermissions]):
-        self.roles: Dict[UserRole, RolePermissions] = {r.role: r for r in roles}
+    def __init__(self, roles: list[RolePermissions]):
+        self.roles: dict[UserRole, RolePermissions] = {r.role: r for r in roles}
 
     # TODO: all operations allowed for a given role
     # TODO: build a tree out of the list of allowed operations
@@ -114,7 +114,7 @@ class RoleBasedAccessModel:
                 return True
         return False
 
-    async def who_can(self, operation: str, context: Dict = None):
+    async def who_can(self, operation: str, context: dict = None):
         allowed = []
         for role in self.roles:
             if await self.can(role, operation, context):
@@ -122,7 +122,7 @@ class RoleBasedAccessModel:
         return allowed
 
     @classmethod
-    def from_rawdata(cls, raw: Dict):
+    def from_rawdata(cls, raw: dict):
         roles = [
             RolePermissions.from_rawdata(role, value) for role, value in raw.items()
         ]
@@ -136,7 +136,7 @@ operators_pattern = re.compile(r"(&|\||\bAND\b|\bOR\b)")
 
 
 async def check_access(
-    model: RoleBasedAccessModel, role: UserRole, operations: str, context: Dict = None
+    model: RoleBasedAccessModel, role: UserRole, operations: str, context: dict = None
 ) -> bool:
     """Extends `RoleBasedAccessModel.can` to check access to boolean expressions of operations
 
