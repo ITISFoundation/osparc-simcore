@@ -23,5 +23,6 @@ class ServiceNotFound(PydanticErrorMixin, StudyDispatcherError):
 class InvalidRedirectionParams(PydanticErrorMixin, StudyDispatcherError):
     code = "studies_dispatcher.invalid_redirection_params"
     msg_template = (
-        "Invalid request link: cannot find any reference to either data or a service"
+        "The link you provided is invalid because it doesn't contain any information related to data or a service."
+        " Please check the link and make sure it is correct."
     )
