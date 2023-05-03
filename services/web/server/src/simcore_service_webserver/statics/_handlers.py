@@ -9,7 +9,7 @@ from ._constants import (
     FRONTEND_APPS_AVAILABLE,
 )
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 async def get_cached_frontend_index(request: web.Request):

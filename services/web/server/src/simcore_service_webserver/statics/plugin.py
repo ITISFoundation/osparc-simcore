@@ -17,11 +17,11 @@ from ._events import create_cached_indexes, create_statics_json
 from ._handlers import get_cached_frontend_index, get_statics_json
 from .settings import StaticWebserverModuleSettings, get_plugin_settings
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @app_module_setup(
-    __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_STATICWEB", logger=log
+    __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_STATICWEB", logger=_logger
 )
 def setup_statics(app: web.Application) -> None:
 
