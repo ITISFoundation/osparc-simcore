@@ -465,13 +465,16 @@ async def test_viewer_redirect_with_client_errors(client: TestClient):
         .url_for()
         .with_query(
             file_name="users.csv",
-            file_size=-1,  # <<<<<---------
+            file_size=-1,  # <---------
             file_type="CSV",
             viewer_key="simcore/services/dynamic/raw-graphs",
             viewer_version="2.11.1",
-            download_link=urllib.parse.quote("httnot a link"),  # <<<<<---------
+            download_link="httnot a link",  # <---------
         )
     )
+
+    # NOTE: that it validates against: ServiceAndFileParams | FileQueryParams | ServiceQueryParams
+    # and the latter are strict i.e. Extra.forbid
 
     resp = await client.get(f"{redirect_url}")
     assert resp.status == 200

@@ -10,7 +10,7 @@ from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKey, ServiceVersion
-from pydantic import BaseModel, ValidationError, validator
+from pydantic import BaseModel, Extra, ValidationError, validator
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.error_codes import create_error_code
@@ -143,10 +143,14 @@ def _handle_errors_with_error_page(handler: Handler):
 
 
 class ServiceQueryParams(ServiceParams):
-    ...
+    class Config:
+        extra = Extra.forbid
 
 
 class FileQueryParams(FileParams):
+    class Config:
+        extra = Extra.forbid
+
     @validator("file_type")
     @classmethod
     def ensure_extension_upper_and_dotless(cls, v):
@@ -193,7 +197,11 @@ class ViewerQueryParams(BaseModel):
 
 
 RedirectionQueryParams: TypeAlias = (
-    ServiceAndFileParams | FileQueryParams | ServiceQueryParams
+    # NOTE: Extra.forbid in FileQueryParams, ServiceQueryParams avoids bad casting when
+    # errors in ServiceAndFileParams
+    ServiceAndFileParams
+    | FileQueryParams
+    | ServiceQueryParams
 )
 
 #
