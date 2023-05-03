@@ -166,7 +166,7 @@ async def get_computation_task(
         log.warning(
             "getting pipeline for project %s failed: %s.", f"{project_id=}", exc
         )
-    raise
+        return None
 
 
 @log_decorator(logger=log)

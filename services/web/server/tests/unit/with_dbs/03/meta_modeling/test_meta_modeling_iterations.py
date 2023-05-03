@@ -134,7 +134,7 @@ async def test_iterators_workflow(
         return f"{project_id}"
 
     mocker.patch(
-        "simcore_service_webserver.director_v2._director_v2_core_computations.ComputationsApi.start",
+        "simcore_service_webserver.director_v2._core_computations.ComputationsApi.start",
         side_effect=_mock_start,
     )
     # ----

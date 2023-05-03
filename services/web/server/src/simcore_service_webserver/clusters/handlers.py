@@ -14,7 +14,7 @@ from servicelib.json_serialization import json_dumps
 from servicelib.request_keys import RQT_USERID_KEY
 
 from .._meta import api_version_prefix
-from ..director_v2 import api
+from ..director_v2 import api as director_v2_api
 from ..director_v2._models import ClusterCreate, ClusterPatch, ClusterPing
 from ..director_v2.exceptions import (
     ClusterAccessForbidden,
@@ -82,7 +82,7 @@ async def create_cluster_handler(request: web.Request) -> web.Response:
     req_ctx = _RequestContext.parse_obj(request)
     new_cluster = await parse_request_body_as(ClusterCreate, request)
 
-    created_cluster = await api.create_cluster(
+    created_cluster = await director_v2_api.create_cluster(
         app=request.app,
         user_id=req_ctx.user_id,
         new_cluster=new_cluster,
@@ -101,7 +101,7 @@ async def create_cluster_handler(request: web.Request) -> web.Response:
 async def list_clusters_handler(request: web.Request) -> web.Response:
     req_ctx = _RequestContext.parse_obj(request)
 
-    data = await api.list_clusters(
+    data = await director_v2_api.list_clusters(
         app=request.app,
         user_id=req_ctx.user_id,
     )
@@ -118,7 +118,7 @@ async def get_cluster_handler(request: web.Request) -> web.Response:
     req_ctx = _RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_ClusterPathParams, request)
 
-    cluster = await api.get_cluster(
+    cluster = await director_v2_api.get_cluster(
         app=request.app,
         user_id=req_ctx.user_id,
         cluster_id=path_params.cluster_id,
@@ -137,7 +137,7 @@ async def get_cluster_details_handler(request: web.Request) -> web.Response:
     req_ctx = _RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_ClusterPathParams, request)
 
-    cluster_details = await api.get_cluster_details(
+    cluster_details = await director_v2_api.get_cluster_details(
         app=request.app,
         user_id=req_ctx.user_id,
         cluster_id=path_params.cluster_id,
@@ -156,7 +156,7 @@ async def update_cluster_handler(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(_ClusterPathParams, request)
     cluster_patch = await parse_request_body_as(ClusterPatch, request)
 
-    updated_cluster = await api.update_cluster(
+    updated_cluster = await director_v2_api.update_cluster(
         app=request.app,
         user_id=req_ctx.user_id,
         cluster_id=path_params.cluster_id,
@@ -175,7 +175,7 @@ async def delete_cluster_handler(request: web.Request) -> web.Response:
     req_ctx = _RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_ClusterPathParams, request)
 
-    await api.delete_cluster(
+    await director_v2_api.delete_cluster(
         app=request.app,
         user_id=req_ctx.user_id,
         cluster_id=path_params.cluster_id,
@@ -190,7 +190,7 @@ async def delete_cluster_handler(request: web.Request) -> web.Response:
 async def ping_cluster_handler(request: web.Request) -> web.Response:
     cluster_ping = await parse_request_body_as(ClusterPing, request)
 
-    await api.ping_cluster(
+    await director_v2_api.ping_cluster(
         app=request.app,
         cluster_ping=cluster_ping,
     )
@@ -208,7 +208,7 @@ async def ping_cluster_cluster_id_handler(request: web.Request) -> web.Response:
     req_ctx = _RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_ClusterPathParams, request)
 
-    await api.ping_specific_cluster(
+    await director_v2_api.ping_specific_cluster(
         app=request.app,
         user_id=req_ctx.user_id,
         cluster_id=path_params.cluster_id,

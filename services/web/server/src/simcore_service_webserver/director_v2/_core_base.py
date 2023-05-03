@@ -53,10 +53,6 @@ def _get_exception_from(
     return DirectorServiceError(status=status_code, reason=reason, url=url)
 
 
-class RetryFailedError(Exception):
-    pass
-
-
 async def request_director_v2(
     app: web.Application,
     method: str,
