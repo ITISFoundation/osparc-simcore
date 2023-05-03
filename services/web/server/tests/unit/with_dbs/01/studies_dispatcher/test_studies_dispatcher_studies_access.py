@@ -1,7 +1,8 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-# pylint: disable=too-many-arguments
 
 
 import asyncio
@@ -99,7 +100,7 @@ async def unpublished_project(
     fake_project: ProjectDict,
     tests_data_dir: Path,
     osparc_product_name: str,
-) -> ProjectDict:
+) -> AsyncIterator[ProjectDict]:
     """An unpublished template"""
 
     project_data = deepcopy(fake_project)
