@@ -2,7 +2,7 @@
 
     Typically dumped in statics.json
 """
-from typing import Any
+from typing import Any, TypedDict
 
 from aiohttp import web
 from models_library.utils.change_case import snake_to_camel
@@ -11,50 +11,58 @@ from settings_library.base import BaseCustomSettings
 
 from .._constants import APP_SETTINGS_KEY
 
+
+class ThirdPartyInfoDict(TypedDict):
+    name: str
+    version: str
+    url: str
+    thumbnail: str
+
+
 THIRD_PARTY_REFERENCES = [
-    dict(
+    ThirdPartyInfoDict(
         name="adminer",
         version="4.8.0",
         url="https://www.adminer.org/",
         thumbnail="https://www.adminer.org/static/images/logo.png",
     ),
-    dict(
+    ThirdPartyInfoDict(
         name="dask",
         version="-",
         url="https://docs.dask.org/en/latest/scheduler-overview.html",
         thumbnail="https://docs.dask.org/en/stable/_static/images/dask-horizontal-white.svg",
     ),
-    dict(
+    ThirdPartyInfoDict(
         name="docker",
         version="-",
         url="https://www.docker.com/",
         thumbnail="https://upload.wikimedia.org/wikipedia/en/thumb/f/f4/Docker_logo.svg/120px-Docker_logo.svg.png",
     ),
-    dict(
+    ThirdPartyInfoDict(
         name="github",
         version="-",
         url="https://github.com/",
         thumbnail="https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Octicons-mark-github.svg/2048px-Octicons-mark-github.svg.png",
     ),
-    dict(
+    ThirdPartyInfoDict(
         name="minio",
         version="-",
         url="https://min.io/",
         thumbnail="https://min.io/resources/img/logo.svg",
     ),
-    dict(
+    ThirdPartyInfoDict(
         name="portainer",
         version="-",
         url="https://www.portainer.io/",
         thumbnail="https://www.portainer.io/hubfs/Brand%20Assets/Logos/Portainer%20Logo%20Solid%20All%20-%20Blue%20no%20padding.svg",
     ),
-    dict(
+    ThirdPartyInfoDict(
         name="postgres",
         version="10.11",
         url="https://www.postgresql.org/",
         thumbnail="https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Postgresql_elephant.svg/120px-Postgresql_elephant.svg.png",
     ),
-    dict(
+    ThirdPartyInfoDict(
         name="redis",
         version="-",
         url="https://redis.io/",
@@ -84,25 +92,13 @@ class FrontEndAppSettings(BaseCustomSettings):
 
 
 class StaticWebserverModuleSettings(BaseCustomSettings):
-    # TODO: remove
-    STATIC_WEBSERVER_ENABLED: bool = Field(
-        True,
-        description=(
-            "if enabled it will try to fetch and cache the 3 product index webpages"
-        ),
-        env=["STATIC_WEBSERVER_ENABLED", "WEBSERVER_STATIC_MODULE_ENABLED"],  # legacy
-    )
-
-    # TODO: move WEBSERVER_FRONTEND here??
-
-    # TODO: host/port
     STATIC_WEBSERVER_URL: AnyHttpUrl = Field(
         default=parse_obj_as(AnyHttpUrl, "http://static-webserver:8000"),  # NOSONAR
         description="url fort static content",
         env=[
             "STATIC_WEBSERVER_URL",
-            "WEBSERVER_STATIC_MODULE_STATIC_WEB_SERVER_URL",
-        ],  # legacy
+            "WEBSERVER_STATIC_MODULE_STATIC_WEB_SERVER_URL",  # legacy
+        ],
     )
 
 
