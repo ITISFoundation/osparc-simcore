@@ -349,14 +349,6 @@ class GetStatus(DynamicSchedulerEvent):
                 # Adding a delay between when the error is first seen and when the
                 # error is raised to avoid random shutdowns of dynamic-sidecar services.
                 scheduler_data.dynamic_sidecar.inspect_error_handler.try_to_raise(e)
-
-            # After the service creation it takes a bit of time for the container to start
-            # If the same message appears in the log multiple times in a row (for the same
-            # service) something might be wrong with the service.
-            logger.warning(
-                "No container present for %s. Please investigate.",
-                scheduler_data.service_name,
-            )
             return
 
         scheduler_data.dynamic_sidecar.inspect_error_handler.else_reset()
