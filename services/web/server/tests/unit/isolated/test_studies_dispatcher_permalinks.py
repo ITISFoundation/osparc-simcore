@@ -10,7 +10,7 @@ from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_webserver.application import create_application
-from simcore_service_webserver.studies_dispatcher.api import (
+from simcore_service_webserver.studies_dispatcher.permalinks import (
     ProjectType,
     create_permalink_for_study,
     create_permalink_for_study_or_none,

@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Optional, TypedDict
+from typing import TypedDict
 
 from aiohttp import web
 from simcore_postgres_database.models.projects import ProjectType, projects
@@ -8,7 +8,7 @@ from yarl import URL
 
 from ..utils_aiohttp import create_url_for_function
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 # Expected inputs models
@@ -48,11 +48,11 @@ class PermalinkNotAllowedError(RuntimeError):
 
 def create_permalink_for_study_or_none(
     request: web.Request, project_data: _ProjectSelectionDict
-) -> Optional[StudyPermalinkInfo]:
+) -> StudyPermalinkInfo | None:
     try:
         return create_permalink_for_study(request, project_data)
     except (PermalinkNotAllowedError, KeyError) as err:
-        logger.debug(err)
+        _logger.debug(err)
         return None
 
 
