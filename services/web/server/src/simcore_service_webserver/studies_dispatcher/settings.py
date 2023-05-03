@@ -21,7 +21,7 @@ class StudiesDispatcherSettings(BaseCustomSettings):
     )
 
     STUDIES_DEFAULT_SERVICE_THUMBNAIL: HttpUrl = Field(
-        default="https://via.placeholder.com/170x120.png",
+        default=HttpUrl("https://via.placeholder.com/170x120.png"),
         description="Default servcie thumbnails in the service response",
     )
 

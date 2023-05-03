@@ -2,7 +2,6 @@ import logging
 import uuid
 from collections import deque
 from functools import lru_cache
-from typing import Optional
 
 from aiohttp import web
 from pydantic import ValidationError
@@ -29,13 +28,13 @@ def compose_uuid_from(*values) -> uuid.UUID:
 
 
 async def list_viewers_info(
-    app: web.Application, file_type: Optional[str] = None, *, only_default: bool = False
+    app: web.Application, file_type: str | None = None, *, only_default: bool = False
 ) -> list[ViewerInfo]:
     #
     # TODO: These services MUST be shared with EVERYBODY! Setup check on startup and fill
     #       with !?
     #
-    consumers = deque()
+    consumers: deque = deque()
 
     async with app[APP_DB_ENGINE_KEY].acquire() as conn:
 
@@ -71,7 +70,7 @@ async def list_viewers_info(
 async def get_default_viewer(
     app: web.Application,
     file_type: str,
-    file_size: Optional[int] = None,
+    file_size: int | None = None,
 ) -> ViewerInfo:
     try:
         viewers = await list_viewers_info(app, file_type, only_default=True)
@@ -93,9 +92,9 @@ async def get_default_viewer(
 async def validate_requested_viewer(
     app: web.Application,
     file_type: str,
-    file_size: Optional[int] = None,
-    service_key: Optional[str] = None,
-    service_version: Optional[str] = None,
+    file_size: int | None = None,
+    service_key: str | None = None,
+    service_version: str | None = None,
 ) -> ViewerInfo:
 
     if not service_key and not service_version:

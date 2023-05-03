@@ -19,8 +19,9 @@ from ..utils import compose_support_error_msg
 from ..utils_aiohttp import create_redirect_response
 from ._catalog import validate_requested_service
 from ._constants import MSG_UNEXPECTED_ERROR
-from ._core import StudyDispatcherError, ViewerInfo, validate_requested_viewer
-from ._models import ServiceInfo
+from ._core import validate_requested_viewer
+from ._exceptions import StudyDispatcherError
+from ._models import ServiceInfo, ViewerInfo
 from ._projects import acquire_project_with_service, acquire_project_with_viewer
 from ._users import UserInfo, acquire_user, ensure_authentication
 
@@ -117,7 +118,7 @@ def compose_service_dispatcher_prefix_url(
     request: web.Request, service_key: str, service_version: str
 ) -> HttpUrl:
     params = ViewerQueryParams(
-        viewer_key=service_key, viewer_version=service_version  # type: ignore
+        viewer_key=service_key, viewer_version=service_version
     ).dict(exclude_none=True, exclude_unset=True)
     absolute_url = request.url.join(
         request.app.router["get_redirection_to_viewer"].url_for().with_query(**params)
@@ -188,7 +189,7 @@ async def get_redirection_to_viewer(request: web.Request):
     params = parse_request_query_parameters_as(RedirectionQueryParams, request)
 
     logger.debug("Requesting viewer %s", params)
-
+    user: UserInfo
     if params.file_type and params.download_link:
         # TODO: Cannot check file_size from HEAD
         # removed await params.check_download_link()
@@ -203,9 +204,7 @@ async def get_redirection_to_viewer(request: web.Request):
         logger.debug("Validated viewer %s", viewer)
 
         # Retrieve user or create a temporary guest
-        user: UserInfo = await acquire_user(
-            request, is_guest_allowed=viewer.is_guest_allowed
-        )
+        user = await acquire_user(request, is_guest_allowed=viewer.is_guest_allowed)
         logger.debug("User acquired %s", user)
 
         # Generate one project per user + download_link + viewer
@@ -242,17 +241,15 @@ async def get_redirection_to_viewer(request: web.Request):
         logger.debug("Validated service %s", valid_service)
 
         # Retrieve user or create a temporary guest
-        user: UserInfo = await acquire_user(
-            request, is_guest_allowed=valid_service.is_public
-        )
+        user = await acquire_user(request, is_guest_allowed=valid_service.is_public)
         logger.debug("User acquired %s", user)
 
         project_id, viewer_id = await acquire_project_with_service(
             request.app,
             user,
             service_info=ServiceInfo(
-                key=valid_service.key,  # type: ignore
-                version=valid_service.version,  # type: ignore
+                key=valid_service.key,
+                version=valid_service.version,
                 label=valid_service.title,
             ),
             product_name=get_product_name(request),
