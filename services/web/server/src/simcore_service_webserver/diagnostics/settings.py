@@ -1,6 +1,3 @@
-# pylint: disable=no-self-use
-# pylint: disable=no-self-argument
-
 from aiohttp.web import Application
 from pydantic import Field, NonNegativeFloat, PositiveFloat, validator
 from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
@@ -8,7 +5,6 @@ from settings_library.base import BaseCustomSettings
 
 
 class DiagnosticsSettings(BaseCustomSettings):
-
     DIAGNOSTICS_SLOW_DURATION_SECS: PositiveFloat = Field(
         1.0,
         description=(

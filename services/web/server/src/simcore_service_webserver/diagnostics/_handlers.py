@@ -4,20 +4,20 @@
 import asyncio
 import logging
 from contextlib import suppress
-from typing import Any, Dict
+from typing import Any
 
 from aiohttp import ClientError, ClientSession, web
 from models_library.app_diagnostics import AppStatusCheck
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.utils import logged_gather
 
-from . import catalog_client, db, director_v2_api, storage_api
-from ._meta import API_VERSION, APP_NAME, api_version_prefix
-from .login.decorators import login_required
-from .security_decorators import permission_required
-from .utils import get_task_info, get_tracemalloc_info
+from .. import catalog_client, db, director_v2_api, storage_api
+from .._meta import API_VERSION, APP_NAME, api_version_prefix
+from ..login.decorators import login_required
+from ..security_decorators import permission_required
+from ..utils import get_task_info, get_tracemalloc_info
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 routes = web.RouteTableDef()
 
@@ -31,7 +31,7 @@ async def get_app_diagnostics(request: web.Request):
         /v0/status/diagnostics?top_tracemalloc=10 with display top 10 files allocating the most memory
     """
     # tasks in loop
-    data: Dict[str, Any] = {
+    data: dict[str, Any] = {
         "loop_tasks": [get_task_info(task) for task in asyncio.all_tasks()]
     }
 
@@ -58,7 +58,7 @@ async def get_app_status(request: web.Request):
 
     def _get_client_session_info():
         client: ClientSession = get_client_session(request.app)
-        info: Dict[str, Any] = {"instance": str(client)}
+        info: dict[str, Any] = {"instance": str(client)}
 
         if not client.closed:
             info.update(
@@ -111,7 +111,7 @@ async def get_app_status(request: web.Request):
         _check_storage(),
         _check_director2(),
         _check_catalog(),
-        log=log,
+        log=_logger,
         reraise=False,
     )
 
