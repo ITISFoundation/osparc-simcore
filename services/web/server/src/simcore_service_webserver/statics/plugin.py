@@ -13,9 +13,9 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 
 from .._constants import INDEX_RESOURCE_NAME
 from ..products.plugin import setup_products
-from ..statics_events import create_cached_indexes, create_statics_json
-from ..statics_handlers import get_cached_frontend_index, get_statics_json
-from ..statics_settings import StaticWebserverModuleSettings, get_plugin_settings
+from ._events import create_cached_indexes, create_statics_json
+from ._handlers import get_cached_frontend_index, get_statics_json
+from .settings import StaticWebserverModuleSettings, get_plugin_settings
 
 log = logging.getLogger(__name__)
 

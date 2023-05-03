@@ -9,7 +9,7 @@ from models_library.utils.change_case import snake_to_camel
 from pydantic import AnyHttpUrl, Field
 from settings_library.base import BaseCustomSettings
 
-from ._constants import APP_SETTINGS_KEY
+from .._constants import APP_SETTINGS_KEY
 
 THIRD_PARTY_REFERENCES = [
     dict(

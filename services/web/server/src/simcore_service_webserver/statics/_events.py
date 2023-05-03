@@ -13,14 +13,14 @@ from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 from yarl import URL
 
-from ._constants import APP_SETTINGS_KEY
-from .products.plugin import APP_PRODUCTS_KEY, Product
-from .statics_constants import (
+from .._constants import APP_SETTINGS_KEY
+from ..products.plugin import APP_PRODUCTS_KEY, Product
+from ._constants import (
     APP_FRONTEND_CACHED_INDEXES_KEY,
     APP_FRONTEND_CACHED_STATICS_JSON_KEY,
     FRONTEND_APPS_AVAILABLE,
 )
-from .statics_settings import (
+from .settings import (
     FrontEndAppSettings,
     StaticWebserverModuleSettings,
     get_plugin_settings,

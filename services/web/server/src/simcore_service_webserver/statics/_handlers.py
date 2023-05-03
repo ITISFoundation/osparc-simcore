@@ -2,8 +2,8 @@ import logging
 
 from aiohttp import web
 
-from .products.plugin import get_product_name
-from .statics_constants import (
+from ..products.plugin import get_product_name
+from ._constants import (
     APP_FRONTEND_CACHED_INDEXES_KEY,
     APP_FRONTEND_CACHED_STATICS_JSON_KEY,
     FRONTEND_APPS_AVAILABLE,
