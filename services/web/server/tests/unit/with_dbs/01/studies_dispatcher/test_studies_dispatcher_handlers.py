@@ -334,7 +334,7 @@ async def assert_redirected_to_study(
 @pytest.fixture(params=["service_and_file", "service_only", "file_only"])
 def redirect_url(request: FixtureRequest, client: TestClient) -> URL:
     assert client.app
-    query = None
+    query: dict[str, Any] = {}
     if request.param == "service_and_file":
         query = dict(
             file_name="users.csv",
@@ -342,7 +342,7 @@ def redirect_url(request: FixtureRequest, client: TestClient) -> URL:
             file_type="CSV",
             viewer_key="simcore/services/dynamic/raw-graphs",
             viewer_version="2.11.1",
-            download_link=urllib.parse.quote(
+            download_link=URL(
                 "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/8987c95d0ca0090e14f3a5b52db724fa24114cf5/services/storage/tests/data/users.csv"
             ),
         )
@@ -356,13 +356,16 @@ def redirect_url(request: FixtureRequest, client: TestClient) -> URL:
             file_name="users.csv",
             file_size=parse_obj_as(ByteSize, "1MiB"),
             file_type="CSV",
-            download_link=urllib.parse.quote(
+            download_link=URL(
                 "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/8987c95d0ca0090e14f3a5b52db724fa24114cf5/services/storage/tests/data/users.csv"
             ),
         )
 
-    query: dict[str, str] = {k: f"{v}" for k, v in query.items()}
-    url = client.app.router["get_redirection_to_viewer"].url_for().with_query(query)
+    url = (
+        client.app.router["get_redirection_to_viewer"]
+        .url_for()
+        .with_query({k: f"{v}" for k, v in query.items()})
+    )
     return url
 
 
