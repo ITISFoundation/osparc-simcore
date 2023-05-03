@@ -1,6 +1,6 @@
 # See https://pre-commit.com/hooks.html for more hooks
 exclude: "^.venv$|^.cache$|^.pytest_cache$"
-fail_fast: true
+fail_fast: false
 default_language_version:
   python: python3.10
 repos:
