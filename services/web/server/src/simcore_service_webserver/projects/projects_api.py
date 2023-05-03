@@ -15,7 +15,7 @@ import logging
 from collections import defaultdict
 from contextlib import suppress
 from pprint import pformat
-from typing import Any
+from typing import Any, cast
 from uuid import UUID, uuid4
 
 from aiohttp import web
@@ -61,17 +61,13 @@ from ..socketio.events import (
     send_group_messages,
     send_messages,
 )
-from ..users_api import UserRole, get_user_name, get_user_role
+from ..users_api import UserNameDict, UserRole, get_user_name, get_user_role
 from ..users_exceptions import UserNotFoundError
 from . import _delete_utils, _nodes_utils
-from .project_lock import (
-    UserNameDict,
-    get_project_locked_state,
-    is_project_locked,
-    lock_project,
-)
+from .project_lock import get_project_locked_state, is_project_locked, lock_project
 from .project_models import ProjectDict
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
+from .projects_db_utils import PermissionStr
 from .projects_exceptions import (
     NodeNotFoundError,
     ProjectLockError,
@@ -115,7 +111,7 @@ async def get_project_for_user(
     project, project_type = await db.get_project(
         user_id,
         project_uuid,
-        check_permissions=check_permissions,
+        check_permissions=cast(PermissionStr, check_permissions),
     )
 
     # adds state if it is not a template
@@ -894,7 +890,8 @@ async def is_service_deprecated(
     )
     if deprecation_date := service.get("deprecated"):
         deprecation_date = parse_obj_as(datetime.datetime, deprecation_date)
-        return datetime.datetime.utcnow() > deprecation_date
+        deprecation_date_bool: bool = datetime.datetime.utcnow() > deprecation_date
+        return deprecation_date_bool
     return False
 
 

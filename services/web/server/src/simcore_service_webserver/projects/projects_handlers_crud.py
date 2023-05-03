@@ -33,9 +33,9 @@ from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
 from .. import catalog, director_v2_api
-from .._constants import RQ_PRODUCT_KEY
+from .._constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
 from .._meta import api_version_prefix as VTAG
-from ..login.decorators import RQT_USERID_KEY, login_required
+from ..login.decorators import login_required
 from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
 from ..security_api import check_permission
 from ..security_decorators import permission_required
@@ -76,8 +76,8 @@ routes = web.RouteTableDef()
 
 
 class RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore
+    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore
 
 
 class ProjectPathParams(BaseModel):

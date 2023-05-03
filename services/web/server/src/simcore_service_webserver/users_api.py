@@ -6,7 +6,7 @@
 
 import logging
 from collections import deque
-from typing import Any, Optional, TypedDict
+from typing import Any, TypedDict
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -154,7 +154,7 @@ async def get_user_role(app: web.Application, user_id: UserID) -> UserRole:
 
     engine: Engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
-        user_role: Optional[RowProxy] = await conn.scalar(
+        user_role: RowProxy | None = await conn.scalar(
             sa.select([users.c.role]).where(users.c.id == user_id)
         )
         if user_role is None:
@@ -323,3 +323,6 @@ async def delete_token(app: web.Application, user_id: int, service_id: str) -> N
                 and_(tokens.c.user_id == user_id, tokens.c.token_service == service_id)
             )
         )
+
+
+__all__: tuple[str, ...] = ("UserRole",)

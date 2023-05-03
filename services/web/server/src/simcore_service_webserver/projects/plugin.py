@@ -84,3 +84,6 @@ def setup_projects(app: web.Application) -> bool:
     # app.router.add_routes( _create_routes("node", specs, nodes_handlers) )
 
     return True
+
+
+__all__: tuple[str, ...] = ("setup_projects_db",)

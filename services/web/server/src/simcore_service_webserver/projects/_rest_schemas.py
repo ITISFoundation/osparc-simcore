@@ -111,8 +111,6 @@ class ProjectReplace(InputSchema):
 class ProjectUpdate(InputSchema):
     name: str = NOT_REQUIRED
     description: str = NOT_REQUIRED
-    name: str = NOT_REQUIRED
-    description: str = NOT_REQUIRED
     thumbnail: HttpUrlWithCustomMinLength = NOT_REQUIRED
     workbench: NodesDict = NOT_REQUIRED
     access_rights: dict[GroupIDStr, AccessRights] = NOT_REQUIRED

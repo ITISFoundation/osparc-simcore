@@ -76,14 +76,16 @@ class ProjectDBAPI(BaseProjectDB):
 
     @classmethod
     def get_from_app_context(cls, app: web.Application) -> "ProjectDBAPI":
-        return app[APP_PROJECT_DBAPI]
+        app_project_dbapi: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+        return app_project_dbapi
 
     @classmethod
     def set_once_in_app_context(cls, app: web.Application) -> "ProjectDBAPI":
         if app.get(APP_PROJECT_DBAPI) is None:
             db = ProjectDBAPI(app)
             app[APP_PROJECT_DBAPI] = db
-        return app[APP_PROJECT_DBAPI]
+        app_project_dbapi: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+        return app_project_dbapi
 
     @property
     def engine(self) -> Engine:
@@ -315,7 +317,7 @@ class ProjectDBAPI(BaseProjectDB):
 
             prjs, prj_types = await self._execute_with_permission_check(
                 conn,
-                select_projects_query=query.offset(offset).limit(limit),
+                select_projects_query=f"{query.offset(offset).limit(limit)}",
                 user_id=user_id,
                 user_groups=user_groups,
                 filter_by_services=filter_by_services,
@@ -328,7 +330,7 @@ class ProjectDBAPI(BaseProjectDB):
             )
 
     async def list_projects_uuids(self, user_id: int) -> list[str]:
-        result = deque()
+        result: deque = deque()
         async with self.engine.acquire() as conn:
             async for row in conn.execute(
                 sa.select([projects.c.uuid]).where(projects.c.prj_owner == user_id)
@@ -486,7 +488,8 @@ class ProjectDBAPI(BaseProjectDB):
                 .values(**updated_values)
                 .where(projects.c.uuid == project_uuid)
             )
-            return result.rowcount == 1
+            result_row_count: bool = result.rowcount == 1
+            return result_row_count
 
     async def update_project_last_change_timestamp(self, project_uuid: ProjectIDStr):
         async with self.engine.acquire() as conn:
@@ -666,7 +669,7 @@ class ProjectDBAPI(BaseProjectDB):
                 .select_from(projects)
                 .where(projects.c.uuid == f"{project_uuid}")
             ):
-                result.update(row.as_tuple())  # type: ignore
+                result.update(row.as_tuple())
         return result
 
     #

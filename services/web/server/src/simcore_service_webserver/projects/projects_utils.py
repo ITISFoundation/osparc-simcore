@@ -1,7 +1,7 @@
 import logging
 import re
 from copy import deepcopy
-from typing import Any, AnyStr, Match, Optional, TypedDict, Union
+from typing import Any, Match, TypedDict, cast
 from uuid import UUID, uuid1, uuid5
 
 from models_library.projects_nodes_io import NodeIDStr
@@ -25,8 +25,8 @@ SUPPORTED_FRONTEND_KEYS: set[ServiceKey] = {
 
 
 class NodeDict(TypedDict, total=False):
-    key: Optional[ServiceKey]
-    outputs: Optional[dict[str, Any]]
+    key: ServiceKey | None
+    outputs: dict[str, Any] | None
 
 
 NodesMap = dict[NodeIDStr, NodeIDStr]
@@ -35,7 +35,7 @@ NodesMap = dict[NodeIDStr, NodeIDStr]
 def clone_project_document(
     project: ProjectDict,
     *,
-    forced_copy_project_id: Optional[UUID] = None,
+    forced_copy_project_id: UUID | None = None,
     clean_output_data: bool = False,
 ) -> tuple[ProjectDict, NodesMap]:
     project_copy = deepcopy(project)
@@ -63,12 +63,12 @@ def clone_project_document(
 
     project_map = {project["uuid"]: project_copy["uuid"]}
 
-    def _replace_uuids(node: Union[str, list, dict]) -> Union[str, list, dict]:
+    def _replace_uuids(node: str | list | dict) -> str | list | dict:
         if isinstance(node, str):
             # NOTE: for datasets we get something like project_uuid/node_uuid/file_id
             if "/" in node:
                 parts = node.split("/")
-                node = "/".join(_replace_uuids(part) for part in parts)
+                node = "/".join(cast(str, _replace_uuids(part)) for part in parts)
             else:
                 node = project_map.get(node, nodes_map.get(NodeIDStr(node), node))
         elif isinstance(node, list):
@@ -124,7 +124,7 @@ def substitute_parameterized_inputs(
         except ValueError:
             return s
 
-    def _get_param_input_match(name, value, access) -> Optional[Match[AnyStr]]:
+    def _get_param_input_match(name, value, access) -> Match[str] | None:
         if (
             isinstance(value, str)
             and access.get(name, "ReadAndWrite") == "ReadAndWrite"

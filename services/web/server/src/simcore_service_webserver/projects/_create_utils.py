@@ -184,7 +184,7 @@ async def create_project(
 
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
 
-    new_project = {}
+    new_project: dict = {}
     copy_file_coro = None
     try:
         task_progress.update(message="creating new study...")
