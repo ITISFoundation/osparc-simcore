@@ -6,7 +6,7 @@ from typing import Any
 
 from aiohttp import web
 from models_library.utils.change_case import snake_to_camel
-from pydantic import AnyHttpUrl, Field
+from pydantic import AnyHttpUrl, Field, parse_obj_as
 from settings_library.base import BaseCustomSettings
 
 from .._constants import APP_SETTINGS_KEY
@@ -97,7 +97,7 @@ class StaticWebserverModuleSettings(BaseCustomSettings):
 
     # TODO: host/port
     STATIC_WEBSERVER_URL: AnyHttpUrl = Field(
-        "http://static-webserver:8000",  # NOSONAR
+        default=parse_obj_as(AnyHttpUrl, "http://static-webserver:8000"),  # NOSONAR
         description="url fort static content",
         env=[
             "STATIC_WEBSERVER_URL",
