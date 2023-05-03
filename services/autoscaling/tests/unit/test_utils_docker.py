@@ -815,6 +815,33 @@ async def test_tag_node(
     assert updated_node.Spec.Labels == {}
 
 
+async def test_tag_node_out_of_sequence_error(
+    autoscaling_docker: AutoscalingDocker, host_node: Node, faker: Faker
+):
+    assert host_node.Description
+    assert host_node.Description.Hostname
+    tags = faker.pydict(allowed_types=(str,))
+    # this works
+    updated_node = await tag_node(
+        autoscaling_docker, host_node, tags=tags, available=False
+    )
+    assert updated_node
+    assert host_node.Version
+    assert host_node.Version.Index
+    assert updated_node.Version
+    assert updated_node.Version.Index
+    assert host_node.Version.Index < updated_node.Version.Index
+
+    # running the same call with the old node should not raise an out of sequence error
+    updated_node2 = await tag_node(
+        autoscaling_docker, host_node, tags=tags, available=True
+    )
+    assert updated_node2
+    assert updated_node2.Version
+    assert updated_node2.Version.Index
+    assert updated_node2.Version.Index > updated_node.Version.Index
+
+
 @pytest.mark.parametrize(
     "images, expected_cmd",
     [

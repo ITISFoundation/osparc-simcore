@@ -139,7 +139,7 @@ MONITORING_ENABLED: bool = strtobool(os.environ.get("MONITORING_ENABLED", "False
 # tracing
 TRACING_ENABLED: bool = strtobool(os.environ.get("TRACING_ENABLED", "True"))
 TRACING_ZIPKIN_ENDPOINT: str = os.environ.get(
-    "TRACING_ZIPKIN_ENDPOINT", "http://jaeger:9411"
+    "TRACING_ZIPKIN_ENDPOINT", "http://jaeger:9411" # NOSONAR
 )
 
 # resources: not taken from servicelib.resources since the director uses a fixed hash of that library

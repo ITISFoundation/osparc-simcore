@@ -9,7 +9,7 @@ from pathlib import Path
 from random import randbytes, shuffle
 from shutil import move, rmtree
 from threading import Thread
-from typing import AsyncIterable, AsyncIterator, Awaitable, Final, Iterator, Optional
+from typing import AsyncIterable, AsyncIterator, Awaitable, Final, Iterator
 from unittest.mock import AsyncMock
 
 import aiofiles
@@ -150,7 +150,7 @@ def mock_long_running_upload_outputs(mocker: MockerFixture) -> Iterator[AsyncMoc
 
     yield mocker.patch(
         "simcore_service_dynamic_sidecar.modules.outputs._manager.upload_outputs",
-        sire_effect=mock_upload_outputs,
+        side_effect=mock_upload_outputs,
     )
 
 
@@ -258,9 +258,7 @@ async def random_events_in_path(
         await awaitable
 
 
-async def _generate_event_burst(
-    tmp_path: Path, subfolder: Optional[str] = None
-) -> None:
+async def _generate_event_burst(tmp_path: Path, subfolder: str | None = None) -> None:
     def _worker():
         full_dir_path = tmp_path if subfolder is None else tmp_path / subfolder
         full_dir_path.mkdir(parents=True, exist_ok=True)
@@ -333,7 +331,9 @@ async def test_does_not_trigger_on_attribute_change(
     assert mock_event_filter_upload_trigger.call_count == 1
 
 
-@pytest.mark.flaky(max_runs=3)
+# This test was marked as flaky and DK reworked the sleeps/timeouts necessary here in Apr2023
+# If flakyness persists on github actions, please consider adding it to the flaky tests again
+# To mitigate temporarily, add `@pytest.mark.flaky(max_runs=3)`
 async def test_port_key_sequential_event_generation(
     mock_long_running_upload_outputs: AsyncMock,
     mounted_volumes: MountedVolumes,
@@ -359,9 +359,11 @@ async def test_port_key_sequential_event_generation(
             )
         )
 
-    # Waiting for events o finish propagation and changes to be uploaded
+    # Waiting for events to finish propagation and changes to be uploaded
     MARGIN_FOR_ALL_EVENT_PROCESSORS_TO_TRIGGER = 1
-    sleep_for = max(wait_interval_for_port) + MARGIN_FOR_ALL_EVENT_PROCESSORS_TO_TRIGGER
+    sleep_for = max(
+        max(wait_interval_for_port) + MARGIN_FOR_ALL_EVENT_PROCESSORS_TO_TRIGGER, 3
+    )
     print(f"Waiting {sleep_for} seconds for events to be processed")
     await asyncio.sleep(sleep_for)
 
