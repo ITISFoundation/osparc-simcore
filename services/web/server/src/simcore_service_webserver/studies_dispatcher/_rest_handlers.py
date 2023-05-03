@@ -3,12 +3,11 @@
 """
 import logging
 from dataclasses import asdict
-from typing import cast
 
 from aiohttp import web
 from aiohttp.web import Request
 from models_library.services import ServiceKey
-from pydantic import BaseModel, Field, ValidationError, validator
+from pydantic import BaseModel, Field, ValidationError, parse_obj_as, validator
 from pydantic.networks import HttpUrl
 
 from .._meta import API_VTAG
@@ -35,7 +34,7 @@ def _compose_file_and_service_dispatcher_prefix_url(
     absolute_url = request.url.join(
         request.app.router["get_redirection_to_viewer"].url_for().with_query(**params)
     )
-    return cast(HttpUrl, f"{absolute_url}")
+    return parse_obj_as(HttpUrl, f"{absolute_url}")
 
 
 def _compose_service_only_dispatcher_prefix_url(
@@ -47,7 +46,7 @@ def _compose_service_only_dispatcher_prefix_url(
     absolute_url = request.url.join(
         request.app.router["get_redirection_to_viewer"].url_for().with_query(**params)
     )
-    return cast(HttpUrl, f"{absolute_url}")
+    return parse_obj_as(HttpUrl, f"{absolute_url}")
 
 
 #
