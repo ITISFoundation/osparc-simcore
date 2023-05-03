@@ -1,5 +1,6 @@
 import logging
 import uuid
+from typing import cast
 
 from aiopg.sa.result import RowProxy
 from models_library.services import ServiceKey, ServiceVersion
@@ -19,7 +20,7 @@ class ServiceInfo(BaseModel):
     label: str = Field(..., description="Display name")
 
     thumbnail: HttpUrl = Field(
-        default=HttpUrl("https://via.placeholder.com/170x120.png")
+        default=cast(HttpUrl, "https://via.placeholder.com/170x120.png")
     )
 
     is_guest_allowed: bool = True

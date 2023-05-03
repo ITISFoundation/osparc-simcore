@@ -1,4 +1,5 @@
 from datetime import timedelta
+from typing import cast
 
 from aiohttp import web
 from pydantic import HttpUrl, validator
@@ -21,7 +22,7 @@ class StudiesDispatcherSettings(BaseCustomSettings):
     )
 
     STUDIES_DEFAULT_SERVICE_THUMBNAIL: HttpUrl = Field(
-        default=HttpUrl("https://via.placeholder.com/170x120.png"),
+        default=cast(HttpUrl, "https://via.placeholder.com/170x120.png"),
         description="Default servcie thumbnails in the service response",
     )
 
