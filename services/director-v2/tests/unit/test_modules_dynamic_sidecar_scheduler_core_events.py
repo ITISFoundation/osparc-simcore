@@ -2,7 +2,8 @@
 # pylint:disable=unused-argument
 
 import asyncio
-from typing import Final
+import logging
+from typing import Final, Iterable
 
 import pytest
 from fastapi import FastAPI
@@ -11,6 +12,7 @@ from pytest import LogCaptureFixture, MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
+from servicelib.exception_utils import _SKIPS_MESSAGE
 from simcore_service_director_v2.models.schemas.dynamic_services import SchedulerData
 from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
     ContainerState,
@@ -89,30 +91,37 @@ def scheduler_data(
     return scheduler_data
 
 
-_CHECK_LOG_EXCEPTION_IS_SKIPPED = "skip(s) of exception"
+@pytest.fixture()
+def caplog_debug(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
+    with caplog.at_level(
+        logging.DEBUG,
+    ):
+        yield caplog
 
 
 async def test_event_get_status_network_connectivity(
     mock_dynamic_sidecar_client_always_fail: None,
     minimal_app: FastAPI,
     scheduler_data: SchedulerData,
-    caplog_info_level: LogCaptureFixture,
+    caplog_debug: LogCaptureFixture,
 ):
+    caplog_debug.clear()
     with pytest.raises(BaseClientHTTPError):
         for _ in range(REPEAT_COUNT):
             await _events.GetStatus.action(minimal_app, scheduler_data)
             await asyncio.sleep(SLEEP_BETWEEN_CALLS)
 
-    assert caplog_info_level.text.count(_CHECK_LOG_EXCEPTION_IS_SKIPPED) > 1
+    assert caplog_debug.text.count(_SKIPS_MESSAGE) > 1
 
 
 async def test_event_get_status_recovers_after_error(
     mock_dynamic_sidecar_client_stops_failing: None,
     minimal_app: FastAPI,
     scheduler_data: SchedulerData,
-    caplog_info_level: LogCaptureFixture,
+    caplog_debug: LogCaptureFixture,
 ):
+    caplog_debug.clear()
     for _ in range(REPEAT_COUNT):
         await _events.GetStatus.action(minimal_app, scheduler_data)
         await asyncio.sleep(SLEEP_BETWEEN_CALLS)
-    assert caplog_info_level.text.count(_CHECK_LOG_EXCEPTION_IS_SKIPPED) >= 1
+    assert caplog_debug.text.count(_SKIPS_MESSAGE) >= 1

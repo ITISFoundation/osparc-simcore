@@ -1,6 +1,12 @@
+import logging
 from datetime import datetime
+from typing import Final
 
 from pydantic import BaseModel, Field, NonNegativeFloat, PrivateAttr
+
+_logger = logging.getLogger(__name__)
+
+_SKIPS_MESSAGE: Final[str] = "skip(s) of exception"
 
 
 class DelayedExceptionHandler(BaseModel):
@@ -52,6 +58,8 @@ class DelayedExceptionHandler(BaseModel):
             datetime.utcnow() - self._first_exception_skip
         ).total_seconds() > self.delay_for:
             raise exception
+
+        _logger.debug("%s %s: %s", self._failure_counter, _SKIPS_MESSAGE, exception)
 
     def else_reset(self) -> None:
         """error no longer occurs reset tracking"""
