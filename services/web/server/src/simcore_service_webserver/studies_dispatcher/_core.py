@@ -16,7 +16,6 @@ from ._errors import FileToLarge, IncompatibleService
 from ._models import ViewerInfo
 from .settings import get_plugin_settings
 
-_MEGABYTES = 1024 * 1024
 _BASE_UUID = uuid.UUID("ca2144da-eabb-4daf-a1df-a3682050e25f")
 
 
