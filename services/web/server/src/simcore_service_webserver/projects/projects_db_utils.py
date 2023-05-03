@@ -58,7 +58,7 @@ def check_project_permissions(
         return
 
     operations_on_project = set(permission.split("|"))
-    assert set(operations_on_project).issubset(set(PermissionStr.__args__))  # nosec
+    assert set(operations_on_project).issubset(set(PermissionStr.__args__))  # type: ignore # nosec
 
     #
     # Get primary_gid, standard_gids and everyone_gid for user_id
