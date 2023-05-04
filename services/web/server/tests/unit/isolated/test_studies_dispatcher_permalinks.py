@@ -12,11 +12,9 @@ from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_webserver.application import create_application
-from simcore_service_webserver.studies_dispatcher.permalinks import (
+from simcore_service_webserver.studies_dispatcher._projects_permalinks import (
     ProjectType,
-    _ProjectSelectionDict,
     create_permalink_for_study,
-    create_permalink_for_study_or_none,
 )
 
 
@@ -76,18 +74,14 @@ def test_create_permalink(
 
     fake_request = make_mocked_request("GET", "/project", app=app)
 
-    project_data: _ProjectSelectionDict = {
-        "uuid": faker.uuid4(),
-        "type": ProjectType.TEMPLATE,
-        "access_rights": {"1": {"read": True, "write": False, "delete": False}},
-        "published": False,
-    }
-
-    permalink1 = create_permalink_for_study(fake_request, project_data)
+    project_uuid = (faker.uuid4(),)
+    permalink1 = create_permalink_for_study(
+        fake_request,
+        project_uuid=project_uuid,
+        project_type=ProjectType.TEMPLATE,
+        project_access_rights={"1": {"read": True, "write": False, "delete": False}},
+        project_is_public=False,
+    )
 
     assert not permalink1.is_public
-    assert permalink1.url.path.endswith(project_data["uuid"])
-
-    permalink2 = create_permalink_for_study_or_none(fake_request, project_data)
-
-    assert permalink1 == permalink2
+    assert permalink1.url.path.endswith(project_uuid)
