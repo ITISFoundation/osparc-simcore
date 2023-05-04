@@ -151,11 +151,11 @@ async def create_project(request: web.Request):
 
     return await start_long_running_task(
         request,
-        task=_create_utils.create_project,
+        _create_utils.create_project,
         fire_and_forget=True,
         task_context=jsonable_encoder(req_ctx),
         # arguments
-        app=request.app,
+        request=request,
         new_project_was_hidden_before_data_was_copied=query_params.hidden,
         from_study=query_params.from_study,
         as_template=query_params.as_template,
@@ -300,7 +300,7 @@ async def get_active_project(request: web.Request) -> web.Response:
 
             # Adds permalink
             project["permalink"] = await create_permalink(
-                request.app, project_id=project["uuid"]
+                request, project_id=project["uuid"]
             )
 
             data = ProjectGet.parse_obj(project).data(exclude_unset=True)
@@ -357,6 +357,11 @@ async def get_project(request: web.Request):
 
         if new_uuid := request.get(RQ_REQUESTED_REPO_PROJECT_UUID_KEY):
             project["uuid"] = new_uuid
+
+        # Adds permalink
+        project["permalink"] = await create_permalink(
+            request, project_id=project["uuid"]
+        )
 
         data = ProjectGet.parse_obj(project).data(exclude_unset=True)
         return web.json_response({"data": data}, dumps=json_dumps)

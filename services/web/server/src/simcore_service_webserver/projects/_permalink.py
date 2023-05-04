@@ -13,11 +13,12 @@ class ProjectPermalink(BaseModel):
 
 
 _CreateLinkCallable = Callable[
-    [web.Application, ProjectID], Coroutine[Any, Any, ProjectPermalink]
+    [web.Request, ProjectID], Coroutine[Any, Any, ProjectPermalink]
 ]
 
 
 def register_factory(app: web.Application, factory_coro: _CreateLinkCallable):
+    # FIXME: only once!
     app[_PROJECT_PERMALINK] = factory_coro
 
 
@@ -26,11 +27,11 @@ def _get_factory(app: web.Application) -> _CreateLinkCallable | None:
 
 
 async def create_permalink(
-    app: web.Application, project_id: ProjectID
+    request: web.Request, project_id: ProjectID
 ) -> ProjectPermalink | None:
-    if factory := _get_factory(app):
+    if create := _get_factory(request.app):
         # TODO: timeout
         # TODO: raised exceptions?
-        permalink_info: ProjectPermalink = await factory(app, project_id)
+        permalink_info: ProjectPermalink = await create(request, project_id)
         return permalink_info
     return None

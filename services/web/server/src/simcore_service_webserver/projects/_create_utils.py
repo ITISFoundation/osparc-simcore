@@ -152,7 +152,7 @@ async def _compose_project_data(
 
 async def create_project(
     task_progress: TaskProgress,
-    app: web.Application,
+    request: web.Request,
     new_project_was_hidden_before_data_was_copied: bool,
     from_study: ProjectID | None,
     as_template: bool,
@@ -182,8 +182,9 @@ async def create_project(
         web.HTTPUnauthorized:
 
     """
+    assert request.app  # nosec
 
-    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
+    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
 
     new_project = {}
     copy_file_coro = None
@@ -192,7 +193,7 @@ async def create_project(
         if from_study:
             # 1. prepare copy
             new_project, copy_file_coro = await _prepare_project_copy(
-                app,
+                request.app,
                 user_id=user_id,
                 src_project_uuid=from_study,
                 as_template=as_template,
@@ -239,12 +240,12 @@ async def create_project(
             user_id=user_id,
             project=new_project,
             is_template=as_template,
-            app=app,
+            app=request.app,
         )
 
         # Adds permalink
         new_project["permalink"] = await create_permalink(
-            app, project_id=new_project["uuid"]
+            request, project_id=new_project["uuid"]
         )
 
         # Ensures is like ProjectGet
