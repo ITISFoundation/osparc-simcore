@@ -6,7 +6,7 @@ import asyncio
 import logging
 import os
 import socket
-from typing import Any, AsyncIterator, Optional
+from typing import Any, AsyncIterator, Callable
 
 import aio_pika
 import pytest
@@ -19,13 +19,13 @@ from tenacity.wait import wait_fixed
 
 from .helpers.utils_docker import get_localhost_ip, get_service_published_port
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @tenacity.retry(
     wait=wait_fixed(5),
     stop=stop_after_attempt(60),
-    before_sleep=before_sleep_log(log, logging.INFO),
+    before_sleep=before_sleep_log(_logger, logging.INFO),
     reraise=True,
 )
 async def wait_till_rabbit_responsive(url: str) -> None:
@@ -81,7 +81,7 @@ async def rabbit_connection(
     def _reconnect_callback():
         pytest.fail("rabbit reconnected")
 
-    def _connection_close_callback(sender: Any, exc: Optional[BaseException] = None):
+    def _connection_close_callback(sender: Any, exc: BaseException | None = None):
         if exc and not isinstance(exc, asyncio.CancelledError):
             pytest.fail(f"rabbit connection closed with exception {exc} from {sender}!")
         print("<-- connection closed")
@@ -108,7 +108,7 @@ async def rabbit_connection(
 async def rabbit_channel(
     rabbit_connection: aio_pika.abc.AbstractConnection,
 ) -> AsyncIterator[aio_pika.abc.AbstractChannel]:
-    def _channel_close_callback(sender: Any, exc: Optional[BaseException] = None):
+    def _channel_close_callback(sender: Any, exc: BaseException | None = None):
         if exc and not isinstance(exc, asyncio.CancelledError):
             pytest.fail(f"rabbit channel closed with exception {exc} from {sender}!")
         print("<-- rabbit channel closed")
@@ -122,10 +122,26 @@ async def rabbit_channel(
 
 
 @pytest.fixture
-async def rabbit_client(
-    rabbit_settings: RabbitSettings,
-) -> AsyncIterator[RabbitMQClient]:
-    client = RabbitMQClient("pytest", settings=rabbit_settings)
-    assert client
-    yield client
-    await client.close()
+async def rabbitmq_client(
+    rabbit_service: RabbitSettings,
+) -> AsyncIterator[Callable[[str], RabbitMQClient]]:
+    created_clients = []
+
+    def _creator(client_name: str) -> RabbitMQClient:
+        client = RabbitMQClient(f"pytest_{client_name}", rabbit_service)
+        assert client
+        assert client._connection_pool  # pylint: disable=protected-access
+        assert not client._connection_pool.is_closed  # pylint: disable=protected-access
+        assert client._channel_pool  # pylint: disable=protected-access
+        assert not client._channel_pool.is_closed  # pylint: disable=protected-access
+        assert client.client_name == f"pytest_{client_name}"
+        assert client.settings == rabbit_service
+        created_clients.append(client)
+        return client
+
+    yield _creator
+    # cleanup, properly close the clients
+    await asyncio.gather(*(client.close() for client in created_clients))
+    for client in created_clients:
+        assert client._channel_pool  # pylint: disable=protected-access
+        assert client._channel_pool.is_closed  # pylint: disable=protected-access
