@@ -42,6 +42,7 @@ from ..security.api import check_permission
 from ..security.decorators import permission_required
 from ..users_api import get_user_name
 from . import _create_utils, projects_api
+from ._permalink import create_permalink
 from ._rest_schemas import (
     EmptyModel,
     ProjectCopyOverride,
@@ -296,6 +297,12 @@ async def get_active_project(request: web.Request) -> web.Response:
                 user_id=req_ctx.user_id,
                 include_state=True,
             )
+
+            # Adds permalink
+            project["permalink"] = await create_permalink(
+                request.app, project_id=project["uuid"]
+            )
+
             data = ProjectGet.parse_obj(project).data(exclude_unset=True)
 
         return web.json_response({"data": data}, dumps=json_dumps)
