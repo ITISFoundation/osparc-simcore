@@ -40,11 +40,11 @@ async function runTutorial () {
     await utils.takeScreenshot(page, screenshotPrefix + 'service_started');
 
     // wait for iframe to be ready
-    const voilaTimeout = 240000;
-    const checkFrequency = 5000;
+    const sarTimeout = 30000;
+    const checkFrequency = 3000;
     // wait for iframe to be ready, it might take a while in Voila
     let iframe = null;
-    for (let i=0; i<voilaTimeout; i+=checkFrequency) {
+    for (let i=0; i<sarTimeout; i+=checkFrequency) {
       iframe = await this.getIframe(sarIdViewer);
       if (iframe) {
         break;
@@ -52,10 +52,9 @@ async function runTutorial () {
       await this.waitFor(checkFrequency, `iframe not ready yet: ${i/1000}s`);
     }
 
-    // createTrainingSetBtn
-    // exportTrainingSetBtn
-    // wait for iframe to be rendered
-    await tutorial.waitForSarValidationRendered(iframe);
+    // SAR Validation service testing
+    await tutorial.waitAndClick("createTrainingSetBtn", iframe);
+    await tutorial.waitAndClick("exportTrainingSetBtn", iframe);
   }
   catch(err) {
     await tutorial.setTutorialFailed(true, false);
