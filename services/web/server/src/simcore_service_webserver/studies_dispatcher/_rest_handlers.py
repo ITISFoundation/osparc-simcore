@@ -34,19 +34,21 @@ def _compose_file_and_service_dispatcher_prefix_url(
     absolute_url = request.url.join(
         request.app.router["get_redirection_to_viewer"].url_for().with_query(**params)
     )
-    return parse_obj_as(HttpUrl, f"{absolute_url}")
+    absolute_url_: HttpUrl = parse_obj_as(HttpUrl, f"{absolute_url}")
+    return absolute_url_
 
 
 def _compose_service_only_dispatcher_prefix_url(
     request: web.Request, service_key: str, service_version: str
 ) -> HttpUrl:
     params = ViewerQueryParams(
-        viewer_key=service_key, viewer_version=service_version  # type: ignore
+        viewer_key=service_key, viewer_version=service_version
     ).dict(exclude_none=True, exclude_unset=True)
     absolute_url = request.url.join(
         request.app.router["get_redirection_to_viewer"].url_for().with_query(**params)
     )
-    return parse_obj_as(HttpUrl, f"{absolute_url}")
+    absolute_url_: HttpUrl = parse_obj_as(HttpUrl, f"{absolute_url}")
+    return absolute_url_
 
 
 #

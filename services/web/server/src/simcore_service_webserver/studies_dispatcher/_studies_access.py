@@ -192,7 +192,7 @@ async def get_authorized_user(request: web.Request) -> dict:
 
     db: AsyncpgStorage = get_plugin_storage(request.app)
     userid = await authorized_userid(request)
-    user = await db.get_user({"id": userid})
+    user: dict = await db.get_user({"id": userid})
     return user
 
 
