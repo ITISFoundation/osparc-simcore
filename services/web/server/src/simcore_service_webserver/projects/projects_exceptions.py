@@ -1,5 +1,5 @@
 """Defines the different exceptions that may arise in the projects subpackage"""
-from typing import Any, Optional
+from typing import Any
 
 import redis.exceptions
 from models_library.projects import ProjectID
@@ -39,7 +39,7 @@ class ProjectOwnerNotFoundError(ProjectsException):
 class ProjectNotFoundError(ProjectsException):
     """Project was not found in DB"""
 
-    def __init__(self, project_uuid, *, search_context: Optional[Any] = None):
+    def __init__(self, project_uuid, *, search_context: Any | None = None):
         super().__init__(f"Project with uuid {project_uuid} not found.")
         self.project_uuid = project_uuid
         self.search_context_msg = f"{search_context}"
@@ -86,3 +86,7 @@ class ProjectTooManyProjectOpened(ProjectsException):
         super().__init__(
             f"You cannot open more than {max_num_projects} stud{'y' if max_num_projects == 1 else 'ies'} at once. Please close another study and retry."
         )
+
+
+class PermalinkNotAllowedError(ProjectsException):
+    ...
