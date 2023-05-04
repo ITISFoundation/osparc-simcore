@@ -272,7 +272,7 @@ async def create_project(
         )
         if project_uuid := new_project.get("uuid"):
             await projects_api.submit_delete_project_task(
-                app=app,
+                app=request.app,
                 project_uuid=project_uuid,
                 user_id=user_id,
                 simcore_user_agent=simcore_user_agent,
