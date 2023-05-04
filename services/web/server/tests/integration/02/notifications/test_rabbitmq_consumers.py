@@ -19,10 +19,12 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import (
+    EventRabbitMessage,
     InstrumentationRabbitMessage,
     LoggerRabbitMessage,
     ProgressRabbitMessageNode,
     ProgressType,
+    RabbitEventMessageType,
 )
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
@@ -48,9 +50,10 @@ from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
-from simcore_service_webserver.security import setup_security
+from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio.events import (
+    SOCKET_IO_EVENT,
     SOCKET_IO_LOG_EVENT,
     SOCKET_IO_NODE_PROGRESS_EVENT,
     SOCKET_IO_NODE_UPDATED_EVENT,
@@ -387,3 +390,50 @@ async def test_instrumentation_workflow(
             **rabbit_message.dict(include=set(included_labels)),
         ),
     )
+
+
+@pytest.mark.parametrize("user_role", [UserRole.GUEST], ids=str)
+@pytest.mark.parametrize(
+    "project_hidden", [False, True], ids=lambda id: f"ProjectHidden={id}"
+)
+async def test_event_workflow(
+    client: TestClient,
+    rabbitmq_publisher: RabbitMQClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    socketio_client_factory: Callable[
+        [str | None, TestClient | None], Awaitable[socketio.AsyncClient]
+    ],
+    mocker: MockerFixture,
+    project_hidden: bool,
+    aiopg_engine: aiopg.sa.Engine,
+):
+    """
+    RabbitMQ --> Webserver --> Redis --> webclient (socketio)
+
+    """
+    socket_io_conn = await socketio_client_factory(None, client)
+
+    if project_hidden:
+        async with aiopg_engine.acquire() as conn:
+            await conn.execute(
+                sa.update(projects)
+                .values(hidden=True)
+                .where(projects.c.uuid == user_project["uuid"])
+            )
+
+    mock_log_handler = mocker.MagicMock()
+    socket_io_conn.on(SOCKET_IO_EVENT, handler=mock_log_handler)
+
+    random_node_id_in_project = NodeID(choice(list(user_project["workbench"])))
+    rabbit_message = EventRabbitMessage(
+        user_id=UserID(logged_user["id"]),
+        project_id=ProjectID(user_project["uuid"]),
+        node_id=random_node_id_in_project,
+        action=RabbitEventMessageType.RELOAD_IFRAME,
+    )
+
+    await rabbitmq_publisher.publish(rabbit_message.channel_name, rabbit_message)
+
+    expected_call = jsonable_encoder(rabbit_message, include={"action", "node_id"})
+    await _assert_handler_called_with_json(mock_log_handler, expected_call)
