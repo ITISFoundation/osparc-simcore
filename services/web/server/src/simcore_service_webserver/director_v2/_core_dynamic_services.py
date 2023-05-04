@@ -16,6 +16,7 @@ from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
+from pydantic import BaseModel
 from pydantic.types import NonNegativeFloat, PositiveInt
 from servicelib.common_headers import (
     X_DYNAMIC_SIDECAR_REQUEST_DNS,
@@ -33,7 +34,12 @@ from ._core_base import DataType, request_director_v2
 from .exceptions import DirectorServiceError, ServiceWaitingForManualIntervention
 from .settings import DirectorV2Settings, get_plugin_settings
 
-log = logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
+
+
+class _Params(BaseModel):
+    user_id: PositiveInt | None = None
+    project_id: str | None = None
 
 
 async def list_dynamic_services(
@@ -41,14 +47,12 @@ async def list_dynamic_services(
     user_id: PositiveInt | None = None,
     project_id: str | None = None,
 ) -> list[DataType]:
-    params = {}
-    if user_id:
-        params["user_id"] = user_id
-    if project_id:
-        params["project_id"] = project_id  # type: ignore
+    params = _Params(user_id=user_id, project_id=project_id)
     settings: DirectorV2Settings = get_plugin_settings(app)
     if params:  # Update query doesnt work with no params to unwrap
-        backend_url = (settings.base_url / "dynamic_services").update_query(**params)
+        backend_url = (settings.base_url / "dynamic_services").update_query(
+            **params.dict(exclude_none=True)
+        )
     else:
         backend_url = settings.base_url / "dynamic_services"
 
@@ -223,7 +227,7 @@ async def stop_dynamic_services_in_project(
 
 
 # NOTE: ANE https://github.com/ITISFoundation/osparc-simcore/issues/3191
-@log_decorator(logger=log)
+@log_decorator(logger=_log)
 async def retrieve(
     app: web.Application, service_uuid: str, port_keys: list[str]
 ) -> DataType:
@@ -242,7 +246,7 @@ async def retrieve(
 
 # NOTE: ANE https://github.com/ITISFoundation/osparc-simcore/issues/3191
 # notice that this function is identical to retrieve except that it does NOT raises
-@log_decorator(logger=log)
+@log_decorator(logger=_log)
 async def request_retrieve_dyn_service(
     app: web.Application, service_uuid: str, port_keys: list[str]
 ) -> None:
@@ -258,7 +262,7 @@ async def request_retrieve_dyn_service(
             timeout=settings.get_service_retrieve_timeout(),
         )
     except DirectorServiceError as exc:
-        log.warning(
+        _log.warning(
             "Unable to call :retrieve endpoint on service %s, keys: [%s]: error: [%s:%s]",
             service_uuid,
             port_keys,
@@ -267,7 +271,7 @@ async def request_retrieve_dyn_service(
         )
 
 
-@log_decorator(logger=log)
+@log_decorator(logger=_log)
 async def restart_dynamic_service(app: web.Application, node_uuid: str) -> None:
     """User restart the dynamic dynamic service started in the node_uuid
 
@@ -285,7 +289,7 @@ async def restart_dynamic_service(app: web.Application, node_uuid: str) -> None:
     )
 
 
-@log_decorator(logger=log)
+@log_decorator(logger=_log)
 async def update_dynamic_service_networks_in_project(
     app: web.Application, project_id: ProjectID
 ) -> None:
