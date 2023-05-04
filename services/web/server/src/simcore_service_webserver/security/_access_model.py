@@ -2,42 +2,39 @@
 
 
    References:
-    https://blog.nodeswat.com/implement-access-control-in-node-js-8567e7b484d1
+    https://b_logger.nodeswat.com/implement-access-control-in-node-js-8567e7b484d1
 """
 
 import inspect
 import logging
 import re
-from typing import Any, Callable, Dict, List, Optional, Union
+from dataclasses import dataclass, field
+from typing import Any, Callable, Optional, TypeAlias
 
-import attr
+from ..db_models import UserRole
 
-from .db_models import UserRole
+_logger = logging.getLogger(__name__)
 
-log = logging.getLogger(__name__)
-
-ContextType = Optional[Dict[str, Any]]
+ContextType: TypeAlias = Optional[dict[str, Any]]
 
 
-@attr.s(auto_attribs=True)
-class RolePermissions:
+@dataclass
+class _RolePermissions:
     role: UserRole
-    allowed: List[str] = attr.Factory(list)  # named permissions allowed
-    check: Dict[str, Callable[[ContextType], bool]] = attr.Factory(
-        dict
-    )  # checked permissions: permissions with conditions
-    inherits: List[UserRole] = attr.Factory(list)
+    # named permissions allowed
+    allowed: list[str] = field(default_factory=list)
+    # checked permissions: permissions with conditions
+    check: dict[str, Callable[[ContextType], bool]] = field(default_factory=dict)
+    inherits: list[UserRole] = field(default_factory=list)
 
     @classmethod
-    def from_rawdata(cls, role: Union[str, UserRole], value: Dict) -> "RolePermissions":
+    def from_rawdata(cls, role: str | UserRole, value: dict) -> "_RolePermissions":
 
         if isinstance(role, str):
             name = role
             role = UserRole[name]
 
-        role_permission = cls(
-            role=role, allowed=[], check=[], inherits=value.get("inherits", [])
-        )
+        role_permission = cls(role=role, inherits=value.get("inherits", []))
 
         allowed = set()
         check = {}
@@ -64,31 +61,26 @@ class RoleBasedAccessModel:
 
     """
 
-    def __init__(self, roles: List[RolePermissions]):
-        self.roles: Dict[UserRole, RolePermissions] = {r.role: r for r in roles}
-
-    # TODO: all operations allowed for a given role
-    # TODO: build a tree out of the list of allowed operations
-    # TODO: operations to ADD/REMOVE/EDIT permissions in a role
+    def __init__(self, roles: list[_RolePermissions]):
+        self.roles: dict[UserRole, _RolePermissions] = {r.role: r for r in roles}
 
     async def can(
         self, role: UserRole, operation: str, context: ContextType = None
     ) -> bool:
         # pylint: disable=too-many-return-statements
 
-        # undefined operation  TODO: check if such a name is defined??
+        # undefined operation
         if not operation:
-            log.debug("Checking undefined operation %s in access model", operation)
+            _logger.debug("Checking undefined operation %s in access model", operation)
             return False
 
         # undefined role
-        role_access = self.roles.get(role, False)
+        role_access = self.roles.get(role, None)
         if not role_access:
-            log.debug("Role %s has no permissions defined in acces model", role)
+            _logger.debug("Role %s has no permissions defined in acces model", role)
             return False
 
         # check named operations
-        # TODO: add wildcards???
         if operation in role_access.allowed:
             return True
 
@@ -96,11 +88,17 @@ class RoleBasedAccessModel:
         if operation in role_access.check.keys():
             check = role_access.check[operation]
             try:
+                is_valid: bool
+
                 if inspect.iscoroutinefunction(check):
-                    return await check(context)
-                return check(context)
+                    is_valid = await check(context)
+                    return is_valid
+
+                is_valid = check(context)
+                return is_valid
+
             except Exception:  # pylint: disable=broad-except
-                log.exception(
+                _logger.debug(
                     "Check operation '%s', shall not raise [%s]", operation, check
                 )
                 return False
@@ -114,7 +112,7 @@ class RoleBasedAccessModel:
                 return True
         return False
 
-    async def who_can(self, operation: str, context: Dict = None):
+    async def who_can(self, operation: str, context: dict | None = None):
         allowed = []
         for role in self.roles:
             if await self.can(role, operation, context):
@@ -122,27 +120,24 @@ class RoleBasedAccessModel:
         return allowed
 
     @classmethod
-    def from_rawdata(cls, raw: Dict):
+    def from_rawdata(cls, raw: dict):
         roles = [
-            RolePermissions.from_rawdata(role, value) for role, value in raw.items()
+            _RolePermissions.from_rawdata(role, value) for role, value in raw.items()
         ]
         return RoleBasedAccessModel(roles)
 
-    # TODO: print table??
 
-
-# TODO: implement expression parser: reg = re.compile(r'(&|\||\bAND\b|\bOR\b|\(|\))')
-operators_pattern = re.compile(r"(&|\||\bAND\b|\bOR\b)")
+_OPERATORS_REGEX_PATTERN = re.compile(r"(&|\||\bAND\b|\bOR\b)")
 
 
 async def check_access(
-    model: RoleBasedAccessModel, role: UserRole, operations: str, context: Dict = None
+    model: RoleBasedAccessModel, role: UserRole, operations: str, context: dict = None
 ) -> bool:
     """Extends `RoleBasedAccessModel.can` to check access to boolean expressions of operations
 
     Returns True if a user with a role has permission on a given context
     """
-    tokens = operators_pattern.split(operations)
+    tokens = _OPERATORS_REGEX_PATTERN.split(operations)
     if len(tokens) == 1:
         return await model.can(role, tokens[0], context)
 
@@ -156,5 +151,6 @@ async def check_access(
             return False
         return can_lhs or (await model.can(role, rhs, context))
 
-    # FIXME: This only works for operators with TWO operands
-    raise NotImplementedError("Invalid expression %s" % operations)
+    raise NotImplementedError(
+        f"Invalid expression '{operations}': only supports at most two operands"
+    )

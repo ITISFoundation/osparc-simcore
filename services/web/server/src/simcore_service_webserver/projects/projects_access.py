@@ -1,7 +1,7 @@
 import jsondiff
 from aiohttp import web
 
-from ..security_api import UserRole, get_access_model
+from ..security.api import UserRole, get_access_model
 from .projects_db import ProjectDBAPI
 
 

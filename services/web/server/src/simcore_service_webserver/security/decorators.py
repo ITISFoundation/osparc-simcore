@@ -3,7 +3,7 @@ from functools import wraps
 from aiohttp import web
 from servicelib.aiohttp.typing_extension import Handler
 
-from .security_api import check_permission
+from .api import check_permission
 
 
 def permission_required(permissions: str):
