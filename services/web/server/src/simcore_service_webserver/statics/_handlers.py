@@ -2,14 +2,14 @@ import logging
 
 from aiohttp import web
 
-from .products.plugin import get_product_name
-from .statics_constants import (
+from ..products.plugin import get_product_name
+from ._constants import (
     APP_FRONTEND_CACHED_INDEXES_KEY,
     APP_FRONTEND_CACHED_STATICS_JSON_KEY,
     FRONTEND_APPS_AVAILABLE,
 )
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 async def get_cached_frontend_index(request: web.Request):
