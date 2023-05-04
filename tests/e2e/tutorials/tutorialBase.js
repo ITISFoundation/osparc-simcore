@@ -779,6 +779,21 @@ class TutorialBase {
     return false;
   }
 
+  async testSARValidation(sarIframe) {
+    // SAR Validation service testing
+    /*
+    training-set-generation/generate
+    training-set-generation/data
+    training-set-generation/distribution
+    */
+    await this.waitAndClick("createTrainingSetBtn", sarIframe);
+
+    await this.waitAndClick("exportTrainingSetBtn", sarIframe);
+    /*
+    training-set-generation/xport
+    */
+  }
+
   async takeScreenshot(screenshotTitle) {
     // Generates an URL that points to the backend logs at this time
     const snapshotUrl = utils.getGrayLogSnapshotUrl(this.__url, 30);

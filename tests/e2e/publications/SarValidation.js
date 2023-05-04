@@ -40,11 +40,7 @@ async function runTutorial () {
     await tutorial.waitFor(5000, 'Service started');
     await utils.takeScreenshot(page, screenshotPrefix + 'service_started');
 
-    const iframe = await tutorial.getIframe(sarIdViewer);
-
-    // SAR Validation service testing
-    await tutorial.waitAndClick("createTrainingSetBtn", iframe);
-    await tutorial.waitAndClick("exportTrainingSetBtn", iframe);
+    await tutorial.testSARValidation(sarIdViewer);
   }
   catch(err) {
     await tutorial.setTutorialFailed(true, false);
