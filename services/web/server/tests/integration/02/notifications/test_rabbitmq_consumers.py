@@ -18,6 +18,7 @@ from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.rabbitmq_messages import (
+    InstrumentationRabbitMessage,
     LoggerRabbitMessage,
     ProgressRabbitMessageNode,
     ProgressType,
@@ -80,7 +81,22 @@ async def _assert_no_handler_not_called(handler: mock.Mock) -> None:
                 handler.assert_not_called()
 
 
-async def _assert_handler_called_with(
+async def _assert_handler_called(handler: mock.Mock, expected_call: mock._Call) -> None:
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1),
+        stop=stop_after_delay(10),
+        retry=retry_if_exception_type(AssertionError),
+        reraise=True,
+    ):
+        with attempt:
+            print(
+                f"--> checking if messages reached webclient... {attempt.retry_state.attempt_number} attempt"
+            )
+            handler.assert_has_calls([expected_call])
+            print(f"calls received! {attempt.retry_state.retry_object.statistics}")
+
+
+async def _assert_handler_called_with_json(
     handler: mock.Mock, expected_call: dict[str, Any] | list[dict[str, Any]]
 ) -> None:
     async for attempt in AsyncRetrying(
@@ -195,7 +211,7 @@ async def test_log_workflow(
         expected_call = jsonable_encoder(
             log_message, exclude={"user_id", "channel_name"}
         )
-        await _assert_handler_called_with(mock_log_handler, expected_call)
+        await _assert_handler_called_with_json(mock_log_handler, expected_call)
 
 
 @pytest.mark.parametrize("user_role", [UserRole.GUEST], ids=str)
@@ -235,7 +251,7 @@ async def test_progress_non_computational_workflow(
     await rabbitmq_publisher.publish(progress_message.channel_name, progress_message)
 
     expected_call = jsonable_encoder(progress_message, exclude={"channel_name"})
-    await _assert_handler_called_with(mock_progress_handler, expected_call)
+    await _assert_handler_called_with_json(mock_progress_handler, expected_call)
 
 
 @pytest.mark.parametrize("user_role", [UserRole.GUEST], ids=str)
@@ -291,7 +307,7 @@ async def test_progress_computational_workflow(
     if project_hidden:
         await _assert_no_handler_not_called(mock_progress_handler)
     else:
-        await _assert_handler_called_with(mock_progress_handler, expected_call)
+        await _assert_handler_called_with_json(mock_progress_handler, expected_call)
 
     # check the database. doing it after the waiting calls above is safe
 
@@ -306,4 +322,60 @@ async def test_progress_computational_workflow(
         project_workbench = dict(row[projects.c.workbench])
     assert project_workbench[f"{random_node_id_in_project}"]["progress"] == int(
         progress_message.progress * 100
+    )
+
+
+@pytest.mark.parametrize("user_role", [UserRole.GUEST], ids=str)
+@pytest.mark.parametrize(
+    "project_hidden", [False, True], ids=lambda id: f"ProjectHidden={id}"
+)
+async def test_instrumentation_workflow(
+    client: TestClient,
+    rabbitmq_publisher: RabbitMQClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    mocker: MockerFixture,
+    project_hidden: bool,
+    aiopg_engine: aiopg.sa.Engine,
+    faker: Faker,
+):
+    """
+    RabbitMQ --> Webserver -->  Prometheus metrics
+
+    """
+
+    mocked_service_started = mocker.patch(
+        "simcore_service_webserver.notifications._rabbitmq_consumers.service_started"
+    )
+    if project_hidden:
+        async with aiopg_engine.acquire() as conn:
+            await conn.execute(
+                sa.update(projects)
+                .values(hidden=True)
+                .where(projects.c.uuid == user_project["uuid"])
+            )
+
+    random_node_id_in_project = NodeID(choice(list(user_project["workbench"])))
+    rabbit_message = InstrumentationRabbitMessage(
+        user_id=UserID(logged_user["id"]),
+        project_id=ProjectID(user_project["uuid"]),
+        node_id=random_node_id_in_project,
+        metrics="service_started",
+        service_uuid=faker.uuid4(),
+        service_key=faker.pystr(),
+        service_tag=faker.pystr(),
+        result=None,
+        simcore_user_agent=faker.pystr(),
+        service_type=faker.pystr(),
+    )
+    await rabbitmq_publisher.publish(rabbit_message.channel_name, rabbit_message)
+
+    await _assert_handler_called(
+        mocked_service_started,
+        mock.call(
+            client.app,
+            **rabbit_message.dict(
+                include={"service_key", "service_tag", "simcore_user_agent"}
+            ),
+        ),
     )
