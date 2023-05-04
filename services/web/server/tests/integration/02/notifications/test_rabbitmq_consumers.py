@@ -229,7 +229,7 @@ async def test_progress_non_computational_workflow(
         user_id=UserID(logged_user["id"]),
         project_id=ProjectID(user_project["uuid"]),
         node_id=random_node_id_in_project,
-        progress=0,
+        progress=0.3,
         progress_type=progress_type,
     )
     await rabbitmq_publisher.publish(progress_message.channel_name, progress_message)
@@ -277,7 +277,7 @@ async def test_progress_computational_workflow(
         user_id=UserID(logged_user["id"]),
         project_id=ProjectID(user_project["uuid"]),
         node_id=random_node_id_in_project,
-        progress=0,
+        progress=0.3,
         progress_type=ProgressType.COMPUTATION_RUNNING,
     )
     await rabbitmq_publisher.publish(progress_message.channel_name, progress_message)
@@ -286,8 +286,24 @@ async def test_progress_computational_workflow(
         progress_message, include={"node_id", "project_id"}
     )
     expected_call |= {"data": user_project["workbench"][f"{random_node_id_in_project}"]}
+    expected_call["data"]["progress"] = int(progress_message.progress * 100)
 
     if project_hidden:
         await _assert_no_handler_not_called(mock_progress_handler)
     else:
         await _assert_handler_called_with(mock_progress_handler, expected_call)
+
+    # check the database. doing it after the waiting calls above is safe
+
+    async with aiopg_engine.acquire() as conn:
+        result = await conn.execute(
+            sa.select([projects.c.workbench]).where(
+                projects.c.uuid == user_project["uuid"]
+            )
+        )
+        row = await result.fetchone()
+        assert row
+        project_workbench = dict(row[projects.c.workbench])
+    assert project_workbench[f"{random_node_id_in_project}"]["progress"] == int(
+        progress_message.progress * 100
+    )
