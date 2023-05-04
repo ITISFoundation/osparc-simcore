@@ -1,3 +1,4 @@
+import logging
 from contextlib import suppress
 from dataclasses import dataclass
 from typing import AsyncIterator
@@ -8,6 +9,7 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.engine import Engine
 from models_library.services import ServiceKey, ServiceVersion
 from pydantic import HttpUrl, PositiveInt, ValidationError, parse_obj_as
+from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.models.services import (
     services_access_rights,
     services_meta_data,
@@ -18,11 +20,13 @@ from simcore_postgres_database.models.services_consume_filetypes import (
 from simcore_postgres_database.utils_services import create_select_latest_services_query
 
 from ..db import get_database_engine
-from ._exceptions import StudyDispatcherError
+from ._errors import ServiceNotFound
 from .settings import StudiesDispatcherSettings, get_plugin_settings
 
 _EVERYONE_GROUP_ID = 1
 LARGEST_PAGE_SIZE = 1000
+
+_logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -116,7 +120,7 @@ async def iter_latest_product_services(
 
 
 @dataclass
-class ServiceValidated:
+class ValidService:
     key: str
     version: str
     title: str
@@ -124,12 +128,13 @@ class ServiceValidated:
     thumbnail: HttpUrl | None  # nullable
 
 
+@log_decorator(_logger, level=logging.DEBUG)
 async def validate_requested_service(
     app: web.Application,
     *,
     service_key: ServiceKey,
     service_version: ServiceVersion,
-) -> ServiceValidated:
+) -> ValidService:
     engine: Engine = get_database_engine(app)
 
     async with engine.acquire() as conn:
@@ -148,8 +153,8 @@ async def validate_requested_service(
         row = await result.fetchone()
 
         if row is None:
-            raise StudyDispatcherError(
-                f"Service {service_key}:{service_version} not found"
+            raise ServiceNotFound(
+                service_key=service_key, service_version=service_version
             )
 
         assert row.key == service_key  # nosec
@@ -170,7 +175,7 @@ async def validate_requested_service(
             with suppress(ValidationError):
                 thumbnail_or_none = parse_obj_as(HttpUrl, row.thumbnail)
 
-        return ServiceValidated(
+        return ValidService(
             key=service_key,
             version=service_version,
             is_public=bool(is_guest_allowed),
