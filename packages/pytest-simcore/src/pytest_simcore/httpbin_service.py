@@ -36,17 +36,18 @@ def httpbin_base_url() -> Iterable[HttpUrl]:
     client = docker.from_env()
     container_name = "httpbin-fixture"
     try:
-        client.containers.run(
+        container = client.containers.run(
             image="kennethreitz/httpbin",
             ports={80: port},
             name=container_name,
             detach=True,
         )
+        print(container)
 
         @retry(
             wait=wait_fixed(1),
-            retry=retry_if_exception_type(requests.exceptions.HTTPError),
-            stop=stop_after_delay(10),
+            retry=retry_if_exception_type(requests.exceptions.RequestException),
+            stop=stop_after_delay(15),
             after=after_log(logging.getLogger(), logging.DEBUG),
         )
         def _wait_until_httpbin_is_responsive():
