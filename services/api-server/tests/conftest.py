@@ -14,6 +14,7 @@ CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 
 pytest_plugins = [
     "pytest_simcore.cli_runner",
+    "pytest_simcore.httpbin_service",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.repository_paths",
