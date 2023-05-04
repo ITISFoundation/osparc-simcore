@@ -25,7 +25,7 @@ from models_library.emails import LowerCaseEmailStr
 from pydantic import parse_obj_as
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.error_codes import create_error_code
-from simcore_service_webserver.director_v2_core_computations import (
+from simcore_service_webserver.director_v2._core_computations import (
     create_or_update_pipeline,
 )
 

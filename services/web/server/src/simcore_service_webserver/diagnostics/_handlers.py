@@ -13,6 +13,7 @@ from servicelib.utils import logged_gather
 
 from .. import catalog_client, db, storage_api
 from .._meta import API_VERSION, APP_NAME, api_version_prefix
+from ..director_v2 import api as director_v2_api
 from ..login.decorators import login_required
 from ..security_decorators import permission_required
 from ..utils import get_task_info, get_tracemalloc_info

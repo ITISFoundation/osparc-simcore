@@ -13,8 +13,8 @@ import logging
 from typing import Any, Union
 
 import aiohttp
-from aiohttp import ClientTimeout, web
-from tenacity._asyncio import AsyncRetrying
+from aiohttp import ClientSession, ClientTimeout, web
+from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_random
@@ -53,6 +53,33 @@ def _get_exception_from(
     return DirectorServiceError(status=status_code, reason=reason, url=url)
 
 
+@retry(**DEFAULT_RETRY_POLICY)
+async def _make_request(
+    session: ClientSession,
+    method: str,
+    headers: dict[str, str] | None,
+    data: Any | None,
+    expected_status: type[web.HTTPSuccessful],
+    on_error: _StatusToExceptionMapping | None,
+    url: URL,
+    **kwargs,
+) -> DataBody | str:
+    async with session.request(
+        method, url, headers=headers, json=data, **kwargs
+    ) as response:
+        payload: dict[str, Any] | list[dict[str, Any]] | None | str = (
+            await response.json()
+            if response.content_type == "application/json"
+            else await response.text()
+        )
+
+        if response.status != expected_status.status_code:
+            raise _get_exception_from(
+                response.status, on_error, reason=f"{payload}", url=url
+            )
+        return payload
+
+
 async def request_director_v2(
     app: web.Application,
     method: str,
@@ -68,35 +95,15 @@ async def request_director_v2(
     helper to make requests to director-v2 API
     SEE OAS in services/director-v2/openapi.json
     """
-    # TODO: deprecate!
     session = get_client_session(app)
     on_error = on_error or {}
 
     try:
-        async for attempt in AsyncRetrying(**DEFAULT_RETRY_POLICY):
-            with attempt:
-                async with session.request(
-                    method, url, headers=headers, json=data, **kwargs
-                ) as response:
-                    payload: dict[str, Any] | list[dict[str, Any]] | None | str = (
-                        await response.json()
-                        if response.content_type == "application/json"
-                        else await response.text()
-                        # FIXME: text should never happen ... perhaps unhandled exception!
-                    )
-
-                    if response.status != expected_status.status_code:
-                        raise _get_exception_from(
-                            response.status, on_error, reason=f"{payload}", url=url
-                        )
-                    return payload
-        raise DirectorServiceError(
-            status=web.HTTPServiceUnavailable.status_code,
-            reason="request to director-v2 maximum number of attempts reached",
-            url=url,
+        payload: DataBody | str = await _make_request(
+            session, method, headers, data, expected_status, on_error, url, **kwargs
         )
+        return payload
 
-    # TODO: enrich with https://docs.aiohttp.org/en/stable/client_reference.html#hierarchy-of-exceptions
     except asyncio.TimeoutError as err:
         raise DirectorServiceError(
             status=web.HTTPServiceUnavailable.status_code,
