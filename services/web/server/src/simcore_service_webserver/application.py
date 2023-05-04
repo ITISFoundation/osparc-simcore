@@ -14,7 +14,7 @@ from .application_settings import setup_settings
 from .catalog import setup_catalog
 from .clusters.plugin import setup_clusters
 from .db import setup_db
-from .diagnostics import setup_diagnostics
+from .diagnostics.plugin import setup_diagnostics
 from .director.plugin import setup_director
 from .director_v2.plugin import setup_director_v2
 from .email import setup_email

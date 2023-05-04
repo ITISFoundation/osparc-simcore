@@ -11,12 +11,13 @@ from models_library.app_diagnostics import AppStatusCheck
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.utils import logged_gather
 
-from . import catalog_client, db, storage_api
-from ._meta import API_VERSION, APP_NAME, api_version_prefix
-from .director_v2 import api
-from .login.decorators import login_required
-from .security_decorators import permission_required
-from .utils import get_task_info, get_tracemalloc_info
+from .. import catalog_client, db, storage_api
+from .._meta import API_VERSION, APP_NAME, api_version_prefix
+from ..login.decorators import login_required
+from ..security_decorators import permission_required
+from ..utils import get_task_info, get_tracemalloc_info
+
+_logger = logging.getLogger(__name__)
 
 log = logging.getLogger(__name__)
 
@@ -98,7 +99,9 @@ async def get_app_status(request: web.Request):
         }
 
     async def _check_director2():
-        check.services["director_v2"] = {"healthy": await api.is_healthy(request.app)}
+        check.services["director_v2"] = {
+            "healthy": await director_v2_api.is_healthy(request.app)
+        }
 
     async def _check_catalog():
         check.services["catalog"] = {
@@ -110,7 +113,7 @@ async def get_app_status(request: web.Request):
         _check_storage(),
         _check_director2(),
         _check_catalog(),
-        log=log,
+        log=_logger,
         reraise=False,
     )
 

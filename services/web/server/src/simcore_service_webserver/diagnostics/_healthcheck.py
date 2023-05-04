@@ -2,15 +2,14 @@ import logging
 import statistics
 import time
 from dataclasses import dataclass, field
-from typing import List, Optional
 
 from aiohttp import web
 from servicelib.aiohttp.incidents import LimitedOrderedStack, SlowCallback
 
-from .diagnostics_settings import get_plugin_settings
-from .rest_healthcheck import HealthCheckFailed
+from ..rest_healthcheck import HealthCheckFailed
+from .settings import get_plugin_settings
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 # APP KEYS ---
 kINCIDENTS_REGISTRY = f"{__name__}.incidents_registry"
@@ -26,7 +25,8 @@ kSTART_SENSING_DELAY_SECS = f"{__name__}.start_sensing_delay"
 
 class IncidentsRegistry(LimitedOrderedStack[SlowCallback]):
     def max_delay(self) -> float:
-        return self.max_item.delay_secs if self else 0
+        delay: float = self.max_item.delay_secs or 0.0
+        return delay
 
 
 @dataclass
@@ -38,7 +38,7 @@ class DelayWindowProbe:
 
     min_threshold_secs: float = 0.3
     max_window: int = 100
-    last_delays: List = field(default_factory=list)
+    last_delays: list = field(default_factory=list)
 
     def observe(self, delay: float):
         # Mean latency of the last N request slower than min_threshold_secs sec
@@ -49,9 +49,10 @@ class DelayWindowProbe:
                 fifo.pop(0)
 
     def value(self) -> float:
+        delay: float = 0.0
         if self.last_delays:
-            return statistics.mean(self.last_delays)
-        return 0
+            delay = statistics.mean(self.last_delays)
+        return delay
 
 
 logged_once = False
@@ -67,7 +68,7 @@ def is_sensing_enabled(app: web.Application):
     time_elapsed_since_setup = time.time() - app[kPLUGIN_START_TIME]
     enabled = time_elapsed_since_setup > settings.DIAGNOSTICS_START_SENSING_DELAY
     if enabled and not logged_once:
-        log.debug(
+        _logger.debug(
             "Diagnostics starts sensing after waiting %3.2f secs [> %3.2f secs] since submodule init",
             time_elapsed_since_setup,
             settings.DIAGNOSTICS_START_SENSING_DELAY,
@@ -86,9 +87,8 @@ def assert_healthy_app(app: web.Application) -> None:
     settings = get_plugin_settings(app)
 
     # CRITERIA 1:
-    incidents: Optional[IncidentsRegistry] = app.get(kINCIDENTS_REGISTRY)
+    incidents: IncidentsRegistry | None = app.get(kINCIDENTS_REGISTRY)
     if incidents:
-
         if not is_sensing_enabled(app):
             # NOTE: this is the only way to avoid accounting
             # before sensing is enabled
@@ -97,7 +97,7 @@ def assert_healthy_app(app: web.Application) -> None:
         max_delay_allowed: float = settings.DIAGNOSTICS_MAX_TASK_DELAY
         max_delay: float = incidents.max_delay()
 
-        log.debug(
+        _logger.debug(
             "Max. blocking delay was %s secs [max allowed %s secs]",
             max_delay,
             max_delay_allowed,
@@ -111,12 +111,12 @@ def assert_healthy_app(app: web.Application) -> None:
             raise HealthCheckFailed(msg)
 
     # CRITERIA 2: Mean latency of the last N request slower than 1 sec
-    probe: Optional[DelayWindowProbe] = app.get(kLATENCY_PROBE)
+    probe: DelayWindowProbe | None = app.get(kLATENCY_PROBE)
     if probe:
         latency = probe.value()
         max_latency_allowed = settings.DIAGNOSTICS_MAX_AVG_LATENCY
 
-        log.debug(
+        _logger.debug(
             "Mean slow latency of last requests is %s secs [max allowed %s secs]",
             latency,
             max_latency_allowed,

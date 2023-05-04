@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from aiohttp import web
-from pydantic import HttpUrl, validator
+from pydantic import ByteSize, HttpUrl, parse_obj_as, validator
 from pydantic.fields import Field
 from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from settings_library.base import BaseCustomSettings
@@ -22,7 +22,18 @@ class StudiesDispatcherSettings(BaseCustomSettings):
 
     STUDIES_DEFAULT_SERVICE_THUMBNAIL: HttpUrl = Field(
         default="https://via.placeholder.com/170x120.png",
-        description="Default servcie thumbnails in the service response",
+        description="Default thumbnail for services or dispatch project with a service",
+    )
+
+    STUDIES_DEFAULT_FILE_THUMBNAIL: HttpUrl = Field(
+        default="https://via.placeholder.com/170x120.png",
+        description="Default thumbnail for dispatch projects with only data (i.e. file-picker)",
+    )
+
+    STUDIES_MAX_FILE_SIZE_ALLOWED: ByteSize = Field(
+        default=parse_obj_as(ByteSize, "50Mib"),
+        description="Limits the size of the files that can be dispatched"
+        "Note that the accuracy of the file size is not guaranteed and this limit might be surpassed",
     )
 
     @validator("STUDIES_GUEST_ACCOUNT_LIFETIME")
@@ -33,9 +44,8 @@ class StudiesDispatcherSettings(BaseCustomSettings):
         return v
 
     def is_login_required(self):
-        """Returns False if study access entrypoint does not require auth
-
-        NOTE: in special cases this entrypoing can be programatically protected with auth
+        """Used just to allow protecting the dispatcher redirect entrypoint programatically
+        Normally dispatcher entrypoints are openened
         """
         return not self.STUDIES_ACCESS_ANONYMOUS_ALLOWED
 
