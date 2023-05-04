@@ -27,7 +27,7 @@ from .helpers.utils_docker import get_localhost_ip
 @pytest.fixture(scope="session")
 def httpbin_base_url() -> Iterable[HttpUrl]:
     """
-    Implemented cannot rely on https://httpbin.org/ being always available
+    Implemented as a fixture since it cannot rely on full availability of https://httpbin.org/ during testing
     """
     ip_address = get_localhost_ip()
     port = aiohttp.test_utils.unused_port()
