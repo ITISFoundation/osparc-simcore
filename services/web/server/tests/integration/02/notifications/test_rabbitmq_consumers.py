@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 
 import asyncio
+import json
 from random import choice
 from typing import Any, Awaitable, Callable
 from unittest import mock
@@ -16,8 +17,13 @@ from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.rabbitmq_messages import LoggerRabbitMessage
+from models_library.rabbitmq_messages import (
+    LoggerRabbitMessage,
+    ProgressRabbitMessageNode,
+    ProgressType,
+)
 from models_library.users import UserID
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from redis import Redis
@@ -38,7 +44,11 @@ from simcore_service_webserver.resource_manager.plugin import setup_resource_man
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.socketio.events import SOCKET_IO_LOG_EVENT
+from simcore_service_webserver.socketio.events import (
+    SOCKET_IO_LOG_EVENT,
+    SOCKET_IO_NODE_PROGRESS_EVENT,
+    SOCKET_IO_NODE_UPDATED_EVENT,
+)
 from simcore_service_webserver.socketio.plugin import setup_socketio
 from tenacity import RetryError
 from tenacity._asyncio import AsyncRetrying
@@ -71,7 +81,7 @@ async def _assert_no_handler_not_called(handler: mock.Mock) -> None:
 
 
 async def _assert_handler_called_with(
-    handler: mock.Mock, expected_call: mock._Call
+    handler: mock.Mock, expected_call: dict[str, Any] | list[dict[str, Any]]
 ) -> None:
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.1),
@@ -83,7 +93,9 @@ async def _assert_handler_called_with(
             print(
                 f"--> checking if messages reached webclient... {attempt.retry_state.attempt_number} attempt"
             )
-            handler.assert_has_calls([expected_call])
+            handler.assert_called_once()
+            call_args, _call_kwargs = handler.call_args
+            assert json.loads(call_args[0]) == expected_call
             print(f"calls received! {attempt.retry_state.retry_object.statistics}")
 
 
@@ -134,10 +146,10 @@ async def rabbitmq_publisher(
     return rabbitmq_client("pytest_publisher")
 
 
-_NON_ANONYMOUS_USER_ROLES = [u for u in UserRole if u is not UserRole.ANONYMOUS]
-
-
-@pytest.mark.parametrize("user_role", _NON_ANONYMOUS_USER_ROLES, ids=str)
+@pytest.mark.parametrize("user_role", [UserRole.GUEST], ids=str)
+@pytest.mark.parametrize(
+    "project_hidden", [False, True], ids=lambda id: f"ProjectHidden={id}"
+)
 async def test_log_workflow(
     client: TestClient,
     rabbitmq_publisher: RabbitMQClient,
@@ -148,12 +160,22 @@ async def test_log_workflow(
         [str | None, TestClient | None], Awaitable[socketio.AsyncClient]
     ],
     mocker: MockerFixture,
+    project_hidden: bool,
+    aiopg_engine: aiopg.sa.Engine,
 ):
     """
-    RabbitMQ --> Webserver --> webclient (socketio)
+    RabbitMQ --> Webserver --> Redis --> webclient (socketio)
 
     """
     socket_io_conn = await socketio_client_factory(None, client)
+
+    if project_hidden:
+        async with aiopg_engine.acquire() as conn:
+            await conn.execute(
+                sa.update(projects)
+                .values(hidden=True)
+                .where(projects.c.uuid == user_project["uuid"])
+            )
 
     mock_log_handler = mocker.MagicMock()
     socket_io_conn.on(SOCKET_IO_LOG_EVENT, handler=mock_log_handler)
@@ -167,45 +189,105 @@ async def test_log_workflow(
     )
     await rabbitmq_publisher.publish(log_message.channel_name, log_message)
 
-    expected_call = log_message.json(exclude={"user_id", "channel_name"})
-    await _assert_handler_called_with(mock_log_handler, mock.call(expected_call))
+    if project_hidden:
+        await _assert_no_handler_not_called(mock_log_handler)
+    else:
+        expected_call = jsonable_encoder(
+            log_message, exclude={"user_id", "channel_name"}
+        )
+        await _assert_handler_called_with(mock_log_handler, expected_call)
 
 
-@pytest.mark.parametrize("user_role", [UserRole.USER], ids=str)
-async def test_log_workflow_blocks_if_project_is_hidden(
+@pytest.mark.parametrize("user_role", [UserRole.GUEST], ids=str)
+@pytest.mark.parametrize(
+    "progress_type",
+    [p for p in ProgressType if p is not ProgressType.COMPUTATION_RUNNING],
+    ids=str,
+)
+async def test_progress_non_computational_workflow(
     client: TestClient,
     rabbitmq_publisher: RabbitMQClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
-    faker: Faker,
     socketio_client_factory: Callable[
         [str | None, TestClient | None], Awaitable[socketio.AsyncClient]
     ],
     mocker: MockerFixture,
-    aiopg_engine: aiopg.sa.Engine,
+    progress_type: ProgressType,
 ):
     """
-    RabbitMQ --> Webserver --> webclient (socketio)
+    RabbitMQ --> Webserver -->  Redis --> webclient (socketio)
 
     """
     socket_io_conn = await socketio_client_factory(None, client)
-    async with aiopg_engine.acquire() as conn:
-        await conn.execute(
-            sa.update(projects)
-            .values(hidden=True)
-            .where(projects.c.uuid == user_project["uuid"])
-        )
 
-    mock_log_handler = mocker.MagicMock()
-    socket_io_conn.on(SOCKET_IO_LOG_EVENT, handler=mock_log_handler)
+    mock_progress_handler = mocker.MagicMock()
+    socket_io_conn.on(SOCKET_IO_NODE_PROGRESS_EVENT, handler=mock_progress_handler)
 
     random_node_id_in_project = NodeID(choice(list(user_project["workbench"])))
-    log_message = LoggerRabbitMessage(
+    progress_message = ProgressRabbitMessageNode(
         user_id=UserID(logged_user["id"]),
         project_id=ProjectID(user_project["uuid"]),
         node_id=random_node_id_in_project,
-        messages=[faker.text() for _ in range(10)],
+        progress=0,
+        progress_type=progress_type,
     )
-    await rabbitmq_publisher.publish(log_message.channel_name, log_message)
+    await rabbitmq_publisher.publish(progress_message.channel_name, progress_message)
 
-    await _assert_no_handler_not_called(mock_log_handler)
+    expected_call = jsonable_encoder(progress_message, exclude={"channel_name"})
+    await _assert_handler_called_with(mock_progress_handler, expected_call)
+
+
+@pytest.mark.parametrize("user_role", [UserRole.GUEST], ids=str)
+@pytest.mark.parametrize(
+    "project_hidden", [False, True], ids=lambda id: f"ProjectHidden={id}"
+)
+async def test_progress_computational_workflow(
+    client: TestClient,
+    rabbitmq_publisher: RabbitMQClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    socketio_client_factory: Callable[
+        [str | None, TestClient | None], Awaitable[socketio.AsyncClient]
+    ],
+    mocker: MockerFixture,
+    project_hidden: bool,
+    aiopg_engine: aiopg.sa.Engine,
+):
+    """
+    RabbitMQ --> Webserver -->  DB (progress update in Projects table)
+                                Redis --> webclient (socketio)
+
+    """
+    socket_io_conn = await socketio_client_factory(None, client)
+
+    mock_progress_handler = mocker.MagicMock()
+    socket_io_conn.on(SOCKET_IO_NODE_UPDATED_EVENT, handler=mock_progress_handler)
+
+    if project_hidden:
+        async with aiopg_engine.acquire() as conn:
+            await conn.execute(
+                sa.update(projects)
+                .values(hidden=True)
+                .where(projects.c.uuid == user_project["uuid"])
+            )
+
+    random_node_id_in_project = NodeID(choice(list(user_project["workbench"])))
+    progress_message = ProgressRabbitMessageNode(
+        user_id=UserID(logged_user["id"]),
+        project_id=ProjectID(user_project["uuid"]),
+        node_id=random_node_id_in_project,
+        progress=0,
+        progress_type=ProgressType.COMPUTATION_RUNNING,
+    )
+    await rabbitmq_publisher.publish(progress_message.channel_name, progress_message)
+
+    expected_call = jsonable_encoder(
+        progress_message, include={"node_id", "project_id"}
+    )
+    expected_call |= {"data": user_project["workbench"][f"{random_node_id_in_project}"]}
+
+    if project_hidden:
+        await _assert_no_handler_not_called(mock_progress_handler)
+    else:
+        await _assert_handler_called_with(mock_progress_handler, expected_call)
