@@ -2,12 +2,6 @@ from aiopg.sa.result import RowProxy
 from models_library.services import ServiceKey, ServiceVersion
 from pydantic import BaseModel, Field, HttpUrl, PositiveInt, parse_obj_as
 
-MEGABYTES = 1024 * 1024
-_BASE_UUID = uuid.UUID("ca2144da-eabb-4daf-a1df-a3682050e25f")
-
-
-logger = logging.getLogger(__name__)
-
 
 class ServiceInfo(BaseModel):
     key: ServiceKey
