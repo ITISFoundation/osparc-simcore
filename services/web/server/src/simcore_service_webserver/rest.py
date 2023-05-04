@@ -22,7 +22,7 @@ from ._meta import API_VTAG, api_version_prefix
 from .rest_healthcheck import HealthCheck
 from .rest_settings import RestSettings, get_plugin_settings
 from .rest_utils import get_openapi_specs_path, load_openapi_specs
-from .security import setup_security
+from .security.plugin import setup_security
 
 log = logging.getLogger(__name__)
 

@@ -35,10 +35,10 @@ from .remote_debug import setup_remote_debugging
 from .resource_manager.plugin import setup_resource_manager
 from .rest import setup_rest
 from .scicrunch.plugin import setup_scicrunch
-from .security import setup_security
+from .security.plugin import setup_security
 from .session import setup_session
 from .socketio.plugin import setup_socketio
-from .statics import setup_statics
+from .statics.plugin import setup_statics
 from .storage import setup_storage
 from .studies_dispatcher.plugin import setup_studies_dispatcher
 from .tags import setup_tags

@@ -16,7 +16,7 @@ from servicelib.request_keys import RQT_USERID_KEY
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import api_version_prefix as VTAG
 from ..login.decorators import login_required
-from ..security_decorators import permission_required
+from ..security.decorators import permission_required
 from ..version_control.models import CommitID
 from ._abc import get_project_run_policy
 from ._core_computations import ComputationsApi

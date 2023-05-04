@@ -13,20 +13,20 @@ from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 from yarl import URL
 
-from ._constants import APP_SETTINGS_KEY
-from .products.plugin import APP_PRODUCTS_KEY, Product
-from .statics_constants import (
+from .._constants import APP_PRODUCTS_KEY, APP_SETTINGS_KEY
+from ..products.plugin import Product
+from ._constants import (
     APP_FRONTEND_CACHED_INDEXES_KEY,
     APP_FRONTEND_CACHED_STATICS_JSON_KEY,
     FRONTEND_APPS_AVAILABLE,
 )
-from .statics_settings import (
+from .settings import (
     FrontEndAppSettings,
     StaticWebserverModuleSettings,
     get_plugin_settings,
 )
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 # This retry policy aims to overcome the inconvenient fact that the swarm
@@ -39,7 +39,7 @@ log = logging.getLogger(__name__)
 _STATIC_WEBSERVER_RETRY_ON_STARTUP_POLICY = dict(
     stop=stop_after_attempt(5),
     wait=wait_fixed(1.5),
-    before=before_log(log, logging.WARNING),
+    before=before_log(_logger, logging.WARNING),
     retry=retry_if_exception_type(ClientConnectionError),
     reraise=True,
 )
@@ -60,7 +60,7 @@ async def create_cached_indexes(app: web.Application) -> None:
 
     for frontend_name in FRONTEND_APPS_AVAILABLE:
         url = URL(settings.STATIC_WEBSERVER_URL) / frontend_name
-        log.info("Fetching index from %s", url)
+        _logger.info("Fetching index from %s", url)
         try:
             body = ""
             # web-static server might still not be up
@@ -72,7 +72,7 @@ async def create_cached_indexes(app: web.Application) -> None:
                     body = await response.text()
 
         except ClientError as err:
-            log.error("Could not fetch index from static server: %s", err)
+            _logger.error("Could not fetch index from static server: %s", err)
 
             # ANE: Yes this is supposed to fail the boot process
             raise RuntimeError(
@@ -83,7 +83,7 @@ async def create_cached_indexes(app: web.Application) -> None:
         body = body.replace(f"../resource/{frontend_name}", f"resource/{frontend_name}")
         body = body.replace("boot.js", f"{frontend_name}/boot.js")
 
-        log.info("Storing index for %s", url)
+        _logger.info("Storing index for %s", url)
         cached_indexes[frontend_name] = body
 
     app[APP_FRONTEND_CACHED_INDEXES_KEY] = cached_indexes
@@ -111,11 +111,11 @@ async def create_statics_json(app: web.Application) -> None:
     for product in products.values():
         data = deepcopy(common)
 
-        log.debug("Product %s", product.name)
+        _logger.debug("Product %s", product.name)
         data.update(product.to_statics())
 
         data_json = json_dumps(data)
-        log.debug("Front-end statics.json: %s", data_json)
+        _logger.debug("Front-end statics.json: %s", data_json)
 
         # cache computed statics.json
         app[APP_FRONTEND_CACHED_STATICS_JSON_KEY][product.name] = data_json

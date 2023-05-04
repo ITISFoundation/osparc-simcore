@@ -1,7 +1,7 @@
 import logging
-from typing import Optional, TypedDict, Union
+from dataclasses import dataclass, field
+from typing import TypedDict
 
-import attr
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp_security.abc import AbstractAuthorizationPolicy
@@ -10,14 +10,14 @@ from aiopg.sa.result import ResultProxy
 from expiringdict import ExpiringDict
 from models_library.basic_types import IdInt
 from servicelib.aiohttp.aiopg_utils import PostgresRetryPolicyUponOperation
-from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.models.users import UserRole
 from tenacity import retry
 
-from .db_models import UserStatus, users
-from .security_access_model import RoleBasedAccessModel, check_access
+from ..db import get_database_engine
+from ..db_models import UserStatus, users
+from ._access_model import ContextType, RoleBasedAccessModel, check_access
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class _UserIdentity(TypedDict, total=True):
@@ -25,28 +25,26 @@ class _UserIdentity(TypedDict, total=True):
     role: UserRole
 
 
-@attr.s(auto_attribs=True, frozen=True)
+def _create_expiring_dict():
+    return ExpiringDict(max_len=100, max_age_seconds=10)
+
+
+@dataclass(frozen=True)
 class AuthorizationPolicy(AbstractAuthorizationPolicy):
     app: web.Application
     access_model: RoleBasedAccessModel
-    timed_cache: ExpiringDict = attr.ib(
-        init=False, default=ExpiringDict(max_len=100, max_age_seconds=10)
-    )
+    timed_cache: ExpiringDict = field(default_factory=_create_expiring_dict)
 
     @property
     def engine(self) -> Engine:
-        """Lazy getter since the database is not available upon setup
+        """Lazy getter since the database is not available upon setup"""
+        _engine: Engine = get_database_engine(self.app)
+        return _engine
 
-        :return: database's engine
-        """
-        # TODO: what if db is not available?
-        # return self.app.config_dict[APP_DB_ENGINE_KEY]
-        return self.app[APP_DB_ENGINE_KEY]
-
-    @retry(**PostgresRetryPolicyUponOperation(log).kwargs)
-    async def _get_active_user_with(self, identity: str) -> Optional[_UserIdentity]:
+    @retry(**PostgresRetryPolicyUponOperation(_logger).kwargs)
+    async def _get_active_user_with(self, identity: str) -> _UserIdentity | None:
         # NOTE: Keeps a cache for a few seconds. Observed successive streams of this query
-        user: Optional[_UserIdentity] = self.timed_cache.get(identity)
+        user: _UserIdentity | None = self.timed_cache.get(identity, None)
         if user is None:
             async with self.engine.acquire() as conn:
                 # NOTE: sometimes it raises psycopg2.DatabaseError in #880 and #1160
@@ -60,25 +58,31 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
             if row is not None:
                 assert row["id"]  # nosec
                 assert row["role"]  # nosec
-                self.timed_cache[identity] = user = dict(row.items())
+                self.timed_cache[identity] = user = _UserIdentity(
+                    id=row.id, role=row.role
+                )
 
         return user
 
-    async def authorized_userid(self, identity: str) -> Optional[int]:
+    async def authorized_userid(self, identity: str) -> int | None:
         """Retrieve authorized user id.
 
         Return the user_id of the user identified by the identity
         or "None" if no user exists related to the identity.
         """
-        # TODO: why users.c.user_login_key!=users.c.email
-        user: Optional[_UserIdentity] = await self._get_active_user_with(identity)
-        return user["id"] if user else None
+        user: _UserIdentity | None = await self._get_active_user_with(identity)
+
+        if user is None:
+            return None
+
+        user_id: int = user["id"]
+        return user_id
 
     async def permits(
         self,
         identity: str,
-        permission: Union[str, tuple],
-        context: Optional[dict] = None,
+        permission: str,
+        context: ContextType = None,
     ) -> bool:
         """Determines whether an identified user has permission
 
@@ -88,7 +92,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         :return: True if user has permission to execute this operation within the given context
         """
         if identity is None or permission is None:
-            log.debug(
+            _logger.debug(
                 "Invalid %s of %s. Denying access.",
                 f"{identity=}",
                 f"{permission=}",
@@ -96,8 +100,8 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
             return False
 
         user = await self._get_active_user_with(identity)
-        if user:
-            role = user.get("role")
-            return await check_access(self.access_model, role, permission, context)
+        if user is None:
+            return False
 
-        return False
+        role = user.get("role")
+        return await check_access(self.access_model, role, permission, context)

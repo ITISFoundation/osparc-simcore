@@ -22,7 +22,7 @@ from servicelib.json_serialization import json_dumps
 
 from .._meta import api_version_prefix as VTAG
 from ..login.decorators import login_required
-from ..security_decorators import permission_required
+from ..security.decorators import permission_required
 from . import _ports_utils, projects_api
 from .project_models import ProjectDict
 from .projects_db import ProjectDBAPI

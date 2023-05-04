@@ -23,7 +23,7 @@ from ..director_v2.exceptions import (
     DirectorServiceError,
 )
 from ..login.decorators import login_required
-from ..security_decorators import permission_required
+from ..security.decorators import permission_required
 
 logger = logging.getLogger(__name__)
 

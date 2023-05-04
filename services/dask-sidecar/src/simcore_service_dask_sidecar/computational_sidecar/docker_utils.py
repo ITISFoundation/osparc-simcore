@@ -170,7 +170,7 @@ async def parse_line(line: str) -> tuple[LogType, str, str]:
     return (log_type, timestamp, log)
 
 
-async def publish_container_logs(
+async def _publish_container_logs(
     service_key: str,
     service_version: str,
     container: DockerContainer,
@@ -213,7 +213,7 @@ async def _parse_container_log_file(
         while (await container.show())["State"]["Running"]:
             if line := await file_pointer.readline():
                 log_type, _, message = await parse_line(line)
-                await publish_container_logs(
+                await _publish_container_logs(
                     service_key=service_key,
                     service_version=service_version,
                     container=container,
@@ -228,7 +228,7 @@ async def _parse_container_log_file(
         # finish reading the logs if possible
         async for line in file_pointer:
             log_type, _, message = await parse_line(line)
-            await publish_container_logs(
+            await _publish_container_logs(
                 service_key=service_key,
                 service_version=service_version,
                 container=container,
@@ -277,7 +277,6 @@ async def _parse_container_docker_logs(
         container.id,
         container_name,
     )
-    # TODO: move that file somewhere else
     async with aiofiles.tempfile.TemporaryDirectory() as tmp_dir:
         log_file_path = (
             Path(tmp_dir) / f"{service_key.split(sep='/')[-1]}_{service_version}.logs"
@@ -290,7 +289,7 @@ async def _parse_container_docker_logs(
             ):
                 await log_fp.write(log_line.encode("utf-8"))
                 log_type, latest_log_timestamp, message = await parse_line(log_line)
-                await publish_container_logs(
+                await _publish_container_logs(
                     service_key=service_key,
                     service_version=service_version,
                     container=container,
@@ -321,7 +320,7 @@ async def _parse_container_docker_logs(
             for log_line in missing_logs:
                 await log_fp.write(log_line.encode("utf-8"))
                 log_type, latest_log_timestamp, message = await parse_line(log_line)
-                await publish_container_logs(
+                await _publish_container_logs(
                     service_key=service_key,
                     service_version=service_version,
                     container=container,

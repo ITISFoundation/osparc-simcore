@@ -1,7 +1,7 @@
 import logging
 from contextlib import AsyncExitStack
 from tempfile import TemporaryDirectory
-from typing import Any, Callable, Coroutine, Optional
+from typing import Any, Callable, Coroutine
 
 from aiofiles.tempfile import TemporaryDirectory as AioTemporaryDirectory
 from aiohttp import web
@@ -12,7 +12,7 @@ from .._constants import RQ_PRODUCT_KEY
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..projects.project_lock import lock_project
 from ..projects.projects_api import retrieve_and_notify_project_locked_state
-from ..security_decorators import permission_required
+from ..security.decorators import permission_required
 from ..users_api import get_user_name
 from .exceptions import ExporterException
 from .export_import import study_duplicate, study_export, study_import
@@ -42,7 +42,7 @@ async def export_project(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
     assert project_uuid  # nosec
-    delete_tmp_dir: Optional[Callable[[], Coroutine[Any, Any, None]]] = None
+    delete_tmp_dir: Callable[[], Coroutine[Any, Any, None]] | None = None
     try:
         async with AsyncExitStack() as tmp_dir_stack, lock_project(
             request.app,
