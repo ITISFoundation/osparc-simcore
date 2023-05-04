@@ -38,6 +38,7 @@ from simcore_postgres_database.models.services import (
     services_access_rights,
     services_meta_data,
 )
+from simcore_postgres_database.models.users import UserRole
 from simcore_sdk.node_ports_common.filemanager import get_download_link_from_s3
 from simcore_service_webserver._constants import X_PRODUCT_NAME_HEADER
 from simcore_service_webserver.application import (
@@ -66,11 +67,10 @@ from simcore_service_webserver.exporter.settings import (
 )
 from simcore_service_webserver.garbage_collector import setup_garbage_collector
 from simcore_service_webserver.scicrunch.plugin import setup_scicrunch
-from simcore_service_webserver.security_roles import UserRole
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from yarl import URL
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 pytest_simcore_core_services_selection = [
     "catalog",
@@ -532,7 +532,7 @@ async def test_import_export_import_duplicate(
         with assemble_tmp_file_path(file_to_download_name) as downloaded_file_path:
             async with aiofiles.open(downloaded_file_path, mode="wb") as f:
                 await f.write(await export_response.read())
-                log.info("output_path %s", downloaded_file_path)
+                _logger.info("output_path %s", downloaded_file_path)
 
             reimported_project_uuid = await import_study_from_file(
                 client, downloaded_file_path, headers=headers
