@@ -20,9 +20,9 @@ from ..utils import compose_support_error_msg
 from ..utils_aiohttp import create_redirect_response
 from ._catalog import ValidService, validate_requested_service
 from ._constants import MSG_UNEXPECTED_ERROR
-from ._core import ViewerInfo, validate_requested_file, validate_requested_viewer
+from ._core import validate_requested_file, validate_requested_viewer
 from ._errors import InvalidRedirectionParams, StudyDispatcherError
-from ._models import FileParams, ServiceInfo, ServiceParams
+from ._models import FileParams, ServiceInfo, ServiceParams, ViewerInfo
 from ._projects import (
     get_or_create_project_with_file,
     get_or_create_project_with_file_and_service,
@@ -77,7 +77,7 @@ def _create_service_info_from(service: ValidService) -> ServiceInfo:
     )
     if service.thumbnail:
         values_map["thumbnail"] = service.thumbnail
-    return ServiceInfo.construct(_fields_set=set(values_map.keys()), **values_map)
+    return ServiceInfo.construct(_fields_set=set(values_map.keys()), **values_map)  # type: ignore
 
 
 def _handle_errors_with_error_page(handler: Handler):
@@ -220,9 +220,12 @@ async def get_redirection_to_viewer(request: web.Request):
 
     NOTE: Can be set as login_required programatically with STUDIES_ACCESS_ANONYMOUS_ALLOWED env var.
     """
-    query_params = parse_request_query_parameters_as(RedirectionQueryParams, request)
+    query_params: RedirectionQueryParams = parse_request_query_parameters_as(
+        RedirectionQueryParams, request
+    )
     _logger.debug("Requesting viewer %s [%s]", query_params, type(query_params))
 
+    user: UserInfo
     if isinstance(query_params, ServiceAndFileParams):
         file_params = service_params = query_params
 
@@ -236,7 +239,7 @@ async def get_redirection_to_viewer(request: web.Request):
         )
 
         # Retrieve user or create a temporary guest
-        user: UserInfo = await get_or_create_user(
+        user = await get_or_create_user(
             request, is_guest_allowed=viewer.is_guest_allowed
         )
 
@@ -258,15 +261,15 @@ async def get_redirection_to_viewer(request: web.Request):
         )
 
     elif isinstance(query_params, ServiceQueryParams):
-        service_params = query_params
+        service_params_ = ServiceQueryParams
 
         valid_service: ValidService = await validate_requested_service(
             app=request.app,
-            service_key=service_params.viewer_key,
-            service_version=service_params.viewer_version,
+            service_key=service_params_.viewer_key,
+            service_version=service_params_.viewer_version,
         )
 
-        user: UserInfo = await get_or_create_user(
+        user = await get_or_create_user(
             request, is_guest_allowed=valid_service.is_public
         )
 
@@ -286,20 +289,20 @@ async def get_redirection_to_viewer(request: web.Request):
         )
 
     elif isinstance(query_params, FileQueryParams):
-        file_params = query_params
+        file_params_ = query_params
 
         validate_requested_file(
             app=request.app,
-            file_type=file_params.file_type,
-            file_size=file_params.file_size,
+            file_type=file_params_.file_type,
+            file_size=file_params_.file_size,
         )
 
-        user: UserInfo = await get_or_create_user(request, is_guest_allowed=True)
+        user = await get_or_create_user(request, is_guest_allowed=True)
 
         project_id, file_picker_id = await get_or_create_project_with_file(
             request.app,
             user,
-            file_params=file_params,
+            file_params=file_params_,
             project_thumbnail=get_plugin_settings(
                 app=request.app
             ).STUDIES_DEFAULT_FILE_THUMBNAIL,
@@ -310,8 +313,8 @@ async def get_redirection_to_viewer(request: web.Request):
             request.app,
             project_id=project_id,
             viewer_node_id=file_picker_id,  # TODO: ask odei about this?
-            file_name=file_params.file_name,
-            file_size=file_params.file_size,
+            file_name=file_params_.file_name,
+            file_size=file_params_.file_size,
         )
 
     else:

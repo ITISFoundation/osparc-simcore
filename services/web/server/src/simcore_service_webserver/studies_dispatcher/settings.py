@@ -26,7 +26,7 @@ class StudiesDispatcherSettings(BaseCustomSettings):
     )
 
     STUDIES_DEFAULT_FILE_THUMBNAIL: HttpUrl = Field(
-        default="https://via.placeholder.com/170x120.png",
+        default=parse_obj_as(HttpUrl, "https://via.placeholder.com/170x120.png"),
         description="Default thumbnail for dispatch projects with only data (i.e. file-picker)",
     )
 
