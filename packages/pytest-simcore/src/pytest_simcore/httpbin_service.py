@@ -38,7 +38,7 @@ def httpbin_base_url() -> Iterable[HttpUrl]:
     try:
         client.containers.run(
             image="kennethreitz/httpbin",
-            ports={port: 80},
+            ports={80: port},
             name=container_name,
             detach=True,
         )
