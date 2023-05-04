@@ -20,7 +20,7 @@ from ..garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
 from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..login.utils import ACTIVE, GUEST, get_client_ip, get_random_string
 from ..redis import get_redis_lock_manager_client
-from ..security_api import authorized_userid, encrypt_password, is_anonymous, remember
+from ..security.api import authorized_userid, encrypt_password, is_anonymous, remember
 from ..users_api import get_user
 from ..users_exceptions import UserNotFoundError
 from ._constants import MSG_GUESTS_NOT_ALLOWED

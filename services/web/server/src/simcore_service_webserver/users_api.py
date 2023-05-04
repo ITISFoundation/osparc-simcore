@@ -6,7 +6,7 @@
 
 import logging
 from collections import deque
-from typing import Any, Optional, TypedDict
+from typing import Any, TypedDict
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -20,7 +20,7 @@ from sqlalchemy import and_, literal_column
 from .db_models import GroupType, groups, tokens, user_to_groups, users
 from .groups_utils import convert_groups_db_to_schema
 from .login.storage import AsyncpgStorage, get_plugin_storage
-from .security_api import clean_auth_policy_cache
+from .security.api import clean_auth_policy_cache
 from .users_exceptions import UserNotFoundError
 from .users_models import ProfileGet, ProfileUpdate
 from .users_utils import convert_user_db_to_schema
@@ -154,7 +154,7 @@ async def get_user_role(app: web.Application, user_id: UserID) -> UserRole:
 
     engine: Engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
-        user_role: Optional[RowProxy] = await conn.scalar(
+        user_role: RowProxy | None = await conn.scalar(
             sa.select([users.c.role]).where(users.c.id == user_id)
         )
         if user_role is None:

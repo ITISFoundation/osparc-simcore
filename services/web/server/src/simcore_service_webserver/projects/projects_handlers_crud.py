@@ -37,8 +37,8 @@ from .._constants import RQ_PRODUCT_KEY
 from .._meta import api_version_prefix as VTAG
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
-from ..security_api import check_permission
-from ..security_decorators import permission_required
+from ..security.api import check_permission
+from ..security.decorators import permission_required
 from ..users_api import get_user_name
 from . import _create_utils, projects_api
 from ._rest_schemas import (
