@@ -261,7 +261,7 @@ async def get_redirection_to_viewer(request: web.Request):
         )
 
     elif isinstance(query_params, ServiceQueryParams):
-        service_params_ = ServiceQueryParams
+        service_params_ = query_params
 
         valid_service: ValidService = await validate_requested_service(
             app=request.app,
