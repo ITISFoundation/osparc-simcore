@@ -13,6 +13,12 @@ from tenacity.wait import wait_fixed
 from yarl import URL
 
 
+async def test_deployed_services_running(
+    simcore_stack_deployed_services: list[Service],
+):
+    ...
+
+
 @pytest.mark.parametrize(
     "test_url,expected_in_content",
     [
@@ -34,8 +40,8 @@ def test_product_frontend_app_served(
         wait=wait_fixed(5),
         stop=stop_after_delay(1 * MINUTE),
     )
-    def request_test_url():
-        resp = requests.get(test_url)
+    def request_test_url() -> requests.Response:
+        resp = requests.get(test_url, timeout=5)
         assert (
             resp.ok
         ), f"Failed request {resp.url} with {resp.status_code}: {resp.reason}"
