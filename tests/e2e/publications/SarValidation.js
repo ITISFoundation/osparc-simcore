@@ -33,24 +33,14 @@ async function runTutorial () {
     await tutorial.waitForServices(
       workbenchData["studyId"],
       [sarIdViewer],
-      startTimeout
+      startTimeout,
+      false
     );
 
-    await tutorial.waitFor(2000, 'Service started');
+    await tutorial.waitFor(5000, 'Service started');
     await utils.takeScreenshot(page, screenshotPrefix + 'service_started');
 
-    // wait for iframe to be ready
-    const sarTimeout = 30000;
-    const checkFrequency = 3000;
-    // wait for iframe to be ready, it might take a while in Voila
-    let iframe = null;
-    for (let i=0; i<sarTimeout; i+=checkFrequency) {
-      iframe = await this.getIframe(sarIdViewer);
-      if (iframe) {
-        break;
-      }
-      await this.waitFor(checkFrequency, `iframe not ready yet: ${i/1000}s`);
-    }
+    const iframe = await tutorial.getIframe(sarIdViewer);
 
     // SAR Validation service testing
     await tutorial.waitAndClick("createTrainingSetBtn", iframe);
