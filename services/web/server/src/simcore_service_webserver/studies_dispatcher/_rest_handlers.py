@@ -1,7 +1,5 @@
 """ Handles requests to the Rest API
 
-NOTE: openapi section for these handlers was generated using
-   services/web/server/tests/sandbox/viewers_openapi_generator.py
 """
 import logging
 from dataclasses import asdict
@@ -9,7 +7,7 @@ from dataclasses import asdict
 from aiohttp import web
 from aiohttp.web import Request
 from models_library.services import ServiceKey
-from pydantic import BaseModel, Field, ValidationError, validator
+from pydantic import BaseModel, Field, ValidationError, parse_obj_as, validator
 from pydantic.networks import HttpUrl
 
 from .._meta import API_VTAG
@@ -18,12 +16,37 @@ from ..utils_aiohttp import envelope_json_response
 from ._catalog import ServiceMetaData, iter_latest_product_services
 from ._core import list_viewers_info
 from ._models import ViewerInfo
-from .handlers_redirects import (
-    compose_dispatcher_prefix_url,
-    compose_service_dispatcher_prefix_url,
-)
+from ._redirects_handlers import ViewerQueryParams
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
+
+
+#
+# HELPERS to compose redirects
+#
+
+
+def _compose_file_and_service_dispatcher_prefix_url(
+    request: web.Request, viewer: ViewerInfo
+) -> HttpUrl:
+    """This is denoted PREFIX URL because it needs to append extra query parameters"""
+    params = ViewerQueryParams.from_viewer(viewer).dict()
+    absolute_url = request.url.join(
+        request.app.router["get_redirection_to_viewer"].url_for().with_query(**params)
+    )
+    return parse_obj_as(HttpUrl, f"{absolute_url}")
+
+
+def _compose_service_only_dispatcher_prefix_url(
+    request: web.Request, service_key: str, service_version: str
+) -> HttpUrl:
+    params = ViewerQueryParams(
+        viewer_key=service_key, viewer_version=service_version  # type: ignore
+    ).dict(exclude_none=True, exclude_unset=True)
+    absolute_url = request.url.join(
+        request.app.router["get_redirection_to_viewer"].url_for().with_query(**params)
+    )
+    return parse_obj_as(HttpUrl, f"{absolute_url}")
 
 
 #
@@ -62,7 +85,7 @@ class Viewer(BaseModel):
         return cls(
             file_type=viewer.filetype,
             title=viewer.title,
-            view_url=compose_dispatcher_prefix_url(
+            view_url=_compose_file_and_service_dispatcher_prefix_url(
                 request,
                 viewer,
             ),
@@ -91,7 +114,7 @@ class ServiceGet(BaseModel):
     @classmethod
     def create(cls, meta: ServiceMetaData, request: web.Request):
         return cls(
-            view_url=compose_service_dispatcher_prefix_url(
+            view_url=_compose_service_only_dispatcher_prefix_url(
                 request, service_key=meta.key, service_version=meta.version
             ),
             **asdict(meta),
@@ -138,7 +161,7 @@ async def list_services(request: Request):
             service = ServiceGet.create(service_data, request)
             services.append(service)
         except ValidationError as err:
-            logger.debug("Invalid %s: %s", f"{service_data=}", err)
+            _logger.debug("Invalid %s: %s", f"{service_data=}", err)
 
     return envelope_json_response(services)
 

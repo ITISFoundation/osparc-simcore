@@ -48,7 +48,7 @@ from ._constants import (
 )
 from .settings import StudiesDispatcherSettings, get_plugin_settings
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 _BASE_UUID = UUID("71e0eb5e-0797-4469-89ba-00a0df4d338a")
 
@@ -96,7 +96,7 @@ async def _get_published_template_project(
         return prj
 
     except (ProjectNotFoundError, ProjectInvalidRightsError) as err:
-        log.debug(
+        _logger.debug(
             "Project with %s %s was not found. Reason: %s",
             f"{project_uuid=}",
             f"{only_public_projects=}",
@@ -233,7 +233,9 @@ async def copy_study_to_account(
 
         # check project inputs and substitute template_parameters
         if template_parameters:
-            log.info("Substituting parameters '%s' in template", template_parameters)
+            _logger.info(
+                "Substituting parameters '%s' in template", template_parameters
+            )
             project = (
                 substitute_parameterized_inputs(project, template_parameters) or project
             )
@@ -251,7 +253,7 @@ async def copy_study_to_account(
             nodes_map,
             user["id"],
         ):
-            log.info(
+            _logger.info(
                 "copying %s into %s for %s: %s",
                 f"{template_project['uuid']=}",
                 f"{project['uuid']}",
@@ -306,7 +308,7 @@ def _handle_errors_with_error_page(handler: Handler):
 
         except Exception as err:
             error_code = create_error_code(err)
-            log.exception(
+            _logger.exception(
                 "Unexpected failure while dispatching study [%s]",
                 f"{error_code}",
                 extra={"error_code": error_code},
@@ -351,24 +353,24 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
 
     # Get or create a valid USER
     if not user:
-        log.debug("Creating temporary user ...")
+        _logger.debug("Creating temporary user ...")
         user = await _create_temporary_user(request)
         is_anonymous_user = True
 
     # COPY
     try:
-        log.debug(
+        _logger.debug(
             "Granted access to study '%s' for user %s. Copying study over ...",
             template_project.get("name"),
             user.get("email"),
         )
         copied_project_id = await copy_study_to_account(request, template_project, user)
 
-        log.debug("Study %s copied", copied_project_id)
+        _logger.debug("Study %s copied", copied_project_id)
 
     except Exception as exc:  # pylint: disable=broad-except
         error_code = create_error_code(exc)
-        log.exception(
+        _logger.exception(
             "Failed while copying project '%s' to '%s' [%s]",
             template_project.get("name"),
             user.get("email"),
@@ -390,7 +392,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
 
     response = web.HTTPFound(location=redirect_url)
     if is_anonymous_user:
-        log.debug("Auto login for anonymous user %s", user["name"])
+        _logger.debug("Auto login for anonymous user %s", user["name"])
         identity = user["email"]
 
         await remember(request, response, identity)

@@ -4,20 +4,22 @@ from collections import deque
 from functools import lru_cache
 
 from aiohttp import web
-from pydantic import ValidationError
+from models_library.utils.pydantic_tools_extension import parse_obj_or_none
+from pydantic import ByteSize, ValidationError
+from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.models.services_consume_filetypes import (
     services_consume_filetypes,
 )
 
 from .._constants import APP_DB_ENGINE_KEY
-from ._exceptions import StudyDispatcherError
+from ._errors import FileToLarge, IncompatibleService
 from ._models import ViewerInfo
+from .settings import get_plugin_settings
 
-MEGABYTES = 1024 * 1024
 _BASE_UUID = uuid.UUID("ca2144da-eabb-4daf-a1df-a3682050e25f")
 
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @lru_cache
@@ -48,7 +50,7 @@ async def list_viewers_info(
         if file_type and only_default:
             stmt = stmt.limit(1)
 
-        logger.debug("Listing viewers:\n%s", stmt)
+        _logger.debug("Listing viewers:\n%s", stmt)
 
         listed_filetype = set()
         async for row in await conn.execute(stmt):
@@ -62,7 +64,7 @@ async def list_viewers_info(
                 consumers.append(consumer)
 
             except ValidationError as err:
-                logger.warning("Review invalid service metadata %s: %s", row, err)
+                _logger.warning("Review invalid service metadata %s: %s", row, err)
 
     return list(consumers)
 
@@ -72,23 +74,27 @@ async def get_default_viewer(
     file_type: str,
     file_size: int | None = None,
 ) -> ViewerInfo:
+    """
+
+    Raises:
+        IncompatibleService
+        FileToLarge
+    """
     try:
         viewers = await list_viewers_info(app, file_type, only_default=True)
         viewer = viewers[0]
     except IndexError as err:
-        raise StudyDispatcherError(
-            f"No viewer available for file type '{file_type}'"
-        ) from err
+        raise IncompatibleService(file_type=file_type) from err
 
-    # TODO: This is a temporary limitation just for demo purposes.
-    if file_size is not None and file_size > 50 * MEGABYTES:
-        raise StudyDispatcherError(
-            f"File size {file_size*1E-6} MB is over allowed limit"
-        )
+    if current_size := parse_obj_or_none(ByteSize, file_size):
+        max_size: ByteSize = get_plugin_settings(app).STUDIES_MAX_FILE_SIZE_ALLOWED
+        if current_size > max_size:
+            raise FileToLarge(file_size_in_mb=current_size.to("MiB"))
 
     return viewer
 
 
+@log_decorator(_logger, level=logging.DEBUG)
 async def validate_requested_viewer(
     app: web.Application,
     file_type: str,
@@ -96,6 +102,12 @@ async def validate_requested_viewer(
     service_key: str | None = None,
     service_version: str | None = None,
 ) -> ViewerInfo:
+    """
+
+    Raises:
+        IncompatibleService: When there is no match
+
+    """
 
     if not service_key and not service_version:
         return await get_default_viewer(app, file_type, file_size)
@@ -112,6 +124,17 @@ async def validate_requested_viewer(
             if row:
                 return ViewerInfo.create_from_db(row)
 
-    raise StudyDispatcherError(
-        f"None of the registered viewers can open file type '{file_type}'"
-    )
+    raise IncompatibleService(file_type=file_type)
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+def validate_requested_file(
+    app: web.Application, file_type: str, file_size: int | None = None
+):
+    # NOTE in the future we might want to prevent some types to be pulled
+    assert file_type  # nosec
+
+    if current_size := parse_obj_or_none(ByteSize, file_size):
+        max_size: ByteSize = get_plugin_settings(app).STUDIES_MAX_FILE_SIZE_ALLOWED
+        if current_size > max_size:
+            raise FileToLarge(file_size_in_mb=current_size.to("MiB"))
