@@ -35,7 +35,7 @@ from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import setup_db
-from simcore_service_webserver.diagnostics import setup_diagnostics
+from simcore_service_webserver.diagnostics.plugin import setup_diagnostics
 from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.notifications.plugin import setup_notifications
