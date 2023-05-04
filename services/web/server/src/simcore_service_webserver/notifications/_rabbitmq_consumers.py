@@ -121,7 +121,7 @@ async def _log_message_parser(app: web.Application, data: bytes) -> bool:
         socket_messages: list[SocketMessageDict] = [
             {
                 "event_type": SOCKET_IO_LOG_EVENT,
-                "data": rabbit_message.dict(exclude={"user_id"}),
+                "data": rabbit_message.dict(exclude={"user_id", "channel_name"}),
             }
         ]
         await send_messages(app, f"{rabbit_message.user_id}", socket_messages)
