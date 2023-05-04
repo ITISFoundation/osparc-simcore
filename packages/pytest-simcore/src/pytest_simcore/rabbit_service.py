@@ -6,7 +6,7 @@ import asyncio
 import logging
 import os
 import socket
-from typing import Any, AsyncIterator
+from typing import Any, AsyncIterator, Callable
 
 import aio_pika
 import pytest
@@ -122,10 +122,26 @@ async def rabbit_channel(
 
 
 @pytest.fixture
-async def rabbit_client(
-    rabbit_settings: RabbitSettings,
-) -> AsyncIterator[RabbitMQClient]:
-    client = RabbitMQClient("pytest", settings=rabbit_settings)
-    assert client
-    yield client
-    await client.close()
+async def rabbitmq_client(
+    rabbit_service: RabbitSettings,
+) -> AsyncIterator[Callable[[str], RabbitMQClient]]:
+    created_clients = []
+
+    def _creator(client_name: str) -> RabbitMQClient:
+        client = RabbitMQClient(f"pytest_{client_name}", rabbit_service)
+        assert client
+        assert client._connection_pool  # pylint: disable=protected-access
+        assert not client._connection_pool.is_closed  # pylint: disable=protected-access
+        assert client._channel_pool  # pylint: disable=protected-access
+        assert not client._channel_pool.is_closed  # pylint: disable=protected-access
+        assert client.client_name == f"pytest_{client_name}"
+        assert client.settings == rabbit_service
+        created_clients.append(client)
+        return client
+
+    yield _creator
+    # cleanup, properly close the clients
+    await asyncio.gather(*(client.close() for client in created_clients))
+    for client in created_clients:
+        assert client._channel_pool  # pylint: disable=protected-access
+        assert client._channel_pool.is_closed  # pylint: disable=protected-access

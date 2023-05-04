@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import asyncio
-from typing import Any, Mapping
+from typing import Any, Callable, Mapping
 
 import aiodocker
 import pytest
@@ -109,11 +109,12 @@ async def test_post_message(
     mocked_redis_server: None,
     initialized_app: FastAPI,
     rabbit_message: RabbitMessageBase,
-    rabbit_client: RabbitMQClient,
+    rabbitmq_client: Callable[[str], RabbitMQClient],
     mocker: MockerFixture,
 ):
     mocked_message_handler = mocker.AsyncMock(return_value=True)
-    await rabbit_client.subscribe(
+    client = rabbitmq_client("pytest_consumer")
+    await client.subscribe(
         rabbit_message.channel_name,
         mocked_message_handler,
         topics=[BIND_TO_ALL_TOPICS] if rabbit_message.routing_key() else None,
