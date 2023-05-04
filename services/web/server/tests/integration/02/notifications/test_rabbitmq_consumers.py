@@ -17,6 +17,7 @@ from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import (
     InstrumentationRabbitMessage,
     LoggerRabbitMessage,
@@ -29,6 +30,10 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from redis import Redis
 from servicelib.aiohttp.application import create_safe_application
+from servicelib.aiohttp.monitor_services import (
+    SERVICE_STARTED_LABELS,
+    SERVICE_STOPPED_LABELS,
+)
 from servicelib.rabbitmq import RabbitMQClient
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.projects import projects
@@ -329,6 +334,7 @@ async def test_progress_computational_workflow(
 @pytest.mark.parametrize(
     "project_hidden", [False, True], ids=lambda id: f"ProjectHidden={id}"
 )
+@pytest.mark.parametrize("metrics_name", ["service_started", "service_stopped"])
 async def test_instrumentation_workflow(
     client: TestClient,
     rabbitmq_publisher: RabbitMQClient,
@@ -338,14 +344,15 @@ async def test_instrumentation_workflow(
     project_hidden: bool,
     aiopg_engine: aiopg.sa.Engine,
     faker: Faker,
+    metrics_name: str,
 ):
     """
     RabbitMQ --> Webserver -->  Prometheus metrics
 
     """
 
-    mocked_service_started = mocker.patch(
-        "simcore_service_webserver.notifications._rabbitmq_consumers.service_started"
+    mocked_metrics_method = mocker.patch(
+        f"simcore_service_webserver.notifications._rabbitmq_consumers.{metrics_name}"
     )
     if project_hidden:
         async with aiopg_engine.acquire() as conn:
@@ -360,22 +367,23 @@ async def test_instrumentation_workflow(
         user_id=UserID(logged_user["id"]),
         project_id=ProjectID(user_project["uuid"]),
         node_id=random_node_id_in_project,
-        metrics="service_started",
+        metrics=metrics_name,
         service_uuid=faker.uuid4(),
         service_key=faker.pystr(),
         service_tag=faker.pystr(),
-        result=None,
+        result=RunningState.STARTED,
         simcore_user_agent=faker.pystr(),
         service_type=faker.pystr(),
     )
     await rabbitmq_publisher.publish(rabbit_message.channel_name, rabbit_message)
 
+    included_labels = SERVICE_STARTED_LABELS
+    if metrics_name == "service_stopped":
+        included_labels = SERVICE_STOPPED_LABELS
     await _assert_handler_called(
-        mocked_service_started,
+        mocked_metrics_method,
         mock.call(
             client.app,
-            **rabbit_message.dict(
-                include={"service_key", "service_tag", "simcore_user_agent"}
-            ),
+            **rabbit_message.dict(include=set(included_labels)),
         ),
     )
