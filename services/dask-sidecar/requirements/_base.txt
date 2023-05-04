@@ -159,7 +159,9 @@ pyyaml==5.4.1
     #   dask-gateway
     #   distributed
 redis==4.5.4
-    # via -r requirements/../../../packages/service-library/requirements/_base.in
+    # via
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
 requests==2.28.2
     # via fsspec
 s3fs==2023.3.0
