@@ -25,6 +25,9 @@ from models_library.emails import LowerCaseEmailStr
 from pydantic import parse_obj_as
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.error_codes import create_error_code
+from simcore_service_webserver.director_v2_core_computations import (
+    create_or_update_pipeline,
+)
 
 from .._constants import INDEX_RESOURCE_NAME
 from ..garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
@@ -240,10 +243,11 @@ async def copy_study_to_account(
                 substitute_parameterized_inputs(project, template_parameters) or project
             )
         # add project model + copy data TODO: guarantee order and atomicity
+        product_name = get_product_name(request)
         await db.insert_project(
             project,
             user["id"],
-            product_name=get_product_name(request),
+            product_name=product_name,
             force_project_uuid=True,
         )
         async for lr_task in copy_data_folders_from_project(
@@ -262,6 +266,9 @@ async def copy_study_to_account(
             )
             if lr_task.done():
                 await lr_task.result()
+        await create_or_update_pipeline(
+            request.app, user["id"], project["uuid"], product_name
+        )
 
     return project_uuid
 
