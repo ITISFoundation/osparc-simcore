@@ -12,7 +12,7 @@ from simcore_postgres_database.utils_products import (
 )
 
 from .._constants import APP_DB_ENGINE_KEY, APP_PRODUCTS_KEY
-from ..statics_constants import FRONTEND_APP_DEFAULT, FRONTEND_APPS_AVAILABLE
+from ..statics._constants import FRONTEND_APP_DEFAULT, FRONTEND_APPS_AVAILABLE
 from ._db import iter_products
 from ._model import Product
 
