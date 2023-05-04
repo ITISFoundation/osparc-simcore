@@ -20,12 +20,20 @@ from simcore_service_webserver.studies_dispatcher._projects_permalinks import (
 
 @pytest.fixture
 def app_environment(env_devel_dict: EnvVarsDict, monkeypatch: MonkeyPatch):
-    envs_plugins = setenvs_from_dict(
+
+    # remove
+    for env in ("WEBSERVER_STUDIES_DISPATCHER", "WEBSERVER_STUDIES_ACCESS_ENABLED"):
+        monkeypatch.delenv(env, raising=False)
+        env_devel_dict.pop(env, None)
+
+    # override
+    env_vars = setenvs_from_dict(
         monkeypatch,
         {
+            **env_devel_dict,
             "WEBSERVER_ACTIVITY": "null",
             "WEBSERVER_CATALOG": "null",
-            "WEBSERVER_CLUSTERS": "null",
+            "WEBSERVER_CLUSTERS": "false",
             "WEBSERVER_COMPUTATION": "0",
             "WEBSERVER_DIAGNOSTICS": "null",
             "WEBSERVER_DIRECTOR": "null",
@@ -44,26 +52,13 @@ def app_environment(env_devel_dict: EnvVarsDict, monkeypatch: MonkeyPatch):
             "WEBSERVER_TRACING": "null",
             "WEBSERVER_USERS": "1",
             "WEBSERVER_VERSION_CONTROL": "0",
-        },
-    )
-
-    monkeypatch.delenv("WEBSERVER_STUDIES_DISPATCHER", raising=False)
-    env_devel_dict.pop("WEBSERVER_STUDIES_DISPATCHER", None)
-
-    # legacy for STUDIES_ACCESS_ANONYMOUS_ALLOWED
-    monkeypatch.delenv("WEBSERVER_STUDIES_ACCESS_ENABLED", raising=False)
-
-    envs_studies_dispatcher = setenvs_from_dict(
-        monkeypatch,
-        {
+            #
             "STUDIES_ACCESS_ANONYMOUS_ALLOWED": "1",
         },
     )
-
     # NOTE: To see logs, use pytest -s --log-cli-level=DEBUG
     # setup_logging(level=logging.DEBUG)
-
-    return {**env_devel_dict, **envs_plugins, **envs_studies_dispatcher}
+    return env_vars
 
 
 def test_create_permalink(
@@ -74,7 +69,7 @@ def test_create_permalink(
 
     fake_request = make_mocked_request("GET", "/project", app=app)
 
-    project_uuid = (faker.uuid4(),)
+    project_uuid = faker.uuid4()
     permalink1 = create_permalink_for_study(
         fake_request,
         project_uuid=project_uuid,
