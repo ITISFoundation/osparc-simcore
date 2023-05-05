@@ -1,7 +1,3 @@
-"""
-    Plugin to interact with the invitations service
-"""
-
 import logging
 from contextlib import contextmanager
 
@@ -69,14 +65,12 @@ def _handle_exceptions_as_invitations_errors():
 #
 # API plugin CALLS
 #
+_MGS_INVALID_INVITATION_URL = "Link seems corrupted or incomplete"
 
 
 def is_service_invitation_code(code: str):
     """Fast check to distinguish from confirmation-type of invitation code"""
     return len(code) > 100  # typically long strings
-
-
-_MGS_INVALID_INVITATION_URL = "Link seems corrupted or incomplete"
 
 
 async def validate_invitation_url(
