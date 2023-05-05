@@ -21,7 +21,7 @@ from simcore_postgres_database.models.products import (
 )
 
 from ..db_models import products
-from ..statics_constants import FRONTEND_APPS_AVAILABLE
+from ..statics._constants import FRONTEND_APPS_AVAILABLE
 
 log = logging.getLogger(__name__)
 

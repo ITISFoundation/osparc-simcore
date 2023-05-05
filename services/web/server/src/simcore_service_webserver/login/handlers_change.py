@@ -10,7 +10,7 @@ from servicelib.request_keys import RQT_USERID_KEY
 
 from .._meta import API_VTAG
 from ..products.plugin import Product, get_current_product
-from ..security_api import check_password, encrypt_password
+from ..security.api import check_password, encrypt_password
 from ..utils import HOUR
 from ..utils_rate_limiting import global_rate_limit_route
 from ._confirmation import is_confirmation_allowed, make_confirmation_link

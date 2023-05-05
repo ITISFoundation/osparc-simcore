@@ -16,7 +16,7 @@ cfgv==3.3.1
     # via pre-commit
 click==8.1.3
     # via
-    #   -c requirements/_base.txt
+    #   -c requirements/_test.txt
     #   black
     #   pip-tools
 dill==0.3.6
@@ -61,7 +61,7 @@ pyproject-hooks==1.0.0
     # via build
 pyyaml==5.4.1
     # via
-    #   -c requirements/_base.txt
+    #   -c requirements/_test.txt
     #   pre-commit
     #   watchdog
 tomli==2.0.1
@@ -75,7 +75,7 @@ tomlkit==0.11.7
     # via pylint
 typing-extensions==4.5.0
     # via
-    #   -c requirements/_base.txt
+    #   -c requirements/_test.txt
     #   astroid
 virtualenv==20.21.0
     # via pre-commit
@@ -85,7 +85,7 @@ wheel==0.40.0
     # via pip-tools
 wrapt==1.15.0
     # via
-    #   -c requirements/_base.txt
+    #   -c requirements/_test.txt
     #   astroid
 
 # The following packages are considered to be unsafe in a requirements file:

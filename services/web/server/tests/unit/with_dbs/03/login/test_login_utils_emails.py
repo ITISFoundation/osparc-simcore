@@ -25,7 +25,7 @@ from simcore_service_webserver.login.utils_email import (
     send_email_from_template,
     themed,
 )
-from simcore_service_webserver.statics_constants import FRONTEND_APPS_AVAILABLE
+from simcore_service_webserver.statics._constants import FRONTEND_APPS_AVAILABLE
 
 
 @pytest.fixture

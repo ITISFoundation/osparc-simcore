@@ -23,7 +23,7 @@ log = logging.getLogger(__file__)
 
 async def _post_rabbit_message(app: FastAPI, message: RabbitMessageBase) -> None:
     with log_catch(log, reraise=False):
-        await get_rabbitmq_client(app).publish(message.channel_name, message.json())
+        await get_rabbitmq_client(app).publish(message.channel_name, message)
 
 
 async def post_log_message(app: FastAPI, logs: str, *, log_level: int) -> None:

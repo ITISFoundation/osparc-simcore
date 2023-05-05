@@ -1,5 +1,4 @@
 import functools
-from typing import Optional
 
 from aiohttp import web
 from aiopg.sa.engine import Engine
@@ -21,7 +20,7 @@ from simcore_postgres_database.utils_tags import (
 
 from ._meta import api_version_prefix as VTAG
 from .login.decorators import RQT_USERID_KEY, login_required
-from .security_decorators import permission_required
+from .security.decorators import permission_required
 
 
 def _handle_tags_exceptions(handler: Handler):
@@ -63,14 +62,14 @@ class TagPathParams(_InputSchema):
 
 
 class TagUpdate(_InputSchema):
-    name: Optional[str] = None
-    description: Optional[str] = None
-    color: Optional[ColorStr] = None
+    name: str | None = None
+    description: str | None = None
+    color: ColorStr | None = None
 
 
 class TagCreate(_InputSchema):
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     color: ColorStr
 
 
@@ -91,7 +90,7 @@ class TagAccessRights(_OutputSchema):
 class TagGet(_OutputSchema):
     id: PositiveInt
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     color: str
 
     # analogous to UsersGroup

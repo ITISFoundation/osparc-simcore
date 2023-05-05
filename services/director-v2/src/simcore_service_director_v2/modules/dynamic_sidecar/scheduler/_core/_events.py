@@ -120,7 +120,7 @@ class CreateSidecars(DynamicSchedulerEvent):
             simcore_user_agent=scheduler_data.request_simcore_user_agent,
         )
         rabbitmq_client: RabbitMQClient = app.state.rabbitmq_client
-        await rabbitmq_client.publish(message.channel_name, message.json())
+        await rabbitmq_client.publish(message.channel_name, message)
 
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
@@ -218,16 +218,14 @@ class CreateSidecars(DynamicSchedulerEvent):
                 include=DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS,
             )
         )
-        await rabbitmq_client.publish(
-            ProgressRabbitMessageNode.get_channel_name(),
-            ProgressRabbitMessageNode(
-                user_id=scheduler_data.user_id,
-                project_id=scheduler_data.project_id,
-                node_id=scheduler_data.node_uuid,
-                progress_type=ProgressType.SIDECARS_PULLING,
-                progress=0,
-            ).json(),
+        rabbit_message = ProgressRabbitMessageNode(
+            user_id=scheduler_data.user_id,
+            project_id=scheduler_data.project_id,
+            node_id=scheduler_data.node_uuid,
+            progress_type=ProgressType.SIDECARS_PULLING,
+            progress=0,
         )
+        await rabbitmq_client.publish(rabbit_message.channel_name, rabbit_message)
         dynamic_sidecar_id = await create_service_and_get_id(
             dynamic_sidecar_service_final_spec
         )
@@ -237,16 +235,14 @@ class CreateSidecars(DynamicSchedulerEvent):
                 dynamic_sidecar_id, dynamic_sidecar_settings
             )
         )
-        await rabbitmq_client.publish(
-            ProgressRabbitMessageNode.get_channel_name(),
-            ProgressRabbitMessageNode(
-                user_id=scheduler_data.user_id,
-                project_id=scheduler_data.project_id,
-                node_id=scheduler_data.node_uuid,
-                progress_type=ProgressType.SIDECARS_PULLING,
-                progress=1,
-            ).json(),
+        rabbit_message = ProgressRabbitMessageNode(
+            user_id=scheduler_data.user_id,
+            project_id=scheduler_data.project_id,
+            node_id=scheduler_data.node_uuid,
+            progress_type=ProgressType.SIDECARS_PULLING,
+            progress=1,
         )
+        await rabbitmq_client.publish(rabbit_message.channel_name, rabbit_message)
 
         await constrain_service_to_node(
             service_name=scheduler_data.service_name,
