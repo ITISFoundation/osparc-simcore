@@ -21,8 +21,6 @@ from ..utils_aiohttp import envelope_json_response
 
 _logger = logging.getLogger(__name__)
 
-log = logging.getLogger(__name__)
-
 routes = web.RouteTableDef()
 
 
