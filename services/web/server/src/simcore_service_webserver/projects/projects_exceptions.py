@@ -90,3 +90,7 @@ class ProjectTooManyProjectOpened(ProjectsException):
 
 class PermalinkNotAllowedError(ProjectsException):
     ...
+
+
+class PermalinkFactoryError(ProjectsException):
+    ...

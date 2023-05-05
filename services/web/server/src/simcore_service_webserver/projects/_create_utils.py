@@ -23,7 +23,7 @@ from ..storage_api import (
 )
 from ..users_api import get_user_name
 from . import projects_api
-from ._permalink import create_permalink
+from ._permalink import update_or_pop_permalink_in_project
 from ._rest_schemas import ProjectGet
 from .project_models import ProjectDict
 from .projects_db import ProjectDBAPI
@@ -244,9 +244,8 @@ async def create_project(
         )
 
         # Adds permalink
-        new_project["permalink"] = await create_permalink(
-            request, project_id=new_project["uuid"]
-        )
+        await update_or_pop_permalink_in_project(request, new_project)
+        assert new_project["permalink"]  # nosec
 
         # Ensures is like ProjectGet
         data = ProjectGet.parse_obj(new_project).data(exclude_unset=True)

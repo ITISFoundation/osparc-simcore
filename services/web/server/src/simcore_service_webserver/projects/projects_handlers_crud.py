@@ -42,7 +42,7 @@ from ..security.api import check_permission
 from ..security.decorators import permission_required
 from ..users_api import get_user_name
 from . import _create_utils, projects_api
-from ._permalink import create_permalink
+from ._permalink import update_or_pop_permalink_in_project
 from ._rest_schemas import (
     EmptyModel,
     ProjectCopyOverride,
@@ -298,10 +298,8 @@ async def get_active_project(request: web.Request) -> web.Response:
                 include_state=True,
             )
 
-            # Adds permalink
-            project["permalink"] = await create_permalink(
-                request, project_id=project["uuid"]
-            )
+            # updates permalink dynamically
+            await update_or_pop_permalink_in_project(request, project)
 
             data = ProjectGet.parse_obj(project).data(exclude_unset=True)
 
@@ -359,9 +357,7 @@ async def get_project(request: web.Request):
             project["uuid"] = new_uuid
 
         # Adds permalink
-        project["permalink"] = await create_permalink(
-            request, project_id=project["uuid"]
-        )
+        await update_or_pop_permalink_in_project(request, project)
 
         data = ProjectGet.parse_obj(project).data(exclude_unset=True)
         return web.json_response({"data": data}, dumps=json_dumps)

@@ -1,13 +1,16 @@
+import asyncio
 import logging
 from typing import Any, Callable, Coroutine
 
 from aiohttp import web
 from models_library.projects import ProjectID
 from pydantic import BaseModel, HttpUrl
+from simcore_service_webserver.projects.project_models import ProjectDict
 
-from .projects_exceptions import PermalinkNotAllowedError
+from .projects_exceptions import PermalinkFactoryError, PermalinkNotAllowedError
 
 _PROJECT_PERMALINK = f"{__name__}"
+_logger = logging.getLogger(__name__)
 
 
 class ProjectPermalink(BaseModel):
@@ -25,21 +28,56 @@ def register_factory(app: web.Application, factory_coro: _CreateLinkCallable):
     app[_PROJECT_PERMALINK] = factory_coro
 
 
-def _get_factory(app: web.Application) -> _CreateLinkCallable | None:
-    return app.get(_PROJECT_PERMALINK)
+def _get_factory(app: web.Application) -> _CreateLinkCallable:
+    if _create := app.get(_PROJECT_PERMALINK):
+        return _create
+    raise PermalinkFactoryError(
+        "Undefined permalink factory. Check plugin initialization."
+    )
 
 
-_logger = logging.getLogger(__name__)
+_CALLBACK_TIMEOUT = (
+    2  #  get_plugin_settings(request.app).PROJECTS_PERMALINK_FACTORY_TIMEOUT
+)
 
 
-async def create_permalink(
+async def _create_permalink(
     request: web.Request, project_id: ProjectID
+) -> ProjectPermalink:
+
+    create = _get_factory(request.app)
+    assert create  # nosec
+
+    try:
+        permalink: ProjectPermalink = await asyncio.wait_for(
+            create(request, project_id), timeout=_CALLBACK_TIMEOUT
+        )
+        return permalink
+    except asyncio.TimeoutError as err:
+        raise PermalinkFactoryError(
+            f"Permalink factory callback '{create}' timed out after {_CALLBACK_TIMEOUT} secs"
+        ) from err
+
+
+async def update_or_pop_permalink_in_project(
+    request: web.Request, project: ProjectDict
 ) -> ProjectPermalink | None:
-    if create := _get_factory(request.app):
-        # TODO: timeout
-        try:
-            permalink_info: ProjectPermalink = await create(request, project_id)
-            return permalink_info
-        except PermalinkNotAllowedError as err:
-            _logger.debug("Permalink set to None: %s", err)
+    """Updates permalink entry in project
+
+    Creates a permalink for this project and assigns it to project["permalink"]
+
+    If fails, it pops it from project (so it is not set in the pydantic model. SEE ProjectGet.permalink)
+    """
+    try:
+        permalink = await _create_permalink(request, project_id=project["uuid"])
+
+        assert permalink  # nosec
+        project["permalink"] = permalink
+
+        return permalink
+
+    except (PermalinkNotAllowedError, PermalinkFactoryError) as err:
+        project.pop("permalink", None)
+        _logger.debug("Failed to create permalink %s", f"{err}")
+
     return None

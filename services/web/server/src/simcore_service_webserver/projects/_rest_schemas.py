@@ -73,7 +73,7 @@ class ProjectGet(OutputSchema):
     ui: EmptyModel | StudyUI | None
     quality: dict[str, Any] = {}
     dev: dict | None
-    permalink: ProjectPermalink | None = None  # Optional and nullable
+    permalink: ProjectPermalink = NOT_REQUIRED
 
     _empty_description = validator("description", allow_reuse=True, pre=True)(
         none_to_empty_str
