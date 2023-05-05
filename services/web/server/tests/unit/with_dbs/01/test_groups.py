@@ -35,7 +35,7 @@ from simcore_service_webserver.login.storage import (
     get_plugin_storage as get_login_plugin_storage,
 )
 from simcore_service_webserver.rest import setup_rest
-from simcore_service_webserver.security import setup_security
+from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.users import setup_users
 from simcore_service_webserver.utils import gravatar_hash

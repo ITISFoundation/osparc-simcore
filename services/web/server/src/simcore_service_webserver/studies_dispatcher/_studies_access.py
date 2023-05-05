@@ -39,7 +39,7 @@ from ..projects.projects_exceptions import (
     ProjectNotFoundError,
 )
 from ..redis import get_redis_lock_manager_client
-from ..security_api import is_anonymous, remember
+from ..security.api import is_anonymous, remember
 from ..storage_api import copy_data_folders_from_project
 from ..utils import compose_support_error_msg
 from ..utils_aiohttp import create_redirect_response
@@ -123,7 +123,7 @@ async def _get_published_template_project(
 async def _create_temporary_user(request: web.Request):
     from ..login.storage import AsyncpgStorage, get_plugin_storage
     from ..login.utils import ACTIVE, GUEST, get_client_ip, get_random_string
-    from ..security_api import encrypt_password
+    from ..security.api import encrypt_password
 
     db: AsyncpgStorage = get_plugin_storage(request.app)
     redis_locks_client: aioredis.Redis = get_redis_lock_manager_client(request.app)
@@ -188,11 +188,11 @@ async def _create_temporary_user(request: web.Request):
 
 async def get_authorized_user(request: web.Request) -> dict:
     from ..login.storage import AsyncpgStorage, get_plugin_storage
-    from ..security_api import authorized_userid
+    from ..security.api import authorized_userid
 
     db: AsyncpgStorage = get_plugin_storage(request.app)
     userid = await authorized_userid(request)
-    user = await db.get_user({"id": userid})
+    user: dict = await db.get_user({"id": userid})
     return user
 
 

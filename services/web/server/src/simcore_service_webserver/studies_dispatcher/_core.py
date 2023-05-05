@@ -36,7 +36,7 @@ async def list_viewers_info(
     # TODO: These services MUST be shared with EVERYBODY! Setup check on startup and fill
     #       with !?
     #
-    consumers = deque()
+    consumers: deque = deque()
 
     async with app[APP_DB_ENGINE_KEY].acquire() as conn:
 
