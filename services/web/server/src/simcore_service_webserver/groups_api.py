@@ -329,7 +329,7 @@ async def _get_user_in_group_permissions(
         .select_from(users.join(user_to_groups, users.c.id == user_to_groups.c.uid))
         .where(and_(user_to_groups.c.gid == gid, users.c.id == the_user_id_in_group))
     )
-    the_user: RowProxy = await result.fetchone()
+    the_user: RowProxy | None = await result.fetchone()
     if not the_user:
         raise UserInGroupNotFoundError(the_user_id_in_group, gid)
     return the_user
