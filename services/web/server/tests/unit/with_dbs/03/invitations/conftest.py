@@ -14,7 +14,7 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
-from simcore_service_webserver.invitations.invitations_client import InvitationContent
+from simcore_service_webserver.invitations._client import InvitationContent
 from simcore_service_webserver.invitations.settings import (
     InvitationsSettings,
     get_plugin_settings,

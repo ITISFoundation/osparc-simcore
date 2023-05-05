@@ -13,7 +13,7 @@ from servicelib.error_codes import create_error_code
 from simcore_postgres_database.models.users import users
 
 from ..db import get_database_engine
-from .invitations_client import (
+from ._client import (
     InvitationContent,
     InvitationsServiceApi,
     get_invitations_service_api,

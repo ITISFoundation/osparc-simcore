@@ -9,6 +9,7 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 
 from .._constants import APP_SETTINGS_KEY
 from ..db import setup_db
+from ._client import invitations_service_api_cleanup_ctx
 from ._core import (
     InvalidInvitation,
     InvitationsServiceUnavailable,
@@ -16,7 +17,6 @@ from ._core import (
     is_service_invitation_code,
     validate_invitation_url,
 )
-from .invitations_client import invitations_service_api_cleanup_ctx
 
 logger = logging.getLogger(__name__)
 
