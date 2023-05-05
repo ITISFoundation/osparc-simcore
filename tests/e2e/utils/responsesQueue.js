@@ -38,7 +38,7 @@ class ResponsesQueue {
     });
   }
 
-  __addResponseListener(url) {
+  __addResponseListener(url, extractJsonResp = true) {
     const that = this;
     this.__page.on("response", function callback(resp) {
       if (resp.url().includes(url)) {
@@ -46,6 +46,9 @@ class ResponsesQueue {
         that.__respPendingQueue[url]["end"] = new Date();
         console.log(resp.status());
         if (resp.status() === 204) {
+          that.removeResponseListener(url, "ok", callback);
+        }
+        else if (extractJsonResp === false && resp.status() === 200) {
           that.removeResponseListener(url, "ok", callback);
         }
         else {
@@ -57,9 +60,9 @@ class ResponsesQueue {
     });
   }
 
-  addResponseListener(url) {
+  addResponseListener(url, extractJsonResp = true) {
     this.__addRequestListener(url);
-    this.__addResponseListener(url);
+    this.__addResponseListener(url, extractJsonResp);
   }
 
   removeResponseListener(url, resp, callback) {

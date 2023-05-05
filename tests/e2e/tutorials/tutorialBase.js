@@ -779,6 +779,32 @@ class TutorialBase {
     return false;
   }
 
+  async testSARValidation(sarIframe) {
+    // SAR Validation service testing
+
+    this.__responsesQueue.addResponseListener("training-set-generation/generate");
+    this.__responsesQueue.addResponseListener("training-set-generation/data");
+    this.__responsesQueue.addResponseListener("training-set-generation/distribution", false);
+    try {
+      await this.waitAndClick("createTrainingSetBtn", sarIframe);
+      await this.__responsesQueue.waitUntilResponse("training-set-generation/generate");
+      await this.__responsesQueue.waitUntilResponse("training-set-generation/data");
+      await this.__responsesQueue.waitUntilResponse("training-set-generation/distribution");
+    }
+    catch (err) {
+      console.error(this.__templateName, "training-set can't be generated", err);
+    }
+
+    this.__responsesQueue.addResponseListener("training-set-generation/xport", false);
+    try {
+      await this.waitAndClick("exportTrainingSetBtn", sarIframe);
+      await this.__responsesQueue.waitUntilResponse("training-set-generation/xport");
+    }
+    catch (err) {
+      console.error(this.__templateName, "training-set can't be exported", err);
+    }
+  }
+
   async takeScreenshot(screenshotTitle) {
     // Generates an URL that points to the backend logs at this time
     const snapshotUrl = utils.getGrayLogSnapshotUrl(this.__url, 30);
