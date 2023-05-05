@@ -636,17 +636,6 @@ async def mocked_notification_system(mocker):
 @pytest.mark.parametrize(
     "user_role, expected_save_state",
     [
-        # pytest.param(
-        #     UserRole.GUEST,
-        #     False,
-        #     marks=pytest.mark.xfail(
-        #         reason=(
-        #             "GC is wrongly assuming that only 1 tab can be opened for GUEST users. "
-        #             "SEE: https://github.com/ITISFoundation/osparc-simcore/issues/3770"
-        #         )
-        #         #
-        #     ),
-        # ),
         (UserRole.GUEST, False),
         (UserRole.USER, True),
         (UserRole.TESTER, True),
