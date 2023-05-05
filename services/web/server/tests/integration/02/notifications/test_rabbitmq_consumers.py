@@ -246,6 +246,58 @@ async def test_log_workflow(
 
 
 @pytest.mark.parametrize("user_role", [UserRole.GUEST], ids=str)
+async def test_log_workflow_only_receives_messages_if_subscribed(
+    client: TestClient,
+    rabbitmq_publisher: RabbitMQClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    faker: Faker,
+    mocker: MockerFixture,
+):
+    """
+    RabbitMQ (TOPIC) --> Webserver
+
+    """
+    mocked_send_messages = mocker.patch(
+        "simcore_service_webserver.notifications._rabbitmq_consumers.send_messages",
+        autospec=True,
+    )
+
+    project_id = ProjectID(user_project["uuid"])
+    random_node_id_in_project = NodeID(choice(list(user_project["workbench"])))
+    sender_user_id = UserID(logged_user["id"])
+
+    assert client.app
+    await project_logs.subscribe(client.app, project_id)
+
+    log_message = LoggerRabbitMessage(
+        user_id=sender_user_id,
+        project_id=project_id,
+        node_id=random_node_id_in_project,
+        messages=[faker.text() for _ in range(10)],
+    )
+    await rabbitmq_publisher.publish(log_message.channel_name, log_message)
+    await _assert_handler_called(
+        mocked_send_messages,
+        mock.call(
+            client.app,
+            f"{log_message.user_id}",
+            [
+                {
+                    "event_type": SOCKET_IO_LOG_EVENT,
+                    "data": log_message.dict(exclude={"user_id", "channel_name"}),
+                }
+            ],
+        ),
+    )
+    mocked_send_messages.reset_mock()
+
+    # when unsubscribed, we do not receive the messages anymore
+    await project_logs.unsubscribe(client.app, project_id)
+    await _assert_no_handler_not_called(mocked_send_messages)
+
+
+@pytest.mark.parametrize("user_role", [UserRole.GUEST], ids=str)
 @pytest.mark.parametrize(
     "progress_type",
     [p for p in ProgressType if p is not ProgressType.COMPUTATION_RUNNING],
