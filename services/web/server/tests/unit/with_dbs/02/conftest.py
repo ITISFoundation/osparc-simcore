@@ -375,17 +375,3 @@ def mock_get_total_project_dynamic_nodes_creation_interval(
         ".get_total_project_dynamic_nodes_creation_interval",
         return_value=_VERY_LONG_LOCK_TIMEOUT_S,
     )
-
-
-@pytest.fixture
-def mock_notifications_plugin(mocker: MockerFixture) -> dict[str, mock.Mock]:
-    mocked_subscribe = mocker.patch(
-        "simcore_service_webserver.notifications.project_logs.subscribe",
-        autospec=True,
-    )
-    mocked_unsubscribe = mocker.patch(
-        "simcore_service_webserver.notifications.project_logs.unsubscribe",
-        autospec=True,
-    )
-
-    return {"subscribe": mocked_subscribe, "unsubscribe": mocked_unsubscribe}
