@@ -135,8 +135,24 @@ class RedisClientSDK:
                 # lock is in use now
                 yield ttl_lock
         finally:
-            # NOTE: lock can expire before being released.
-            # Will raise LockNotOwnedError
+            # NOTE Why is this error suppressed? Given the following situation:
+            # - 250 locks are acquire in parallel with the option `blocking=True`,
+            #     meaning: it will wait for the lock to be free before acquiring it
+            # - when the lock is acquired the `_extend_lock` task is started
+            #     in the background, extending the lock at a fixed interval of time,
+            #     which is half of the duration of the lock's TTL
+            # - before the task is released the lock extension task is cancelled
+            # Here is where the issue occurs:
+            # - some time passes between the task's cancellation and
+            #     the call to release the lock
+            # - if the TTL is too small, 1/2 of the TTL might be just shorter than
+            #     the time it passes to between the task is canceled and the task lock is released
+            # - this means that the lock will expire and be considered as not owned any longer
+            # For example: in one of the failing tests the TTL is set to `0.25` seconds,
+            # and half of that is `0.125` seconds.
+
+            # Above implies that only one "task" `owns` and `extends` the lock at a time.
+            # The issue appears to be related some timings (being too low).
             with contextlib.suppress(redis.exceptions.LockNotOwnedError):
                 await ttl_lock.release()
 
