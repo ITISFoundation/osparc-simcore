@@ -10,7 +10,7 @@ from pydantic import AnyHttpUrl, BaseModel, parse_obj_as
 from yarl import URL
 
 from .._constants import APP_SETTINGS_KEY
-from .invitations_settings import InvitationsSettings
+from .settings import InvitationsSettings
 
 logger = logging.getLogger(__name__)
 

@@ -16,7 +16,7 @@ from simcore_service_webserver.invitations.invitations_client import (
     InvitationsServiceApi,
     get_invitations_service_api,
 )
-from simcore_service_webserver.invitations.invitations_plugin import (
+from simcore_service_webserver.invitations.plugin import (
     InvalidInvitation,
     InvitationsServiceUnavailable,
     validate_invitation_url,
