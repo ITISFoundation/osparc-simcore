@@ -784,16 +784,18 @@ class TutorialBase {
 
     this.__responsesQueue.addResponseListener("training-set-generation/generate");
     this.__responsesQueue.addResponseListener("training-set-generation/data");
+    this.__responsesQueue.addResponseListener("training-set-generation/distribution", false);
     try {
       await this.waitAndClick("createTrainingSetBtn", sarIframe);
       await this.__responsesQueue.waitUntilResponse("training-set-generation/generate");
       await this.__responsesQueue.waitUntilResponse("training-set-generation/data");
+      await this.__responsesQueue.waitUntilResponse("training-set-generation/distribution");
     }
     catch (err) {
       console.error(this.__templateName, "training-set can't be generated", err);
     }
 
-    this.__responsesQueue.addResponseListener("training-set-generation/xport");
+    this.__responsesQueue.addResponseListener("training-set-generation/xport", false);
     try {
       await this.waitAndClick("exportTrainingSetBtn", sarIframe);
       await this.__responsesQueue.waitUntilResponse("training-set-generation/xport");
