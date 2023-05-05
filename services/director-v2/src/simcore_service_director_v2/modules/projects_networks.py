@@ -218,7 +218,7 @@ async def _get_networks_with_aliases_for_default_network(
                 ],
                 log_level=logging.WARNING,
             )
-            await rabbitmq_client.publish(message.channel_name, message.json())
+            await rabbitmq_client.publish(message.channel_name, message)
             continue
 
         new_networks_with_aliases[default_network][f"{node_uuid}"] = network_alias

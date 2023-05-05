@@ -60,7 +60,7 @@ def _create_file_picker(download_link: str):
         inputNodes=[],
         outputs={
             # NOTE: Empty label checked with @odeimaiz
-            output_id: DownloadLink(  # type: ignore
+            output_id: DownloadLink(
                 downloadLink=parse_obj_as(AnyUrl, download_link),
                 label="",
             )
@@ -90,13 +90,13 @@ def _create_project(
         uuid=project_id,
         name=name,
         description=description,
-        thumbnail=thumbnail,  # type: ignore
-        prjOwner=owner.email,  # type: ignore
-        accessRights={owner.primary_gid: access_rights},  # type: ignore
-        creationDate=now_str(),  # type: ignore
-        lastChangeDate=now_str(),  # type: ignore
-        workbench=workbench,  # type: ignore
-        ui=StudyUI(workbench=workbench_ui),  # type: ignore
+        thumbnail=thumbnail,
+        prjOwner=owner.email,
+        accessRights={owner.primary_gid: access_rights},
+        creationDate=now_str(),
+        lastChangeDate=now_str(),
+        workbench=workbench,
+        ui=StudyUI(workbench=workbench_ui),
     )
 
     return project
@@ -149,7 +149,7 @@ def _create_project_with_filepicker_and_service(
         version=viewer_info.version,
         label=viewer_info.label,
         inputs={
-            viewer_info.input_port_key: PortLink(  # type: ignore
+            viewer_info.input_port_key: PortLink(
                 nodeUuid=file_picker_id,
                 output=file_picker_output_id,
             )

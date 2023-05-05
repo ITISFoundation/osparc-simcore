@@ -3,7 +3,7 @@ import logging
 import os
 import socket
 from dataclasses import dataclass, field
-from typing import Any, Awaitable, Callable, Final
+from typing import Any, Awaitable, Callable, Final, Protocol
 
 import aio_pika
 from aio_pika.exceptions import ChannelClosed
@@ -15,15 +15,15 @@ from settings_library.rabbit import RabbitSettings
 from .rabbitmq_errors import RemoteMethodNotRegisteredError, RPCNotInitializedError
 from .rabbitmq_utils import RPCMethodName, RPCNamespace, RPCNamespacedMethodName
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def _connection_close_callback(sender: Any, exc: BaseException | None) -> None:
     if exc:
         if isinstance(exc, asyncio.CancelledError):
-            log.info("Rabbit connection was cancelled")
+            _logger.info("Rabbit connection was cancelled")
         else:
-            log.error(
+            _logger.error(
                 "Rabbit connection closed with exception from %s:%s",
                 sender,
                 exc,
@@ -33,11 +33,11 @@ def _connection_close_callback(sender: Any, exc: BaseException | None) -> None:
 def _channel_close_callback(sender: Any, exc: BaseException | None) -> None:
     if exc:
         if isinstance(exc, asyncio.CancelledError):
-            log.info("Rabbit channel was cancelled")
+            _logger.info("Rabbit channel was cancelled")
         elif isinstance(exc, ChannelClosed):
-            log.info("%s", exc)
+            _logger.info("%s", exc)
         else:
-            log.error(
+            _logger.error(
                 "Rabbit channel closed with exception from %s:%s",
                 sender,
                 exc,
@@ -59,7 +59,17 @@ async def _get_connection(
 
 
 MessageHandler = Callable[[Any], Awaitable[bool]]
-Message = str
+
+BIND_TO_ALL_TOPICS: Final[str] = "#"
+
+
+class RabbitMessage(Protocol):
+    def body(self) -> bytes:
+        ...
+
+    def routing_key(self) -> str | None:
+        ...
+
 
 _MINUTE: Final[int] = 60
 _RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_S: Final[int] = 15 * _MINUTE
@@ -97,7 +107,7 @@ class RabbitMQClient:
         await self._rpc.initialize()
 
     async def close(self) -> None:
-        with log_context(log, logging.INFO, msg="Closing connection to RabbitMQ"):
+        with log_context(_logger, logging.INFO, msg="Closing connection to RabbitMQ"):
             assert self._channel_pool  # nosec
             await self._channel_pool.close()
             assert self._connection_pool  # nosec
@@ -140,7 +150,7 @@ class RabbitMQClient:
         specifying a topic will make the client declare a TOPIC type of RabbitMQ Exchange instead of FANOUT
         - a FANOUT exchange transmit messages to any connected queue regardless of the routing key
         - a TOPIC exchange transmit messages to any connected queue provided it is bound with the message routing key
-          - topic = "#" is equivalent to the FANOUT effect
+          - topic = BIND_TO_ALL_TOPICS ("#") is equivalent to the FANOUT effect
           - a queue bound with topic "director-v2.*" will receive any message that uses a routing key such as "director-v2.event.service_started"
           - a queue bound with topic "director-v2.event.specific_event" will only receive messages with that exact routing key (same as DIRECT exchanges behavior)
 
@@ -187,7 +197,7 @@ class RabbitMQClient:
             ) -> None:
                 async with message.process(requeue=True):
                     with log_context(
-                        log, logging.DEBUG, msg=f"Message received {message}"
+                        _logger, logging.DEBUG, msg=f"Message received {message}"
                     ):
                         if not await message_handler(message.body):
                             await message.nack()
@@ -240,15 +250,14 @@ class RabbitMQClient:
             # NOTE: we force delete here
             await queue.delete(if_unused=False, if_empty=False)
 
-    async def publish(
-        self, exchange_name: str, message: Message, *, topic: str | None = None
-    ) -> None:
+    async def publish(self, exchange_name: str, message: RabbitMessage) -> None:
         """publish message in the exchange exchange_name.
         specifying a topic will use a TOPIC type of RabbitMQ Exchange instead of FANOUT
 
         NOTE: changing the type of Exchange will create issues if the name is not changed!
         """
         assert self._channel_pool  # nosec
+        topic = message.routing_key()
         async with self._channel_pool.acquire() as channel:
             channel: aio_pika.RobustChannel
             exchange = await channel.declare_exchange(
@@ -259,8 +268,8 @@ class RabbitMQClient:
                 durable=True,
             )
             await exchange.publish(
-                aio_pika.Message(message.encode()),
-                routing_key=topic or "",
+                aio_pika.Message(message.body()),
+                routing_key=message.routing_key() or "",
             )
 
     async def rpc_request(
