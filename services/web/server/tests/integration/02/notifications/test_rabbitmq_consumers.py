@@ -75,20 +75,23 @@ pytest_simcore_core_services_selection = [
 
 pytest_simcore_ops_services_selection = []
 
+_STABLE_DELAY_S = 3
+
 
 async def _assert_no_handler_not_called(handler: mock.Mock) -> None:
     with pytest.raises(RetryError):
         async for attempt in AsyncRetrying(
             retry=retry_always,
-            stop=stop_after_delay(5),
+            stop=stop_after_delay(_STABLE_DELAY_S),
             reraise=True,
             wait=wait_fixed(1),
         ):
             with attempt:
                 print(
-                    f"--> checking no mesage reached webclient... {attempt.retry_state.attempt_number} attempt"
+                    f"--> checking no message reached webclient for {attempt.retry_state.attempt_number}/{_STABLE_DELAY_S}s..."
                 )
                 handler.assert_not_called()
+    print(f"no calls received for {_STABLE_DELAY_S}s. very good.")
 
 
 async def _assert_handler_called(handler: mock.Mock, expected_call: mock._Call) -> None:
