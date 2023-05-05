@@ -135,7 +135,11 @@ class RedisClientSDK:
                 # lock is in use now
                 yield ttl_lock
         finally:
-            await ttl_lock.release()
+            # lock can expire before before being released
+            # making sure release never raises an error because the lock
+            # is no longer owned
+            with log_catch(logger, reraise=False):
+                await ttl_lock.release()
 
     async def lock_value(self, lock_name: str) -> str | None:
         return await self._client.get(lock_name)
