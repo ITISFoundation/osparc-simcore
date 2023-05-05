@@ -140,10 +140,13 @@ async def test_delete_multiple_opened_project_forbidden(
 
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_session_id1)
-    await assert_status(resp, expected_ok)
-    mocked_notifications_plugin["subscribe"].assert_called_once_with(
-        client.app, ProjectID(user_project["uuid"])
-    )
+    data, error = await assert_status(resp, expected_ok)
+    if data:
+        mocked_notifications_plugin["subscribe"].assert_called_once_with(
+            client.app, ProjectID(user_project["uuid"])
+        )
+    else:
+        mocked_notifications_plugin["subscribe"].assert_not_called()
 
     # delete project in tab2
     client_session_id2 = client_session_id_factory()
