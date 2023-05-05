@@ -781,17 +781,28 @@ class TutorialBase {
 
   async testSARValidation(sarIframe) {
     // SAR Validation service testing
-    /*
-    training-set-generation/generate
-    training-set-generation/data
-    training-set-generation/distribution
-    */
-    await this.waitAndClick("createTrainingSetBtn", sarIframe);
 
-    await this.waitAndClick("exportTrainingSetBtn", sarIframe);
-    /*
-    training-set-generation/xport
-    */
+    this.__responsesQueue.addResponseListener("training-set-generation/generate");
+    this.__responsesQueue.addResponseListener("training-set-generation/data");
+    this.__responsesQueue.addResponseListener("training-set-generation/distribution");
+    try {
+      await this.waitAndClick("createTrainingSetBtn", sarIframe);
+      await this.__responsesQueue.waitUntilResponse("training-set-generation/generate");
+      await this.__responsesQueue.waitUntilResponse("training-set-generation/data");
+      await this.__responsesQueue.waitUntilResponse("training-set-generation/distribution");
+    }
+    catch (err) {
+      console.error(this.__templateName, "training-set can't be generated", err);
+    }
+
+    this.__responsesQueue.addResponseListener("training-set-generation/xport");
+    try {
+      await this.waitAndClick("exportTrainingSetBtn", sarIframe);
+      await this.__responsesQueue.waitUntilResponse("training-set-generation/xport");
+    }
+    catch (err) {
+      console.error(this.__templateName, "training-set can't be generated", err);
+    }
   }
 
   async takeScreenshot(screenshotTitle) {

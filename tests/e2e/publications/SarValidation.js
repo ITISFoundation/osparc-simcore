@@ -40,7 +40,8 @@ async function runTutorial () {
     await tutorial.waitFor(5000, 'Service started');
     await utils.takeScreenshot(page, screenshotPrefix + 'service_started');
 
-    await tutorial.testSARValidation(sarIdViewer);
+    const sarIframe = await tutorial.getIframe(sarIdViewer);
+    await tutorial.testSARValidation(sarIframe);
   }
   catch(err) {
     await tutorial.setTutorialFailed(true, false);
