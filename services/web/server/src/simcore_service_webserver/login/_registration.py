@@ -25,7 +25,7 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.confirmations import ConfirmationAction
 from yarl import URL
 
-from ..invitations import (
+from ..invitations_plugin import (
     InvalidInvitation,
     InvitationsServiceUnavailable,
     extract_invitation,

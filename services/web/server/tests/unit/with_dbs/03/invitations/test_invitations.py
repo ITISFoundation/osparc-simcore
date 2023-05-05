@@ -11,15 +11,15 @@ from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import NewUser
 from simcore_service_webserver.application_settings import ApplicationSettings
-from simcore_service_webserver.invitations import (
-    InvalidInvitation,
-    InvitationsServiceUnavailable,
-    validate_invitation_url,
-)
 from simcore_service_webserver.invitations_client import (
     InvitationContent,
     InvitationsServiceApi,
     get_invitations_service_api,
+)
+from simcore_service_webserver.invitations_plugin import (
+    InvalidInvitation,
+    InvitationsServiceUnavailable,
+    validate_invitation_url,
 )
 from yarl import URL
 
