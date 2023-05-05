@@ -135,10 +135,9 @@ class RedisClientSDK:
                 # lock is in use now
                 yield ttl_lock
         finally:
-            # lock can expire before before being released
-            # making sure release never raises an error because the lock
-            # is no longer owned
-            with log_catch(logger, reraise=False):
+            # NOTE: lock can expire before being released.
+            # Will raise LockNotOwnedError
+            with contextlib.suppress(redis.exceptions.LockNotOwnedError):
                 await ttl_lock.release()
 
     async def lock_value(self, lock_name: str) -> str | None:
