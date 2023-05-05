@@ -153,8 +153,13 @@ class RedisClientSDK:
 
             # Above implies that only one "task" `owns` and `extends` the lock at a time.
             # The issue appears to be related some timings (being too low).
-            with contextlib.suppress(redis.exceptions.LockNotOwnedError):
+            try:
                 await ttl_lock.release()
+            except redis.exceptions.LockNotOwnedError:
+                # if this appears outside tests it can cause issues since something might be happening
+                logger.warning(
+                    "Attention: lock is no longer owned. This is unexpected and requires investigation"
+                )
 
     async def lock_value(self, lock_name: str) -> str | None:
         return await self._client.get(lock_name)
