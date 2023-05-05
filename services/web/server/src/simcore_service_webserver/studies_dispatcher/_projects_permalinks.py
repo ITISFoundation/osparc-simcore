@@ -36,13 +36,13 @@ def create_permalink_for_study(
     project_access_rights: dict[_GroupID, _GroupAccessRightsDict],
     project_is_public: bool,
 ) -> ProjectPermalink:
-    """
+    """Checks criteria and defines how a permalink is built
 
     Raises:
-        PermalinkNotAllowedError
+        PermalinkNotAllowedError if some criteria are not fulfilled
     """
 
-    # checks
+    # check: criterias/conditions on a project to have a permalink
     if project_type != ProjectType.TEMPLATE:
         raise PermalinkNotAllowedError(
             "Can only create permalink from a template project. "
@@ -81,8 +81,8 @@ async def permalink_factory(
     - Assumes project_id is up-to-date in the database
 
     """
+    # NOTE: next iterations will mobe this as part of the project repository pattern
     engine = get_database_engine(request.app)
-    # TODO: move to projects_utils?
     async with engine.acquire() as conn:
         stmt = sa.select(
             [
