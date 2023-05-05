@@ -5,6 +5,9 @@
 
 from pydantic.errors import PydanticErrorMixin
 
+MSG_INVALID_INVITATION_URL = "Link seems corrupted or incomplete"
+MSG_INVITATION_ALREADY_USED = "This invitation was already used"
+
 
 class InvitationsErrors(PydanticErrorMixin, ValueError):
     ...

@@ -13,7 +13,13 @@ from ._client import (
     InvitationsServiceApi,
     get_invitations_service_api,
 )
-from .errors import InvalidInvitation, InvitationsErrors, InvitationsServiceUnavailable
+from .errors import (
+    MSG_INVALID_INVITATION_URL,
+    MSG_INVITATION_ALREADY_USED,
+    InvalidInvitation,
+    InvitationsErrors,
+    InvitationsServiceUnavailable,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -65,7 +71,6 @@ def _handle_exceptions_as_invitations_errors():
 #
 # API plugin CALLS
 #
-_MGS_INVALID_INVITATION_URL = "Link seems corrupted or incomplete"
 
 
 def is_service_invitation_code(code: str):
@@ -87,7 +92,7 @@ async def validate_invitation_url(
         try:
             valid_url = parse_obj_as(AnyHttpUrl, invitation_url)
         except ValidationError as err:
-            raise InvalidInvitation(reason=_MGS_INVALID_INVITATION_URL) from err
+            raise InvalidInvitation(reason=MSG_INVALID_INVITATION_URL) from err
 
         # check with service
         invitation = await invitations_service.extract_invitation(
@@ -101,7 +106,7 @@ async def validate_invitation_url(
 
         # existing users cannot be re-invited
         if await _is_user_registered(app=app, email=invitation.guest):
-            raise InvalidInvitation(reason="This invitation was already used")
+            raise InvalidInvitation(reason=MSG_INVITATION_ALREADY_USED)
 
     return invitation
 
@@ -120,7 +125,7 @@ async def extract_invitation(
         try:
             valid_url = parse_obj_as(AnyHttpUrl, invitation_url)
         except ValidationError as err:
-            raise InvalidInvitation(reason=_MGS_INVALID_INVITATION_URL) from err
+            raise InvalidInvitation(reason=MSG_INVALID_INVITATION_URL) from err
 
         # check with service
         invitation = await invitations_service.extract_invitation(
