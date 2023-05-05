@@ -107,7 +107,9 @@ def test_create_permalink(fake_get_project_request: web.Request, is_public: bool
 
 
 @pytest.fixture(params=[True, False])
-def valid_project_kwargs(request: FixtureRequest):
+def valid_project_kwargs(
+    request: FixtureRequest, fake_get_project_request: web.Request
+):
     return dict(
         project_uuid=fake_get_project_request.match_info["project_uuid"],
         project_type=ProjectType.TEMPLATE,
