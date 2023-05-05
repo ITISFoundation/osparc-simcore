@@ -414,7 +414,7 @@ async function isServiceConnected(page, studyId, nodeId) {
   console.log("-- Is Service Connected", nodeId);
   const serviceUrl = await getServiceUrl(page, studyId, nodeId);
   const connected = await makePingRequest(page, serviceUrl);
-  console.log(connected ? ("service " + nodeId + " connected") : ("service" + nodeId + " connecting..."), "--")
+  console.log(connected ? ("service " + nodeId + " connected") : ("service " + nodeId + " connecting..."), "--")
   return connected;
 }
 
