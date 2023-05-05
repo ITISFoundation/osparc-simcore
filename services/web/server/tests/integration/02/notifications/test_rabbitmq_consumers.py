@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
 import asyncio
 import json
@@ -45,6 +46,7 @@ from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.diagnostics.plugin import setup_diagnostics
 from simcore_service_webserver.director_v2.plugin import setup_director_v2
 from simcore_service_webserver.login.plugin import setup_login
+from simcore_service_webserver.notifications import project_logs
 from simcore_service_webserver.notifications.plugin import setup_notifications
 from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.projects.project_models import ProjectDict
@@ -177,6 +179,9 @@ async def rabbitmq_publisher(
 @pytest.mark.parametrize(
     "sender_same_user_id", [True, False], ids=lambda id: f"same_sender_id={id}"
 )
+@pytest.mark.parametrize(
+    "subscribe_to_logs", [True, False], ids=lambda id: f"subscribed={id}"
+)
 async def test_log_workflow(
     client: TestClient,
     rabbitmq_publisher: RabbitMQClient,
@@ -190,9 +195,10 @@ async def test_log_workflow(
     project_hidden: bool,
     aiopg_engine: aiopg.sa.Engine,
     sender_same_user_id: bool,
+    subscribe_to_logs: bool,
 ):
     """
-    RabbitMQ --> Webserver --> Redis --> webclient (socketio)
+    RabbitMQ (TOPIC) --> Webserver --> Redis --> webclient (socketio)
 
     """
     socket_io_conn = await socketio_client_factory(None, client)
@@ -208,19 +214,25 @@ async def test_log_workflow(
     mock_log_handler = mocker.MagicMock()
     socket_io_conn.on(SOCKET_IO_LOG_EVENT, handler=mock_log_handler)
 
+    project_id = ProjectID(user_project["uuid"])
     random_node_id_in_project = NodeID(choice(list(user_project["workbench"])))
     sender_user_id = UserID(logged_user["id"])
     if sender_same_user_id is False:
         sender_user_id = UserID(faker.pyint(min_value=logged_user["id"] + 1))
+
+    if subscribe_to_logs:
+        assert client.app
+        await project_logs.subscribe(client.app, project_id)
+
     log_message = LoggerRabbitMessage(
         user_id=sender_user_id,
-        project_id=ProjectID(user_project["uuid"]),
+        project_id=project_id,
         node_id=random_node_id_in_project,
         messages=[faker.text() for _ in range(10)],
     )
     await rabbitmq_publisher.publish(log_message.channel_name, log_message)
 
-    call_expected = not project_hidden and sender_same_user_id
+    call_expected = not project_hidden and sender_same_user_id and subscribe_to_logs
     if call_expected:
         expected_call = jsonable_encoder(
             log_message, exclude={"user_id", "channel_name"}
