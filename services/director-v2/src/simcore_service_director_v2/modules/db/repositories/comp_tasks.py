@@ -348,6 +348,25 @@ class CompTasksRepository(BaseRepository):
             f"{state=}",
         )
 
+    async def set_project_task_progress(
+        self, project_id: ProjectID, node_id: NodeID, progress: float
+    ) -> None:
+        async with self.db_engine.acquire() as conn:
+            await conn.execute(
+                sa.update(comp_tasks)
+                .where(
+                    (comp_tasks.c.project_id == f"{project_id}")
+                    & (comp_tasks.c.node_id == f"{node_id}")
+                )
+                .values(progress=progress)
+            )
+        logger.debug(
+            "set project %s task %s with progress %s",
+            f"{project_id=}",
+            f"{node_id=}",
+            f"{progress=}",
+        )
+
     async def delete_tasks_from_project(self, project: ProjectAtDB) -> None:
         async with self.db_engine.acquire() as conn:
             await conn.execute(

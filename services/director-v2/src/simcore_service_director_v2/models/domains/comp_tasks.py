@@ -14,7 +14,15 @@ from models_library.services import (
     ServicePortKey,
 )
 from models_library.services_resources import BootMode
-from pydantic import BaseModel, ByteSize, Extra, Field, parse_obj_as, validator
+from pydantic import (
+    BaseModel,
+    ByteSize,
+    Extra,
+    Field,
+    NonNegativeFloat,
+    parse_obj_as,
+    validator,
+)
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.comp_tasks import NodeClass, StateType
 
@@ -121,6 +129,9 @@ class CompTaskAtDB(BaseModel):
     internal_id: PositiveInt
     node_class: NodeClass
     errors: list[ErrorDict] | None = Field(default=None)
+    progress: NonNegativeFloat | None = Field(
+        default=None, le=1.0, description="current progress of the task if available"
+    )
 
     @validator("state", pre=True)
     @classmethod
