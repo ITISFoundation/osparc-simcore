@@ -24,13 +24,17 @@ _CreateLinkCallable = Callable[
 
 
 def register_factory(app: web.Application, factory_coro: _CreateLinkCallable):
-    # FIXME: only once!
+    if _create := app.get(_PROJECT_PERMALINK):
+        raise PermalinkFactoryError(
+            f"Permalink factory can only be set once: registered {_create}"
+        )
     app[_PROJECT_PERMALINK] = factory_coro
 
 
 def _get_factory(app: web.Application) -> _CreateLinkCallable:
     if _create := app.get(_PROJECT_PERMALINK):
         return _create
+
     raise PermalinkFactoryError(
         "Undefined permalink factory. Check plugin initialization."
     )

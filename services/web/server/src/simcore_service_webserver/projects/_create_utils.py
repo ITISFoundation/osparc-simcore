@@ -245,7 +245,6 @@ async def create_project(
 
         # Adds permalink
         await update_or_pop_permalink_in_project(request, new_project)
-        assert new_project["permalink"]  # nosec
 
         # Ensures is like ProjectGet
         data = ProjectGet.parse_obj(new_project).data(exclude_unset=True)
