@@ -801,7 +801,7 @@ class TutorialBase {
       await this.__responsesQueue.waitUntilResponse("training-set-generation/xport");
     }
     catch (err) {
-      console.error(this.__templateName, "training-set can't be generated", err);
+      console.error(this.__templateName, "training-set can't be exported", err);
     }
   }
 
