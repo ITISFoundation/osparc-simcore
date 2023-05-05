@@ -7,8 +7,8 @@ import logging
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from ._constants import APP_SETTINGS_KEY
-from .db import setup_db
+from .._constants import APP_SETTINGS_KEY
+from ..db import setup_db
 from .invitations_client import invitations_service_api_cleanup_ctx
 from .invitations_core import (
     InvalidInvitation,

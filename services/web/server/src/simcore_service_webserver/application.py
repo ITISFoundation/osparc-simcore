@@ -21,7 +21,7 @@ from .email import setup_email
 from .exporter.plugin import setup_exporter
 from .garbage_collector import setup_garbage_collector
 from .groups import setup_groups
-from .invitations_plugin import setup_invitations
+from .invitations.invitations_plugin import setup_invitations
 from .login.plugin import setup_login
 from .long_running_tasks import setup_long_running_tasks
 from .meta_modeling.plugin import setup_meta_modeling

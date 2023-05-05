@@ -2,7 +2,6 @@ import contextlib
 import logging
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
 
 from aiohttp import BasicAuth, ClientSession, web
 from aiohttp.client_exceptions import ClientError
@@ -10,7 +9,7 @@ from models_library.emails import LowerCaseEmailStr
 from pydantic import AnyHttpUrl, BaseModel, parse_obj_as
 from yarl import URL
 
-from ._constants import APP_SETTINGS_KEY
+from .._constants import APP_SETTINGS_KEY
 from .invitations_settings import InvitationsSettings
 
 logger = logging.getLogger(__name__)
@@ -24,7 +23,7 @@ logger = logging.getLogger(__name__)
 class InvitationContent(BaseModel):
     issuer: str
     guest: LowerCaseEmailStr
-    trial_account_days: Optional[int] = None
+    trial_account_days: int | None = None
     created: datetime
 
 

@@ -12,7 +12,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
-from simcore_service_webserver.invitations_client import InvitationContent
+from simcore_service_webserver.invitations.invitations_client import InvitationContent
 from simcore_service_webserver.login.handlers_registration import (
     InvitationCheck,
     InvitationInfo,

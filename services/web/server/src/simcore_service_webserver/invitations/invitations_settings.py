@@ -16,7 +16,7 @@ from settings_library.utils_service import (
     URLPart,
 )
 
-from ._constants import APP_SETTINGS_KEY
+from .._constants import APP_SETTINGS_KEY
 
 
 class InvitationsSettings(BaseCustomSettings, MixinServiceSettings):
