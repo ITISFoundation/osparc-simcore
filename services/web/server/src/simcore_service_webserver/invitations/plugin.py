@@ -16,14 +16,14 @@ from ._core import (
     validate_invitation_url,
 )
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @app_module_setup(
     __name__,
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_INVITATIONS",
-    logger=logger,
+    logger=_logger,
 )
 def setup_invitations(app: web.Application):
     assert app[APP_SETTINGS_KEY].WEBSERVER_INVITATIONS  # nosec
@@ -39,8 +39,6 @@ def setup_invitations(app: web.Application):
 
 __all__: tuple[str, ...] = (
     "extract_invitation",
-    "InvalidInvitation",
-    "InvitationsServiceUnavailable",
     "is_service_invitation_code",
     "setup_invitations",
     "validate_invitation_url",

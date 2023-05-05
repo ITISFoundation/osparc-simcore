@@ -12,7 +12,7 @@ from yarl import URL
 from .._constants import APP_SETTINGS_KEY
 from .settings import InvitationsSettings
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 #
@@ -78,7 +78,7 @@ class InvitationsServiceApi:
             response = await self.client.get(self._url(self.healthcheck_path))
             ok = response.ok
         except ClientError as err:
-            logger.debug("Invitations service is not responsive: %s", err)
+            _logger.debug("Invitations service is not responsive: %s", err)
         return ok
 
     is_responsive = ping
@@ -116,7 +116,7 @@ async def invitations_service_api_cleanup_ctx(app: web.Application):
     try:
         await service_api.close()
     except Exception:  # pylint: disable=broad-except
-        logger.warning("Ignoring error while closing service-api")
+        _logger.warning("Ignoring error while closing service-api")
 
 
 def get_invitations_service_api(app: web.Application) -> InvitationsServiceApi:

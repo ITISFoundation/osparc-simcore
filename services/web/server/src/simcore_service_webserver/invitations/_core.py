@@ -19,12 +19,7 @@ from ._client import (
 )
 from .errors import InvalidInvitation, InvitationsErrors, InvitationsServiceUnavailable
 
-logger = logging.getLogger(__name__)
-
-
-#
-# DATABASE
-#
+_logger = logging.getLogger(__name__)
 
 
 async def _is_user_registered(app: web.Application, email: str) -> bool:
@@ -47,7 +42,7 @@ def _handle_exceptions_as_invitations_errors():
         # check possible errors
         if err.status == web.HTTPUnprocessableEntity.status_code:
             error_code = create_error_code(err)
-            logger.exception(
+            _logger.exception(
                 "Invitation request %s unexpectedly failed [%s]",
                 f"{err=} ",
                 f"{error_code}",
@@ -67,7 +62,7 @@ def _handle_exceptions_as_invitations_errors():
         raise
 
     except Exception as err:
-        logger.exception("Unexpected error in invitations plugin")
+        _logger.exception("Unexpected error in invitations plugin")
         raise InvitationsServiceUnavailable() from err
 
 
