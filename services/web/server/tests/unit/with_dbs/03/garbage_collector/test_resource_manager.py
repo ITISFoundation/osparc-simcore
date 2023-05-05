@@ -462,7 +462,7 @@ async def test_interactive_services_removed_after_logout(
     expected_save_state: bool,
     open_project: Callable,
     mock_progress_bar: Any,
-    mock_notifications_plugin: dict[str, mock.Mock],
+    mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     assert client.app
 
@@ -527,7 +527,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     mocker: MockerFixture,
     open_project: Callable,
     mock_progress_bar: Any,
-    mock_notifications_plugin: dict[str, mock.Mock],
+    mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     # login - logged_user fixture
     # create empty study - empty_user_project fixture
@@ -658,7 +658,7 @@ async def test_interactive_services_removed_per_project(
     expected_save_state: bool,
     open_project: Callable,
     mock_progress_bar: Any,
-    mock_notifications_plugin: dict[str, mock.Mock],
+    mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     # create server with delay set to DELAY
     # login - logged_user fixture
@@ -822,7 +822,7 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
     expected_save_state: bool,
     open_project: Callable,
     mock_progress_bar: Any,
-    mock_notifications_plugin: dict[str, mock.Mock],
+    mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     # login - logged_user fixture
     # create empty study - empty_user_project fixture

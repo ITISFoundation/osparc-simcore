@@ -114,7 +114,7 @@ async def test_delete_project(
     ],
 )
 async def test_delete_multiple_opened_project_forbidden(
-    mock_notifications_plugin: dict[str, mock.Mock],
+    mocked_notifications_plugin: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
     client,
     logged_user,
@@ -141,7 +141,7 @@ async def test_delete_multiple_opened_project_forbidden(
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_session_id1)
     await assert_status(resp, expected_ok)
-    mock_notifications_plugin["subscribe"].assert_called_once_with(
+    mocked_notifications_plugin["subscribe"].assert_called_once_with(
         client.app, ProjectID(user_project["uuid"])
     )
 

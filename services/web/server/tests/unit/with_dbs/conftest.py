@@ -619,7 +619,7 @@ def mock_rabbitmq(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-def mock_notifications_plugin(mocker: MockerFixture) -> dict[str, mock.Mock]:
+def mocked_notifications_plugin(mocker: MockerFixture) -> dict[str, mock.Mock]:
     mocked_subscribe = mocker.patch(
         "simcore_service_webserver.notifications.project_logs.subscribe",
         autospec=True,
