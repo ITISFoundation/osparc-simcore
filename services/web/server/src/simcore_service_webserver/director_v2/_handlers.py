@@ -24,7 +24,7 @@ from .exceptions import DirectorServiceError
 
 log = logging.getLogger(__name__)
 
-# TODO: connect routes
+# TODO: make it cheaper by /computations/{project_id}/state. First trial shows
 routes = web.RouteTableDef()
 
 
@@ -47,7 +47,7 @@ async def start_computation(request: web.Request) -> web.Response:
     project_id = ProjectID(request.match_info["project_id"])
 
     subgraph: set[str] = set()
-    force_restart: bool = False  # TODO: deprecate this entry
+    force_restart: bool = False  # NOTE: deprecate this entry
     cluster_id: NonNegativeInt = 0
 
     if request.can_read_body:
@@ -141,7 +141,7 @@ async def stop_computation(request: web.Request) -> web.Response:
             *[computations.stop(pid, req_ctx.user_id) for pid in project_ids]
         )
 
-        # FIXME: our middleware has this issue
+        # NOTE: our middleware has this issue
         #
         #  if 'return web.HTTPNoContent()' then 'await response.json()' raises ContentTypeError
         #  if 'raise web.HTTPNoContent()' then 'await response.json() == None'

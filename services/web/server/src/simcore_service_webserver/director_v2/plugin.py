@@ -52,7 +52,6 @@ def setup_director_v2(app: web.Application):
             filter(lambda o: "computation" in o[1], iter_path_operations(specs)),
             strict=True,
         )
-        # TODO:  app.router.add_routes(director_v2_handlers.routes) and corresponding tests
         app.router.add_routes(routes)
 
     else:

@@ -126,7 +126,7 @@ async def create_or_update_pipeline(
 async def is_pipeline_running(
     app: web.Application, user_id: PositiveInt, project_id: UUID
 ) -> bool | None:
-    # TODO: make it cheaper by /computations/{project_id}/state. First trial shows
+    # NOTE: possiblity to make it cheaper by /computations/{project_id}/state. First trial shows
     # that the efficiency gain is minimal but should be considered specially if the handler
     # gets heavier with time
     pipeline = await get_computation_task(app, user_id, project_id)
