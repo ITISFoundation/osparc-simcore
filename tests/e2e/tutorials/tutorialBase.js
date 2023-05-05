@@ -784,12 +784,10 @@ class TutorialBase {
 
     this.__responsesQueue.addResponseListener("training-set-generation/generate");
     this.__responsesQueue.addResponseListener("training-set-generation/data");
-    this.__responsesQueue.addResponseListener("training-set-generation/distribution");
     try {
       await this.waitAndClick("createTrainingSetBtn", sarIframe);
       await this.__responsesQueue.waitUntilResponse("training-set-generation/generate");
       await this.__responsesQueue.waitUntilResponse("training-set-generation/data");
-      await this.__responsesQueue.waitUntilResponse("training-set-generation/distribution");
     }
     catch (err) {
       console.error(this.__templateName, "training-set can't be generated", err);
