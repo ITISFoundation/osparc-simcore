@@ -73,12 +73,13 @@ class InvitationsServiceApi:
         await self.exit_stack.aclose()
 
     async def ping(self) -> bool:
+        ok = False
         try:
             response = await self.client.get(self._url(self.healthcheck_path))
-            return response.ok
+            ok = response.ok
         except ClientError as err:
             logger.debug("Invitations service is not responsive: %s", err)
-        return False
+        return ok
 
     is_responsive = ping
 
@@ -120,4 +121,5 @@ async def invitations_service_api_cleanup_ctx(app: web.Application):
 
 def get_invitations_service_api(app: web.Application) -> InvitationsServiceApi:
     assert app[_APP_INVITATIONS_SERVICE_API_KEY]  # nosec
-    return app[_APP_INVITATIONS_SERVICE_API_KEY]
+    service_api: InvitationsServiceApi = app[_APP_INVITATIONS_SERVICE_API_KEY]
+    return service_api

@@ -11,8 +11,6 @@ from .._constants import APP_SETTINGS_KEY
 from ..db import setup_db
 from ._client import invitations_service_api_cleanup_ctx
 from ._core import (
-    InvalidInvitation,
-    InvitationsServiceUnavailable,
     extract_invitation,
     is_service_invitation_code,
     validate_invitation_url,
