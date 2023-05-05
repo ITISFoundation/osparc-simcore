@@ -16,7 +16,7 @@ from settings_library.utils_service import (
     URLPart,
 )
 
-from ._constants import APP_SETTINGS_KEY
+from .._constants import APP_SETTINGS_KEY
 
 
 class InvitationsSettings(BaseCustomSettings, MixinServiceSettings):
@@ -38,20 +38,22 @@ class InvitationsSettings(BaseCustomSettings, MixinServiceSettings):
     @cached_property
     def api_base_url(self) -> str:
         # http://invitations:8000/v1
-        return self._compose_url(
+        base_url_with_vtag: str = self._compose_url(
             prefix="INVITATIONS",
             port=URLPart.REQUIRED,
             vtag=URLPart.REQUIRED,
         )
+        return base_url_with_vtag
 
     @cached_property
     def base_url(self) -> str:
         # http://invitations:8000
-        return self._compose_url(
+        base_url_without_vtag: str = self._compose_url(
             prefix="INVITATIONS",
             port=URLPart.REQUIRED,
             vtag=URLPart.EXCLUDE,
         )
+        return base_url_without_vtag
 
 
 def get_plugin_settings(app: web.Application) -> InvitationsSettings:

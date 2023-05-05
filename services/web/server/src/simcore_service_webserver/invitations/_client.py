@@ -2,7 +2,6 @@ import contextlib
 import logging
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
 
 from aiohttp import BasicAuth, ClientSession, web
 from aiohttp.client_exceptions import ClientError
@@ -10,10 +9,10 @@ from models_library.emails import LowerCaseEmailStr
 from pydantic import AnyHttpUrl, BaseModel, parse_obj_as
 from yarl import URL
 
-from ._constants import APP_SETTINGS_KEY
-from .invitations_settings import InvitationsSettings
+from .._constants import APP_SETTINGS_KEY
+from .settings import InvitationsSettings
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 #
@@ -24,7 +23,7 @@ logger = logging.getLogger(__name__)
 class InvitationContent(BaseModel):
     issuer: str
     guest: LowerCaseEmailStr
-    trial_account_days: Optional[int] = None
+    trial_account_days: int | None = None
     created: datetime
 
 
@@ -74,12 +73,13 @@ class InvitationsServiceApi:
         await self.exit_stack.aclose()
 
     async def ping(self) -> bool:
+        ok = False
         try:
             response = await self.client.get(self._url(self.healthcheck_path))
-            return response.ok
+            ok = response.ok
         except ClientError as err:
-            logger.debug("Invitations service is not responsive: %s", err)
-        return False
+            _logger.debug("Invitations service is not responsive: %s", err)
+        return ok
 
     is_responsive = ping
 
@@ -116,9 +116,10 @@ async def invitations_service_api_cleanup_ctx(app: web.Application):
     try:
         await service_api.close()
     except Exception:  # pylint: disable=broad-except
-        logger.warning("Ignoring error while closing service-api")
+        _logger.warning("Ignoring error while closing service-api")
 
 
 def get_invitations_service_api(app: web.Application) -> InvitationsServiceApi:
     assert app[_APP_INVITATIONS_SERVICE_API_KEY]  # nosec
-    return app[_APP_INVITATIONS_SERVICE_API_KEY]
+    service_api: InvitationsServiceApi = app[_APP_INVITATIONS_SERVICE_API_KEY]
+    return service_api
