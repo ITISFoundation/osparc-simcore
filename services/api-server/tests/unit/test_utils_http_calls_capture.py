@@ -5,65 +5,18 @@
 
 
 import asyncio
-import logging
 import re
-from contextlib import suppress
-from typing import Iterable
 
-import docker
 import httpx
-import pytest
 import respx
-from docker.errors import APIError
 from faker import Faker
 from models_library.basic_regex import UUID_RE_BASE
+from pydantic import HttpUrl
 from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
-from tenacity import retry
-from tenacity.after import after_log
-from tenacity.retry import retry_if_exception_type
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
-
-
-@pytest.fixture(scope="module")
-def httpbin_base_url() -> Iterable[str]:
-    # yield "https://httpbin.org/" # sometimes is not available
-
-    port = 80
-    base_url = f"http://127.0.0.1:{port}"
-
-    client = docker.from_env()
-    container_name = "httpbin-fixture"
-    try:
-        client.containers.run(
-            "kennethreitz/httpbin",
-            ports={port: 80},
-            name=container_name,
-            detach=True,
-        )
-
-        @retry(
-            wait=wait_fixed(1),
-            retry=retry_if_exception_type(httpx.HTTPError),
-            stop=stop_after_delay(10),
-            after=after_log(logging.getLogger(), logging.DEBUG),
-        )
-        def _wait_until_httpbin_is_responsive():
-            r = httpx.get(f"{base_url}/get")
-            r.raise_for_status()
-
-        _wait_until_httpbin_is_responsive()
-
-        yield base_url
-
-    finally:
-        with suppress(APIError):
-            container = client.containers.get(container_name)
-            container.remove(force=True)
 
 
 async def test_capture_http_call(
-    event_loop: asyncio.AbstractEventLoop, httpbin_base_url
+    event_loop: asyncio.AbstractEventLoop, httpbin_base_url: HttpUrl
 ):
     # CAPTURE
     async with httpx.AsyncClient() as client:
