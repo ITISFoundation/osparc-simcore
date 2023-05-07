@@ -48,10 +48,11 @@ async def list_dynamic_services(
     project_id: str | None = None,
 ) -> list[DataType]:
     params = _Params(user_id=user_id, project_id=project_id)
+    params_dict = params.dict(exclude_none=True)
     settings: DirectorV2Settings = get_plugin_settings(app)
-    if params:  # Update query doesnt work with no params to unwrap
+    if params_dict:  # Update query doesnt work with no params to unwrap
         backend_url = (settings.base_url / "dynamic_services").update_query(
-            **params.dict(exclude_none=True)
+            **params_dict
         )
     else:
         backend_url = settings.base_url / "dynamic_services"
