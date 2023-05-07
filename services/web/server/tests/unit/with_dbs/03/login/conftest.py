@@ -135,7 +135,7 @@ def mocked_email_core_remove_comments(mocker: MockerFixture):
         return html_string
 
     mocker.patch(
-        "simcore_service_webserver.email_core._remove_comments",
+        "simcore_service_webserver.email.core._remove_comments",
         autospec=True,
         side_effect=_do_not_remove_comments,
     )

@@ -12,8 +12,8 @@ import jinja_app_loader
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from . import email_handlers
-from ._resources import resources
+from .._resources import resources
+from . import _handlers
 
 log = logging.getLogger(__name__)
 
@@ -37,4 +37,4 @@ def setup_email(app: web.Application):
     assert env  # nosec
 
     # routings
-    app.router.add_routes(email_handlers.routes)
+    app.router.add_routes(_handlers.routes)
