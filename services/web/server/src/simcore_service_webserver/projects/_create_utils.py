@@ -17,7 +17,7 @@ from simcore_postgres_database.webserver_models import ProjectType as ProjectTyp
 
 from .. import director_v2_api
 from ..application_settings import get_settings
-from ..storage_api import (
+from ..storage.api import (
     copy_data_folders_from_project,
     get_project_total_size_simcore_s3,
 )

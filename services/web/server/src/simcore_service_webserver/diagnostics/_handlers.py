@@ -11,10 +11,11 @@ from models_library.app_diagnostics import AppStatusCheck
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.utils import logged_gather
 
-from .. import catalog_client, db, director_v2_api, storage_api
+from .. import catalog_client, db, director_v2_api
 from .._meta import API_VERSION, APP_NAME, api_version_prefix
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
+from ..storage import api as storage_api
 from ..utils import get_task_info, get_tracemalloc_info
 from ..utils_aiohttp import envelope_json_response
 
