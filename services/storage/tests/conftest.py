@@ -12,7 +12,7 @@ import urllib.parse
 import uuid
 from pathlib import Path
 from time import perf_counter
-from typing import AsyncIterator, Awaitable, Callable, Iterator, Optional, cast
+from typing import AsyncIterator, Awaitable, Callable, Iterator, cast
 
 import dotenv
 import pytest
@@ -59,18 +59,19 @@ from tests.helpers.utils_file_meta_data import assert_file_meta_data_in_db
 from yarl import URL
 
 pytest_plugins = [
+    "pytest_simcore.aioresponses_mocker",
     "pytest_simcore.cli_runner",
+    "pytest_simcore.docker_compose",
+    "pytest_simcore.docker_swarm",
+    "pytest_simcore.file_extra",
+    "pytest_simcore.httpbin_service",
+    "pytest_simcore.monkeypatch_extra",
+    "pytest_simcore.postgres_service",
+    "pytest_simcore.pytest_global_environs",
     "pytest_simcore.repository_paths",
+    "pytest_simcore.tmp_path_extra",
     "tests.fixtures.data_models",
     "tests.fixtures.datcore_adapter",
-    "pytest_simcore.pytest_global_environs",
-    "pytest_simcore.postgres_service",
-    "pytest_simcore.docker_swarm",
-    "pytest_simcore.docker_compose",
-    "pytest_simcore.tmp_path_extra",
-    "pytest_simcore.monkeypatch_extra",
-    "pytest_simcore.file_extra",
-    "pytest_simcore.aioresponses_mocker",
 ]
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -449,15 +450,15 @@ def upload_file(
     project_id: ProjectID,
     node_id: NodeID,
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
-    create_file_of_size: Callable[[ByteSize, Optional[str]], Path],
+    create_file_of_size: Callable[[ByteSize, str | None], Path],
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
 ) -> Callable[
-    [ByteSize, str, Optional[SimcoreS3FileID]], Awaitable[tuple[Path, SimcoreS3FileID]]
+    [ByteSize, str, SimcoreS3FileID | None], Awaitable[tuple[Path, SimcoreS3FileID]]
 ]:
     async def _uploader(
         file_size: ByteSize,
         file_name: str,
-        file_id: Optional[SimcoreS3FileID] = None,
+        file_id: SimcoreS3FileID | None = None,
         wait_for_completion: bool = True,
     ) -> tuple[Path, SimcoreS3FileID]:
         assert client.app
@@ -545,12 +546,12 @@ def upload_file(
 @pytest.fixture
 def create_simcore_file_id(
     faker: Faker,
-) -> Callable[[ProjectID, NodeID, str, Optional[Path]], SimcoreS3FileID]:
+) -> Callable[[ProjectID, NodeID, str, Path | None], SimcoreS3FileID]:
     def _creator(
         project_id: ProjectID,
         node_id: NodeID,
         file_name: str,
-        file_base_path: Optional[Path] = None,
+        file_base_path: Path | None = None,
     ) -> SimcoreS3FileID:
         s3_file_name = file_name
         if file_base_path:

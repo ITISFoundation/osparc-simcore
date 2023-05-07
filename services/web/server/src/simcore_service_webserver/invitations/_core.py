@@ -1,30 +1,27 @@
-"""
-    Plugin to interact with the invitations service
-"""
-
 import logging
 from contextlib import contextmanager
 
 import sqlalchemy as sa
 from aiohttp import ClientError, ClientResponseError, web
 from pydantic import AnyHttpUrl, ValidationError, parse_obj_as
-from pydantic.errors import PydanticErrorMixin
 from servicelib.error_codes import create_error_code
 from simcore_postgres_database.models.users import users
 
-from .db import get_database_engine
-from .invitations_client import (
+from ..db import get_database_engine
+from ._client import (
     InvitationContent,
     InvitationsServiceApi,
     get_invitations_service_api,
 )
+from .errors import (
+    MSG_INVALID_INVITATION_URL,
+    MSG_INVITATION_ALREADY_USED,
+    InvalidInvitation,
+    InvitationsErrors,
+    InvitationsServiceUnavailable,
+)
 
-logger = logging.getLogger(__name__)
-
-
-#
-# DATABASE
-#
+_logger = logging.getLogger(__name__)
 
 
 async def _is_user_registered(app: web.Application, email: str) -> bool:
@@ -37,26 +34,6 @@ async def _is_user_registered(app: web.Application, email: str) -> bool:
         return user_id is not None
 
 
-#
-# API plugin ERRORS
-#
-
-
-class InvitationsErrors(PydanticErrorMixin, ValueError):
-    ...
-
-
-class InvalidInvitation(InvitationsErrors):
-    msg_template = "Invalid invitation. {reason}"
-
-
-class InvitationsServiceUnavailable(InvitationsErrors):
-    msg_template = (
-        "Unable to process your invitation since the invitations service is currently unavailable. "
-        "Please try again later."
-    )
-
-
 @contextmanager
 def _handle_exceptions_as_invitations_errors():
     try:
@@ -67,7 +44,7 @@ def _handle_exceptions_as_invitations_errors():
         # check possible errors
         if err.status == web.HTTPUnprocessableEntity.status_code:
             error_code = create_error_code(err)
-            logger.exception(
+            _logger.exception(
                 "Invitation request %s unexpectedly failed [%s]",
                 f"{err=} ",
                 f"{error_code}",
@@ -87,7 +64,7 @@ def _handle_exceptions_as_invitations_errors():
         raise
 
     except Exception as err:
-        logger.exception("Unexpected error in invitations plugin")
+        _logger.exception("Unexpected error in invitations plugin")
         raise InvitationsServiceUnavailable() from err
 
 
@@ -99,9 +76,6 @@ def _handle_exceptions_as_invitations_errors():
 def is_service_invitation_code(code: str):
     """Fast check to distinguish from confirmation-type of invitation code"""
     return len(code) > 100  # typically long strings
-
-
-_MGS_INVALID_INVITATION_URL = "Link seems corrupted or incomplete"
 
 
 async def validate_invitation_url(
@@ -116,13 +90,13 @@ async def validate_invitation_url(
     with _handle_exceptions_as_invitations_errors():
 
         try:
-            invitation_url = parse_obj_as(AnyHttpUrl, invitation_url)
+            valid_url = parse_obj_as(AnyHttpUrl, invitation_url)
         except ValidationError as err:
-            raise InvalidInvitation(reason=_MGS_INVALID_INVITATION_URL) from err
+            raise InvalidInvitation(reason=MSG_INVALID_INVITATION_URL) from err
 
         # check with service
         invitation = await invitations_service.extract_invitation(
-            invitation_url=invitation_url
+            invitation_url=valid_url
         )
 
         if invitation.guest != guest_email:
@@ -132,7 +106,7 @@ async def validate_invitation_url(
 
         # existing users cannot be re-invited
         if await _is_user_registered(app=app, email=invitation.guest):
-            raise InvalidInvitation(reason="This invitation was already used")
+            raise InvalidInvitation(reason=MSG_INVITATION_ALREADY_USED)
 
     return invitation
 
@@ -149,12 +123,12 @@ async def extract_invitation(
     with _handle_exceptions_as_invitations_errors():
 
         try:
-            invitation_url = parse_obj_as(AnyHttpUrl, invitation_url)
+            valid_url = parse_obj_as(AnyHttpUrl, invitation_url)
         except ValidationError as err:
-            raise InvalidInvitation(reason=_MGS_INVALID_INVITATION_URL) from err
+            raise InvalidInvitation(reason=MSG_INVALID_INVITATION_URL) from err
 
         # check with service
         invitation = await invitations_service.extract_invitation(
-            invitation_url=invitation_url
+            invitation_url=valid_url
         )
         return invitation
