@@ -42,9 +42,6 @@ class DirectorV2Settings(BaseCustomSettings, MixinServiceSettings):
         ),
         envs=[
             "DIRECTOR_V2_STOP_SERVICE_TIMEOUT",
-            # TODO: below this line are deprecated. rm when deveops give OK
-            "WEBSERVER_DIRECTOR_STOP_SERVICE_TIMEOUT",
-            "webserver_director_stop_service_timeout",
         ],
     )
 
@@ -53,9 +50,6 @@ class DirectorV2Settings(BaseCustomSettings, MixinServiceSettings):
         description="timeout of containers restart",
         envs=[
             "DIRECTOR_V2_RESTART_DYNAMIC_SERVICE_TIMEOUT",
-            # TODO: below this line are deprecated. rm when deveops give OK
-            "SERVICES_COMMON_RESTART_CONTAINERS_TIMEOUT",
-            "SERVICES_COMMON_restart_containers_timeout",
         ],
     )
 
@@ -69,9 +63,6 @@ class DirectorV2Settings(BaseCustomSettings, MixinServiceSettings):
         ),
         envs=[
             "DIRECTOR_V2_DYNAMIC_SERVICE_DATA_UPLOAD_DOWNLOAD_TIMEOUT",
-            # TODO: below this line are deprecated. rm when deveops give OK
-            "SERVICES_COMMON_STORAGE_SERVICE_UPLOAD_DOWNLOAD_TIMEOUT",
-            "SERVICES_COMMON_storage_service_upload_download_timeout",
         ],
     )
 
