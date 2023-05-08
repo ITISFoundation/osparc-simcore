@@ -625,7 +625,7 @@ async def test_open_project_with_large_amount_of_dynamic_services_starts_them_if
             client.app, ProjectID(project["uuid"])
         )
         mocked_notifications_plugin["subscribe"].reset_mock()
-        mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_called()
+        mocked_director_v2_api["director_v2.api.run_dynamic_service"].assert_called()
 
 
 @pytest.mark.parametrize(*standard_user_role())
@@ -650,7 +650,7 @@ async def test_open_project_with_deprecated_services_ok_but_does_not_start_dynam
     mocked_notifications_plugin["subscribe"].assert_called_once_with(
         client.app, ProjectID(user_project["uuid"])
     )
-    mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_not_called()
+    mocked_director_v2_api["director_v2.api.run_dynamic_service"].assert_not_called()
 
 
 @pytest.fixture
@@ -739,12 +739,10 @@ async def test_close_project(
         mocked_notifications_plugin["subscribe"].assert_called_once_with(
             client.app, ProjectID(user_project["uuid"])
         )
-        mocked_director_v2_api["director_v2_api.list_dynamic_services"].assert_any_call(
+        mocked_director_v2_api["director_v2.api.list_dynamic_services"].assert_any_call(
             client.server.app, logged_user["id"], user_project["uuid"]
         )
-        mocked_director_v2_api[
-            "director_v2._core_dynamic_services.list_dynamic_services"
-        ].reset_mock()
+        mocked_director_v2_api["director_v2.api.list_dynamic_services"].reset_mock()
     else:
         mocked_notifications_plugin["subscribe"].assert_not_called()
 
@@ -768,7 +766,7 @@ async def test_close_project(
             ),
         ]
         mocked_director_v2_api[
-            "director_v2._core_dynamic_services.list_dynamic_services"
+            "director_v2.api.list_dynamic_services"
         ].assert_has_calls(calls)
 
         calls = [
@@ -781,9 +779,9 @@ async def test_close_project(
             )
             for service in fake_dynamic_services
         ]
-        mocked_director_v2_api[
-            "director_v2._core_dynamic_services.stop_dynamic_service"
-        ].assert_has_calls(calls)
+        mocked_director_v2_api["director_v2.api.stop_dynamic_service"].assert_has_calls(
+            calls
+        )
 
         # should not be callsed request_retrieve_dyn_service
 
