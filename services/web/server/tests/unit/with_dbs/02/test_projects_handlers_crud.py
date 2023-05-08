@@ -1,3 +1,4 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
@@ -15,7 +16,9 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from models_library.projects_state import ProjectState
+from pydantic import parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     ExpectedResponse,
     MockedStorageSubsystem,
@@ -26,6 +29,7 @@ from simcore_postgres_database.models.projects_to_products import projects_to_pr
 from simcore_service_webserver._constants import X_PRODUCT_NAME_HEADER
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db_models import UserRole
+from simcore_service_webserver.projects._permalink import ProjectPermalink
 from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.utils import to_datetime
 from yarl import URL
@@ -125,10 +129,10 @@ async def _list_projects(
 
 
 async def _assert_get_same_project(
-    client,
+    client: TestClient,
     project: dict,
     expected: type[web.HTTPException],
-) -> dict:
+) -> None:
     # GET /v0/projects/{project_id}
 
     # with a project owned by user
@@ -138,14 +142,21 @@ async def _assert_get_same_project(
     data, error = await assert_status(resp, expected)
 
     if not error:
+        # Optional fields are not part of reference 'project'
         project_state = data.pop("state")
+        project_permalink = data.pop("permalink", None)
+
         assert data == project
-        assert ProjectState(**project_state)
-    return data
+
+        if project_state:
+            assert parse_obj_as(ProjectState, project_state)
+
+        if project_permalink:
+            assert parse_obj_as(ProjectPermalink, project_permalink)
 
 
 async def _replace_project(
-    client, project_update: dict, expected: type[web.HTTPException]
+    client: TestClient, project_update: dict, expected: type[web.HTTPException]
 ) -> dict:
     # PUT /v0/projects/{project_id}
     url = client.app.router["replace_project"].url_for(
@@ -290,10 +301,10 @@ async def test_list_projects_with_innaccessible_services(
     ],
 )
 async def test_get_project(
-    client,
-    logged_user,
-    user_project,
-    template_project,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    template_project: ProjectDict,
     expected,
     catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
 ):
@@ -311,8 +322,8 @@ async def test_get_project(
 
 @pytest.mark.parametrize(*standard_role_response())
 async def test_new_project(
-    client,
-    logged_user,
+    client: TestClient,
+    logged_user: UserInfoDict,
     primary_group,
     expected,
     storage_subsystem_mock,
@@ -326,8 +337,8 @@ async def test_new_project(
 
 @pytest.mark.parametrize(*standard_role_response())
 async def test_new_project_from_template(
-    client,
-    logged_user,
+    client: TestClient,
+    logged_user: UserInfoDict,
     primary_group: dict[str, str],
     template_project,
     expected,
@@ -355,10 +366,10 @@ async def test_new_project_from_template(
 
 @pytest.mark.parametrize(*standard_role_response())
 async def test_new_project_from_other_study(
-    client,
-    logged_user,
+    client: TestClient,
+    logged_user: UserInfoDict,
     primary_group: dict[str, str],
-    user_project,
+    user_project: ProjectDict,
     expected,
     storage_subsystem_mock,
     catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
@@ -387,8 +398,8 @@ async def test_new_project_from_other_study(
 
 @pytest.mark.parametrize(*standard_role_response())
 async def test_new_project_from_template_with_body(
-    client,
-    logged_user,
+    client: TestClient,
+    logged_user: UserInfoDict,
     primary_group: dict[str, str],
     standard_groups: list[dict[str, str]],
     template_project,
@@ -572,9 +583,9 @@ async def test_new_template_from_project(
     ],
 )
 async def test_replace_project(
-    client,
-    logged_user,
-    user_project,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
     expected,
     expected_change_access,
     all_group,
@@ -601,7 +612,11 @@ async def test_replace_project(
     ],
 )
 async def test_replace_project_updated_inputs(
-    client, logged_user, user_project, expected, ensure_run_in_sequence_context_is_empty
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    expected,
+    ensure_run_in_sequence_context_is_empty,
 ):
     project_update = deepcopy(user_project)
     #
@@ -629,7 +644,11 @@ async def test_replace_project_updated_inputs(
     ],
 )
 async def test_replace_project_updated_readonly_inputs(
-    client, logged_user, user_project, expected, ensure_run_in_sequence_context_is_empty
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    expected,
+    ensure_run_in_sequence_context_is_empty,
 ):
     project_update = deepcopy(user_project)
     project_update["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]["inputs"][
