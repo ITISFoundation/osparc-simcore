@@ -51,6 +51,7 @@ class DynamicServiceCreate(ServiceDetails):
                 "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                 "basepath": "/x/75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                 "product_name": "osparc",
+                "can_save": True,
                 "service_resources": ServiceResourcesDictHelpers.Config.schema_extra[
                     "examples"
                 ][0],
