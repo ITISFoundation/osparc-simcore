@@ -8,12 +8,13 @@ import logging
 import os
 import time
 from pprint import pformat
-from typing import Any, Callable, Iterable
+from typing import Any, Callable, Iterable, Iterator, Literal, TypeAlias, TypedDict
 
 import httpx
 import osparc
 import pytest
 from osparc.configuration import Configuration
+from pytest import FixtureRequest
 from pytest_simcore.helpers.typing_docker import UrlStr
 from tenacity import Retrying
 from tenacity.before_sleep import before_sleep_log
@@ -23,7 +24,7 @@ from tenacity.wait import wait_fixed
 log = logging.getLogger(__name__)
 
 
-_MINUTE: int = 60  # secs
+_MINUTE: int = 60  # in secs
 
 
 pytest_plugins = [
@@ -65,20 +66,38 @@ def ops_services_selection(ops_docker_compose: dict) -> list[str]:
 
 
 @pytest.fixture(scope="module")
-def event_loop(request) -> Iterable[asyncio.AbstractEventLoop]:
+def event_loop(request: FixtureRequest) -> Iterable[asyncio.AbstractEventLoop]:
     """Overrides pytest_asyncio.event_loop and extends to module scope"""
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
 
 
+ServiceNameStr: TypeAlias = str
+
+
+class ComposeSpecDict(TypedDict):
+    version: str
+    services: dict[str, Any]
+
+
+class StackDict(TypedDict):
+    name: str
+    compose: ComposeSpecDict
+
+
+class StacksDeployedDict(TypedDict):
+    stacks: dict[Literal["core", "ops"], StackDict]
+    services: list[ServiceNameStr]
+
+
 @pytest.fixture(scope="module")
 def simcore_docker_stack_and_registry_ready(
     event_loop: asyncio.AbstractEventLoop,
     docker_registry: UrlStr,
-    docker_stack: dict,
+    docker_stack: StacksDeployedDict,
     simcore_services_ready: None,
-) -> dict:
+) -> StacksDeployedDict:
     # At this point `simcore_services_ready` waited until all services
     # are running. Let's make one more check on the web-api
     for attempt in Retrying(
@@ -98,14 +117,24 @@ def simcore_docker_stack_and_registry_ready(
     return docker_stack
 
 
+class RegisteredUserDict(TypedDict):
+    email: str
+    password: str
+    api_key: str
+    api_secret: str
+
+
 @pytest.fixture(scope="module")
-def registered_user(simcore_docker_stack_and_registry_ready):
-    user = {
-        "email": "first.last@mymail.com",
-        "password": "my secret",
-        "api_key": None,
-        "api_secret": None,
-    }
+def registered_user(
+    simcore_docker_stack_and_registry_ready: StacksDeployedDict,
+) -> Iterator[RegisteredUserDict]:
+
+    user = RegisteredUserDict(
+        email="user@foo.com",
+        password="my secret",
+        api_key="",
+        api_secret="",
+    )
 
     with httpx.Client(base_url="http://127.0.0.1:9081/v0") as client:
         # setup user via web-api
@@ -137,7 +166,11 @@ def registered_user(simcore_docker_stack_and_registry_ready):
         data = resp.json()["data"]
         assert data["display_name"] == "test-public-api"
 
-        user.update({"api_key": data["api_key"], "api_secret": data["api_secret"]})
+        assert "api_key" in data
+        assert "api_secret" in data
+
+        user["api_key"] = data["api_key"]
+        user["api_secret"] = data["api_secret"]
 
         yield user
 
@@ -146,12 +179,18 @@ def registered_user(simcore_docker_stack_and_registry_ready):
         )
 
 
+class ServiceInfoDict(TypedDict):
+    name: str
+    version: str
+    schema: dict[str, Any]
+
+
 @pytest.fixture(scope="module")
 def services_registry(
     docker_registry_image_injector: Callable,
-    registered_user: dict[str, str],
+    registered_user: RegisteredUserDict,
     testing_environ_vars: dict[str, str],
-) -> dict[str, Any]:
+) -> dict[ServiceNameStr, ServiceInfoDict]:
     # NOTE: service image MUST be injected in registry AFTER user is registered
     #
     # See injected fixture in packages/pytest-simcore/src/pytest_simcore/docker_registry.py
@@ -235,17 +274,17 @@ def services_registry(
     time.sleep(wait_for_catalog_to_detect + 1)
 
     return {
-        "sleeper_service": {
-            "name": sleeper_service["image"]["name"],
-            "version": sleeper_service["image"]["tag"],
-            "schema": sleeper_service["schema"],
-        },
+        "sleeper_service": ServiceInfoDict(
+            name=sleeper_service["image"]["name"],
+            version=sleeper_service["image"]["tag"],
+            schema=sleeper_service["schema"],
+        ),
         # add here more
     }
 
 
 @pytest.fixture(scope="module")
-def api_client(registered_user) -> osparc.ApiClient:
+def api_client(registered_user: RegisteredUserDict) -> Iterator[osparc.ApiClient]:
     cfg = Configuration(
         host=os.environ.get("OSPARC_API_URL", "http://127.0.0.1:8006"),
         username=registered_user["api_key"],
@@ -268,11 +307,14 @@ def api_client(registered_user) -> osparc.ApiClient:
 
 
 @pytest.fixture(scope="module")
-def files_api(api_client) -> osparc.FilesApi:
+def files_api(api_client: osparc.ApiClient) -> osparc.FilesApi:
     return osparc.FilesApi(api_client)
 
 
 @pytest.fixture(scope="module")
-def solvers_api(api_client, services_registry) -> osparc.SolversApi:
+def solvers_api(
+    api_client: osparc.ApiClient,
+    services_registry: dict[ServiceNameStr, ServiceInfoDict],
+) -> osparc.SolversApi:
     # services_registry fixture dependency ensures that services are injected in registry
     return osparc.SolversApi(api_client)

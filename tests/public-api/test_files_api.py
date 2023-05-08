@@ -11,8 +11,8 @@ from osparc.api.files_api import FilesApi
 from osparc.models import File
 
 
-def test_upload_file(files_api: FilesApi, tmpdir):
-    input_path = Path(tmpdir) / "some-text-file.txt"
+def test_upload_file(files_api: FilesApi, tmp_path: Path):
+    input_path = tmp_path / "some-text-file.txt"
     input_path.write_text("demo")
 
     input_file: File = files_api.upload_file(file=input_path)
@@ -35,6 +35,8 @@ def test_upload_file(files_api: FilesApi, tmpdir):
     # and doing direct upload?
     same_file = files_api.upload_file(file=input_path)
     # FIXME: assert input_file.checksum == same_file.checksum
+
+    assert False
 
 
 @pytest.mark.parametrize("file_type", ["binary", "text"])
