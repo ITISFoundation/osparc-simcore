@@ -138,7 +138,7 @@ def mocked_send_email(monkeypatch: MonkeyPatch) -> None:
         )
 
     monkeypatch.setattr(
-        simcore_service_webserver.email.core,
+        simcore_service_webserver.email._core,
         "send_email",
         _print_mail_to_stdout,
     )
