@@ -296,12 +296,12 @@ async def test_share_project(
 
 
 @pytest.mark.parametrize(
-    "user_role,expected",
+    "user_role,expected, save_state",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized, False),
+        (UserRole.GUEST, web.HTTPOk, False),
+        (UserRole.USER, web.HTTPOk, True),
+        (UserRole.TESTER, web.HTTPOk, True),
     ],
 )
 async def test_open_project(
@@ -310,6 +310,7 @@ async def test_open_project(
     user_project: ProjectDict,
     client_session_id_factory: Callable[[], str],
     expected: type[web.HTTPException],
+    save_state: bool,
     mocked_director_v2_api: dict[str, mock.Mock],
     mock_service_resources: ServiceResourcesDict,
     mock_orphaned_services: mock.Mock,
@@ -345,6 +346,7 @@ async def test_open_project(
                     request_scheme=request_scheme,
                     simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                     request_dns=request_dns,
+                    save_state=save_state,
                     product_name=osparc_product_name,
                     service_resources=ServiceResourcesDictHelpers.create_jsonable(
                         mock_service_resources
@@ -410,6 +412,7 @@ async def test_open_template_project_for_edition(
                     request_scheme=request_scheme,
                     simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                     request_dns=request_dns,
+                    save_state=True,
                     service_resources=ServiceResourcesDictHelpers.create_jsonable(
                         mock_service_resources
                     ),
