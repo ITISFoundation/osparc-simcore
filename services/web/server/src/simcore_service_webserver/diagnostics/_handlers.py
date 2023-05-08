@@ -11,8 +11,9 @@ from models_library.app_diagnostics import AppStatusCheck
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.utils import logged_gather
 
-from .. import catalog_client, db, director_v2_api
+from .. import catalog_client, db
 from .._meta import API_VERSION, APP_NAME, api_version_prefix
+from ..director_v2 import api as director_v2_api
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..storage import api as storage_api

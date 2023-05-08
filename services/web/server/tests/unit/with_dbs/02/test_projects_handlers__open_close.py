@@ -351,7 +351,7 @@ async def test_open_project(
                     ),
                 )
             )
-        mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_has_calls(
+        mocked_director_v2_api["director_v2.api.run_dynamic_service"].assert_has_calls(
             calls
         )
 
@@ -416,7 +416,7 @@ async def test_open_template_project_for_edition(
                     product_name=osparc_product_name,
                 )
             )
-        mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_has_calls(
+        mocked_director_v2_api["director_v2.api.run_dynamic_service"].assert_has_calls(
             calls
         )
 
@@ -480,7 +480,7 @@ async def test_open_project_with_small_amount_of_dynamic_services_starts_them_au
     project = await user_project_with_num_dynamic_services(num_of_dyn_services)
     all_service_uuids = list(project["workbench"])
     for num_service_already_running in range(num_of_dyn_services):
-        mocked_director_v2_api["director_v2_api.list_dynamic_services"].return_value = [
+        mocked_director_v2_api["director_v2.api.list_dynamic_services"].return_value = [
             {"service_uuid": all_service_uuids[service_id]}
             for service_id in range(num_service_already_running)
         ]
@@ -489,9 +489,9 @@ async def test_open_project_with_small_amount_of_dynamic_services_starts_them_au
         resp = await client.post(f"{url}", json=client_session_id_factory())
         await assert_status(resp, expected.ok)
         assert mocked_director_v2_api[
-            "director_v2_api.run_dynamic_service"
+            "director_v2.api.run_dynamic_service"
         ].call_count == (num_of_dyn_services - num_service_already_running)
-        mocked_director_v2_api["director_v2_api.run_dynamic_service"].reset_mock()
+        mocked_director_v2_api["director_v2.api.run_dynamic_service"].reset_mock()
 
 
 @pytest.mark.parametrize(*standard_user_role())
@@ -513,7 +513,7 @@ async def test_open_project_with_disable_service_auto_start_set_overrides_behavi
     project = await user_project_with_num_dynamic_services(num_of_dyn_services)
     all_service_uuids = list(project["workbench"])
     for num_service_already_running in range(num_of_dyn_services):
-        mocked_director_v2_api["director_v2_api.list_dynamic_services"].return_value = [
+        mocked_director_v2_api["director_v2.api.list_dynamic_services"].return_value = [
             {"service_uuid": all_service_uuids[service_id]}
             for service_id in range(num_service_already_running)
         ]
@@ -527,7 +527,7 @@ async def test_open_project_with_disable_service_auto_start_set_overrides_behavi
         resp = await client.post(f"{url}", json=client_session_id_factory())
         await assert_status(resp, expected.ok)
         mocked_director_v2_api[
-            "director_v2_api.run_dynamic_service"
+            "director_v2.api.run_dynamic_service"
         ].assert_not_called()
 
 
@@ -550,7 +550,7 @@ async def test_open_project_with_large_amount_of_dynamic_services_does_not_start
     )
     all_service_uuids = list(project["workbench"])
     for num_service_already_running in range(max_amount_of_auto_started_dyn_services):
-        mocked_director_v2_api["director_v2_api.list_dynamic_services"].return_value = [
+        mocked_director_v2_api["director_v2.api.list_dynamic_services"].return_value = [
             {"service_uuid": all_service_uuids[service_id]}
             for service_id in range(num_service_already_running)
         ]
@@ -558,7 +558,7 @@ async def test_open_project_with_large_amount_of_dynamic_services_does_not_start
         resp = await client.post(f"{url}", json=client_session_id_factory())
         await assert_status(resp, expected.ok)
         mocked_director_v2_api[
-            "director_v2_api.run_dynamic_service"
+            "director_v2.api.run_dynamic_service"
         ].assert_not_called()
 
 
@@ -586,14 +586,14 @@ async def test_open_project_with_large_amount_of_dynamic_services_starts_them_if
     project = await user_project_with_num_dynamic_services(num_of_dyn_services + 1)
     all_service_uuids = list(project["workbench"])
     for num_service_already_running in range(num_of_dyn_services):
-        mocked_director_v2_api["director_v2_api.list_dynamic_services"].return_value = [
+        mocked_director_v2_api["director_v2.api.list_dynamic_services"].return_value = [
             {"service_uuid": all_service_uuids[service_id]}
             for service_id in range(num_service_already_running)
         ]
         url = client.app.router["open_project"].url_for(project_id=project["uuid"])
         resp = await client.post(f"{url}", json=client_session_id_factory())
         await assert_status(resp, expected.ok)
-        mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_called()
+        mocked_director_v2_api["director_v2.api.run_dynamic_service"].assert_called()
 
 
 @pytest.mark.parametrize(*standard_user_role())
@@ -614,7 +614,7 @@ async def test_open_project_with_deprecated_services_ok_but_does_not_start_dynam
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_session_id_factory())
     await assert_status(resp, expected.ok)
-    mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_not_called()
+    mocked_director_v2_api["director_v2.api.run_dynamic_service"].assert_not_called()
 
 
 @pytest.fixture
@@ -688,7 +688,7 @@ async def test_close_project(
     fake_dynamic_services = fake_services(number_services=5)
     assert len(fake_dynamic_services) == 5
     mocked_director_v2_api[
-        "director_v2_core_dynamic_services.list_dynamic_services"
+        "director_v2._core_dynamic_services.list_dynamic_services"
     ].return_value = fake_dynamic_services
 
     # open project
@@ -697,11 +697,11 @@ async def test_close_project(
     resp = await client.post(url, json=client_id)
 
     if resp.status == web.HTTPOk.status_code:
-        mocked_director_v2_api["director_v2_api.list_dynamic_services"].assert_any_call(
+        mocked_director_v2_api["director_v2.api.list_dynamic_services"].assert_any_call(
             client.server.app, logged_user["id"], user_project["uuid"]
         )
         mocked_director_v2_api[
-            "director_v2_core_dynamic_services.list_dynamic_services"
+            "director_v2._core_dynamic_services.list_dynamic_services"
         ].reset_mock()
 
     # close project
@@ -721,7 +721,7 @@ async def test_close_project(
             ),
         ]
         mocked_director_v2_api[
-            "director_v2_core_dynamic_services.list_dynamic_services"
+            "director_v2._core_dynamic_services.list_dynamic_services"
         ].assert_has_calls(calls)
 
         calls = [
@@ -735,7 +735,7 @@ async def test_close_project(
             for service in fake_dynamic_services
         ]
         mocked_director_v2_api[
-            "director_v2_core_dynamic_services.stop_dynamic_service"
+            "director_v2._core_dynamic_services.stop_dynamic_service"
         ].assert_has_calls(calls)
 
         # should not be callsed request_retrieve_dyn_service
@@ -865,17 +865,17 @@ async def test_project_node_lifetime(
     node_id = None
     if resp.status == web.HTTPCreated.status_code:
         mocked_director_v2_api[
-            "director_v2_api.run_dynamic_service"
+            "director_v2.api.run_dynamic_service"
         ].assert_called_once()
         assert "node_id" in data
         node_id = data["node_id"]
     else:
         mocked_director_v2_api[
-            "director_v2_api.run_dynamic_service"
+            "director_v2.api.run_dynamic_service"
         ].assert_not_called()
 
     # create a new NOT dynamic node...
-    mocked_director_v2_api["director_v2_api.run_dynamic_service"].reset_mock()
+    mocked_director_v2_api["director_v2.api.run_dynamic_service"].reset_mock()
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
     body = {
         "service_key": "simcore/services/comp/key",
@@ -886,23 +886,23 @@ async def test_project_node_lifetime(
     node_id_2 = None
     if resp.status == web.HTTPCreated.status_code:
         mocked_director_v2_api[
-            "director_v2_api.run_dynamic_service"
+            "director_v2.api.run_dynamic_service"
         ].assert_not_called()
         assert "node_id" in data
         node_id_2 = data["node_id"]
     else:
         mocked_director_v2_api[
-            "director_v2_api.run_dynamic_service"
+            "director_v2.api.run_dynamic_service"
         ].assert_not_called()
 
     # get the node state
-    mocked_director_v2_api["director_v2_api.list_dynamic_services"].return_value = [
+    mocked_director_v2_api["director_v2.api.list_dynamic_services"].return_value = [
         {"service_uuid": node_id, "service_state": "running"}
     ]
     url = client.app.router["get_node"].url_for(
         project_id=user_project["uuid"], node_id=node_id
     )
-    mocked_director_v2_api["director_v2_api.get_dynamic_service"].return_value = {
+    mocked_director_v2_api["director_v2.api.get_dynamic_service"].return_value = {
         "service_state": "running"
     }
     resp = await client.get(url)
@@ -912,12 +912,12 @@ async def test_project_node_lifetime(
         assert data["service_state"] == "running"
 
     # get the NOT dynamic node state
-    mocked_director_v2_api["director_v2_api.list_dynamic_services"].return_value = []
+    mocked_director_v2_api["director_v2.api.list_dynamic_services"].return_value = []
 
     url = client.app.router["get_node"].url_for(
         project_id=user_project["uuid"], node_id=node_id_2
     )
-    mocked_director_v2_api["director_v2_api.get_dynamic_service"].return_value = {
+    mocked_director_v2_api["director_v2.api.get_dynamic_service"].return_value = {
         "service_state": "idle"
     }
     resp = await client.get(url)
@@ -927,7 +927,7 @@ async def test_project_node_lifetime(
         assert data["service_state"] == "idle"
 
     # delete the node
-    mocked_director_v2_api["director_v2_api.list_dynamic_services"].return_value = [
+    mocked_director_v2_api["director_v2.api.list_dynamic_services"].return_value = [
         {"service_uuid": node_id}
     ]
     url = client.app.router["delete_node"].url_for(
@@ -937,17 +937,17 @@ async def test_project_node_lifetime(
     data, errors = await assert_status(resp, expected_response_on_Delete)
     if resp.status == web.HTTPNoContent.status_code:
         mocked_director_v2_api[
-            "director_v2_api.stop_dynamic_service"
+            "director_v2.api.stop_dynamic_service"
         ].assert_called_once()
         mock_storage_api_delete_data_folders_of_project_node.assert_called_once()
     else:
         mocked_director_v2_api[
-            "director_v2_api.stop_dynamic_service"
+            "director_v2.api.stop_dynamic_service"
         ].assert_not_called()
         mock_storage_api_delete_data_folders_of_project_node.assert_not_called()
 
     # delete the NOT dynamic node
-    mocked_director_v2_api["director_v2_api.stop_dynamic_service"].reset_mock()
+    mocked_director_v2_api["director_v2.api.stop_dynamic_service"].reset_mock()
     mock_storage_api_delete_data_folders_of_project_node.reset_mock()
     # mock_director_api_get_running_services.return_value.set_result([{"service_uuid": node_id}])
     url = client.app.router["delete_node"].url_for(
@@ -957,12 +957,12 @@ async def test_project_node_lifetime(
     data, errors = await assert_status(resp, expected_response_on_Delete)
     if resp.status == web.HTTPNoContent.status_code:
         mocked_director_v2_api[
-            "director_v2_api.stop_dynamic_service"
+            "director_v2.api.stop_dynamic_service"
         ].assert_not_called()
         mock_storage_api_delete_data_folders_of_project_node.assert_called_once()
     else:
         mocked_director_v2_api[
-            "director_v2_api.stop_dynamic_service"
+            "director_v2.api.stop_dynamic_service"
         ].assert_not_called()
         mock_storage_api_delete_data_folders_of_project_node.assert_not_called()
 

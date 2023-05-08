@@ -13,7 +13,7 @@ from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.users import UserID
 
-from .. import director_v2_api
+from ..director_v2 import api
 from ..storage.api import delete_data_folders_of_project
 from ..users_api import UserNameDict
 from ..users_exceptions import UserNotFoundError
@@ -96,7 +96,7 @@ async def delete_project(
 
         # stops computational services
         # - raises DirectorServiceError
-        await director_v2_api.delete_pipeline(app, user_id, project_uuid)
+        await api.delete_pipeline(app, user_id, project_uuid)
 
         # rm data from storage
         await delete_data_folders_of_project(app, project_uuid, user_id)

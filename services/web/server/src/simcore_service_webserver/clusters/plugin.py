@@ -11,8 +11,8 @@ import logging
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from .. import director_v2
 from .._constants import APP_SETTINGS_KEY
+from ..director_v2 import plugin as director_v2
 from . import handlers
 
 log = logging.getLogger(__name__)

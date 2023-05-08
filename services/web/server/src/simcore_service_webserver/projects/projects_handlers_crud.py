@@ -32,9 +32,10 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
-from .. import catalog, director_v2_api
+from .. import catalog
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import api_version_prefix as VTAG
+from ..director_v2 import api
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
 from ..security.api import check_permission
@@ -429,7 +430,7 @@ async def replace_project(request: web.Request):
         if current_project["accessRights"] != new_project["accessRights"]:
             await check_permission(request, "project.access_rights.update")
 
-        if await director_v2_api.is_pipeline_running(
+        if await api.is_pipeline_running(
             request.app, req_ctx.user_id, path_params.project_id
         ):
             if any_node_inputs_changed(new_project, current_project):
@@ -470,10 +471,10 @@ async def replace_project(request: web.Request):
             new_project=new_project,
         )
 
-        await director_v2_api.update_dynamic_service_networks_in_project(
+        await api.update_dynamic_service_networks_in_project(
             request.app, path_params.project_id
         )
-        await director_v2_api.create_or_update_pipeline(
+        await api.create_or_update_pipeline(
             request.app,
             req_ctx.user_id,
             path_params.project_id,

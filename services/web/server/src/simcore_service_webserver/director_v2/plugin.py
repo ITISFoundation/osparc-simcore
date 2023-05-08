@@ -12,12 +12,12 @@ from servicelib.aiohttp.rest_routing import (
     map_handlers_with_operations,
 )
 
-from . import director_v2_handlers
-from ._constants import APP_OPENAPI_SPECS_KEY
-from .director_v2_abc import set_project_run_policy
-from .director_v2_core_computations import ComputationsApi, set_client
-from .director_v2_core_utils import DefaultProjectRunPolicy
-from .rest import setup_rest
+from .._constants import APP_OPENAPI_SPECS_KEY
+from ..rest import setup_rest
+from . import _handlers as director_v2_handlers
+from ._abc import set_project_run_policy
+from ._core_computations import ComputationsApi, set_client
+from ._core_utils import DefaultProjectRunPolicy
 
 log = logging.getLogger(__name__)
 
@@ -52,7 +52,6 @@ def setup_director_v2(app: web.Application):
             filter(lambda o: "computation" in o[1], iter_path_operations(specs)),
             strict=True,
         )
-        # TODO:  app.router.add_routes(director_v2_handlers.routes) and corresponding tests
         app.router.add_routes(routes)
 
     else:
