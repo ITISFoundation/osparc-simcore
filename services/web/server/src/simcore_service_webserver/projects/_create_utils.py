@@ -227,12 +227,12 @@ async def create_project(
 
         # update the network information in director-v2
         await api.update_dynamic_service_networks_in_project(
-            app, ProjectID(new_project["uuid"])
+            request.app, ProjectID(new_project["uuid"])
         )
 
         # This is a new project and every new graph needs to be reflected in the pipeline tables
         await api.create_or_update_pipeline(
-            app, user_id, new_project["uuid"], product_name
+            request.app, user_id, new_project["uuid"], product_name
         )
 
         # Appends state
