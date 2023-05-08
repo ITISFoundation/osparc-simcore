@@ -1,7 +1,6 @@
 import logging
 from contextlib import contextmanager
-from copy import deepcopy
-from typing import Any, Iterator
+from typing import Iterator, TypedDict
 
 import simcore_postgres_database.cli
 import sqlalchemy as sa
@@ -11,20 +10,25 @@ from simcore_postgres_database.models.base import metadata
 log = logging.getLogger(__name__)
 
 
+class PostgresTestConfig(TypedDict):
+    user: str
+    password: str
+    database: str
+    host: str
+    port: str
+
+
 @contextmanager
 def migrated_pg_tables_context(
-    postgres_config: dict[str, str]
-) -> Iterator[dict[str, Any]]:
+    postgres_config: PostgresTestConfig,
+) -> Iterator[PostgresTestConfig]:
     """
     Within the context, tables are created and dropped
     using migration upgrade/downgrade routines
     """
 
-    cfg = deepcopy(postgres_config)
-    cfg.update(
-        dsn="postgresql://{user}:{password}@{host}:{port}/{database}".format(
-            **postgres_config
-        )
+    dsn = "postgresql://{user}:{password}@{host}:{port}/{database}".format(
+        **postgres_config
     )
 
     assert simcore_postgres_database.cli.discover.callback
@@ -33,7 +37,7 @@ def migrated_pg_tables_context(
     simcore_postgres_database.cli.discover.callback(**postgres_config)
     simcore_postgres_database.cli.upgrade.callback("head")
 
-    yield cfg
+    yield postgres_config
 
     # downgrades database to zero ---
     #
@@ -49,7 +53,7 @@ def migrated_pg_tables_context(
     # FIXME: migration downgrade fails to remove User types
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1776
     # Added drop_all as tmp fix
-    postgres_engine = sa.create_engine(cfg["dsn"])
+    postgres_engine = sa.create_engine(dsn)
     metadata.drop_all(bind=postgres_engine)
 
 
