@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional, Tuple
 
 from aiohttp import web
 from models_library.projects import ProjectID
@@ -34,7 +33,7 @@ class AbstractProjectRunPolicy(ABC):
         self,
         request: web.Request,
         project_uuid: ProjectID,
-    ) -> List[ProjectID]:
+    ) -> list[ProjectID]:
         ...
 
     @abstractmethod
@@ -42,13 +41,14 @@ class AbstractProjectRunPolicy(ABC):
         self,
         request: web.Request,
         project_uuid: ProjectID,
-    ) -> Tuple[List[ProjectID], List[CommitID]]:
+    ) -> tuple[list[ProjectID], list[CommitID]]:
 
         ...
 
 
-def get_project_run_policy(app: web.Application) -> Optional[AbstractProjectRunPolicy]:
-    return app.get(_APP_PROJECT_RUN_POLICY_KEY)
+def get_project_run_policy(app: web.Application) -> AbstractProjectRunPolicy | None:
+    app_: AbstractProjectRunPolicy | None = app.get(_APP_PROJECT_RUN_POLICY_KEY)
+    return app_
 
 
 def set_project_run_policy(app: web.Application, policy_obj: AbstractProjectRunPolicy):

@@ -94,7 +94,7 @@ async def test_add_new_project_from_model_instance(
     assert client.app
 
     mock_directorv2_api = mocker.patch(
-        "simcore_service_webserver.director_v2_api.create_or_update_pipeline",
+        "simcore_service_webserver.director_v2.api.create_or_update_pipeline",
         return_value=None,
     )
 

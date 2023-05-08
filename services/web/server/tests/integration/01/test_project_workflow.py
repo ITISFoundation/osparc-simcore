@@ -34,7 +34,7 @@ from simcore_service_webserver import catalog
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.catalog import setup_catalog
 from simcore_service_webserver.db import setup_db
-from simcore_service_webserver.director_v2 import setup_director_v2
+from simcore_service_webserver.director_v2.plugin import setup_director_v2
 from simcore_service_webserver.garbage_collector import setup_garbage_collector
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.products.plugin import setup_products

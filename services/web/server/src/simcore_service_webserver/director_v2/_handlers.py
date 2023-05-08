@@ -13,24 +13,24 @@ from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 
-from ._constants import RQ_PRODUCT_KEY
-from ._meta import api_version_prefix as VTAG
-from .director_v2_abc import get_project_run_policy
-from .director_v2_core_computations import ComputationsApi
-from .director_v2_exceptions import DirectorServiceError
-from .login.decorators import login_required
-from .security.decorators import permission_required
-from .version_control.db import CommitID
+from .._constants import RQ_PRODUCT_KEY
+from .._meta import api_version_prefix as VTAG
+from ..login.decorators import login_required
+from ..security.decorators import permission_required
+from ..version_control.models import CommitID
+from ._abc import get_project_run_policy
+from ._core_computations import ComputationsApi
+from .exceptions import DirectorServiceError
 
 log = logging.getLogger(__name__)
 
-# TODO: connect routes
+# TODO: make it cheaper by /computations/{project_id}/state. First trial shows
 routes = web.RouteTableDef()
 
 
 class RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore
+    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore
 
 
 @routes.post(f"/{VTAG}/computations/{{project_id}}:start")
@@ -47,7 +47,7 @@ async def start_computation(request: web.Request) -> web.Response:
     project_id = ProjectID(request.match_info["project_id"])
 
     subgraph: set[str] = set()
-    force_restart: bool = False  # TODO: deprecate this entry
+    force_restart: bool = False  # NOTE: deprecate this entry
     cluster_id: NonNegativeInt = 0
 
     if request.can_read_body:
@@ -141,7 +141,7 @@ async def stop_computation(request: web.Request) -> web.Response:
             *[computations.stop(pid, req_ctx.user_id) for pid in project_ids]
         )
 
-        # FIXME: our middleware has this issue
+        # NOTE: our middleware has this issue
         #
         #  if 'return web.HTTPNoContent()' then 'await response.json()' raises ContentTypeError
         #  if 'raise web.HTTPNoContent()' then 'await response.json() == None'
