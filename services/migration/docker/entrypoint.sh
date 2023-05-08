@@ -29,4 +29,5 @@ sc-pg upgrade-and-close
 echo "DONE" >"${SC_DONE_MARK_FILE}"
 
 echo "$INFO Migration Done. Wait forever ..."
+echo "$INFO local dir after update: $(ls -al)"
 exec tail -f /dev/null
