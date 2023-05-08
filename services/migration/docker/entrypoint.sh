@@ -29,5 +29,4 @@ sc-pg upgrade-and-close
 echo "DONE" >"${SC_DONE_MARK_FILE}"
 
 echo "$INFO Migration Done. Wait forever ..."
-# TODO: perhaps we should simply stop???
 exec tail -f /dev/null

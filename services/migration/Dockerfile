@@ -84,7 +84,7 @@ HEALTHCHECK \
   --interval=10s \
   --timeout=10s \
   --start-period=1ms \
-  --retries=3 \
+  --retries=10 \
   CMD [ "/bin/sh", "/home/scu/services/migration/docker/healthcheck.sh"]
 
 ENTRYPOINT [ "/bin/sh", "services/migration/docker/entrypoint.sh" ]
