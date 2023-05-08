@@ -2359,15 +2359,13 @@ paths:
           in: query
         - required: false
           schema:
-            allOf:
-              - title: ProjectTypeAPI
-                enum:
-                  - all
-                  - template
-                  - user
-                type: string
-                description: An enumeration.
-            default: all
+            title: ProjectTypeAPI
+            enum:
+              - all
+              - template
+              - user
+            type: string
+            description: An enumeration.
           name: type
           in: query
         - description: includes projects marked as hidden in the listing

@@ -30,9 +30,7 @@ paths:
         in: query
       - required: false
         schema:
-          allOf:
-          - $ref: '#/components/schemas/ProjectTypeAPI'
-          default: all
+          $ref: '#/components/schemas/ProjectTypeAPI'
         name: type
         in: query
       - description: includes projects marked as hidden in the listing
