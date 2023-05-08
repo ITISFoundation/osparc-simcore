@@ -15,8 +15,8 @@ from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
-from .. import director_v2_api
 from ..application_settings import get_settings
+from ..director_v2 import api
 from ..storage_api import (
     copy_data_folders_from_project,
     get_project_total_size_simcore_s3,
@@ -224,12 +224,12 @@ async def create_project(
             )
 
         # update the network information in director-v2
-        await director_v2_api.update_dynamic_service_networks_in_project(
+        await api.update_dynamic_service_networks_in_project(
             app, ProjectID(new_project["uuid"])
         )
 
         # This is a new project and every new graph needs to be reflected in the pipeline tables
-        await director_v2_api.create_or_update_pipeline(
+        await api.create_or_update_pipeline(
             app, user_id, new_project["uuid"], product_name
         )
 

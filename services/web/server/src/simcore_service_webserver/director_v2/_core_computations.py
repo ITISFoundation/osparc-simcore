@@ -7,7 +7,7 @@ Wraps interactions to the director-v2 service
 
 import json
 import logging
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
 from aiohttp import web
@@ -19,16 +19,16 @@ from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_decorator
 from settings_library.utils_cli import create_json_encoder_wo_secrets
 
-from .director_v2_core_base import DataType, request_director_v2
-from .director_v2_exceptions import (
+from ._core_base import DataType, request_director_v2
+from ._models import ClusterCreate, ClusterPatch, ClusterPing
+from .exceptions import (
     ClusterAccessForbidden,
     ClusterDefinedPingError,
     ClusterNotFoundError,
     ClusterPingError,
     DirectorServiceError,
 )
-from .director_v2_models import ClusterCreate, ClusterPatch, ClusterPing
-from .director_v2_settings import DirectorV2Settings, get_plugin_settings
+from .settings import DirectorV2Settings, get_plugin_settings
 
 log = logging.getLogger(__name__)
 
@@ -66,7 +66,8 @@ class ComputationsApi:
             },
         )
         assert isinstance(computation_task_out, dict)  # nosec
-        return computation_task_out["id"]
+        computation_task_out_id: str = computation_task_out["id"]
+        return computation_task_out_id
 
     async def stop(self, project_id: ProjectID, user_id: UserID):
         await request_director_v2(
@@ -81,8 +82,9 @@ class ComputationsApi:
 _APP_KEY = f"{__name__}.{ComputationsApi.__name__}"
 
 
-def get_client(app: web.Application) -> Optional[ComputationsApi]:
-    return app.get(_APP_KEY)
+def get_client(app: web.Application) -> ComputationsApi | None:
+    app_key: ComputationsApi | None = app.get(_APP_KEY)
+    return app_key
 
 
 def set_client(app: web.Application, obj: ComputationsApi):
@@ -98,7 +100,7 @@ def set_client(app: web.Application, obj: ComputationsApi):
 @log_decorator(logger=log)
 async def create_or_update_pipeline(
     app: web.Application, user_id: UserID, project_id: ProjectID, product_name: str
-) -> Optional[DataType]:
+) -> DataType | None:
     settings: DirectorV2Settings = get_plugin_settings(app)
 
     backend_url = settings.base_url / "computations"
@@ -117,13 +119,14 @@ async def create_or_update_pipeline(
 
     except DirectorServiceError as exc:
         log.error("could not create pipeline from project %s: %s", project_id, exc)
+    return None
 
 
 @log_decorator(logger=log)
 async def is_pipeline_running(
     app: web.Application, user_id: PositiveInt, project_id: UUID
-) -> Optional[bool]:
-    # TODO: make it cheaper by /computations/{project_id}/state. First trial shows
+) -> bool | None:
+    # NOTE: possiblity to make it cheaper by /computations/{project_id}/state. First trial shows
     # that the efficiency gain is minimal but should be considered specially if the handler
     # gets heavier with time
     pipeline = await get_computation_task(app, user_id, project_id)
@@ -135,13 +138,14 @@ async def is_pipeline_running(
         # if statement casts to False
         return None
 
-    return pipeline.state.is_running()
+    pipeline_state: bool | None = pipeline.state.is_running()
+    return pipeline_state
 
 
 @log_decorator(logger=log)
 async def get_computation_task(
     app: web.Application, user_id: UserID, project_id: ProjectID
-) -> Optional[ComputationTask]:
+) -> ComputationTask | None:
     settings: DirectorV2Settings = get_plugin_settings(app)
     backend_url = (settings.base_url / f"computations/{project_id}").update_query(
         user_id=int(user_id)
@@ -158,10 +162,11 @@ async def get_computation_task(
     except DirectorServiceError as exc:
         if exc.status == web.HTTPNotFound.status_code:
             # the pipeline might not exist and that is ok
-            return
+            return None
         log.warning(
             "getting pipeline for project %s failed: %s.", f"{project_id=}", exc
         )
+        return None
 
 
 @log_decorator(logger=log)

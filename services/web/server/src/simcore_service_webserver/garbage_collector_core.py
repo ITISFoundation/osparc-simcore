@@ -17,9 +17,10 @@ from servicelib.utils import logged_gather
 from simcore_postgres_database.errors import DatabaseError
 from simcore_postgres_database.models.users import UserRole
 
-from . import director_v2_api, users_exceptions
+from . import users_exceptions
 from .director.director_exceptions import DirectorException, ServiceNotFoundError
-from .director_v2_exceptions import ServiceWaitingForManualIntervention
+from .director_v2 import api
+from .director_v2.exceptions import ServiceWaitingForManualIntervention
 from .garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
 from .garbage_collector_utils import get_new_project_owner_gid, replace_current_owner
 from .projects.projects_api import (
@@ -323,7 +324,7 @@ async def _remove_single_service_if_orphan(
             f"{service_host=}",
         )
         try:
-            await director_v2_api.stop_dynamic_service(
+            await api.stop_dynamic_service(
                 app,
                 service_uuid,
                 simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
@@ -383,7 +384,7 @@ async def _remove_single_service_if_orphan(
             # -------------------------------------------
 
             try:
-                await director_v2_api.stop_dynamic_service(
+                await api.stop_dynamic_service(
                     app,
                     service_uuid,
                     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
@@ -426,8 +427,8 @@ async def remove_orphaned_services(
 
     running_interactive_services: list[dict[str, Any]] = []
     try:
-        running_interactive_services = await director_v2_api.list_dynamic_services(app)
-    except director_v2_api.DirectorServiceError:
+        running_interactive_services = await api.list_dynamic_services(app)
+    except api.DirectorServiceError:
         logger.debug("Could not fetch running_interactive_services")
 
     logger.info(
