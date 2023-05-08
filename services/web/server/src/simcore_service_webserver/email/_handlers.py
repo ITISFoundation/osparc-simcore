@@ -12,7 +12,7 @@ from ..products.plugin import Product, get_current_product, get_product_template
 from ..security.decorators import permission_required
 from ..utils import get_traceback_string
 from ..utils_aiohttp import envelope_json_response
-from .core import check_email_server_responsiveness, send_email_from_template
+from ._core import check_email_server_responsiveness, send_email_from_template
 from .settings import get_plugin_settings
 
 logger = logging.getLogger(__name__)
