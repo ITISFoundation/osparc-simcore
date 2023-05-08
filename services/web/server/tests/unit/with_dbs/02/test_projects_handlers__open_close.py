@@ -766,7 +766,7 @@ async def test_close_project(
             ),
         ]
         mocked_director_v2_api[
-            "director_v2.api.list_dynamic_services"
+            "director_v2._core_dynamic_services.list_dynamic_services"
         ].assert_has_calls(calls)
 
         calls = [
@@ -779,9 +779,9 @@ async def test_close_project(
             )
             for service in fake_dynamic_services
         ]
-        mocked_director_v2_api["director_v2.api.stop_dynamic_service"].assert_has_calls(
-            calls
-        )
+        mocked_director_v2_api[
+            "director_v2._core_dynamic_services.stop_dynamic_service"
+        ].assert_has_calls(calls)
 
         # should not be callsed request_retrieve_dyn_service
 
@@ -915,14 +915,18 @@ async def test_project_node_lifetime(
     data, errors = await assert_status(resp, expected_response_on_Create)
     node_id = None
     if resp.status == web.HTTPCreated.status_code:
-        mocked_director_v2_api["run_dynamic_service"].assert_called_once()
+        mocked_director_v2_api[
+            "director_v2.api.run_dynamic_service"
+        ].assert_called_once()
         assert "node_id" in data
         node_id = data["node_id"]
     else:
-        mocked_director_v2_api["run_dynamic_service"].assert_not_called()
+        mocked_director_v2_api[
+            "director_v2.api.run_dynamic_service"
+        ].assert_not_called()
 
     # create a new NOT dynamic node...
-    mocked_director_v2_api["run_dynamic_service"].reset_mock()
+    mocked_director_v2_api["director_v2.api.run_dynamic_service"].reset_mock()
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
     body = {
         "service_key": "simcore/services/comp/key",
@@ -932,14 +936,18 @@ async def test_project_node_lifetime(
     data, errors = await assert_status(resp, expected_response_on_Create)
     node_id_2 = None
     if resp.status == web.HTTPCreated.status_code:
-        mocked_director_v2_api["run_dynamic_service"].assert_not_called()
+        mocked_director_v2_api[
+            "director_v2.api.run_dynamic_service"
+        ].assert_not_called()
         assert "node_id" in data
         node_id_2 = data["node_id"]
     else:
-        mocked_director_v2_api["run_dynamic_service"].assert_not_called()
+        mocked_director_v2_api[
+            "director_v2.api.run_dynamic_service"
+        ].assert_not_called()
 
     # get the node state
-    mocked_director_v2_api["list_dynamic_services"].return_value = [
+    mocked_director_v2_api["director_v2.api.list_dynamic_services"].return_value = [
         {"service_uuid": node_id, "service_state": "running"}
     ]
     url = client.app.router["get_node"].url_for(
@@ -955,7 +963,7 @@ async def test_project_node_lifetime(
         assert data["service_state"] == "running"
 
     # get the NOT dynamic node state
-    mocked_director_v2_api["list_dynamic_services"].return_value = []
+    mocked_director_v2_api["director_v2.api.list_dynamic_services"].return_value = []
 
     url = client.app.router["get_node"].url_for(
         project_id=user_project["uuid"], node_id=node_id_2
@@ -970,7 +978,7 @@ async def test_project_node_lifetime(
         assert data["service_state"] == "idle"
 
     # delete the node
-    mocked_director_v2_api["list_dynamic_services"].return_value = [
+    mocked_director_v2_api["director_v2.api.list_dynamic_services"].return_value = [
         {"service_uuid": node_id}
     ]
     url = client.app.router["delete_node"].url_for(
