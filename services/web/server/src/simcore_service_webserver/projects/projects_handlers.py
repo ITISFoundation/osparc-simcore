@@ -29,6 +29,7 @@ from .. import users_api
 from .._meta import api_version_prefix as VTAG
 from ..director_v2.exceptions import DirectorServiceError
 from ..login.decorators import login_required
+from ..notifications import project_logs
 from ..products.plugin import Product, get_current_product
 from ..security.decorators import permission_required
 from . import projects_api
@@ -100,6 +101,9 @@ async def open_project(request: web.Request) -> web.Response:
         await projects_api.update_project_linked_product(
             request.app, path_params.project_id, req_ctx.product_name
         )
+
+        # we now need to receive logs for that project
+        await project_logs.subscribe(request.app, path_params.project_id)
 
         # user id opened project uuid
         if not query_params.disable_service_auto_start:
@@ -189,6 +193,7 @@ async def close_project(request: web.Request) -> web.Response:
                 X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
             ),
         )
+        await project_logs.unsubscribe(request.app, path_params.project_id)
         raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(

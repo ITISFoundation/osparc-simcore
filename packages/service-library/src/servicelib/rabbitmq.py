@@ -107,9 +107,11 @@ class RabbitMQClient:
         await self._rpc.initialize()
 
     async def close(self) -> None:
-        with log_context(_logger, logging.INFO, msg="Closing connection to RabbitMQ"):
-            assert self._channel_pool  # nosec
-            await self._channel_pool.close()
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg=f"{self.client_name} closing connection to RabbitMQ",
+        ):
             assert self._connection_pool  # nosec
             await self._connection_pool.close()
 

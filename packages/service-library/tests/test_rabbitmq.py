@@ -44,8 +44,6 @@ async def test_rabbit_client(rabbit_client_name: str, rabbit_service: RabbitSett
     await client.close()
     assert client._connection_pool
     assert client._connection_pool.is_closed
-    assert client._channel_pool
-    assert client._channel_pool.is_closed
 
 
 @pytest.fixture

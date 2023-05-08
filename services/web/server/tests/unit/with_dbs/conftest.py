@@ -16,6 +16,7 @@ import textwrap
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, AsyncIterator, Callable, Iterator
+from unittest import mock
 from unittest.mock import AsyncMock, MagicMock, Mock
 from uuid import uuid4
 
@@ -533,6 +534,7 @@ async def primary_group(
     client: TestClient,
     logged_user: UserInfoDict,
 ) -> dict[str, Any]:
+    assert client.app
     primary_group, _, _ = await list_user_groups(client.app, logged_user["id"])
     return primary_group
 
@@ -542,6 +544,7 @@ async def standard_groups(
     client: TestClient,
     logged_user: UserInfoDict,
 ) -> AsyncIterator[list[dict[str, Any]]]:
+    assert client.app
     sparc_group = {
         "gid": "5",  # this will be replaced
         "label": "SPARC",
@@ -601,6 +604,7 @@ async def all_group(
     client: TestClient,
     logged_user: UserInfoDict,
 ) -> dict[str, str]:
+    assert client.app
     _, _, all_group = await list_user_groups(client.app, logged_user["id"])
     return all_group
 
@@ -612,6 +616,20 @@ def mock_rabbitmq(mocker: MockerFixture) -> None:
         autospec=True,
         return_value=AsyncMock(),
     )
+
+
+@pytest.fixture
+def mocked_notifications_plugin(mocker: MockerFixture) -> dict[str, mock.Mock]:
+    mocked_subscribe = mocker.patch(
+        "simcore_service_webserver.notifications.project_logs.subscribe",
+        autospec=True,
+    )
+    mocked_unsubscribe = mocker.patch(
+        "simcore_service_webserver.notifications.project_logs.unsubscribe",
+        autospec=True,
+    )
+
+    return {"subscribe": mocked_subscribe, "unsubscribe": mocked_unsubscribe}
 
 
 @pytest.fixture
