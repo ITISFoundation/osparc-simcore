@@ -81,7 +81,7 @@ COPY --from=build ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY --chown=scu:scu services/migration/docker services/migration/docker
 
 HEALTHCHECK \
-  --interval=10s \
+  --interval=5s \
   --timeout=10s \
   --start-period=1ms \
   --retries=10 \
