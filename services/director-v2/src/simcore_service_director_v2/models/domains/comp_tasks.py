@@ -192,6 +192,7 @@ class CompTaskAtDB(BaseModel):
                     "submit": "2021-03-01 13:07:34.19161",
                     "node_class": "INTERACTIVE",
                     "state": "NOT_STARTED",
+                    "progress": 0.44,
                 }
                 for image_example in Image.Config.schema_extra["examples"]
             ]
