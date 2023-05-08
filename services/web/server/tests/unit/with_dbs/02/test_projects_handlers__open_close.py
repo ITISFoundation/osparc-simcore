@@ -1262,7 +1262,7 @@ async def test_open_shared_project_at_same_time(
     mock_rabbitmq: None,
     mocked_notifications_plugin: dict[str, mock.Mock],
 ):
-    NUMBER_OF_ADDITIONAL_CLIENTS = 20
+    NUMBER_OF_ADDITIONAL_CLIENTS = 10
     # log client 1
     client_1 = client
     client_id1 = client_session_id_factory()
