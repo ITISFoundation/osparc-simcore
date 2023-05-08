@@ -52,7 +52,6 @@ def _resolve_storage_url(request: web.Request) -> URL:
     #    ('asdf', '')
     suffix = "/".join(request.url.raw_parts[BASEPATH_INDEX:])
 
-    # TODO: check request.query to storage! unsafe!?
     url = (endpoint / suffix).with_query(request.query).update_query(user_id=userid)
     return url
 
@@ -69,7 +68,6 @@ async def _request_storage(
         await extract_and_validate(request)
 
     url = _resolve_storage_url(request)
-    # _token_data, _token_secret = _get_token_key_and_secret(request)
 
     body = None
     if request.can_read_body:

@@ -14,14 +14,14 @@ log = logging.getLogger(__name__)
 
 
 def create(specs: openapi.Spec) -> list[web.RouteDef]:
-    # TODO: consider the case in which server creates routes for both v0 and v1!!!
-    # TODO: should this be taken from servers instead?
+    # NOTE: consider the case in which server creates routes for both v0 and v1!!!
+    # NOTE: should this be taken from servers instead?
     BASEPATH = "/v" + specs.info.version.split(".")[0]
 
     log.debug("creating %s ", __name__)
     routes = []
 
-    # TODO: routing will be done automatically using operation_id/tags, etc...
+    # NOTE: routing will be done automatically using operation_id/tags, etc...
 
     # storage --
     path, handler = "/storage/locations", _handlers.get_storage_locations
