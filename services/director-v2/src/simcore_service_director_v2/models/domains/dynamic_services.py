@@ -37,6 +37,9 @@ class DynamicServiceCreate(ServiceDetails):
     service_resources: ServiceResourcesDict
 
     product_name: str = Field(..., description="Current product name")
+    can_save: bool = Field(
+        ..., description="the service data must be saved when closing"
+    )
 
     class Config:
         schema_extra = {

@@ -441,6 +441,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         request_dns: str,
         request_scheme: str,
         request_simcore_user_agent: str,
+        can_save: bool,
         run_id: UUID | None = None,
     ) -> "SchedulerData":
         # This constructor method sets current product
@@ -467,7 +468,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             request_scheme=request_scheme,
             proxy_service_name=names_helper.proxy_service_name,
             request_simcore_user_agent=request_simcore_user_agent,
-            dynamic_sidecar={},
+            dynamic_sidecar={"service_removal_state": {"can_save": can_save}},
         )
         if run_id:
             obj_dict["run_id"] = run_id
