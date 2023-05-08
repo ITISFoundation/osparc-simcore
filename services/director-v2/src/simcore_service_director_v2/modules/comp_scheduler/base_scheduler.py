@@ -231,6 +231,7 @@ class BaseCompScheduler(ABC):
                 project_id,
                 [NodeID(n) for n in tasks_to_set_aborted],
                 RunningState.ABORTED,
+                optional_progress=1.0,
             )
         return tasks
 
@@ -471,7 +472,10 @@ class BaseCompScheduler(ABC):
             self.db_engine, CompTasksRepository
         )
         await comp_tasks_repo.set_project_tasks_state(
-            project_id, list(tasks_ready_to_start.keys()), RunningState.PENDING
+            project_id,
+            list(tasks_ready_to_start.keys()),
+            RunningState.PENDING,
+            optional_progress=0,
         )
 
         # we pass the tasks to the dask-client in a gather such that each task can be stopped independently
@@ -502,6 +506,7 @@ class BaseCompScheduler(ABC):
                     [r.node_id],
                     RunningState.FAILED,
                     r.get_errors(),
+                    optional_progress=1.0,
                 )
             elif isinstance(
                 r,
@@ -523,6 +528,7 @@ class BaseCompScheduler(ABC):
                         project_id,
                         list(tasks_ready_to_start.keys()),
                         RunningState.PUBLISHED,
+                        optional_progress=0,
                     ),
                 )
             elif isinstance(r, Exception):
@@ -536,7 +542,7 @@ class BaseCompScheduler(ABC):
                     "".join(traceback.format_tb(r.__traceback__)),
                 )
                 await comp_tasks_repo.set_project_tasks_state(
-                    project_id, [t], RunningState.FAILED
+                    project_id, [t], RunningState.FAILED, optional_progress=1.0
                 )
 
     def _wake_up_scheduler_now(self) -> None:

@@ -249,18 +249,17 @@ class CompTasksRepository(BaseRepository):
                 )
             )
             # remove the tasks that were removed from project workbench
-            node_ids_to_delete = [
-                t.node_id
-                for t in await result.fetchall()
-                if t.node_id not in project.workbench
-            ]
-            for node_id in node_ids_to_delete:
-                await conn.execute(
-                    sa.delete(comp_tasks).where(
-                        (comp_tasks.c.project_id == str(project.uuid))
-                        & (comp_tasks.c.node_id == node_id)
+            if all_nodes := await result.fetchall():
+                node_ids_to_delete = [
+                    t.node_id for t in all_nodes if t.node_id not in project.workbench
+                ]
+                for node_id in node_ids_to_delete:
+                    await conn.execute(
+                        sa.delete(comp_tasks).where(
+                            (comp_tasks.c.project_id == str(project.uuid))
+                            & (comp_tasks.c.node_id == node_id)
+                        )
                     )
-                )
 
             # insert or update the remaining tasks
             # NOTE: comp_tasks DB only trigger a notification to the webserver if an UPDATE on comp_tasks.outputs or comp_tasks.state is done
@@ -331,15 +330,20 @@ class CompTasksRepository(BaseRepository):
         tasks: list[NodeID],
         state: RunningState,
         errors: list[ErrorDict] | None = None,
+        *,
+        optional_progress: float | None = None,
     ) -> None:
         async with self.db_engine.acquire() as conn:
+            update_values = {"state": RUNNING_STATE_TO_DB[state], "errors": errors}
+            if optional_progress is not None:
+                update_values["progress"] = optional_progress
             await conn.execute(
                 sa.update(comp_tasks)
                 .where(
                     (comp_tasks.c.project_id == f"{project_id}")
                     & (comp_tasks.c.node_id.in_([str(t) for t in tasks]))
                 )
-                .values(state=RUNNING_STATE_TO_DB[state], errors=errors)
+                .values(**update_values)
             )
         logger.debug(
             "set project %s tasks %s with state %s",
