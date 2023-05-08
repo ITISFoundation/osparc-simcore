@@ -356,7 +356,9 @@ async def test_open_project(
                     ),
                 )
             )
-        mocked_director_v2_api["run_dynamic_service"].assert_has_calls(calls)
+        mocked_director_v2_api["director_v2.api.run_dynamic_service"].assert_has_calls(
+            calls
+        )
     else:
         mocked_notifications_plugin["subscribe"].assert_not_called()
 
@@ -425,7 +427,9 @@ async def test_open_template_project_for_edition(
                     product_name=osparc_product_name,
                 )
             )
-        mocked_director_v2_api["run_dynamic_service"].assert_has_calls(calls)
+        mocked_director_v2_api["director_v2.api.run_dynamic_service"].assert_has_calls(
+            calls
+        )
     else:
         mocked_notifications_plugin["subscribe"].assert_not_called()
 
@@ -490,7 +494,7 @@ async def test_open_project_with_small_amount_of_dynamic_services_starts_them_au
     project = await user_project_with_num_dynamic_services(num_of_dyn_services)
     all_service_uuids = list(project["workbench"])
     for num_service_already_running in range(num_of_dyn_services):
-        mocked_director_v2_api["list_dynamic_services"].return_value = [
+        mocked_director_v2_api["director_v2.api.list_dynamic_services"].return_value = [
             {"service_uuid": all_service_uuids[service_id]}
             for service_id in range(num_service_already_running)
         ]
@@ -502,10 +506,10 @@ async def test_open_project_with_small_amount_of_dynamic_services_starts_them_au
             client.app, ProjectID(project["uuid"])
         )
         mocked_notifications_plugin["subscribe"].reset_mock()
-        assert mocked_director_v2_api["run_dynamic_service"].call_count == (
-            num_of_dyn_services - num_service_already_running
-        )
-        mocked_director_v2_api["run_dynamic_service"].reset_mock()
+        assert mocked_director_v2_api[
+            "director_v2.api.run_dynamic_service"
+        ].call_count == (num_of_dyn_services - num_service_already_running)
+        mocked_director_v2_api["director_v2.api.run_dynamic_service"].reset_mock()
 
 
 @pytest.mark.parametrize(*standard_user_role())
@@ -528,7 +532,7 @@ async def test_open_project_with_disable_service_auto_start_set_overrides_behavi
     project = await user_project_with_num_dynamic_services(num_of_dyn_services)
     all_service_uuids = list(project["workbench"])
     for num_service_already_running in range(num_of_dyn_services):
-        mocked_director_v2_api["list_dynamic_services"].return_value = [
+        mocked_director_v2_api["director_v2.api.list_dynamic_services"].return_value = [
             {"service_uuid": all_service_uuids[service_id]}
             for service_id in range(num_service_already_running)
         ]
@@ -545,7 +549,9 @@ async def test_open_project_with_disable_service_auto_start_set_overrides_behavi
             client.app, ProjectID(project["uuid"])
         )
         mocked_notifications_plugin["subscribe"].reset_mock()
-        mocked_director_v2_api["run_dynamic_service"].assert_not_called()
+        mocked_director_v2_api[
+            "director_v2.api.run_dynamic_service"
+        ].assert_not_called()
 
 
 @pytest.mark.parametrize(*standard_user_role())
@@ -567,7 +573,7 @@ async def test_open_project_with_large_amount_of_dynamic_services_does_not_start
     )
     all_service_uuids = list(project["workbench"])
     for num_service_already_running in range(max_amount_of_auto_started_dyn_services):
-        mocked_director_v2_api["list_dynamic_services"].return_value = [
+        mocked_director_v2_api["director_v2.api.list_dynamic_services"].return_value = [
             {"service_uuid": all_service_uuids[service_id]}
             for service_id in range(num_service_already_running)
         ]
@@ -578,7 +584,9 @@ async def test_open_project_with_large_amount_of_dynamic_services_does_not_start
             client.app, ProjectID(project["uuid"])
         )
         mocked_notifications_plugin["subscribe"].reset_mock()
-        mocked_director_v2_api["run_dynamic_service"].assert_not_called()
+        mocked_director_v2_api[
+            "director_v2.api.run_dynamic_service"
+        ].assert_not_called()
 
 
 @pytest.mark.parametrize(*standard_user_role())
@@ -606,7 +614,7 @@ async def test_open_project_with_large_amount_of_dynamic_services_starts_them_if
     project = await user_project_with_num_dynamic_services(num_of_dyn_services + 1)
     all_service_uuids = list(project["workbench"])
     for num_service_already_running in range(num_of_dyn_services):
-        mocked_director_v2_api["list_dynamic_services"].return_value = [
+        mocked_director_v2_api["director_v2.api.list_dynamic_services"].return_value = [
             {"service_uuid": all_service_uuids[service_id]}
             for service_id in range(num_service_already_running)
         ]
