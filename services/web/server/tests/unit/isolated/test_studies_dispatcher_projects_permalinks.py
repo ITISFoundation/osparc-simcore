@@ -28,7 +28,6 @@ from simcore_service_webserver.studies_dispatcher.settings import get_plugin_set
 def app_environment(
     env_devel_dict: EnvVarsDict, monkeypatch: MonkeyPatch
 ) -> EnvVarsDict:
-
     # remove
     for env in ("WEBSERVER_STUDIES_DISPATCHER", "WEBSERVER_STUDIES_ACCESS_ENABLED"):
         monkeypatch.delenv(env, raising=False)
@@ -84,7 +83,7 @@ def fake_get_project_request(faker: Faker, app: web.Application) -> web.Request:
     project_uuid = faker.uuid4()
     return make_mocked_request(
         "GET",
-        "/project/{project_uuid}",
+        "https://testfoo.com/project/{project_uuid}",
         app=app,
         match_info={"project_uuid": project_uuid},
     )
@@ -131,7 +130,6 @@ def test_permalink_only_for_template_projects(
 def test_permalink_only_when_read_access_to_everyone(
     fake_get_project_request: web.Request, valid_project_kwargs: dict[str, Any]
 ):
-
     with pytest.raises(PermalinkNotAllowedError):
         create_permalink_for_study(
             fake_get_project_request,
