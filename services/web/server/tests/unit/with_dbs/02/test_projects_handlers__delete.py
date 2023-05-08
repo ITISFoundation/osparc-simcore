@@ -13,6 +13,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from models_library.projects import ProjectID
 from models_library.projects_state import ProjectStatus
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_webserver_unit_with_db import (
@@ -113,6 +114,7 @@ async def test_delete_project(
     ],
 )
 async def test_delete_multiple_opened_project_forbidden(
+    mocked_notifications_plugin: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
     client,
     logged_user,
@@ -128,7 +130,6 @@ async def test_delete_multiple_opened_project_forbidden(
 ):
     # service in project
     service = await create_dynamic_service_mock(logged_user["id"], user_project["uuid"])
-
     # open project in tab1
     client_session_id1 = client_session_id_factory()
     try:
@@ -139,7 +140,13 @@ async def test_delete_multiple_opened_project_forbidden(
 
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_session_id1)
-    await assert_status(resp, expected_ok)
+    data, error = await assert_status(resp, expected_ok)
+    if data:
+        mocked_notifications_plugin["subscribe"].assert_called_once_with(
+            client.app, ProjectID(user_project["uuid"])
+        )
+    else:
+        mocked_notifications_plugin["subscribe"].assert_not_called()
 
     # delete project in tab2
     client_session_id2 = client_session_id_factory()
