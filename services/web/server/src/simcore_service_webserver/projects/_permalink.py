@@ -40,9 +40,7 @@ def _get_factory(app: web.Application) -> _CreateLinkCallable:
     )
 
 
-_CALLBACK_TIMEOUT = (
-    2  #  get_plugin_settings(request.app).PROJECTS_PERMALINK_FACTORY_TIMEOUT
-)
+_PERMALINK_CREATE_TIMEOUT_S = 2
 
 
 async def _create_permalink(
@@ -54,12 +52,12 @@ async def _create_permalink(
 
     try:
         permalink: ProjectPermalink = await asyncio.wait_for(
-            create(request, project_id), timeout=_CALLBACK_TIMEOUT
+            create(request, project_id), timeout=_PERMALINK_CREATE_TIMEOUT_S
         )
         return permalink
     except asyncio.TimeoutError as err:
         raise PermalinkFactoryError(
-            f"Permalink factory callback '{create}' timed out after {_CALLBACK_TIMEOUT} secs"
+            f"Permalink factory callback '{create}' timed out after {_PERMALINK_CREATE_TIMEOUT_S} secs"
         ) from err
 
 
