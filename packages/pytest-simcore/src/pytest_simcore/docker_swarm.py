@@ -178,6 +178,17 @@ def docker_swarm(
     assert _is_docker_swarm_init(docker_client) is keep_docker_up
 
 
+@retry(
+    wait=wait_fixed(0.3),
+    retry=retry_if_exception_type(AssertionError),
+    stop=stop_after_delay(30),
+)
+def _wait_for_new_task(service, old_task_ids: set[str]) -> None:
+    service.reload()
+    new_task_ids = {t["ID"] for t in service.tasks()}
+    assert len(new_task_ids.difference(old_task_ids)) == 1
+
+
 def _force_restart_migration_service(docker_client: docker.client.DockerClient) -> None:
     for migration_service in (
         service
@@ -187,7 +198,9 @@ def _force_restart_migration_service(docker_client: docker.client.DockerClient) 
         print(
             "WARNING: migration service detected before updating stack, it will be force-updated"
         )
+        current_task_ids = {t["ID"] for t in migration_service.tasks()}
         migration_service.force_update()
+        _wait_for_new_task(migration_service, current_task_ids)
         print(f"forced updated {migration_service.name}.")
 
 
