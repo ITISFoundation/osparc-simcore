@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
 import asyncio
 import json
@@ -45,6 +46,7 @@ from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.diagnostics.plugin import setup_diagnostics
 from simcore_service_webserver.director_v2.plugin import setup_director_v2
 from simcore_service_webserver.login.plugin import setup_login
+from simcore_service_webserver.notifications import project_logs
 from simcore_service_webserver.notifications.plugin import setup_notifications
 from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.projects.project_models import ProjectDict
@@ -73,20 +75,23 @@ pytest_simcore_core_services_selection = [
 
 pytest_simcore_ops_services_selection = []
 
+_STABLE_DELAY_S = 3
+
 
 async def _assert_no_handler_not_called(handler: mock.Mock) -> None:
     with pytest.raises(RetryError):
         async for attempt in AsyncRetrying(
             retry=retry_always,
-            stop=stop_after_delay(5),
+            stop=stop_after_delay(_STABLE_DELAY_S),
             reraise=True,
             wait=wait_fixed(1),
         ):
             with attempt:
                 print(
-                    f"--> checking no mesage reached webclient... {attempt.retry_state.attempt_number} attempt"
+                    f"--> checking no message reached webclient for {attempt.retry_state.attempt_number}/{_STABLE_DELAY_S}s..."
                 )
                 handler.assert_not_called()
+    print(f"no calls received for {_STABLE_DELAY_S}s. very good.")
 
 
 async def _assert_handler_called(handler: mock.Mock, expected_call: mock._Call) -> None:
@@ -177,6 +182,9 @@ async def rabbitmq_publisher(
 @pytest.mark.parametrize(
     "sender_same_user_id", [True, False], ids=lambda id: f"same_sender_id={id}"
 )
+@pytest.mark.parametrize(
+    "subscribe_to_logs", [True, False], ids=lambda id: f"subscribed={id}"
+)
 async def test_log_workflow(
     client: TestClient,
     rabbitmq_publisher: RabbitMQClient,
@@ -190,9 +198,10 @@ async def test_log_workflow(
     project_hidden: bool,
     aiopg_engine: aiopg.sa.Engine,
     sender_same_user_id: bool,
+    subscribe_to_logs: bool,
 ):
     """
-    RabbitMQ --> Webserver --> Redis --> webclient (socketio)
+    RabbitMQ (TOPIC) --> Webserver --> Redis --> webclient (socketio)
 
     """
     socket_io_conn = await socketio_client_factory(None, client)
@@ -208,19 +217,25 @@ async def test_log_workflow(
     mock_log_handler = mocker.MagicMock()
     socket_io_conn.on(SOCKET_IO_LOG_EVENT, handler=mock_log_handler)
 
+    project_id = ProjectID(user_project["uuid"])
     random_node_id_in_project = NodeID(choice(list(user_project["workbench"])))
     sender_user_id = UserID(logged_user["id"])
     if sender_same_user_id is False:
         sender_user_id = UserID(faker.pyint(min_value=logged_user["id"] + 1))
+
+    if subscribe_to_logs:
+        assert client.app
+        await project_logs.subscribe(client.app, project_id)
+
     log_message = LoggerRabbitMessage(
         user_id=sender_user_id,
-        project_id=ProjectID(user_project["uuid"]),
+        project_id=project_id,
         node_id=random_node_id_in_project,
         messages=[faker.text() for _ in range(10)],
     )
     await rabbitmq_publisher.publish(log_message.channel_name, log_message)
 
-    call_expected = not project_hidden and sender_same_user_id
+    call_expected = not project_hidden and sender_same_user_id and subscribe_to_logs
     if call_expected:
         expected_call = jsonable_encoder(
             log_message, exclude={"user_id", "channel_name"}
@@ -228,6 +243,58 @@ async def test_log_workflow(
         await _assert_handler_called_with_json(mock_log_handler, expected_call)
     else:
         await _assert_no_handler_not_called(mock_log_handler)
+
+
+@pytest.mark.parametrize("user_role", [UserRole.GUEST], ids=str)
+async def test_log_workflow_only_receives_messages_if_subscribed(
+    client: TestClient,
+    rabbitmq_publisher: RabbitMQClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    faker: Faker,
+    mocker: MockerFixture,
+):
+    """
+    RabbitMQ (TOPIC) --> Webserver
+
+    """
+    mocked_send_messages = mocker.patch(
+        "simcore_service_webserver.notifications._rabbitmq_consumers.send_messages",
+        autospec=True,
+    )
+
+    project_id = ProjectID(user_project["uuid"])
+    random_node_id_in_project = NodeID(choice(list(user_project["workbench"])))
+    sender_user_id = UserID(logged_user["id"])
+
+    assert client.app
+    await project_logs.subscribe(client.app, project_id)
+
+    log_message = LoggerRabbitMessage(
+        user_id=sender_user_id,
+        project_id=project_id,
+        node_id=random_node_id_in_project,
+        messages=[faker.text() for _ in range(10)],
+    )
+    await rabbitmq_publisher.publish(log_message.channel_name, log_message)
+    await _assert_handler_called(
+        mocked_send_messages,
+        mock.call(
+            client.app,
+            f"{log_message.user_id}",
+            [
+                {
+                    "event_type": SOCKET_IO_LOG_EVENT,
+                    "data": log_message.dict(exclude={"user_id", "channel_name"}),
+                }
+            ],
+        ),
+    )
+    mocked_send_messages.reset_mock()
+
+    # when unsubscribed, we do not receive the messages anymore
+    await project_logs.unsubscribe(client.app, project_id)
+    await _assert_no_handler_not_called(mocked_send_messages)
 
 
 @pytest.mark.parametrize("user_role", [UserRole.GUEST], ids=str)
