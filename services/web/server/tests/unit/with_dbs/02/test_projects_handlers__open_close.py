@@ -359,12 +359,12 @@ async def test_open_project(
 
 
 @pytest.mark.parametrize(
-    "user_role,expected",
+    "user_role,expected,save_state",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized, False),
+        (UserRole.GUEST, web.HTTPForbidden, False),
+        (UserRole.USER, web.HTTPOk, True),
+        (UserRole.TESTER, web.HTTPOk, True),
     ],
 )
 async def test_open_template_project_for_edition(
@@ -373,6 +373,7 @@ async def test_open_template_project_for_edition(
     create_template_project: Callable[..., Awaitable[ProjectDict]],
     client_session_id_factory: Callable[[], str],
     expected: type[web.HTTPException],
+    save_state: bool,
     mocked_director_v2_api: dict[str, mock.Mock],
     mock_service_resources: ServiceResourcesDict,
     mock_orphaned_services: mock.Mock,
@@ -412,7 +413,7 @@ async def test_open_template_project_for_edition(
                     request_scheme=request_scheme,
                     simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                     request_dns=request_dns,
-                    save_state=True,
+                    save_state=save_state,
                     service_resources=ServiceResourcesDictHelpers.create_jsonable(
                         mock_service_resources
                     ),
