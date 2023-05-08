@@ -298,7 +298,7 @@ async def get_active_project(request: web.Request) -> web.Response:
                 include_state=True,
             )
 
-            # updates permalink dynamically
+            # updates project's permalink field
             await update_or_pop_permalink_in_project(request, project)
 
             data = ProjectGet.parse_obj(project).data(exclude_unset=True)

@@ -68,12 +68,6 @@ def create_permalink_for_study(
     )
 
 
-assert "uuid" in projects.columns  # nosec
-assert "type" in projects.columns  # nosec
-assert "access_rights" in projects.columns  # nosec
-assert "published" in projects.columns  # nosec
-
-
 async def permalink_factory(
     request: web.Request, project_uuid: ProjectID
 ) -> ProjectPermalink:
