@@ -20,7 +20,7 @@ from servicelib.aiohttp.monitor_services import (
 )
 from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_context
-from servicelib.rabbitmq import BIND_TO_ALL_TOPICS, RabbitMQClient
+from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 
 from ..projects import projects_api
@@ -35,6 +35,7 @@ from ..socketio.events import (
     SocketMessageDict,
     send_messages,
 )
+from ._constants import APP_RABBITMQ_CONSUMERS_KEY
 
 _logger = logging.getLogger(__name__)
 
@@ -170,7 +171,7 @@ EXCHANGE_TO_PARSER_CONFIG: Final[
     (
         LoggerRabbitMessage.get_channel_name(),
         _log_message_parser,
-        dict(topics=[BIND_TO_ALL_TOPICS]),
+        dict(topics=[]),
     ),
     (
         ProgressRabbitMessageNode.get_channel_name(),
@@ -201,6 +202,12 @@ async def setup_rabbitmq_consumers(app: web.Application) -> AsyncIterator[None]:
                 for exchange_name, parser_fct, queue_kwargs in EXCHANGE_TO_PARSER_CONFIG
             )
         )
+        app[APP_RABBITMQ_CONSUMERS_KEY] = {
+            exchange_name: queue_name
+            for (exchange_name, *_), queue_name in zip(
+                EXCHANGE_TO_PARSER_CONFIG, subscribed_queues
+            )
+        }
 
     yield
 

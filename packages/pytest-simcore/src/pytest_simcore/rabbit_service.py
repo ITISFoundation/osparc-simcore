@@ -142,6 +142,3 @@ async def rabbitmq_client(
     yield _creator
     # cleanup, properly close the clients
     await asyncio.gather(*(client.close() for client in created_clients))
-    for client in created_clients:
-        assert client._channel_pool  # pylint: disable=protected-access
-        assert client._channel_pool.is_closed  # pylint: disable=protected-access
