@@ -62,7 +62,7 @@ pyproject-hooks==1.0.0
     # via build
 pyyaml==6.0
     # via
-    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_test.txt
     #   pre-commit
     #   watchdog
 tomli==2.0.1
