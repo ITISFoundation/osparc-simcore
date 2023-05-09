@@ -17,7 +17,7 @@ from ..scicrunch.models import ResearchResource, ResourceHit
 from ..scicrunch.service_client import InvalidRRID, SciCrunch
 from ..security.decorators import permission_required
 from ..users_exceptions import UserNotFoundError
-from . import groups_api
+from . import api
 from .exceptions import (
     GroupNotFoundError,
     UserInGroupNotFoundError,
@@ -65,7 +65,7 @@ async def list_groups(request: web.Request):
 
     product: Product = get_current_product(request)
     user_id = request[RQT_USERID_KEY]
-    primary_group, user_groups, all_group = await groups_api.list_user_groups(
+    primary_group, user_groups, all_group = await api.list_user_groups(
         request.app, user_id
     )
 
@@ -78,7 +78,7 @@ async def list_groups(request: web.Request):
 
     if product.group_id:
         with suppress(GroupNotFoundError):
-            result["product"] = await groups_api.get_product_group_for_user(
+            result["product"] = await api.get_product_group_for_user(
                 app=request.app,
                 user_id=user_id,
                 product_gid=product.group_id,
@@ -96,7 +96,7 @@ async def get_group(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     gid = request.match_info["gid"]
 
-    return await groups_api.get_user_group(request.app, user_id, gid)
+    return await api.get_user_group(request.app, user_id, gid)
 
 
 @routes.post(f"/{API_VTAG}/groups", name="create_group")
@@ -108,7 +108,7 @@ async def create_group(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     new_group = await request.json()
 
-    created_group = await groups_api.create_user_group(request.app, user_id, new_group)
+    created_group = await api.create_user_group(request.app, user_id, new_group)
     raise web.HTTPCreated(
         text=json.dumps({"data": created_group}), content_type=MIMETYPE_APPLICATION_JSON
     )
@@ -123,9 +123,7 @@ async def update_group(request: web.Request):
     gid = request.match_info["gid"]
     new_group_values = await request.json()
 
-    return await groups_api.update_user_group(
-        request.app, user_id, gid, new_group_values
-    )
+    return await api.update_user_group(request.app, user_id, gid, new_group_values)
 
 
 @routes.delete(f"/{API_VTAG}/groups/{{gid}}", name="update_group")
@@ -136,7 +134,7 @@ async def delete_group(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     gid = request.match_info["gid"]
 
-    await groups_api.delete_user_group(request.app, user_id, gid)
+    await api.delete_user_group(request.app, user_id, gid)
     raise web.HTTPNoContent()
 
 
@@ -148,7 +146,7 @@ async def get_group_users(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     gid = request.match_info["gid"]
 
-    return await groups_api.list_users_in_group(request.app, user_id, gid)
+    return await api.list_users_in_group(request.app, user_id, gid)
 
 
 @routes.post(f"/{API_VTAG}/groups/{{gid}}/users", name="add_group_user")
@@ -172,7 +170,7 @@ async def add_group_user(request: web.Request):
         else None
     )
 
-    await groups_api.add_user_in_group(
+    await api.add_user_in_group(
         request.app,
         user_id,
         gid,
@@ -193,9 +191,7 @@ async def get_group_user(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     gid = request.match_info["gid"]
     the_user_id_in_group = request.match_info["uid"]
-    return await groups_api.get_user_in_group(
-        request.app, user_id, gid, the_user_id_in_group
-    )
+    return await api.get_user_in_group(request.app, user_id, gid, the_user_id_in_group)
 
 
 @routes.patch(f"/{API_VTAG}/groups/{{gid}}/users/{{uid}}", name="update_group_user")
@@ -210,7 +206,7 @@ async def update_group_user(request: web.Request):
     gid = request.match_info["gid"]
     the_user_id_in_group = request.match_info["uid"]
     new_values_for_user_in_group = await request.json()
-    return await groups_api.update_user_in_group(
+    return await api.update_user_in_group(
         request.app,
         user_id,
         gid,
@@ -227,9 +223,7 @@ async def delete_group_user(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     gid = request.match_info["gid"]
     the_user_id_in_group = request.match_info["uid"]
-    await groups_api.delete_user_in_group(
-        request.app, user_id, gid, the_user_id_in_group
-    )
+    await api.delete_user_in_group(request.app, user_id, gid, the_user_id_in_group)
     raise web.HTTPNoContent()
 
 

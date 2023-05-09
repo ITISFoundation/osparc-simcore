@@ -18,7 +18,7 @@ from servicelib.utils import fire_and_forget_task, logged_gather
 from socketio import AsyncServer
 from socketio.exceptions import ConnectionRefusedError as SocketIOConnectionError
 
-from ..groups.groups_api import list_user_groups
+from ..groups.api import list_user_groups
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
 from .events import SOCKET_IO_HEARTBEAT_EVENT, SocketMessageDict, send_messages

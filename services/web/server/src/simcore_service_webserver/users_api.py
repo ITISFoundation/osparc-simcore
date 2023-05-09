@@ -18,7 +18,7 @@ from simcore_postgres_database.models.users import UserNameConverter, UserRole
 from sqlalchemy import and_, literal_column
 
 from .db_models import GroupType, groups, tokens, user_to_groups, users
-from .groups.groups_api import convert_groups_db_to_schema
+from .groups.api import convert_groups_db_to_schema
 from .login.storage import AsyncpgStorage, get_plugin_storage
 from .security.api import clean_auth_policy_cache
 from .users_exceptions import UserNotFoundError

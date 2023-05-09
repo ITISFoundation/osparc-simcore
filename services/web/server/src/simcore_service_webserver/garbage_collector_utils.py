@@ -8,7 +8,7 @@ from simcore_postgres_database.errors import DatabaseError
 
 from . import users_exceptions
 from .db_models import GroupType
-from .groups.groups_api import get_group_from_gid
+from .groups.api import get_group_from_gid
 from .projects.projects_db import APP_PROJECT_DBAPI, ProjectAccessRights
 from .projects.projects_exceptions import ProjectNotFoundError
 from .users_api import get_user, get_user_id_from_gid
