@@ -279,8 +279,7 @@ def docker_stack(
     stacks_deployed: dict[str, dict] = {}
     for key, stack_name, compose_file in stacks:
 
-        if not keep_docker_up:
-            _deploy_stack(compose_file, stack_name)
+        _deploy_stack(compose_file, stack_name)
 
         stacks_deployed[key] = {
             "name": stack_name,
