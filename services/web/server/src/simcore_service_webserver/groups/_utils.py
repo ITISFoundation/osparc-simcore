@@ -4,7 +4,7 @@ from typing import Any, Mapping, TypedDict
 from aiopg.sa.result import RowProxy
 
 from ..users_utils import convert_user_db_to_schema
-from .groups_exceptions import UserInsufficientRightsError
+from .exceptions import UserInsufficientRightsError
 
 logger = logging.getLogger(__name__)
 

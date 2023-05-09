@@ -22,11 +22,7 @@ from ._utils import (
     convert_groups_schema_to_db,
     convert_user_in_group_to_schema,
 )
-from .groups_exceptions import (
-    GroupNotFoundError,
-    GroupsException,
-    UserInGroupNotFoundError,
-)
+from .exceptions import GroupNotFoundError, GroupsException, UserInGroupNotFoundError
 
 logger = logging.getLogger(__name__)
 
