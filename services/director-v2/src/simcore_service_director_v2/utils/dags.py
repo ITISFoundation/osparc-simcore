@@ -191,17 +191,31 @@ async def compute_pipeline_details(
     except nx.exception.NetworkXUnfeasible:
         # not acyclic
         pass
+
+    graph_data = complete_dag.nodes.data()
+    pipeline_progress = (
+        sum(
+            graph_data[node_id]["progress"]
+            for node_id in pipeline_dag.nodes
+            if graph_data[node_id]["progress"] is not None
+        )
+        / len(pipeline_dag.nodes)
+        if len(pipeline_dag.nodes) > 0
+        else None
+    )
+
     return PipelineDetails(
         adjacency_list=nx.convert.to_dict_of_lists(pipeline_dag),
+        progress=pipeline_progress,
         node_states={
-            node_id: NodeState.construct(
+            node_id: NodeState(
                 modified=node_data.get(kNODE_MODIFIED_STATE, False),
                 dependencies=node_data.get(kNODE_DEPENDENCIES_TO_COMPUTE, set()),
                 currentStatus=next(
                     (task.state for task in comp_tasks if f"{task.node_id}" == node_id),
                     RunningState.UNKNOWN,
                 ),
-                progress=node_data["progress"] or 0,
+                progress=node_data.get("progress", 0),
             )
             for node_id, node_data in complete_dag.nodes.data()
             if node_data["node_class"] is NodeClass.COMPUTATIONAL

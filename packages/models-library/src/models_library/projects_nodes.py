@@ -85,11 +85,11 @@ class NodeState(BaseModel):
         description="the node's current state",
         alias="currentStatus",
     )
-    progress: float = Field(
+    progress: float | None = Field(
         default=0,
         ge=0.0,
         le=1.0,
-        description="current progress of the task if available",
+        description="current progress of the task if available (None if not started)",
     )
 
     class Config:
