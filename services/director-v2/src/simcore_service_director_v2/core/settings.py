@@ -42,7 +42,6 @@ from settings_library.postgres import PostgresSettings
 from settings_library.r_clone import RCloneSettings as SettingsLibraryRCloneSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
-from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from settings_library.utils_service import DEFAULT_FASTAPI_PORT
 from simcore_postgres_database.models.clusters import ClusterType
@@ -568,8 +567,6 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     DIRECTOR_V2_COMPUTATIONAL_BACKEND: ComputationalBackendSettings = Field(
         auto_default_from_env=True
     )
-
-    DIRECTOR_V2_TRACING: TracingSettings | None = Field(auto_default_from_env=True)
 
     DIRECTOR_V2_DOCKER_REGISTRY: RegistrySettings = Field(auto_default_from_env=True)
 

@@ -8,7 +8,6 @@ from pydantic import ByteSize, Field, PositiveInt, parse_obj_as
 from settings_library.base import BaseCustomSettings
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
-from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from simcore_service_catalog.models.schemas.services_specifications import (
     ServiceSpecifications,
@@ -24,7 +23,7 @@ class DirectorSettings(BaseCustomSettings):
 
     @cached_property
     def base_url(self) -> str:
-        return f"http://{self.DIRECTOR_HOST}:{self.DIRECTOR_PORT}/{self.DIRECTOR_VTAG}" # NOSONAR
+        return f"http://{self.DIRECTOR_HOST}:{self.DIRECTOR_PORT}/{self.DIRECTOR_VTAG}"  # NOSONAR
 
 
 _DEFAULT_RESOURCES: Final[ResourcesDict] = parse_obj_as(
@@ -73,8 +72,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     # BACKGROUND TASK
     CATALOG_BACKGROUND_TASK_REST_TIME: PositiveInt = 60
     CATALOG_BACKGROUND_TASK_WAIT_AFTER_FAILURE: PositiveInt = 5  # secs
-
-    CATALOG_TRACING: TracingSettings | None = None
 
     CATALOG_SERVICES_DEFAULT_RESOURCES: ResourcesDict = _DEFAULT_RESOURCES
     CATALOG_SERVICES_DEFAULT_SPECIFICATIONS: ServiceSpecifications = (
