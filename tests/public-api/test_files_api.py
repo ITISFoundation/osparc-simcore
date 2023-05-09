@@ -1,4 +1,6 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
@@ -35,8 +37,6 @@ def test_upload_file(files_api: FilesApi, tmp_path: Path):
     # and doing direct upload?
     same_file = files_api.upload_file(file=input_path)
     # FIXME: assert input_file.checksum == same_file.checksum
-
-    assert False
 
 
 @pytest.mark.parametrize("file_type", ["binary", "text"])

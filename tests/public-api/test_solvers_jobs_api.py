@@ -3,10 +3,12 @@
     might affect the others. E.g. files uploaded in one test can be listed in rext
 
 """
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
 
 import logging
 import time
@@ -193,6 +195,7 @@ _RETRY_POLICY_IF_LOGFILE_404_NOT_FOUND = dict(
 )
 
 
+@pytest.mark.testit
 @pytest.mark.parametrize("expected_outcome", ("SUCCESS", "FAILED"))
 def test_run_job(
     uploaded_input_file: File,

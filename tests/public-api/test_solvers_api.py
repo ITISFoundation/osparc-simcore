@@ -1,11 +1,13 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 
 import random
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any, NamedTuple
 
 import pytest
 from osparc.api.solvers_api import SolversApi
@@ -14,8 +16,13 @@ from osparc.models import Solver
 from packaging.version import parse as parse_version
 
 
+class NameTagTuple(NamedTuple):
+    repository_name: str
+    tag: str
+
+
 @pytest.fixture(scope="module")
-def sleeper_key_and_version(services_registry: dict[str, Any]) -> tuple[str, str]:
+def sleeper_key_and_version(services_registry: dict[str, Any]) -> NameTagTuple:
     # image in registry
     repository_name = services_registry["sleeper_service"]["name"]
     tag = services_registry["sleeper_service"]["version"]
@@ -27,7 +34,7 @@ def sleeper_key_and_version(services_registry: dict[str, Any]) -> tuple[str, str
     #  repository_name -> solver_key
     #  tag -> version
     #
-    return repository_name, tag
+    return NameTagTuple(repository_name, tag)
 
 
 def test_get_latest_solver(solvers_api: SolversApi):
@@ -56,7 +63,7 @@ def test_get_all_releases(solvers_api: SolversApi):
         one_solver.id
     )
 
-    latest: Optional[Solver] = None
+    latest: Solver | None = None
     for solver in all_releases_of_given_solver:
         if one_solver.id == solver.id:
             assert isinstance(solver, Solver)
@@ -72,7 +79,9 @@ def test_get_all_releases(solvers_api: SolversApi):
     assert latest == all_releases_of_given_solver[-1]
 
 
-def test_get_solver_release(solvers_api: SolversApi, sleeper_key_and_version):
+def test_get_solver_release(
+    solvers_api: SolversApi, sleeper_key_and_version: NameTagTuple
+):
     expected_solver_key, expected_version = sleeper_key_and_version
 
     solver = solvers_api.get_solver_release(
@@ -91,7 +100,7 @@ def test_get_solver_release(solvers_api: SolversApi, sleeper_key_and_version):
     assert solver == same_solver
 
 
-def test_solvers_not_found(solvers_api):
+def test_solvers_not_found(solvers_api: SolversApi):
 
     with pytest.raises(ApiException) as excinfo:
         solvers_api.get_solver_release(
