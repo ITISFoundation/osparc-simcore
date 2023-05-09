@@ -107,7 +107,9 @@ class CompTaskAtDB(BaseModel):
     job_id: str | None = Field(default=None, description="The worker job ID")
     node_schema: NodeSchema = Field(..., alias="schema")
     inputs: InputsDict | None = Field(..., description="the inputs payload")
-    outputs: OutputsDict | None = Field({}, description="the outputs payload")
+    outputs: OutputsDict | None = Field(
+        default_factory=dict, description="the outputs payload"
+    )
     run_hash: str | None = Field(
         default=None,
         description="the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated",
