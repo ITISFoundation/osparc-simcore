@@ -5,7 +5,7 @@ from typing import Any
 import networkx as nx
 from models_library.projects import NodesDict
 from models_library.projects_nodes import NodeID, NodeState
-from models_library.projects_nodes_io import PortLink
+from models_library.projects_nodes_io import NodeIDStr, PortLink
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.utils.nodes import compute_node_hash
@@ -29,6 +29,7 @@ def create_complete_dag(workbench: NodesDict) -> nx.DiGraph:
     """creates a complete graph out of the project workbench"""
     dag_graph = nx.DiGraph()
     for node_id, node in workbench.items():
+        assert node.state  # nosec
         dag_graph.add_node(
             node_id,
             name=node.label,
@@ -39,8 +40,9 @@ def create_complete_dag(workbench: NodesDict) -> nx.DiGraph:
             outputs=node.outputs,
             state=node.state.current_status,
         )
+        assert node.input_nodes  # nosec
         for input_node_id in node.input_nodes:
-            predecessor_node = workbench.get(str(input_node_id))
+            predecessor_node = workbench.get(NodeIDStr(input_node_id))
             if predecessor_node:
                 dag_graph.add_edge(str(input_node_id), node_id)
 
@@ -60,6 +62,7 @@ def create_complete_dag_from_tasks(tasks: list[CompTaskAtDB]) -> nx.DiGraph:
             outputs=task.outputs,
             state=task.state,
         )
+        assert task.inputs  # nosec
         for input_data in task.inputs.values():
             if isinstance(input_data, PortLink):
                 dag_graph.add_edge(str(input_data.node_uuid), str(task.node_id))
@@ -135,7 +138,7 @@ def node_needs_computation(
 
 async def _set_computational_nodes_states(complete_dag: nx.DiGraph) -> None:
     nodes_data_view: nx.classes.reportviews.NodeDataView = complete_dag.nodes.data()
-    for node in nx.topological_sort(complete_dag):
+    for node in nx.algorithms.dag.topological_sort(complete_dag):
         if _is_node_computational(nodes_data_view[node].get("key", "")):
             await compute_node_states(nodes_data_view, node)
 
@@ -147,7 +150,7 @@ async def create_minimal_computational_graph_based_on_selection(
     try:
         # first pass, traversing in topological order to correctly get the dependencies, set the nodes states
         await _set_computational_nodes_states(complete_dag)
-    except nx.NetworkXUnfeasible:
+    except nx.exception.NetworkXUnfeasible:
         # not acyclic, return an empty graph
         return nx.DiGraph()
 
@@ -189,11 +192,11 @@ async def compute_pipeline_details(
         # FIXME: this problem of cyclic graphs for control loops create all kinds of issues that must be fixed
         # first pass, traversing in topological order to correctly get the dependencies, set the nodes states
         await _set_computational_nodes_states(complete_dag)
-    except nx.NetworkXUnfeasible:
+    except nx.exception.NetworkXUnfeasible:
         # not acyclic
         pass
     return PipelineDetails(
-        adjacency_list=nx.to_dict_of_lists(pipeline_dag),
+        adjacency_list=nx.convert.to_dict_of_lists(pipeline_dag),
         node_states={
             node_id: NodeState(
                 modified=node_data.get(kNODE_MODIFIED_STATE, False),
@@ -212,7 +215,7 @@ async def compute_pipeline_details(
 def find_computational_node_cycles(dag: nx.DiGraph) -> list[list[str]]:
     """returns a list of nodes part of a cycle and computational, which is currently forbidden."""
     computational_node_cycles = []
-    list_potential_cycles = nx.simple_cycles(dag)
+    list_potential_cycles = nx.algorithms.cycles.simple_cycles(dag)
     for cycle in list_potential_cycles:
         if any(_is_node_computational(dag.nodes[node_id]["key"]) for node_id in cycle):
             computational_node_cycles.append(deepcopy(cycle))
