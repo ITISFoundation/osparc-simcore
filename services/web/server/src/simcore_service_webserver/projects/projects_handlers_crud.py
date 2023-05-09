@@ -42,6 +42,7 @@ from ..security.api import check_permission
 from ..security.decorators import permission_required
 from ..users_api import get_user_name
 from . import _create_utils, projects_api
+from ._permalink import update_or_pop_permalink_in_project
 from ._rest_schemas import (
     EmptyModel,
     ProjectCopyOverride,
@@ -150,11 +151,11 @@ async def create_project(request: web.Request):
 
     return await start_long_running_task(
         request,
-        task=_create_utils.create_project,
+        _create_utils.create_project,
         fire_and_forget=True,
         task_context=jsonable_encoder(req_ctx),
         # arguments
-        app=request.app,
+        request=request,
         new_project_was_hidden_before_data_was_copied=query_params.hidden,
         from_study=query_params.from_study,
         as_template=query_params.as_template,
@@ -296,6 +297,10 @@ async def get_active_project(request: web.Request) -> web.Response:
                 user_id=req_ctx.user_id,
                 include_state=True,
             )
+
+            # updates project's permalink field
+            await update_or_pop_permalink_in_project(request, project)
+
             data = ProjectGet.parse_obj(project).data(exclude_unset=True)
 
         return web.json_response({"data": data}, dumps=json_dumps)
@@ -350,6 +355,9 @@ async def get_project(request: web.Request):
 
         if new_uuid := request.get(RQ_REQUESTED_REPO_PROJECT_UUID_KEY):
             project["uuid"] = new_uuid
+
+        # Adds permalink
+        await update_or_pop_permalink_in_project(request, project)
 
         data = ProjectGet.parse_obj(project).data(exclude_unset=True)
         return web.json_response({"data": data}, dumps=json_dumps)
