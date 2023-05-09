@@ -11,10 +11,9 @@ from servicelib.aiohttp.rest_routing import (
     map_handlers_with_operations,
 )
 
+from .._constants import APP_OPENAPI_SPECS_KEY, APP_SETTINGS_KEY
+from ..products.plugin import setup_products
 from . import groups_handlers
-from ._constants import APP_OPENAPI_SPECS_KEY, APP_SETTINGS_KEY
-from .products.plugin import setup_products
-
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +26,6 @@ logger = logging.getLogger(__name__)
     logger=logger,
 )
 def setup_groups(app: web.Application):
-
     assert app[APP_SETTINGS_KEY].WEBSERVER_GROUPS  # nosec
 
     # plugin dependencies

@@ -18,7 +18,7 @@ from servicelib.utils import fire_and_forget_task, logged_gather
 from socketio import AsyncServer
 from socketio.exceptions import ConnectionRefusedError as SocketIOConnectionError
 
-from ..groups_api import list_user_groups
+from ..groups.groups_api import list_user_groups
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
 from .events import SOCKET_IO_HEARTBEAT_EVENT, SocketMessageDict, send_messages
@@ -185,7 +185,6 @@ async def disconnect(sid: str, app: web.Application) -> None:
     sio = get_socket_server(app)
     async with sio.session(sid) as socketio_session:
         if "user_id" in socketio_session:
-
             user_id = socketio_session["user_id"]
             client_session_id = socketio_session["client_session_id"]
 

@@ -1,10 +1,10 @@
 import logging
-from typing import Any, Dict, Mapping, Optional, TypedDict
+from typing import Any, Mapping, TypedDict
 
 from aiopg.sa.result import RowProxy
 
+from ..users_utils import convert_user_db_to_schema
 from .groups_exceptions import UserInsufficientRightsError
-from .users_utils import convert_user_db_to_schema
 
 logger = logging.getLogger(__name__)
 
@@ -34,8 +34,8 @@ def check_group_permissions(
 
 
 def convert_groups_db_to_schema(
-    db_row: RowProxy, *, prefix: Optional[str] = "", **kwargs
-) -> Dict:
+    db_row: RowProxy, *, prefix: str | None = "", **kwargs
+) -> dict:
     converted_dict = {
         k: db_row[f"{prefix}{v}"]
         for k, v in GROUPS_SCHEMA_TO_DB.items()
@@ -45,7 +45,7 @@ def convert_groups_db_to_schema(
     return converted_dict
 
 
-def convert_groups_schema_to_db(schema: Dict) -> Dict:
+def convert_groups_schema_to_db(schema: dict) -> dict:
     return {
         v: schema[k]
         for k, v in GROUPS_SCHEMA_TO_DB.items()
@@ -53,7 +53,7 @@ def convert_groups_schema_to_db(schema: Dict) -> Dict:
     }
 
 
-def convert_user_in_group_to_schema(user: Mapping[str, Any]) -> Dict[str, str]:
+def convert_user_in_group_to_schema(user: Mapping[str, Any]) -> dict[str, str]:
     group_user = convert_user_db_to_schema(user)
     group_user.pop("role")
     group_user["accessRights"] = user["access_rights"]

@@ -9,21 +9,21 @@ from pydantic import parse_obj_as
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
+from .._meta import API_VTAG
+from ..login.decorators import RQT_USERID_KEY, login_required
+from ..scicrunch.db import ResearchResourceRepository
+from ..scicrunch.errors import ScicrunchError
+from ..scicrunch.models import ResearchResource, ResourceHit
+from ..scicrunch.service_client import InvalidRRID, SciCrunch
+from ..security.decorators import permission_required
+from ..users_exceptions import UserNotFoundError
 from . import groups_api
-from ._meta import API_VTAG
 from .groups_classifiers import GroupClassifierRepository, build_rrids_tree_view
 from .groups_exceptions import (
     GroupNotFoundError,
     UserInGroupNotFoundError,
     UserInsufficientRightsError,
 )
-from .login.decorators import RQT_USERID_KEY, login_required
-from .scicrunch.db import ResearchResourceRepository
-from .scicrunch.errors import ScicrunchError
-from .scicrunch.models import ResearchResource, ResourceHit
-from .scicrunch.service_client import InvalidRRID, SciCrunch
-from .security.decorators import permission_required
-from .users_exceptions import UserNotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +61,7 @@ async def list_groups(request: web.Request):
 
     List of the groups I belonged to
     """
-    from .products.plugin import Product, get_current_product
+    from ..products.plugin import Product, get_current_product
 
     product: Product = get_current_product(request)
     user_id = request[RQT_USERID_KEY]
@@ -325,7 +325,6 @@ async def add_scicrunch_resource(request: web.Request):
 @permission_required("groups.*")
 @_handle_scicrunch_exceptions
 async def search_scicrunch_resources(request: web.Request):
-
     guess_name = str(request.query["guess_name"]).strip()
 
     scicrunch = SciCrunch.get_instance(request.app)

@@ -1,5 +1,4 @@
 from contextlib import suppress
-from typing import Optional
 
 from models_library.emails import LowerCaseEmailStr
 from pydantic import AnyUrl, BaseModel, Field, ValidationError, parse_obj_as, validator
@@ -32,7 +31,7 @@ class UsersGroup(BaseModel):
     gid: int = Field(..., description="the group ID")
     label: str = Field(..., description="the group name")
     description: str = Field(..., description="the group description")
-    thumbnail: Optional[AnyUrl] = Field(
+    thumbnail: AnyUrl | None = Field(
         default=None, description="url to the group thumbnail"
     )
     access_rights: GroupAccessRights = Field(..., alias="accessRights")
@@ -86,10 +85,10 @@ class UsersGroup(BaseModel):
 
 
 class AllUsersGroups(BaseModel):
-    me: Optional[UsersGroup] = None
-    organizations: Optional[list[UsersGroup]] = None
-    all: Optional[UsersGroup] = None
-    product: Optional[UsersGroup] = None
+    me: UsersGroup | None = None
+    organizations: list[UsersGroup] | None = None
+    all: UsersGroup | None = None
+    product: UsersGroup | None = None
 
     class Config:
         schema_extra = {
@@ -133,12 +132,12 @@ class AllUsersGroups(BaseModel):
 
 
 class GroupUser(GroupAccessRights):
-    first_name: Optional[str] = Field(None, description="the user first name")
-    last_name: Optional[str] = Field(None, description="the user last name")
-    login: Optional[LowerCaseEmailStr] = Field(None, description="the user login email")
-    gravatar_id: Optional[str] = Field(None, description="the user gravatar id hash")
-    id: Optional[str] = Field(None, description="the user id")
-    gid: Optional[str] = Field(None, description="the user primary gid")
+    first_name: str | None = Field(None, description="the user first name")
+    last_name: str | None = Field(None, description="the user last name")
+    login: LowerCaseEmailStr | None = Field(None, description="the user login email")
+    gravatar_id: str | None = Field(None, description="the user gravatar id hash")
+    id: str | None = Field(None, description="the user id")
+    gid: str | None = Field(None, description="the user primary gid")
 
     class Config:
         schema_extra = {

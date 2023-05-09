@@ -12,7 +12,9 @@ from simcore_postgres_database.utils_products import get_or_create_product_group
 from sqlalchemy import and_, literal_column
 from sqlalchemy.dialects.postgresql import insert
 
-from .db_models import GroupType, groups, user_to_groups, users
+from ..db_models import GroupType, groups, user_to_groups, users
+from ..users_api import get_user
+from ..users_exceptions import UserNotFoundError
 from .groups_exceptions import (
     GroupNotFoundError,
     GroupsException,
@@ -25,8 +27,6 @@ from .groups_utils import (
     convert_groups_schema_to_db,
     convert_user_in_group_to_schema,
 )
-from .users_api import get_user
-from .users_exceptions import UserNotFoundError
 
 logger = logging.getLogger(__name__)
 

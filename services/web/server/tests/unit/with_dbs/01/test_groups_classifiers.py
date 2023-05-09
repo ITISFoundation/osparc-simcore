@@ -2,19 +2,19 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=no-name-in-module
 
-from typing import Dict
 
 import pytest
 import sqlalchemy as sa
 from servicelib.common_aiopg_utils import DataSourceName, create_pg_engine
 from simcore_service_webserver._constants import APP_DB_ENGINE_KEY
-from simcore_service_webserver.groups_classifiers import GroupClassifierRepository
+from simcore_service_webserver.groups.groups_classifiers import (
+    GroupClassifierRepository,
+)
 from sqlalchemy.sql import text
 
 
 @pytest.fixture
 def inject_tables(postgres_db: sa.engine.Engine):
-
     stmt = text(
         """\
     INSERT INTO "group_classifiers" ("id", "bundle", "created", "modified", "gid", "uses_scicrunch") VALUES
@@ -26,8 +26,7 @@ def inject_tables(postgres_db: sa.engine.Engine):
 
 
 @pytest.fixture
-async def app(postgres_dsn: Dict, inject_tables):
-
+async def app(postgres_dsn: dict, inject_tables):
     dsn = DataSourceName(
         user=postgres_dsn["user"],
         password=postgres_dsn["password"],
@@ -42,7 +41,6 @@ async def app(postgres_dsn: Dict, inject_tables):
 
 
 async def test_classfiers_from_bundle(app):
-
     repo = GroupClassifierRepository(app)
 
     assert not await repo.group_uses_scicrunch(gid=1)

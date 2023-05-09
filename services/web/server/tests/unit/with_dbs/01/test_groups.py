@@ -24,15 +24,15 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import setup_db
-from simcore_service_webserver.groups import setup_groups
-from simcore_service_webserver.groups_api import (
+from simcore_service_webserver.groups.groups_api import (
     DEFAULT_GROUP_OWNER_ACCESS_RIGHTS,
     DEFAULT_GROUP_READ_ACCESS_RIGHTS,
     auto_add_user_to_groups,
     create_user_group,
     delete_user_group,
 )
-from simcore_service_webserver.groups_utils import AccessRightsDict
+from simcore_service_webserver.groups.groups_utils import AccessRightsDict
+from simcore_service_webserver.groups.plugin import setup_groups
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security.plugin import setup_security

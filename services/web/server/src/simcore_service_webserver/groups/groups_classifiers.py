@@ -9,7 +9,7 @@
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -17,9 +17,9 @@ from aiopg.sa.result import RowProxy
 from pydantic import BaseModel, Field, HttpUrl, ValidationError, constr, validator
 from simcore_postgres_database.models.classifiers import group_classifiers
 
-from ._constants import APP_DB_ENGINE_KEY
-from .scicrunch.db import ResearchResourceRepository
-from .scicrunch.service_client import SciCrunch
+from .._constants import APP_DB_ENGINE_KEY
+from ..scicrunch.db import ResearchResourceRepository
+from ..scicrunch.service_client import SciCrunch
 
 logger = logging.getLogger(__name__)
 
@@ -34,8 +34,8 @@ class ClassifierItem(BaseModel):
         ..., description="Unique identifier used to tag studies or services"
     )
     display_name: str
-    short_description: Optional[str]
-    url: Optional[HttpUrl] = Field(
+    short_description: str | None
+    url: HttpUrl | None = Field(
         None,
         description="Link to more information",
         example="https://scicrunch.org/resources/Any/search?q=osparc&l=osparc",
@@ -51,11 +51,11 @@ class ClassifierItem(BaseModel):
 
 class Classifiers(BaseModel):
     # meta
-    vcs_url: Optional[str]
-    vcs_ref: Optional[str]
+    vcs_url: str | None
+    vcs_ref: str | None
 
     # data
-    classifiers: Dict[TreePath, ClassifierItem]
+    classifiers: dict[TreePath, ClassifierItem]
 
 
 # DATABASE --------
@@ -70,16 +70,16 @@ class GroupClassifierRepository:
     def __init__(self, app: web.Application):
         self.engine = app[APP_DB_ENGINE_KEY]
 
-    async def _get_bundle(self, gid: int) -> Optional[RowProxy]:
+    async def _get_bundle(self, gid: int) -> RowProxy | None:
         async with self.engine.acquire() as conn:
-            bundle: Optional[RowProxy] = await conn.scalar(
+            bundle: RowProxy | None = await conn.scalar(
                 sa.select([group_classifiers.c.bundle]).where(
                     group_classifiers.c.gid == gid
                 )
             )
             return bundle
 
-    async def get_classifiers_from_bundle(self, gid: int) -> Dict[str, Any]:
+    async def get_classifiers_from_bundle(self, gid: int) -> dict[str, Any]:
         bundle = await self._get_bundle(gid)
         if bundle:
             try:
@@ -97,7 +97,7 @@ class GroupClassifierRepository:
 
     async def group_uses_scicrunch(self, gid: int) -> bool:
         async with self.engine.acquire() as conn:
-            value: Optional[RowProxy] = await conn.scalar(
+            value: RowProxy | None = await conn.scalar(
                 sa.select([group_classifiers.c.uses_scicrunch]).where(
                     group_classifiers.c.gid == gid
                 )
@@ -108,7 +108,7 @@ class GroupClassifierRepository:
 # HELPERS FOR API HANDLERS --------------
 
 
-async def build_rrids_tree_view(app, tree_view_mode="std") -> Dict[str, Any]:
+async def build_rrids_tree_view(app, tree_view_mode="std") -> dict[str, Any]:
     if tree_view_mode != "std":
         raise web.HTTPNotImplemented(
             reason="Currently only 'std' option for the classifiers tree view is implemented"
