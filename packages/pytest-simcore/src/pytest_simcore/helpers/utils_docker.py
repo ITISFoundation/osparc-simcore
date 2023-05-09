@@ -4,8 +4,9 @@ import os
 import re
 import socket
 import subprocess
+from enum import Enum
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
 
 import docker
 import yaml
@@ -13,6 +14,18 @@ from tenacity import retry
 from tenacity.after import after_log
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
+
+
+# SEE https://docs.docker.com/engine/api/v1.42/#tag/Container/operation/ContainerList
+class ContainerStatus(str, Enum):
+    CREATED = "created"
+    RESTARTING = "restarting"
+    RUNNING = "running"
+    REMOVING = "removing"
+    PAUSED = "paused"
+    EXITED = "exited"
+    DEAD = "dead"
+
 
 COLOR_ENCODING_RE = re.compile(r"\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]")
 MAX_PATH_CHAR_LEN_ALLOWED = 260
@@ -42,7 +55,7 @@ def get_localhost_ip(default="127.0.0.1") -> str:
     after=after_log(log, logging.WARNING),
 )
 def get_service_published_port(
-    service_name: str, target_ports: Optional[Union[list[int], int]] = None
+    service_name: str, target_ports: list[int] | int | None = None
 ) -> str:
     # WARNING: ENSURE that service name exposes a port in
     # Dockerfile file or docker-compose config file
@@ -97,11 +110,11 @@ def get_service_published_port(
 
 
 def run_docker_compose_config(
-    docker_compose_paths: Union[list[Path], Path],
+    docker_compose_paths: list[Path] | Path,
     scripts_dir: Path,
     project_dir: Path,
     env_file_path: Path,
-    destination_path: Optional[Path] = None,
+    destination_path: Path | None = None,
 ) -> dict:
     """Runs docker-compose config to validate and resolve a compose file configuration
 
@@ -225,22 +238,22 @@ def safe_artifact_name(name: str) -> str:
     return BANNED_CHARS_FOR_ARTIFACTS.sub("_", name)
 
 
-def save_docker_infos(destination_path: Path):
+def save_docker_infos(destination_dir: Path):
     client = docker.from_env()
 
     # Includes stop containers, which might be e.g. failing tasks
     all_containers = client.containers.list(all=True)
 
-    destination_path = Path(safe_artifact_name(f"{destination_path}"))
+    destination_dir = Path(safe_artifact_name(f"{destination_dir}"))
 
     if all_containers:
         try:
-            destination_path.mkdir(parents=True, exist_ok=True)
+            destination_dir.mkdir(parents=True, exist_ok=True)
 
         except OSError as err:
             if err.errno == kFILENAME_TOO_LONG:
-                destination_path = shorten_path(err.filename)
-                destination_path.mkdir(parents=True, exist_ok=True)
+                destination_dir = shorten_path(err.filename)
+                destination_dir.mkdir(parents=True, exist_ok=True)
 
         for container in all_containers:
             try:
@@ -250,7 +263,7 @@ def save_docker_infos(destination_path: Path):
                 logs: str = container.logs(timestamps=True, tail=1000).decode()
 
                 try:
-                    (destination_path / f"{container_name}.log").write_text(
+                    (destination_dir / f"{container_name}.log").write_text(
                         COLOR_ENCODING_RE.sub("", logs)
                     )
 
@@ -262,7 +275,7 @@ def save_docker_infos(destination_path: Path):
 
                 # inspect attrs
                 try:
-                    (destination_path / f"{container_name}.json").write_text(
+                    (destination_dir / f"{container_name}.json").write_text(
                         json.dumps(container.attrs, indent=2)
                     )
                 except OSError as err:
@@ -272,10 +285,13 @@ def save_docker_infos(destination_path: Path):
                         )
 
             except Exception as err:  # pylint: disable=broad-except
-                print(f"Unexpected failure while dumping {container}." f"Details {err}")
+                if container.status != ContainerStatus.CREATED:
+                    print(
+                        f"Error while dumping {container.name=}, {container.status=}.\n\t{err=}"
+                    )
 
         print(
             "\n\t",
             f"wrote docker log and json files for {len(all_containers)} containers in ",
-            destination_path,
+            destination_dir,
         )
