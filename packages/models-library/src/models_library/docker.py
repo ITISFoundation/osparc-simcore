@@ -30,8 +30,8 @@ class SimcoreServiceDockerLabelKeys(BaseModel):
     project_id: ProjectID = Field(..., alias="study_id")
     node_id: NodeID = Field(..., alias="uuid")
 
-    product_name: ProductName
-    simcore_user_agent: str
+    product_name: ProductName = "opsarc"
+    simcore_user_agent: str = ""
 
     def to_docker_labels(self) -> dict[str, str]:
         """returns a dictionary of strings as required by docker"""
