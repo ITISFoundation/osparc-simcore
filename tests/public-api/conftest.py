@@ -1,6 +1,8 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import asyncio
 import json
@@ -8,7 +10,7 @@ import logging
 import os
 import time
 from pprint import pformat
-from typing import Any, Callable, Iterable, Iterator, Literal, TypeAlias, TypedDict
+from typing import Callable, Iterable, Iterator
 
 import httpx
 import osparc
@@ -16,12 +18,19 @@ import pytest
 from osparc.configuration import Configuration
 from pytest import FixtureRequest
 from pytest_simcore.helpers.typing_docker import UrlStr
+from pytest_simcore.helpers.utils_envs import EnvVarsDict
+from pytest_simcore.helpers.utils_public_api import (
+    RegisteredUserDict,
+    ServiceInfoDict,
+    ServiceNameStr,
+    StacksDeployedDict,
+)
 from tenacity import Retrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 _MINUTE: int = 60  # in secs
@@ -41,7 +50,7 @@ pytest_plugins = [
 
 
 @pytest.fixture(scope="session")
-def testing_environ_vars(testing_environ_vars: dict[str, str]) -> dict[str, str]:
+def testing_environ_vars(testing_environ_vars: EnvVarsDict) -> EnvVarsDict:
     ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::testing_environ_vars fixture
 
     # help faster update of service_metadata table by catalog
@@ -73,24 +82,6 @@ def event_loop(request: FixtureRequest) -> Iterable[asyncio.AbstractEventLoop]:
     loop.close()
 
 
-ServiceNameStr: TypeAlias = str
-
-
-class ComposeSpecDict(TypedDict):
-    version: str
-    services: dict[str, Any]
-
-
-class StackDict(TypedDict):
-    name: str
-    compose: ComposeSpecDict
-
-
-class StacksDeployedDict(TypedDict):
-    stacks: dict[Literal["core", "ops"], StackDict]
-    services: list[ServiceNameStr]
-
-
 @pytest.fixture(scope="module")
 def simcore_docker_stack_and_registry_ready(
     event_loop: asyncio.AbstractEventLoop,
@@ -104,24 +95,17 @@ def simcore_docker_stack_and_registry_ready(
         wait=wait_fixed(1),
         stop=stop_after_delay(0.5 * _MINUTE),
         reraise=True,
-        before_sleep=before_sleep_log(log, logging.INFO),
+        before_sleep=before_sleep_log(_logger, logging.INFO),
     ):
         with attempt:
             resp = httpx.get("http://127.0.0.1:9081/v0/")
             resp.raise_for_status()
-            log.info(
+            _logger.info(
                 "Connection to osparc-simcore web API succeeded [%s]",
                 json.dumps(attempt.retry_state.retry_object.statistics),
             )
 
     return docker_stack
-
-
-class RegisteredUserDict(TypedDict):
-    email: str
-    password: str
-    api_key: str
-    api_secret: str
 
 
 @pytest.fixture(scope="module")
@@ -177,12 +161,6 @@ def registered_user(
         resp = client.request(
             "DELETE", "/auth/api-keys", json={"display_name": "test-public-api"}
         )
-
-
-class ServiceInfoDict(TypedDict):
-    name: str
-    version: str
-    schema: dict[str, Any]
 
 
 @pytest.fixture(scope="module")

@@ -7,13 +7,14 @@
 
 import random
 from http import HTTPStatus
-from typing import Any, NamedTuple
+from typing import NamedTuple
 
 import pytest
 from osparc.api.solvers_api import SolversApi
 from osparc.exceptions import ApiException
 from osparc.models import Solver
 from packaging.version import parse as parse_version
+from pytest_simcore.helpers.utils_public_api import ServiceInfoDict, ServiceNameStr
 
 
 class NameTagTuple(NamedTuple):
@@ -22,7 +23,9 @@ class NameTagTuple(NamedTuple):
 
 
 @pytest.fixture(scope="module")
-def sleeper_key_and_version(services_registry: dict[str, Any]) -> NameTagTuple:
+def sleeper_key_and_version(
+    services_registry: dict[ServiceNameStr, ServiceInfoDict]
+) -> NameTagTuple:
     # image in registry
     repository_name = services_registry["sleeper_service"]["name"]
     tag = services_registry["sleeper_service"]["version"]
