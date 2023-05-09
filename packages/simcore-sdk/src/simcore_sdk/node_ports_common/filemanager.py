@@ -396,7 +396,8 @@ async def entry_exists(
                 f"{file_metadata=}",
             )
             return bool(file_metadata.file_id == s3_object)
-    except exceptions.S3InvalidPathError:
+    except exceptions.S3InvalidPathError as err:
+        log.debug("Failed request metadata for s3_object=%s with %s", s3_object, err)
         return False
 
 
