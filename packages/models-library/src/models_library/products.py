@@ -1,1 +1,3 @@
-ProductName = str
+from typing import TypeAlias
+
+ProductName: TypeAlias = str

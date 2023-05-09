@@ -3,7 +3,6 @@ import logging
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
-from servicelib.fastapi.tracing import setup_tracing
 from servicelib.logging_utils import config_all_loggers
 
 from .._meta import API_VERSION, API_VTAG
@@ -71,9 +70,6 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     if settings.PENNSIEVE.PENNSIEVE_ENABLED:
         pennsieve.setup(app, settings.PENNSIEVE)
-
-    if settings.DATCORE_ADAPTER_TRACING:
-        setup_tracing(app, settings.DATCORE_ADAPTER_TRACING)
 
     app.add_exception_handler(HTTPException, http_error_handler)
     app.add_exception_handler(RequestValidationError, http422_error_handler)

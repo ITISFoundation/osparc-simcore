@@ -38,7 +38,6 @@ def app_environment(
             "WEBSERVER_HOST": "webserver",
             "WEBSERVER_SESSION_SECRET_KEY": Fernet.generate_key().decode("utf-8"),
             "API_SERVER_POSTGRES": "null",
-            "API_SERVER_TRACING": "null",
             "LOG_LEVEL": "debug",
             "SC_BOOT_MODE": "production",
         },
@@ -69,7 +68,6 @@ async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
             base_url="http://api.testserver.io",
             headers={"Content-Type": "application/json"},
         ) as client:
-
             assert isinstance(client._transport, ASGITransport)
             # rewires location test's app to client.app
             setattr(client, "app", client._transport.app)
@@ -88,7 +86,6 @@ def auth(mocker, app: FastAPI, faker: Faker) -> HTTPBasicAuth:
     """
     # mock engine if db was not init
     if app.state.settings.API_SERVER_POSTGRES is None:
-
         engine = mocker.MagicMock()
         engine.minsize = 1
         engine.size = 10
