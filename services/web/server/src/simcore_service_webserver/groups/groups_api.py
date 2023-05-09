@@ -15,17 +15,17 @@ from sqlalchemy.dialects.postgresql import insert
 from ..db_models import GroupType, groups, user_to_groups, users
 from ..users_api import get_user
 from ..users_exceptions import UserNotFoundError
-from .groups_exceptions import (
-    GroupNotFoundError,
-    GroupsException,
-    UserInGroupNotFoundError,
-)
-from .groups_utils import (
+from ._utils import (
     AccessRightsDict,
     check_group_permissions,
     convert_groups_db_to_schema,
     convert_groups_schema_to_db,
     convert_user_in_group_to_schema,
+)
+from .groups_exceptions import (
+    GroupNotFoundError,
+    GroupsException,
+    UserInGroupNotFoundError,
 )
 
 logger = logging.getLogger(__name__)
@@ -416,3 +416,9 @@ async def get_group_from_gid(app: web.Application, gid: int) -> RowProxy | None:
             groups.select().where(groups.c.gid == gid)
         )
         return await res.first()
+
+
+__all__: tuple[str, ...] = (
+    "convert_groups_db_to_schema",
+    "get_group_from_gid",
+)
