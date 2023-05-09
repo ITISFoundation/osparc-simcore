@@ -14,7 +14,7 @@ from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
 from ..modules.db.tables import NodeClass
 from .computations import to_node_class
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 kNODE_MODIFIED_STATE = "modified_state"
@@ -67,7 +67,7 @@ def create_complete_dag_from_tasks(tasks: list[CompTaskAtDB]) -> nx.DiGraph:
     return dag_graph
 
 
-async def compute_node_modified_state(
+async def _compute_node_modified_state(
     graph_data: nx.classes.reportviews.NodeDataView, node_id: NodeID
 ) -> bool:
     node = graph_data[f"{node_id}"]
@@ -96,29 +96,29 @@ async def compute_node_modified_state(
     return False
 
 
-async def compute_node_dependencies_state(graph_data, node_id) -> set[NodeID]:
+async def _compute_node_dependencies_state(graph_data, node_id) -> set[NodeID]:
     node = graph_data[f"{node_id}"]
     # check if the previous node is outdated or waits for dependencies... in which case this one has to wait
     non_computed_dependencies: set[NodeID] = set()
     for input_port in node.get("inputs", {}).values():
         if isinstance(input_port, PortLink):
-            if node_needs_computation(graph_data, input_port.node_uuid):
+            if _node_needs_computation(graph_data, input_port.node_uuid):
                 non_computed_dependencies.add(input_port.node_uuid)
     # all good. ready
     return non_computed_dependencies
 
 
-async def compute_node_states(
+async def _compute_node_states(
     graph_data: nx.classes.reportviews.NodeDataView, node_id: NodeID
-):
+) -> None:
     node = graph_data[f"{node_id}"]
-    node[kNODE_MODIFIED_STATE] = await compute_node_modified_state(graph_data, node_id)
-    node[kNODE_DEPENDENCIES_TO_COMPUTE] = await compute_node_dependencies_state(
+    node[kNODE_MODIFIED_STATE] = await _compute_node_modified_state(graph_data, node_id)
+    node[kNODE_DEPENDENCIES_TO_COMPUTE] = await _compute_node_dependencies_state(
         graph_data, node_id
     )
 
 
-def node_needs_computation(
+def _node_needs_computation(
     graph_data: nx.classes.reportviews.NodeDataView, node_id: NodeID
 ) -> bool:
     node = graph_data[f"{node_id}"]
@@ -132,7 +132,7 @@ async def _set_computational_nodes_states(complete_dag: nx.DiGraph) -> None:
     graph_data: nx.classes.reportviews.NodeDataView = complete_dag.nodes.data()
     for node_id in nx.algorithms.dag.topological_sort(complete_dag):
         if graph_data[node_id]["node_class"] is NodeClass.COMPUTATIONAL:
-            await compute_node_states(graph_data, node_id)
+            await _compute_node_states(graph_data, node_id)
 
 
 async def create_minimal_computational_graph_based_on_selection(
@@ -155,7 +155,7 @@ async def create_minimal_computational_graph_based_on_selection(
                 n
                 for n, _ in graph_data
                 if graph_data[n]["node_class"] is NodeClass.COMPUTATIONAL
-                and (force_restart or node_needs_computation(graph_data, n))
+                and (force_restart or _node_needs_computation(graph_data, n))
             }
         )
     else:
@@ -166,7 +166,7 @@ async def create_minimal_computational_graph_based_on_selection(
                     n
                     for n in nx.bfs_tree(complete_dag, f"{node}", reverse=True)
                     if graph_data[n]["node_class"] is NodeClass.COMPUTATIONAL
-                    and node_needs_computation(graph_data, n)
+                    and _node_needs_computation(graph_data, n)
                 }
             )
             if (
