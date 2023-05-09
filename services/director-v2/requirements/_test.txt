@@ -29,9 +29,7 @@ aiosignal==1.2.0
 alembic==1.8.1
     # via -r requirements/_test.in
 anyio==3.6.2
-    # via
-    #   -c requirements/_base.txt
-    #   httpcore
+    # via httpcore
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
 astroid==2.15.2
@@ -136,7 +134,9 @@ httpcore==0.15.0
     #   -c requirements/_base.txt
     #   httpx
 httpx==0.24.0
-    # via respx
+    # via
+    #   -c requirements/_base.txt
+    #   respx
 icdiff==2.0.6
     # via pytest-icdiff
 idna==2.10

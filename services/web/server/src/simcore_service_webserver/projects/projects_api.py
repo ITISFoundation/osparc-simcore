@@ -221,6 +221,15 @@ async def _start_dynamic_service(
 
     # this is a dynamic node, let's gather its resources and start it
 
+    save_state = False
+    user_role: UserRole = await get_user_role(request.app, user_id)
+    if user_role > UserRole.GUEST:
+        save_state = await ProjectDBAPI.get_from_app_context(
+            request.app
+        ).has_permission(
+            user_id=user_id, project_uuid=f"{project_uuid}", permission="write"
+        )
+
     lock_key = _nodes_utils.get_service_start_lock_key(user_id, project_uuid)
     redis_client_sdk = get_redis_lock_manager_client_sdk(request.app)
     project_settings: ProjectsSettings = get_plugin_settings(request.app)
@@ -254,6 +263,7 @@ async def _start_dynamic_service(
         await director_v2_api.run_dynamic_service(
             app=request.app,
             product_name=product_name,
+            save_state=save_state,
             project_id=f"{project_uuid}",
             user_id=user_id,
             service_key=service_key,

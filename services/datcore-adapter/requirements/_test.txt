@@ -5,9 +5,7 @@
 #    pip-compile --output-file=requirements/_test.txt --resolver=backtracking --strip-extras requirements/_test.in
 #
 anyio==3.6.2
-    # via
-    #   -c requirements/_base.txt
-    #   httpcore
+    # via httpcore
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
 certifi==2022.12.7
@@ -37,7 +35,9 @@ httpcore==0.15.0
     #   -c requirements/_base.txt
     #   httpx
 httpx==0.24.0
-    # via respx
+    # via
+    #   -c requirements/_base.txt
+    #   respx
 icdiff==2.0.6
     # via pytest-icdiff
 idna==3.4
