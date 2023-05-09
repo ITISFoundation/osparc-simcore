@@ -139,7 +139,7 @@ def mocked_send_email(monkeypatch: MonkeyPatch) -> None:
         )
 
     monkeypatch.setattr(
-        simcore_service_webserver.email_core,
+        simcore_service_webserver.email._core,  # pylint: disable=protected-access
         "send_email",
         _print_mail_to_stdout,
     )

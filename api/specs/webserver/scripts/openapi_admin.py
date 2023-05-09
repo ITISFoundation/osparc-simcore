@@ -12,11 +12,11 @@ from typing import Union
 
 from fastapi import FastAPI, Header
 from models_library.generics import Envelope
-from simcore_service_webserver.email_handlers import TestEmail, TestFailed, TestPassed
+from simcore_service_webserver.email._handlers import TestEmail, TestFailed, TestPassed
 
 app = FastAPI(redoc_url=None)
 
-TAGS: list[Union[str, Enum]] = [
+TAGS: list[str | Enum] = [
     "admin",
 ]
 
@@ -28,7 +28,7 @@ TAGS: list[Union[str, Enum]] = [
     operation_id="test_email",
 )
 async def test_email(
-    test: TestEmail, x_simcore_products_name: Union[str, None] = Header(default=None)
+    test: TestEmail, x_simcore_products_name: str | None = Header(default=None)
 ):
     # X-Simcore-Products-Name
     ...

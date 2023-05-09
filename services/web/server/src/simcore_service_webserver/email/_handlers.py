@@ -6,17 +6,14 @@ from models_library.emails import LowerCaseEmailStr
 from pydantic import BaseModel, Field
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 
-from ._meta import API_VTAG
-from .email_core import (
-    check_email_server_responsiveness,
-    get_plugin_settings,
-    send_email_from_template,
-)
-from .login.decorators import login_required
-from .products.plugin import Product, get_current_product, get_product_template_path
-from .security.decorators import permission_required
-from .utils import get_traceback_string
-from .utils_aiohttp import envelope_json_response
+from .._meta import API_VTAG
+from ..login.decorators import login_required
+from ..products.plugin import Product, get_current_product, get_product_template_path
+from ..security.decorators import permission_required
+from ..utils import get_traceback_string
+from ..utils_aiohttp import envelope_json_response
+from ._core import check_email_server_responsiveness, send_email_from_template
+from .settings import get_plugin_settings
 
 logger = logging.getLogger(__name__)
 
