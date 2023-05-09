@@ -19,6 +19,8 @@ class StacksDeployedDict(TypedDict):
 
 
 class RegisteredUserDict(TypedDict):
+    first_name: str
+    last_name: str
     email: str
     password: str
     api_key: str
