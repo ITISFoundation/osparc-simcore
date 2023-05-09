@@ -8,8 +8,9 @@ import pickle
 import socket
 import threading
 from collections import deque
+from logging.handlers import DEFAULT_UDP_LOGGING_PORT, DatagramHandler
 from pathlib import Path
-from typing import Final
+from typing import AsyncIterator, Final, Iterator
 from unittest.mock import AsyncMock
 
 import pytest
@@ -28,7 +29,7 @@ from simcore_service_dynamic_sidecar.modules.attribute_monitor import (
 # redirecting via UDP, below is a slight change from
 # https://github.com/pytest-dev/pytest/issues/3037#issuecomment-745050393
 
-DATAGRAM_PORT: Final[PortInt] = logging.handlers.DEFAULT_UDP_LOGGING_PORT
+DATAGRAM_PORT: Final[PortInt] = PortInt(DEFAULT_UDP_LOGGING_PORT)
 ENSURE_LOGS_DELIVERED: Final[float] = 0.1
 
 
@@ -41,22 +42,22 @@ def fake_dy_volumes_mount_dir(tmp_path: Path) -> Path:
 @pytest.fixture
 def patch_logging(mocker: MockerFixture) -> None:
     logger = logging.getLogger(_logging_event_handler.__name__)
-    datagram_handler = logging.handlers.DatagramHandler("127.0.0.1", DATAGRAM_PORT)
+    datagram_handler = DatagramHandler("127.0.0.1", DATAGRAM_PORT)
     datagram_handler.setLevel(logging.NOTSET)
     logger.addHandler(datagram_handler)
-    logger.isEnabledFor = lambda _: True
+    logger.isEnabledFor = lambda _level: True
 
     mocker.patch.object(_logging_event_handler, "logger", logger)
 
 
 class LogRecordKeeper:
-    def __init__(self):
+    def __init__(self) -> None:
         self._records = deque()
 
     def appendleft(self, x) -> None:
         self._records.appendleft(x)
 
-    def has_log_within(self, **expected_logrec_fields) -> None:
+    def has_log_within(self, **expected_logrec_fields) -> bool:
         for rec in self._records:
             if all(str(v) in str(rec[k]) for k, v in expected_logrec_fields.items()):
                 return True
@@ -70,10 +71,10 @@ class LogRecordKeeper:
 
 
 @pytest.fixture
-def log_receiver() -> LogRecordKeeper:
+def log_receiver() -> Iterator[LogRecordKeeper]:
     log_record_keeper = LogRecordKeeper()
 
-    def listener():
+    def listener() -> None:
         receive_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         receive_socket.bind(("127.0.0.1", DATAGRAM_PORT))
         while True:
@@ -107,7 +108,7 @@ def fake_app(fake_dy_volumes_mount_dir: Path, patch_logging: None) -> FastAPI:
 @pytest.fixture
 async def logging_event_handler_observer(
     fake_app: FastAPI,
-) -> None:
+) -> AsyncIterator[None]:
     setup_attribute_monitor(fake_app)
     async with LifespanManager(fake_app):
         assert fake_app.state.attribute_monitor

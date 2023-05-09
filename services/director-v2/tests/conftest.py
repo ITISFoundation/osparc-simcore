@@ -166,8 +166,6 @@ def mock_env(
         "R_CLONE_PROVIDER": "MINIO",
         "DIRECTOR_V2_POSTGRES_ENABLED": "false",
         "SC_BOOT_MODE": "production",
-        # disable tracing as together with LifespanManager, it does not remove itself nicely
-        "DIRECTOR_V2_TRACING": "null",
     }
     setenvs_from_dict(monkeypatch, env_vars)
     return env_vars

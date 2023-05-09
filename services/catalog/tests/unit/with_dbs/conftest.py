@@ -8,7 +8,7 @@ import random
 from copy import deepcopy
 from datetime import datetime
 from random import randint
-from typing import Any, AsyncIterator, Awaitable, Callable, Iterable, Iterator, Optional
+from typing import Any, AsyncIterator, Awaitable, Callable, Iterable, Iterator
 
 import pytest
 import respx
@@ -74,7 +74,6 @@ def app(
     print("database started:", postgres_host_config)
     print("database w/products in table:", products_names)
 
-    monkeypatch.setenv("CATALOG_TRACING", "null")
     monkeypatch.setenv("SC_BOOT_MODE", "local-development")
     monkeypatch.setenv("POSTGRES_CLIENT_NAME", "pytest_client")
     app = init_app()
@@ -400,9 +399,8 @@ async def service_catalog_faker(
         team_access=None,
         everyone_access=None,
         product=products_names[0],
-        deprecated: Optional[datetime] = None,
+        deprecated: datetime | None = None,
     ) -> tuple[dict[str, Any], ...]:
-
         service = _random_service(key=key, version=version, deprecated=deprecated)
 
         # owner always has full-access
