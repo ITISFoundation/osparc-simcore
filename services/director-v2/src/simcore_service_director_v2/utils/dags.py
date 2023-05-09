@@ -36,6 +36,8 @@ def create_complete_dag(workbench: NodesDict) -> nx.DiGraph:
             outputs=node.outputs,
             state=node.state.current_status,
             node_class=to_node_class(node.key),
+            # TODO: project progress goes from 0 to 100, this needs a change
+            progress=node.progress / 100 if node.progress else None,
         )
         if node.input_nodes:
             for input_node_id in node.input_nodes:
@@ -59,6 +61,7 @@ def create_complete_dag_from_tasks(tasks: list[CompTaskAtDB]) -> nx.DiGraph:
             outputs=task.outputs,
             state=task.state,
             node_class=task.node_class,
+            progress=task.progress,
         )
         if task.inputs:
             for input_data in task.inputs.values():
@@ -182,7 +185,7 @@ async def compute_pipeline_details(
     complete_dag: nx.DiGraph, pipeline_dag: nx.DiGraph, comp_tasks: list[CompTaskAtDB]
 ) -> PipelineDetails:
     try:
-        # FIXME: this problem of cyclic graphs for control loops create all kinds of issues that must be fixed
+        # NOTE: this problem of cyclic graphs for control loops create all kinds of issues that must be fixed
         # first pass, traversing in topological order to correctly get the dependencies, set the nodes states
         await _set_computational_nodes_states(complete_dag)
     except nx.exception.NetworkXUnfeasible:
@@ -191,13 +194,14 @@ async def compute_pipeline_details(
     return PipelineDetails(
         adjacency_list=nx.convert.to_dict_of_lists(pipeline_dag),
         node_states={
-            node_id: NodeState(
+            node_id: NodeState.construct(
                 modified=node_data.get(kNODE_MODIFIED_STATE, False),
                 dependencies=node_data.get(kNODE_DEPENDENCIES_TO_COMPUTE, set()),
                 currentStatus=next(
                     (task.state for task in comp_tasks if f"{task.node_id}" == node_id),
                     RunningState.UNKNOWN,
                 ),
+                progress=node_data["progress"] or 0,
             )
             for node_id, node_data in complete_dag.nodes.data()
             if node_data["node_class"] is NodeClass.COMPUTATIONAL
