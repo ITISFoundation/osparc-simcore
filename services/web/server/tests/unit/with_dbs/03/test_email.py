@@ -23,9 +23,9 @@ from pytest_simcore.helpers.utils_login import UserInfoDict, UserRole
 from settings_library.email import EmailProtocol, SMTPSettings
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver._resources import resources
-from simcore_service_webserver.email import setup_email
-from simcore_service_webserver.email_core import _remove_comments, _render_template
-from simcore_service_webserver.email_handlers import TestFailed, TestPassed
+from simcore_service_webserver.email._core import _remove_comments, _render_template
+from simcore_service_webserver.email._handlers import TestFailed, TestPassed
+from simcore_service_webserver.email.plugin import setup_email
 
 
 @pytest.fixture
@@ -34,7 +34,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
         monkeypatch,
         {
             "WEBSERVER_ACTIVITY": "null",
-            "WEBSERVER_COMPUTATION": "0",
+            "WEBSERVER_NOTIFICATIONS": "0",
             "WEBSERVER_DIAGNOSTICS": "null",
             "WEBSERVER_DIRECTOR": "null",
             "WEBSERVER_EXPORTER": "null",

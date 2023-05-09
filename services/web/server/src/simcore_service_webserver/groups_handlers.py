@@ -2,7 +2,6 @@ import functools
 import json
 import logging
 from contextlib import suppress
-from typing import Optional
 
 from aiohttp import web
 from models_library.emails import LowerCaseEmailStr
@@ -23,7 +22,7 @@ from .scicrunch.db import ResearchResourceRepository
 from .scicrunch.errors import ScicrunchError
 from .scicrunch.models import ResearchResource, ResourceHit
 from .scicrunch.service_client import InvalidRRID, SciCrunch
-from .security_decorators import permission_required
+from .security.decorators import permission_required
 from .users_exceptions import UserNotFoundError
 
 logger = logging.getLogger(__name__)
@@ -62,7 +61,7 @@ async def list_groups(request: web.Request):
 
     List of the groups I belonged to
     """
-    from .products import Product, get_current_product
+    from .products.plugin import Product, get_current_product
 
     product: Product = get_current_product(request)
     user_id = request[RQT_USERID_KEY]
@@ -285,7 +284,7 @@ async def get_scicrunch_resource(request: web.Request):
 
     # check if in database first
     repo = ResearchResourceRepository(request.app)
-    resource: Optional[ResearchResource] = await repo.get_resource(rrid)
+    resource: ResearchResource | None = await repo.get_resource(rrid)
     if not resource:
         # otherwise, request to scicrunch service
         scicrunch = SciCrunch.get_instance(request.app)
@@ -306,7 +305,7 @@ async def add_scicrunch_resource(request: web.Request):
 
     # check if exists
     repo = ResearchResourceRepository(request.app)
-    resource: Optional[ResearchResource] = await repo.get_resource(rrid)
+    resource: ResearchResource | None = await repo.get_resource(rrid)
     if not resource:
         # then request scicrunch service
         scicrunch = SciCrunch.get_instance(request.app)

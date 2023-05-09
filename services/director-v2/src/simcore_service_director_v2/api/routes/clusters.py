@@ -155,7 +155,6 @@ async def get_default_cluster_details(
     clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
     dask_clients_pool: DaskClientsPool = Depends(get_dask_clients_pool),
 ):
-
     default_cluster = await _get_cluster_details_with_id(
         settings=settings,
         user_id=user_id,

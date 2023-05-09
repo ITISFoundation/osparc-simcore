@@ -6,7 +6,7 @@
 from copy import deepcopy
 from dataclasses import dataclass
 from http import HTTPStatus
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 import pytest
 
@@ -17,11 +17,13 @@ class HttpApiCallCapture:
     Captures relevant information of a call to the http api
     """
 
+    name: str
     description: str
-    method: Literal["GET", "PUT", "POST", "PATCH"]
+    method: Literal["GET", "PUT", "POST", "PATCH", "DELETE"]
     path: str
-    request_payload: Optional[dict[str, Any]]
-    response_body: Optional[dict[str, Any]]
+    query: str | None = None
+    request_payload: dict[str, Any] | None = None
+    response_body: dict[str, Any] | None = None
     status_code: HTTPStatus = HTTPStatus.OK
 
     def __str__(self) -> str:
@@ -38,7 +40,9 @@ class HttpApiCallCapture:
 # This data can be obtained using the  browser's developer tools
 #
 
+
 NEW_PROJECT = HttpApiCallCapture(
+    name="NEW_PROJECT",
     description="Press 'New Project'",
     method="POST",
     path="/v0/projects",
@@ -77,6 +81,7 @@ NEW_PROJECT = HttpApiCallCapture(
 
 
 GET_PROJECT = HttpApiCallCapture(
+    name="GET_PROJECT",
     description="Received newly created project",
     method="GET",
     path="/v0/projects/18f1938c-567d-11ec-b2f3-02420a000010",
@@ -107,6 +112,7 @@ GET_PROJECT = HttpApiCallCapture(
 
 
 OPEN_PROJECT = HttpApiCallCapture(
+    name="OPEN_PROJECT",
     description="Open newly created project, i.e. project becomes active and dy-services are started",
     method="POST",
     path="/v0/projects/18f1938c-567d-11ec-b2f3-02420a000010:open",
@@ -145,6 +151,7 @@ OPEN_PROJECT = HttpApiCallCapture(
 
 
 REPLACE_PROJECT = HttpApiCallCapture(
+    name="REPLACE_PROJECT",
     description="Saving periodically the project after modification (autosave)",
     method="PUT",
     path="/v0/projects/18f1938c-567d-11ec-b2f3-02420a000010",
@@ -271,6 +278,7 @@ REPLACE_PROJECT = HttpApiCallCapture(
 
 
 REPLACE_PROJECT_ON_MODIFIED = HttpApiCallCapture(
+    name="REPLACE_PROJECT_ON_MODIFIED",
     description="After the user adds an iterator 1:3 and two sleepers, the project is saved",
     method="PUT",
     path="/v0/projects/18f1938c-567d-11ec-b2f3-02420a000010",
@@ -523,6 +531,7 @@ REPLACE_PROJECT_ON_MODIFIED = HttpApiCallCapture(
 
 
 RUN_PROJECT = HttpApiCallCapture(
+    name="RUN_PROJECT",
     description="User press run button",
     method="POST",
     path="/computations/18f1938c-567d-11ec-b2f3-02420a000010:start",
@@ -538,6 +547,7 @@ RUN_PROJECT = HttpApiCallCapture(
 
 
 CLOSE_PROJECT = HttpApiCallCapture(
+    name="CLOSE_PROJECT",
     description="Back to the dashboard, project closes",
     method="POST",
     path="/v0/projects/18f1938c-567d-11ec-b2f3-02420a000010:close",
@@ -549,6 +559,7 @@ CLOSE_PROJECT = HttpApiCallCapture(
 
 
 LIST_PROJECTS = HttpApiCallCapture(
+    name="LIST_PROJECTS",
     description="Open browser in ashboard and user gets all projects",
     method="POST",
     path="/v0/projects?type=user&offset=0&limit=10",
@@ -702,6 +713,292 @@ SESSION_WORKFLOW = (
     RUN_PROJECT,
     CLOSE_PROJECT,
     LIST_PROJECTS,
+)
+
+
+CREATE_FROM_TEMPLATE = HttpApiCallCapture(
+    name="CREATE_FROM_TEMPLATE",
+    description="Click 'Sleeper study' card in Templates tab",
+    method="POST",
+    path="/v0/projects",
+    query="from_study=ee87ff60-4147-4381-bcb8-59d076dbc788",
+    request_payload={
+        "uuid": "",
+        "name": "Sleepers",
+        "description": "5 sleepers interconnected",
+        "prjOwner": "",
+        "accessRights": {},
+        "creationDate": "2023-04-13T10:12:13.197Z",
+        "lastChangeDate": "2023-04-13T10:12:13.197Z",
+        "thumbnail": "https://raw.githubusercontent.com/ITISFoundation/osparc-assets/main/assets/TheSoftWatches.jpg",
+        "workbench": {},
+    },
+    response_body={
+        "data": {
+            "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3Dee87ff60-4147-4381-bcb8-59d076dbc788.261e4470-4132-47a3-82d1-7c38bed30e13",
+            "task_name": "POST /v0/projects?from_study=ee87ff60-4147-4381-bcb8-59d076dbc788",
+            "status_href": "/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Dee87ff60-4147-4381-bcb8-59d076dbc788.261e4470-4132-47a3-82d1-7c38bed30e13",
+            "result_href": "/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Dee87ff60-4147-4381-bcb8-59d076dbc788.261e4470-4132-47a3-82d1-7c38bed30e13/result",
+            "abort_href": "/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Dee87ff60-4147-4381-bcb8-59d076dbc788.261e4470-4132-47a3-82d1-7c38bed30e13",
+        }
+    },
+    status_code=HTTPStatus.ACCEPTED,  # 202
+)
+
+
+CREATE_FROM_TEMPLATE__TASK_STATUS = HttpApiCallCapture(
+    name="CREATE_FROM_TEMPLATE__TASK_STATUS",
+    description="status_href that follows from CREATE_FROM_TEMPLATE",
+    method="GET",
+    path="/v0/tasks/POST%20%2Fv0%2Fprojects%3Ffrom_study%3Dee87ff60-4147-4381-bcb8-59d076dbc788.261e4470-4132-47a3-82d1-7c38bed30e13",
+    response_body={
+        "data": {
+            "task_progress": {"message": "creating new study...", "percent": 0.0},
+            "done": False,
+            "started": "2023-04-13T10:16:45.602233",
+        }
+    },
+    status_code=HTTPStatus.OK,  # 200
+)
+
+
+CREATE_FROM_TEMPLATE__TASK_RESULT = HttpApiCallCapture(
+    name="CREATE_FROM_TEMPLATE__TASK_RESULT",
+    description="status_href that follows from CREATE_FROM_TEMPLATE",
+    method="GET",
+    path="/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Dee87ff60-4147-4381-bcb8-59d076dbc788.261e4470-4132-47a3-82d1-7c38bed30e13/result",
+    response_body={
+        "data": {
+            "uuid": "4c58409a-d9e4-11ed-9c9e-02420a0b755a",
+            "name": "Sleepers",
+            "description": "5 sleepers interconnected",
+            "thumbnail": "https://raw.githubusercontent.com/ITISFoundation/osparc-assets/main/assets/TheSoftWatches.jpg",
+            "creationDate": "2023-04-13T10:16:47.521Z",
+            "lastChangeDate": "2023-04-13T10:16:48.572Z",
+            "accessRights": {"4": {"read": True, "write": True, "delete": True}},
+            "workbench": {
+                "f67a6277-b47f-5a17-9782-b9a92600e8c9": {
+                    "key": "simcore/services/comp/itis/sleeper",
+                    "version": "1.0.0",
+                    "label": "sleeper 0",
+                    "inputs": {"in_2": 2},
+                    "inputAccess": {"in_1": "Invisible", "in_2": "ReadOnly"},
+                    "inputNodes": [],
+                    "outputNode": False,
+                    "outputs": {},
+                    "progress": 0,
+                    "thumbnail": "",
+                    "position": {"x": 50, "y": 300},
+                    "state": {
+                        "modified": True,
+                        "dependencies": [],
+                        "currentStatus": "NOT_STARTED",
+                    },
+                },
+                "c898ccef-8ac9-5346-8e8b-99546c551d79": {
+                    "key": "simcore/services/comp/itis/sleeper",
+                    "version": "1.0.0",
+                    "label": "sleeper 1",
+                    "inputs": {
+                        "in_1": {
+                            "nodeUuid": "f67a6277-b47f-5a17-9782-b9a92600e8c9",
+                            "output": "out_1",
+                        },
+                        "in_2": 2,
+                    },
+                    "inputNodes": ["f67a6277-b47f-5a17-9782-b9a92600e8c9"],
+                    "outputNode": False,
+                    "outputs": {},
+                    "progress": 0,
+                    "thumbnail": "",
+                    "position": {"x": 300, "y": 200},
+                    "state": {
+                        "modified": True,
+                        "dependencies": ["f67a6277-b47f-5a17-9782-b9a92600e8c9"],
+                        "currentStatus": "NOT_STARTED",
+                    },
+                },
+                "52a6c113-0615-55cd-b32f-5a8ead710562": {
+                    "key": "simcore/services/comp/itis/sleeper",
+                    "version": "1.0.0",
+                    "label": "sleeper 2",
+                    "inputs": {
+                        "in_1": {
+                            "nodeUuid": "c898ccef-8ac9-5346-8e8b-99546c551d79",
+                            "output": "out_1",
+                        },
+                        "in_2": {
+                            "nodeUuid": "c898ccef-8ac9-5346-8e8b-99546c551d79",
+                            "output": "out_2",
+                        },
+                    },
+                    "inputNodes": ["c898ccef-8ac9-5346-8e8b-99546c551d79"],
+                    "outputNode": False,
+                    "outputs": {},
+                    "progress": 0,
+                    "thumbnail": "",
+                    "position": {"x": 550, "y": 200},
+                    "state": {
+                        "modified": True,
+                        "dependencies": ["c898ccef-8ac9-5346-8e8b-99546c551d79"],
+                        "currentStatus": "NOT_STARTED",
+                    },
+                },
+                "1a93a810-749f-58c4-9506-0be716268427": {
+                    "key": "simcore/services/comp/itis/sleeper",
+                    "version": "1.0.0",
+                    "label": "sleeper 3",
+                    "inputs": {
+                        "in_2": {
+                            "nodeUuid": "f67a6277-b47f-5a17-9782-b9a92600e8c9",
+                            "output": "out_2",
+                        }
+                    },
+                    "inputNodes": ["f67a6277-b47f-5a17-9782-b9a92600e8c9"],
+                    "outputNode": False,
+                    "outputs": {},
+                    "progress": 0,
+                    "thumbnail": "",
+                    "position": {"x": 420, "y": 400},
+                    "state": {
+                        "modified": True,
+                        "dependencies": ["f67a6277-b47f-5a17-9782-b9a92600e8c9"],
+                        "currentStatus": "NOT_STARTED",
+                    },
+                },
+                "281f7845-f7ee-57a7-9b66-81931a30b254": {
+                    "key": "simcore/services/comp/itis/sleeper",
+                    "version": "1.0.0",
+                    "label": "sleeper 4",
+                    "inputs": {
+                        "in_1": {
+                            "nodeUuid": "52a6c113-0615-55cd-b32f-5a8ead710562",
+                            "output": "out_1",
+                        },
+                        "in_2": {
+                            "nodeUuid": "1a93a810-749f-58c4-9506-0be716268427",
+                            "output": "out_2",
+                        },
+                    },
+                    "inputNodes": [
+                        "52a6c113-0615-55cd-b32f-5a8ead710562",
+                        "1a93a810-749f-58c4-9506-0be716268427",
+                    ],
+                    "outputNode": False,
+                    "outputs": {},
+                    "progress": 0,
+                    "thumbnail": "",
+                    "position": {"x": 800, "y": 300},
+                    "state": {
+                        "modified": True,
+                        "dependencies": [
+                            "1a93a810-749f-58c4-9506-0be716268427",
+                            "52a6c113-0615-55cd-b32f-5a8ead710562",
+                        ],
+                        "currentStatus": "NOT_STARTED",
+                    },
+                },
+            },
+            "ui": {
+                "mode": "workbench",
+                "slideshow": {},
+                "workbench": {},
+                "currentNodeId": "",
+            },
+            "classifiers": [],
+            "dev": {},
+            "quality": {
+                "enabled": True,
+                "tsr_target": {
+                    "r01": {"level": 4, "references": ""},
+                    "r02": {"level": 4, "references": ""},
+                    "r03": {"level": 4, "references": ""},
+                    "r04": {"level": 4, "references": ""},
+                    "r05": {"level": 4, "references": ""},
+                    "r06": {"level": 4, "references": ""},
+                    "r07": {"level": 4, "references": ""},
+                    "r08": {"level": 4, "references": ""},
+                    "r09": {"level": 4, "references": ""},
+                    "r10": {"level": 4, "references": ""},
+                },
+                "annotations": {
+                    "vandv": "",
+                    "limitations": "",
+                    "certificationLink": "",
+                    "certificationStatus": "Uncertified",
+                },
+                "tsr_current": {
+                    "r01": {"level": 0, "references": ""},
+                    "r02": {"level": 0, "references": ""},
+                    "r03": {"level": 0, "references": ""},
+                    "r04": {"level": 0, "references": ""},
+                    "r05": {"level": 0, "references": ""},
+                    "r06": {"level": 0, "references": ""},
+                    "r07": {"level": 0, "references": ""},
+                    "r08": {"level": 0, "references": ""},
+                    "r09": {"level": 0, "references": ""},
+                    "r10": {"level": 0, "references": ""},
+                },
+            },
+            "prjOwner": "user@company.com",
+            "tags": [22],
+            "state": {
+                "locked": {"value": False, "status": "CLOSED"},
+                "state": {"value": "NOT_STARTED"},
+            },
+        }
+    },
+    status_code=HTTPStatus.CREATED,  # 201
+)
+
+DELETE_PROJECT = HttpApiCallCapture(
+    name="DELETE_PROJECT",
+    description="Deletes a given study",
+    method="DELETE",
+    path="/v0/projects/4c58409a-d9e4-11ed-9c9e-02420a0b755a",
+    status_code=HTTPStatus.NO_CONTENT,  # 204
+)
+
+
+CREATE_FROM_SERVICE = HttpApiCallCapture(
+    name="CREATE_FROM_SERVICE",
+    description="Click 'Sleeper service' card in Services tab",
+    method="POST",
+    path="/v0/projects",
+    request_payload={
+        "uuid": "",
+        "name": "sleeper",
+        "description": "",
+        "prjOwner": "",
+        "accessRights": {},
+        "creationDate": "2023-04-12T17:47:22.551Z",
+        "lastChangeDate": "2023-04-12T17:47:22.551Z",
+        "thumbnail": "https://raw.githubusercontent.com/ITISFoundation/osparc-assets/main/assets/TheSoftWatches.jpg",
+        "workbench": {
+            "5ecf6ef9-7600-4ac2-abe5-c3a2cc714e32": {
+                "key": "simcore/services/comp/itis/sleeper",
+                "version": "2.1.4",
+                "label": "sleeper",
+            }
+        },
+        "ui": {
+            "workbench": {
+                "5ecf6ef9-7600-4ac2-abe5-c3a2cc714e32": {
+                    "position": {"x": 250, "y": 100}
+                }
+            }
+        },
+    },
+    response_body={
+        "data": {
+            "task_id": "POST%20%2Fv0%2Fprojects.c81eb383-d5b7-4284-be34-36477530ac2e",
+            "task_name": "POST /v0/projects",
+            "status_href": "/v0/tasks/POST%2520%252Fv0%252Fprojects.c81eb383-d5b7-4284-be34-36477530ac2e",
+            "result_href": "/v0/tasks/POST%2520%252Fv0%252Fprojects.c81eb383-d5b7-4284-be34-36477530ac2e/result",
+            "abort_href": "/v0/tasks/POST%2520%252Fv0%252Fprojects.c81eb383-d5b7-4284-be34-36477530ac2e",
+        }
+    },
+    status_code=HTTPStatus.ACCEPTED,  # 202
 )
 
 

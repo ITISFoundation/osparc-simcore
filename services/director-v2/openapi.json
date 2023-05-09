@@ -120,7 +120,7 @@
             "required": true,
             "schema": {
               "title": "Service Key",
-              "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
+              "pattern": "^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
               "type": "string",
               "description": "Distinctive name for the node based on the docker registry path"
             },
@@ -178,7 +178,7 @@
             "required": true,
             "schema": {
               "title": "Service Key",
-              "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
+              "pattern": "^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
               "type": "string",
               "description": "Distinctive name for the node based on the docker registry path"
             },
@@ -312,7 +312,7 @@
             "required": true,
             "schema": {
               "title": "Service Key",
-              "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
+              "pattern": "^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
               "type": "string",
               "description": "distinctive name for the node based on the docker registry path"
             },
@@ -2411,7 +2411,7 @@
         "properties": {
           "service_key": {
             "title": "Service Key",
-            "pattern": "^(simcore)/(services)/dynamic(/[\\w/-]+)+$",
+            "pattern": "^simcore/services/dynamic/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
             "type": "string",
             "description": "distinctive name for the node based on the docker registry path"
           },
@@ -2504,7 +2504,7 @@
         "properties": {
           "image": {
             "title": "Image",
-            "pattern": "^(?P<registry_host>(?:(?:(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z0-9-]+(?::\\d+)?)|[a-zA-Z0-9-]+:\\d+))?(?:/)?(?P<docker_image>(?:[a-z0-9][a-z0-9_.-]*/)*[a-z0-9-_]+[a-z0-9])(?::(?P<docker_tag>[\\w][\\w.-]{0,126}[\\w]))?(?P<docker_digest>\\@sha256:[a-fA-F0-9]{64})?$",
+            "pattern": "^(?:(?P<registry_host>[a-z0-9-]+(?:\\.[a-z0-9-]+)+(?::\\d+)?|[a-z0-9-]+:\\d+)/)?(?P<docker_image>(?:[a-z0-9][a-z0-9_.-]*/)*[a-z0-9-_]+[a-z0-9])(?::(?P<docker_tag>[\\w][\\w.-]{0,127}))?(?P<docker_digest>\\@sha256:[a-fA-F0-9]{32,64})?$",
             "type": "string",
             "description": "Used by the frontend to provide a context for the users.Services with a docker-compose spec will have multiple entries.Using the `image:version` instead of the docker-compose spec is more helpful for the end user."
           },
@@ -2846,7 +2846,7 @@
         "properties": {
           "service_key": {
             "title": "Service Key",
-            "pattern": "^(simcore)/(services)/dynamic(/[\\w/-]+)+$",
+            "pattern": "^simcore/services/dynamic/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
             "type": "string",
             "description": "distinctive name for the node based on the docker registry path"
           },
@@ -2969,7 +2969,7 @@
           },
           "service_key": {
             "title": "Service Key",
-            "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
+            "pattern": "^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
             "type": "string",
             "description": "distinctive name for the node based on the docker registry path",
             "example": [
@@ -3160,7 +3160,7 @@
           },
           "key": {
             "title": "Key",
-            "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
+            "pattern": "^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
             "type": "string",
             "description": "distinctive name for the node based on the docker registry path"
           },

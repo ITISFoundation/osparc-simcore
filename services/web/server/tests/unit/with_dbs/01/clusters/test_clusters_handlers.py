@@ -25,16 +25,16 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (  # nopycln: im
 )
 from simcore_postgres_database.models.clusters import ClusterType
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.director_v2_exceptions import (
+from simcore_service_webserver.director_v2._models import (
+    ClusterCreate,
+    ClusterPatch,
+    ClusterPing,
+)
+from simcore_service_webserver.director_v2.exceptions import (
     ClusterAccessForbidden,
     ClusterNotFoundError,
     ClusterPingError,
     DirectorServiceError,
-)
-from simcore_service_webserver.director_v2_models import (
-    ClusterCreate,
-    ClusterPatch,
-    ClusterPing,
 )
 
 

@@ -17,7 +17,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_webserver._constants import RQ_PRODUCT_KEY
 from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.email import setup_email
+from simcore_service_webserver.email.plugin import setup_email
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.login.utils_email import (
     AttachmentTuple,
@@ -25,7 +25,7 @@ from simcore_service_webserver.login.utils_email import (
     send_email_from_template,
     themed,
 )
-from simcore_service_webserver.statics_constants import FRONTEND_APPS_AVAILABLE
+from simcore_service_webserver.statics._constants import FRONTEND_APPS_AVAILABLE
 
 
 @pytest.fixture
@@ -59,7 +59,7 @@ def mocked_core_do_send_email(mocker: MockerFixture) -> MagicMock:
         print("---------------")
 
     mock = mocker.patch(
-        "simcore_service_webserver.email_core._do_send_mail",
+        "simcore_service_webserver.email._core._do_send_mail",
         spec=True,
         side_effect=print_mail,
     )

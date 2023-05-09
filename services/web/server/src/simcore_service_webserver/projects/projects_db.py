@@ -14,7 +14,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
-from aiopg.sa.result import RowProxy
+from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes import Node
 from models_library.users import UserID
@@ -22,7 +22,7 @@ from pydantic import ValidationError, parse_obj_as
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.json_serialization import json_dumps
-from servicelib.logging_utils import log_context
+from servicelib.logging_utils import get_log_record_extra, log_context
 from simcore_postgres_database.errors import UniqueViolation
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.webserver_models import ProjectType, projects
@@ -116,6 +116,7 @@ class ProjectDBAPI(BaseProjectDB):
         :raises ValidationError
         :return: inserted project
         """
+
         # pylint: disable=no-value-for-parameter
         async with self.engine.acquire() as conn:
             # TODO: check security of this query with args. Hard-code values?
@@ -130,40 +131,41 @@ class ProjectDBAPI(BaseProjectDB):
 
             # NOTE: tags are removed in convert_to_db_names so we keep it
             project_tags = parse_obj_as(list[int], project.get("tags", []).copy())
-            project_db_values = convert_to_db_names(project)
-            project_db_values.update(
+            insert_values = convert_to_db_names(project)
+            insert_values.update(
                 {
-                    "type": ProjectType.TEMPLATE
+                    "type": ProjectType.TEMPLATE.value
                     if (force_as_template or user_id is None)
-                    else ProjectType.STANDARD,
+                    else ProjectType.STANDARD.value,
                     "prj_owner": user_id if user_id else None,
                 }
             )
 
             if hidden:
-                project_db_values["hidden"] = True
+                insert_values["hidden"] = True
 
             # validate access_rights. are the gids valid? also ensure prj_owner is in there
             if user_id:
                 primary_gid = await self._get_user_primary_group_gid(
                     conn, user_id=user_id
                 )
-                project_db_values.setdefault("access_rights", {})
-                project_db_values["access_rights"].update(
+                insert_values.setdefault("access_rights", {})
+                insert_values["access_rights"].update(
                     create_project_access_rights(primary_gid, ProjectAccessRights.OWNER)
                 )
 
             # ensure we have the minimal amount of data here
-            project_db_values.setdefault("name", "New Study")
-            project_db_values.setdefault("description", "")
-            project_db_values.setdefault("workbench", {})
+            # All non-default in projects table
+            insert_values.setdefault("name", "New Study")
+            insert_values.setdefault("workbench", {})
+
             # must be valid uuid
             try:
-                uuidlib.UUID(str(project_db_values.get("uuid")))
+                uuidlib.UUID(str(insert_values.get("uuid")))
             except ValueError:
                 if force_project_uuid:
                     raise
-                project_db_values["uuid"] = f"{uuidlib.uuid1()}"
+                insert_values["uuid"] = f"{uuidlib.uuid1()}"
 
             # Atomic transaction to insert project and update relations
             #  - Retries insert if UUID collision
@@ -174,24 +176,46 @@ class ProjectDBAPI(BaseProjectDB):
                 ):
                     raise err
 
+            selected_values: ProjectDict = {}
             async for attempt in AsyncRetrying(retry=retry_if_exception_type(TryAgain)):
                 with attempt:
                     async with conn.begin():
                         project_index = None
-                        project_uuid = ProjectID(f"{project_db_values['uuid']}")
+                        project_uuid = ProjectID(f"{insert_values['uuid']}")
 
                         try:
-                            project_index = await conn.scalar(
+                            result: ResultProxy = await conn.execute(
                                 projects.insert()
-                                .values(**project_db_values)
-                                .returning(projects.c.id)
+                                .values(**insert_values)
+                                .returning(
+                                    projects.c.id,
+                                    # Parts of ProjectGet
+                                    projects.c.uuid,
+                                    projects.c.name,
+                                    projects.c.description,
+                                    projects.c.thumbnail,
+                                    projects.c.prj_owner,
+                                    projects.c.creation_date,
+                                    projects.c.last_change_date,
+                                    projects.c.workbench,
+                                    projects.c.access_rights,
+                                    projects.c.classifiers,
+                                    projects.c.ui,
+                                    projects.c.quality,
+                                    projects.c.dev,
+                                )
                             )
+                            row: RowProxy | None = await result.fetchone()
+                            assert row  # nosec
+
+                            selected_values = ProjectDict(row.items())
+                            project_index = selected_values.pop("id")
 
                         except UniqueViolation as err:
                             _reraise_if_not_unique_uuid_error(err)
 
                             # Tries new uuid
-                            project_db_values["uuid"] = f"{uuidlib.uuid1()}"
+                            insert_values["uuid"] = f"{uuidlib.uuid1()}"
 
                             # NOTE: Retry is over transaction context
                             # to rollout when a new insert is required
@@ -211,12 +235,14 @@ class ProjectDBAPI(BaseProjectDB):
                             project_index_id=project_index,
                             project_tags=project_tags,
                         )
-                        project_db_values["tags"] = project_tags
+                        selected_values["tags"] = project_tags
 
             # Returns created project with names as in the project schema
             user_email = await self._get_user_email(conn, user_id)
-            api_project = convert_to_schema_names(project_db_values, user_email)
-            return api_project
+
+            # Convert to dict parsable by ProjectGet model
+            project_get = convert_to_schema_names(selected_values, user_email)
+            return project_get
 
     async def upsert_project_linked_product(
         self,
@@ -520,6 +546,7 @@ class ProjectDBAPI(BaseProjectDB):
             log,
             logging.DEBUG,
             msg=f"Patching project {project_uuid} for user {user_id}",
+            extra=get_log_record_extra(user_id=user_id),
         ):
             async with self.engine.acquire() as conn, conn.begin() as _transaction:
                 current_project: dict = await self._get_project(
@@ -729,6 +756,14 @@ class ProjectDBAPI(BaseProjectDB):
     #
     # Project HIDDEN column
     #
+    async def is_hidden(self, project_uuid: ProjectID) -> bool:
+        async with self.engine.acquire() as conn:
+            result = await conn.scalar(
+                sa.select([projects.c.hidden]).where(
+                    projects.c.uuid == f"{project_uuid}"
+                )
+            )
+        return bool(result)
 
     async def set_hidden_flag(self, project_uuid: ProjectID, enabled: bool):
         async with self.engine.acquire() as conn:

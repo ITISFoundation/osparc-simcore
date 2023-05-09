@@ -5,7 +5,7 @@ import json
 import logging
 import os
 import urllib.parse
-from typing import Any, Optional
+from typing import Any
 
 import aiodocker
 import httpx
@@ -121,7 +121,7 @@ async def _wait_for_service(service_name: str) -> None:
 
 
 async def _get_service_published_port(
-    service_name: str, target_port: Optional[int] = None
+    service_name: str, target_port: int | None = None
 ) -> int:
     # it takes a bit of time for the port to be auto generated
     # keep trying until it is there
@@ -215,7 +215,7 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
 
     # patch the endppoint inside the scheduler
     scheduler: DynamicSidecarsScheduler = app.state.dynamic_sidecar_scheduler
-    endpoint: Optional[str] = None
+    endpoint: str | None = None
     async with scheduler._scheduler._lock:  # pylint: disable=protected-access
         for (
             scheduler_data
@@ -267,7 +267,7 @@ async def assert_start_service(
     service_key: str,
     service_version: str,
     service_uuid: str,
-    basepath: Optional[str],
+    basepath: str | None,
     catalog_url: URL,
 ) -> None:
     service_resources: ServiceResourcesDict = await _get_service_resources(
@@ -281,6 +281,7 @@ async def assert_start_service(
         service_key=service_key,
         service_version=service_version,
         service_uuid=service_uuid,
+        can_save=True,
         basepath=basepath,
         service_resources=ServiceResourcesDictHelpers.create_jsonable(
             service_resources

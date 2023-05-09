@@ -88,8 +88,10 @@ endif
 get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
 
 # NOTE: this is only for WSL2 as the WSL2 subsystem IP is changing on each reboot
+ifeq ($(IS_WSL2),WSL2)
 S3_ENDPOINT := $(get_my_ip):9001
 export S3_ENDPOINT
+endif
 
 # Check that given variables are set and all have non-empty values,
 # die with an error otherwise.
@@ -429,12 +431,12 @@ push-version: tag-version
 	python3 -m venv $@
 	## upgrading tools to latest version in $(shell python3 --version)
 	$@/bin/pip3 --quiet install --upgrade \
-		pip~=23.0 \
+		pip~=23.1 \
 		wheel \
 		setuptools
 	@$@/bin/pip3 list --verbose
 
-devenv: .venv ## create a python virtual environment with dev tools (e.g. linters, etc)
+devenv: .venv .vscode/settings.json .vscode/launch.json ## create a development environment (configs, virtual-env, hooks, ...)
 	$</bin/pip3 --quiet install -r requirements/devenv.txt
 	# Installing pre-commit hooks in current .git repo
 	@$</bin/pre-commit install
@@ -463,10 +465,16 @@ nodenv: node_modules ## builds node_modules local environ (TODO)
 	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
 
 
-.vscode/settings.json: .vscode-template/settings.json
-	$(info WARNING: #####  $< is newer than $@ ####)
-	@diff -uN $@ $<
-	@false
+.vscode/settings.json: .vscode/settings.template.json
+	$(if $(wildcard $@), \
+	@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
+	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
+
+
+.vscode/launch.json: .vscode/launch.template.json
+	$(if $(wildcard $@), \
+	@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
+	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
 
 
 
@@ -509,6 +517,7 @@ settings-schema.json: ## [container] dumps json-schema settings of all services
 	@$(MAKE_C) services/api-server $@
 	@$(MAKE_C) services/autoscaling $@
 	@$(MAKE_C) services/catalog $@
+	@$(MAKE_C) services/datcore-adapter $@
 	@$(MAKE_C) services/director-v2 $@
 	@$(MAKE_C) services/invitations $@
 	@$(MAKE_C) services/storage $@

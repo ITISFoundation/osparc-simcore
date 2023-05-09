@@ -5,9 +5,7 @@
 #    pip-compile --output-file=requirements/_test.txt --resolver=backtracking --strip-extras requirements/_test.in
 #
 anyio==3.6.2
-    # via
-    #   -c requirements/_base.txt
-    #   httpcore
+    # via httpcore
 certifi==2022.12.7
     # via
     #   -c requirements/_base.txt
@@ -29,13 +27,13 @@ httpcore==0.16.3
     # via
     #   -c requirements/_base.txt
     #   httpx
-httpx==0.23.3
+httpx==0.24.0
     # via -r requirements/_test.in
 idna==3.4
     # via
     #   -c requirements/_base.txt
     #   anyio
-    #   rfc3986
+    #   httpx
 iniconfig==2.0.0
     # via pytest
 packaging==23.0
@@ -65,10 +63,6 @@ python-dateutil==2.8.2
     #   faker
 python-dotenv==0.21.0
     # via -r requirements/_test.in
-rfc3986==1.5.0
-    # via
-    #   -c requirements/_base.txt
-    #   httpx
 six==1.16.0
     # via
     #   -c requirements/_base.txt

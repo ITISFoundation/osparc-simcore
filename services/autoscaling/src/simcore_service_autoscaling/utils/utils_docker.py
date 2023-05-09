@@ -9,7 +9,7 @@ import logging
 import re
 from contextlib import suppress
 from pathlib import Path
-from typing import Final, Optional, cast
+from typing import Final, cast
 
 import yaml
 from models_library.docker import DockerGenericTag, DockerLabelKey
@@ -259,7 +259,7 @@ def compute_tasks_needed_resources(tasks: list[Task]) -> Resources:
 async def compute_node_used_resources(
     docker_client: AutoscalingDocker,
     node: Node,
-    service_labels: Optional[list[DockerLabelKey]] = None,
+    service_labels: list[DockerLabelKey] | None = None,
 ) -> Resources:
     cluster_resources_counter = collections.Counter({"ram": 0, "cpus": 0})
     task_filters = {"node": node.ID}
@@ -410,7 +410,7 @@ def get_docker_pull_images_crontab(interval: datetime.timedelta) -> str:
 
 async def find_node_with_name(
     docker_client: AutoscalingDocker, name: str
-) -> Optional[Node]:
+) -> Node | None:
     list_of_nodes = await docker_client.nodes.list(filters={"name": name})
     if not list_of_nodes:
         return None
@@ -428,17 +428,23 @@ async def tag_node(
         logger, logging.DEBUG, msg=f"tagging {node.ID=} with {tags=} and {available=}"
     ):
         assert node.ID  # nosec
-        assert node.Version  # nosec
-        assert node.Version.Index  # nosec
-        assert node.Spec  # nosec
-        assert node.Spec.Role  # nosec
+
+        latest_version_node = parse_obj_as(
+            Node, await docker_client.nodes.inspect(node_id=node.ID)
+        )
+        assert latest_version_node.Version  # nosec
+        assert latest_version_node.Version.Index  # nosec
+        assert latest_version_node.Spec  # nosec
+        assert latest_version_node.Spec.Role  # nosec
+
+        # updating now should work nicely
         await docker_client.nodes.update(
             node_id=node.ID,
-            version=node.Version.Index,
+            version=latest_version_node.Version.Index,
             spec={
                 "Availability": "active" if available else "drain",
                 "Labels": tags,
-                "Role": node.Spec.Role.value,
+                "Role": latest_version_node.Spec.Role.value,
             },
         )
         return parse_obj_as(Node, await docker_client.nodes.inspect(node_id=node.ID))

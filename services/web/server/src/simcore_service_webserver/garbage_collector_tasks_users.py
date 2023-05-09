@@ -10,14 +10,14 @@ from typing import AsyncIterator, Callable
 from aiohttp import web
 from aiopg.sa.engine import Engine
 from models_library.users import UserID
-from servicelib.logging_utils import log_context
+from servicelib.logging_utils import get_log_record_extra, log_context
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.wait import wait_exponential
 
 from ._constants import APP_DB_ENGINE_KEY
 from .login.utils import notify_user_logout
-from .security_api import clean_auth_policy_cache
+from .security.api import clean_auth_policy_cache
 from .users_db import update_expired_users
 
 logger = logging.getLogger(__name__)
@@ -39,6 +39,7 @@ async def notify_user_logout_all_sessions(
         logging.INFO,
         "Forcing logout of %s from all sessions",
         f"{user_id=}",
+        get_log_record_extra(user_id=user_id),
     ):
         try:
             await notify_user_logout(app, user_id, client_session_id=None)
@@ -47,6 +48,7 @@ async def notify_user_logout_all_sessions(
                 "Ignored error while notifying logout for %s",
                 f"{user_id=}",
                 exec_info=True,
+                extra=get_log_record_extra(user_id=user_id),
             )
 
 
@@ -69,7 +71,11 @@ async def _update_expired_users(app: web.Application):
 
         # broadcast force logout of user_id
         for user_id in updated:
-            logger.info("User account with %s expired", f"{user_id=}")
+            logger.info(
+                "User account with %s expired",
+                f"{user_id=}",
+                extra=get_log_record_extra(user_id=user_id),
+            )
 
             # NOTE: : this notification will never reach sockets because it runs in the GC!!
             # We need a mechanism to send messages from GC to the webservers

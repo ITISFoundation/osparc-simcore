@@ -22,7 +22,7 @@ from servicelib.aiohttp.long_running_tasks.client import (
     LRTask,
     long_running_task_request,
 )
-from servicelib.logging_utils import log_context
+from servicelib.logging_utils import get_log_record_extra, log_context
 from yarl import URL
 
 from .projects.project_models import ProjectDict
@@ -55,7 +55,12 @@ async def get_storage_locations(
             await response.json()
         )
         assert locations_enveloped.data  # nosec
-        log.info("%s can access %s", f"{user_id=}", f"{locations_enveloped.data=}")
+        log.info(
+            "%s can access %s",
+            f"{user_id=}",
+            f"{locations_enveloped.data=}",
+            extra=get_log_record_extra(user_id=user_id),
+        )
         return locations_enveloped.data
 
 
@@ -66,6 +71,7 @@ async def get_project_total_size_simcore_s3(
         log,
         logging.DEBUG,
         msg=f"getting {project_uuid=} total size in S3 for {user_id=}",
+        extra=get_log_record_extra(user_id=user_id),
     ):
         # NOTE: datcore does not handle filtering and is too slow for this, so for now this is hard-coded
         user_accessible_locations = [FileLocation(name="simcore.s3", id=0)]

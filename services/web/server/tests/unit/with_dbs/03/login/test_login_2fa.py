@@ -28,7 +28,7 @@ from simcore_service_webserver.login._2fa import (
     send_email_code,
 )
 from simcore_service_webserver.login.storage import AsyncpgStorage
-from simcore_service_webserver.products import get_current_product
+from simcore_service_webserver.products.plugin import get_current_product
 
 
 @pytest.fixture

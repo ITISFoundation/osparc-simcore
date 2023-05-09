@@ -12,7 +12,7 @@ import sys
 from asyncio import iscoroutinefunction
 from contextlib import contextmanager
 from inspect import getframeinfo, stack
-from typing import Callable
+from typing import Callable, TypedDict
 
 log = logging.getLogger(__name__)
 
@@ -52,51 +52,57 @@ class CustomFormatter(logging.Formatter):
     2. Overrides 'filename' with the value of 'file_name_override', if it exists.
     """
 
-    def __init__(self, fmt, color_log_enabled: bool = False):
+    def __init__(self, fmt: str, log_format_local_dev_enabled: bool):
         super().__init__(fmt)
-        self.color_log_enabled = color_log_enabled
+        self.log_format_local_dev_enabled = log_format_local_dev_enabled
 
     def format(self, record):
         if hasattr(record, "func_name_override"):
             record.funcName = record.func_name_override
         if hasattr(record, "file_name_override"):
             record.filename = record.file_name_override
+        if not hasattr(record, "log_uid"):
+            record.log_uid = None  # Default value if user is not provided in the log
 
-        if self.color_log_enabled:
+        if self.log_format_local_dev_enabled:
             levelname = record.levelname
             if levelname in COLORS:
                 levelname_color = COLORS[levelname] + levelname + NORMAL
                 record.levelname = levelname_color
+            return super().format(record)
+
         return super().format(record).replace("\n", "\\n")
 
 
 # SEE https://docs.python.org/3/library/logging.html#logrecord-attributes
-DEFAULT_FORMATTING = "log_level=%(levelname)s | log_timestamp=%(asctime)s | log_source=%(name)s:%(funcName)s(%(lineno)d) | log_msg=%(message)s"
+DEFAULT_FORMATTING = "log_level=%(levelname)s | log_timestamp=%(asctime)s | log_source=%(name)s:%(funcName)s(%(lineno)d) | log_uid=%(log_uid)s | log_msg=%(message)s"
 
 # Graylog Grok pattern extractor:
 # log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{DATA:log_source} \| log_msg=%{GREEDYDATA:log_msg}
 
 
-def config_all_loggers():
+def config_all_loggers(log_format_local_dev_enabled: bool):
     """
     Applies common configuration to ALL registered loggers
     """
     the_manager: logging.Manager = logging.Logger.manager
+    root_logger = logging.getLogger()
 
-    loggers = [logging.getLogger()] + [
+    loggers = [root_logger] + [
         logging.getLogger(name) for name in the_manager.loggerDict
     ]
 
     for logger in loggers:
-        set_logging_handler(logger, DEFAULT_FORMATTING)
+        set_logging_handler(logger, DEFAULT_FORMATTING, log_format_local_dev_enabled)
 
 
 def set_logging_handler(
     logger: logging.Logger,
     fmt: str,
+    log_format_local_dev_enabled: bool,
 ) -> None:
     for handler in logger.handlers:
-        handler.setFormatter(CustomFormatter(fmt))
+        handler.setFormatter(CustomFormatter(fmt, log_format_local_dev_enabled))
 
 
 def test_logger_propagation(logger: logging.Logger):
@@ -229,3 +235,15 @@ def log_context(logger: logging.Logger, level: int, msg: str, *args, **kwargs):
     logger.log(level, "Starting " + msg + " ...", *args, **kwargs)
     yield
     logger.log(level, "Finished " + msg, *args, **kwargs)
+
+
+class LogExtra(TypedDict, total=False):
+    log_uid: str
+
+
+def get_log_record_extra(*, user_id: int | str | None = None) -> LogExtra | None:
+    extra: LogExtra = {}
+    if user_id:
+        assert int(user_id) > 0  # nosec
+        extra["log_uid"] = f"{user_id}"
+    return extra or None

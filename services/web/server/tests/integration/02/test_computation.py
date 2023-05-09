@@ -9,7 +9,7 @@ import json
 import time
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Callable, NamedTuple, Union
+from typing import Any, Callable, NamedTuple
 
 import pytest
 import sqlalchemy as sa
@@ -23,6 +23,7 @@ from servicelib.json_serialization import json_dumps
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.projects import projects
+from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import (
     NodeClass,
     StateType,
@@ -31,18 +32,17 @@ from simcore_postgres_database.webserver_models import (
 )
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.computation import setup_computation
-from simcore_service_webserver.computation_utils import DB_TO_RUNNING_STATE
 from simcore_service_webserver.db import setup_db
-from simcore_service_webserver.diagnostics import setup_diagnostics
-from simcore_service_webserver.director_v2 import setup_director_v2
+from simcore_service_webserver.diagnostics.plugin import setup_diagnostics
+from simcore_service_webserver.director_v2.plugin import setup_director_v2
 from simcore_service_webserver.login.plugin import setup_login
-from simcore_service_webserver.products import setup_products
+from simcore_service_webserver.notifications._utils import DB_TO_RUNNING_STATE
+from simcore_service_webserver.notifications.plugin import setup_notifications
+from simcore_service_webserver.products.plugin import setup_products
 from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
-from simcore_service_webserver.security import setup_security
-from simcore_service_webserver.security_roles import UserRole
+from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio.plugin import setup_socketio
 from simcore_service_webserver.users import setup_users
@@ -81,17 +81,15 @@ class ExpectedResponse(NamedTuple):
     will have no access, therefore ExpectedResponse.ok = HTTPUnauthorized
     """
 
-    ok: Union[type[web.HTTPUnauthorized], type[web.HTTPForbidden], type[web.HTTPOk]]
-    created: Union[
-        type[web.HTTPUnauthorized], type[web.HTTPForbidden], type[web.HTTPCreated]
-    ]
-    no_content: Union[
-        type[web.HTTPUnauthorized], type[web.HTTPForbidden], type[web.HTTPNoContent]
-    ]
-    forbidden: Union[
-        type[web.HTTPUnauthorized],
-        type[web.HTTPForbidden],
-    ]
+    ok: type[web.HTTPUnauthorized] | type[web.HTTPForbidden] | type[web.HTTPOk]
+    created: (
+        type[web.HTTPUnauthorized] | type[web.HTTPForbidden] | type[web.HTTPCreated]
+    )
+    no_content: (
+        type[web.HTTPUnauthorized] | type[web.HTTPForbidden] | type[web.HTTPNoContent]
+    )
+    forbidden: (type[web.HTTPUnauthorized] | type[web.HTTPForbidden])
+
     # pylint: disable=no-member
     def __str__(self) -> str:
         items = ", ".join(f"{k}={v.__name__}" for k, v in self._asdict().items())
@@ -154,7 +152,6 @@ def client(
     mocker: MockerFixture,
     monkeypatch_setenv_from_app_config: Callable,
 ) -> TestClient:
-
     cfg = deepcopy(app_config)
 
     assert cfg["rest"]["version"] == API_VTAG
@@ -176,7 +173,7 @@ def client(
     setup_users(app)
     setup_socketio(app)
     setup_projects(app)
-    setup_computation(app)
+    setup_notifications(app)
     setup_director_v2(app)
     setup_resource_manager(app)
     setup_products(app)
@@ -289,6 +286,7 @@ async def _assert_and_wait_for_pipeline_state(
     expected_state: RunningState,
     expected_api_response: ExpectedResponse,
 ):
+    assert client.app
     url_project_state = client.app.router["get_project_state"].url_for(
         project_id=project_id
     )
@@ -320,7 +318,6 @@ async def _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(
     project_id: str,
     postgres_session: sa.orm.session.Session,
 ):
-
     async for attempt in AsyncRetrying(
         reraise=True,
         stop=stop_after_delay(120),
@@ -375,6 +372,7 @@ async def test_start_stop_computation(
     user_role: UserRole,
     expected: ExpectedResponse,
 ):
+    assert client.app
     project_id = user_project["uuid"]
     fake_workbench_payload = user_project["workbench"]
 
@@ -447,6 +445,7 @@ async def test_run_pipeline_and_check_state(
     user_role: UserRole,
     expected: ExpectedResponse,
 ):
+    assert client.app
     project_id = user_project["uuid"]
     fake_workbench_payload = user_project["workbench"]
 

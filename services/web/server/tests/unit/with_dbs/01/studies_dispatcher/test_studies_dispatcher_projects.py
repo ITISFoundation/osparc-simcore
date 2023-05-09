@@ -1,7 +1,8 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-# pylint: disable=too-many-arguments
 
 
 from typing import Any, AsyncIterator
@@ -90,8 +91,10 @@ async def test_add_new_project_from_model_instance(
     file_picker_id: NodeID,
     viewer_id: NodeID,
 ):
+    assert client.app
+
     mock_directorv2_api = mocker.patch(
-        "simcore_service_webserver.director_v2_api.create_or_update_pipeline",
+        "simcore_service_webserver.director_v2.api.create_or_update_pipeline",
         return_value=None,
     )
 

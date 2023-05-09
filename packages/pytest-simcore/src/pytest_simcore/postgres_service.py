@@ -2,8 +2,9 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import AsyncIterator, Final, Iterator, TypedDict
+from typing import AsyncIterator, Final, Iterator
 
+import docker
 import pytest
 import sqlalchemy as sa
 import tenacity
@@ -13,17 +14,9 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 from .helpers.utils_docker import get_localhost_ip, get_service_published_port
-from .helpers.utils_postgres import migrated_pg_tables_context
+from .helpers.utils_postgres import PostgresTestConfig, migrated_pg_tables_context
 
 TEMPLATE_DB_TO_RESTORE = "template_simcore_db"
-
-
-class PostgresTestConfig(TypedDict):
-    user: str
-    password: str
-    database: str
-    host: str
-    port: str
 
 
 def execute_queries(
@@ -188,6 +181,7 @@ def postgres_dsn_url(postgres_dsn: PostgresTestConfig) -> str:
 def postgres_db(
     postgres_dsn: PostgresTestConfig,
     postgres_engine: sa.engine.Engine,
+    docker_client: docker.DockerClient,
 ) -> Iterator[sa.engine.Engine]:
     """An postgres database init with empty tables and an sqlalchemy engine connected to it"""
 

@@ -43,7 +43,7 @@ RUN apt-get update \
 RUN python -m venv "${VIRTUAL_ENV}"
 
 RUN pip --no-cache-dir install --upgrade \
-  pip~=23.0  \
+  pip~=23.1  \
   wheel \
   setuptools
 
@@ -81,10 +81,10 @@ COPY --from=build ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY --chown=scu:scu services/migration/docker services/migration/docker
 
 HEALTHCHECK \
-  --interval=10s \
+  --interval=5s \
   --timeout=10s \
   --start-period=1ms \
-  --retries=3 \
+  --retries=10 \
   CMD [ "/bin/sh", "/home/scu/services/migration/docker/healthcheck.sh"]
 
 ENTRYPOINT [ "/bin/sh", "services/migration/docker/entrypoint.sh" ]

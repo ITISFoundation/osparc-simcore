@@ -92,8 +92,7 @@ def clone_project_document(
         project_copy["ui"]["slideshow"] = _replace_uuids(
             project_copy["ui"].get("slideshow", {})
         )
-        if "mode" in project_copy["ui"]:
-            project_copy["ui"]["mode"] = project_copy["ui"]["mode"]
+
     if clean_output_data:
         FIELDS_TO_DELETE = ("outputs", "progress", "runHash")
         for node_data in project_copy.get("workbench", {}).values():

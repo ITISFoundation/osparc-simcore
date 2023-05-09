@@ -1,7 +1,7 @@
 import logging
-from typing import Optional
 
 from aiohttp import web
+from servicelib.logging_utils import get_log_record_extra
 from yarl import URL
 
 from . import catalog_client
@@ -9,7 +9,7 @@ from ._constants import RQ_PRODUCT_KEY, X_PRODUCT_NAME_HEADER
 from .catalog_client import to_backend_service
 from .catalog_settings import get_plugin_settings
 from .login.decorators import RQT_USERID_KEY, login_required
-from .security_decorators import permission_required
+from .security.decorators import permission_required
 
 logger = logging.getLogger(__name__)
 
@@ -36,10 +36,15 @@ async def reverse_proxy_handler(request: web.Request) -> web.Response:
     # FIXME: hack
     if "/services" in backend_url.path:
         backend_url = backend_url.update_query({"user_id": user_id})
-    logger.debug("Redirecting '%s' -> '%s'", request.url, backend_url)
+    logger.debug(
+        "Redirecting '%s' -> '%s'",
+        request.url,
+        backend_url,
+        extra=get_log_record_extra(user_id=user_id),
+    )
 
     # body
-    raw: Optional[bytes] = None
+    raw: bytes | None = None
     if request.can_read_body:
         raw = await request.read()
 

@@ -5,9 +5,7 @@
 #    pip-compile --output-file=requirements/_test.txt --resolver=backtracking --strip-extras requirements/_test.in
 #
 anyio==3.6.2
-    # via
-    #   -c requirements/_base.txt
-    #   httpcore
+    # via httpcore
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
 async-timeout==4.0.2
@@ -97,7 +95,7 @@ httpcore==0.16.3
     # via
     #   -c requirements/_base.txt
     #   httpx
-httpx==0.23.3
+httpx==0.24.0
     # via
     #   -r requirements/_test.in
     #   respx
@@ -105,8 +103,8 @@ idna==3.4
     # via
     #   -c requirements/_base.txt
     #   anyio
+    #   httpx
     #   requests
-    #   rfc3986
 iniconfig==2.0.0
     # via pytest
 itsdangerous==2.1.2
@@ -220,7 +218,7 @@ pyyaml==5.4.1
     #   moto
     #   openapi-spec-validator
     #   responses
-redis==4.5.1
+redis==4.5.4
     # via
     #   -c requirements/_base.txt
     #   fakeredis
@@ -235,10 +233,6 @@ responses==0.23.1
     # via moto
 respx==0.20.1
     # via -r requirements/_test.in
-rfc3986==1.5.0
-    # via
-    #   -c requirements/_base.txt
-    #   httpx
 rsa==4.9
     # via
     #   -c requirements/../../../requirements/constraints.txt

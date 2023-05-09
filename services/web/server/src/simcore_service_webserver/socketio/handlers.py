@@ -8,11 +8,11 @@
 
 import asyncio
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from aiohttp import web
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
-from servicelib.logging_utils import log_context
+from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.observer import emit, observe
 from servicelib.utils import fire_and_forget_task, logged_gather
 from socketio import AsyncServer
@@ -36,20 +36,26 @@ async def connect(sid: str, environ: dict, app: web.Application) -> bool:
     """socketio reserved handler for when the fontend connects through socket.io
 
     Arguments:
-        sid {str} -- the socket ID
-        environ {Dict} -- the WSGI environ, among other contains the original request
-        app {web.Application} -- the aiohttp app
+        sid -- the socket ID
+        environ -- the WSGI environ, among other contains the original request
+
+    Raises:
+        SocketIOConnectionError: Authentication fail or unexpected error
 
     Returns:
-        [type] -- True if socket.io connection accepted
+        True if socket.io connection accepted
     """
+
     log.debug("client connecting in room %s", sid)
+
     request = environ[_SOCKET_IO_AIOHTTP_REQUEST_KEY]
     try:
         await authenticate_user(sid, app, request)
         await set_user_in_rooms(sid, app, request)
+
     except web.HTTPUnauthorized as exc:
         raise SocketIOConnectionError("authentification failed") from exc
+
     except Exception as exc:  # pylint: disable=broad-except
         raise SocketIOConnectionError(f"Unexpected error: {exc}") from exc
 
@@ -80,12 +86,17 @@ async def connect(sid: str, environ: dict, app: web.Application) -> bool:
 async def authenticate_user(
     sid: str, app: web.Application, request: web.Request
 ) -> None:
-    """throws web.HTTPUnauthorized when the user is not recognized. Keeps the original request."""
+    """
+
+    :raises web.HTTPUnauthorized when the user is not recognized. Keeps the original request.
+    """
     user_id = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
     log.debug("client %s authenticated", user_id)
     client_session_id = request.query.get("client_session_id", None)
     if not client_session_id:
-        log.error("Tab ID is not available!")
+        log.error(
+            "Tab ID is not available!", extra=get_log_record_extra(user_id=user_id)
+        )
         raise web.HTTPUnauthorized(reason="missing tab id")
 
     sio = get_socket_server(app)
@@ -95,7 +106,11 @@ async def authenticate_user(
         socketio_session["client_session_id"] = client_session_id
         socketio_session["request"] = request
     with managed_resource(user_id, client_session_id, app) as rt:
-        log.info("socketio connection from user %s", user_id)
+        log.info(
+            "socketio connection from user %s",
+            user_id,
+            extra=get_log_record_extra(user_id=user_id),
+        )
         await rt.set_socket_id(sid)
 
 
@@ -128,7 +143,7 @@ async def disconnect_other_sockets(sio, sockets: list[str]) -> None:
 
 @observe(event="SIGNAL_USER_LOGOUT")
 async def on_user_logout(
-    user_id: str, client_session_id: Optional[str], app: web.Application
+    user_id: str, client_session_id: str | None, app: web.Application
 ) -> None:
     log.debug("user %s must be disconnected", user_id)
     # find the sockets related to the user
@@ -144,6 +159,7 @@ async def on_user_logout(
                         "Disconnection of socket id '%s' failed. socket id could not be found: [%s]",
                         socket_id,
                         exc,
+                        extra=get_log_record_extra(user_id=user_id),
                     )
             # trigger faster gc on disconnect
             await rt.user_pressed_disconnect()
@@ -163,9 +179,7 @@ async def on_user_logout(
 async def disconnect(sid: str, app: web.Application) -> None:
     """socketio reserved handler for when the socket.io connection is disconnected.
 
-    Arguments:
-        sid {str} -- the socket ID
-        app {web.Application} -- the aiohttp app
+    sid: the socket ID
     """
     log.debug("client in room %s disconnecting", sid)
     sio = get_socket_server(app)
@@ -181,6 +195,7 @@ async def disconnect(sid: str, app: web.Application) -> None:
                 "disconnection of %s for %s",
                 f"{user_id=}",
                 f"{client_session_id=}",
+                extra=get_log_record_extra(user_id=user_id),
             ):
                 with managed_resource(user_id, client_session_id, app) as rt:
                     log.debug("client %s disconnected from room %s", user_id, sid)
@@ -204,10 +219,8 @@ async def client_heartbeat(sid: str, _: Any, app: web.Application) -> None:
     Each time this event is received the alive key's TTL is updated in
     Redis. Once the key expires, resources will be garbage collected.
 
-    Arguments:
-        sid {str} -- the socket ID
-        _ {Any} -- the data is ignored for this handler
-        app {web.Application} -- the aiohttp app
+    sid: the socket ID
+    _ : the data is ignored for this handler
     """
     sio = get_socket_server(app)
     async with sio.session(sid) as socketio_session:

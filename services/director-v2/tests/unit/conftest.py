@@ -25,6 +25,7 @@ from dask_gateway_server.app import DaskGateway
 from dask_gateway_server.backends.local import UnsafeLocalBackend
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
+from models_library.basic_types import PortInt
 from models_library.clusters import ClusterID
 from models_library.generated_models.docker_rest_api import (
     ServiceSpec as DockerServiceSpec,
@@ -75,8 +76,8 @@ def dynamic_service_create() -> DynamicServiceCreate:
 
 
 @pytest.fixture
-def dynamic_sidecar_port() -> int:
-    return 1222
+def dynamic_sidecar_port() -> PortInt:
+    return PortInt(1222)
 
 
 @pytest.fixture
@@ -95,6 +96,11 @@ def request_scheme() -> str:
 
 
 @pytest.fixture
+def can_save() -> bool:
+    return True
+
+
+@pytest.fixture
 def request_simcore_user_agent() -> str:
     return "python/test"
 
@@ -103,10 +109,11 @@ def request_simcore_user_agent() -> str:
 def scheduler_data_from_http_request(
     dynamic_service_create: DynamicServiceCreate,
     simcore_service_labels: SimcoreServiceLabels,
-    dynamic_sidecar_port: int,
+    dynamic_sidecar_port: PortInt,
     request_dns: str,
     request_scheme: str,
     request_simcore_user_agent: str,
+    can_save: bool,
     run_id: RunID,
 ) -> SchedulerData:
     return SchedulerData.from_http_request(
@@ -116,6 +123,7 @@ def scheduler_data_from_http_request(
         request_dns=request_dns,
         request_scheme=request_scheme,
         request_simcore_user_agent=request_simcore_user_agent,
+        can_save=can_save,
         run_id=run_id,
     )
 
@@ -224,21 +232,26 @@ def local_dask_gateway_server_config(
     unused_tcp_port_factory: Callable,
 ) -> traitlets.config.Config:
     c = traitlets.config.Config()
-    c.DaskGateway.backend_class = UnsafeLocalBackend  # type: ignore
-    c.DaskGateway.address = f"127.0.0.1:{unused_tcp_port_factory()}"  # type: ignore
-    c.Proxy.address = f"127.0.0.1:{unused_tcp_port_factory()}"  # type: ignore
-    c.DaskGateway.authenticator_class = "dask_gateway_server.auth.SimpleAuthenticator"  # type: ignore
-    c.SimpleAuthenticator.password = "qweqwe"  # type: ignore
-    c.ClusterConfig.worker_cmd = [  # type: ignore
+    assert isinstance(c.DaskGateway, traitlets.config.Config)
+    assert isinstance(c.ClusterConfig, traitlets.config.Config)
+    assert isinstance(c.Proxy, traitlets.config.Config)
+    assert isinstance(c.SimpleAuthenticator, traitlets.config.Config)
+    c.DaskGateway.backend_class = UnsafeLocalBackend
+    c.DaskGateway.address = f"127.0.0.1:{unused_tcp_port_factory()}"
+    c.Proxy.address = f"127.0.0.1:{unused_tcp_port_factory()}"
+    c.DaskGateway.authenticator_class = "dask_gateway_server.auth.SimpleAuthenticator"
+    c.SimpleAuthenticator.password = "qweqwe"
+    c.ClusterConfig.worker_cmd = [
         "dask-worker",
         "--resources",
         f"CPU=12,GPU=1,RAM={16e9}",
     ]
     # NOTE: This must be set such that the local unsafe backend creates a worker with enough cores/memory
-    c.ClusterConfig.worker_cores = 12  # type: ignore
-    c.ClusterConfig.worker_memory = "16G"  # type: ignore
+    c.ClusterConfig.worker_cores = 12
+    c.ClusterConfig.worker_memory = "16G"
+    c.ClusterConfig.cluster_max_workers = 3
 
-    c.DaskGateway.log_level = "DEBUG"  # type: ignore
+    c.DaskGateway.log_level = "DEBUG"
     return c
 
 

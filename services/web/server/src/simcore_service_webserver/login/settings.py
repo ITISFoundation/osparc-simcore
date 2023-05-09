@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Final, Literal, Optional
+from typing import Final, Literal
 
 from aiohttp import web
 from pydantic import BaseModel, validator
@@ -37,13 +37,13 @@ class LoginSettings(BaseCustomSettings):
         ],
     )
 
-    LOGIN_TWILIO: Optional[TwilioSettings] = Field(
+    LOGIN_TWILIO: TwilioSettings | None = Field(
         auto_default_from_env=True,
         description="Twilio service settings. Used to send SMS for 2FA",
     )
 
     LOGIN_2FA_CODE_EXPIRATION_SEC: PositiveInt = Field(
-        default=60.0, description="Expiration time for code [sec]"
+        default=60, description="Expiration time for code [sec]"
     )
 
     LOGIN_2FA_REQUIRED: bool = Field(
@@ -114,8 +114,8 @@ class LoginOptions(BaseModel):
     SMTP_HOST: str
     SMTP_PORT: int
     SMTP_PROTOCOL: EmailProtocol
-    SMTP_USERNAME: Optional[str] = Field(...)
-    SMTP_PASSWORD: Optional[SecretStr] = Field(...)
+    SMTP_USERNAME: str | None = Field(...)
+    SMTP_PASSWORD: SecretStr | None = Field(...)
 
     # NOTE: lifetime limits are expressed in days (use constants above)
     REGISTRATION_CONFIRMATION_LIFETIME: PositiveFloat = 5 * _DAYS

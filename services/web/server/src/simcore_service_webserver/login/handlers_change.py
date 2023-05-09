@@ -6,10 +6,11 @@ from models_library.emails import LowerCaseEmailStr
 from pydantic import SecretStr, validator
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from servicelib.request_keys import RQT_USERID_KEY
 
 from .._meta import API_VTAG
-from ..products import Product, get_current_product
-from ..security_api import check_password, encrypt_password
+from ..products.plugin import Product, get_current_product
+from ..security.api import check_password, encrypt_password
 from ..utils import HOUR
 from ..utils_rate_limiting import global_rate_limit_route
 from ._confirmation import is_confirmation_allowed, make_confirmation_link
@@ -23,7 +24,7 @@ from ._constants import (
     MSG_WRONG_PASSWORD,
 )
 from ._models import InputSchema, create_password_match_validator
-from .decorators import RQT_USERID_KEY, login_required
+from .decorators import login_required
 from .settings import LoginOptions, get_plugin_options
 from .storage import AsyncpgStorage, get_plugin_storage
 from .utils import (

@@ -6,7 +6,7 @@ import asyncio
 import logging
 import sys
 from datetime import datetime
-from typing import Any, AsyncIterable, AsyncIterator, Optional
+from typing import Any, AsyncIterable, AsyncIterator
 from uuid import UUID, uuid4
 
 import aiodocker
@@ -336,7 +336,7 @@ def labels_example(request: FixtureRequest) -> SimcoreServiceLabels:
 
 
 @pytest.fixture(params=[None, datetime.utcnow()])
-def time_dy_sidecar_became_unreachable(request: FixtureRequest) -> Optional[datetime]:
+def time_dy_sidecar_became_unreachable(request: FixtureRequest) -> datetime | None:
     return request.param
 
 
@@ -344,7 +344,7 @@ def time_dy_sidecar_became_unreachable(request: FixtureRequest) -> Optional[date
 def mock_scheduler_data(
     labels_example: SimcoreServiceLabels,
     scheduler_data: SchedulerData,
-    time_dy_sidecar_became_unreachable: Optional[datetime],
+    time_dy_sidecar_became_unreachable: datetime | None,
     service_name: str,
 ) -> SchedulerData:
     # test all possible cases
@@ -386,7 +386,6 @@ def test_settings__valid_network_names(
     monkeypatch: MonkeyPatch,
     dynamic_sidecar_settings: DynamicSidecarSettings,
 ) -> None:
-
     items = dynamic_sidecar_settings.dict()
     items["SIMCORE_SERVICES_NETWORK_NAME"] = simcore_services_network_name
 
@@ -395,7 +394,6 @@ def test_settings__valid_network_names(
 
 
 async def test_failed_docker_client_request(docker_swarm: None):
-
     missing_network_name = "this_network_cannot_be_found"
 
     with pytest.raises(GenericDockerError) as execinfo:
@@ -514,7 +512,6 @@ async def test_dynamic_sidecar_get_dynamic_sidecar_sate_fail_to_schedule(
     cleanup_test_dynamic_sidecar_service: None,
     docker_swarm: None,
 ):
-
     # set unachievable resource
     dynamic_sidecar_service_spec["task_template"]["Resources"] = {
         "Reservations": {"NanoCPUs": MAX_INT64, "MemoryBytes": MAX_INT64}
@@ -542,7 +539,6 @@ async def test_is_dynamic_sidecar_stack_missing(
     cleanup_dynamic_sidecar_stack: None,
     docker_swarm: None,
 ):
-
     services_are_missing = await docker_api.is_dynamic_sidecar_stack_missing(
         node_uuid, dynamic_sidecar_settings
     )

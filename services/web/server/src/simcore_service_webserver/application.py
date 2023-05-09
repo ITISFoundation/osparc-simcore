@@ -13,20 +13,20 @@ from .activity.plugin import setup_activity
 from .application_settings import setup_settings
 from .catalog import setup_catalog
 from .clusters.plugin import setup_clusters
-from .computation import setup_computation
 from .db import setup_db
-from .diagnostics import setup_diagnostics
+from .diagnostics.plugin import setup_diagnostics
 from .director.plugin import setup_director
-from .director_v2 import setup_director_v2
-from .email import setup_email
+from .director_v2.plugin import setup_director_v2
+from .email.plugin import setup_email
 from .exporter.plugin import setup_exporter
 from .garbage_collector import setup_garbage_collector
 from .groups import setup_groups
-from .invitations import setup_invitations
+from .invitations.plugin import setup_invitations
 from .login.plugin import setup_login
 from .long_running_tasks import setup_long_running_tasks
 from .meta_modeling.plugin import setup_meta_modeling
-from .products import setup_products
+from .notifications.plugin import setup_notifications
+from .products.plugin import setup_products
 from .projects.plugin import setup_projects
 from .publications import setup_publications
 from .rabbitmq import setup_rabbitmq
@@ -35,10 +35,10 @@ from .remote_debug import setup_remote_debugging
 from .resource_manager.plugin import setup_resource_manager
 from .rest import setup_rest
 from .scicrunch.plugin import setup_scicrunch
-from .security import setup_security
+from .security.plugin import setup_security
 from .session import setup_session
 from .socketio.plugin import setup_socketio
-from .statics import setup_statics
+from .statics.plugin import setup_statics
 from .storage import setup_storage
 from .studies_dispatcher.plugin import setup_studies_dispatcher
 from .tags import setup_tags
@@ -79,7 +79,7 @@ def create_application() -> web.Application:
     # monitoring
     setup_diagnostics(app)
     setup_activity(app)
-    setup_computation(app)
+    setup_notifications(app)
     setup_socketio(app)
 
     # login
@@ -138,7 +138,7 @@ def run_service(app: web.Application, config: dict[str, Any]):
         app,
         host=config["main"]["host"],
         port=config["main"]["port"],
-        # this gets overriden by the gunicorn config if any
+        # this gets overriden by the gunicorn config in /docker/boot.sh
         access_log_format='%a %t "%r" %s %b --- [%Dus] "%{Referer}i" "%{User-Agent}i"',
     )
 

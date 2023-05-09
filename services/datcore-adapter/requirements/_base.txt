@@ -57,10 +57,7 @@ fastapi==0.85.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
-    #   fastapi-contrib
     #   fastapi-pagination
-fastapi-contrib==0.2.11
-    # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 fastapi-pagination==0.10.0
     # via -r requirements/_base.in
 h11==0.12.0
@@ -75,7 +72,7 @@ httpcore==0.15.0
     # via httpx
 httptools==0.5.0
     # via uvicorn
-httpx==0.23.0
+httpx==0.24.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
@@ -85,10 +82,8 @@ idna==3.4
     # via
     #   anyio
     #   email-validator
-    #   rfc3986
+    #   httpx
     #   yarl
-jaeger-client==4.8.0
-    # via fastapi-contrib
 jmespath==1.0.1
     # via
     #   boto3
@@ -99,10 +94,6 @@ jsonschema==3.2.0
     #   -r requirements/../../../packages/models-library/requirements/_base.in
 multidict==6.0.3
     # via yarl
-opentracing==2.4.0
-    # via
-    #   fastapi-contrib
-    #   jaeger-client
 pamqp==3.2.1
     # via aiormq
 pydantic==1.10.2
@@ -130,12 +121,10 @@ pyyaml==5.4.1
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   uvicorn
-redis==4.4.0
+redis==4.5.4
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-rfc3986==1.5.0
-    # via httpx
 s3transfer==0.6.0
     # via boto3
 six==1.16.0
@@ -143,7 +132,6 @@ six==1.16.0
     #   jsonschema
     #   python-dateutil
     #   python-multipart
-    #   thrift
 sniffio==1.3.0
     # via
     #   anyio
@@ -155,14 +143,6 @@ tenacity==8.1.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-threadloop==1.0.2
-    # via jaeger-client
-thrift==0.16.0
-    # via jaeger-client
-tornado==6.2
-    # via
-    #   jaeger-client
-    #   threadloop
 tqdm==4.64.1
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in

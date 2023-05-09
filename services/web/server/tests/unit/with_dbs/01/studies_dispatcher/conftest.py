@@ -23,7 +23,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
         {
             "WEBSERVER_ACTIVITY": "null",
             "WEBSERVER_CATALOG": "null",
-            "WEBSERVER_COMPUTATION": "0",
+            "WEBSERVER_NOTIFICATIONS": "0",
             "WEBSERVER_DIAGNOSTICS": "null",
             "WEBSERVER_DIRECTOR": "null",
             "WEBSERVER_EXPORTER": "null",
@@ -54,7 +54,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
     )
 
     # NOTE: To see logs, use pytest -s --log-cli-level=DEBUG
-    setup_logging(level=logging.DEBUG)
+    setup_logging(level=logging.DEBUG, log_format_local_dev_enabled=True)
 
     plugin_settings = StudiesDispatcherSettings.create_from_envs()
     print(plugin_settings.json(indent=1))

@@ -5,26 +5,23 @@ from cryptography.fernet import Fernet
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.requests import Request
 
-from ...core.settings import WebServerSettings
-from ...modules.webserver import AuthSession
+from ..._constants import MSG_BACKEND_SERVICE_UNAVAILABLE
+from ...core.settings import ApplicationSettings, WebServerSettings
+from ...plugins.webserver import AuthSession
+from .application import get_app, get_settings
 from .authentication import get_active_user_email
 
-UNAVAILBLE_MSG = "backend service is disabled or unreachable"
 
-
-def _get_app(request: Request) -> FastAPI:
-    return request.app
-
-
-def _get_settings(request: Request) -> WebServerSettings:
-    s = request.app.state.settings.API_SERVER_WEBSERVER
-    if not s:
+def _get_settings(
+    app_settings: ApplicationSettings = Depends(get_settings),
+) -> WebServerSettings:
+    settings = app_settings.API_SERVER_WEBSERVER
+    if not settings:
         raise HTTPException(
-            status.HTTP_503_SERVICE_UNAVAILABLE, detail="webserver disabled"
+            status.HTTP_503_SERVICE_UNAVAILABLE, detail=MSG_BACKEND_SERVICE_UNAVAILABLE
         )
-
-    assert isinstance(s, WebServerSettings)  # nosec
-    return s
+    assert isinstance(settings, WebServerSettings)  # nosec
+    return settings
 
 
 def _get_encrypt(request: Request) -> Fernet | None:
@@ -41,7 +38,9 @@ def get_session_cookie(
     # SEE services/web/server/tests/unit/with_dbs/test_login.py
 
     if fernet is None:
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail=UNAVAILBLE_MSG)
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE, detail=MSG_BACKEND_SERVICE_UNAVAILABLE
+        )
 
     # builds session cookie
     cookie_name = settings.WEBSERVER_SESSION_NAME
@@ -59,7 +58,7 @@ def get_session_cookie(
 
 
 def get_webserver_session(
-    app: FastAPI = Depends(_get_app),
+    app: FastAPI = Depends(get_app),
     session_cookies: dict = Depends(get_session_cookie),
 ) -> AuthSession:
     """

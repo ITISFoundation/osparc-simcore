@@ -28,19 +28,19 @@ from settings_library.utils_service import DEFAULT_AIOHTTP_PORT
 from ._constants import APP_SETTINGS_KEY
 from ._meta import API_VERSION, API_VTAG, APP_NAME
 from .catalog_settings import CatalogSettings
-from .diagnostics_settings import DiagnosticsSettings
+from .diagnostics.settings import DiagnosticsSettings
 from .director.settings import DirectorSettings
-from .director_v2_settings import DirectorV2Settings
+from .director_v2.settings import DirectorV2Settings
 from .exporter.settings import ExporterSettings
 from .garbage_collector_settings import GarbageCollectorSettings
-from .invitations_settings import InvitationsSettings
+from .invitations.settings import InvitationsSettings
 from .login.settings import LoginSettings
 from .projects.projects_settings import ProjectsSettings
 from .resource_manager.settings import ResourceManagerSettings
 from .rest_settings import RestSettings
 from .scicrunch.settings import SciCrunchSettings
 from .session_settings import SessionSettings
-from .statics_settings import FrontEndAppSettings, StaticWebserverModuleSettings
+from .statics.settings import FrontEndAppSettings, StaticWebserverModuleSettings
 from .storage_settings import StorageSettings
 from .studies_dispatcher.settings import StudiesDispatcherSettings
 
@@ -105,6 +105,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         LogLevel.WARNING.value,
         env=["WEBSERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
         # NOTE: suffix '_LOGLEVEL' is used overall
+    )
+    WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
+        False,
+        env=["WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"],
+        description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
     # TODO: find a better name!?
     WEBSERVER_SERVER_HOST: str = Field(
@@ -198,7 +203,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # These plugins only require (for the moment) an entry to toggle between enabled/disabled
     WEBSERVER_CLUSTERS: bool = False
-    WEBSERVER_COMPUTATION: bool = True
+    WEBSERVER_NOTIFICATIONS: bool = Field(
+        default=True, env=["WEBSERVER_NOTIFICATIONS", "WEBSERVER_COMPUTATION"]
+    )
     WEBSERVER_GROUPS: bool = True
     WEBSERVER_META_MODELING: bool = True
     WEBSERVER_PRODUCTS: bool = True

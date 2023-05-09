@@ -13,6 +13,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from models_library.projects import ProjectID
 from models_library.projects_state import ProjectStatus
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_webserver_unit_with_db import (
@@ -25,7 +26,7 @@ from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db_models import UserRole
-from simcore_service_webserver.projects import _delete
+from simcore_service_webserver.projects import _delete_utils
 from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.projects.projects_api import lock_with_notification
 from socketio.exceptions import ConnectionError as SocketConnectionError
@@ -60,12 +61,12 @@ async def test_delete_project(
     # DELETE /v0/projects/{project_id}
     fakes = fake_services(5)
     mocked_director_v2_api[
-        "director_v2_core_dynamic_services.list_dynamic_services"
+        "director_v2._core_dynamic_services.list_dynamic_services"
     ].return_value = fakes
 
     await _request_delete_project(client, user_project, expected.no_content)
 
-    tasks = _delete.get_scheduled_tasks(
+    tasks = _delete_utils.get_scheduled_tasks(
         project_uuid=user_project["uuid"], user_id=logged_user["id"]
     )
 
@@ -78,7 +79,7 @@ async def test_delete_project(
         await tasks[0]
 
         mocked_director_v2_api[
-            "director_v2_core_dynamic_services.list_dynamic_services"
+            "director_v2._core_dynamic_services.list_dynamic_services"
         ].assert_called_once()
 
         expected_calls = [
@@ -92,7 +93,7 @@ async def test_delete_project(
             for service in fakes
         ]
         mocked_director_v2_api[
-            "director_v2_core_dynamic_services.stop_dynamic_service"
+            "director_v2._core_dynamic_services.stop_dynamic_service"
         ].assert_has_calls(expected_calls)
 
         await assert_get_same_project_caller(client, user_project, web.HTTPNotFound)
@@ -113,6 +114,7 @@ async def test_delete_project(
     ],
 )
 async def test_delete_multiple_opened_project_forbidden(
+    mocked_notifications_plugin: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
     client,
     logged_user,
@@ -128,7 +130,6 @@ async def test_delete_multiple_opened_project_forbidden(
 ):
     # service in project
     service = await create_dynamic_service_mock(logged_user["id"], user_project["uuid"])
-
     # open project in tab1
     client_session_id1 = client_session_id_factory()
     try:
@@ -139,7 +140,13 @@ async def test_delete_multiple_opened_project_forbidden(
 
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_session_id1)
-    await assert_status(resp, expected_ok)
+    data, error = await assert_status(resp, expected_ok)
+    if data:
+        mocked_notifications_plugin["subscribe"].assert_called_once_with(
+            client.app, ProjectID(user_project["uuid"])
+        )
+    else:
+        mocked_notifications_plugin["subscribe"].assert_not_called()
 
     # delete project in tab2
     client_session_id2 = client_session_id_factory()

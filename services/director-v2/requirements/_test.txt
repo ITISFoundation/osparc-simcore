@@ -28,10 +28,8 @@ aiosignal==1.2.0
     #   aiohttp
 alembic==1.8.1
     # via -r requirements/_test.in
-anyio==3.6.1
-    # via
-    #   -c requirements/_base.txt
-    #   httpcore
+anyio==3.6.2
+    # via httpcore
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
 astroid==2.15.2
@@ -135,7 +133,7 @@ httpcore==0.15.0
     # via
     #   -c requirements/_base.txt
     #   httpx
-httpx==0.23.0
+httpx==0.24.0
     # via
     #   -c requirements/_base.txt
     #   respx
@@ -145,8 +143,8 @@ idna==2.10
     # via
     #   -c requirements/_base.txt
     #   anyio
+    #   httpx
     #   requests
-    #   rfc3986
     #   yarl
 iniconfig==2.0.0
     # via pytest
@@ -274,10 +272,6 @@ requests==2.27.1
     #   docker
 respx==0.20.1
     # via -r requirements/_test.in
-rfc3986==1.4.0
-    # via
-    #   -c requirements/_base.txt
-    #   httpx
 s3transfer==0.6.0
     # via boto3
 six==1.15.0

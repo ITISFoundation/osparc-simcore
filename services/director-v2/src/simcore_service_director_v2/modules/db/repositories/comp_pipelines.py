@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 import networkx as nx
 import sqlalchemy as sa
@@ -24,7 +23,7 @@ class CompPipelinesRepository(BaseRepository):
                     comp_pipeline.c.project_id == str(project_id)
                 )
             )
-            row: Optional[RowProxy] = await result.fetchone()
+            row: RowProxy | None = await result.fetchone()
         if not row:
             raise PipelineNotFoundError(str(project_id))
         return CompPipelineAtDB.from_orm(row)
@@ -35,7 +34,6 @@ class CompPipelinesRepository(BaseRepository):
         dag_graph: nx.DiGraph,
         publish: bool,
     ) -> None:
-
         pipeline_at_db = CompPipelineAtDB(
             project_id=project_id,
             dag_adjacency_list=nx.to_dict_of_lists(dag_graph),

@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Any, Optional
+from typing import Any
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -139,7 +139,7 @@ async def get_product_group_for_user(
 
 async def create_user_group(
     app: web.Application, user_id: int, new_group: dict
-) -> dict[str, str]:
+) -> dict[str, Any]:
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
         result = await conn.execute(
@@ -281,9 +281,9 @@ async def add_user_in_group(
     user_id: int,
     gid: int,
     *,
-    new_user_id: Optional[int] = None,
-    new_user_email: Optional[str] = None,
-    access_rights: Optional[AccessRightsDict] = None,
+    new_user_id: int | None = None,
+    new_user_email: str | None = None,
+    access_rights: AccessRightsDict | None = None,
 ) -> None:
     """
     adds new_user (either by id or email) in group (with gid) owned by user_id
@@ -323,14 +323,13 @@ async def add_user_in_group(
 async def _get_user_in_group_permissions(
     conn: SAConnection, gid: int, the_user_id_in_group: int
 ) -> RowProxy:
-
     # now get the user
     result = await conn.execute(
         sa.select([users, user_to_groups.c.access_rights])
         .select_from(users.join(user_to_groups, users.c.id == user_to_groups.c.uid))
         .where(and_(user_to_groups.c.gid == gid, users.c.id == the_user_id_in_group))
     )
-    the_user: RowProxy = await result.fetchone()
+    the_user: RowProxy | None = await result.fetchone()
     if not the_user:
         raise UserInGroupNotFoundError(the_user_id_in_group, gid)
     return the_user
@@ -410,7 +409,7 @@ async def delete_user_in_group(
         )
 
 
-async def get_group_from_gid(app: web.Application, gid: int) -> Optional[RowProxy]:
+async def get_group_from_gid(app: web.Application, gid: int) -> RowProxy | None:
     engine: Engine = app[APP_DB_ENGINE_KEY]
 
     async with engine.acquire() as conn:

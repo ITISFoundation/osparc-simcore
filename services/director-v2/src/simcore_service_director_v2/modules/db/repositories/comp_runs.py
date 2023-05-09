@@ -57,7 +57,7 @@ class CompRunsRepository(BaseRepository):
     ) -> list[CompRunsAtDB]:
         if not filter_by_state:
             filter_by_state = set()
-        runs_in_db = deque()
+        runs_in_db: deque[CompRunsAtDB] = deque()
         async with self.db_engine.acquire() as conn:
             async for row in conn.execute(
                 sa.select([comp_runs]).where(

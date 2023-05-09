@@ -7,7 +7,7 @@ import logging
 import re
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncIterable, Callable, Optional
+from typing import Any, AsyncIterable, Callable
 from uuid import UUID, uuid4
 
 import aiopg
@@ -20,13 +20,14 @@ from models_library.projects_state import RunningState
 from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
 from pytest_simcore.helpers.utils_projects import create_project, empty_project_data
 from servicelib.aiohttp.application import create_safe_application
-from settings_library.redis import RedisSettings
+from settings_library.redis import RedisDatabase, RedisSettings
+from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver import garbage_collector_core
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import projects, users
 from simcore_service_webserver.director.plugin import setup_director
-from simcore_service_webserver.director_v2 import setup_director_v2
+from simcore_service_webserver.director_v2.plugin import setup_director_v2
 from simcore_service_webserver.garbage_collector import setup_garbage_collector
 from simcore_service_webserver.groups_api import (
     add_user_in_group,
@@ -34,14 +35,13 @@ from simcore_service_webserver.groups_api import (
     list_user_groups,
 )
 from simcore_service_webserver.login.plugin import setup_login
-from simcore_service_webserver.projects._delete import get_scheduled_tasks
+from simcore_service_webserver.projects._delete_utils import get_scheduled_tasks
 from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.resource_manager.registry import get_registry
 from simcore_service_webserver.rest import setup_rest
-from simcore_service_webserver.security import setup_security
-from simcore_service_webserver.security_roles import UserRole
+from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio.plugin import setup_socketio
 from simcore_service_webserver.users import setup_users
@@ -73,7 +73,9 @@ def __drop_and_recreate_postgres__(database_from_template_before_each_function):
 @pytest.fixture(autouse=True)
 async def __delete_all_redis_keys__(redis_settings: RedisSettings):
     client = aioredis.from_url(
-        redis_settings.dsn_resources, encoding="utf-8", decode_responses=True
+        redis_settings.build_redis_dsn(RedisDatabase.RESOURCES),
+        encoding="utf-8",
+        decode_responses=True,
     )
     await client.flushall()
     await client.close(close_connection_pool=True)
@@ -196,7 +198,7 @@ async def new_project(
     user: UserInfoDict,
     product_name: str,
     tests_data_dir: Path,
-    access_rights: Optional[dict[str, Any]] = None,
+    access_rights: dict[str, Any] | None = None,
 ):
     """returns a project for the given user"""
     project_data = empty_project_data()
@@ -731,7 +733,7 @@ async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_l
     q_project = await fetch_project_from_db(aiopg_engine, project)
     assert q_project
 
-    new_owner: Optional[UserInfoDict] = None
+    new_owner: UserInfoDict | None = None
     remaining_users = []
     for user in [q_u2, q_u3]:
         assert user

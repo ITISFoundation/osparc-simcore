@@ -119,6 +119,7 @@ class OsparcBackend(DBBackendBase):
             cmd=scheduler_cmd,
             labels={"cluster_id": f"{cluster.id}", "type": "scheduler"},
             gateway_api_url=self.api_url,
+            placement={"Constraints": ["node.role==manager"]},
         ):
             yield dask_scheduler_start_result
 

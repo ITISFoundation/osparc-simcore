@@ -39,7 +39,6 @@ def mock_env(
     monkeypatch.setenv("DIRECTOR_ENABLED", "false")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "false")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "false")
-    monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
 
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
 
@@ -83,6 +82,7 @@ async def observed_service(
     dynamic_sidecar_port: int,
     request_dns: str,
     request_scheme: str,
+    can_save: bool,
 ) -> SchedulerData:
     await dynamic_sidecar_scheduler.add_service(
         dynamic_service_create,
@@ -90,7 +90,8 @@ async def observed_service(
         dynamic_sidecar_port,
         request_dns,
         request_scheme,
-        request_simcore_user_agent="",
+        "",
+        can_save,
     )
     # pylint:disable=protected-access
     return dynamic_sidecar_scheduler._scheduler.get_scheduler_data(
