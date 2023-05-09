@@ -125,7 +125,7 @@ def _pull_push_service(
     image_labels: dict = dict(image.labels)
 
     if owner_email:
-        print("Overriding labels to take ownership as %s ...", owner_email)
+        print(f"Overriding labels to take ownership as {owner_email} ...")
         # By overriding these labels, user owner_email gets ownership of the service
         # and the catalog service automatically gives full access rights for testing it
         # otherwise it does not even get read rights
