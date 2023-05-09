@@ -10,17 +10,18 @@
 
 import logging
 import re
-from typing import Any
+from typing import Any, Literal
 
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.result import RowProxy
 from pydantic import (
     BaseModel,
-    ConstraintStr,
+    ConstrainedStr,
     Field,
     HttpUrl,
     ValidationError,
+    parse_obj_as,
     validator,
 )
 from simcore_postgres_database.models.classifiers import group_classifiers
@@ -36,7 +37,7 @@ MAX_SIZE_SHORT_MSG = 100
 # DOMAIN MODELS ---
 
 
-class TreePath(ConstraintStr):
+class TreePath(ConstrainedStr):
     regex = re.compile(r"[\w:]+")  # Examples 'a::b::c
 
 
@@ -119,7 +120,9 @@ class GroupClassifierRepository:
 # HELPERS FOR API HANDLERS --------------
 
 
-async def build_rrids_tree_view(app, tree_view_mode="std") -> dict[str, Any]:
+async def build_rrids_tree_view(
+    app: web.Application, tree_view_mode: Literal["std"] = "std"
+) -> dict[str, Any]:
     if tree_view_mode != "std":
         raise web.HTTPNotImplemented(
             reason="Currently only 'std' option for the classifiers tree view is implemented"
@@ -128,7 +131,7 @@ async def build_rrids_tree_view(app, tree_view_mode="std") -> dict[str, Any]:
     scicrunch = SciCrunch.get_instance(app)
     repo = ResearchResourceRepository(app)
 
-    flat_tree_view = {}
+    flat_tree_view: dict[TreePath, ClassifierItem] = {}
     for resource in await repo.list_resources():
         try:
             validated_item = ClassifierItem(
@@ -138,7 +141,7 @@ async def build_rrids_tree_view(app, tree_view_mode="std") -> dict[str, Any]:
                 url=scicrunch.get_resolver_web_url(resource.rrid),
             )
 
-            node = validated_item.display_name.replace(":", " ")
+            node = parse_obj_as(TreePath, validated_item.display_name.replace(":", " "))
             flat_tree_view[node] = validated_item
 
         except ValidationError as err:

@@ -9,7 +9,7 @@ import logging
 from typing import Any, MutableMapping
 
 from aiohttp import ClientSession, client_exceptions
-from pydantic import ValidationError
+from pydantic import HttpUrl, ValidationError, parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
 from yarl import URL
 
@@ -88,9 +88,11 @@ class SciCrunch:
             )
         )
 
-    def get_resolver_web_url(self, rrid: str) -> str:
+    def get_resolver_web_url(self, rrid: str) -> HttpUrl:
         # example https://scicrunch.org/resolver/RRID:AB_90755
-        return f"{self.settings.SCICRUNCH_RESOLVER_BASE_URL}/{rrid}"
+        return parse_obj_as(
+            HttpUrl, f"{self.settings.SCICRUNCH_RESOLVER_BASE_URL}/{rrid}"
+        )
 
     @classmethod
     def validate_identifier(cls, rrid: str, *, for_api: bool = False) -> str:
