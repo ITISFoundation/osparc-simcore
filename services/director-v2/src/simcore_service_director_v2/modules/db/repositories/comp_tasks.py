@@ -151,11 +151,13 @@ async def _generate_tasks_list_from_project(
 
         assert node.state is not None  # nosec
         task_state = node.state.current_status
+        task_progress = node.state.progress
         if (
             node_id in published_nodes
             and to_node_class(node.key) == NodeClass.COMPUTATIONAL
         ):
             task_state = RunningState.PUBLISHED
+            task_progress = 0
 
         task_db = CompTaskAtDB(
             project_id=project.uuid,
@@ -172,6 +174,7 @@ async def _generate_tasks_list_from_project(
             state=task_state,
             internal_id=internal_id,
             node_class=to_node_class(node.key),
+            progress=task_progress,
         )
 
         list_comp_tasks.append(task_db)
