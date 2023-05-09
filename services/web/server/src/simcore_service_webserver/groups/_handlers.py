@@ -2,10 +2,16 @@ import functools
 import json
 import logging
 from contextlib import suppress
+from typing import Literal
 
 from aiohttp import web
 from models_library.emails import LowerCaseEmailStr
-from pydantic import parse_obj_as
+from models_library.users import GroupID
+from pydantic import BaseModel, parse_obj_as
+from servicelib.aiohttp.requests_validation import (
+    parse_request_path_parameters_as,
+    parse_request_query_parameters_as,
+)
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
@@ -161,7 +167,7 @@ async def add_group_user(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     gid = request.match_info["gid"]
     new_user_in_group = await request.json()
-    # TODO: validate!!
+
     assert "uid" in new_user_in_group or "email" in new_user_in_group  # nosec
 
     new_user_id = new_user_in_group["uid"] if "uid" in new_user_in_group else None
@@ -228,22 +234,29 @@ async def delete_group_user(request: web.Request):
     raise web.HTTPNoContent()
 
 
+class _GroupsParams(BaseModel):
+    gid: GroupID
+
+
+class _ClassifiersQuery(BaseModel):
+    tree_view: Literal["std"] = "std"
+
+
 @routes.get(f"/{API_VTAG}/groups/{{gid}}/classifiers", name="get_group_classifiers")
 @login_required
 @permission_required("groups.*")
 async def get_group_classifiers(request: web.Request):
     try:
-        gid = int(request.match_info["gid"])
-        # FIXME: Raise ValidationError and handle as bad request.
-        # Now middleware will convert as server error but it is a client error
+        path_params = parse_request_path_parameters_as(_GroupsParams, request)
+        query_params = parse_request_query_parameters_as(_ClassifiersQuery, request)
 
         repo = GroupClassifierRepository(request.app)
-        if not await repo.group_uses_scicrunch(gid):
-            return await repo.get_classifiers_from_bundle(gid)
+        if not await repo.group_uses_scicrunch(path_params.gid):
+            return await repo.get_classifiers_from_bundle(path_params.gid)
 
         # otherwise, build dynamic tree with RRIDs
         return await build_rrids_tree_view(
-            request.app, tree_view_mode=request.query.get("tree_view", "std")
+            request.app, tree_view_mode=query_params.tree_view
         )
     except ScicrunchError:
         return {}

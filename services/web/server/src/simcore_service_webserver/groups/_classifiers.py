@@ -26,7 +26,7 @@ from pydantic import (
 )
 from simcore_postgres_database.models.classifiers import group_classifiers
 
-from .._constants import APP_DB_ENGINE_KEY
+from ..db import get_database_engine
 from ..scicrunch.db import ResearchResourceRepository
 from ..scicrunch.service_client import SciCrunch
 
@@ -74,13 +74,8 @@ class Classifiers(BaseModel):
 
 
 class GroupClassifierRepository:
-    #
-    # TODO: a repo: retrieves engine from app
-    # TODO: a repo: some members acquire and retrieve connection
-    # TODO: a repo: any validation error in a repo is due to corrupt data in db!
-
     def __init__(self, app: web.Application):
-        self.engine = app[APP_DB_ENGINE_KEY]
+        self.engine = get_database_engine(app)
 
     async def _get_bundle(self, gid: int) -> RowProxy | None:
         async with self.engine.acquire() as conn:

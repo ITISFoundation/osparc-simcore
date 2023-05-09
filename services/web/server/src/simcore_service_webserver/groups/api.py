@@ -233,7 +233,7 @@ async def auto_add_user_to_groups(app: web.Application, user_id: int) -> None:
         async for row in conn.execute(query):
             inclusion_rules = row[groups.c.inclusion_rules]
             for prop, rule_pattern in inclusion_rules.items():
-                if not prop in user:
+                if prop not in user:
                     continue
                 if re.search(rule_pattern, user[prop]):
                     possible_group_ids.add(row[groups.c.gid])
@@ -287,7 +287,6 @@ async def add_user_in_group(
     adds new_user (either by id or email) in group (with gid) owned by user_id
     """
     if not new_user_id and not new_user_email:
-        # TODO: I would return ValueError here since is a problem with the arguments
         raise GroupsException("Invalid method call, missing user id or user email")
 
     if new_user_email:
