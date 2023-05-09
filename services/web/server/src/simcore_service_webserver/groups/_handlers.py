@@ -18,12 +18,12 @@ from ..scicrunch.service_client import InvalidRRID, SciCrunch
 from ..security.decorators import permission_required
 from ..users_exceptions import UserNotFoundError
 from . import api
+from ._classifiers import GroupClassifierRepository, build_rrids_tree_view
 from .exceptions import (
     GroupNotFoundError,
     UserInGroupNotFoundError,
     UserInsufficientRightsError,
 )
-from .groups_classifiers import GroupClassifierRepository, build_rrids_tree_view
 
 logger = logging.getLogger(__name__)
 
