@@ -7,6 +7,7 @@ from aiohttp import web
 from aiopg.sa import SAConnection
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
+from models_library.users import GroupID, UserID
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.utils_products import get_or_create_product_group
 from sqlalchemy import and_, literal_column
@@ -253,11 +254,13 @@ async def auto_add_user_to_groups(app: web.Application, user_id: int) -> None:
 
 
 async def auto_add_user_to_product_group(
-    app: web.Application, user_id: int, product_name: str
-) -> int:
+    app: web.Application, user_id: UserID, product_name: str
+) -> GroupID:
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
-        product_group_id = await get_or_create_product_group(conn, product_name)
+        product_group_id: GroupID = await get_or_create_product_group(
+            conn, product_name
+        )
 
         await conn.execute(
             # pylint: disable=no-value-for-parameter
@@ -274,10 +277,10 @@ async def auto_add_user_to_product_group(
 
 async def add_user_in_group(
     app: web.Application,
-    user_id: int,
-    gid: int,
+    user_id: UserID,
+    gid: GroupID,
     *,
-    new_user_id: int | None = None,
+    new_user_id: UserID | None = None,
     new_user_email: str | None = None,
     access_rights: AccessRightsDict | None = None,
 ) -> None:
@@ -302,7 +305,9 @@ async def add_user_in_group(
             sa.select(sa.func.count()).where(users.c.id == new_user_id)
         )
         if not users_count:
-            raise UserInGroupNotFoundError(new_user_id, gid)  # type: ignore
+            assert new_user_id is not None  # nosec
+            raise UserInGroupNotFoundError(new_user_id, gid)
+
         # add the new user to the group now
         user_access_rights = DEFAULT_GROUP_READ_ACCESS_RIGHTS
         if access_rights:

@@ -9,12 +9,13 @@ from pydantic import parse_obj_as
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
+from .._constants import RQT_USERID_KEY
 from .._meta import API_VTAG
-from ..login.decorators import RQT_USERID_KEY, login_required
+from ..login.decorators import login_required
 from ..scicrunch.db import ResearchResourceRepository
-from ..scicrunch.errors import ScicrunchError
+from ..scicrunch.errors import InvalidRRID, ScicrunchError
 from ..scicrunch.models import ResearchResource, ResourceHit
-from ..scicrunch.service_client import InvalidRRID, SciCrunch
+from ..scicrunch.service_client import SciCrunch
 from ..security.decorators import permission_required
 from ..users_exceptions import UserNotFoundError
 from . import api

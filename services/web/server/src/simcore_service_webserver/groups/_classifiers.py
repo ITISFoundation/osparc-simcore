@@ -9,12 +9,20 @@
 """
 
 import logging
+import re
 from typing import Any
 
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.result import RowProxy
-from pydantic import BaseModel, Field, HttpUrl, ValidationError, constr, validator
+from pydantic import (
+    BaseModel,
+    ConstraintStr,
+    Field,
+    HttpUrl,
+    ValidationError,
+    validator,
+)
 from simcore_postgres_database.models.classifiers import group_classifiers
 
 from .._constants import APP_DB_ENGINE_KEY
@@ -22,11 +30,14 @@ from ..scicrunch.db import ResearchResourceRepository
 from ..scicrunch.service_client import SciCrunch
 
 logger = logging.getLogger(__name__)
+MAX_SIZE_SHORT_MSG = 100
+
 
 # DOMAIN MODELS ---
 
-TreePath = constr(regex=r"[\w:]+")  # Examples 'a::b::c
-MAX_SIZE_SHORT_MSG = 100
+
+class TreePath(ConstraintStr):
+    regex = re.compile(r"[\w:]+")  # Examples 'a::b::c
 
 
 class ClassifierItem(BaseModel):
