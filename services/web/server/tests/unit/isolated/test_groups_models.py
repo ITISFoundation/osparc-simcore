@@ -4,7 +4,7 @@ from typing import Any
 import pytest
 from models_library.generics import Envelope
 from pydantic import BaseModel
-from simcore_service_webserver.groups.groups_models import (
+from simcore_service_webserver.groups.schemas import (
     AllUsersGroups,
     GroupAccessRights,
     GroupUser,
