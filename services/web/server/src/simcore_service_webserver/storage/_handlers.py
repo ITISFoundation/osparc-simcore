@@ -109,7 +109,7 @@ def extract_link(data: dict | None) -> str:
     if data is None or "link" not in data:
         raise web.HTTPException(reason=f"No url found in response: '{data}'")
 
-    return parse_obj_as(str, data["link"])
+    return f"{data['link']}"
 
 
 # ---------------------------------------------------------------------
