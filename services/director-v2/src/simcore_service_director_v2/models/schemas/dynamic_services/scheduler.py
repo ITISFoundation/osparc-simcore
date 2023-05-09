@@ -143,7 +143,7 @@ class ServiceRemovalState(BaseModel):
         description="when True, marks the service as ready to be removed",
     )
     can_save: bool = Field(
-        None,
+        ...,
         description="when True, saves the internal state and upload outputs of the service",
     )
     was_removed: bool = Field(
@@ -164,7 +164,7 @@ class ServiceRemovalState(BaseModel):
 
     @root_validator(pre=True)
     @classmethod
-    def _can_save_is_no_longer_none(cls, values) -> bool:
+    def _can_save_is_no_longer_none(cls, values):
         warnings.warn(
             (
                 "Once https://github.com/ITISFoundation/osparc-simcore/issues/4202 "
@@ -175,10 +175,10 @@ class ServiceRemovalState(BaseModel):
             DeprecationWarning,
             stacklevel=2,
         )
-        can_save: bool | None = values.get("can_save")
+        can_save: bool | None = values.get("can_save", None)
         if can_save is None:
-            return False
-        return can_save
+            values["can_save"] = False
+        return values
 
 
 class DynamicSidecar(BaseModel):
