@@ -25,13 +25,13 @@ from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.groups.api import (
-    DEFAULT_GROUP_OWNER_ACCESS_RIGHTS,
-    DEFAULT_GROUP_READ_ACCESS_RIGHTS,
+    _DEFAULT_GROUP_OWNER_ACCESS_RIGHTS,
+    _DEFAULT_GROUP_READ_ACCESS_RIGHTS,
     auto_add_user_to_groups,
     create_user_group,
     delete_user_group,
 )
-from simcore_service_webserver.groups.groups_utils import AccessRightsDict
+from simcore_service_webserver.groups._utils import AccessRightsDict
 from simcore_service_webserver.groups.plugin import setup_groups
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.rest import setup_rest
@@ -333,7 +333,7 @@ async def test_add_remove_users_from_group(
         list_of_users = data
         assert len(list_of_users) == 1
         the_owner = list_of_users[0]
-        _assert__group_user(logged_user, DEFAULT_GROUP_OWNER_ACCESS_RIGHTS, the_owner)
+        _assert__group_user(logged_user, _DEFAULT_GROUP_OWNER_ACCESS_RIGHTS, the_owner)
 
     # create a random number of users and put them in the group
     add_group_user_url = client.app.router["add_group_user"].url_for(
@@ -370,7 +370,7 @@ async def test_add_remove_users_from_group(
             data, error = await assert_status(resp, expected.ok)
             if not error:
                 _assert__group_user(
-                    created_users_list[i], DEFAULT_GROUP_READ_ACCESS_RIGHTS, data
+                    created_users_list[i], _DEFAULT_GROUP_READ_ACCESS_RIGHTS, data
                 )
         # check list is correct
         resp = await client.get(f"{get_group_users_url}")
@@ -390,9 +390,9 @@ async def test_add_remove_users_from_group(
                 assert len(expected_users_list) == 1
                 _assert__group_user(
                     expected_users_list[0],
-                    DEFAULT_GROUP_READ_ACCESS_RIGHTS
+                    _DEFAULT_GROUP_READ_ACCESS_RIGHTS
                     if actual_user["login"] != logged_user["email"]
-                    else DEFAULT_GROUP_OWNER_ACCESS_RIGHTS,
+                    else _DEFAULT_GROUP_READ_ACCESS_RIGHTS,
                     actual_user,
                 )
                 all_created_users.remove(expected_users_list[0])

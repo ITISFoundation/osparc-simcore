@@ -1,4 +1,3 @@
-import logging
 from typing import Any, Mapping, TypedDict
 
 from aiopg.sa.result import RowProxy
@@ -6,9 +5,7 @@ from aiopg.sa.result import RowProxy
 from ..users_utils import convert_user_db_to_schema
 from .exceptions import UserInsufficientRightsError
 
-logger = logging.getLogger(__name__)
-
-GROUPS_SCHEMA_TO_DB = {
+_GROUPS_SCHEMA_TO_DB = {
     "gid": "gid",
     "label": "name",
     "description": "description",
@@ -38,7 +35,7 @@ def convert_groups_db_to_schema(
 ) -> dict:
     converted_dict = {
         k: db_row[f"{prefix}{v}"]
-        for k, v in GROUPS_SCHEMA_TO_DB.items()
+        for k, v in _GROUPS_SCHEMA_TO_DB.items()
         if f"{prefix}{v}" in db_row
     }
     converted_dict.update(**kwargs)
@@ -48,7 +45,7 @@ def convert_groups_db_to_schema(
 def convert_groups_schema_to_db(schema: dict) -> dict:
     return {
         v: schema[k]
-        for k, v in GROUPS_SCHEMA_TO_DB.items()
+        for k, v in _GROUPS_SCHEMA_TO_DB.items()
         if k in schema and k != "gid"
     }
 

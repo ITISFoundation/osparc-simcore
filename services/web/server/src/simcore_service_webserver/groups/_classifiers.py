@@ -30,7 +30,7 @@ from .._constants import APP_DB_ENGINE_KEY
 from ..scicrunch.db import ResearchResourceRepository
 from ..scicrunch.service_client import SciCrunch
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 MAX_SIZE_SHORT_MSG = 100
 
 
@@ -98,7 +98,7 @@ class GroupClassifierRepository:
                 # truncate bundle to what is needed and drop the rest
                 return Classifiers(**bundle).dict(exclude_unset=True, exclude_none=True)
             except ValidationError as err:
-                logger.error(
+                _logger.error(
                     "DB corrupt data in 'groups_classifiers' table. "
                     "Invalid classifier for gid=%d: %s. "
                     "Returning empty bundle.",
@@ -145,7 +145,7 @@ async def build_rrids_tree_view(
             flat_tree_view[node] = validated_item
 
         except ValidationError as err:
-            logger.warning(
+            _logger.warning(
                 "Cannot convert RRID into a classifier item. Skipping. Details: %s", err
             )
 

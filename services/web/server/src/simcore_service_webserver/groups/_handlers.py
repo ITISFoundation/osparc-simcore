@@ -26,7 +26,7 @@ from .exceptions import (
     UserInsufficientRightsError,
 )
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def _handle_groups_exceptions(handler: Handler):
@@ -260,7 +260,7 @@ def _handle_scicrunch_exceptions(handler: Handler):
 
         except ScicrunchError as err:
             user_msg = "Cannot get RRID since scicrunch.org service is not reachable."
-            logger.error("%s -> %s", err, user_msg)
+            _logger.error("%s -> %s", err, user_msg)
             raise web.HTTPServiceUnavailable(reason=user_msg) from err
 
     return wrapper

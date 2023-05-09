@@ -1,4 +1,3 @@
-import logging
 import re
 from typing import Any
 
@@ -25,24 +24,22 @@ from ._utils import (
 )
 from .exceptions import GroupNotFoundError, GroupsException, UserInGroupNotFoundError
 
-logger = logging.getLogger(__name__)
+_DEFAULT_PRODUCT_GROUP_ACCESS_RIGHTS = AccessRightsDict(
+    read=False,
+    write=False,
+    delete=False,
+)
 
-DEFAULT_PRODUCT_GROUP_ACCESS_RIGHTS: AccessRightsDict = {
-    "read": False,
-    "write": False,
-    "delete": False,
-}
-
-DEFAULT_GROUP_READ_ACCESS_RIGHTS: AccessRightsDict = {
-    "read": True,
-    "write": False,
-    "delete": False,
-}
-DEFAULT_GROUP_OWNER_ACCESS_RIGHTS: AccessRightsDict = {
-    "read": True,
-    "write": True,
-    "delete": True,
-}
+_DEFAULT_GROUP_READ_ACCESS_RIGHTS = AccessRightsDict(
+    read=True,
+    write=False,
+    delete=False,
+)
+_DEFAULT_GROUP_OWNER_ACCESS_RIGHTS = AccessRightsDict(
+    read=True,
+    write=True,
+    delete=True,
+)
 
 
 async def list_user_groups(
@@ -157,11 +154,11 @@ async def create_user_group(
             user_to_groups.insert().values(
                 uid=user_id,
                 gid=group.gid,
-                access_rights=DEFAULT_GROUP_OWNER_ACCESS_RIGHTS,
+                access_rights=_DEFAULT_GROUP_OWNER_ACCESS_RIGHTS,
             )
         )
     return convert_groups_db_to_schema(
-        group, accessRights=DEFAULT_GROUP_OWNER_ACCESS_RIGHTS
+        group, accessRights=_DEFAULT_GROUP_OWNER_ACCESS_RIGHTS
     )
 
 
@@ -247,7 +244,9 @@ async def auto_add_user_to_groups(app: web.Application, user_id: int) -> None:
                 # pylint: disable=no-value-for-parameter
                 insert(user_to_groups)
                 .values(
-                    uid=user_id, gid=gid, access_rights=DEFAULT_GROUP_READ_ACCESS_RIGHTS
+                    uid=user_id,
+                    gid=gid,
+                    access_rights=_DEFAULT_GROUP_READ_ACCESS_RIGHTS,
                 )
                 .on_conflict_do_nothing()  # in case the user was already added
             )
@@ -268,7 +267,7 @@ async def auto_add_user_to_product_group(
             .values(
                 uid=user_id,
                 gid=product_group_id,
-                access_rights=DEFAULT_PRODUCT_GROUP_ACCESS_RIGHTS,
+                access_rights=_DEFAULT_PRODUCT_GROUP_ACCESS_RIGHTS,
             )
             .on_conflict_do_nothing()  # in case the user was already added
         )
@@ -309,9 +308,9 @@ async def add_user_in_group(
             raise UserInGroupNotFoundError(new_user_id, gid)
 
         # add the new user to the group now
-        user_access_rights = DEFAULT_GROUP_READ_ACCESS_RIGHTS
+        user_access_rights = _DEFAULT_GROUP_READ_ACCESS_RIGHTS
         if access_rights:
-            user_access_rights.update(access_rights)
+            user_access_rights.update(access_rights)  # type: ignore
         await conn.execute(
             # pylint: disable=no-value-for-parameter
             user_to_groups.insert().values(
