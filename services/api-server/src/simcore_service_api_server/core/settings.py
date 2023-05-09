@@ -9,7 +9,6 @@ from settings_library.basic_types import PortInt, VersionTag
 from settings_library.catalog import CatalogSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.storage import StorageSettings
-from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from settings_library.utils_service import (
     DEFAULT_AIOHTTP_PORT,
@@ -80,7 +79,6 @@ class DirectorV2Settings(BaseCustomSettings, MixinServiceSettings):
 
 
 class BasicSettings(BaseCustomSettings, MixinLoggingSettings):
-
     # DEVELOPMENT
     API_SERVER_DEV_FEATURES_ENABLED: bool = Field(
         False, env=["API_SERVER_DEV_FEATURES_ENABLED", "FAKE_API_SERVER_ENABLED"]
@@ -108,7 +106,6 @@ class BasicSettings(BaseCustomSettings, MixinLoggingSettings):
 
 
 class ApplicationSettings(BasicSettings):
-
     # DOCKER BOOT
     SC_BOOT_MODE: BootModeEnum | None
 
@@ -122,9 +119,6 @@ class ApplicationSettings(BasicSettings):
     API_SERVER_DIRECTOR_V2: DirectorV2Settings | None = Field(
         auto_default_from_env=True
     )
-
-    # DIAGNOSTICS
-    API_SERVER_TRACING: TracingSettings | None = Field(auto_default_from_env=True)
 
     # DEV-TOOLS
     API_SERVER_DEV_HTTP_CALLS_LOGS_PATH: Path | None = Field(

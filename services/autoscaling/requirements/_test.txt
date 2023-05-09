@@ -5,9 +5,7 @@
 #    pip-compile --output-file=requirements/_test.txt --resolver=backtracking --strip-extras requirements/_test.in
 #
 anyio==3.6.2
-    # via
-    #   -c requirements/_base.txt
-    #   httpcore
+    # via httpcore
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
 async-timeout==4.0.2
