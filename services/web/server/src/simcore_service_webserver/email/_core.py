@@ -8,14 +8,14 @@ from email.mime.text import MIMEText
 from email.utils import formatdate, make_msgid
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Mapping, NamedTuple, Optional, TypedDict, Union
+from typing import Any, Mapping, NamedTuple, TypedDict, Union
 
 import aiosmtplib
 from aiohttp import web
 from aiohttp_jinja2 import render_string
 from settings_library.email import EmailProtocol, SMTPSettings
 
-from .email_settings import get_plugin_settings
+from .settings import get_plugin_settings
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ def _create_smtp_client(settings: SMTPSettings) -> aiosmtplib.SMTP:
 
 
 async def _do_send_mail(
-    *, message: Union[MIMEText, MIMEMultipart], settings: SMTPSettings
+    *, message: MIMEText | MIMEMultipart, settings: SMTPSettings
 ) -> None:
     # WARNING: _do_send_mail is mocked so be careful when changing the signature or name !!
 
@@ -108,7 +108,7 @@ async def check_email_server_responsiveness(settings: SMTPSettings) -> SMTPServe
             hostname=smtp.hostname,
             port=smtp.port,
             timeout=smtp.timeout,
-            user_tls=smtp.use_tls,
+            use_tls=smtp.use_tls,
         )
 
 
@@ -221,7 +221,7 @@ async def send_email_from_template(
     to: str,
     template: Path,
     context: Mapping[str, Any],
-    attachments: Optional[list[AttachmentTuple]] = None,
+    attachments: list[AttachmentTuple] | None = None,
 ):
     """Render template in context and send email w/ or w/o attachments"""
     settings: SMTPSettings = get_plugin_settings(request.app)
