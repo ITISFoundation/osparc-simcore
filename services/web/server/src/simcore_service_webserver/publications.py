@@ -8,7 +8,7 @@ from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from . import publication_handlers
-from .email import setup_email
+from .email.plugin import setup_email
 from .products.plugin import setup_products
 
 logger = logging.getLogger(__name__)

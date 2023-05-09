@@ -17,7 +17,7 @@ from .db import setup_db
 from .diagnostics.plugin import setup_diagnostics
 from .director.plugin import setup_director
 from .director_v2.plugin import setup_director_v2
-from .email import setup_email
+from .email.plugin import setup_email
 from .exporter.plugin import setup_exporter
 from .garbage_collector import setup_garbage_collector
 from .groups import setup_groups
