@@ -176,7 +176,9 @@ def services_registry(
     user_email = registered_user["email"]
 
     sleeper_service = docker_registry_image_injector(
-        "itisfoundation/sleeper", "2.1.1", user_email
+        source_image_repo="itisfoundation/sleeper",
+        source_image_tag="2.1.1",
+        owner_email=user_email,
     )
 
     assert sleeper_service["image"]["tag"] == "2.1.1"

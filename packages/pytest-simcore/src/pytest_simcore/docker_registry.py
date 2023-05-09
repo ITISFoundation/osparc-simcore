@@ -7,7 +7,7 @@ import os
 import time
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Callable, Iterator, Optional
+from typing import Any, Callable, Iterator
 
 import docker
 import jsonschema
@@ -113,7 +113,7 @@ def _pull_push_service(
     tag: str,
     new_registry: str,
     node_meta_schema: dict,
-    owner_email: Optional[str] = None,
+    owner_email: str | None = None,
 ) -> dict[str, Any]:
     client = docker.from_env()
     # pull image from original location
@@ -189,7 +189,7 @@ def docker_registry_image_injector(
     docker_registry: str, node_meta_schema: dict
 ) -> Callable[..., dict[str, Any]]:
     def inject_image(
-        source_image_repo: str, source_image_tag: str, owner_email: Optional[str] = None
+        source_image_repo: str, source_image_tag: str, owner_email: str | None = None
     ):
         return _pull_push_service(
             source_image_repo,
