@@ -19,7 +19,7 @@ def meta_api(api_client: ApiClient) -> MetaApi:
 def _get_client_report(api_client: ApiClient) -> dict[str, str]:
     report = {}
     for line in api_client.configuration.to_debug_report().split("\n"):
-        key, value = line.split(":")
+        key, value = line.split(":", maxsplit=1)
         report[key.strip()] = value.strip()
     return report
 
