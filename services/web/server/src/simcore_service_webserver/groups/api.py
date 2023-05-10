@@ -415,9 +415,3 @@ async def get_group_from_gid(app: web.Application, gid: int) -> RowProxy | None:
             groups.select().where(groups.c.gid == gid)
         )
         return await res.first()
-
-
-__all__: tuple[str, ...] = (
-    "convert_groups_db_to_schema",
-    "get_group_from_gid",
-)

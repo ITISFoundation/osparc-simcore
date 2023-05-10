@@ -153,3 +153,6 @@ class GroupUser(GroupAccessRights):
                 "delete": False,
             }
         }
+
+
+__all__: tuple[str, ...] = ("convert_groups_db_to_schema",)
