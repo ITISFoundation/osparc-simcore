@@ -4,28 +4,21 @@ import os
 import re
 import socket
 import subprocess
-from enum import Enum
 from pathlib import Path
 from typing import Any
 
 import docker
 import yaml
+from models_library.generated_models.docker_rest_api import Status2 as ContainerStatus
 from tenacity import retry
 from tenacity.after import after_log
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
-
 # SEE https://docs.docker.com/engine/api/v1.42/#tag/Container/operation/ContainerList
-class ContainerStatus(str, Enum):
-    CREATED = "created"
-    RESTARTING = "restarting"
-    RUNNING = "running"
-    REMOVING = "removing"
-    PAUSED = "paused"
-    EXITED = "exited"
-    DEAD = "dead"
-
+assert "created" in ContainerStatus  # nosec
+assert "running" in ContainerStatus  # nosec
+assert "restarting" in ContainerStatus  # nosec
 
 COLOR_ENCODING_RE = re.compile(r"\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]")
 MAX_PATH_CHAR_LEN_ALLOWED = 260
@@ -285,7 +278,7 @@ def save_docker_infos(destination_dir: Path):
                         )
 
             except Exception as err:  # pylint: disable=broad-except
-                if container.status != ContainerStatus.CREATED:
+                if container.status != ContainerStatus.created:
                     print(
                         f"Error while dumping {container.name=}, {container.status=}.\n\t{err=}"
                     )
