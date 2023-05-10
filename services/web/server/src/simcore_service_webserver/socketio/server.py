@@ -5,14 +5,9 @@ from typing import AsyncIterator
 from aiohttp import web
 from socketio import AsyncServer
 
-_APP_CLIENT_SOCKET_SERVER_KEY = f"{__name__}.socketio_socketio"
-APP_CLIENT_SOCKET_DECORATED_HANDLERS_KEY = f"{__name__}.socketio_handlers"
+from ._utils import APP_CLIENT_SOCKET_SERVER_KEY, get_socket_server
 
 _logger = logging.getLogger(__name__)
-
-
-def get_socket_server(app: web.Application) -> AsyncServer:
-    return app[_APP_CLIENT_SOCKET_SERVER_KEY]
 
 
 async def _socketio_server_cleanup_ctx(_app: web.Application) -> AsyncIterator[None]:
@@ -37,7 +32,7 @@ async def _socketio_server_cleanup_ctx(_app: web.Application) -> AsyncIterator[N
 
 
 def setup_socketio_server(app: web.Application):
-    if app.get(_APP_CLIENT_SOCKET_SERVER_KEY) is None:
+    if app.get(APP_CLIENT_SOCKET_SERVER_KEY) is None:
         # SEE https://github.com/miguelgrinberg/python-socketio/blob/v4.6.1/docs/server.rst#aiohttp
         # TODO: ujson to speed up?
         # TODO: client_manager= to socketio.AsyncRedisManager/AsyncAioPikaManager for horizontal scaling (shared sessions)
@@ -49,7 +44,7 @@ def setup_socketio_server(app: web.Application):
         )
         sio_server.attach(app)
 
-        app[_APP_CLIENT_SOCKET_SERVER_KEY] = sio_server
+        app[APP_CLIENT_SOCKET_SERVER_KEY] = sio_server
 
         if _socketio_server_cleanup_ctx not in app.cleanup_ctx:
             app.cleanup_ctx.append(_socketio_server_cleanup_ctx)

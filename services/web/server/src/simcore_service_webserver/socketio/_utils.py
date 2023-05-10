@@ -4,8 +4,15 @@ from types import ModuleType
 from typing import Any, Awaitable, Callable
 
 from aiohttp import web
+from socketio import AsyncServer
 
-from .server import APP_CLIENT_SOCKET_DECORATED_HANDLERS_KEY, get_socket_server
+APP_CLIENT_SOCKET_DECORATED_HANDLERS_KEY = f"{__name__}.socketio_handlers"
+APP_CLIENT_SOCKET_SERVER_KEY = f"{__name__}.socketio_socketio"
+
+
+def get_socket_server(app: web.Application) -> AsyncServer:
+    return app[APP_CLIENT_SOCKET_SERVER_KEY]
+
 
 # The socket ID that was assigned to the client
 SocketID = str
@@ -54,8 +61,9 @@ def _socket_io_handler(app: web.Application):
 
 def _has_socket_io_handler_signature(fun: Callable) -> bool:
     # last parameter is web.Application?
-    last_paramter = list(inspect.signature(fun).parameters.values())[-1]
-    return last_paramter.annotation == web.Application
+    last_parameter = list(inspect.signature(fun).parameters.values())[-1]
+    is_web_app: bool = last_parameter.annotation == web.Application
+    return is_web_app
 
 
 def register_handlers(app: web.Application, module: ModuleType):

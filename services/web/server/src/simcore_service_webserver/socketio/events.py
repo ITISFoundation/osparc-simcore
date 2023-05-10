@@ -7,13 +7,14 @@ from collections import deque
 from typing import Any, Final, Sequence, TypedDict
 
 from aiohttp.web import Application
+from models_library.users import UserID
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import fire_and_forget_task, logged_gather
 from socketio import AsyncServer
 
 from ..resource_manager.websocket_manager import managed_resource
-from .server import get_socket_server
+from ._utils import get_socket_server
 
 _logger = logging.getLogger(__name__)
 
@@ -32,7 +33,7 @@ class SocketMessageDict(TypedDict):
 
 
 async def send_messages(
-    app: Application, user_id: str, messages: Sequence[SocketMessageDict]
+    app: Application, user_id: UserID, messages: Sequence[SocketMessageDict]
 ) -> None:
     sio: AsyncServer = get_socket_server(app)
 
@@ -50,7 +51,7 @@ async def send_messages(
 
 
 async def post_messages(
-    app: Application, user_id: str, messages: Sequence[SocketMessageDict]
+    app: Application, user_id: UserID, messages: Sequence[SocketMessageDict]
 ) -> None:
     fire_and_forget_task(
         send_messages(app, user_id, messages),
