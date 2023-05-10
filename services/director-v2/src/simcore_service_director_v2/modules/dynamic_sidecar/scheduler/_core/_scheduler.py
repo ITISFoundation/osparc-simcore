@@ -51,7 +51,6 @@ from ...api_client import DynamicSidecarClient, get_dynamic_sidecar_client
 from ...docker_api import (
     get_dynamic_sidecar_state,
     get_dynamic_sidecars_to_observe,
-    remove_pending_volume_removal_services,
     update_scheduler_data_label,
 )
 from ...docker_states import extract_containers_minimum_statuses
@@ -105,7 +104,7 @@ class Scheduler(SchedulerPublicInterface):
         )
 
         self._cleanup_volume_removal_services_task = asyncio.create_task(
-            self._cleanup_volume_removal_services(),
+            _scheduler_utils.cleanup_volume_removal_services(self.app),
             name="dynamic-scheduler-cleanup-volume-removal-services",
         )
         await self._discover_running_services()
@@ -663,31 +662,3 @@ class Scheduler(SchedulerPublicInterface):
 
         for scheduler_data in services_to_observe:
             await self._add_service(scheduler_data)
-
-    async def _cleanup_volume_removal_services(self) -> None:
-        settings: DynamicServicesSchedulerSettings = (
-            self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
-        )
-        dynamic_sidecar_settings: DynamicSidecarSettings = (
-            self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-        )
-
-        logger.debug(
-            "dynamic-sidecars cleanup pending volume removal services every %s seconds",
-            settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_PENDING_VOLUME_REMOVAL_INTERVAL_S,
-        )
-        while await asyncio.sleep(
-            settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_PENDING_VOLUME_REMOVAL_INTERVAL_S,
-            True,
-        ):
-            logger.debug("Removing pending volume removal services...")
-
-            try:
-                await remove_pending_volume_removal_services(dynamic_sidecar_settings)
-            except asyncio.CancelledError:
-                logger.info("Stopped pending volume removal services task")
-                raise
-            except Exception:  # pylint: disable=broad-except
-                logger.exception(
-                    "Unexpected error while cleaning up pending volume removal services"
-                )
