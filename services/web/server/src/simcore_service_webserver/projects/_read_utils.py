@@ -1,7 +1,11 @@
 """ Utils to implement READ operations (from cRud) on the project resource
 
+
+Read operations are list, get
+
 """
 from aiohttp import web
+from models_library.projects import ProjectID
 from models_library.users import UserID
 from pydantic import NonNegativeInt
 from servicelib.utils import logged_gather
@@ -84,3 +88,13 @@ async def list_projects(
     )
 
     return projects, total_number_projects
+
+
+async def get_project(
+    request: web.Request,
+    user_id: UserID,
+    product_name: str,
+    project_uuid: ProjectID,
+    project_type: ProjectTypeAPI,
+):
+    raise NotImplementedError()
