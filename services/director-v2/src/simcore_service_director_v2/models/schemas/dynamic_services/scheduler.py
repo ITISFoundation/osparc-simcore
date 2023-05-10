@@ -180,6 +180,10 @@ class ServiceRemovalState(BaseModel):
             values["can_save"] = False
         return values
 
+    @classmethod
+    def make_default(cls) -> "ServiceRemovalState":
+        return cls(can_remove=False, can_save=False, was_removed=False)
+
 
 class DynamicSidecar(BaseModel):
     status: Status = Field(
@@ -243,7 +247,7 @@ class DynamicSidecar(BaseModel):
     )
 
     service_removal_state: ServiceRemovalState = Field(
-        default_factory=ServiceRemovalState,
+        default_factory=ServiceRemovalState.make_default,
         description=(
             "stores information used during service removal "
             "from the dynamic-sidecar scheduler"
