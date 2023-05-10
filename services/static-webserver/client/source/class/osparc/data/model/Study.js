@@ -55,6 +55,7 @@ qx.Class.define("osparc.data.model.Study", {
       tags: studyData.tags || this.getTags(),
       state: studyData.state || this.getState(),
       quality: studyData.quality || this.getQuality(),
+      permalink: studyData.permalink || this.getPermalink(),
       dev: studyData.dev || this.getDev()
     });
 
@@ -154,6 +155,12 @@ qx.Class.define("osparc.data.model.Study", {
       init: {},
       event: "changeQuality",
       nullable: true
+    },
+
+    permalink: {
+      check: "Object",
+      nullable: true,
+      init: {}
     },
 
     dev: {
