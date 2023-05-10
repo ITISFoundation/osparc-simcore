@@ -158,18 +158,21 @@ async def _assert_get_same_project(
 async def _replace_project(
     client: TestClient, project_update: dict, expected: type[web.HTTPException]
 ) -> dict:
+    assert client.app
+
     # PUT /v0/projects/{project_id}
     url = client.app.router["replace_project"].url_for(
         project_id=project_update["uuid"]
     )
     assert str(url) == f"{API_PREFIX}/projects/{project_update['uuid']}"
-    resp = await client.put(url, json=project_update)
+    resp = await client.put(f"{url}", json=project_update)
     data, error = await assert_status(resp, expected)
     if not error:
         assert_replaced(current_project=data, update_data=project_update)
     return data
 
 
+@pytest.mark.testit
 @pytest.mark.parametrize(
     "user_role,expected",
     [
@@ -194,36 +197,54 @@ async def test_list_projects(
     if data:
         assert len(data) == 2
 
+        # template project
         project_state = data[0].pop("state")
+        project_permalink = data[0].pop("permalink")
+
         assert data[0] == template_project
         assert not ProjectState(
             **project_state
         ).locked.value, "Templates are not locked"
+        assert parse_obj_as(ProjectPermalink, project_permalink)
 
+        # standard project
         project_state = data[1].pop("state")
+        project_permalink = data[1].pop("permalink", None)
+
         assert data[1] == user_project
         assert ProjectState(**project_state)
+        assert project_permalink is None
 
     # GET /v0/projects?type=user
     data, *_ = await _list_projects(client, expected, {"type": "user"})
     if data:
         assert len(data) == 1
+
+        # standad project
         project_state = data[0].pop("state")
+        project_permalink = data[0].pop("permalink", None)
+
         assert data[0] == user_project
         assert not ProjectState(
             **project_state
         ).locked.value, "Single user does not lock"
+        assert project_permalink is None
 
     # GET /v0/projects?type=template
     # instead /v0/projects/templates ??
     data, *_ = await _list_projects(client, expected, {"type": "template"})
     if data:
         assert len(data) == 1
+
+        # template project
         project_state = data[0].pop("state")
+        project_permalink = data[0].pop("permalink")
+
         assert data[0] == template_project
         assert not ProjectState(
             **project_state
         ).locked.value, "Templates are not locked"
+        assert parse_obj_as(ProjectPermalink, project_permalink)
 
 
 @pytest.fixture(scope="session")
