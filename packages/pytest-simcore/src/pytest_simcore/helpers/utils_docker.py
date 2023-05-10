@@ -4,27 +4,41 @@ import os
 import re
 import socket
 import subprocess
+from enum import Enum
 from pathlib import Path
 from typing import Any
 
 import docker
 import yaml
-from models_library.generated_models.docker_rest_api import Status2 as ContainerStatus
 from tenacity import retry
 from tenacity.after import after_log
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
-# Check that is the right status since there are at least two different listings
-assert "created" in ContainerStatus.__members__  # nosec
-assert "running" in ContainerStatus.__members__  # nosec
-assert "restarting" in ContainerStatus.__members__  # nosec
-# SEE https://docs.docker.com/engine/api/v1.42/#tag/Container/operation/ContainerList
+
+# NOTE: CANNOT use models_library.generated_models.docker_rest_api.Status2 because some of the
+# packages tests installations do not include this library!!
+class ContainerStatus(str, Enum):
+    """
+    String representation of the container state. Can be one of "created",
+    "running", "paused", "restarting", "removing", "exited", or "dead".
+
+    """
+
+    # SEE https://docs.docker.com/engine/api/v1.42/#tag/Container/operation/ContainerList
+
+    created = "created"
+    running = "running"
+    paused = "paused"
+    restarting = "restarting"
+    removing = "removing"
+    exited = "exited"
+    dead = "dead"
 
 
-COLOR_ENCODING_RE = re.compile(r"\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]")
-MAX_PATH_CHAR_LEN_ALLOWED = 260
-kFILENAME_TOO_LONG = 36
+_COLOR_ENCODING_RE = re.compile(r"\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]")
+_MAX_PATH_CHAR_LEN_ALLOWED = 260
+_kFILENAME_TOO_LONG = 36
 _NORMPATH_COUNT = 0
 
 
@@ -209,14 +223,14 @@ def shorten_path(filename: str) -> Path:
     # problematic characters but so far we did not find any case ...
     global _NORMPATH_COUNT  # pylint: disable=global-statement
 
-    if len(filename) > MAX_PATH_CHAR_LEN_ALLOWED:
+    if len(filename) > _MAX_PATH_CHAR_LEN_ALLOWED:
         _NORMPATH_COUNT += 1
         path = Path(filename)
         if path.is_dir():
-            limit = MAX_PATH_CHAR_LEN_ALLOWED - 60
+            limit = _MAX_PATH_CHAR_LEN_ALLOWED - 60
             filename = filename[:limit] + f"{_NORMPATH_COUNT}"
         elif path.is_file():
-            limit = MAX_PATH_CHAR_LEN_ALLOWED - 10
+            limit = _MAX_PATH_CHAR_LEN_ALLOWED - 10
             filename = filename[:limit] + f"{_NORMPATH_COUNT}{path.suffix}"
 
     return Path(filename)
@@ -246,7 +260,7 @@ def save_docker_infos(destination_dir: Path):
             destination_dir.mkdir(parents=True, exist_ok=True)
 
         except OSError as err:
-            if err.errno == kFILENAME_TOO_LONG:
+            if err.errno == _kFILENAME_TOO_LONG:
                 destination_dir = shorten_path(err.filename)
                 destination_dir.mkdir(parents=True, exist_ok=True)
 
@@ -259,13 +273,13 @@ def save_docker_infos(destination_dir: Path):
 
                 try:
                     (destination_dir / f"{container_name}.log").write_text(
-                        COLOR_ENCODING_RE.sub("", logs)
+                        _COLOR_ENCODING_RE.sub("", logs)
                     )
 
                 except OSError as err:
-                    if err.errno == kFILENAME_TOO_LONG:
+                    if err.errno == _kFILENAME_TOO_LONG:
                         shorten_path(err.filename).write_text(
-                            COLOR_ENCODING_RE.sub("", logs)
+                            _COLOR_ENCODING_RE.sub("", logs)
                         )
 
                 # inspect attrs
@@ -274,7 +288,7 @@ def save_docker_infos(destination_dir: Path):
                         json.dumps(container.attrs, indent=2)
                     )
                 except OSError as err:
-                    if err.errno == kFILENAME_TOO_LONG:
+                    if err.errno == _kFILENAME_TOO_LONG:
                         shorten_path(err.filename).write_text(
                             json.dumps(container.attrs, indent=2)
                         )
