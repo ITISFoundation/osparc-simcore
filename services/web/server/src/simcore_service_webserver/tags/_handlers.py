@@ -1,9 +1,10 @@
 import functools
+import re
 
 from aiohttp import web
 from aiopg.sa.engine import Engine
 from models_library.users import UserID
-from pydantic import BaseModel, Extra, Field, PositiveInt, constr
+from pydantic import BaseModel, ConstrainedStr, Extra, Field, PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -25,7 +26,7 @@ from ..security.decorators import permission_required
 
 def _handle_tags_exceptions(handler: Handler):
     @functools.wraps(handler)
-    async def wrapper(request: web.Request) -> web.Response:
+    async def wrapper(request: web.Request) -> web.StreamResponse:
         try:
             return await handler(request)
 
@@ -54,7 +55,8 @@ class _InputSchema(BaseModel):
         allow_mutations = False
 
 
-ColorStr = constr(regex=r"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$")
+class ColorStr(ConstrainedStr):
+    regex = re.compile(r"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$")
 
 
 class TagPathParams(_InputSchema):
