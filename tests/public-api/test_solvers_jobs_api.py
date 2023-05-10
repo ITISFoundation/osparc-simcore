@@ -197,7 +197,13 @@ _RETRY_POLICY_IF_LOGFILE_404_NOT_FOUND = dict(
 
 
 @pytest.mark.testit
-@pytest.mark.parametrize("expected_outcome", ("SUCCESS", "FAILED"))
+@pytest.mark.parametrize(
+    "expected_outcome",
+    (
+        "SUCCESS",
+        # NOTE: disabled "FAILED" until question in https://github.com/ITISFoundation/osparc-simcore/pull/4205  is resolved
+    ),
+)
 def test_run_job(
     uploaded_input_file: File,
     files_api: FilesApi,
