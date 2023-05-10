@@ -1,5 +1,3 @@
-from typing import Any
-
 from aiohttp import web
 from models_library.users import UserID
 from pydantic import NonNegativeInt
@@ -8,29 +6,29 @@ from simcore_postgres_database.webserver_models import ProjectType as ProjectTyp
 
 from .. import catalog
 from . import projects_api
-from .project_models import ProjectTypeAPI
+from ._permalink import update_or_pop_permalink_in_project
+from ._rest_schemas import ProjectListItem
+from .project_models import ProjectDict, ProjectTypeAPI
 from .projects_db import ProjectDBAPI
 
 
-async def _set_all_project_states(
-    app: web.Application,
-    user_id: UserID,
-    projects: list[dict[str, Any]],
-    project_types: list[ProjectTypeDB],
+async def _append_fields(
+    request: web.Request, user_id: UserID, project: ProjectDict, is_template: bool
 ):
-    await logged_gather(
-        *[
-            projects_api.add_project_states_for_user(
-                user_id=user_id,
-                project=prj,
-                is_template=prj_type == ProjectTypeDB.TEMPLATE,
-                app=app,
-            )
-            for prj, prj_type in zip(projects, project_types)
-        ],
-        reraise=True,
-        max_concurrency=100,
+    # state
+    await projects_api.add_project_states_for_user(
+        user_id=user_id,
+        project=project,
+        is_template=is_template,
+        app=request.app,
     )
+
+    # permalink
+    await update_or_pop_permalink_in_project(request, project)
+
+    # validate
+    project_data = ProjectListItem.parse_obj(project).data(exclude_unset=True)
+    return project_data
 
 
 async def list_projects(
@@ -41,9 +39,10 @@ async def list_projects(
     show_hidden: bool,
     offset: NonNegativeInt,
     limit: int,
-):
+) -> tuple[list[ProjectDict], int]:
 
     app = request.app
+    db = ProjectDBAPI.get_from_app_context(app)
 
     user_available_services: list[
         dict
@@ -51,9 +50,7 @@ async def list_projects(
         app, user_id, product_name, only_key_versions=True
     )
 
-    db = ProjectDBAPI.get_from_app_context(app)
-
-    projects, project_types, total_number_projects = await db.list_projects(
+    db_projects, db_project_types, total_number_projects = await db.list_projects(
         user_id=user_id,
         product_name=product_name,
         filter_by_project_type=ProjectTypeAPI.to_project_type_db(project_type),
@@ -62,8 +59,19 @@ async def list_projects(
         limit=limit,
         include_hidden=show_hidden,
     )
-    await _set_all_project_states(
-        app, user_id=user_id, projects=projects, project_types=project_types
+
+    projects: list[ProjectDict] = await logged_gather(
+        *[
+            _append_fields(
+                request,
+                user_id,
+                project=prj,
+                is_template=prj_type == ProjectTypeDB.TEMPLATE,
+            )
+            for prj, prj_type in zip(db_projects, db_project_types)
+        ],
+        reraise=True,
+        max_concurrency=100,
     )
 
     return projects, total_number_projects
