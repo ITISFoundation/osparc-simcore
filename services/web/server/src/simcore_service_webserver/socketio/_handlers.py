@@ -21,11 +21,11 @@ from socketio.exceptions import ConnectionRefusedError as SocketIOConnectionErro
 from ..groups.api import list_user_groups
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
+from ._utils import EnvironDict, SocketID, register_socketio_handler
 from .events import SOCKET_IO_HEARTBEAT_EVENT, SocketMessageDict, send_messages
-from .handlers_utils import EnvironDict, SocketID, register_socketio_handler
 from .server import get_socket_server
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 ANONYMOUS_USER_ID = -1
 
@@ -57,10 +57,10 @@ async def _authenticate_user(
         web.HTTPUnauthorized: when the user is not recognized. Keeps the original request
     """
     user_id = _get_user_id(request)
-    log.debug("client %s authenticated", f"{user_id=}")
+    _logger.debug("client %s authenticated", f"{user_id=}")
     client_session_id = request.query.get("client_session_id", None)
     if not client_session_id:
-        log.error(
+        _logger.error(
             "Tab ID is not available!", extra=get_log_record_extra(user_id=user_id)
         )
         raise web.HTTPUnauthorized(reason="missing tab id")
@@ -72,7 +72,7 @@ async def _authenticate_user(
         socketio_session["client_session_id"] = client_session_id
         socketio_session["request"] = request
     with managed_resource(user_id, client_session_id, app) as rt:
-        log.info(
+        _logger.info(
             "socketio connection from user %s",
             user_id,
             extra=get_log_record_extra(user_id=user_id),
@@ -101,7 +101,7 @@ async def connect(sid: SocketID, environ: EnvironDict, app: web.Application) -> 
     Returns:
         True if socket.io connection accepted
     """
-    log.debug("client connecting in room %s", f"{sid=}")
+    _logger.debug("client connecting in room %s", f"{sid=}")
     request: web.Request = environ["aiohttp.request"]
     try:
         await _authenticate_user(sid, app, request)
@@ -116,7 +116,7 @@ async def connect(sid: SocketID, environ: EnvironDict, app: web.Application) -> 
     # this has been tested and is working with good results
     # the previous implementation was not working as expected
     emit_interval: int = 2
-    log.info("Sending set_heartbeat_emit_interval with %s", emit_interval)
+    _logger.info("Sending set_heartbeat_emit_interval with %s", emit_interval)
 
     user_id = _get_user_id(request)
     heart_beat_messages: list[SocketMessageDict] = [
@@ -142,7 +142,7 @@ async def disconnect(sid: SocketID, app: web.Application) -> None:
         sid -- the socket ID
         app -- the aiohttp app
     """
-    log.debug("client in room %s disconnecting", sid)
+    _logger.debug("client in room %s disconnecting", sid)
     sio = get_socket_server(app)
     async with sio.session(sid) as socketio_session:
         if "user_id" in socketio_session:
@@ -151,21 +151,21 @@ async def disconnect(sid: SocketID, app: web.Application) -> None:
             client_session_id = socketio_session["client_session_id"]
 
             with log_context(
-                log,
+                _logger,
                 logging.INFO,
                 "disconnection of %s for %s",
                 f"{user_id=}",
                 f"{client_session_id=}",
             ):
                 with managed_resource(user_id, client_session_id, app) as rt:
-                    log.debug("client %s disconnected from room %s", user_id, sid)
+                    _logger.debug("client %s disconnected from room %s", user_id, sid)
                     await rt.remove_socket_id()
                 # signal same user other clients if available
                 await emit("SIGNAL_USER_DISCONNECTED", user_id, client_session_id, app)
 
         else:
             # this should not happen!!
-            log.error(
+            _logger.error(
                 "Unknown client diconnected sid: %s, session %s",
                 sid,
                 str(socketio_session),
@@ -201,7 +201,7 @@ async def client_heartbeat(sid: SocketID, _: Any, app: web.Application) -> None:
 
 
 async def _disconnect_other_sockets(sio, sockets: list[str]) -> None:
-    log.debug("disconnecting sockets %s", sockets)
+    _logger.debug("disconnecting sockets %s", sockets)
     logout_tasks = [
         sio.emit("logout", to=sid, data={"reason": "user logged out"})
         for sid in sockets
@@ -219,7 +219,7 @@ async def _disconnect_other_sockets(sio, sockets: list[str]) -> None:
 async def on_user_logout(
     user_id: str, client_session_id: str | None, app: web.Application
 ) -> None:
-    log.debug("user %s must be disconnected", user_id)
+    _logger.debug("user %s must be disconnected", user_id)
     # find the sockets related to the user
     sio: AsyncServer = get_socket_server(app)
     with managed_resource(user_id, client_session_id, app) as rt:
@@ -229,7 +229,7 @@ async def on_user_logout(
                 try:
                     await sio.disconnect(sid=socket_id)
                 except KeyError as exc:
-                    log.warning(
+                    _logger.warning(
                         "Disconnection of socket id '%s' failed. socket id could not be found: [%s]",
                         socket_id,
                         exc,

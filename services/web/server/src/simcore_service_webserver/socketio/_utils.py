@@ -34,7 +34,7 @@ _socketio_handlers_registry: list[
 ] = []
 
 
-def socket_io_handler(app: web.Application):
+def _socket_io_handler(app: web.Application):
     """This decorator allows passing additional paramters to python-socketio compatible handlers.
 
     i.e. python-socketio handler expect functions of type `async def function(sid, *args, **kwargs)`
@@ -52,7 +52,7 @@ def socket_io_handler(app: web.Application):
     return decorator
 
 
-def has_socket_io_handler_signature(fun) -> bool:
+def _has_socket_io_handler_signature(fun) -> bool:
     # last parameter is web.Application
     return (
         list(inspect.signature(fun).parameters.values())[-1].annotation
@@ -67,7 +67,7 @@ def register_handlers(app: web.Application, module: ModuleType):
     ]
     # convert handler
     partial_fcts = [
-        socket_io_handler(app)(func_handler) for func_handler in member_fcts
+        _socket_io_handler(app)(func_handler) for func_handler in member_fcts
     ]
     app[APP_CLIENT_SOCKET_DECORATED_HANDLERS_KEY] = partial_fcts
 
@@ -91,7 +91,7 @@ def register_socketio_handler(func: Callable) -> Callable:
 
     is_handler = (
         inspect.isfunction(func)
-        and has_socket_io_handler_signature(func)
+        and _has_socket_io_handler_signature(func)
         and inspect.iscoroutinefunction(func)
     )
     if is_handler:

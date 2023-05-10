@@ -14,7 +14,7 @@ from servicelib.utils import fire_and_forget_task, logged_gather
 from ..resource_manager.websocket_manager import managed_resource
 from .server import AsyncServer, get_socket_server
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 SOCKET_IO_PROJECT_UPDATED_EVENT: Final[str] = "projectStateUpdated"
 SOCKET_IO_NODE_UPDATED_EVENT: Final[str] = "nodeUpdated"
@@ -45,7 +45,7 @@ async def send_messages(
             send_tasks.append(
                 sio.emit(message["event_type"], json_dumps(message["data"]), room=sid)
             )
-    await logged_gather(*send_tasks, reraise=False, log=log, max_concurrency=10)
+    await logged_gather(*send_tasks, reraise=False, log=_logger, max_concurrency=10)
 
 
 async def post_messages(
@@ -77,4 +77,4 @@ async def send_group_messages(
         for message in messages
     ]
 
-    await logged_gather(*send_tasks, reraise=False, log=log, max_concurrency=10)
+    await logged_gather(*send_tasks, reraise=False, log=_logger, max_concurrency=10)
