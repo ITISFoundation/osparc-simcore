@@ -10,7 +10,7 @@
 
 import logging
 import re
-from typing import Any, Literal
+from typing import Any, Final, Literal
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -31,7 +31,7 @@ from ..scicrunch.db import ResearchResourceRepository
 from ..scicrunch.service_client import SciCrunch
 
 _logger = logging.getLogger(__name__)
-MAX_SIZE_SHORT_MSG = 100
+MAX_SIZE_SHORT_MSG: Final[int] = 100
 
 
 # DOMAIN MODELS ---
