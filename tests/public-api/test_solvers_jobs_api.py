@@ -201,7 +201,7 @@ _RETRY_POLICY_IF_LOGFILE_404_NOT_FOUND = dict(
     "expected_outcome",
     (
         "SUCCESS",
-        # NOTE: disabled "FAILED" until question in https://github.com/ITISFoundation/osparc-simcore/pull/4205  is resolved
+         pytest.param("FAILED", marks=pytest.mark.skip(reason='until question in https://github.com/ITISFoundation/osparc-simcore/pull/4205  is resolved')),
     ),
 )
 def test_run_job(
