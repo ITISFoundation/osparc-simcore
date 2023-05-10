@@ -3,6 +3,7 @@ from models_library.users import UserID
 from pydantic import NonNegativeInt
 from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
+from simcore_service_webserver.rest_schemas_base import OutputSchema
 
 from .. import catalog
 from . import projects_api
@@ -13,7 +14,11 @@ from .projects_db import ProjectDBAPI
 
 
 async def _append_fields(
-    request: web.Request, user_id: UserID, project: ProjectDict, is_template: bool
+    request: web.Request,
+    user_id: UserID,
+    project: ProjectDict,
+    is_template: bool,
+    model_schema_cls: type[OutputSchema],
 ):
     # state
     await projects_api.add_project_states_for_user(
@@ -27,7 +32,7 @@ async def _append_fields(
     await update_or_pop_permalink_in_project(request, project)
 
     # validate
-    project_data = ProjectListItem.parse_obj(project).data(exclude_unset=True)
+    project_data = model_schema_cls.parse_obj(project).data(exclude_unset=True)
     return project_data
 
 
@@ -67,6 +72,7 @@ async def list_projects(
                 user_id,
                 project=prj,
                 is_template=prj_type == ProjectTypeDB.TEMPLATE,
+                model_schema_cls=ProjectListItem,
             )
             for prj, prj_type in zip(db_projects, db_project_types)
         ],
