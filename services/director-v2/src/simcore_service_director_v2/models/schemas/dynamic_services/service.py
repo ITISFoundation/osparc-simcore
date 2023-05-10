@@ -145,7 +145,7 @@ class RunningDynamicServiceDetails(ServiceDetails):
 
     @cached_property
     def legacy_service_url(self) -> str:
-        return f"http://{self.host}:{self.internal_port}{self.basepath}" # NOSONAR
+        return f"http://{self.host}:{self.internal_port}{self.basepath}"  # NOSONAR
 
     @classmethod
     def from_scheduler_data(
