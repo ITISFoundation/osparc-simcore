@@ -18,7 +18,7 @@ from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
 from ._observer import on_user_logout
 from ._utils import EnvironDict, SocketID, get_socket_server, register_socketio_handler
-from .api import SOCKET_IO_HEARTBEAT_EVENT, SocketMessageDict, send_messages
+from .messages import SOCKET_IO_HEARTBEAT_EVENT, SocketMessageDict, send_messages
 
 _logger = logging.getLogger(__name__)
 
