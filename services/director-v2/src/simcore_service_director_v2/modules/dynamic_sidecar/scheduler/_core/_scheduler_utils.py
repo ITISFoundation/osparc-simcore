@@ -9,7 +9,10 @@ from servicelib.fastapi.long_running_tasks.client import ProgressCallback
 from .....core.settings import DynamicServicesSchedulerSettings, DynamicSidecarSettings
 from .....models.schemas.dynamic_services import DynamicSidecarStatus, SchedulerData
 from ...api_client import DynamicSidecarClient, get_dynamic_sidecar_client
-from ...docker_api import remove_pending_volume_removal_services
+from ...docker_api import (
+    get_dynamic_sidecars_to_observe,
+    remove_pending_volume_removal_services,
+)
 from ._events_utils import service_push_outputs
 
 logger = logging.getLogger(__name__)
@@ -77,3 +80,18 @@ async def cleanup_volume_removal_services(app: FastAPI) -> None:
             logger.exception(
                 "Unexpected error while cleaning up pending volume removal services"
             )
+
+
+async def discover_running_services(schduler: "Scheduler") -> None:  # type: ignore
+    """discover all services which were started before and add them to the scheduler"""
+    dynamic_sidecar_settings: DynamicSidecarSettings = (
+        schduler.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+    )
+    services_to_observe: list[SchedulerData] = await get_dynamic_sidecars_to_observe(
+        dynamic_sidecar_settings
+    )
+
+    logger.info("The following services need to be observed: %s", services_to_observe)
+
+    for scheduler_data in services_to_observe:
+        await schduler._add_service(scheduler_data)

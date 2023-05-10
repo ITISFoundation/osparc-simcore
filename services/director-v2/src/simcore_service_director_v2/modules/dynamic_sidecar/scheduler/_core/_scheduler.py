@@ -48,11 +48,7 @@ from .....models.schemas.dynamic_services import (
     ServiceState,
 )
 from ...api_client import DynamicSidecarClient, get_dynamic_sidecar_client
-from ...docker_api import (
-    get_dynamic_sidecar_state,
-    get_dynamic_sidecars_to_observe,
-    update_scheduler_data_label,
-)
+from ...docker_api import get_dynamic_sidecar_state, update_scheduler_data_label
 from ...docker_states import extract_containers_minimum_statuses
 from ...errors import (
     DockerServiceNotFoundError,
@@ -107,7 +103,7 @@ class Scheduler(SchedulerPublicInterface):
             _scheduler_utils.cleanup_volume_removal_services(self.app),
             name="dynamic-scheduler-cleanup-volume-removal-services",
         )
-        await self._discover_running_services()
+        await _scheduler_utils.discover_running_services(self)
 
     async def shutdown(self) -> None:
         logger.info("Shutting down dynamic-sidecar scheduler")
@@ -646,19 +642,3 @@ class Scheduler(SchedulerPublicInterface):
 
             await sleep(settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS)
             self._observation_counter += 1
-
-    async def _discover_running_services(self) -> None:
-        """discover all services which were started before and add them to the scheduler"""
-        dynamic_sidecar_settings: DynamicSidecarSettings = (
-            self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-        )
-        services_to_observe: list[
-            SchedulerData
-        ] = await get_dynamic_sidecars_to_observe(dynamic_sidecar_settings)
-
-        logger.info(
-            "The following services need to be observed: %s", services_to_observe
-        )
-
-        for scheduler_data in services_to_observe:
-            await self._add_service(scheduler_data)
