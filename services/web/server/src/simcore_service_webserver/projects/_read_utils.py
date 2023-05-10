@@ -1,3 +1,6 @@
+""" Utils to implement READ operations (from cRud) on the project resource
+
+"""
 from aiohttp import web
 from models_library.users import UserID
 from pydantic import NonNegativeInt
