@@ -22,6 +22,7 @@ from simcore_postgres_database.utils_tags import (
 from .._meta import api_version_prefix as VTAG
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security.decorators import permission_required
+from ..utils_aiohttp import envelope_json_response
 
 
 def _handle_tags_exceptions(handler: Handler):
@@ -140,7 +141,7 @@ async def create_tag(request: web.Request):
             **tag_data.dict(exclude_unset=True),
         )
         model = TagGet.from_db(tag)
-        return model.dict(by_alias=True)
+        return envelope_json_response(model)
 
 
 @routes.get(f"/{VTAG}/tags", name="list_tags")
@@ -154,7 +155,9 @@ async def list_tags(request: web.Request):
     repo = TagsRepo(user_id=req_ctx.user_id)
     async with engine.acquire() as conn:
         tags = await repo.list(conn)
-        return [TagGet.from_db(t).dict(by_alias=True) for t in tags]
+        return envelope_json_response(
+            [TagGet.from_db(t).dict(by_alias=True) for t in tags]
+        )
 
 
 @routes.patch(f"/{VTAG}/tags/{{tag_id}}", name="update_tag")
@@ -173,7 +176,7 @@ async def update_tag(request: web.Request):
             conn, query_params.tag_id, **tag_data.dict(exclude_unset=True)
         )
         model = TagGet.from_db(tag)
-        return model.dict(by_alias=True)
+        return envelope_json_response(model)
 
 
 @routes.delete(f"/{VTAG}/tags/{{tag_id}}", name="delete_tag")
