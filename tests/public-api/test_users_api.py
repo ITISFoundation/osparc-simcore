@@ -49,16 +49,22 @@ def expected_profile(registered_user: RegisteredUserDict) -> ProfileDict:
             "login": email,
             "role": UserRoleEnum.USER,
             "groups": {
-                "me": {
-                    "gid": "123",
-                    "label": "maxy",
-                    "description": "primary group",
-                },
-                "organizations": [],
                 "all": {
                     "gid": "1",
                     "label": "Everyone",
                     "description": "all users",
+                },
+                "organizations": [
+                    {
+                        "gid": "2",
+                        "label": "osparc",
+                        "description": "osparc product group",
+                    }
+                ],
+                "me": {
+                    "gid": "3",
+                    "label": "John",
+                    "description": "primary group",
                 },
             },
             "gravatar_id": hashlib.md5(email.encode()).hexdigest(),  # nosec

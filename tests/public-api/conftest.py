@@ -112,10 +112,14 @@ def simcore_docker_stack_and_registry_ready(
 def registered_user(
     simcore_docker_stack_and_registry_ready: StacksDeployedDict,
 ) -> Iterator[RegisteredUserDict]:
+
+    first_name = "John"
+    last_name = "Smith"
     user = RegisteredUserDict(
-        first_name="John",
-        last_name="Smith",
-        email="user@company.com",
+        first_name=first_name,
+        last_name=last_name,
+        # NOTE: keep email
+        email="{first_name}.{last_name}@company.com",
         password="my secret",
         api_key="",
         api_secret="",
