@@ -23,7 +23,20 @@ qx.Class.define("osparc.component.filter.CollaboratorToggleButton", {
       appearance: "tagbutton"
     });
 
-    this.setLabel(collaborator["label"]);
+    let label = null;
+    if ("first_name" in collaborator) {
+      // user
+      label = collaborator["first_name"] + " " + collaborator["last_name"];
+    } else {
+      // org
+      label = collaborator["label"];
+    }
+    this.setLabel(label);
+
+    if ("login" in collaborator) {
+      this.setToolTipText(collaborator["login"]);
+    }
+
     let iconPath = null;
     switch (collaborator["collabType"]) {
       case 0:
