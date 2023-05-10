@@ -24,7 +24,6 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (
 from servicelib.aiohttp.application import create_safe_application
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver._meta import API_VTAG as VX
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.groups import _handlers
@@ -89,12 +88,10 @@ def client(
     _handlers.routes,
     ids=lambda r: f"{r.method.upper()} {r.path}",
 )
-def test_route_against_openapi_specs(
-    route: AbstractRouteDef, openapi_specs: OpenApiSpecs
-):
+def test_route_in_openapi_specs(route: AbstractRouteDef, openapi_specs: OpenApiSpecs):
 
-    assert route.path.startswith(f"/{VX}")
-    path = route.path.replace(f"/{VX}", "")
+    assert route.path.startswith(f"/{API_VTAG}")
+    path = route.path.replace(f"/{API_VTAG}", "")
 
     assert path in openapi_specs.paths
 
@@ -108,8 +105,7 @@ def test_route_against_openapi_specs(
     ), "route's name differs from OAS operation_id"
 
 
-def test_all_openapi_specs_routes_are_registered(openapi_specs: OpenApiSpecs):
-
+def test_openapi_specs_in_routes(openapi_specs: OpenApiSpecs):
     registered_operation_ids = [r.kwargs["name"] for r in _handlers.routes]
 
     for url, path in openapi_specs.paths.items():

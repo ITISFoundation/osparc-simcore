@@ -18,6 +18,7 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from .._constants import RQT_USERID_KEY
 from .._meta import API_VTAG
 from ..login.decorators import login_required
+from ..products.plugin import Product, get_current_product
 from ..scicrunch.db import ResearchResourceRepository
 from ..scicrunch.errors import InvalidRRID, ScicrunchError
 from ..scicrunch.models import ResearchResource, ResourceHit
@@ -37,9 +38,10 @@ _logger = logging.getLogger(__name__)
 
 def _handle_groups_exceptions(handler: Handler):
     @functools.wraps(handler)
-    async def wrapper(request: web.Request) -> web.Response:
+    async def wrapper(request: web.Request) -> web.StreamResponse:
         try:
-            return await handler(request)
+            response = await handler(request)
+            return response
 
         except UserNotFoundError as exc:
             raise web.HTTPNotFound(reason=f"User {exc.uid} not found") from exc
@@ -68,7 +70,6 @@ async def list_groups(request: web.Request):
 
     List of the groups I belonged to
     """
-    from ..products.plugin import Product, get_current_product
 
     product: Product = get_current_product(request)
     user_id = request[RQT_USERID_KEY]
@@ -133,7 +134,7 @@ async def update_group(request: web.Request):
     return await api.update_user_group(request.app, user_id, gid, new_group_values)
 
 
-@routes.delete(f"/{API_VTAG}/groups/{{gid}}", name="update_group")
+@routes.delete(f"/{API_VTAG}/groups/{{gid}}", name="delete_group")
 @login_required
 @permission_required("groups.*")
 @_handle_groups_exceptions
