@@ -7,7 +7,7 @@ from aiohttp import web
 from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from . import tags_handlers
+from . import _handlers
 
 logger = logging.getLogger(__name__)
 
@@ -21,4 +21,4 @@ logger = logging.getLogger(__name__)
 )
 def setup_tags(app: web.Application):
     assert app[APP_SETTINGS_KEY].WEBSERVER_TAGS  # nosec
-    app.router.add_routes(tags_handlers.routes)
+    app.router.add_routes(_handlers.routes)

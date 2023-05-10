@@ -41,7 +41,7 @@ from .socketio.plugin import setup_socketio
 from .statics.plugin import setup_statics
 from .storage.plugin import setup_storage
 from .studies_dispatcher.plugin import setup_studies_dispatcher
-from .tags import setup_tags
+from .tags.plugin import setup_tags
 from .tracing import setup_app_tracing
 from .users import setup_users
 from .version_control.plugin import setup_version_control
