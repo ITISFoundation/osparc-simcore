@@ -19,6 +19,7 @@ from pydantic import (
     Field,
     HttpUrl,
     NonNegativeFloat,
+    parse_obj_as,
     root_validator,
     validator,
 )
@@ -70,14 +71,16 @@ class WorkersDict(DictModel[AnyUrl, Worker]):
 
 class Scheduler(BaseModel):
     status: str = Field(..., description="The running status of the scheduler")
-    workers: WorkersDict | None = Field(default_factory=dict)
+    workers: WorkersDict | None = Field(
+        default_factory=lambda: parse_obj_as(WorkersDict, {})
+    )
 
     @validator("workers", pre=True, always=True)
     @classmethod
     def ensure_workers_is_empty_dict(cls, v) -> WorkersDict:
         if v is None:
-            return {}
-        return v
+            return parse_obj_as(WorkersDict, {})
+        return parse_obj_as(WorkersDict, v)
 
 
 class ClusterDetails(BaseModel):
