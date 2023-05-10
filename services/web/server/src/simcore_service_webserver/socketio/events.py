@@ -10,9 +10,10 @@ from aiohttp.web import Application
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import fire_and_forget_task, logged_gather
+from socketio import AsyncServer
 
 from ..resource_manager.websocket_manager import managed_resource
-from .server import AsyncServer, get_socket_server
+from .server import get_socket_server
 
 _logger = logging.getLogger(__name__)
 
@@ -39,7 +40,7 @@ async def send_messages(
     with managed_resource(user_id, None, app) as rt:
         socket_ids = await rt.find_socket_ids()
 
-    send_tasks = deque()
+    send_tasks: deque = deque()
     for sid in socket_ids:
         for message in messages:
             send_tasks.append(

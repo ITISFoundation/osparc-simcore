@@ -52,12 +52,10 @@ def _socket_io_handler(app: web.Application):
     return decorator
 
 
-def _has_socket_io_handler_signature(fun) -> bool:
-    # last parameter is web.Application
-    return (
-        list(inspect.signature(fun).parameters.values())[-1].annotation
-        == web.Application
-    )
+def _has_socket_io_handler_signature(fun: Callable) -> bool:
+    # last parameter is web.Application?
+    last_paramter = list(inspect.signature(fun).parameters.values())[-1]
+    return last_paramter.annotation == web.Application
 
 
 def register_handlers(app: web.Application, module: ModuleType):

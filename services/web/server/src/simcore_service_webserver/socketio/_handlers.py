@@ -14,6 +14,7 @@ from aiohttp import web
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.observer import emit, observe
+from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.utils import fire_and_forget_task, logged_gather
 from socketio import AsyncServer
 from socketio.exceptions import ConnectionRefusedError as SocketIOConnectionError
