@@ -3,8 +3,6 @@
     SEE https://pypi.python.org/pypi/python-socketio
     SEE http://python-socketio.readthedocs.io/en/latest/
 """
-# pylint: disable=C0111
-# pylint: disable=W0703
 
 import asyncio
 import logging
@@ -23,7 +21,7 @@ from ..groups.api import list_user_groups
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
 from ._utils import EnvironDict, SocketID, get_socket_server, register_socketio_handler
-from .events import SOCKET_IO_HEARTBEAT_EVENT, SocketMessageDict, send_messages
+from .api import SOCKET_IO_HEARTBEAT_EVENT, SocketMessageDict, send_messages
 
 _logger = logging.getLogger(__name__)
 
@@ -168,7 +166,7 @@ async def disconnect(sid: SocketID, app: web.Application) -> None:
             _logger.error(
                 "Unknown client diconnected sid: %s, session %s",
                 sid,
-                str(socketio_session),
+                f"{socketio_session}",
             )
 
 

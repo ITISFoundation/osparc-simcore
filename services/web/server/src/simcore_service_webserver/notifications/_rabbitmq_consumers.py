@@ -26,7 +26,7 @@ from servicelib.utils import logged_gather
 from ..projects import projects_api
 from ..projects.projects_exceptions import NodeNotFoundError, ProjectNotFoundError
 from ..rabbitmq import get_rabbitmq_client
-from ..socketio.events import (
+from ..socketio.api import (
     SOCKET_IO_EVENT,
     SOCKET_IO_LOG_EVENT,
     SOCKET_IO_NODE_PROGRESS_EVENT,

@@ -54,7 +54,7 @@ from simcore_service_webserver.resource_manager.plugin import setup_resource_man
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.socketio.events import (
+from simcore_service_webserver.socketio.api import (
     SOCKET_IO_EVENT,
     SOCKET_IO_LOG_EVENT,
     SOCKET_IO_NODE_PROGRESS_EVENT,
