@@ -94,6 +94,41 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     __linkUnlinkStackMap: null,
     __fieldOptsBtnMap: null,
 
+    makeInputsDynamic: function() {
+      const data = this._form.getData();
+      let emptyDataPorts = [];
+      for (const portId in data) {
+        const ctrl = this._form.getControl(portId);
+        console.log(ctrl);
+        if (
+          ctrl &&
+          ctrl.type.includes("data:") &&
+          !("link" in ctrl)
+        ) {
+          emptyDataPorts.push(portId);
+        } else {
+          emptyDataPorts = [];
+        }
+      }
+      for (let i=1; i<emptyDataPorts.length; i++) {
+        const hidePortId = emptyDataPorts[i];
+        this.excludePort(hidePortId);
+      }
+    },
+
+    excludePort: function(portId) {
+      const entry = this.self().GRID_POS;
+      Object.values(entry).forEach(entryPos => {
+        const layoutElement = this._getLayoutChild(portId, entryPos);
+        if (layoutElement && layoutElement.child) {
+          const control = layoutElement.child;
+          if (control) {
+            control.exclude();
+          }
+        }
+      });
+    },
+
     __createLinkUnlinkStack: function(field) {
       const linkUnlinkStack = new qx.ui.container.Stack();
 

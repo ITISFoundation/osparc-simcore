@@ -499,6 +499,9 @@ qx.Class.define("osparc.data.model.Node", {
       this.__setInputData(nodeData.inputs);
       this.__setInputUnits(nodeData.inputsUnits);
       this.__setInputDataAccess(nodeData.inputAccess);
+      if (this.getPropsForm()) {
+        this.getPropsForm().makeInputsDynamic();
+      }
       this.setOutputData(nodeData.outputs);
       this.addInputNodes(nodeData.inputNodes);
       this.addOutputNodes(nodeData.outputNodes);
