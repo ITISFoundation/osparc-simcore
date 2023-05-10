@@ -272,7 +272,7 @@ class CompTasksRepository(BaseRepository):
                 insert_stmt = insert(comp_tasks).values(**comp_task_db.to_db_model())
 
                 exclusion_rule = (
-                    {"state"}
+                    {"state", "progress"}
                     if str(comp_task_db.node_id) not in published_nodes
                     else set()
                 )
@@ -367,6 +367,8 @@ class CompTasksRepository(BaseRepository):
                 )
                 .values(progress=progress)
             )
+            await conn.commit()
+
         logger.debug(
             "set project %s task %s with progress %s",
             f"{project_id=}",
