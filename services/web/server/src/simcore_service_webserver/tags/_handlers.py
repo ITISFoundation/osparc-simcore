@@ -47,7 +47,7 @@ def _handle_tags_exceptions(handler: Handler):
 
 
 class _RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore
 
 
 class _InputSchema(BaseModel):
