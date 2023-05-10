@@ -15,10 +15,12 @@ from tenacity.after import after_log
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
+# Check that is the right status since there are at least two different listings
+assert "created" in ContainerStatus.__members__  # nosec
+assert "running" in ContainerStatus.__members__  # nosec
+assert "restarting" in ContainerStatus.__members__  # nosec
 # SEE https://docs.docker.com/engine/api/v1.42/#tag/Container/operation/ContainerList
-assert "created" in ContainerStatus  # nosec
-assert "running" in ContainerStatus  # nosec
-assert "restarting" in ContainerStatus  # nosec
+
 
 COLOR_ENCODING_RE = re.compile(r"\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]")
 MAX_PATH_CHAR_LEN_ALLOWED = 260
