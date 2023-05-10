@@ -12,11 +12,11 @@ class PipelineDetails(BaseModel):
         ...,
         description="The adjacency list of the current pipeline in terms of {NodeID: [successor NodeID]}",
     )
-    progress: float | None = Field(
+    progress: float = Field(
         ...,
         ge=0,
         le=1.0,
-        description="the progress of the pipeline (none if no there are no computational tasks)",
+        description="the progress of the pipeline",
     )
     node_states: dict[NodeID, NodeState] = Field(
         ..., description="The states of each of the computational nodes in the pipeline"
@@ -59,14 +59,17 @@ class ComputationTask(BaseModel):
                             "2fb4808a-e403-4a46-b52c-892560d27862": {
                                 "modified": True,
                                 "dependencies": [],
+                                "progress": 0.0,
                             },
                             "19a40c7b-0a40-458a-92df-c77a5df7c886": {
                                 "modified": False,
                                 "dependencies": [
                                     "2fb4808a-e403-4a46-b52c-892560d27862"
                                 ],
+                                "progress": 0.0,
                             },
                         },
+                        "progress": 0.0,
                     },
                     "iteration": None,
                     "cluster_id": None,
@@ -85,14 +88,17 @@ class ComputationTask(BaseModel):
                             "2fb4808a-e403-4a46-b52c-892560d27862": {
                                 "modified": False,
                                 "dependencies": [],
+                                "progress": 1.0,
                             },
                             "19a40c7b-0a40-458a-92df-c77a5df7c886": {
                                 "modified": False,
                                 "dependencies": [
                                     "2fb4808a-e403-4a46-b52c-892560d27862"
                                 ],
+                                "progress": 1.0,
                             },
                         },
+                        "progress": 1.0,
                     },
                     "iteration": 2,
                     "cluster_id": 0,
