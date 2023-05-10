@@ -13,6 +13,7 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from openapi_core.schema.specs.models import Spec as OpenApiSpecs
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, NewUser, UserInfoDict
 from pytest_simcore.helpers.utils_webserver_unit_with_db import (
@@ -22,8 +23,10 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (
 from servicelib.aiohttp.application import create_safe_application
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import API_VTAG
+from simcore_service_webserver._meta import API_VTAG as VX
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import setup_db
+from simcore_service_webserver.groups import _handlers
 from simcore_service_webserver.groups._db import (
     _DEFAULT_GROUP_OWNER_ACCESS_RIGHTS,
     _DEFAULT_GROUP_READ_ACCESS_RIGHTS,
@@ -78,6 +81,38 @@ def client(
 
 
 # --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "route",
+    _handlers.routes,
+    ids=lambda r: f"{r.method.upper()} {r.path}",
+)
+def test_route_against_openapi_specs(route, openapi_specs: OpenApiSpecs):
+
+    assert route.path.startswith(f"/{VX}")
+    path = route.path.replace(f"/{VX}", "")
+
+    assert path in openapi_specs.paths
+
+    assert (
+        route.method.lower() in openapi_specs.paths[path].operations
+    ), f"operation {route.method=} for {path=} undefined in OAS"
+
+    assert (
+        openapi_specs.paths[path].operations[route.method.lower()].operation_id
+        == route.kwargs["name"]
+    ), "route's name differs from OAS operation_id"
+
+
+def test_routes_against_openapi_specs(openapi_specs: OpenApiSpecs):
+
+    for url, path in openapi_specs.paths.items():
+        for method, operation in path.operations.items():
+            if "groups" in path.split("/"):
+                assert (
+                    operation.operation_id in _handlers.routes
+                ), f"{method} {url}/{path}: {operation=}"
 
 
 def _assert_group(group: dict[str, str]):
