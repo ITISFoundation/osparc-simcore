@@ -52,3 +52,11 @@ def setup_socketio_server(app: web.Application):
         assert sio_server == get_socket_server(app)  # nosec
 
     return get_socket_server(app)
+
+
+assert get_socket_server  # nosec
+
+__all__: tuple[str, ...] = (
+    "get_socket_server",
+    "setup_socketio_server",
+)
