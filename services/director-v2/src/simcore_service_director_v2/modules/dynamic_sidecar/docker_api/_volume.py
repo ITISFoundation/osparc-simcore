@@ -1,12 +1,10 @@
 import logging
 from datetime import datetime, timezone
-from typing import Final
 
 from fastapi.encoders import jsonable_encoder
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from pydantic import parse_obj_as
 from servicelib.docker_utils import to_datetime
 from servicelib.logging_utils import log_context
 from tenacity import TryAgain
@@ -17,15 +15,11 @@ from tenacity.wait import wait_fixed
 
 from ....core.settings import DynamicSidecarSettings
 from ....models.schemas.constants import DYNAMIC_VOLUME_REMOVER_PREFIX
-from ..docker_service_specs.volume_remover import (
-    DockerVersion,
-    spec_volume_removal_service,
-)
+from ..docker_service_specs.volume_remover import spec_volume_removal_service
 from ._utils import docker_client
 
 _logger = logging.getLogger(__name__)
 
-DIND_VERSION: Final[DockerVersion] = parse_obj_as(DockerVersion, "20.10.14")
 
 # FROM https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
 SERVICE_FINISHED_STATES: set[str] = {
@@ -68,7 +62,6 @@ async def remove_volumes_from_node(
             project_id=project_id,
             node_uuid=node_uuid,
             volume_names=volume_names,
-            docker_version=DIND_VERSION,
             volume_removal_attempts=volume_removal_attempts,
             sleep_between_attempts_s=sleep_between_attempts_s,
             service_timeout_s=service_timeout_s,
