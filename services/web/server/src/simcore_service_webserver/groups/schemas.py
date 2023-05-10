@@ -3,6 +3,8 @@ from contextlib import suppress
 from models_library.emails import LowerCaseEmailStr
 from pydantic import AnyUrl, BaseModel, Field, ValidationError, parse_obj_as, validator
 
+from ._utils import convert_groups_db_to_schema
+
 #
 # GROUPS MODELS defined in OPENAPI specs
 #
@@ -154,5 +156,8 @@ class GroupUser(GroupAccessRights):
             }
         }
 
+
+# Avoids pycln to remove import
+assert convert_groups_db_to_schema  # nosec
 
 __all__: tuple[str, ...] = ("convert_groups_db_to_schema",)
