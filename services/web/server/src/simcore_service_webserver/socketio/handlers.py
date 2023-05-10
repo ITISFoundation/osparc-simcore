@@ -51,7 +51,11 @@ async def _set_user_in_rooms(
 async def _authenticate_user(
     sid: SocketID, app: web.Application, request: web.Request
 ) -> None:
-    """throws web.HTTPUnauthorized when the user is not recognized. Keeps the original request."""
+    """
+
+    Raises:
+        web.HTTPUnauthorized: when the user is not recognized. Keeps the original request
+    """
     user_id = _get_user_id(request)
     log.debug("client %s authenticated", f"{user_id=}")
     client_session_id = request.query.get("client_session_id", None)
@@ -86,12 +90,16 @@ async def connect(sid: SocketID, environ: EnvironDict, app: web.Application) -> 
     """socketio reserved handler for when the fontend connects through socket.io
 
     Arguments:
-        sid {str} -- the socket ID
-        environ {Dict} -- the WSGI environ, among other contains the original request
-        app {web.Application} -- the aiohttp app
+        sid -- the socket ID
+        environ -- the WSGI environ, among other contains the original request
+        app  -- the aiohttp app
+
+    Raises:
+        SocketIOConnectionError: HTTPUnauthorized
+        SocketIOConnectionError: Unexpected error
 
     Returns:
-        [type] -- True if socket.io connection accepted
+        True if socket.io connection accepted
     """
     log.debug("client connecting in room %s", f"{sid=}")
     request: web.Request = environ["aiohttp.request"]
@@ -131,8 +139,8 @@ async def disconnect(sid: SocketID, app: web.Application) -> None:
     """socketio reserved handler for when the socket.io connection is disconnected.
 
     Arguments:
-        sid {str} -- the socket ID
-        app {web.Application} -- the aiohttp app
+        sid -- the socket ID
+        app -- the aiohttp app
     """
     log.debug("client in room %s disconnecting", sid)
     sio = get_socket_server(app)
@@ -172,9 +180,9 @@ async def client_heartbeat(sid: SocketID, _: Any, app: web.Application) -> None:
     Redis. Once the key expires, resources will be garbage collected.
 
     Arguments:
-        sid {str} -- the socket ID
-        _ {Any} -- the data is ignored for this handler
-        app {web.Application} -- the aiohttp app
+        sid-- the socket ID
+        _  -- the data is ignored for this handler
+        app  -- the aiohttp app
     """
     sio = get_socket_server(app)
     async with sio.session(sid) as socketio_session:
