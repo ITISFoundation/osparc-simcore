@@ -12,6 +12,7 @@ from typing import Any, AsyncIterator, Callable
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from aiohttp.web_routedef import AbstractRouteDef
 from faker import Faker
 from openapi_core.schema.specs.models import Spec as OpenApiSpecs
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -88,7 +89,9 @@ def client(
     _handlers.routes,
     ids=lambda r: f"{r.method.upper()} {r.path}",
 )
-def test_route_against_openapi_specs(route, openapi_specs: OpenApiSpecs):
+def test_route_against_openapi_specs(
+    route: AbstractRouteDef, openapi_specs: OpenApiSpecs
+):
 
     assert route.path.startswith(f"/{VX}")
     path = route.path.replace(f"/{VX}", "")
@@ -105,14 +108,17 @@ def test_route_against_openapi_specs(route, openapi_specs: OpenApiSpecs):
     ), "route's name differs from OAS operation_id"
 
 
-def test_routes_against_openapi_specs(openapi_specs: OpenApiSpecs):
+def test_all_openapi_specs_routes_are_registered(openapi_specs: OpenApiSpecs):
+
+    registered_operation_ids = [r.kwargs["name"] for r in _handlers.routes]
 
     for url, path in openapi_specs.paths.items():
         for method, operation in path.operations.items():
-            if "groups" in path.split("/"):
+            assert method == operation.http_method
+            if "groups" in operation.tags:
                 assert (
-                    operation.operation_id in _handlers.routes
-                ), f"{method} {url}/{path}: {operation=}"
+                    operation.operation_id in registered_operation_ids
+                ), f"{operation.http_method.upper()} {url}: {operation.tags=}, {operation.operation_id=}"
 
 
 def _assert_group(group: dict[str, str]):
