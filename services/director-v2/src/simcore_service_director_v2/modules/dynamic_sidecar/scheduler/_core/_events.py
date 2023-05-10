@@ -489,9 +489,15 @@ class CreateUserServices(DynamicSchedulerEvent):
             dynamic_sidecar_endpoint, compose_spec, progress_create_containers
         )
 
-        await dynamic_sidecar_client.enable_service_outputs_watcher(
-            dynamic_sidecar_endpoint
-        )
+        # NOTE: when in READ ONLY mode disable the outputs watcher
+        if scheduler_data.dynamic_sidecar.service_removal_state.can_save:
+            await dynamic_sidecar_client.enable_service_outputs_watcher(
+                dynamic_sidecar_endpoint
+            )
+        else:
+            await dynamic_sidecar_client.disable_service_outputs_watcher(
+                dynamic_sidecar_endpoint
+            )
 
         # Starts PROXY -----------------------------------------------
         # The entrypoint container name was now computed
