@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime, timezone
+from typing import Final
 
 from fastapi.encoders import jsonable_encoder
 from models_library.projects import ProjectID
@@ -22,7 +23,9 @@ from ..docker_service_specs.volume_remover import (
 )
 from ._utils import docker_client
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
+
+DIND_VERSION: Final[DockerVersion] = parse_obj_as(DockerVersion, "20.10.14")
 
 # FROM https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
 SERVICE_FINISHED_STATES: set[str] = {
@@ -52,18 +55,6 @@ async def remove_volumes_from_node(
     """
 
     async with docker_client() as client:
-        # When running docker-dind makes sure to use the same image as the
-        # underlying docker-engine.
-        # Will start a container with the same version across the entire cluster.
-        # It is safe to assume the local docker engine version will be
-        # the same as the one on the targeted node.
-        version_request = await client._query_json(  # pylint: disable=protected-access
-            "version", versioned_api=False
-        )
-        docker_version: DockerVersion = parse_obj_as(
-            DockerVersion, version_request["Version"]
-        )
-
         # Timeout for the runtime of the service is calculated based on the amount
         # of attempts required to remove each individual volume,
         # in the worst case scenario when all volumes are do not exit.
@@ -77,7 +68,7 @@ async def remove_volumes_from_node(
             project_id=project_id,
             node_uuid=node_uuid,
             volume_names=volume_names,
-            docker_version=docker_version,
+            docker_version=DIND_VERSION,
             volume_removal_attempts=volume_removal_attempts,
             sleep_between_attempts_s=sleep_between_attempts_s,
             service_timeout_s=service_timeout_s,
@@ -96,7 +87,7 @@ async def remove_volumes_from_node(
                 reraise=True,
             ):
                 with attempt:
-                    log.debug(
+                    _logger.debug(
                         "Waiting for removal of %s, with service id %s",
                         node_uuid,
                         service_id,
@@ -112,7 +103,7 @@ async def remove_volumes_from_node(
 
                     task = tasks[0]
                     task_status = task["Status"]
-                    log.debug("Service %s, %s", service_id, f"{task_status=}")
+                    _logger.debug("Service %s, %s", service_id, f"{task_status=}")
                     task_state = task_status["State"]
                     if task_state not in SERVICE_FINISHED_STATES:
                         raise TryAgain(
@@ -123,7 +114,7 @@ async def remove_volumes_from_node(
                         task_state == "complete"
                         and task_status["ContainerStatus"]["ExitCode"] == 0
                     ):
-                        log.error(
+                        _logger.error(
                             "Service %s on node %s status: %s",
                             service_id,
                             node_uuid,
@@ -137,11 +128,13 @@ async def remove_volumes_from_node(
             # to instruct swarm to remove a service after it's created
             # container/task finished
             with log_context(
-                log, logging.DEBUG, f"deleting service {service_id} on node {node_uuid}"
+                _logger,
+                logging.DEBUG,
+                f"deleting service {service_id} on node {node_uuid}",
             ):
                 await client.services.delete(service_id)
 
-        log.debug("Finished removing volumes for service %s", node_uuid)
+        _logger.debug("Finished removing volumes for service %s", node_uuid)
         return True
 
 
@@ -172,5 +165,7 @@ async def remove_pending_volume_removal_services(
             if service_timed_out:
                 service_id = volume_removal_service["ID"]
                 service_name = volume_removal_service["Spec"]["Name"]
-                log.debug("Removing pending volume removal service %s", service_name)
+                _logger.debug(
+                    "Removing pending volume removal service %s", service_name
+                )
                 await client.services.delete(service_id)
