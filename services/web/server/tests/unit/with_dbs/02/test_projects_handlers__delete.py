@@ -167,15 +167,17 @@ def user_project_in_2_products(
     faker: Faker,
 ) -> Iterator[dict[str, Any]]:
     fake_product_name = faker.name()
-    postgres_db.execute(products.insert().values(name=fake_product_name, host_regex=""))
-    postgres_db.execute(
-        projects_to_products.insert().values(
-            project_uuid=user_project["uuid"], product_name=fake_product_name
+    with postgres_db.connect() as conn:
+        conn.execute(products.insert().values(name=fake_product_name, host_regex=""))
+        conn.execute(
+            projects_to_products.insert().values(
+                project_uuid=user_project["uuid"], product_name=fake_product_name
+            )
         )
-    )
     yield user_project
     # cleanup
-    postgres_db.execute(products.delete().where(products.c.name == fake_product_name))
+    with postgres_db.connect() as conn:
+        conn.execute(products.delete().where(products.c.name == fake_product_name))
 
 
 @pytest.mark.parametrize(*standard_role_response())

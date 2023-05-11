@@ -61,7 +61,7 @@ async def list_user_groups(
 
     async with engine.acquire() as conn:
         query = (
-            sa.select([groups, user_to_groups.c.access_rights])
+            sa.select(groups, user_to_groups.c.access_rights)
             .select_from(
                 user_to_groups.join(groups, user_to_groups.c.gid == groups.c.gid),
             )
@@ -88,7 +88,7 @@ async def list_user_groups(
 
 async def _get_user_group(conn: SAConnection, user_id: int, gid: int) -> RowProxy:
     result = await conn.execute(
-        sa.select([groups, user_to_groups.c.access_rights])
+        sa.select(groups, user_to_groups.c.access_rights)
         .select_from(user_to_groups.join(groups, user_to_groups.c.gid == groups.c.gid))
         .where(and_(user_to_groups.c.uid == user_id, user_to_groups.c.gid == gid))
     )
@@ -101,7 +101,7 @@ async def _get_user_group(conn: SAConnection, user_id: int, gid: int) -> RowProx
 async def _get_user_from_email(app: web.Application, email: str) -> RowProxy:
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
-        result = await conn.execute(sa.select([users]).where(users.c.email == email))
+        result = await conn.execute(sa.select(users).where(users.c.email == email))
         user: RowProxy = await result.fetchone()
         if not user:
             raise UserNotFoundError(email=email)
@@ -143,7 +143,7 @@ async def create_user_group(
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
         result = await conn.execute(
-            sa.select([users.c.primary_gid]).where(users.c.id == user_id)
+            sa.select(users.c.primary_gid).where(users.c.id == user_id)
         )
         user: RowProxy = await result.fetchone()
         if not user:
@@ -217,7 +217,7 @@ async def list_users_in_group(
         check_group_permissions(group, user_id, gid, "read")
         # now get the list
         query = (
-            sa.select([users, user_to_groups.c.access_rights])
+            sa.select(users, user_to_groups.c.access_rights)
             .select_from(users.join(user_to_groups))
             .where(user_to_groups.c.gid == gid)
         )
@@ -234,7 +234,7 @@ async def auto_add_user_to_groups(app: web.Application, user_id: int) -> None:
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
         # get the groups where there are inclusion rules and see if they apply
-        query = sa.select([groups]).where(groups.c.inclusion_rules != {})
+        query = sa.select(groups).where(groups.c.inclusion_rules != {})
         possible_group_ids = set()
         async for row in conn.execute(query):
             inclusion_rules = row[groups.c.inclusion_rules]
@@ -303,8 +303,7 @@ async def add_user_in_group(
         check_group_permissions(group, user_id, gid, "write")
         # now check the new user exists
         users_count = await conn.scalar(
-            # pylint: disable=no-value-for-parameter
-            sa.select([sa.func.count()]).where(users.c.id == new_user_id)
+            sa.select(sa.func.count()).where(users.c.id == new_user_id)
         )
         if not users_count:
             raise UserInGroupNotFoundError(new_user_id, gid)  # type: ignore
@@ -325,7 +324,7 @@ async def _get_user_in_group_permissions(
 ) -> RowProxy:
     # now get the user
     result = await conn.execute(
-        sa.select([users, user_to_groups.c.access_rights])
+        sa.select(users, user_to_groups.c.access_rights)
         .select_from(users.join(user_to_groups, users.c.id == user_to_groups.c.uid))
         .where(and_(user_to_groups.c.gid == gid, users.c.id == the_user_id_in_group))
     )
