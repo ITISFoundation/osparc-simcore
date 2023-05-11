@@ -110,4 +110,11 @@ echo "  $SC_USER_NAME rights    : $(id "$SC_USER_NAME")"
 echo "  local dir : $(ls -al)"
 echo "  volumes dir : $(ls -al "${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}")"
 
+echo "$INFO" "Available permissions at etntrypoint finish"
+capsh --print
+
+echo "$INFO" "Granting /usr/local/bin/python3.10 CAP_LINUX_IMMUTABLE"
+setcap 'cap_linux_immutable+ep' /usr/local/bin/python3.10
+getcap /usr/local/bin/python3.10
+
 exec gosu "$SC_USER_NAME" "$@"

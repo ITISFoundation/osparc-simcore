@@ -19,6 +19,7 @@ RUN  --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=loc
   apt-get install -y --no-install-recommends\
   curl \
   gosu \
+  libcap2-bin \
   ca-certificates \
   # required by python-magic
   libmagic1 \
