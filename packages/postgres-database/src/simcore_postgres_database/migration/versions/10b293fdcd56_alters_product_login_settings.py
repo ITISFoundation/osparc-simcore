@@ -55,8 +55,10 @@ def downgrade():
         )  # back to default
         data = json.dumps(data)
         conn.execute(
-            "UPDATE products SET login_settings = '{}' WHERE name = '{}'".format(  # nosec
-                data, row["name"]
+            sa.DDL(
+                "UPDATE products SET login_settings = '{}' WHERE name = '{}'".format(  # nosec
+                    data, row["name"]
+                )
             )
         )
 
