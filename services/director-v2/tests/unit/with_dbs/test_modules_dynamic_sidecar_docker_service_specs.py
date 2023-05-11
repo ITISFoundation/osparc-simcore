@@ -217,6 +217,7 @@ def expected_dynamic_sidecar_spec(
                     "STORAGE_HOST": "storage",
                     "STORAGE_PORT": "8080",
                 },
+                "CapabilityAdd": ["CAP_LINUX_IMMUTABLE"],
                 "Hosts": [],
                 "Image": "local/dynamic-sidecar:MOCK",
                 "Init": True,
