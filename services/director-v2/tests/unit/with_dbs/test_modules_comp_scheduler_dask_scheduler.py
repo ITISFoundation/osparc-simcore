@@ -9,7 +9,7 @@
 
 
 from dataclasses import dataclass
-from typing import Any, Callable, Iterator, Union
+from typing import Any, Callable, Iterator
 from unittest import mock
 
 import aiopg
@@ -194,7 +194,7 @@ async def test_empty_pipeline_is_not_scheduled(
             cluster_id=DEFAULT_CLUSTER_ID,
         )
     # create the empty pipeline now
-    _empty_pipeline = pipeline(project_id=f"{empty_project.uuid}")
+    pipeline(project_id=f"{empty_project.uuid}")
 
     # creating a run with an empty pipeline is useless, check the scheduler is not kicking in
     await scheduler.run_new_pipeline(
@@ -204,7 +204,7 @@ async def test_empty_pipeline_is_not_scheduled(
     )
     assert len(scheduler.scheduled_pipelines) == 0
     assert (
-        scheduler.wake_up_event.is_set() == False
+        scheduler.wake_up_event.is_set() is False
     ), "the scheduler was woken up on an empty pipeline!"
     # check the database is empty
     async with aiopg_engine.acquire() as conn:  # type: ignore
@@ -214,7 +214,7 @@ async def test_empty_pipeline_is_not_scheduled(
                 & (comp_runs.c.project_uuid == f"{empty_project.uuid}")
             )  # there is only one entry
         )
-        assert result == None
+        assert result is None
 
 
 async def test_misconfigured_pipeline_is_not_scheduled(
@@ -232,7 +232,7 @@ async def test_misconfigured_pipeline_is_not_scheduled(
     It shall be aborted and shown as such in the comp_runs db"""
     user = registered_user()
     sleepers_project = project(user, workbench=fake_workbench_without_outputs)
-    sleepers_pipeline = pipeline(
+    pipeline(
         project_id=f"{sleepers_project.uuid}",
         dag_adjacency_list=fake_workbench_adjacency,
     )
@@ -244,13 +244,13 @@ async def test_misconfigured_pipeline_is_not_scheduled(
     )
     assert len(scheduler.scheduled_pipelines) == 1
     assert (
-        scheduler.wake_up_event.is_set() == True
+        scheduler.wake_up_event.is_set() is True
     ), "the scheduler was NOT woken up on the scheduled pipeline!"
     for (u_id, p_id, it), params in scheduler.scheduled_pipelines.items():
         assert u_id == user["id"]
         assert p_id == sleepers_project.uuid
         assert it > 0
-        assert params.mark_for_cancellation == False
+        assert params.mark_for_cancellation is False
     # check the database was properly updated
     async with aiopg_engine.acquire() as conn:  # type: ignore
         result = await conn.execute(
@@ -286,6 +286,7 @@ async def test_proper_pipeline_is_scheduled(
     published_project: PublishedProject,
 ):
     # This calls adds starts the scheduling of a pipeline
+    assert published_project.project.prj_owner
     await scheduler.run_new_pipeline(
         user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
@@ -293,13 +294,13 @@ async def test_proper_pipeline_is_scheduled(
     )
     assert len(scheduler.scheduled_pipelines) == 1, "the pipeline is not scheduled!"
     assert (
-        scheduler.wake_up_event.is_set() == True
+        scheduler.wake_up_event.is_set() is True
     ), "the scheduler was NOT woken up on the scheduled pipeline!"
     for (u_id, p_id, it), params in scheduler.scheduled_pipelines.items():
         assert u_id == published_project.project.prj_owner
         assert p_id == published_project.project.uuid
         assert it > 0
-        assert params.mark_for_cancellation == False
+        assert params.mark_for_cancellation is False
     # check the database is correctly updated, the run is published
     await assert_comp_run_state(
         aiopg_engine,
@@ -525,8 +526,10 @@ async def test_handling_of_disconnected_dask_scheduler(
         "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.DaskClient.send_computation_tasks",
         side_effect=backend_error,
     )
+    assert mocked_dask_client_send_task
 
     # running the pipeline will now raise and the tasks are set back to PUBLISHED
+    assert published_project.project.prj_owner
     await scheduler.run_new_pipeline(
         user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
@@ -580,7 +583,7 @@ async def test_handling_of_disconnected_dask_scheduler(
 @dataclass
 class RebootState:
     task_status: RunningState
-    task_result: Union[Exception, TaskOutputData]
+    task_result: Exception | TaskOutputData
     expected_task_state_group1: RunningState
     expected_task_state_group2: RunningState
     expected_run_state: RunningState
@@ -716,6 +719,7 @@ async def test_handling_scheduling_after_reboot(
         [running_project.tasks[4].node_id],
         exp_state=reboot_state.expected_task_state_group2,
     )
+    assert running_project.project.prj_owner
     await assert_comp_run_state(
         aiopg_engine,
         running_project.project.prj_owner,
