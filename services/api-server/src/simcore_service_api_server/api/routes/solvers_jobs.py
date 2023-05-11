@@ -317,9 +317,21 @@ async def get_job_output_logfile(
 
     New in *version 0.4.0*
     """
+    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    _logger.debug("Get Job '%s' outputs logfile", job_name)
+
+    project_id = job_id
 
     logs_urls: dict[NodeName, DownloadLink] = await director2_api.get_computation_logs(
-        user_id=user_id, project_id=job_id
+        user_id=user_id, project_id=project_id
+    )
+
+    _logger.debug(
+        "Found %d logfiles for %s %s: %s",
+        len(logs_urls),
+        f"{project_id=}",
+        f"{user_id=}",
+        list(logs_urls.keys()),
     )
 
     # if more than one node? should rezip all of them??
@@ -335,6 +347,7 @@ async def get_job_output_logfile(
         )
         return RedirectResponse(presigned_download_link)
 
+    # No log found !
     raise HTTPException(
         status.HTTP_404_NOT_FOUND,
         detail=f"Log for {solver_key}/releases/{version}/jobs/{job_id} not found."

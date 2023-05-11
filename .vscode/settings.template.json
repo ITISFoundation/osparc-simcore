@@ -45,8 +45,7 @@
     "./services/director/src",
     "./services/storage/src",
     "./services/web/server/src",
-    "./services/web/server/tests/unit/with_dbs",
-    "./services/web/server/tests/unit/with_dbs/slow"
+    "./services/web/server/tests/unit/with_dbs"
   ],
   "python.linting.pylintEnabled": true,
   "python.linting.enabled": true,
