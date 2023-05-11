@@ -11,8 +11,8 @@ from .groups.api import get_group_from_gid
 from .projects.projects_db import APP_PROJECT_DBAPI, ProjectAccessRights
 from .projects.projects_exceptions import ProjectNotFoundError
 from .users import exceptions
+from .users.api import get_user, get_user_id_from_gid
 from .users.exceptions import UserNotFoundError
-from .users.users_api import get_user, get_user_id_from_gid
 from .users.users_to_groups_api import get_users_for_gid
 
 logger = logging.getLogger(__name__)

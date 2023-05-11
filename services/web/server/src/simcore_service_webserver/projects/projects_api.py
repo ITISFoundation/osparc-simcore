@@ -63,8 +63,8 @@ from ..socketio.messages import (
     send_messages,
 )
 from ..storage import api as storage_api
+from ..users.api import UserRole, get_user_name, get_user_role
 from ..users.exceptions import UserNotFoundError
-from ..users.users_api import UserRole, get_user_name, get_user_role
 from . import _delete_utils, _nodes_utils
 from .project_lock import (
     UserNameDict,

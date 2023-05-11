@@ -38,13 +38,13 @@ from .projects.projects_exceptions import (
 from .redis import get_redis_lock_manager_client
 from .resource_manager.registry import RedisResourceRegistry, get_registry
 from .users import exceptions
-from .users.exceptions import UserNotFoundError
-from .users.users_api import (
+from .users.api import (
     delete_user,
     get_guest_user_ids_and_names,
     get_user,
     get_user_role,
 )
+from .users.exceptions import UserNotFoundError
 
 logger = logging.getLogger(__name__)
 

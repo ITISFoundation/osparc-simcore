@@ -20,7 +20,7 @@ from simcore_service_webserver.projects.project_lock import (
     is_project_locked,
     lock_project,
 )
-from simcore_service_webserver.users.users_api import UserNameDict
+from simcore_service_webserver.users.api import UserNameDict
 
 
 @pytest.fixture()
