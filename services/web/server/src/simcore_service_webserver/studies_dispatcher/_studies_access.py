@@ -110,7 +110,7 @@ async def _get_published_template_project(
             raise RedirectToFrontEndPageError(
                 MSG_PUBLIC_PROJECT_NOT_PUBLISHED.format(project_id=project_uuid),
                 error_code="PUBLIC_PROJECT_NOT_PUBLISHED",
-                status_code=web.HTTPNotFound.status_code,
+                status_code=web.HTTPUnauthorized.status_code,
             ) from err
 
         raise RedirectToFrontEndPageError(
@@ -307,9 +307,7 @@ def _handle_errors_with_error_page(handler: Handler):
             raise create_redirect_response(
                 request.app,
                 page="error",
-                message=compose_support_error_msg(
-                    msg=err.human_readable_message, error_code=err.error_code
-                ),
+                message=err.human_readable_message,
                 status_code=err.status_code,
             ) from err
 
