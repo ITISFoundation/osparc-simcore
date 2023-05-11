@@ -73,7 +73,7 @@ async def list_projects(
     )
 
     projects: list[ProjectDict] = await logged_gather(
-        *[
+        *(
             _append_fields(
                 request,
                 user_id,
@@ -82,7 +82,7 @@ async def list_projects(
                 model_schema_cls=ProjectListItem,
             )
             for prj, prj_type in zip(db_projects, db_project_types)
-        ],
+        ),
         reraise=True,
         max_concurrency=100,
     )
