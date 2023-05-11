@@ -56,6 +56,9 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
     return app_environment | overrides
 
 
+@pytest.mark.skip(
+    reason="Pending https://github.com/ITISFoundation/osparc-simcore/issues/3387"
+)
 @pytest.mark.parametrize("user_role", (UserRole.USER,))
 async def test_socketio_session_client_to_server(
     logged_user: UserInfoDict,
