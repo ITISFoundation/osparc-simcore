@@ -24,21 +24,17 @@ _logger = logging.getLogger(__name__)
 
 _ANONYMOUS_USER_ID = -1
 
+# Messages reaching users
+_MSG_UNAUTHORIZED_MISSING_SESSION_INFO = (
+    "Sorry, we cannot identify you. Please reaload the page and login again."
+)
 
-def _get_user_id(request: web.Request) -> UserID:
-    user_id = request.get(RQT_USERID_KEY, _ANONYMOUS_USER_ID)
-    return int(user_id)
 
-
-async def _set_user_in_rooms(
-    socket_id: SocketID, app: web.Application, request: web.Request
-) -> None:
-    user_id = _get_user_id(request)
-    primary_group, user_groups, all_group = await list_user_groups(app, user_id)
-    groups = [primary_group] + user_groups + ([all_group] if bool(all_group) else [])
-    sio = get_socket_server(app)
-    for group in groups:
-        sio.enter_room(socket_id, f"{group['gid']}")
+# Send service_deletion_timeout to client
+# 2 seconds avoids GC from removing the services to early
+# this has been tested and is working with good results
+# the previous implementation was not working as expected
+_EMIT_INTERVAL_S: int = 2
 
 
 @login_required
@@ -50,18 +46,17 @@ async def _authenticate_user(
     Raises:
         web.HTTPUnauthorized: when the user is not recognized. Keeps the original request
     """
-    user_id = _get_user_id(request)
-    _logger.debug("client %s authenticated", f"{user_id=}")
-
+    user_id = UserID(request.get(RQT_USERID_KEY, _ANONYMOUS_USER_ID))
     client_session_id = request.query.get("client_session_id", None)
-    if not client_session_id:
-        _logger.error(
-            "Tab ID is not available!", extra=get_log_record_extra(user_id=user_id)
-        )
-        raise web.HTTPUnauthorized(reason="missing tab id")
 
-    sio = get_socket_server(app)
+    _logger.debug("client %s,%s authenticated", f"{user_id=}", f"{client_session_id=}")
+
+    if not client_session_id:
+        _logger.error("Tab ID is missing", extra=get_log_record_extra(user_id=user_id))
+        raise web.HTTPUnauthorized(reason=_MSG_UNAUTHORIZED_MISSING_SESSION_INFO)
+
     # here we keep the original HTTP request in the socket session storage
+    sio = get_socket_server(app)
     async with sio.session(socket_id) as socketio_session:
         socketio_session["user_id"] = user_id
         socketio_session["client_session_id"] = client_session_id
@@ -76,6 +71,18 @@ async def _authenticate_user(
         await resource_registry.set_socket_id(socket_id)
 
     return user_id
+
+
+async def _set_user_in_group_rooms(
+    app: web.Application, user_id: UserID, socket_id: SocketID
+) -> None:
+    """Adds user in rooms associated to its groups"""
+    primary_group, user_groups, all_group = await list_user_groups(app, user_id)
+    groups = [primary_group] + user_groups + ([all_group] if bool(all_group) else [])
+
+    sio = get_socket_server(app)
+    for group in groups:
+        sio.enter_room(socket_id, f"{group['gid']}")
 
 
 #
@@ -102,22 +109,18 @@ async def connect(
     _logger.debug("client connecting in room %s", f"{socket_id=}")
 
     try:
-        request: web.Request = environ["aiohttp.request"]
+        user_id = await _authenticate_user(
+            socket_id, app, request=environ["aiohttp.request"]
+        )
 
-        user_id = await _authenticate_user(socket_id, app, request)
-        await _set_user_in_rooms(socket_id, app, request)
+        await _set_user_in_group_rooms(app, user_id, socket_id)
 
-        # Send service_deletion_timeout to client
-        # 2 seconds avoids GC from removing the services to early
-        # this has been tested and is working with good results
-        # the previous implementation was not working as expected
-        emit_interval: int = 2
-        _logger.info("Sending set_heartbeat_emit_interval with %s", emit_interval)
+        _logger.info("Sending set_heartbeat_emit_interval with %s", _EMIT_INTERVAL_S)
 
         heart_beat_messages: list[SocketMessageDict] = [
             {
                 "event_type": SOCKET_IO_HEARTBEAT_EVENT,
-                "data": {"interval": emit_interval},
+                "data": {"interval": _EMIT_INTERVAL_S},
             }
         ]
         await send_messages(
