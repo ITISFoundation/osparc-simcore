@@ -18,6 +18,7 @@ on:
   pull_request:
     branches:
       - "*"
+  # https://github.blog/changelog/2023-02-08-pull-request-merge-queue-public-beta/
   merge_group:
     branches:
       - "master"
