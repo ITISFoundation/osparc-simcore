@@ -34,7 +34,7 @@ from yarl import URL
 #
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def postgres_db(postgres_db: sa.engine.Engine) -> sa.engine.Engine:
     #
     # Extends postgres_db fixture (called with web_server) to inject tables and start redis
