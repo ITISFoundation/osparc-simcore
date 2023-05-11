@@ -1,7 +1,7 @@
 import datetime
 from asyncio.log import logger
 from contextlib import asynccontextmanager
-from typing import Final, Optional, Union
+from typing import Final
 
 import redis
 from aiohttp import web
@@ -11,7 +11,7 @@ from redis.asyncio.lock import Lock
 from servicelib.background_task import periodic_task
 
 from ..redis import get_redis_lock_manager_client
-from ..users_api import UserNameDict
+from ..users.users_api import UserNameDict
 from .projects_exceptions import ProjectLockError
 
 PROJECT_REDIS_LOCK_KEY: str = "project_lock:{}"
@@ -27,7 +27,7 @@ async def _auto_extend_project_lock(project_lock: Lock) -> None:
 @asynccontextmanager
 async def lock_project(
     app: web.Application,
-    project_uuid: Union[str, ProjectID],
+    project_uuid: str | ProjectID,
     status: ProjectStatus,
     user_id: int,
     user_name: UserNameDict,
@@ -81,7 +81,7 @@ async def lock_project(
 
 
 async def is_project_locked(
-    app: web.Application, project_uuid: Union[str, ProjectID]
+    app: web.Application, project_uuid: str | ProjectID
 ) -> bool:
     redis_lock = get_redis_lock_manager_client(app).lock(
         PROJECT_REDIS_LOCK_KEY.format(project_uuid)
@@ -90,8 +90,8 @@ async def is_project_locked(
 
 
 async def get_project_locked_state(
-    app: web.Application, project_uuid: Union[str, ProjectID]
-) -> Optional[ProjectLocked]:
+    app: web.Application, project_uuid: str | ProjectID
+) -> ProjectLocked | None:
     """returns the ProjectLocked object if the project is locked"""
     if await is_project_locked(app, project_uuid):
         redis_locks_client = get_redis_lock_manager_client(app)

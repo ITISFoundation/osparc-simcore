@@ -17,10 +17,10 @@ from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.models.users import UserNameConverter, UserRole
 from sqlalchemy import and_, literal_column
 
-from .db_models import GroupType, groups, tokens, user_to_groups, users
-from .groups.schemas import convert_groups_db_to_schema
-from .login.storage import AsyncpgStorage, get_plugin_storage
-from .security.api import clean_auth_policy_cache
+from ..db_models import GroupType, groups, tokens, user_to_groups, users
+from ..groups.schemas import convert_groups_db_to_schema
+from ..login.storage import AsyncpgStorage, get_plugin_storage
+from ..security.api import clean_auth_policy_cache
 from .users_exceptions import UserNotFoundError
 from .users_models import ProfileGet, ProfileUpdate
 from .users_utils import convert_user_db_to_schema

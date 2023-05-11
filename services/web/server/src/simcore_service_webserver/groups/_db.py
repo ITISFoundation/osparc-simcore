@@ -10,7 +10,7 @@ from sqlalchemy import and_, literal_column
 from sqlalchemy.dialects.postgresql import insert
 
 from ..db_models import GroupType, groups, user_to_groups, users
-from ..users_exceptions import UserNotFoundError
+from ..users.users_exceptions import UserNotFoundError
 from ._utils import (
     AccessRightsDict,
     check_group_permissions,

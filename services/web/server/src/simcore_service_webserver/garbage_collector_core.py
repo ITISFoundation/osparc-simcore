@@ -17,7 +17,6 @@ from servicelib.utils import logged_gather
 from simcore_postgres_database.errors import DatabaseError
 from simcore_postgres_database.models.users import UserRole
 
-from . import users_exceptions
 from .director.director_exceptions import DirectorException, ServiceNotFoundError
 from .director_v2 import api
 from .director_v2.exceptions import ServiceWaitingForManualIntervention
@@ -38,13 +37,14 @@ from .projects.projects_exceptions import (
 )
 from .redis import get_redis_lock_manager_client
 from .resource_manager.registry import RedisResourceRegistry, get_registry
-from .users_api import (
+from .users import users_exceptions
+from .users.users_api import (
     delete_user,
     get_guest_user_ids_and_names,
     get_user,
     get_user_role,
 )
-from .users_exceptions import UserNotFoundError
+from .users.users_exceptions import UserNotFoundError
 
 logger = logging.getLogger(__name__)
 

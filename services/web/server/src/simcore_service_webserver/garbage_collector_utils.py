@@ -6,13 +6,13 @@ from aiopg.sa.result import RowProxy
 from models_library.users import GroupID, UserID
 from simcore_postgres_database.errors import DatabaseError
 
-from . import users_exceptions
 from .db_models import GroupType
 from .groups.api import get_group_from_gid
 from .projects.projects_db import APP_PROJECT_DBAPI, ProjectAccessRights
 from .projects.projects_exceptions import ProjectNotFoundError
-from .users_api import get_user, get_user_id_from_gid
-from .users_exceptions import UserNotFoundError
+from .users import users_exceptions
+from .users.users_api import get_user, get_user_id_from_gid
+from .users.users_exceptions import UserNotFoundError
 from .users_to_groups_api import get_users_for_gid
 
 logger = logging.getLogger(__name__)

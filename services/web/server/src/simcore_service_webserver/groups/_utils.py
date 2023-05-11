@@ -2,7 +2,7 @@ from typing import Any, Mapping, TypedDict
 
 from aiopg.sa.result import RowProxy
 
-from ..users_utils import convert_user_db_to_schema
+from ..users.users_utils import convert_user_db_to_schema
 from .exceptions import UserInsufficientRightsError
 
 _GROUPS_SCHEMA_TO_DB = {

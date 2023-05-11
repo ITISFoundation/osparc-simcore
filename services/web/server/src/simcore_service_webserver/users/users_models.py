@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field, validator
 from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.models.users import UserRole
 
-from .groups.schemas import AllUsersGroups
+from ..groups.schemas import AllUsersGroups
 
 #
 # TOKENS resource

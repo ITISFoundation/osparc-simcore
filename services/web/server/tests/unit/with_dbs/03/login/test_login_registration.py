@@ -34,7 +34,7 @@ from simcore_service_webserver.login.settings import (
     LoginSettingsForProduct,
 )
 from simcore_service_webserver.login.storage import AsyncpgStorage
-from simcore_service_webserver.users_models import ProfileGet
+from simcore_service_webserver.users.users_models import ProfileGet
 
 
 @pytest.fixture

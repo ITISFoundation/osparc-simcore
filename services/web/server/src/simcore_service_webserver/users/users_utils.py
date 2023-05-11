@@ -1,13 +1,13 @@
 import logging
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping
 
-from .utils import gravatar_hash
+from ..utils import gravatar_hash
 
 logger = logging.getLogger(__name__)
 
 
 def convert_user_db_to_schema(
-    row: Mapping[str, Any], prefix: Optional[str] = ""
+    row: Mapping[str, Any], prefix: str | None = ""
 ) -> dict[str, Any]:
     parts = row[f"{prefix}name"].split(".") + [""]
     data = {

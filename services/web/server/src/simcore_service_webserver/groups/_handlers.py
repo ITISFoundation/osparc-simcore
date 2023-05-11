@@ -24,7 +24,7 @@ from ..scicrunch.errors import InvalidRRID, ScicrunchError
 from ..scicrunch.models import ResearchResource, ResourceHit
 from ..scicrunch.service_client import SciCrunch
 from ..security.decorators import permission_required
-from ..users_exceptions import UserNotFoundError
+from ..users.users_exceptions import UserNotFoundError
 from . import api
 from ._classifiers import GroupClassifierRepository, build_rrids_tree_view
 from .exceptions import (
