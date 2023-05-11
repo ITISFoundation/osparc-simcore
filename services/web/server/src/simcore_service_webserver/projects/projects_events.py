@@ -42,11 +42,10 @@ def setup_project_events(_app: web.Application) -> None:
     # For the moment, this is only used as a placeholder to import this file
     # This way the functions above are registered as handlers of a give event
     # using the @observe decorator
-
     assert _on_user_disconnected  # nosec
-    assert is_observer_on_event(
+    assert is_observer_on_event(  # nosec
         _on_user_disconnected, "SIGNAL_USER_DISCONNECTED"
-    )  # nosec
+    )
 
     logger.info(
         "App registered events (at this point):\n%s", registed_observers_report()
