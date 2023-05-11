@@ -278,25 +278,19 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
     },
 
     __createGalleryMenuBtn: function() {
-      const menu = new qx.ui.menu.Menu().set({
-        font: "text-14"
-      });
-      const menuButton = new osparc.ui.form.HoverMenuButton().set({
+      const galleryButton = new qx.ui.form.Button().set({
         label: this.tr("Gallery"),
-        menu
+        backgroundColor: "transparent"
       });
-      this.self().addEntryToMenu(menu, "Industries");
-      this.self().addEntryToMenu(menu, "Academia");
-      this.self().addEntryToMenu(menu, "Applications");
-      return menuButton;
+      return galleryButton;
     },
 
     __createSuccessStoriesBtn: function() {
-      const pricingButton = new qx.ui.form.Button().set({
+      const successStoriesButton = new qx.ui.form.Button().set({
         label: this.tr("Success stories"),
         backgroundColor: "transparent"
       });
-      return pricingButton;
+      return successStoriesButton;
     },
 
     __createPricingBtn: function() {
