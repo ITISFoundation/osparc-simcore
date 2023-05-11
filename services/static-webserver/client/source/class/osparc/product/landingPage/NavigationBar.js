@@ -46,6 +46,7 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
         rich: true
       });
       menu.add(entryButton);
+      return entryButton;
     }
   },
 
@@ -123,11 +124,6 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
           control.set(osparc.navigation.NavigationBar.BUTTON_OPTIONS);
           this.getChildControl("right-items").add(control);
           break;
-        case "community":
-          control = this.__createCommunityBtn();
-          control.set(osparc.navigation.NavigationBar.BUTTON_OPTIONS);
-          this.getChildControl("right-items").add(control);
-          break;
         case "pricing":
           control = this.__createPricingBtn();
           control.set(osparc.navigation.NavigationBar.BUTTON_OPTIONS);
@@ -165,8 +161,9 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
 
       this.getChildControl("products");
       this.getChildControl("solutions");
+      this.getChildControl("resources");
+      this.getChildControl("gallery");
       this.getChildControl("success-stories");
-      this.getChildControl("community");
       this.getChildControl("pricing");
       this.getChildControl("theme-switch");
       this.getChildControl("login-button");
@@ -218,7 +215,8 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
       this.self().addEntryToMenu(menu, "Tutorials");
       this.self().addEntryToMenu(menu, "Documentation");
       this.self().addEntryToMenu(menu, "Computable Human Models (ViP)");
-      this.self().addEntryToMenu(menu, "Forum"); // OM link
+      const button = this.self().addEntryToMenu(menu, "Forum");
+      button.addListener("execute", () => window.open("https://forum.zmt.swiss/"));
       this.self().addEntryToMenu(menu, "Python API");
       this.self().addEntryToMenu(menu, "Validation");
       this.self().addEntryToMenu(menu, "Security");
@@ -243,14 +241,6 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
     __createSuccessStoriesBtn: function() {
       const pricingButton = new qx.ui.form.Button().set({
         label: this.tr("Success stories"),
-        backgroundColor: "transparent"
-      });
-      return pricingButton;
-    },
-
-    __createCommunityBtn: function() {
-      const pricingButton = new qx.ui.form.Button().set({
-        label: this.tr("Community"),
         backgroundColor: "transparent"
       });
       return pricingButton;
