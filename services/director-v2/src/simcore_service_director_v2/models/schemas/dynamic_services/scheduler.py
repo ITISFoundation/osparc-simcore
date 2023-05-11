@@ -143,7 +143,7 @@ class ServiceRemovalState(BaseModel):
         description="when True, marks the service as ready to be removed",
     )
     can_save: bool = Field(
-        ...,
+        False,
         description="when True, saves the internal state and upload outputs of the service",
     )
     was_removed: bool = Field(
@@ -179,10 +179,6 @@ class ServiceRemovalState(BaseModel):
         if can_save is None:
             values["can_save"] = False
         return values
-
-    @classmethod
-    def make_default(cls) -> "ServiceRemovalState":
-        return cls(can_remove=False, can_save=False, was_removed=False)
 
 
 class DynamicSidecar(BaseModel):
@@ -247,7 +243,7 @@ class DynamicSidecar(BaseModel):
     )
 
     service_removal_state: ServiceRemovalState = Field(
-        default_factory=ServiceRemovalState.make_default,
+        default_factory=ServiceRemovalState,
         description=(
             "stores information used during service removal "
             "from the dynamic-sidecar scheduler"
