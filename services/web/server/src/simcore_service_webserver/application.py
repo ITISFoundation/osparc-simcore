@@ -20,7 +20,7 @@ from .director_v2.plugin import setup_director_v2
 from .email.plugin import setup_email
 from .exporter.plugin import setup_exporter
 from .garbage_collector import setup_garbage_collector
-from .groups import setup_groups
+from .groups.plugin import setup_groups
 from .invitations.plugin import setup_invitations
 from .login.plugin import setup_login
 from .long_running_tasks import setup_long_running_tasks
@@ -46,7 +46,7 @@ from .tracing import setup_app_tracing
 from .users import setup_users
 from .version_control.plugin import setup_version_control
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def create_application() -> web.Application:
@@ -128,7 +128,7 @@ def create_application() -> web.Application:
     app.on_startup.append(welcome_banner)
     app.on_shutdown.append(finished_banner)
 
-    logger.debug("Routes in app: \n %s", pformat(app.router.named_resources()))
+    _logger.debug("Routes in app: \n %s", pformat(app.router.named_resources()))
 
     return app
 
