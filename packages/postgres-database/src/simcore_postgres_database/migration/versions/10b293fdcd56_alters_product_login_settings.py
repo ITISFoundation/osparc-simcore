@@ -21,15 +21,17 @@ depends_on = None
 def upgrade():
     # Reassign items from two_factor_enabled -> LOGIN_2FA_REQUIRED
     conn = op.get_bind()
-    rows = conn.execute("SELECT name, login_settings FROM products").fetchall()
+    rows = conn.execute(sa.DDL("SELECT name, login_settings FROM products")).fetchall()
     for row in rows:
         data = row["login_settings"] or {}
         if "two_factor_enabled" in data:
             data["LOGIN_2FA_REQUIRED"] = data.pop("two_factor_enabled")
             data = json.dumps(data)
             conn.execute(
-                "UPDATE products SET login_settings = '{}' WHERE name = '{}'".format(  # nosec
-                    data, row["name"]
+                sa.DDL(
+                    "UPDATE products SET login_settings = '{}' WHERE name = '{}'".format(  # nosec
+                        data, row["name"]
+                    )
                 )
             )
 
@@ -45,7 +47,7 @@ def upgrade():
 def downgrade():
     # Reassign items from LOGIN_2FA_REQUIRED -> two_factor_enabled=false
     conn = op.get_bind()
-    rows = conn.execute("SELECT name, login_settings FROM products").fetchall()
+    rows = conn.execute(sa.DDL("SELECT name, login_settings FROM products")).fetchall()
     for row in rows:
         data = row["login_settings"] or {}
         data["two_factor_enabled"] = data.pop(
