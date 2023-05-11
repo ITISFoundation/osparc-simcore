@@ -780,13 +780,16 @@ class TutorialBase {
     return false;
   }
 
-  async testSARValidation(sarIframe) {
+  async testSARValidation(sarNodeId) {
     // SAR Validation service testing
+    await this.waitFor(5000, 'SAR Service started');
+    await this.takeScreenshot("testSARValidation_before");
 
     this.__responsesQueue.addResponseListener("training-set-generation/generate");
     this.__responsesQueue.addResponseListener("training-set-generation/data");
     this.__responsesQueue.addResponseListener("training-set-generation/distribution", false);
     try {
+      const sarIframe = await this.getIframe(sarNodeId);
       await this.waitAndClick("createTrainingSetBtn", sarIframe);
       await this.__responsesQueue.waitUntilResponse("training-set-generation/generate");
       await this.__responsesQueue.waitUntilResponse("training-set-generation/data");
@@ -799,6 +802,7 @@ class TutorialBase {
 
     this.__responsesQueue.addResponseListener("training-set-generation/xport", false);
     try {
+      const sarIframe = await this.getIframe(sarNodeId);
       await this.waitAndClick("exportTrainingSetBtn", sarIframe);
       await this.__responsesQueue.waitUntilResponse("training-set-generation/xport");
     }
@@ -806,6 +810,8 @@ class TutorialBase {
       console.error(this.__templateName, "training-set can't be exported", err);
       throw (err);
     }
+
+    await this.takeScreenshot("testSARValidation_after");
   }
 
   async takeScreenshot(screenshotTitle) {
