@@ -442,7 +442,7 @@ def postgres_service(docker_services, postgres_dsn):
     return url
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="module")
 def postgres_db(
     postgres_dsn: dict, postgres_service: str
 ) -> Iterator[sa.engine.Engine]:

@@ -55,6 +55,7 @@ qx.Class.define("osparc.data.model.Study", {
       tags: studyData.tags || this.getTags(),
       state: studyData.state || this.getState(),
       quality: studyData.quality || this.getQuality(),
+      permalink: studyData.permalink || this.getPermalink(),
       dev: studyData.dev || this.getDev()
     });
 
@@ -156,6 +157,12 @@ qx.Class.define("osparc.data.model.Study", {
       nullable: true
     },
 
+    permalink: {
+      check: "Object",
+      nullable: true,
+      init: {}
+    },
+
     dev: {
       check: "Object",
       nullable: true,
@@ -188,6 +195,7 @@ qx.Class.define("osparc.data.model.Study", {
 
   statics: {
     IgnoreSerializationProps: [
+      "permalink",
       "state",
       "pipelineRunning",
       "readOnly"

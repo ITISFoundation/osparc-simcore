@@ -125,7 +125,7 @@ async def update_user_profile(
         last_name = profile_update.last_name
         if not first_name or not last_name:
             name = await conn.scalar(
-                sa.select([users.c.name]).where(users.c.id == user_id)
+                sa.select(users.c.name).where(users.c.id == user_id)
             )
             try:
                 first_name, last_name = name.rsplit(".", maxsplit=2)
@@ -155,7 +155,7 @@ async def get_user_role(app: web.Application, user_id: UserID) -> UserRole:
     engine: Engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
         user_role: RowProxy | None = await conn.scalar(
-            sa.select([users.c.role]).where(users.c.id == user_id)
+            sa.select(users.c.role).where(users.c.id == user_id)
         )
         if user_role is None:
             raise UserNotFoundError(uid=user_id)
@@ -167,7 +167,7 @@ async def get_guest_user_ids_and_names(app: web.Application) -> list[tuple[int, 
     result = deque()
     async with engine.acquire() as conn:
         async for row in conn.execute(
-            sa.select([users.c.id, users.c.name]).where(users.c.role == UserRole.GUEST)
+            sa.select(users.c.id, users.c.name).where(users.c.role == UserRole.GUEST)
         ):
             result.append(row.as_tuple())
         return list(result)
@@ -207,7 +207,7 @@ async def get_user_name(app: web.Application, user_id: int) -> UserNameDict:
     user_id = _parse_as_user(user_id)
     async with engine.acquire() as conn:
         user_name = await conn.scalar(
-            sa.select([users.c.name]).where(users.c.id == user_id)
+            sa.select(users.c.name).where(users.c.id == user_id)
         )
         if not user_name:
             raise UserNotFoundError(uid=user_id)
@@ -226,7 +226,7 @@ async def get_user(app: web.Application, user_id: int) -> dict:
     engine = app[APP_DB_ENGINE_KEY]
     user_id = _parse_as_user(user_id)
     async with engine.acquire() as conn:
-        result = await conn.execute(sa.select([users]).where(users.c.id == user_id))
+        result = await conn.execute(sa.select(users).where(users.c.id == user_id))
         row: RowProxy = await result.fetchone()
         if not row:
             raise UserNotFoundError(uid=user_id)
@@ -237,7 +237,7 @@ async def get_user_id_from_gid(app: web.Application, primary_gid: int) -> int:
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
         return await conn.scalar(
-            sa.select([users.c.id]).where(users.c.primary_gid == primary_gid)
+            sa.select(users.c.id).where(users.c.primary_gid == primary_gid)
         )
 
 
@@ -265,7 +265,7 @@ async def list_tokens(app: web.Application, user_id: int) -> list[dict[str, str]
     user_tokens = []
     async with engine.acquire() as conn:
         async for row in conn.execute(
-            sa.select([tokens.c.token_data]).where(tokens.c.user_id == user_id)
+            sa.select(tokens.c.token_data).where(tokens.c.user_id == user_id)
         ):
             user_tokens.append(row["token_data"])
         return user_tokens
@@ -277,7 +277,7 @@ async def get_token(
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
         result = await conn.execute(
-            sa.select([tokens.c.token_data]).where(
+            sa.select(tokens.c.token_data).where(
                 and_(tokens.c.user_id == user_id, tokens.c.token_service == service_id)
             )
         )
@@ -292,7 +292,7 @@ async def update_token(
     # TODO: optimize to a single call?
     async with engine.acquire() as conn:
         result = await conn.execute(
-            sa.select([tokens.c.token_data, tokens.c.token_id]).where(
+            sa.select(tokens.c.token_data, tokens.c.token_id).where(
                 and_(tokens.c.user_id == user_id, tokens.c.token_service == service_id)
             )
         )

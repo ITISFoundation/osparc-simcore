@@ -4,9 +4,10 @@
 # pylint: disable=too-many-arguments
 
 
-from typing import Any, AsyncIterator, Callable
+from typing import Any, AsyncIterator, Callable, Iterator
 
 import pytest
+import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
@@ -23,11 +24,19 @@ from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_projects import assert_get_same_project
 from pytest_simcore.helpers.utils_tags import create_tag, delete_tag
+from simcore_postgres_database.models.tags import tags
 from simcore_service_webserver import tags_handlers
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db import get_database_engine
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects.project_models import ProjectDict
+
+
+@pytest.fixture
+def _clean_tags_table(postgres_db: sa.engine.Engine) -> Iterator[None]:
+    yield
+    with postgres_db.connect() as conn:
+        conn.execute(tags.delete())
 
 
 @pytest.mark.parametrize(
@@ -36,7 +45,6 @@ from simcore_service_webserver.projects.project_models import ProjectDict
     ids=lambda r: f"{r.method.upper()} {r.path}",
 )
 def test_tags_route_against_openapi_specs(route, openapi_specs: OpenApiSpecs):
-
     assert route.path.startswith(f"/{api_version_prefix}")
     path = route.path.replace(f"/{api_version_prefix}", "")
 
@@ -185,6 +193,7 @@ async def test_create_and_update_tags(
     logged_user: UserInfoDict,
     user_role: UserRole,
     everybody_tag_id: int,
+    _clean_tags_table: None,
 ):
     assert client.app
 
@@ -204,7 +213,7 @@ async def test_create_and_update_tags(
         "accessRights": {"read": True, "write": True, "delete": True},
     }
 
-    url = client.app.router["update_tag"].url_for(tag_id="2")
+    url = client.app.router["update_tag"].url_for(tag_id=f"{created['id']}")
     resp = await client.patch(
         f"{url}",
         json={"description": "This is my tag"},
