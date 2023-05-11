@@ -1,6 +1,6 @@
 import re
 from datetime import datetime
-from typing import Optional, TypedDict
+from typing import TypedDict
 
 from aiohttp import web
 from aiohttp.test_utils import TestClient
@@ -92,13 +92,13 @@ async def log_client_in(
 
 
 class NewUser:
-    def __init__(self, params=None, app: Optional[web.Application] = None):
+    def __init__(self, params=None, app: web.Application | None = None):
         self.params = params
         self.user = None
         assert app
         self.db = get_plugin_storage(app)
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> UserInfoDict:
         self.user = await create_fake_user(self.db, self.params)
         return self.user
 
@@ -123,9 +123,9 @@ class NewInvitation(NewUser):
     def __init__(
         self,
         client: TestClient,
-        guest_email: Optional[str] = None,
-        host: Optional[dict] = None,
-        trial_days: Optional[int] = None,
+        guest_email: str | None = None,
+        host: dict | None = None,
+        trial_days: int | None = None,
     ):
         assert client.app
         super().__init__(params=host, app=client.app)
