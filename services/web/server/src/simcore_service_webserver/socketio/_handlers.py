@@ -16,16 +16,12 @@ from socketio.exceptions import ConnectionRefusedError as SocketIOConnectionErro
 from ..groups.api import list_user_groups
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
-from ._observer import on_user_logout
 from ._utils import EnvironDict, SocketID, get_socket_server, register_socketio_handler
 from .messages import SOCKET_IO_HEARTBEAT_EVENT, SocketMessageDict, send_messages
 
 _logger = logging.getLogger(__name__)
 
 ANONYMOUS_USER_ID = -1
-
-# enforces registration
-assert on_user_logout  # nosec
 
 
 def _get_user_id(request: web.Request) -> int:
@@ -40,7 +36,6 @@ async def _set_user_in_rooms(
     primary_group, user_groups, all_group = await list_user_groups(app, user_id)
     groups = [primary_group] + user_groups + ([all_group] if bool(all_group) else [])
     sio = get_socket_server(app)
-    # TODO: check if it is necessary to leave_room when socket disconnects
     for group in groups:
         sio.enter_room(sid, f"{group['gid']}")
 

@@ -31,7 +31,7 @@ async def _socketio_server_cleanup_ctx(_app: web.Application) -> AsyncIterator[N
     await asyncio.gather(*cancelled_tasks, return_exceptions=True)
 
 
-def setup_socketio_server(app: web.Application):
+def setup_socketio_server(app: web.Application) -> AsyncServer:
     if app.get(APP_CLIENT_SOCKET_SERVER_KEY) is None:
         # SEE https://github.com/miguelgrinberg/python-socketio/blob/v4.6.1/docs/server.rst#aiohttp
         # TODO: ujson to speed up?

@@ -9,7 +9,9 @@ from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from .._constants import APP_SETTINGS_KEY
-from . import _handlers, _utils
+from . import _handlers
+from ._observer import setup_observer_events_handlers
+from ._utils import register_socketio_handlers
 from .server import setup_socketio_server
 
 _logger = logging.getLogger(__name__)
@@ -25,7 +27,8 @@ def setup_socketio(app: web.Application):
     assert app[APP_SETTINGS_KEY].WEBSERVER_SOCKETIO  # nosec
 
     setup_socketio_server(app)
-    _utils.register_handlers(app, _handlers)
+    register_socketio_handlers(app, _handlers)
+    setup_observer_events_handlers(app)
 
 
 __all__: tuple[str, ...] = (

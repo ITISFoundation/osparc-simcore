@@ -6,8 +6,7 @@ import logging
 
 from aiohttp import web
 from models_library.projects import ProjectID
-from servicelib.observer import event_registry as _event_registry
-from servicelib.observer import observe
+from servicelib.observer import is_observer_on_event, observe, registed_observers_report
 from servicelib.utils import logged_gather
 
 from ..notifications import project_logs
@@ -45,21 +44,10 @@ def setup_project_events(_app: web.Application) -> None:
     # using the @observe decorator
 
     assert _on_user_disconnected  # nosec
-    #
-    # FIXME: with_db/02/conftest.py
-    # 'assert _on_user_disconnected in _event_registry["SIGNAL_USER_DISCONNECTED"] ' FAILS
-    # showing '_on_user_disconnected' with different ids!!
-    # This typically happens when somewhere importlib.reload was used.
-    # Since the function is stateless and registstered once, for the moment
-    # we make a weaker
-    assert _on_user_disconnected.__name__ in (  # nosec
-        f.__name__ for f in _event_registry["SIGNAL_USER_DISCONNECTED"]
-    )
+    assert is_observer_on_event(
+        _on_user_disconnected, "SIGNAL_USER_DISCONNECTED"
+    )  # nosec
 
     logger.info(
-        "App registered events (at this point):\n%s",
-        "\n".join(
-            f" {event}->{len(funcs)} handles"
-            for event, funcs in _event_registry.items()
-        ),
+        "App registered events (at this point):\n%s", registed_observers_report()
     )

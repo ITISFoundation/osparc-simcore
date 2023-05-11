@@ -9,7 +9,7 @@ import logging
 from aiohttp import web
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.logging_utils import get_log_record_extra
-from servicelib.observer import observe
+from servicelib.observer import register_observer
 from servicelib.utils import fire_and_forget_task, logged_gather
 from socketio import AsyncServer
 
@@ -34,8 +34,7 @@ async def _disconnect_other_sockets(sio: AsyncServer, sockets: list[str]) -> Non
     await logged_gather(*disconnect_tasks)
 
 
-@observe(event="SIGNAL_USER_LOGOUT")
-async def on_user_logout(
+async def _on_user_logout(
     user_id: str, client_session_id: str | None, app: web.Application
 ) -> None:
     _logger.debug("user %s must be disconnected", user_id)
@@ -66,3 +65,14 @@ async def on_user_logout(
                 task_suffix_name=f"disconnect_other_sockets_{user_id=}",
                 fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
             )
+
+
+def setup_observer_events_handlers(app: web.Application):
+    # Using decorators will execute when the module is imported
+    # It has the risk of forgetting to import and cannot control when the
+    # registration happens. In contrast, explicit registration
+    # allows more control. It will be called on `setup_socketio``
+
+    assert app  # nosec
+
+    register_observer(_on_user_logout, event="SIGNAL_USER_LOGOUT")

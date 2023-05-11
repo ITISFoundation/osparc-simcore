@@ -66,7 +66,7 @@ def _has_socket_io_handler_signature(fun: Callable) -> bool:
     return is_web_app
 
 
-def register_handlers(app: web.Application, module: ModuleType):
+def register_socketio_handlers(app: web.Application, module: ModuleType):
     sio = get_socket_server(app)
     member_fcts = [
         fct for fct in _socketio_handlers_registry if inspect.getmodule(fct) == module
