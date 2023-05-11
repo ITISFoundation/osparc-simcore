@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class ThinDV2LocalhostClient(BaseThinClient):
-    BASE_ADDRESS: str = "http://localhost:8000" # NOSONAR
+    BASE_ADDRESS: str = "http://localhost:8000"  # NOSONAR
 
     def __init__(self):
         self.client = AsyncClient(timeout=Timeout(5))
