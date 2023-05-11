@@ -1,11 +1,13 @@
 import json
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import FastAPI, status
 from httpx import Response, Timeout
+from models_library.volumes import VolumeCategory
 from pydantic import AnyHttpUrl
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
+from servicelib.volumes_utils import VolumeStatus
 
 from ....core.settings import DynamicSidecarSettings
 from ._base import BaseThinClient, expect_status, retry_on_errors
@@ -193,7 +195,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
     async def post_containers_tasks_ports_inputs_pull(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
-        port_keys: Optional[list[str]] = None,
+        port_keys: list[str] | None = None,
     ) -> Response:
         port_keys = [] if port_keys is None else port_keys
         url = self._get_url(dynamic_sidecar_endpoint, "/containers/ports/inputs:pull")
@@ -204,7 +206,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
     async def post_containers_tasks_ports_outputs_pull(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
-        port_keys: Optional[list[str]] = None,
+        port_keys: list[str] | None = None,
     ) -> Response:
         port_keys = [] if port_keys is None else port_keys
         url = self._get_url(dynamic_sidecar_endpoint, "/containers/ports/outputs:pull")
@@ -225,3 +227,15 @@ class ThinDynamicSidecarClient(BaseThinClient):
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "/containers:restart")
         return await self.client.post(url)
+
+    @retry_on_errors
+    @expect_status(status.HTTP_204_NO_CONTENT)
+    async def put_volumes(
+        self,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
+        volume_category: VolumeCategory,
+        volume_status: VolumeStatus,
+    ) -> Response:
+        url = self._get_url(dynamic_sidecar_endpoint, f"/volumes/{volume_category}")
+
+        return await self.client.put(url, json={"status": volume_status})

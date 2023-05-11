@@ -445,7 +445,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         # This constructor method sets current product
         names_helper = DynamicSidecarNamesHelper.make(service.node_uuid)
 
-        obj_dict = dict(
+        obj_dict: dict[str, Any] = dict(
             service_name=names_helper.service_name_dynamic_sidecar,
             hostname=names_helper.service_name_dynamic_sidecar,
             port=port,
