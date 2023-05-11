@@ -41,28 +41,29 @@ def no_task_context_decorator(handler: Handler):
 
 
 async def start_long_running_task(
-    request: web.Request,
-    task: TaskProtocol,
+    # NOTE: positional argument are suffixed with "_" to avoid name conflicts with "task_kwargs" keys
+    request_: web.Request,
+    task_: TaskProtocol,
     *,
     fire_and_forget: bool = False,
     task_context: TaskContext,
     **task_kwargs: Any,
 ) -> web.Response:
-    task_manager = get_tasks_manager(request.app)
-    task_name = create_task_name_from_request(request)
+    task_manager = get_tasks_manager(request_.app)
+    task_name = create_task_name_from_request(request_)
     task_id = None
     try:
         task_id = start_task(
             task_manager,
-            task,
+            task_,
             fire_and_forget=fire_and_forget,
             task_context=task_context,
             task_name=task_name,
             **task_kwargs,
         )
-        status_url = request.app.router["get_task_status"].url_for(task_id=task_id)
-        result_url = request.app.router["get_task_result"].url_for(task_id=task_id)
-        abort_url = request.app.router["cancel_and_delete_task"].url_for(
+        status_url = request_.app.router["get_task_status"].url_for(task_id=task_id)
+        result_url = request_.app.router["get_task_result"].url_for(task_id=task_id)
+        abort_url = request_.app.router["cancel_and_delete_task"].url_for(
             task_id=task_id
         )
         task_get = TaskGet(
@@ -80,7 +81,7 @@ async def start_long_running_task(
     except asyncio.CancelledError:
         # cancel the task, the client has disconnected
         if task_id:
-            task_manager = get_tasks_manager(request.app)
+            task_manager = get_tasks_manager(request_.app)
             await task_manager.cancel_task(task_id, with_task_context=None)
         raise
 
