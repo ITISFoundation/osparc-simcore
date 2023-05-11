@@ -720,14 +720,14 @@ async def test_task_progress_triggers(
     # send some progress
     started_task = expected_pending_tasks[0]
     assert started_task.job_id
-    for progress in [-1, 0, 0.3, 0.5, 1, 1.5, 0.7, 0]:
+    for progress in [-1, 0, 0.3, 0.5, 1, 1.5, 0.7, 0, 20]:
         progress_event = TaskProgressEvent(
             job_id=started_task.job_id, progress=progress
         )
         await cast(DaskScheduler, scheduler)._task_progress_change_handler(
             progress_event.json()
         )
-        # FIXME: this does not really make sense
+        # NOTE: not sure whether it should switch to STARTED.. it would make sense
         await _assert_comp_tasks_db(
             aiopg_engine,
             published_project.project.uuid,
