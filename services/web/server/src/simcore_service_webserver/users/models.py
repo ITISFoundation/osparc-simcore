@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Literal
+from typing import Any, Literal, Mapping
 from uuid import UUID
 
 from models_library.basic_types import IdInt
@@ -9,6 +9,7 @@ from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.models.users import UserRole
 
 from ..groups.schemas import AllUsersGroups
+from ..utils import gravatar_hash
 
 #
 # TOKENS resource
@@ -104,3 +105,26 @@ class ProfileGet(_ProfileCommon):
         if isinstance(v, UserRole):
             return v.name.capitalize()
         return v
+
+
+#
+# helpers
+#
+
+
+def convert_user_db_to_schema(
+    row: Mapping[str, Any], prefix: str | None = ""
+) -> dict[str, Any]:
+    parts = row[f"{prefix}name"].split(".") + [""]
+    data = {
+        "id": row[f"{prefix}id"],
+        "login": row[f"{prefix}email"],
+        "first_name": parts[0],
+        "last_name": parts[1],
+        "role": row[f"{prefix}role"].name.capitalize(),
+        "gravatar_id": gravatar_hash(row[f"{prefix}email"]),
+    }
+
+    if expires_at := row[f"{prefix}expires_at"]:
+        data["expires_at"] = expires_at
+    return data
