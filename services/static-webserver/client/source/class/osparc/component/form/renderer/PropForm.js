@@ -108,11 +108,29 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       return emptyDataPorts;
     },
 
+    __getVisibleEmptyDataLastPort: function() {
+      let emptyDataPorts = null;
+      this.__getPortKeys().forEach(portId => {
+        const ctrl = this._form.getControl(portId);
+        const label = this._getLabelFieldChild(portId).child;
+        if (
+          ctrl && ctrl.type.includes("data:") && !("link" in ctrl) &&
+          label && label.isVisible()
+        ) {
+          emptyDataPorts = portId;
+        }
+      });
+      return emptyDataPorts;
+    },
+
     __addPortButtonClicked: function() {
       const emptyDataPorts = this.__getEmptyDataLastPorts();
-      if (emptyDataPorts.length>1) {
-        // the first empty one should already be visible
-        this.showPort(emptyDataPorts[1]);
+      const lastEmptyDataPort = this.__getVisibleEmptyDataLastPort();
+      if (emptyDataPorts.length>1 && lastEmptyDataPort) {
+        const idx = emptyDataPorts.indexOf(lastEmptyDataPort);
+        if (idx+1 < emptyDataPorts.length) {
+          this.showPort(emptyDataPorts[idx+1]);
+        }
       } else {
         const msg = this.tr("You reached the maximum number of inputs");
         osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING");
@@ -128,6 +146,10 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         const hidePortId = emptyDataPorts[i];
         this.excludePort(hidePortId);
       }
+
+      this.__addPortButton.set({
+        visibility: emptyDataPorts.length > 1 ? "visible" : "excluded"
+      });
     },
 
     showPort: function(portId) {
@@ -407,15 +429,13 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       }
 
       // add port button
-      const emptyDataPorts = this.__getEmptyDataLastPorts();
       const addPortButton = this.__addPortButton = new qx.ui.form.Button().set({
         icon: "@FontAwesome5Solid/plus/14",
         toolTipText: this.tr("Add input"),
         alignX: "center",
-        allowGrowX: false,
-        visibility: emptyDataPorts.length > 1 ? "visible" : "excluded"
+        allowGrowX: false
       });
-      addPortButton.addListener("execute", this.__addPortButtonClicked);
+      addPortButton.addListener("execute", () => this.__addPortButtonClicked());
       this._add(addPortButton, {
         row,
         column: this.self().GRID_POS.LABEL
@@ -531,10 +551,14 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         }
       }
 
-      this._addAt(icon, idx, {
-        row: row,
-        column: this.self().GRID_POS.RETRIEVE_STATUS
-      });
+      const label = this._getLabelFieldChild(portId).child;
+      if (label && label.isVisible()) {
+        this._getLabelFieldChild(portId);
+        this._addAt(icon, idx, {
+          row,
+          column: this.self().GRID_POS.RETRIEVE_STATUS
+        });
+      }
     },
 
     __arePortsCompatible: function(node1Id, port1Id, node2Id, port2Id) {
