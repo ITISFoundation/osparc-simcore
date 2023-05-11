@@ -39,7 +39,7 @@ from .security.plugin import setup_security
 from .session import setup_session
 from .socketio.plugin import setup_socketio
 from .statics.plugin import setup_statics
-from .storage import setup_storage
+from .storage.plugin import setup_storage
 from .studies_dispatcher.plugin import setup_studies_dispatcher
 from .tags import setup_tags
 from .tracing import setup_app_tracing
