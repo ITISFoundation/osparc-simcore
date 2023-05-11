@@ -9,7 +9,7 @@ import time
 from asyncio.subprocess import Process
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncIterator, NamedTuple, Optional
+from typing import AsyncIterator, NamedTuple
 
 import aiofiles
 import httpx
@@ -24,10 +24,6 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-from ..modules.mounted_fs import MountedVolumes
-
-HIDDEN_FILE_NAME = ".hidden_do_not_remove"
-
 logger = logging.getLogger(__name__)
 
 
@@ -35,7 +31,7 @@ class CommandResult(NamedTuple):
     success: bool
     message: str
     command: str
-    elapsed: Optional[float]
+    elapsed: float | None
 
 
 class _RegistryNotReachableException(Exception):
@@ -113,7 +109,6 @@ async def write_to_tmp_file(file_contents: str) -> AsyncIterator[Path]:
 
 
 def _close_transport(proc: Process):
-
     # Closes transport (initialized during 'await proc.communicate(...)' ) and avoids error:
     #
     # Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x7f871d0c7e50>
@@ -130,7 +125,7 @@ def _close_transport(proc: Process):
                 t.close()
 
 
-async def async_command(command: str, timeout: Optional[float] = None) -> CommandResult:
+async def async_command(command: str, timeout: float | None = None) -> CommandResult:
     """
     Does not raise Exception
     """
@@ -208,16 +203,3 @@ def assemble_container_names(validated_compose_content: str) -> list[str]:
         service_data["container_name"]
         for service_data in parsed_compose_spec["services"].values()
     ]
-
-
-async def volumes_fix_permissions(mounted_volumes: MountedVolumes) -> None:
-    # NOTE: by creating a hidden file on all mounted volumes
-    # the same permissions are ensured and avoids
-    # issues when starting the services
-    for volume_path in mounted_volumes.all_disk_paths():
-        hidden_file = volume_path / HIDDEN_FILE_NAME
-        hidden_file.write_text(
-            f"Directory must not be empty.\nCreated by {__file__}.\n"
-            "Required by oSPARC internals to properly enforce permissions on this "
-            "directory and all its files"
-        )

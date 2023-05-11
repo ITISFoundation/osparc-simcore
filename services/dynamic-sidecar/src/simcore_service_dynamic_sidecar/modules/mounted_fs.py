@@ -42,6 +42,7 @@ class MountedVolumes:
         outputs_path: Path,
         state_paths: list[Path],
         state_exclude: set[str],
+        shared_store_path: Path,
         compose_namespace: str,
         dy_volumes: Path,
     ) -> None:
@@ -51,8 +52,9 @@ class MountedVolumes:
         self.outputs_path: Path = outputs_path
         self.state_paths: list[Path] = state_paths
         self.state_exclude: set[str] = state_exclude
-        self.compose_namespace = compose_namespace
-        self._dy_volumes = dy_volumes
+        self.shared_store_path: Path = shared_store_path
+        self.compose_namespace: str = compose_namespace
+        self._dy_volumes: Path = dy_volumes
 
         self._ensure_directories()
 
@@ -86,6 +88,10 @@ class MountedVolumes:
     def disk_outputs_path(self) -> Path:
         return _ensure_path(self._dy_volumes / self.outputs_path.relative_to("/"))
 
+    @cached_property
+    def disk_shared_store_path(self) -> Path:
+        return _ensure_path(self._dy_volumes / self.shared_store_path.relative_to("/"))
+
     def disk_state_paths(self) -> Iterator[Path]:
         for state_path in self.state_paths:
             yield _ensure_path(self._dy_volumes / state_path.relative_to("/"))
@@ -100,9 +106,15 @@ class MountedVolumes:
         """
         Creates directories on its file system, these will be mounted by the user services.
         """
-        _ensure_path(self._dy_volumes)
-        for path in self.all_disk_paths():
+        for path in (
+            self._dy_volumes,
+            self.disk_shared_store_path,
+            self.disk_inputs_path,
+            self.disk_outputs_path,
+        ):
             _ensure_path(path)
+        for state_path in self.disk_state_paths():
+            _ensure_path(state_path)
 
     @staticmethod
     async def _get_bind_path_from_label(label: str, run_id: RunID) -> Path:
@@ -143,6 +155,7 @@ def setup_mounted_fs(app: FastAPI) -> MountedVolumes:
         outputs_path=settings.DY_SIDECAR_PATH_OUTPUTS,
         state_paths=settings.DY_SIDECAR_STATE_PATHS,
         state_exclude=settings.DY_SIDECAR_STATE_EXCLUDE,
+        shared_store_path=settings.DYNAMIC_SIDECAR_SHARED_STORE_DIR,
         compose_namespace=settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE,
         dy_volumes=settings.DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR,
     )

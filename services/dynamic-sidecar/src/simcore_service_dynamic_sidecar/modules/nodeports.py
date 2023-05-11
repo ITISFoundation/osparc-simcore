@@ -18,6 +18,7 @@ from models_library.projects_nodes_io import NodeIDStr
 from pydantic import ByteSize
 from servicelib.archiving_utils import PrunableFolder, archive_dir, unarchive_dir
 from servicelib.async_utils import run_sequentially_in_context
+from servicelib.file_constants import KEY_VALUE_FILE_NAME
 from servicelib.file_utils import remove_directory
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
@@ -40,14 +41,13 @@ class PortTypeName(str, Enum):
 
 
 _FILE_TYPE_PREFIX = "data:"
-_KEY_VALUE_FILE_NAME = "key_values.json"
 
 logger = logging.getLogger(__name__)
 
 # OUTPUTS section
 
 
-def _get_size_of_value(value: Optional[ItemConcreteValue]) -> int:
+def _get_size_of_value(value: ItemConcreteValue | None) -> int:
     if value is None:
         return 0
     if isinstance(value, Path):
@@ -73,7 +73,7 @@ _CONTROL_TESTMARK_DY_SIDECAR_NODEPORT_UPLOADED_MESSAGE = (
 async def upload_outputs(
     outputs_path: Path,
     port_keys: list[str],
-    io_log_redirect_cb: Optional[LogRedirectCB],
+    io_log_redirect_cb: LogRedirectCB | None,
     progress_bar: ProgressBarData,
 ) -> None:
     # pylint: disable=too-many-branches
@@ -90,9 +90,7 @@ async def upload_outputs(
     )
 
     # let's gather the tasks
-    ports_values: dict[
-        str, tuple[Optional[ItemConcreteValue], Optional[SetKWargs]]
-    ] = {}
+    ports_values: dict[str, tuple[ItemConcreteValue | None, SetKWargs | None]] = {}
     archiving_tasks: deque[Coroutine[None, None, None]] = deque()
     ports_to_set = [
         port_value
@@ -161,7 +159,7 @@ async def upload_outputs(
                     ),
                 )
             else:
-                data_file = outputs_path / _KEY_VALUE_FILE_NAME
+                data_file = outputs_path / KEY_VALUE_FILE_NAME
                 if data_file.exists():
                     data = json.loads(data_file.read_text())
                     if port.key in data and data[port.key] is not None:
@@ -195,7 +193,7 @@ _shutil_move = aiofiles.os.wrap(shutil.move)  # type: ignore
 
 async def _get_data_from_port(
     port: Port, *, target_dir: Path, progress_bar: ProgressBarData
-) -> tuple[Port, Optional[ItemConcreteValue], ByteSize]:
+) -> tuple[Port, ItemConcreteValue | None, ByteSize]:
     async with progress_bar.sub_progress(
         steps=2 if is_file_type(port.property_type) else 1
     ) as sub_progress:
@@ -204,7 +202,7 @@ async def _get_data_from_port(
 
         if is_file_type(port.property_type):
             # if there are files, move them to the final destination
-            downloaded_file: Optional[Path] = cast(Optional[Path], port_data)
+            downloaded_file: Path | None = cast(Optional[Path], port_data)
             final_path: Path = target_dir / port.key
 
             if not downloaded_file or not downloaded_file.exists():
@@ -299,7 +297,7 @@ async def download_target_ports(
 
     # create/update the json file with the new values
     if data:
-        data_file = target_dir / _KEY_VALUE_FILE_NAME
+        data_file = target_dir / KEY_VALUE_FILE_NAME
         if data_file.exists():
             current_data = json.loads(data_file.read_text())
             # merge data

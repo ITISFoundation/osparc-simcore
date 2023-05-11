@@ -373,6 +373,7 @@ async def test_regression_io_log_redirect_cb(
         outputs_path=Path("/"),
         state_paths=[],
         state_exclude=set(),
+        shared_store_path=Path("/"),
         compose_namespace="",
         dy_volumes=Path("/"),
     )
