@@ -35,6 +35,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict
+from pytest_simcore.helpers.utils_projects import NewProject
 from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
 from redis import Redis
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
@@ -654,3 +655,19 @@ def mock_progress_bar(mocker: MockerFixture) -> Any:
         return_value=mock_bar,
     )
     return mock_bar
+
+
+@pytest.fixture
+async def user_project(
+    client, fake_project, logged_user, tests_data_dir: Path, osparc_product_name: str
+) -> AsyncIterator[ProjectDict]:
+    async with NewProject(
+        fake_project,
+        client.app,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+        tests_data_dir=tests_data_dir,
+    ) as project:
+        print("-----> added project", project["name"])
+        yield project
+        print("<----- removed project", project["name"])

@@ -143,7 +143,7 @@ class ServiceRemovalState(BaseModel):
         description="when True, marks the service as ready to be removed",
     )
     can_save: bool = Field(
-        ...,
+        False,
         description="when True, saves the internal state and upload outputs of the service",
     )
     was_removed: bool = Field(
