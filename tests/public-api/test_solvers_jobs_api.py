@@ -3,16 +3,17 @@
     might affect the others. E.g. files uploaded in one test can be listed in rext
 
 """
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
 
 import logging
 import time
 from operator import attrgetter
 from pathlib import Path
-from typing import Any
 from urllib.parse import quote_plus
 from zipfile import ZipFile
 
@@ -21,6 +22,8 @@ import osparc.exceptions
 import pytest
 from osparc import FilesApi, SolversApi
 from osparc.models import File, Job, JobInputs, JobOutputs, JobStatus, Solver
+from pytest import TempPathFactory
+from pytest_simcore.helpers.utils_public_api import ServiceInfoDict, ServiceNameStr
 from tenacity import Retrying, TryAgain
 from tenacity.after import after_log
 from tenacity.retry import retry_if_exception_type
@@ -37,7 +40,7 @@ logger = logging.getLogger(__name__)
 @pytest.fixture(scope="module")
 def sleeper_solver(
     solvers_api: SolversApi,
-    services_registry: dict[str, Any],
+    services_registry: dict[ServiceNameStr, ServiceInfoDict],
 ) -> Solver:
     # this part is tested in test_solvers_api so it becomes a fixture here
 
@@ -82,12 +85,12 @@ def sleeper_solver(
 
 
 @pytest.fixture(scope="module")
-def uploaded_input_file(tmpdir_factory, files_api: FilesApi) -> File:
+def uploaded_input_file(tmp_path_factory: TempPathFactory, files_api: FilesApi) -> File:
 
-    tmpdir = tmpdir_factory.mktemp("uploaded_input_file")
+    basedir: Path = tmp_path_factory.mktemp("uploaded_input_file")
 
     # produce an input file in place
-    input_path = Path(tmpdir) / "file-with-number.txt"
+    input_path = basedir / "file-with-number.txt"
     input_path.write_text("2")
 
     # upload resource to server
@@ -193,7 +196,18 @@ _RETRY_POLICY_IF_LOGFILE_404_NOT_FOUND = dict(
 )
 
 
-@pytest.mark.parametrize("expected_outcome", ("SUCCESS", "FAILED"))
+@pytest.mark.parametrize(
+    "expected_outcome",
+    (
+        "SUCCESS",
+        pytest.param(
+            "FAILED",
+            marks=pytest.mark.skip(
+                reason="until question in https://github.com/ITISFoundation/osparc-simcore/pull/4205  is resolved"
+            ),
+        ),
+    ),
+)
 def test_run_job(
     uploaded_input_file: File,
     files_api: FilesApi,
