@@ -31,12 +31,12 @@ from simcore_service_webserver.groups._db import (
     _DEFAULT_GROUP_OWNER_ACCESS_RIGHTS,
     _DEFAULT_GROUP_READ_ACCESS_RIGHTS,
 )
+from simcore_service_webserver.groups._utils import AccessRightsDict
 from simcore_service_webserver.groups.api import (
     auto_add_user_to_groups,
     create_user_group,
     delete_user_group,
 )
-from simcore_service_webserver.groups._utils import AccessRightsDict
 from simcore_service_webserver.groups.plugin import setup_groups
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.rest import setup_rest
@@ -64,7 +64,8 @@ def client(
     # fake config
     app = create_safe_application(cfg)
 
-    assert setup_settings(app)
+    settings = setup_settings(app)
+    print(settings.json(indent=1))
 
     setup_db(app)
     setup_session(app)
@@ -336,9 +337,9 @@ async def test_add_remove_users_from_group(
     resp = await client.get(f"{url}")
     data, error = await assert_status(resp, expected.not_found)
 
+    # Create group
     url = client.app.router["create_group"].url_for()
     assert f"{url}" == f"/{API_VTAG}/groups"
-
     resp = await client.post(f"{url}", json=new_group)
     data, error = await assert_status(resp, expected.created)
 
@@ -346,17 +347,17 @@ async def test_add_remove_users_from_group(
     if not error:
         assert isinstance(data, dict)
         assigned_group = data
+
         _assert_group(assigned_group)
+
         # we get a new gid and the rest keeps the same
         assert assigned_group["gid"] != new_group["gid"]
-        for prop in ["label", "description", "thumbnail"]:
-            assert assigned_group[prop] == new_group[prop]
+
+        props = ["label", "description", "thumbnail"]
+        assert {assigned_group[p] for p in props} == {new_group[p] for p in props}
+
         # we get all rights on the group since we are the creator
-        assert assigned_group["accessRights"] == {
-            "read": True,
-            "write": True,
-            "delete": True,
-        }
+        assert assigned_group["accessRights"] == _DEFAULT_GROUP_OWNER_ACCESS_RIGHTS
 
     # check that our user is in the group of users
     get_group_users_url = client.app.router["get_group_users"].url_for(
@@ -383,6 +384,7 @@ async def test_add_remove_users_from_group(
     )
     num_new_users = random.randint(1, 10)
     created_users_list = []
+
     async with AsyncExitStack() as users_stack:
         for i in range(num_new_users):
             created_users_list.append(
@@ -416,10 +418,12 @@ async def test_add_remove_users_from_group(
         data, error = await assert_status(resp, expected.ok)
         if not error:
             list_of_users = data
+
             # now we should have all the users in the group + the owner
             all_created_users = created_users_list + [logged_user]
             assert len(list_of_users) == len(all_created_users)
             for actual_user in list_of_users:
+
                 expected_users_list = list(
                     filter(
                         lambda x, ac=actual_user: x["email"] == ac["login"],
@@ -427,11 +431,15 @@ async def test_add_remove_users_from_group(
                     )
                 )
                 assert len(expected_users_list) == 1
+                expected_user = expected_users_list[0]
+
+                expected_access_rigths = _DEFAULT_GROUP_READ_ACCESS_RIGHTS
+                if actual_user["login"] == logged_user["email"]:
+                    expected_access_rigths = _DEFAULT_GROUP_OWNER_ACCESS_RIGHTS
+
                 _assert__group_user(
-                    expected_users_list[0],
-                    _DEFAULT_GROUP_READ_ACCESS_RIGHTS
-                    if actual_user["login"] != logged_user["email"]
-                    else _DEFAULT_GROUP_READ_ACCESS_RIGHTS,
+                    expected_user,
+                    expected_access_rigths,
                     actual_user,
                 )
                 all_created_users.remove(expected_users_list[0])
