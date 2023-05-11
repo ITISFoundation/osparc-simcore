@@ -51,6 +51,7 @@ from simcore_service_director_v2.models.schemas.dynamic_services import (
     ServiceState,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.volume_remover import (
+    DIND_VERSION,
     DockerVersion,
 )
 from yarl import URL
@@ -451,10 +452,5 @@ async def async_docker_client() -> AsyncIterable[aiodocker.Docker]:
 
 
 @pytest.fixture
-async def docker_version(async_docker_client: aiodocker.Docker) -> DockerVersion:
-    version_request = (
-        await async_docker_client._query_json(  # pylint: disable=protected-access
-            "version", versioned_api=False
-        )
-    )
-    return parse_obj_as(DockerVersion, version_request["Version"])
+async def docker_version() -> DockerVersion:
+    return parse_obj_as(DockerVersion, DIND_VERSION)

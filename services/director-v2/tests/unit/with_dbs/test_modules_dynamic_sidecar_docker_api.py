@@ -840,13 +840,11 @@ async def named_volumes(
 async def is_volume_present(
     async_docker_client: aiodocker.Docker, volume_name: str
 ) -> bool:
-    docker_volume = DockerVolume(async_docker_client, volume_name)
-    try:
-        await docker_volume.show()
-        return True
-    except aiodocker.DockerError as e:
-        assert e.message == f"get {volume_name}: no such volume"
-        return False
+    list_of_volumes = await async_docker_client.volumes.list()
+    for volume in list_of_volumes.get("Volumes", []):
+        if volume["Name"] == volume_name:
+            return True
+    return False
 
 
 async def test_remove_volume_from_node_ok(
