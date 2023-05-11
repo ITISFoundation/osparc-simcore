@@ -10,7 +10,7 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 
 from .._constants import APP_SETTINGS_KEY
 from . import _handlers
-from ._observer import setup_observer_events_handlers
+from ._observer import setup_socketio_observer_events
 from ._utils import register_socketio_handlers
 from .server import setup_socketio_server
 
@@ -28,7 +28,7 @@ def setup_socketio(app: web.Application):
 
     setup_socketio_server(app)
     register_socketio_handlers(app, _handlers)
-    setup_observer_events_handlers(app)
+    setup_socketio_observer_events(app)
 
 
 __all__: tuple[str, ...] = (

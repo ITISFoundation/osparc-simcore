@@ -67,8 +67,8 @@ async def _on_user_logout(
             )
 
 
-def setup_observer_events_handlers(app: web.Application):
-
+def setup_socketio_observer_events(app: web.Application):
+    # ensures registry in place
     setup_observer_registry(app)
-
+    # registers
     register_observer(app, _on_user_logout, event="SIGNAL_USER_LOGOUT")
