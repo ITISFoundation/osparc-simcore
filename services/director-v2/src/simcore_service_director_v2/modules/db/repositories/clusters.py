@@ -95,7 +95,7 @@ async def _compute_user_access_rights(
     conn: connection.SAConnection, user_id: UserID, cluster: Cluster
 ) -> ClusterAccessRights:
     result = await conn.execute(
-        sa.select([user_to_groups.c.gid, groups.c.type])
+        sa.select(user_to_groups.c.gid, groups.c.type)
         .where(user_to_groups.c.uid == user_id)
         .order_by(groups.c.type)
         .join(groups)
@@ -121,7 +121,7 @@ class ClustersRepository(BaseRepository):
     async def create_cluster(self, user_id, new_cluster: ClusterCreate) -> Cluster:
         async with self.db_engine.acquire() as conn:
             user_primary_gid = await conn.scalar(
-                sa.select([users.c.primary_gid]).where(users.c.id == user_id)
+                sa.select(users.c.primary_gid).where(users.c.id == user_id)
             )
             new_cluster.owner = user_primary_gid
             new_cluster_id = await conn.scalar(
@@ -135,11 +135,11 @@ class ClustersRepository(BaseRepository):
     async def list_clusters(self, user_id: UserID) -> list[Cluster]:
         async with self.db_engine.acquire() as conn:
             result = await conn.execute(
-                sa.select([clusters.c.id], distinct=True)
+                sa.select(clusters.c.id, distinct=True)
                 .where(
                     cluster_to_groups.c.gid.in_(
                         # get the groups of the user where he/she has read access
-                        sa.select([groups.c.gid])
+                        sa.select(groups.c.gid)
                         .where(user_to_groups.c.uid == user_id)
                         .order_by(groups.c.gid)
                         .select_from(groups.join(user_to_groups))

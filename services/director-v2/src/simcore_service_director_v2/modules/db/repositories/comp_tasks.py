@@ -189,9 +189,7 @@ class CompTasksRepository(BaseRepository):
         tasks: list[CompTaskAtDB] = []
         async with self.db_engine.acquire() as conn:
             async for row in conn.execute(
-                sa.select([comp_tasks]).where(
-                    comp_tasks.c.project_id == f"{project_id}"
-                )
+                sa.select(comp_tasks).where(comp_tasks.c.project_id == f"{project_id}")
             ):
                 task_db = CompTaskAtDB.from_orm(row)
                 tasks.append(task_db)
@@ -205,7 +203,7 @@ class CompTasksRepository(BaseRepository):
         tasks: list[CompTaskAtDB] = []
         async with self.db_engine.acquire() as conn:
             async for row in conn.execute(
-                sa.select([comp_tasks]).where(
+                sa.select(comp_tasks).where(
                     (comp_tasks.c.project_id == f"{project_id}")
                     & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
                 )
@@ -217,7 +215,7 @@ class CompTasksRepository(BaseRepository):
     async def check_task_exists(self, project_id: ProjectID, node_id: NodeID) -> bool:
         async with self.db_engine.acquire() as conn:
             nid: str | None = await conn.scalar(
-                sa.select([comp_tasks.c.node_id]).where(
+                sa.select(comp_tasks.c.node_id).where(
                     (comp_tasks.c.project_id == f"{project_id}")
                     & (comp_tasks.c.node_id == f"{node_id}")
                 )
@@ -247,7 +245,7 @@ class CompTasksRepository(BaseRepository):
         async with self.db_engine.acquire() as conn:
             # get current tasks
             result = await conn.execute(
-                sa.select([comp_tasks.c.node_id]).where(
+                sa.select(comp_tasks.c.node_id).where(
                     comp_tasks.c.project_id == str(project.uuid)
                 )
             )
