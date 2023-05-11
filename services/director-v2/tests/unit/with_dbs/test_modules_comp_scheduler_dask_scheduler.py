@@ -190,7 +190,7 @@ def mocked_clean_task_output_fct(mocker: MockerFixture) -> mock.MagicMock:
 
 
 @pytest.fixture
-def mocked_scheduler_task(mocker: MockerFixture) -> None:
+def with_disabled_scheduler_task(mocker: MockerFixture) -> None:
     """disables the scheduler task, note that it needs to be triggered manually then"""
     mocker.patch.object(background_task, "scheduler_task")
 
@@ -249,7 +249,7 @@ def test_scheduler_raises_exception_for_missing_dependencies(
 
 
 async def test_empty_pipeline_is_not_scheduled(
-    mocked_scheduler_task: None,
+    with_disabled_scheduler_task: None,
     scheduler: BaseCompScheduler,
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., ProjectAtDB],
@@ -291,7 +291,7 @@ async def test_empty_pipeline_is_not_scheduled(
 
 
 async def test_misconfigured_pipeline_is_not_scheduled(
-    mocked_scheduler_task: None,
+    with_disabled_scheduler_task: None,
     scheduler: BaseCompScheduler,
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., ProjectAtDB],
@@ -457,7 +457,7 @@ async def _assert_schedule_pipeline_PENDING(
 
 @pytest.mark.acceptance_test
 async def test_proper_pipeline_is_scheduled(
-    mocked_scheduler_task: None,
+    with_disabled_scheduler_task: None,
     mocked_dask_client: mock.MagicMock,
     scheduler: BaseCompScheduler,
     aiopg_engine: aiopg.sa.engine.Engine,
@@ -695,7 +695,7 @@ async def test_proper_pipeline_is_scheduled(
 
 
 async def test_task_progress_triggers(
-    mocked_scheduler_task: None,
+    with_disabled_scheduler_task: None,
     mocked_dask_client: mock.MagicMock,
     scheduler: BaseCompScheduler,
     aiopg_engine: aiopg.sa.engine.Engine,
@@ -703,11 +703,17 @@ async def test_task_progress_triggers(
     mocked_parse_output_data_fct: None,
     mocked_clean_task_output_and_log_files_if_invalid: None,
 ):
-    assert published_project.project.prj_owner
-    await scheduler.run_new_pipeline(
-        user_id=published_project.project.prj_owner,
-        project_id=published_project.project.uuid,
-        cluster_id=DEFAULT_CLUSTER_ID,
+    expected_published_tasks = await _assert_start_pipeline(
+        aiopg_engine, published_project, scheduler
+    )
+    # -------------------------------------------------------------------------------
+    # 1. first run will move comp_tasks to PENDING so the worker can take them
+    expected_pending_tasks = await _assert_schedule_pipeline_PENDING(
+        aiopg_engine,
+        published_project,
+        expected_published_tasks,
+        mocked_dask_client,
+        scheduler,
     )
 
 
@@ -722,7 +728,7 @@ async def test_task_progress_triggers(
     ],
 )
 async def test_handling_of_disconnected_dask_scheduler(
-    mocked_scheduler_task: None,
+    with_disabled_scheduler_task: None,
     dask_spec_local_cluster: SpecCluster,
     scheduler: BaseCompScheduler,
     aiopg_engine: aiopg.sa.engine.Engine,
@@ -861,7 +867,7 @@ class RebootState:
     ],
 )
 async def test_handling_scheduling_after_reboot(
-    mocked_scheduler_task: None,
+    with_disabled_scheduler_task: None,
     mocked_dask_client: mock.MagicMock,
     aiopg_engine: aiopg.sa.engine.Engine,
     running_project: RunningProject,
