@@ -119,7 +119,7 @@ def registered_user(
         first_name=first_name,
         last_name=last_name,
         # NOTE: keep email
-        email="{first_name}.{last_name}@company.com",
+        email=f"{first_name}.{last_name}@company.com",
         password="my secret",
         api_key="",
         api_secret="",
