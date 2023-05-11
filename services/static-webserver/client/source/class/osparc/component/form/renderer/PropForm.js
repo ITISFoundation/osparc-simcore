@@ -131,6 +131,9 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         if (idx+1 < emptyDataPorts.length) {
           this.showPort(emptyDataPorts[idx+1]);
         }
+        if (idx+1 === emptyDataPorts.length-1) {
+          this.__addPortButton.exclude();
+        }
       } else {
         const msg = this.tr("You reached the maximum number of inputs");
         osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING");
