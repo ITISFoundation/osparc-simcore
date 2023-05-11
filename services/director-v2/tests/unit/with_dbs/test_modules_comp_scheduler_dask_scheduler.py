@@ -17,7 +17,7 @@ import aiopg
 import aiopg.sa
 import httpx
 import pytest
-from _helpers import PublishedProject, RunningProject, manually_run_comp_scheduler
+from _helpers import PublishedProject, RunningProject
 from dask.distributed import SpecCluster
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.io import TaskOutputData
@@ -64,6 +64,72 @@ pytest_simcore_ops_services_selection = [
 ]
 
 
+def _assert_dask_client_correctly_initialized(
+    mocked_dask_client: mock.MagicMock, scheduler: BaseCompScheduler
+) -> None:
+    mocked_dask_client.create.assert_called_once_with(
+        app=mock.ANY,
+        settings=mock.ANY,
+        endpoint=mock.ANY,
+        authentication=mock.ANY,
+        tasks_file_link_type=mock.ANY,
+    )
+    mocked_dask_client.register_handlers.assert_called_once_with(
+        TaskHandlers(
+            cast(DaskScheduler, scheduler)._task_progress_change_handler,
+            cast(DaskScheduler, scheduler)._task_log_change_handler,
+        )
+    )
+
+
+async def _assert_comp_run_db(
+    aiopg_engine: aiopg.sa.engine.Engine,
+    pub_project: PublishedProject,
+    expected_state: RunningState,
+) -> None:
+    # check the database is correctly updated, the run is published
+    async with aiopg_engine.acquire() as conn:
+        result = await conn.execute(
+            comp_runs.select().where(
+                (comp_runs.c.user_id == pub_project.project.prj_owner)
+                & (comp_runs.c.project_uuid == f"{pub_project.project.uuid}")
+            )  # there is only one entry
+        )
+        run_entry = CompRunsAtDB.parse_obj(await result.first())
+    assert (
+        run_entry.result == expected_state
+    ), f"comp_runs: expected state '{expected_state}, found '{run_entry.result}'"
+
+
+async def _assert_comp_tasks_db(
+    aiopg_engine: aiopg.sa.engine.Engine,
+    project_uuid: ProjectID,
+    task_ids: list[NodeID],
+    *,
+    expected_state: RunningState,
+    expected_progress: float | None,
+) -> None:
+    # check the database is correctly updated, the run is published
+    async with aiopg_engine.acquire() as conn:
+        result = await conn.execute(
+            comp_tasks.select().where(
+                (comp_tasks.c.project_id == f"{project_uuid}")
+                & (comp_tasks.c.node_id.in_([f"{n}" for n in task_ids]))
+            )  # there is only one entry
+        )
+        tasks = parse_obj_as(list[CompTaskAtDB], await result.fetchall())
+    assert all(
+        t.state == expected_state for t in tasks
+    ), f"expected state: {expected_state}, found: {[t.state for t in tasks]}"
+    assert all(
+        t.progress == expected_progress for t in tasks
+    ), f"{expected_progress=}, found: {[t.progress for t in tasks]}"
+
+
+async def run_comp_scheduler(scheduler: BaseCompScheduler) -> None:
+    await scheduler.schedule_all_pipelines()
+
+
 @pytest.fixture
 def minimal_dask_scheduler_config(
     mock_env: EnvVarsDict,
@@ -107,10 +173,9 @@ def mocked_dask_client(mocker: MockerFixture) -> mock.MagicMock:
 
 
 @pytest.fixture
-def mocked_node_ports(mocker: MockerFixture) -> None:
-    mocker.patch(
+def mocked_parse_output_data_fct(mocker: MockerFixture) -> mock.Mock:
+    return mocker.patch(
         "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.parse_output_data",
-        return_value=None,
         autospec=True,
     )
 
@@ -138,6 +203,14 @@ async def minimal_app(async_client: httpx.AsyncClient) -> FastAPI:
     # causing issues downstream with coroutines not
     # being created on the same loop
     return async_client._transport.app  # type: ignore
+
+
+@pytest.fixture
+def mocked_clean_task_output_and_log_files_if_invalid(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.clean_task_output_and_log_files_if_invalid",
+        autospec=True,
+    )
 
 
 async def test_scheduler_gracefully_starts_and_stops(
@@ -178,7 +251,6 @@ def test_scheduler_raises_exception_for_missing_dependencies(
 async def test_empty_pipeline_is_not_scheduled(
     mocked_scheduler_task: None,
     scheduler: BaseCompScheduler,
-    minimal_app: FastAPI,
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., ProjectAtDB],
     pipeline: Callable[..., CompPipelineAtDB],
@@ -221,7 +293,6 @@ async def test_empty_pipeline_is_not_scheduled(
 async def test_misconfigured_pipeline_is_not_scheduled(
     mocked_scheduler_task: None,
     scheduler: BaseCompScheduler,
-    minimal_app: FastAPI,
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., ProjectAtDB],
     pipeline: Callable[..., CompPipelineAtDB],
@@ -263,7 +334,7 @@ async def test_misconfigured_pipeline_is_not_scheduled(
         run_entry = CompRunsAtDB.parse_obj(await result.first())
     assert run_entry.result == RunningState.PUBLISHED
     # let the scheduler kick in
-    await manually_run_comp_scheduler(scheduler)
+    await run_comp_scheduler(scheduler)
     # check the scheduled pipelines is again empty since it's misconfigured
     assert len(scheduler.scheduled_pipelines) == 0
     # check the database entry is correctly updated
@@ -278,95 +349,10 @@ async def test_misconfigured_pipeline_is_not_scheduled(
     assert run_entry.result == RunningState.ABORTED
 
 
-@pytest.fixture
-def mocked_parse_output_data(mocker: MockerFixture) -> None:
-    mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.parse_output_data",
-        autospec=True,
-    )
-
-
-@pytest.fixture
-def mocked_clean_task_output_and_log_files_if_invalid(mocker: MockerFixture) -> None:
-    mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.clean_task_output_and_log_files_if_invalid",
-        autospec=True,
-    )
-
-
-def _assert_dask_client_init(
-    mocked_dask_client: mock.MagicMock, scheduler: BaseCompScheduler
-) -> None:
-    mocked_dask_client.create.assert_called_once_with(
-        app=mock.ANY,
-        settings=mock.ANY,
-        endpoint=mock.ANY,
-        authentication=mock.ANY,
-        tasks_file_link_type=mock.ANY,
-    )
-    mocked_dask_client.register_handlers.assert_called_once_with(
-        TaskHandlers(
-            cast(DaskScheduler, scheduler)._task_progress_change_handler,
-            cast(DaskScheduler, scheduler)._task_log_change_handler,
-        )
-    )
-
-
-async def _assert_comp_run_state(
-    aiopg_engine: aiopg.sa.engine.Engine,
-    pub_project: PublishedProject,
-    expected_state: RunningState,
-) -> None:
-    # check the database is correctly updated, the run is published
-    async with aiopg_engine.acquire() as conn:
-        result = await conn.execute(
-            comp_runs.select().where(
-                (comp_runs.c.user_id == pub_project.project.prj_owner)
-                & (comp_runs.c.project_uuid == f"{pub_project.project.uuid}")
-            )  # there is only one entry
-        )
-        run_entry = CompRunsAtDB.parse_obj(await result.first())
-    assert (
-        run_entry.result == expected_state
-    ), f"comp_runs: expected state '{expected_state}, found '{run_entry.result}'"
-
-
-async def assert_comp_tasks_state(
-    aiopg_engine: aiopg.sa.engine.Engine,
-    project_uuid: ProjectID,
-    task_ids: list[NodeID],
-    *,
-    expected_state: RunningState,
-    expected_progress: float | None,
-) -> None:
-    # check the database is correctly updated, the run is published
-    async with aiopg_engine.acquire() as conn:
-        result = await conn.execute(
-            comp_tasks.select().where(
-                (comp_tasks.c.project_id == f"{project_uuid}")
-                & (comp_tasks.c.node_id.in_([f"{n}" for n in task_ids]))
-            )  # there is only one entry
-        )
-        tasks = parse_obj_as(list[CompTaskAtDB], await result.fetchall())
-    assert all(
-        t.state == expected_state for t in tasks
-    ), f"expected state: {expected_state}, found: {[t.state for t in tasks]}"
-    assert all(
-        t.progress == expected_progress for t in tasks
-    ), f"{expected_progress=}, found: {[t.progress for t in tasks]}"
-
-
-async def test_proper_pipeline_is_scheduled(
-    mocked_scheduler_task: None,
-    mocked_dask_client: mock.MagicMock,
-    scheduler: BaseCompScheduler,
-    minimal_app: FastAPI,
-    aiopg_engine: aiopg.sa.engine.Engine,
-    published_project: PublishedProject,
-    mocked_parse_output_data: None,
-    mocked_clean_task_output_and_log_files_if_invalid: None,
-):
-    # This calls adds starts the scheduling of a pipeline
+async def _assert_start_pipeline(
+    aiopg_engine, published_project: PublishedProject, scheduler: BaseCompScheduler
+) -> list[CompTaskAtDB]:
+    exp_published_tasks = deepcopy(published_project.tasks)
     assert published_project.project.prj_owner
     await scheduler.run_new_pipeline(
         user_id=published_project.project.prj_owner,
@@ -382,48 +368,47 @@ async def test_proper_pipeline_is_scheduled(
         assert p_id == published_project.project.uuid
         assert it > 0
         assert params.mark_for_cancellation is False
-    # check the database is correctly updated, the run is published
-    exp_published_tasks = deepcopy(published_project.tasks)
 
-    await _assert_comp_run_state(
-        aiopg_engine, published_project, RunningState.PUBLISHED
-    )
-    await assert_comp_tasks_state(
+    # check the database is correctly updated, the run is published
+    await _assert_comp_run_db(aiopg_engine, published_project, RunningState.PUBLISHED)
+    await _assert_comp_tasks_db(
         aiopg_engine,
         published_project.project.uuid,
         [p.node_id for p in exp_published_tasks],
         expected_state=RunningState.PUBLISHED,
         expected_progress=None,
     )
-    exp_pending_tasks = [
-        published_project.tasks[1],
-        published_project.tasks[3],
-    ]
-    for p in exp_pending_tasks:
-        exp_published_tasks.remove(p)
-    # -------------------------------------------------------------------------------
-    # 1. first run will move comp_tasks to PENDING so the worker can take them
-    await manually_run_comp_scheduler(scheduler)
-    # the client should be properly initialized, and the handlers registered
-    _assert_dask_client_init(mocked_dask_client, scheduler)
+    return exp_published_tasks
 
-    # the run is still published
-    await _assert_comp_run_state(
-        aiopg_engine, published_project, RunningState.PUBLISHED
-    )
-    # the first tasks are set to pending, so they are ready to be taken
-    await assert_comp_tasks_state(
+
+async def _assert_schedule_pipeline_PENDING(
+    aiopg_engine,
+    published_project: PublishedProject,
+    published_tasks: list[CompTaskAtDB],
+    mocked_dask_client: mock.MagicMock,
+    scheduler: BaseCompScheduler,
+) -> list[CompTaskAtDB]:
+    expected_pending_tasks = [
+        published_tasks[1],
+        published_tasks[3],
+    ]
+    for p in expected_pending_tasks:
+        published_tasks.remove(p)
+    await run_comp_scheduler(scheduler)
+    _assert_dask_client_correctly_initialized(mocked_dask_client, scheduler)
+    await _assert_comp_run_db(aiopg_engine, published_project, RunningState.PUBLISHED)
+    await _assert_comp_tasks_db(
         aiopg_engine,
         published_project.project.uuid,
-        [p.node_id for p in exp_pending_tasks],
+        [p.node_id for p in expected_pending_tasks],
         expected_state=RunningState.PENDING,
         expected_progress=0,
     )
     # the other tasks are still waiting in published state
-    await assert_comp_tasks_state(
+    await _assert_comp_tasks_db(
         aiopg_engine,
         published_project.project.uuid,
-        [p.node_id for p in exp_published_tasks],
+        [p.node_id for p in published_tasks],
         expected_state=RunningState.PUBLISHED,
         expected_progress=None,  # since we bypass the API entrypoint this is correct
     )
@@ -437,42 +422,66 @@ async def test_proper_pipeline_is_scheduled(
                 tasks={f"{p.node_id}": p.image},
                 callback=scheduler._wake_up_scheduler_now,
             )
-            for p in exp_pending_tasks
+            for p in expected_pending_tasks
         ],
         any_order=True,
     )
     mocked_dask_client.send_computation_tasks.reset_mock()
     mocked_dask_client.get_tasks_status.assert_not_called()
     mocked_dask_client.get_task_result.assert_not_called()
-    # -------------------------------------------------------------------------------
-    # 2. comp_run will switch to pending, everything else stays the same, the backend gets some calls
-    await manually_run_comp_scheduler(scheduler)
-    await _assert_comp_run_state(aiopg_engine, published_project, RunningState.PENDING)
-    await assert_comp_tasks_state(
+    # there is a second run of the scheduler to move comp_runs to pending, the rest does not change
+    await run_comp_scheduler(scheduler)
+    await _assert_comp_run_db(aiopg_engine, published_project, RunningState.PENDING)
+    await _assert_comp_tasks_db(
         aiopg_engine,
         published_project.project.uuid,
-        [p.node_id for p in exp_pending_tasks],
+        [p.node_id for p in expected_pending_tasks],
         expected_state=RunningState.PENDING,
         expected_progress=0,
     )
-    await assert_comp_tasks_state(
+    await _assert_comp_tasks_db(
         aiopg_engine,
         published_project.project.uuid,
-        [p.node_id for p in exp_published_tasks],
+        [p.node_id for p in published_tasks],
         expected_state=RunningState.PUBLISHED,
         expected_progress=None,  # since we bypass the API entrypoint this is correct
     )
     mocked_dask_client.send_computation_tasks.assert_not_called()
     mocked_dask_client.get_tasks_status.assert_has_calls(
-        calls=[mock.call([p.job_id for p in exp_pending_tasks])], any_order=True
+        calls=[mock.call([p.job_id for p in expected_pending_tasks])], any_order=True
     )
     mocked_dask_client.get_tasks_status.reset_mock()
     mocked_dask_client.get_task_result.assert_not_called()
+    return expected_pending_tasks
+
+
+@pytest.mark.acceptance_test
+async def test_proper_pipeline_is_scheduled(
+    mocked_scheduler_task: None,
+    mocked_dask_client: mock.MagicMock,
+    scheduler: BaseCompScheduler,
+    aiopg_engine: aiopg.sa.engine.Engine,
+    published_project: PublishedProject,
+    mocked_parse_output_data_fct: mock.Mock,
+    mocked_clean_task_output_and_log_files_if_invalid: None,
+):
+    expected_published_tasks = await _assert_start_pipeline(
+        aiopg_engine, published_project, scheduler
+    )
+    # -------------------------------------------------------------------------------
+    # 1. first run will move comp_tasks to PENDING so the worker can take them
+    expected_pending_tasks = await _assert_schedule_pipeline_PENDING(
+        aiopg_engine,
+        published_project,
+        expected_published_tasks,
+        mocked_dask_client,
+        scheduler,
+    )
 
     # -------------------------------------------------------------------------------
     # 3. the "worker" starts processing a task
-    exp_started_task = exp_pending_tasks[0]
-    exp_pending_tasks.remove(exp_started_task)
+    exp_started_task = expected_pending_tasks[0]
+    expected_pending_tasks.remove(exp_started_task)
 
     async def _return_1st_task_running(job_ids: list[str]) -> list[RunningState]:
         return [
@@ -483,33 +492,33 @@ async def test_proper_pipeline_is_scheduled(
         ]
 
     mocked_dask_client.get_tasks_status.side_effect = _return_1st_task_running
-    await manually_run_comp_scheduler(scheduler)
+    await run_comp_scheduler(scheduler)
     # comp_run, the comp_task switch to STARTED
-    await _assert_comp_run_state(aiopg_engine, published_project, RunningState.STARTED)
-    await assert_comp_tasks_state(
+    await _assert_comp_run_db(aiopg_engine, published_project, RunningState.STARTED)
+    await _assert_comp_tasks_db(
         aiopg_engine,
         published_project.project.uuid,
         [exp_started_task.node_id],
         expected_state=RunningState.STARTED,
         expected_progress=0,
     )
-    await assert_comp_tasks_state(
+    await _assert_comp_tasks_db(
         aiopg_engine,
         published_project.project.uuid,
-        [p.node_id for p in exp_pending_tasks],
+        [p.node_id for p in expected_pending_tasks],
         expected_state=RunningState.PENDING,
         expected_progress=0,
     )
-    await assert_comp_tasks_state(
+    await _assert_comp_tasks_db(
         aiopg_engine,
         published_project.project.uuid,
-        [p.node_id for p in exp_published_tasks],
+        [p.node_id for p in expected_published_tasks],
         expected_state=RunningState.PUBLISHED,
         expected_progress=None,  # since we bypass the API entrypoint this is correct
     )
     mocked_dask_client.send_computation_tasks.assert_not_called()
     mocked_dask_client.get_tasks_status.assert_called_once_with(
-        [p.job_id for p in ([exp_started_task] + exp_pending_tasks)],
+        [p.job_id for p in ([exp_started_task] + expected_pending_tasks)],
     )
     mocked_dask_client.get_tasks_status.reset_mock()
     mocked_dask_client.get_task_result.assert_not_called()
@@ -530,9 +539,9 @@ async def test_proper_pipeline_is_scheduled(
         return TaskOutputData.parse_obj({"out_1": None, "out_2": 45})
 
     mocked_dask_client.get_task_result.side_effect = _return_random_task_result
-    await manually_run_comp_scheduler(scheduler)
-    await _assert_comp_run_state(aiopg_engine, published_project, RunningState.STARTED)
-    await assert_comp_tasks_state(
+    await run_comp_scheduler(scheduler)
+    await _assert_comp_run_db(aiopg_engine, published_project, RunningState.STARTED)
+    await _assert_comp_tasks_db(
         aiopg_engine,
         published_project.project.uuid,
         [exp_started_task.node_id],
@@ -541,21 +550,21 @@ async def test_proper_pipeline_is_scheduled(
     )
     completed_tasks = [exp_started_task]
     next_pending_task = published_project.tasks[2]
-    exp_pending_tasks.append(next_pending_task)
-    await assert_comp_tasks_state(
+    expected_pending_tasks.append(next_pending_task)
+    await _assert_comp_tasks_db(
         aiopg_engine,
         published_project.project.uuid,
-        [p.node_id for p in exp_pending_tasks],
+        [p.node_id for p in expected_pending_tasks],
         expected_state=RunningState.PENDING,
         expected_progress=0,
     )
-    await assert_comp_tasks_state(
+    await _assert_comp_tasks_db(
         aiopg_engine,
         published_project.project.uuid,
         [
             p.node_id
             for p in published_project.tasks
-            if p not in exp_pending_tasks + completed_tasks
+            if p not in expected_pending_tasks + completed_tasks
         ],
         expected_state=RunningState.PUBLISHED,
         expected_progress=None,  # since we bypass the API entrypoint this is correct
@@ -571,7 +580,9 @@ async def test_proper_pipeline_is_scheduled(
     )
     mocked_dask_client.send_computation_tasks.reset_mock()
     mocked_dask_client.get_tasks_status.assert_has_calls(
-        calls=[mock.call([p.job_id for p in completed_tasks + exp_pending_tasks[:1]])],
+        calls=[
+            mock.call([p.job_id for p in completed_tasks + expected_pending_tasks[:1]])
+        ],
         any_order=True,
     )
     mocked_dask_client.get_tasks_status.reset_mock()
@@ -579,6 +590,12 @@ async def test_proper_pipeline_is_scheduled(
         completed_tasks[0].job_id
     )
     mocked_dask_client.get_task_result.reset_mock()
+    mocked_parse_output_data_fct.assert_called_once_with(
+        mock.ANY,
+        completed_tasks[0].job_id,
+        await _return_random_task_result(completed_tasks[0].job_id),
+    )
+    mocked_parse_output_data_fct.reset_mock()
 
     # -------------------------------------------------------------------------------
     # 6. the "worker" starts processing a task
@@ -594,9 +611,9 @@ async def test_proper_pipeline_is_scheduled(
 
     mocked_dask_client.get_tasks_status.side_effect = _return_2nd_task_running
     # trigger the scheduler, run state should keep to STARTED, task should be as well
-    await manually_run_comp_scheduler(scheduler)
-    await _assert_comp_run_state(aiopg_engine, published_project, RunningState.STARTED)
-    await assert_comp_tasks_state(
+    await run_comp_scheduler(scheduler)
+    await _assert_comp_run_db(aiopg_engine, published_project, RunningState.STARTED)
+    await _assert_comp_tasks_db(
         aiopg_engine,
         published_project.project.uuid,
         [exp_started_task.node_id],
@@ -604,9 +621,9 @@ async def test_proper_pipeline_is_scheduled(
         expected_progress=0,
     )
     mocked_dask_client.send_computation_tasks.assert_not_called()
-    exp_pending_tasks.reverse()
+    expected_pending_tasks.reverse()
     mocked_dask_client.get_tasks_status.assert_called_once_with(
-        [p.job_id for p in exp_pending_tasks]
+        [p.job_id for p in expected_pending_tasks]
     )
     mocked_dask_client.get_tasks_status.reset_mock()
     mocked_dask_client.get_task_result.assert_not_called()
@@ -623,9 +640,9 @@ async def test_proper_pipeline_is_scheduled(
 
     mocked_dask_client.get_tasks_status.side_effect = _return_2nd_task_failed
     mocked_dask_client.get_task_result.side_effect = None
-    await manually_run_comp_scheduler(scheduler)
-    await _assert_comp_run_state(aiopg_engine, published_project, RunningState.STARTED)
-    await assert_comp_tasks_state(
+    await run_comp_scheduler(scheduler)
+    await _assert_comp_run_db(aiopg_engine, published_project, RunningState.STARTED)
+    await _assert_comp_tasks_db(
         aiopg_engine,
         published_project.project.uuid,
         [exp_started_task.node_id],
@@ -634,16 +651,17 @@ async def test_proper_pipeline_is_scheduled(
     )
     mocked_dask_client.send_computation_tasks.assert_not_called()
     mocked_dask_client.get_tasks_status.assert_called_once_with(
-        [p.job_id for p in exp_pending_tasks]
+        [p.job_id for p in expected_pending_tasks]
     )
     mocked_dask_client.get_tasks_status.reset_mock()
     mocked_dask_client.get_task_result.assert_called_once_with(exp_started_task.job_id)
     mocked_dask_client.get_task_result.reset_mock()
-    exp_pending_tasks.remove(exp_started_task)
+    mocked_parse_output_data_fct.assert_not_called()
+    expected_pending_tasks.remove(exp_started_task)
 
     # -------------------------------------------------------------------------------
     # 8. the last task shall succeed
-    exp_started_task = exp_pending_tasks[0]
+    exp_started_task = expected_pending_tasks[0]
 
     async def _return_3rd_task_success(job_ids: list[str]) -> list[RunningState]:
         return [
@@ -657,10 +675,10 @@ async def test_proper_pipeline_is_scheduled(
     mocked_dask_client.get_task_result.side_effect = _return_random_task_result
 
     # trigger the scheduler, it should switch to FAILED, as we are done
-    await manually_run_comp_scheduler(scheduler)
-    await _assert_comp_run_state(aiopg_engine, published_project, RunningState.FAILED)
+    await run_comp_scheduler(scheduler)
+    await _assert_comp_run_db(aiopg_engine, published_project, RunningState.FAILED)
 
-    await assert_comp_tasks_state(
+    await _assert_comp_tasks_db(
         aiopg_engine,
         published_project.project.uuid,
         [exp_started_task.node_id],
@@ -669,7 +687,7 @@ async def test_proper_pipeline_is_scheduled(
     )
     mocked_dask_client.send_computation_tasks.assert_not_called()
     mocked_dask_client.get_tasks_status.assert_called_once_with(
-        [p.job_id for p in exp_pending_tasks]
+        [p.job_id for p in expected_pending_tasks]
     )
     mocked_dask_client.get_task_result.assert_called_once_with(exp_started_task.job_id)
     # the scheduled pipeline shall be removed
@@ -680,13 +698,17 @@ async def test_task_progress_triggers(
     mocked_scheduler_task: None,
     mocked_dask_client: mock.MagicMock,
     scheduler: BaseCompScheduler,
-    minimal_app: FastAPI,
     aiopg_engine: aiopg.sa.engine.Engine,
     published_project: PublishedProject,
-    mocked_parse_output_data: None,
+    mocked_parse_output_data_fct: None,
     mocked_clean_task_output_and_log_files_if_invalid: None,
 ):
-    ...
+    assert published_project.project.prj_owner
+    await scheduler.run_new_pipeline(
+        user_id=published_project.project.prj_owner,
+        project_id=published_project.project.uuid,
+        cluster_id=DEFAULT_CLUSTER_ID,
+    )
 
 
 @pytest.mark.parametrize(
@@ -703,7 +725,6 @@ async def test_handling_of_disconnected_dask_scheduler(
     mocked_scheduler_task: None,
     dask_spec_local_cluster: SpecCluster,
     scheduler: BaseCompScheduler,
-    minimal_app: FastAPI,
     aiopg_engine: aiopg.sa.engine.Engine,
     mocker: MockerFixture,
     published_project: PublishedProject,
@@ -726,11 +747,9 @@ async def test_handling_of_disconnected_dask_scheduler(
 
     # since there is no cluster, there is no dask-scheduler,
     # the tasks shall all still be in PUBLISHED state now
-    await _assert_comp_run_state(
-        aiopg_engine, published_project, RunningState.PUBLISHED
-    )
+    await _assert_comp_run_db(aiopg_engine, published_project, RunningState.PUBLISHED)
 
-    await assert_comp_tasks_state(
+    await _assert_comp_tasks_db(
         aiopg_engine,
         published_project.project.uuid,
         [t.node_id for t in published_project.tasks],
@@ -744,9 +763,9 @@ async def test_handling_of_disconnected_dask_scheduler(
         project_id=published_project.project.uuid,
     )
     # we ensure the scheduler was run
-    await manually_run_comp_scheduler(scheduler)
+    await run_comp_scheduler(scheduler)
     # after this step the tasks are marked as ABORTED
-    await assert_comp_tasks_state(
+    await _assert_comp_tasks_db(
         aiopg_engine,
         published_project.project.uuid,
         [
@@ -758,9 +777,9 @@ async def test_handling_of_disconnected_dask_scheduler(
         expected_progress=1,
     )
     # then we have another scheduler run
-    await manually_run_comp_scheduler(scheduler)
+    await run_comp_scheduler(scheduler)
     # now the run should be ABORTED
-    await _assert_comp_run_state(aiopg_engine, published_project, RunningState.ABORTED)
+    await _assert_comp_run_db(aiopg_engine, published_project, RunningState.ABORTED)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -847,8 +866,7 @@ async def test_handling_scheduling_after_reboot(
     aiopg_engine: aiopg.sa.engine.Engine,
     running_project: RunningProject,
     scheduler: BaseCompScheduler,
-    minimal_app: FastAPI,
-    mocked_node_ports: None,
+    mocked_parse_output_data_fct: mock.MagicMock,
     mocked_clean_task_output_fct: mock.MagicMock,
     reboot_state: RebootState,
 ):
@@ -868,7 +886,7 @@ async def test_handling_scheduling_after_reboot(
 
     mocked_dask_client.get_task_result.side_effect = mocked_get_task_result
 
-    await manually_run_comp_scheduler(scheduler)
+    await run_comp_scheduler(scheduler)
     # the status will be called once for all RUNNING tasks
     mocked_dask_client.get_tasks_status.assert_called_once()
     if reboot_state.expected_run_state in COMPLETED_STATES:
@@ -900,7 +918,7 @@ async def test_handling_scheduling_after_reboot(
     else:
         mocked_clean_task_output_fct.assert_not_called()
 
-    await assert_comp_tasks_state(
+    await _assert_comp_tasks_db(
         aiopg_engine,
         running_project.project.uuid,
         [
@@ -911,7 +929,7 @@ async def test_handling_scheduling_after_reboot(
         expected_state=reboot_state.expected_task_state_group1,
         expected_progress=reboot_state.expected_task_progress_group1,
     )
-    await assert_comp_tasks_state(
+    await _assert_comp_tasks_db(
         aiopg_engine,
         running_project.project.uuid,
         [running_project.tasks[4].node_id],
@@ -919,6 +937,6 @@ async def test_handling_scheduling_after_reboot(
         expected_progress=reboot_state.expected_task_progress_group2,
     )
     assert running_project.project.prj_owner
-    await _assert_comp_run_state(
+    await _assert_comp_run_db(
         aiopg_engine, running_project, reboot_state.expected_run_state
     )

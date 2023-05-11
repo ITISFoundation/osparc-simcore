@@ -35,10 +35,6 @@ async def trigger_comp_scheduler(scheduler: BaseCompScheduler) -> None:
     await asyncio.sleep(1)
 
 
-async def manually_run_comp_scheduler(scheduler: BaseCompScheduler) -> None:
-    await scheduler.schedule_all_pipelines()
-
-
 async def set_comp_task_state(
     aiopg_engine: aiopg.sa.engine.Engine, node_id: str, state: StateType
 ) -> None:
