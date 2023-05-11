@@ -52,7 +52,7 @@ from simcore_service_webserver.resource_manager.registry import (
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT
+from simcore_service_webserver.socketio.messages import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.socketio.plugin import setup_socketio
 from simcore_service_webserver.users import setup_users
 from simcore_service_webserver.users_api import delete_user

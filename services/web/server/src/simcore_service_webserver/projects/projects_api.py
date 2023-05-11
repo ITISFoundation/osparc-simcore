@@ -55,7 +55,7 @@ from ..resource_manager.websocket_manager import (
     UserSessionID,
     managed_resource,
 )
-from ..socketio.events import (
+from ..socketio.messages import (
     SOCKET_IO_NODE_UPDATED_EVENT,
     SOCKET_IO_PROJECT_UPDATED_EVENT,
     SocketMessageDict,
