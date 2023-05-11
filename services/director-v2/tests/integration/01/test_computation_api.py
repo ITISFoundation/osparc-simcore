@@ -97,7 +97,7 @@ def fake_workbench_computational_pipeline_details(
     adjacency_list = json.loads(fake_workbench_computational_adjacency_file.read_text())
     node_states = json.loads(fake_workbench_node_states_file.read_text())
     return PipelineDetails.parse_obj(
-        {"adjacency_list": adjacency_list, "node_states": node_states}
+        {"adjacency_list": adjacency_list, "node_states": node_states, "progress": None}
     )
 
 
@@ -389,7 +389,9 @@ async def test_run_partial_computation(
             for n, s in exp_node_states.items()
         }
         return PipelineDetails(
-            adjacency_list=converted_adj_list, node_states=converted_node_states
+            adjacency_list=converted_adj_list,
+            node_states=converted_node_states,
+            progress=None,
         )
 
     # convert the ids to the node uuids from the project
