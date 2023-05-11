@@ -43,6 +43,7 @@ from simcore_service_webserver.redis import (
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session import setup_session
+from simcore_service_webserver.users._models import ProfileGet
 from simcore_service_webserver.users.plugin import setup_users
 from simcore_service_webserver.users.user_notifications import (
     MAX_NOTIFICATIONS_FOR_USER_TO_KEEP,
@@ -52,7 +53,6 @@ from simcore_service_webserver.users.user_notifications import (
     get_notification_key,
 )
 from simcore_service_webserver.users.users_handlers import _get_user_notifications
-from simcore_service_webserver.users.users_models import ProfileGet
 
 API_VERSION = "v0"
 

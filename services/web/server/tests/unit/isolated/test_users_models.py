@@ -9,7 +9,7 @@ from models_library.generics import Envelope
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import BaseModel
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.users.users_models import ProfileGet, Token
+from simcore_service_webserver.users._models import ProfileGet, Token
 
 
 @pytest.mark.parametrize(

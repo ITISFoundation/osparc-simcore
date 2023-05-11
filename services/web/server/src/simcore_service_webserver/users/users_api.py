@@ -21,8 +21,8 @@ from ..db_models import GroupType, groups, tokens, user_to_groups, users
 from ..groups.schemas import convert_groups_db_to_schema
 from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..security.api import clean_auth_policy_cache
+from ._models import ProfileGet, ProfileUpdate
 from .exceptions import UserNotFoundError
-from .users_models import ProfileGet, ProfileUpdate
 from .users_utils import convert_user_db_to_schema
 
 logger = logging.getLogger(__name__)
