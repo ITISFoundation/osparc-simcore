@@ -12,11 +12,11 @@ class PipelineDetails(BaseModel):
         ...,
         description="The adjacency list of the current pipeline in terms of {NodeID: [successor NodeID]}",
     )
-    progress: float = Field(
+    progress: float | None = Field(
         ...,
         ge=0,
         le=1.0,
-        description="the progress of the pipeline",
+        description="the progress of the pipeline (None if there are no computational tasks)",
     )
     node_states: dict[NodeID, NodeState] = Field(
         ..., description="The states of each of the computational nodes in the pipeline"
