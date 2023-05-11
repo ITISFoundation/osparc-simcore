@@ -526,10 +526,10 @@ async def test_proper_pipeline_is_scheduled(
 
     mocked_dask_client.get_tasks_status.side_effect = _return_1st_task_success
 
-    async def _return_1st_task_result(job_id) -> TaskOutputData:
+    async def _return_rangom_task_result(job_id) -> TaskOutputData:
         return TaskOutputData.parse_obj({"out_1": None, "out_2": 45})
 
-    mocked_dask_client.get_task_result.side_effect = _return_1st_task_result
+    mocked_dask_client.get_task_result.side_effect = _return_rangom_task_result
     await manually_run_comp_scheduler(scheduler)
     await _assert_comp_run_state(aiopg_engine, published_project, RunningState.STARTED)
     await assert_comp_tasks_state(
@@ -652,11 +652,7 @@ async def test_proper_pipeline_is_scheduled(
         ]
 
     mocked_dask_client.get_tasks_status.side_effect = _return_3rd_task_success
-
-    async def _return_1st_task_result(job_id) -> TaskOutputData:
-        return TaskOutputData.parse_obj({"out_1": None, "out_2": 45})
-
-    mocked_dask_client.get_task_result.side_effect = _return_1st_task_result
+    mocked_dask_client.get_task_result.side_effect = _return_rangom_task_result
 
     # trigger the scheduler, it should switch to FAILED, as we are done
     await manually_run_comp_scheduler(scheduler)
