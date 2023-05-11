@@ -8,6 +8,7 @@ import logging
 from typing import Any
 
 from aiohttp import web
+from models_library.users import UserID
 from servicelib.aiohttp.observer import emit
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.request_keys import RQT_USERID_KEY
@@ -21,11 +22,11 @@ from .messages import SOCKET_IO_HEARTBEAT_EVENT, SocketMessageDict, send_message
 
 _logger = logging.getLogger(__name__)
 
-ANONYMOUS_USER_ID = -1
+_ANONYMOUS_USER_ID = -1
 
 
-def _get_user_id(request: web.Request) -> int:
-    user_id = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
+def _get_user_id(request: web.Request) -> UserID:
+    user_id = request.get(RQT_USERID_KEY, _ANONYMOUS_USER_ID)
     return int(user_id)
 
 
@@ -43,7 +44,7 @@ async def _set_user_in_rooms(
 @login_required
 async def _authenticate_user(
     sid: SocketID, app: web.Application, request: web.Request
-) -> None:
+) -> UserID:
     """
 
     Raises:
@@ -51,6 +52,7 @@ async def _authenticate_user(
     """
     user_id = _get_user_id(request)
     _logger.debug("client %s authenticated", f"{user_id=}")
+
     client_session_id = request.query.get("client_session_id", None)
     if not client_session_id:
         _logger.error(
@@ -64,6 +66,7 @@ async def _authenticate_user(
         socketio_session["user_id"] = user_id
         socketio_session["client_session_id"] = client_session_id
         socketio_session["request"] = request
+
     with managed_resource(user_id, client_session_id, app) as rt:
         _logger.info(
             "socketio connection from user %s",
@@ -71,6 +74,8 @@ async def _authenticate_user(
             extra=get_log_record_extra(user_id=user_id),
         )
         await rt.set_socket_id(sid)
+
+    return user_id
 
 
 #
@@ -95,34 +100,36 @@ async def connect(sid: SocketID, environ: EnvironDict, app: web.Application) -> 
         True if socket.io connection accepted
     """
     _logger.debug("client connecting in room %s", f"{sid=}")
-    request: web.Request = environ["aiohttp.request"]
+
     try:
-        await _authenticate_user(sid, app, request)
+        request: web.Request = environ["aiohttp.request"]
+
+        user_id = await _authenticate_user(sid, app, request)
         await _set_user_in_rooms(sid, app, request)
+
+        # Send service_deletion_timeout to client
+        # 2 seconds avoids GC from removing the services to early
+        # this has been tested and is working with good results
+        # the previous implementation was not working as expected
+        emit_interval: int = 2
+        _logger.info("Sending set_heartbeat_emit_interval with %s", emit_interval)
+
+        heart_beat_messages: list[SocketMessageDict] = [
+            {
+                "event_type": SOCKET_IO_HEARTBEAT_EVENT,
+                "data": {"interval": emit_interval},
+            }
+        ]
+        await send_messages(
+            app,
+            user_id,
+            heart_beat_messages,
+        )
+
     except web.HTTPUnauthorized as exc:
         raise SocketIOConnectionError("authentification failed") from exc
     except Exception as exc:  # pylint: disable=broad-except
         raise SocketIOConnectionError(f"Unexpected error: {exc}") from exc
-
-    # Send service_deletion_timeout to client
-    # 2 seconds avoids GC from removing the services to early
-    # this has been tested and is working with good results
-    # the previous implementation was not working as expected
-    emit_interval: int = 2
-    _logger.info("Sending set_heartbeat_emit_interval with %s", emit_interval)
-
-    user_id = _get_user_id(request)
-    heart_beat_messages: list[SocketMessageDict] = [
-        {
-            "event_type": SOCKET_IO_HEARTBEAT_EVENT,
-            "data": {"interval": emit_interval},
-        }
-    ]
-    await send_messages(
-        app,
-        user_id,
-        heart_beat_messages,
-    )
 
     return True
 
