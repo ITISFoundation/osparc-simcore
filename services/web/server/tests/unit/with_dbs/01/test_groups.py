@@ -14,7 +14,7 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict, log_client_in
+from pytest_simcore.helpers.utils_login import LoggedUser, NewUser, UserInfoDict
 from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     ExpectedResponse,
     standard_role_response,
@@ -582,23 +582,26 @@ async def test_add_user_gets_added_to_group(
         "good@black.com",
         "bad@blanco.com",
     ]
-    for email in emails:
-        user = await log_client_in(
-            client,
-            user_data={"role": user_role.name, "email": email},
-            enable_check=user_role != UserRole.ANONYMOUS,
-        )
-        await auto_add_user_to_groups(client.app, user["id"])
+    async with AsyncExitStack() as users_stack:
+        for email in emails:
+            user = await users_stack.enter_async_context(
+                LoggedUser(
+                    client,
+                    params={"role": user_role.name, "email": email},
+                    check_if_succeeds=user_role != UserRole.ANONYMOUS,
+                )
+            )
+            await auto_add_user_to_groups(client.app, user["id"])
 
-        url = client.app.router["list_groups"].url_for()
-        assert f"{url}" == f"/{API_VTAG}/groups"
+            url = client.app.router["list_groups"].url_for()
+            assert f"{url}" == f"/{API_VTAG}/groups"
 
-        resp = await client.get(f"{url}")
-        data, error = await assert_status(
-            resp, web.HTTPOk if user_role == UserRole.GUEST else expected.ok
-        )
-        if not error:
-            assert len(data["organizations"]) == (0 if "bad" in email else 1)
+            resp = await client.get(f"{url}")
+            data, error = await assert_status(
+                resp, web.HTTPOk if user_role == UserRole.GUEST else expected.ok
+            )
+            if not error:
+                assert len(data["organizations"]) == (0 if "bad" in email else 1)
 
 
 @pytest.fixture
