@@ -26,7 +26,7 @@ from ._notifications import (
 from .exceptions import TokenNotFoundError, UserNotFoundError
 from .models import ProfileGet, ProfileUpdate
 
-logger = logging.getLogger(__name__)
+__logger = logging.getLogger(__name__)
 
 
 # me/ -----------------------------------------------------------

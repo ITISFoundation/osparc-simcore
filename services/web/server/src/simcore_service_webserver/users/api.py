@@ -25,7 +25,7 @@ from ._db import get_users_for_gid, update_expired_users
 from .exceptions import UserNotFoundError
 from .models import ProfileGet, ProfileUpdate, convert_user_db_to_schema
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def _parse_as_user(user_id: Any) -> UserID:
@@ -182,7 +182,7 @@ async def delete_user(app: web.Application, user_id: int) -> None:
     db: AsyncpgStorage = get_plugin_storage(app)
     user = await db.get_user({"id": user_id})
     if not user:
-        logger.warning(
+        _logger.warning(
             "User with id '%s' could not be deleted because it does not exist", user_id
         )
         return

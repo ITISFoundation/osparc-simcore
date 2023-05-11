@@ -15,7 +15,7 @@ from servicelib.aiohttp.rest_routing import (
 from .._constants import APP_OPENAPI_SPECS_KEY
 from . import _handlers
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @app_module_setup(
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_USERS",
     depends=["simcore_service_webserver.rest"],
-    logger=logger,
+    logger=_logger,
 )
 def setup_users(app: web.Application):
     assert app[APP_SETTINGS_KEY].WEBSERVER_USERS  # nosec

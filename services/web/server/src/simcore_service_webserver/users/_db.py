@@ -1,5 +1,3 @@
-import logging
-
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.engine import Engine
@@ -10,8 +8,6 @@ from simcore_postgres_database.models.users import UserStatus, users
 from sqlalchemy.sql import func
 
 from ..db_models import user_to_groups
-
-logger = logging.getLogger(__name__)
 
 
 async def update_expired_users(engine: Engine) -> list[IdInt]:
