@@ -365,7 +365,6 @@ class CompTasksRepository(BaseRepository):
                 )
                 .values(progress=progress)
             )
-            await conn.commit()
 
         logger.debug(
             "set project %s task %s with progress %s",
