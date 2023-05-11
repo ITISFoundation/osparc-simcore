@@ -196,9 +196,62 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
         label: this.tr("Solutions"),
         menu
       });
-      this.self().addEntryToMenu(menu, "Industries");
-      this.self().addEntryToMenu(menu, "Academia");
-      this.self().addEntryToMenu(menu, "Applications");
+
+      const industriesMenuBtn = this.self().addEntryToMenu(menu, "Industries");
+      const industriesMenu = new qx.ui.menu.Menu().set({
+        font: "text-14",
+        padding: 10,
+        backgroundColor: "background-main-1"
+      });
+      industriesMenu.getContentElement().setStyles({
+        "border-width": "0px"
+      });
+      [
+        "Medical Implants",
+        "Telecommunications",
+        "Automotive",
+        "Wearable devices",
+        "Neurotechnologies"
+      ].forEach(label => this.self().addEntryToMenu(industriesMenu, label));
+      industriesMenuBtn.setMenu(industriesMenu);
+
+      const accademiaMenuBtn = this.self().addEntryToMenu(menu, "Accademia");
+      const accademiaMenu = new qx.ui.menu.Menu().set({
+        font: "text-14",
+        padding: 10,
+        backgroundColor: "background-main-1"
+      });
+      accademiaMenu.getContentElement().setStyles({
+        "border-width": "0px"
+      });
+      [
+        "Students",
+        "Research"
+      ].forEach(label => this.self().addEntryToMenu(accademiaMenu, label));
+      accademiaMenuBtn.setMenu(accademiaMenu);
+
+      const applicationsMenuBtn = this.self().addEntryToMenu(menu, "Applications");
+      const applicationsMenu = new qx.ui.menu.Menu().set({
+        font: "text-14",
+        padding: 10,
+        backgroundColor: "background-main-1"
+      });
+      applicationsMenu.getContentElement().setStyles({
+        "border-width": "0px"
+      });
+      [
+        "Neuro stimulation",
+        "MRI implant safety",
+        "Antenna design",
+        "SAR compliance",
+        "mmWave exposure",
+        "Thermal therapies",
+        "Wireless power transfer",
+        "FUS",
+        "Wearables"
+      ].forEach(label => this.self().addEntryToMenu(applicationsMenu, label));
+      applicationsMenuBtn.setMenu(applicationsMenu);
+
       return menuButton;
     },
 
