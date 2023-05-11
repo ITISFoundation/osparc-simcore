@@ -224,12 +224,12 @@ def test_run_job(
         status: JobStatus = solvers_api.inspect_job(solver.id, solver.version, job.id)
         assert isinstance(status, JobStatus)
 
-        assert 0 <= status.progress <= 100
+        assert 0 <= status.progress <= 1
 
-        print("Solver progress", f"{status.progress}/100", flush=True)
+        print("Solver progress", f"{status.progress}", flush=True)
 
     # done, either successfully or with failures!
-    assert status.progress == 100
+    assert status.progress == 1
     assert status.state == expected_outcome
     # FIXME: assert status.submitted_at < status.started_at
     # FIXME: assert status.started_at < status.stopped_at
