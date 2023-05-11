@@ -831,10 +831,10 @@ async def test_node_id_exists(
     node_id_exists = await db_api.node_id_exists(
         f"{not_existing_node_id_in_existing_project}"
     )
-    assert node_id_exists == False
+    assert node_id_exists is False
     existing_node_id = choice(lots_of_projects_and_nodes[existing_project_id])
     node_id_exists = await db_api.node_id_exists(f"{existing_node_id}")
-    assert node_id_exists == True
+    assert node_id_exists is True
 
 
 @pytest.mark.parametrize(
@@ -844,10 +844,16 @@ async def test_node_id_exists(
 async def test_get_node_ids_from_project(
     db_api: ProjectDBAPI, lots_of_projects_and_nodes: dict[ProjectID, list[NodeID]]
 ):
-    for project_id in lots_of_projects_and_nodes:
-        node_ids_inside_project: set[str] = await db_api.list_node_ids_in_project(
-            f"{project_id}"
+    node_ids_inside_project_list = await asyncio.gather(
+        *(
+            db_api.list_node_ids_in_project(f"{project_id}")
+            for project_id in lots_of_projects_and_nodes
         )
+    )
+
+    for project_id, node_ids_inside_project in zip(
+        lots_of_projects_and_nodes, node_ids_inside_project_list
+    ):
         assert node_ids_inside_project == {
             f"{n}" for n in lots_of_projects_and_nodes[project_id]
         }
