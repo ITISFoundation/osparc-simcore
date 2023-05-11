@@ -21,7 +21,7 @@ from ..db_models import GroupType, groups, tokens, user_to_groups, users
 from ..groups.schemas import convert_groups_db_to_schema
 from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..security.api import clean_auth_policy_cache
-from ._db import update_expired_users
+from ._db import get_users_for_gid, update_expired_users
 from ._models import ProfileGet, ProfileUpdate
 from .exceptions import UserNotFoundError
 from .users_utils import convert_user_db_to_schema
@@ -327,5 +327,8 @@ async def delete_token(app: web.Application, user_id: int, service_id: str) -> N
 
 
 assert update_expired_users  # nosec
-
-__all__: tuple[str, ...] = ("update_expired_users",)
+assert get_users_for_gid  # nosec
+__all__: tuple[str, ...] = (
+    "update_expired_users",
+    "get_users_for_gid",
+)
