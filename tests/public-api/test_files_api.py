@@ -1,4 +1,6 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
@@ -11,8 +13,8 @@ from osparc.api.files_api import FilesApi
 from osparc.models import File
 
 
-def test_upload_file(files_api: FilesApi, tmpdir):
-    input_path = Path(tmpdir) / "some-text-file.txt"
+def test_upload_file(files_api: FilesApi, tmp_path: Path):
+    input_path = tmp_path / "some-text-file.txt"
     input_path.write_text("demo")
 
     input_file: File = files_api.upload_file(file=input_path)

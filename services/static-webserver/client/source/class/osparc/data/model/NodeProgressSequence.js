@@ -162,8 +162,6 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     },
 
     addProgressMessage: function(progressType, progress) {
-      console.log(progressType, progress);
-
       switch (progressType) {
         case "SIDECARS_PULLING":
           this.setSidecarPulling(progress);

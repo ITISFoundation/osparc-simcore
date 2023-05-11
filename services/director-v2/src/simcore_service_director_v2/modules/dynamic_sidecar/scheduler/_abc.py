@@ -79,7 +79,7 @@ class SchedulerPublicInterface(ABC):
         request_dns: str,
         request_scheme: str,
         request_simcore_user_agent: str,
-        can_save: str,
+        can_save: bool,
     ) -> None:
         """
         Adds a new service.

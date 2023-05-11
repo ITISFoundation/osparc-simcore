@@ -5,7 +5,6 @@ Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
 """
 import json
 import logging
-from typing import Any
 
 from aiohttp import web
 from jsonschema import ValidationError as JsonSchemaValidationError
@@ -29,8 +28,6 @@ from servicelib.common_headers import (
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
-from servicelib.utils import logged_gather
-from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
 from .. import catalog
 from .._constants import RQ_PRODUCT_KEY
@@ -41,7 +38,7 @@ from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resourc
 from ..security.api import check_permission
 from ..security.decorators import permission_required
 from ..users_api import get_user_name
-from . import _create_utils, projects_api
+from . import _create_utils, _read_utils, projects_api
 from ._permalink import update_or_pop_permalink_in_project
 from ._rest_schemas import (
     EmptyModel,
@@ -203,51 +200,24 @@ async def list_projects(request: web.Request):
         web.HTTPUnprocessableEntity: (422) if validation of request parameters fail
 
     """
-
-    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
     req_ctx = RequestContext.parse_obj(request)
     query_params = parse_request_query_parameters_as(_ProjectListParams, request)
 
-    async def set_all_project_states(
-        projects: list[dict[str, Any]], project_types: list[ProjectTypeDB]
-    ):
-        await logged_gather(
-            *[
-                projects_api.add_project_states_for_user(
-                    user_id=req_ctx.user_id,
-                    project=prj,
-                    is_template=prj_type == ProjectTypeDB.TEMPLATE,
-                    app=request.app,
-                )
-                for prj, prj_type in zip(projects, project_types)
-            ],
-            reraise=True,
-            max_concurrency=100,
-        )
-
-    user_available_services: list[
-        dict
-    ] = await catalog.get_services_for_user_in_product(
-        request.app, req_ctx.user_id, req_ctx.product_name, only_key_versions=True
-    )
-
-    projects, project_types, total_number_projects = await db.list_projects(
+    projects, total_number_of_projects = await _read_utils.list_projects(
+        request,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
-        filter_by_project_type=ProjectTypeAPI.to_project_type_db(
-            query_params.project_type
-        ),
-        filter_by_services=user_available_services,
-        offset=query_params.offset,
+        project_type=query_params.project_type,
+        show_hidden=query_params.show_hidden,
         limit=query_params.limit,
-        include_hidden=query_params.show_hidden,
+        offset=query_params.offset,
     )
-    await set_all_project_states(projects, project_types)
+
     page = Page[ProjectDict].parse_obj(
         paginate_data(
             chunk=projects,
             request_url=request.url,
-            total=total_number_projects,
+            total=total_number_of_projects,
             limit=query_params.limit,
             offset=query_params.offset,
         )

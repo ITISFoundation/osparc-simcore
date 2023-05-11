@@ -231,6 +231,7 @@ class TutorialBase {
     }
     catch (err) {
       console.error(this.__templateName, "could not be started", err);
+      throw (err);
     }
     return resp;
   }
@@ -793,6 +794,7 @@ class TutorialBase {
     }
     catch (err) {
       console.error(this.__templateName, "training-set can't be generated", err);
+      throw (err);
     }
 
     this.__responsesQueue.addResponseListener("training-set-generation/xport", false);
@@ -802,6 +804,7 @@ class TutorialBase {
     }
     catch (err) {
       console.error(this.__templateName, "training-set can't be exported", err);
+      throw (err);
     }
   }
 

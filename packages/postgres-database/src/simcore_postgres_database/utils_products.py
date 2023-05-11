@@ -2,7 +2,7 @@
 
 """
 
-from typing import Any, Optional, Protocol
+from typing import Any, Protocol
 
 import sqlalchemy as sa
 
@@ -39,7 +39,7 @@ async def get_default_product_name(conn: _DBConnection) -> str:
     :: raises ValueError if undefined
     """
     product_name = await conn.scalar(
-        sa.select([products.c.name]).order_by(products.c.priority)
+        sa.select(products.c.name).order_by(products.c.priority)
     )
     if not product_name:
         raise ValueError("No product defined in database")
@@ -50,9 +50,9 @@ async def get_default_product_name(conn: _DBConnection) -> str:
 
 async def get_product_group_id(
     connection: _DBConnection, product_name: str
-) -> Optional[_GroupID]:
+) -> _GroupID | None:
     group_id = await connection.scalar(
-        sa.select([products.c.group_id]).where(products.c.name == product_name)
+        sa.select(products.c.group_id).where(products.c.name == product_name)
     )
     return None if group_id is None else _GroupID(group_id)
 
@@ -65,7 +65,7 @@ async def get_or_create_product_group(
     """
     async with connection.begin():
         group_id = await connection.scalar(
-            sa.select([products.c.group_id])
+            sa.select(products.c.group_id)
             .where(products.c.name == product_name)
             .with_for_update(read=True)
             # a `FOR SHARE` lock: locks changes in the product until transaction is done.
