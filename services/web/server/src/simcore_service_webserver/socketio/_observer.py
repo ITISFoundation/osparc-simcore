@@ -8,8 +8,8 @@ import logging
 
 from aiohttp import web
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
+from servicelib.aiohttp.observer import register_observer, setup_observer_registry
 from servicelib.logging_utils import get_log_record_extra
-from servicelib.observer import register_observer
 from servicelib.utils import fire_and_forget_task, logged_gather
 from socketio import AsyncServer
 
@@ -68,11 +68,7 @@ async def _on_user_logout(
 
 
 def setup_observer_events_handlers(app: web.Application):
-    # Using decorators will execute when the module is imported
-    # It has the risk of forgetting to import and cannot control when the
-    # registration happens. In contrast, explicit registration
-    # allows more control. It will be called on `setup_socketio``
 
-    assert app  # nosec
+    setup_observer_registry(app)
 
-    register_observer(_on_user_logout, event="SIGNAL_USER_LOGOUT")
+    register_observer(app, _on_user_logout, event="SIGNAL_USER_LOGOUT")

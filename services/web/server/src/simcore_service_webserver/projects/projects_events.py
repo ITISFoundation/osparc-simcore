@@ -6,7 +6,11 @@ import logging
 
 from aiohttp import web
 from models_library.projects import ProjectID
-from servicelib.observer import is_observer_on_event, observe, registed_observers_report
+from servicelib.aiohttp.observer import (
+    registed_observers_report,
+    register_observer,
+    setup_observer_registry,
+)
 from servicelib.utils import logged_gather
 
 from ..notifications import project_logs
@@ -16,7 +20,6 @@ from .projects_api import retrieve_and_notify_project_locked_state
 logger = logging.getLogger(__name__)
 
 
-@observe(event="SIGNAL_USER_DISCONNECTED")
 async def _on_user_disconnected(
     user_id: int, client_session_id: str, app: web.Application
 ) -> None:
@@ -38,15 +41,11 @@ async def _on_user_disconnected(
     )
 
 
-def setup_project_events(_app: web.Application) -> None:
-    # For the moment, this is only used as a placeholder to import this file
-    # This way the functions above are registered as handlers of a give event
-    # using the @observe decorator
-    assert _on_user_disconnected  # nosec
-    assert is_observer_on_event(  # nosec
-        _on_user_disconnected, "SIGNAL_USER_DISCONNECTED"
-    )
+def setup_project_events(app: web.Application) -> None:
+    setup_observer_registry(app)
+
+    register_observer(app, _on_user_disconnected, event="SIGNAL_USER_DISCONNECTED")
 
     logger.info(
-        "App registered events (at this point):\n%s", registed_observers_report()
+        "App registered events (at this point):\n%s", registed_observers_report(app)
     )

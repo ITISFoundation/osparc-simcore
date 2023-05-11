@@ -8,8 +8,8 @@ import logging
 from typing import Any
 
 from aiohttp import web
+from servicelib.aiohttp.observer import emit
 from servicelib.logging_utils import get_log_record_extra, log_context
-from servicelib.observer import emit
 from servicelib.request_keys import RQT_USERID_KEY
 from socketio.exceptions import ConnectionRefusedError as SocketIOConnectionError
 
@@ -154,7 +154,9 @@ async def disconnect(sid: SocketID, app: web.Application) -> None:
                     _logger.debug("client %s disconnected from room %s", user_id, sid)
                     await rt.remove_socket_id()
                 # signal same user other clients if available
-                await emit("SIGNAL_USER_DISCONNECTED", user_id, client_session_id, app)
+                await emit(
+                    app, "SIGNAL_USER_DISCONNECTED", user_id, client_session_id, app
+                )
 
         else:
             # this should not happen!!
