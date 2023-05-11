@@ -17,7 +17,6 @@ from ..login.decorators import login_required
 from ..redis import get_redis_user_notifications_client
 from ..security.decorators import permission_required
 from . import api
-from ._models import ProfileGet, ProfileUpdate
 from ._notifications import (
     MAX_NOTIFICATIONS_FOR_USER_TO_KEEP,
     MAX_NOTIFICATIONS_FOR_USER_TO_SHOW,
@@ -25,6 +24,7 @@ from ._notifications import (
     get_notification_key,
 )
 from .exceptions import TokenNotFoundError, UserNotFoundError
+from .models import ProfileGet, ProfileUpdate
 
 logger = logging.getLogger(__name__)
 
