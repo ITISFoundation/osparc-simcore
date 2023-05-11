@@ -17,13 +17,13 @@ from ..login.decorators import login_required
 from ..redis import get_redis_user_notifications_client
 from ..security.decorators import permission_required
 from . import users_api
+from .exceptions import TokenNotFoundError, UserNotFoundError
 from .user_notifications import (
     MAX_NOTIFICATIONS_FOR_USER_TO_KEEP,
     MAX_NOTIFICATIONS_FOR_USER_TO_SHOW,
     UserNotification,
     get_notification_key,
 )
-from .users_exceptions import TokenNotFoundError, UserNotFoundError
 from .users_models import ProfileGet, ProfileUpdate
 
 logger = logging.getLogger(__name__)

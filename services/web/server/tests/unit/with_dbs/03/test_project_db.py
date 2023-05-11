@@ -47,7 +47,7 @@ from simcore_service_webserver.projects.projects_exceptions import (
     NodeNotFoundError,
     ProjectNotFoundError,
 )
-from simcore_service_webserver.users.users_exceptions import UserNotFoundError
+from simcore_service_webserver.users.exceptions import UserNotFoundError
 from simcore_service_webserver.utils import to_datetime
 from sqlalchemy.engine.result import Row
 

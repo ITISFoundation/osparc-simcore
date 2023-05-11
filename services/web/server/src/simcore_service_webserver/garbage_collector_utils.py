@@ -10,9 +10,9 @@ from .db_models import GroupType
 from .groups.api import get_group_from_gid
 from .projects.projects_db import APP_PROJECT_DBAPI, ProjectAccessRights
 from .projects.projects_exceptions import ProjectNotFoundError
-from .users import users_exceptions
+from .users import exceptions
+from .users.exceptions import UserNotFoundError
 from .users.users_api import get_user, get_user_id_from_gid
-from .users.users_exceptions import UserNotFoundError
 from .users.users_to_groups_api import get_users_for_gid
 
 logger = logging.getLogger(__name__)
@@ -37,7 +37,7 @@ async def _fetch_new_project_owner_from_groups(
             try:
                 possible_user = await get_user(app=app, user_id=possible_user_id)
                 return int(possible_user["primary_gid"])
-            except users_exceptions.UserNotFoundError:
+            except exceptions.UserNotFoundError:
                 logger.warning(
                     "Could not find new owner '%s' will try a new one",
                     possible_user_id,
