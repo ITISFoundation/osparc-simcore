@@ -20,6 +20,7 @@ import pytest
 from _helpers import PublishedProject, RunningProject
 from dask.distributed import SpecCluster
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
+from dask_task_models_library.container_tasks.events import TaskProgressEvent
 from dask_task_models_library.container_tasks.io import TaskOutputData
 from fastapi.applications import FastAPI
 from models_library.clusters import DEFAULT_CLUSTER_ID
@@ -715,6 +716,25 @@ async def test_task_progress_triggers(
         mocked_dask_client,
         scheduler,
     )
+
+    # send some progress
+    started_task = expected_pending_tasks[0]
+    assert started_task.job_id
+    for progress in [-1, 0, 0.3, 0.5, 1, 1.5, 0.7, 0]:
+        progress_event = TaskProgressEvent(
+            job_id=started_task.job_id, progress=progress
+        )
+        await cast(DaskScheduler, scheduler)._task_progress_change_handler(
+            progress_event.json()
+        )
+        # FIXME: this does not really make sense
+        await _assert_comp_tasks_db(
+            aiopg_engine,
+            published_project.project.uuid,
+            [started_task.node_id],
+            expected_state=RunningState.PENDING,
+            expected_progress=min(max(0, progress), 1),
+        )
 
 
 @pytest.mark.parametrize(
