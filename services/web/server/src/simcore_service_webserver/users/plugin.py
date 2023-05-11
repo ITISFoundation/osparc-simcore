@@ -13,7 +13,7 @@ from servicelib.aiohttp.rest_routing import (
 )
 
 from .._constants import APP_OPENAPI_SPECS_KEY
-from . import users_handlers
+from . import _handlers
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ def setup_users(app: web.Application):
     # routes related with users
     specs = app[APP_OPENAPI_SPECS_KEY]
     routes = map_handlers_with_operations(
-        get_handlers_from_namespace(users_handlers),
+        get_handlers_from_namespace(_handlers),
         filter(lambda o: "me" in o[1].split("/"), iter_path_operations(specs)),
         strict=True,
     )
