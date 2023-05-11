@@ -8,15 +8,15 @@ from typing import Any
 from unittest.mock import call
 
 import aiodocker
+import arrow
 import pytest
 from models_library.services_resources import BootMode
 from pytest_mock.plugin import MockerFixture
 from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
-    DEFAULT_TIME_STAMP,
     LogType,
+    _parse_line,
     create_container_config,
     managed_container,
-    parse_line,
 )
 
 
@@ -96,104 +96,129 @@ async def test_create_container_config(
 
 
 @pytest.mark.parametrize(
-    "log_line, expected_parsing",
+    "version1_logs",
+    [True, False],
+    ids=lambda id: f"version{'>=1' if id is True else '0'}-logs",
+)
+@pytest.mark.parametrize(
+    "log_line, expected_log_type, expected_message",
     [
         (
-            "2021-10-05T09:53:48.873236400Z hello from the logs",
-            (
-                LogType.LOG,
-                "2021-10-05T09:53:48.873236400Z",
-                "hello from the logs",
-            ),
+            "hello from the logs",
+            LogType.LOG,
+            "hello from the logs",
         ),
         (
-            "This is not an expected docker log",
-            (
-                LogType.LOG,
-                DEFAULT_TIME_STAMP,
-                "This is not an expected docker log",
-            ),
+            "[progress] this is some whatever progress without number",
+            LogType.LOG,
+            "[progress] this is some whatever progress without number",
+        ),
+        ("[Progress] 34%", LogType.PROGRESS, "0.34"),
+        (
+            "[PROGRESS] .34",
+            LogType.PROGRESS,
+            "0.34",
         ),
         (
-            "2021-10-05T09:53:48.873236400Z [progress] this is some whatever progress without number",
-            (
-                LogType.LOG,
-                "2021-10-05T09:53:48.873236400Z",
-                "[progress] this is some whatever progress without number",
-            ),
+            "[progress] 0.44",
+            LogType.PROGRESS,
+            "0.44",
         ),
         (
-            "2021-10-05T09:53:48.873236400Z [Progress] 34%",
-            (LogType.PROGRESS, "2021-10-05T09:53:48.873236400Z", "0.34"),
+            "[progress] 44 percent done",
+            LogType.PROGRESS,
+            "0.44",
         ),
         (
-            "2021-10-05T09:53:48.873236400Z [PROGRESS] .34",
-            (LogType.PROGRESS, "2021-10-05T09:53:48.873236400Z", "0.34"),
+            "[progress] 44/150",
+            LogType.PROGRESS,
+            f"{(44.0 / 150.0):.2f}",
         ),
         (
-            "2021-10-05T09:53:48.873236400Z [progress] 0.44",
-            (LogType.PROGRESS, "2021-10-05T09:53:48.873236400Z", "0.44"),
+            "Progress: this is some progress",
+            LogType.LOG,
+            "Progress: this is some progress",
+        ),
+        ("progress: 34%", LogType.PROGRESS, "0.34"),
+        (
+            "PROGRESS: .34",
+            LogType.PROGRESS,
+            "0.34",
         ),
         (
-            "2021-10-05T09:53:48.873236400Z [progress] 44 percent done",
-            (LogType.PROGRESS, "2021-10-05T09:53:48.873236400Z", "0.44"),
+            "progress: 0.44",
+            LogType.PROGRESS,
+            "0.44",
         ),
         (
-            "2021-10-05T09:53:48.873236400Z [progress] 44/150",
-            (
-                LogType.PROGRESS,
-                "2021-10-05T09:53:48.873236400Z",
-                f"{(44.0 / 150.0):.2f}",
-            ),
+            "progress: 44 percent done",
+            LogType.PROGRESS,
+            "0.44",
         ),
         (
-            "2021-10-05T09:53:48.873236400Z Progress: this is some progress",
-            (
-                LogType.LOG,
-                "2021-10-05T09:53:48.873236400Z",
-                "Progress: this is some progress",
-            ),
+            "44 percent done",
+            LogType.PROGRESS,
+            "0.44",
         ),
         (
-            "2021-10-05T09:53:48.873236400Z progress: 34%",
-            (LogType.PROGRESS, "2021-10-05T09:53:48.873236400Z", "0.34"),
+            "progress: 44/150",
+            LogType.PROGRESS,
+            f"{(44.0/150.0):.2f}",
         ),
         (
-            "2021-10-05T09:53:48.873236400Z PROGRESS: .34",
-            (LogType.PROGRESS, "2021-10-05T09:53:48.873236400Z", "0.34"),
+            "progress: 44/150...",
+            LogType.PROGRESS,
+            f"{(44.0/150.0):.2f}",
         ),
         (
-            "2021-10-05T09:53:48.873236400Z progress: 0.44",
-            (LogType.PROGRESS, "2021-10-05T09:53:48.873236400Z", "0.44"),
+            "any kind of message even with progress inside",
+            LogType.LOG,
+            "any kind of message even with progress inside",
         ),
         (
-            "2021-10-05T09:53:48.873236400Z progress: 44 percent done",
-            (LogType.PROGRESS, "2021-10-05T09:53:48.873236400Z", "0.44"),
+            "[PROGRESS]1.000000\n",
+            LogType.PROGRESS,
+            "1.00",
         ),
         (
-            "2021-10-05T09:53:48.873236400Z progress: 44/150",
-            (LogType.PROGRESS, "2021-10-05T09:53:48.873236400Z", f"{(44.0/150.0):.2f}"),
+            "[PROGRESS] 1\n",
+            LogType.PROGRESS,
+            "1.00",
         ),
         (
-            "2021-10-05T09:53:48.873236400Z any kind of message even with progress inside",
-            (
-                LogType.LOG,
-                "2021-10-05T09:53:48.873236400Z",
-                "any kind of message even with progress inside",
-            ),
+            "[PROGRESS] 0\n",
+            LogType.PROGRESS,
+            "0.00",
         ),
         (
-            "2021-10-05T09:53:48.873236400Z [PROGRESS]1.000000\n",
-            (LogType.PROGRESS, "2021-10-05T09:53:48.873236400Z", "1.00"),
-        ),
-        (
-            "2021-10-05T09:53:48.873236400Z [PROGRESS]: 1% [ 10 / 624 ] Time Update, estimated remaining time 1 seconds @ 26.43 MCells/s",
-            (LogType.PROGRESS, "2021-10-05T09:53:48.873236400Z", "0.01"),
+            "[PROGRESS]: 1% [ 10 / 624 ] Time Update, estimated remaining time 1 seconds @ 26.43 MCells/s",
+            LogType.PROGRESS,
+            "0.01",
         ),
     ],
 )
-async def test_parse_line(log_line: str, expected_parsing: tuple[LogType, str, str]):
-    assert await parse_line(log_line) == expected_parsing
+async def test_parse_line(
+    version1_logs: bool,
+    log_line: str,
+    expected_log_type: LogType,
+    expected_message: str,
+):
+    expected_time_stamp = arrow.utcnow().datetime
+    if version1_logs:
+        # from version 1 the logs come directly from ```docker logs -t -f``` and contain the timestamp
+        # version 0 does not contain a timestamp and is added at parsing time
+        log_line = f"{expected_time_stamp.isoformat()} {log_line}"
+
+    received_log_type, received_time_stamp, received_message = await _parse_line(
+        log_line
+    )
+    assert received_log_type == expected_log_type
+    assert received_message == expected_message
+    if version1_logs:
+        assert received_time_stamp == expected_time_stamp
+    else:
+        # in version 0 the time stamps are expected to increase slowly
+        assert received_time_stamp >= expected_time_stamp
 
 
 @pytest.mark.parametrize(
