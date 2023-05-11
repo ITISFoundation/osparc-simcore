@@ -31,19 +31,19 @@ def _get_user_id(request: web.Request) -> UserID:
 
 
 async def _set_user_in_rooms(
-    sid: SocketID, app: web.Application, request: web.Request
+    socket_id: SocketID, app: web.Application, request: web.Request
 ) -> None:
     user_id = _get_user_id(request)
     primary_group, user_groups, all_group = await list_user_groups(app, user_id)
     groups = [primary_group] + user_groups + ([all_group] if bool(all_group) else [])
     sio = get_socket_server(app)
     for group in groups:
-        sio.enter_room(sid, f"{group['gid']}")
+        sio.enter_room(socket_id, f"{group['gid']}")
 
 
 @login_required
 async def _authenticate_user(
-    sid: SocketID, app: web.Application, request: web.Request
+    socket_id: SocketID, app: web.Application, request: web.Request
 ) -> UserID:
     """
 
@@ -62,18 +62,18 @@ async def _authenticate_user(
 
     sio = get_socket_server(app)
     # here we keep the original HTTP request in the socket session storage
-    async with sio.session(sid) as socketio_session:
+    async with sio.session(socket_id) as socketio_session:
         socketio_session["user_id"] = user_id
         socketio_session["client_session_id"] = client_session_id
         socketio_session["request"] = request
 
-    with managed_resource(user_id, client_session_id, app) as rt:
+    with managed_resource(user_id, client_session_id, app) as resource_registry:
         _logger.info(
             "socketio connection from user %s",
             user_id,
             extra=get_log_record_extra(user_id=user_id),
         )
-        await rt.set_socket_id(sid)
+        await resource_registry.set_socket_id(socket_id)
 
     return user_id
 
@@ -84,13 +84,13 @@ async def _authenticate_user(
 
 
 @register_socketio_handler
-async def connect(sid: SocketID, environ: EnvironDict, app: web.Application) -> bool:
+async def connect(
+    socket_id: SocketID, environ: EnvironDict, app: web.Application
+) -> bool:
     """socketio reserved handler for when the fontend connects through socket.io
 
     Arguments:
-        sid -- the socket ID
         environ -- the WSGI environ, among other contains the original request
-        app  -- the aiohttp app
 
     Raises:
         SocketIOConnectionError: HTTPUnauthorized
@@ -99,13 +99,13 @@ async def connect(sid: SocketID, environ: EnvironDict, app: web.Application) -> 
     Returns:
         True if socket.io connection accepted
     """
-    _logger.debug("client connecting in room %s", f"{sid=}")
+    _logger.debug("client connecting in room %s", f"{socket_id=}")
 
     try:
         request: web.Request = environ["aiohttp.request"]
 
-        user_id = await _authenticate_user(sid, app, request)
-        await _set_user_in_rooms(sid, app, request)
+        user_id = await _authenticate_user(socket_id, app, request)
+        await _set_user_in_rooms(socket_id, app, request)
 
         # Send service_deletion_timeout to client
         # 2 seconds avoids GC from removing the services to early
@@ -135,19 +135,11 @@ async def connect(sid: SocketID, environ: EnvironDict, app: web.Application) -> 
 
 
 @register_socketio_handler
-async def disconnect(sid: SocketID, app: web.Application) -> None:
-    """socketio reserved handler for when the socket.io connection is disconnected.
-
-    Arguments:
-        sid -- the socket ID
-        app -- the aiohttp app
-    """
-    _logger.debug("client in room %s disconnecting", sid)
+async def disconnect(socket_id: SocketID, app: web.Application) -> None:
+    """socketio reserved handler for when the socket.io connection is disconnected."""
     sio = get_socket_server(app)
-    async with sio.session(sid) as socketio_session:
-        if "user_id" in socketio_session:
-
-            user_id = socketio_session["user_id"]
+    async with sio.session(socket_id) as socketio_session:
+        if user_id := socketio_session.get("user_id"):
             client_session_id = socketio_session["client_session_id"]
 
             with log_context(
@@ -157,9 +149,10 @@ async def disconnect(sid: SocketID, app: web.Application) -> None:
                 f"{user_id=}",
                 f"{client_session_id=}",
             ):
-                with managed_resource(user_id, client_session_id, app) as rt:
-                    _logger.debug("client %s disconnected from room %s", user_id, sid)
-                    await rt.remove_socket_id()
+                with managed_resource(
+                    user_id, client_session_id, app
+                ) as resource_registry:
+                    await resource_registry.remove_socket_id()
                 # signal same user other clients if available
                 await emit(
                     app, "SIGNAL_USER_DISCONNECTED", user_id, client_session_id, app
@@ -169,13 +162,13 @@ async def disconnect(sid: SocketID, app: web.Application) -> None:
             # this should not happen!!
             _logger.error(
                 "Unknown client diconnected sid: %s, session %s",
-                sid,
+                socket_id,
                 f"{socketio_session}",
             )
 
 
 @register_socketio_handler
-async def client_heartbeat(sid: SocketID, _: Any, app: web.Application) -> None:
+async def client_heartbeat(socket_id: SocketID, _: Any, app: web.Application) -> None:
     """JS client invokes this handler to signal its presence.
 
     Each time this event is received the alive key's TTL is updated in
@@ -187,11 +180,9 @@ async def client_heartbeat(sid: SocketID, _: Any, app: web.Application) -> None:
         app  -- the aiohttp app
     """
     sio = get_socket_server(app)
-    async with sio.session(sid) as socketio_session:
-        if "user_id" not in socketio_session:
-            return
+    async with sio.session(socket_id) as socketio_session:
+        if user_id := socketio_session.get("user_id"):
+            client_session_id = socketio_session["client_session_id"]
 
-        user_id = socketio_session["user_id"]
-        client_session_id = socketio_session["client_session_id"]
-        with managed_resource(user_id, client_session_id, app) as rt:
-            await rt.set_heartbeat()
+            with managed_resource(user_id, client_session_id, app) as rt:
+                await rt.set_heartbeat()
