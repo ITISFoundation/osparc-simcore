@@ -18,7 +18,7 @@ from tenacity.wait import wait_exponential
 from ._constants import APP_DB_ENGINE_KEY
 from .login.utils import notify_user_logout
 from .security.api import clean_auth_policy_cache
-from .users.users_db import update_expired_users
+from .users.api import update_expired_users
 
 logger = logging.getLogger(__name__)
 
