@@ -108,6 +108,16 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
           control.set(osparc.navigation.NavigationBar.BUTTON_OPTIONS);
           this.getChildControl("right-items").add(control);
           break;
+        case "resources":
+          control = this.__createResourcesMenuBtn();
+          control.set(osparc.navigation.NavigationBar.BUTTON_OPTIONS);
+          this.getChildControl("right-items").add(control);
+          break;
+        case "gallery":
+          control = this.__createGalleryMenuBtn();
+          control.set(osparc.navigation.NavigationBar.BUTTON_OPTIONS);
+          this.getChildControl("right-items").add(control);
+          break;
         case "success-stories":
           control = this.__createSuccessStoriesBtn();
           control.set(osparc.navigation.NavigationBar.BUTTON_OPTIONS);
@@ -170,9 +180,14 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
         label: this.tr("Products"),
         menu
       });
-      this.self().addEntryToMenu(menu, "Sim4Life");
-      this.self().addEntryToMenu(menu, "S4L");
-      this.self().addEntryToMenu(menu, "<i>S4L<sup>lite</sup></i>");
+      this.self().addEntryToMenu(menu, "Cloud platform");
+      this.self().addEntryToMenu(menu, "Desktop");
+      this.self().addEntryToMenu(menu, "Electromagnetics");
+      this.self().addEntryToMenu(menu, "Neuronal activation");
+      this.self().addEntryToMenu(menu, "Thermodynamics");
+      this.self().addEntryToMenu(menu, "Acoustics");
+      this.self().addEntryToMenu(menu, "Computational human phantoms");
+      this.self().addEntryToMenu(menu, "CAD Modeling");
       return menuButton;
     },
 
@@ -182,6 +197,41 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
       });
       const menuButton = new osparc.ui.form.HoverMenuButton().set({
         label: this.tr("Solutions"),
+        menu
+      });
+      this.self().addEntryToMenu(menu, "Industries");
+      this.self().addEntryToMenu(menu, "Academia");
+      this.self().addEntryToMenu(menu, "Applications");
+      return menuButton;
+    },
+
+    __createResourcesMenuBtn: function() {
+      const menu = new qx.ui.menu.Menu().set({
+        font: "text-14"
+      });
+      const menuButton = new osparc.ui.form.HoverMenuButton().set({
+        label: this.tr("Resources"),
+        menu
+      });
+      this.self().addEntryToMenu(menu, "News");
+      this.self().addEntryToMenu(menu, "Demos");
+      this.self().addEntryToMenu(menu, "Tutorials");
+      this.self().addEntryToMenu(menu, "Documentation");
+      this.self().addEntryToMenu(menu, "Computable Human Models (ViP)");
+      this.self().addEntryToMenu(menu, "Forum"); // OM link
+      this.self().addEntryToMenu(menu, "Python API");
+      this.self().addEntryToMenu(menu, "Validation");
+      this.self().addEntryToMenu(menu, "Security");
+      this.self().addEntryToMenu(menu, "Whitepapers");
+      return menuButton;
+    },
+
+    __createGalleryMenuBtn: function() {
+      const menu = new qx.ui.menu.Menu().set({
+        font: "text-14"
+      });
+      const menuButton = new osparc.ui.form.HoverMenuButton().set({
+        label: this.tr("Gallery"),
         menu
       });
       this.self().addEntryToMenu(menu, "Industries");
