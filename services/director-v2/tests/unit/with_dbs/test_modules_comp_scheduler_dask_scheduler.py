@@ -676,6 +676,19 @@ async def test_proper_pipeline_is_scheduled(
     assert scheduler.scheduled_pipelines == {}
 
 
+async def test_task_progress_triggers(
+    mocked_scheduler_task: None,
+    mocked_dask_client: mock.MagicMock,
+    scheduler: BaseCompScheduler,
+    minimal_app: FastAPI,
+    aiopg_engine: aiopg.sa.engine.Engine,
+    published_project: PublishedProject,
+    mocked_parse_output_data: None,
+    mocked_clean_task_output_and_log_files_if_invalid: None,
+):
+    ...
+
+
 @pytest.mark.parametrize(
     "backend_error",
     [
