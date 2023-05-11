@@ -64,7 +64,8 @@ class Worker(BaseModel):
     metrics: WorkerMetrics
 
 
-WorkersDict: TypeAlias = dict[AnyUrl, Worker]
+class WorkersDict(DictModel[AnyUrl, Worker]):
+    ...
 
 
 class Scheduler(BaseModel):
@@ -73,7 +74,7 @@ class Scheduler(BaseModel):
 
     @validator("workers", pre=True, always=True)
     @classmethod
-    def ensure_workers_is_empty_dict(cls, v):
+    def ensure_workers_is_empty_dict(cls, v) -> WorkersDict:
         if v is None:
             return {}
         return v

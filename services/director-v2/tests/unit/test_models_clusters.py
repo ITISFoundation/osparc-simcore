@@ -12,6 +12,7 @@ from simcore_service_director_v2.models.schemas.clusters import (
     UsedResources,
     Worker,
     WorkerMetrics,
+    WorkersDict,
 )
 
 
@@ -47,13 +48,13 @@ def test_cluster_creation_brings_default_thumbail(
 
 def test_scheduler_constructor_with_default_has_correct_dict(faker: Faker):
     scheduler = Scheduler(status=faker.text())
-    assert scheduler.workers is not None
+    assert isinstance(scheduler.workers, WorkersDict)
     assert len(scheduler.workers) == 0
 
 
 def test_scheduler_constructor_with_no_workers_has_correct_dict(faker: Faker):
     scheduler = Scheduler(status=faker.text(), workers=None)
-    assert scheduler.workers is not None
+    assert isinstance(scheduler.workers, WorkersDict)
     assert len(scheduler.workers) == 0
 
 
