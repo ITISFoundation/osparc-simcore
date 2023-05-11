@@ -27,8 +27,13 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
     const title = this.tr("Confirmation Settings");
     this.base(arguments, title, iconSrc);
 
-    const experimentalSettings = this.__createConfirmationsSettings();
-    this.add(experimentalSettings);
+    const confirmationSettings = this.__createConfirmationsSettings();
+    this.add(confirmationSettings);
+
+    if (osparc.product.Utils.showPreferencesExperimental()) {
+      const experimentalSettings = this.__createExperimentalSettings();
+      this.add(experimentalSettings);
+    }
   },
 
   members: {
@@ -104,6 +109,25 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
         cbSnapNodeToGrid.bind("value", preferencesSettings, "snapNodeToGrid");
         box.add(cbSnapNodeToGrid);
       }
+
+      return box;
+    },
+
+    __createExperimentalSettings: function() {
+      // layout
+      const box = this._createSectionBox("Experimental preferences");
+
+      const label = this._createHelpLabel(this.tr(
+        "This is a list of experimental preferences"
+      ));
+      box.add(label);
+
+      const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+
+      const cbAutoPorts = new qx.ui.form.CheckBox(this.tr("Connect ports automatically"));
+      preferencesSettings.bind("autoConnectPorts", cbAutoPorts, "value");
+      cbAutoPorts.bind("value", preferencesSettings, "autoConnectPorts");
+      box.add(cbAutoPorts);
 
       return box;
     }
