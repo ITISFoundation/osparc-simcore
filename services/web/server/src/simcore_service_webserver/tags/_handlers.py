@@ -1,9 +1,10 @@
 import functools
+import re
 
 from aiohttp import web
 from aiopg.sa.engine import Engine
 from models_library.users import UserID
-from pydantic import BaseModel, Extra, Field, PositiveInt, constr
+from pydantic import BaseModel, ConstrainedStr, Extra, Field, PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -11,6 +12,7 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.utils_tags import (
     TagDict,
     TagNotFoundError,
@@ -18,14 +20,15 @@ from simcore_postgres_database.utils_tags import (
     TagsRepo,
 )
 
-from ._meta import api_version_prefix as VTAG
-from .login.decorators import RQT_USERID_KEY, login_required
-from .security.decorators import permission_required
+from .._meta import api_version_prefix as VTAG
+from ..login.decorators import login_required
+from ..security.decorators import permission_required
+from ..utils_aiohttp import envelope_json_response
 
 
 def _handle_tags_exceptions(handler: Handler):
     @functools.wraps(handler)
-    async def wrapper(request: web.Request) -> web.Response:
+    async def wrapper(request: web.Request) -> web.StreamResponse:
         try:
             return await handler(request)
 
@@ -43,8 +46,8 @@ def _handle_tags_exceptions(handler: Handler):
 #
 
 
-class RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
+class _RequestContext(BaseModel):
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore
 
 
 class _InputSchema(BaseModel):
@@ -54,7 +57,8 @@ class _InputSchema(BaseModel):
         allow_mutations = False
 
 
-ColorStr = constr(regex=r"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$")
+class ColorStr(ConstrainedStr):
+    regex = re.compile(r"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$")
 
 
 class TagPathParams(_InputSchema):
@@ -104,7 +108,7 @@ class TagGet(_OutputSchema):
             name=tag["name"],
             description=tag["description"],
             color=tag["color"],
-            accessRights=TagAccessRights(
+            access_rights=TagAccessRights(
                 read=tag["read"],
                 write=tag["write"],
                 delete=tag["delete"],
@@ -125,7 +129,7 @@ routes = web.RouteTableDef()
 @_handle_tags_exceptions
 async def create_tag(request: web.Request):
     engine: Engine = request.app[APP_DB_ENGINE_KEY]
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = _RequestContext.parse_obj(request)
     tag_data = await parse_request_body_as(TagCreate, request)
 
     repo = TagsRepo(user_id=req_ctx.user_id)
@@ -138,7 +142,7 @@ async def create_tag(request: web.Request):
             **tag_data.dict(exclude_unset=True),
         )
         model = TagGet.from_db(tag)
-        return model.dict(by_alias=True)
+        return envelope_json_response(model)
 
 
 @routes.get(f"/{VTAG}/tags", name="list_tags")
@@ -147,12 +151,14 @@ async def create_tag(request: web.Request):
 @_handle_tags_exceptions
 async def list_tags(request: web.Request):
     engine: Engine = request.app[APP_DB_ENGINE_KEY]
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = _RequestContext.parse_obj(request)
 
     repo = TagsRepo(user_id=req_ctx.user_id)
     async with engine.acquire() as conn:
         tags = await repo.list(conn)
-        return [TagGet.from_db(t).dict(by_alias=True) for t in tags]
+        return envelope_json_response(
+            [TagGet.from_db(t).dict(by_alias=True) for t in tags]
+        )
 
 
 @routes.patch(f"/{VTAG}/tags/{{tag_id}}", name="update_tag")
@@ -161,7 +167,7 @@ async def list_tags(request: web.Request):
 @_handle_tags_exceptions
 async def update_tag(request: web.Request):
     engine: Engine = request.app[APP_DB_ENGINE_KEY]
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = _RequestContext.parse_obj(request)
     query_params = parse_request_path_parameters_as(TagPathParams, request)
     tag_data = await parse_request_body_as(TagUpdate, request)
 
@@ -171,7 +177,7 @@ async def update_tag(request: web.Request):
             conn, query_params.tag_id, **tag_data.dict(exclude_unset=True)
         )
         model = TagGet.from_db(tag)
-        return model.dict(by_alias=True)
+        return envelope_json_response(model)
 
 
 @routes.delete(f"/{VTAG}/tags/{{tag_id}}", name="delete_tag")
@@ -180,7 +186,7 @@ async def update_tag(request: web.Request):
 @_handle_tags_exceptions
 async def delete_tag(request: web.Request):
     engine: Engine = request.app[APP_DB_ENGINE_KEY]
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = _RequestContext.parse_obj(request)
     query_params = parse_request_path_parameters_as(TagPathParams, request)
 
     repo = TagsRepo(user_id=req_ctx.user_id)
