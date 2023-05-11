@@ -273,7 +273,8 @@ def db_api(client: TestClient, postgres_db: sa.engine.Engine) -> Iterator[Projec
     yield db_api
 
     # clean the projects
-    postgres_db.execute("DELETE FROM projects")
+    with postgres_db.connect() as conn:
+        conn.execute("DELETE FROM projects")
 
 
 def _assert_added_project(
@@ -304,11 +305,12 @@ def _assert_added_project(
 def _assert_projects_to_product_db_row(
     postgres_db: sa.engine.Engine, project: dict[str, Any], product_name: str
 ):
-    rows = postgres_db.execute(
-        sa.select([projects_to_products]).where(
-            projects_to_products.c.project_uuid == f"{project['uuid']}"
-        )
-    ).fetchall()
+    with postgres_db.connect() as conn:
+        rows = conn.execute(
+            sa.select([projects_to_products]).where(
+                projects_to_products.c.project_uuid == f"{project['uuid']}"
+            )
+        ).fetchall()
     assert rows
     assert len(rows) == 1
     assert rows[0][projects_to_products.c.product_name] == product_name
@@ -317,9 +319,10 @@ def _assert_projects_to_product_db_row(
 def _assert_project_db_row(
     postgres_db: sa.engine.Engine, project: dict[str, Any], **kwargs
 ):
-    row: Row | None = postgres_db.execute(
-        f"SELECT * FROM projects WHERE \"uuid\"='{project['uuid']}'"
-    ).fetchone()
+    with postgres_db.connect() as conn:
+        row: Row | None = conn.execute(
+            f"SELECT * FROM projects WHERE \"uuid\"='{project['uuid']}'"
+        ).fetchone()
 
     expected_db_entries = {
         "type": "STANDARD",

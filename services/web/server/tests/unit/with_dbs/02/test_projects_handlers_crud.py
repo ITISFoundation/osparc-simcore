@@ -235,13 +235,15 @@ def s4l_product_name() -> str:
 def s4l_products_db_name(
     postgres_db: sa.engine.Engine, s4l_product_name: str
 ) -> Iterator[str]:
-    postgres_db.execute(
-        products.insert().values(
-            name=s4l_product_name, host_regex="pytest", display_name="pytest"
+    with postgres_db.connect() as conn:
+        conn.execute(
+            products.insert().values(
+                name=s4l_product_name, host_regex="pytest", display_name="pytest"
+            )
         )
-    )
     yield s4l_product_name
-    postgres_db.execute(products.delete().where(products.c.name == s4l_product_name))
+    with postgres_db.connect() as conn:
+        conn.execute(products.delete().where(products.c.name == s4l_product_name))
 
 
 @pytest.fixture
@@ -277,7 +279,8 @@ async def test_list_projects_with_innaccessible_services(
     assert len(data) == 0
     # use-case 3: remove the links to products
     # shall still return 0 because the user has no access to the services
-    postgres_db.execute(projects_to_products.delete())
+    with postgres_db.connect() as conn:
+        conn.execute(projects_to_products.delete())
     data, *_ = await _list_projects(client, expected, headers=s4l_product_headers)
     assert len(data) == 0
     data, *_ = await _list_projects(client, expected)
