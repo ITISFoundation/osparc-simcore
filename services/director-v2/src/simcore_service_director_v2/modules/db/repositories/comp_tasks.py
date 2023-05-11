@@ -302,7 +302,7 @@ class CompTasksRepository(BaseRepository):
                     & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
                     & (comp_tasks.c.state == StateType.PUBLISHED)
                 )
-                .values(state=StateType.ABORTED)
+                .values(state=StateType.ABORTED, progress=1.0)
             )
         logger.debug("marked project %s published tasks as aborted", f"{project_id=}")
 
