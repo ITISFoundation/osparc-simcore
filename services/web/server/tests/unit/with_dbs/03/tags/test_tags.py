@@ -213,7 +213,7 @@ async def test_create_and_update_tags(
         "accessRights": {"read": True, "write": True, "delete": True},
     }
 
-    url = client.app.router["update_tag"].url_for(tag_id="2")
+    url = client.app.router["update_tag"].url_for(tag_id=f"{created['id']}")
     resp = await client.patch(
         f"{url}",
         json={"description": "This is my tag"},
