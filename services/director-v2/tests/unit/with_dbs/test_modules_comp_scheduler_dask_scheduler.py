@@ -9,10 +9,11 @@
 
 
 from dataclasses import dataclass
-from typing import Any, Callable, Iterator
+from typing import Any, Callable
 from unittest import mock
 
 import aiopg
+import aiopg.sa
 import httpx
 import pytest
 from _helpers import (
@@ -87,7 +88,7 @@ def minimal_dask_scheduler_config(
 @pytest.fixture
 def scheduler(
     minimal_dask_scheduler_config: None,
-    aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
+    aiopg_engine: aiopg.sa.engine.Engine,
     # dask_spec_local_cluster: SpecCluster,
     minimal_app: FastAPI,
 ) -> BaseCompScheduler:
@@ -141,7 +142,7 @@ async def minimal_app(async_client: httpx.AsyncClient) -> FastAPI:
 
 async def test_scheduler_gracefully_starts_and_stops(
     minimal_dask_scheduler_config: None,
-    aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
+    aiopg_engine: aiopg.sa.engine.Engine,
     dask_spec_local_cluster: SpecCluster,
     minimal_app: FastAPI,
 ):
@@ -158,7 +159,7 @@ async def test_scheduler_gracefully_starts_and_stops(
 )
 def test_scheduler_raises_exception_for_missing_dependencies(
     minimal_dask_scheduler_config: None,
-    aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
+    aiopg_engine: aiopg.sa.engine.Engine,
     dask_spec_local_cluster: SpecCluster,
     monkeypatch: MonkeyPatch,
     missing_dependency: str,
@@ -181,7 +182,7 @@ async def test_empty_pipeline_is_not_scheduled(
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., ProjectAtDB],
     pipeline: Callable[..., CompPipelineAtDB],
-    aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
+    aiopg_engine: aiopg.sa.engine.Engine,
 ):
     user = registered_user()
     empty_project = project(user)
@@ -207,7 +208,7 @@ async def test_empty_pipeline_is_not_scheduled(
         scheduler.wake_up_event.is_set() is False
     ), "the scheduler was woken up on an empty pipeline!"
     # check the database is empty
-    async with aiopg_engine.acquire() as conn:  # type: ignore
+    async with aiopg_engine.acquire() as conn:
         result = await conn.scalar(
             comp_runs.select().where(
                 (comp_runs.c.user_id == user["id"])
@@ -226,7 +227,7 @@ async def test_misconfigured_pipeline_is_not_scheduled(
     pipeline: Callable[..., CompPipelineAtDB],
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
-    aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
+    aiopg_engine: aiopg.sa.engine.Engine,
 ):
     """A pipeline which comp_tasks are missing should not be scheduled.
     It shall be aborted and shown as such in the comp_runs db"""
@@ -252,7 +253,7 @@ async def test_misconfigured_pipeline_is_not_scheduled(
         assert it > 0
         assert params.mark_for_cancellation is False
     # check the database was properly updated
-    async with aiopg_engine.acquire() as conn:  # type: ignore
+    async with aiopg_engine.acquire() as conn:
         result = await conn.execute(
             comp_runs.select().where(
                 (comp_runs.c.user_id == user["id"])
@@ -266,7 +267,7 @@ async def test_misconfigured_pipeline_is_not_scheduled(
     # check the scheduled pipelines is again empty since it's misconfigured
     assert len(scheduler.scheduled_pipelines) == 0
     # check the database entry is correctly updated
-    async with aiopg_engine.acquire() as conn:  # type: ignore
+    async with aiopg_engine.acquire() as conn:
         result = await conn.execute(
             comp_runs.select().where(
                 (comp_runs.c.user_id == user["id"])
@@ -282,7 +283,7 @@ async def test_proper_pipeline_is_scheduled(
     mocked_dask_client: mock.MagicMock,
     scheduler: BaseCompScheduler,
     minimal_app: FastAPI,
-    aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
+    aiopg_engine: aiopg.sa.engine.Engine,
     published_project: PublishedProject,
 ):
     # This calls adds starts the scheduling of a pipeline
@@ -516,7 +517,7 @@ async def test_handling_of_disconnected_dask_scheduler(
     dask_spec_local_cluster: SpecCluster,
     scheduler: BaseCompScheduler,
     minimal_app: FastAPI,
-    aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
+    aiopg_engine: aiopg.sa.engine.Engine,
     mocker: MockerFixture,
     published_project: PublishedProject,
     backend_error: SchedulerError,
@@ -647,7 +648,7 @@ class RebootState:
 async def test_handling_scheduling_after_reboot(
     mocked_scheduler_task: None,
     mocked_dask_client: mock.MagicMock,
-    aiopg_engine: aiopg.sa.engine.Engine,  # type: ignore
+    aiopg_engine: aiopg.sa.engine.Engine,
     running_project: RunningProject,
     scheduler: BaseCompScheduler,
     minimal_app: FastAPI,

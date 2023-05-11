@@ -1,8 +1,9 @@
 import asyncio
 from dataclasses import dataclass
-from typing import Any, Dict, Iterator, List
+from typing import Any
 
 import aiopg
+import aiopg.sa
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -23,7 +24,7 @@ from simcore_service_director_v2.modules.comp_scheduler.base_scheduler import (
 class PublishedProject:
     project: ProjectAtDB
     pipeline: CompPipelineAtDB
-    tasks: List[CompTaskAtDB]
+    tasks: list[CompTaskAtDB]
 
 
 @dataclass
@@ -32,13 +33,13 @@ class RunningProject(PublishedProject):
 
 
 async def assert_comp_run_state(
-    aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
+    aiopg_engine: aiopg.sa.engine.Engine,
     user_id: UserID,
     project_uuid: ProjectID,
     exp_state: RunningState,
 ):
     # check the database is correctly updated, the run is published
-    async with aiopg_engine.acquire() as conn:  # type: ignore
+    async with aiopg_engine.acquire() as conn:
         result = await conn.execute(
             comp_runs.select().where(
                 (comp_runs.c.user_id == user_id)
@@ -52,20 +53,20 @@ async def assert_comp_run_state(
 
 
 async def assert_comp_tasks_state(
-    aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
+    aiopg_engine: aiopg.sa.engine.Engine,
     project_uuid: ProjectID,
-    task_ids: List[NodeID],
+    task_ids: list[NodeID],
     exp_state: RunningState,
 ):
     # check the database is correctly updated, the run is published
-    async with aiopg_engine.acquire() as conn:  # type: ignore
+    async with aiopg_engine.acquire() as conn:
         result = await conn.execute(
             comp_tasks.select().where(
                 (comp_tasks.c.project_id == f"{project_uuid}")
                 & (comp_tasks.c.node_id.in_([f"{n}" for n in task_ids]))
             )  # there is only one entry
         )
-        tasks = parse_obj_as(List[CompTaskAtDB], await result.fetchall())
+        tasks = parse_obj_as(list[CompTaskAtDB], await result.fetchall())
     assert all(  # pylint: disable=use-a-generator
         [t.state == exp_state for t in tasks]
     ), f"expected state: {exp_state}, found: {[t.state for t in tasks]}"
@@ -84,9 +85,9 @@ async def manually_run_comp_scheduler(scheduler: BaseCompScheduler):
 
 
 async def set_comp_task_state(
-    aiopg_engine: Iterator[aiopg.sa.engine.Engine], node_id: str, state: StateType  # type: ignore
+    aiopg_engine: aiopg.sa.engine.Engine, node_id: str, state: StateType
 ):
-    async with aiopg_engine.acquire() as conn:  # type: ignore
+    async with aiopg_engine.acquire() as conn:
         await conn.execute(
             # pylint: disable=no-value-for-parameter
             comp_tasks.update()
@@ -96,9 +97,12 @@ async def set_comp_task_state(
 
 
 async def set_comp_task_outputs(
-    aiopg_engine: aiopg.sa.engine.Engine, node_id: NodeID, outputs_schema: Dict[str, Any], outputs: Dict[str, Any]  # type: ignore
+    aiopg_engine: aiopg.sa.engine.Engine,
+    node_id: NodeID,
+    outputs_schema: dict[str, Any],
+    outputs: dict[str, Any],
 ):
-    async with aiopg_engine.acquire() as conn:  # type: ignore
+    async with aiopg_engine.acquire() as conn:
         await conn.execute(
             # pylint: disable=no-value-for-parameter
             comp_tasks.update()
@@ -108,9 +112,12 @@ async def set_comp_task_outputs(
 
 
 async def set_comp_task_inputs(
-    aiopg_engine: aiopg.sa.engine.Engine, node_id: NodeID, inputs_schema: Dict[str, Any], inputs: Dict[str, Any]  # type: ignore
+    aiopg_engine: aiopg.sa.engine.Engine,
+    node_id: NodeID,
+    inputs_schema: dict[str, Any],
+    inputs: dict[str, Any],
 ):
-    async with aiopg_engine.acquire() as conn:  # type: ignore
+    async with aiopg_engine.acquire() as conn:
         await conn.execute(
             # pylint: disable=no-value-for-parameter
             comp_tasks.update()
