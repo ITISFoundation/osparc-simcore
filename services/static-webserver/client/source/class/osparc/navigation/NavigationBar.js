@@ -432,6 +432,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         tabButtons.forEach(tabButton => {
           tabButton.getChildControl("icon").show();
           tabButton.getChildControl("label").exclude();
+          tabButton.setToolTipText(tabButton.ttt);
         });
         // right-items
         this.getChildControl("user-menu").exclude();
@@ -448,6 +449,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         tabButtons.forEach(tabButton => {
           tabButton.getChildControl("label").show();
           tabButton.getChildControl("icon").exclude();
+          tabButton.resetToolTipText();
         });
         // right-items
         this.getChildControl("user-menu-compact").exclude();
