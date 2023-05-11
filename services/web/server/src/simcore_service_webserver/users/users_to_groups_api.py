@@ -1,13 +1,11 @@
-from typing import Set
-
 import sqlalchemy as sa
 from aiohttp import web
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 
-from .db_models import user_to_groups
+from ..db_models import user_to_groups
 
 
-async def get_users_for_gid(app: web.Application, gid: int) -> Set[int]:
+async def get_users_for_gid(app: web.Application, gid: int) -> set[int]:
     engine = app[APP_DB_ENGINE_KEY]
     result = set()
     async with engine.acquire() as conn:

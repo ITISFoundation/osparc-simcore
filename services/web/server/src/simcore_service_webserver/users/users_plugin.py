@@ -12,8 +12,8 @@ from servicelib.aiohttp.rest_routing import (
     map_handlers_with_operations,
 )
 
-from .. import users_handlers
 from .._constants import APP_OPENAPI_SPECS_KEY
+from . import users_handlers
 
 logger = logging.getLogger(__name__)
 

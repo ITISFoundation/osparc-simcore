@@ -13,7 +13,7 @@ from .projects.projects_exceptions import ProjectNotFoundError
 from .users import users_exceptions
 from .users.users_api import get_user, get_user_id_from_gid
 from .users.users_exceptions import UserNotFoundError
-from .users_to_groups_api import get_users_for_gid
+from .users.users_to_groups_api import get_users_for_gid
 
 logger = logging.getLogger(__name__)
 

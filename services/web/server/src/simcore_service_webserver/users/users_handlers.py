@@ -12,19 +12,19 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
-from ._meta import API_VTAG
-from .login.decorators import login_required
-from .redis import get_redis_user_notifications_client
-from .security.decorators import permission_required
-from .users import users_api
-from .users.user_notifications import (
+from .._meta import API_VTAG
+from ..login.decorators import login_required
+from ..redis import get_redis_user_notifications_client
+from ..security.decorators import permission_required
+from . import users_api
+from .user_notifications import (
     MAX_NOTIFICATIONS_FOR_USER_TO_KEEP,
     MAX_NOTIFICATIONS_FOR_USER_TO_SHOW,
     UserNotification,
     get_notification_key,
 )
-from .users.users_exceptions import TokenNotFoundError, UserNotFoundError
-from .users.users_models import ProfileGet, ProfileUpdate
+from .users_exceptions import TokenNotFoundError, UserNotFoundError
+from .users_models import ProfileGet, ProfileUpdate
 
 logger = logging.getLogger(__name__)
 
