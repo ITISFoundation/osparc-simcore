@@ -12,7 +12,9 @@ from typing import Any, AsyncIterator, Callable
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from aiohttp.web_routedef import AbstractRouteDef
 from faker import Faker
+from openapi_core.schema.specs.models import Spec as OpenApiSpecs
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, NewUser, UserInfoDict
 from pytest_simcore.helpers.utils_webserver_unit_with_db import (
@@ -24,15 +26,18 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import setup_db
-from simcore_service_webserver.groups import setup_groups
-from simcore_service_webserver.groups_api import (
-    DEFAULT_GROUP_OWNER_ACCESS_RIGHTS,
-    DEFAULT_GROUP_READ_ACCESS_RIGHTS,
+from simcore_service_webserver.groups import _handlers
+from simcore_service_webserver.groups._db import (
+    _DEFAULT_GROUP_OWNER_ACCESS_RIGHTS,
+    _DEFAULT_GROUP_READ_ACCESS_RIGHTS,
+)
+from simcore_service_webserver.groups._utils import AccessRightsDict
+from simcore_service_webserver.groups.api import (
     auto_add_user_to_groups,
     create_user_group,
     delete_user_group,
 )
-from simcore_service_webserver.groups_utils import AccessRightsDict
+from simcore_service_webserver.groups.plugin import setup_groups
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security.plugin import setup_security
@@ -59,7 +64,8 @@ def client(
     # fake config
     app = create_safe_application(cfg)
 
-    assert setup_settings(app)
+    settings = setup_settings(app)
+    print(settings.json(indent=1))
 
     setup_db(app)
     setup_session(app)
@@ -76,6 +82,40 @@ def client(
 
 
 # --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "route",
+    _handlers.routes,
+    ids=lambda r: f"{r.method.upper()} {r.path}",
+)
+def test_route_in_openapi_specs(route: AbstractRouteDef, openapi_specs: OpenApiSpecs):
+
+    assert route.path.startswith(f"/{API_VTAG}")
+    path = route.path.replace(f"/{API_VTAG}", "")
+
+    assert path in openapi_specs.paths
+
+    assert (
+        route.method.lower() in openapi_specs.paths[path].operations
+    ), f"operation {route.method=} for {path=} undefined in OAS"
+
+    assert (
+        openapi_specs.paths[path].operations[route.method.lower()].operation_id
+        == route.kwargs["name"]
+    ), "route's name differs from OAS operation_id"
+
+
+def test_openapi_specs_in_routes(openapi_specs: OpenApiSpecs):
+    registered_operation_ids = [r.kwargs["name"] for r in _handlers.routes]
+
+    for url, path in openapi_specs.paths.items():
+        for method, operation in path.operations.items():
+            assert method == operation.http_method
+            if "groups" in operation.tags:
+                assert (
+                    operation.operation_id in registered_operation_ids
+                ), f"{operation.http_method.upper()} {url}: {operation.tags=}, {operation.operation_id=}"
 
 
 def _assert_group(group: dict[str, str]):
@@ -297,9 +337,9 @@ async def test_add_remove_users_from_group(
     resp = await client.get(f"{url}")
     data, error = await assert_status(resp, expected.not_found)
 
+    # Create group
     url = client.app.router["create_group"].url_for()
     assert f"{url}" == f"/{API_VTAG}/groups"
-
     resp = await client.post(f"{url}", json=new_group)
     data, error = await assert_status(resp, expected.created)
 
@@ -307,17 +347,17 @@ async def test_add_remove_users_from_group(
     if not error:
         assert isinstance(data, dict)
         assigned_group = data
+
         _assert_group(assigned_group)
+
         # we get a new gid and the rest keeps the same
         assert assigned_group["gid"] != new_group["gid"]
-        for prop in ["label", "description", "thumbnail"]:
-            assert assigned_group[prop] == new_group[prop]
+
+        props = ["label", "description", "thumbnail"]
+        assert {assigned_group[p] for p in props} == {new_group[p] for p in props}
+
         # we get all rights on the group since we are the creator
-        assert assigned_group["accessRights"] == {
-            "read": True,
-            "write": True,
-            "delete": True,
-        }
+        assert assigned_group["accessRights"] == _DEFAULT_GROUP_OWNER_ACCESS_RIGHTS
 
     # check that our user is in the group of users
     get_group_users_url = client.app.router["get_group_users"].url_for(
@@ -333,7 +373,7 @@ async def test_add_remove_users_from_group(
         list_of_users = data
         assert len(list_of_users) == 1
         the_owner = list_of_users[0]
-        _assert__group_user(logged_user, DEFAULT_GROUP_OWNER_ACCESS_RIGHTS, the_owner)
+        _assert__group_user(logged_user, _DEFAULT_GROUP_OWNER_ACCESS_RIGHTS, the_owner)
 
     # create a random number of users and put them in the group
     add_group_user_url = client.app.router["add_group_user"].url_for(
@@ -344,6 +384,7 @@ async def test_add_remove_users_from_group(
     )
     num_new_users = random.randint(1, 10)
     created_users_list = []
+
     async with AsyncExitStack() as users_stack:
         for i in range(num_new_users):
             created_users_list.append(
@@ -370,17 +411,19 @@ async def test_add_remove_users_from_group(
             data, error = await assert_status(resp, expected.ok)
             if not error:
                 _assert__group_user(
-                    created_users_list[i], DEFAULT_GROUP_READ_ACCESS_RIGHTS, data
+                    created_users_list[i], _DEFAULT_GROUP_READ_ACCESS_RIGHTS, data
                 )
         # check list is correct
         resp = await client.get(f"{get_group_users_url}")
         data, error = await assert_status(resp, expected.ok)
         if not error:
             list_of_users = data
+
             # now we should have all the users in the group + the owner
             all_created_users = created_users_list + [logged_user]
             assert len(list_of_users) == len(all_created_users)
             for actual_user in list_of_users:
+
                 expected_users_list = list(
                     filter(
                         lambda x, ac=actual_user: x["email"] == ac["login"],
@@ -388,11 +431,15 @@ async def test_add_remove_users_from_group(
                     )
                 )
                 assert len(expected_users_list) == 1
+                expected_user = expected_users_list[0]
+
+                expected_access_rigths = _DEFAULT_GROUP_READ_ACCESS_RIGHTS
+                if actual_user["login"] == logged_user["email"]:
+                    expected_access_rigths = _DEFAULT_GROUP_OWNER_ACCESS_RIGHTS
+
                 _assert__group_user(
-                    expected_users_list[0],
-                    DEFAULT_GROUP_READ_ACCESS_RIGHTS
-                    if actual_user["login"] != logged_user["email"]
-                    else DEFAULT_GROUP_OWNER_ACCESS_RIGHTS,
+                    expected_user,
+                    expected_access_rigths,
                     actual_user,
                 )
                 all_created_users.remove(expected_users_list[0])

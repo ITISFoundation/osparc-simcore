@@ -28,7 +28,7 @@ from pytest_simcore.helpers import FIXTURE_CONFIG_CORE_SERVICES_SELECTION
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_docker import get_service_published_port
 from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict
-from simcore_service_webserver.groups_api import (
+from simcore_service_webserver.groups.api import (
     add_user_in_group,
     create_user_group,
     delete_user_group,
