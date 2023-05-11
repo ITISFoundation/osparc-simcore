@@ -58,11 +58,9 @@ async def get_user_profile(app: web.Application, user_id: UserID) -> ProfileGet:
     async with engine.acquire() as conn:
         async for row in conn.execute(
             sa.select(
-                [
-                    users,
-                    groups,
-                    user_to_groups.c.access_rights,
-                ],
+                users,
+                groups,
+                user_to_groups.c.access_rights,
                 use_labels=True,
             )
             .select_from(

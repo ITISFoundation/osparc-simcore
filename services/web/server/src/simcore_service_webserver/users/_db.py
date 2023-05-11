@@ -31,7 +31,7 @@ async def get_users_for_gid(app: web.Application, gid: int) -> set[int]:
     result = set()
     async with engine.acquire() as conn:
         query_result = await conn.execute(
-            sa.select([user_to_groups.c.uid]).where(user_to_groups.c.gid == gid)
+            sa.select(user_to_groups.c.uid).where(user_to_groups.c.gid == gid)
         )
         async for entry in query_result:
             result.add(entry[0])
