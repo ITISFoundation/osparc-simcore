@@ -526,10 +526,10 @@ async def test_proper_pipeline_is_scheduled(
 
     mocked_dask_client.get_tasks_status.side_effect = _return_1st_task_success
 
-    async def _return_rangom_task_result(job_id) -> TaskOutputData:
+    async def _return_random_task_result(job_id) -> TaskOutputData:
         return TaskOutputData.parse_obj({"out_1": None, "out_2": 45})
 
-    mocked_dask_client.get_task_result.side_effect = _return_rangom_task_result
+    mocked_dask_client.get_task_result.side_effect = _return_random_task_result
     await manually_run_comp_scheduler(scheduler)
     await _assert_comp_run_state(aiopg_engine, published_project, RunningState.STARTED)
     await assert_comp_tasks_state(
@@ -612,7 +612,7 @@ async def test_proper_pipeline_is_scheduled(
     mocked_dask_client.get_task_result.assert_not_called()
 
     # -------------------------------------------------------------------------------
-    # 6. the task fails
+    # 7. the task fails
     async def _return_2nd_task_failed(job_ids: list[str]) -> list[RunningState]:
         return [
             RunningState.FAILED
@@ -636,12 +636,14 @@ async def test_proper_pipeline_is_scheduled(
     mocked_dask_client.get_tasks_status.assert_called_once_with(
         [p.job_id for p in exp_pending_tasks]
     )
+    mocked_dask_client.get_tasks_status.reset_mock()
     mocked_dask_client.get_task_result.assert_called_once_with(exp_started_task.job_id)
     mocked_dask_client.get_task_result.reset_mock()
+    exp_pending_tasks.remove(exp_started_task)
 
     # -------------------------------------------------------------------------------
-    # 6. the last task shall succeed
-    exp_started_task = exp_pending_tasks[1]
+    # 8. the last task shall succeed
+    exp_started_task = exp_pending_tasks[0]
 
     async def _return_3rd_task_success(job_ids: list[str]) -> list[RunningState]:
         return [
@@ -652,7 +654,7 @@ async def test_proper_pipeline_is_scheduled(
         ]
 
     mocked_dask_client.get_tasks_status.side_effect = _return_3rd_task_success
-    mocked_dask_client.get_task_result.side_effect = _return_rangom_task_result
+    mocked_dask_client.get_task_result.side_effect = _return_random_task_result
 
     # trigger the scheduler, it should switch to FAILED, as we are done
     await manually_run_comp_scheduler(scheduler)
@@ -666,6 +668,10 @@ async def test_proper_pipeline_is_scheduled(
         expected_progress=1,
     )
     mocked_dask_client.send_computation_tasks.assert_not_called()
+    mocked_dask_client.get_tasks_status.assert_called_once_with(
+        [p.job_id for p in exp_pending_tasks]
+    )
+    mocked_dask_client.get_task_result.assert_called_once_with(exp_started_task.job_id)
     # the scheduled pipeline shall be removed
     assert scheduler.scheduled_pipelines == {}
 
