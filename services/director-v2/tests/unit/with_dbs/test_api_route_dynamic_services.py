@@ -246,7 +246,7 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
     )
 
     mocker.patch(
-        f"{module_base}._core._scheduler.Scheduler._discover_running_services",
+        f"{module_base}._core._scheduler_utils.discover_running_services",
         autospec=True,
         return_value=None,
     )

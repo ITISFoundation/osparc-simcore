@@ -85,22 +85,6 @@ def client(
 
 
 @pytest.fixture
-async def user_project(
-    client, fake_project, logged_user, tests_data_dir: Path, osparc_product_name: str
-):
-    async with NewProject(
-        fake_project,
-        client.app,
-        user_id=logged_user["id"],
-        tests_data_dir=tests_data_dir,
-        product_name=osparc_product_name,
-    ) as project:
-        print("-----> added project", project["name"])
-        yield project
-        print("<----- removed project", project["name"])
-
-
-@pytest.fixture
 async def shared_project(
     client,
     fake_project,

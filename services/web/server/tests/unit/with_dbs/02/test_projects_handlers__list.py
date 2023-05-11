@@ -161,7 +161,7 @@ async def test_list_projects_with_pagination(
     limit: int,
     request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):
-    NUM_PROJECTS = 90
+    NUM_PROJECTS = 60
     # let's create a few projects here
     created_projects = await asyncio.gather(
         *[

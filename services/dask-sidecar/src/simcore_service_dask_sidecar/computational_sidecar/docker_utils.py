@@ -1,5 +1,6 @@
 import asyncio
 import contextlib
+import datetime
 import json
 import logging
 import re
@@ -19,6 +20,7 @@ from typing import (
 
 import aiofiles
 import aiofiles.tempfile
+import arrow
 from aiodocker import Docker, DockerError
 from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
@@ -131,37 +133,46 @@ _DOCKER_LOG_REGEXP: re.Pattern[str] = re.compile(
     r"\s(?P<log>.*)$"
 )
 _PROGRESS_REGEXP: re.Pattern[str] = re.compile(
-    r"\[?progress\]?:?\s*([0-1]?\.\d+|\d+(%)|\d+\s*(percent)|(\d+\/\d+))"
+    r"^(?:\[?progress\]?:?)?\s*"
+    r"(?P<value>[0-1]?\.\d+|"
+    r"\d+\s*(?:(?P<percent_sign>%)|"
+    r"\d+\s*"
+    r"(?P<percent_explicit>percent))|"
+    r"\[?(?P<fraction>\d+\/\d+)\]?"
+    r"|0|1)"
 )
-DEFAULT_TIME_STAMP = "2000-01-01T00:00:00.000000000Z"
 
 
-async def parse_line(line: str) -> tuple[LogType, str, str]:
+async def _parse_line(line: str) -> tuple[LogType, datetime.datetime, str]:
     match = re.search(_DOCKER_LOG_REGEXP, line)
     if not match:
+        # try to correct the log, it might be coming from an old comp service that does not put timestamps
+        corrected_line = f"{arrow.utcnow().datetime.isoformat()} {line}"
+        match = re.search(_DOCKER_LOG_REGEXP, corrected_line)
+    if not match:
         # default return as log
-        return (LogType.LOG, DEFAULT_TIME_STAMP, f"{line}")
+        return (LogType.LOG, arrow.utcnow().datetime, f"{line}")
 
     log_type = LogType.LOG
-    timestamp = match.group("timestamp")
+    timestamp = to_datetime(match.group("timestamp"))
     log = f"{match.group('log')}"
     # now look for progress
     match = re.search(_PROGRESS_REGEXP, log.lower())
     if match:
         try:
             # can be anything from "23 percent", 23%, 23/234, 0.0-1.0
-            progress = match.group(1)
+            progress = match.group("value")
             log_type = LogType.PROGRESS
-            if match.group(2):
+            if match.group("percent_sign"):
                 # this is of the 23% kind
-                log = f"{float(progress.rstrip('%').strip()) / 100.0:.2f}"
-            elif match.group(3):
+                log = f"{float(progress.split('%')[0].strip()) / 100.0:.2f}"
+            elif match.group("percent_explicit"):
                 # this is of the 23 percent kind
-                log = f"{float(progress.rstrip('percent').strip()) / 100.0:.2f}"
-            elif match.group(4):
+                log = f"{float(progress.split('percent')[0].strip()) / 100.0:.2f}"
+            elif match.group("fraction"):
                 # this is of the 23/123 kind
-                nums = progress.strip().split("/")
-                log = f"{float(nums[0]) / float(nums[1]):.2f}"
+                nums = match.group("fraction").strip().split("/")
+                log = f"{float(nums[0].strip()) / float(nums[1].strip()):.2f}"
             else:
                 # this is of the 0.0-1.0 kind
                 log = f"{float(progress.strip()):.2f}"
@@ -212,7 +223,7 @@ async def _parse_container_log_file(
         logger.debug("monitoring legacy-style container log file: opened %s", log_file)
         while (await container.show())["State"]["Running"]:
             if line := await file_pointer.readline():
-                log_type, _, message = await parse_line(line)
+                log_type, _, message = await _parse_line(line)
                 await _publish_container_logs(
                     service_key=service_key,
                     service_version=service_version,
@@ -227,7 +238,7 @@ async def _parse_container_log_file(
             await asyncio.sleep(PARSE_LOG_INTERVAL_S)
         # finish reading the logs if possible
         async for line in file_pointer:
-            log_type, _, message = await parse_line(line)
+            log_type, _, message = await _parse_line(line)
             await _publish_container_logs(
                 service_key=service_key,
                 service_version=service_version,
@@ -271,7 +282,7 @@ async def _parse_container_docker_logs(
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
 ) -> None:
-    latest_log_timestamp = DEFAULT_TIME_STAMP
+    latest_log_timestamp = arrow.utcnow().datetime
     logger.debug(
         "monitoring 1.0+ container logs from container %s:%s",
         container.id,
@@ -288,7 +299,7 @@ async def _parse_container_docker_logs(
                 container.log(stdout=True, stderr=True, follow=True, timestamps=True),
             ):
                 await log_fp.write(log_line.encode("utf-8"))
-                log_type, latest_log_timestamp, message = await parse_line(log_line)
+                log_type, latest_log_timestamp, message = await _parse_line(log_line)
                 await _publish_container_logs(
                     service_key=service_key,
                     service_version=service_version,
@@ -314,12 +325,12 @@ async def _parse_container_docker_logs(
                     stderr=True,
                     timestamps=True,
                     follow=False,
-                    since=to_datetime(latest_log_timestamp).strftime("%s"),
+                    since=latest_log_timestamp.strftime("%s"),
                 ),
             )
             for log_line in missing_logs:
                 await log_fp.write(log_line.encode("utf-8"))
-                log_type, latest_log_timestamp, message = await parse_line(log_line)
+                log_type, latest_log_timestamp, message = await _parse_line(log_line)
                 await _publish_container_logs(
                     service_key=service_key,
                     service_version=service_version,
