@@ -41,7 +41,7 @@ async def _on_user_disconnected(
     )
 
 
-def setup_project_events(app: web.Application) -> None:
+def setup_project_observer_events(app: web.Application) -> None:
     setup_observer_registry(app)
 
     register_observer(app, _on_user_disconnected, event="SIGNAL_USER_DISCONNECTED")
