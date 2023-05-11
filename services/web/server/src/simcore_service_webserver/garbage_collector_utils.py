@@ -11,7 +11,7 @@ from .groups.api import get_group_from_gid
 from .projects.projects_db import APP_PROJECT_DBAPI, ProjectAccessRights
 from .projects.projects_exceptions import ProjectNotFoundError
 from .users import exceptions
-from .users.api import get_user, get_user_id_from_gid, get_users_for_gid
+from .users.api import get_user, get_user_id_from_gid, get_users_in_group
 from .users.exceptions import UserNotFoundError
 
 logger = logging.getLogger(__name__)
@@ -28,7 +28,9 @@ async def _fetch_new_project_owner_from_groups(
     # go through user_to_groups table and fetch all uid for matching gid
     for group_gid in standard_groups.keys():
         # remove the current owner from the bunch
-        target_group_users = await get_users_for_gid(app=app, gid=group_gid) - {user_id}
+        target_group_users = await get_users_in_group(app=app, gid=group_gid) - {
+            user_id
+        }
         logger.info("Found group users '%s'", target_group_users)
 
         for possible_user_id in target_group_users:
