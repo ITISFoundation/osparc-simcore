@@ -63,7 +63,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Page", {
     // NeuronalActivation content
     const neuronalActivationScroll = new qx.ui.container.Scroll();
     const neuronalActivationLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(null, null, "separator-vertical"));
-    const neuronalActivation = new osparc.product.landingPage.s4llite.Pricing();
+    const neuronalActivation = new osparc.product.landingPage.s4llite.solutions.NeuronalActivation();
     neuronalActivationLayout.add(neuronalActivation);
     const neuronalActivationFooter = new osparc.product.landingPage.s4llite.Footer().set({
       backgroundColor: "background-main-2"
