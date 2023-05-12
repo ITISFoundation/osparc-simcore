@@ -22,12 +22,10 @@ qx.Class.define("osparc.product.landingPage.s4llite.solutions.SolutionsBase", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(40).set({
+    this._setLayout(new qx.ui.layout.VBox(0).set({
       alignX: "center",
       alignY: "middle"
     }));
-
-    this.setPadding(30);
 
     this.buildLayout();
   },
@@ -38,6 +36,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.solutions.SolutionsBase", {
         alignX: "center",
         alignY: "middle"
       })).set({
+        padding: 60,
         width: 450,
         maxWidth: 450
       });
@@ -94,6 +93,10 @@ qx.Class.define("osparc.product.landingPage.s4llite.solutions.SolutionsBase", {
         alignX: "center",
         alignY: "middle"
       }));
+      contentLayout.set({
+        backgroundColor: "background-main-1",
+        padding: 40
+      });
 
       const textLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(30).set({
         alignY: "middle"
