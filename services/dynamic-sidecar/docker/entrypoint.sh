@@ -110,4 +110,12 @@ echo "  $SC_USER_NAME rights    : $(id "$SC_USER_NAME")"
 echo "  local dir : $(ls -al)"
 echo "  volumes dir : $(ls -al "${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}")"
 
+echo "$INFO" "Available permissions"
+capsh --print
+
+PYTHON_BINARY=$(readlink --canonicalize $(which python))
+echo "$INFO" "Granting ${PYTHON_BINARY} CAP_LINUX_IMMUTABLE"
+setcap 'cap_linux_immutable+ep' "${PYTHON_BINARY}"
+getcap "${PYTHON_BINARY}"
+
 exec gosu "$SC_USER_NAME" "$@"

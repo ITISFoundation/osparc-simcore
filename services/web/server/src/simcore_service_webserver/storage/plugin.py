@@ -8,7 +8,7 @@ from aiohttp import web
 from servicelib.aiohttp.application_keys import APP_OPENAPI_SPECS_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from . import storage_routes
+from . import _routes
 
 log = logging.getLogger(__name__)
 
@@ -20,5 +20,5 @@ def setup_storage(app: web.Application):
 
     specs = app[APP_OPENAPI_SPECS_KEY]  # validated openapi specs
 
-    routes = storage_routes.create(specs)
+    routes = _routes.create(specs)
     app.router.add_routes(routes)

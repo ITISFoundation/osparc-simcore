@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Literal, Optional
+from typing import Literal
 from uuid import UUID
 
 from models_library.basic_types import IdInt
@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field, validator
 from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.models.users import UserRole
 
-from .groups_models import AllUsersGroups
+from .groups.schemas import AllUsersGroups
 
 #
 # TOKENS resource
@@ -24,7 +24,7 @@ class Token(BaseModel):
         ..., description="uniquely identifies the service where this token is used"
     )
     token_key: UUID = Field(..., description="basic token key")
-    token_secret: Optional[UUID] = None
+    token_secret: UUID | None = None
 
     class Config:
         schema_extra = {
@@ -45,8 +45,8 @@ class TokenID(BaseModel):
 
 
 class _ProfileCommon(BaseModel):
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
+    first_name: str | None = None
+    last_name: str | None = None
 
     class Config:
         schema_extra = {
@@ -65,9 +65,9 @@ class ProfileGet(_ProfileCommon):
     id: IdInt
     login: LowerCaseEmailStr
     role: Literal["Anonymous", "Guest", "User", "Tester", "Admin"]
-    groups: Optional[AllUsersGroups] = None
-    gravatar_id: Optional[str] = None
-    expiration_date: Optional[date] = Field(
+    groups: AllUsersGroups | None = None
+    gravatar_id: str | None = None
+    expiration_date: date | None = Field(
         default=None,
         description="If user has a trial account, it sets the expiration date, otherwise None",
         alias="expirationDate",

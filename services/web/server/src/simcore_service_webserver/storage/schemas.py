@@ -1,12 +1,12 @@
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
-from pydantic import BaseModel, Field, conint
+from pydantic import BaseModel, Field
 
 
 class FileLocation(BaseModel):
-    name: Optional[str] = None
-    id: Optional[float] = None
+    name: str | None = None
+    id: float | None = None
 
     class Config:
         schema_extra = {
@@ -22,8 +22,8 @@ class FileLocationArray(BaseModel):
 
 
 class TableSynchronisation(BaseModel):
-    dry_run: Optional[bool] = None
-    fire_and_forget: Optional[bool] = None
+    dry_run: bool | None = None
+    fire_and_forget: bool | None = None
     removed: list[str]
 
 
@@ -33,7 +33,7 @@ class Links(BaseModel):
 
 
 class FileUploadSchema(BaseModel):
-    chunk_size: conint(ge=0)
+    chunk_size: int = Field(..., ge=0)
     urls: list[str]
     links: Links
 
@@ -53,12 +53,12 @@ class State(str, Enum):
 
 class FileUploadCompleteFuture(BaseModel):
     state: State
-    e_tag: Optional[str] = None
+    e_tag: str | None = None
 
 
 class DatasetMetaData(BaseModel):
-    dataset_id: Optional[str] = None
-    display_name: Optional[str] = None
+    dataset_id: str | None = None
+    display_name: str | None = None
 
     class Config:
         schema_extra = {
@@ -75,7 +75,7 @@ class DatasetMetaDataArray(BaseModel):
 
 class FileLocationEnveloped(BaseModel):
     data: FileLocation
-    error: Optional[Any] = None
+    error: Any | None = None
 
 
 class TableSynchronisationEnveloped(BaseModel):
@@ -100,7 +100,7 @@ class FileUploadCompleteFutureEnveloped(BaseModel):
 
 class DatasetMetaEnvelope(BaseModel):
     data: DatasetMetaData
-    error: Optional[Any] = None
+    error: Any | None = None
 
 
 class CompleteUpload(BaseModel):
@@ -109,16 +109,16 @@ class CompleteUpload(BaseModel):
 
 
 class FileMetaData(BaseModel):
-    file_uuid: Optional[str] = None
-    location_id: Optional[str] = None
-    project_name: Optional[str] = None
-    node_name: Optional[str] = None
-    file_name: Optional[str] = None
-    file_id: Optional[str] = None
-    created_at: Optional[str] = None
-    last_modified: Optional[str] = None
-    file_size: Optional[int] = None
-    entity_tag: Optional[str] = None
+    file_uuid: str | None = None
+    location_id: str | None = None
+    project_name: str | None = None
+    node_name: str | None = None
+    file_name: str | None = None
+    file_id: str | None = None
+    created_at: str | None = None
+    last_modified: str | None = None
+    file_size: int | None = None
+    entity_tag: str | None = None
 
     class Config:
         schema_extra = {
@@ -143,11 +143,11 @@ class FileMetaDataArray(BaseModel):
 
 class FileMetaEnvelope(BaseModel):
     data: FileMetaData
-    error: Optional[Any] = None
+    error: Any | None = None
 
 
 class PresignedLink(BaseModel):
-    link: Optional[str] = None
+    link: str | None = None
 
     class Config:
         schema_extra = {"example": {"link": "example_link"}}
@@ -155,4 +155,4 @@ class PresignedLink(BaseModel):
 
 class PresignedLinkEnveloped(BaseModel):
     data: PresignedLink
-    error: Optional[Any] = None
+    error: Any | None = None
