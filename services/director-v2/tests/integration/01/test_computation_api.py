@@ -25,6 +25,7 @@ from models_library.projects_nodes import NodeState
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
+from models_library.users import UserID
 from pytest import MonkeyPatch
 from settings_library.rabbit import RabbitSettings
 from simcore_service_director_v2.models.schemas.comp_tasks import ComputationGet
@@ -369,6 +370,7 @@ class PartialComputationParams:
     ],
 )
 async def test_run_partial_computation(
+    catalog_ready: Callable[[UserID, str], Awaitable[None]],
     minimal_configuration: None,
     async_client: httpx.AsyncClient,
     registered_user: Callable,
@@ -380,6 +382,7 @@ async def test_run_partial_computation(
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ):
     user = registered_user()
+    await catalog_ready(user["id"], osparc_product_name)
     sleepers_project: ProjectAtDB = project(
         user, workbench=fake_workbench_without_outputs
     )
@@ -406,11 +409,13 @@ async def test_run_partial_computation(
             )
             for n, s in exp_node_states.items()
         }
-
+        pipeline_progress = 0
+        for node in converted_node_states.values():
+            pipeline_progress += (node.progress or 0) / len(converted_node_states)
         return PipelineDetails(
             adjacency_list=converted_adj_list,
             node_states=converted_node_states,
-            progress=None,
+            progress=pipeline_progress,
         )
 
     # convert the ids to the node uuids from the project
