@@ -14,10 +14,9 @@ from aiopg.sa.engine import Engine
 from aiopg.sa.result import RowProxy
 from models_library.users import GroupID, UserID
 from simcore_postgres_database.models.users import UserNameConverter, UserRole
-from sqlalchemy import and_, literal_column
 
 from ..db import get_database_engine
-from ..db_models import GroupType, groups, tokens, user_to_groups, users
+from ..db_models import GroupType, groups, user_to_groups, users
 from ..groups.schemas import convert_groups_db_to_schema
 from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..security.api import clean_auth_policy_cache
@@ -249,87 +248,3 @@ async def get_users_in_group(app: web.Application, gid: GroupID) -> set[UserID]:
 async def update_expired_users(engine: Engine) -> list[UserID]:
     async with engine.acquire() as conn:
         return await _db.do_update_expired_users(conn)
-
-
-# TOKEN  API ----------------------------------------------------------------------------
-
-
-async def create_token(
-    app: web.Application, user_id: UserID, token_data: dict[str, str]
-) -> dict[str, str]:
-    engine = get_database_engine(app)
-    async with engine.acquire() as conn:
-        await conn.execute(
-            # pylint: disable=no-value-for-parameter
-            tokens.insert().values(
-                user_id=user_id,
-                token_service=token_data["service"],
-                token_data=token_data,
-            )
-        )
-        return token_data
-
-
-async def list_tokens(app: web.Application, user_id: UserID) -> list[dict[str, str]]:
-    engine = get_database_engine(app)
-    user_tokens = []
-    async with engine.acquire() as conn:
-        async for row in conn.execute(
-            sa.select(tokens.c.token_data).where(tokens.c.user_id == user_id)
-        ):
-            user_tokens.append(row["token_data"])
-        return user_tokens
-
-
-async def get_token(
-    app: web.Application, user_id: UserID, service_id: str
-) -> dict[str, str]:
-    engine = get_database_engine(app)
-    async with engine.acquire() as conn:
-        result = await conn.execute(
-            sa.select(tokens.c.token_data).where(
-                and_(tokens.c.user_id == user_id, tokens.c.token_service == service_id)
-            )
-        )
-        row: RowProxy = await result.first()
-        return dict(row["token_data"])
-
-
-async def update_token(
-    app: web.Application, user_id: UserID, service_id: str, token_data: dict[str, str]
-) -> dict[str, str]:
-    engine = get_database_engine(app)
-    # TODO: optimize to a single call?
-    async with engine.acquire() as conn:
-        result = await conn.execute(
-            sa.select(tokens.c.token_data, tokens.c.token_id).where(
-                and_(tokens.c.user_id == user_id, tokens.c.token_service == service_id)
-            )
-        )
-        row = await result.first()
-
-        data = dict(row["token_data"])
-        tid = row["token_id"]
-        data.update(token_data)
-
-        resp = await conn.execute(
-            # pylint: disable=no-value-for-parameter
-            tokens.update()
-            .where(tokens.c.token_id == tid)
-            .values(token_data=data)
-            .returning(literal_column("*"))
-        )
-        assert resp.rowcount == 1  # nosec
-        updated_token: RowProxy = await resp.fetchone()
-        return dict(updated_token["token_data"])
-
-
-async def delete_token(app: web.Application, user_id: UserID, service_id: str) -> None:
-    engine = get_database_engine(app)
-    async with engine.acquire() as conn:
-        await conn.execute(
-            # pylint: disable=no-value-for-parameter
-            tokens.delete().where(
-                and_(tokens.c.user_id == user_id, tokens.c.token_service == service_id)
-            )
-        )

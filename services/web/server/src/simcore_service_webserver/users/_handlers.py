@@ -1,7 +1,6 @@
 # pylint: disable=no-value-for-parameter
 
 import json
-import logging
 from typing import Any
 
 import redis.asyncio as aioredis
@@ -16,7 +15,7 @@ from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..redis import get_redis_user_notifications_client
 from ..security.decorators import permission_required
-from . import api
+from . import _tokens, api
 from ._notifications import (
     MAX_NOTIFICATIONS_FOR_USER_TO_KEEP,
     MAX_NOTIFICATIONS_FOR_USER_TO_SHOW,
@@ -25,8 +24,6 @@ from ._notifications import (
 )
 from .exceptions import TokenNotFoundError, UserNotFoundError
 from .schemas import ProfileGet, ProfileUpdate
-
-__logger = logging.getLogger(__name__)
 
 
 # me/ -----------------------------------------------------------
@@ -68,7 +65,7 @@ async def create_tokens(request: web.Request):
 
     # TODO: what it service exists already!?
     # TODO: if service already, then IntegrityError is raised! How to deal with db exceptions??
-    await api.create_token(request.app, uid, body)
+    await _tokens.create_token(request.app, uid, body)
     raise web.HTTPCreated(
         text=json.dumps({"data": body}), content_type=MIMETYPE_APPLICATION_JSON
     )
@@ -80,7 +77,7 @@ async def list_tokens(request: web.Request):
     # TODO: start = request.match_info.get('start', 0)
     # TODO: count = request.match_info.get('count', None)
     uid = request[RQT_USERID_KEY]
-    return await api.list_tokens(request.app, uid)
+    return await _tokens.list_tokens(request.app, uid)
 
 
 @login_required
@@ -89,7 +86,7 @@ async def get_token(request: web.Request):
     uid = request[RQT_USERID_KEY]
     service_id = request.match_info["service"]
 
-    return await api.get_token(request.app, uid, service_id)
+    return await _tokens.get_token(request.app, uid, service_id)
 
 
 @login_required
@@ -105,7 +102,7 @@ async def update_token(request: web.Request):
     # TODO: validate
     body = await request.json()
 
-    await api.update_token(request.app, uid, service_id, body)
+    await _tokens.update_token(request.app, uid, service_id, body)
 
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
@@ -117,7 +114,7 @@ async def delete_token(request: web.Request):
     service_id = request.match_info.get("service")
 
     try:
-        await api.delete_token(request.app, uid, service_id)
+        await _tokens.delete_token(request.app, uid, service_id)
         raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
     except TokenNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Token for {service_id} not found") from exc
