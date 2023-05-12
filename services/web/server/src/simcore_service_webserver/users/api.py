@@ -40,9 +40,6 @@ def _parse_as_user(user_id: Any) -> UserID:
     return user_id
 
 
-# USERS  API ----------------------------------------------------------------------------
-
-
 async def get_user_profile(app: web.Application, user_id: UserID) -> ProfileGet:
     """
     :raises UserNotFoundError:
