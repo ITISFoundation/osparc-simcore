@@ -31,7 +31,7 @@ from simcore_service_webserver.director_v2._core_computations import (
 
 from .._constants import INDEX_RESOURCE_NAME
 from ..garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
-from ..products.plugin import get_product_name
+from ..products.plugin import get_current_product, get_product_name
 from ..projects.project_models import ProjectDict
 from ..projects.projects_db import ANY_USER, ProjectDBAPI
 from ..projects.projects_exceptions import (
@@ -68,7 +68,7 @@ def _compose_uuid(template_uuid, user_id, query="") -> str:
 
 
 async def _get_published_template_project(
-    app: web.Application,
+    request: web.Request,
     project_uuid: str,
     *,
     is_user_authenticated: bool,
@@ -76,7 +76,7 @@ async def _get_published_template_project(
     """
     raises RedirectToFrontEndPageError
     """
-    db = ProjectDBAPI.get_from_app_context(app)
+    db = ProjectDBAPI.get_from_app_context(request.app)
 
     only_public_projects = not is_user_authenticated
 
@@ -106,9 +106,10 @@ async def _get_published_template_project(
             err.detailed_message(),
         )
 
+        support_email = get_current_product(request).support_email
         if only_public_projects:
             raise RedirectToFrontEndPageError(
-                MSG_PUBLIC_PROJECT_NOT_PUBLISHED.format(project_id=project_uuid),
+                MSG_PUBLIC_PROJECT_NOT_PUBLISHED.format(support_email=support_email),
                 error_code="PUBLIC_PROJECT_NOT_PUBLISHED",
                 status_code=web.HTTPUnauthorized.status_code,
             ) from err
@@ -351,7 +352,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
 
     # Get published PROJECT referenced in link
     template_project = await _get_published_template_project(
-        request.app,
+        request,
         project_id,
         is_user_authenticated=bool(user),
     )
