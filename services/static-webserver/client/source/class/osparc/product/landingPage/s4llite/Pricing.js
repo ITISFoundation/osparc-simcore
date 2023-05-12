@@ -69,11 +69,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Pricing", {
       });
       const modePartLayout = new qx.ui.toolbar.Part();
       const cloudBtn = this.self().createToolbarRadioButton(this.tr("Cloud"), "@FontAwesome5Solid/cloud/36", "left");
-      cloudBtn.addListener("execute", () => console.log("cloud"));
-
       const desktopBtn = this.self().createToolbarRadioButton(this.tr("Desktop"), "@FontAwesome5Solid/desktop/36", "right");
-      desktopBtn.addListener("execute", () => console.log("desktop"));
-
       const radioGroup = new qx.ui.form.RadioGroup();
       [
         cloudBtn,
@@ -90,12 +86,12 @@ qx.Class.define("osparc.product.landingPage.s4llite.Pricing", {
       this._add(toolbar);
 
 
-      const title1 = osparc.product.landingPage.Utils.largeTitle(this.tr("Pricing & Plans")).set({
+      const title1 = osparc.product.landingPage.Utils.largeTitle(this.tr("Cloud: Pricing & Plans")).set({
         paddingTop: 20
       });
       this._add(title1);
 
-      const img1 = new qx.ui.basic.Image("osparc/landingPage/diru1.png");
+      const img1 = new qx.ui.basic.Image("osparc/landingPage/diru3.png");
       img1.getContentElement().setStyles({
         "border-radius": "6px"
       });
@@ -106,11 +102,22 @@ qx.Class.define("osparc.product.landingPage.s4llite.Pricing", {
       });
       this._add(title2);
 
-      const img2 = new qx.ui.basic.Image("osparc/landingPage/diru2.png");
+      const img2 = new qx.ui.basic.Image("osparc/landingPage/diru4.png");
       img2.getContentElement().setStyles({
         "border-radius": "6px"
       });
       this._add(img2);
+
+      cloudBtn.addListener("execute", () => {
+        title1.setValue("Cloud: Pricing & Plans");
+        img1.setSource("osparc/landingPage/diru3.png");
+        img2.setSource("osparc/landingPage/diru4.png");
+      });
+      desktopBtn.addListener("execute", () => {
+        title1.setValue("Desktop: Pricing & Plans");
+        img1.setSource("osparc/landingPage/diru1.png");
+        img2.setSource("osparc/landingPage/diru2.png");
+      });
     }
   }
 });
