@@ -198,9 +198,8 @@ def _force_remove_migration_service(docker_client: docker.client.DockerClient) -
         if "migration" in service.name  # type: ignore
     ):
         print(
-            "WARNING: migration service detected before updating stack, it will be force-updated"
+            "WARNING: migration service detected before updating stack, it will be force-removed now and re-deployed to ensure DB update"
         )
-        before_update_task_ids = {t["ID"] for t in migration_service.tasks()}
         migration_service.remove()  # type: ignore
         _wait_for_migration_service_to_be_removed(docker_client)
         print(f"forced updated {migration_service.name}.")  # type: ignore
