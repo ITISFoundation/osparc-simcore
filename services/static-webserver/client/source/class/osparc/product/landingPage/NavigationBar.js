@@ -36,6 +36,8 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
 
   events: {
     "showMainContent": "qx.event.type.Event",
+    "showCloudPlatform": "qx.event.type.Event",
+    "showDesktop": "qx.event.type.Event",
     "showElectromagnetics": "qx.event.type.Event",
     "showNeuronalActivation": "qx.event.type.Event",
     "showPricing": "qx.event.type.Event",
@@ -192,8 +194,10 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
         label: this.tr("Products"),
         menu
       });
-      this.__createEntryInMenu(menu, "Cloud platform");
-      this.__createEntryInMenu(menu, "Desktop");
+      const cloudButton = this.__createEntryInMenu(menu, "Cloud platform", false);
+      cloudButton.addListener("execute", () => this.fireEvent("showCloudPlatform"));
+      const desktopButton = this.__createEntryInMenu(menu, "Desktop");
+      desktopButton.addListener("execute", () => this.fireEvent("showDesktop"));
       const electromagneticsButton = this.__createEntryInMenu(menu, "Electromagnetics", false);
       electromagneticsButton.addListener("execute", () => this.fireEvent("showElectromagnetics"));
       const neuronalActivationButton = this.__createEntryInMenu(menu, "Neuronal activation", false);

@@ -44,6 +44,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.solutions.SolutionsBase", {
 
       const text1 = new qx.ui.basic.Label().set({
         value: title,
+        textAlign: "center",
         font: "text-26",
         rich: true,
         wrap: true
@@ -52,6 +53,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.solutions.SolutionsBase", {
 
       const text2 = new qx.ui.basic.Label().set({
         value: description,
+        textAlign: "center",
         font: "text-18",
         rich: true,
         wrap: true
@@ -124,6 +126,8 @@ qx.Class.define("osparc.product.landingPage.s4llite.solutions.SolutionsBase", {
 
       const image = new qx.ui.basic.Image(imageSrc).set({
         alignY: "middle",
+        maxWidth: 450,
+        maxHeight: 300,
         scale: true
       });
       image.getContentElement().setStyles({

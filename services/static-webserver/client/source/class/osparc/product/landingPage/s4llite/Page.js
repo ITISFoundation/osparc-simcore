@@ -48,6 +48,30 @@ qx.Class.define("osparc.product.landingPage.s4llite.Page", {
     marketingScroll.add(marketingLayout);
     pagesStack.add(marketingScroll);
 
+    // Cloud Platform content
+    const cloudPlatformScroll = new qx.ui.container.Scroll();
+    const cloudPlatformLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(null, null, "separator-vertical"));
+    const cloudPlatform = new osparc.product.landingPage.s4llite.solutions.CloudPlatform();
+    cloudPlatformLayout.add(cloudPlatform);
+    const cloudPlatformFooter = new osparc.product.landingPage.s4llite.Footer().set({
+      backgroundColor: "background-main-2"
+    });
+    cloudPlatformLayout.add(cloudPlatformFooter);
+    cloudPlatformScroll.add(cloudPlatformLayout);
+    pagesStack.add(cloudPlatformScroll);
+
+    // Desktop content
+    const desktopScroll = new qx.ui.container.Scroll();
+    const desktopLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(null, null, "separator-vertical"));
+    const desktop = new osparc.product.landingPage.s4llite.solutions.Desktop();
+    desktopLayout.add(desktop);
+    const desktopFooter = new osparc.product.landingPage.s4llite.Footer().set({
+      backgroundColor: "background-main-2"
+    });
+    desktopLayout.add(desktopFooter);
+    desktopScroll.add(desktopLayout);
+    pagesStack.add(desktopScroll);
+
     // Electromagnetics content
     const electromagneticsScroll = new qx.ui.container.Scroll();
     const electromagneticsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(null, null, "separator-vertical"));
@@ -88,6 +112,8 @@ qx.Class.define("osparc.product.landingPage.s4llite.Page", {
       flex: 1
     });
 
+    navBar.addListener("showCloudPlatform", () => pagesStack.setSelection([cloudPlatformScroll]));
+    navBar.addListener("showDesktop", () => pagesStack.setSelection([desktopScroll]));
     navBar.addListener("showElectromagnetics", () => pagesStack.setSelection([electromagneticsScroll]));
     navBar.addListener("showNeuronalActivation", () => pagesStack.setSelection([neuronalActivationScroll]));
     navBar.addListener("showPricing", () => pagesStack.setSelection([pricingScroll]));
