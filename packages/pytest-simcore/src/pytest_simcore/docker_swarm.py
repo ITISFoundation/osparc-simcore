@@ -44,7 +44,7 @@ def _is_docker_swarm_init(docker_client: docker.client.DockerClient) -> bool:
 
 
 @retry(
-    wait=wait_fixed(5),
+    wait=wait_fixed(1),
     stop=stop_after_delay(8 * MINUTE),
     before_sleep=before_sleep_log(log, logging.WARNING),
     reraise=True,
