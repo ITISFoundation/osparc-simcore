@@ -22,7 +22,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.solutions.SolutionsBase", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(20).set({
+    this._setLayout(new qx.ui.layout.VBox(40).set({
       alignX: "center",
       alignY: "middle"
     }));
@@ -69,9 +69,8 @@ qx.Class.define("osparc.product.landingPage.s4llite.solutions.SolutionsBase", {
       return headerLayout;
     },
 
-    mediumStrongButton: function(label) {
-      const linkButton = new qx.ui.form.Button().set({
-        appearance: "strong-button",
+    mediumStrongButton: function(label, strong = true) {
+      const button = new qx.ui.form.Button().set({
         label,
         font: "text-16",
         center: true,
@@ -79,10 +78,75 @@ qx.Class.define("osparc.product.landingPage.s4llite.solutions.SolutionsBase", {
         allowGrowX: false,
         width: 170
       });
-      linkButton.getContentElement().setStyles({
+      if (strong) {
+        button.setAppearance("strong-button");
+      }
+      button.getContentElement().setStyles({
         "border-radius": "8px"
       });
-      return linkButton;
+      return button;
+    },
+
+    createContent: function(title, description, imageSrc, imagePos = "left") {
+      const contentLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(80).set({
+        alignX: "center",
+        alignY: "middle"
+      }));
+
+      const textLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(30).set({
+        alignY: "middle"
+      })).set({
+        maxWidth: 450
+      });
+
+      const titleLabel = new qx.ui.basic.Label().set({
+        value: title,
+        font: "text-18",
+        rich: true,
+        wrap: true
+      });
+      textLayout.add(titleLabel);
+
+      const descLabel = new qx.ui.basic.Label().set({
+        value: description,
+        font: "text-16",
+        rich: true,
+        wrap: true
+      });
+      textLayout.add(descLabel);
+
+      const label = qx.locale.Manager.tr("Learn More");
+      const learnMoreButton = this.mediumStrongButton(label, false);
+      learnMoreButton.getContentElement().setStyles({
+        "border-radius": "8px"
+      });
+      textLayout.add(learnMoreButton);
+
+      const image = new qx.ui.basic.Image(imageSrc).set({
+        alignY: "middle",
+        scale: true
+      });
+      image.getContentElement().setStyles({
+        "border-radius": "8px"
+      });
+
+      if (imagePos === "left") {
+        contentLayout.add(image, {
+          width: "50%"
+        });
+        contentLayout.add(textLayout, {
+          width: "50%"
+        });
+      } else {
+        contentLayout.add(textLayout, {
+          width: "50%"
+        });
+        contentLayout.add(image, {
+          width: "50%"
+        });
+      }
+
+      return contentLayout;
     }
   },
 
