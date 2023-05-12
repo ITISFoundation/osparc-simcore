@@ -1,5 +1,5 @@
 """
-NOTE: Coupling with user's plugin public modules should be added here to avoid cyclic dependencies
+NOTE: Coupling with user's plugin api modules should be added here to avoid cyclic dependencies
 """
 
 from typing import Any, Mapping
