@@ -48,15 +48,39 @@ qx.Class.define("osparc.product.landingPage.s4llite.Page", {
     marketingScroll.add(marketingLayout);
     pagesStack.add(marketingScroll);
 
+    // Electromagnetics content
+    const electromagneticsScroll = new qx.ui.container.Scroll();
+    const electromagneticsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(null, null, "separator-vertical"));
+    const electromagnetics = new osparc.product.landingPage.s4llite.Pricing();
+    electromagneticsLayout.add(electromagnetics);
+    const electromagneticsFooter = new osparc.product.landingPage.s4llite.Footer().set({
+      backgroundColor: "background-main-2"
+    });
+    electromagneticsLayout.add(electromagneticsFooter);
+    electromagneticsScroll.add(electromagneticsLayout);
+    pagesStack.add(electromagneticsScroll);
+
+    // NeuronalActivation content
+    const neuronalActivationScroll = new qx.ui.container.Scroll();
+    const neuronalActivationLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(null, null, "separator-vertical"));
+    const neuronalActivation = new osparc.product.landingPage.s4llite.Pricing();
+    neuronalActivationLayout.add(neuronalActivation);
+    const neuronalActivationFooter = new osparc.product.landingPage.s4llite.Footer().set({
+      backgroundColor: "background-main-2"
+    });
+    neuronalActivationLayout.add(neuronalActivationFooter);
+    neuronalActivationScroll.add(neuronalActivationLayout);
+    pagesStack.add(neuronalActivationScroll);
+
     // Pricing content
     const pricingScroll = new qx.ui.container.Scroll();
     const pricingLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(null, null, "separator-vertical"));
     const pricing = new osparc.product.landingPage.s4llite.Pricing();
     pricingLayout.add(pricing);
-    const footer2 = new osparc.product.landingPage.s4llite.Footer().set({
+    const pricingFooter = new osparc.product.landingPage.s4llite.Footer().set({
       backgroundColor: "background-main-2"
     });
-    pricingLayout.add(footer2);
+    pricingLayout.add(pricingFooter);
     pricingScroll.add(pricingLayout);
     pagesStack.add(pricingScroll);
 
@@ -64,8 +88,14 @@ qx.Class.define("osparc.product.landingPage.s4llite.Page", {
       flex: 1
     });
 
+    navBar.addListener("showElectromagnetics", () => pagesStack.setSelection([electromagneticsScroll]));
+    navBar.addListener("showNeuronalActivation", () => pagesStack.setSelection([neuronalActivationScroll]));
     navBar.addListener("showPricing", () => pagesStack.setSelection([pricingScroll]));
-    pricing.addListener("backToContent", () => pagesStack.setSelection([marketingScroll]));
+    [
+      electromagnetics,
+      neuronalActivation,
+      pricing
+    ].forEach(page => page.addListener("backToContent", () => pagesStack.setSelection([marketingScroll])));
 
     const chat = osparc.product.landingPage.Chat.getInstance();
     chat.start();

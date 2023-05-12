@@ -36,6 +36,8 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
 
   events: {
     "showPricing": "qx.event.type.Event",
+    "showElectromagnetics": "qx.event.type.Event",
+    "showNeuronalActivation": "qx.event.type.Event",
     "loginPressed": "qx.event.type.Event"
   },
 
@@ -282,6 +284,7 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
         label: this.tr("Gallery"),
         backgroundColor: "transparent"
       });
+      galleryButton.addListener("execute", () => this.fireEvent("showElectromagnetics"));
       return galleryButton;
     },
 
@@ -290,6 +293,7 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
         label: this.tr("Success stories"),
         backgroundColor: "transparent"
       });
+      successStoriesButton.addListener("execute", () => this.fireEvent("showNeuronalActivation"));
       return successStoriesButton;
     },
 
