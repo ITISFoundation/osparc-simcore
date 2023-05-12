@@ -1,8 +1,7 @@
-from typing import Any, Mapping, TypedDict
+from typing import TypedDict
 
 from aiopg.sa.result import RowProxy
 
-from ..users.models import convert_user_db_to_schema
 from .exceptions import UserInsufficientRightsError
 
 _GROUPS_SCHEMA_TO_DB = {
@@ -48,11 +47,3 @@ def convert_groups_schema_to_db(schema: dict) -> dict:
         for k, v in _GROUPS_SCHEMA_TO_DB.items()
         if k in schema and k != "gid"
     }
-
-
-def convert_user_in_group_to_schema(user: Mapping[str, Any]) -> dict[str, str]:
-    group_user = convert_user_db_to_schema(user)
-    group_user.pop("role")
-    group_user["accessRights"] = user["access_rights"]
-    group_user["gid"] = user["primary_gid"]
-    return group_user

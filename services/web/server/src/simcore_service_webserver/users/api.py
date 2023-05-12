@@ -23,7 +23,7 @@ from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..security.api import clean_auth_policy_cache
 from . import _db
 from .exceptions import UserNotFoundError
-from .models import ProfileGet, ProfileUpdate, convert_user_db_to_schema
+from .schemas import ProfileGet, ProfileUpdate, convert_user_db_to_schema
 
 _logger = logging.getLogger(__name__)
 

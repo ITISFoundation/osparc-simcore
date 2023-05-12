@@ -11,12 +11,12 @@ from sqlalchemy.dialects.postgresql import insert
 
 from ..db_models import GroupType, groups, user_to_groups, users
 from ..users.exceptions import UserNotFoundError
+from ._users import convert_user_in_group_to_schema
 from ._utils import (
     AccessRightsDict,
     check_group_permissions,
     convert_groups_db_to_schema,
     convert_groups_schema_to_db,
-    convert_user_in_group_to_schema,
 )
 from .exceptions import GroupNotFoundError, UserInGroupNotFoundError
 

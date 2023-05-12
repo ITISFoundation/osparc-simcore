@@ -51,8 +51,8 @@ from simcore_service_webserver.users._notifications import (
     UserNotification,
     get_notification_key,
 )
-from simcore_service_webserver.users.models import ProfileGet
 from simcore_service_webserver.users.plugin import setup_users
+from simcore_service_webserver.users.schemas import ProfileGet
 
 API_VERSION = "v0"
 

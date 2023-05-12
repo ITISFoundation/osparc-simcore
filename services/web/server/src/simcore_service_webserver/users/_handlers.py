@@ -24,7 +24,7 @@ from ._notifications import (
     get_notification_key,
 )
 from .exceptions import TokenNotFoundError, UserNotFoundError
-from .models import ProfileGet, ProfileUpdate
+from .schemas import ProfileGet, ProfileUpdate
 
 __logger = logging.getLogger(__name__)
 
