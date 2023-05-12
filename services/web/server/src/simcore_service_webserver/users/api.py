@@ -166,9 +166,9 @@ async def get_guest_user_ids_and_names(app: web.Application) -> list[tuple[int, 
         return list(result)
 
 
-async def delete_user(app: web.Application, user_id: UserID) -> None:
+async def delete_user_without_projects(app: web.Application, user_id: UserID) -> None:
     """Deletes a user from the database if the user exists"""
-    # FIXME: user cannot be deleted without deleting first all ist project
+    # WARNING: user cannot be deleted without deleting first all ist project
     # otherwise this function will raise asyncpg.exceptions.ForeignKeyViolationError
     # Consider "marking" users as deleted and havning a background job that
     # cleans it up

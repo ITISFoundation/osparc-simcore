@@ -55,7 +55,6 @@ async def get_token(
 async def update_token(
     app: web.Application, user_id: UserID, service_id: str, token_data: dict[str, str]
 ) -> dict[str, str]:
-    # TODO: optimize to a single call?
     async with get_database_engine(app).acquire() as conn:
         result = await conn.execute(
             sa.select(tokens.c.token_data, tokens.c.token_id).where(

@@ -39,7 +39,7 @@ from .redis import get_redis_lock_manager_client
 from .resource_manager.registry import RedisResourceRegistry, get_registry
 from .users import exceptions
 from .users.api import (
-    delete_user,
+    delete_user_without_projects,
     get_guest_user_ids_and_names,
     get_user,
     get_user_role,
@@ -587,7 +587,7 @@ async def remove_guest_user_with_all_its_resources(
             "Deleting user %s because it is a GUEST",
             f"{user_id=}",
         )
-        await delete_user(app, user_id)
+        await delete_user_without_projects(app, user_id)
 
     except (
         DatabaseError,
