@@ -20,8 +20,10 @@ async def do_update_expired_users(conn: SAConnection) -> list[UserID]:
         )
         .returning(users.c.id)
     )
-    expired = [r.id for r in await result.fetchall()]
-    return expired
+    if rows := await result.fetchall():
+        expired = [r.id for r in rows]
+        return expired
+    return []
 
 
 async def get_users_ids_in_group(conn: SAConnection, gid: GroupID) -> set[UserID]:
