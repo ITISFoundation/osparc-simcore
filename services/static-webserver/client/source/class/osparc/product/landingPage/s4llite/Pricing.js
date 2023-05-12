@@ -31,10 +31,6 @@ qx.Class.define("osparc.product.landingPage.s4llite.Pricing", {
     this.buildLayout();
   },
 
-  events: {
-    "backToContent": "qx.event.type.Event"
-  },
-
   statics: {
     createToolbarRadioButton: function(label, icon, pos) {
       const rButton = new qx.ui.toolbar.RadioButton().set({
@@ -68,19 +64,6 @@ qx.Class.define("osparc.product.landingPage.s4llite.Pricing", {
 
   members: {
     buildLayout: function() {
-      const backToContentButton = new qx.ui.form.Button(this.tr("Back")).set({
-        icon: "@FontAwesome5Solid/arrow-left/14",
-        font: "text-14",
-        alignX: "left",
-        alignY: "middle",
-        allowGrowX: false,
-        padding: 5,
-        width: 90
-      });
-      backToContentButton.addListener("execute", () => this.fireEvent("backToContent"));
-      this._add(backToContentButton);
-
-
       const toolbar = new qx.ui.toolbar.ToolBar().set({
         backgroundColor: "transparent"
       });

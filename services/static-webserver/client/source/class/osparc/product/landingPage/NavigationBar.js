@@ -35,21 +35,11 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
   },
 
   events: {
-    "showPricing": "qx.event.type.Event",
+    "showMainContent": "qx.event.type.Event",
     "showElectromagnetics": "qx.event.type.Event",
     "showNeuronalActivation": "qx.event.type.Event",
+    "showPricing": "qx.event.type.Event",
     "loginPressed": "qx.event.type.Event"
-  },
-
-  statics: {
-    addEntryToMenu: function(menu, entryText) {
-      const entryButton = new qx.ui.menu.Button(entryText);
-      entryButton.getChildControl("label").set({
-        rich: true
-      });
-      menu.add(entryButton);
-      return entryButton;
-    }
   },
 
   members: {
@@ -171,6 +161,29 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
       this.getChildControl("login-button");
     },
 
+    __createEntryInMenu: function(menu, entryText, addToMainContentListener = true) {
+      const button = new qx.ui.menu.Button(entryText);
+      button.getChildControl("label").set({
+        rich: true
+      });
+      if (addToMainContentListener) {
+        button.addListener("execute", () => this.fireEvent("showMainContent"));
+      }
+      menu.add(button);
+      return button;
+    },
+
+    __createButton: function(entryText, addToMainContentListener = true) {
+      const button = new qx.ui.form.Button(entryText).set({
+        rich: true,
+        backgroundColor: "transparent"
+      });
+      if (addToMainContentListener) {
+        button.addListener("execute", () => this.fireEvent("showMainContent"));
+      }
+      return button;
+    },
+
     __createProductsMenuBtn: function() {
       const menu = new qx.ui.menu.Menu().set({
         font: "text-14"
@@ -179,14 +192,16 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
         label: this.tr("Products"),
         menu
       });
-      this.self().addEntryToMenu(menu, "Cloud platform");
-      this.self().addEntryToMenu(menu, "Desktop");
-      this.self().addEntryToMenu(menu, "Electromagnetics");
-      this.self().addEntryToMenu(menu, "Neuronal activation");
-      this.self().addEntryToMenu(menu, "Thermodynamics");
-      this.self().addEntryToMenu(menu, "Acoustics");
-      this.self().addEntryToMenu(menu, "Computational human phantoms");
-      this.self().addEntryToMenu(menu, "CAD Modeling");
+      this.__createEntryInMenu(menu, "Cloud platform");
+      this.__createEntryInMenu(menu, "Desktop");
+      const electromagneticsButton = this.__createEntryInMenu(menu, "Electromagnetics", false);
+      electromagneticsButton.addListener("execute", () => this.fireEvent("showElectromagnetics"));
+      const neuronalActivationButton = this.__createEntryInMenu(menu, "Neuronal activation", false);
+      neuronalActivationButton.addListener("execute", () => this.fireEvent("showNeuronalActivation"));
+      this.__createEntryInMenu(menu, "Thermodynamics");
+      this.__createEntryInMenu(menu, "Acoustics");
+      this.__createEntryInMenu(menu, "Computational human phantoms");
+      this.__createEntryInMenu(menu, "CAD Modeling");
       return menuButton;
     },
 
@@ -199,7 +214,7 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
         menu
       });
 
-      const industriesMenuBtn = this.self().addEntryToMenu(menu, "Industries");
+      const industriesMenuBtn = this.__createEntryInMenu(menu, "Industries");
       const industriesMenu = new qx.ui.menu.Menu().set({
         font: "text-14",
         padding: 10,
@@ -214,10 +229,10 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
         "Automotive",
         "Wearable devices",
         "Neurotechnologies"
-      ].forEach(label => this.self().addEntryToMenu(industriesMenu, label));
+      ].forEach(label => this.__createEntryInMenu(industriesMenu, label));
       industriesMenuBtn.setMenu(industriesMenu);
 
-      const accademiaMenuBtn = this.self().addEntryToMenu(menu, "Accademia");
+      const accademiaMenuBtn = this.__createEntryInMenu(menu, "Accademia");
       const accademiaMenu = new qx.ui.menu.Menu().set({
         font: "text-14",
         padding: 10,
@@ -229,10 +244,10 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
       [
         "Students",
         "Research"
-      ].forEach(label => this.self().addEntryToMenu(accademiaMenu, label));
+      ].forEach(label => this.__createEntryInMenu(accademiaMenu, label));
       accademiaMenuBtn.setMenu(accademiaMenu);
 
-      const applicationsMenuBtn = this.self().addEntryToMenu(menu, "Applications");
+      const applicationsMenuBtn = this.__createEntryInMenu(menu, "Applications");
       const applicationsMenu = new qx.ui.menu.Menu().set({
         font: "text-14",
         padding: 10,
@@ -251,7 +266,7 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
         "Wireless power transfer",
         "FUS",
         "Wearables"
-      ].forEach(label => this.self().addEntryToMenu(applicationsMenu, label));
+      ].forEach(label => this.__createEntryInMenu(applicationsMenu, label));
       applicationsMenuBtn.setMenu(applicationsMenu);
 
       return menuButton;
@@ -265,43 +280,32 @@ qx.Class.define("osparc.product.landingPage.NavigationBar", {
         label: this.tr("Resources"),
         menu
       });
-      this.self().addEntryToMenu(menu, "News");
-      this.self().addEntryToMenu(menu, "Demos");
-      this.self().addEntryToMenu(menu, "Tutorials");
-      this.self().addEntryToMenu(menu, "Documentation");
-      this.self().addEntryToMenu(menu, "Computable Human Models (ViP)");
-      const button = this.self().addEntryToMenu(menu, "Forum");
+      this.__createEntryInMenu(menu, "News");
+      this.__createEntryInMenu(menu, "Demos");
+      this.__createEntryInMenu(menu, "Tutorials");
+      this.__createEntryInMenu(menu, "Documentation");
+      this.__createEntryInMenu(menu, "Computable Human Models (ViP)");
+      const button = this.__createEntryInMenu(menu, "Forum");
       button.addListener("execute", () => window.open("https://forum.zmt.swiss/"));
-      this.self().addEntryToMenu(menu, "Python API");
-      this.self().addEntryToMenu(menu, "Validation");
-      this.self().addEntryToMenu(menu, "Security");
-      this.self().addEntryToMenu(menu, "Whitepapers");
+      this.__createEntryInMenu(menu, "Python API");
+      this.__createEntryInMenu(menu, "Validation");
+      this.__createEntryInMenu(menu, "Security");
+      this.__createEntryInMenu(menu, "Whitepapers");
       return menuButton;
     },
 
     __createGalleryMenuBtn: function() {
-      const galleryButton = new qx.ui.form.Button().set({
-        label: this.tr("Gallery"),
-        backgroundColor: "transparent"
-      });
-      galleryButton.addListener("execute", () => this.fireEvent("showElectromagnetics"));
+      const galleryButton = this.__createButton(this.tr("Gallery"));
       return galleryButton;
     },
 
     __createSuccessStoriesBtn: function() {
-      const successStoriesButton = new qx.ui.form.Button().set({
-        label: this.tr("Success stories"),
-        backgroundColor: "transparent"
-      });
-      successStoriesButton.addListener("execute", () => this.fireEvent("showNeuronalActivation"));
+      const successStoriesButton = this.__createButton(this.tr("Success stories"));
       return successStoriesButton;
     },
 
     __createPricingBtn: function() {
-      const pricingButton = new qx.ui.form.Button().set({
-        label: this.tr("Pricing"),
-        backgroundColor: "transparent"
-      });
+      const pricingButton = this.__createButton(this.tr("Pricing"), false);
       pricingButton.addListener("execute", () => this.fireEvent("showPricing"));
       return pricingButton;
     },

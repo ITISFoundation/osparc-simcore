@@ -51,7 +51,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Page", {
     // Electromagnetics content
     const electromagneticsScroll = new qx.ui.container.Scroll();
     const electromagneticsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(null, null, "separator-vertical"));
-    const electromagnetics = new osparc.product.landingPage.s4llite.Pricing();
+    const electromagnetics = new osparc.product.landingPage.s4llite.solutions.Electromagnetics();
     electromagneticsLayout.add(electromagnetics);
     const electromagneticsFooter = new osparc.product.landingPage.s4llite.Footer().set({
       backgroundColor: "background-main-2"
@@ -91,11 +91,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Page", {
     navBar.addListener("showElectromagnetics", () => pagesStack.setSelection([electromagneticsScroll]));
     navBar.addListener("showNeuronalActivation", () => pagesStack.setSelection([neuronalActivationScroll]));
     navBar.addListener("showPricing", () => pagesStack.setSelection([pricingScroll]));
-    [
-      electromagnetics,
-      neuronalActivation,
-      pricing
-    ].forEach(page => page.addListener("backToContent", () => pagesStack.setSelection([marketingScroll])));
+    navBar.addListener("showMainContent", () => pagesStack.setSelection([marketingScroll]));
 
     const chat = osparc.product.landingPage.Chat.getInstance();
     chat.start();
