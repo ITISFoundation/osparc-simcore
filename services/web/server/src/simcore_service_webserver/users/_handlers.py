@@ -1,12 +1,14 @@
 # pylint: disable=no-value-for-parameter
 
-import json
+import functools
 from typing import Any
 
 import redis.asyncio as aioredis
 from aiohttp import web
 from models_library.generics import Envelope
 from pydantic import BaseModel
+from servicelib.aiohttp.typing_extension import Handler
+from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
@@ -15,6 +17,7 @@ from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..redis import get_redis_user_notifications_client
 from ..security.decorators import permission_required
+from ..utils_aiohttp import envelope_json_response
 from . import _tokens, api
 from ._notifications import (
     MAX_NOTIFICATIONS_FOR_USER_TO_KEEP,
@@ -55,41 +58,55 @@ async def update_my_profile(request: web.Request):
 
 
 # me/tokens/ ------------------------------------------------------
+
+
+def _handle_tokens_errors(handler: Handler):
+    @functools.wraps(handler)
+    async def _wrapper(request: web.Request) -> web.StreamResponse:
+        try:
+            return await handler(request)
+
+        except TokenNotFoundError as exc:
+            raise web.HTTPNotFound(
+                reason=f"Token for {exc.service_id} not found"
+            ) from exc
+
+    return _wrapper
+
+
 @login_required
 @permission_required("user.tokens.*")
 async def create_tokens(request: web.Request):
     uid = request[RQT_USERID_KEY]
-
-    # TODO: validate
     body = await request.json()
 
-    # TODO: what it service exists already!?
-    # TODO: if service already, then IntegrityError is raised! How to deal with db exceptions??
     await _tokens.create_token(request.app, uid, body)
     raise web.HTTPCreated(
-        text=json.dumps({"data": body}), content_type=MIMETYPE_APPLICATION_JSON
+        text=json_dumps({"data": body}), content_type=MIMETYPE_APPLICATION_JSON
     )
 
 
 @login_required
 @permission_required("user.tokens.*")
 async def list_tokens(request: web.Request):
-    # TODO: start = request.match_info.get('start', 0)
-    # TODO: count = request.match_info.get('count', None)
     uid = request[RQT_USERID_KEY]
-    return await _tokens.list_tokens(request.app, uid)
+    all_tokens = await _tokens.list_tokens(request.app, uid)
+    return envelope_json_response(all_tokens)
 
 
 @login_required
+@_handle_tokens_errors
 @permission_required("user.tokens.*")
 async def get_token(request: web.Request):
     uid = request[RQT_USERID_KEY]
     service_id = request.match_info["service"]
 
-    return await _tokens.get_token(request.app, uid, service_id)
+    one_token = await _tokens.get_token(request.app, uid, service_id)
+    return envelope_json_response(one_token)
 
 
 @login_required
+@_handle_tokens_errors
 @permission_required("user.tokens.*")
 async def update_token(request: web.Request):
     """updates token_data of a given user service
@@ -98,26 +115,20 @@ async def update_token(request: web.Request):
     """
     uid = request[RQT_USERID_KEY]
     service_id = request.match_info["service"]
-
-    # TODO: validate
-    body = await request.json()
-
-    await _tokens.update_token(request.app, uid, service_id, body)
-
+    token_data = await request.json()
+    await _tokens.update_token(request.app, uid, service_id, token_data)
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 @login_required
+@_handle_tokens_errors
 @permission_required("user.tokens.*")
 async def delete_token(request: web.Request):
     uid = request[RQT_USERID_KEY]
-    service_id = request.match_info.get("service")
+    service_id = request.match_info["service"]
 
-    try:
-        await _tokens.delete_token(request.app, uid, service_id)
-        raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
-    except TokenNotFoundError as exc:
-        raise web.HTTPNotFound(reason=f"Token for {service_id} not found") from exc
+    await _tokens.delete_token(request.app, uid, service_id)
+    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 # me/notifications -----------------------------------------------------------

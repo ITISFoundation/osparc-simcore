@@ -10,6 +10,7 @@ from sqlalchemy import and_, literal_column
 
 from ..db import get_database_engine
 from ..db_models import tokens
+from .exceptions import TokenNotFoundError
 
 
 async def create_token(
@@ -46,8 +47,9 @@ async def get_token(
                 and_(tokens.c.user_id == user_id, tokens.c.token_service == service_id)
             )
         )
-        row: RowProxy = await result.first()
-        return dict(row["token_data"])
+        if row := await result.first():
+            return dict(row["token_data"])
+        raise TokenNotFoundError(service_id=service_id)
 
 
 async def update_token(
@@ -57,10 +59,12 @@ async def update_token(
     async with get_database_engine(app).acquire() as conn:
         result = await conn.execute(
             sa.select(tokens.c.token_data, tokens.c.token_id).where(
-                and_(tokens.c.user_id == user_id, tokens.c.token_service == service_id)
+                (tokens.c.user_id == user_id) & (tokens.c.token_service == service_id)
             )
         )
         row = await result.first()
+        if not row:
+            raise TokenNotFoundError(service_id=service_id)
 
         data = dict(row["token_data"])
         tid = row["token_id"]
