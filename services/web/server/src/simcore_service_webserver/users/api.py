@@ -53,18 +53,19 @@ async def get_user_profile(app: web.Application, user_id: UserID) -> ProfileGet:
 
     async with engine.acquire() as conn:
         async for row in conn.execute(
-            sa.select(
-                [users, groups, user_to_groups.c.access_rights],
-                use_labels=True,
-            )
+            sa.select(users, groups, user_to_groups.c.access_rights)
             .select_from(
-                users.join(
-                    user_to_groups.join(groups, user_to_groups.c.gid == groups.c.gid),
+                sa.join(
+                    users,
+                    sa.join(
+                        user_to_groups, groups, user_to_groups.c.gid == groups.c.gid
+                    ),
                     users.c.id == user_to_groups.c.uid,
                 )
             )
             .where(users.c.id == user_id)
             .order_by(sa.asc(groups.c.name))
+            .apply_labels()
         ):
             user_profile.update(convert_user_db_to_schema(row, prefix="users_"))
             if row["groups_type"] == GroupType.EVERYONE:
