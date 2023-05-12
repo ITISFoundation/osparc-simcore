@@ -149,6 +149,8 @@ async def catalog_ready(
             assert (
                 response.status_code == status.HTTP_200_OK
             ), f"catalog is not ready {response.status_code}:{response.text}, TIP: migration not completed or catalog broken?"
+            services = response.json()
+            assert services != [], "catalog is not ready: no services available"
             print(
                 f"<-- catalog is up and ready, received {response.status_code}:{response.text}"
             )
