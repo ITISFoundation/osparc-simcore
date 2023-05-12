@@ -25,11 +25,11 @@ from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_projects import assert_get_same_project
 from pytest_simcore.helpers.utils_tags import create_tag, delete_tag
 from simcore_postgres_database.models.tags import tags
-from simcore_service_webserver import tags_handlers
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db import get_database_engine
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects.project_models import ProjectDict
+from simcore_service_webserver.tags import _handlers
 
 
 @pytest.fixture
@@ -41,7 +41,7 @@ def _clean_tags_table(postgres_db: sa.engine.Engine) -> Iterator[None]:
 
 @pytest.mark.parametrize(
     "route",
-    tags_handlers.routes,
+    _handlers.routes,
     ids=lambda r: f"{r.method.upper()} {r.path}",
 )
 def test_tags_route_against_openapi_specs(route, openapi_specs: OpenApiSpecs):
