@@ -114,8 +114,12 @@ echo "$INFO" "Available permissions"
 capsh --print
 
 PYTHON_BINARY=$(readlink --canonicalize $(which python))
+CHATTR_BINARY=$(readlink --canonicalize $(which chattr))
 echo "$INFO" "Granting ${PYTHON_BINARY} CAP_LINUX_IMMUTABLE"
 setcap 'cap_linux_immutable+ep' "${PYTHON_BINARY}"
 getcap "${PYTHON_BINARY}"
+echo "$INFO" "Granting ${CHATTR_BINARY} CAP_LINUX_IMMUTABLE"
+setcap 'cap_linux_immutable+ep' "${CHATTR_BINARY}"
+getcap "${CHATTR_BINARY}"
 
 exec gosu "$SC_USER_NAME" "$@"

@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 import stat
 from contextlib import asynccontextmanager
@@ -16,6 +17,8 @@ from servicelib.volumes_utils import VolumeState, VolumeStatus, save_volume_stat
 
 from ..core.utils import async_command
 from .mounted_fs import MountedVolumes
+
+_logger = logging.getLogger(__name__)
 
 chmod = aiofiles_os.wrap(os.chmod)  # type: ignore
 
@@ -49,7 +52,10 @@ async def _toggle_file_immutability(
     file_path: Path, set_immutable: bool, timeout: PositiveFloat = 5
 ) -> None:
     immutable: str = "+i" if set_immutable else "-i"
-    await async_command(f"chattr {immutable} {file_path}", timeout=timeout)
+
+    command = f"chattr {immutable} {file_path}"
+    command_result = await async_command(command, timeout=timeout)
+    _logger.debug("'%s' result: %s", command, command_result)
 
 
 async def _create_file_with_restricted_permissions(file_path: Path) -> None:
@@ -74,11 +80,11 @@ async def _create_file_with_restricted_permissions(file_path: Path) -> None:
 
 @asynccontextmanager
 async def _disable_file_immutability(file_path: Path) -> AsyncIterator[None]:
-    await _toggle_file_immutability(file_path=file_path, set_immutable=True)
+    await _toggle_file_immutability(file_path=file_path, set_immutable=False)
     try:
         yield None
     finally:
-        await _toggle_file_immutability(file_path=file_path, set_immutable=False)
+        await _toggle_file_immutability(file_path=file_path, set_immutable=True)
 
 
 async def create_hidden_file_on_all_volumes(mounted_volumes: MountedVolumes) -> None:
@@ -100,12 +106,13 @@ async def create_hidden_file_on_all_volumes(mounted_volumes: MountedVolumes) -> 
         await _create_file_with_restricted_permissions(hidden_file)
 
         # write content
-        async with aiofiles.open(hidden_file, mode="w") as f:
-            await f.write(
-                f"Directory must not be empty.\nCreated by {__file__}.\n"
-                "Required by oSPARC internals to properly enforce permissions on this "
-                "directory and all its files"
-            )
+        async with _disable_file_immutability(hidden_file):
+            async with aiofiles.open(hidden_file, mode="w") as f:
+                await f.write(
+                    f"Directory must not be empty.\nCreated by {__file__}.\n"
+                    "Required by oSPARC internals to properly enforce permissions on this "
+                    "directory and all its files"
+                )
 
 
 async def create_agent_file_on_all_volumes(mounted_volumes: MountedVolumes) -> None:
