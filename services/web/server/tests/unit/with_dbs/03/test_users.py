@@ -1,4 +1,6 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
@@ -32,6 +34,7 @@ from redis import Redis
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.models.users import UserRole
+from simcore_service_webserver._meta import api_version_prefix as API_VERSION
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import APP_DB_ENGINE_KEY, setup_db
 from simcore_service_webserver.groups.plugin import setup_groups
@@ -53,8 +56,6 @@ from simcore_service_webserver.users._notifications import (
 )
 from simcore_service_webserver.users.plugin import setup_users
 from simcore_service_webserver.users.schemas import ProfileGet
-
-API_VERSION = "v0"
 
 
 @pytest.fixture
