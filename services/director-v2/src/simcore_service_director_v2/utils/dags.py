@@ -215,7 +215,14 @@ async def compute_pipeline_details(
                     (task.state for task in comp_tasks if f"{task.node_id}" == node_id),
                     RunningState.UNKNOWN,
                 ),
-                progress=node_data.get("progress", 0),
+                progress=next(
+                    (
+                        task.progress
+                        for task in comp_tasks
+                        if f"{task.node_id}" == node_id
+                    ),
+                    None,
+                ),
             )
             for node_id, node_data in complete_dag.nodes.data()
             if node_data["node_class"] is NodeClass.COMPUTATIONAL
