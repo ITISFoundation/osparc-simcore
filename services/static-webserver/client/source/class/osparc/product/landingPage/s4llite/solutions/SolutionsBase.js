@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.product.landingPage.s4llite.SolutionBase", {
+qx.Class.define("osparc.product.landingPage.s4llite.solutions.SolutionsBase", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
