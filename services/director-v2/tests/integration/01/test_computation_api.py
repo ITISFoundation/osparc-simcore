@@ -97,7 +97,7 @@ def fake_workbench_computational_pipeline_details(
     adjacency_list = json.loads(fake_workbench_computational_adjacency_file.read_text())
     node_states = json.loads(fake_workbench_node_states_file.read_text())
     return PipelineDetails.parse_obj(
-        {"adjacency_list": adjacency_list, "node_states": node_states, "progress": None}
+        {"adjacency_list": adjacency_list, "node_states": node_states, "progress": 0}
     )
 
 
@@ -110,6 +110,8 @@ def fake_workbench_computational_pipeline_details_completed(
         node_state.modified = False
         node_state.dependencies = set()
         node_state.current_status = RunningState.SUCCESS
+        node_state.progress = 1
+    completed_pipeline_details.progress = 1
     return completed_pipeline_details
 
 
@@ -216,6 +218,7 @@ class PartialComputationParams:
                         "modified": True,
                         "dependencies": [],
                         "currentStatus": RunningState.PUBLISHED,
+                        "progress": 0,
                     },
                     2: {
                         "modified": True,
@@ -235,6 +238,7 @@ class PartialComputationParams:
                         "modified": False,
                         "dependencies": [],
                         "currentStatus": RunningState.SUCCESS,
+                        "progress": 1,
                     },
                     2: {
                         "modified": True,
@@ -255,6 +259,7 @@ class PartialComputationParams:
                         "modified": False,
                         "dependencies": [],
                         "currentStatus": RunningState.PUBLISHED,
+                        "progress": 0,
                     },
                     2: {
                         "modified": True,
@@ -284,21 +289,25 @@ class PartialComputationParams:
                         "modified": True,
                         "dependencies": [],
                         "currentStatus": RunningState.PUBLISHED,
+                        "progress": 0,
                     },
                     2: {
                         "modified": True,
                         "dependencies": [1],
                         "currentStatus": RunningState.PUBLISHED,
+                        "progress": 0,
                     },
                     3: {
                         "modified": True,
                         "dependencies": [],
                         "currentStatus": RunningState.PUBLISHED,
+                        "progress": 0,
                     },
                     4: {
                         "modified": True,
                         "dependencies": [2, 3],
                         "currentStatus": RunningState.PUBLISHED,
+                        "progress": 0,
                     },
                 },
                 exp_node_states_after_run={
@@ -306,21 +315,25 @@ class PartialComputationParams:
                         "modified": False,
                         "dependencies": [],
                         "currentStatus": RunningState.SUCCESS,
+                        "progress": 1,
                     },
                     2: {
                         "modified": False,
                         "dependencies": [],
                         "currentStatus": RunningState.SUCCESS,
+                        "progress": 1,
                     },
                     3: {
                         "modified": False,
                         "dependencies": [],
                         "currentStatus": RunningState.SUCCESS,
+                        "progress": 1,
                     },
                     4: {
                         "modified": False,
                         "dependencies": [],
                         "currentStatus": RunningState.SUCCESS,
+                        "progress": 1,
                     },
                 },
                 exp_pipeline_adj_list_after_force_run={1: [2], 2: [4], 4: []},
@@ -329,21 +342,25 @@ class PartialComputationParams:
                         "modified": False,
                         "dependencies": [],
                         "currentStatus": RunningState.PUBLISHED,
+                        "progress": 0,
                     },
                     2: {
                         "modified": False,
                         "dependencies": [],
                         "currentStatus": RunningState.PUBLISHED,
+                        "progress": 0,
                     },
                     3: {
                         "modified": False,
                         "dependencies": [],
                         "currentStatus": RunningState.SUCCESS,
+                        "progress": 1,
                     },
                     4: {
                         "modified": False,
                         "dependencies": [],
                         "currentStatus": RunningState.PUBLISHED,
+                        "progress": 0,
                     },
                 },
             ),
@@ -385,9 +402,11 @@ async def test_run_partial_computation(
                     NodeID(workbench_node_uuids[dep_n]) for dep_n in s["dependencies"]
                 },
                 currentStatus=s.get("currentStatus", RunningState.NOT_STARTED),
+                progress=s.get("progress"),
             )
             for n, s in exp_node_states.items()
         }
+
         return PipelineDetails(
             adjacency_list=converted_adj_list,
             node_states=converted_node_states,
