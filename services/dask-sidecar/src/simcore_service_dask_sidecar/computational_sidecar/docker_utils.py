@@ -45,7 +45,7 @@ from .models import (
 from .task_shared_volume import TaskSharedVolumes
 
 logger = create_dask_worker_logger(__name__)
-LogPublishingCB = Callable[[str], Awaitable[None]]
+LogPublishingCB = Callable[[str, int], Awaitable[None]]
 
 
 async def create_container_config(
@@ -492,10 +492,12 @@ async def pull_image(
         },
     ):
         await log_publishing_cb(
-            f"Pulling {service_key}:{service_version}: {pull_progress}..."
+            f"Pulling {service_key}:{service_version}: {pull_progress}...",
+            logging.DEBUG,
         )
     await log_publishing_cb(
-        f"Docker image for {service_key}:{service_version} ready  on {socket.gethostname()}."
+        f"Docker image for {service_key}:{service_version} ready  on {socket.gethostname()}.",
+        logging.INFO,
     )
 
 
