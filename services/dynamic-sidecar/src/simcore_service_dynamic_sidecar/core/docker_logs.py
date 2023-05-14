@@ -38,6 +38,19 @@ async def _logs_fetcher_worker(
             await dispatch_log(image_name=image_name, message=line)
 
 
+def _guess_image_log_level(message: str) -> int:
+    lower_case_message = message.lower().strip()
+    if lower_case_message.startswith(
+        ("error:", "err:", "error ", "err ", "[error]", "[err]")
+    ):
+        return logging.ERROR
+    if lower_case_message.startswith(
+        ("warning:", "warn:", "warning ", "warn ", "[warning]", "[warn]")
+    ):
+        return logging.WARNING
+    return logging.INFO
+
+
 class BackgroundLogFetcher:
     def __init__(self, app: FastAPI) -> None:
         self._app: FastAPI = app
@@ -46,7 +59,9 @@ class BackgroundLogFetcher:
 
     async def _dispatch_logs(self, image_name: str, message: str) -> None:
         await post_log_message(
-            self._app, f"[{image_name}] {message}", log_level=logging.INFO
+            self._app,
+            f"[{image_name}] {message}",
+            log_level=_guess_image_log_level(message),
         )
 
     async def start_log_feching(self, container_name: str) -> None:
