@@ -47,15 +47,15 @@ class TaskProgressEvent(BaseTaskEvent):
 
 class TaskLogEvent(BaseTaskEvent):
     log: str
-    log_level: int = logging.INFO
+    log_level: int
 
     @staticmethod
     def topic_name() -> str:
         return "task_logs"
 
     @classmethod
-    def from_dask_worker(cls, log: str) -> "TaskLogEvent":
-        return cls(job_id=get_worker().get_current_task(), log=log)
+    def from_dask_worker(cls, log: str, log_level: int) -> "TaskLogEvent":
+        return cls(job_id=get_worker().get_current_task(), log=log, log_level=log_level)
 
     class Config(BaseTaskEvent.Config):
         schema_extra = {

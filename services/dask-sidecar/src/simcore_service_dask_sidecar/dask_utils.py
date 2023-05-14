@@ -88,7 +88,9 @@ async def monitor_task_abortion(
         ):
             publish_event(
                 log_publisher,
-                TaskLogEvent.from_dask_worker(log="[sidecar] cancelling task..."),
+                TaskLogEvent.from_dask_worker(
+                    log="[sidecar] cancelling task...", log_level=logging.INFO
+                ),
             )
             logger.debug("cancelling %s....................", f"{task=}")
             task.cancel()
@@ -110,7 +112,9 @@ async def monitor_task_abortion(
     except asyncio.CancelledError as exc:
         publish_event(
             log_publisher,
-            TaskLogEvent.from_dask_worker(log="[sidecar] task run was aborted"),
+            TaskLogEvent.from_dask_worker(
+                log="[sidecar] task run was aborted", log_level=logging.INFO
+            ),
         )
         raise TaskCancelledError from exc
     finally:
@@ -140,6 +144,7 @@ def publish_task_logs(
     log_type: LogType,
     message_prefix: str,
     message: str,
+    log_level: int = logging.INFO,
 ) -> None:
     logger.info("[%s - %s]: %s", message_prefix, log_type.name, message)
     if log_type == LogType.PROGRESS:
@@ -148,4 +153,6 @@ def publish_task_logs(
             TaskProgressEvent.from_dask_worker(progress=float(message)),
         )
     else:
-        publish_event(logs_pub, TaskLogEvent.from_dask_worker(log=message))
+        publish_event(
+            logs_pub, TaskLogEvent.from_dask_worker(log=message, log_level=log_level)
+        )

@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 import os
 import socket
 from dataclasses import dataclass
@@ -155,12 +156,14 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                 exc=exc,
             ) from exc
 
-    async def _publish_sidecar_log(self, log: str) -> None:
+    async def _publish_sidecar_log(
+        self, log: str, log_level: int = logging.INFO
+    ) -> None:
         publish_event(
             self.task_publishers.logs,
-            TaskLogEvent.from_dask_worker(log=f"[sidecar] {log}"),
+            TaskLogEvent.from_dask_worker(log=f"[sidecar] {log}", log_level=log_level),
         )
-        logger.info(log)
+        logger.log(log_level, log)
 
     async def run(self, command: list[str]) -> TaskOutputData:
         await self._publish_sidecar_log(
@@ -253,7 +256,9 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
         tb: TracebackType | None,
     ) -> None:
         if exc:
-            await self._publish_sidecar_log(f"Task error:\n{exc}")
             await self._publish_sidecar_log(
-                "There might be more information in the service log file"
+                f"Task error:\n{exc}", log_level=logging.ERROR
+            )
+            await self._publish_sidecar_log(
+                "TIP: There might be more information in the service log file in the service outputs",
             )

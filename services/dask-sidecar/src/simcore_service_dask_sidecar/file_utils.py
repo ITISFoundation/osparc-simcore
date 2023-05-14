@@ -1,11 +1,12 @@
 import asyncio
 import functools
+import logging
 import mimetypes
 import time
 import zipfile
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Awaitable, Callable, Final, Optional, TypedDict, Union, cast
+from typing import Any, Awaitable, Callable, Final, TypedDict, cast
 
 import aiofiles
 import aiofiles.tempfile
@@ -23,7 +24,7 @@ HTTP_FILE_SYSTEM_SCHEMES: Final = ["http", "https"]
 S3_FILE_SYSTEM_SCHEMES: Final = ["s3", "s3a"]
 
 
-LogPublishingCB = Callable[[str], Awaitable[None]]
+LogPublishingCB = Callable[[str, int], Awaitable[None]]
 
 
 def _file_progress_cb(
@@ -38,7 +39,8 @@ def _file_progress_cb(
         log_publishing_cb(
             f"{text_prefix}"
             f" {100.0 * float(value or 0)/float(size or 1):.1f}%"
-            f" ({ByteSize(value).human_readable() if value else 0} / {ByteSize(size).human_readable() if size else 'NaN'})"
+            f" ({ByteSize(value).human_readable() if value else 0} / {ByteSize(size).human_readable() if size else 'NaN'})",
+            logging.DEBUG,
         ),
         main_loop,
     )
@@ -54,7 +56,7 @@ class ClientKWArgsDict(TypedDict):
 class S3FsSettingsDict(TypedDict):
     key: str
     secret: str
-    token: Optional[str]
+    token: str | None
     use_ssl: bool
     client_kwargs: ClientKWArgsDict
 
@@ -85,8 +87,8 @@ async def _copy_file(
     *,
     log_publishing_cb: LogPublishingCB,
     text_prefix: str,
-    src_storage_cfg: Optional[dict[str, Any]] = None,
-    dst_storage_cfg: Optional[dict[str, Any]] = None,
+    src_storage_cfg: dict[str, Any] | None = None,
+    dst_storage_cfg: dict[str, Any] | None = None,
 ):
     src_storage_kwargs = src_storage_cfg or {}
     dst_storage_kwargs = dst_storage_cfg or {}
@@ -109,7 +111,8 @@ async def _copy_file(
                     f"{text_prefix}"
                     f" {100.0 * float(total_data_written or 0)/float(file_size or 1):.1f}%"
                     f" ({ByteSize(total_data_written).human_readable() if total_data_written else 0} / {ByteSize(file_size).human_readable() if file_size else 'NaN'})"
-                    f" [{ByteSize(total_data_written).to('MB')/elapsed_time:.2f} MBytes/s (avg)]"
+                    f" [{ByteSize(total_data_written).to('MB')/elapsed_time:.2f} MBytes/s (avg)]",
+                    logging.DEBUG,
                 )
 
 
@@ -118,14 +121,15 @@ _ZIP_MIME_TYPE: Final[str] = "application/zip"
 
 async def pull_file_from_remote(
     src_url: AnyUrl,
-    target_mime_type: Optional[str],
+    target_mime_type: str | None,
     dst_path: Path,
     log_publishing_cb: LogPublishingCB,
-    s3_settings: Optional[S3Settings],
+    s3_settings: S3Settings | None,
 ) -> None:
     assert src_url.path  # nosec
     await log_publishing_cb(
-        f"Downloading '{src_url.path.strip('/')}' into local file '{dst_path.name}'..."
+        f"Downloading '{src_url.path.strip('/')}' into local file '{dst_path.name}'...",
+        logging.INFO,
     )
     if not dst_path.parent.exists():
         raise ValueError(
@@ -136,7 +140,7 @@ async def pull_file_from_remote(
     if not target_mime_type:
         target_mime_type, _ = mimetypes.guess_type(dst_path)
 
-    storage_kwargs: Union[S3FsSettingsDict, dict[str, Any]] = {}
+    storage_kwargs: S3FsSettingsDict | dict[str, Any] = {}
     if s3_settings and src_url.scheme in S3_FILE_SYSTEM_SCHEMES:
         storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
     await _copy_file(
@@ -148,24 +152,27 @@ async def pull_file_from_remote(
     )
 
     await log_publishing_cb(
-        f"Download of '{src_url.path.strip('/')}' into local file '{dst_path.name}' complete."
+        f"Download of '{src_url.path.strip('/')}' into local file '{dst_path.name}' complete.",
+        logging.INFO,
     )
 
     if src_mime_type == _ZIP_MIME_TYPE and target_mime_type != _ZIP_MIME_TYPE:
-        await log_publishing_cb(f"Uncompressing '{dst_path.name}'...")
+        await log_publishing_cb(f"Uncompressing '{dst_path.name}'...", logging.INFO)
         logger.debug("%s is a zip file and will be now uncompressed", dst_path)
         with zipfile.ZipFile(dst_path, "r") as zip_obj:
             await asyncio.get_event_loop().run_in_executor(
                 None, zip_obj.extractall, dst_path.parents[0]
             )
         # finally remove the zip archive
-        await log_publishing_cb(f"Uncompressing '{dst_path.name}' complete.")
+        await log_publishing_cb(
+            f"Uncompressing '{dst_path.name}' complete.", logging.INFO
+        )
         dst_path.unlink()
 
 
 async def _push_file_to_http_link(
     file_to_upload: Path, dst_url: AnyUrl, log_publishing_cb: LogPublishingCB
-):
+) -> None:
     # NOTE: special case for http scheme when uploading. this is typically a S3 put presigned link.
     # Therefore, we need to use the http filesystem directly in order to call the put_file function.
     # writing on httpfilesystem is disabled by default.
@@ -198,12 +205,12 @@ async def _push_file_to_remote(
     file_to_upload: Path,
     dst_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
-    s3_settings: Optional[S3Settings],
-):
+    s3_settings: S3Settings | None,
+) -> None:
     logger.debug("Uploading %s to %s...", file_to_upload, dst_url)
     assert dst_url.path  # nosec
 
-    storage_kwargs: Union[S3FsSettingsDict, dict[str, Any]] = {}
+    storage_kwargs: S3FsSettingsDict | dict[str, Any] = {}
     if s3_settings:
         storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
 
@@ -223,7 +230,7 @@ async def push_file_to_remote(
     src_path: Path,
     dst_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
-    s3_settings: Optional[S3Settings],
+    s3_settings: S3Settings | None,
 ) -> None:
     if not src_path.exists():
         raise ValueError(f"{src_path=} does not exist")
@@ -237,7 +244,8 @@ async def push_file_to_remote(
         if dst_mime_type == _ZIP_MIME_TYPE and src_mime_type != _ZIP_MIME_TYPE:
             archive_file_path = Path(tmp_dir) / Path(URL(dst_url).path).name
             await log_publishing_cb(
-                f"Compressing '{src_path.name}' to '{archive_file_path.name}'..."
+                f"Compressing '{src_path.name}' to '{archive_file_path.name}'...",
+                logging.INFO,
             )
             with zipfile.ZipFile(
                 archive_file_path, mode="w", compression=zipfile.ZIP_DEFLATED
@@ -249,10 +257,13 @@ async def push_file_to_remote(
             assert archive_file_path.exists()  # nosec
             file_to_upload = archive_file_path
             await log_publishing_cb(
-                f"Compression of '{src_path.name}' to '{archive_file_path.name}' complete."
+                f"Compression of '{src_path.name}' to '{archive_file_path.name}' complete.",
+                logging.INFO,
             )
 
-        await log_publishing_cb(f"Uploading '{file_to_upload.name}' to '{dst_url}'...")
+        await log_publishing_cb(
+            f"Uploading '{file_to_upload.name}' to '{dst_url}'...", logging.INFO
+        )
 
         if dst_url.scheme in HTTP_FILE_SYSTEM_SCHEMES:
             logger.debug("destination is a http presigned link")
@@ -263,5 +274,6 @@ async def push_file_to_remote(
             )
 
     await log_publishing_cb(
-        f"Upload of '{src_path.name}' to '{dst_url.path.strip('/')}' complete"
+        f"Upload of '{src_path.name}' to '{dst_url.path.strip('/')}' complete",
+        logging.INFO,
     )
