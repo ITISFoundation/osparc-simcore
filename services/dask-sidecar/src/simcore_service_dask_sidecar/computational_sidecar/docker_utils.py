@@ -227,12 +227,30 @@ async def _parse_container_log_file(
     s3_settings: S3Settings | None,
 ) -> None:
     log_file = task_volumes.logs_folder / LEGACY_SERVICE_LOG_FILE_NAME
-    logger.debug("monitoring legacy-style container log file in %s", log_file)
+    with log_context(
+        logger,
+        logging.DEBUG,
+        "started monitoring of pre-1.0 service - using log file in /logs folder",
+    ):
+        async with aiofiles.open(log_file, mode="r") as file_pointer:
+            while (await container.show())["State"]["Running"]:
+                if line := await file_pointer.readline():
+                    log_type, _, message, log_level = await _parse_line(line)
+                    await _publish_container_logs(
+                        service_key=service_key,
+                        service_version=service_version,
+                        container=container,
+                        container_name=container_name,
+                        progress_pub=progress_pub,
+                        logs_pub=logs_pub,
+                        log_type=log_type,
+                        message=message,
+                        log_level=log_level,
+                    )
 
-    async with aiofiles.open(log_file, mode="r") as file_pointer:
-        logger.debug("monitoring legacy-style container log file: opened %s", log_file)
-        while (await container.show())["State"]["Running"]:
-            if line := await file_pointer.readline():
+                await asyncio.sleep(PARSE_LOG_INTERVAL_S)
+            # finish reading the logs if possible
+            async for line in file_pointer:
                 log_type, _, message, log_level = await _parse_line(line)
                 await _publish_container_logs(
                     service_key=service_key,
@@ -246,41 +264,10 @@ async def _parse_container_log_file(
                     log_level=log_level,
                 )
 
-            await asyncio.sleep(PARSE_LOG_INTERVAL_S)
-        # finish reading the logs if possible
-        async for line in file_pointer:
-            log_type, _, message, log_level = await _parse_line(line)
-            await _publish_container_logs(
-                service_key=service_key,
-                service_version=service_version,
-                container=container,
-                container_name=container_name,
-                progress_pub=progress_pub,
-                logs_pub=logs_pub,
-                log_type=log_type,
-                message=message,
-                log_level=log_level,
+            # copy the log file to the log_file_url
+            await push_file_to_remote(
+                log_file, log_file_url, log_publishing_cb, s3_settings
             )
-        logger.debug(
-            "monitoring legacy-style container log file: completed reading of %s",
-            log_file,
-        )
-        logger.debug(
-            "monitoring legacy-style container log file: copying log file from %s to %s...",
-            log_file,
-            log_file_url,
-        )
-        # copy the log file to the log_file_url
-        file_to_upload = log_file
-        await push_file_to_remote(
-            file_to_upload, log_file_url, log_publishing_cb, s3_settings
-        )
-
-        logger.debug(
-            "monitoring legacy-style container log file: copying log file from %s to %s completed",
-            log_file,
-            log_file_url,
-        )
 
 
 async def _parse_container_docker_logs(
@@ -295,96 +282,82 @@ async def _parse_container_docker_logs(
     s3_settings: S3Settings | None,
 ) -> None:
     latest_log_timestamp = arrow.utcnow().datetime
-    logger.debug(
-        "monitoring 1.0+ container logs from container %s:%s",
-        container.id,
-        container_name,
-    )
-    async with aiofiles.tempfile.TemporaryDirectory() as tmp_dir:
-        log_file_path = (
-            Path(tmp_dir) / f"{service_key.split(sep='/')[-1]}_{service_version}.logs"
-        )
-        log_file_path.parent.mkdir(parents=True, exist_ok=True)
-        async with aiofiles.open(log_file_path, mode="wb+") as log_fp:
-            async for log_line in cast(
-                AsyncGenerator[str, None],
-                container.log(stdout=True, stderr=True, follow=True, timestamps=True),
-            ):
-                await log_fp.write(log_line.encode("utf-8"))
-                log_type, latest_log_timestamp, message, log_level = await _parse_line(
-                    log_line
-                )
-                await _publish_container_logs(
-                    service_key=service_key,
-                    service_version=service_version,
-                    container=container,
-                    container_name=container_name,
-                    progress_pub=progress_pub,
-                    logs_pub=logs_pub,
-                    log_type=log_type,
-                    message=message,
-                    log_level=log_level,
-                )
-
-            logger.debug(
-                "monitoring 1.0+ container logs from container %s:%s: getting remaining logs",
-                container.id,
-                container_name,
+    with log_context(
+        logger, logging.DEBUG, "started monitoring of >=1.0 service - using docker logs"
+    ):
+        async with aiofiles.tempfile.TemporaryDirectory() as tmp_dir:
+            log_file_path = (
+                Path(tmp_dir)
+                / f"{service_key.split(sep='/')[-1]}_{service_version}.logs"
             )
-            # NOTE: The log stream may be interrupted before all the logs are gathered!
-            # therefore it is needed to get the remaining logs
-            missing_logs = await cast(
-                Coroutine,
-                container.log(
-                    stdout=True,
-                    stderr=True,
-                    timestamps=True,
-                    follow=False,
-                    since=latest_log_timestamp.strftime("%s"),
-                ),
-            )
-            for log_line in missing_logs:
-                await log_fp.write(log_line.encode("utf-8"))
-                log_type, latest_log_timestamp, message, log_level = await _parse_line(
-                    log_line
-                )
-                await _publish_container_logs(
-                    service_key=service_key,
-                    service_version=service_version,
-                    container=container,
-                    container_name=container_name,
-                    progress_pub=progress_pub,
-                    logs_pub=logs_pub,
-                    log_type=log_type,
-                    message=message,
-                    log_level=log_level,
-                )
+            log_file_path.parent.mkdir(parents=True, exist_ok=True)
+            async with aiofiles.open(log_file_path, mode="wb+") as log_fp:
+                async for log_line in cast(
+                    AsyncGenerator[str, None],
+                    container.log(
+                        stdout=True, stderr=True, follow=True, timestamps=True
+                    ),
+                ):
+                    await log_fp.write(log_line.encode("utf-8"))
+                    (
+                        log_type,
+                        latest_log_timestamp,
+                        message,
+                        log_level,
+                    ) = await _parse_line(log_line)
+                    await _publish_container_logs(
+                        service_key=service_key,
+                        service_version=service_version,
+                        container=container,
+                        container_name=container_name,
+                        progress_pub=progress_pub,
+                        logs_pub=logs_pub,
+                        log_type=log_type,
+                        message=message,
+                        log_level=log_level,
+                    )
 
-        logger.debug(
-            "monitoring 1.0+ container logs from container %s:%s: completed",
-            container.id,
-            container_name,
-        )
-
-        logger.debug(
-            "monitoring 1.0+ container logs from container %s:%s: copying log file from %s to %s...",
-            container.id,
-            container_name,
-            log_file_path,
-            log_file_url,
-        )
+                logger.debug(
+                    "monitoring 1.0+ container logs from container %s:%s: getting remaining logs",
+                    container.id,
+                    container_name,
+                )
+                # NOTE: The log stream may be interrupted before all the logs are gathered!
+                # therefore it is needed to get the remaining logs
+                missing_logs = await cast(
+                    Coroutine,
+                    container.log(
+                        stdout=True,
+                        stderr=True,
+                        timestamps=True,
+                        follow=False,
+                        since=latest_log_timestamp.strftime("%s"),
+                    ),
+                )
+                for log_line in missing_logs:
+                    await log_fp.write(log_line.encode("utf-8"))
+                    (
+                        log_type,
+                        latest_log_timestamp,
+                        message,
+                        log_level,
+                    ) = await _parse_line(log_line)
+                    await _publish_container_logs(
+                        service_key=service_key,
+                        service_version=service_version,
+                        container=container,
+                        container_name=container_name,
+                        progress_pub=progress_pub,
+                        logs_pub=logs_pub,
+                        log_type=log_type,
+                        message=message,
+                        log_level=log_level,
+                    )
 
         # copy the log file to the log_file_url
         await push_file_to_remote(
             log_file_path, log_file_url, log_publishing_cb, s3_settings
         )
-
-    logger.debug(
-        "monitoring 1.0+ container logs from container %s:%s: copying log file to %s completed",
-        container.id,
-        container_name,
-        log_file_url,
-    )
 
 
 async def monitor_container_logs(
@@ -407,47 +380,36 @@ async def monitor_container_logs(
     with log_catch(logger, reraise=False):
         container_info = await container.show()
         container_name = container_info.get("Name", "undefined")
-        logger.info(
-            "Starting to parse information of task [%s:%s - %s%s]",
-            service_key,
-            service_version,
-            container.id,
-            container_name,
-        )
-
-        if integration_version > LEGACY_INTEGRATION_VERSION:
-            await _parse_container_docker_logs(
-                container,
-                service_key,
-                service_version,
-                container_name,
-                progress_pub,
-                logs_pub,
-                log_file_url,
-                log_publishing_cb,
-                s3_settings,
-            )
-        else:
-            await _parse_container_log_file(
-                container,
-                service_key,
-                service_version,
-                container_name,
-                progress_pub,
-                logs_pub,
-                task_volumes,
-                log_file_url,
-                log_publishing_cb,
-                s3_settings,
-            )
-
-        logger.info(
-            "Finished parsing information of task [%s:%s - %s%s]",
-            service_key,
-            service_version,
-            container.id,
-            container_name,
-        )
+        with log_context(
+            logger,
+            logging.INFO,
+            f"parse logs of {service_key}:{service_version} - {container.id}-{container_name}",
+        ):
+            if integration_version > LEGACY_INTEGRATION_VERSION:
+                await _parse_container_docker_logs(
+                    container,
+                    service_key,
+                    service_version,
+                    container_name,
+                    progress_pub,
+                    logs_pub,
+                    log_file_url,
+                    log_publishing_cb,
+                    s3_settings,
+                )
+            else:
+                await _parse_container_log_file(
+                    container,
+                    service_key,
+                    service_version,
+                    container_name,
+                    progress_pub,
+                    logs_pub,
+                    task_volumes,
+                    log_file_url,
+                    log_publishing_cb,
+                    s3_settings,
+                )
 
 
 @contextlib.asynccontextmanager
