@@ -5,8 +5,11 @@ from threading import Thread
 
 import pytest
 from pytest import LogCaptureFixture
-from servicelib.logging_utils import guess_message_log_level, log_decorator
+from servicelib.logging_utils import LogLevelInt, guess_message_log_level, log_decorator
 from servicelib.utils import logged_gather
+from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
+    LogMessageStr,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -70,5 +73,7 @@ async def test_error_regression_def(
         ("Not a Warn: this is an warning", logging.INFO),
     ],
 )
-def test_guess_message_log_level(message: str, expected_log_level: int):
+def test_guess_message_log_level(
+    message: LogMessageStr, expected_log_level: LogLevelInt
+):
     assert guess_message_log_level(message) == expected_log_level

@@ -14,6 +14,7 @@ from typing import (
     Awaitable,
     Callable,
     Coroutine,
+    TypeAlias,
     cast,
 )
 
@@ -30,7 +31,12 @@ from packaging import version
 from pydantic import ByteSize
 from pydantic.networks import AnyUrl
 from servicelib.docker_utils import to_datetime
-from servicelib.logging_utils import guess_message_log_level, log_catch, log_context
+from servicelib.logging_utils import (
+    LogLevelInt,
+    guess_message_log_level,
+    log_catch,
+    log_context,
+)
 from settings_library.s3 import S3Settings
 
 from ..dask_utils import LogType, create_dask_worker_logger, publish_task_logs
@@ -156,7 +162,12 @@ def _guess_progress_value(progress_match: re.Match[str]) -> float:
     return value
 
 
-async def _parse_line(line: str) -> tuple[LogType, datetime.datetime, str, int]:
+LogMessageStr: TypeAlias = str
+
+
+async def _parse_line(
+    line: str,
+) -> tuple[LogType, datetime.datetime, LogMessageStr, LogLevelInt]:
     match = re.search(DOCKER_LOG_REGEXP, line)
     if not match:
         # try to correct the log, it might be coming from an old comp service that does not put timestamps
@@ -193,8 +204,8 @@ async def _publish_container_logs(
     progress_pub: Pub,
     logs_pub: Pub,
     log_type: LogType,
-    message: str,
-    log_level: int,
+    message: LogMessageStr,
+    log_level: LogLevelInt,
 ) -> None:
     return publish_task_logs(
         progress_pub,

@@ -13,7 +13,9 @@ import arrow
 import pytest
 from models_library.services_resources import BootMode
 from pytest_mock.plugin import MockerFixture
+from servicelib.logging_utils import LogLevelInt
 from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
+    LogMessageStr,
     LogType,
     _parse_line,
     create_container_config,
@@ -167,8 +169,8 @@ async def test_parse_line(
     version1_logs: bool,
     log_line: str,
     expected_log_type: LogType,
-    expected_message: str,
-    expected_log_level: int,
+    expected_message: LogMessageStr,
+    expected_log_level: LogLevelInt,
 ):
     expected_time_stamp = arrow.utcnow().datetime
     if version1_logs:

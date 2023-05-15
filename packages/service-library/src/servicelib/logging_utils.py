@@ -12,7 +12,7 @@ import sys
 from asyncio import iscoroutinefunction
 from contextlib import contextmanager
 from inspect import getframeinfo, stack
-from typing import Callable, TypedDict
+from typing import Callable, TypeAlias, TypedDict
 
 log = logging.getLogger(__name__)
 
@@ -249,7 +249,10 @@ def get_log_record_extra(*, user_id: int | str | None = None) -> LogExtra | None
     return extra or None
 
 
-def guess_message_log_level(message: str) -> int:
+LogLevelInt: TypeAlias = int
+
+
+def guess_message_log_level(message: str) -> LogLevelInt:
     lower_case_message = message.lower().strip()
     if lower_case_message.startswith(
         ("error:", "err:", "error ", "err ", "[error]", "[err]")

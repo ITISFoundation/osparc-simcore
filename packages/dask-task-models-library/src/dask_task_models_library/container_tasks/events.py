@@ -4,6 +4,10 @@ from typing import Union
 
 from distributed.worker import get_worker
 from pydantic import BaseModel, Extra, NonNegativeFloat
+from servicelib.logging_utils import LogLevelInt
+from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
+    LogMessageStr,
+)
 
 
 class BaseTaskEvent(BaseModel, ABC):
@@ -46,15 +50,15 @@ class TaskProgressEvent(BaseTaskEvent):
 
 
 class TaskLogEvent(BaseTaskEvent):
-    log: str
-    log_level: int
+    log: LogMessageStr
+    log_level: LogLevelInt
 
     @staticmethod
     def topic_name() -> str:
         return "task_logs"
 
     @classmethod
-    def from_dask_worker(cls, log: str, log_level: int) -> "TaskLogEvent":
+    def from_dask_worker(cls, log: str, log_level: LogLevelInt) -> "TaskLogEvent":
         return cls(job_id=get_worker().get_current_task(), log=log, log_level=log_level)
 
     class Config(BaseTaskEvent.Config):

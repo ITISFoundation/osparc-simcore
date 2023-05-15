@@ -15,6 +15,10 @@ from dask_task_models_library.container_tasks.events import (
 from dask_task_models_library.container_tasks.io import TaskCancelEventName
 from distributed.worker import get_worker
 from distributed.worker_state_machine import TaskState
+from servicelib.logging_utils import LogLevelInt
+from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
+    LogMessageStr,
+)
 
 
 def create_dask_worker_logger(name: str) -> logging.Logger:
@@ -143,8 +147,8 @@ def publish_task_logs(
     logs_pub: distributed.Pub,
     log_type: LogType,
     message_prefix: str,
-    message: str,
-    log_level: int,
+    message: LogMessageStr,
+    log_level: LogLevelInt,
 ) -> None:
     logger.info("[%s - %s]: %s", message_prefix, log_type.name, message)
     if log_type == LogType.PROGRESS:

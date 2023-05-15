@@ -10,6 +10,10 @@ from models_library.users import UserID
 from models_library.utils.enums import StrAutoEnum
 from pydantic import BaseModel, Field
 from pydantic.types import NonNegativeFloat
+from servicelib.logging_utils import LogLevelInt
+from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
+    LogMessageStr,
+)
 
 
 class RabbitEventMessageType(str, Enum):
@@ -47,8 +51,8 @@ class NodeMessageBase(ProjectMessageBase):
 
 class LoggerRabbitMessage(RabbitMessageBase, NodeMessageBase):
     channel_name: Literal["simcore.services.logs.v2"] = "simcore.services.logs.v2"
-    messages: list[str]
-    log_level: int = logging.INFO
+    messages: list[LogMessageStr]
+    log_level: LogLevelInt = logging.INFO
 
     def routing_key(self) -> str:
         return f"{self.project_id}.{self.log_level}"
