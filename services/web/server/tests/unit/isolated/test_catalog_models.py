@@ -11,7 +11,7 @@ import pytest
 from pint import UnitRegistry
 from pydantic import BaseModel
 from simcore_service_webserver.catalog._handlers import RESPONSE_MODEL_POLICY
-from simcore_service_webserver.catalog.catalog_models import (
+from simcore_service_webserver.catalog._schemas import (
     ServiceInputGet,
     ServiceOutputGet,
     replace_service_input_outputs,
