@@ -19,9 +19,9 @@ from servicelib.common_headers import X_FORWARDED_PROTO
 from servicelib.request_keys import RQT_USERID_KEY
 from yarl import URL
 
-from .login.decorators import login_required
-from .security.decorators import permission_required
-from .storage_settings import StorageSettings, get_plugin_settings
+from ..login.decorators import login_required
+from ..security.decorators import permission_required
+from .settings import StorageSettings, get_plugin_settings
 
 log = logging.getLogger(__name__)
 
@@ -35,7 +35,8 @@ def _get_base_storage_url(app: web.Application) -> URL:
 
 def _get_storage_vtag(app: web.Application) -> str:
     settings: StorageSettings = get_plugin_settings(app)
-    return settings.STORAGE_VTAG
+    storage_vtag: str = settings.STORAGE_VTAG
+    return storage_vtag
 
 
 def _resolve_storage_url(request: web.Request) -> URL:
@@ -51,7 +52,6 @@ def _resolve_storage_url(request: web.Request) -> URL:
     #    ('asdf', '')
     suffix = "/".join(request.url.raw_parts[BASEPATH_INDEX:])
 
-    # TODO: check request.query to storage! unsafe!?
     url = (endpoint / suffix).with_query(request.query).update_query(user_id=userid)
     return url
 
@@ -68,7 +68,6 @@ async def _request_storage(
         await extract_and_validate(request)
 
     url = _resolve_storage_url(request)
-    # _token_data, _token_secret = _get_token_key_and_secret(request)
 
     body = None
     if request.can_read_body:
@@ -88,7 +87,8 @@ def _unresolve_storage_url(request: web.Request, storage_url: AnyUrl) -> AnyUrl:
     converted_url = request.url.with_path(
         f"/v0/storage{storage_url.path.removeprefix(prefix)}"
     ).with_scheme(request.headers.get(X_FORWARDED_PROTO, request.url.scheme))
-    return parse_obj_as(AnyUrl, f"{converted_url}")
+    converted_url_: AnyUrl = parse_obj_as(AnyUrl, f"{converted_url}")
+    return converted_url_
 
 
 async def safe_unwrap(
@@ -109,7 +109,7 @@ def extract_link(data: dict | None) -> str:
     if data is None or "link" not in data:
         raise web.HTTPException(reason=f"No url found in response: '{data}'")
 
-    return data["link"]
+    return f"{data['link']}"
 
 
 # ---------------------------------------------------------------------

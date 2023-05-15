@@ -46,7 +46,7 @@ from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_postgres_database.webserver_models import ProjectType
 
-from .. import catalog_client, storage_api
+from .. import catalog_client
 from ..director_v2 import api as director_v2_api
 from ..products.plugin import get_product_name
 from ..redis import get_redis_lock_manager_client_sdk
@@ -55,13 +55,14 @@ from ..resource_manager.websocket_manager import (
     UserSessionID,
     managed_resource,
 )
-from ..socketio.events import (
+from ..socketio.messages import (
     SOCKET_IO_NODE_UPDATED_EVENT,
     SOCKET_IO_PROJECT_UPDATED_EVENT,
     SocketMessageDict,
     send_group_messages,
     send_messages,
 )
+from ..storage import api as storage_api
 from ..users_api import UserRole, get_user_name, get_user_role
 from ..users_exceptions import UserNotFoundError
 from . import _delete_utils, _nodes_utils
