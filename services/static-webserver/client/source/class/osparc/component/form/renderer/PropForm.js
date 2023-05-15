@@ -95,6 +95,9 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     __fieldOptsBtnMap: null,
     __addPortButton: null,
 
+    /*
+     * <-- Dynamic inputs -->
+     */
     __getEmptyDataLastPorts: function() {
       let emptyDataPorts = [];
       this.__getPortKeys().forEach(portId => {
@@ -129,7 +132,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       if (emptyDataPorts.length>1 && lastEmptyDataPort) {
         const idx = emptyDataPorts.indexOf(lastEmptyDataPort);
         if (idx+1 < emptyDataPorts.length) {
-          this.showPort(emptyDataPorts[idx+1]);
+          this.__showPort(emptyDataPorts[idx+1]);
         }
         if (idx+1 === emptyDataPorts.length-1) {
           this.__addPortButton.exclude();
@@ -141,21 +144,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       }
     },
 
-    makeInputsDynamic: function() {
-      this.__getPortKeys().forEach(portId => this.showPort(portId));
-
-      const emptyDataPorts = this.__getEmptyDataLastPorts();
-      for (let i=1; i<emptyDataPorts.length; i++) {
-        const hidePortId = emptyDataPorts[i];
-        this.excludePort(hidePortId);
-      }
-
-      this.__addPortButton.set({
-        visibility: emptyDataPorts.length > 1 ? "visible" : "excluded"
-      });
-    },
-
-    showPort: function(portId) {
+    __showPort: function(portId) {
       const entry = this.self().GRID_POS;
       Object.values(entry).forEach(entryPos => {
         const layoutElement = this._getLayoutChild(portId, entryPos);
@@ -168,7 +157,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       });
     },
 
-    excludePort: function(portId) {
+    __excludePort: function(portId) {
       const entry = this.self().GRID_POS;
       Object.values(entry).forEach(entryPos => {
         const layoutElement = this._getLayoutChild(portId, entryPos);
@@ -180,6 +169,23 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         }
       });
     },
+
+    makeInputsDynamic: function() {
+      this.__getPortKeys().forEach(portId => this.__showPort(portId));
+
+      const emptyDataPorts = this.__getEmptyDataLastPorts();
+      for (let i=1; i<emptyDataPorts.length; i++) {
+        const hidePortId = emptyDataPorts[i];
+        this.__excludePort(hidePortId);
+      }
+
+      this.__addPortButton.set({
+        visibility: emptyDataPorts.length > 1 ? "visible" : "excluded"
+      });
+    },
+    /*
+     * <-- /Dynamic inputs -->
+     */
 
     __createLinkUnlinkStack: function(field) {
       const linkUnlinkStack = new qx.ui.container.Stack();
@@ -889,8 +895,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       }
 
       this.__portLinkRemoved(toPortId);
-
-      this.makeInputsDynamic();
     }
     /* /LINKS */
   }
