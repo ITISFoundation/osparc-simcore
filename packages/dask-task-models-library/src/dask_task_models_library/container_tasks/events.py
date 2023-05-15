@@ -46,7 +46,7 @@ class TaskProgressEvent(BaseTaskEvent):
 
 
 _LogMessageStr: TypeAlias = str
-_LogLevelInt: TypeAlias = str
+_LogLevelInt: TypeAlias = int
 
 
 class TaskLogEvent(BaseTaskEvent):
