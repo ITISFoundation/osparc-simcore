@@ -5,11 +5,11 @@ from aiohttp import MultipartReader, hdrs, web
 from json2html import json2html
 from servicelib.request_keys import RQT_USERID_KEY
 
-from ._meta import api_version_prefix as vx
-from .login.decorators import login_required
-from .login.storage import AsyncpgStorage, get_plugin_storage
-from .login.utils_email import themed
-from .products.plugin import get_current_product
+from .._meta import api_version_prefix as vx
+from ..login.decorators import login_required
+from ..login.storage import AsyncpgStorage, get_plugin_storage
+from ..login.utils_email import themed
+from ..products.plugin import get_current_product
 
 log = logging.getLogger(__name__)
 
@@ -58,7 +58,7 @@ async def service_submission(request: web.Request):
     try:
         # NOTE: temporarily internal import to avoid render_and_send_mail to be interpreted as handler
         # TODO: Move outside when get_handlers_from_namespace is fixed
-        from .login.utils_email import AttachmentTuple, send_email_from_template
+        from ..login.utils_email import AttachmentTuple, send_email_from_template
 
         attachments = [
             AttachmentTuple(
