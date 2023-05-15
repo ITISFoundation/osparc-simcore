@@ -46,7 +46,7 @@ from settings_library.email import SMTPSettings
 from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
-from simcore_service_webserver.catalog import catalog_plugin
+from simcore_service_webserver.catalog import plugin as catalog_plugin
 from simcore_service_webserver.groups.api import (
     add_user_in_group,
     create_user_group,

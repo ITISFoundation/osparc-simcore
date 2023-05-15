@@ -31,8 +31,8 @@ from servicelib.aiohttp.long_running_tasks.server import (
 )
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.catalog import catalog_plugin
-from simcore_service_webserver.catalog.catalog_plugin import setup_catalog
+from simcore_service_webserver.catalog import plugin as catalog_plugin
+from simcore_service_webserver.catalog.plugin import setup_catalog
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.director_v2.plugin import setup_director_v2
 from simcore_service_webserver.garbage_collector import setup_garbage_collector

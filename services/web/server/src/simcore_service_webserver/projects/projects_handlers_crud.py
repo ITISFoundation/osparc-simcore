@@ -31,7 +31,7 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import api_version_prefix as VTAG
-from ..catalog import catalog_plugin
+from ..catalog.plugin import get_services_for_user_in_product
 from ..director_v2 import api
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
@@ -295,9 +295,7 @@ async def get_project(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
-    user_available_services: list[
-        dict
-    ] = await catalog_plugin.get_services_for_user_in_product(
+    user_available_services: list[dict] = await get_services_for_user_in_product(
         request.app, req_ctx.user_id, req_ctx.product_name, only_key_versions=True
     )
 
