@@ -4,8 +4,8 @@ from aiohttp import web
 from servicelib.logging_utils import get_log_record_extra
 from yarl import URL
 
-from .._constants import RQ_PRODUCT_KEY, X_PRODUCT_NAME_HEADER
-from ..login.decorators import RQT_USERID_KEY, login_required
+from .._constants import RQ_PRODUCT_KEY, RQT_USERID_KEY, X_PRODUCT_NAME_HEADER
+from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from . import client
 from .client import to_backend_service

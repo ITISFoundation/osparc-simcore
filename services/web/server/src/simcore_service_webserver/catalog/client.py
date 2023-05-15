@@ -113,14 +113,15 @@ async def get_services_for_user_in_product(
         async with session.get(
             url,
             headers={X_PRODUCT_NAME_HEADER: product_name},
-        ) as resp:
-            if resp.status >= 400:
+        ) as response:
+            if response.status >= 400:
                 _logger.warning(
                     "Error while retrieving services for user %s. Returning an empty list",
                     user_id,
                 )
                 return []
-            return await resp.json()
+            body: list[dict] = await response.json()
+            return body
 
     except asyncio.TimeoutError as err:
         _logger.warning("Catalog service connection timeout error")
@@ -147,9 +148,10 @@ async def get_service(
     try:
         async with session.get(
             url, headers={X_PRODUCT_NAME_HEADER: product_name}
-        ) as resp:
-            resp.raise_for_status()  # FIXME: error handling for session and response exceptions
-            return await resp.json()
+        ) as response:
+            response.raise_for_status()  # FIXME: error handling for session and response exceptions
+            body: dict[str, Any] = await response.json()
+            return body
 
     except asyncio.TimeoutError as err:
         _logger.warning("Catalog service connection timeout error")
@@ -210,7 +212,8 @@ async def update_service(
             url, headers={X_PRODUCT_NAME_HEADER: product_name}, json=update_data
         ) as resp:
             resp.raise_for_status()  # FIXME: error handling for session and response exceptions
-            return await resp.json()
+            body: dict[str, Any] = await resp.json()
+            return body
 
     except asyncio.TimeoutError as err:
         _logger.warning("Catalog service connection timeout error")

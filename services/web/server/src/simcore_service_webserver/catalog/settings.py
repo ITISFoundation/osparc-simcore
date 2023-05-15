@@ -15,3 +15,9 @@ def get_plugin_settings(app: web.Application) -> CatalogSettings:
     assert settings, "setup_settings not called?"  # nosec
     assert isinstance(settings, CatalogSettings)  # nosec
     return settings
+
+
+__all__: tuple[str, ...] = (
+    "CatalogSettings",
+    "get_plugin_settings",
+)

@@ -20,7 +20,6 @@ from pydantic import (
     StrictBool,
     StrictFloat,
     StrictInt,
-    constr,
     validator,
 )
 
@@ -63,9 +62,18 @@ PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]+$"  # TODO: PC->* it would be advisable to ha
 LATEST_INTEGRATION_VERSION = "1.0.0"
 
 # CONSTRAINT TYPES -------------------------------------------
+class ServicePortKey(ConstrainedStr):
+    regex = re.compile(PROPERTY_KEY_RE)
 
-ServicePortKey = constr(regex=PROPERTY_KEY_RE)
-FileName = constr(regex=FILENAME_RE)
+    class Config:
+        frozen = True
+
+
+class FileName(ConstrainedStr):
+    regex = re.compile(FILENAME_RE)
+
+    class Config:
+        frozen = True
 
 
 class ServiceKey(ConstrainedStr):

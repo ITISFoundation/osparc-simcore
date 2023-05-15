@@ -21,7 +21,8 @@ ServiceOutputKey = ServicePortKey
 
 def json_dumps(v, *, default=None) -> str:
     # orjson.dumps returns bytes, to match standard json.dumps we need to decode
-    return orjson.dumps(v, default=default).decode()
+    dump: str = orjson.dumps(v, default=default).decode()
+    return dump
 
 
 #####

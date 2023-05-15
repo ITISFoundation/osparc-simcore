@@ -377,7 +377,9 @@ async def get_service_input(
     service = await client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
-    service_input = ServiceInputGet.from_catalog_service_api_model(service, input_key)
+    service_input: ServiceInputGet = ServiceInputGet.from_catalog_service_api_model(
+        service, input_key
+    )
 
     return service_input
 
@@ -451,7 +453,7 @@ async def get_service_output(
     service = await client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
-    service_output = ServiceOutputGet.from_catalog_service_api_model(
+    service_output: ServiceOutputGet = ServiceOutputGet.from_catalog_service_api_model(
         service, output_key
     )
 
