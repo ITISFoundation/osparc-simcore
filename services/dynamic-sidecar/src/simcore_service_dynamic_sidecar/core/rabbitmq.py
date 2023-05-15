@@ -18,11 +18,11 @@ from servicelib.rabbitmq_utils import wait_till_rabbitmq_responsive
 
 from ..core.settings import ApplicationSettings
 
-log = logging.getLogger(__file__)
+_logger = logging.getLogger(__file__)
 
 
 async def _post_rabbit_message(app: FastAPI, message: RabbitMessageBase) -> None:
-    with log_catch(log, reraise=False):
+    with log_catch(_logger, reraise=False):
         await get_rabbitmq_client(app).publish(message.channel_name, message)
 
 
@@ -78,7 +78,7 @@ def setup_rabbitmq(app: FastAPI) -> None:
         assert app_settings.RABBIT_SETTINGS  # nosec
         settings = app_settings.RABBIT_SETTINGS
         await wait_till_rabbitmq_responsive(settings.dsn)
-        with log_context(log, logging.INFO, msg="Create RabbitMQClient"):
+        with log_context(_logger, logging.INFO, msg="Create RabbitMQClient"):
             app.state.rabbitmq_client = RabbitMQClient(
                 client_name=f"dynamic-sidecar_{app_settings.DY_SIDECAR_NODE_ID}",
                 settings=settings,
