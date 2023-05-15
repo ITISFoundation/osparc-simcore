@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 
 from datetime import datetime, timedelta
-from typing import Optional
 
 import pytest
 from aiohttp import web
@@ -15,7 +14,7 @@ from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import NewUser
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.models.users import UserStatus
-from simcore_service_webserver.users_db import update_expired_users
+from simcore_service_webserver.users.api import update_expired_users
 
 _NOW = datetime.utcnow()
 YESTERDAY = _NOW - timedelta(days=1)
@@ -34,7 +33,7 @@ def app_environment(
 
 @pytest.mark.parametrize("expires_at", (YESTERDAY, TOMORROW, None))
 async def test_update_expired_users(
-    expires_at: Optional[datetime], client: TestClient, faker: Faker
+    expires_at: datetime | None, client: TestClient, faker: Faker
 ):
     has_expired = expires_at == YESTERDAY
     async with NewUser(

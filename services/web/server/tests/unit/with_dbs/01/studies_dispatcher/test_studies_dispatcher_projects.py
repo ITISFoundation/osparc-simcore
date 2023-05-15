@@ -26,7 +26,7 @@ from simcore_service_webserver.studies_dispatcher._projects import (
     _create_project_with_filepicker_and_service,
     _create_project_with_service,
 )
-from simcore_service_webserver.users_api import get_user
+from simcore_service_webserver.users.api import get_user
 
 FAKE_FILE_VIEWS = list_fake_file_consumers()
 
