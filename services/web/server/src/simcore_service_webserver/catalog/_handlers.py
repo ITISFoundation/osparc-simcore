@@ -1,9 +1,7 @@
 """ rest api handlers
 
- - TODO: uuid instead of key+version?
- - Take into account that part of the API is also needed in the public API so logic should
-   live in the catalog service in his final version
- TODO: define pruning of response policy: e.g. if None, send or not, if unset, send or not ...
+- Take into account that part of the API is also needed in the public API so logic
+should live in the catalog service in his final version
 
 """
 import logging
