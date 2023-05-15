@@ -156,7 +156,7 @@ def _guess_progress_value(progress_match: re.Match[str]) -> float:
     return value
 
 
-async def _parse_line(line: str) -> tuple[LogType, datetime.datetime, str, int | None]:
+async def _parse_line(line: str) -> tuple[LogType, datetime.datetime, str, int]:
     match = re.search(DOCKER_LOG_REGEXP, line)
     if not match:
         # try to correct the log, it might be coming from an old comp service that does not put timestamps
@@ -178,8 +178,8 @@ async def _parse_line(line: str) -> tuple[LogType, datetime.datetime, str, int |
         return (
             LogType.PROGRESS,
             timestamp,
-            f"{_guess_progress_value(match)}:.2f",
-            None,
+            f"{_guess_progress_value(match):.2f}",
+            logging.INFO,
         )
 
     return (LogType.LOG, timestamp, log, guess_message_log_level(log))
