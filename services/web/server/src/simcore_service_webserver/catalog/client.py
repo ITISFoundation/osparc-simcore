@@ -30,7 +30,7 @@ from .settings import get_plugin_settings
 _logger = logging.getLogger(__name__)
 
 
-async def is_catalog_service_responsive(app: web.Application):
+async def is_catalog_service_responsive(app: web.Application) -> bool:
     """Returns true if catalog is ready"""
     try:
         session: ClientSession = get_client_session(app)
@@ -42,7 +42,7 @@ async def is_catalog_service_responsive(app: web.Application):
             raise_for_status=True,
             timeout=ClientTimeout(total=2, connect=1),
         )
-    except (ClientConnectionError, ClientResponseError, InvalidURL, ValueError) as err:
+    except (ClientConnectionError, ClientResponseError, InvalidURL, ValueError):
         return False
     return True
 
