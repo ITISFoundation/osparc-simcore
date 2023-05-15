@@ -1,3 +1,11 @@
+""" rest api handlers
+
+ - TODO: uuid instead of key+version?
+ - Take into account that part of the API is also needed in the public API so logic should
+   live in the catalog service in his final version
+ TODO: define pruning of response policy: e.g. if None, send or not, if unset, send or not ...
+
+"""
 import logging
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -19,6 +27,7 @@ from .._constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
 from .._meta import api_version_prefix
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
+from ..utils_aiohttp import envelope_json_response
 from . import client
 from ._schemas import (
     ServiceInputGet,
@@ -34,13 +43,6 @@ from ._units import can_connect
 
 _logger = logging.getLogger(__name__)
 
-###############
-# API HANDLERS
-#
-# - TODO: uuid instead of key+version?
-# - Take into account that part of the API is also needed in the public API so logic should
-#   live in the catalog service in his final version
-# TODO: define pruning of response policy: e.g. if None, send or not, if unset, send or not ...
 
 VTAG = f"/{api_version_prefix}"
 
@@ -102,8 +104,7 @@ async def list_services_handler(request: Request):
         # match, parse and validate
         data_array = await list_services(ctx)
 
-    enveloped: str = json_dumps({"data": data_array})
-    return web.Response(text=enveloped, content_type="application/json")
+    return envelope_json_response(data_array)
 
 
 @routes.get(f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}")
@@ -118,9 +119,7 @@ async def get_service_handler(request: Request):
     # Evaluate and return validated model
     data = await get_service(service_key, service_version, ctx)
 
-    # format response
-    enveloped: str = json_dumps({"data": data})
-    return web.Response(text=enveloped, content_type="application/json")
+    return envelope_json_response(data)
 
 
 @routes.patch(f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}")
@@ -136,9 +135,7 @@ async def update_service_handler(request: Request):
     # Evaluate and return validated model
     data = await update_service(service_key, service_version, update_data, ctx)
 
-    # format response
-    enveloped: str = json_dumps({"data": data})
-    return web.Response(text=enveloped, content_type="application/json")
+    return envelope_json_response(data)
 
 
 @routes.get(f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}/inputs")
@@ -153,11 +150,8 @@ async def list_service_inputs_handler(request: Request):
     # Evaluate and return validated model
     response_model = await list_service_inputs(service_key, service_version, ctx)
 
-    # format response
-    enveloped: str = json_dumps(
-        {"data": [m.dict(**RESPONSE_MODEL_POLICY) for m in response_model]}
-    )
-    return web.Response(text=enveloped, content_type="application/json")
+    data = [m.dict(**RESPONSE_MODEL_POLICY) for m in response_model]
+    return envelope_json_response(data)
 
 
 @routes.get(
@@ -177,9 +171,8 @@ async def get_service_input_handler(request: Request):
         service_key, service_version, input_key, ctx
     )
 
-    # format response
-    enveloped: str = json_dumps({"data": response_model.dict(**RESPONSE_MODEL_POLICY)})
-    return web.Response(text=enveloped, content_type="application/json")
+    data = response_model.dict(**RESPONSE_MODEL_POLICY)
+    return envelope_json_response(data)
 
 
 @routes.get(f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}/inputs:match")
@@ -204,9 +197,7 @@ async def get_compatible_inputs_given_source_output_handler(request: Request):
         ctx,
     )
 
-    # format response
-    enveloped: str = json_dumps({"data": data})
-    return web.Response(text=enveloped, content_type="application/json")
+    return envelope_json_response(data)
 
 
 @routes.get(
@@ -223,11 +214,8 @@ async def list_service_outputs_handler(request: Request):
     # Evaluate and return validated model
     response_model = await list_service_outputs(service_key, service_version, ctx)
 
-    # format response
-    enveloped: str = json_dumps(
-        {"data": [m.dict(**RESPONSE_MODEL_POLICY) for m in response_model]}
-    )
-    return web.Response(text=enveloped, content_type="application/json")
+    data = [m.dict(**RESPONSE_MODEL_POLICY) for m in response_model]
+    return envelope_json_response(data)
 
 
 @routes.get(
@@ -247,9 +235,8 @@ async def get_service_output_handler(request: Request):
         service_key, service_version, output_key, ctx
     )
 
-    # format response
-    enveloped: str = json_dumps({"data": response_model.dict(**RESPONSE_MODEL_POLICY)})
-    return web.Response(text=enveloped, content_type="application/json")
+    data = response_model.dict(**RESPONSE_MODEL_POLICY)
+    return envelope_json_response(data)
 
 
 @routes.get(
@@ -281,9 +268,7 @@ async def get_compatible_outputs_given_target_input_handler(request: Request):
         ctx,
     )
 
-    # format response
-    enveloped: str = json_dumps({"data": data})
-    return web.Response(text=enveloped, content_type="application/json")
+    return envelope_json_response(data)
 
 
 @routes.get(f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}/resources")
@@ -307,16 +292,11 @@ async def get_service_resources_handler(request: Request):
         service_version=service_version,
     )
 
-    # format response
-    enveloped: str = json_dumps(
-        {"data": ServiceResourcesDictHelpers.create_jsonable(service_resources)}
-    )
-    return web.Response(text=enveloped, content_type="application/json")
+    data = ServiceResourcesDictHelpers.create_jsonable(service_resources)
+    return envelope_json_response(data)
 
 
-###############
-# IMPLEMENTATION
-#
+# IMPLEMENTATION --------------------------------------------------------------------------------
 
 
 async def list_services(ctx: _RequestContext):
