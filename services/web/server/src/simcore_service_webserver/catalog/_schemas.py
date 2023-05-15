@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, TypeAlias
 
 import orjson
 from models_library.services import (
@@ -15,8 +15,8 @@ from pydantic.main import BaseModel
 
 from ._units import UnitHtmlFormat, get_html_formatted_unit
 
-ServiceInputKey = ServicePortKey
-ServiceOutputKey = ServicePortKey
+ServiceInputKey: TypeAlias = ServicePortKey
+ServiceOutputKey: TypeAlias = ServicePortKey
 
 
 def json_dumps(v, *, default=None) -> str:
@@ -48,10 +48,11 @@ class _BaseCommonApiExtension(BaseModel):
     )
 
     class Config:
-        extra = Extra.forbid
         alias_generator = snake_to_camel
-        json_loads = orjson.loads
+        allow_population_by_field_name = True
+        extra = Extra.forbid
         json_dumps = json_dumps
+        json_loads = orjson.loads
 
 
 class ServiceInputGet(ServiceInput, _BaseCommonApiExtension):
@@ -99,15 +100,16 @@ class ServiceInputGet(ServiceInput, _BaseCommonApiExtension):
         ureg: UnitRegistry | None = None,
     ):
         data = service["inputs"][input_key]
-        port = cls(keyId=input_key, **data)  # validated!
-        unit_html: UnitHtmlFormat
+        port = cls(key_id=input_key, **data)  # validated!
+        unit_html: UnitHtmlFormat | None
 
         if ureg and (unit_html := get_html_formatted_unit(port, ureg)):
             # we know data is ok since it was validated above
             return cls.construct(
-                keyId=input_key,
-                unitLong=unit_html.long,
-                unitShort=unit_html.short,
+                _fields_set=port.__fields_set__ | {"unit_long", "unit_short"},
+                key_id=input_key,
+                unit_long=unit_html.long,
+                unit_short=unit_html.short,
                 **data,
             )
         return port
@@ -145,15 +147,16 @@ class ServiceOutputGet(ServiceOutput, _BaseCommonApiExtension):
         if "defaultValue" in data:
             data.pop("defaultValue")
 
-        port = cls(keyId=output_key, **data)  # validated
+        port = cls(key_id=output_key, **data)  # validated
 
-        unit_html: UnitHtmlFormat
+        unit_html: UnitHtmlFormat | None
         if ureg and (unit_html := get_html_formatted_unit(port, ureg)):
             # we know data is ok since it was validated above
             return cls.construct(
-                keyId=output_key,
-                unitLong=unit_html.long,
-                unitShort=unit_html.short,
+                _fields_set=port.__fields_set__ | {"unit_long", "unit_short"},
+                key_id=output_key,
+                unit_long=unit_html.long,
+                unit_short=unit_html.short,
                 **data,
             )
         return port
