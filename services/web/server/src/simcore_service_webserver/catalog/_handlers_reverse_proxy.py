@@ -11,7 +11,7 @@ from . import client
 from .client import to_backend_service
 from .settings import get_plugin_settings
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -36,7 +36,7 @@ async def reverse_proxy_handler(request: web.Request) -> web.Response:
     # FIXME: hack
     if "/services" in backend_url.path:
         backend_url = backend_url.update_query({"user_id": user_id})
-    logger.debug(
+    _logger.debug(
         "Redirecting '%s' -> '%s'",
         request.url,
         backend_url,

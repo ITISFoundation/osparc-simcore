@@ -25,7 +25,7 @@ from .._constants import X_PRODUCT_NAME_HEADER
 from .._meta import api_version_prefix
 from .settings import get_plugin_settings
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 async def is_catalog_service_responsive(app: web.Application):
@@ -42,7 +42,7 @@ async def is_catalog_service_responsive(app: web.Application):
         )
 
     except (ClientConnectionError, ClientResponseError, InvalidURL, ValueError) as err:
-        logger.warning("Catalog service unresponsive: %s", err)
+        _logger.warning("Catalog service unresponsive: %s", err)
         return False
     return True
 
@@ -88,7 +88,7 @@ async def make_request_and_envelope_response(
             return web.json_response(resp_data, status=resp.status, dumps=json_dumps)
 
     except (asyncio.TimeoutError, ClientConnectionError, ClientResponseError) as err:
-        logger.warning(
+        _logger.warning(
             "Catalog service errors upon request %s %s: %s", method, url.relative(), err
         )
         raise web.HTTPServiceUnavailable(
@@ -115,7 +115,7 @@ async def get_services_for_user_in_product(
             headers={X_PRODUCT_NAME_HEADER: product_name},
         ) as resp:
             if resp.status >= 400:
-                logger.warning(
+                _logger.warning(
                     "Error while retrieving services for user %s. Returning an empty list",
                     user_id,
                 )
@@ -123,7 +123,7 @@ async def get_services_for_user_in_product(
             return await resp.json()
 
     except asyncio.TimeoutError as err:
-        logger.warning("Catalog service connection timeout error")
+        _logger.warning("Catalog service connection timeout error")
         raise web.HTTPServiceUnavailable(
             reason="catalog is currently unavailable"
         ) from err
@@ -152,7 +152,7 @@ async def get_service(
             return await resp.json()
 
     except asyncio.TimeoutError as err:
-        logger.warning("Catalog service connection timeout error")
+        _logger.warning("Catalog service connection timeout error")
         raise web.HTTPServiceUnavailable(
             reason="catalog is currently unavailable"
         ) from err
@@ -178,12 +178,12 @@ async def get_service_resources(
             return parse_obj_as(ServiceResourcesDict, dict_response)
 
     except asyncio.TimeoutError as err:
-        logger.warning("Catalog service connection timeout error")
+        _logger.warning("Catalog service connection timeout error")
         raise web.HTTPServiceUnavailable(
             reason="catalog is currently unavailable"
         ) from err
     except ClientConnectionError as err:
-        logger.warning("Catalog service is unavailable", exc_info=True)
+        _logger.warning("Catalog service is unavailable", exc_info=True)
         raise web.HTTPServiceUnavailable(
             reason="catalog is currently unavailable, please try again later"
         ) from err
@@ -213,7 +213,7 @@ async def update_service(
             return await resp.json()
 
     except asyncio.TimeoutError as err:
-        logger.warning("Catalog service connection timeout error")
+        _logger.warning("Catalog service connection timeout error")
         raise web.HTTPServiceUnavailable(
             reason="catalog is currently unavailable"
         ) from err

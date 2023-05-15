@@ -32,7 +32,7 @@ from ._schemas import (
 )
 from ._units import can_connect
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 ###############
 # API HANDLERS
@@ -334,7 +334,7 @@ async def list_services(ctx: _RequestContext):
             # completely break all the listing operation. At this moment,
             # a limitation on schema's $ref produced an error that made faiing
             # the full service listing.
-            logger.exception(
+            _logger.exception(
                 "Failed while processing this %s. "
                 "Skipping service from listing. "
                 "TIP: check formatting of docker label annotations for inputs/outputs.",

@@ -14,7 +14,7 @@ from . import _handlers
 from ._handlers_reverse_proxy import reverse_proxy_handler
 from .client import get_services_for_user_in_product, is_catalog_service_responsive
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 assert get_services_for_user_in_product  # nosec
@@ -26,7 +26,7 @@ assert is_catalog_service_responsive  # nosec
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_CATALOG",
     depends=["simcore_service_webserver.rest"],
-    logger=logger,
+    logger=_logger,
 )
 def setup_catalog(app: web.Application):
     # TODO: remove option disable_auth and replace by mocker.patch
