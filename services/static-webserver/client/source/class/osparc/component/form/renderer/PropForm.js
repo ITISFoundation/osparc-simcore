@@ -141,12 +141,8 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     __checkAddInputPortButtonVisibility: function() {
       const emptyDataPorts = this.__getEmptyDataLastPorts();
       const lastEmptyDataPort = this.__getVisibleEmptyDataLastPort();
-      console.log("checkAddInputPortButtonVisibility", emptyDataPorts, lastEmptyDataPort);
-      if (emptyDataPorts.length>1 && lastEmptyDataPort) {
-        const idx = emptyDataPorts.indexOf(lastEmptyDataPort);
-        if (idx+1 === emptyDataPorts.length-1) {
-          return "excluded";
-        }
+      const idx = emptyDataPorts.indexOf(lastEmptyDataPort);
+      if (idx < emptyDataPorts.length-1) {
         return "visible";
       }
       return "excluded";
