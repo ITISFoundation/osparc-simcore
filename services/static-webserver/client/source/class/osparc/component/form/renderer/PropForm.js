@@ -93,7 +93,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     __ctrlLinkMap: null,
     __linkUnlinkStackMap: null,
     __fieldOptsBtnMap: null,
-    __addPortButton: null,
+    __addInputPortButton: null,
 
     /*
      * <-- Dynamic inputs -->
@@ -126,7 +126,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       return emptyDataPorts;
     },
 
-    __addPortButtonClicked: function() {
+    __addInputPortButtonClicked: function() {
       const emptyDataPorts = this.__getEmptyDataLastPorts();
       const lastEmptyDataPort = this.__getVisibleEmptyDataLastPort();
       if (emptyDataPorts.length>1 && lastEmptyDataPort) {
@@ -135,12 +135,12 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
           this.__showPort(emptyDataPorts[idx+1]);
         }
         if (idx+1 === emptyDataPorts.length-1) {
-          this.__addPortButton.exclude();
+          this.__addInputPortButton.exclude();
         }
       } else {
         const msg = this.tr("You reached the maximum number of inputs");
         osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING");
-        this.__addPortButton.exclude();
+        this.__addInputPortButton.exclude();
       }
     },
 
@@ -179,7 +179,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         this.__excludePort(hidePortId);
       }
 
-      this.__addPortButton.set({
+      this.__addInputPortButton.set({
         visibility: emptyDataPorts.length > 1 ? "visible" : "excluded"
       });
     },
@@ -438,13 +438,13 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       }
 
       // add port button
-      const addPortButton = this.__addPortButton = new qx.ui.form.Button().set({
+      const addPortButton = this.__addInputPortButton = new qx.ui.form.Button().set({
         icon: "@FontAwesome5Solid/plus/14",
         toolTipText: this.tr("Add input"),
         alignX: "center",
         allowGrowX: false
       });
-      addPortButton.addListener("execute", () => this.__addPortButtonClicked());
+      addPortButton.addListener("execute", () => this.__addInputPortButtonClicked());
       this._add(addPortButton, {
         row,
         column: this.self().GRID_POS.LABEL
