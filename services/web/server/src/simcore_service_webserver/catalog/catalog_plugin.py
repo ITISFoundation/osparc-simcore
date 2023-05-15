@@ -10,7 +10,7 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 from servicelib.aiohttp.rest_routing import iter_path_operations
 
 from .._constants import APP_OPENAPI_SPECS_KEY
-from . import catalog_handlers
+from . import _handlers
 from .catalog_client import (
     get_services_for_user_in_product,
     is_catalog_service_responsive,
@@ -37,11 +37,11 @@ def setup_catalog(app: web.Application):
     # resolve url
     exclude: list[str] = []
     route_def: RouteDef
-    for route_def in catalog_handlers.routes:
+    for route_def in _handlers.routes:
         route_def.kwargs["name"] = operation_id = route_def.handler.__name__
         exclude.append(operation_id)
 
-    app.add_routes(catalog_handlers.routes)
+    app.add_routes(_handlers.routes)
 
     # bind the rest routes with the reverse-proxy-handler
     specs = app[APP_OPENAPI_SPECS_KEY]  # validated openapi specs
