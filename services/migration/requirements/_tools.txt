@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_tools.txt --resolver=backtracking --strip-extras requirements/_tools.in
 #
-astroid==2.15.4
+astroid==2.15.5
     # via pylint
 black==23.3.0
     # via -r requirements/../../../requirements/devenv.txt
@@ -38,7 +38,7 @@ mypy-extensions==1.0.0
     # via
     #   -c requirements/_test.txt
     #   black
-nodeenv==1.7.0
+nodeenv==1.8.0
     # via pre-commit
 packaging==23.1
     # via
@@ -49,7 +49,7 @@ pathspec==0.11.1
     # via black
 pip-tools==6.13.0
     # via -r requirements/../../../requirements/devenv.txt
-platformdirs==3.5.0
+platformdirs==3.5.1
     # via
     #   black
     #   pylint
