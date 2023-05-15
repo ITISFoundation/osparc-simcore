@@ -104,7 +104,6 @@ class ServiceInputGet(ServiceInput, _BaseCommonApiExtension):
         if ureg and (unit_html := get_html_formatted_unit(port, ureg)):
             # we know data is ok since it was validated above
             return cls.construct(
-                _fields_set=port.__fields_set__ | {"unit_long", "unit_short"},
                 key_id=input_key,
                 unit_long=unit_html.long,
                 unit_short=unit_html.short,
@@ -150,12 +149,12 @@ class ServiceOutputGet(ServiceOutput, _BaseCommonApiExtension):
         if ureg and (unit_html := get_html_formatted_unit(port, ureg)):
             # we know data is ok since it was validated above
             return cls.construct(
-                _fields_set=port.__fields_set__ | {"unit_long", "unit_short"},
                 key_id=output_key,
                 unit_long=unit_html.long,
                 unit_short=unit_html.short,
                 **data,
             )
+
         return port
 
 

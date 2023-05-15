@@ -55,6 +55,9 @@ class _RequestContext(BaseModel):
     product_name: str
     unit_registry: UnitRegistry
 
+    class Config:
+        arbitrary_types_allowed = True
+
     @classmethod
     def create(cls, request: Request) -> "_RequestContext":
         with handle_validation_as_http_error(
