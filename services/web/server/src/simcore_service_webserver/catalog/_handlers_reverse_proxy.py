@@ -33,9 +33,10 @@ async def reverse_proxy_handler(request: web.Request) -> web.Response:
         URL(settings.base_url),
         settings.CATALOG_VTAG,
     )
-    # FIXME: hack
+    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/4237
     if "/services" in backend_url.path:
         backend_url = backend_url.update_query({"user_id": user_id})
+
     _logger.debug(
         "Redirecting '%s' -> '%s'",
         request.url,
