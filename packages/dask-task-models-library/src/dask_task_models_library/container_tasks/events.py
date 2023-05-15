@@ -1,10 +1,9 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Union
+from typing import TypeAlias, Union
 
 from distributed.worker import get_worker
 from pydantic import BaseModel, Extra, NonNegativeFloat
-from servicelib.logging_utils import LogLevelInt, LogMessageStr
 
 
 class BaseTaskEvent(BaseModel, ABC):
@@ -46,16 +45,20 @@ class TaskProgressEvent(BaseTaskEvent):
         }
 
 
+_LogMessageStr: TypeAlias = str
+_LogLevelInt: TypeAlias = str
+
+
 class TaskLogEvent(BaseTaskEvent):
-    log: LogMessageStr
-    log_level: LogLevelInt
+    log: _LogMessageStr
+    log_level: _LogLevelInt
 
     @staticmethod
     def topic_name() -> str:
         return "task_logs"
 
     @classmethod
-    def from_dask_worker(cls, log: str, log_level: LogLevelInt) -> "TaskLogEvent":
+    def from_dask_worker(cls, log: str, log_level: _LogLevelInt) -> "TaskLogEvent":
         return cls(job_id=get_worker().get_current_task(), log=log, log_level=log_level)
 
     class Config(BaseTaskEvent.Config):
