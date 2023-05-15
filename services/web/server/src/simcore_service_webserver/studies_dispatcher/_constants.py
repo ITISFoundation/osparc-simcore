@@ -5,8 +5,6 @@ from typing import Final
 #       Please keep alphabetical order
 #
 
-# product = get_current_product()
-
 MSG_PROJECT_NOT_FOUND: Final[str] = "Cannot find any study with ID '{project_id}'"
 
 # This error happens when the linked study ID does not exists OR is not shared with everyone

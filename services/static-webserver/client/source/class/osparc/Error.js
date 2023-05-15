@@ -187,29 +187,29 @@ qx.Class.define("osparc.Error", {
           break;
         case "actions-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(20)).set({
-            alignX: "center",
-            maxWidth: 400
+          alignX: "center",
+          maxWidth: 400
           });
           break;
         case "copy-to-clipboard": {
-            control = new qx.ui.form.Button().set({
-              icon: "@FontAwesome5Solid/copy/14",
-              label: this.tr("Copy to clipboard")
-            });
-            control.addListener("execute", () => this.__copyMessagesToClipboard(), this);
-            break;
+          control = new qx.ui.form.Button().set({
+            icon: "@FontAwesome5Solid/copy/14",
+            label: this.tr("Copy to clipboard")
+          });
+          control.addListener("execute", () => this.__copyMessagesToClipboard(), this);
+          break;
         }
         case "support-email": {
-            control = new qx.ui.form.Button().set({
-              icon: "@FontAwesome5Solid/envelope/14",
-              label: this.tr("Support email")
-            });
-            control.addListener("execute", () => this.__supportEmail(), this);
-            const actionsLayout = this.getChildControl("actions-layout");
-            actionsLayout.add(control, {
-              flex: 1
-            });
-            break;
+          control = new qx.ui.form.Button().set({
+            icon: "@FontAwesome5Solid/envelope/14",
+            label: this.tr("Support email")
+          });
+          control.addListener("execute", () => this.__supportEmail(), this);
+          const actionsLayout = this.getChildControl("actions-layout");
+          actionsLayout.add(control, {
+            flex: 1
+          });
+          break;
         }
         case "log-in-button": {
           control = new qx.ui.form.Button().set({
