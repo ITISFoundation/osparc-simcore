@@ -113,8 +113,10 @@ class ProfileGet(_ProfileCommon):
 
 
 def convert_user_db_to_schema(
-    row: Mapping[str, Any], prefix: str | None = ""
+    row: Mapping[str, Any], prefix: Literal["users_", ""] = ""
 ) -> dict[str, Any]:
+    # NOTE: this type of functions will be replaced by pydantic.
+    assert prefix is not None  # nosec
     parts = row[f"{prefix}name"].split(".") + [""]
     data = {
         "id": row[f"{prefix}id"],

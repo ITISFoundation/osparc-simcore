@@ -47,7 +47,7 @@ async def notify_user_logout_all_sessions(
             logger.warning(
                 "Ignored error while notifying logout for %s",
                 f"{user_id=}",
-                exec_info=True,
+                exc_info=True,
                 extra=get_log_record_extra(user_id=user_id),
             )
 

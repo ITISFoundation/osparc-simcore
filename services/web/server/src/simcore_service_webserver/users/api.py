@@ -52,6 +52,7 @@ async def get_user_profile(app: web.Application, user_id: UserID) -> ProfileGet:
     user_id = _parse_as_user(user_id)
 
     async with engine.acquire() as conn:
+        row: RowProxy
         async for row in conn.execute(
             sa.select(users, groups, user_to_groups.c.access_rights)
             .select_from(
