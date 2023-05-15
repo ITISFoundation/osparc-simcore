@@ -11,11 +11,8 @@ from copy import deepcopy
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import ProgressType
 from servicelib.async_utils import run_sequentially_in_context
-from servicelib.logging_utils import LogLevelInt
+from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from settings_library.basic_types import LogLevel
-from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
-    LogMessageStr,
-)
 from simcore_service_dynamic_sidecar.core.rabbitmq import (
     post_progress_message,
     post_sidecar_log_message,

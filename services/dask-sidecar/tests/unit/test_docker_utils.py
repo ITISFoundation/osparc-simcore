@@ -13,9 +13,8 @@ import arrow
 import pytest
 from models_library.services_resources import BootMode
 from pytest_mock.plugin import MockerFixture
-from servicelib.logging_utils import LogLevelInt
+from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
-    LogMessageStr,
     LogType,
     _parse_line,
     create_container_config,

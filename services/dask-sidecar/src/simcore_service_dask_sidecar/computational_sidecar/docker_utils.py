@@ -14,7 +14,6 @@ from typing import (
     Awaitable,
     Callable,
     Coroutine,
-    TypeAlias,
     cast,
 )
 
@@ -33,6 +32,7 @@ from pydantic.networks import AnyUrl
 from servicelib.docker_utils import to_datetime
 from servicelib.logging_utils import (
     LogLevelInt,
+    LogMessageStr,
     guess_message_log_level,
     log_catch,
     log_context,
@@ -56,7 +56,7 @@ from .models import (
 from .task_shared_volume import TaskSharedVolumes
 
 logger = create_dask_worker_logger(__name__)
-LogPublishingCB = Callable[[str, int], Awaitable[None]]
+LogPublishingCB = Callable[[LogMessageStr, LogLevelInt], Awaitable[None]]
 
 
 async def create_container_config(
@@ -160,9 +160,6 @@ def _guess_progress_value(progress_match: re.Match[str]) -> float:
     except ValueError:
         logger.exception("Could not extract progress from log line %s", progress_match)
     return value
-
-
-LogMessageStr: TypeAlias = str
 
 
 async def _parse_line(

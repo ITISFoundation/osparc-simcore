@@ -13,6 +13,7 @@ import aiofiles.tempfile
 import fsspec
 from pydantic import ByteSize, FileUrl, parse_obj_as
 from pydantic.networks import AnyUrl
+from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from settings_library.s3 import S3Settings
 from yarl import URL
 
@@ -24,7 +25,7 @@ HTTP_FILE_SYSTEM_SCHEMES: Final = ["http", "https"]
 S3_FILE_SYSTEM_SCHEMES: Final = ["s3", "s3a"]
 
 
-LogPublishingCB = Callable[[str, int], Awaitable[None]]
+LogPublishingCB = Callable[[LogMessageStr, LogLevelInt], Awaitable[None]]
 
 
 def _file_progress_cb(

@@ -4,10 +4,7 @@ from typing import Union
 
 from distributed.worker import get_worker
 from pydantic import BaseModel, Extra, NonNegativeFloat
-from servicelib.logging_utils import LogLevelInt
-from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
-    LogMessageStr,
-)
+from servicelib.logging_utils import LogLevelInt, LogMessageStr
 
 
 class BaseTaskEvent(BaseModel, ABC):

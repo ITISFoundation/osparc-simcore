@@ -10,10 +10,7 @@ from models_library.users import UserID
 from models_library.utils.enums import StrAutoEnum
 from pydantic import BaseModel, Field
 from pydantic.types import NonNegativeFloat
-from servicelib.logging_utils import LogLevelInt
-from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
-    LogMessageStr,
-)
+from servicelib.logging_utils import LogLevelInt, LogMessageStr
 
 
 class RabbitEventMessageType(str, Enum):

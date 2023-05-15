@@ -12,12 +12,9 @@ from models_library.rabbitmq_messages import (
     RabbitMessageBase,
 )
 from pydantic import NonNegativeFloat
-from servicelib.logging_utils import LogLevelInt, log_catch, log_context
+from servicelib.logging_utils import LogLevelInt, LogMessageStr, log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq_utils import wait_till_rabbitmq_responsive
-from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
-    LogMessageStr,
-)
 
 from ..core.settings import ApplicationSettings
 

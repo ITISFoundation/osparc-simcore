@@ -24,7 +24,7 @@ from models_library.services_resources import BootMode
 from packaging import version
 from pydantic import ValidationError
 from pydantic.networks import AnyUrl
-from servicelib.logging_utils import LogLevelInt
+from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from settings_library.s3 import S3Settings
 from yarl import URL
 
@@ -32,7 +32,6 @@ from ..dask_utils import TaskPublisher, create_dask_worker_logger, publish_event
 from ..file_utils import pull_file_from_remote, push_file_to_remote
 from ..settings import Settings
 from .docker_utils import (
-    LogMessageStr,
     create_container_config,
     get_computational_shared_data_mount_point,
     get_integration_version,

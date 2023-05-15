@@ -250,6 +250,7 @@ def get_log_record_extra(*, user_id: int | str | None = None) -> LogExtra | None
 
 
 LogLevelInt: TypeAlias = int
+LogMessageStr: TypeAlias = str
 
 
 def guess_message_log_level(message: str) -> LogLevelInt:

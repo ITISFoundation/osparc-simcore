@@ -5,11 +5,13 @@ from threading import Thread
 
 import pytest
 from pytest import LogCaptureFixture
-from servicelib.logging_utils import LogLevelInt, guess_message_log_level, log_decorator
-from servicelib.utils import logged_gather
-from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
+from servicelib.logging_utils import (
+    LogLevelInt,
     LogMessageStr,
+    guess_message_log_level,
+    log_decorator,
 )
+from servicelib.utils import logged_gather
 
 logger = logging.getLogger(__name__)
 

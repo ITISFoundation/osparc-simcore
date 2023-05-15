@@ -15,10 +15,7 @@ from dask_task_models_library.container_tasks.events import (
 from dask_task_models_library.container_tasks.io import TaskCancelEventName
 from distributed.worker import get_worker
 from distributed.worker_state_machine import TaskState
-from servicelib.logging_utils import LogLevelInt
-from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
-    LogMessageStr,
-)
+from servicelib.logging_utils import LogLevelInt, LogMessageStr
 
 
 def create_dask_worker_logger(name: str) -> logging.Logger:
