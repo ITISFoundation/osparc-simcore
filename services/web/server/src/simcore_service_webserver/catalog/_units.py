@@ -5,7 +5,7 @@ from pint import PintError, UnitRegistry
 
 
 def _get_unit_name(port: BaseServiceIOModel) -> str | None:
-    unit = port.unit
+    unit: str | None = port.unit
     if port.property_type == "ref_contentSchema":
         assert port.content_schema is not None  # nosec
         # NOTE: content schema might not be resolved (i.e. has $ref!! )
