@@ -19,7 +19,7 @@ from .._constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
 from .._meta import api_version_prefix
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
-from . import catalog_client
+from . import client
 from ._schemas import (
     ServiceInputGet,
     ServiceInputKey,
@@ -300,13 +300,11 @@ async def get_service_resources_handler(request: Request):
         service_key: ServiceKey = request.match_info["service_key"]
         service_version: ServiceVersion = request.match_info["service_version"]
 
-    service_resources: ServiceResourcesDict = (
-        await catalog_client.get_service_resources(
-            request.app,
-            user_id=ctx.user_id,
-            service_key=service_key,
-            service_version=service_version,
-        )
+    service_resources: ServiceResourcesDict = await client.get_service_resources(
+        request.app,
+        user_id=ctx.user_id,
+        service_key=service_key,
+        service_version=service_version,
     )
 
     # format response
@@ -322,7 +320,7 @@ async def get_service_resources_handler(request: Request):
 
 
 async def list_services(ctx: _RequestContext):
-    services = await catalog_client.get_services_for_user_in_product(
+    services = await client.get_services_for_user_in_product(
         ctx.app, ctx.user_id, ctx.product_name, only_key_versions=False
     )
     for service in services:
@@ -348,7 +346,7 @@ async def list_services(ctx: _RequestContext):
 async def get_service(
     service_key: ServiceKey, service_version: ServiceVersion, ctx: _RequestContext
 ) -> dict[str, Any]:
-    service = await catalog_client.get_service(
+    service = await client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
     replace_service_input_outputs(
@@ -363,7 +361,7 @@ async def update_service(
     update_data: dict[str, Any],
     ctx: _RequestContext,
 ):
-    service = await catalog_client.update_service(
+    service = await client.update_service(
         ctx.app,
         ctx.user_id,
         service_key,
@@ -381,7 +379,7 @@ async def list_service_inputs(
     service_key: ServiceKey, service_version: ServiceVersion, ctx: _RequestContext
 ) -> ServiceOutputGet:
 
-    service = await catalog_client.get_service(
+    service = await client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
     inputs = []
@@ -400,7 +398,7 @@ async def get_service_input(
     ctx: _RequestContext,
 ) -> ServiceInputGet:
 
-    service = await catalog_client.get_service(
+    service = await client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
     service_input = ServiceInputGet.from_catalog_service_api_model(service, input_key)
@@ -455,7 +453,7 @@ async def list_service_outputs(
     service_version: ServiceVersion,
     ctx: _RequestContext,
 ) -> list[ServiceOutputGet]:
-    service = await catalog_client.get_service(
+    service = await client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
 
@@ -474,7 +472,7 @@ async def get_service_output(
     output_key: ServiceOutputKey,
     ctx: _RequestContext,
 ) -> ServiceOutputGet:
-    service = await catalog_client.get_service(
+    service = await client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
     service_output = ServiceOutputGet.from_catalog_service_api_model(

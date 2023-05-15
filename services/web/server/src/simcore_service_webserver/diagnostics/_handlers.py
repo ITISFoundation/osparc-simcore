@@ -13,7 +13,7 @@ from servicelib.utils import logged_gather
 
 from .. import db
 from .._meta import API_VERSION, APP_NAME, api_version_prefix
-from ..catalog import catalog_client
+from ..catalog.client import is_catalog_service_responsive
 from ..director_v2 import api as director_v2_api
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
@@ -107,7 +107,7 @@ async def get_app_status(request: web.Request):
 
     async def _check_catalog():
         check.services["catalog"] = {
-            "healthy": await catalog_client.is_catalog_service_responsive(request.app)
+            "healthy": await is_catalog_service_responsive(request.app)
         }
 
     await logged_gather(
