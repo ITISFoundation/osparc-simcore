@@ -1,7 +1,7 @@
 import hashlib
 from datetime import datetime
 from enum import Enum
-from typing import Union
+from typing import TypeAlias, Union
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConstrainedInt, Field, HttpUrl, validator
@@ -17,9 +17,9 @@ from ..api_resources import (
 
 # FIXME: all ints and bools will be floats
 # TODO: evaluate how coupled is this to InputTypes/OUtputTypes
-ArgumentType = Union[File, float, int, bool, str, None]
-KeywordArguments = dict[str, ArgumentType]
-PositionalArguments = list[ArgumentType]
+ArgumentType: TypeAlias = Union[File, float, int, bool, str, None]
+KeywordArguments: TypeAlias = dict[str, ArgumentType]
+PositionalArguments: TypeAlias = list[ArgumentType]
 
 
 def compute_checksum(kwargs: KeywordArguments):
