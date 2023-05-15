@@ -247,3 +247,16 @@ def get_log_record_extra(*, user_id: int | str | None = None) -> LogExtra | None
         assert int(user_id) > 0  # nosec
         extra["log_uid"] = f"{user_id}"
     return extra or None
+
+
+def guess_message_log_level(message: str) -> int:
+    lower_case_message = message.lower().strip()
+    if lower_case_message.startswith(
+        ("error:", "err:", "error ", "err ", "[error]", "[err]")
+    ):
+        return logging.ERROR
+    if lower_case_message.startswith(
+        ("warning:", "warn:", "warning ", "warn ", "[warning]", "[warn]")
+    ):
+        return logging.WARNING
+    return logging.INFO

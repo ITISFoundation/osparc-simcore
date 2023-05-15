@@ -9,7 +9,8 @@ import yaml
 from aiodocker.utils import clean_filters
 from models_library.basic_regex import DOCKER_GENERIC_TAG_KEY_RE
 from models_library.services import RunID
-from pydantic import PositiveInt
+from pydantic import PositiveInt, parse_obj_as
+from servicelib.logging_utils import log_catch
 from settings_library.docker_registry import RegistrySettings
 
 from .errors import UnexpectedDockerError, VolumeNotFoundError
@@ -233,10 +234,14 @@ async def _pull_image_with_progress(
         if registry_host
         else None,
     ):
-        if _parse_docker_pull_progress(
-            pull_progress, all_image_pulling_data[image_name]
-        ):
-            total_current, total_total = _compute_sizes(all_image_pulling_data)
-            await progress_cb(total_current, total_total)
+        with log_catch(logger, reraise=False):
+            if _parse_docker_pull_progress(
+                parse_obj_as(_DockerProgressDict, pull_progress),
+                all_image_pulling_data[image_name],
+            ):
+                total_current, total_total = _compute_sizes(all_image_pulling_data)
+                await progress_cb(total_current, total_total)
 
-        await log_cb(f"pulling {shorter_image_name}: {pull_progress}...", logging.DEBUG)
+            await log_cb(
+                f"pulling {shorter_image_name}: {pull_progress}...", logging.DEBUG
+            )

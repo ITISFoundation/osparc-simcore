@@ -9,9 +9,10 @@
 import logging
 from asyncio import CancelledError, Task, create_task
 from contextlib import suppress
-from typing import Any, Callable, Coroutine, cast
+from typing import Any, AsyncGenerator, Callable, Coroutine, cast
 
 from fastapi import FastAPI
+from servicelib.logging_utils import guess_message_log_level
 
 from ..core.rabbitmq import post_log_message
 from .docker_utils import docker_client
@@ -34,21 +35,11 @@ async def _logs_fetcher_worker(
         image_name = container_inspect["Config"]["Image"].split("/")[-1]
 
         logger.debug("Streaming logs from %s, image %s", container_name, image_name)
-        async for line in container.log(stdout=True, stderr=True, follow=True):
+        async for line in cast(
+            AsyncGenerator[str, None],
+            container.log(stdout=True, stderr=True, follow=True),
+        ):
             await dispatch_log(image_name=image_name, message=line)
-
-
-def _guess_image_log_level(message: str) -> int:
-    lower_case_message = message.lower().strip()
-    if lower_case_message.startswith(
-        ("error:", "err:", "error ", "err ", "[error]", "[err]")
-    ):
-        return logging.ERROR
-    if lower_case_message.startswith(
-        ("warning:", "warn:", "warning ", "warn ", "[warning]", "[warn]")
-    ):
-        return logging.WARNING
-    return logging.INFO
 
 
 class BackgroundLogFetcher:
@@ -61,7 +52,7 @@ class BackgroundLogFetcher:
         await post_log_message(
             self._app,
             f"[{image_name}] {message}",
-            log_level=_guess_image_log_level(message),
+            log_level=guess_message_log_level(message),
         )
 
     async def start_log_feching(self, container_name: str) -> None:
