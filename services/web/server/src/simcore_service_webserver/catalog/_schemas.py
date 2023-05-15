@@ -2,25 +2,19 @@ from typing import Any
 
 import orjson
 from models_library.services import (
-    SERVICE_KEY_RE,
-    VERSION_RE,
     ServiceInput,
+    ServiceKey,
     ServiceOutput,
     ServicePortKey,
+    ServiceVersion,
 )
 from models_library.utils.change_case import snake_to_camel
 from pint import UnitRegistry
-from pydantic import ConstrainedStr, Extra, Field, constr
+from pydantic import Extra, Field
 from pydantic.main import BaseModel
 
 from ._units import UnitHtmlFormat, get_html_formatted_unit
 
-
-class ServiceKey(ConstrainedStr):
-    regex = SERVICE_KEY_RE
-
-
-ServiceVersion = constr(regex=VERSION_RE)
 ServiceInputKey = ServicePortKey
 ServiceOutputKey = ServicePortKey
 
@@ -189,3 +183,9 @@ def replace_service_input_outputs(
             service, output_key, unit_registry
         )
         service["outputs"][output_key] = new_output.dict(**export_options)
+
+
+assert ServiceKey  # nosec
+assert ServiceVersion  # nosec
+
+__all__: tuple[str, ...] = ("ServiceKey", "ServiceVersion")
