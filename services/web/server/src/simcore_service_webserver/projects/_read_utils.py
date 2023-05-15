@@ -12,7 +12,7 @@ from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 from simcore_service_webserver.rest_schemas_base import OutputSchema
 
-from .. import catalog
+from ..catalog import catalog_plugin
 from . import projects_api
 from ._permalink import update_or_pop_permalink_in_project
 from ._rest_schemas import ProjectListItem
@@ -58,7 +58,7 @@ async def list_projects(
 
     user_available_services: list[
         dict
-    ] = await catalog.get_services_for_user_in_product(
+    ] = await catalog_plugin.get_services_for_user_in_product(
         app, user_id, product_name, only_key_versions=True
     )
 

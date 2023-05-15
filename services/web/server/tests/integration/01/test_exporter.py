@@ -57,7 +57,7 @@ from simcore_service_webserver.application import (
     setup_users,
 )
 from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.catalog import setup_catalog
+from simcore_service_webserver.catalog.catalog_plugin import setup_catalog
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import projects
 from simcore_service_webserver.exporter.async_hashing import Algorithm, checksum

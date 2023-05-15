@@ -44,9 +44,9 @@ from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.common_aiopg_utils import DSN
 from settings_library.email import SMTPSettings
 from settings_library.redis import RedisDatabase, RedisSettings
-from simcore_service_webserver import catalog
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
+from simcore_service_webserver.catalog import catalog_plugin
 from simcore_service_webserver.groups.api import (
     add_user_in_group,
     create_user_group,
@@ -226,7 +226,7 @@ async def catalog_subsystem_mock(
         return services_in_project
 
     monkeypatch.setattr(
-        catalog, "get_services_for_user_in_product", mocked_get_services_for_user
+        catalog_plugin, "get_services_for_user_in_product", mocked_get_services_for_user
     )
 
     return _creator

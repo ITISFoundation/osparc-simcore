@@ -47,7 +47,7 @@ from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import ProjectType
 
-from .. import catalog_client
+from ..catalog import catalog_client
 from ..director_v2 import api as director_v2_api
 from ..products.plugin import get_product_name
 from ..redis import get_redis_lock_manager_client_sdk

@@ -9,8 +9,8 @@ from pint import UnitRegistry
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.aiohttp.rest_routing import iter_path_operations
 
+from .._constants import APP_OPENAPI_SPECS_KEY
 from . import catalog_handlers
-from ._constants import APP_OPENAPI_SPECS_KEY
 from .catalog_client import (
     get_services_for_user_in_product,
     is_catalog_service_responsive,

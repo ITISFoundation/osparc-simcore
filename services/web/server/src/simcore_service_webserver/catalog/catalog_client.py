@@ -4,7 +4,7 @@
 import asyncio
 import logging
 import urllib.parse
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping
 
 from aiohttp import ClientSession, ClientTimeout, web
 from aiohttp.client_exceptions import (
@@ -21,8 +21,8 @@ from servicelib.json_serialization import json_dumps
 from settings_library.catalog import CatalogSettings
 from yarl import URL
 
-from ._constants import X_PRODUCT_NAME_HEADER
-from ._meta import api_version_prefix
+from .._constants import X_PRODUCT_NAME_HEADER
+from .._meta import api_version_prefix
 from .catalog_settings import get_plugin_settings
 
 logger = logging.getLogger(__name__)
@@ -63,8 +63,8 @@ async def make_request_and_envelope_response(
     app: web.Application,
     method: str,
     url: URL,
-    headers: Optional[Mapping[str, str]] = None,
-    data: Optional[bytes] = None,
+    headers: Mapping[str, str] | None = None,
+    data: bytes | None = None,
 ) -> web.Response:
     """
     Helper to forward a request to the catalog service

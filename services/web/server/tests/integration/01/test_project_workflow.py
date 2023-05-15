@@ -30,9 +30,9 @@ from servicelib.aiohttp.long_running_tasks.server import (
     setup as setup_long_running_tasks,
 )
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver import catalog
 from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.catalog import setup_catalog
+from simcore_service_webserver.catalog import catalog_plugin
+from simcore_service_webserver.catalog.catalog_plugin import setup_catalog
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.director_v2.plugin import setup_director_v2
 from simcore_service_webserver.garbage_collector import setup_garbage_collector
@@ -161,7 +161,7 @@ async def catalog_subsystem_mock(
         return services_in_project
 
     monkeypatch.setattr(
-        catalog, "get_services_for_user_in_product", mocked_get_services_for_user
+        catalog_plugin, "get_services_for_user_in_product", mocked_get_services_for_user
     )
 
     return _creator

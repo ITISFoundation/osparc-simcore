@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 
 import re
-from typing import Type
 
 import pytest
 from aiohttp import web
@@ -16,7 +15,7 @@ from pydantic import parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from settings_library.catalog import CatalogSettings
-from simcore_service_webserver.catalog_settings import get_plugin_settings
+from simcore_service_webserver.catalog.catalog_settings import get_plugin_settings
 from simcore_service_webserver.db_models import UserRole
 
 
@@ -55,7 +54,7 @@ async def test_dag_entrypoints(
     logged_user: UserInfoDict,
     api_version_prefix: str,
     mock_catalog_service_api_responses: None,
-    expected: Type[web.HTTPException],
+    expected: type[web.HTTPException],
 ):
     VTAG = api_version_prefix
 
@@ -118,7 +117,7 @@ async def test_get_service_resources(
     client: TestClient,
     logged_user: UserInfoDict,
     mock_catalog_service_api_responses: None,
-    expected: Type[web.HTTPException],
+    expected: type[web.HTTPException],
 ):
     assert client.app
     assert client.app.router
@@ -147,7 +146,7 @@ async def test_get_undefined_service_resources_raises_not_found_error(
     client: TestClient,
     logged_user: UserInfoDict,
     mock_catalog_service_api_responses_not_found: None,
-    expected: Type[web.HTTPException],
+    expected: type[web.HTTPException],
 ):
     assert client.app
     assert client.app.router

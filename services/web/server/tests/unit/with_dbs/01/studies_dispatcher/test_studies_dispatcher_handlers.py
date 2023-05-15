@@ -23,7 +23,7 @@ from pytest_simcore.helpers.utils_login import UserRole
 from pytest_simcore.pydantic_models import iter_model_examples_in_module
 from servicelib.json_serialization import json_dumps
 from settings_library.redis import RedisSettings
-from simcore_service_webserver import catalog
+from simcore_service_webserver.catalog import catalog_plugin
 from simcore_service_webserver.studies_dispatcher._core import ViewerInfo
 from simcore_service_webserver.studies_dispatcher._rest_handlers import ServiceGet
 from sqlalchemy.sql import text
@@ -279,7 +279,7 @@ async def catalog_subsystem_mock(monkeypatch: MonkeyPatch) -> None:
         return services_in_project
 
     monkeypatch.setattr(
-        catalog, "get_services_for_user_in_product", mocked_get_services_for_user
+        catalog_plugin, "get_services_for_user_in_product", mocked_get_services_for_user
     )
 
 

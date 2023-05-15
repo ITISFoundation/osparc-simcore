@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Optional
 
 from models_library.services import BaseServiceIOModel, ServiceInput, ServiceOutput
 from pint import PintError, UnitRegistry
@@ -38,7 +37,7 @@ class UnitHtmlFormat:
 
 def get_html_formatted_unit(
     port: BaseServiceIOModel, ureg: UnitRegistry
-) -> Optional[UnitHtmlFormat]:
+) -> UnitHtmlFormat | None:
     try:
         unit_name = _get_unit_name(port)
         if unit_name is None:
