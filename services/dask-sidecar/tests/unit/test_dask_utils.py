@@ -6,6 +6,7 @@
 
 import asyncio
 import concurrent.futures
+import logging
 import time
 from typing import Any
 
@@ -46,7 +47,9 @@ async def test_publish_event(dask_client: distributed.Client):
             assert dask_pub.subscribers
             print("we do have subscribers!")
 
-    event_to_publish = TaskLogEvent(job_id="some_fake_job_id", log="the log")
+    event_to_publish = TaskLogEvent(
+        job_id="some_fake_job_id", log="the log", log_level=logging.INFO
+    )
     publish_event(dask_pub=dask_pub, event=event_to_publish)
     # NOTE: this tests runs a sync dask client,
     # and the CI seems to have sometimes difficulties having this run in a reasonable time

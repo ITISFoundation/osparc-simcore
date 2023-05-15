@@ -144,7 +144,7 @@ def publish_task_logs(
     log_type: LogType,
     message_prefix: str,
     message: str,
-    log_level: int = logging.INFO,
+    log_level: int,
 ) -> None:
     logger.info("[%s - %s]: %s", message_prefix, log_type.name, message)
     if log_type == LogType.PROGRESS:
