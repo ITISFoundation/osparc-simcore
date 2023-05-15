@@ -12,12 +12,12 @@ from servicelib.request_keys import RQT_USERID_KEY
 from .._meta import api_version_prefix as vx
 from ..login.decorators import login_required
 from ..login.storage import AsyncpgStorage, get_plugin_storage
-from ..login.utils_email import themed
+from ..login.utils_email import AttachmentTuple, send_email_from_template, themed
 from ..products.plugin import get_current_product
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
-EMAIL_TEMPLATE_NAME = "service_submission.jinja2"
+_EMAIL_TEMPLATE_NAME = "service_submission.jinja2"
 
 routes = web.RouteTableDef()
 
@@ -54,16 +54,11 @@ async def service_submission(request: web.Request):
 
     support_email_address = product.support_email
 
-    # TODO: remove this dependency and use db instead
     db: AsyncpgStorage = get_plugin_storage(request.app)
     user = await db.get_user({"id": request[RQT_USERID_KEY]})
     user_email = user.get("email")
 
     try:
-        # NOTE: temporarily internal import to avoid render_and_send_mail to be interpreted as handler
-        # TODO: Move outside when get_handlers_from_namespace is fixed
-        from ..login.utils_email import AttachmentTuple, send_email_from_template
-
         attachments = [
             AttachmentTuple(
                 filename="metadata.json",
@@ -82,7 +77,7 @@ async def service_submission(request: web.Request):
             request,
             from_=user_email,
             to=support_email_address,
-            template=themed("templates/common", EMAIL_TEMPLATE_NAME),
+            template=themed("templates/common", _EMAIL_TEMPLATE_NAME),
             context={
                 "user": user_email,
                 "data": json2html.convert(
@@ -93,7 +88,7 @@ async def service_submission(request: web.Request):
             attachments=attachments,
         )
     except Exception as exc:
-        log.exception("Error while sending the 'new service submission' mail.")
+        _logger.exception("Error while sending the 'new service submission' mail.")
         raise web.HTTPServiceUnavailable() from exc
 
-    raise web.HTTPNoContent(content_type="application/json")
+    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
