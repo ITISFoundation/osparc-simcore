@@ -35,8 +35,6 @@ def json_dumps(v, *, default=None) -> str:
 #  - warning with couplings! Add example to ensure that API model maintain
 #    backwards compatibility
 #   - schema samples could have multiple schemas to tests backwards compatibility
-#
-# TODO: reduce to a minimum returned input/output models (ask OM)
 class _BaseCommonApiExtension(BaseModel):
     unit_long: str | None = Field(
         None,
@@ -140,10 +138,9 @@ class ServiceOutputGet(ServiceOutput, _BaseCommonApiExtension):
         service: dict[str, Any],
         output_key: ServiceOutputKey,
         ureg: UnitRegistry | None = None,
-    ):
+    ) -> "ServiceOutputGet":
         data = service["outputs"][output_key]
         # NOTE: prunes invalid field that might have remained in database
-        # TODO: remove from root and remove this cleanup operation
         if "defaultValue" in data:
             data.pop("defaultValue")
 

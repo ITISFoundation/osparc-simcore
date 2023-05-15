@@ -17,10 +17,6 @@ from .client import get_services_for_user_in_product, is_catalog_service_respons
 _logger = logging.getLogger(__name__)
 
 
-assert get_services_for_user_in_product  # nosec
-assert is_catalog_service_responsive  # nosec
-
-
 @app_module_setup(
     __name__,
     ModuleCategory.ADDON,
@@ -29,8 +25,6 @@ assert is_catalog_service_responsive  # nosec
     logger=_logger,
 )
 def setup_catalog(app: web.Application):
-    # TODO: remove option disable_auth and replace by mocker.patch
-
     # resolve url
     exclude: list[str] = []
     route_def: RouteDef
@@ -56,7 +50,11 @@ def setup_catalog(app: web.Application):
     app[UnitRegistry.__name__] = UnitRegistry()
 
 
-__all__ = (
+assert get_services_for_user_in_product  # nosec
+assert is_catalog_service_responsive  # nosec
+
+
+__all__: tuple[str, ...] = (
     "get_services_for_user_in_product",
     "is_catalog_service_responsive",
     "setup_catalog",
