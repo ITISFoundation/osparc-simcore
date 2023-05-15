@@ -47,7 +47,7 @@ from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_service_webserver import catalog
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
-from simcore_service_webserver.groups_api import (
+from simcore_service_webserver.groups.api import (
     add_user_in_group,
     create_user_group,
     delete_user_group,
@@ -442,7 +442,7 @@ def postgres_service(docker_services, postgres_dsn):
     return url
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="module")
 def postgres_db(
     postgres_dsn: dict, postgres_service: str
 ) -> Iterator[sa.engine.Engine]:

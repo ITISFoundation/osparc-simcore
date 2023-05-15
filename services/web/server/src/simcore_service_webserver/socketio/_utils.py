@@ -4,8 +4,15 @@ from types import ModuleType
 from typing import Any, Awaitable, Callable
 
 from aiohttp import web
+from socketio import AsyncServer
 
-from .server import APP_CLIENT_SOCKET_DECORATED_HANDLERS_KEY, get_socket_server
+APP_CLIENT_SOCKET_DECORATED_HANDLERS_KEY = f"{__name__}.socketio_handlers"
+APP_CLIENT_SOCKET_SERVER_KEY = f"{__name__}.socketio_socketio"
+
+
+def get_socket_server(app: web.Application) -> AsyncServer:
+    return app[APP_CLIENT_SOCKET_SERVER_KEY]
+
 
 # The socket ID that was assigned to the client
 SocketID = str
@@ -34,7 +41,7 @@ _socketio_handlers_registry: list[
 ] = []
 
 
-def socket_io_handler(app: web.Application):
+def _socket_io_handler(app: web.Application):
     """This decorator allows passing additional paramters to python-socketio compatible handlers.
 
     i.e. python-socketio handler expect functions of type `async def function(sid, *args, **kwargs)`
@@ -52,22 +59,21 @@ def socket_io_handler(app: web.Application):
     return decorator
 
 
-def has_socket_io_handler_signature(fun) -> bool:
-    # last parameter is web.Application
-    return (
-        list(inspect.signature(fun).parameters.values())[-1].annotation
-        == web.Application
-    )
+def _has_socket_io_handler_signature(fun: Callable) -> bool:
+    # last parameter is web.Application?
+    last_parameter = list(inspect.signature(fun).parameters.values())[-1]
+    is_web_app: bool = last_parameter.annotation == web.Application
+    return is_web_app
 
 
-def register_handlers(app: web.Application, module: ModuleType):
+def register_socketio_handlers(app: web.Application, module: ModuleType):
     sio = get_socket_server(app)
     member_fcts = [
         fct for fct in _socketio_handlers_registry if inspect.getmodule(fct) == module
     ]
     # convert handler
     partial_fcts = [
-        socket_io_handler(app)(func_handler) for func_handler in member_fcts
+        _socket_io_handler(app)(func_handler) for func_handler in member_fcts
     ]
     app[APP_CLIENT_SOCKET_DECORATED_HANDLERS_KEY] = partial_fcts
 
@@ -91,7 +97,7 @@ def register_socketio_handler(func: Callable) -> Callable:
 
     is_handler = (
         inspect.isfunction(func)
-        and has_socket_io_handler_signature(func)
+        and _has_socket_io_handler_signature(func)
         and inspect.iscoroutinefunction(func)
     )
     if is_handler:

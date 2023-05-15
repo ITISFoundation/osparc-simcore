@@ -14,7 +14,7 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 
 from ..director_v2 import api
-from ..storage_api import delete_data_folders_of_project
+from ..storage.api import delete_data_folders_of_project
 from ..users_api import UserNameDict
 from ..users_exceptions import UserNotFoundError
 from .projects_db import ProjectDBAPI
