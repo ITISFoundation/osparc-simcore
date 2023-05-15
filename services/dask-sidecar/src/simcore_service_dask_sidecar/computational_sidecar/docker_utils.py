@@ -140,7 +140,7 @@ async def managed_container(
 
 
 def _guess_progress_value(progress_match: re.Match[str]) -> float:
-    value = 0
+    value: float = 0.0
     try:
         # can be anything from "23 percent", 23%, 23/234, 0.0-1.0
         progress_str = progress_match.group("value")
