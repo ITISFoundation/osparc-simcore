@@ -18,7 +18,6 @@ async def create_token(
 ) -> dict[str, str]:
     async with get_database_engine(app).acquire() as conn:
         await conn.execute(
-            # pylint: disable=no-value-for-parameter
             tokens.insert().values(
                 user_id=user_id,
                 token_service=token_data["service"],
