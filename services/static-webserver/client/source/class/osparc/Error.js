@@ -113,7 +113,8 @@ qx.Class.define("osparc.Error", {
       "502": "Bad Gateway",
       "503": "Service Unavailable",
       "504": "Gateway Timeout",
-      "505": "HTTP Version Not Supported"
+      "505": "HTTP Version Not Supported",
+      1000: "You need to be logged in"
     },
 
     POS: {
@@ -191,29 +192,30 @@ qx.Class.define("osparc.Error", {
           });
           break;
         case "copy-to-clipboard": {
-          control = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/copy/14",
-            label: this.tr("Copy to clipboard")
-          });
-          control.addListener("execute", () => this.__copyMessagesToClipboard(), this);
-          break;
+            control = new qx.ui.form.Button().set({
+              icon: "@FontAwesome5Solid/copy/14",
+              label: this.tr("Copy to clipboard")
+            });
+            control.addListener("execute", () => this.__copyMessagesToClipboard(), this);
+            break;
         }
         case "support-email": {
-          control = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/envelope/14",
-            label: this.tr("Support email")
-          });
-          control.addListener("execute", () => this.__supportEmail(), this);
-          const actionsLayout = this.getChildControl("actions-layout");
-          actionsLayout.add(control, {
-            flex: 1
-          });
-          break;
+            control = new qx.ui.form.Button().set({
+              icon: "@FontAwesome5Solid/envelope/14",
+              label: this.tr("Support email")
+            });
+            control.addListener("execute", () => this.__supportEmail(), this);
+            const actionsLayout = this.getChildControl("actions-layout");
+            actionsLayout.add(control, {
+              flex: 1
+            });
+            break;
         }
         case "log-in-button": {
           control = new qx.ui.form.Button().set({
             icon: "@FontAwesome5Solid/sign-in-alt/14",
-            label: this.tr("Log in")
+            label: this.tr("Log in"),
+            appearance: "strong-button"
           });
           control.addListener("execute", () => this.__logIn(), this);
           const actionsLayout = this.getChildControl("actions-layout");
@@ -247,16 +249,16 @@ qx.Class.define("osparc.Error", {
       const actionsLayout = this.getChildControl("actions-layout");
       messagesLayout.add(actionsLayout);
 
-      const copyToClipboard = this.getChildControl("copy-to-clipboard");
-      actionsLayout.add(copyToClipboard, {
+      const logIn = this.getChildControl("log-in-button");
+      actionsLayout.add(logIn, {
         flex: 1
       });
       const supportEmail = this.getChildControl("support-email");
       actionsLayout.add(supportEmail, {
         flex: 1
       });
-      const logIn = this.getChildControl("log-in-button");
-      actionsLayout.add(logIn, {
+      const copyToClipboard = this.getChildControl("copy-to-clipboard");
+      actionsLayout.add(copyToClipboard, {
         flex: 1
       });
     },
