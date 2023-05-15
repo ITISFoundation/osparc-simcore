@@ -134,14 +134,22 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         if (idx+1 < emptyDataPorts.length) {
           this.__showPort(emptyDataPorts[idx+1]);
         }
-        if (idx+1 === emptyDataPorts.length-1) {
-          this.__addInputPortButton.exclude();
-        }
-      } else {
-        const msg = this.tr("You reached the maximum number of inputs");
-        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING");
-        this.__addInputPortButton.exclude();
+        this.__addInputPortButton.setVisibility(this.__checkAddInputPortButtonVisibility());
       }
+    },
+
+    __checkAddInputPortButtonVisibility: function() {
+      const emptyDataPorts = this.__getEmptyDataLastPorts();
+      const lastEmptyDataPort = this.__getVisibleEmptyDataLastPort();
+      console.log("checkAddInputPortButtonVisibility", emptyDataPorts, lastEmptyDataPort);
+      if (emptyDataPorts.length>1 && lastEmptyDataPort) {
+        const idx = emptyDataPorts.indexOf(lastEmptyDataPort);
+        if (idx+1 === emptyDataPorts.length-1) {
+          return "excluded";
+        }
+        return "visible";
+      }
+      return "excluded";
     },
 
     __showPort: function(portId) {
@@ -179,9 +187,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         this.__excludePort(hidePortId);
       }
 
-      this.__addInputPortButton.set({
-        visibility: emptyDataPorts.length > 1 ? "visible" : "excluded"
-      });
+      this.__addInputPortButton.setVisibility(this.__checkAddInputPortButtonVisibility());
     },
     /*
      * <-- /Dynamic inputs -->

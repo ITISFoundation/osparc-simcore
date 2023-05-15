@@ -454,6 +454,9 @@ qx.Class.define("osparc.data.model.Node", {
             this.__addSettings(metaData.inputs);
             this.__addSettingsAccessLevelEditor(metaData.inputs);
           }
+          if (this.getPropsForm()) {
+            this.getPropsForm().makeInputsDynamic();
+          }
         }
         if (metaData.outputs) {
           this.setOutputs(metaData.outputs);
