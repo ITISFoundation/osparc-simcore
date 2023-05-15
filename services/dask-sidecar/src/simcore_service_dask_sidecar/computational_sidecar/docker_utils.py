@@ -287,8 +287,7 @@ async def _parse_container_docker_logs(
     ):
         async with aiofiles.tempfile.TemporaryDirectory() as tmp_dir:
             log_file_path = (
-                Path(tmp_dir)
-                / f"{service_key.split(sep='/')[-1]}_{service_version}.logs"
+                tmp_dir / f"{service_key.split(sep='/')[-1]}_{service_version}.logs"
             )
             log_file_path.parent.mkdir(parents=True, exist_ok=True)
             async with aiofiles.open(log_file_path, mode="wb+") as log_fp:
@@ -317,11 +316,6 @@ async def _parse_container_docker_logs(
                         log_level=log_level,
                     )
 
-                logger.debug(
-                    "monitoring 1.0+ container logs from container %s:%s: getting remaining logs",
-                    container.id,
-                    container_name,
-                )
                 # NOTE: The log stream may be interrupted before all the logs are gathered!
                 # therefore it is needed to get the remaining logs
                 missing_logs = await cast(
