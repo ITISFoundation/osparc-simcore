@@ -3,6 +3,10 @@ import logging
 
 from aiohttp import MultipartReader, hdrs, web
 from json2html import json2html
+from servicelib.mimetype_constants import (
+    MIMETYPE_APPLICATION_JSON,
+    MIMETYPE_APPLICATION_ZIP,
+)
 from servicelib.request_keys import RQT_USERID_KEY
 
 from .._meta import api_version_prefix as vx
@@ -32,10 +36,10 @@ async def service_submission(request: web.Request):
         part = await reader.next()  # pylint: disable=not-callable
         if part is None:
             break
-        if part.headers[hdrs.CONTENT_TYPE] == "application/json":
+        if part.headers[hdrs.CONTENT_TYPE] == MIMETYPE_APPLICATION_JSON:
             data = await part.json()
             continue
-        if part.headers[hdrs.CONTENT_TYPE] == "application/zip":
+        if part.headers[hdrs.CONTENT_TYPE] == MIMETYPE_APPLICATION_ZIP:
             filedata = await part.read(decode=True)
             # Validate max file size
             maxsize = 10 * 1024 * 1024  # 10MB
