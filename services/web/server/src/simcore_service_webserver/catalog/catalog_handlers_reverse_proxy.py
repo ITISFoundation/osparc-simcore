@@ -9,7 +9,7 @@ from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security.decorators import permission_required
 from . import catalog_client
 from .catalog_client import to_backend_service
-from .catalog_settings import get_plugin_settings
+from .settings import get_plugin_settings
 
 logger = logging.getLogger(__name__)
 

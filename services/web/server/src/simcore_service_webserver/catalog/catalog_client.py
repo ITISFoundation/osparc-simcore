@@ -23,7 +23,7 @@ from yarl import URL
 
 from .._constants import X_PRODUCT_NAME_HEADER
 from .._meta import api_version_prefix
-from .catalog_settings import get_plugin_settings
+from .settings import get_plugin_settings
 
 logger = logging.getLogger(__name__)
 
