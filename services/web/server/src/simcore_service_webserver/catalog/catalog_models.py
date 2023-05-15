@@ -13,7 +13,7 @@ from pint import UnitRegistry
 from pydantic import ConstrainedStr, Extra, Field, constr
 from pydantic.main import BaseModel
 
-from .catalog_units import UnitHtmlFormat, get_html_formatted_unit
+from ._units import UnitHtmlFormat, get_html_formatted_unit
 
 
 class ServiceKey(ConstrainedStr):

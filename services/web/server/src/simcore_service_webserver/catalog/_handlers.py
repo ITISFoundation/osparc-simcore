@@ -20,6 +20,7 @@ from .._meta import api_version_prefix
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from . import catalog_client
+from ._units import can_connect
 from .catalog_models import (
     ServiceInputGet,
     ServiceInputKey,
@@ -30,7 +31,6 @@ from .catalog_models import (
     json_dumps,
     replace_service_input_outputs,
 )
-from .catalog_units import can_connect
 
 logger = logging.getLogger(__name__)
 
