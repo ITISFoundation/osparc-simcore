@@ -26,28 +26,6 @@ def project_slug_dir(osparc_simcore_root_dir: Path) -> Path:
     return service_folder
 
 
-@pytest.fixture(scope="session")
-def installed_package_dir() -> Path:
-    dirpath = Path(simcore_service_invitations.__file__).resolve().parent
-    assert dirpath.exists()
-    return dirpath
-
-
-@pytest.fixture
-def jsondata(faker: Faker) -> dict:
-    return {
-        "name": faker.name(),
-        "email": faker.email(),
-        "phone": faker.phone_number(),
-        "address": {
-            "street": faker.street_address(),
-            "city": faker.city(),
-            "state": faker.state(),
-            "zipcode": faker.zipcode(),
-        },
-    }
-
-
 @pytest.fixture
 def fake_user_name(faker: Faker) -> str:
     return faker.user_name()
@@ -73,7 +51,6 @@ def app_environment(
     monkeypatch: MonkeyPatch,
     fake_user_name: str,
     fake_port: int,
-    fake_url: str,
     fake_password: str,
 ) -> EnvVarsDict:
     envs = setenvs_from_dict(
