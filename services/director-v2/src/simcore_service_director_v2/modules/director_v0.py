@@ -5,7 +5,7 @@
 import logging
 import urllib.parse
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Any, cast
 
 import httpx
 import yarl
@@ -13,8 +13,14 @@ from fastapi import FastAPI, HTTPException, Request, Response
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
-from models_library.services import ServiceDockerData, ServiceKeyVersion
+from models_library.services import (
+    ServiceDockerData,
+    ServiceKey,
+    ServiceKeyVersion,
+    ServiceVersion,
+)
 from models_library.users import UserID
+from servicelib.logging_utils import log_decorator
 
 # Module's business logic ---------------------------------------------
 from starlette import status
@@ -25,14 +31,13 @@ from ..models.schemas.dynamic_services import RunningDynamicServiceDetails
 from ..models.schemas.services import ServiceExtras
 from ..utils.client_decorators import handle_errors, handle_retry
 from ..utils.clients import unenvelope_or_raise_error
-from ..utils.logging_utils import log_decorator
 
 logger = logging.getLogger(__name__)
 
 # Module's setup logic ---------------------------------------------
 
 
-def setup(app: FastAPI, settings: Optional[DirectorV0Settings]):
+def setup(app: FastAPI, settings: DirectorV0Settings | None):
     if not settings:
         settings = DirectorV0Settings()
 
@@ -61,13 +66,14 @@ class DirectorV0Client:
     client: httpx.AsyncClient
 
     @classmethod
-    def create(cls, app: FastAPI, **kwargs):
+    def create(cls, app: FastAPI, **kwargs) -> "DirectorV0Client":
         app.state.director_v0_client = cls(**kwargs)
         return cls.instance(app)
 
     @classmethod
-    def instance(cls, app: FastAPI):
-        return app.state.director_v0_client
+    def instance(cls, app: FastAPI) -> "DirectorV0Client":
+        client: DirectorV0Client = app.state.director_v0_client
+        return client
 
     @handle_errors("Director", logger)
     @handle_retry(logger)
@@ -105,14 +111,17 @@ class DirectorV0Client:
             "GET", f"/services/{urllib.parse.quote_plus(service.key)}/{service.version}"
         )
         if resp.status_code == status.HTTP_200_OK:
-            return ServiceDockerData.parse_obj(unenvelope_or_raise_error(resp)[0])
+            data = cast(list[dict[str, Any]], unenvelope_or_raise_error(resp))
+            return ServiceDockerData.parse_obj(data[0])
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     @log_decorator(logger=logger)
-    async def get_service_extras(self, service: ServiceKeyVersion) -> ServiceExtras:
+    async def get_service_extras(
+        self, service_key: ServiceKey, service_version: ServiceVersion
+    ) -> ServiceExtras:
         resp = await self.request(
             "GET",
-            f"/service_extras/{urllib.parse.quote_plus(service.key)}/{service.version}",
+            f"/service_extras/{urllib.parse.quote_plus(service_key)}/{service_version}",
         )
         if resp.status_code == status.HTTP_200_OK:
             return ServiceExtras.parse_obj(unenvelope_or_raise_error(resp))
@@ -144,8 +153,8 @@ class DirectorV0Client:
 
     @log_decorator(logger=logger)
     async def get_running_services(
-        self, user_id: Optional[UserID] = None, project_id: Optional[ProjectID] = None
-    ) -> List[RunningDynamicServiceDetails]:
+        self, user_id: UserID | None = None, project_id: ProjectID | None = None
+    ) -> list[RunningDynamicServiceDetails]:
         query_params = {}
         if user_id is not None:
             query_params["user_id"] = f"{user_id}"
@@ -159,6 +168,6 @@ class DirectorV0Client:
         if resp.status_code == status.HTTP_200_OK:
             return [
                 RunningDynamicServiceDetails(**x)
-                for x in unenvelope_or_raise_error(resp)
+                for x in cast(list[dict[str, Any]], unenvelope_or_raise_error(resp))
             ]
         raise HTTPException(status_code=resp.status_code, detail=resp.content)

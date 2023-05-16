@@ -1,4 +1,6 @@
 """Defines the different exceptions that may arise in the projects subpackage"""
+from typing import Any
+
 import redis.exceptions
 from models_library.projects import ProjectID
 from models_library.users import UserID
@@ -9,6 +11,10 @@ class ProjectsException(Exception):
 
     def __init__(self, msg=None):
         super().__init__(msg or "Unexpected error occured in projects submodule")
+
+    def detailed_message(self):
+        # Override in subclass
+        return f"{type(self)}: {self}"
 
 
 class ProjectInvalidRightsError(ProjectsException):
@@ -33,9 +39,17 @@ class ProjectOwnerNotFoundError(ProjectsException):
 class ProjectNotFoundError(ProjectsException):
     """Project was not found in DB"""
 
-    def __init__(self, project_uuid):
-        super().__init__(f"Project with uuid {project_uuid} not found")
+    def __init__(self, project_uuid, *, search_context: Any | None = None):
+        super().__init__(f"Project with uuid {project_uuid} not found.")
         self.project_uuid = project_uuid
+        self.search_context_msg = f"{search_context}"
+
+    def detailed_message(self):
+        msg = f"Project with uuid {self.project_uuid}"
+        if self.search_context_msg:
+            msg += f" and {self.search_context_msg}"
+        msg += " was not found"
+        return msg
 
 
 class ProjectDeleteError(ProjectsException):
@@ -70,5 +84,13 @@ class ProjectStartsTooManyDynamicNodes(ProjectsException):
 class ProjectTooManyProjectOpened(ProjectsException):
     def __init__(self, max_num_projects: int):
         super().__init__(
-            f"You cannot open more than {max_num_projects} stud{'y' if max_num_projects == 1 else 'ies'} at once. Please, close another study and retry."
+            f"You cannot open more than {max_num_projects} stud{'y' if max_num_projects == 1 else 'ies'} at once. Please close another study and retry."
         )
+
+
+class PermalinkNotAllowedError(ProjectsException):
+    ...
+
+
+class PermalinkFactoryError(ProjectsException):
+    ...

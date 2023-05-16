@@ -191,14 +191,14 @@ async def async_command(command: str, timeout: Optional[float] = None) -> Comman
             command=f"{command}",
             elapsed=time.time() - start,
         )
-    else:
-        # no exceptions
-        return CommandResult(
-            success=proc.returncode == os.EX_OK,
-            message=stdout.decode(),
-            command=f"{command}",
-            elapsed=time.time() - start,
-        )
+
+    # no exceptions
+    return CommandResult(
+        success=proc.returncode == os.EX_OK,
+        message=stdout.decode(),
+        command=f"{command}",
+        elapsed=time.time() - start,
+    )
 
 
 def assemble_container_names(validated_compose_content: str) -> list[str]:

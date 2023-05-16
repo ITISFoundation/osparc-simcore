@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-ARG PYTHON_VERSION="3.9.12"
+ARG PYTHON_VERSION="3.10.10"
 FROM python:${PYTHON_VERSION}-slim-buster as base
 #
 #  USAGE:
@@ -19,6 +19,7 @@ RUN  --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=loc
   apt-get install -y --no-install-recommends\
   curl \
   gosu \
+  libcap2-bin \
   ca-certificates \
   # required by python-magic
   libmagic1 \
@@ -88,7 +89,7 @@ RUN python -m venv "${VIRTUAL_ENV}" \
 
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
   pip --no-cache-dir install --upgrade  \
-  pip~=22.0  \
+  pip~=23.1  \
   wheel \
   setuptools
 

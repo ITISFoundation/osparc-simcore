@@ -113,6 +113,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     }
   },
 
+  statics: {
+    AUTO_SAVE_INTERVAL: 3000,
+    READ_ONLY_TEXT: qx.locale.Manager.tr("You do not have writing permissions.<br>Your changes will not be saved.")
+  },
+
   members: {
     __study: null,
     __settingStudy: null,
@@ -176,7 +181,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
           study.initStudy();
 
-          if (osparc.utils.Utils.isProduct("s4llite")) {
+          if (osparc.product.Utils.isProduct("s4llite")) {
             this.__startIdlingTracker();
           }
 
@@ -184,7 +189,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           // If it is larger than PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES, dynamics won't start -> Flash Message
           osparc.store.StaticInfo.getInstance().getMaxNumberDyNodes()
             .then(maxNumber => {
-              console.log(maxNumber);
               if (maxNumber) {
                 const nodes = study.getWorkbench().getNodes();
                 const nDynamics = Object.values(nodes).filter(node => node.isDynamic()).length;
@@ -202,8 +206,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               if (osparc.data.model.Study.canIWrite(study.getAccessRights())) {
                 this.__startAutoSaveTimer();
               } else {
-                const msg = this.tr("You do not have writing permissions.<br>Changes will not be saved");
-                osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO");
+                const msg = this.self().READ_ONLY_TEXT;
+                osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING");
               }
             });
 
@@ -550,8 +554,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __startAutoSaveTimer: function() {
       // Save every 3 seconds
-      const interval = 3000;
-      let timer = this.__autoSaveTimer = new qx.event.Timer(interval);
+      let timer = this.__autoSaveTimer = new qx.event.Timer(this.self().AUTO_SAVE_INTERVAL);
       timer.addListener("interval", () => {
         if (!osparc.wrapper.WebSocket.getInstance().isConnected()) {
           return;

@@ -2,12 +2,15 @@ import logging
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
-from pydantic import EmailStr, SecretStr, validator
+from models_library.emails import LowerCaseEmailStr
+from pydantic import SecretStr, validator
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from servicelib.request_keys import RQT_USERID_KEY
 
-from ..products import Product, get_current_product
-from ..security_api import check_password, encrypt_password
+from .._meta import API_VTAG
+from ..products.plugin import Product, get_current_product
+from ..security.api import check_password, encrypt_password
 from ..utils import HOUR
 from ..utils_rate_limiting import global_rate_limit_route
 from ._confirmation import is_confirmation_allowed, make_confirmation_link
@@ -21,7 +24,7 @@ from ._constants import (
     MSG_WRONG_PASSWORD,
 )
 from ._models import InputSchema, create_password_match_validator
-from .decorators import RQT_USERID_KEY, login_required
+from .decorators import login_required
 from .settings import LoginOptions, get_plugin_options
 from .storage import AsyncpgStorage, get_plugin_storage
 from .utils import (
@@ -31,7 +34,7 @@ from .utils import (
     flash_response,
     validate_user_status,
 )
-from .utils_email import get_template_path, render_and_send_mail
+from .utils_email import get_template_path, send_email_from_template
 
 log = logging.getLogger(__name__)
 
@@ -44,7 +47,7 @@ class ResetPasswordBody(InputSchema):
 
 
 @global_rate_limit_route(number_of_requests=10, interval_seconds=HOUR)
-@routes.post("/v0/auth/reset-password", name="auth_reset_password")
+@routes.post(f"/{API_VTAG}/auth/reset-password", name="auth_reset_password")
 async def submit_request_to_reset_password(request: web.Request):
     """
         1. confirm user exists
@@ -85,7 +88,7 @@ async def submit_request_to_reset_password(request: web.Request):
 
     except web.HTTPError as err:
         try:
-            await render_and_send_mail(
+            await send_email_from_template(
                 request,
                 from_=product.support_email,
                 to=request_body.email,
@@ -105,7 +108,7 @@ async def submit_request_to_reset_password(request: web.Request):
         link = make_confirmation_link(request, confirmation)
         try:
             # primary reset email with a URL and the normal instructions.
-            await render_and_send_mail(
+            await send_email_from_template(
                 request,
                 from_=product.support_email,
                 to=request_body.email,
@@ -127,10 +130,10 @@ async def submit_request_to_reset_password(request: web.Request):
 
 
 class ChangeEmailBody(InputSchema):
-    email: EmailStr
+    email: LowerCaseEmailStr
 
 
-@routes.post("/v0/auth/change-email", name="auth_change_email")
+@routes.post(f"/{API_VTAG}/auth/change-email", name="auth_change_email")
 @login_required
 async def submit_request_to_change_email(request: web.Request):
     db: AsyncpgStorage = get_plugin_storage(request.app)
@@ -159,7 +162,7 @@ async def submit_request_to_change_email(request: web.Request):
     )
     link = make_confirmation_link(request, confirmation)
     try:
-        await render_and_send_mail(
+        await send_email_from_template(
             request,
             from_=product.support_email,
             to=request_body.email,
@@ -188,7 +191,7 @@ class ChangePasswordBody(InputSchema):
     )
 
 
-@routes.post("/v0/auth/change-password", name="auth_change_password")
+@routes.post(f"/{API_VTAG}/auth/change-password", name="auth_change_password")
 @login_required
 async def change_password(request: web.Request):
 

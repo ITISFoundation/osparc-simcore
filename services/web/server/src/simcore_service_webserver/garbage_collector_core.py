@@ -5,23 +5,23 @@
 import asyncio
 import logging
 from itertools import chain
-from typing import Any, Optional
+from typing import Any
 
 import asyncpg.exceptions
 from aiohttp import web
+from models_library.projects import ProjectID
 from redis.asyncio import Redis
+from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+from servicelib.logging_utils import log_context, log_decorator
 from servicelib.utils import logged_gather
 from simcore_postgres_database.errors import DatabaseError
 from simcore_postgres_database.models.users import UserRole
 
-from . import director_v2_api, users_exceptions
 from .director.director_exceptions import DirectorException, ServiceNotFoundError
+from .director_v2 import api
+from .director_v2.exceptions import ServiceWaitingForManualIntervention
 from .garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
-from .garbage_collector_utils import (
-    get_new_project_owner_gid,
-    log_context,
-    replace_current_owner,
-)
+from .garbage_collector_utils import get_new_project_owner_gid, replace_current_owner
 from .projects.projects_api import (
     get_project_for_user,
     get_workbench_node_ids_from_project_uuid,
@@ -30,16 +30,21 @@ from .projects.projects_api import (
     submit_delete_project_task,
 )
 from .projects.projects_db import ProjectDBAPI
-from .projects.projects_exceptions import ProjectDeleteError, ProjectNotFoundError
+from .projects.projects_exceptions import (
+    ProjectDeleteError,
+    ProjectLockError,
+    ProjectNotFoundError,
+)
 from .redis import get_redis_lock_manager_client
 from .resource_manager.registry import RedisResourceRegistry, get_registry
-from .users_api import (
-    delete_user,
+from .users import exceptions
+from .users.api import (
+    delete_user_without_projects,
     get_guest_user_ids_and_names,
     get_user,
     get_user_role,
 )
-from .users_exceptions import UserNotFoundError
+from .users.exceptions import UserNotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -67,17 +72,21 @@ async def collect_garbage(app: web.Application):
     """
     registry: RedisResourceRegistry = get_registry(app)
 
-    with log_context(logger.info, "Step 1: Removes disconnected user resources"):
+    with log_context(
+        logger, logging.INFO, "Step 1: Removes disconnected user resources"
+    ):
         # Triggers signal to close possible pending opened projects
         # Removes disconnected GUEST users after they finished their sessions
         await remove_disconnected_user_resources(registry, app)
 
-    with log_context(logger.info, "Step 2: Removes users manually marked for removal"):
+    with log_context(
+        logger, logging.INFO, "Step 2: Removes users manually marked for removal"
+    ):
         # if a user was manually marked as GUEST it needs to be
         # removed together with all the associated projects
         await remove_users_manually_marked_as_guests(registry, app)
 
-    with log_context(logger.info, "Step 3: Removes orphaned services"):
+    with log_context(logger, logging.INFO, "Step 3: Removes orphaned services"):
         # For various reasons, some services remain pending after
         # the projects are closed or the user was disconencted.
         # This will close and remove all these services from
@@ -122,7 +131,6 @@ async def remove_disconnected_user_resources(
 
     # clean up all resources of expired keys
     for dead_key in dead_keys:
-
         # Skip locked keys for the moment
         user_id = int(dead_key["user_id"])
         if await lock_manager.lock(
@@ -172,7 +180,6 @@ async def remove_disconnected_user_resources(
             )
 
             if not is_resource_still_in_use:
-
                 # adds the remaining resource entries for (2)
                 keys_to_update.extend(other_keys_with_this_resource)
 
@@ -192,13 +199,14 @@ async def remove_disconnected_user_resources(
                             user_id=int(dead_key["user_id"]),
                             project_uuid=resource_value,
                             app=app,
+                            simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                             user_name={
                                 "first_name": "garbage",
                                 "last_name": "collector",
                             },
                         )
 
-                    except ProjectNotFoundError as err:
+                    except (ProjectNotFoundError, ProjectLockError) as err:
                         logger.warning(
                             (
                                 "Could not remove project interactive services user_id=%s "
@@ -294,11 +302,16 @@ async def remove_users_manually_marked_as_guests(
         )
 
 
-async def _remove_single_orphaned_service(
+@log_decorator(logger, log_traceback=True)
+async def _remove_single_service_if_orphan(
     app: web.Application,
     interactive_service: dict[str, Any],
     currently_opened_projects_node_ids: dict[str, str],
 ) -> None:
+    """
+    Removes the service if it is an orphan. Otherwise the service is left running.
+    """
+
     service_host = interactive_service["service_host"]
     # if not present in DB or not part of currently opened projects, can be removed
     service_uuid = interactive_service["service_uuid"]
@@ -311,8 +324,11 @@ async def _remove_single_orphaned_service(
             f"{service_host=}",
         )
         try:
-            await director_v2_api.stop_dynamic_service(
-                app, service_uuid, save_state=False
+            await api.stop_dynamic_service(
+                app,
+                service_uuid,
+                simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                save_state=False,
             )
         except (ServiceNotFoundError, DirectorException) as err:
             logger.warning("Error while stopping service: %s", err)
@@ -352,13 +368,13 @@ async def _remove_single_orphaned_service(
 
             user_id = int(interactive_service.get("user_id", -1))
 
-            user_role: Optional[UserRole] = None
+            user_role: UserRole | None = None
             try:
                 user_role = await get_user_role(app, user_id)
             except (UserNotFoundError, ValueError):
                 user_role = None
 
-            project_uuid = currently_opened_projects_node_ids[service_uuid]
+            project_uuid = interactive_service["project_id"]
 
             save_state = await ProjectDBAPI.get_from_app_context(app).has_permission(
                 user_id, project_uuid, "write"
@@ -367,7 +383,15 @@ async def _remove_single_orphaned_service(
                 save_state = False
             # -------------------------------------------
 
-            await director_v2_api.stop_dynamic_service(app, service_uuid, save_state)
+            try:
+                await api.stop_dynamic_service(
+                    app,
+                    service_uuid,
+                    UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                    save_state,
+                )
+            except ServiceWaitingForManualIntervention:
+                pass
 
         except (ServiceNotFoundError, DirectorException) as err:
             logger.warning("Error while stopping service: %s", err)
@@ -395,13 +419,16 @@ async def remove_orphaned_services(
             continue
 
         project_uuid = resources["project_id"]
-        node_ids = await get_workbench_node_ids_from_project_uuid(app, project_uuid)
-        currently_opened_projects_node_ids[node_ids] = project_uuid
+        node_ids: set[str] = await get_workbench_node_ids_from_project_uuid(
+            app, project_uuid
+        )
+        for node_id in node_ids:
+            currently_opened_projects_node_ids[node_id] = project_uuid
 
     running_interactive_services: list[dict[str, Any]] = []
     try:
-        running_interactive_services = await director_v2_api.list_dynamic_services(app)
-    except director_v2_api.DirectorServiceError:
+        running_interactive_services = await api.list_dynamic_services(app)
+    except api.DirectorServiceError:
         logger.debug("Could not fetch running_interactive_services")
 
     logger.info(
@@ -418,7 +445,7 @@ async def remove_orphaned_services(
     # a big study with logs of heavy projects, this will
     # ensure it gets done in parallel
     tasks = [
-        _remove_single_orphaned_service(
+        _remove_single_service_if_orphan(
             app, interactive_service, currently_opened_projects_node_ids
         )
         for interactive_service in running_interactive_services
@@ -444,7 +471,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
     # recover user's primary_gid
     try:
         project_owner: dict = await get_user(app=app, user_id=user_id)
-    except users_exceptions.UserNotFoundError:
+    except exceptions.UserNotFoundError:
         logger.warning(
             "Could not recover user data for user '%s', stopping removal of projects!",
             f"{user_id=}",
@@ -501,7 +528,12 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
                     f"{project_uuid=}",
                     f"{user_id=}",
                 )
-                task = await submit_delete_project_task(app, project_uuid, user_id)
+                task = await submit_delete_project_task(
+                    app,
+                    ProjectID(project_uuid),
+                    user_id,
+                    UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                )
                 assert task  # nosec
                 delete_tasks.append(task)
 
@@ -512,7 +544,6 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
                 )
 
         else:
-
             # Try to change the project owner and remove access rights from the current owner
             logger.debug(
                 "Transferring ownership of project %s from user %s to %s.",
@@ -556,7 +587,7 @@ async def remove_guest_user_with_all_its_resources(
             "Deleting user %s because it is a GUEST",
             f"{user_id=}",
         )
-        await delete_user(app, user_id)
+        await delete_user_without_projects(app, user_id)
 
     except (
         DatabaseError,
@@ -566,7 +597,7 @@ async def remove_guest_user_with_all_its_resources(
         ProjectDeleteError,
     ) as error:
         logger.warning(
-            "Failed to delete user %s and its resources: %s",
+            "Failed to delete guest user %s and its resources: %s",
             f"{user_id=}",
             f"{error}",
         )

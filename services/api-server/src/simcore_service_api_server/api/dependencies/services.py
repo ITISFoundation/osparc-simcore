@@ -1,14 +1,14 @@
 """ Dependences with any other services (except webserver)
 
 """
-from typing import Callable, Type
+from typing import Callable
 
 from fastapi import HTTPException, Request, status
 
 from ...utils.client_base import BaseServiceClientApi
 
 
-def get_api_client(client_type: Type[BaseServiceClientApi]) -> Callable:
+def get_api_client(client_type: type[BaseServiceClientApi]) -> Callable:
     """
     Retrieves API client from backend services EXCEPT web-server (see dependencies/webserver)
 
@@ -20,7 +20,7 @@ def get_api_client(client_type: Type[BaseServiceClientApi]) -> Callable:
     """
     assert issubclass(client_type, BaseServiceClientApi)  # nosec
 
-    def _get_client_from_app(request: Request) -> client_type:
+    def _get_client_from_app(request: Request) -> BaseServiceClientApi:
         client_obj = client_type.get_instance(request.app)
         if client_obj is None:
             raise HTTPException(

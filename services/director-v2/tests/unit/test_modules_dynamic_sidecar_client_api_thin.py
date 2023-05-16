@@ -27,7 +27,7 @@ MockRequestType = Callable[
 # UTILS
 
 
-def assert_responses(mocked: Response, result: Optional[Response]) -> None:
+def assert_responses(mocked: Response, result: Response | None) -> None:
     assert result is not None
     assert mocked.status_code == result.status_code
     assert mocked.headers == result.headers
@@ -63,19 +63,17 @@ def dynamic_sidecar_endpoint() -> AnyHttpUrl:
 
 
 @pytest.fixture
-def mock_request(
-    dynamic_sidecar_endpoint: AnyHttpUrl, respx_mock: MockRouter
-) -> MockRequestType:
+def mock_request(respx_mock: MockRouter) -> MockRequestType:
     def request_mock(
         method: str,
         path: str,
-        return_value: Optional[Response] = None,
-        side_effect: Optional[SideEffectTypes] = None,
+        return_value: Response | None = None,
+        side_effect: SideEffectTypes | None = None,
     ) -> Route:
         print(f"Mocking {path=}")
-        return respx_mock.request(
-            method=method, url=f"{dynamic_sidecar_endpoint}{path}"
-        ).mock(return_value=return_value, side_effect=side_effect)
+        return respx_mock.request(method=method, url=f"{path}").mock(
+            return_value=return_value, side_effect=side_effect
+        )
 
     return request_mock
 

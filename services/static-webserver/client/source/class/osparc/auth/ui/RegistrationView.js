@@ -52,27 +52,33 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
         email.activate();
       });
 
-      const pass1 = new qx.ui.form.PasswordField().set({
+      const pass1 = new osparc.ui.form.PasswordField().set({
         required: true,
         placeholder: this.tr("Type a password")
       });
-      osparc.utils.Utils.setIdToWidget(pass1, "registrationPass1Fld");
+      osparc.utils.Utils.setIdToWidget(pass1.getChildControl("passwordField"), "registrationPass1Fld");
       this.add(pass1);
 
-      const pass2 = new qx.ui.form.PasswordField().set({
+      const pass2 = new osparc.ui.form.PasswordField().set({
         required: true,
         placeholder: this.tr("Retype the password")
       });
-      osparc.utils.Utils.setIdToWidget(pass2, "registrationPass2Fld");
+      osparc.utils.Utils.setIdToWidget(pass2.getChildControl("passwordField"), "registrationPass2Fld");
       this.add(pass2);
 
       const urlFragment = osparc.utils.Utils.parseURLFragment();
-      const token = urlFragment.params ? urlFragment.params.invitation || null : null;
-      const invitation = new qx.ui.form.TextField().set({
-        visibility: "excluded",
-        value: token
-      });
-      this.add(invitation);
+      const invitationToken = urlFragment.params ? urlFragment.params.invitation || null : null;
+      if (invitationToken) {
+        osparc.auth.Manager.getInstance().checkInvitation(invitationToken)
+          .then(data => {
+            if (data && data.email) {
+              email.set({
+                value: data.email,
+                enabled: false
+              });
+            }
+          });
+      }
 
       // validation
       validator.add(email, qx.util.Validate.email());
@@ -105,7 +111,7 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
             email: email.getValue(),
             password: pass1.getValue(),
             confirm: pass2.getValue(),
-            invitation: invitation.getValue() ? invitation.getValue() : ""
+            invitation: invitationToken ? invitationToken : ""
           });
         }
       }, this);

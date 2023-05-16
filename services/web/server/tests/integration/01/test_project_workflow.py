@@ -13,7 +13,7 @@
 
 import asyncio
 from copy import deepcopy
-from typing import Awaitable, Callable, Optional, Union
+from typing import Awaitable, Callable
 from uuid import uuid4
 
 import pytest
@@ -21,6 +21,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from faker import Faker
 from models_library.projects_state import ProjectState
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.long_running_tasks.client import LRTask
@@ -28,20 +29,20 @@ from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.aiohttp.long_running_tasks.server import (
     setup as setup_long_running_tasks,
 )
+from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver import catalog
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.catalog import setup_catalog
 from simcore_service_webserver.db import setup_db
-from simcore_service_webserver.director_v2 import setup_director_v2
+from simcore_service_webserver.director_v2.plugin import setup_director_v2
 from simcore_service_webserver.garbage_collector import setup_garbage_collector
 from simcore_service_webserver.login.plugin import setup_login
-from simcore_service_webserver.products import setup_products
+from simcore_service_webserver.products.plugin import setup_products
 from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
-from simcore_service_webserver.security import setup_security
-from simcore_service_webserver.security_roles import UserRole
+from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session import setup_session
 
 API_VERSION = "v0"
@@ -103,7 +104,7 @@ def client(
 
 
 @pytest.fixture
-async def storage_subsystem_mock(mocker):
+async def storage_subsystem_mock(mocker: MockerFixture):
     """
     Patches client calls to storage service
 
@@ -128,24 +129,26 @@ async def storage_subsystem_mock(mocker):
         )
 
     mock = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers_crud.copy_data_folders_from_project",
+        "simcore_service_webserver.projects._create_utils.copy_data_folders_from_project",
         autospec=True,
         side_effect=_mock_copy_data_from_project,
     )
 
     # requests storage to delete data
     mock1 = mocker.patch(
-        "simcore_service_webserver.projects._delete.delete_data_folders_of_project",
+        "simcore_service_webserver.projects._delete_utils.delete_data_folders_of_project",
         return_value="",
     )
     return mock, mock1
 
 
 @pytest.fixture
-async def catalog_subsystem_mock(monkeypatch):
+async def catalog_subsystem_mock(
+    monkeypatch: pytest.MonkeyPatch,
+) -> Callable[[list[ProjectDict]], None]:
     services_in_project = []
 
-    def creator(projects: Optional[Union[list[dict], dict]] = None) -> None:
+    def _creator(projects: list[ProjectDict]) -> None:
         for proj in projects:
             services_in_project.extend(
                 [
@@ -161,7 +164,7 @@ async def catalog_subsystem_mock(monkeypatch):
         catalog, "get_services_for_user_in_product", mocked_get_services_for_user
     )
 
-    return creator
+    return _creator
 
 
 # Tests CRUD operations --------------------------------------------
@@ -187,7 +190,7 @@ async def _request_get(client, pid) -> dict:
     return project
 
 
-async def _request_update(client, project, pid):
+async def _request_replace(client, project, pid):
     # PUT /v0/projects/{project_id}
     url = client.app.router["replace_project"].url_for(project_id=pid)
     resp = await client.put(url, json=project)
@@ -210,7 +213,7 @@ async def test_workflow(
     docker_registry: str,
     simcore_services_ready,
     fake_project: ProjectDict,
-    catalog_subsystem_mock,
+    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     client,
     logged_user,
     primary_group: dict[str, str],
@@ -269,7 +272,7 @@ async def test_workflow(
     )
     # modify
     pid = modified_project["uuid"]
-    await _request_update(client, modified_project, pid)
+    await _request_replace(client, modified_project, pid)
 
     # list not empty
     projects = await _request_list(client)

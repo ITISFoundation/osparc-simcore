@@ -42,6 +42,7 @@ def client(
     aiohttp_client,
     web_server: TestServer,
     mock_orphaned_services,
+    mocked_email_core_remove_comments: None,
 ) -> TestClient:
     cli = event_loop.run_until_complete(aiohttp_client(web_server))
     return cli

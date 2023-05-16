@@ -1,6 +1,6 @@
 import logging
 from asyncio.log import logger
-from typing import Final, List
+from typing import Final
 
 from aiocache import cached
 from fastapi import APIRouter, Depends, HTTPException
@@ -12,7 +12,11 @@ from simcore_service_director_v2.api.dependencies.scheduler import (
 from simcore_service_director_v2.utils.dask_client_utils import test_scheduler_endpoint
 from starlette import status
 
-from ...core.errors import ClusterInvalidOperationError, ConfigurationError
+from ...core.errors import (
+    ClusterInvalidOperationError,
+    ConfigurationError,
+    DaskClientAcquisisitonError,
+)
 from ...core.settings import ComputationalBackendSettings
 from ...models.schemas.clusters import (
     ClusterCreate,
@@ -70,7 +74,7 @@ async def create_cluster(
     return await clusters_repo.create_cluster(user_id, new_cluster)
 
 
-@router.get("", summary="Lists clusters for user", response_model=List[ClusterGet])
+@router.get("", summary="Lists clusters for user", response_model=list[ClusterGet])
 async def list_clusters(
     user_id: UserID,
     clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
@@ -175,15 +179,20 @@ async def get_cluster_details(
     clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
     dask_clients_pool: DaskClientsPool = Depends(get_dask_clients_pool),
 ):
-    cluster_details = await _get_cluster_details_with_id(
-        settings=settings,
-        user_id=user_id,
-        cluster_id=cluster_id,
-        clusters_repo=clusters_repo,
-        dask_clients_pool=dask_clients_pool,
-    )
-    logger.debug("found followind %s", f"{cluster_details=!r}")
-    return cluster_details
+    try:
+        cluster_details = await _get_cluster_details_with_id(
+            settings=settings,
+            user_id=user_id,
+            cluster_id=cluster_id,
+            clusters_repo=clusters_repo,
+            dask_clients_pool=dask_clients_pool,
+        )
+        logger.debug("found following %s", f"{cluster_details=!r}")
+        return cluster_details
+    except DaskClientAcquisisitonError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"{exc}"
+        ) from exc
 
 
 @router.post(

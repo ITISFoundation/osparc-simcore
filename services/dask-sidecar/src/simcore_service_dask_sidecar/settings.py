@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, cast
 
 from models_library.basic_types import LogLevel
 from pydantic import Field, validator
@@ -8,8 +8,8 @@ from settings_library.utils_logging import MixinLoggingSettings
 
 
 class Settings(BaseCustomSettings, MixinLoggingSettings):
-    SC_BUILD_TARGET: Optional[str] = None
-    SC_BOOT_MODE: Optional[str] = None
+    SC_BUILD_TARGET: str | None = None
+    SC_BOOT_MODE: str | None = None
     LOG_LEVEL: LogLevel = Field(
         LogLevel.INFO.value,
         env=["DASK_SIDECAR_LOGLEVEL", "SIDECAR_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
@@ -20,22 +20,23 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
     SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME: str
     SIDECAR_COMP_SERVICES_SHARED_FOLDER: Path
 
-    SIDECAR_INTERVAL_TO_CHECK_TASK_ABORTED_S: Optional[int] = 5
-
-    TARGET_MPI_NODE_CPU_COUNT: Optional[int] = Field(
-        None,
-        description="If a node has this amount of CPUs it will be a candidate an MPI candidate",
-    )
+    SIDECAR_INTERVAL_TO_CHECK_TASK_ABORTED_S: int | None = 5
 
     # dask config ----
 
-    DASK_START_AS_SCHEDULER: Optional[bool] = Field(
+    DASK_START_AS_SCHEDULER: bool | None = Field(
         False, description="If this env is set, then the app boots as scheduler"
     )
 
-    DASK_SCHEDULER_HOST: Optional[str] = Field(
+    DASK_SCHEDULER_HOST: str | None = Field(
         None,
         description="Address of the scheduler to register (only if started as worker )",
+    )
+
+    DASK_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
+        False,
+        env=["DASK_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"],
+        description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
 
     def as_scheduler(self) -> bool:
@@ -50,4 +51,4 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
     @validator("LOG_LEVEL", pre=True)
     @classmethod
     def _validate_loglevel(cls, value: Any) -> str:
-        return cls.validate_log_level(value)
+        return cast(str, cls.validate_log_level(f"{value}"))

@@ -117,6 +117,8 @@ async function runTutorial() {
     await tutorial.waitFor(5000, "Export Report");
     await tutorial.takeScreenshot("postpro_export_report");
 
+    await tutorial.waitFor(15000, "Export Report: waiting even longer");
+
     const outFiles = [
       "output_1.zip",
       "TIP_report.pdf",

@@ -44,8 +44,7 @@ async def is_catalog_service_responsive(app: web.Application):
     except (ClientConnectionError, ClientResponseError, InvalidURL, ValueError) as err:
         logger.warning("Catalog service unresponsive: %s", err)
         return False
-    else:
-        return True
+    return True
 
 
 def to_backend_service(rel_url: URL, origin: URL, version_prefix: str) -> URL:

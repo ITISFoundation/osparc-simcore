@@ -2,7 +2,7 @@ import asyncio
 import sys
 from contextlib import asynccontextmanager
 from enum import Enum
-from typing import AsyncIterator, Optional
+from typing import AsyncIterator
 
 import typer
 from fastapi import FastAPI, status
@@ -60,7 +60,8 @@ def _get_dynamic_sidecar_endpoint(
     dynamic_sidecar_names = DynamicSidecarNamesHelper.make(NodeID(node_id))
     hostname = dynamic_sidecar_names.service_name_dynamic_sidecar
     port = settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_PORT
-    return parse_obj_as(AnyHttpUrl, f"http://{hostname}:{port}")  # NOSONAR
+    url: AnyHttpUrl = parse_obj_as(AnyHttpUrl, f"http://{hostname}:{port}")  # NOSONAR
+    return url
 
 
 async def _save_node_state(
@@ -91,8 +92,6 @@ async def async_project_save_state(project_id: ProjectID, save_attempts: int) ->
         project_at_db = await projects_repository.get_project(project_id)
 
         typer.echo(f"Saving project '{project_at_db.uuid}' - '{project_at_db.name}'")
-
-        dynamic_sidecar_client = api_client.get_dynamic_sidecar_client(app)
         nodes_failed_to_save: list[NodeIDStr] = []
         for node_uuid, node_content in project_at_db.workbench.items():
             # onl dynamic-sidecars are used
@@ -106,7 +105,7 @@ async def async_project_save_state(project_id: ProjectID, save_attempts: int) ->
             try:
                 await _save_node_state(
                     app,
-                    dynamic_sidecar_client,
+                    api_client.get_dynamic_sidecar_client(app, node_uuid),
                     save_attempts,
                     node_uuid,
                     node_content.label,
@@ -146,7 +145,7 @@ class RenderData(BaseModel):
 
 async def _get_dy_service_state(
     client: AsyncClient, node_uuid: NodeIDStr
-) -> Optional[DynamicServiceGet]:
+) -> DynamicServiceGet | None:
     try:
         result = await client.get(
             f"http://localhost:8000/v2/dynamic_services/{node_uuid}",  # NOSONAR
@@ -216,14 +215,19 @@ async def _to_render_data(
     )
 
 
+def _get_node_id(x: RenderData) -> NodeIDStr:
+    return x.node_uuid
+
+
 async def _get_nodes_render_data(
     app: FastAPI,
     project_id: ProjectID,
 ) -> list[RenderData]:
     projects_repository: ProjectsRepository = get_repository(app, ProjectsRepository)
+
     project_at_db = await projects_repository.get_project(project_id)
 
-    render_data = []
+    render_data: list[RenderData] = []
     async with AsyncClient() as client:
         for node_uuid, node_content in project_at_db.workbench.items():
             service_type = get_service_from_key(service_key=node_content.key)
@@ -232,7 +236,8 @@ async def _get_nodes_render_data(
                     client, node_uuid, node_content.label, service_type
                 )
             )
-    return sorted(render_data, key=lambda x: x.node_uuid)
+    sorted_render_data: list[RenderData] = sorted(render_data, key=_get_node_id)
+    return sorted_render_data
 
 
 async def _display(

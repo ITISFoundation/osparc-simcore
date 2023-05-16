@@ -47,6 +47,9 @@ VENV_DIR      := $(abspath $(REPO_BASE_DIR)/.venv)
 # environment variables files
 DOT_ENV_FILE = $(abspath $(REPO_BASE_DIR)/.env)
 
+# utils
+get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
+
 #
 # SHORTCUTS
 #

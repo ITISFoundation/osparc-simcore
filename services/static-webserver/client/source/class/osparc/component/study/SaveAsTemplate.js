@@ -47,7 +47,7 @@ qx.Class.define("osparc.component.study.SaveAsTemplate", {
     __copyWData: null,
 
     __buildLayout: function() {
-      const shareWith = this.__shareWith = new osparc.component.permissions.PublishTemplateWith();
+      const shareWith = this.__shareWith = new osparc.component.share.PublishTemplate();
       this._add(shareWith, {
         flex: 1
       });

@@ -25,9 +25,3 @@ class Ec2TooManyInstancesError(AutoscalingRuntimeError):
 
 class Ec2InvalidDnsNameError(AutoscalingRuntimeError):
     msg_template: str = "Invalid EC2 private DNS name {aws_private_dns_name}"
-
-
-class RedisNotConnectedError(AutoscalingRuntimeError):
-    msg_template: str = (
-        "Cannot connect with redis server on {dsn}, please check configuration"
-    )

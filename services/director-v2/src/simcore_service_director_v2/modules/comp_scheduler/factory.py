@@ -1,5 +1,4 @@
 import logging
-from typing import cast
 
 from fastapi import FastAPI
 from models_library.clusters import DEFAULT_CLUSTER_ID
@@ -22,9 +21,7 @@ async def create_from_db(app: FastAPI) -> BaseCompScheduler:
             "Database connection is missing. Please check application configuration."
         )
     db_engine = app.state.engine
-    runs_repository: CompRunsRepository = cast(
-        CompRunsRepository, get_repository(db_engine, CompRunsRepository)
-    )
+    runs_repository: CompRunsRepository = get_repository(db_engine, CompRunsRepository)
 
     # get currently scheduled runs
     runs: list[CompRunsAtDB] = await runs_repository.list(

@@ -1,26 +1,28 @@
 """ Common utils for OAS script generators
 """
 
+import inspect
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Callable, NamedTuple
 
 import yaml
 from fastapi import FastAPI
 from models_library.basic_types import LogLevel
 from pydantic import BaseModel, Field
+from pydantic.fields import FieldInfo
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
 class Log(BaseModel):
-    level: Optional[LogLevel] = Field("INFO", description="log level")
+    level: LogLevel | None = Field("INFO", description="log level")
     message: str = Field(
         ...,
         description="log message. If logger is USER, then it MUST be human readable",
     )
-    logger: Optional[str] = Field(
+    logger: str | None = Field(
         None, description="name of the logger receiving this message"
     )
 
@@ -40,16 +42,16 @@ class ErrorItem(BaseModel):
         description="Typically the name of the exception that produced it otherwise some known error code",
     )
     message: str = Field(..., description="Error message specific to this item")
-    resource: Optional[str] = Field(
+    resource: str | None = Field(
         None, description="API resource affected by this error"
     )
-    field: Optional[str] = Field(None, description="Specific field within the resource")
+    field: str | None = Field(None, description="Specific field within the resource")
 
 
 class Error(BaseModel):
-    logs: Optional[list[Log]] = Field(None, description="log messages")
-    errors: Optional[list[ErrorItem]] = Field(None, description="errors metadata")
-    status: Optional[int] = Field(None, description="HTTP error code")
+    logs: list[Log] | None = Field(None, description="log messages")
+    errors: list[ErrorItem] | None = Field(None, description="errors metadata")
+    status: int | None = Field(None, description="HTTP error code")
 
 
 def create_openapi_specs(
@@ -61,6 +63,10 @@ def create_openapi_specs(
     # Remove these sections
     for section in ("info", "openapi"):
         openapi.pop(section)
+
+    schemas = openapi["components"]["schemas"]
+    for section in ("HTTPValidationError", "ValidationError"):
+        schemas.pop(section)
 
     # Removes default response 422
     if drop_fastapi_default_422:
@@ -77,3 +83,32 @@ def create_openapi_specs(
         yaml.safe_dump(openapi, fh, indent=1, sort_keys=False)
 
     print("Saved OAS to", file_path)
+
+
+class ParamSpec(NamedTuple):
+    name: str
+    annotated_type: type
+    field_info: FieldInfo
+
+
+def assert_handler_signature_against_model(
+    handler: Callable, model_cls: type[BaseModel]
+):
+
+    sig = inspect.signature(handler)
+
+    # query, path and body parameters
+    specs_params = [
+        ParamSpec(param.name, param.annotation, param.default)
+        for param in sig.parameters.values()
+    ]
+
+    # query and path parameters
+    implemented_params = [
+        ParamSpec(field.name, field.type_, field.field_info)
+        for field in model_cls.__fields__.values()
+    ]
+
+    assert {p.name for p in implemented_params}.issubset(  # nosec
+        {p.name for p in specs_params}
+    ), f"Entrypoint {handler} does not implement OAS"

@@ -3,7 +3,7 @@ import contextlib
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, AsyncIterator, Optional, cast
+from typing import AsyncIterator, Final
 
 import distributed
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
@@ -11,12 +11,11 @@ from dask_task_models_library.container_tasks.events import (
     BaseTaskEvent,
     TaskLogEvent,
     TaskProgressEvent,
-    TaskStateEvent,
 )
 from dask_task_models_library.container_tasks.io import TaskCancelEventName
-from distributed.worker import TaskState, get_worker
-
-from .boot_mode import BootMode
+from distributed.worker import get_worker
+from distributed.worker_state_machine import TaskState
+from servicelib.logging_utils import LogLevelInt, LogMessageStr
 
 
 def create_dask_worker_logger(name: str) -> logging.Logger:
@@ -26,16 +25,16 @@ def create_dask_worker_logger(name: str) -> logging.Logger:
 logger = create_dask_worker_logger(__name__)
 
 
-def _get_current_task_state() -> Optional[TaskState]:
+def _get_current_task_state() -> TaskState | None:
     worker = get_worker()
     logger.debug("current worker %s", f"{worker=}")
     current_task = worker.get_current_task()
     logger.debug("current task %s", f"{current_task=}")
-    return worker.tasks.get(current_task)
+    return worker.state.tasks.get(current_task)
 
 
 def is_current_task_aborted() -> bool:
-    task: Optional[TaskState] = _get_current_task_state()
+    task: TaskState | None = _get_current_task_state()
     logger.debug("found following TaskState: %s", task)
     if task is None:
         # the task was removed from the list of tasks this worker should work on, meaning it is aborted
@@ -51,31 +50,23 @@ def is_current_task_aborted() -> bool:
     return False
 
 
-def get_current_task_boot_mode() -> BootMode:
-    task: Optional[TaskState] = _get_current_task_state()
-    if task and task.resource_restrictions:
-        if task.resource_restrictions.get("MPI", 0) > 0:
-            return BootMode.MPI
-        if task.resource_restrictions.get("GPU", 0) > 0:
-            return BootMode.GPU
-    return BootMode.CPU
+_DEFAULT_MAX_RESOURCES: Final[dict[str, float]] = {"CPU": 1, "RAM": 1024**3}
 
 
-def get_current_task_resources() -> dict[str, Any]:
+def get_current_task_resources() -> dict[str, float]:
+    current_task_resources = _DEFAULT_MAX_RESOURCES
     if task := _get_current_task_state():
         if task_resources := task.resource_restrictions:
-            return cast(dict[str, Any], task_resources)
-    return {}
+            current_task_resources.update(task_resources)
+    return current_task_resources
 
 
 @dataclass()
 class TaskPublisher:
-    state: distributed.Pub = field(init=False)
     progress: distributed.Pub = field(init=False)
     logs: distributed.Pub = field(init=False)
 
     def __post_init__(self):
-        self.state = distributed.Pub(TaskStateEvent.topic_name())
         self.progress = distributed.Pub(TaskProgressEvent.topic_name())
         self.logs = distributed.Pub(TaskLogEvent.topic_name())
 
@@ -98,7 +89,9 @@ async def monitor_task_abortion(
         ):
             publish_event(
                 log_publisher,
-                TaskLogEvent.from_dask_worker(log="[sidecar] cancelling task..."),
+                TaskLogEvent.from_dask_worker(
+                    log="[sidecar] cancelling task...", log_level=logging.INFO
+                ),
             )
             logger.debug("cancelling %s....................", f"{task=}")
             task.cancel()
@@ -120,7 +113,9 @@ async def monitor_task_abortion(
     except asyncio.CancelledError as exc:
         publish_event(
             log_publisher,
-            TaskLogEvent.from_dask_worker(log="[sidecar] task run was aborted"),
+            TaskLogEvent.from_dask_worker(
+                log="[sidecar] task run was aborted", log_level=logging.INFO
+            ),
         )
         raise TaskCancelledError from exc
     finally:
@@ -149,7 +144,8 @@ def publish_task_logs(
     logs_pub: distributed.Pub,
     log_type: LogType,
     message_prefix: str,
-    message: str,
+    message: LogMessageStr,
+    log_level: LogLevelInt,
 ) -> None:
     logger.info("[%s - %s]: %s", message_prefix, log_type.name, message)
     if log_type == LogType.PROGRESS:
@@ -158,4 +154,6 @@ def publish_task_logs(
             TaskProgressEvent.from_dask_worker(progress=float(message)),
         )
     else:
-        publish_event(logs_pub, TaskLogEvent.from_dask_worker(log=message))
+        publish_event(
+            logs_pub, TaskLogEvent.from_dask_worker(log=message, log_level=log_level)
+        )

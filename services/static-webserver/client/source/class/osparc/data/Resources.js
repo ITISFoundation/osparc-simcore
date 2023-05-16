@@ -98,6 +98,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/projects/{studyId}:open"
           },
+          openDisableAutoStart: {
+            method: "POST",
+            url: statics.API + "/projects/{studyId}:open?disable_service_auto_start={disableServiceAutoStart}"
+          },
           close: {
             method: "POST",
             url: statics.API + "/projects/{studyId}:close"
@@ -442,6 +446,27 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
+       * NOTIFICATIONS
+       */
+      "notifications": {
+        useCache: false,
+        idField: "notification",
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/me/notifications"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/me/notifications"
+          },
+          patch: {
+            method: "PATCH",
+            url: statics.API + "/me/notifications/{notificationId}"
+          }
+        }
+      },
+      /*
        * ORGANIZATIONS
        */
       "organizations": {
@@ -582,6 +607,10 @@ qx.Class.define("osparc.data.Resources", {
           postRegister: {
             method: "POST",
             url: statics.API + "/auth/register"
+          },
+          checkInvitation: {
+            method: "POST",
+            url: statics.API + "/auth/register/invitations:check"
           },
           verifyPhoneNumber: {
             method: "POST",
@@ -793,6 +822,8 @@ qx.Class.define("osparc.data.Resources", {
           }
           if (endpoint.includes("delete")) {
             this.__removeCached(resource, deleteId);
+          } else if (useCache && endpointDef.method === "POST" && options.pollTask !== true) {
+            this.__addCached(resource, data);
           } else if (useCache && endpointDef.method === "GET") {
             if (endpoint.includes("getPage")) {
               this.__addCached(resource, data);
@@ -945,7 +976,7 @@ qx.Class.define("osparc.data.Resources", {
     },
 
     /**
-     * Stores the cached version of a resource, or a collection of them.
+     * Add the given data to the cached version of a resource, or a collection of them.
      * @param {String} resource Name of the resource as defined in the static property 'resources'.
      * @param {*} data Resource or collection of resources to be addded to the cache.
      */

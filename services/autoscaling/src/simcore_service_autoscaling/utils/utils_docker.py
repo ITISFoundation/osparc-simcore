@@ -7,9 +7,12 @@ import collections
 import datetime
 import logging
 import re
-from typing import Final, Optional, cast
+from contextlib import suppress
+from pathlib import Path
+from typing import Final, cast
 
-from models_library.docker import DockerLabelKey
+import yaml
+from models_library.docker import DockerGenericTag, DockerLabelKey
 from models_library.generated_models.docker_rest_api import (
     Node,
     NodeState,
@@ -21,6 +24,7 @@ from pydantic import ByteSize, parse_obj_as
 from servicelib.docker_utils import to_datetime
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
+from settings_library.docker_registry import RegistrySettings
 
 from ..core.settings import ApplicationSettings
 from ..models import Resources
@@ -132,6 +136,18 @@ async def _associated_service_has_no_node_placement_contraints(
     return True
 
 
+def _by_created_dt(task: Task) -> datetime.datetime:
+    # NOTE: SAFE implementation to extract task.CreatedAt as datetime for comparison
+    if task.CreatedAt:
+        with suppress(ValueError):
+            created_at = to_datetime(task.CreatedAt)
+            created_at_utc: datetime.datetime = created_at.replace(
+                tzinfo=datetime.timezone.utc
+            )
+            return created_at_utc
+    return datetime.datetime.now(datetime.timezone.utc)
+
+
 async def pending_service_tasks_with_insufficient_resources(
     docker_client: AutoscalingDocker,
     service_labels: list[DockerLabelKey],
@@ -154,17 +170,7 @@ async def pending_service_tasks_with_insufficient_resources(
         ),
     )
 
-    sorted_tasks = sorted(
-        tasks,
-        key=lambda task: cast(  # NOTE: some mypy fun here
-            datetime.datetime,
-            (
-                to_datetime(
-                    task.CreatedAt or f"{datetime.datetime.now(datetime.timezone.utc)}"
-                )
-            ),
-        ),
-    )
+    sorted_tasks = sorted(tasks, key=_by_created_dt)
 
     pending_tasks = [
         task
@@ -253,7 +259,7 @@ def compute_tasks_needed_resources(tasks: list[Task]) -> Resources:
 async def compute_node_used_resources(
     docker_client: AutoscalingDocker,
     node: Node,
-    service_labels: Optional[list[DockerLabelKey]] = None,
+    service_labels: list[DockerLabelKey] | None = None,
 ) -> Resources:
     cluster_resources_counter = collections.Counter({"ram": 0, "cpus": 0})
     task_filters = {"node": node.ID}
@@ -324,9 +330,87 @@ async def get_docker_swarm_join_bash_command() -> str:
     )
 
 
+def get_docker_login_on_start_bash_command(registry_settings: RegistrySettings) -> str:
+    return " ".join(
+        [
+            "echo",
+            f'"{registry_settings.REGISTRY_PW.get_secret_value()}"',
+            "|",
+            "docker",
+            "login",
+            "--username",
+            registry_settings.REGISTRY_USER,
+            "--password-stdin",
+            registry_settings.resolved_registry_url,
+        ]
+    )
+
+
+_DOCKER_COMPOSE_CMD: Final[str] = "docker compose"
+_PRE_PULL_COMPOSE_PATH: Final[Path] = Path("/docker-pull.compose.yml")
+_DOCKER_COMPOSE_PULL_SCRIPT_PATH: Final[Path] = Path("/docker-pull-script.sh")
+_CRONJOB_LOGS_PATH: Final[Path] = Path("/var/log/docker-pull-cronjob.log")
+
+
+def get_docker_pull_images_on_start_bash_command(
+    docker_tags: list[DockerGenericTag],
+) -> str:
+    if not docker_tags:
+        return ""
+
+    compose = {
+        "version": '"3.8"',
+        "services": {
+            f"pre-pull-image-{n}": {"image": image_tag}
+            for n, image_tag in enumerate(docker_tags)
+        },
+    }
+    compose_yaml = yaml.safe_dump(compose)
+    write_compose_file_cmd = " ".join(
+        ["echo", f'"{compose_yaml}"', ">", f"{_PRE_PULL_COMPOSE_PATH}"]
+    )
+    write_docker_compose_pull_script_cmd = " ".join(
+        [
+            "echo",
+            f'"#!/bin/sh\necho Pulling started at \\$(date)\n{_DOCKER_COMPOSE_CMD} --file={_PRE_PULL_COMPOSE_PATH} pull"',
+            ">",
+            f"{_DOCKER_COMPOSE_PULL_SCRIPT_PATH}",
+        ]
+    )
+    make_docker_compose_script_executable = " ".join(
+        ["chmod", "+x", f"{_DOCKER_COMPOSE_PULL_SCRIPT_PATH}"]
+    )
+    docker_compose_pull_cmd = " ".join([f".{_DOCKER_COMPOSE_PULL_SCRIPT_PATH}"])
+    return " && ".join(
+        [
+            write_compose_file_cmd,
+            write_docker_compose_pull_script_cmd,
+            make_docker_compose_script_executable,
+            docker_compose_pull_cmd,
+        ]
+    )
+
+
+def get_docker_pull_images_crontab(interval: datetime.timedelta) -> str:
+    # check the interval is within 1 < 60 minutes
+    checked_interval = round(interval.total_seconds() / 60)
+
+    crontab_entry = " ".join(
+        [
+            "echo",
+            f'"*/{checked_interval or 1} * * * * root',
+            f"{_DOCKER_COMPOSE_PULL_SCRIPT_PATH}",
+            f'>> {_CRONJOB_LOGS_PATH} 2>&1"',
+            ">>",
+            "/etc/crontab",
+        ]
+    )
+    return " && ".join([crontab_entry])
+
+
 async def find_node_with_name(
     docker_client: AutoscalingDocker, name: str
-) -> Optional[Node]:
+) -> Node | None:
     list_of_nodes = await docker_client.nodes.list(filters={"name": name})
     if not list_of_nodes:
         return None
@@ -344,17 +428,23 @@ async def tag_node(
         logger, logging.DEBUG, msg=f"tagging {node.ID=} with {tags=} and {available=}"
     ):
         assert node.ID  # nosec
-        assert node.Version  # nosec
-        assert node.Version.Index  # nosec
-        assert node.Spec  # nosec
-        assert node.Spec.Role  # nosec
+
+        latest_version_node = parse_obj_as(
+            Node, await docker_client.nodes.inspect(node_id=node.ID)
+        )
+        assert latest_version_node.Version  # nosec
+        assert latest_version_node.Version.Index  # nosec
+        assert latest_version_node.Spec  # nosec
+        assert latest_version_node.Spec.Role  # nosec
+
+        # updating now should work nicely
         await docker_client.nodes.update(
             node_id=node.ID,
-            version=node.Version.Index,
+            version=latest_version_node.Version.Index,
             spec={
                 "Availability": "active" if available else "drain",
                 "Labels": tags,
-                "Role": node.Spec.Role.value,
+                "Role": latest_version_node.Spec.Role.value,
             },
         )
         return parse_obj_as(Node, await docker_client.nodes.inspect(node_id=node.ID))

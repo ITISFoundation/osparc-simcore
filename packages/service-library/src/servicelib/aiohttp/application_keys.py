@@ -19,7 +19,6 @@ from typing import Final
 # web.Application keys, i.e. app[APP_*_KEY]
 #
 APP_CONFIG_KEY: Final[str] = f"{__name__ }.config"
-APP_JSONSCHEMA_SPECS_KEY: Final[str] = f"{__name__ }.jsonschema_specs"
 APP_OPENAPI_SPECS_KEY: Final[str] = f"{__name__ }.openapi_specs"
 APP_SETTINGS_KEY: Final[str] = f"{__name__ }.settings"
 
@@ -28,6 +27,8 @@ APP_DB_ENGINE_KEY: Final[str] = f"{__name__ }.db_engine"
 APP_CLIENT_SESSION_KEY: Final[str] = f"{__name__ }.session"
 
 APP_FIRE_AND_FORGET_TASKS_KEY: Final[str] = f"{__name__}.tasks"
+
+APP_RABBITMQ_CLIENT_KEY: Final[str] = f"{__name__}.rabbit_client"
 
 #
 # web.Response keys, i.e. app[RSP_*_KEY]

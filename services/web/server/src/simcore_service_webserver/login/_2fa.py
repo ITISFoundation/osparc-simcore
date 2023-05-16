@@ -9,19 +9,25 @@ Currently includes two parts:
 
 import asyncio
 import logging
-from typing import Optional
 
 from aiohttp import web
 from pydantic import BaseModel, Field
 from servicelib.logging_utils import log_decorator
 from servicelib.utils_secrets import generate_passcode
 from settings_library.twilio import TwilioSettings
+from simcore_postgres_database.models.users import FullNameTuple, UserNameConverter
 from twilio.rest import Client
 
 from ..redis import get_redis_validation_code_client
-from .utils_email import get_template_path, render_and_send_mail
+from .utils_email import get_template_path, send_email_from_template
 
 log = logging.getLogger(__name__)
+
+
+def _get_human_readable_first_name(user_name: str) -> str:
+    full_name: FullNameTuple = UserNameConverter.get_full_name(user_name)
+    first_name: str = full_name.first_name.strip()[:20]  # security strip
+    return first_name.capitalize()
 
 
 class ValidationCode(BaseModel):
@@ -42,7 +48,8 @@ async def _do_create_2fa_code(
     *,
     expiration_seconds: int,
 ) -> str:
-    hash_key, code = user_email, generate_passcode()
+    hash_key: str = user_email
+    code: str = generate_passcode()
     await redis_client.set(hash_key, value=code, ex=expiration_seconds)
     return code
 
@@ -52,7 +59,7 @@ async def create_2fa_code(
 ) -> str:
     """Saves 2FA code with an expiration time, i.e. a finite Time-To-Live (TTL)"""
     redis_client = get_redis_validation_code_client(app)
-    code = await _do_create_2fa_code(
+    code: str = await _do_create_2fa_code(
         redis_client=redis_client,
         user_email=user_email,
         expiration_seconds=expiration_in_seconds,
@@ -61,11 +68,12 @@ async def create_2fa_code(
 
 
 @log_decorator(log, level=logging.DEBUG)
-async def get_2fa_code(app: web.Application, user_email: str) -> Optional[str]:
+async def get_2fa_code(app: web.Application, user_email: str) -> str | None:
     """Returns 2FA code for user or None if it does not exist (e.g. expired or never set)"""
     redis_client = get_redis_validation_code_client(app)
     hash_key = user_email
-    return await redis_client.get(hash_key)
+    hash_value: str | None = await redis_client.get(hash_key)
+    return hash_value
 
 
 @log_decorator(log, level=logging.DEBUG)
@@ -94,10 +102,11 @@ async def send_sms_code(
     twilio_alpha_numeric_sender: str,
     user_name: str = "user",
 ):
+    first_name = _get_human_readable_first_name(user_name)
     create_kwargs = {
         "messaging_service_sid": twilio_messaging_sid,
         "to": phone_number,
-        "body": f"Dear {user_name[:20].capitalize().strip()}, your verification code is {code}",
+        "body": f"Dear {first_name}, your verification code is {code}",
     }
     if twilo_auth.is_alphanumeric_supported(phone_number):
         create_kwargs["from_"] = twilio_alpha_numeric_sender
@@ -140,7 +149,8 @@ async def send_email_code(
     user_name: str = "user",
 ):
     email_template_path = await get_template_path(request, "new_2fa_code.jinja2")
-    await render_and_send_mail(
+    first_name = _get_human_readable_first_name(user_name)
+    await send_email_from_template(
         request,
         from_=support_email,
         to=user_email,
@@ -148,7 +158,7 @@ async def send_email_code(
         context={
             "host": request.host,
             "code": code,
-            "name": user_name.capitalize(),
+            "name": first_name,
             "support_email": support_email,
         },
     )

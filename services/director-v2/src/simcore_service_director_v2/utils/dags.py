@@ -1,9 +1,9 @@
 import logging
 from copy import deepcopy
-from typing import Any, Dict, List, Set
+from typing import Any
 
 import networkx as nx
-from models_library.projects import Workbench
+from models_library.projects import NodesDict
 from models_library.projects_nodes import NodeID, NodeState
 from models_library.projects_nodes_io import PortLink
 from models_library.projects_pipeline import PipelineDetails
@@ -11,21 +11,21 @@ from models_library.projects_state import RunningState
 from models_library.utils.nodes import compute_node_hash
 from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
 
-from .computations import NodeClass, to_node_class
-from .logging_utils import log_decorator
+from ..modules.db.tables import NodeClass
+from .computations import to_node_class
 
 logger = logging.getLogger(__name__)
 
 
 def _is_node_computational(node_key: str) -> bool:
     try:
-        return to_node_class(node_key) == NodeClass.COMPUTATIONAL
+        result: bool = to_node_class(node_key) == NodeClass.COMPUTATIONAL
+        return result
     except ValueError:
         return False
 
 
-@log_decorator(logger=logger)
-def create_complete_dag(workbench: Workbench) -> nx.DiGraph:
+def create_complete_dag(workbench: NodesDict) -> nx.DiGraph:
     """creates a complete graph out of the project workbench"""
     dag_graph = nx.DiGraph()
     for node_id, node in workbench.items():
@@ -47,8 +47,7 @@ def create_complete_dag(workbench: Workbench) -> nx.DiGraph:
     return dag_graph
 
 
-@log_decorator(logger=logger)
-def create_complete_dag_from_tasks(tasks: List[CompTaskAtDB]) -> nx.DiGraph:
+def create_complete_dag_from_tasks(tasks: list[CompTaskAtDB]) -> nx.DiGraph:
     dag_graph = nx.DiGraph()
     for task in tasks:
         dag_graph.add_node(
@@ -86,8 +85,9 @@ async def compute_node_modified_state(
             return True
 
     # maybe our inputs changed? let's compute the node hash and compare with the saved one
-    async def get_node_io_payload_cb(node_id: NodeID) -> Dict[str, Any]:
-        return nodes_data_view[str(node_id)]
+    async def get_node_io_payload_cb(node_id: NodeID) -> dict[str, Any]:
+        result: dict[str, Any] = nodes_data_view[str(node_id)]
+        return result
 
     computed_hash = await compute_node_hash(node_id, get_node_io_payload_cb)
     if computed_hash != node["run_hash"]:
@@ -95,10 +95,10 @@ async def compute_node_modified_state(
     return False
 
 
-async def compute_node_dependencies_state(nodes_data_view, node_id) -> Set[NodeID]:
+async def compute_node_dependencies_state(nodes_data_view, node_id) -> set[NodeID]:
     node = nodes_data_view[str(node_id)]
     # check if the previous node is outdated or waits for dependencies... in which case this one has to wait
-    non_computed_dependencies: Set[NodeID] = set()
+    non_computed_dependencies: set[NodeID] = set()
     for input_port in node.get("inputs", {}).values():
         if isinstance(input_port, PortLink):
             if node_needs_computation(nodes_data_view, input_port.node_uuid):
@@ -127,12 +127,12 @@ def node_needs_computation(
     nodes_data_view: nx.classes.reportviews.NodeDataView, node_id: NodeID
 ) -> bool:
     node = nodes_data_view[str(node_id)]
-    return node.get(kNODE_MODIFIED_STATE, False) or node.get(
+    needs_computation: bool = node.get(kNODE_MODIFIED_STATE, False) or node.get(
         kNODE_DEPENDENCIES_TO_COMPUTE, None
     )
+    return needs_computation
 
 
-@log_decorator(logger=logger)
 async def _set_computational_nodes_states(complete_dag: nx.DiGraph) -> None:
     nodes_data_view: nx.classes.reportviews.NodeDataView = complete_dag.nodes.data()
     for node in nx.topological_sort(complete_dag):
@@ -140,9 +140,8 @@ async def _set_computational_nodes_states(complete_dag: nx.DiGraph) -> None:
             await compute_node_states(nodes_data_view, node)
 
 
-@log_decorator(logger=logger)
 async def create_minimal_computational_graph_based_on_selection(
-    complete_dag: nx.DiGraph, selected_nodes: List[NodeID], force_restart: bool
+    complete_dag: nx.DiGraph, selected_nodes: list[NodeID], force_restart: bool
 ) -> nx.DiGraph:
     nodes_data_view: nx.classes.reportviews.NodeDataView = complete_dag.nodes.data()
     try:
@@ -153,7 +152,7 @@ async def create_minimal_computational_graph_based_on_selection(
         return nx.DiGraph()
 
     # second pass, detect all the nodes that need to be run
-    minimal_nodes_selection: Set[str] = set()
+    minimal_nodes_selection: set[str] = set()
     if not selected_nodes:
         # fully automatic detection, we want anything that is waiting for dependencies or outdated
         minimal_nodes_selection.update(
@@ -168,12 +167,12 @@ async def create_minimal_computational_graph_based_on_selection(
         # we want all the outdated nodes that are in the tree leading to the selected nodes
         for node in selected_nodes:
             minimal_nodes_selection.update(
-                set(
+                {
                     n
                     for n in nx.bfs_tree(complete_dag, f"{node}", reverse=True)
                     if _is_node_computational(nodes_data_view[n]["key"])
                     and node_needs_computation(nodes_data_view, n)
-                )
+                }
             )
             if force_restart and _is_node_computational(
                 nodes_data_view[f"{node}"]["key"]
@@ -183,9 +182,8 @@ async def create_minimal_computational_graph_based_on_selection(
     return complete_dag.subgraph(minimal_nodes_selection)
 
 
-@log_decorator(logger=logger)
 async def compute_pipeline_details(
-    complete_dag: nx.DiGraph, pipeline_dag: nx.DiGraph, comp_tasks: List[CompTaskAtDB]
+    complete_dag: nx.DiGraph, pipeline_dag: nx.DiGraph, comp_tasks: list[CompTaskAtDB]
 ) -> PipelineDetails:
     try:
         # FIXME: this problem of cyclic graphs for control loops create all kinds of issues that must be fixed
@@ -211,7 +209,7 @@ async def compute_pipeline_details(
     )
 
 
-def find_computational_node_cycles(dag: nx.DiGraph) -> List[List[str]]:
+def find_computational_node_cycles(dag: nx.DiGraph) -> list[list[str]]:
     """returns a list of nodes part of a cycle and computational, which is currently forbidden."""
     computational_node_cycles = []
     list_potential_cycles = nx.simple_cycles(dag)

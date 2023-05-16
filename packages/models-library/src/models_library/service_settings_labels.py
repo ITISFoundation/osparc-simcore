@@ -4,7 +4,7 @@ import json
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Final, Iterator, Literal, Optional, Union
+from typing import Any, Final, Iterator, Literal, TypeAlias
 
 from pydantic import (
     BaseModel,
@@ -163,7 +163,7 @@ class PathMappingsLabel(BaseModel):
         description="optional list of paths which contents need to be persisted",
     )
 
-    state_exclude: Optional[set[str]] = Field(
+    state_exclude: set[str] | None = Field(
         None,
         description="optional list unix shell rules used to exclude files from the state",
     )
@@ -240,7 +240,7 @@ class PathMappingsLabel(BaseModel):
         }
 
 
-ComposeSpecLabel = dict[str, Any]
+ComposeSpecLabel: TypeAlias = dict[str, Any]
 
 
 class RestartPolicy(str, Enum):
@@ -258,7 +258,7 @@ class _PortRange(BaseModel):
     @classmethod
     def lower_less_than_upper(cls, v, values) -> PortInt:
         upper = v
-        lower: Optional[PortInt] = values.get("lower")
+        lower: PortInt | None = values.get("lower")
         if lower is None or lower >= upper:
             raise ValueError(f"Condition not satisfied: {lower=} < {upper=}")
         return v
@@ -282,7 +282,7 @@ class DNSResolver(BaseModel):
 
 class NATRule(BaseModel):
     hostname: str
-    tcp_ports: list[Union[_PortRange, PortInt]]
+    tcp_ports: list[_PortRange | PortInt]
     dns_resolver: DNSResolver = Field(
         default_factory=lambda: DNSResolver(
             address=DEFAULT_DNS_SERVER_ADDRESS, port=DEFAULT_DNS_SERVER_PORT
@@ -299,7 +299,7 @@ class NATRule(BaseModel):
 
 
 class DynamicSidecarServiceLabels(BaseModel):
-    paths_mapping: Optional[Json[PathMappingsLabel]] = Field(
+    paths_mapping: Json[PathMappingsLabel] | None = Field(
         None,
         alias="simcore.service.paths-mapping",
         description=(
@@ -308,7 +308,7 @@ class DynamicSidecarServiceLabels(BaseModel):
         ),
     )
 
-    compose_spec: Optional[Json[ComposeSpecLabel]] = Field(
+    compose_spec: Json[ComposeSpecLabel] | None = Field(
         None,
         alias="simcore.service.compose-spec",
         description=(
@@ -317,7 +317,7 @@ class DynamicSidecarServiceLabels(BaseModel):
             "only used by dynamic-sidecar."
         ),
     )
-    container_http_entry: Optional[str] = Field(
+    container_http_entry: str | None = Field(
         None,
         alias="simcore.service.container-http-entrypoint",
         description=(
@@ -339,15 +339,15 @@ class DynamicSidecarServiceLabels(BaseModel):
         ),
     )
 
-    containers_allowed_outgoing_permit_list: Optional[
+    containers_allowed_outgoing_permit_list: None | (
         Json[dict[str, list[NATRule]]]
-    ] = Field(
+    ) = Field(
         None,
         alias="simcore.service.containers-allowed-outgoing-permit-list",
         description="allow internet access to certain domain names and ports per container",
     )
 
-    containers_allowed_outgoing_internet: Optional[Json[set[str]]] = Field(
+    containers_allowed_outgoing_internet: Json[set[str]] | None = Field(
         None,
         alias="simcore.service.containers-allowed-outgoing-internet",
         description="allow complete internet access to containers in here",
@@ -360,7 +360,7 @@ class DynamicSidecarServiceLabels(BaseModel):
 
     @validator("container_http_entry", always=True)
     @classmethod
-    def compose_spec_requires_container_http_entry(cls, v, values) -> Optional[str]:
+    def compose_spec_requires_container_http_entry(cls, v, values) -> str | None:
         v = None if v == "" else v
         if v is None and values.get("compose_spec") is not None:
             raise ValueError(
@@ -378,7 +378,7 @@ class DynamicSidecarServiceLabels(BaseModel):
         if v is None:
             return v
 
-        compose_spec: Optional[dict] = values.get("compose_spec")
+        compose_spec: dict | None = values.get("compose_spec")
         if compose_spec is None:
             keys = set(v.keys())
             if len(keys) != 1 or DEFAULT_SINGLE_SERVICE_NAME not in keys:
@@ -401,7 +401,7 @@ class DynamicSidecarServiceLabels(BaseModel):
         if v is None:
             return v
 
-        compose_spec: Optional[dict] = values.get("compose_spec")
+        compose_spec: dict | None = values.get("compose_spec")
         if compose_spec is None:
             if {DEFAULT_SINGLE_SERVICE_NAME} != v:
                 raise ValueError(

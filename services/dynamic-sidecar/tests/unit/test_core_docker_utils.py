@@ -8,7 +8,7 @@ import pytest
 import yaml
 from faker import Faker
 from models_library.services import RunID
-from pydantic import PositiveInt
+from pydantic import PositiveInt, SecretStr
 from pytest import FixtureRequest
 from settings_library.docker_registry import RegistrySettings
 from simcore_service_dynamic_sidecar.core.docker_utils import (
@@ -143,10 +143,10 @@ async def test_issue_3793_pulling_images_raises_error():
     Reproduces (sometimes) https://github.com/ITISFoundation/osparc-simcore/issues/3793
     """
 
-    async def _print_progress(*args, **kwargs):
+    async def _print_progress(*args, **kwargs) -> None:
         print("progress -> ", args, kwargs)
 
-    async def _print_log(*args, **kwargs):
+    async def _print_log(*args, **kwargs) -> None:
         print("log -> ", args, kwargs)
 
     for n in range(2):
@@ -163,7 +163,7 @@ async def test_issue_3793_pulling_images_raises_error():
             registry_settings=RegistrySettings(
                 REGISTRY_AUTH=False,
                 REGISTRY_USER="",
-                REGISTRY_PW="",
+                REGISTRY_PW=SecretStr(""),
                 REGISTRY_SSL=False,
             ),
             progress_cb=_print_progress,
@@ -176,9 +176,9 @@ async def test_pull_image(repeat: str):
     async def _print_progress(current: int, total: int):
         print("progress ->", f"{current=}", f"{total=}")
 
-    async def _print_log(msg):
+    async def _print_log(msg, log_level):
         assert "alpine" in msg
-        print("log -> ", msg)
+        print(f"log: {log_level=}: {msg}")
 
     await pull_images(
         images={
@@ -187,7 +187,7 @@ async def test_pull_image(repeat: str):
         registry_settings=RegistrySettings(
             REGISTRY_AUTH=False,
             REGISTRY_USER="",
-            REGISTRY_PW="",
+            REGISTRY_PW=SecretStr(""),
             REGISTRY_SSL=False,
         ),
         progress_cb=_print_progress,

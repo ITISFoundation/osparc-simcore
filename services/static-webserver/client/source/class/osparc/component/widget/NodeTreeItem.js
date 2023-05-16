@@ -117,7 +117,8 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         node.attachHandlersToStartButton(startButton);
 
         const stopButton = this.getChildControl("stop-button");
-        node.attachHandlersToStopButton(stopButton);
+        node.attachVisibilityHandlerToStopButton(stopButton);
+        node.attachExecuteHandlerToStopButton(stopButton);
       }
 
       const markerBtn = this.getChildControl("marker-button");
@@ -292,6 +293,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
       this.getChildControl("icon").set({
         alignX: "center",
         alignY: "middle",
+        paddingTop: 1, // alignY: "middle" is not very effective
         width: 22
       });
 

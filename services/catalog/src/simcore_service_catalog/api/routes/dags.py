@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional
+from typing import Optional
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from starlette.status import (
@@ -17,7 +17,7 @@ router = APIRouter()
 log = logging.getLogger(__name__)
 
 
-@router.get("", response_model=List[DAGOut])
+@router.get("", response_model=list[DAGOut])
 async def list_dags(
     page_token: Optional[str] = Query(
         None, description="Requests a specific page of the list results"
@@ -102,7 +102,7 @@ async def udpate_dag(
     dag: DAGIn = Body(None),
     dags_repo: DAGsRepository = Depends(get_repository(DAGsRepository)),
 ):
-    async with dags_repo.connection.begin():
+    async with dags_repo.db_engine.begin():
         await dags_repo.update_dag(dag_id, dag)
         updated_dag = await dags_repo.get_dag(dag_id)
 

@@ -1,4 +1,5 @@
 # pylint: disable=unused-import
+# pylint: disable=broad-exception-raised
 
 pytest_plugins = "pytester"
 

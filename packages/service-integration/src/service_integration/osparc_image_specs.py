@@ -21,15 +21,16 @@ def create_image_spec(
     docker_compose_overwrite_cfg: DockerComposeOverwriteCfg,
     runtime_cfg: Optional[RuntimeConfig] = None,
     *,
-    extra_labels: dict[str, str] = {},
+    extra_labels: dict[str, str] = None,
     **_context
 ) -> ComposeSpecification:
     """Creates the image-spec provided the osparc-config and a given context (e.g. development)
 
     - the image-spec simplifies building an image to ``docker-compose build``
     """
-
-    labels = {**extra_labels, **meta_cfg.to_labels_annotations()}
+    labels = {**meta_cfg.to_labels_annotations()}
+    if extra_labels:
+        labels.update(extra_labels)
     if runtime_cfg:
         labels.update(runtime_cfg.to_labels_annotations())
 

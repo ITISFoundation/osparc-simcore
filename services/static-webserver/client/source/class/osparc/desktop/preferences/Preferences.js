@@ -49,6 +49,13 @@ qx.Class.define("osparc.desktop.preferences.Preferences", {
       event: "changeConfirmDeleteStudy"
     },
 
+    confirmDemoteOrgnaization: {
+      nullable: false,
+      init: true,
+      check: "Boolean",
+      event: "changeConfirmDemoteOrgnaization"
+    },
+
     confirmDeleteNode: {
       nullable: false,
       init: true,
@@ -63,11 +70,11 @@ qx.Class.define("osparc.desktop.preferences.Preferences", {
       event: "changeConfirmStopNode"
     },
 
-    confirmWindowSize: {
+    snapNodeToGrid: {
       nullable: false,
       init: true,
       check: "Boolean",
-      event: "changeConfirmWindowSize"
+      event: "changeSnapNodeToGrid"
     }
   }
 });

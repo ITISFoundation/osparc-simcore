@@ -21,10 +21,9 @@ from . import (
     projects_ports_handlers,
     projects_tags_handlers,
 )
-from .project_models import setup_projects_model_schema
+from ._observer import setup_project_observer_events
 from .projects_access import setup_projects_access
 from .projects_db import setup_projects_db
-from .projects_events import setup_project_events
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +65,7 @@ def setup_projects(app: web.Application) -> bool:
     setup_projects_db(app)
 
     # registers event handlers (e.g. on_user_disconnect)
-    setup_project_events(app)
+    setup_project_observer_events(app)
 
     app.router.add_routes(projects_handlers.routes)
     app.router.add_routes(projects_handlers_crud.routes)
@@ -84,6 +83,4 @@ def setup_projects(app: web.Application) -> bool:
     # FIXME: this uses some unimplemented handlers, do we really need to keep this in?
     # app.router.add_routes( _create_routes("node", specs, nodes_handlers) )
 
-    # json-schemas for projects datasets
-    setup_projects_model_schema(app)
     return True

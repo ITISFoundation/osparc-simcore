@@ -6,17 +6,17 @@
 
 import asyncio
 import concurrent.futures
+import logging
 import time
-from typing import Any, Dict
+from typing import Any
 
 import distributed
 import pytest
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import TaskLogEvent
 from dask_task_models_library.container_tasks.io import TaskCancelEventName
-from simcore_service_dask_sidecar.boot_mode import BootMode
 from simcore_service_dask_sidecar.dask_utils import (
-    get_current_task_boot_mode,
+    _DEFAULT_MAX_RESOURCES,
     get_current_task_resources,
     is_current_task_aborted,
     monitor_task_abortion,
@@ -28,7 +28,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 DASK_TASK_STARTED_EVENT = "task_started"
-DASK_TESTING_TIMEOUT_S = 5
+DASK_TESTING_TIMEOUT_S = 25
 
 
 async def test_publish_event(dask_client: distributed.Client):
@@ -47,7 +47,9 @@ async def test_publish_event(dask_client: distributed.Client):
             assert dask_pub.subscribers
             print("we do have subscribers!")
 
-    event_to_publish = TaskLogEvent(job_id="some_fake_job_id", log="the log")
+    event_to_publish = TaskLogEvent(
+        job_id="some_fake_job_id", log="the log", log_level=logging.INFO
+    )
     publish_event(dask_pub=dask_pub, event=event_to_publish)
     # NOTE: this tests runs a sync dask client,
     # and the CI seems to have sometimes difficulties having this run in a reasonable time
@@ -143,35 +145,18 @@ def test_monitor_task_abortion(dask_client: distributed.Client):
 
 
 @pytest.mark.parametrize(
-    "resources, expected_boot_mode",
-    [
-        ({"CPU": 2}, BootMode.CPU),
-        ({"MPI": 1.0}, BootMode.MPI),
-        ({"GPU": 5.0}, BootMode.GPU),
-    ],
-)
-def test_task_boot_mode(
-    dask_client: distributed.Client,
-    resources: Dict[str, Any],
-    expected_boot_mode: BootMode,
-):
-    future = dask_client.submit(get_current_task_boot_mode, resources=resources)
-    received_boot_mode = future.result(timeout=DASK_TESTING_TIMEOUT_S)
-    assert received_boot_mode == expected_boot_mode
-
-
-@pytest.mark.parametrize(
     "resources",
     [
         ({"CPU": 2}),
-        ({"MPI": 1.0}),
         ({"GPU": 5.0}),
     ],
 )
 def test_task_resources(
     dask_client: distributed.Client,
-    resources: Dict[str, Any],
+    resources: dict[str, Any],
 ):
     future = dask_client.submit(get_current_task_resources, resources=resources)
     received_resources = future.result(timeout=DASK_TESTING_TIMEOUT_S)
-    assert received_resources == resources
+    current_resources = _DEFAULT_MAX_RESOURCES
+    current_resources.update(resources)
+    assert received_resources == current_resources

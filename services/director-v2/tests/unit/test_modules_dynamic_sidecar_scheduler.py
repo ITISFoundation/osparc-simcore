@@ -12,9 +12,10 @@ from unittest.mock import AsyncMock
 
 import pytest
 import respx
+from faker import Faker
 from fastapi import FastAPI
 from models_library.service_settings_labels import SimcoreServiceLabels
-from pytest import MonkeyPatch
+from pytest import LogCaptureFixture, MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
@@ -41,6 +42,9 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._events
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._observer import (
     _apply_observation_cycle,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._scheduler import (
+    Scheduler,
 )
 
 # running scheduler at a hight rate to stress out the system
@@ -205,7 +209,7 @@ def mocked_api_client(scheduler_data: SchedulerData) -> Iterator[MockRouter]:
 @pytest.fixture
 def mock_service_running(mock_docker_api, mocker: MockerFixture) -> Iterator[AsyncMock]:
     mock = mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._scheduler.get_dynamic_sidecar_state",
+        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._scheduler_utils.get_dynamic_sidecar_state",
         return_value=(ServiceState.RUNNING, ""),
     )
 
@@ -311,7 +315,6 @@ async def test_scheduler_health_timing_out(
     mock_max_status_api_duration: None,
     mocked_dynamic_scheduler_events: None,
 ):
-
     await manually_trigger_scheduler()
     await scheduler._scheduler._add_service(scheduler_data)
     await manually_trigger_scheduler()
@@ -441,3 +444,32 @@ async def test_get_stack_status_ok(
             service_state=ServiceState.RUNNING,
             service_message="",
         )
+
+
+@pytest.fixture
+def mocked_app() -> AsyncMock:
+    return AsyncMock()
+
+
+@pytest.mark.parametrize("missing_to_observe_entry", [True, False])
+async def test_regression_remove_service_from_observation(
+    mocked_app: AsyncMock,
+    faker: Faker,
+    caplog_debug_level: LogCaptureFixture,
+    missing_to_observe_entry: bool,
+):
+    scheduler = Scheduler(mocked_app)
+
+    # emulate service was previously added
+    node_uuid = faker.uuid4(cast_to=None)
+    service_name = f"service_{node_uuid}"
+    scheduler._inverse_search_mapping[node_uuid] = service_name
+    if not missing_to_observe_entry:
+        scheduler._to_observe[service_name] = AsyncMock()
+
+    await scheduler.remove_service_from_observation(node_uuid)
+    # check log message
+    assert f"Removed service '{service_name}' from scheduler" in caplog_debug_level.text
+
+    if missing_to_observe_entry:
+        assert f"Unexpected: '{service_name}' not found in" in caplog_debug_level.text

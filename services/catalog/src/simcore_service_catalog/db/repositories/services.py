@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 from itertools import chain
-from typing import Any, Iterable, Optional
+from typing import Any, Iterable, cast
 
 import packaging.version
 import sqlalchemy as sa
@@ -11,6 +11,7 @@ from models_library.users import GroupID
 from psycopg2.errors import ForeignKeyViolation
 from pydantic import ValidationError
 from simcore_postgres_database.models.groups import GroupType
+from simcore_postgres_database.utils_services import create_select_latest_services_query
 from simcore_service_catalog.models.domain.service_specifications import (
     ServiceSpecificationsAtDB,
 )
@@ -31,11 +32,11 @@ logger = logging.getLogger(__name__)
 
 
 def _make_list_services_query(
-    gids: Optional[list[int]] = None,
-    execute_access: Optional[bool] = None,
-    write_access: Optional[bool] = None,
-    combine_access_with_and: Optional[bool] = True,
-    product_name: Optional[str] = None,
+    gids: list[int] | None = None,
+    execute_access: bool | None = None,
+    write_access: bool | None = None,
+    combine_access_with_and: bool | None = True,
+    product_name: str | None = None,
 ) -> Select:
     query = sa.select([services_meta_data])
     if gids or execute_access or write_access:
@@ -79,11 +80,11 @@ class ServicesRepository(BaseRepository):
     async def list_services(
         self,
         *,
-        gids: Optional[list[int]] = None,
-        execute_access: Optional[bool] = None,
-        write_access: Optional[bool] = None,
-        combine_access_with_and: Optional[bool] = True,
-        product_name: Optional[str] = None,
+        gids: list[int] | None = None,
+        execute_access: bool | None = None,
+        write_access: bool | None = None,
+        combine_access_with_and: bool | None = True,
+        product_name: str | None = None,
     ) -> list[ServiceMetaDataAtDB]:
         services_in_db = []
 
@@ -97,16 +98,16 @@ class ServicesRepository(BaseRepository):
                     product_name,
                 )
             ):
-                services_in_db.append(ServiceMetaDataAtDB(**row))
+                services_in_db.append(ServiceMetaDataAtDB.from_orm(row))
         return services_in_db
 
     async def list_service_releases(
         self,
         key: str,
         *,
-        major: Optional[int] = None,
-        minor: Optional[int] = None,
-        limit_count: Optional[int] = None,
+        major: int | None = None,
+        minor: int | None = None,
+        limit_count: int | None = None,
     ) -> list[ServiceMetaDataAtDB]:
         """Lists LAST n releases of a given service, sorted from latest first
 
@@ -139,28 +140,47 @@ class ServicesRepository(BaseRepository):
         releases = []
         async with self.db_engine.connect() as conn:
             async for row in await conn.stream(query):
-                releases.append(ServiceMetaDataAtDB(**row))
+                releases.append(ServiceMetaDataAtDB.from_orm(row))
 
         # Now sort naturally from latest first: (This is lame, the sorting should be done in the db)
-        return sorted(
-            releases, key=lambda x: packaging.version.parse(x.version), reverse=True
-        )
+        def _by_version(x: ServiceMetaDataAtDB) -> packaging.version.Version:
+            return cast(packaging.version.Version, packaging.version.parse(x.version))
 
-    async def get_latest_release(self, key: str) -> Optional[ServiceMetaDataAtDB]:
+        releases_sorted = sorted(releases, key=_by_version, reverse=True)
+        return releases_sorted
+
+    async def get_latest_release(self, key: str) -> ServiceMetaDataAtDB | None:
         """Returns last release or None if service was never released"""
-        releases = await self.list_service_releases(key, limit_count=1)
-        return releases[0] if releases else None
+        services_latest = create_select_latest_services_query().alias("services_latest")
+
+        query = (
+            sa.select(services_meta_data)
+            .select_from(
+                services_latest.join(
+                    services_meta_data,
+                    (services_meta_data.c.key == services_latest.c.key)
+                    & (services_meta_data.c.version == services_latest.c.latest),
+                )
+            )
+            .where(services_latest.c.key == key)
+        )
+        async with self.db_engine.connect() as conn:
+            result = await conn.execute(query)
+            row = result.first()
+        if row:
+            return ServiceMetaDataAtDB.from_orm(row)
+        return None  # mypy
 
     async def get_service(
         self,
         key: str,
         version: str,
         *,
-        gids: Optional[list[int]] = None,
-        execute_access: Optional[bool] = None,
-        write_access: Optional[bool] = None,
-        product_name: Optional[str] = None,
-    ) -> Optional[ServiceMetaDataAtDB]:
+        gids: list[int] | None = None,
+        execute_access: bool | None = None,
+        write_access: bool | None = None,
+        product_name: str | None = None,
+    ) -> ServiceMetaDataAtDB | None:
         query = sa.select([services_meta_data]).where(
             (services_meta_data.c.key == key)
             & (services_meta_data.c.version == version)
@@ -190,14 +210,14 @@ class ServicesRepository(BaseRepository):
             result = await conn.execute(query)
             row = result.first()
         if row:
-            return ServiceMetaDataAtDB(**row)
+            return ServiceMetaDataAtDB.from_orm(row)
+        return None  # mypy
 
     async def create_service(
         self,
         new_service: ServiceMetaDataAtDB,
         new_service_access_rights: list[ServiceAccessRightsAtDB],
     ) -> ServiceMetaDataAtDB:
-
         for access_rights in new_service_access_rights:
             if (
                 access_rights.key != new_service.key
@@ -216,7 +236,7 @@ class ServicesRepository(BaseRepository):
             )
             row = result.first()
             assert row  # nosec
-            created_service = ServiceMetaDataAtDB(**row)
+            created_service = ServiceMetaDataAtDB.from_orm(row)
 
             for access_rights in new_service_access_rights:
                 insert_stmt = pg_insert(services_access_rights).values(
@@ -242,14 +262,14 @@ class ServicesRepository(BaseRepository):
             )
             row = result.first()
             assert row  # nosec
-        updated_service = ServiceMetaDataAtDB(**row)
+        updated_service = ServiceMetaDataAtDB.from_orm(row)
         return updated_service
 
     async def get_service_access_rights(
         self,
         key: str,
         version: str,
-        product_name: Optional[str] = None,
+        product_name: str | None = None,
     ) -> list[ServiceAccessRightsAtDB]:
         """
         - If product_name is not specificed, then all are considered in the query
@@ -265,13 +285,13 @@ class ServicesRepository(BaseRepository):
 
         async with self.db_engine.connect() as conn:
             async for row in await conn.stream(query):
-                services_in_db.append(ServiceAccessRightsAtDB(**row))
+                services_in_db.append(ServiceAccessRightsAtDB.from_orm(row))
         return services_in_db
 
     async def list_services_access_rights(
         self,
         key_versions: Iterable[tuple[str, str]],
-        product_name: Optional[str] = None,
+        product_name: str | None = None,
     ) -> dict[tuple[str, str], list[ServiceAccessRightsAtDB]]:
         """Batch version of get_service_access_rights"""
         service_to_access_rights = defaultdict(list)
@@ -294,7 +314,7 @@ class ServicesRepository(BaseRepository):
                         row[services_access_rights.c.key],
                         row[services_access_rights.c.version],
                     )
-                ].append(ServiceAccessRightsAtDB(**row))
+                ].append(ServiceAccessRightsAtDB.from_orm(row))
         return service_to_access_rights
 
     async def upsert_service_access_rights(
@@ -348,9 +368,9 @@ class ServicesRepository(BaseRepository):
         self,
         key: ServiceKey,
         version: ServiceVersion,
-        groups: tuple[GroupAtDB],
+        groups: tuple[GroupAtDB, ...],
         allow_use_latest_service_version: bool = False,
-    ) -> Optional[ServiceSpecifications]:
+    ) -> ServiceSpecifications | None:
         """returns the service specifications for service 'key:version' and for 'groups'
             returns None if nothing found
 
@@ -360,11 +380,10 @@ class ServicesRepository(BaseRepository):
             "getting specifications from db for %s", f"{key}:{version} for {groups=}"
         )
         gid_to_group_map = {group.gid: group for group in groups}
-        group_specs = {
-            GroupType.EVERYONE: None,
-            GroupType.PRIMARY: None,
-            GroupType.STANDARD: {},
-        }
+
+        everyone_specs = None
+        primary_specs = None
+        teams_specs: dict[GroupID, ServiceSpecificationsAtDB] = {}
 
         queried_version = packaging.version.parse(version)
         # we should instead use semver enabled postgres [https://pgxn.org/dist/semver/doc/semver.html]
@@ -396,14 +415,18 @@ class ServicesRepository(BaseRepository):
                     # filter by group type
                     group = gid_to_group_map[row.gid]
                     if (group.group_type == GroupType.STANDARD) and _is_newer(
-                        group_specs[group.group_type].get(db_service_spec.gid),
+                        teams_specs.get(db_service_spec.gid),
                         db_service_spec,
                     ):
-                        group_specs[group.group_type][
-                            db_service_spec.gid
-                        ] = db_service_spec
-                    elif _is_newer(group_specs[group.group_type], db_service_spec):
-                        group_specs[group.group_type] = db_service_spec
+                        teams_specs[db_service_spec.gid] = db_service_spec
+                    elif (group.group_type == GroupType.EVERYONE) and _is_newer(
+                        everyone_specs, db_service_spec
+                    ):
+                        everyone_specs = db_service_spec
+                    elif (group.group_type == GroupType.PRIMARY) and _is_newer(
+                        primary_specs, db_service_spec
+                    ):
+                        primary_specs = db_service_spec
 
                 except ValidationError as exc:
                     logger.warning(
@@ -413,15 +436,14 @@ class ServicesRepository(BaseRepository):
                     )
 
         if merged_specifications := _merge_specs(
-            group_specs[GroupType.EVERYONE],
-            group_specs[GroupType.STANDARD],
-            group_specs[GroupType.PRIMARY],
+            everyone_specs, teams_specs, primary_specs
         ):
             return ServiceSpecifications.parse_obj(merged_specifications)
+        return None  # mypy
 
 
 def _is_newer(
-    old: Optional[ServiceSpecificationsAtDB],
+    old: ServiceSpecificationsAtDB | None,
     new: ServiceSpecificationsAtDB,
 ):
     return old is None or (
@@ -431,9 +453,9 @@ def _is_newer(
 
 
 def _merge_specs(
-    everyone_spec: Optional[ServiceSpecificationsAtDB],
+    everyone_spec: ServiceSpecificationsAtDB | None,
     team_specs: dict[GroupID, ServiceSpecificationsAtDB],
-    user_spec: Optional[ServiceSpecificationsAtDB],
+    user_spec: ServiceSpecificationsAtDB | None,
 ) -> dict[str, Any]:
     merged_spec = {}
     for spec in chain([everyone_spec], team_specs.values(), [user_spec]):

@@ -42,26 +42,25 @@ def test_substitution_with_new_and_legacy_identifiers():
     compose_spec:
         service-one:
             init: true
-            image: ${SIMCORE_REGISTRY}/simcore/services/dynamic/dy-static-file-server-dynamic-sidecar-compose-spec:${SERVICE_VERSION}
+            image: ${SIMCORE_REGISTRY}/simcore/services/dynamic/dy-vendor-service:${SERVICE_VERSION}
             environment:
                 # legacy examples
                 - SYM_SERVER_HOSTNAME=%%container_name.sym-server%%
                 - APP_HOSTNAME=%%container_name.dsistudio-app%%
                 - APP_HOSTNAME=some-prefix_%service_uuid%
-                - SPEAG_LICENSE_FILE=${OSPARC_ENVIRONMENT_SPEAG_LICENSE_FILE}
+                - MY_LICENSE_FILE=${OSPARC_ENVIRONMENT_VENDOR_LICENSE_FILE}
                 - MY_PRODUCT=$OSPARC_ENVIRONMENT_CURRENT_PRODUCT
                 - MY_EMAIL=$OSPARC_ENVIRONMENT_USER_EMAIL
-                - S4L_LITE_PRODUCT=yes
                 - AS_VOILA=1
                 - DISPLAY1=$${KEEP_SINCE_IT_USES_DOLLAR_ESCAPE_SIGN}
                 - DISPLAY2=${KEEP_SINCE_IT_WAS_EXCLUDED_FROM_SUBSTITUTIONS}
     containers-allowed-outgoing-permit-list:
         s4l-core:
-            - hostname: $OSPARC_ENVIRONMENT_LICENSE_SERVER_HOST
-              tcp_ports: [$OSPARC_ENVIRONMENT_LICENSE_SERVER_PRIMARY_PORT, $OSPARC_ENVIRONMENT_LICENSE_SERVER_SECONDARY_PORT]
+            - hostname: $OSPARC_ENVIRONMENT_VENDOR_LICENSE_SERVER_HOST
+              tcp_ports: [$OSPARC_ENVIRONMENT_VENDOR_LICENSE_SERVER_PRIMARY_PORT, $OSPARC_ENVIRONMENT_VENDOR_LICENSE_SERVER_SECONDARY_PORT]
               dns_resolver:
-                  address: $OSPARC_ENVIRONMENT_LICENSE_DNS_RESOLVER_IP
-                  port: $OSPARC_ENVIRONMENT_LICENSE_DNS_RESOLVER_PORT
+                  address: $OSPARC_ENVIRONMENT_VENDOR_LICENSE_DNS_RESOLVER_IP
+                  port: $OSPARC_ENVIRONMENT_VENDOR_LICENSE_DNS_RESOLVER_PORT
     containers-allowed-outgoing-internet:
         - s4l-core-stream
     """
@@ -80,15 +79,15 @@ def test_substitution_with_new_and_legacy_identifiers():
         "OSPARC_ENVIRONMENT_CONTAINER_NAME_DSISTUDIO_APP",
         "OSPARC_ENVIRONMENT_SERVICE_UUID",
         # -----
-        "OSPARC_ENVIRONMENT_SPEAG_LICENSE_FILE",
+        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_FILE",
         "OSPARC_ENVIRONMENT_CURRENT_PRODUCT",
         "OSPARC_ENVIRONMENT_USER_EMAIL",
         "KEEP_SINCE_IT_WAS_EXCLUDED_FROM_SUBSTITUTIONS",
-        "OSPARC_ENVIRONMENT_LICENSE_SERVER_HOST",
-        "OSPARC_ENVIRONMENT_LICENSE_SERVER_PRIMARY_PORT",
-        "OSPARC_ENVIRONMENT_LICENSE_SERVER_SECONDARY_PORT",
-        "OSPARC_ENVIRONMENT_LICENSE_DNS_RESOLVER_IP",
-        "OSPARC_ENVIRONMENT_LICENSE_DNS_RESOLVER_PORT",
+        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_SERVER_HOST",
+        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_SERVER_PRIMARY_PORT",
+        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_SERVER_SECONDARY_PORT",
+        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_DNS_RESOLVER_IP",
+        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_DNS_RESOLVER_PORT",
     ]
 
     # prepare substitutions map {id: value, ...}
@@ -111,16 +110,15 @@ def test_substitution_with_new_and_legacy_identifiers():
     compose_spec:
         service-one:
             init: true
-            image: VALUE/simcore/services/dynamic/dy-static-file-server-dynamic-sidecar-compose-spec:VALUE
+            image: VALUE/simcore/services/dynamic/dy-vendor-service:VALUE
             environment:
                 # legacy examples
                 - SYM_SERVER_HOSTNAME=VALUE
                 - APP_HOSTNAME=VALUE
                 - APP_HOSTNAME=some-prefix_VALUE
-                - SPEAG_LICENSE_FILE=VALUE
+                - MY_LICENSE_FILE=VALUE
                 - MY_PRODUCT=VALUE
                 - MY_EMAIL=VALUE
-                - S4L_LITE_PRODUCT=yes
                 - AS_VOILA=1
                 - DISPLAY1=${KEEP_SINCE_IT_USES_DOLLAR_ESCAPE_SIGN}
                 - DISPLAY2=${KEEP_SINCE_IT_WAS_EXCLUDED_FROM_SUBSTITUTIONS}

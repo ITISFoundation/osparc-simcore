@@ -42,6 +42,7 @@ SERVICES_NAMES_TO_BUILD := \
   dynamic-sidecar \
 	invitations \
   migration \
+	osparc-gateway-server \
   service-integration \
   static-webserver \
   storage \
@@ -87,8 +88,10 @@ endif
 get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
 
 # NOTE: this is only for WSL2 as the WSL2 subsystem IP is changing on each reboot
+ifeq ($(IS_WSL2),WSL2)
 S3_ENDPOINT := $(get_my_ip):9001
 export S3_ENDPOINT
+endif
 
 # Check that given variables are set and all have non-empty values,
 # die with an error otherwise.
@@ -162,7 +165,7 @@ docker buildx bake \
 		)\
 	)\
 	$(if $(push),--push,) \
-	$(if $(push),--file docker-bake.hcml,) --file docker-compose-build.yml $(if $(target),$(target),) \
+	$(if $(push),--file docker-bake.hcl,) --file docker-compose-build.yml $(if $(target),$(target),) \
 	$(if $(findstring -nc,$@),--no-cache,\
 		$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
 			--set $(service).cache-to=type=gha$(comma)mode=max$(comma)scope=$(service) \
@@ -229,52 +232,45 @@ CPU_COUNT = $(shell cat /proc/cpuinfo | grep processor | wc -l )
 
 .stack-simcore-development.yml: .env $(docker-compose-configs)
 	# Creating config for stack with 'local/{service}:development' to $@
-	@export DOCKER_REGISTRY=local \
-	export DOCKER_IMAGE_TAG=development; \
-	export DEV_PC_CPU_COUNT=${CPU_COUNT}; \
-	docker-compose \
-		--env-file .env \
-		--file services/docker-compose.yml \
-		--file services/docker-compose.local.yml \
-		--file services/docker-compose.devel.yml \
-		--log-level=ERROR \
-		config | sed --regexp-extended "s/cpus: ([0-9\\.]+)/cpus: '\\1'/" > $@
+	@export DOCKER_REGISTRY=local && \
+	export DOCKER_IMAGE_TAG=development && \
+	export DEV_PC_CPU_COUNT=${CPU_COUNT} && \
+	scripts/docker/docker-compose-config.bash -e .env \
+		services/docker-compose.yml \
+		services/docker-compose.local.yml \
+		services/docker-compose.devel.yml \
+		> $@
 
 .stack-simcore-production.yml: .env $(docker-compose-configs)
 	# Creating config for stack with 'local/{service}:production' to $@
-	@export DOCKER_REGISTRY=local;       \
-	export DOCKER_IMAGE_TAG=production; \
-	docker-compose \
-		--env-file .env \
-		--file services/docker-compose.yml \
-		--file services/docker-compose.local.yml \
-		--log-level=ERROR \
-		config | sed --regexp-extended "s/cpus: ([0-9\\.]+)/cpus: '\\1'/" > $@
+	@export DOCKER_REGISTRY=local && \
+	export DOCKER_IMAGE_TAG=production && \
+	scripts/docker/docker-compose-config.bash -e .env \
+		services/docker-compose.yml \
+		services/docker-compose.local.yml \
+		> $@
 
 .stack-simcore-version.yml: .env $(docker-compose-configs)
 	# Creating config for stack with '$(DOCKER_REGISTRY)/{service}:${DOCKER_IMAGE_TAG}' to $@
-	@docker-compose \
-		--env-file .env \
-		--file services/docker-compose.yml \
-		--file services/docker-compose.local.yml \
-		--log-level=ERROR \
-		config | sed --regexp-extended "s/cpus: ([0-9\\.]+)/cpus: '\\1'/" > $@
+	@scripts/docker/docker-compose-config.bash -e .env \
+		services/docker-compose.yml \
+		services/docker-compose.local.yml \
+		> $@
+
 
 .stack-ops.yml: .env $(docker-compose-configs)
 	# Compiling config file for filestash
-	$(eval TMP_PATH_TO_FILESTASH_CONFIG=$(shell set -o allexport; \
-	source $(CURDIR)/.env; \
-	set +o allexport; \
+	$(eval TMP_PATH_TO_FILESTASH_CONFIG=$(shell set -o allexport && \
+	source $(CURDIR)/.env && \
+	set +o allexport && \
 	python3 scripts/filestash/create_config.py))
 	# Creating config for ops stack to $@
 	# -> filestash config at $(TMP_PATH_TO_FILESTASH_CONFIG)
 	@$(shell \
 		export TMP_PATH_TO_FILESTASH_CONFIG="${TMP_PATH_TO_FILESTASH_CONFIG}" && \
-		docker-compose \
-			--env-file .env \
-			--file services/docker-compose-ops.yml \
-			--log-level=DEBUG \
-			config | sed --regexp-extended "s/cpus: ([0-9\\.]+)/cpus: '\\1'/" > $@ \
+		scripts/docker/docker-compose-config.bash -e .env \
+		services/docker-compose-ops.yml \
+		> $@ \
 	)
 
 
@@ -435,12 +431,12 @@ push-version: tag-version
 	python3 -m venv $@
 	## upgrading tools to latest version in $(shell python3 --version)
 	$@/bin/pip3 --quiet install --upgrade \
-		pip~=22.0 \
+		pip~=23.1 \
 		wheel \
 		setuptools
 	@$@/bin/pip3 list --verbose
 
-devenv: .venv ## create a python virtual environment with dev tools (e.g. linters, etc)
+devenv: .venv .vscode/settings.json .vscode/launch.json ## create a development environment (configs, virtual-env, hooks, ...)
 	$</bin/pip3 --quiet install -r requirements/devenv.txt
 	# Installing pre-commit hooks in current .git repo
 	@$</bin/pre-commit install
@@ -469,10 +465,16 @@ nodenv: node_modules ## builds node_modules local environ (TODO)
 	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
 
 
-.vscode/settings.json: .vscode-template/settings.json
-	$(info WARNING: #####  $< is newer than $@ ####)
-	@diff -uN $@ $<
-	@false
+.vscode/settings.json: .vscode/settings.template.json
+	$(if $(wildcard $@), \
+	@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
+	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
+
+
+.vscode/launch.json: .vscode/launch.template.json
+	$(if $(wildcard $@), \
+	@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
+	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
 
 
 
@@ -508,7 +510,18 @@ new-service: .venv ## Bakes a new project from cookiecutter-simcore-pyservice an
 openapi-specs: ## bundles and validates openapi specifications and schemas of ALL service's API
 	@$(MAKE_C) services/web/server $@
 	@$(MAKE_C) services/storage $@
-	@$(MAKE_C) services/director $@
+
+
+.PHONY: settings-schema.json
+settings-schema.json: ## [container] dumps json-schema settings of all services
+	@$(MAKE_C) services/api-server $@
+	@$(MAKE_C) services/autoscaling $@
+	@$(MAKE_C) services/catalog $@
+	@$(MAKE_C) services/datcore-adapter $@
+	@$(MAKE_C) services/director-v2 $@
+	@$(MAKE_C) services/invitations $@
+	@$(MAKE_C) services/storage $@
+	@$(MAKE_C) services/web/server $@
 
 
 .PHONY: code-analysis
@@ -548,28 +561,35 @@ rm-registry: ## remove the registry and changes to host/file
 		echo removing entry in /etc/hosts...;\
 		sudo sed -i "/127.0.0.1 $(LOCAL_REGISTRY_HOSTNAME)/d" /etc/hosts,\
 		echo /etc/hosts is already cleaned)
-	@$(if $(shell grep "{\"insecure-registries\": \[\"$(LOCAL_REGISTRY_HOSTNAME):5000\"\]}" /etc/docker/daemon.json),\
+	@$(if $(shell jq -e '.["insecure-registries"]? | index("http://$(LOCAL_REGISTRY_HOSTNAME):5000")? // empty' /etc/docker/daemon.json),\
 		echo removing entry in /etc/docker/daemon.json...;\
-		sudo sed -i '/{"insecure-registries": \["$(LOCAL_REGISTRY_HOSTNAME):5000"\]}/d' /etc/docker/daemon.json;,\
-		echo /etc/docker/daemon.json is already cleaned)
+		jq 'if .["insecure-registries"] then .["insecure-registries"] |= map(select(. != "http://$(LOCAL_REGISTRY_HOSTNAME):5000")) else . end' /etc/docker/daemon.json > /tmp/daemon.json && \
+		sudo mv /tmp/daemon.json /etc/docker/daemon.json &&\
+		echo restarting engine... &&\
+		sudo service docker restart &&\
+		echo done,\
+		echo /etc/docker/daemon.json already cleaned)
 	# removing container and volume
-	-docker rm --force $(LOCAL_REGISTRY_HOSTNAME)
-	-docker volume rm $(LOCAL_REGISTRY_VOLUME)
+	-@docker rm --force $(LOCAL_REGISTRY_HOSTNAME)
+	-@docker volume rm $(LOCAL_REGISTRY_VOLUME)
 
 local-registry: .env ## creates a local docker registry and configure simcore to use it (NOTE: needs admin rights)
 	@$(if $(shell grep "127.0.0.1 $(LOCAL_REGISTRY_HOSTNAME)" /etc/hosts),,\
 					echo configuring host file to redirect $(LOCAL_REGISTRY_HOSTNAME) to 127.0.0.1; \
 					sudo echo 127.0.0.1 $(LOCAL_REGISTRY_HOSTNAME) | sudo tee -a /etc/hosts;\
 					echo done)
-	@$(if $(shell grep "{\"insecure-registries\": \[\"registry:5000\"\]}" /etc/docker/daemon.json),,\
+	@$(if $(shell jq -e '.["insecure-registries"]? | index("http://$(LOCAL_REGISTRY_HOSTNAME):5000")? // empty' /etc/docker/daemon.json),,\
 					echo configuring docker engine to use insecure local registry...; \
-					sudo echo {\"insecure-registries\": [\"$(LOCAL_REGISTRY_HOSTNAME):5000\"]} | sudo tee -a /etc/docker/daemon.json; \
-					echo restarting engine...; \
-					sudo service docker restart;\
+					jq 'if .["insecure-registries"] | index("http://$(LOCAL_REGISTRY_HOSTNAME):5000") then . else .["insecure-registries"] += ["http://$(LOCAL_REGISTRY_HOSTNAME):5000"] end' /etc/docker/daemon.json > /tmp/daemon.json &&\
+					sudo mv /tmp/daemon.json /etc/docker/daemon.json &&\
+					echo restarting engine... &&\
+					sudo service docker restart &&\
 					echo done)
+
 	@$(if $(shell docker ps --format="{{.Names}}" | grep registry),,\
-					echo starting registry on $(LOCAL_REGISTRY_HOSTNAME):5000...; \
-					docker run --detach \
+					echo starting registry on http://$(LOCAL_REGISTRY_HOSTNAME):5000...; \
+					docker run \
+							--detach \
 							--init \
 							--env REGISTRY_STORAGE_DELETE_ENABLED=true \
 							--publish 5000:5000 \

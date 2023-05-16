@@ -1,4 +1,4 @@
-ARG PYTHON_VERSION="3.9.12"
+ARG PYTHON_VERSION="3.10.10"
 FROM python:${PYTHON_VERSION}-slim-buster as base
 
 RUN apt-get update \
@@ -15,7 +15,7 @@ RUN apt-get update \
 
 
 RUN pip --no-cache-dir install --upgrade \
-  pip~=22.0  \
+  pip~=23.1  \
   wheel \
   setuptools
 

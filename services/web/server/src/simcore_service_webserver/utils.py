@@ -6,11 +6,12 @@ import hashlib
 import logging
 import os
 import sys
+import traceback
 import tracemalloc
 from collections import OrderedDict
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import orjson
 from models_library.basic_types import SHA1Str
@@ -141,16 +142,26 @@ def get_tracemalloc_info(top=10) -> list[str]:
 def compose_support_error_msg(
     msg: str, error_code: ErrorCodeStr, support_email: str = "support"
 ) -> str:
-    return (
-        f"{msg.strip(' .').capitalize()} [{error_code}].\n"
-        f"Please contact {support_email} and attach the message above"
+    sentences = []
+    for line in msg.split("\n"):
+        if sentence := line.strip(" ."):
+            sentences.append(sentence[0].upper() + sentence[1:])
+
+    sentences.append(
+        f"For more information please forward this message to {support_email} [{error_code}]"
     )
+
+    return ". ".join(sentences)
 
 
 # -----------------------------------------------
 #
 # FORMATTING
 #
+
+
+def get_traceback_string(exception: BaseException) -> str:
+    return "".join(traceback.format_exception(exception))
 
 
 # -----------------------------------------------
@@ -168,4 +179,4 @@ def compute_sha1_on_small_dataset(d: Any) -> SHA1Str:
     """
     # SEE options in https://github.com/ijl/orjson#option
     data_bytes = orjson.dumps(d, option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SORT_KEYS)
-    return hashlib.sha1(data_bytes).hexdigest()  # nosec
+    return cast(SHA1Str, hashlib.sha1(data_bytes).hexdigest())  # nosec

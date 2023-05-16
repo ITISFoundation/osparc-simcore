@@ -15,8 +15,8 @@ from models_library.projects import ProjectID
 from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
 from models_library.users import UserID
-from simcore_service_webserver import director_v2_api
-from simcore_service_webserver.director_v2_models import (
+from simcore_service_webserver.director_v2 import api
+from simcore_service_webserver.director_v2._models import (
     ClusterCreate,
     ClusterPatch,
     ClusterPing,
@@ -46,10 +46,14 @@ def cluster_id(faker: Faker) -> ClusterID:
 
 
 async def test_create_pipeline(
-    mocked_director_v2, client, user_id: UserID, project_id: ProjectID
+    mocked_director_v2,
+    client,
+    user_id: UserID,
+    project_id: ProjectID,
+    osparc_product_name: str,
 ):
-    task_out = await director_v2_api.create_or_update_pipeline(
-        client.app, user_id, project_id
+    task_out = await api.create_or_update_pipeline(
+        client.app, user_id, project_id, osparc_product_name
     )
     assert task_out
     assert isinstance(task_out, dict)
@@ -62,9 +66,7 @@ async def test_get_computation_task(
     user_id: UserID,
     project_id: ProjectID,
 ):
-    task_out = await director_v2_api.get_computation_task(
-        client.app, user_id, project_id
-    )
+    task_out = await api.get_computation_task(client.app, user_id, project_id)
     assert task_out
     assert isinstance(task_out, ComputationTask)
     assert task_out.state == RunningState.NOT_STARTED
@@ -73,7 +75,7 @@ async def test_get_computation_task(
 async def test_delete_pipeline(
     mocked_director_v2, client, user_id: UserID, project_id: ProjectID
 ):
-    await director_v2_api.delete_pipeline(client.app, user_id, project_id)
+    await api.delete_pipeline(client.app, user_id, project_id)
 
 
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
@@ -81,7 +83,7 @@ async def test_delete_pipeline(
 async def test_create_cluster(
     mocked_director_v2, client, user_id: UserID, cluster_create
 ):
-    created_cluster = await director_v2_api.create_cluster(
+    created_cluster = await api.create_cluster(
         client.app, user_id=user_id, new_cluster=cluster_create
     )
     assert created_cluster is not None
@@ -90,7 +92,7 @@ async def test_create_cluster(
 
 
 async def test_list_clusters(mocked_director_v2, client, user_id: UserID):
-    list_of_clusters = await director_v2_api.list_clusters(client.app, user_id=user_id)
+    list_of_clusters = await api.list_clusters(client.app, user_id=user_id)
     assert isinstance(list_of_clusters, list)
     assert len(list_of_clusters) > 0
 
@@ -98,9 +100,7 @@ async def test_list_clusters(mocked_director_v2, client, user_id: UserID):
 async def test_get_cluster(
     mocked_director_v2, client, user_id: UserID, cluster_id: ClusterID
 ):
-    cluster = await director_v2_api.get_cluster(
-        client.app, user_id=user_id, cluster_id=cluster_id
-    )
+    cluster = await api.get_cluster(client.app, user_id=user_id, cluster_id=cluster_id)
     assert isinstance(cluster, dict)
     assert cluster["id"] == cluster_id
 
@@ -108,7 +108,7 @@ async def test_get_cluster(
 async def test_get_cluster_details(
     mocked_director_v2, client, user_id: UserID, cluster_id: ClusterID
 ):
-    cluster_details = await director_v2_api.get_cluster_details(
+    cluster_details = await api.get_cluster_details(
         client.app, user_id=user_id, cluster_id=cluster_id
     )
     assert isinstance(cluster_details, dict)
@@ -120,7 +120,7 @@ async def test_update_cluster(
     mocked_director_v2, client, user_id: UserID, cluster_id: ClusterID, cluster_patch
 ):
     print(f"--> updating cluster with {cluster_patch=}")
-    updated_cluster = await director_v2_api.update_cluster(
+    updated_cluster = await api.update_cluster(
         client.app, user_id=user_id, cluster_id=cluster_id, cluster_patch=cluster_patch
     )
     assert isinstance(updated_cluster, dict)
@@ -130,20 +130,16 @@ async def test_update_cluster(
 async def test_delete_cluster(
     mocked_director_v2, client, user_id: UserID, cluster_id: ClusterID
 ):
-    await director_v2_api.delete_cluster(
-        client.app, user_id=user_id, cluster_id=cluster_id
-    )
+    await api.delete_cluster(client.app, user_id=user_id, cluster_id=cluster_id)
 
 
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
 @given(cluster_ping=st.builds(ClusterPing))
 async def test_ping_cluster(mocked_director_v2, client, cluster_ping: ClusterPing):
-    await director_v2_api.ping_cluster(client.app, cluster_ping=cluster_ping)
+    await api.ping_cluster(client.app, cluster_ping=cluster_ping)
 
 
 async def test_ping_specific_cluster(
     mocked_director_v2, client, user_id: UserID, cluster_id: ClusterID
 ):
-    await director_v2_api.ping_specific_cluster(
-        client.app, user_id=user_id, cluster_id=cluster_id
-    )
+    await api.ping_specific_cluster(client.app, user_id=user_id, cluster_id=cluster_id)

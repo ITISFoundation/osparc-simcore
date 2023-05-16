@@ -50,7 +50,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
       cbConfirmBackToDashboard.bind("value", preferencesSettings, "confirmBackToDashboard");
       box.add(cbConfirmBackToDashboard);
 
-      const studyLabel = osparc.utils.Utils.getStudyLabel();
+      const studyLabel = osparc.product.Utils.getStudyAlias();
       const cbConfirmDeleteStudy = new qx.ui.form.CheckBox(this.tr("Delete a ") + studyLabel);
       preferencesSettings.bind("confirmDeleteStudy", cbConfirmDeleteStudy, "value");
       cbConfirmDeleteStudy.bind("value", preferencesSettings, "confirmDeleteStudy");
@@ -72,7 +72,12 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
       }, this);
       box.add(cbConfirmDeleteStudy);
 
-      if (!(osparc.utils.Utils.isProduct("tis") || osparc.utils.Utils.isProduct("s4llite"))) {
+      const cbConfirmDemoteOrgnaization = new qx.ui.form.CheckBox(this.tr("Demote Organization collaboration"));
+      preferencesSettings.bind("confirmDemoteOrgnaization", cbConfirmDemoteOrgnaization, "value");
+      cbConfirmDemoteOrgnaization.bind("value", preferencesSettings, "confirmDemoteOrgnaization");
+      box.add(cbConfirmDemoteOrgnaization);
+
+      if (!(osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("s4llite"))) {
         const cbConfirmDeleteNode = new qx.ui.form.CheckBox(this.tr("Delete a Node"));
         preferencesSettings.bind("confirmDeleteNode", cbConfirmDeleteNode, "value");
         cbConfirmDeleteNode.bind("value", preferencesSettings, "confirmDeleteNode");
@@ -98,12 +103,12 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
         preferencesSettings.bind("confirmStopNode", cbConfirmStopNode, "value");
         cbConfirmStopNode.bind("value", preferencesSettings, "confirmStopNode");
         box.add(cbConfirmStopNode);
-      }
 
-      const cbConfirmWindowSize = new qx.ui.form.CheckBox(this.tr("Window size check"));
-      preferencesSettings.bind("confirmWindowSize", cbConfirmWindowSize, "value");
-      cbConfirmWindowSize.bind("value", preferencesSettings, "confirmWindowSize");
-      box.add(cbConfirmWindowSize);
+        const cbSnapNodeToGrid = new qx.ui.form.CheckBox(this.tr("Snap Node to grid"));
+        preferencesSettings.bind("snapNodeToGrid", cbSnapNodeToGrid, "value");
+        cbSnapNodeToGrid.bind("value", preferencesSettings, "snapNodeToGrid");
+        box.add(cbSnapNodeToGrid);
+      }
 
       return box;
     }

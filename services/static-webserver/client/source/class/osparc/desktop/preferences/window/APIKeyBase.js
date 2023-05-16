@@ -21,12 +21,11 @@ qx.Class.define("osparc.desktop.preferences.window.APIKeyBase", {
     this.base(arguments, caption);
 
     this.set({
-      layout: new qx.ui.layout.VBox(5),
+      layout: new qx.ui.layout.VBox(10),
       autoDestroy: true,
       modal: true,
       showMaximize: false,
       showMinimize: false,
-      contentPadding: 0,
       width: 350,
       clickAwayClose: true
     });
@@ -43,7 +42,7 @@ qx.Class.define("osparc.desktop.preferences.window.APIKeyBase", {
         paddingRight: 5,
         rich: true
       });
-      this._add(introLabel);
+      this.add(introLabel);
     }
   }
 });

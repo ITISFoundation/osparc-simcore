@@ -45,13 +45,14 @@ qx.Class.define("osparc.desktop.MainPage", {
 
     this._setLayout(new qx.ui.layout.VBox(null, null, "separator-vertical"));
 
-    this._add(osparc.component.notification.NotificationsRibbon.getInstance());
+    this._add(osparc.component.notification.RibbonNotifications.getInstance());
 
     const navBar = this.__navBar = this.__createNavigationBar();
     this._add(navBar);
 
     // Some resources request before building the main stack
-    osparc.data.MaintenanceTracker.getInstance().startTracker();
+    osparc.WindowSizeTracker.getInstance().startTracker();
+    osparc.MaintenanceTracker.getInstance().startTracker();
 
     const store = osparc.store.Store.getInstance();
     Promise.all([
@@ -65,6 +66,10 @@ qx.Class.define("osparc.desktop.MainPage", {
 
       this.__attachHandlers();
     });
+  },
+
+  statics: {
+    MIN_STUDIES_PER_ROW: 4
   },
 
   members: {
@@ -87,31 +92,31 @@ qx.Class.define("osparc.desktop.MainPage", {
         return;
       }
       if (this.__studyEditor) {
+        const isReadOnly = this.__studyEditor.getStudy().isReadOnly();
         const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
-        if (preferencesSettings.getConfirmBackToDashboard()) {
+        if (!isReadOnly && preferencesSettings.getConfirmBackToDashboard()) {
+          const studyName = this.__studyEditor.getStudy().getName();
           const win = new osparc.ui.window.Confirmation();
-          if (osparc.utils.Utils.isProduct("s4llite")) {
-            let msg = this.tr("Do you really want to close the project?");
-            msg += "<br>";
-            msg += this.tr("Save your changes to:");
+          if (osparc.product.Utils.isProduct("s4llite")) {
+            let msg = this.tr("Do you want to close ") + "<b>" + studyName + "</b>?";
+            msg += "<br><br>";
+            msg += this.tr("Make sure you saved your changes to:");
             msg += "<br>";
             msg += this.tr("- current <b>smash file</b> (running <b>simulations</b>, if any, will be terminated)");
             msg += "<br>";
             msg += this.tr("- current <b>notebooks</b> (<b>jupyterlab</b> session will be terminated)");
-            const confirmText = this.tr("Close");
             win.set({
-              maxWidth: 400,
+              maxWidth: 460,
+              caption: this.tr("Close"),
               message: msg,
-              caption: confirmText,
-              confirmText
+              confirmText: this.tr("Yes")
             });
           } else {
-            const msg = this.tr("Do you really want to save and close the study?");
-            const confirmText = this.tr("Save & Close");
+            const msg = this.tr("Do you want to save and close ") + "<b>" + studyName + "</b>?";
             win.set({
+              caption: this.tr("Save & Close"),
               message: msg,
-              caption: confirmText,
-              confirmText
+              confirmText: this.tr("Yes")
             });
           }
           const confirmButton = win.getConfirmButton();
@@ -179,15 +184,14 @@ qx.Class.define("osparc.desktop.MainPage", {
       const dashboard = this.__dashboard = new osparc.dashboard.Dashboard();
       const tabsBar = dashboard.getChildControl("bar");
       tabsBar.set({
-        paddingBottom: 8
+        paddingBottom: 6
       });
       this.__navBar.addDashboardTabButtons(tabsBar);
-      const minNStudyItemsPerRow = 5;
       const itemWidth = osparc.dashboard.GridButtonBase.ITEM_WIDTH + osparc.dashboard.GridButtonBase.SPACING;
-      dashboard.setMinWidth(minNStudyItemsPerRow * itemWidth + 8);
+      dashboard.setMinWidth(this.self().MIN_STUDIES_PER_ROW * itemWidth + 8);
       const fitResourceCards = () => {
         const w = document.documentElement.clientWidth;
-        const nStudies = Math.floor((w - 2*260 - 8) / itemWidth);
+        const nStudies = Math.floor((w - 2*150 - 8) / itemWidth);
         const newWidth = nStudies * itemWidth + 8;
         if (newWidth > dashboard.getMinWidth()) {
           dashboard.setWidth(newWidth);
@@ -238,7 +242,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         },
         data: data["studyData"]
       };
-      const fetchPromise = osparc.data.Resources.fetch("studies", "postToTemplate", params);
+      const fetchPromise = osparc.data.Resources.fetch("studies", "postToTemplate", params, null, {"pollTask": true});
       const pollTasks = osparc.data.PollTasks.getInstance();
       const interval = 1000;
       pollTasks.createPollingTask(fetchPromise, interval)
@@ -287,7 +291,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     },
 
     __startStudy: function(studyId) {
-      this.__showLoadingPage(this.tr("Loading Study"));
+      this.__showLoadingPage(this.tr("Loading ") + osparc.product.Utils.getStudyAlias());
 
       const params = {
         url: {

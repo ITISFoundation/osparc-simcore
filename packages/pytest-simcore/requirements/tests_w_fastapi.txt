@@ -1,6 +1,0 @@
-#
-# Requirements to test fastapi-specific services
-#
-
-# fixtures
-asgi_lifespan

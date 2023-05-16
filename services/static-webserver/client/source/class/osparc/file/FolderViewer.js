@@ -236,10 +236,17 @@ qx.Class.define("osparc.file.FolderViewer", {
         });
       } else if (this.getMode() === "icons") {
         content.forEach(entry => {
+          let tt = entry.getLabel();
+          if (entry.getSize) {
+            tt += "<br>" + osparc.utils.Utils.bytesToSize(entry.getSize());
+          }
+          if (entry.getLastModified) {
+            tt += "<br>" + osparc.utils.Utils.formatDateAndTime(new Date(entry.getLastModified()));
+          }
           const item = this.self().getItemButton().set({
             label: entry.getLabel(),
             icon: entry.getIcon ? entry.getIcon() : this.__getIcon(entry),
-            toolTipText: entry.getLabel()
+            toolTipText: tt
           });
           const icon = item.getChildControl("icon", true);
           if (icon.getSource() === "@FontAwesome5Solid/circle-notch/12") {

@@ -2,7 +2,7 @@ import asyncio
 import functools
 import inspect
 import logging
-from typing import Any, Awaitable, Callable, Optional
+from typing import Any, Awaitable, Callable
 
 from httpx import AsyncClient, ConnectError, HTTPError, PoolTimeout, Response
 from httpx._types import TimeoutTypes, URLTypes
@@ -18,15 +18,18 @@ from ._errors import ClientHttpError, UnexpectedStatusError, _WrongReturnType
 logger = logging.getLogger(__name__)
 
 
-def _log_requests_in_pool(client: AsyncClient, event_name: str) -> None:
+def _log_pool_status(client: AsyncClient, event_name: str) -> None:
     # pylint: disable=protected-access
     logger.warning(
-        "Requests while event '%s': %s",
+        "Pool status @ '%s': requests(%s)=%s, connections(%s)=%s",
         event_name.upper(),
+        len(client._transport._pool._requests),
         [
-            (r.request.method, r.request.url, r.request.headers)
+            (id(r), r.request.method, r.request.url, r.request.headers)
             for r in client._transport._pool._requests
         ],
+        len(client._transport._pool.connections),
+        [(id(c), c.__dict__) for c in client._transport._pool.connections],
     )
 
 
@@ -77,7 +80,7 @@ def retry_on_errors(
                     return r
         except HTTPError as e:
             if isinstance(e, PoolTimeout):
-                _log_requests_in_pool(zelf._client, "pool timeout")
+                _log_pool_status(zelf.client, "pool timeout")
             raise ClientHttpError(e) from e
 
     return request_wrapper
@@ -118,18 +121,26 @@ class BaseThinClient:
     def __init__(
         self,
         *,
-        request_timeout: int,
-        base_url: Optional[URLTypes] = None,
-        timeout: Optional[TimeoutTypes] = None,
+        request_timeout: float,
+        base_url: URLTypes | None = None,
+        timeout: TimeoutTypes | None = None,
     ) -> None:
-        self.request_timeout: int = request_timeout
+        self.request_timeout: float = request_timeout
 
-        client_args: dict[str, Any] = {}
+        client_args: dict[str, Any] = {
+            # NOTE: the default httpx pool limit configurations look good
+            # https://www.python-httpx.org/advanced/#pool-limit-configuration
+            # instruct the remote uvicorn web server to close the connections
+            # https://www.uvicorn.org/server-behavior/#http-headers
+            "headers": {
+                "Connection": "Close",
+            }
+        }
         if base_url:
             client_args["base_url"] = base_url
         if timeout:
             client_args["timeout"] = timeout
-        self._client = AsyncClient(**client_args)
+        self.client = AsyncClient(**client_args)
 
         # ensure all user defined public methods return `httpx.Response`
         # NOTE: ideally these checks should be ran at import time!
@@ -145,8 +156,8 @@ class BaseThinClient:
                 raise _WrongReturnType(method, signature.return_annotation)
 
     async def close(self) -> None:
-        _log_requests_in_pool(self._client, "closing")
-        await self._client.aclose()
+        _log_pool_status(self.client, "closing")
+        await self.client.aclose()
 
     async def __aenter__(self):
         return self

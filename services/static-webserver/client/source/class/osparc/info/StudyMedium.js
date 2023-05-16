@@ -29,15 +29,13 @@ qx.Class.define("osparc.info.StudyMedium", {
       padding: this.self().PADDING,
       backgroundColor: "background-main"
     });
-    this._setLayout(new qx.ui.layout.VBox(6));
+    this._setLayout(new qx.ui.layout.VBox(8));
 
     if (study instanceof osparc.data.model.Study) {
       this.setStudy(study);
     }
 
-    this.addListenerOnce("appear", () => {
-      this.__rebuildLayout();
-    }, this);
+    this.addListenerOnce("appear", () => this.__rebuildLayout(), this);
   },
 
   properties: {
@@ -76,7 +74,7 @@ qx.Class.define("osparc.info.StudyMedium", {
     __rebuildLayout: function(width) {
       this._removeAll();
 
-      const nameAndMenuButton = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+      const nameAndMenuButton = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignY: "middle"
       }));
       nameAndMenuButton.add(this.__createTitle(), {
@@ -183,7 +181,7 @@ qx.Class.define("osparc.info.StudyMedium", {
       }];
 
       if (
-        !osparc.utils.Utils.isProduct("s4llite") &&
+        osparc.product.Utils.showQuality() &&
         osparc.component.metadata.Quality.isEnabled(this.getStudy().getQuality())
       ) {
         extraInfo.push({
@@ -265,8 +263,8 @@ qx.Class.define("osparc.info.StudyMedium", {
     __openStudyDetails: function() {
       const studyDetails = new osparc.info.StudyLarge(this.getStudy());
       const title = this.tr("Study Information");
-      const width = 500;
-      const height = 500;
+      const width = osparc.info.CardLarge.WIDTH;
+      const height = osparc.info.CardLarge.HEIGHT;
       osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height);
     }
   }

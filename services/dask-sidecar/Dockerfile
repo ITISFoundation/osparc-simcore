@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-ARG PYTHON_VERSION="3.9.12"
+ARG PYTHON_VERSION="3.10.10"
 FROM --platform=${TARGETPLATFORM} python:${PYTHON_VERSION}-slim-buster as base
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
@@ -81,7 +81,7 @@ RUN  --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=loc
 RUN python -m venv "${VIRTUAL_ENV}"
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
   pip install --upgrade \
-  pip~=22.0  \
+  pip~=23.1  \
   wheel \
   setuptools
 

@@ -3,10 +3,10 @@
 
 
 import logging
+import re
 from enum import Enum, auto
 from functools import cached_property
 from pathlib import Path
-from typing import Optional
 
 from models_library.basic_types import (
     BootModeEnum,
@@ -22,15 +22,16 @@ from models_library.clusters import (
     NoAuthentication,
 )
 from models_library.docker import DockerGenericTag
-from models_library.projects_networks import SERVICE_NETWORK_RE
+from models_library.projects_networks import DockerNetworkName
 from models_library.utils.enums import StrAutoEnum
 from pydantic import (
     AnyHttpUrl,
     AnyUrl,
+    ConstrainedStr,
     Field,
     PositiveFloat,
     PositiveInt,
-    constr,
+    parse_obj_as,
     validator,
 )
 from settings_library.base import BaseCustomSettings
@@ -38,16 +39,14 @@ from settings_library.catalog import CatalogSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
-from settings_library.r_clone import RCloneSettings
+from settings_library.r_clone import RCloneSettings as SettingsLibraryRCloneSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
-from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from settings_library.utils_service import DEFAULT_FASTAPI_PORT
 from simcore_postgres_database.models.clusters import ClusterType
 from simcore_sdk.node_ports_v2 import FileLinkType
 
-from ..meta import API_VTAG
 from ..models.schemas.constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE
 
 logger = logging.getLogger(__name__)
@@ -68,10 +67,12 @@ ORG_LABELS_TO_SCHEMA_LABELS: dict[str, str] = {
 
 SUPPORTED_TRAEFIK_LOG_LEVELS: set[str] = {"info", "debug", "warn", "error"}
 
-PlacementConstraintStr = constr(
-    strip_whitespace=True,
-    regex=r"^(?!-)(?![.])(?!.*--)(?!.*[.][.])[a-zA-Z0-9.-]*(?<!-)(?<![.])(!=|==){1}[a-zA-Z0-9_. -]*$",
-)
+
+class PlacementConstraintStr(ConstrainedStr):
+    strip_whitespace = True
+    regex = re.compile(
+        r"^(?!-)(?![.])(?!.*--)(?!.*[.][.])[a-zA-Z0-9.-]*(?<!-)(?<![.])(!=|==)[a-zA-Z0-9_. -]*$"
+    )
 
 
 class VFSCacheMode(str, Enum):
@@ -90,10 +91,11 @@ class EnvoyLogLevel(StrAutoEnum):
     CRITICAL = auto()
 
     def to_log_level(self) -> str:
-        return self.value.lower()
+        lower_log_level: str = self.value.lower()
+        return lower_log_level
 
 
-class RCloneSettings(RCloneSettings):  # pylint: disable=function-redefined
+class RCloneSettings(SettingsLibraryRCloneSettings):
     R_CLONE_DIR_CACHE_TIME_SECONDS: PositiveInt = Field(
         10,
         description="time to cache directory entries for",
@@ -109,7 +111,7 @@ class RCloneSettings(RCloneSettings):  # pylint: disable=function-redefined
 
     @validator("R_CLONE_POLL_INTERVAL_SECONDS")
     @classmethod
-    def enforce_r_clone_requirement(cls, v, values) -> PositiveInt:
+    def enforce_r_clone_requirement(cls, v: int, values) -> PositiveInt:
         dir_cache_time = values["R_CLONE_DIR_CACHE_TIME_SECONDS"]
         if not v < dir_cache_time:
             raise ValueError(
@@ -126,12 +128,13 @@ class StorageSettings(BaseCustomSettings):
 
     @cached_property
     def endpoint(self) -> str:
-        return AnyHttpUrl.build(
+        url: str = AnyHttpUrl.build(
             scheme="http",
             host=self.STORAGE_HOST,
-            port=f"{self.STORAGE_PORT}",
             path=f"/{self.STORAGE_VTAG}",
+            port=f"{self.STORAGE_PORT}",
         )
+        return url
 
 
 class DirectorV0Settings(BaseCustomSettings):
@@ -145,12 +148,13 @@ class DirectorV0Settings(BaseCustomSettings):
 
     @cached_property
     def endpoint(self) -> str:
-        return AnyHttpUrl.build(
+        url: str = AnyHttpUrl.build(
             scheme="http",
             host=self.DIRECTOR_HOST,
             port=f"{self.DIRECTOR_PORT}",
             path=f"/{self.DIRECTOR_V0_VTAG}",
         )
+        return url
 
 
 class DynamicSidecarProxySettings(BaseCustomSettings):
@@ -166,7 +170,8 @@ class DynamicSidecarEgressSettings(BaseCustomSettings):
         description="envoy image to use",
     )
     DYNAMIC_SIDECAR_ENVOY_LOG_LEVEL: EnvoyLogLevel = Field(
-        EnvoyLogLevel.ERROR, description="log level for envoy proxy service"
+        default=EnvoyLogLevel.ERROR,  # type: ignore
+        description="log level for envoy proxy service",
     )
 
 
@@ -191,9 +196,8 @@ class DynamicSidecarSettings(BaseCustomSettings):
         description="used by the director to start a specific version of the dynamic-sidecar",
     )
 
-    SIMCORE_SERVICES_NETWORK_NAME: str = Field(
+    SIMCORE_SERVICES_NETWORK_NAME: DockerNetworkName = Field(
         ...,
-        regex=SERVICE_NETWORK_RE,
         description="network all dynamic services are connected to",
     )
 
@@ -314,7 +318,7 @@ class DynamicSidecarSettings(BaseCustomSettings):
     # DEVELOPMENT ONLY config
     #
 
-    DYNAMIC_SIDECAR_MOUNT_PATH_DEV: Optional[Path] = Field(
+    DYNAMIC_SIDECAR_MOUNT_PATH_DEV: Path | None = Field(
         None,
         description="Host path to the dynamic-sidecar project. Used as source path to mount to the dynamic-sidecar [DEVELOPMENT ONLY]",
         example="osparc-simcore/services/dynamic-sidecar",
@@ -383,12 +387,12 @@ class DynamicSidecarSettings(BaseCustomSettings):
 
     @validator("DYNAMIC_SIDECAR_IMAGE", pre=True)
     @classmethod
-    def strip_leading_slashes(cls, v) -> str:
+    def strip_leading_slashes(cls, v: str) -> str:
         return v.lstrip("/")
 
     @validator("DYNAMIC_SIDECAR_LOG_LEVEL")
     @classmethod
-    def validate_log_level(cls, v) -> str:
+    def validate_log_level(cls, v: str) -> str:
         valid_log_levels = {"DEBUG", "INFO", "WARNING", "ERROR"}
         if v not in valid_log_levels:
             raise ValueError(f"Log level must be one of {valid_log_levels} not {v}")
@@ -440,13 +444,13 @@ class ComputationalBackendSettings(BaseCustomSettings):
         True,
     )
     COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL: AnyUrl = Field(
-        "tcp://dask-scheduler:8786",
+        parse_obj_as(AnyUrl, "tcp://dask-scheduler:8786"),
         description="This is the cluster that will be used by default"
         " when submitting computational services (typically "
         "tcp://dask-scheduler:8786 for the internal cluster, or "
         "http(s)/GATEWAY_IP:8000 for a osparc-dask-gateway)",
     )
-    COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH: Optional[ClusterAuthentication] = Field(
+    COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH: ClusterAuthentication | None = Field(
         NoAuthentication(),
         description="Empty for the internal cluster, must be one "
         "of simple/kerberos/jupyterhub for the osparc-dask-gateway",
@@ -461,7 +465,7 @@ class ComputationalBackendSettings(BaseCustomSettings):
     )
 
     @cached_property
-    def default_cluster(self):
+    def default_cluster(self) -> Cluster:
         return Cluster(
             id=DEFAULT_CLUSTER_ID,
             name="Default cluster",
@@ -469,7 +473,7 @@ class ComputationalBackendSettings(BaseCustomSettings):
             authentication=self.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH,
             owner=1,  # NOTE: currently this is a soft hack (the group of everyone is the group 1)
             type=ClusterType.ON_PREMISE,
-        )  # type: ignore
+        )
 
     @validator("COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH", pre=True)
     def empty_auth_is_none(v):
@@ -481,11 +485,19 @@ class ComputationalBackendSettings(BaseCustomSettings):
 class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     # docker environs
     SC_BOOT_MODE: BootModeEnum
-    SC_BOOT_TARGET: Optional[BuildTargetEnum]
+    SC_BOOT_TARGET: BuildTargetEnum | None
 
     LOG_LEVEL: LogLevel = Field(
         LogLevel.INFO.value,
         env=["DIRECTOR_V2_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
+    )
+    DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
+        False,
+        env=[
+            "DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED",
+            "LOG_FORMAT_LOCAL_DEV_ENABLED",
+        ],
+        description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
     DIRECTOR_V2_DEV_FEATURES_ENABLED: bool = False
 
@@ -516,16 +528,11 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     PUBLISHED_HOSTS_NAME: str = Field("", env="PUBLISHED_HOSTS_NAME")
     SWARM_STACK_NAME: str = Field("undefined-please-check", env="SWARM_STACK_NAME")
 
-    NODE_SCHEMA_LOCATION: str = Field(
-        f"{API_ROOT}/{API_VTAG}/schemas/node-meta-v0.0.1.json",
-        description="used when in devel mode vs release mode",
-    )
-
-    SIMCORE_SERVICES_NETWORK_NAME: Optional[str] = Field(
+    SIMCORE_SERVICES_NETWORK_NAME: str | None = Field(
         None,
         description="used to find the right network name",
     )
-    SIMCORE_SERVICES_PREFIX: Optional[str] = Field(
+    SIMCORE_SERVICES_PREFIX: str | None = Field(
         "simcore/services",
         description="useful when developing with an alternative registry namespace",
     )
@@ -544,7 +551,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     # App modules settings ---------------------
     DIRECTOR_V2_STORAGE: StorageSettings = Field(auto_default_from_env=True)
 
-    DIRECTOR_V2_CATALOG: Optional[CatalogSettings] = Field(auto_default_from_env=True)
+    DIRECTOR_V2_CATALOG: CatalogSettings | None = Field(auto_default_from_env=True)
 
     DIRECTOR_V0: DirectorV0Settings = Field(auto_default_from_env=True)
 
@@ -562,8 +569,6 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
         auto_default_from_env=True
     )
 
-    DIRECTOR_V2_TRACING: Optional[TracingSettings] = Field(auto_default_from_env=True)
-
     DIRECTOR_V2_DOCKER_REGISTRY: RegistrySettings = Field(auto_default_from_env=True)
 
     # This is just a service placement constraint, see
@@ -575,5 +580,6 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
 
     @validator("LOG_LEVEL", pre=True)
     @classmethod
-    def _validate_loglevel(cls, value) -> str:
-        return cls.validate_log_level(value)
+    def _validate_loglevel(cls, value: str) -> str:
+        log_level: str = cls.validate_log_level(value)
+        return log_level

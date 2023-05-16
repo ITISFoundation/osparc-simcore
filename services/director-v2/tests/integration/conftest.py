@@ -1,11 +1,13 @@
 import asyncio
 from typing import AsyncIterator, Awaitable, Callable, Iterator
+from unittest.mock import AsyncMock
 
 import httpx
 import pytest
 import sqlalchemy as sa
 from models_library.projects import ProjectAtDB
 from models_library.users import UserID
+from pytest_mock import MockerFixture
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects import projects
 from simcore_service_director_v2.models.schemas.comp_tasks import ComputationGet
@@ -95,3 +97,15 @@ async def create_pipeline(
         )
     )
     assert all(r.raise_for_status() is None for r in responses)
+
+
+@pytest.fixture
+def mock_projects_repository(mocker: MockerFixture) -> None:
+    mocked_obj = AsyncMock()
+    mocked_obj.is_node_present_in_workbench(return_value=True)
+
+    module_base = "simcore_service_director_v2.modules.db.repositories.projects"
+    mocker.patch(
+        f"{module_base}.ProjectsRepository.is_node_present_in_workbench",
+        return_value=mocked_obj,
+    )

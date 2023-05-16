@@ -2,77 +2,41 @@ import logging
 import uuid
 from collections import deque
 from functools import lru_cache
-from typing import List, Optional
 
 from aiohttp import web
-from aiopg.sa.result import RowProxy
-from models_library.services import KEY_RE, VERSION_RE
-from pydantic import BaseModel, Field, ValidationError, constr
+from models_library.utils.pydantic_tools_extension import parse_obj_or_none
+from pydantic import ByteSize, ValidationError
+from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.models.services_consume_filetypes import (
     services_consume_filetypes,
 )
 
 from .._constants import APP_DB_ENGINE_KEY
+from ._errors import FileToLarge, IncompatibleService
+from ._models import ViewerInfo
+from .settings import get_plugin_settings
 
-MEGABYTES = 1024 * 1024
-
-log = logging.getLogger(__name__)
-
-
-# VIEWERS  -----------------------------------------------------------------------------
-class StudyDispatcherError(Exception):
-    def __init__(self, reason):
-        super().__init__()
-        self.reason = reason
+_BASE_UUID = uuid.UUID("ca2144da-eabb-4daf-a1df-a3682050e25f")
 
 
-class ViewerInfo(BaseModel):
-    """Here a viewer denotes a service
-      - that supports (i.e. can consume) a specific filetype and
-      - that is available to everyone
-    and therefore it can be dispatched to both guest and active users
-    to visualize a file of that type
-    """
+_logger = logging.getLogger(__name__)
 
-    key: constr(regex=KEY_RE)  # type: ignore
-    version: constr(regex=VERSION_RE)  # type: ignore
-    filetype: str = Field(..., description="Filetype associated to this viewer")
 
-    label: str = Field(..., description="Display name")
-    input_port_key: str = Field(
-        description="Name of the connection port, since it is service-dependent",
-    )
-    is_guest_allowed: bool = True
-
-    @property
-    def footprint(self) -> str:
-        return f"{self.key}:{self.version}"
-
-    @property
-    def title(self) -> str:
-        """human readable title"""
-        return f"{self.label.capitalize()} v{self.version}"
-
-    @classmethod
-    def create_from_db(cls, row: RowProxy) -> "ViewerInfo":
-        return cls(
-            key=row["service_key"],
-            version=row["service_version"],
-            filetype=row["filetype"],
-            label=row["service_display_name"] or row["service_key"].split("/")[-1],
-            input_port_key=row["service_input_port"],
-            is_guest_allowed=row["is_guest_allowed"],
-        )
+@lru_cache
+def compose_uuid_from(*values) -> uuid.UUID:
+    composition: str = "/".join(map(str, values))
+    new_uuid = uuid.uuid5(_BASE_UUID, composition)
+    return new_uuid
 
 
 async def list_viewers_info(
-    app: web.Application, file_type: Optional[str] = None, *, only_default: bool = False
-) -> List[ViewerInfo]:
+    app: web.Application, file_type: str | None = None, *, only_default: bool = False
+) -> list[ViewerInfo]:
     #
     # TODO: These services MUST be shared with EVERYBODY! Setup check on startup and fill
     #       with !?
     #
-    consumers = deque()
+    consumers: deque = deque()
 
     async with app[APP_DB_ENGINE_KEY].acquire() as conn:
 
@@ -86,7 +50,7 @@ async def list_viewers_info(
         if file_type and only_default:
             stmt = stmt.limit(1)
 
-        log.debug("Listing viewers:\n%s", stmt)
+        _logger.debug("Listing viewers:\n%s", stmt)
 
         listed_filetype = set()
         async for row in await conn.execute(stmt):
@@ -100,7 +64,7 @@ async def list_viewers_info(
                 consumers.append(consumer)
 
             except ValidationError as err:
-                log.warning("Review invalid service metadata %s: %s", row, err)
+                _logger.warning("Review invalid service metadata %s: %s", row, err)
 
     return list(consumers)
 
@@ -108,32 +72,42 @@ async def list_viewers_info(
 async def get_default_viewer(
     app: web.Application,
     file_type: str,
-    file_size: Optional[int] = None,
+    file_size: int | None = None,
 ) -> ViewerInfo:
+    """
+
+    Raises:
+        IncompatibleService
+        FileToLarge
+    """
     try:
         viewers = await list_viewers_info(app, file_type, only_default=True)
         viewer = viewers[0]
     except IndexError as err:
-        raise StudyDispatcherError(
-            f"No viewer available for file type '{file_type}'"
-        ) from err
+        raise IncompatibleService(file_type=file_type) from err
 
-    # TODO: This is a temporary limitation just for demo purposes.
-    if file_size is not None and file_size > 50 * MEGABYTES:
-        raise StudyDispatcherError(
-            f"File size {file_size*1E-6} MB is over allowed limit"
-        )
+    if current_size := parse_obj_or_none(ByteSize, file_size):
+        max_size: ByteSize = get_plugin_settings(app).STUDIES_MAX_FILE_SIZE_ALLOWED
+        if current_size > max_size:
+            raise FileToLarge(file_size_in_mb=current_size.to("MiB"))
 
     return viewer
 
 
+@log_decorator(_logger, level=logging.DEBUG)
 async def validate_requested_viewer(
     app: web.Application,
     file_type: str,
-    file_size: Optional[int] = None,
-    service_key: Optional[str] = None,
-    service_version: Optional[str] = None,
+    file_size: int | None = None,
+    service_key: str | None = None,
+    service_version: str | None = None,
 ) -> ViewerInfo:
+    """
+
+    Raises:
+        IncompatibleService: When there is no match
+
+    """
 
     if not service_key and not service_version:
         return await get_default_viewer(app, file_type, file_size)
@@ -150,17 +124,17 @@ async def validate_requested_viewer(
             if row:
                 return ViewerInfo.create_from_db(row)
 
-    raise StudyDispatcherError(
-        f"None of the registered viewers can open file type '{file_type}'"
-    )
+    raise IncompatibleService(file_type=file_type)
 
 
-# UTILITIES ---------------------------------------------------------------
-BASE_UUID = uuid.UUID("ca2144da-eabb-4daf-a1df-a3682050e25f")
+@log_decorator(_logger, level=logging.DEBUG)
+def validate_requested_file(
+    app: web.Application, file_type: str, file_size: int | None = None
+):
+    # NOTE in the future we might want to prevent some types to be pulled
+    assert file_type  # nosec
 
-
-@lru_cache()
-def compose_uuid_from(*values) -> str:
-    composition = "/".join(map(str, values))
-    new_uuid = uuid.uuid5(BASE_UUID, composition)
-    return str(new_uuid)
+    if current_size := parse_obj_or_none(ByteSize, file_size):
+        max_size: ByteSize = get_plugin_settings(app).STUDIES_MAX_FILE_SIZE_ALLOWED
+        if current_size > max_size:
+            raise FileToLarge(file_size_in_mb=current_size.to("MiB"))

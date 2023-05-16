@@ -5,7 +5,7 @@
 import logging
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncIterator, Awaitable, Callable, Optional, Union
+from typing import Any, AsyncIterator, Awaitable, Callable
 from unittest import mock
 from uuid import UUID
 
@@ -15,6 +15,7 @@ from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.users import UserID
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.rawdata_fakers import random_project
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_projects import NewProject
@@ -26,10 +27,9 @@ from simcore_service_webserver._meta import API_VTAG as VX
 from simcore_service_webserver.db import APP_DB_ENGINE_KEY
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.log import setup_logging
+from simcore_service_webserver.projects.project_models import ProjectDict
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
-
-ProjectDict = dict[str, Any]
 
 
 @pytest.fixture
@@ -55,16 +55,19 @@ def fake_project(faker: Faker) -> ProjectDict:
 
 
 @pytest.fixture
-async def catalog_subsystem_mock(
-    catalog_subsystem_mock: Callable[[Optional[Union[list[dict], dict]]], None],
-    fake_project,
+async def catalog_subsystem_mock_override(
+    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
+    fake_project: ProjectDict,
 ) -> None:
     catalog_subsystem_mock([fake_project])
 
 
 @pytest.fixture
 def app_cfg(
-    default_app_cfg, unused_tcp_port_factory, catalog_subsystem_mock, monkeypatch
+    default_app_cfg,
+    unused_tcp_port_factory,
+    catalog_subsystem_mock_override: None,
+    monkeypatch,
 ) -> dict[str, Any]:
     """App's configuration used for every test in this module
 
@@ -113,7 +116,7 @@ def app_cfg(
         cfg[section]["enabled"] = False
 
     # NOTE: To see logs, use pytest -s --log-cli-level=DEBUG
-    setup_logging(level=logging.DEBUG)
+    setup_logging(level=logging.DEBUG, log_format_local_dev_enabled=True)
 
     # Enforces smallest GC in the background task
     cfg["resource_manager"]["garbage_collection_interval_seconds"] = 1
@@ -191,7 +194,7 @@ def request_update_project(
 @pytest.fixture
 async def request_delete_project(
     logged_user: UserInfoDict,
-    mocker,
+    mocker: MockerFixture,
 ) -> AsyncIterator[Callable[[TestClient, UUID], Awaitable]]:
     director_v2_api_delete_pipeline: mock.AsyncMock = mocker.patch(
         "simcore_service_webserver.projects.projects_api.director_v2_api.delete_pipeline",
@@ -202,7 +205,7 @@ async def request_delete_project(
         autospec=True,
     )
     fire_and_forget_call_to_storage: mock.Mock = mocker.patch(
-        "simcore_service_webserver.projects._delete.delete_data_folders_of_project",
+        "simcore_service_webserver.projects._delete_utils.delete_data_folders_of_project",
         autospec=True,
     )
 

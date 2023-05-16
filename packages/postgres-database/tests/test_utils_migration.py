@@ -1,3 +1,8 @@
+# pylint: disable=no-value-for-parameter
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 import pytest
 from alembic.script.revision import MultipleHeads
 from simcore_postgres_database.utils_migration import get_current_head

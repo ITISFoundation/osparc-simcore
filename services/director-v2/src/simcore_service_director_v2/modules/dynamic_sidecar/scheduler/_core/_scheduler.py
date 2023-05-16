@@ -14,13 +14,13 @@ self._to_observe is protected by an asyncio Lock
 """
 
 import asyncio
+import contextlib
 import functools
 import logging
-from asyncio import sleep
-from contextlib import suppress
-from dataclasses import dataclass
-from typing import Optional, Union
+from asyncio import Lock, Queue, Task, sleep
+from dataclasses import dataclass, field
 
+from fastapi import FastAPI
 from models_library.basic_types import PortInt
 from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkAlias
@@ -28,8 +28,12 @@ from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import RestartPolicy, SimcoreServiceLabels
 from models_library.users import UserID
 from pydantic import AnyHttpUrl
+from servicelib.background_task import cancel_task
 from servicelib.fastapi.long_running_tasks.client import ProgressCallback
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
+from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
+    ServiceName,
+)
 
 from .....core.settings import DynamicServicesSchedulerSettings, DynamicSidecarSettings
 from .....models.domains.dynamic_services import (
@@ -37,32 +41,21 @@ from .....models.domains.dynamic_services import (
     RetrieveDataOutEnveloped,
 )
 from .....models.schemas.dynamic_services import (
-    DynamicSidecarStatus,
     RunningDynamicServiceDetails,
     SchedulerData,
+    ServiceName,
 )
 from ...api_client import DynamicSidecarClient, get_dynamic_sidecar_client
-from ...docker_api import (
-    get_dynamic_sidecar_state,
-    get_dynamic_sidecars_to_observe,
-    remove_pending_volume_removal_services,
-    update_scheduler_data_label,
-)
-from ...docker_states import ServiceState, extract_containers_minimum_statuses
-from ...errors import (
-    DockerServiceNotFoundError,
-    DynamicSidecarError,
-    DynamicSidecarNotFoundError,
-)
+from ...docker_api import update_scheduler_data_label
+from ...errors import DynamicSidecarError, DynamicSidecarNotFoundError
 from .._abc import SchedulerPublicInterface
+from . import _scheduler_utils
 from ._events_utils import (
-    service_push_outputs,
     service_remove_containers,
     service_remove_sidecar_proxy_docker_networks_and_volumes,
     service_save_state,
 )
 from ._observer import observing_single_service
-from ._scheduler_mixin import SchedulerInternalsMixin
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +64,92 @@ _DISABLED_MARK = object()
 
 
 @dataclass
-class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
+class Scheduler(  # pylint: disable=too-many-instance-attributes
+    SchedulerPublicInterface
+):
+    app: FastAPI
+
+    _lock: Lock = field(default_factory=Lock)
+    _to_observe: dict[ServiceName, SchedulerData] = field(default_factory=dict)
+    _service_observation_task: dict[ServiceName, asyncio.Task | object | None] = field(
+        default_factory=dict
+    )
+    _keep_running: bool = False
+    _inverse_search_mapping: dict[NodeID, ServiceName] = field(default_factory=dict)
+    _scheduler_task: Task | None = None
+    _cleanup_volume_removal_services_task: Task | None = None
+    _trigger_observation_queue_task: Task | None = None
+    _trigger_observation_queue: Queue = field(default_factory=Queue)
+    _observation_counter: int = 0
+
+    async def start(self) -> None:
+        # run as a background task
+        logger.info("Starting dynamic-sidecar scheduler")
+        self._keep_running = True
+        self._scheduler_task = asyncio.create_task(
+            self._run_scheduler_task(), name="dynamic-scheduler"
+        )
+        self._trigger_observation_queue_task = asyncio.create_task(
+            self._run_trigger_observation_queue_task(),
+            name="dynamic-scheduler-trigger-obs-queue",
+        )
+
+        self._cleanup_volume_removal_services_task = asyncio.create_task(
+            _scheduler_utils.cleanup_volume_removal_services(self.app),
+            name="dynamic-scheduler-cleanup-volume-removal-services",
+        )
+        await _scheduler_utils.discover_running_services(self)
+
+    async def shutdown(self) -> None:
+        logger.info("Shutting down dynamic-sidecar scheduler")
+        self._keep_running = False
+        self._inverse_search_mapping = {}
+        self._to_observe = {}
+
+        if self._cleanup_volume_removal_services_task is not None:
+            self._cleanup_volume_removal_services_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._cleanup_volume_removal_services_task
+            self._cleanup_volume_removal_services_task = None
+
+        if self._scheduler_task is not None:
+            self._scheduler_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._scheduler_task
+            self._scheduler_task = None
+
+        if self._trigger_observation_queue_task is not None:
+            await self._trigger_observation_queue.put(None)
+
+            self._trigger_observation_queue_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._trigger_observation_queue_task
+            self._trigger_observation_queue_task = None
+            self._trigger_observation_queue = Queue()
+
+        # let's properly cleanup remaining observation tasks
+        running_tasks = [
+            x for x in self._service_observation_task.values() if isinstance(x, Task)
+        ]
+        for task in running_tasks:
+            task.cancel()
+        try:
+            MAX_WAIT_TIME_SECONDS = 5
+            results = await asyncio.wait_for(
+                asyncio.gather(*running_tasks, return_exceptions=True),
+                timeout=MAX_WAIT_TIME_SECONDS,
+            )
+            if bad_results := list(filter(lambda r: isinstance(r, Exception), results)):
+                logger.error(
+                    "Following observation tasks completed with an unexpected error:%s",
+                    f"{bad_results}",
+                )
+        except asyncio.TimeoutError:
+            logger.error(
+                "Timed-out waiting for %s to complete. Action: Check why this is blocking",
+                f"{running_tasks=}",
+            )
+
     def toggle_observation(self, node_uuid: NodeID, disable: bool) -> bool:
         """
         returns True if it managed to enable/disable observation of the service
@@ -97,23 +175,17 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
     async def push_service_outputs(
         self,
         node_uuid: NodeID,
-        progress_callback: Optional[ProgressCallback] = None,
+        progress_callback: ProgressCallback | None = None,
     ) -> None:
-        dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-            self.app
-        )
-        await service_push_outputs(
-            app=self.app,
-            node_uuid=node_uuid,
-            dynamic_sidecar_client=dynamic_sidecar_client,
-            progress_callback=progress_callback,
+        await _scheduler_utils.push_service_outputs(
+            self.app, node_uuid, progress_callback
         )
 
     async def remove_service_containers(
-        self, node_uuid: NodeID, progress_callback: Optional[ProgressCallback] = None
+        self, node_uuid: NodeID, progress_callback: ProgressCallback | None = None
     ) -> None:
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-            self.app
+            self.app, node_uuid
         )
         await service_remove_containers(
             app=self.app,
@@ -136,10 +208,10 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
         )
 
     async def save_service_state(
-        self, node_uuid: NodeID, progress_callback: Optional[ProgressCallback] = None
+        self, node_uuid: NodeID, progress_callback: ProgressCallback | None = None
     ) -> None:
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-            self.app
+            self.app, node_uuid
         )
         await service_save_state(
             app=self.app,
@@ -155,6 +227,8 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
         port: PortInt,
         request_dns: str,
         request_scheme: str,
+        request_simcore_user_agent: str,
+        can_save: bool,
     ) -> None:
         """Invoked before the service is started"""
         scheduler_data = SchedulerData.from_http_request(
@@ -163,6 +237,8 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
             port=port,
             request_dns=request_dns,
             request_scheme=request_scheme,
+            request_simcore_user_agent=request_simcore_user_agent,
+            can_save=can_save,
         )
         await self._add_service(scheduler_data)
 
@@ -203,8 +279,8 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
     def list_services(
         self,
         *,
-        user_id: Optional[UserID] = None,
-        project_id: Optional[ProjectID] = None,
+        user_id: UserID | None = None,
+        project_id: ProjectID | None = None,
     ) -> list[NodeID]:
         """
         Returns the list of tracked service UUIDs
@@ -214,6 +290,7 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
         all_tracked_service_uuids = list(self._inverse_search_mapping.keys())
         if user_id is None and project_id is None:
             return all_tracked_service_uuids
+
         # let's filter
         def _is_scheduled(node_id: NodeID) -> bool:
             try:
@@ -234,7 +311,10 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
         )
 
     async def mark_service_for_removal(
-        self, node_uuid: NodeID, can_save: Optional[bool]
+        self,
+        node_uuid: NodeID,
+        can_save: bool | None,
+        skip_observation_recreation: bool = False,
     ) -> None:
         """Marks service for removal, causing RemoveMarkedService to trigger"""
         async with self._lock:
@@ -246,27 +326,28 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
                 return
 
             current: SchedulerData = self._to_observe[service_name]
+
+            # if service is already being removed no need to force a cancellation and removal of the service
+            if current.dynamic_sidecar.service_removal_state.can_remove:
+                logger.info(
+                    "Service %s is already being removed, will not cancel observation",
+                    node_uuid,
+                )
+                return
+
             current.dynamic_sidecar.service_removal_state.mark_to_remove(can_save)
             await update_scheduler_data_label(current)
 
             # cancel current observation task
             if service_name in self._service_observation_task:
-                service_task: Optional[
-                    Union[asyncio.Task, object]
-                ] = self._service_observation_task[service_name]
+                service_task: None | asyncio.Task | object = (
+                    self._service_observation_task[service_name]
+                )
                 if isinstance(service_task, asyncio.Task):
-                    service_task.cancel()
+                    await cancel_task(service_task, timeout=10)
 
-                    async def _await_task(task: asyncio.Task) -> None:
-                        await task
-
-                    with suppress(asyncio.CancelledError):
-                        try:
-                            await asyncio.wait_for(
-                                _await_task(service_task), timeout=10
-                            )
-                        except asyncio.TimeoutError:
-                            pass
+            if skip_observation_recreation:
+                return
 
             # recreate new observation
             dynamic_sidecar_settings: DynamicSidecarSettings = (
@@ -275,11 +356,19 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
             dynamic_scheduler: DynamicServicesSchedulerSettings = (
                 self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
             )
-            self._service_observation_task[service_name] = self.__get_observation_task(
+            self._service_observation_task[
+                service_name
+            ] = self.__create_observation_task(
                 dynamic_sidecar_settings, dynamic_scheduler, service_name
             )
 
         logger.debug("Service '%s' marked for removal from scheduler", service_name)
+
+    async def is_service_awaiting_manual_intervention(self, node_uuid: NodeID) -> bool:
+        """returns True if services is waiting for manual intervention"""
+        return await _scheduler_utils.service_awaits_manual_interventions(
+            self.get_scheduler_data(node_uuid)
+        )
 
     async def remove_service_from_observation(self, node_uuid: NodeID) -> None:
         # TODO: this is used internally no need to be here exposed in the interface
@@ -293,15 +382,19 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
 
             service_name = self._inverse_search_mapping[node_uuid]
             if service_name not in self._to_observe:
-                return
+                logger.warning(
+                    "Unexpected: '%s' not found in %s, but found in %s",
+                    f"{service_name}",
+                    f"{self._to_observe=}",
+                    f"{self._inverse_search_mapping=}",
+                )
 
-            del self._to_observe[service_name]
             del self._inverse_search_mapping[node_uuid]
+            self._to_observe.pop(service_name, None)
 
         logger.debug("Removed service '%s' from scheduler", service_name)
 
     async def get_stack_status(self, node_uuid: NodeID) -> RunningDynamicServiceDetails:
-        # pylint: disable=too-many-return-statements
         """
 
         raises DynamicSidecarNotFoundError
@@ -311,73 +404,8 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
         service_name = self._inverse_search_mapping[node_uuid]
 
         scheduler_data: SchedulerData = self._to_observe[service_name]
-
-        # check if there was an error picked up by the scheduler
-        # and marked this service as failed
-        if scheduler_data.dynamic_sidecar.status.current != DynamicSidecarStatus.OK:
-            return RunningDynamicServiceDetails.from_scheduler_data(
-                node_uuid=node_uuid,
-                scheduler_data=scheduler_data,
-                service_state=ServiceState.FAILED,
-                service_message=scheduler_data.dynamic_sidecar.status.info,
-            )
-
-        # is the service stopping?
-        if scheduler_data.dynamic_sidecar.service_removal_state.can_remove:
-            return RunningDynamicServiceDetails.from_scheduler_data(
-                node_uuid=node_uuid,
-                scheduler_data=scheduler_data,
-                service_state=ServiceState.STOPPING,
-                service_message=scheduler_data.dynamic_sidecar.status.info,
-            )
-
-        # the service should be either running or starting
-        try:
-            sidecar_state, sidecar_message = await get_dynamic_sidecar_state(
-                # the service_name is unique and will not collide with other names
-                # it can be used in place of the service_id here, as the docker API accepts both
-                service_id=scheduler_data.service_name
-            )
-        except DockerServiceNotFoundError:
-            # in this case, the service is starting, so state is pending
-            return RunningDynamicServiceDetails.from_scheduler_data(
-                node_uuid=node_uuid,
-                scheduler_data=scheduler_data,
-                service_state=ServiceState.PENDING,
-                service_message=scheduler_data.dynamic_sidecar.status.info,
-            )
-
-        # while the dynamic-sidecar state is not RUNNING report it's state
-        if sidecar_state != ServiceState.RUNNING:
-            return RunningDynamicServiceDetails.from_scheduler_data(
-                node_uuid=node_uuid,
-                scheduler_data=scheduler_data,
-                service_state=sidecar_state,
-                service_message=sidecar_message,
-            )
-
-        # NOTE: This will be repeatedly called until the
-        # user services are effectively started
-
-        # wait for containers to start
-        if len(scheduler_data.dynamic_sidecar.containers_inspect) == 0:
-            # marks status as waiting for containers
-            return RunningDynamicServiceDetails.from_scheduler_data(
-                node_uuid=node_uuid,
-                scheduler_data=scheduler_data,
-                service_state=ServiceState.STARTING,
-                service_message="",
-            )
-
-        # compute composed containers states
-        container_state, container_message = extract_containers_minimum_statuses(
-            scheduler_data.dynamic_sidecar.containers_inspect
-        )
-        return RunningDynamicServiceDetails.from_scheduler_data(
-            node_uuid=node_uuid,
-            scheduler_data=scheduler_data,
-            service_state=container_state,
-            service_message=container_message,
+        return await _scheduler_utils.get_stack_status_from_scheduler_data(
+            scheduler_data
         )
 
     async def retrieve_service_inputs(
@@ -391,7 +419,7 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
         scheduler_data: SchedulerData = self._to_observe[service_name]
         dynamic_sidecar_endpoint: AnyHttpUrl = scheduler_data.endpoint
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-            self.app
+            self.app, node_uuid
         )
 
         transferred_bytes = await dynamic_sidecar_client.pull_service_input_ports(
@@ -414,7 +442,7 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
         scheduler_data = self._to_observe[service_name]
 
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-            self.app
+            self.app, node_id
         )
 
         await dynamic_sidecar_client.attach_service_containers_to_project_network(
@@ -435,7 +463,7 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
         scheduler_data = self._to_observe[service_name]
 
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-            self.app
+            self.app, node_id
         )
 
         await dynamic_sidecar_client.detach_service_containers_from_project_network(
@@ -449,11 +477,11 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
         if node_uuid not in self._inverse_search_mapping:
             raise DynamicSidecarNotFoundError(node_uuid)
 
-        service_name = self._inverse_search_mapping[node_uuid]
+        service_name: ServiceName = self._inverse_search_mapping[node_uuid]
         scheduler_data: SchedulerData = self._to_observe[service_name]
 
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-            self.app
+            self.app, node_uuid
         )
 
         await dynamic_sidecar_client.restart_containers(scheduler_data.endpoint)
@@ -461,11 +489,11 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
     def _enqueue_observation_from_service_name(self, service_name: str) -> None:
         self._trigger_observation_queue.put_nowait(service_name)
 
-    def __get_observation_task(
+    def __create_observation_task(
         self,
         dynamic_sidecar_settings: DynamicSidecarSettings,
         dynamic_scheduler: DynamicServicesSchedulerSettings,
-        service_name: str,
+        service_name: ServiceName,
     ) -> asyncio.Task:
         scheduler_data: SchedulerData = self._to_observe[service_name]
         observation_task = asyncio.create_task(
@@ -496,7 +524,7 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
             self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
         )
 
-        service_name: str
+        service_name: ServiceName
         while service_name := await self._trigger_observation_queue.get():
             logger.info("Handling observation for %s", service_name)
 
@@ -507,9 +535,10 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
                 continue
 
             if self._service_observation_task.get(service_name) is None:
+                logger.info("Create observation task for service %s", service_name)
                 self._service_observation_task[
                     service_name
-                ] = self.__get_observation_task(
+                ] = self.__create_observation_task(
                     dynamic_sidecar_settings, dynamic_scheduler, service_name
                 )
 
@@ -542,47 +571,3 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
 
             await sleep(settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS)
             self._observation_counter += 1
-
-    async def _discover_running_services(self) -> None:
-        """discover all services which were started before and add them to the scheduler"""
-        dynamic_sidecar_settings: DynamicSidecarSettings = (
-            self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-        )
-        services_to_observe: list[
-            SchedulerData
-        ] = await get_dynamic_sidecars_to_observe(dynamic_sidecar_settings)
-
-        logger.info(
-            "The following services need to be observed: %s", services_to_observe
-        )
-
-        for scheduler_data in services_to_observe:
-            await self._add_service(scheduler_data)
-
-    async def _cleanup_volume_removal_services(self) -> None:
-        settings: DynamicServicesSchedulerSettings = (
-            self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
-        )
-        dynamic_sidecar_settings: DynamicSidecarSettings = (
-            self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-        )
-
-        logger.debug(
-            "dynamic-sidecars cleanup pending volume removal services every %s seconds",
-            settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_PENDING_VOLUME_REMOVAL_INTERVAL_S,
-        )
-        while await asyncio.sleep(
-            settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_PENDING_VOLUME_REMOVAL_INTERVAL_S,
-            True,
-        ):
-            logger.debug("Removing pending volume removal services...")
-
-            try:
-                await remove_pending_volume_removal_services(dynamic_sidecar_settings)
-            except asyncio.CancelledError:
-                logger.info("Stopped pending volume removal services task")
-                raise
-            except Exception:  # pylint: disable=broad-except
-                logger.exception(
-                    "Unexpected error while cleaning up pending volume removal services"
-                )

@@ -1,0 +1,148 @@
+name: 🚀 Release to production (developers-only)
+description: Creates an issue to plan and log the release from staging to production
+title: "🚀 Release v<M.m.0>"
+labels: ["t:maintenance", "release"]
+assignees: ["matusdrobuliak66"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Release version
+      description: Release version as major.minor.0 .Check [Releases](https://github.com/ITISFoundation/osparc-simcore/releases)
+      placeholder: 1.2.0
+    validations:
+      required: true
+  - type: input
+    id: commit_sha
+    attributes:
+      label: Commit SHA
+      description: |
+        Selects the commit from which the release takes placeholder. Check [commits](https://github.com/ITISFoundation/osparc-simcore/commits/master)
+        IMPORTANT: make sure t (i.e. tests passed and images were built and pushed)
+      placeholder: 7d9dcc313f9ced0bd1e6508363148841683b6d7c
+    validations:
+      required: true
+  - type: input
+    id: staging_release
+    attributes:
+      label: "Previous pre-release"
+      description: |
+        Link to pre-release to staging that preceeds this release
+      value: https://github.com/ITISFoundation/osparc-simcore/releases/tag/staging_<sprint_name><version>
+    validations:
+      required: true
+  - type: checkboxes
+    attributes:
+      label: Did the commit CI suceeded?
+      description: Check the CI of the selected commit in the [repo commits](https://github.com/ITISFoundation/osparc-simcore/commits/master) to make sure the images are built and ready
+      options:
+        - label: The commit CI succeeded.
+          required: true
+  - type: textarea
+    attributes:
+      label: Motivation
+      description: |
+        What is the motivation to release to production? Our current release policy recommends **at least one releast to production for every sprint**.
+        For the moment releases to production require maintenance and therefore interrupting users
+        - Explain what motivates this release?
+        - Which important changes we might pay attention to?
+        - How should we test them?
+        - Is there anything in particular we should monitor?
+      placeholder: |
+        - Regular sprint release
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Changes
+      description: |
+        Changes introduced by this release.
+        List links to the PRs associated to every commit in the release. This will automatically create references between PRs and this release that will be very valuable for traceability.
+        TIP: use the autogenerate changelog feature during the draft release. (TIP: use regex replace for better visualization ``\*.+ by (@\w+) in (https:.*)`` -> ``* $2 by $1``)
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: "Devops check 👷"
+      description: |
+        Check the PRs marked with (⚠️ devops).
+        Determine and commit necessary changes required in the ``osparc-ops-*`` repos.
+        Log below completed steps and issues
+      value: |
+        - [ ] Add changes (if any) and release tags in https://github.com/ITISFoundation/osparc-ops-environments/tags
+        - [ ] Add changes (if any) and release tags in **osparc-ops-deployment-configuration** (osparc.io & osparc.speag.com & tip.itis.swiss)
+        - [ ] ...
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: "Tests assessment: e2e testing check 🧪"
+      description: |
+        Check [e2e](https://git.speag.com/oSparc/e2e-testing/-/pipelines?page=1&scope=all&ref=master), [p2e](https://git.speag.com/oSparc/e2e-portal-testing/-/pipelines?page=1&scope=all&ref=staging) and [ops](https://git.speag.com/oSparc/e2e-ops/-/pipelines?page=1&scope=all&ref=master)
+
+        Keep an agenda of what has been reported on every daily
+      placeholder: |
+        - Mon. ...
+        - Tue. ...
+        - Wed. ...
+        - Thu. ...
+        - Fri. ...
+  - type: textarea
+    attributes:
+      label: "Test assessment: targeted-testing 🔍️"
+      description: |
+        Assessment carried out by the team on changelog **at least** on items marked with 🚨
+        List issues here!
+      placeholder: |
+        Target PRs:
+        - [x] #234
+  - type: textarea
+    attributes:
+      label: "Test assessment: user-testing 🧐"
+      description: |
+        Assessment performed together with a final user. The session is recorded and ``filesrv/osparc/DEVELOPERS/test-sessions``.
+        Create an issue for every bug/enhancement including the video timestap to follow up.
+        List issues here!
+      placeholder: |
+        Follow up issues:
+        - #234
+  - type: textarea
+    attributes:
+      label: Summary 📝
+      description: |
+        Preparation for the release
+        **IMPORTANT** MUST be announced at least 24h before!
+      value: |
+        - [ ] Prepare release link
+        ```cmd
+        make release-prod version=<M.m.0>  git_sha=<commit_sha>
+        ```
+        - [ ] Draft [release changelog](https://github.com/ITISFoundation/osparc-simcore/releases)
+        - [ ] Announce maintenance ( ** ANNOUNCE AT LEAST 24 HOURS BEFORE ** )
+        - redis ``{"start": "2023-03-06T13:00:00.000Z", "end": "2023-03-06T15:00:00.000Z", "reason": "Release <vX.X.0>"}``
+            - [ ] aws
+            - [ ] dalco
+            - [ ] tip
+        - status page (https://manage.statuspage.io/)
+            - [ ] osparc
+            - [ ] s4l
+        - mattermost channels
+            - [ ] maintenance
+            - [ ] power users
+  - type: textarea
+    attributes:
+      label: Releasing 🚀
+      value: |
+        - [ ] Maintenance page up.
+        - [ ] Release by publishing [draft](https://github.com/ITISFoundation/osparc-simcore/releases)
+        - [ ] Check release CI
+        - [ ] Check deployed
+          - [ ] aws deploy
+          - [ ] dalco deploy
+          - [ ] tip deploy
+        - [ ] Delete announcement
+        - [ ] Check e2e runs
+        - [ ] Announce
+        ``` md
+        :tada: https://github.com/ITISFoundation/osparc-simcore/releases/tag/v<M.m.0>
+        ```

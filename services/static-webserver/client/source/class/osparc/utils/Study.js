@@ -123,7 +123,7 @@ qx.Class.define("osparc.utils.Study", {
       return msg;
     },
 
-    createStudyFromService: function(key, version, existingStudies) {
+    createStudyFromService: function(key, version, existingStudies, newStudyLabel) {
       return new Promise((resolve, reject) => {
         const store = osparc.store.Store.getInstance();
         store.getAllServices()
@@ -132,11 +132,14 @@ qx.Class.define("osparc.utils.Study", {
               const service = version ? osparc.utils.Services.getFromObject(services, key, version) : osparc.utils.Services.getLatest(services, key);
               const newUuid = osparc.utils.Utils.uuidv4();
               const minStudyData = osparc.data.model.Study.createMyNewStudyObject();
+              if (newStudyLabel === undefined) {
+                newStudyLabel = service["name"];
+              }
               if (existingStudies) {
-                const title = osparc.utils.Utils.getUniqueStudyName(service["name"], existingStudies);
+                const title = osparc.utils.Utils.getUniqueStudyName(newStudyLabel, existingStudies);
                 minStudyData["name"] = title;
               } else {
-                minStudyData["name"] = service["name"];
+                minStudyData["name"] = newStudyLabel;
               }
               if (service["thumbnail"]) {
                 minStudyData["thumbnail"] = service["thumbnail"];
@@ -185,7 +188,7 @@ qx.Class.define("osparc.utils.Study", {
 
     createStudyAndPoll: function(params) {
       return new Promise((resolve, reject) => {
-        const fetchPromise = osparc.data.Resources.fetch("studies", "postNewStudy", params);
+        const fetchPromise = osparc.data.Resources.fetch("studies", "postNewStudy", params, null, {"pollTask": true});
         const pollTasks = osparc.data.PollTasks.getInstance();
         const interval = 1000;
         pollTasks.createPollingTask(fetchPromise, interval)
@@ -224,7 +227,7 @@ qx.Class.define("osparc.utils.Study", {
               },
               data: minStudyData
             };
-            const fetchPromise = osparc.data.Resources.fetch("studies", "postNewStudyFromTemplate", params);
+            const fetchPromise = osparc.data.Resources.fetch("studies", "postNewStudyFromTemplate", params, null, {"pollTask": true});
             const pollTasks = osparc.data.PollTasks.getInstance();
             const interval = 1000;
             pollTasks.createPollingTask(fetchPromise, interval)

@@ -4,7 +4,6 @@
 
 import json
 import logging
-from typing import Optional, Union
 
 from aiohttp import web
 from models_library.projects_nodes import NodeID
@@ -19,17 +18,21 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
+from servicelib.common_headers import (
+    UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+    X_SIMCORE_USER_AGENT,
+)
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserRole
 
-from .. import director_v2_api
 from .._meta import api_version_prefix as VTAG
-from ..director_v2_exceptions import DirectorServiceError
+from ..director_v2 import api
+from ..director_v2.exceptions import DirectorServiceError
 from ..login.decorators import login_required
 from ..projects.projects_db import ProjectDBAPI
-from ..security_decorators import permission_required
-from ..users_api import get_user_role
+from ..security.decorators import permission_required
+from ..users.api import get_user_role
 from . import projects_api
 from .projects_exceptions import (
     NodeNotFoundError,
@@ -51,7 +54,7 @@ routes = web.RouteTableDef()
 class _CreateNodeBody(BaseModel):
     service_key: ServiceKey
     service_version: ServiceVersion
-    service_id: Optional[str] = None
+    service_id: str | None = None
 
 
 @routes.post(f"/{VTAG}/projects/{{project_id}}/nodes")
@@ -131,7 +134,7 @@ async def get_node(request: web.Request) -> web.Response:
             )
 
         # NOTE: for legacy services a redirect to director-v0 is made
-        service_data: Union[dict, list] = await director_v2_api.get_dynamic_service(
+        service_data: dict | list = await api.get_dynamic_service(
             app=request.app, node_uuid=f"{path_params.node_id}"
         )
 
@@ -205,9 +208,7 @@ async def retrieve_node(request: web.Request) -> web.Response:
         raise web.HTTPBadRequest(reason=f"Invalid request body: {exc}") from exc
 
     return web.json_response(
-        await director_v2_api.retrieve(
-            request.app, f"{path_params.node_id}", port_keys
-        ),
+        await api.retrieve(request.app, f"{path_params.node_id}", port_keys),
         dumps=json_dumps,
     )
 
@@ -222,7 +223,11 @@ async def start_node(request: web.Request) -> web.Response:
     try:
 
         await projects_api.start_project_node(
-            request, req_ctx.user_id, path_params.project_id, path_params.node_id
+            request,
+            product_name=req_ctx.product_name,
+            user_id=req_ctx.user_id,
+            project_id=path_params.project_id,
+            node_id=path_params.node_id,
         )
 
         raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
@@ -242,7 +247,7 @@ async def _stop_dynamic_service_with_progress(
     _task_progress: TaskProgress, path_params: _NodePathParams, *args, **kwargs
 ):
     try:
-        await director_v2_api.stop_dynamic_service(*args, **kwargs)
+        await api.stop_dynamic_service(*args, **kwargs)
         raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(
@@ -282,6 +287,9 @@ async def stop_node(request: web.Request) -> web.Response:
         path_params=path_params,
         app=request.app,
         service_uuid=f"{path_params.node_id}",
+        simcore_user_agent=request.headers.get(
+            X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+        ),
         save_state=save_state,
         fire_and_forget=True,
     )
@@ -295,7 +303,7 @@ async def restart_node(request: web.Request) -> web.Response:
 
     path_params = parse_request_path_parameters_as(_NodePathParams, request)
 
-    await director_v2_api.restart_dynamic_service(request.app, f"{path_params.node_id}")
+    await api.restart_dynamic_service(request.app, f"{path_params.node_id}")
 
     raise web.HTTPNoContent()
 

@@ -79,12 +79,15 @@ qx.Class.define("osparc.data.model.Node", {
 
     key: {
       check: "String",
-      nullable: true
+      nullable: true,
+      apply: "__applyNewMetaData"
     },
 
     version: {
       check: "String",
-      nullable: true
+      nullable: true,
+      event: "changeVersion",
+      apply: "__applyNewMetaData"
     },
 
     nodeId: {
@@ -269,6 +272,41 @@ qx.Class.define("osparc.data.model.Node", {
       return osparc.utils.Services.isRetired(metaData);
     },
 
+    hasBootModes: function(metaData) {
+      if ("boot-options" in metaData && "boot_mode" in metaData["boot-options"] && "items" in metaData["boot-options"]["boot_mode"]) {
+        return Object.keys(metaData["boot-options"]["boot_mode"]["items"]).length;
+      }
+      return false;
+    },
+
+    getBootModesSelectBox: function(nodeMetaData, workbench, nodeId) {
+      if (!osparc.data.model.Node.hasBootModes(nodeMetaData)) {
+        return null;
+      }
+
+      const bootModesMD = nodeMetaData["boot-options"]["boot_mode"];
+      const bootModeSB = new qx.ui.form.SelectBox();
+      const sbItems = [];
+      Object.entries(bootModesMD["items"]).forEach(([bootModeId, bootModeMD]) => {
+        const sbItem = new qx.ui.form.ListItem(bootModeMD["label"]);
+        sbItem.bootModeId = bootModeId;
+        bootModeSB.add(sbItem);
+        sbItems.push(sbItem);
+      });
+      let defaultBMId = null;
+      if (workbench && nodeId && "bootOptions" in workbench[nodeId] && "boot_mode" in workbench[nodeId]["bootOptions"]) {
+        defaultBMId = workbench[nodeId]["bootOptions"]["boot_mode"];
+      } else {
+        defaultBMId = bootModesMD["default"];
+      }
+      sbItems.forEach(sbItem => {
+        if (defaultBMId === sbItem.bootModeId) {
+          bootModeSB.setSelection([sbItem]);
+        }
+      });
+      return bootModeSB;
+    },
+
     getOutput: function(outputs, outputKey) {
       if (outputKey in outputs && "value" in outputs[outputKey]) {
         return outputs[outputKey]["value"];
@@ -337,6 +375,14 @@ qx.Class.define("osparc.data.model.Node", {
 
     isRetired: function() {
       return osparc.data.model.Node.isRetired(this.getMetaData());
+    },
+
+    hasBootModes: function() {
+      return osparc.data.model.Node.hasBootModes(this.getMetaData());
+    },
+
+    __applyNewMetaData: function() {
+      this.__metaData = osparc.utils.Services.getMetaData(this.getKey(), this.getVersion());
     },
 
     getMetaData: function() {
@@ -730,6 +776,12 @@ qx.Class.define("osparc.data.model.Node", {
       return outputsData;
     },
 
+    requestFileUploadAbort: function() {
+      if (this.isFilePicker()) {
+        this["fileUploadAbortRequested"] = true;
+      }
+    },
+
     __applyErrors: function(errors) {
       if (errors && errors.length) {
         errors.forEach(error => {
@@ -888,7 +940,14 @@ qx.Class.define("osparc.data.model.Node", {
     },
     // !---- Output Nodes -----
 
+    canNodeStart: function() {
+      return this.isDynamic() && ["idle", "failed"].includes(this.getStatus().getInteractive());
+    },
+
     requestStartNode: function() {
+      if (!this.canNodeStart()) {
+        return false;
+      }
       const params = {
         url: {
           studyId: this.getStudy().getUuid(),
@@ -945,28 +1004,40 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     __getLoadingPageHeader: function() {
+      let statusText = this.tr("Starting");
       const status = this.getStatus().getInteractive();
-      const label = this.getLabel();
       if (status) {
-        const sta = status.charAt(0).toUpperCase() + status.slice(1);
-        const header = sta + " " + label;
-        return header;
+        statusText = status.charAt(0).toUpperCase() + status.slice(1);
       }
-      return this.tr("Starting ") + label;
+      return statusText + " " + this.getLabel() + " <span style='font-size: 16px;font-weight: normal;'><sub>v" + this.getVersion() + "</sub></span>";
     },
 
-    __getExtraMessages: function() {
+    __addDisclaimer: function(loadingPage) {
       if (this.getKey() && this.getKey().includes("pub-nat-med")) {
-        return [
-          this.tr("This might take a couple of minutes")
-        ];
+        loadingPage.set({
+          disclaimer: this.tr("This might take a couple of minutes")
+        });
       }
-      return [];
+      if (this.getKey() && this.getKey().includes("sim4life-lite")) {
+        // show disclaimer after 1'
+        setTimeout(() => {
+          if (loadingPage) {
+            loadingPage.set({
+              disclaimer: this.tr("Platform demand is currently exceptional and efforts are underway to increase system capacity.<br>There may be a delay of a few minutes in starting services.")
+            });
+          }
+        }, 60*1000);
+      }
+      return null;
     },
 
     __initLoadingPage: function() {
-      const showZoomMaximizeButton = !osparc.utils.Utils.isProduct("s4llite");
-      const loadingPage = new osparc.ui.message.Loading(this.__getLoadingPageHeader(), this.__getExtraMessages(), showZoomMaximizeButton);
+      const showZoomMaximizeButton = !osparc.product.Utils.isProduct("s4llite");
+      const loadingPage = new osparc.ui.message.Loading(showZoomMaximizeButton);
+      loadingPage.set({
+        header: this.__getLoadingPageHeader()
+      });
+      this.__addDisclaimer(loadingPage);
 
       const thumbnail = this.getMetaData()["thumbnail"];
       if (thumbnail) {
@@ -1005,8 +1076,8 @@ qx.Class.define("osparc.data.model.Node", {
       this.__initLoadingPage();
 
       const iframe = new osparc.component.widget.PersistentIframe();
-      if (osparc.utils.Utils.isProduct("s4llite")) {
-        iframe.setShowZoomButton(false);
+      if (osparc.product.Utils.isProduct("s4llite")) {
+        iframe.setShowToolbar(false);
       }
       iframe.addListener("restart", () => this.__restartIFrame(), this);
       this.setIFrame(iframe);
@@ -1134,8 +1205,9 @@ qx.Class.define("osparc.data.model.Node", {
 
     startDynamicService: function() {
       if (this.isDynamic()) {
-        const metaData = this.getMetaData();
+        this.getStatus().getProgressSequence().resetSequence();
 
+        const metaData = this.getMetaData();
         const msg = "Starting " + metaData.key + ":" + metaData.version + "...";
         const msgData = {
           nodeId: this.getNodeId(),
@@ -1150,8 +1222,9 @@ qx.Class.define("osparc.data.model.Node", {
 
     stopDynamicService: function() {
       if (this.isDynamic()) {
-        const metaData = this.getMetaData();
+        this.getStatus().getProgressSequence().resetSequence();
 
+        const metaData = this.getMetaData();
         const msg = "Stopping " + metaData.key + ":" + metaData.version + "...";
         const msgData = {
           nodeId: this.getNodeId(),
@@ -1371,18 +1444,22 @@ qx.Class.define("osparc.data.model.Node", {
         converter: state => (state === "ready") ? "excluded" : "visible"
       });
       this.getStatus().bind("interactive", startButton, "enabled", {
+        // OM
         converter: state => ["idle", "failed"].includes(state)
       });
       const executeListenerId = startButton.addListener("execute", this.requestStartNode, this);
       startButton.executeListenerId = executeListenerId;
     },
 
-    attachHandlersToStopButton: function(stopButton) {
+    attachExecuteHandlerToStopButton: function(stopButton) {
+      const executeListenerId = stopButton.addListener("execute", this.requestStopNode, this);
+      stopButton.executeListenerId = executeListenerId;
+    },
+
+    attachVisibilityHandlerToStopButton: function(stopButton) {
       this.getStatus().bind("interactive", stopButton, "visibility", {
         converter: state => (state === "ready") ? "visible" : "excluded"
       });
-      const executeListenerId = stopButton.addListener("execute", this.requestStopNode, this);
-      stopButton.executeListenerId = executeListenerId;
     },
 
     removeNode: function() {

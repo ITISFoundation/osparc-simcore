@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import TypeAlias
 
 from models_library.clusters import (
     CLUSTER_ADMIN_RIGHTS,
@@ -23,20 +23,23 @@ from pydantic import (
     validator,
 )
 from pydantic.networks import AnyUrl
-from pydantic.types import ByteSize, NonNegativeInt, PositiveFloat
+from pydantic.types import ByteSize, PositiveFloat
+
+
+class TaskCounts(BaseModel):
+    error: int = 0
+    memory: int = 0
+    executing: int = 0
 
 
 class WorkerMetrics(BaseModel):
     cpu: float = Field(..., description="consumed % of cpus")
     memory: ByteSize = Field(..., description="consumed memory")
     num_fds: int = Field(..., description="consumed file descriptors")
-    ready: NonNegativeInt = Field(..., description="# tasks ready to run")
-    executing: NonNegativeInt = Field(..., description="# tasks currently executing")
-    in_flight: NonNegativeInt = Field(..., description="# tasks waiting for data")
-    in_memory: NonNegativeInt = Field(..., description="# tasks in worker memory")
+    task_counts: TaskCounts = Field(..., description="task details")
 
 
-AvailableResources = DictModel[str, PositiveFloat]
+AvailableResources: TypeAlias = DictModel[str, PositiveFloat]
 
 
 class UsedResources(DictModel[str, NonNegativeFloat]):
@@ -61,13 +64,12 @@ class Worker(BaseModel):
     metrics: WorkerMetrics
 
 
-class WorkersDict(DictModel[AnyUrl, Worker]):
-    ...
+WorkersDict: TypeAlias = dict[AnyUrl, Worker]
 
 
 class Scheduler(BaseModel):
     status: str = Field(..., description="The running status of the scheduler")
-    workers: Optional[WorkersDict] = Field(default_factory=dict)
+    workers: WorkersDict | None = Field(default_factory=dict)
 
     @validator("workers", pre=True, always=True)
     @classmethod
@@ -88,7 +90,7 @@ class ClusterDetails(BaseModel):
 
 
 class ClusterGet(Cluster):
-    access_rights: Dict[GroupID, ClusterAccessRights] = Field(
+    access_rights: dict[GroupID, ClusterAccessRights] = Field(
         alias="accessRights", default_factory=dict
     )
 
@@ -109,9 +111,9 @@ class ClusterDetailsGet(ClusterDetails):
 
 
 class ClusterCreate(BaseCluster):
-    owner: Optional[GroupID]
+    owner: GroupID | None
     authentication: ExternalClusterAuthentication
-    access_rights: Dict[GroupID, ClusterAccessRights] = Field(
+    access_rights: dict[GroupID, ClusterAccessRights] = Field(
         alias="accessRights", default_factory=dict
     )
 
@@ -162,14 +164,14 @@ class ClusterCreate(BaseCluster):
 
 
 class ClusterPatch(BaseCluster):
-    name: Optional[str]
-    description: Optional[str]
-    type: Optional[ClusterType]
-    owner: Optional[GroupID]
-    thumbnail: Optional[HttpUrl]
-    endpoint: Optional[AnyUrl]
-    authentication: Optional[ExternalClusterAuthentication]
-    access_rights: Optional[Dict[GroupID, ClusterAccessRights]] = Field(
+    name: str | None
+    description: str | None
+    type: ClusterType | None
+    owner: GroupID | None
+    thumbnail: HttpUrl | None
+    endpoint: AnyUrl | None
+    authentication: ExternalClusterAuthentication | None
+    access_rights: dict[GroupID, ClusterAccessRights] | None = Field(
         alias="accessRights"
     )
 

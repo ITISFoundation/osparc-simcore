@@ -2,11 +2,13 @@
     Models Node as a central element in a project's pipeline
 """
 
+import re
 from copy import deepcopy
-from typing import Any, Optional, Union
+from typing import Any, TypeAlias, Union
 
 from pydantic import (
     BaseModel,
+    ConstrainedStr,
     Extra,
     Field,
     HttpUrl,
@@ -14,11 +16,9 @@ from pydantic import (
     StrictBool,
     StrictFloat,
     StrictInt,
-    constr,
     validator,
 )
 
-from .basic_regex import VERSION_RE
 from .basic_types import EnvVarKey
 from .projects_access import AccessEnum
 from .projects_nodes_io import (
@@ -30,7 +30,7 @@ from .projects_nodes_io import (
 )
 from .projects_nodes_ui import Position
 from .projects_state import RunningState
-from .services import PROPERTY_KEY_RE, SERVICE_KEY_RE
+from .services import PROPERTY_KEY_RE, ServiceKey, ServiceVersion
 
 # NOTE: WARNING the order here matters
 
@@ -56,10 +56,20 @@ OutputTypes = Union[
     Union[list[Any], dict[str, Any]],  # arrays | object
 ]
 
-InputID = OutputID = constr(regex=PROPERTY_KEY_RE)
-InputsDict = dict[InputID, InputTypes]
-OutputsDict = dict[OutputID, OutputTypes]
-UnitStr = constr(strip_whitespace=True)
+
+class KeyIDStr(ConstrainedStr):
+    regex = re.compile(PROPERTY_KEY_RE)
+
+
+InputID: TypeAlias = KeyIDStr
+OutputID: TypeAlias = KeyIDStr
+
+InputsDict: TypeAlias = dict[InputID, InputTypes]
+OutputsDict: TypeAlias = dict[OutputID, OutputTypes]
+
+
+class UnitStr(ConstrainedStr):
+    strip_whitespace = True
 
 
 class NodeState(BaseModel):
@@ -99,88 +109,93 @@ class NodeState(BaseModel):
         }
 
 
+class HttpUrlWithCustomMinLength(HttpUrl):
+    # Overwriting min length to be back compatible when generating OAS
+    min_length = 0
+
+
 class Node(BaseModel):
-    key: str = Field(
+    key: ServiceKey = Field(
         ...,
         description="distinctive name for the node based on the docker registry path",
-        regex=SERVICE_KEY_RE,
         examples=[
             "simcore/services/comp/itis/sleeper",
             "simcore/services/dynamic/3dviewer",
             "simcore/services/frontend/file-picker",
         ],
     )
-    version: str = Field(
+    version: ServiceVersion = Field(
         ...,
         description="semantic version number of the node",
-        regex=VERSION_RE,
         examples=["1.0.0", "0.0.1"],
     )
     label: str = Field(
         ..., description="The short name of the node", examples=["JupyterLab"]
     )
-    progress: Optional[float] = Field(
-        None, ge=0, le=100, description="the node progress value"
+    progress: float | None = Field(
+        default=None, ge=0, le=100, description="the node progress value"
     )
-    thumbnail: Optional[HttpUrl] = Field(
-        None,
+    thumbnail: HttpUrlWithCustomMinLength | None = Field(
+        default=None,
         description="url of the latest screenshot of the node",
         examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
     )
 
     # RUN HASH
-    run_hash: Optional[str] = Field(
-        None,
+    run_hash: str | None = Field(
+        default=None,
         description="the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated",
         alias="runHash",
     )
 
     # INPUT PORTS ---
-    inputs: Optional[InputsDict] = Field(
+    inputs: InputsDict | None = Field(
         default_factory=dict, description="values of input properties"
     )
-    inputs_units: Optional[dict[InputID, UnitStr]] = Field(
-        None,
+    inputs_units: dict[InputID, UnitStr] | None = Field(
+        default=None,
         description="Overrides default unit (if any) defined in the service for each port",
         alias="inputsUnits",
     )
-    input_access: Optional[dict[InputID, AccessEnum]] = Field(
-        None, description="map with key - access level pairs", alias="inputAccess"
+    input_access: dict[InputID, AccessEnum] | None = Field(
+        default=None,
+        description="map with key - access level pairs",
+        alias="inputAccess",
     )
-    input_nodes: Optional[list[NodeID]] = Field(
+    input_nodes: list[NodeID] | None = Field(
         default_factory=list,
         description="node IDs of where the node is connected to",
         alias="inputNodes",
     )
 
     # OUTPUT PORTS ---
-    outputs: Optional[OutputsDict] = Field(
+    outputs: OutputsDict | None = Field(
         default_factory=dict, description="values of output properties"
     )
-    output_node: Optional[bool] = Field(None, deprecated=True, alias="outputNode")
-    output_nodes: Optional[list[NodeID]] = Field(
-        None,
+    output_node: bool | None = Field(default=None, deprecated=True, alias="outputNode")
+    output_nodes: list[NodeID] | None = Field(
+        default=None,
         description="Used in group-nodes. Node IDs of those connected to the output",
         alias="outputNodes",
     )
 
-    parent: Optional[NodeID] = Field(
-        None,
+    parent: NodeID | None = Field(
+        default=None,
         description="Parent's (group-nodes') node ID s. Used to group",
     )
 
-    position: Optional[Position] = Field(
-        None,
+    position: Position | None = Field(
+        default=None,
         deprecated=True,
         description="Use projects_ui.WorkbenchUI.position instead",
     )
 
-    state: Optional[NodeState] = Field(
+    state: NodeState | None = Field(
         default_factory=NodeState, description="The node's state object"
     )
 
-    boot_options: Optional[dict[EnvVarKey, str]] = Field(
-        None,
+    boot_options: dict[EnvVarKey, str] | None = Field(
+        default=None,
         alias="bootOptions",
         description=(
             "Some services provide alternative parameters to be injected at boot time. "

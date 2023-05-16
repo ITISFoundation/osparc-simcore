@@ -30,6 +30,7 @@ class TutorialBase {
     this.__interval = null;
 
     this.__failed = false;
+    this.__reasonFailed = null;
 
     this.startScreenshooter()
   }
@@ -127,6 +128,9 @@ class TutorialBase {
         }).catch(() => { })
       }
       setTimeout(waitForFlash, 0)
+
+      // In case there is landing page, go to the log in page
+      await auto.toLogInPage(this.__page);
 
       const needsRegister = await this.registerIfNeeded();
       if (!needsRegister) {
@@ -227,6 +231,7 @@ class TutorialBase {
     }
     catch (err) {
       console.error(this.__templateName, "could not be started", err);
+      throw (err);
     }
     return resp;
   }
@@ -574,10 +579,12 @@ class TutorialBase {
       console.error("Failed going to dashboard study", err);
       throw (err);
     }
+    await this.waitFor(5000, 'Going back to Dashboard');
     await this.takeScreenshot("toDashboard_after");
   }
 
   async removeStudy(studyId, waitFor = 5000) {
+    await auto.dashboardStudiesBrowser(this.__page);
     await this.waitFor(waitFor, 'Wait to be unlocked');
     await this.takeScreenshot("deleteFirstStudy_before");
     const intervalWait = 3000;
@@ -622,8 +629,25 @@ class TutorialBase {
     await this.takeScreenshot('waitFor_finished')
   }
 
+  async __s4lSplashScreenOff(s4lNodeId) {
+    await this.waitFor(10000, 'Wait for the s4l iframe to appear');
+    await this.takeScreenshot("s4l");
+
+    const s4lIframe = await this.getIframe(s4lNodeId);
+    return new Promise(resolve => {
+      s4lIframe.waitForSelector("[osparc-test-id=splash-screen-off]", {
+        timeout: 60000
+      })
+        .then(() => resolve(true))
+        .catch(() => resolve(false));
+    });
+  }
+
   async testS4L(s4lNodeId) {
-    await this.waitFor(20000, 'Wait for the splash screen to disappear');
+    const splashScreenGone = await this.__s4lSplashScreenOff(s4lNodeId);
+    if (!splashScreenGone) {
+      throw("S4L Splash Screen Timeout");
+    }
 
     const s4lIframe = await this.getIframe(s4lNodeId);
     await this.waitAndClick('mode-button-modeling', s4lIframe);
@@ -646,14 +670,16 @@ class TutorialBase {
   }
 
   async testS4LTIPostPro(s4lNodeId) {
-    await this.waitFor(20000, 'Wait for the splash screen to disappear');
-    await this.takeScreenshot("s4l");
+    const splashScreenGone = await this.__s4lSplashScreenOff(s4lNodeId);
+    if (!splashScreenGone) {
+      throw("S4L Splash screen Timeout");
+    }
 
     const s4lIframe = await this.getIframe(s4lNodeId);
     await this.waitAndClick('mode-button-postro', s4lIframe);
     await this.takeScreenshot("Postpro");
     const algorithmTrees = await utils.getChildrenElementsBySelector(s4lIframe, '[osparc-test-id="tree-algorithm');
-    if (algorithmTrees.length !== 1) {
+    if (algorithmTrees.length < 1) {
       throw("Post Pro tree missing");
     }
 
@@ -673,7 +699,10 @@ class TutorialBase {
   }
 
   async testS4LDipole(s4lNodeId) {
-    await this.waitFor(20000, 'Wait for the splash screen to disappear');
+    const splashScreenGone = await this.__s4lSplashScreenOff(s4lNodeId);
+    if (!splashScreenGone) {
+      throw("S4L Splash screen Timeout");
+    }
 
     const s4lIframe = await this.getIframe(s4lNodeId);
     await this.waitAndClick('mode-button-modeling', s4lIframe);
@@ -751,6 +780,34 @@ class TutorialBase {
     return false;
   }
 
+  async testSARValidation(sarIframe) {
+    // SAR Validation service testing
+
+    this.__responsesQueue.addResponseListener("training-set-generation/generate");
+    this.__responsesQueue.addResponseListener("training-set-generation/data");
+    this.__responsesQueue.addResponseListener("training-set-generation/distribution", false);
+    try {
+      await this.waitAndClick("createTrainingSetBtn", sarIframe);
+      await this.__responsesQueue.waitUntilResponse("training-set-generation/generate");
+      await this.__responsesQueue.waitUntilResponse("training-set-generation/data");
+      await this.__responsesQueue.waitUntilResponse("training-set-generation/distribution");
+    }
+    catch (err) {
+      console.error(this.__templateName, "training-set can't be generated", err);
+      throw (err);
+    }
+
+    this.__responsesQueue.addResponseListener("training-set-generation/xport", false);
+    try {
+      await this.waitAndClick("exportTrainingSetBtn", sarIframe);
+      await this.__responsesQueue.waitUntilResponse("training-set-generation/xport");
+    }
+    catch (err) {
+      console.error(this.__templateName, "training-set can't be exported", err);
+      throw (err);
+    }
+  }
+
   async takeScreenshot(screenshotTitle) {
     // Generates an URL that points to the backend logs at this time
     const snapshotUrl = utils.getGrayLogSnapshotUrl(this.__url, 30);
@@ -769,11 +826,16 @@ class TutorialBase {
     return this.__failed;
   }
 
-  async setTutorialFailed(failed, loggerScreenshot = true) {
+  getTutorialFailedReason() {
+    return this.__reasonFailed;
+  }
+
+  async setTutorialFailed(failed, loggerScreenshot = true, reason = "") {
     if (failed && loggerScreenshot) {
       await this.takeLoggerScreenshot();
     }
     this.__failed = failed;
+    this.__reasonFailed = reason
   }
 }
 

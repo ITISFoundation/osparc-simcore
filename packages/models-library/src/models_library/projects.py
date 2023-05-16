@@ -1,37 +1,46 @@
 """
     Models a study's project document
 """
+import re
 from copy import deepcopy
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional
+from typing import Any, TypeAlias
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, constr, validator
+from models_library.utils.common_validators import empty_str_to_none, none_to_empty_str
+from pydantic import BaseModel, ConstrainedStr, Extra, Field, validator
 
 from .basic_regex import DATE_RE, UUID_RE_BASE
+from .emails import LowerCaseEmailStr
 from .projects_access import AccessRights, GroupIDStr
-from .projects_nodes import Node
+from .projects_nodes import HttpUrlWithCustomMinLength, Node
 from .projects_nodes_io import NodeIDStr
 from .projects_state import ProjectState
 from .projects_ui import StudyUI
 
-ProjectID = UUID
-ProjectIDStr = constr(regex=UUID_RE_BASE)
+ProjectID: TypeAlias = UUID
+ClassifierID: TypeAlias = str
 
-ClassifierID = str
+NodesDict: TypeAlias = dict[NodeIDStr, Node]
 
-# TODO: for some reason class Workbench(BaseModel): __root__= does not work as I thought ... investigate!
-Workbench = dict[NodeIDStr, Node]
+
+class ProjectIDStr(ConstrainedStr):
+    regex = re.compile(UUID_RE_BASE)
+
+    class Config:
+        frozen = True
+
+
+class DateTimeStr(ConstrainedStr):
+    regex = re.compile(DATE_RE)
+
+    class Config:
+        frozen = True
 
 
 # NOTE: careful this is in sync with packages/postgres-database/src/simcore_postgres_database/models/projects.py!!!
 class ProjectType(str, Enum):
-    """
-    template: template project
-    standard: standard project
-    """
-
     TEMPLATE = "TEMPLATE"
     STANDARD = "STANDARD"
 
@@ -54,7 +63,7 @@ class BaseProjectModel(BaseModel):
         description="longer one-line description about the project",
         examples=["Dabbling in temporal transitions ..."],
     )
-    thumbnail: Optional[HttpUrl] = Field(
+    thumbnail: HttpUrlWithCustomMinLength | None = Field(
         ...,
         description="url of the project thumbnail",
         examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
@@ -64,14 +73,16 @@ class BaseProjectModel(BaseModel):
     last_change_date: datetime = Field(...)
 
     # Pipeline of nodes (SEE projects_nodes.py)
-    workbench: Workbench = Field(..., description="Project's pipeline")
+    workbench: NodesDict = Field(..., description="Project's pipeline")
 
-    @validator("thumbnail", always=True, pre=True)
-    @classmethod
-    def convert_empty_str_to_none(cls, v):
-        if isinstance(v, str) and v == "":
-            return None
-        return v
+    # validators
+    _empty_thumbnail_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
+        empty_str_to_none
+    )
+
+    _none_description_is_empty = validator("description", allow_reuse=True, pre=True)(
+        none_to_empty_str
+    )
 
 
 class ProjectAtDB(BaseProjectModel):
@@ -81,9 +92,9 @@ class ProjectAtDB(BaseProjectModel):
 
     project_type: ProjectType = Field(..., alias="type", description="The project type")
 
-    prj_owner: Optional[int] = Field(..., description="The project owner id")
+    prj_owner: int | None = Field(..., description="The project owner id")
 
-    published: Optional[bool] = Field(
+    published: bool | None = Field(
         False, description="Defines if a study is available publicly"
     )
 
@@ -105,19 +116,19 @@ class Project(BaseProjectModel):
     # NOT for usage with DB!!
 
     # Ownership and Access  (SEE projects_access.py)
-    prj_owner: EmailStr = Field(..., description="user email", alias="prjOwner")
+    prj_owner: LowerCaseEmailStr = Field(
+        ..., description="user email", alias="prjOwner"
+    )
 
-    # Timestamps   TODO: should we use datetime??
-    creation_date: str = Field(
+    # Timestamps
+    creation_date: DateTimeStr = Field(
         ...,
-        regex=DATE_RE,
         description="project creation date",
         examples=["2018-07-01T11:13:43Z"],
         alias="creationDate",
     )
-    last_change_date: str = Field(
+    last_change_date: DateTimeStr = Field(
         ...,
-        regex=DATE_RE,
         description="last save date",
         examples=["2018-07-01T11:13:43Z"],
         alias="lastChangeDate",
@@ -129,26 +140,29 @@ class Project(BaseProjectModel):
     )
 
     # Classification
-    tags: Optional[list[int]] = []
-    classifiers: Optional[list[ClassifierID]] = Field(
+    tags: list[int] | None = []
+    classifiers: list[ClassifierID] | None = Field(
         default_factory=list,
         description="Contains the reference to the project classifiers",
         examples=["some:id:to:a:classifier"],
     )
 
     # Project state (SEE projects_state.py)
-    state: Optional[ProjectState] = None
+    state: ProjectState | None = None
 
     # UI front-end setup (SEE projects_ui.py)
-    ui: Optional[StudyUI] = None
+    ui: StudyUI | None = None
 
     # Quality
     quality: dict[str, Any] = Field(
-        {}, description="stores the study quality assessment"
+        default_factory=dict,
+        description="stores the study quality assessment",
     )
 
     # Dev only
-    dev: Optional[dict] = Field(description="object used for development purposes only")
+    dev: dict | None = Field(
+        default=None, description="object used for development purposes only"
+    )
 
     class Config:
         description = "Document that stores metadata, pipeline and UI setup of a study"

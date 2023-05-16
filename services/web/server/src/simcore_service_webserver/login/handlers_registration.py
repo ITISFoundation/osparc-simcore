@@ -1,19 +1,24 @@
 import logging
 from datetime import datetime, timedelta
-from typing import Literal, Optional
+from typing import Literal
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
-from pydantic import BaseModel, EmailStr, Field, PositiveInt, SecretStr, validator
+from models_library.emails import LowerCaseEmailStr
+from pydantic import BaseModel, Field, PositiveInt, SecretStr, validator
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.error_codes import create_error_code
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
-from ..groups_api import auto_add_user_to_groups, auto_add_user_to_product_group
-from ..products import Product, get_current_product
-from ..security_api import encrypt_password
+from .._meta import API_VTAG
+from ..groups.api import auto_add_user_to_groups, auto_add_user_to_product_group
+from ..invitations.plugin import is_service_invitation_code
+from ..products.plugin import Product, get_current_product
+from ..security.api import encrypt_password
 from ..session_access import on_success_grant_session_access_to, session_access_required
-from ..utils_aiohttp import NextPage
+from ..utils import MINUTE
+from ..utils_aiohttp import NextPage, envelope_json_response
+from ..utils_rate_limiting import global_rate_limit_route
 from ._2fa import create_2fa_code, mask_phone_number, send_sms_code
 from ._confirmation import make_confirmation_link
 from ._constants import (
@@ -25,7 +30,11 @@ from ._constants import (
     MSG_UNAUTHORIZED_REGISTER_PHONE,
 )
 from ._models import InputSchema, check_confirm_password_match
-from ._registration import check_and_consume_invitation, check_other_registrations
+from ._registration import (
+    check_and_consume_invitation,
+    check_other_registrations,
+    extract_email_from_invitation,
+)
 from ._security import login_granted_response
 from .settings import (
     LoginOptions,
@@ -43,7 +52,7 @@ from .utils import (
     flash_response,
     get_client_ip,
 )
-from .utils_email import get_template_path, render_and_send_mail
+from .utils_email import get_template_path, send_email_from_template
 
 log = logging.getLogger(__name__)
 
@@ -56,11 +65,55 @@ def _get_user_name(email: str) -> str:
 routes = RouteTableDef()
 
 
+class InvitationCheck(InputSchema):
+    invitation: str = Field(..., description="Invitation code")
+
+
+class InvitationInfo(InputSchema):
+    email: LowerCaseEmailStr | None = Field(
+        None, description="Email associated to invitation or None"
+    )
+
+
+@global_rate_limit_route(number_of_requests=30, interval_seconds=MINUTE)
+@routes.post(
+    f"/{API_VTAG}/auth/register/invitations:check",
+    name="auth_check_registration_invitation",
+)
+async def check_registration_invitation(request: web.Request):
+    """
+    Decrypts invitation and extracts associated email or
+    returns None if is not an encrypted invitation (might be a database invitation).
+
+    raises HTTPForbidden, HTTPServiceUnavailable
+    """
+    product: Product = get_current_product(request)
+    settings: LoginSettingsForProduct = get_plugin_settings(
+        request.app, product_name=product.name
+    )
+
+    # disabled -> None
+    if not settings.LOGIN_REGISTRATION_INVITATION_REQUIRED:
+        return envelope_json_response(InvitationInfo(email=None))
+
+    # non-encrypted -> None
+    # NOTE: that None is given if the code is the old type (and does not fail)
+    check = await parse_request_body_as(InvitationCheck, request)
+    if not is_service_invitation_code(code=check.invitation):
+        return envelope_json_response(InvitationInfo(email=None))
+
+    # extracted -> email
+    email = await extract_email_from_invitation(
+        request.app, invitation_code=check.invitation
+    )
+    return envelope_json_response(InvitationInfo(email=email))
+
+
 class RegisterBody(InputSchema):
-    email: EmailStr
+    email: LowerCaseEmailStr
     password: SecretStr
-    confirm: Optional[SecretStr] = Field(None, description="Password confirmation")
-    invitation: Optional[str] = Field(None, description="Invitation code")
+    confirm: SecretStr | None = Field(None, description="Password confirmation")
+    invitation: str | None = Field(None, description="Invitation code")
 
     _password_confirm_match = validator("confirm", allow_reuse=True)(
         check_confirm_password_match
@@ -79,7 +132,7 @@ class RegisterBody(InputSchema):
         }
 
 
-@routes.post("/v0/auth/register", name="auth_register")
+@routes.post(f"/{API_VTAG}/auth/register", name="auth_register")
 async def register(request: web.Request):
     """
     Starts user's registration by providing an email, password and
@@ -98,7 +151,7 @@ async def register(request: web.Request):
 
     await check_other_registrations(email=registration.email, db=db, cfg=cfg)
 
-    expires_at = None  # = does not expire
+    expires_at: datetime | None = None  # = does not expire
     if settings.LOGIN_REGISTRATION_INVITATION_REQUIRED:
         # Only requests with INVITATION can register user
         # to either a permanent or to a trial account
@@ -153,7 +206,7 @@ async def register(request: web.Request):
             email_template_path = await get_template_path(
                 request, "registration_email.jinja2"
             )
-            await render_and_send_mail(
+            await send_email_from_template(
                 request,
                 from_=product.support_email,
                 to=registration.email,
@@ -181,31 +234,30 @@ async def register(request: web.Request):
                 reason=f"{MSG_CANT_SEND_MAIL} [{error_code}]"
             ) from err
 
-        else:
-            response = flash_response(
-                "You are registered successfully! To activate your account, please, "
-                f"click on the verification link in the email we sent you to {registration.email}.",
-                "INFO",
-            )
-            return response
-    else:
-        # No confirmation required: authorize login
-        assert not settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED  # nosec
-        assert not settings.LOGIN_2FA_REQUIRED  # nosec
-
-        response = await login_granted_response(request=request, user=user)
+        response = flash_response(
+            "You are registered successfully! To activate your account, please, "
+            f"click on the verification link in the email we sent you to {registration.email}.",
+            "INFO",
+        )
         return response
+
+    # No confirmation required: authorize login
+    assert not settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED  # nosec
+    assert not settings.LOGIN_2FA_REQUIRED  # nosec
+
+    response = await login_granted_response(request=request, user=user)
+    return response
 
 
 class RegisterPhoneBody(InputSchema):
-    email: EmailStr
+    email: LowerCaseEmailStr
     phone: str = Field(
         ..., description="Phone number E.164, needed on the deployments with 2FA"
     )
 
 
 class _PageParams(BaseModel):
-    retry_2fa_after: Optional[PositiveInt] = None
+    retry_2fa_after: PositiveInt | None = None
 
 
 class RegisterPhoneNextPage(NextPage[_PageParams]):
@@ -226,7 +278,7 @@ class RegisterPhoneNextPage(NextPage[_PageParams]):
     name="auth_resend_2fa_code",
     max_access_count=MAX_2FA_CODE_RESEND,
 )
-@routes.post("/v0/auth/verify-phone-number", name="auth_register_phone")
+@routes.post(f"/{API_VTAG}/auth/verify-phone-number", name="auth_register_phone")
 async def register_phone(request: web.Request):
     """
     Submits phone registration

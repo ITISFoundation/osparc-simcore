@@ -12,7 +12,7 @@ import sys
 from asyncio import iscoroutinefunction
 from contextlib import contextmanager
 from inspect import getframeinfo, stack
-from typing import Callable, Optional
+from typing import Callable, TypeAlias, TypedDict
 
 log = logging.getLogger(__name__)
 
@@ -52,47 +52,57 @@ class CustomFormatter(logging.Formatter):
     2. Overrides 'filename' with the value of 'file_name_override', if it exists.
     """
 
+    def __init__(self, fmt: str, log_format_local_dev_enabled: bool):
+        super().__init__(fmt)
+        self.log_format_local_dev_enabled = log_format_local_dev_enabled
+
     def format(self, record):
         if hasattr(record, "func_name_override"):
             record.funcName = record.func_name_override
         if hasattr(record, "file_name_override"):
             record.filename = record.file_name_override
+        if not hasattr(record, "log_uid"):
+            record.log_uid = None  # Default value if user is not provided in the log
 
-        # add color
-        levelname = record.levelname
-        if levelname in COLORS:
-            levelname_color = COLORS[levelname] + levelname + NORMAL
-            record.levelname = levelname_color
-        return super().format(record)
+        if self.log_format_local_dev_enabled:
+            levelname = record.levelname
+            if levelname in COLORS:
+                levelname_color = COLORS[levelname] + levelname + NORMAL
+                record.levelname = levelname_color
+            return super().format(record)
+
+        return super().format(record).replace("\n", "\\n")
 
 
 # SEE https://docs.python.org/3/library/logging.html#logrecord-attributes
-DEFAULT_FORMATTING = "%(levelname)s: [%(asctime)s/%(processName)s] [%(name)s:%(funcName)s(%(lineno)d)]  -  %(message)s"
+DEFAULT_FORMATTING = "log_level=%(levelname)s | log_timestamp=%(asctime)s | log_source=%(name)s:%(funcName)s(%(lineno)d) | log_uid=%(log_uid)s | log_msg=%(message)s"
+
+# Graylog Grok pattern extractor:
+# log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{DATA:log_source} \| log_msg=%{GREEDYDATA:log_msg}
 
 
-def config_all_loggers():
+def config_all_loggers(log_format_local_dev_enabled: bool):
     """
     Applies common configuration to ALL registered loggers
     """
     the_manager: logging.Manager = logging.Logger.manager
+    root_logger = logging.getLogger()
 
-    loggers = [logging.getLogger()] + [
+    loggers = [root_logger] + [
         logging.getLogger(name) for name in the_manager.loggerDict
     ]
+
     for logger in loggers:
-        set_logging_handler(logger)
+        set_logging_handler(logger, DEFAULT_FORMATTING, log_format_local_dev_enabled)
 
 
 def set_logging_handler(
     logger: logging.Logger,
-    formatter_base: Optional[type[logging.Formatter]] = None,
-    fmt: str = DEFAULT_FORMATTING,
+    fmt: str,
+    log_format_local_dev_enabled: bool,
 ) -> None:
-    if not formatter_base:
-        formatter_base = CustomFormatter
-
     for handler in logger.handlers:
-        handler.setFormatter(formatter_base(fmt))
+        handler.setFormatter(CustomFormatter(fmt, log_format_local_dev_enabled))
 
 
 def test_logger_propagation(logger: logging.Logger):
@@ -145,7 +155,7 @@ def _log_arguments(
     return extra_args
 
 
-def log_decorator(logger=None, level: int = logging.DEBUG):
+def log_decorator(logger=None, level: int = logging.DEBUG, log_traceback: bool = False):
     # Build logger object
     logger_obj = logger or log
 
@@ -164,7 +174,10 @@ def log_decorator(logger=None, level: int = logging.DEBUG):
                 except:
                     # log exception if occurs in function
                     logger_obj.error(
-                        "Exception: %s", sys.exc_info()[1], extra=extra_args
+                        "Exception: %s",
+                        sys.exc_info()[1],
+                        extra=extra_args,
+                        exc_info=log_traceback,
                     )
                     raise
                 # Return function value
@@ -174,7 +187,7 @@ def log_decorator(logger=None, level: int = logging.DEBUG):
 
             @functools.wraps(func)
             def log_decorator_wrapper(*args, **kwargs):
-                extra_args = _log_arguments(logger_obj, func, *args, **kwargs)
+                extra_args = _log_arguments(logger_obj, level, func, *args, **kwargs)
                 try:
                     # log return value from the function
                     value = func(*args, **kwargs)
@@ -184,7 +197,10 @@ def log_decorator(logger=None, level: int = logging.DEBUG):
                 except:
                     # log exception if occurs in function
                     logger_obj.error(
-                        "Exception: %s", sys.exc_info()[1], extra=extra_args
+                        "Exception: %s",
+                        sys.exc_info()[1],
+                        extra=extra_args,
+                        exc_info=log_traceback,
                     )
                     raise
                 # Return function value
@@ -219,3 +235,32 @@ def log_context(logger: logging.Logger, level: int, msg: str, *args, **kwargs):
     logger.log(level, "Starting " + msg + " ...", *args, **kwargs)
     yield
     logger.log(level, "Finished " + msg, *args, **kwargs)
+
+
+class LogExtra(TypedDict, total=False):
+    log_uid: str
+
+
+def get_log_record_extra(*, user_id: int | str | None = None) -> LogExtra | None:
+    extra: LogExtra = {}
+    if user_id:
+        assert int(user_id) > 0  # nosec
+        extra["log_uid"] = f"{user_id}"
+    return extra or None
+
+
+LogLevelInt: TypeAlias = int
+LogMessageStr: TypeAlias = str
+
+
+def guess_message_log_level(message: str) -> LogLevelInt:
+    lower_case_message = message.lower().strip()
+    if lower_case_message.startswith(
+        ("error:", "err:", "error ", "err ", "[error]", "[err]")
+    ):
+        return logging.ERROR
+    if lower_case_message.startswith(
+        ("warning:", "warn:", "warning ", "warn ", "[warning]", "[warn]")
+    ):
+        return logging.WARNING
+    return logging.INFO

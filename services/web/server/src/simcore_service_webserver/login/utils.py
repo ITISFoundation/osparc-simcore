@@ -1,13 +1,13 @@
 import logging
 import random
-from typing import Any, Optional
+from typing import Any, cast
 
 import attr
 import passlib.hash
 from aiohttp import web
 from models_library.users import UserID
 from passlib import pwd
-from servicelib import observer
+from servicelib.aiohttp import observer
 from servicelib.aiohttp.rest_models import LogMessageType
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -65,7 +65,7 @@ def validate_user_status(*, user: dict, support_email: str):
 
 
 async def notify_user_logout(
-    app: web.Application, user_id: UserID, client_session_id: Optional[Any] = None
+    app: web.Application, user_id: UserID, client_session_id: Any | None = None
 ):
     """Broadcasts logout of 'user_id' in 'client_session_id'.
 
@@ -73,22 +73,22 @@ async def notify_user_logout(
 
     Listeners (e.g. sockets) will trigger logout mechanisms
     """
-    await observer.emit("SIGNAL_USER_LOGOUT", user_id, client_session_id, app)
+    await observer.emit(app, "SIGNAL_USER_LOGOUT", user_id, client_session_id, app)
 
 
 def encrypt_password(password: str) -> str:
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3375
-    return passlib.hash.sha256_crypt.using(rounds=1000).hash(password)
+    return cast(str, passlib.hash.sha256_crypt.using(rounds=1000).hash(password))
 
 
 def check_password(password: str, password_hash: str) -> bool:
-    return passlib.hash.sha256_crypt.verify(password, password_hash)
+    return cast(bool, passlib.hash.sha256_crypt.verify(password, password_hash))
 
 
-def get_random_string(min_len: int, max_len: Optional[int] = None) -> str:
+def get_random_string(min_len: int, max_len: int | None = None) -> str:
     max_len = max_len or min_len
     size = random.randint(min_len, max_len)
-    return pwd.genword(entropy=52, length=size)
+    return cast(str, pwd.genword(entropy=52, length=size))
 
 
 def get_client_ip(request: web.Request) -> str:
@@ -96,7 +96,7 @@ def get_client_ip(request: web.Request) -> str:
         ips = request.headers["X-Forwarded-For"]
     except KeyError:
         ips = request.transport.get_extra_info("peername")[0]
-    return ips.split(",")[0]
+    return cast(str, ips.split(",")[0])
 
 
 def flash_response(

@@ -1,8 +1,12 @@
 import logging
 from copy import deepcopy
-from typing import Optional, Union
+from typing import Optional
 
 from fastapi.applications import FastAPI
+from models_library.docker import SimcoreServiceDockerLabelKeys
+from models_library.products import ProductName
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import (
     ComposeSpecLabel,
     PathMappingsLabel,
@@ -15,6 +19,7 @@ from models_library.services_resources import (
     ResourceValue,
     ServiceResourcesDict,
 )
+from models_library.users import UserID
 from models_library.utils.docker_compose import replace_env_vars_in_compose_spec
 from servicelib.json_serialization import json_dumps
 from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
@@ -72,14 +77,12 @@ class _environment_section:
     """
 
     @staticmethod
-    def parse(environment: Union[EnvVarsMap, EnvKeyEqValueList]) -> EnvVarsMap:
+    def parse(environment: EnvVarsMap | EnvKeyEqValueList) -> EnvVarsMap:
         envs = {}
         if isinstance(environment, list):
             for key_eq_value in environment:
                 assert isinstance(key_eq_value, str)  # nosec
-                key, value, *_ = key_eq_value.split("=", maxsplit=1) + [
-                    None,
-                ]  # type: ignore
+                key, value, *_ = key_eq_value.split("=", maxsplit=1) + [None]
                 envs[key] = value
         else:
             assert isinstance(environment, dict)  # nosec
@@ -121,6 +124,8 @@ def _update_resource_limits_and_reservations(
     # example: '2.3' -> 2 ; '3.7' -> 3
     docker_compose_major_version: int = int(service_spec["version"].split(".")[0])
     for spec_service_key, spec in service_spec["services"].items():
+        if spec_service_key not in service_resources:
+            continue
         resources: ResourcesDict = service_resources[spec_service_key].resources
         logger.debug("Resources for %s: %s", spec_service_key, f"{resources=}")
 
@@ -190,20 +195,50 @@ def _strip_service_quotas(service_spec: ComposeSpecLabel):
         spec.pop("storage_opt", None)
 
 
+def _update_container_labels(
+    service_spec: ComposeSpecLabel,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    simcore_user_agent: str,
+    product_name: ProductName,
+) -> None:
+    for spec in service_spec["services"].values():
+        labels: list[str] = spec.setdefault("labels", [])
+
+        label_keys = SimcoreServiceDockerLabelKeys(
+            user_id=user_id,
+            study_id=project_id,
+            uuid=node_id,
+            simcore_user_agent=simcore_user_agent,
+            product_name=product_name,
+        )
+        docker_labels = [f"{k}={v}" for k, v in label_keys.to_docker_labels().items()]
+
+        for docker_label in docker_labels:
+            if docker_label not in labels:
+                labels.append(docker_label)
+
+
 def assemble_spec(
     *,
     app: FastAPI,
     service_key: ServiceKey,
     service_version: ServiceVersion,
     paths_mapping: PathMappingsLabel,
-    compose_spec: Optional[ComposeSpecLabel],
-    container_http_entry: Optional[str],
+    compose_spec: ComposeSpecLabel | None,
+    container_http_entry: str | None,
     dynamic_sidecar_network_name: str,
     swarm_network_name: str,
     service_resources: ServiceResourcesDict,
     has_quota_support: bool,
     simcore_service_labels: SimcoreServiceLabels,
     allow_internet_access: bool,
+    product_name: ProductName,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    simcore_user_agent: str,
 ) -> str:
     """
     returns a docker-compose spec used by
@@ -234,7 +269,7 @@ def assemble_spec(
         }
         container_name = DEFAULT_SINGLE_SERVICE_NAME
     else:
-        service_spec = compose_spec
+        service_spec = deepcopy(compose_spec)
         container_name = container_http_entry
 
     assert service_spec is not None  # nosec
@@ -265,7 +300,19 @@ def assemble_spec(
             egress_proxy_settings=egress_proxy_settings,
         )
 
-    stringified_service_spec = replace_env_vars_in_compose_spec(
+    _update_container_labels(
+        service_spec=service_spec,
+        user_id=user_id,
+        project_id=project_id,
+        node_id=node_id,
+        product_name=product_name,
+        simcore_user_agent=simcore_user_agent,
+    )
+
+    # TODO: will be used in next PR
+    assert product_name  # nosec
+
+    stringified_service_spec: str = replace_env_vars_in_compose_spec(
         service_spec=service_spec,
         replace_simcore_registry=docker_registry_settings.resolved_registry_url,
         replace_service_version=service_version,

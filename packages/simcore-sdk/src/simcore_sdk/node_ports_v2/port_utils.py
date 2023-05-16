@@ -1,9 +1,9 @@
 import logging
 import shutil
 from pathlib import Path
-from typing import Any, Callable, Coroutine, Optional
+from typing import Any, Callable, Coroutine
 
-from models_library.api_schemas_storage import FileUploadSchema
+from models_library.api_schemas_storage import FileUploadSchema, LinkType
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize
 from pydantic.tools import parse_obj_as
@@ -13,8 +13,7 @@ from yarl import URL
 
 from ..node_ports_common import data_items_utils, filemanager
 from ..node_ports_common.constants import SIMCORE_LOCATION
-from ..node_ports_common.filemanager import LogRedirectCB
-from ..node_ports_common.storage_client import LinkType
+from ..node_ports_common.file_io_utils import LogRedirectCB
 from .links import DownloadLink, FileLink, ItemConcreteValue, ItemValue, PortLink
 
 log = logging.getLogger(__name__)
@@ -25,14 +24,14 @@ async def get_value_link_from_port_link(
     node_port_creator: Callable[[str], Coroutine[Any, Any, Any]],
     *,
     file_link_type: LinkType,
-) -> Optional[ItemValue]:
+) -> ItemValue | None:
     log.debug("Getting value link %s", value)
     # create a node ports for the other node
     other_nodeports = await node_port_creator(value.node_uuid)
     # get the port value through that guy
     log.debug("Received node from DB %s, now returning value link", other_nodeports)
 
-    other_value: Optional[ItemValue] = await other_nodeports.get_value_link(
+    other_value: ItemValue | None = await other_nodeports.get_value_link(
         value.output, file_link_type=file_link_type
     )
     return other_value
@@ -41,26 +40,26 @@ async def get_value_link_from_port_link(
 async def get_value_from_link(
     key: str,
     value: PortLink,
-    fileToKeyMap: Optional[dict[str, str]],
+    file_to_key_map: dict[str, str] | None,
     node_port_creator: Callable[[str], Coroutine[Any, Any, Any]],
     *,
-    progress_bar: Optional[ProgressBarData],
-) -> Optional[ItemConcreteValue]:
+    progress_bar: ProgressBarData | None,
+) -> ItemConcreteValue | None:
     log.debug("Getting value %s", value)
     # create a node ports for the other node
     other_nodeports = await node_port_creator(value.node_uuid)
     # get the port value through that guy
     log.debug("Received node from DB %s, now returning value", other_nodeports)
 
-    other_value: Optional[ItemConcreteValue] = await other_nodeports.get(
+    other_value: ItemConcreteValue | None = await other_nodeports.get(
         value.output, progress_bar
     )
     if isinstance(other_value, Path):
         file_name = other_value.name
         # move the file to the right final location
         # if a file alias is present use it
-        if fileToKeyMap:
-            file_name = next(iter(fileToKeyMap))
+        if file_to_key_map:
+            file_name = next(iter(file_to_key_map))
 
         file_path = data_items_utils.create_file_path(key, file_name)
         if other_value == file_path:
@@ -96,7 +95,8 @@ async def get_download_link_from_storage(
 
     # could raise ValidationError but will never do it since
     assert isinstance(link, URL)  # nosec
-    return parse_obj_as(AnyUrl, f"{link}")
+    url: AnyUrl = parse_obj_as(AnyUrl, f"{link}")
+    return url
 
 
 async def get_download_link_from_storage_overload(
@@ -117,7 +117,8 @@ async def get_download_link_from_storage_overload(
         s3_object=s3_object,
         link_type=link_type,
     )
-    return parse_obj_as(AnyUrl, f"{link}")
+    url: AnyUrl = parse_obj_as(AnyUrl, f"{link}")
+    return url
 
 
 async def get_upload_links_from_storage(
@@ -172,10 +173,10 @@ async def delete_target_link(
 async def pull_file_from_store(
     user_id: UserID,
     key: str,
-    fileToKeyMap: Optional[dict[str, str]],
+    file_to_key_map: dict[str, str] | None,
     value: FileLink,
-    io_log_redirect_cb: Optional[LogRedirectCB],
-    progress_bar: Optional[ProgressBarData],
+    io_log_redirect_cb: LogRedirectCB | None,
+    progress_bar: ProgressBarData | None,
 ) -> Path:
     log.debug("pulling file from storage %s", value)
     # do not make any assumption about s3_path, it is a str containing stuff that can be anything depending on the store
@@ -190,8 +191,8 @@ async def pull_file_from_store(
         progress_bar=progress_bar or ProgressBarData(steps=1),
     )
     # if a file alias is present use it to rename the file accordingly
-    if fileToKeyMap:
-        renamed_file = local_path / next(iter(fileToKeyMap))
+    if file_to_key_map:
+        renamed_file = local_path / next(iter(file_to_key_map))
         if downloaded_file != renamed_file:
             if renamed_file.exists():
                 renamed_file.unlink()
@@ -207,9 +208,9 @@ async def push_file_to_store(
     user_id: UserID,
     project_id: str,
     node_id: str,
-    io_log_redirect_cb: Optional[LogRedirectCB],
-    r_clone_settings: Optional[RCloneSettings] = None,
-    file_base_path: Optional[Path] = None,
+    io_log_redirect_cb: LogRedirectCB | None,
+    r_clone_settings: RCloneSettings | None = None,
+    file_base_path: Path | None = None,
     progress_bar: ProgressBarData,
 ) -> FileLink:
     log.debug("file path %s will be uploaded to s3", file)
@@ -232,10 +233,10 @@ async def push_file_to_store(
 
 async def pull_file_from_download_link(
     key: str,
-    fileToKeyMap: Optional[dict[str, str]],
+    file_to_key_map: dict[str, str] | None,
     value: DownloadLink,
-    io_log_redirect_cb: Optional[LogRedirectCB],
-    progress_bar: Optional[ProgressBarData],
+    io_log_redirect_cb: LogRedirectCB | None,
+    progress_bar: ProgressBarData | None,
 ) -> Path:
     log.debug(
         "Getting value from download link [%s] with label %s",
@@ -252,8 +253,8 @@ async def pull_file_from_download_link(
     )
 
     # if a file alias is present use it to rename the file accordingly
-    if fileToKeyMap:
-        renamed_file = local_path / next(iter(fileToKeyMap))
+    if file_to_key_map:
+        renamed_file = local_path / next(iter(file_to_key_map))
         if downloaded_file != renamed_file:
             if renamed_file.exists():
                 renamed_file.unlink()

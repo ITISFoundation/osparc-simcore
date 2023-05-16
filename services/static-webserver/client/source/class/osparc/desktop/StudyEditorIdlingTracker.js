@@ -45,7 +45,7 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
       }
 
       let msg = qx.locale.Manager.tr("Are you still there?") + "<br>";
-      msg += qx.locale.Manager.tr("If not, the ") + osparc.utils.Utils.getStudyLabel() + qx.locale.Manager.tr(" will be closed in: ");
+      msg += qx.locale.Manager.tr("If not, the ") + osparc.product.Utils.getStudyAlias() + qx.locale.Manager.tr(" will be closed in: ");
       msg += osparc.utils.Utils.formatSeconds(timeoutSec);
       this.__idleFlashMessage.setMessage(msg);
     },

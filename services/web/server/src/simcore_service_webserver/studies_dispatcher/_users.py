@@ -8,21 +8,25 @@
 
 """
 import logging
-from typing import Optional
+from datetime import datetime
 
 import redis.asyncio as aioredis
 from aiohttp import web
-from pydantic import BaseModel
+from models_library.emails import LowerCaseEmailStr
+from pydantic import BaseModel, parse_obj_as
+from servicelib.logging_utils import log_decorator
 
 from ..garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
 from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..login.utils import ACTIVE, GUEST, get_client_ip, get_random_string
 from ..redis import get_redis_lock_manager_client
-from ..security_api import authorized_userid, encrypt_password, is_anonymous, remember
-from ..users_api import get_user
-from ..users_exceptions import UserNotFoundError
+from ..security.api import authorized_userid, encrypt_password, is_anonymous, remember
+from ..users.api import get_user
+from ..users.exceptions import UserNotFoundError
+from ._constants import MSG_GUESTS_NOT_ALLOWED
+from .settings import StudiesDispatcherSettings, get_plugin_settings
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class UserInfo(BaseModel):
@@ -34,7 +38,7 @@ class UserInfo(BaseModel):
     is_guest: bool = True
 
 
-async def _get_authorized_user(request: web.Request) -> Optional[dict]:
+async def _get_authorized_user(request: web.Request) -> dict:
     # Returns valid user if it is identified (cookie) and logged in (valid cookie)?
     user_id = await authorized_userid(request)
     if user_id is not None:
@@ -42,19 +46,19 @@ async def _get_authorized_user(request: web.Request) -> Optional[dict]:
             user = await get_user(request.app, user_id)
             return user
         except UserNotFoundError:
-            return None
-
-    return None
+            return {}
+    return {}
 
 
 async def _create_temporary_user(request: web.Request):
     db: AsyncpgStorage = get_plugin_storage(request.app)
     redis_locks_client: aioredis.Redis = get_redis_lock_manager_client(request.app)
+    settings: StudiesDispatcherSettings = get_plugin_settings(app=request.app)
 
-    # TODO: avatar is an icon of the hero!
     random_user_name = get_random_string(min_len=5)
-    email = random_user_name + "@guest-at-osparc.io"
+    email = parse_obj_as(LowerCaseEmailStr, f"{random_user_name}@guest-at-osparc.io")
     password = get_random_string(min_len=12)
+    expires_at = datetime.utcnow() + settings.STUDIES_GUEST_ACCOUNT_LIFETIME
 
     # GUEST_USER_RC_LOCK:
     #
@@ -96,6 +100,7 @@ async def _create_temporary_user(request: web.Request):
                 "status": ACTIVE,
                 "role": GUEST,
                 "created_ip": get_client_ip(request),
+                "expires_at": expires_at,
             }
         )
         user: dict = await get_user(request.app, usr["id"])
@@ -109,10 +114,17 @@ async def _create_temporary_user(request: web.Request):
     return user
 
 
-async def acquire_user(request: web.Request, *, is_guest_allowed: bool) -> UserInfo:
+@log_decorator(_logger, level=logging.DEBUG)
+async def get_or_create_user(
+    request: web.Request, *, is_guest_allowed: bool
+) -> UserInfo:
     """
-    Identifies request's user and if anonymous, it creates
-    a temporary guest user that is authorized.
+    Arguments:
+        is_guest_allowed -- if True, it will create a temporary GUEST account
+
+    Raises:
+        web.HTTPUnauthorized
+
     """
     user = None
 
@@ -123,12 +135,14 @@ async def acquire_user(request: web.Request, *, is_guest_allowed: bool) -> UserI
         user = await _get_authorized_user(request)
 
     if not user and is_guest_allowed:
-        log.debug("Creating temporary GUEST user ...")
+        _logger.debug("Creating temporary GUEST user ...")
         user = await _create_temporary_user(request)
         is_anonymous_user = True
 
     if not is_guest_allowed and (not user or user.get("role") == GUEST):
-        raise web.HTTPUnauthorized(reason="Only available for registered users")
+        raise web.HTTPUnauthorized(reason=MSG_GUESTS_NOT_ALLOWED)
+
+    assert isinstance(user, dict)  # nosec
 
     return UserInfo(
         id=user["id"],
@@ -144,6 +158,6 @@ async def ensure_authentication(
     user: UserInfo, request: web.Request, response: web.Response
 ):
     if user.needs_login:
-        log.debug("Auto login for anonymous user %s", user.name)
+        _logger.debug("Auto login for anonymous user %s", user.name)
         identity = user.email
         await remember(request, response, identity)

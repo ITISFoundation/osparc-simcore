@@ -1,10 +1,10 @@
-from typing import Optional
+from typing import Any
 
 from models_library.basic_regex import UUID_RE
 from models_library.basic_types import PortInt
 from models_library.service_settings_labels import ContainerSpec
-from models_library.services import KEY_RE, VERSION_RE, ServiceDockerData
-from pydantic import BaseModel, Field
+from models_library.services import SERVICE_KEY_RE, VERSION_RE, ServiceDockerData
+from pydantic import BaseModel, Field, validator
 from pydantic.types import ByteSize, NonNegativeInt
 
 from .dynamic_services import ServiceState
@@ -23,34 +23,37 @@ class NodeRequirements(BaseModel):
         alias="CPU",
         gt=0.0,
     )
-    gpu: Optional[NonNegativeInt] = Field(
+    gpu: NonNegativeInt | None = Field(
         None,
         description="defines the required (maximum) GPU for running the services",
         alias="GPU",
     )
     ram: ByteSize = Field(
         ...,
-        description="defines the required (maximum) amount of RAM for running the services in bytes",
+        description="defines the required (maximum) amount of RAM for running the services",
         alias="RAM",
     )
-    mpi: Optional[int] = Field(
-        None,
-        deprecated=True,
-        description="defines whether a MPI node is required for running the services",
-        alias="MPI",
-        le=1,
-        ge=0,
+    vram: ByteSize | None = Field(
+        default=None,
+        description="defines the required (maximum) amount of VRAM for running the services",
+        alias="VRAM",
     )
 
+    @validator("vram", "gpu", always=True, pre=True)
+    @classmethod
+    def check_0_is_none(cls, v):
+        if v == 0:
+            v = None
+        return v
+
     class Config:
-        schema_extra = {
+        schema_extra: dict[str, Any] = {
             "examples": [
                 {"CPU": 1.0, "RAM": 4194304},
                 {"CPU": 1.0, "GPU": 1, "RAM": 4194304},
                 {
                     "CPU": 1.0,
                     "RAM": 4194304,
-                    "MPI": 1,
                 },
             ]
         }
@@ -58,11 +61,11 @@ class NodeRequirements(BaseModel):
 
 class ServiceExtras(BaseModel):
     node_requirements: NodeRequirements
-    service_build_details: Optional[ServiceBuildDetails] = None
-    container_spec: Optional[ContainerSpec] = None
+    service_build_details: ServiceBuildDetails | None = None
+    container_spec: ContainerSpec | None = None
 
     class Config:
-        schema_extra = {
+        schema_extra: dict[str, Any] = {
             "examples": [
                 {"node_requirements": node_example}
                 for node_example in NodeRequirements.Config.schema_extra["examples"]
@@ -98,7 +101,7 @@ class ServiceExtrasEnveloped(BaseModel):
 
 
 class RunningServiceDetails(BaseModel):
-    published_port: Optional[PortInt] = Field(
+    published_port: PortInt | None = Field(
         None,
         description="The ports where the service provides its interface on the docker swarm",
         deprecated=True,
@@ -112,7 +115,7 @@ class RunningServiceDetails(BaseModel):
     )
     service_key: str = Field(
         ...,
-        regex=KEY_RE,
+        regex=SERVICE_KEY_RE.pattern,
         description="distinctive name for the node based on the docker registry path",
         example=[
             "simcore/services/comp/itis/sleeper",

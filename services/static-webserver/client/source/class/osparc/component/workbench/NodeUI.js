@@ -71,6 +71,10 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     NODE_HEIGHT: 80
   },
 
+  events: {
+    "updateNodeDecorator": "qx.event.type.Event"
+  },
+
   members: {
     __thumbnail: null,
     __svgWorkbenchCanvas: null,
@@ -190,7 +194,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       const node = this.getNode();
       node.bind("label", this, "caption", {
         onUpdate: () => {
-          setTimeout(() => this.fireEvent("nodeMoving"), 50);
+          setTimeout(() => this.fireEvent("updateNodeDecorator"), 50);
         }
       });
       const metaData = node.getMetaData();
@@ -226,7 +230,8 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           label: this.tr("Stop"),
           icon: "@FontAwesome5Solid/stop/10"
         });
-        node.attachHandlersToStopButton(stopButton);
+        node.attachVisibilityHandlerToStopButton(stopButton);
+        node.attachExecuteHandlerToStopButton(stopButton);
         this._optionsMenu.addAt(stopButton, 1);
       }
 
@@ -270,48 +275,52 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       node.addListener("changeMarker", () => updateMarker());
       updateMarker();
 
-      if (node.isDeprecated()) {
+      const evaluateLifeCycleIcon = () => {
         const deprecatedIcon = this.getChildControl("deprecated-icon");
-        deprecatedIcon.set({
-          textColor: osparc.utils.StatusUI.getColor("deprecated")
-        });
-        let ttMsg = osparc.utils.Services.DEPRECATED_SERVICE_TEXT;
-        const deprecatedDateMsg = osparc.utils.Services.getDeprecationDateText(node.getMetaData());
-        if (deprecatedDateMsg) {
-          ttMsg = ttMsg + "<br>" + deprecatedDateMsg;
-        }
-        const deprecatedTTMsg = node.isDynamic() ? osparc.utils.Services.DEPRECATED_DYNAMIC_INSTRUCTIONS : osparc.utils.Services.DEPRECATED_COMPUTATIONAL_INSTRUCTIONS;
-        if (deprecatedTTMsg) {
-          ttMsg = ttMsg + "<br>" + deprecatedTTMsg;
-        }
-        const toolTip = new qx.ui.tooltip.ToolTip().set({
-          label: ttMsg,
-          icon: osparc.utils.StatusUI.getIconSource("deprecated"),
-          rich: true,
-          maxWidth: 250
-        });
-        deprecatedIcon.setToolTip(toolTip);
-      }
+        deprecatedIcon.exclude();
+        if (node.isDeprecated()) {
+          deprecatedIcon.show();
+          deprecatedIcon.set({
+            textColor: osparc.utils.StatusUI.getColor("deprecated")
+          });
+          let ttMsg = osparc.utils.Services.DEPRECATED_SERVICE_TEXT;
+          const deprecatedDateMsg = osparc.utils.Services.getDeprecationDateText(node.getMetaData());
+          if (deprecatedDateMsg) {
+            ttMsg = ttMsg + "<br>" + deprecatedDateMsg;
+          }
+          const deprecatedTTMsg = node.isDynamic() ? osparc.utils.Services.DEPRECATED_DYNAMIC_INSTRUCTIONS : osparc.utils.Services.DEPRECATED_COMPUTATIONAL_INSTRUCTIONS;
+          if (deprecatedTTMsg) {
+            ttMsg = ttMsg + "<br>" + deprecatedTTMsg;
+          }
+          const toolTip = new qx.ui.tooltip.ToolTip().set({
+            label: ttMsg,
+            icon: osparc.utils.StatusUI.getIconSource("deprecated"),
+            rich: true,
+            maxWidth: 250
+          });
+          deprecatedIcon.setToolTip(toolTip);
+        } else if (node.isRetired()) {
+          deprecatedIcon.show();
+          deprecatedIcon.set({
+            textColor: osparc.utils.StatusUI.getColor("retired")
+          });
 
-      if (node.isRetired()) {
-        const retiredIcon = this.getChildControl("deprecated-icon");
-        retiredIcon.set({
-          textColor: osparc.utils.StatusUI.getColor("retired")
-        });
-
-        let ttMsg = osparc.utils.Services.RETIRED_SERVICE_TEXT;
-        const deprecatedTTMsg = node.isDynamic() ? osparc.utils.Services.DEPRECATED_DYNAMIC_INSTRUCTIONS : osparc.utils.Services.DEPRECATED_COMPUTATIONAL_INSTRUCTIONS;
-        if (deprecatedTTMsg) {
-          ttMsg = ttMsg + "<br>" + deprecatedTTMsg;
+          let ttMsg = osparc.utils.Services.RETIRED_SERVICE_TEXT;
+          const deprecatedTTMsg = node.isDynamic() ? osparc.utils.Services.RETIRED_DYNAMIC_INSTRUCTIONS : osparc.utils.Services.RETIRED_COMPUTATIONAL_INSTRUCTIONS;
+          if (deprecatedTTMsg) {
+            ttMsg = ttMsg + "<br>" + deprecatedTTMsg;
+          }
+          const toolTip = new qx.ui.tooltip.ToolTip().set({
+            label: ttMsg,
+            icon: osparc.utils.StatusUI.getIconSource("retired"),
+            rich: true,
+            maxWidth: 250
+          });
+          deprecatedIcon.setToolTip(toolTip);
         }
-        const toolTip = new qx.ui.tooltip.ToolTip().set({
-          label: ttMsg,
-          icon: osparc.utils.StatusUI.getIconSource("retired"),
-          rich: true,
-          maxWidth: 250
-        });
-        retiredIcon.setToolTip(toolTip);
-      }
+      };
+      evaluateLifeCycleIcon();
+      this.getNode().addListener("changeVersion", () => evaluateLifeCycleIcon());
     },
 
     __applyType: function(type) {
@@ -380,7 +389,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       if (imageSrc) {
         this.setThumbnail(imageSrc);
       }
-      this.fireEvent("nodeMoving");
+      this.fireEvent("updateNodeDecorator");
     },
 
     __turnIntoParameterUI: function() {
@@ -405,7 +414,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           return "";
         }
       });
-      this.fireEvent("nodeMoving");
+      this.fireEvent("updateNodeDecorator");
     },
 
     __turnIntoIteratorUI: function() {
@@ -562,6 +571,28 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       const coords = this._setPositionFromEvent(e);
       this.getNode().setPosition(coords);
       this.base(arguments, e);
+    },
+
+    setPosition: function(pos) {
+      const node = this.getNode();
+      node.setPosition(pos);
+      this.moveTo(node.getPosition().x, node.getPosition().y);
+    },
+
+    snapToGrid: function() {
+      const node = this.getNode();
+      const {
+        x,
+        y
+      } = node.getPosition();
+      const snapGrid = 20;
+      const snapX = Math.round(x/snapGrid)*snapGrid;
+      const snapY = Math.round(y/snapGrid)*snapGrid;
+      node.setPosition({
+        x: snapX,
+        y: snapY
+      });
+      this.moveTo(node.getPosition().x, node.getPosition().y);
     },
 
     __applyThumbnail: function(thumbnailSrc) {

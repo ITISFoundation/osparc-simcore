@@ -26,6 +26,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
   extend: osparc.dashboard.ResourceBrowserBase,
 
   construct: function() {
+    this._resourceType = "service";
     this.base(arguments);
 
     this.__sortBy = osparc.component.service.SortServicesButtons.DefaultSorting;
@@ -70,7 +71,10 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
             const latestService = osparc.utils.Services.getLatest(services, key);
             const found = Object.keys(favServices).find(favSrv => favSrv === key);
             latestService.hits = found ? favServices[found]["hits"] : 0;
-            servicesList.push(latestService);
+            // do not list frontend services
+            if (!latestService["key"].includes("simcore/services/frontend/")) {
+              servicesList.push(latestService);
+            }
           }
           this.__setResourcesToList(servicesList);
         })
@@ -141,14 +145,14 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
 
     // LAYOUT //
     _createLayout: function() {
-      this._createResourcesLayout("service");
+      this._createResourcesLayout();
       const list = this._resourcesContainer.getFlatList();
       if (list) {
         osparc.utils.Utils.setIdToWidget(list, "servicesList");
       }
 
       this.__addNewServiceButtons();
-      this._secondaryBar.add(new qx.ui.core.Spacer(), {
+      this._toolbar.add(new qx.ui.core.Spacer(), {
         flex: 1
       });
       this.__addSortingButtons();
@@ -169,13 +173,13 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
                   this.__displayServiceSubmissionForm(data);
                 });
             });
-            this._secondaryBar.add(testDataButton);
+            this._toolbar.add(testDataButton);
           }
         });
 
       const addServiceButton = new qx.ui.form.Button(this.tr("Submit new service"), "@FontAwesome5Solid/plus-circle/14");
       addServiceButton.addListener("execute", () => this.__displayServiceSubmissionForm());
-      this._secondaryBar.add(addServiceButton);
+      this._toolbar.add(addServiceButton);
     },
 
     __addSortingButtons: function() {
@@ -184,7 +188,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         this.__sortBy = e.getData();
         this.__setResourcesToList(this._resourcesList);
       }, this);
-      this._secondaryBar.add(containterSortBtns);
+      this._toolbar.add(containterSortBtns);
     },
     // LAYOUT //
 

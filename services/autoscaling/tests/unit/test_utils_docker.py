@@ -13,7 +13,7 @@ import aiodocker
 import pytest
 from deepdiff import DeepDiff
 from faker import Faker
-from models_library.docker import DockerLabelKey
+from models_library.docker import DockerGenericTag, DockerLabelKey
 from models_library.generated_models.docker_rest_api import (
     Availability,
     NodeState,
@@ -27,11 +27,14 @@ from simcore_service_autoscaling.models import Resources
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
 from simcore_service_autoscaling.utils.utils_docker import (
     Node,
+    _by_created_dt,
     compute_cluster_total_resources,
     compute_cluster_used_resources,
     compute_node_used_resources,
     compute_tasks_needed_resources,
     find_node_with_name,
+    get_docker_pull_images_crontab,
+    get_docker_pull_images_on_start_bash_command,
     get_docker_swarm_join_bash_command,
     get_max_resources_from_docker_task,
     get_monitored_nodes,
@@ -395,12 +398,33 @@ async def test_pending_service_task_with_insufficient_resources_properly_sorts_t
         days=1
     )
     for task in pending_tasks:
-        assert task.CreatedAt
+        assert task.CreatedAt  # NOTE: in this case they are but they might be None
         assert (
             to_datetime(task.CreatedAt).replace(tzinfo=datetime.timezone.utc)
             > last_date
         )
         last_date = to_datetime(task.CreatedAt).replace(tzinfo=datetime.timezone.utc)
+
+
+def test_safe_sort_key_callback():
+    tasks_with_faulty_timestamp = [
+        Task(ID=n, CreatedAt=value)  # type: ignore
+        for n, value in enumerate(
+            [
+                # SEE test_to_datetime_conversion_known_errors
+                None,
+                "2023-03-15 09:20:58.123456",
+                "2023-03-15T09:20:58.123456",
+                "2023-03-15T09:20:58.123456Z",
+                f"{datetime.datetime.now(datetime.timezone.utc)}",
+                "corrupted string",
+            ]
+        )
+    ]
+    sorted_tasks = sorted(tasks_with_faulty_timestamp, key=_by_created_dt)
+
+    assert len(sorted_tasks) == len(tasks_with_faulty_timestamp)
+    assert {t.ID for t in sorted_tasks} == {t.ID for t in tasks_with_faulty_timestamp}
 
 
 def test_get_node_total_resources(host_node: Node):
@@ -789,3 +813,85 @@ async def test_tag_node(
     assert updated_node.Spec
     assert updated_node.Spec.Availability == Availability.active
     assert updated_node.Spec.Labels == {}
+
+
+async def test_tag_node_out_of_sequence_error(
+    autoscaling_docker: AutoscalingDocker, host_node: Node, faker: Faker
+):
+    assert host_node.Description
+    assert host_node.Description.Hostname
+    tags = faker.pydict(allowed_types=(str,))
+    # this works
+    updated_node = await tag_node(
+        autoscaling_docker, host_node, tags=tags, available=False
+    )
+    assert updated_node
+    assert host_node.Version
+    assert host_node.Version.Index
+    assert updated_node.Version
+    assert updated_node.Version.Index
+    assert host_node.Version.Index < updated_node.Version.Index
+
+    # running the same call with the old node should not raise an out of sequence error
+    updated_node2 = await tag_node(
+        autoscaling_docker, host_node, tags=tags, available=True
+    )
+    assert updated_node2
+    assert updated_node2.Version
+    assert updated_node2.Version.Index
+    assert updated_node2.Version.Index > updated_node.Version.Index
+
+
+@pytest.mark.parametrize(
+    "images, expected_cmd",
+    [
+        (
+            ["nginx", "itisfoundation/simcore/services/dynamic/service:23.5.5"],
+            'echo "services:\n  pre-pull-image-0:\n    image: nginx\n  pre-pull-image-1:\n    '
+            'image: itisfoundation/simcore/services/dynamic/service:23.5.5\nversion: \'"3.8"\'\n"'
+            " > /docker-pull.compose.yml"
+            " && "
+            'echo "#!/bin/sh\necho Pulling started at \\$(date)\ndocker compose --file=/docker-pull.compose.yml pull" > /docker-pull-script.sh'
+            " && "
+            "chmod +x /docker-pull-script.sh"
+            " && "
+            "./docker-pull-script.sh",
+        ),
+        (
+            [],
+            "",
+        ),
+    ],
+)
+def test_get_docker_pull_images_on_start_bash_command(
+    images: list[DockerGenericTag], expected_cmd: str
+):
+    assert get_docker_pull_images_on_start_bash_command(images) == expected_cmd
+
+
+@pytest.mark.parametrize(
+    "interval, expected_cmd",
+    [
+        (
+            datetime.timedelta(minutes=20),
+            'echo "*/20 * * * * root /docker-pull-script.sh >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
+        ),
+        (
+            datetime.timedelta(seconds=20),
+            'echo "*/1 * * * * root /docker-pull-script.sh >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
+        ),
+        (
+            datetime.timedelta(seconds=200),
+            'echo "*/3 * * * * root /docker-pull-script.sh >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
+        ),
+        (
+            datetime.timedelta(days=3),
+            'echo "*/4320 * * * * root /docker-pull-script.sh >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
+        ),
+    ],
+    ids=str,
+)
+def test_get_docker_pull_images_crontab(
+    interval: datetime.timedelta, expected_cmd: str
+):
+    assert get_docker_pull_images_crontab(interval) == expected_cmd

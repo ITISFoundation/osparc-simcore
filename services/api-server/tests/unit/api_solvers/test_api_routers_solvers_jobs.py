@@ -2,7 +2,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import json
 from pathlib import Path
 from pprint import pprint
 from typing import Any, Iterator
@@ -14,9 +13,11 @@ import pytest
 import respx
 from faker import Faker
 from fastapi import FastAPI
+from models_library.services import ServiceDockerData
 from pydantic import AnyUrl, HttpUrl, parse_obj_as
 from respx import MockRouter
 from simcore_service_api_server.core.settings import ApplicationSettings
+from simcore_service_api_server.models.schemas.jobs import Job, JobInputs, JobStatus
 from starlette import status
 
 
@@ -26,12 +27,12 @@ def bucket_name():
 
 
 @pytest.fixture
-def project_id(faker: Faker):
+def project_id(faker: Faker) -> str:
     return faker.uuid4()
 
 
 @pytest.fixture
-def node_id(faker: Faker):
+def node_id(faker: Faker) -> str:
     return faker.uuid4()
 
 
@@ -89,29 +90,25 @@ def presigned_download_link(
 def mocked_directorv2_service_api(
     app: FastAPI,
     presigned_download_link: AnyUrl,
-    osparc_simcore_services_dir: Path,
+    directorv2_service_openapi_specs: dict[str, Any],
 ):
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_DIRECTOR_V2
-
-    # director-v2 OAS
-    openapis_specs: dict[str, Any] = json.loads(
-        (osparc_simcore_services_dir / "director-v2" / "openapi.json").read_text()
-    )
+    oas = directorv2_service_openapi_specs
 
     # pylint: disable=not-context-manager
     with respx.mock(
-        base_url=settings.API_SERVER_DIRECTOR_V2.base_url,
+        base_url=settings.API_SERVER_DIRECTOR_V2.api_base_url,
         assert_all_called=False,
-        assert_all_mocked=False,
+        assert_all_mocked=True,  # IMPORTANT: KEEP always True!
     ) as respx_mock:
 
         # check that what we emulate, actually still exists
         path = "/v2/computations/{project_id}/tasks/-/logfile"
-        assert path in openapis_specs["paths"]
-        assert "get" in openapis_specs["paths"][path]
+        assert path in oas["paths"]
+        assert "get" in oas["paths"][path]
 
-        response = openapis_specs["paths"][path]["get"]["responses"]["200"]
+        response = oas["paths"][path]["get"]["responses"]["200"]
 
         assert response["content"]["application/json"]["schema"]["type"] == "array"
         assert (
@@ -119,14 +116,12 @@ def mocked_directorv2_service_api(
             == "#/components/schemas/TaskLogFileGet"
         )
         assert {"task_id", "download_link"} == set(
-            openapis_specs["components"]["schemas"]["TaskLogFileGet"][
-                "properties"
-            ].keys()
+            oas["components"]["schemas"]["TaskLogFileGet"]["properties"].keys()
         )
 
         respx_mock.get(
             path__regex=r"/computations/(?P<project_id>[\w-]+)/tasks/-/logfile",
-            name="get_computation_logs",
+            name="get_computation_logs",  # = operation_id
         ).respond(
             status.HTTP_200_OK,
             json=[
@@ -184,16 +179,16 @@ async def test_solver_logs(
     auth: httpx.BasicAuth,
     project_id: str,
     presigned_download_link: AnyUrl,
+    solver_key: str,
+    solver_version: str,
 ):
     resp = await client.get("/v0/meta")
     assert resp.status_code == 200
 
-    solver_key = "simcore/services/comp/itis/isolve"
-    version = "1.2.3"
     job_id = project_id
 
     resp = await client.get(
-        f"/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}/outputs/logfile",
+        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs/{job_id}/outputs/logfile",
         auth=auth,
         follow_redirects=True,
     )
@@ -208,3 +203,161 @@ async def test_solver_logs(
 
     assert resp.url == presigned_download_link
     pprint(dict(resp.headers))
+
+
+@pytest.fixture
+def solver_key() -> str:
+    return "simcore/services/comp/itis/isolve"
+
+
+@pytest.fixture
+def solver_version() -> str:
+    return "1.2.3"
+
+
+@pytest.mark.acceptance_test(
+    "New feature https://github.com/ITISFoundation/osparc-simcore/issues/3940"
+)
+async def test_run_solver_job(
+    client: httpx.AsyncClient,
+    directorv2_service_openapi_specs: dict[str, Any],
+    catalog_service_openapi_specs: dict[str, Any],
+    mocked_catalog_service_api: MockRouter,
+    mocked_directorv2_service_api: MockRouter,
+    mocked_webserver_service_api: MockRouter,
+    auth: httpx.BasicAuth,
+    project_id: str,
+    solver_key: str,
+    solver_version: str,
+):
+    oas = directorv2_service_openapi_specs
+
+    # check that what we emulate, actually still exists
+    path = "/v2/computations"
+    assert path in oas["paths"]
+    assert "post" in oas["paths"][path]
+
+    response = oas["paths"][path]["post"]["responses"]["201"]
+
+    assert (
+        response["content"]["application/json"]["schema"]["$ref"]
+        == "#/components/schemas/ComputationGet"
+    )
+    assert {
+        "id",
+        "state",
+        "result",
+        "pipeline_details",
+        "iteration",
+        "cluster_id",
+        "url",
+        "stop_url",
+    } == set(oas["components"]["schemas"]["ComputationGet"]["properties"].keys())
+
+    # CREATE and optionally start
+    mocked_directorv2_service_api.post(
+        path__regex=r"/computations",
+        name="create_computation_v2_computations_post",
+    ).respond(
+        status.HTTP_201_CREATED,
+        json={
+            "id": project_id,
+            "state": "UNKNOWN",
+            "result": "string",
+            "pipeline_details": {
+                "adjacency_list": {
+                    "3fa85f64-5717-4562-b3fc-2c963f66afa6": [
+                        "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                    ],
+                },
+                "node_states": {
+                    "3fa85f64-5717-4562-b3fc-2c963f66afa6": {
+                        "modified": True,
+                        "dependencies": ["3fa85f64-5717-4562-b3fc-2c963f66afa6"],
+                        "currentStatus": "NOT_STARTED",
+                    },
+                },
+            },
+            "iteration": 1,
+            "cluster_id": 0,
+            "url": "http://test.com",
+            "stop_url": "http://test.com",
+        },
+    )
+
+    # catalog_client.get_solver
+    oas = catalog_service_openapi_specs
+    response = oas["paths"]["/v0/services/{service_key}/{service_version}"]["get"][
+        "responses"
+    ]["200"]
+
+    assert (
+        response["content"]["application/json"]["schema"]["$ref"]
+        == "#/components/schemas/ServiceGet"
+    )
+
+    assert {
+        "name",
+        "description",
+        "key",
+        "version",
+        "type",
+        "authors",
+        "contact",
+        "inputs",
+        "outputs",
+    } == set(oas["components"]["schemas"]["ServiceGet"]["required"])
+
+    example = next(
+        e
+        for e in ServiceDockerData.Config.schema_extra["examples"][::-1]
+        if "boot" in e["description"]
+    )
+
+    mocked_catalog_service_api.get(
+        # path__regex=r"/services/(?P<service_key>[\w-]+)/(?P<service_version>[0-9\.]+)",
+        path="/v0/services/simcore%2Fservices%2Fcomp%2Fitis%2Fisolve/1.2.3",
+        name="get_service_v0_services__service_key___service_version__get",
+    ).respond(
+        status.HTTP_200_OK,
+        json=example
+        | {
+            "name": solver_key.split("/")[-1].capitalize(),
+            "description": solver_key.replace("/", " "),
+            "key": solver_key,
+            "version": solver_version,
+            "type": "computational",
+        },
+    )
+
+    # ---------
+
+    resp = await client.get("/v0/meta")
+    assert resp.status_code == 200
+
+    # Create Job
+    resp = await client.post(
+        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs",
+        auth=auth,
+        json=JobInputs(values={"x": 3.14, "n": 42}).dict(),
+    )
+    assert resp.status_code == status.HTTP_200_OK
+
+    assert mocked_webserver_service_api["create_projects"].called
+    assert mocked_webserver_service_api["get_task_status"].called
+    assert mocked_webserver_service_api["get_task_result"].called
+
+    job = Job.parse_obj(resp.json())
+
+    # Start Job
+    resp = await client.post(
+        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs/{job.id}:start",
+        auth=auth,
+        params={"cluster_id": 1},
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert mocked_directorv2_service_api[
+        "create_computation_v2_computations_post"
+    ].called
+
+    job_status = JobStatus.parse_obj(resp.json())

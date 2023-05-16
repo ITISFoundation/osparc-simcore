@@ -55,6 +55,7 @@ qx.Class.define("osparc.data.model.Study", {
       tags: studyData.tags || this.getTags(),
       state: studyData.state || this.getState(),
       quality: studyData.quality || this.getQuality(),
+      permalink: studyData.permalink || this.getPermalink(),
       dev: studyData.dev || this.getDev()
     });
 
@@ -156,6 +157,12 @@ qx.Class.define("osparc.data.model.Study", {
       nullable: true
     },
 
+    permalink: {
+      check: "Object",
+      nullable: true,
+      init: {}
+    },
+
     dev: {
       check: "Object",
       nullable: true,
@@ -188,6 +195,7 @@ qx.Class.define("osparc.data.model.Study", {
 
   statics: {
     IgnoreSerializationProps: [
+      "permalink",
       "state",
       "pipelineRunning",
       "readOnly"
@@ -234,7 +242,7 @@ qx.Class.define("osparc.data.model.Study", {
       const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
       orgIDs.push(myGroupId);
       if (orgIDs.length) {
-        return osparc.component.permissions.Study.canGroupsWrite(studyAccessRights, (orgIDs));
+        return osparc.component.share.CollaboratorsStudy.canGroupsWrite(studyAccessRights, (orgIDs));
       }
       return false;
     },
@@ -244,7 +252,7 @@ qx.Class.define("osparc.data.model.Study", {
       const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
       orgIDs.push(myGroupId);
       if (orgIDs.length) {
-        return osparc.component.permissions.Study.canGroupsDelete(studyAccessRights, (orgIDs));
+        return osparc.component.share.CollaboratorsStudy.canGroupsDelete(studyAccessRights, (orgIDs));
       }
       return false;
     },
@@ -478,11 +486,16 @@ qx.Class.define("osparc.data.model.Study", {
         },
         data: osparc.utils.Utils.getClientSessionID()
       };
+      if ("disableServiceAutoStart" in this.getDev()) {
+        params["url"]["disableServiceAutoStart"] = this.getDev()["disableServiceAutoStart"];
+        return osparc.data.Resources.fetch("studies", "openDisableAutoStart", params);
+      }
       return osparc.data.Resources.fetch("studies", "open", params);
     },
 
     stopStudy: function() {
       this.__stopRequestingStatus();
+      this.__stopFileUploads();
       this.__removeIFrames();
     },
 
@@ -490,6 +503,15 @@ qx.Class.define("osparc.data.model.Study", {
       const nodes = this.getWorkbench().getNodes(true);
       for (const node of Object.values(nodes)) {
         node.stopRequestingStatus();
+      }
+    },
+
+    __stopFileUploads: function() {
+      const nodes = this.getWorkbench().getNodes(true);
+      for (const node of Object.values(nodes)) {
+        if (node.isFilePicker()) {
+          node.requestFileUploadAbort();
+        }
       }
     },
 

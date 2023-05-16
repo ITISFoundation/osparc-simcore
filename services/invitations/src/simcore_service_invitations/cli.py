@@ -5,7 +5,8 @@ from typing import Optional
 import rich
 import typer
 from cryptography.fernet import Fernet
-from pydantic import EmailStr, HttpUrl, SecretStr, ValidationError, parse_obj_as
+from models_library.emails import LowerCaseEmailStr
+from pydantic import HttpUrl, SecretStr, ValidationError, parse_obj_as
 from rich.console import Console
 from servicelib.utils_secrets import generate_password
 from settings_library.utils_cli import create_settings_command
@@ -92,7 +93,7 @@ def generate_dotenv(ctx: typer.Context, auto_password: bool = False):
     ) or generate_password(length=32)
 
     settings = ApplicationSettings.create_from_envs(
-        INVITATIONS_OSPARC_URL="http://127.0.0.1:8000",
+        INVITATIONS_OSPARC_URL="http://127.0.0.1:8000", # NOSONAR
         INVITATIONS_SECRET_KEY=Fernet.generate_key().decode(),
         INVITATIONS_USERNAME=username,
         INVITATIONS_PASSWORD=password,
@@ -111,7 +112,7 @@ def invite(
     ctx: typer.Context,
     email: str = typer.Argument(
         ...,
-        callback=lambda v: parse_obj_as(EmailStr, v),
+        callback=lambda v: parse_obj_as(LowerCaseEmailStr, v),
         help="Custom invitation for a given guest",
     ),
     issuer: str = typer.Option(
@@ -128,7 +129,7 @@ def invite(
 
     invitation_data = InvitationInputs(
         issuer=issuer,
-        guest=email,  # type: ignore
+        guest=email,
         trial_account_days=trial_account_days,
     )
 

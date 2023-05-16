@@ -1,5 +1,8 @@
+from aiohttp import web
 from pydantic import ByteSize, Field, NonNegativeInt, parse_obj_as
 from settings_library.base import BaseCustomSettings
+
+from .._constants import APP_SETTINGS_KEY
 
 
 class ProjectsSettings(BaseCustomSettings):
@@ -12,3 +15,10 @@ class ProjectsSettings(BaseCustomSettings):
         default=5,
         description="defines the number of dynamic services in a project that can be started concurrently (a value of 0 will disable it)",
     )
+
+
+def get_plugin_settings(app: web.Application) -> ProjectsSettings:
+    settings = app[APP_SETTINGS_KEY].WEBSERVER_PROJECTS
+    assert settings, "setup_settings not called?"  # nosec
+    assert isinstance(settings, ProjectsSettings)  # nosec
+    return settings

@@ -25,11 +25,11 @@ test() {
   # WARNING: this test is heavy. Due to limited CI machine power, please do not
   # add too much overhead (e.g. low log-level etc)
   pytest \
+    --asyncio-mode=auto \
     --color=yes \
-    --cov-report=term-missing \
-    -v \
     --durations=5 \
     --log-level=INFO \
+    -v \
     tests/swarm-deploy
 }
 

@@ -87,7 +87,7 @@ def mock_save_service_state(mocker: MockerFixture) -> None:
 @pytest.fixture
 def mock_save_service_state_as_failing(mocker: MockerFixture) -> None:
     async def _always_raise(*args, **kwargs) -> None:
-        raise Exception("I AM FAILING NOW")
+        raise Exception("I AM FAILING NOW")  # pylint: disable=broad-exception-raised
 
     mocker.patch(
         "simcore_service_director_v2.modules.dynamic_sidecar.api_client._public.DynamicSidecarClient.save_service_state",

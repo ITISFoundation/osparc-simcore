@@ -25,16 +25,16 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (  # nopycln: im
 )
 from simcore_postgres_database.models.clusters import ClusterType
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.director_v2_exceptions import (
+from simcore_service_webserver.director_v2._models import (
+    ClusterCreate,
+    ClusterPatch,
+    ClusterPing,
+)
+from simcore_service_webserver.director_v2.exceptions import (
     ClusterAccessForbidden,
     ClusterNotFoundError,
     ClusterPingError,
     DirectorServiceError,
-)
-from simcore_service_webserver.director_v2_models import (
-    ClusterCreate,
-    ClusterPatch,
-    ClusterPing,
 )
 
 
@@ -100,7 +100,7 @@ def cluster_create(faker: Faker) -> ClusterCreate:
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_create_cluster(
-    enable_dev_features: None,
+    enable_webserver_clusters_feature: None,
     mocked_director_v2_api,
     client: TestClient,
     logged_user: dict[str, Any],
@@ -134,7 +134,7 @@ async def test_create_cluster(
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_list_clusters(
-    enable_dev_features: None,
+    enable_webserver_clusters_feature: None,
     mocked_director_v2_api,
     client: TestClient,
     logged_user: dict[str, Any],
@@ -151,7 +151,7 @@ async def test_list_clusters(
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_get_cluster(
-    enable_dev_features: None,
+    enable_webserver_clusters_feature: None,
     mocked_director_v2_api,
     client: TestClient,
     logged_user: dict[str, Any],
@@ -169,7 +169,7 @@ async def test_get_cluster(
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_get_cluster_details(
-    enable_dev_features: None,
+    enable_webserver_clusters_feature: None,
     mocked_director_v2_api,
     client: TestClient,
     logged_user: dict[str, Any],
@@ -197,7 +197,7 @@ async def test_get_cluster_details(
     deadline=None,
 )
 async def test_update_cluster(
-    enable_dev_features: None,
+    enable_webserver_clusters_feature: None,
     mocked_director_v2_api,
     client: TestClient,
     logged_user: dict[str, Any],
@@ -219,7 +219,7 @@ async def test_update_cluster(
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_delete_cluster(
-    enable_dev_features: None,
+    enable_webserver_clusters_feature: None,
     mocked_director_v2_api,
     client: TestClient,
     logged_user: dict[str, Any],
@@ -245,7 +245,7 @@ async def test_delete_cluster(
     deadline=None,
 )
 async def test_ping_cluster(
-    enable_dev_features: None,
+    enable_webserver_clusters_feature: None,
     mocked_director_v2_api,
     client: TestClient,
     logged_user: dict[str, Any],
@@ -263,7 +263,7 @@ async def test_ping_cluster(
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_ping_specific_cluster(
-    enable_dev_features: None,
+    enable_webserver_clusters_feature: None,
     mocked_director_v2_api,
     client: TestClient,
     logged_user: dict[str, Any],
@@ -288,7 +288,7 @@ async def test_ping_specific_cluster(
     ],
 )
 async def test_create_cluster_with_error(
-    enable_dev_features: None,
+    enable_webserver_clusters_feature: None,
     mocked_director_v2_with_error,
     client: TestClient,
     logged_user: dict[str, Any],
@@ -318,7 +318,7 @@ async def test_create_cluster_with_error(
     ],
 )
 async def test_list_clusters_with_error(
-    enable_dev_features: None,
+    enable_webserver_clusters_feature: None,
     mocked_director_v2_with_error,
     client: TestClient,
     logged_user: dict[str, Any],
@@ -343,7 +343,7 @@ async def test_list_clusters_with_error(
     ],
 )
 async def test_get_cluster_with_error(
-    enable_dev_features: None,
+    enable_webserver_clusters_feature: None,
     mocked_director_v2_with_error,
     client: TestClient,
     logged_user: dict[str, Any],
@@ -368,7 +368,7 @@ async def test_get_cluster_with_error(
     ],
 )
 async def test_get_cluster_details_with_error(
-    enable_dev_features: None,
+    enable_webserver_clusters_feature: None,
     mocked_director_v2_with_error,
     client: TestClient,
     logged_user: dict[str, Any],
@@ -393,7 +393,7 @@ async def test_get_cluster_details_with_error(
     ],
 )
 async def test_update_cluster_with_error(
-    enable_dev_features: None,
+    enable_webserver_clusters_feature: None,
     mocked_director_v2_with_error,
     client: TestClient,
     logged_user: dict[str, Any],
@@ -421,7 +421,7 @@ async def test_update_cluster_with_error(
     ],
 )
 async def test_delete_cluster_with_error(
-    enable_dev_features: None,
+    enable_webserver_clusters_feature: None,
     mocked_director_v2_with_error,
     client: TestClient,
     logged_user: dict[str, Any],
@@ -444,7 +444,7 @@ async def test_delete_cluster_with_error(
     ],
 )
 async def test_ping_cluster_with_error(
-    enable_dev_features: None,
+    enable_webserver_clusters_feature: None,
     mocked_director_v2_with_error,
     client: TestClient,
     logged_user: dict[str, Any],
@@ -474,7 +474,7 @@ async def test_ping_cluster_with_error(
     ],
 )
 async def test_ping_specific_cluster_with_error(
-    enable_dev_features: None,
+    enable_webserver_clusters_feature: None,
     mocked_director_v2_with_error,
     client: TestClient,
     logged_user: dict[str, Any],

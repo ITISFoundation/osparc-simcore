@@ -43,7 +43,7 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
           control = new qx.ui.basic.Label().set({
             marginLeft: 10,
             maxWidth: 200,
-            font: "title-16"
+            font: "text-16"
           });
           this._add(control);
           break;
@@ -205,8 +205,8 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
     __openStudyDetails: function() {
       const studyDetails = new osparc.info.StudyLarge(this.getStudy());
       const title = this.tr("Study Information");
-      const width = 500;
-      const height = 500;
+      const width = osparc.info.CardLarge.WIDTH;
+      const height = osparc.info.CardLarge.HEIGHT;
       osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height);
     },
 

@@ -29,6 +29,15 @@ async function closeQuickStart(page) {
     .catch(() => console.log("Quick Start window not found"));
 }
 
+async function toLogInPage(page) {
+  const id = '[osparc-test-id=toLogInPage]';
+  await page.waitForSelector(id, {
+    timeout: 2000
+  })
+    .then(() => page.click(id))
+    .catch(() => console.log("toLogInPage button not found"));
+}
+
 async function register(page, user, pass) {
   await utils.waitAndClick(page, '[osparc-test-id="loginCreateAccountBtn"]');
 
@@ -42,7 +51,7 @@ async function register(page, user, pass) {
 
 async function logIn(page, user, pass) {
   // user might be already logged in
-  const elementExists = await page.$('[osparc-test-id="userMenuMainBtn"]');
+  const elementExists = await page.$('[osparc-test-id="userMenuBtn"]');
   if (elementExists !== null) {
     return;
   }
@@ -63,15 +72,14 @@ async function logIn(page, user, pass) {
 async function logOut(page) {
   console.log("Logging out");
 
-  await utils.waitAndClick(page, '[osparc-test-id="userMenuMainBtn"]');
+  await utils.waitAndClick(page, '[osparc-test-id="userMenuBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="userMenuLogoutBtn"]');
-  await page.waitForSelector('[osparc-test-id="loginSubmitBtn"]');
 }
 
 async function dashboardAbout(page) {
   console.log("Showing About");
 
-  await utils.waitAndClick(page, '[osparc-test-id="userMenuMainBtn"]');
+  await utils.waitAndClick(page, '[osparc-test-id="userMenuBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="userMenuAboutBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="aboutWindowCloseBtn"]');
 }
@@ -79,7 +87,7 @@ async function dashboardAbout(page) {
 async function dashboardPreferences(page) {
   console.log("Navigating through Preferences");
 
-  await utils.waitAndClick(page, '[osparc-test-id="userMenuMainBtn"]');
+  await utils.waitAndClick(page, '[osparc-test-id="userMenuBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="userMenuPreferencesBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="preferencesProfileTabBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="preferencesSecurityTabBtn"]');
@@ -87,7 +95,7 @@ async function dashboardPreferences(page) {
   await utils.waitAndClick(page, '[osparc-test-id="preferencesWindowCloseBtn"]');
 }
 
-async function __dashboardStudiesBrowser(page) {
+async function dashboardStudiesBrowser(page) {
   console.log("Navigating through Studies");
   await utils.waitAndClick(page, '[osparc-test-id="studiesTabBtn"]')
 }
@@ -105,14 +113,14 @@ async function __dashboardServicesBrowser(page) {
 async function dashboardNewPlan(page) {
   console.log("Creating New Plan");
 
-  await __dashboardStudiesBrowser(page);
+  await dashboardStudiesBrowser(page);
   await utils.waitAndClick(page, '[osparc-test-id="newPlanButton"]');
 }
 
 async function dashboardStartSim4LifeLite(page) {
   console.log("Start Sim4Lite from + button");
 
-  await __dashboardStudiesBrowser(page);
+  await dashboardStudiesBrowser(page);
   await utils.waitAndClick(page, '[osparc-test-id="startS4LButton"]');
 }
 
@@ -191,7 +199,7 @@ async function dashboardOpenService(page, serviceName) {
 }
 
 async function __filterStudiesByText(page, studyName) {
-  await __dashboardStudiesBrowser(page);
+  await dashboardStudiesBrowser(page);
   await __typeInSearchBarFilter(page, "study", studyName);
 }
 
@@ -272,7 +280,7 @@ async function runStudy(page) {
 async function deleteFirstStudy(page, studyName) {
   console.log("Deleting first study")
 
-  await __dashboardStudiesBrowser(page);
+  await dashboardStudiesBrowser(page);
 
   if (studyName) {
     await __filterStudiesByText(page, studyName);
@@ -377,10 +385,12 @@ module.exports = {
   acceptCookies,
   ignoreNewRelease,
   closeQuickStart,
+  toLogInPage,
   register,
   logIn,
   logOut,
   dashboardAbout,
+  dashboardStudiesBrowser,
   dashboardPreferences,
   dashboardNewPlan,
   dashboardStartSim4LifeLite,

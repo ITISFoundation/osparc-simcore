@@ -51,8 +51,7 @@ async def is_pg_responsive(engine: Engine, *, raise_if_fails=False) -> bool:
         if raise_if_fails:
             raise
         return False
-    else:
-        return True
+    return True
 
 
 def init_pg_tables(dsn: DataSourceName, schema: sa.schema.MetaData):

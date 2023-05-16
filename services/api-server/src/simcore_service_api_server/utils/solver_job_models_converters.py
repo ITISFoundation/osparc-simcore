@@ -6,10 +6,11 @@ import urllib.parse
 import uuid
 from datetime import datetime
 from functools import lru_cache
-from typing import Callable, Optional
+from typing import Callable
 
 from models_library.projects_nodes import InputID, InputTypes
 
+from ..models.basic_types import VersionStr
 from ..models.domain.projects import (
     InputTypes,
     NewProjectIn,
@@ -20,15 +21,15 @@ from ..models.domain.projects import (
 )
 from ..models.schemas.files import File
 from ..models.schemas.jobs import ArgumentType, Job, JobInputs, JobStatus, TaskStates
-from ..models.schemas.solvers import Solver, SolverKeyId, VersionStr
-from ..modules.director_v2 import ComputationTaskGet
+from ..models.schemas.solvers import Solver, SolverKeyId
+from ..plugins.director_v2 import ComputationTaskGet
 from .typing_extra import get_types
 
 # UTILS ------
 _BASE_UUID = uuid.UUID("231e13db-6bc6-4f64-ba56-2ee2c73b9f09")
 
 
-@lru_cache()
+@lru_cache
 def compose_uuid_from(*values) -> str:
     composition = "/".join(map(str, values))
     new_uuid = uuid.uuid5(_BASE_UUID, composition)
@@ -151,7 +152,7 @@ def create_new_project_for_job(
         uuid=project_id,
         name=job.name,  # NOTE: this IS an identifier as well. MUST NOT be changed in the case of project APIs!
         description=f"Study associated to solver job:\n{job_info}",
-        thumbnail="https://2xx2gy2ovf3r21jclkjio3x8-wpengine.netdna-ssl.com/wp-content/uploads/2018/12/API-Examples.jpg",  # https://placeimg.com/171/96/tech/grayscale/?0.jpg",
+        thumbnail="https://via.placeholder.com/170x120.png",
         workbench={solver_id: solver_service},
         ui=StudyUI(
             workbench={
@@ -199,7 +200,7 @@ def create_job_from_project(
     solver_key: SolverKeyId,
     solver_version: VersionStr,
     project: Project,
-    url_for: Optional[Callable] = None,
+    url_for: Callable | None = None,
 ) -> Job:
     """
     Given a project, creates a job
@@ -228,7 +229,7 @@ def create_job_from_project(
         name=project.name,
         inputs_checksum=job_inputs.compute_checksum(),
         created_at=project.creation_date,
-        runner_name=solver_name,
+        runner_name=solver_name,  # type: ignore
         url=None,
         runner_url=None,
         outputs_url=None,

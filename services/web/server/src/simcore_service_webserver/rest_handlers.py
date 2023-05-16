@@ -10,9 +10,11 @@ from aiohttp import web
 from ._constants import APP_PUBLIC_CONFIG_PER_PRODUCT
 from ._meta import API_VTAG
 from .application_settings import APP_SETTINGS_KEY
-from .products import get_product_name
+from .login.decorators import login_required
+from .products.plugin import get_product_name
 from .redis import get_redis_scheduled_maintenance_client
 from .rest_healthcheck import HealthCheck, HealthCheckFailed
+from .utils_aiohttp import envelope_json_response
 
 log = logging.getLogger(__name__)
 
@@ -55,8 +57,7 @@ async def healthcheck_readiness_probe(request: web.Request):
     health_report = healthcheck.get_app_info(request.app)
     # NOTE: do NOT run healthcheck here, just return info fast.
     health_report["status"] = "SERVICE_RUNNING"
-
-    return web.json_response(data={"data": health_report})
+    return envelope_json_response(health_report)
 
 
 @routes.get(f"/{API_VTAG}/config", name="get_config")
@@ -78,16 +79,23 @@ async def get_config(request: web.Request):
         product_name, {}
     )
 
-    return web.json_response(data={"data": app_public_config | product_public_config})
+    return envelope_json_response(app_public_config | product_public_config)
 
 
 @routes.get(f"/{API_VTAG}/scheduled_maintenance", name="get_scheduled_maintenance")
+@login_required
 async def get_scheduled_maintenance(request: web.Request):
     """Check scheduled_maintenance table in redis"""
 
     redis_client = get_redis_scheduled_maintenance_client(request.app)
     hash_key = "maintenance"
-    # {"start": "2023-01-17T14:45:00.000Z", "end": "2023-01-17T23:00:00.000Z", "reason": "Release 1.0.4"}
+    # Examples.
+    #  {"start": "2023-01-17T14:45:00.000Z", "end": "2023-01-17T23:00:00.000Z", "reason": "Release 1.0.4"}
+    #  {"start": "2023-01-20T09:00:00.000Z", "end": "2023-01-20T10:30:00.000Z", "reason": "Release ResistanceIsFutile2"}
+    # NOTE: datetime is UTC (Canary islands / UK)
     if maintenance_str := await redis_client.get(hash_key):
         return web.json_response(data={"data": maintenance_str})
-    return web.json_response(status=204)
+
+    response = web.json_response(status=web.HTTPNoContent.status_code)
+    assert response.status == 204  # nosec
+    return response

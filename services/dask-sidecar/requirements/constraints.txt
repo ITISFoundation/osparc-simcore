@@ -13,7 +13,3 @@
 #
 # Compatibility/coordination
 #
-
-
-# allows to put files in the HTTP file system
-fsspec>=2021.10.1

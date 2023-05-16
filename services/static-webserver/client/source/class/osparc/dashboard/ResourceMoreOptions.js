@@ -43,11 +43,26 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     "openService": "qx.event.type.Data"
   },
 
+  statics: {
+    WIDTH: 700,
+    HEIGHT: 660
+  },
+
+  properties: {
+    showOpenButton: {
+      check: "Boolean",
+      init: true,
+      nullable: false,
+      event: "changeShowOpenButton"
+    }
+  },
+
   members: {
     __resourceData: null,
     __serviceVersionLayout: null,
     __serviceVersionSelector: null,
     __permissionsPage: null,
+    __tagsPage: null,
     __classifiersPage: null,
     __qualityPage: null,
     __servicesUpdatePage: null,
@@ -60,6 +75,10 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
     openAccessRights: function() {
       this.__openPage(this.__permissionsPage);
+    },
+
+    openTags: function() {
+      this.__openPage(this.__tagsPage);
     },
 
     openClassifiers: function() {
@@ -108,7 +127,6 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
             store.getAllServices()
               .then(services => {
                 const serviceData = osparc.utils.Services.getFromObject(services, this.__resourceData["key"], serviceVersion);
-                console.log(serviceData);
                 serviceData["resourceType"] = "service";
                 this.__resourceData = serviceData;
                 this.__addPages();
@@ -137,6 +155,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         this.__getPermissionsPage,
         this.__getClassifiersPage,
         this.__getQualityPage,
+        this.__getTagsPage,
         this.__getServicesUpdatePage,
         this.__getServicesBootOptionsPage,
         this.__getSaveAsTemplatePage
@@ -177,7 +196,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
       // Page title
       tabPage.add(new qx.ui.basic.Label(title).set({
-        font: "title-16"
+        font: "text-15"
       }));
 
       // Page content
@@ -206,6 +225,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       infoCard.addListener("openAccessRights", () => this.openAccessRights());
       infoCard.addListener("openClassifiers", () => this.openClassifiers());
       infoCard.addListener("openQuality", () => this.openQuality());
+      infoCard.addListener("openTags", () => this.openTags());
       infoCard.addListener("updateStudy", e => {
         const updatedData = e.getData();
         if (osparc.utils.Resources.isStudy(resourceData)) {
@@ -236,6 +256,9 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
           allowGrowX: false,
           alignX: "right"
         });
+        this.bind("showOpenButton", openServiceButton, "visibility", {
+          converter: show => show ? "visible" : "excluded"
+        });
         openServiceButton.addListener("execute", () => {
           this.fireDataEvent("openService", {
             key: resourceData["key"],
@@ -262,15 +285,15 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       if (osparc.utils.Resources.isService(resourceData)) {
         resourceLabel = this.tr("service");
       } else if (osparc.utils.Resources.isTemplate(resourceData)) {
-        resourceLabel = osparc.utils.Utils.getTemplateLabel();
+        resourceLabel = osparc.product.Utils.getTemplateAlias();
       } else if (osparc.utils.Resources.isStudy(resourceData)) {
-        resourceLabel = osparc.utils.Utils.getStudyLabel();
+        resourceLabel = osparc.product.Utils.getStudyAlias();
       }
       const title = this.tr("Share ") + resourceLabel;
       const icon = "@FontAwesome5Solid/share-alt";
       let permissionsView = null;
       if (osparc.utils.Resources.isService(resourceData)) {
-        permissionsView = new osparc.component.permissions.Service(resourceData);
+        permissionsView = new osparc.component.share.CollaboratorsService(resourceData);
         permissionsView.addListener("updateAccessRights", e => {
           const updatedData = e.getData();
           if (osparc.utils.Resources.isService(resourceData)) {
@@ -278,9 +301,11 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
           }
         }, this);
       } else {
-        permissionsView = new osparc.component.permissions.Study(resourceData);
+        permissionsView = new osparc.component.share.CollaboratorsStudy(resourceData);
         if (osparc.utils.Resources.isStudy(resourceData)) {
           permissionsView.getChildControl("study-link").show();
+        } else if (osparc.utils.Resources.isTemplate(resourceData)) {
+          permissionsView.getChildControl("template-link").show();
         }
         permissionsView.addListener("updateAccessRights", e => {
           const updatedData = e.getData();
@@ -297,7 +322,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __getClassifiersPage: function() {
-      if (osparc.utils.Utils.isProduct("s4llite")) {
+      if (!osparc.product.Utils.showClassifiers()) {
         return null;
       }
       const id = "Classifiers";
@@ -331,7 +356,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __getQualityPage: function() {
-      if (osparc.utils.Utils.isProduct("s4llite")) {
+      if (!osparc.product.Utils.showQuality()) {
         return null;
       }
       const id = "Quality";
@@ -355,6 +380,28 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         return page;
       }
       return null;
+    },
+
+    __getTagsPage: function() {
+      const id = "Tags";
+      const resourceData = this.__resourceData;
+      if (osparc.utils.Resources.isService(resourceData)) {
+        return null;
+      }
+      if (!osparc.data.model.Study.canIWrite(resourceData["accessRights"])) {
+        return null;
+      }
+
+      const title = this.tr("Tags");
+      const icon = "@FontAwesome5Solid/tags";
+      const tagManager = new osparc.component.form.tag.TagManager(resourceData);
+      tagManager.addListener("updateTags", e => {
+        const updatedData = e.getData();
+        tagManager.setStudydata(updatedData);
+        this.fireDataEvent("updateStudy", updatedData);
+      }, this);
+      const page = this.__tagsPage = this.__createPage(title, tagManager, icon, id);
+      return page;
     },
 
     __getServicesUpdatePage: function() {
@@ -405,7 +452,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const canIWrite = osparc.data.model.Study.canIWrite(this.__resourceData["accessRights"]);
       const canCreateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.create");
       if (canIWrite && canCreateTemplate) {
-        const title = this.tr("Save as ") + osparc.utils.Utils.capitalize(osparc.utils.Utils.getTemplateLabel());
+        const title = this.tr("Save as ") + osparc.utils.Utils.capitalize(osparc.product.Utils.getTemplateAlias());
         const icon = "@FontAwesome5Solid/copy";
         const saveAsTemplate = new osparc.component.study.SaveAsTemplate(this.__resourceData);
         saveAsTemplate.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));

@@ -181,7 +181,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
     __createTSRSection: function() {
       const box = this.__TSRSection = new qx.ui.groupbox.GroupBox(this.tr("Ten Simple Rules"));
       box.getChildControl("legend").set({
-        font: "title-14"
+        font: "text-14"
       });
       box.getChildControl("frame").set({
         backgroundColor: "transparent"
@@ -206,7 +206,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
     __createAnnotationsSection: function() {
       const box = this.__annotationsSection = new qx.ui.groupbox.GroupBox(this.tr("Annotations"));
       box.getChildControl("legend").set({
-        font: "title-14"
+        font: "text-14"
       });
       box.getChildControl("frame").set({
         backgroundColor: "transparent"
@@ -254,7 +254,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
       const schemaRules = this.__schema["properties"]["tsr_current"]["properties"];
 
       const headerTSR = new qx.ui.basic.Label(this.tr("Rules")).set({
-        font: "title-14"
+        font: "text-14"
       });
       this.__tsrGrid.add(headerTSR, {
         row: 0,
@@ -262,7 +262,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
       });
 
       const headerCL = new qx.ui.basic.Label(this.tr("Conformance Level")).set({
-        font: "title-14"
+        font: "text-14"
       });
       this.__tsrGrid.add(headerCL, {
         row: 0,
@@ -271,7 +271,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
 
       const headerTargetCL = new qx.ui.basic.Label(this.tr("Target")).set({
         toolTipText: this.tr("Conformance Level Target"),
-        font: "title-14"
+        font: "text-14"
       });
       this.bind("mode", headerTargetCL, "visibility", {
         converter: mode => mode === "edit" ? "visible" : "excluded"
@@ -282,7 +282,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
       });
 
       const headerRef = new qx.ui.basic.Label(this.tr("References")).set({
-        font: "title-14"
+        font: "text-14"
       });
       this.__tsrGrid.add(headerRef, {
         row: 0,
@@ -304,7 +304,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         row++;
       });
       const label = new qx.ui.basic.Label("TSR score").set({
-        font: "title-13"
+        font: "text-14"
       });
       this.__tsrGrid.add(label, {
         row,

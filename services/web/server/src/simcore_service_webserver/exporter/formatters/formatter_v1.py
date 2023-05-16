@@ -5,7 +5,7 @@ import traceback
 from collections import deque
 from itertools import chain
 from pathlib import Path
-from typing import Deque, Optional
+from typing import Deque
 from uuid import UUID
 
 from aiohttp import ClientError, ClientSession, ClientTimeout, web
@@ -22,6 +22,7 @@ from models_library.users import UserID
 from models_library.utils.nodes import compute_node_hash, project_node_io_payload_cb
 from pydantic import AnyUrl, parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
+from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.utils import logged_gather
 from simcore_sdk.node_ports_common.exceptions import (
     NodeportsException,
@@ -37,11 +38,11 @@ from simcore_sdk.node_ports_common.storage_client import (
     list_file_metadata,
 )
 
-from ...director_v2_api import create_or_update_pipeline
+from ...director_v2.api import create_or_update_pipeline
 from ...projects.projects_api import get_project_for_user, submit_delete_project_task
 from ...projects.projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from ...projects.projects_exceptions import ProjectsException
-from ...users_api import get_user
+from ...users.api import get_user
 from ...utils import now_str
 from ..exceptions import ExporterException
 from ..file_downloader import ParallelDownloader
@@ -141,7 +142,7 @@ async def extract_download_links(
 async def generate_directory_contents(
     app: web.Application,
     root_folder: Path,
-    manifest_root_folder: Optional[Path],
+    manifest_root_folder: Path | None,
     project_id: str,
     user_id: int,
     version: str,
@@ -224,7 +225,7 @@ async def add_new_project(
     if _project_db["uuid"] != str(project.uuid):
         raise ExporterException("Project uuid dose nto match after validation")
 
-    await create_or_update_pipeline(app, user_id, project.uuid)
+    await create_or_update_pipeline(app, user_id, project.uuid, product_name)
 
 
 async def _fix_node_run_hashes_based_on_old_project(
@@ -348,7 +349,7 @@ async def import_files_and_validate_project(
     user_id: int,
     product_name: str,
     root_folder: Path,
-    manifest_root_folder: Optional[Path],
+    manifest_root_folder: Path | None,
 ) -> str:
     project_file = await ProjectFile.model_from_file(root_dir=root_folder)
     shuffled_data: ShuffledData = project_file.get_shuffled_uuids()
@@ -420,7 +421,10 @@ async def import_files_and_validate_project(
         )
         try:
             await submit_delete_project_task(
-                app=app, project_uuid=UUID(project_uuid), user_id=user_id
+                app=app,
+                project_uuid=UUID(project_uuid),
+                user_id=user_id,
+                simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             )
         except ProjectsException:
             # no need to raise an error here
@@ -440,7 +444,7 @@ class FormatterV1(BaseFormatter):
         self, app: web.Application, project_id: str, user_id: int, **kwargs
     ) -> None:
         # injected by Formatter_V2
-        manifest_root_folder: Optional[Path] = kwargs.get("manifest_root_folder")
+        manifest_root_folder: Path | None = kwargs.get("manifest_root_folder")
 
         await generate_directory_contents(
             app=app,
@@ -456,7 +460,7 @@ class FormatterV1(BaseFormatter):
         user_id: int = kwargs["user_id"]
         product_name: str = kwargs["product_name"]
         # injected by Formatter_V2
-        manifest_root_folder: Optional[Path] = kwargs.get("manifest_root_folder")
+        manifest_root_folder: Path | None = kwargs.get("manifest_root_folder")
 
         return await import_files_and_validate_project(
             app=app,

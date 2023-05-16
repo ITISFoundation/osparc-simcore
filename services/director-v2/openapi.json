@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-director-v2",
     "description": " Orchestrates the pipeline of services defined by the user",
-    "version": "2.1.0"
+    "version": "2.2.0"
   },
   "servers": [
     {
@@ -120,7 +120,7 @@
             "required": true,
             "schema": {
               "title": "Service Key",
-              "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
+              "pattern": "^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
               "type": "string",
               "description": "Distinctive name for the node based on the docker registry path"
             },
@@ -178,7 +178,7 @@
             "required": true,
             "schema": {
               "title": "Service Key",
-              "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
+              "pattern": "^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
               "type": "string",
               "description": "Distinctive name for the node based on the docker registry path"
             },
@@ -312,7 +312,7 @@
             "required": true,
             "schema": {
               "title": "Service Key",
-              "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
+              "pattern": "^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
               "type": "string",
               "description": "distinctive name for the node based on the docker registry path"
             },
@@ -815,6 +815,15 @@
             },
             "name": "x-dynamic-sidecar-request-scheme",
             "in": "header"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "X-Simcore-User-Agent",
+              "type": "string"
+            },
+            "name": "x-simcore-user-agent",
+            "in": "header"
           }
         ],
         "requestBody": {
@@ -922,16 +931,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
           "204": {
-            "description": "No Content"
+            "description": "Successful Response"
           },
           "422": {
             "description": "Validation Error",
@@ -1862,6 +1863,16 @@
           }
         }
       },
+      "BootMode": {
+        "title": "BootMode",
+        "enum": [
+          "CPU",
+          "GPU",
+          "MPI"
+        ],
+        "type": "string",
+        "description": "An enumeration."
+      },
       "BootOption": {
         "title": "BootOption",
         "required": [
@@ -2199,7 +2210,8 @@
         "title": "ComputationCreate",
         "required": [
           "user_id",
-          "project_id"
+          "project_id",
+          "product_name"
         ],
         "type": "object",
         "properties": {
@@ -2222,8 +2234,7 @@
           },
           "product_name": {
             "title": "Product Name",
-            "type": "string",
-            "description": "required if computation is started"
+            "type": "string"
           },
           "subgraph": {
             "title": "Subgraph",
@@ -2393,13 +2404,14 @@
           "user_id",
           "project_id",
           "service_uuid",
-          "service_resources"
+          "service_resources",
+          "product_name"
         ],
         "type": "object",
         "properties": {
           "service_key": {
             "title": "Service Key",
-            "pattern": "^(simcore)/(services)/dynamic(/[\\w/-]+)+$",
+            "pattern": "^simcore/services/dynamic/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
             "type": "string",
             "description": "distinctive name for the node based on the docker registry path"
           },
@@ -2434,6 +2446,11 @@
           "service_resources": {
             "title": "Service Resources",
             "type": "object"
+          },
+          "product_name": {
+            "title": "Product Name",
+            "type": "string",
+            "description": "Current product name"
           }
         },
         "example": {
@@ -2443,6 +2460,7 @@
           "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
           "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
           "basepath": "/x/75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+          "product_name": "osparc",
           "service_resources": {
             "container": {
               "image": "simcore/services/dynamic/jupyter-math:2.0.5",
@@ -2455,7 +2473,10 @@
                   "limit": 2147483648,
                   "reservation": 2147483648
                 }
-              }
+              },
+              "boot_modes": [
+                "CPU"
+              ]
             }
           }
         }
@@ -2483,7 +2504,7 @@
         "properties": {
           "image": {
             "title": "Image",
-            "pattern": "[\\w/-]+:[\\w.@]+",
+            "pattern": "^(?:(?P<registry_host>[a-z0-9-]+(?:\\.[a-z0-9-]+)+(?::\\d+)?|[a-z0-9-]+:\\d+)/)?(?P<docker_image>(?:[a-z0-9][a-z0-9_.-]*/)*[a-z0-9-_]+[a-z0-9])(?::(?P<docker_tag>[\\w][\\w.-]{0,127}))?(?P<docker_digest>\\@sha256:[a-fA-F0-9]{32,64})?$",
             "type": "string",
             "description": "Used by the frontend to provide a context for the users.Services with a docker-compose spec will have multiple entries.Using the `image:version` instead of the docker-compose spec is more helpful for the end user."
           },
@@ -2493,6 +2514,16 @@
             "additionalProperties": {
               "$ref": "#/components/schemas/ResourceValue"
             }
+          },
+          "boot_modes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BootMode"
+            },
+            "description": "describe how a service shall be booted, using CPU, MPI, openMP or GPU",
+            "default": [
+              "CPU"
+            ]
           }
         },
         "example": {
@@ -2633,15 +2664,12 @@
           "RAM": {
             "title": "Ram",
             "type": "integer",
-            "description": "defines the required (maximum) amount of RAM for running the services in bytes"
+            "description": "defines the required (maximum) amount of RAM for running the services"
           },
-          "MPI": {
-            "title": "Mpi",
-            "maximum": 1.0,
-            "minimum": 0.0,
+          "VRAM": {
+            "title": "Vram",
             "type": "integer",
-            "description": "defines whether a MPI node is required for running the services",
-            "deprecated": true
+            "description": "defines the required (maximum) amount of VRAM for running the services"
           }
         }
       },
@@ -2818,7 +2846,7 @@
         "properties": {
           "service_key": {
             "title": "Service Key",
-            "pattern": "^(simcore)/(services)/dynamic(/[\\w/-]+)+$",
+            "pattern": "^simcore/services/dynamic/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
             "type": "string",
             "description": "distinctive name for the node based on the docker registry path"
           },
@@ -2941,7 +2969,7 @@
           },
           "service_key": {
             "title": "Service Key",
-            "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
+            "pattern": "^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
             "type": "string",
             "description": "distinctive name for the node based on the docker registry path",
             "example": [
@@ -3132,7 +3160,7 @@
           },
           "key": {
             "title": "Key",
-            "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
+            "pattern": "^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
             "type": "string",
             "description": "distinctive name for the node based on the docker registry path"
           },
@@ -3464,6 +3492,27 @@
         },
         "additionalProperties": false
       },
+      "TaskCounts": {
+        "title": "TaskCounts",
+        "type": "object",
+        "properties": {
+          "error": {
+            "title": "Error",
+            "type": "integer",
+            "default": 0
+          },
+          "memory": {
+            "title": "Memory",
+            "type": "integer",
+            "default": 0
+          },
+          "executing": {
+            "title": "Executing",
+            "type": "integer",
+            "default": 0
+          }
+        }
+      },
       "TaskLogFileGet": {
         "title": "TaskLogFileGet",
         "required": [
@@ -3624,10 +3673,7 @@
           "cpu",
           "memory",
           "num_fds",
-          "ready",
-          "executing",
-          "in_flight",
-          "in_memory"
+          "task_counts"
         ],
         "type": "object",
         "properties": {
@@ -3646,29 +3692,14 @@
             "type": "integer",
             "description": "consumed file descriptors"
           },
-          "ready": {
-            "title": "Ready",
-            "minimum": 0.0,
-            "type": "integer",
-            "description": "# tasks ready to run"
-          },
-          "executing": {
-            "title": "Executing",
-            "minimum": 0.0,
-            "type": "integer",
-            "description": "# tasks currently executing"
-          },
-          "in_flight": {
-            "title": "In Flight",
-            "minimum": 0.0,
-            "type": "integer",
-            "description": "# tasks waiting for data"
-          },
-          "in_memory": {
-            "title": "In Memory",
-            "minimum": 0.0,
-            "type": "integer",
-            "description": "# tasks in worker memory"
+          "task_counts": {
+            "title": "Task Counts",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TaskCounts"
+              }
+            ],
+            "description": "task details"
           }
         }
       },

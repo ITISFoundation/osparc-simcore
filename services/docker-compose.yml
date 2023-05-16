@@ -59,7 +59,7 @@ services:
     environment:
       - CATALOG_BACKGROUND_TASK_REST_TIME=${CATALOG_BACKGROUND_TASK_REST_TIME:-60}
       - CATALOG_DEV_FEATURES_ENABLED=${CATALOG_DEV_FEATURES_ENABLED}
-      - CATALOG_SERVICES_DEFAULT_RESOURCE=${CATALOG_SERVICES_DEFAULT_RESOURCE}
+      - CATALOG_SERVICES_DEFAULT_RESOURCES=${CATALOG_SERVICES_DEFAULT_RESOURCES}
       - CATALOG_SERVICES_DEFAULT_SPECIFICATIONS=${CATALOG_SERVICES_DEFAULT_SPECIFICATIONS}
       - DIRECTOR_HOST=${DIRECTOR_HOST:-director}
       - DIRECTOR_PORT=${DIRECTOR_PORT:-8080}
@@ -266,6 +266,8 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.path=/v0/
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.interval=2000ms
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.timeout=1000ms
+        # NOTE: stickyness must remain until the long running tasks in the webserver are removed
+        # and also https://github.com/ITISFoundation/osparc-simcore/pull/4180 is resolved.
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.sticky.cookie=true
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.sticky.cookie.samesite=lax
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.sticky.cookie.httponly=true
@@ -290,7 +292,6 @@ services:
     env_file:
       - ../.env
       - ../.env-wb-garbage-collector
-
     deploy:
       placement:
         constraints:
@@ -308,7 +309,8 @@ services:
       resources:
         limits:
           cpus: "1.0"
-          memory: 200M
+          memory: 1024M
+
     networks:
       - default
     volumes:
@@ -500,7 +502,7 @@ services:
         "--loglevel",
         "verbose",
         "--databases",
-        "4",
+        "5",
         "--appendonly",
         "yes"
       ]
@@ -516,7 +518,7 @@ services:
       retries: 50
 
   traefik:
-    image: "traefik:v2.9.5@sha256:6c37f2135af79e0c2e387653ff3ab9abf95eb393439f07cfcfa5e06fd4bb10bb"
+    image: "traefik:v2.9.8@sha256:553239e27c4614d0477651415205b9b119f7a98f698e6562ef383c9d8ff3b6e6"
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     command:
@@ -575,19 +577,27 @@ services:
     #  retries: 3
     #  start_period: 20s
 
+
 volumes:
-  postgres_data: {}
-  computational_shared_data: {}
-  redis-data: {}
+  postgres_data:
+    name: ${SWARM_STACK_NAME}_postgres_data
+  computational_shared_data:
+    name: ${SWARM_STACK_NAME}_computational_shared_data
+  redis-data:
+    name: ${SWARM_STACK_NAME}_redis-data
 
 networks:
   default:
     attachable: true
+    name: ${SWARM_STACK_NAME}_default
   storage_subnet:
     attachable: true
+    name: ${SWARM_STACK_NAME}_storage_subnet
   autoscaling_subnet:
     attachable: true
+    name: ${SWARM_STACK_NAME}_autoscaling_subnet
   interactive_services_subnet:
+    name: ${SWARM_STACK_NAME}_interactive_services_subnet
     driver: overlay
     attachable: true
     internal: false
@@ -598,6 +608,7 @@ networks:
       config:
         - subnet: "172.8.0.0/16"
   computational_services_subnet:
+    name: ${SWARM_STACK_NAME}_computational_services_subnet
     driver: overlay
     attachable: true
     internal: false

@@ -5,18 +5,19 @@
 
     IMPORTANT: remember that these are still unit-tests!
 """
+# nopycln: file
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-
 
 import asyncio
 import sys
 import textwrap
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncIterator, Callable, Iterator, Optional, Union
-from unittest.mock import MagicMock
+from typing import Any, AsyncIterator, Callable, Iterator
+from unittest import mock
+from unittest.mock import AsyncMock, MagicMock, Mock
 from uuid import uuid4
 
 import pytest
@@ -30,27 +31,29 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 from pydantic import ByteSize, parse_obj_as
 from pytest import MonkeyPatch
-from pytest_mock.plugin import MockerFixture
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict
+from pytest_simcore.helpers.utils_projects import NewProject
 from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
 from redis import Redis
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.aiohttp.long_running_tasks.client import LRTask
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.common_aiopg_utils import DSN
-from settings_library.redis import RedisSettings
+from settings_library.email import SMTPSettings
+from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_service_webserver import catalog
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
-from simcore_service_webserver.groups_api import (
+from simcore_service_webserver.groups.api import (
     add_user_in_group,
     create_user_group,
     delete_user_group,
     list_user_groups,
 )
-from simcore_service_webserver.login.settings import LoginOptions
+from simcore_service_webserver.projects.project_models import ProjectDict
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -107,8 +110,10 @@ def app_cfg(default_app_cfg: ConfigDict, unused_tcp_port_factory) -> ConfigDict:
 @pytest.fixture
 def app_environment(
     app_cfg: ConfigDict,
+    monkeypatch: MonkeyPatch,
     monkeypatch_setenv_from_app_config: Callable[[ConfigDict], dict[str, str]],
 ) -> EnvVarsDict:
+    # WARNING: this fixture is commonly overriden. Check before renaming.
     """overridable fixture that defines the ENV for the webserver application
     based on legacy application config files.
 
@@ -120,7 +125,25 @@ def app_environment(
     """
     print("+ web_server:")
     cfg = deepcopy(app_cfg)
-    return monkeypatch_setenv_from_app_config(cfg)
+    env = monkeypatch_setenv_from_app_config(cfg)
+    return env
+
+
+@pytest.fixture
+def mocked_send_email(monkeypatch: MonkeyPatch) -> None:
+    # WARNING: this fixture is commonly overriden. Check before renaming.
+    async def _print_mail_to_stdout(
+        settings: SMTPSettings, *, sender: str, recipient: str, subject: str, body: str
+    ):
+        print(
+            f"=== EMAIL FROM: {sender}\n=== EMAIL TO: {recipient}\n=== SUBJECT: {subject}\n=== BODY:\n{body}"
+        )
+
+    monkeypatch.setattr(
+        simcore_service_webserver.email._core,  # pylint: disable=protected-access
+        "send_email",
+        _print_mail_to_stdout,
+    )
 
 
 @pytest.fixture
@@ -131,14 +154,11 @@ def web_server(
     postgres_db: sa.engine.Engine,
     # tools
     aiohttp_server: Callable,
-    monkeypatch: MonkeyPatch,
+    mocked_send_email: None,
     disable_static_webserver: Callable,
 ) -> TestServer:
     # original APP
     app = create_application()
-
-    # with patched email
-    _patch_compose_mail(monkeypatch)
 
     disable_static_webserver(app)
 
@@ -147,6 +167,7 @@ def web_server(
     )
 
     assert isinstance(postgres_db, sa.engine.Engine)
+
     pg_settings = dict(e.split("=") for e in app[APP_DB_ENGINE_KEY].dsn.split())
     assert pg_settings["host"] == postgres_db.url.host
     assert int(pg_settings["port"]) == postgres_db.url.port
@@ -163,6 +184,11 @@ def client(
     mock_orphaned_services,
     redis_client: Redis,
 ) -> TestClient:
+    """
+    Deployed web-server + postgres + redis services
+    client connect to web-server
+    """
+    # WARNING: this fixture is commonly overriden. Check before renaming.
     cli = event_loop.run_until_complete(aiohttp_client(web_server))
     return cli
 
@@ -180,11 +206,14 @@ def osparc_product_name() -> str:
 
 @pytest.fixture
 async def catalog_subsystem_mock(
-    monkeypatch,
-) -> Callable[[Optional[Union[list[dict], dict]]], None]:
+    monkeypatch: MonkeyPatch,
+) -> Callable[[list[ProjectDict]], None]:
+    """
+    Patches some API calls in the catalog plugin
+    """
     services_in_project = []
 
-    def creator(projects: Optional[Union[list[dict], dict]] = None) -> None:
+    def _creator(projects: list[ProjectDict]) -> None:
         for proj in projects or []:
             services_in_project.extend(
                 [
@@ -200,18 +229,18 @@ async def catalog_subsystem_mock(
         catalog, "get_services_for_user_in_product", mocked_get_services_for_user
     )
 
-    return creator
+    return _creator
 
 
 @pytest.fixture
 def disable_static_webserver(monkeypatch: MonkeyPatch) -> Callable:
     """
-    Disables the static-webserver module.
+    Disables the static-webserver module
     Avoids fecthing and caching index.html pages
-    Mocking a response for all the services which expect it.
+    Mocking a response for all the services which expect it
     """
 
-    async def _mocked_index_html(request: web.Request) -> web.Response:
+    async def fake_front_end_handler(request: web.Request) -> web.Response:
         """
         Emulates the reply of the '/' path when the static-webserver is disabled
         """
@@ -221,7 +250,13 @@ def disable_static_webserver(monkeypatch: MonkeyPatch) -> Callable:
             <html>
             <body>
                 <h1>OSPARC-SIMCORE</h1>
-                <p> This is a result of disable_static_webserver fixture for product OSPARC ({__file__})</p>
+                    <p> This is a result of disable_static_webserver fixture for product OSPARC ({__name__})</p>
+                <h2>Request info</h2>
+                    <ul>
+                        <li>{request.url=}</li>
+                        <li>{request.headers=}</li>
+                        <li>{request.content_length=}</li>
+                    </ul>
             </body>
             </html>
             """
@@ -232,13 +267,13 @@ def disable_static_webserver(monkeypatch: MonkeyPatch) -> Callable:
     monkeypatch.setenv("WEBSERVER_STATICWEB", "null")
 
     def add_index_route(app: web.Application) -> None:
-        app.router.add_get("/", _mocked_index_html, name=INDEX_RESOURCE_NAME)
+        app.router.add_get("/", fake_front_end_handler, name=INDEX_RESOURCE_NAME)
 
     return add_index_route
 
 
 @pytest.fixture
-async def storage_subsystem_mock(mocker) -> MockedStorageSubsystem:
+async def storage_subsystem_mock(mocker: MockerFixture) -> MockedStorageSubsystem:
     """
     Patches client calls to storage service
 
@@ -262,14 +297,14 @@ async def storage_subsystem_mock(mocker) -> MockedStorageSubsystem:
         )
 
     mock = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers_crud.copy_data_folders_from_project",
+        "simcore_service_webserver.projects._create_utils.copy_data_folders_from_project",
         autospec=True,
         side_effect=_mock_copy_data_from_project,
     )
 
     async_mock = mocker.AsyncMock(return_value="")
     mock1 = mocker.patch(
-        "simcore_service_webserver.projects._delete.delete_data_folders_of_project",
+        "simcore_service_webserver.projects._delete_utils.delete_data_folders_of_project",
         autospec=True,
         side_effect=async_mock,
     )
@@ -281,7 +316,7 @@ async def storage_subsystem_mock(mocker) -> MockedStorageSubsystem:
     )
 
     mock3 = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers_crud.get_project_total_size_simcore_s3",
+        "simcore_service_webserver.projects._create_utils.get_project_total_size_simcore_s3",
         autospec=True,
         return_value=parse_obj_as(ByteSize, "1Gib"),
     )
@@ -312,15 +347,18 @@ async def mocked_director_v2_api(mocker: MockerFixture) -> dict[str, MagicMock]:
         "run_dynamic_service",
         "stop_dynamic_service",
     ):
-        for mod_name in ("director_v2_api", "director_v2_core_dynamic_services"):
+        for mod_name in (
+            "director_v2.api",
+            "director_v2._core_dynamic_services",
+        ):
             name = f"{mod_name}.{func_name}"
             mock[name] = mocker.patch(
                 f"simcore_service_webserver.{name}",
                 autospec=True,
                 return_value={},
             )
-    mock["director_v2_api.create_or_update_pipeline"] = mocker.patch(
-        "simcore_service_webserver.director_v2_api.create_or_update_pipeline",
+    mock["director_v2.api.create_or_update_pipeline"] = mocker.patch(
+        "simcore_service_webserver.director_v2.api.create_or_update_pipeline",
         autospec=True,
         return_value=None,
     )
@@ -333,7 +371,7 @@ def create_dynamic_service_mock(
 ) -> Callable:
     services = []
 
-    async def create(user_id, project_id) -> dict:
+    async def _create(user_id, project_id) -> dict:
         SERVICE_UUID = str(uuid4())
         SERVICE_KEY = "simcore/services/dynamic/3d-viewer"
         SERVICE_VERSION = "1.4.2"
@@ -358,17 +396,28 @@ def create_dynamic_service_mock(
         services.append(running_service_dict)
         # reset the future or an invalidStateError will appear as set_result sets the future to done
         mocked_director_v2_api[
-            "director_v2_api.list_dynamic_services"
+            "director_v2.api.list_dynamic_services"
         ].return_value = services
         mocked_director_v2_api[
-            "director_v2_core_dynamic_services.list_dynamic_services"
+            "director_v2._core_dynamic_services.list_dynamic_services"
         ].return_value = services
         return running_service_dict
 
-    return create
+    return _create
 
 
 # POSTGRES CORE SERVICE ---------------------------------------------------
+
+
+def _is_postgres_responsive(url):
+    """Check if something responds to url"""
+    try:
+        engine = sa.create_engine(url)
+        conn = engine.connect()
+        conn.close()
+    except sa.exc.OperationalError:
+        return False
+    return True
 
 
 @pytest.fixture(scope="session")
@@ -393,7 +442,7 @@ def postgres_service(docker_services, postgres_dsn):
     return url
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="module")
 def postgres_db(
     postgres_dsn: dict, postgres_service: str
 ) -> Iterator[sa.engine.Engine]:
@@ -423,6 +472,11 @@ def postgres_db(
 # REDIS CORE SERVICE ------------------------------------------------------
 
 
+def _is_redis_responsive(host: str, port: int) -> bool:
+    r = redis.Redis(host=host, port=port)
+    return r.ping() == True
+
+
 @pytest.fixture(scope="session")
 def redis_service(docker_services, docker_ip) -> RedisSettings:
     # WARNING: overrides pytest_simcore.redis_service.redis_server function-scoped fixture!
@@ -442,7 +496,9 @@ def redis_service(docker_services, docker_ip) -> RedisSettings:
 @pytest.fixture
 async def redis_client(redis_service: RedisSettings):
     client = aioredis.from_url(
-        redis_service.dsn_resources, encoding="utf-8", decode_responses=True
+        redis_service.build_redis_dsn(RedisDatabase.RESOURCES),
+        encoding="utf-8",
+        decode_responses=True,
     )
     yield client
 
@@ -456,7 +512,9 @@ async def redis_locks_client(
 ) -> AsyncIterator[aioredis.Redis]:
     """Creates a redis client to communicate with a redis service ready"""
     client = aioredis.from_url(
-        redis_service.dsn_locks, encoding="utf-8", decode_responses=True
+        redis_service.build_redis_dsn(RedisDatabase.LOCKS),
+        encoding="utf-8",
+        decode_responses=True,
     )
 
     yield client
@@ -465,13 +523,7 @@ async def redis_locks_client(
     await client.close(close_connection_pool=True)
 
 
-def _is_redis_responsive(host: str, port: int) -> bool:
-    r = redis.Redis(host=host, port=port)
-    return r.ping() == True
-
-
 # SOCKETS FIXTURES  --------------------------------------------------------
-
 # Moved to packages/pytest-simcore/src/pytest_simcore/websocket_client.py
 
 
@@ -483,6 +535,7 @@ async def primary_group(
     client: TestClient,
     logged_user: UserInfoDict,
 ) -> dict[str, Any]:
+    assert client.app
     primary_group, _, _ = await list_user_groups(client.app, logged_user["id"])
     return primary_group
 
@@ -492,7 +545,7 @@ async def standard_groups(
     client: TestClient,
     logged_user: UserInfoDict,
 ) -> AsyncIterator[list[dict[str, Any]]]:
-
+    assert client.app
     sparc_group = {
         "gid": "5",  # this will be replaced
         "label": "SPARC",
@@ -512,7 +565,6 @@ async def standard_groups(
     async with NewUser(
         {"name": f"{logged_user['name']}_groups_owner", "role": "USER"}, client.app
     ) as owner_user:
-
         # creates two groups
         sparc_group = await create_user_group(
             app=client.app,
@@ -553,34 +605,69 @@ async def all_group(
     client: TestClient,
     logged_user: UserInfoDict,
 ) -> dict[str, str]:
+    assert client.app
     _, _, all_group = await list_user_groups(client.app, logged_user["id"])
     return all_group
 
 
-# GENERIC HELPER FUNCTIONS ----------------------------------------------------
-
-
-def _patch_compose_mail(monkeypatch):
-    async def print_mail_to_stdout(
-        cfg: LoginOptions, *, sender: str, recipient: str, subject: str, body: str
-    ):
-        print(
-            f"=== EMAIL FROM: {sender}\n=== EMAIL TO: {recipient}\n=== SUBJECT: {subject}\n=== BODY:\n{body}"
-        )
-
-    monkeypatch.setattr(
-        simcore_service_webserver.login.utils_email,
-        "_compose_mail",
-        print_mail_to_stdout,
+@pytest.fixture
+def mock_rabbitmq(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_webserver.director_v2._core_dynamic_services.get_rabbitmq_client",
+        autospec=True,
+        return_value=AsyncMock(),
     )
 
 
-def _is_postgres_responsive(url):
-    """Check if something responds to ``url``"""
-    try:
-        engine = sa.create_engine(url)
-        conn = engine.connect()
-        conn.close()
-    except sa.exc.OperationalError:
-        return False
-    return True
+@pytest.fixture
+def mocked_notifications_plugin(mocker: MockerFixture) -> dict[str, mock.Mock]:
+    mocked_subscribe = mocker.patch(
+        "simcore_service_webserver.notifications.project_logs.subscribe",
+        autospec=True,
+    )
+    mocked_unsubscribe = mocker.patch(
+        "simcore_service_webserver.notifications.project_logs.unsubscribe",
+        autospec=True,
+    )
+
+    return {"subscribe": mocked_subscribe, "unsubscribe": mocked_unsubscribe}
+
+
+@pytest.fixture
+def mock_progress_bar(mocker: MockerFixture) -> Any:
+    sub_progress = Mock()
+
+    class MockedProgress:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            pass
+
+        def sub_progress(self, *kwargs):  # pylint:disable=no-self-use
+            return sub_progress
+
+    mock_bar = MockedProgress()
+
+    mocker.patch(
+        "simcore_service_webserver.director_v2._core_dynamic_services.ProgressBarData",
+        autospec=True,
+        return_value=mock_bar,
+    )
+    return mock_bar
+
+
+@pytest.fixture
+async def user_project(
+    client, fake_project, logged_user, tests_data_dir: Path, osparc_product_name: str
+) -> AsyncIterator[ProjectDict]:
+    async with NewProject(
+        fake_project,
+        client.app,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+        tests_data_dir=tests_data_dir,
+    ) as project:
+        print("-----> added project", project["name"])
+        yield project
+        print("<----- removed project", project["name"])

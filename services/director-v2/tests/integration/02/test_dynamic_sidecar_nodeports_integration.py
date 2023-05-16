@@ -32,7 +32,7 @@ from aiodocker.containers import DockerContainer
 from aiopg.sa import Engine
 from fastapi import FastAPI
 from models_library.clusters import DEFAULT_CLUSTER_ID
-from models_library.projects import Node, ProjectAtDB, ProjectID, Workbench
+from models_library.projects import Node, NodesDict, ProjectAtDB, ProjectID
 from models_library.projects_networks import (
     PROJECT_NETWORK_PREFIX,
     ContainerAliases,
@@ -146,7 +146,6 @@ def minimal_configuration(  # pylint:disable=too-many-arguments
     ensure_swarm_and_networks: None,
     osparc_product_name: str,
 ) -> Iterator[None]:
-
     with postgres_db.connect() as conn:
         # pylint: disable=no-value-for-parameter
         conn.execute(comp_tasks.delete())
@@ -267,7 +266,6 @@ async def current_study(
     osparc_product_name: str,
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ) -> ProjectAtDB:
-
     project_at_db = project(current_user, workbench=fake_dy_workbench)
 
     # create entries in comp_task table in order to pull output ports
@@ -366,7 +364,6 @@ def mock_env(
     monkeypatch.setenv(
         "DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED", dev_feature_r_clone_enabled
     )
-    monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
     monkeypatch.setenv(
         "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL",
         dask_scheduler_service,
@@ -440,7 +437,7 @@ async def projects_networks_db(
 
 
 async def _get_mapped_nodeports_values(
-    user_id: UserID, project_id: str, workbench: Workbench, db_manager: DBManager
+    user_id: UserID, project_id: str, workbench: NodesDict, db_manager: DBManager
 ) -> dict[str, InputsOutputs]:
     result: dict[str, InputsOutputs] = {}
 
@@ -494,7 +491,7 @@ async def _assert_port_values(
 
     # files
 
-    async def _int_value_port(port: Port) -> Optional[int]:
+    async def _int_value_port(port: Port) -> int | None:
         file_path = cast(Optional[Path], await port.get())
         if file_path is None:
             return None
@@ -670,6 +667,7 @@ async def _fetch_data_via_aioboto(
 
 async def _start_and_wait_for_dynamic_services_ready(
     director_v2_client: httpx.AsyncClient,
+    product_name: str,
     user_id: UserID,
     workbench_dynamic_services: dict[str, Node],
     current_study: ProjectAtDB,
@@ -680,6 +678,7 @@ async def _start_and_wait_for_dynamic_services_ready(
         *(
             assert_start_service(
                 director_v2_client=director_v2_client,
+                product_name=product_name,
                 user_id=user_id,
                 project_id=str(current_study.uuid),
                 service_key=node.key,
@@ -844,6 +843,7 @@ async def test_nodeports_integration(
     minimal_configuration: None,
     cleanup_services_and_networks: None,
     projects_networks_db: None,
+    mocked_service_awaits_manual_interventions: None,
     initialized_app: FastAPI,
     update_project_workbench_with_comp_tasks: Callable,
     async_client: httpx.AsyncClient,
@@ -872,7 +872,7 @@ async def test_nodeports_integration(
     between runs.
 
     Execution steps:
-    1. start all the dynamic services and make sure they are running
+    1. start all the dynamic services and make sure they are runningv2/dynamic_services'
     2. run the computational pipeline & trigger port retrievals
     3. check that the outputs of the `sleeper` are the same as the
         outputs of the `dy-static-file-server-dynamic-sidecar-compose-spec``
@@ -892,6 +892,7 @@ async def test_nodeports_integration(
         str, str
     ] = await _start_and_wait_for_dynamic_services_ready(
         director_v2_client=async_client,
+        product_name=osparc_product_name,
         user_id=current_user["id"],
         workbench_dynamic_services=workbench_dynamic_services,
         current_study=current_study,
@@ -915,15 +916,6 @@ async def test_nodeports_integration(
         exp_pipeline_details=PipelineDetails.parse_obj(fake_dy_published),
         iteration=1,
         cluster_id=DEFAULT_CLUSTER_ID,
-    )
-
-    # wait for the computation to start
-    await assert_and_wait_for_pipeline_status(
-        async_client,
-        task_out.url,
-        current_user["id"],
-        current_study.uuid,
-        wait_for_states=[RunningState.STARTED],
     )
 
     # wait for the computation to finish (either by failing, success or abort)
@@ -1098,6 +1090,7 @@ async def test_nodeports_integration(
 
     await _start_and_wait_for_dynamic_services_ready(
         director_v2_client=async_client,
+        product_name=osparc_product_name,
         user_id=current_user["id"],
         workbench_dynamic_services=workbench_dynamic_services,
         current_study=current_study,

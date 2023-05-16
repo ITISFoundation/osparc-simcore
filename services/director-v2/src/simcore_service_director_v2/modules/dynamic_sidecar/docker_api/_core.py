@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Mapping, Optional, Union
+from typing import Any, Mapping
 
 import aiodocker
 from aiodocker.utils import clean_filters, clean_map
@@ -12,6 +12,9 @@ from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
+from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
+    NetworkId,
+)
 from tenacity import TryAgain, retry
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -23,7 +26,12 @@ from ....models.schemas.constants import (
     DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
-from ....models.schemas.dynamic_services import SchedulerData, ServiceState, ServiceType
+from ....models.schemas.dynamic_services import (
+    SchedulerData,
+    ServiceId,
+    ServiceState,
+    ServiceType,
+)
 from ....utils.dict_utils import get_leaf_key_paths, nested_update
 from ..docker_states import TASK_STATES_RUNNING, extract_task_state
 from ..errors import DockerServiceNotFoundError, DynamicSidecarError, GenericDockerError
@@ -47,7 +55,7 @@ async def get_swarm_network(dynamic_sidecar_settings: DynamicSidecarSettings) ->
     if dynamic_sidecar_settings.SIMCORE_SERVICES_NETWORK_NAME:
         network_name = dynamic_sidecar_settings.SIMCORE_SERVICES_NETWORK_NAME
     # try to find the network name (usually named STACKNAME_default)
-    networks = [
+    networks: list[dict] = [
         x for x in all_networks if "swarm" in x["Scope"] and network_name in x["Name"]
     ]
     if not networks or len(networks) > 1:
@@ -58,11 +66,12 @@ async def get_swarm_network(dynamic_sidecar_settings: DynamicSidecarSettings) ->
     return networks[0]
 
 
-async def create_network(network_config: dict[str, Any]) -> str:
+async def create_network(network_config: dict[str, Any]) -> NetworkId:
     async with docker_client() as client:
         try:
             docker_network = await client.networks.create(network_config)
-            return docker_network.id
+            docker_network_id: NetworkId = docker_network.id
+            return docker_network_id
         except aiodocker.exceptions.DockerError as e:
             network_name = network_config["Name"]
             # make sure the current error being trapped is network dose not exit
@@ -77,7 +86,8 @@ async def create_network(network_config: dict[str, Any]) -> str:
             # has removed a container; it results as already attached
             for network_details in await client.networks.list():
                 if network_name == network_details["Name"]:
-                    return network_details["Id"]
+                    network_id: NetworkId = network_details["Id"]
+                    return network_id
 
             # finally raise an error if a network cannot be spawned
             # pylint: disable=raise-missing-from
@@ -87,8 +97,8 @@ async def create_network(network_config: dict[str, Any]) -> str:
 
 
 async def create_service_and_get_id(
-    create_service_data: Union[AioDockerServiceSpec, dict[str, Any]]
-) -> str:
+    create_service_data: AioDockerServiceSpec | dict[str, Any]
+) -> ServiceId:
     # NOTE: ideally the argument should always be AioDockerServiceSpec
     # but for that we need get_dynamic_proxy_spec to return that type
     async with docker_client() as client:
@@ -108,12 +118,14 @@ async def create_service_and_get_id(
         raise DynamicSidecarError(
             f"Error while starting service: {str(service_start_result)}"
         )
-    return service_start_result["ID"]
+    service_id: ServiceId = service_start_result["ID"]
+    return service_id
 
 
 async def inspect_service(service_id: str) -> dict[str, Any]:
     async with docker_client() as client:
-        return await client.services.inspect(service_id)
+        inspect_result: dict[str, Any] = await client.services.inspect(service_id)
+        return inspect_result
 
 
 async def get_dynamic_sidecars_to_observe(
@@ -149,9 +161,9 @@ async def _get_service_latest_task(service_id: str) -> Mapping[str, Any]:
             # previous might have died out.
             # Only interested in the latest task as only one task per
             # service will be running.
-            sorted_tasks = sorted(running_services, key=lambda task: task["UpdatedAt"])
+            sorted_tasks = sorted(running_services, key=lambda task: task["UpdatedAt"])  # type: ignore
 
-            last_task = sorted_tasks[-1]
+            last_task: Mapping[str, Any] = sorted_tasks[-1]
             return last_task
     except GenericDockerError as err:
         if err.original_exception.status == 404:
@@ -196,7 +208,7 @@ async def get_dynamic_sidecar_placement(
 
     task = await _get_task_data_when_service_running(service_id=service_id)
 
-    docker_node_id = task.get("NodeID", None)
+    docker_node_id: None | str = task.get("NodeID", None)
     if not docker_node_id:
         raise DynamicSidecarError(
             f"Could not find an assigned NodeID for service_id={service_id}. "
@@ -222,7 +234,8 @@ async def _get_dynamic_sidecar_stack_services(
         ]
     }
     async with docker_client() as client:
-        return await client.services.list(filters=filters)
+        list_result: list[Mapping] = await client.services.list(filters=filters)
+        return list_result
 
 
 async def is_dynamic_sidecar_stack_missing(
@@ -290,8 +303,8 @@ async def remove_dynamic_sidecar_network(network_name: str) -> bool:
 
 async def list_dynamic_sidecar_services(
     dynamic_sidecar_settings: DynamicSidecarSettings,
-    user_id: Optional[UserID] = None,
-    project_id: Optional[ProjectID] = None,
+    user_id: UserID | None = None,
+    project_id: ProjectID | None = None,
 ) -> list[dict[str, Any]]:
     service_filters = {
         "label": [
@@ -305,7 +318,10 @@ async def list_dynamic_sidecar_services(
         service_filters["label"].append(f"study_id={project_id}")
 
     async with docker_client() as client:
-        return await client.services.list(filters=service_filters)
+        list_result: list[dict[str, Any]] = await client.services.list(
+            filters=service_filters
+        )
+        return list_result
 
 
 async def is_sidecar_running(
@@ -338,7 +354,8 @@ async def get_or_create_networks_ids(
     async def _get_id_from_name(client, network_name: str) -> str:
         network = await client.networks.get(network_name)
         network_inspect = await network.show()
-        return network_inspect["Id"]
+        network_id: str = network_inspect["Id"]
+        return network_id
 
     async with docker_client() as client:
         existing_networks_names = {x["Name"] for x in await client.networks.list()}
@@ -394,7 +411,7 @@ async def get_projects_networks_containers(
         return {}
 
     def _count_containers(item: dict[str, Any]) -> int:
-        containers: Optional[list] = item.get("Containers")
+        containers: list | None = item.get("Containers")
         return 0 if containers is None else len(containers)
 
     return {x["Name"]: _count_containers(x) for x in filtered_networks}
@@ -477,7 +494,7 @@ async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
         )
     except GenericDockerError as e:
         if e.original_exception.status == status.HTTP_404_NOT_FOUND:
-            log.warning(
+            log.info(
                 "Skipped labels update for service '%s' which could not be found.",
                 scheduler_data.service_name,
             )

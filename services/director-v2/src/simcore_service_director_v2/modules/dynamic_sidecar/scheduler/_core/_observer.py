@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 async def _apply_observation_cycle(
-    scheduler: "DynamicSidecarsScheduler", scheduler_data: SchedulerData
+    scheduler: "DynamicSidecarsScheduler", scheduler_data: SchedulerData  # type: ignore
 ) -> None:
     """
     fetches status for service and then processes all the registered events
@@ -41,7 +41,6 @@ async def _apply_observation_cycle(
     dynamic_services_settings: DynamicServicesSettings = (
         app.state.settings.DYNAMIC_SERVICES
     )
-    # TODO: PC-> ANE: custom settings are frozen. in principle, no need to create copies.
     initial_status = deepcopy(scheduler_data.dynamic_sidecar.status)
 
     if (  # do not refactor, second part of "and condition" is skipped most times
@@ -59,6 +58,7 @@ async def _apply_observation_cycle(
         await scheduler.mark_service_for_removal(
             node_uuid=scheduler_data.node_uuid,
             can_save=scheduler_data.dynamic_sidecar.were_containers_created,
+            skip_observation_recreation=True,
         )
 
     for dynamic_scheduler_event in REGISTERED_EVENTS:
@@ -84,7 +84,7 @@ def _trigger_every_30_seconds(observation_counter: int, wait_interval: float) ->
 
 
 async def observing_single_service(
-    scheduler: "DynamicSidecarsScheduler",
+    scheduler: "DynamicSidecarsScheduler",  # type: ignore
     service_name: ServiceName,
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,

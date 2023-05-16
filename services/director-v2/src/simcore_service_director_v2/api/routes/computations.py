@@ -16,7 +16,7 @@ Therefore,
 
 import contextlib
 import logging
-from typing import Any, Optional
+from typing import Any
 
 import networkx as nx
 from fastapi import APIRouter, Depends, HTTPException
@@ -36,6 +36,8 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random
 
 from ...core.errors import (
+    ClusterAccessForbiddenError,
+    ClusterNotFoundError,
     ComputationalRunNotFoundError,
     ProjectNotFoundError,
     SchedulerError,
@@ -51,6 +53,7 @@ from ...models.schemas.comp_tasks import (
 )
 from ...modules.catalog import CatalogClient
 from ...modules.comp_scheduler.base_scheduler import BaseCompScheduler
+from ...modules.db.repositories.clusters import ClustersRepository
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_runs import CompRunsRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
@@ -99,6 +102,7 @@ async def create_computation(
     ),
     comp_tasks_repo: CompTasksRepository = Depends(get_repository(CompTasksRepository)),
     comp_runs_repo: CompRunsRepository = Depends(get_repository(CompRunsRepository)),
+    clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
     director_client: DirectorV0Client = Depends(get_director_v0_client),
     scheduler: BaseCompScheduler = Depends(get_scheduler),
     catalog_client: CatalogClient = Depends(get_catalog_client),
@@ -151,18 +155,39 @@ async def create_computation(
                     status_code=status.HTTP_406_NOT_ACCEPTABLE,
                     detail=f"Project {computation.project_id} cannot run since it contains deprecated tasks {jsonable_encoder( deprecated_tasks)}",
                 )
+            if computation.cluster_id:
+                # check the cluster ID is a valid one
+                try:
+                    await clusters_repo.get_cluster(
+                        computation.user_id, computation.cluster_id
+                    )
+                except ClusterNotFoundError as exc:
+                    raise HTTPException(
+                        status_code=status.HTTP_406_NOT_ACCEPTABLE,
+                        detail=f"Project {computation.project_id} cannot run on cluster {computation.cluster_id}, not found",
+                    ) from exc
+                except ClusterAccessForbiddenError as exc:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail=f"Project {computation.project_id} cannot run on cluster {computation.cluster_id}, no access",
+                    ) from exc
+
         # ok so put the tasks in the db
         await comp_pipelines_repo.upsert_pipeline(
             project.uuid,
             minimal_computational_dag,
             publish=computation.start_pipeline or False,
         )
+        assert computation.product_name  # nosec
         inserted_comp_tasks = await comp_tasks_repo.upsert_tasks_from_project(
             project,
+            catalog_client,
             director_client,
             published_nodes=list(minimal_computational_dag.nodes())
             if computation.start_pipeline
             else [],
+            user_id=computation.user_id,
+            product_name=computation.product_name,
         )
 
         if computation.start_pipeline:
@@ -195,7 +220,7 @@ async def create_computation(
         pipeline_state = get_pipeline_state_from_task_states(filtered_tasks)
 
         # get run details if any
-        last_run: Optional[CompRunsAtDB] = None
+        last_run: CompRunsAtDB | None = None
         with contextlib.suppress(ComputationalRunNotFoundError):
             last_run = await comp_runs_repo.get(
                 user_id=computation.user_id, project_id=computation.project_id
@@ -224,6 +249,10 @@ async def create_computation(
 
     except ProjectNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
+    except ClusterNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_406_NOT_ACCEPTABLE, detail=f"{e}"
+        ) from e
 
 
 @router.get(
@@ -272,7 +301,7 @@ async def get_computation(
     )
 
     # get run details if any
-    last_run: Optional[CompRunsAtDB] = None
+    last_run: CompRunsAtDB | None = None
     with contextlib.suppress(ComputationalRunNotFoundError):
         last_run = await comp_runs_repo.get(user_id=user_id, project_id=project_id)
 
@@ -337,7 +366,7 @@ async def stop_computation(
             await scheduler.stop_pipeline(computation_stop.user_id, project_id)
 
         # get run details if any
-        last_run: Optional[CompRunsAtDB] = None
+        last_run: CompRunsAtDB | None = None
         with contextlib.suppress(ComputationalRunNotFoundError):
             last_run = await comp_runs_repo.get(
                 user_id=computation_stop.user_id, project_id=project_id

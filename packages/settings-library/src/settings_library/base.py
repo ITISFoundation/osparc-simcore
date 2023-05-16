@@ -1,9 +1,16 @@
+import logging
 from functools import cached_property
-from typing import Sequence, get_args
+from typing import Final, Sequence, get_args
 
 from pydantic import BaseConfig, BaseSettings, Extra, ValidationError, validator
 from pydantic.error_wrappers import ErrorList, ErrorWrapper
 from pydantic.fields import ModelField, Undefined
+
+logger = logging.getLogger(__name__)
+
+_DEFAULTS_TO_NONE_MSG: Final[
+    str
+] = "%s auto_default_from_env unresolved, defaulting to None"
 
 
 class DefaultFromEnvFactoryError(ValidationError):
@@ -23,6 +30,11 @@ def create_settings_from_env(field: ModelField):
 
         except ValidationError as err:
             if field.allow_none:
+                # e.g. Optional[PostgresSettings] would warn if defaults to None
+                logger.warning(
+                    _DEFAULTS_TO_NONE_MSG,
+                    field.name,
+                )
                 return None
 
             def _prepend_field_name(ee: ErrorList):
@@ -79,9 +91,7 @@ class BaseCustomSettings(BaseSettings):
                 field_type = next(a for a in args if a != type(None))
 
             if issubclass(field_type, BaseCustomSettings):
-
                 if auto_default_from_env:
-
                     assert field.field_info.default is Undefined
                     assert field.field_info.default_factory is None
 

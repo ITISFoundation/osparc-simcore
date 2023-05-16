@@ -1,9 +1,9 @@
 import logging
-from typing import Optional
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
-from pydantic import BaseModel, EmailStr, Field, SecretStr, parse_obj_as, validator
+from models_library.emails import LowerCaseEmailStr
+from pydantic import BaseModel, Field, SecretStr, parse_obj_as, validator
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -11,11 +11,11 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.error_codes import create_error_code
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.errors import UniqueViolation
-from simcore_service_webserver.session_access import session_access_required
 from yarl import URL
 
-from ..products import Product, get_current_product
-from ..security_api import encrypt_password
+from ..products.plugin import Product, get_current_product
+from ..security.api import encrypt_password
+from ..session_access import session_access_required
 from ..utils import MINUTE
 from ..utils_aiohttp import create_redirect_response
 from ..utils_rate_limiting import global_rate_limit_route
@@ -69,7 +69,7 @@ async def validate_confirmation_and_redirect(request: web.Request):
 
     path_params = parse_request_path_parameters_as(_PathParam, request)
 
-    confirmation: Optional[ConfirmationTokenDict] = await validate_confirmation_code(
+    confirmation: ConfirmationTokenDict | None = await validate_confirmation_code(
         path_params.code.get_secret_value(), db=db, cfg=cfg
     )
 
@@ -93,7 +93,9 @@ async def validate_confirmation_and_redirect(request: web.Request):
                 # update and consume confirmation token
                 await db.delete_confirmation_and_update_user(
                     user_id=user_id,
-                    updates={"email": parse_obj_as(EmailStr, confirmation["data"])},
+                    updates={
+                        "email": parse_obj_as(LowerCaseEmailStr, confirmation["data"])
+                    },
                     confirmation=confirmation,
                 )
 
@@ -133,7 +135,7 @@ async def validate_confirmation_and_redirect(request: web.Request):
 
 
 class PhoneConfirmationBody(InputSchema):
-    email: EmailStr
+    email: LowerCaseEmailStr
     phone: str = Field(
         ..., description="Phone number E.164, needed on the deployments with 2FA"
     )
@@ -153,7 +155,6 @@ async def phone_confirmation(request: web.Request):
     )
 
     db: AsyncpgStorage = get_plugin_storage(request.app)
-    product: Product = get_current_product(request)
 
     if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(

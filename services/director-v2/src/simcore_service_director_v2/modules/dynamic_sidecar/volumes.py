@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -22,7 +22,7 @@ def _get_s3_volume_driver_config(
     storage_directory_name: str,
 ) -> dict[str, Any]:
     assert "/" not in storage_directory_name  # nosec
-    driver_config = {
+    driver_config: dict[str, Any] = {
         "Name": "rclone",
         "Options": {
             "type": "s3",
@@ -41,7 +41,7 @@ def _get_s3_volume_driver_config(
         },
     }
 
-    extra_options = None
+    extra_options: dict[str, str] | None = None
 
     if r_clone_settings.R_CLONE_PROVIDER == S3Provider.MINIO:
         extra_options = {
@@ -67,7 +67,8 @@ def _get_s3_volume_driver_config(
         )
 
     assert extra_options is not None  # nosec
-    driver_config["Options"].update(extra_options)
+    options: dict[str, Any] = driver_config["Options"]
+    options.update(extra_options)
 
     return driver_config
 
@@ -114,7 +115,7 @@ class DynamicSidecarVolumesPathsResolver:
         run_id: RunID,
         project_id: ProjectID,
         user_id: UserID,
-        volume_size_limit: Optional[str],
+        volume_size_limit: str | None,
     ) -> dict[str, Any]:
         """
         Creates specification for mount to be added to containers created as part of a service

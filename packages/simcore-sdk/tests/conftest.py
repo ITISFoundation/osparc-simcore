@@ -10,7 +10,7 @@ from typing import Any
 
 import pytest
 import simcore_sdk
-from pytest_simcore.postgres_service import PostgresTestConfig
+from pytest_simcore.helpers.utils_postgres import PostgresTestConfig
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 sys.path.append(str(current_dir / "helpers"))

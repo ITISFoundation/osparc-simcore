@@ -203,3 +203,35 @@ async def test_regression_non_aws_providers(
     )
 
     assert f'provider "{provider}" not known' not in caplog_info_debug.text
+
+
+async def test_regression_store_to_s3_volume_mountpoint_not_found(
+    unused_volume: DockerVolume,
+    mocked_s3_server_url: HttpUrl,
+    unused_volume_path: Path,
+    bucket: str,
+    settings: ApplicationSettings,
+    caplog_info_debug: LogCaptureFixture,
+):
+    dyv_volume = await unused_volume.show()
+    assert unused_volume_path.exists() is False
+
+    # overwrite to test locally not against volume
+    # root permissions are required to access this
+    dyv_volume["Mountpoint"] = unused_volume_path
+
+    await store_to_s3(
+        volume_name=unused_volume.name,
+        dyv_volume=dyv_volume,
+        s3_access_key="xxx",
+        s3_secret_key="xxx",
+        s3_bucket=bucket,
+        s3_endpoint=mocked_s3_server_url,
+        s3_region="us-east-1",
+        s3_provider=S3Provider.MINIO,
+        s3_parallelism=3,
+        s3_retries=1,
+        exclude_files=settings.AGENT_VOLUMES_CLEANUP_EXCLUDE_FILES,
+    )
+    assert f"mountpoint {unused_volume_path} does not exist" in caplog_info_debug.text
+    assert f"{unused_volume.name}" in caplog_info_debug.text

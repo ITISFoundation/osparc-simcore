@@ -1,9 +1,9 @@
 import json
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import FastAPI, status
-from httpx import AsyncClient, Response, Timeout
+from httpx import Response, Timeout
 from pydantic import AnyHttpUrl
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 
@@ -27,13 +27,6 @@ class ThinDynamicSidecarClient(BaseThinClient):
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
 
-        self.client = AsyncClient(
-            timeout=Timeout(
-                settings.DYNAMIC_SIDECAR_API_REQUEST_TIMEOUT,
-                connect=settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
-            )
-        )
-
         # timeouts
         self._health_request_timeout = Timeout(1.0, connect=1.0)
         self._save_restore_timeout = Timeout(
@@ -50,7 +43,11 @@ class ThinDynamicSidecarClient(BaseThinClient):
         )
 
         super().__init__(
-            request_timeout=settings.DYNAMIC_SIDECAR_CLIENT_REQUEST_TIMEOUT_S
+            request_timeout=settings.DYNAMIC_SIDECAR_CLIENT_REQUEST_TIMEOUT_S,
+            timeout=Timeout(
+                settings.DYNAMIC_SIDECAR_API_REQUEST_TIMEOUT,
+                connect=settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
+            ),
         )
 
     def _get_url(
@@ -196,7 +193,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
     async def post_containers_tasks_ports_inputs_pull(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
-        port_keys: Optional[list[str]] = None,
+        port_keys: list[str] | None = None,
     ) -> Response:
         port_keys = [] if port_keys is None else port_keys
         url = self._get_url(dynamic_sidecar_endpoint, "/containers/ports/inputs:pull")
@@ -207,7 +204,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
     async def post_containers_tasks_ports_outputs_pull(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
-        port_keys: Optional[list[str]] = None,
+        port_keys: list[str] | None = None,
     ) -> Response:
         port_keys = [] if port_keys is None else port_keys
         url = self._get_url(dynamic_sidecar_endpoint, "/containers/ports/outputs:pull")

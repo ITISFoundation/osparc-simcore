@@ -11,11 +11,13 @@
 import json
 import re
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable, TypeAlias
 
 import pytest
 import yaml
 from aioresponses.core import CallbackResult, aioresponses
+from models_library.services import ServiceDockerData
+from models_library.users import UserID
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.director.director_api import (
@@ -27,6 +29,9 @@ from simcore_service_webserver.director.director_api import (
 from simcore_service_webserver.director.plugin import setup_director
 from yarl import URL
 
+SchemaDict: TypeAlias = dict[str, Any]
+OpenApiSpecsDict: TypeAlias = dict[str, Any]
+
 
 @pytest.fixture(scope="session")
 def director_openapi_dir(osparc_simcore_root_dir: Path) -> Path:
@@ -36,14 +41,14 @@ def director_openapi_dir(osparc_simcore_root_dir: Path) -> Path:
 
 
 @pytest.fixture(scope="session")
-def director_openapi_specs(director_openapi_dir: Path) -> Dict[str, Any]:
+def director_openapi_specs(director_openapi_dir: Path) -> OpenApiSpecsDict:
     openapi_path = director_openapi_dir / "openapi.yaml"
     openapi_specs = yaml.safe_load(openapi_path.read_text())
     return openapi_specs
 
 
 @pytest.fixture(scope="session")
-def running_service_model_schema(osparc_simcore_root_dir: Path) -> Dict:
+def running_service_model_schema(osparc_simcore_root_dir: Path) -> SchemaDict:
     # SEE: https://github.com/ITISFoundation/osparc-simcore/tree/master/api/specs/common/schemas/running_service.yaml#L30
     content = yaml.safe_load(
         (
@@ -60,14 +65,18 @@ def running_service_model_schema(osparc_simcore_root_dir: Path) -> Dict:
 
 
 @pytest.fixture(scope="session")
-def registry_service_model_schema(osparc_simcore_root_dir: Path) -> Dict:
-    # SEE: https://github.com/ITISFoundation/osparc-simcore/tree/master/api/specs/common/schemas/services.yaml#L11
-    #      https://github.com/ITISFoundation/osparc-simcore/tree/master/api/specs/common/schemas/node-meta-v0.0.1.json
-    schema = json.loads(
-        (
-            osparc_simcore_root_dir / "api/specs/common/schemas/node-meta-v0.0.1.json"
-        ).read_text()
-    )
+def registry_service_model_schema(osparc_simcore_root_dir: Path) -> SchemaDict:
+    schema = ServiceDockerData.schema()
+
+    #
+    # NOTE: https://json-schema-faker.js.org/ does not support named groups
+    #
+    def _remove_named_groups(regex: str) -> str:
+        return re.sub(r"\(\?P<[^>]+>", "(", regex)
+
+    for property_name in ("key", "version"):
+        prop = schema["properties"][property_name]
+        prop["pattern"] = _remove_named_groups(prop["pattern"])
 
     # Check dump manually in https://json-schema-faker.js.org/
     print(json.dumps(schema))
@@ -81,7 +90,7 @@ def model_fake_factory(random_json_from_schema: Callable) -> Callable:
     Adapter to create fake data instances of a mo
     """
 
-    def _create(schema: Dict, **override_attrs):
+    def _create(schema: dict, **override_attrs):
         model_instance = random_json_from_schema(json.dumps(schema))
         model_instance.update(override_attrs)
 
@@ -100,7 +109,7 @@ def model_fake_factory(random_json_from_schema: Callable) -> Callable:
 
 
 @pytest.fixture(scope="module")
-def user_id():
+def user_id() -> UserID:
     return 1
 
 
@@ -123,14 +132,13 @@ def project_nodes():
 
 @pytest.fixture
 def mock_director_service(
-    model_fake_factory,
-    running_service_model_schema,
-    registry_service_model_schema,
-    user_id: int,
+    model_fake_factory: Callable,
+    running_service_model_schema: SchemaDict,
+    registry_service_model_schema: SchemaDict,
+    user_id: UserID,
     project_id: str,
-    project_nodes: List[Tuple[str, ...]],
+    project_nodes: list[tuple[str, ...]],
 ):
-
     # helpers
     def fake_registry_service_model(**overrides):
         return model_fake_factory(registry_service_model_schema, **overrides)
@@ -140,7 +148,8 @@ def mock_director_service(
 
     # fake director service "state" variables
     _fake_project_services = [
-        fake_registry_service_model(key=s[0], version=s[1]) for s in project_nodes
+        fake_registry_service_model(key=node[0], version=node[1])
+        for node in project_nodes
     ]
 
     _fake_running_services = []
@@ -156,7 +165,6 @@ def mock_director_service(
     # Mocks director's service API  api/specs/director/openapi.yaml
     #
     with aioresponses() as mock:
-
         # GET /running_interactive_services -------------------------------------------------
         url_pattern = (
             r"^http://[a-z\-_]*director:[0-9]+/v0/running_interactive_services\?.*$"
@@ -332,9 +340,8 @@ async def test_director_workflow(
     app_mock,
     user_id: int,
     project_id: str,
-    project_nodes: List[Tuple[str, ...]],
+    project_nodes: list[tuple[str, ...]],
 ):
-
     app = app_mock
 
     # After app's setup, the director config should be in place
@@ -353,7 +360,6 @@ async def test_director_workflow(
     assert not running_services
 
     for service_key, service_version, service_uuid in project_nodes:
-
         # service is in registry
         service = await get_service_by_key_version(app, service_key, service_version)
         assert service
@@ -374,6 +380,7 @@ async def test_director_workflow(
             service_uuid,
             "localhost",
             "http",
+            "test",
         )
 
         # now is running

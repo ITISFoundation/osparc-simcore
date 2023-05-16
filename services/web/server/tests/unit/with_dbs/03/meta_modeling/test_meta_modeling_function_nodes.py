@@ -7,7 +7,7 @@ import collections.abc
 import inspect
 from typing import get_origin
 
-from simcore_service_webserver.meta_modeling_function_nodes import catalog
+from simcore_service_webserver.meta_modeling._function_nodes import catalog
 
 # TODO: test i/o schemas on FRONTEND_SERVICES_CATALOG fit the  _fun Callable
 

@@ -58,6 +58,8 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     "updateTemplate": "qx.event.type.Data",
     "updateService": "qx.event.type.Data",
     "publishTemplate": "qx.event.type.Data",
+    "tagClicked": "qx.event.type.Data",
+    "emptyStudyClicked": "qx.event.type.Data",
     "changeSelection": "qx.event.type.Data",
     "changeVisibility": "qx.event.type.Data"
   },
@@ -110,8 +112,10 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       if (card instanceof qx.ui.form.ToggleButton) {
         if (this.getGroupBy()) {
           const noGroupContainer = this.__getGroupContainer("no-group");
-          noGroupContainer.getContentContainer().remove(card);
-        } else {
+          if (noGroupContainer.getContentContainer().getChildren().indexOf(card) > -1) {
+            noGroupContainer.getContentContainer().remove(card);
+          }
+        } else if (this.__flatList.getChildren().indexOf(card) > -1) {
           this.__flatList.remove(card);
         }
       } else {
@@ -202,8 +206,10 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         "updateStudy",
         "updateTemplate",
         "updateService",
-        "publishTemplate"
-      ].forEach(ev => card.addListener(ev, e => this.fireDataEvent(ev, e.getData())));
+        "publishTemplate",
+        "tagClicked",
+        "emptyStudyClicked"
+      ].forEach(eName => card.addListener(eName, e => this.fireDataEvent(eName, e.getData())));
 
       return card;
     },
@@ -311,7 +317,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
             groupContainer = this.__createGroupContainer(orgId, "loading-label");
             osparc.store.Store.getInstance().getOrganizationOrUser(orgId)
               .then(org => {
-                if (org) {
+                if (org && org["collabType"] !== 2) {
                   let icon = "";
                   if (org.thumbnail) {
                     icon = org.thumbnail;
@@ -319,19 +325,13 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
                     icon = "@FontAwesome5Solid/globe/24";
                   } else if (org["collabType"] === 1) {
                     icon = "@FontAwesome5Solid/users/24";
-                  } else if (org["collabType"] === 2) {
-                    icon = "@FontAwesome5Solid/user/24";
                   }
                   groupContainer.set({
                     headerIcon: icon,
                     headerLabel: org.label
                   });
                 } else {
-                  // unknown org/user: show email address instead
-                  groupContainer.set({
-                    headerIcon: "@FontAwesome5Solid/user/24",
-                    headerLabel: resourceData["prjOwner"]
-                  });
+                  groupContainer.exclude();
                 }
               })
               .finally(() => {

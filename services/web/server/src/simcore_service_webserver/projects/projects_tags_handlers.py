@@ -5,10 +5,11 @@
 import logging
 
 from aiohttp import web
+from servicelib.request_keys import RQT_USERID_KEY
 
 from .._meta import api_version_prefix as VTAG
-from ..login.decorators import RQT_USERID_KEY, login_required
-from ..security_decorators import permission_required
+from ..login.decorators import login_required
+from ..security.decorators import permission_required
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 
 log = logging.getLogger(__name__)

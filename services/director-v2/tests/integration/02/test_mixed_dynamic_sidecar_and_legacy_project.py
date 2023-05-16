@@ -244,10 +244,12 @@ async def test_legacy_and_dynamic_sidecar_run(
     user_dict: dict[str, Any],
     services_endpoint: dict[str, URL],
     director_v2_client: httpx.AsyncClient,
+    osparc_product_name: str,
     ensure_services_stopped: None,
     mock_projects_networks_repository: None,
     mock_dynamic_sidecar_client: None,
     service_resources: ServiceResourcesDict,
+    mocked_service_awaits_manual_interventions: None,
 ):
     """
     The test will start 3 dynamic services in the same project and check
@@ -266,6 +268,7 @@ async def test_legacy_and_dynamic_sidecar_run(
             assert_start_service(
                 director_v2_client=director_v2_client,
                 # context
+                product_name=osparc_product_name,
                 user_id=user_dict["id"],
                 project_id=str(dy_static_file_server_project.uuid),
                 # service

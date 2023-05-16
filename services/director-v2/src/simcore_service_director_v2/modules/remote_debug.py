@@ -23,7 +23,7 @@ def setup(app: FastAPI):
                 address=("0.0.0.0", remote_debug_port),  # nosec
             )  # nosec
         except ImportError as err:
-            raise Exception(
+            raise RuntimeError(
                 "Cannot enable remote debugging. Please install ptvsd first"
             ) from err
 

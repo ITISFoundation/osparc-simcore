@@ -47,7 +47,7 @@ class FilePortSchema(PortSchema):
             "examples": [
                 {
                     "mapping": "some_filename.txt",
-                    "url": "ftp://some_file_url",
+                    "url": "sftp://some_file_url",
                     "required": True,
                 },
                 {
@@ -61,11 +61,11 @@ class FilePortSchema(PortSchema):
 class FileUrl(BaseModel):
     url: AnyUrl
     file_mapping: Optional[str] = Field(
-        None,
+        default=None,
         description="Local file relpath name (if given), otherwise it takes the url filename",
     )
     file_mime_type: Optional[str] = Field(
-        None, description="the file MIME type", regex=MIME_TYPE_RE
+        default=None, description="the file MIME type", regex=MIME_TYPE_RE
     )
 
     class Config:

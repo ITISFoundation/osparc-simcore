@@ -17,7 +17,7 @@
 
 
 qx.Class.define("osparc.info.StudyLarge", {
-  extend: qx.ui.core.Widget,
+  extend: osparc.info.CardLarge,
 
   /**
     * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
@@ -25,12 +25,6 @@ qx.Class.define("osparc.info.StudyLarge", {
     */
   construct: function(study, openOptions = true) {
     this.base(arguments);
-
-    this.set({
-      minHeight: 350,
-      padding: this.self().PADDING
-    });
-    this._setLayout(new qx.ui.layout.VBox(8));
 
     if (study instanceof osparc.data.model.Study) {
       this.setStudy(study);
@@ -43,18 +37,10 @@ qx.Class.define("osparc.info.StudyLarge", {
       this.setOpenOptions(openOptions);
     }
 
-    this.addListenerOnce("appear", () => {
-      this.__rebuildLayout();
-    }, this);
-    this.addListener("resize", () => {
-      this.__rebuildLayout();
-    }, this);
+    this._attachHandlers();
   },
 
   events: {
-    "openAccessRights": "qx.event.type.Event",
-    "openClassifiers": "qx.event.type.Event",
-    "openQuality": "qx.event.type.Event",
     "updateStudy": "qx.event.type.Data",
     "updateTags": "qx.event.type.Data"
   },
@@ -64,20 +50,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       check: "osparc.data.model.Study",
       init: null,
       nullable: false
-    },
-
-    openOptions: {
-      check: "Boolean",
-      init: true,
-      nullable: false
     }
-  },
-
-  statics: {
-    PADDING: 5,
-    EXTRA_INFO_WIDTH: 250,
-    THUMBNAIL_MIN_WIDTH: 150,
-    THUMBNAIL_MAX_WIDTH: 230
   },
 
   members: {
@@ -85,7 +58,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       return osparc.data.model.Study.canIWrite(this.getStudy().getAccessRights());
     },
 
-    __rebuildLayout: function() {
+    _rebuildLayout: function() {
       this._removeAll();
 
       const title = this.__createTitle();
@@ -99,9 +72,9 @@ qx.Class.define("osparc.info.StudyLarge", {
       const bounds = this.getBounds();
       const offset = 30;
       let widgetWidth = bounds ? bounds.width - offset : 500 - offset;
-      let thumbnailWidth = widgetWidth - 2*this.self().PADDING;
+      let thumbnailWidth = widgetWidth - 2 * osparc.info.CardLarge.PADDING;
       const maxThumbnailHeight = extraInfo.length*20;
-      const slim = widgetWidth < this.self().EXTRA_INFO_WIDTH + this.self().THUMBNAIL_MIN_WIDTH + 2*this.self().PADDING - 20;
+      const slim = widgetWidth < osparc.info.CardLarge.EXTRA_INFO_WIDTH + osparc.info.CardLarge.THUMBNAIL_MIN_WIDTH + 2 * osparc.info.CardLarge.PADDING - 20;
       let hBox = null;
       if (slim) {
         this._add(extraInfoLayout);
@@ -110,9 +83,9 @@ qx.Class.define("osparc.info.StudyLarge", {
           alignX: "center"
         }));
         hBox.add(extraInfoLayout);
-        thumbnailWidth -= this.self().EXTRA_INFO_WIDTH;
+        thumbnailWidth -= osparc.info.CardLarge.EXTRA_INFO_WIDTH;
       }
-      thumbnailWidth = Math.min(thumbnailWidth - 20, this.self().THUMBNAIL_MAX_WIDTH);
+      thumbnailWidth = Math.min(thumbnailWidth - 20, osparc.info.CardLarge.THUMBNAIL_MAX_WIDTH);
       const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
       const thumbnailLayout = this.__createViewWithEdit(thumbnail, this.__openThumbnailEditor);
       thumbnailLayout.getLayout().set({
@@ -127,12 +100,20 @@ qx.Class.define("osparc.info.StudyLarge", {
         this._add(hBox);
       }
 
+      if (osparc.product.Utils.showDisableServiceAutoStart() && this.__canIWrite()) {
+        const autoStart = this.__createDisableServiceAutoStart();
+        this._add(autoStart);
+      }
+
       if (this.getStudy().getTags().length || this.__canIWrite()) {
         const tags = this.__createTags();
-        const editInTitle = this.__createViewWithEdit(tags.getChildren()[0], this.__openTagsEditor);
+        const editInTitle = this.__createViewWithEdit(tags.getChildren()[0], null);
         tags.addAt(editInTitle, 0);
         if (this.__canIWrite()) {
-          osparc.utils.Utils.setIdToWidget(editInTitle.getChildren()[1], "editStudyEditTagsBtn");
+          const editButton = editInTitle.getChildren()[1];
+          editButton.setIcon("@FontAwesome5Solid/eye/12");
+          editButton.addListener("execute", () => this.fireEvent("openTags"), this);
+          osparc.utils.Utils.setIdToWidget(editButton, "editStudyEditTagsBtn");
         }
         this._add(tags);
       }
@@ -152,7 +133,9 @@ qx.Class.define("osparc.info.StudyLarge", {
       layout.add(view);
       if (this.__canIWrite()) {
         const editBtn = osparc.utils.Utils.getEditButton();
-        editBtn.addListener("execute", () => cb.call(this), this);
+        if (cb) {
+          editBtn.addListener("execute", () => cb.call(this), this);
+        }
         layout.add(editBtn);
       }
 
@@ -183,7 +166,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       }];
 
       if (
-        !osparc.utils.Utils.isProduct("s4llite") &&
+        osparc.product.Utils.showQuality() &&
         this.getStudy().getQuality() &&
         osparc.component.metadata.Quality.isEnabled(this.getStudy().getQuality())
       ) {
@@ -198,7 +181,7 @@ qx.Class.define("osparc.info.StudyLarge", {
         });
       }
 
-      if (!osparc.utils.Utils.isProduct("s4llite")) {
+      if (osparc.product.Utils.showClassifiers()) {
         extraInfo.push({
           label: this.tr("Classifiers"),
           view: this.__createClassifiers(),
@@ -211,7 +194,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       }
 
       extraInfo.splice(0, 0, {
-        label: osparc.utils.Utils.capitalize(osparc.utils.Utils.getStudyLabel()) + " ID",
+        label: osparc.utils.Utils.capitalize(osparc.product.Utils.getStudyAlias()) + " ID",
         view: this.__createStudyId(),
         action: {
           button: osparc.utils.Utils.getCopyButton(),
@@ -225,7 +208,7 @@ qx.Class.define("osparc.info.StudyLarge", {
 
     __createExtraInfo: function(extraInfo) {
       const moreInfo = osparc.info.StudyUtils.createExtraInfo(extraInfo).set({
-        width: this.self().EXTRA_INFO_WIDTH
+        width: osparc.info.CardLarge.EXTRA_INFO_WIDTH
       });
 
       return moreInfo;
@@ -233,7 +216,7 @@ qx.Class.define("osparc.info.StudyLarge", {
 
     __createTitle: function() {
       const title = osparc.info.StudyUtils.createTitle(this.getStudy()).set({
-        font: "title-16"
+        font: "text-14"
       });
       return title;
     },
@@ -268,6 +251,10 @@ qx.Class.define("osparc.info.StudyLarge", {
 
     __createThumbnail: function(maxWidth, maxHeight = 160) {
       return osparc.info.StudyUtils.createThumbnail(this.getStudy(), maxWidth, maxHeight);
+    },
+
+    __createDisableServiceAutoStart: function() {
+      return osparc.info.StudyUtils.createDisableServiceAutoStart(this.getStudy());
     },
 
     __createTags: function() {
@@ -334,11 +321,10 @@ qx.Class.define("osparc.info.StudyLarge", {
     },
 
     __openTagsEditor: function() {
-      const tagManager = new osparc.component.form.tag.TagManager(this.getStudy().serialize(), null, "study", this.getStudy().getUuid()).set({
-        liveUpdate: false
-      });
+      const tagManager = new osparc.component.form.tag.TagManager(this.getStudy().serialize());
+      const win = osparc.component.form.tag.TagManager.popUpInWindow(tagManager);
       tagManager.addListener("updateTags", e => {
-        tagManager.close();
+        win.close();
         const updatedData = e.getData();
         this.getStudy().setTags(updatedData["tags"]);
         this.fireDataEvent("updateStudy", updatedData);
@@ -359,7 +345,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       });
       suggestions = Array.from(suggestions);
       const thumbnailEditor = new osparc.component.editor.ThumbnailEditor(oldThumbnail, suggestions);
-      const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, suggestions.length > 2 ? 500 : 350, suggestions.length ? 280 : 110);
+      const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, suggestions.length > 2 ? 500 : 350, suggestions.length ? 280 : 115);
       thumbnailEditor.addListener("updateThumbnail", e => {
         win.close();
         const validUrl = e.getData();

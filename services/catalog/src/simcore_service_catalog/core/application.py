@@ -1,15 +1,25 @@
 import logging
 import time
-from typing import Callable, Optional
+from typing import Callable
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.gzip import GZipMiddleware
+from models_library.basic_types import BootModeEnum
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
+from servicelib.logging_utils import config_all_loggers
 from starlette import status
 from starlette.exceptions import HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from .._meta import (
+    API_VERSION,
+    API_VTAG,
+    APP_FINISHED_BANNER_MSG,
+    APP_STARTED_BANNER_MSG,
+    PROJECT_NAME,
+    SUMMARY,
+)
 from ..api.errors.http_error import (
     http_error_handler,
     make_http_error_handler_for_exception,
@@ -17,25 +27,20 @@ from ..api.errors.http_error import (
 from ..api.errors.validation_error import http422_error_handler
 from ..api.root import router as api_router
 from ..api.routes.health import router as health_router
-from ..meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY
 from ..services.function_services import setup_function_services
-from .events import (
-    create_start_app_handler,
-    create_stop_app_handler,
-    on_shutdown,
-    on_startup,
-)
-from .settings import AppSettings, BootModeEnum
+from .events import create_start_app_handler, create_stop_app_handler
+from .settings import ApplicationSettings
 
 logger = logging.getLogger(__name__)
 
 
-def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
+def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     if settings is None:
-        settings = AppSettings.create_from_envs()
+        settings = ApplicationSettings.create_from_envs()
     assert settings  # nosec
     logging.basicConfig(level=settings.CATALOG_LOG_LEVEL.value)
     logging.root.setLevel(settings.CATALOG_LOG_LEVEL.value)
+    config_all_loggers(settings.CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED)
     logger.debug(settings.json(indent=2))
 
     app = FastAPI(
@@ -50,18 +55,26 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     )
     override_fastapi_openapi_method(app)
 
+    # STATE
     app.state.settings = settings
 
+    # PLUGIN SETUP
     setup_function_services(app)
 
-    # events
-    app.add_event_handler("startup", on_startup)
+    # EVENTS
+    async def _on_startup() -> None:
+        print(APP_STARTED_BANNER_MSG, flush=True)
+
+    async def _on_shutdown() -> None:
+        print(APP_FINISHED_BANNER_MSG, flush=True)
+
+    app.add_event_handler("startup", _on_startup)
     app.add_event_handler("startup", create_start_app_handler(app))
 
-    app.add_event_handler("shutdown", on_shutdown)
     app.add_event_handler("shutdown", create_stop_app_handler(app))
+    app.add_event_handler("shutdown", _on_shutdown)
 
-    # exception handlers
+    # ERROR HANDLERS
     app.add_exception_handler(HTTPException, http_error_handler)
     app.add_exception_handler(RequestValidationError, http422_error_handler)
     # SEE https://docs.python.org/3/library/exceptions.html#exception-hierarchy
@@ -78,13 +91,14 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
         ),
     )
 
-    # Routing
-
+    # ROUTING
     # healthcheck at / and at /v0/
     app.include_router(health_router)
 
     # api under /v*
     app.include_router(api_router, prefix=f"/{API_VTAG}")
+
+    # MIDDLEWARES
     # middleware to time requests (ONLY for development)
     if settings.SC_BOOT_MODE != BootModeEnum.PRODUCTION:
 

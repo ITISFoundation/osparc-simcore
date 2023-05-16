@@ -72,14 +72,37 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       return (card instanceof osparc.dashboard.GridButtonItem || card instanceof osparc.dashboard.ListButtonItem);
     },
 
+    createToolbarRadioButton: function(label, icon, toolTipText, pos) {
+      const rButton = new qx.ui.toolbar.RadioButton().set({
+        label,
+        icon,
+        toolTipText,
+        padding: 5,
+        paddingLeft: 8,
+        paddingRight: 8,
+        margin: 0
+      });
+      rButton.getContentElement().setStyles({
+        "border-radius": "0px"
+      });
+      if (pos === "left") {
+        osparc.utils.Utils.addBorderLeftRadius(rButton);
+      } else if (pos === "right") {
+        osparc.utils.Utils.addBorderRightRadius(rButton);
+      }
+      return rButton;
+    },
+
     PAGINATED_STUDIES: 10
   },
 
   members: {
+    _resourceType: null,
     _resourcesList: null,
     _topBar: null,
-    _secondaryBar: null,
-    __viewMenuButton: null,
+    _toolbar: null,
+    _searchBarFilter: null,
+    __viewModeLayout: null,
     _resourcesContainer: null,
     _loadingResourcesBtn: null,
 
@@ -112,40 +135,39 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
-    _createResourcesLayout: function(resourceType) {
-      const topBar = this.__createTopBar(resourceType);
+    _createResourcesLayout: function() {
+      const topBar = this.__createTopBar();
       this._add(topBar);
 
-      const secondaryBar = this._secondaryBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
+      const toolbar = this._toolbar = new qx.ui.toolbar.ToolBar().set({
+        backgroundColor: "transparent",
+        spacing: 10,
         paddingRight: 8,
         alignY: "middle"
       });
-      this._add(secondaryBar);
+      this._add(toolbar);
 
-      const viewByMenu = new qx.ui.menu.Menu().set({
-        font: "text-14"
-      });
-      this.__viewMenuButton = new qx.ui.form.MenuButton(this.tr("View"), "@FontAwesome5Solid/chevron-down/10", viewByMenu);
+      this.__viewModeLayout = new qx.ui.toolbar.Part();
 
       const resourcesContainer = this._resourcesContainer = new osparc.dashboard.ResourceContainerManager();
-
       resourcesContainer.addListener("updateStudy", e => this._updateStudyData(e.getData()));
       resourcesContainer.addListener("updateTemplate", e => this._updateTemplateData(e.getData()));
       resourcesContainer.addListener("updateService", e => this._updateServiceData(e.getData()));
       resourcesContainer.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));
-
+      resourcesContainer.addListener("tagClicked", e => this._searchBarFilter.addTagActiveFilter(e.getData()));
+      resourcesContainer.addListener("emptyStudyClicked", e => this._deleteResourceRequested(e.getData()));
       this._add(resourcesContainer);
     },
 
-    __createTopBar: function(resourceType) {
+    __createTopBar: function() {
       const topBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
-        paddingRight: 8,
+        paddingRight: 22,
         alignY: "middle"
       });
 
-      const searchBarFilter = new osparc.dashboard.SearchBarFilter(resourceType);
+      const searchBarFilter = this._searchBarFilter = new osparc.dashboard.SearchBarFilter(this._resourceType);
       const textField = searchBarFilter.getChildControl("text-field");
-      osparc.utils.Utils.setIdToWidget(textField, resourceType ? "searchBarFilter-textField-"+resourceType : "searchBarFilter-textField");
+      osparc.utils.Utils.setIdToWidget(textField, "searchBarFilter-textField-"+this._resourceType);
       topBar.add(searchBarFilter, {
         flex: 1
       });
@@ -156,7 +178,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     _groupByChanged: function(groupBy) {
       // if cards are grouped they need to be in grid mode
       this._resourcesContainer.setMode("grid");
-      this.__viewMenuButton.setVisibility(groupBy ? "excluded" : "visible");
+      this.__viewModeLayout.setVisibility(groupBy ? "excluded" : "visible");
       this._resourcesContainer.setGroupBy(groupBy);
       this._reloadCards();
     },
@@ -173,49 +195,51 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       const groupByButton = new qx.ui.form.MenuButton(this.tr("Group"), "@FontAwesome5Solid/chevron-down/10", groupByMenu);
       osparc.utils.Utils.setIdToWidget(groupByButton, "groupByButton");
 
+      const groupOptions = new qx.ui.form.RadioGroup();
+
       const dontGroup = new qx.ui.menu.RadioButton(this.tr("None"));
       osparc.utils.Utils.setIdToWidget(dontGroup, "groupByNone");
       dontGroup.addListener("execute", () => this._groupByChanged(null));
-      const tagByGroup = new qx.ui.menu.RadioButton(this.tr("Tags"));
-      tagByGroup.addListener("execute", () => this._groupByChanged("tags"));
-      const groupByShared = new qx.ui.menu.RadioButton(this.tr("Shared with"));
-      groupByShared.addListener("execute", () => this._groupByChanged("shared"));
 
-      const groupOptions = new qx.ui.form.RadioGroup();
-      [
-        dontGroup,
-        tagByGroup,
-        groupByShared
-      ].forEach(btn => {
-        groupByMenu.add(btn);
-        groupOptions.add(btn);
-      });
+      groupByMenu.add(dontGroup);
+      groupOptions.add(dontGroup);
 
-      if (osparc.utils.Utils.isProduct("s4llite")) {
-        tagByGroup.execute();
+      if (this._resourceType === "template") {
+        const tagByGroup = new qx.ui.menu.RadioButton(this.tr("Tags"));
+        tagByGroup.addListener("execute", () => this._groupByChanged("tags"));
+        groupByMenu.add(tagByGroup);
+        groupOptions.add(tagByGroup);
+        if (osparc.product.Utils.isProduct("s4llite")) {
+          tagByGroup.execute();
+        }
       }
 
-      this._secondaryBar.add(groupByButton);
+      const groupByShared = new qx.ui.menu.RadioButton(this.tr("Shared with"));
+      groupByShared.addListener("execute", () => this._groupByChanged("shared"));
+      groupByMenu.add(groupByShared);
+      groupOptions.add(groupByShared);
+
+      this._toolbar.add(groupByButton);
     },
 
     _addViewModeButton: function() {
-      const viewByMenu = this.__viewMenuButton.getMenu();
-
-      const gridBtn = new qx.ui.menu.RadioButton(this.tr("Grid"));
+      const gridBtn = this.self().createToolbarRadioButton(null, "@FontAwesome5Solid/th/14", this.tr("Grid view"), "left");
       gridBtn.addListener("execute", () => this._viewByChanged("grid"));
-      const listBtn = new qx.ui.menu.RadioButton(this.tr("List"));
+
+      const listBtn = this.self().createToolbarRadioButton(null, "@FontAwesome5Solid/bars/14", this.tr("List view"), "right");
       listBtn.addListener("execute", () => this._viewByChanged("list"));
 
-      const groupOptions = new qx.ui.form.RadioGroup();
+      const viewModeLayout = this.__viewModeLayout;
+      const radioGroup = new qx.ui.form.RadioGroup();
       [
         gridBtn,
         listBtn
       ].forEach(btn => {
-        viewByMenu.add(btn);
-        groupOptions.add(btn);
+        viewModeLayout.add(btn);
+        radioGroup.add(btn);
       });
 
-      this._secondaryBar.add(this.__viewMenuButton);
+      this._toolbar.add(viewModeLayout);
     },
 
     /**
@@ -282,13 +306,22 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
+    _deleteResourceRequested: function(resourceId) {
+      throw new Error("Abstract method called!");
+    },
+
     _getMoreOptionsMenuButton: function(resourceData) {
       const moreOptsButton = new qx.ui.menu.Button(this.tr("More options..."));
       osparc.utils.Utils.setIdToWidget(moreOptsButton, "moreInfoBtn");
       moreOptsButton.addListener("execute", () => {
         const moreOpts = new osparc.dashboard.ResourceMoreOptions(resourceData);
         const title = this.tr("Options");
-        const win = osparc.ui.window.Window.popUpInWindow(moreOpts, title, 750, 725);
+        const win = osparc.ui.window.Window.popUpInWindow(
+          moreOpts,
+          title,
+          osparc.dashboard.ResourceMoreOptions.WIDTH,
+          osparc.dashboard.ResourceMoreOptions.HEIGHT
+        );
         moreOpts.addListener("updateStudy", e => this._updateStudyData(e.getData()));
         moreOpts.addListener("updateTemplate", e => this._updateTemplateData(e.getData()));
         moreOpts.addListener("updateService", e => this._updateServiceData(e.getData()));
@@ -315,6 +348,18 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       const shareButton = new qx.ui.menu.Button(this.tr("Share..."));
       shareButton.addListener("tap", () => card.openAccessRights(), this);
       return shareButton;
+    },
+
+    _getTagsMenuButton: function(card) {
+      const resourceData = card.getResourceData();
+      const isCurrentUserOwner = osparc.data.model.Study.canIWrite(resourceData["accessRights"]);
+      if (!isCurrentUserOwner) {
+        return null;
+      }
+
+      const tagsButton = new qx.ui.menu.Button(this.tr("Tags..."));
+      tagsButton.addListener("tap", () => card.openTags(), this);
+      return tagsButton;
     }
   }
 });

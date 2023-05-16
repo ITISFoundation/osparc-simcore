@@ -30,6 +30,7 @@ pytest_plugins = [
 
 @pytest.fixture(scope="session")
 def postgres_service(docker_services, docker_ip, docker_compose_file) -> str:
+    """Deploys docker-compose and postgres service is responsive"""
     # container environment
     with open(docker_compose_file) as fh:
         config = yaml.safe_load(fh)
@@ -58,11 +59,11 @@ def make_engine(
 ) -> Callable[[bool], Union[Awaitable[Engine], sa.engine.base.Engine]]:
     dsn = postgres_service
 
-    def maker(*, is_async=True) -> Union[Awaitable[Engine], sa.engine.base.Engine]:
+    def _make(is_async=True) -> Union[Awaitable[Engine], sa.engine.base.Engine]:
         engine = aiopg.sa.create_engine(dsn) if is_async else sa.create_engine(dsn)
         return engine
 
-    return maker
+    return _make
 
 
 def is_postgres_responsive(dsn) -> bool:
@@ -77,16 +78,19 @@ def is_postgres_responsive(dsn) -> bool:
 
 
 @pytest.fixture(scope="session")
-def db_metadata():
+def db_metadata() -> sa.MetaData:
     from simcore_postgres_database.models.base import metadata
 
     return metadata
 
 
 @pytest.fixture
-async def pg_engine(make_engine: Callable, db_metadata) -> AsyncIterator[Engine]:
-    async_engine = await make_engine(is_async=True)
-
+def pg_sa_engine(
+    make_engine: Callable, db_metadata: sa.MetaData
+) -> Iterator[sa.engine.Engine]:
+    """
+    Runs migration to create tables and return a sqlalchemy engine
+    """
     # NOTE: Using migration to upgrade/downgrade is not
     # such a great idea since these tests are used while developing
     # the tables, i.e. when no migration mechanism are in place
@@ -98,6 +102,22 @@ async def pg_engine(make_engine: Callable, db_metadata) -> AsyncIterator[Engine]
     db_metadata.drop_all(sync_engine)
     db_metadata.create_all(sync_engine)
 
+    yield sync_engine
+
+    # NOTE: ALL is deleted after
+    db_metadata.drop_all(sync_engine)
+    sync_engine.dispose()
+
+
+@pytest.fixture
+async def pg_engine(
+    pg_sa_engine: sa.engine.Engine, make_engine: Callable
+) -> AsyncIterator[Engine]:
+    """
+    Return an aiopg.sa engine connected to a responsive and migrated pg database
+    """
+    async_engine = await make_engine(is_async=True)
+
     yield async_engine
 
     # closes async-engine connections and terminates
@@ -105,9 +125,12 @@ async def pg_engine(make_engine: Callable, db_metadata) -> AsyncIterator[Engine]
     await async_engine.wait_closed()
     async_engine.terminate()
 
-    # NOTE: ALL is deleted after
-    db_metadata.drop_all(sync_engine)
-    sync_engine.dispose()
+
+@pytest.fixture
+async def connection(pg_engine: Engine) -> AsyncIterator[SAConnection]:
+    """Returns an aiopg.sa connection from an engine to a fully furnished and ready pg database"""
+    async with pg_engine.acquire() as _conn:
+        yield _conn
 
 
 #

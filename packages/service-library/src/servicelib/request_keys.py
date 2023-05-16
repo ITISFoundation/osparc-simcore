@@ -1,6 +1,7 @@
-""" Storage keys in requests 
+""" Storage keys in requests
 
 """
+from typing import Final
 
 # RQT=request
-RQT_USERID_KEY = __name__ + ".userid"
+RQT_USERID_KEY: Final[str] = f"{__name__}.userid"

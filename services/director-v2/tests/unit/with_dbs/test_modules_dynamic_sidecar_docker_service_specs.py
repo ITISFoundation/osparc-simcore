@@ -87,7 +87,9 @@ def simcore_service_labels() -> SimcoreServiceLabels:
 
 
 @pytest.fixture
-def expected_dynamic_sidecar_spec(run_id: RunID) -> dict[str, Any]:
+def expected_dynamic_sidecar_spec(
+    run_id: RunID, osparc_product_name: str, request_simcore_user_agent: str
+) -> dict[str, Any]:
     return {
         "endpoint_spec": {},
         "labels": {
@@ -114,7 +116,7 @@ def expected_dynamic_sidecar_spec(run_id: RunID) -> dict[str, Any]:
                         "is_service_environment_ready": False,
                         "service_removal_state": {
                             "can_remove": False,
-                            "can_save": None,
+                            "can_save": True,
                             "was_removed": False,
                         },
                         "status": {"current": "ok", "info": ""},
@@ -134,10 +136,12 @@ def expected_dynamic_sidecar_spec(run_id: RunID) -> dict[str, Any]:
                         "state_exclude": ["/tmp/strip_me/*", "*.py"],
                         "state_paths": ["/tmp/save_1", "/tmp_save_2"],
                     },
+                    "product_name": osparc_product_name,
                     "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                     "proxy_service_name": "dy-proxy_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                     "request_dns": "test-endpoint",
                     "request_scheme": "http",
+                    "request_simcore_user_agent": request_simcore_user_agent,
                     "restart_policy": "on-inputs-downloaded",
                     "service_name": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                     "service_port": 65534,
@@ -183,6 +187,7 @@ def expected_dynamic_sidecar_spec(run_id: RunID) -> dict[str, Any]:
                     "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": "False",
                     "FORWARD_ENV_DISPLAY": ":0",
                     "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
+                    "DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED": "False",
                     "POSTGRES_DB": "test",
                     "POSTGRES_HOST": "localhost",
                     "POSTGRES_PORT": "5432",
@@ -212,6 +217,7 @@ def expected_dynamic_sidecar_spec(run_id: RunID) -> dict[str, Any]:
                     "STORAGE_HOST": "storage",
                     "STORAGE_PORT": "8080",
                 },
+                "CapabilityAdd": ["CAP_LINUX_IMMUTABLE"],
                 "Hosts": [],
                 "Image": "local/dynamic-sidecar:MOCK",
                 "Init": True,

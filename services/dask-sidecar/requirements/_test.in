@@ -7,13 +7,13 @@
 #
 --constraint _base.txt
 
+
 coverage
-coveralls
 docker
 faker
-minio
+moto[server]
 pytest
-pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
+pytest-aiohttp
 pytest-cov
 pytest-icdiff
 pytest-instafail

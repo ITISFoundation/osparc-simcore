@@ -8,12 +8,11 @@
 
 
 from enum import Enum
-from typing import Union
 
 from fastapi import FastAPI, status
 from models_library.generics import Envelope
 from pydantic import NonNegativeInt
-from simcore_service_webserver.storage_schemas import (
+from simcore_service_webserver.storage.schemas import (
     CompleteUpload,
     DatasetMetaData,
     FileLocation,
@@ -27,7 +26,7 @@ from simcore_service_webserver.storage_schemas import (
 
 app = FastAPI(redoc_url=None)
 
-TAGS: list[Union[str, Enum]] = [
+TAGS: list[str | Enum] = [
     "storage",
 ]
 

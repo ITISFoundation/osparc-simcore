@@ -87,6 +87,7 @@ async def async_close_and_save_service(
     outputs_push_retry_attempts: int,
     update_interval: int,
 ) -> None:
+    task_id: TaskId
     async with _minimal_app() as app:
         rich.print(
             f"[yellow]Starting[/yellow] cleanup for service [green]{node_id}[/green]"
@@ -117,7 +118,7 @@ async def async_close_and_save_service(
             response = await thin_dv2_localhost_client.delete_service_containers(
                 f"{node_id}"
             )
-            task_id: TaskId = response.json()
+            task_id = response.json()
             await _track_and_display(
                 client, task_id, update_interval, task_timeout=5 * _MIN
             )
@@ -133,7 +134,7 @@ async def async_close_and_save_service(
                     response = await thin_dv2_localhost_client.save_service_state(
                         f"{node_id}"
                     )
-                    task_id: TaskId = response.json()
+                    task_id = response.json()
                     await _track_and_display(
                         client, task_id, update_interval, task_timeout=60 * _MIN
                     )
@@ -149,7 +150,7 @@ async def async_close_and_save_service(
                     response = await thin_dv2_localhost_client.push_service_outputs(
                         f"{node_id}"
                     )
-                    task_id: TaskId = response.json()
+                    task_id = response.json()
                     await _track_and_display(
                         client, task_id, update_interval, task_timeout=60 * _MIN
                     )
@@ -161,7 +162,7 @@ async def async_close_and_save_service(
             response = await thin_dv2_localhost_client.delete_service_docker_resources(
                 f"{node_id}"
             )
-            task_id: TaskId = response.json()
+            task_id = response.json()
             await _track_and_display(
                 client, task_id, update_interval, task_timeout=5 * _MIN
             )

@@ -1,34 +1,42 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
 import json
-from pathlib import Path
-from typing import Optional
+from typing import Any, Callable, Optional
 
 import pytest
-from pydantic import ValidationError
+import settings_library.base
+from pydantic import BaseModel, ValidationError
 from pydantic.fields import Field
-from settings_library.base import BaseCustomSettings, DefaultFromEnvFactoryError
+from pytest import MonkeyPatch
+from pytest_mock import MockerFixture
+from pytest_simcore.helpers.utils_envs import setenvs_from_envfile
+from settings_library.base import (
+    _DEFAULTS_TO_NONE_MSG,
+    BaseCustomSettings,
+    DefaultFromEnvFactoryError,
+)
 
 S2 = json.dumps({"S_VALUE": 2})
 S3 = json.dumps({"S_VALUE": 3})
 
 
-def get_attrs_tree(obj):
+def _get_attrs_tree(obj: Any) -> dict[str, Any]:
     # long version of json.dumps({ k:str(getattr(field,k)) for k in ModelField.__slots__ } )
     tree = {}
     for name in obj.__class__.__slots__:
         value = getattr(obj, name)
         if hasattr(value.__class__, "__slots__"):
-            tree[name] = get_attrs_tree(value)
+            tree[name] = _get_attrs_tree(value)
         else:
             tree[name] = f"{value}"
 
     return tree
 
 
-def print_defaults(model_cls):
+def _print_defaults(model_cls: type[BaseModel]):
     for field in model_cls.__fields__.values():
         print(field.name, ":", end="")
         try:
@@ -38,14 +46,14 @@ def print_defaults(model_cls):
             print(err)
 
 
-def dumps_model_class(model_cls):
-    d = {field.name: get_attrs_tree(field) for field in model_cls.__fields__.values()}
-    return json.dumps(d, indent=2)
+def _dumps_model_class(model_cls: type[BaseModel]):
+    d = {field.name: _get_attrs_tree(field) for field in model_cls.__fields__.values()}
+    return json.dumps(d, indent=1)
 
 
 @pytest.fixture
-def model_class_factory():
-    def _create_model(class_name):
+def create_settings_class() -> Callable[[str], type[BaseCustomSettings]]:
+    def _create_cls(class_name: str) -> type[BaseCustomSettings]:
         class S(BaseCustomSettings):
             S_VALUE: int
 
@@ -79,15 +87,16 @@ def model_class_factory():
             VALUE_DEFAULT_ENV: S = Field(auto_default_from_env=True)
 
         # Changed in version 3.7: Dictionary order is guaranteed to be insertion order
-        _classes = {"M1": M1, "M2": M2}
+        _classes = {"M1": M1, "M2": M2, "S": S}
         return _classes.get(class_name) or list(_classes.values())
 
-    return _create_model
+    return _create_cls
 
 
-def test_without_envs(model_class_factory):
-
-    M = model_class_factory("M1")
+def test_create_settings_class(
+    create_settings_class: Callable[[str], type[BaseCustomSettings]]
+):
+    M = create_settings_class("M1")
 
     # DEV: Path("M1.ignore.json").write_text(dumps_model_class(M))
 
@@ -101,14 +110,14 @@ def test_without_envs(model_class_factory):
         M.__fields__["VALUE_DEFAULT_ENV"].get_default()
 
 
-def test_with_envs(monkeypatch, model_class_factory):
-
-    M = model_class_factory("M1")
+def test_create_settings_class_with_environment(
+    monkeypatch: MonkeyPatch,
+    create_settings_class: Callable[[str], type[BaseCustomSettings]],
+):
+    # create class within one context
+    SettingsClass = create_settings_class("M1")
 
     with monkeypatch.context() as patch:
-
-        # Environment
-
         # allows DEFAULT_ENV to be implemented
         patch.setenv("S_VALUE", "1")
 
@@ -122,20 +131,19 @@ def test_with_envs(monkeypatch, model_class_factory):
         # FIXME: if set to {} -> it returns S1 ???
         patch.setenv("VALUE_NULLABLE_REQUIRED", S3)
 
-        #
-        print_defaults(M)
+        _print_defaults(SettingsClass)
 
-        obj = M()
+        instance = SettingsClass()
 
-        print(obj.json(indent=2))
+        print(instance.json(indent=2))
 
         # checks
-        assert obj.dict(exclude_unset=True) == {
+        assert instance.dict(exclude_unset=True) == {
             "VALUE": {"S_VALUE": 2},
             "VALUE_NULLABLE_REQUIRED": {"S_VALUE": 3},
         }
 
-        assert obj.dict() == {
+        assert instance.dict() == {
             "VALUE": {"S_VALUE": 2},
             "VALUE_DEFAULT": {"S_VALUE": 42},
             "VALUE_CONFUSING": None,
@@ -148,7 +156,136 @@ def test_with_envs(monkeypatch, model_class_factory):
         }
 
 
-def test_2(monkeypatch, model_class_factory):
+def test_create_settings_class_without_environ_fails(
+    create_settings_class: Callable[[str], type[BaseCustomSettings]],
+):
+    # now defining S_VALUE
+    M2_outside_context = create_settings_class("M2")
 
-    M = model_class_factory("M2")
-    Path("M2.ignore.json").write_text(dumps_model_class(M))
+    with pytest.raises(ValidationError) as err_info:
+        instance = M2_outside_context.create_from_envs()
+
+    assert err_info.value.errors()[0] == {
+        "loc": ("VALUE_DEFAULT_ENV", "S_VALUE"),
+        "msg": "field required",
+        "type": "value_error.missing",
+    }
+
+
+def test_create_settings_class_with_environ_passes(
+    monkeypatch: MonkeyPatch,
+    create_settings_class: Callable[[str], type[BaseCustomSettings]],
+):
+    # now defining S_VALUE
+    with monkeypatch.context() as patch:
+        patch.setenv("S_VALUE", "123")
+
+        M2_inside_context = create_settings_class("M2")
+        print(_dumps_model_class(M2_inside_context))
+
+        instance = M2_inside_context.create_from_envs()
+        assert instance == M2_inside_context(
+            VALUE_NULLABLE_DEFAULT_NULL=None,
+            VALUE_NULLABLE_DEFAULT_ENV={"S_VALUE": 123},
+            VALUE_DEFAULT_ENV={"S_VALUE": 123},
+        )
+
+
+def test_auto_default_to_none_logs_a_warning(
+    create_settings_class: Callable[[str], type[BaseCustomSettings]],
+    mocker: MockerFixture,
+):
+    logger_warn = mocker.spy(settings_library.base.logger, "warning")
+
+    S = create_settings_class("S")
+
+    class SettingsClass(BaseCustomSettings):
+        VALUE_NULLABLE_DEFAULT_NULL: Optional[S] = None
+        VALUE_NULLABLE_DEFAULT_ENV: Optional[S] = Field(auto_default_from_env=True)
+
+    instance = SettingsClass.create_from_envs()
+    assert instance.VALUE_NULLABLE_DEFAULT_NULL == None
+    assert instance.VALUE_NULLABLE_DEFAULT_ENV == None
+
+    # Defaulting to None also logs a warning
+    assert logger_warn.call_count == 1
+    assert _DEFAULTS_TO_NONE_MSG in logger_warn.call_args[0][0]
+
+
+def test_auto_default_to_not_none(
+    monkeypatch: MonkeyPatch,
+    create_settings_class: Callable[[str], type[BaseCustomSettings]],
+):
+    with monkeypatch.context() as patch:
+        patch.setenv("S_VALUE", "123")
+
+        S = create_settings_class("S")
+
+        class SettingsClass(BaseCustomSettings):
+            VALUE_NULLABLE_DEFAULT_NULL: Optional[S] = None
+            VALUE_NULLABLE_DEFAULT_ENV: Optional[S] = Field(auto_default_from_env=True)
+
+        instance = SettingsClass.create_from_envs()
+        assert instance.VALUE_NULLABLE_DEFAULT_NULL == None
+        assert instance.VALUE_NULLABLE_DEFAULT_ENV == S(S_VALUE=123)
+
+
+def test_how_settings_parse_null_environs(monkeypatch: MonkeyPatch):
+    #
+    # We were wondering how nullable fields (i.e. those marked as Optional[.]) can
+    # be defined in the envfile. Here we test different options
+    #
+
+    envs = setenvs_from_envfile(
+        monkeypatch,
+        """
+    VALUE_TO_NOTHING=
+    INT_VALUE_TO_NOTHING=
+    VALUE_TO_WORD_NULL=null
+    VALUE_TO_WORD_NONE=None
+    VALUE_TO_ZERO=0
+    INT_VALUE_TO_ZERO=0
+    """,
+    )
+
+    print(json.dumps(envs, indent=1))
+
+    assert envs == {
+        "VALUE_TO_NOTHING": "",
+        "INT_VALUE_TO_NOTHING": "",
+        "VALUE_TO_WORD_NULL": "null",
+        "VALUE_TO_WORD_NONE": "None",
+        "VALUE_TO_ZERO": "0",
+        "INT_VALUE_TO_ZERO": "0",
+    }
+
+    class SettingsClass(BaseCustomSettings):
+        VALUE_TO_NOTHING: Optional[str]
+        VALUE_TO_WORD_NULL: Optional[str]
+        VALUE_TO_WORD_NONE: Optional[str]
+        VALUE_TO_ZERO: Optional[str]
+
+        INT_VALUE_TO_ZERO: Optional[int]
+
+    instance = SettingsClass.create_from_envs()
+
+    assert instance == SettingsClass(
+        VALUE_TO_NOTHING="",  # NO
+        VALUE_TO_WORD_NULL=None,  # OK!
+        VALUE_TO_WORD_NONE=None,  # OK!
+        VALUE_TO_ZERO="0",  # NO
+        INT_VALUE_TO_ZERO=0,  # NO
+    )
+
+    class SettingsClassExt(SettingsClass):
+        INT_VALUE_TO_NOTHING: Optional[int]
+
+    with pytest.raises(ValidationError) as err_info:
+        SettingsClassExt.create_from_envs()
+
+    error = err_info.value.errors()[0]
+    assert error == {
+        "loc": ("INT_VALUE_TO_NOTHING",),
+        "msg": "value is not a valid integer",
+        "type": "type_error.integer",
+    }

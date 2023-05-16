@@ -27,15 +27,24 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
   construct: function(studyData) {
     this.base(arguments);
 
+    this._setLayout(new qx.ui.layout.VBox(10));
+
+    this._introText = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+    this._add(this._introText);
+
     const grid = new qx.ui.layout.Grid(20, 5);
-    grid.setColumnMinWidth(this.self().GRID_POS.LABEL, 80);
-    grid.setColumnMaxWidth(this.self().GRID_POS.LABEL, 180);
-    grid.setColumnFlex(this.self().GRID_POS.LABEL, 1);
     grid.setColumnAlign(this.self().GRID_POS.LABEL, "left", "middle");
+    grid.setColumnMinWidth(this.self().GRID_POS.LABEL, 80);
+    grid.setColumnMaxWidth(this.self().GRID_POS.LABEL, 160);
+    grid.setColumnFlex(this.self().GRID_POS.LABEL, 1);
     grid.setColumnAlign(this.self().GRID_POS.NAME, "left", "middle");
     grid.setColumnMinWidth(this.self().GRID_POS.NAME, 80);
-    grid.setColumnMaxWidth(this.self().GRID_POS.NAME, 180);
-    this._setLayout(grid);
+    grid.setColumnMaxWidth(this.self().GRID_POS.NAME, 160);
+    grid.setColumnFlex(this.self().GRID_POS.NAME, 1);
+    this._servicesGrid = new qx.ui.container.Composite(grid);
+    this._add(this._servicesGrid, {
+      flex: 1
+    });
 
     this._studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
 
@@ -67,6 +76,8 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
   members: {
     _studyData: null,
     _services: null,
+    _introText: null,
+    _servicesGrid: null,
 
     _updateStudy: function(fetchButton) {
       if (fetchButton) {
@@ -102,31 +113,35 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
     },
 
     __populateEmptyLayout: function() {
-      this._removeAll();
+      this._introText.removeAll();
 
-      this._add(new qx.ui.basic.Label(this.tr("The Study is empty")).set({
+      const emptyStudy = new qx.ui.basic.Label(this.tr("The Study is empty")).set({
         font: "text-14"
-      }), {
-        row: 0,
-        column: this.self().GRID_POS.LABEL
       });
+      this._introText.add(emptyStudy);
     },
 
     _populateLayout: function() {
-      this._removeAll();
+      this._introText.removeAll();
+      this._populateIntroText();
 
+      this._servicesGrid.removeAll();
       this._populateHeader();
       this._populateRows();
     },
 
+    _populateIntroText: function() {
+      throw new Error("Abstract method called!");
+    },
+
     _populateHeader: function() {
-      this._add(new qx.ui.basic.Label(this.tr("Label")).set({
+      this._servicesGrid.add(new qx.ui.basic.Label(this.tr("Label")).set({
         font: "title-14"
       }), {
         row: 0,
         column: this.self().GRID_POS.LABEL
       });
-      this._add(new qx.ui.basic.Label(this.tr("Name")).set({
+      this._servicesGrid.add(new qx.ui.basic.Label(this.tr("Name")).set({
         font: "title-14"
       }), {
         row: 0,
@@ -150,11 +165,11 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
             label: node["label"]
           });
           const title = this.tr("Service information");
-          const width = 600;
-          const height = 700;
+          const width = osparc.info.CardLarge.WIDTH;
+          const height = osparc.info.CardLarge.HEIGHT;
           osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height);
         }, this);
-        this._add(infoButton, {
+        this._servicesGrid.add(infoButton, {
           row: i,
           column: this.self().GRID_POS.INFO_BUTTON
         });
@@ -163,7 +178,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
           toolTipText: node["label"],
           font: "text-14"
         });
-        this._add(labelLabel, {
+        this._servicesGrid.add(labelLabel, {
           row: i,
           column: this.self().GRID_POS.LABEL
         });
@@ -177,7 +192,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
           toolTipText: node["key"],
           font: "text-14"
         });
-        this._add(nameLabel, {
+        this._servicesGrid.add(nameLabel, {
           row: i,
           column: this.self().GRID_POS.NAME
         });

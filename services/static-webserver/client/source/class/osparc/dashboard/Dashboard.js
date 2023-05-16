@@ -37,6 +37,18 @@ qx.Class.define("osparc.dashboard.Dashboard", {
   construct: function() {
     this.base(arguments);
 
+    osparc.utils.Utils.setIdToWidget(this, "dashboard");
+
+    if (osparc.product.panddy.Utils.hasPanddy()) {
+      const panddy = osparc.panddy.Panddy.getInstance();
+      const root = qx.core.Init.getApplication().getRoot();
+      root.add(panddy, {
+        bottom: 10,
+        right: 10
+      });
+      setTimeout(() => panddy.start(), 2000);
+    }
+
     this.set({
       contentPaddingTop: 15,
       contentPaddingLeft: 0,
@@ -87,41 +99,61 @@ qx.Class.define("osparc.dashboard.Dashboard", {
 
     __createMainViewLayout: function() {
       const permissions = osparc.data.Permissions.getInstance();
+      const tabIconSize = 20;
       const tabs = [{
         id: "studiesTabBtn",
-        label: osparc.utils.Utils.getStudyLabel(true).toUpperCase(),
+        label: osparc.product.Utils.getStudyAlias({
+          plural: true,
+          allUpperCase: true
+        }),
+        icon: "@FontAwesome5Solid/file/"+tabIconSize,
         buildLayout: this.__createStudyBrowser
       }];
       if (permissions.canDo("dashboard.templates.read")) {
         const templatesTab = {
           id: "templatesTabBtn",
-          label: osparc.utils.Utils.getTemplateLabel(true).toUpperCase(),
+          label: osparc.product.Utils.getTemplateAlias({
+            plural: true,
+            allUpperCase: true
+          }),
+          icon: "@FontAwesome5Solid/copy/"+tabIconSize,
           buildLayout: this.__createTemplateBrowser
         };
         tabs.push(templatesTab);
       }
-      if (!osparc.utils.Utils.isProduct("s4llite") && permissions.canDo("dashboard.services.read")) {
+      if (permissions.canDo("dashboard.services.read")) {
         tabs.push({
           id: "servicesTabBtn",
           label: this.tr("SERVICES"),
+          icon: "@FontAwesome5Solid/cogs/"+tabIconSize,
           buildLayout: this.__createServiceBrowser
         });
       }
-      if (!osparc.utils.Utils.isProduct("s4llite")) {
+      if (permissions.canDo("dashboard.data.read")) {
         tabs.push({
           id: "dataTabBtn",
           label: this.tr("DATA"),
+          icon: "@FontAwesome5Solid/folder/"+tabIconSize,
           buildLayout: this.__createDataBrowser}
         );
       }
-      tabs.forEach(({id, label, buildLayout}) => {
-        const tabPage = new qx.ui.tabview.Page(label).set({
+      tabs.forEach(({id, label, icon, buildLayout}) => {
+        const tabPage = new qx.ui.tabview.Page(label, icon).set({
           appearance: "dashboard-page"
         });
         const tabButton = tabPage.getChildControl("button");
         tabButton.set({
+          alignX: "center",
+          toolTipText: label,
+          minWidth: 50
+        });
+        tabButton.getChildControl("label").set({
           font: "text-16",
-          minWidth: 70
+          alignX: "center"
+        });
+        tabButton.getChildControl("icon").set({
+          alignX: "center",
+          visibility: "excluded"
         });
         osparc.utils.Utils.setIdToWidget(tabButton, id);
         tabPage.setLayout(new qx.ui.layout.Grow());
