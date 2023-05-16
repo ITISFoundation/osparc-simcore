@@ -176,7 +176,7 @@ def file_on_s3_server(
         open_file = fsspec.open(new_remote_file, mode="wt", **s3_storage_kwargs)
         with open_file as fp:
             fp.write(  # type: ignore
-                f"This is the file contents of file #'{(len(list_of_created_files)+1):03}'"
+                f"This is the file contents of file #'{(len(list_of_created_files)+1):03}'\n"
             )
             for s in faker.sentences(5):
                 fp.write(f"{s}\n")  # type: ignore
