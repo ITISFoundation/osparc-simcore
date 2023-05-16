@@ -224,14 +224,17 @@ class PartialComputationParams:
                     2: {
                         "modified": True,
                         "dependencies": [1],
+                        "progress": 0,
                     },
                     3: {
                         "modified": True,
                         "dependencies": [],
+                        "progress": 0,
                     },
                     4: {
                         "modified": True,
                         "dependencies": [2, 3],
+                        "progress": 0,
                     },
                 },
                 exp_node_states_after_run={
@@ -244,14 +247,17 @@ class PartialComputationParams:
                     2: {
                         "modified": True,
                         "dependencies": [],
+                        "progress": 0,
                     },
                     3: {
                         "modified": True,
                         "dependencies": [],
+                        "progress": 0,
                     },
                     4: {
                         "modified": True,
                         "dependencies": [2, 3],
+                        "progress": 0,
                     },
                 },
                 exp_pipeline_adj_list_after_force_run={1: []},
@@ -413,8 +419,9 @@ async def test_run_partial_computation(
             for n, s in exp_node_states.items()
         }
         pipeline_progress = 0
-        for node in converted_node_states.values():
-            pipeline_progress += (node.progress or 0) / len(converted_node_states)
+        for node_id in converted_adj_list:
+            node = converted_node_states[node_id]
+            pipeline_progress += (node.progress or 0) / len(converted_adj_list)
         return PipelineDetails(
             adjacency_list=converted_adj_list,
             node_states=converted_node_states,

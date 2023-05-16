@@ -136,7 +136,7 @@ async def catalog_ready(
 
         @retry(
             wait=wait_fixed(1),
-            stop=stop_after_delay(30),
+            stop=stop_after_delay(60),
             retry=retry_if_exception_type(AssertionError),
         )
         async def _ensure_catalog_services_answers() -> None:
