@@ -1,6 +1,7 @@
 # pylint: disable=unsubscriptable-object
 
 import json
+import re
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
@@ -9,13 +10,13 @@ from typing import Any, Final, Iterator, Literal, TypeAlias
 from pydantic import (
     BaseModel,
     ByteSize,
+    ConstrainedStr,
     Extra,
     Field,
     Json,
     PrivateAttr,
     ValidationError,
     parse_obj_as,
-    constr,
     root_validator,
     validator,
 )
@@ -26,10 +27,12 @@ from .services_resources import DEFAULT_SINGLE_SERVICE_NAME
 
 # Cloudflare DNS server address
 DEFAULT_DNS_SERVER_ADDRESS: Final[str] = "1.1.1.1"  # NOSONAR
-DEFAULT_DNS_SERVER_PORT: Final[PortInt] = 53
+DEFAULT_DNS_SERVER_PORT: Final[PortInt] = parse_obj_as(PortInt, 53)
+
 
 # NOTE: To allow parametrized value, set the type to Union[..., OEnvSubstitutionStr]
-OEnvSubstitutionStr = constr(regex=r"^\$OSPARC_ENVIRONMENT_\w+$")
+class OEnvSubstitutionStr(ConstrainedStr):
+    regex = re.compile(r"^\$OSPARC_ENVIRONMENT_\w+$")
 
 
 class _BaseConfig:
@@ -277,12 +280,12 @@ class _PortRange(BaseModel):
             raise ValueError(f"Condition not satisfied: {lower=} < {upper=}")
         return v
 
-from typing import Union
+
 class DNSResolver(BaseModel):
-    address: Union[str, OEnvSubstitutionStr] = Field(
+    address: str | OEnvSubstitutionStr = Field(
         ..., description="this is not an url address is derived from IP address"
     )
-    port: Union[PortInt, OEnvSubstitutionStr]
+    port: PortInt | OEnvSubstitutionStr
 
     class Config(_BaseConfig):
         extra = Extra.allow
@@ -295,8 +298,8 @@ class DNSResolver(BaseModel):
 
 
 class NATRule(BaseModel):
-    hostname: str, | OEnvSubstitutionStr
-    tcp_ports: list[ _PortRange | PortInt | OEnvSubstitutionStr ]
+    hostname: str | OEnvSubstitutionStr
+    tcp_ports: list[_PortRange | PortInt | OEnvSubstitutionStr]
     dns_resolver: DNSResolver = Field(
         default_factory=lambda: DNSResolver(
             address=DEFAULT_DNS_SERVER_ADDRESS, port=DEFAULT_DNS_SERVER_PORT
