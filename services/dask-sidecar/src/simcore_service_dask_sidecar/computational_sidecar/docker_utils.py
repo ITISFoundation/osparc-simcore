@@ -272,7 +272,8 @@ async def _parse_container_docker_logs(
     ):
         async with aiofiles.tempfile.TemporaryDirectory() as tmp_dir:
             log_file_path = (
-                tmp_dir / f"{service_key.split(sep='/')[-1]}_{service_version}.logs"
+                Path(tmp_dir)
+                / f"{service_key.split(sep='/')[-1]}_{service_version}.logs"
             )
             log_file_path.parent.mkdir(parents=True, exist_ok=True)
             async with aiofiles.open(log_file_path, mode="wb+") as log_fp:
@@ -301,10 +302,10 @@ async def _parse_container_docker_logs(
                         log_level=log_level,
                     )
 
-        # copy the log file to the log_file_url
-        await push_file_to_remote(
-            log_file_path, log_file_url, log_publishing_cb, s3_settings
-        )
+            # copy the log file to the log_file_url
+            await push_file_to_remote(
+                log_file_path, log_file_url, log_publishing_cb, s3_settings
+            )
 
 
 async def monitor_container_logs(
