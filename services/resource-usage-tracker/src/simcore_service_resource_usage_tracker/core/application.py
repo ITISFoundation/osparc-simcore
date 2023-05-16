@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import FastAPI
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 
@@ -12,9 +14,13 @@ from .._meta import (
 from ..api.routes import setup_api_routes
 from .settings import ApplicationSettings
 
+_logger = logging.getLogger(__name__)
 
-def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
+
+def create_app(settings: ApplicationSettings) -> FastAPI:
+    _logger.info("app settings: %s", settings.json(indent=1))
     app = FastAPI(
+        debug=settings.RESOURCE_USAGE_TRACKER_DEBUG,
         title=f"{PROJECT_NAME} web API",
         description=SUMMARY,
         version=API_VERSION,
@@ -25,7 +31,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     override_fastapi_openapi_method(app)
 
     # STATE
-    app.state.settings = settings or ApplicationSettings.create_from_envs()
+    app.state.settings = settings or ApplicationSettings()
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
     # PLUGINS SETUP
