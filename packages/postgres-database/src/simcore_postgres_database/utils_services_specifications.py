@@ -1,3 +1,4 @@
+from models_library.services import ServiceKey
 from sqlalchemy.sql import select
 
 from ._protocols import DBConnection
@@ -8,19 +9,32 @@ from .models.services_environments import (
 
 
 async def get_vendor_environments(
-    connection: DBConnection, vendor_service_key: str
+    connection: DBConnection,
+    vendor_service_key: ServiceKey,
+    *,
+    normalize_names: bool = True,
 ) -> OsparcEnvironmentsDict:
     # we know it is unique
     identifiers_map = await connection.scalar(
-        select([services_vendor_environments.c.identifiers_map]).where(
+        select(services_vendor_environments.c.identifiers_map).where(
             services_vendor_environments.c.service_key == vendor_service_key
         )
     )
-    environments = {}
+    environments: OsparcEnvironmentsDict = {}
     if identifiers_map is not None:
         environments = dict(identifiers_map)
 
-    assert all(key.startswith("OSPARC_ENVIRONMENT_") for key in environments)  # nosec
+    if normalize_names:
+        new_environments = {}
+        for key, value in environments.items():
+            if not key.startswith("OSPARC_ENVIRONMENT_"):
+                key = f"OSPARC_ENVIRONMENT_{key.upper()}"
+            new_environments[key] = value
+        environments = new_environments
+        assert all(  # nosec
+            key.startswith("OSPARC_ENVIRONMENT_") for key in environments
+        )
+
     assert all(  # nosec
         isinstance(value, (bool, int, str, float)) for value in environments.values()
     )
