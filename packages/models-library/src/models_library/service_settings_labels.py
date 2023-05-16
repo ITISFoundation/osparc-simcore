@@ -191,7 +191,7 @@ class PathMappingsLabel(BaseModel):
         }
 
 
-ComposeSpecLabel: TypeAlias = dict[str, Any]
+ComposeSpecLabelDict: TypeAlias = dict[str, Any]
 
 
 class RestartPolicy(str, Enum):
@@ -267,7 +267,7 @@ class DynamicSidecarServiceLabels(BaseModel):
         ),
     )
 
-    compose_spec: Json[ComposeSpecLabel] | None = Field(
+    compose_spec: Json[ComposeSpecLabelDict] | None = Field(
         None,
         alias="simcore.service.compose-spec",
         description=(

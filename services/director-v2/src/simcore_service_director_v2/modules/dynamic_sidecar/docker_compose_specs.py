@@ -8,7 +8,7 @@ from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import (
-    ComposeSpecLabel,
+    ComposeSpecLabelDict,
     PathMappingsLabel,
     SimcoreServiceLabels,
 )
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 
 def _update_networking_configuration(
-    service_spec: ComposeSpecLabel,
+    service_spec: ComposeSpecLabelDict,
     target_http_entrypoint_container: str,
     dynamic_sidecar_network_name: str,
     swarm_network_name: str,
@@ -101,7 +101,7 @@ class _environment_section:
 
 
 def _update_paths_mappings(
-    service_spec: ComposeSpecLabel, path_mappings: PathMappingsLabel
+    service_spec: ComposeSpecLabelDict, path_mappings: PathMappingsLabel
 ) -> None:
     for service_name in service_spec["services"]:
         service_content = service_spec["services"][service_name]
@@ -119,7 +119,7 @@ def _update_paths_mappings(
 
 
 def _update_resource_limits_and_reservations(
-    service_resources: ServiceResourcesDict, service_spec: ComposeSpecLabel
+    service_resources: ServiceResourcesDict, service_spec: ComposeSpecLabelDict
 ) -> None:
     # example: '2.3' -> 2 ; '3.7' -> 3
     docker_compose_major_version: int = int(service_spec["version"].split(".")[0])
@@ -188,7 +188,7 @@ def _update_resource_limits_and_reservations(
 
 
 def _update_container_labels(
-    service_spec: ComposeSpecLabel,
+    service_spec: ComposeSpecLabelDict,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
@@ -218,7 +218,7 @@ def assemble_spec(
     service_key: ServiceKey,
     service_version: ServiceVersion,
     paths_mapping: PathMappingsLabel,
-    compose_spec: ComposeSpecLabel | None,
+    compose_spec: ComposeSpecLabelDict | None,
     container_http_entry: str | None,
     dynamic_sidecar_network_name: str,
     swarm_network_name: str,
@@ -250,7 +250,7 @@ def assemble_spec(
 
     # when no compose yaml file was provided
     if compose_spec is None:
-        service_spec: ComposeSpecLabel = {
+        service_spec: ComposeSpecLabelDict = {
             "version": docker_compose_version,
             "services": {
                 DEFAULT_SINGLE_SERVICE_NAME: {

@@ -7,7 +7,7 @@ import yaml
 from fastapi import APIRouter, Depends, HTTPException, status
 from models_library.docker import DockerGenericTag
 from models_library.service_settings_labels import (
-    ComposeSpecLabel,
+    ComposeSpecLabelDict,
     SimcoreServiceSettingLabelEntry,
 )
 from models_library.services import ServiceKey, ServiceVersion
@@ -195,8 +195,8 @@ async def get_service_resources(
             image_version, default_service_resources
         )
 
-    service_spec: ComposeSpecLabel | None = parse_raw_as(
-        ComposeSpecLabel | None,
+    service_spec: ComposeSpecLabelDict | None = parse_raw_as(
+        ComposeSpecLabelDict | None,
         service_labels.get(SIMCORE_SERVICE_COMPOSE_SPEC_LABEL, "null"),
     )
     logger.debug("received %s", f"{service_spec=}")
@@ -232,7 +232,7 @@ async def get_service_resources(
         replace_simcore_registry="",
         replace_service_version=service_version,
     )
-    full_service_spec: ComposeSpecLabel = yaml.safe_load(stringified_service_spec)
+    full_service_spec: ComposeSpecLabelDict = yaml.safe_load(stringified_service_spec)
 
     service_to_resources: ServiceResourcesDict = parse_obj_as(ServiceResourcesDict, {})
 
