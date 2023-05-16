@@ -113,8 +113,7 @@ qx.Class.define("osparc.Error", {
       "502": "Bad Gateway",
       "503": "Service Unavailable",
       "504": "Gateway Timeout",
-      "505": "HTTP Version Not Supported",
-      1000: "You need to be logged in"
+      "505": "HTTP Version Not Supported"
     },
 
     POS: {

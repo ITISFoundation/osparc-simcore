@@ -12,6 +12,7 @@ MSG_PROJECT_NOT_PUBLISHED: Final[str] = "Cannot find any study with ID '{project
 
 # This error happens when the linked study ID does not exists OR is not shared with everyone OR is NOT public
 MSG_PUBLIC_PROJECT_NOT_PUBLISHED: Final[str] = (
+    "Only available for registered users.<br/><br/>"
     "Please login and try again.<br/><br/>"
     "If you don't have an account, please request one at {support_email}<br/><br/>"
 )
