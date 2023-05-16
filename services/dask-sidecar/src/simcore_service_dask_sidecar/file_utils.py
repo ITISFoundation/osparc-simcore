@@ -17,9 +17,7 @@ from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from settings_library.s3 import S3Settings
 from yarl import URL
 
-from .dask_utils import create_dask_worker_logger
-
-logger = create_dask_worker_logger(__name__)
+logger = logging.getLogger(__name__)
 
 HTTP_FILE_SYSTEM_SCHEMES: Final = ["http", "https"]
 S3_FILE_SYSTEM_SCHEMES: Final = ["s3", "s3a"]

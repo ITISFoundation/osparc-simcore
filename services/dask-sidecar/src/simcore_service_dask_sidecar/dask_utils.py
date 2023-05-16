@@ -17,12 +17,7 @@ from distributed.worker import get_worker
 from distributed.worker_state_machine import TaskState
 from servicelib.logging_utils import LogLevelInt, LogMessageStr
 
-
-def create_dask_worker_logger(name: str) -> logging.Logger:
-    return logging.getLogger(f"distributed.worker.{name}")
-
-
-logger = create_dask_worker_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def _get_current_task_state() -> TaskState | None:
