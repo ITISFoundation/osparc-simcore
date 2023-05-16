@@ -257,14 +257,11 @@ def guess_message_log_level(message: str) -> LogLevelInt:
     lower_case_message = message.lower().strip()
     if lower_case_message.startswith(
         (
-            "error:",
-            "error ",
+            "error",
             "[error]",
-            "err:",
-            "err ",
+            "err",
             "[err]",
-            "exception:",
-            "exception ",
+            "exception",
             "[exception]",
             "exc:",
             "exc ",
@@ -274,11 +271,9 @@ def guess_message_log_level(message: str) -> LogLevelInt:
         return logging.ERROR
     if lower_case_message.startswith(
         (
-            "warning:",
-            "warning ",
+            "warning",
             "[warning]",
-            "warn:",
-            "warn ",
+            "warn",
             "[warn]",
         )
     ):
