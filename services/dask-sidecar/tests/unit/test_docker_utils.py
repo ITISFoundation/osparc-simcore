@@ -4,6 +4,7 @@
 # pylint: disable=no-member
 
 import asyncio
+import logging
 from typing import Any
 from unittest.mock import call
 
@@ -12,6 +13,7 @@ import arrow
 import pytest
 from models_library.services_resources import BootMode
 from pytest_mock.plugin import MockerFixture
+from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
     LogType,
     _parse_line,
@@ -101,99 +103,64 @@ async def test_create_container_config(
     ids=lambda id: f"version{'>=1' if id is True else '0'}-logs",
 )
 @pytest.mark.parametrize(
-    "log_line, expected_log_type, expected_message",
+    "log_line, expected_log_type, expected_message, expected_log_level",
     [
-        (
-            "hello from the logs",
-            LogType.LOG,
-            "hello from the logs",
-        ),
+        ("hello from the logs", LogType.LOG, "hello from the logs", logging.INFO),
         (
             "[progress] this is some whatever progress without number",
             LogType.LOG,
             "[progress] this is some whatever progress without number",
+            logging.INFO,
         ),
-        ("[Progress] 34%", LogType.PROGRESS, "0.34"),
-        (
-            "[PROGRESS] .34",
-            LogType.PROGRESS,
-            "0.34",
-        ),
-        (
-            "[progress] 0.44",
-            LogType.PROGRESS,
-            "0.44",
-        ),
-        (
-            "[progress] 44 percent done",
-            LogType.PROGRESS,
-            "0.44",
-        ),
-        (
-            "[progress] 44/150",
-            LogType.PROGRESS,
-            f"{(44.0 / 150.0):.2f}",
-        ),
+        ("[Progress] 34%", LogType.PROGRESS, "0.34", logging.INFO),
+        ("[PROGRESS] .34", LogType.PROGRESS, "0.34", logging.INFO),
+        ("[progress] 0.44", LogType.PROGRESS, "0.44", logging.INFO),
+        ("[progress] 44 percent done", LogType.PROGRESS, "0.44", logging.INFO),
+        ("[progress] 44/150", LogType.PROGRESS, f"{(44.0 / 150.0):.2f}", logging.INFO),
         (
             "Progress: this is some progress",
             LogType.LOG,
             "Progress: this is some progress",
+            logging.INFO,
         ),
-        ("progress: 34%", LogType.PROGRESS, "0.34"),
         (
-            "PROGRESS: .34",
+            "progress: 34%",
             LogType.PROGRESS,
             "0.34",
+            logging.INFO,
         ),
-        (
-            "progress: 0.44",
-            LogType.PROGRESS,
-            "0.44",
-        ),
-        (
-            "progress: 44 percent done",
-            LogType.PROGRESS,
-            "0.44",
-        ),
-        (
-            "44 percent done",
-            LogType.PROGRESS,
-            "0.44",
-        ),
-        (
-            "progress: 44/150",
-            LogType.PROGRESS,
-            f"{(44.0/150.0):.2f}",
-        ),
-        (
-            "progress: 44/150...",
-            LogType.PROGRESS,
-            f"{(44.0/150.0):.2f}",
-        ),
+        ("PROGRESS: .34", LogType.PROGRESS, "0.34", logging.INFO),
+        ("progress: 0.44", LogType.PROGRESS, "0.44", logging.INFO),
+        ("progress: 44 percent done", LogType.PROGRESS, "0.44", logging.INFO),
+        ("44 percent done", LogType.PROGRESS, "0.44", logging.INFO),
+        ("progress: 44/150", LogType.PROGRESS, f"{(44.0/150.0):.2f}", logging.INFO),
+        ("progress: 44/150...", LogType.PROGRESS, f"{(44.0/150.0):.2f}", logging.INFO),
         (
             "any kind of message even with progress inside",
             LogType.LOG,
             "any kind of message even with progress inside",
+            logging.INFO,
         ),
-        (
-            "[PROGRESS]1.000000\n",
-            LogType.PROGRESS,
-            "1.00",
-        ),
-        (
-            "[PROGRESS] 1\n",
-            LogType.PROGRESS,
-            "1.00",
-        ),
-        (
-            "[PROGRESS] 0\n",
-            LogType.PROGRESS,
-            "0.00",
-        ),
+        ("[PROGRESS]1.000000\n", LogType.PROGRESS, "1.00", logging.INFO),
+        ("[PROGRESS] 1\n", LogType.PROGRESS, "1.00", logging.INFO),
+        ("[PROGRESS] 0\n", LogType.PROGRESS, "0.00", logging.INFO),
         (
             "[PROGRESS]: 1% [ 10 / 624 ] Time Update, estimated remaining time 1 seconds @ 26.43 MCells/s",
             LogType.PROGRESS,
             "0.01",
+            logging.INFO,
+        ),
+        (
+            "[warn]: this is some warning",
+            LogType.LOG,
+            "[warn]: this is some warning",
+            logging.WARNING,
+        ),
+        (
+            "err: this is some error",
+            LogType.LOG,
+            "err: this is some error",
+            logging.ERROR,
         ),
     ],
 )
@@ -201,7 +168,8 @@ async def test_parse_line(
     version1_logs: bool,
     log_line: str,
     expected_log_type: LogType,
-    expected_message: str,
+    expected_message: LogMessageStr,
+    expected_log_level: LogLevelInt,
 ):
     expected_time_stamp = arrow.utcnow().datetime
     if version1_logs:
@@ -209,11 +177,15 @@ async def test_parse_line(
         # version 0 does not contain a timestamp and is added at parsing time
         log_line = f"{expected_time_stamp.isoformat()} {log_line}"
 
-    received_log_type, received_time_stamp, received_message = await _parse_line(
-        log_line
-    )
+    (
+        received_log_type,
+        received_time_stamp,
+        received_message,
+        received_log_level,
+    ) = await _parse_line(log_line)
     assert received_log_type == expected_log_type
     assert received_message == expected_message
+    assert received_log_level == expected_log_level
     if version1_logs:
         assert received_time_stamp == expected_time_stamp
     else:

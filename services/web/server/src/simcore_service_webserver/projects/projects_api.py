@@ -44,6 +44,7 @@ from servicelib.common_headers import (
 from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.utils import fire_and_forget_task, logged_gather
+from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import ProjectType
 
 from .. import catalog_client
@@ -63,8 +64,8 @@ from ..socketio.messages import (
     send_messages,
 )
 from ..storage import api as storage_api
-from ..users_api import UserRole, get_user_name, get_user_role
-from ..users_exceptions import UserNotFoundError
+from ..users.api import get_user_name, get_user_role
+from ..users.exceptions import UserNotFoundError
 from . import _delete_utils, _nodes_utils
 from .project_lock import (
     UserNameDict,
