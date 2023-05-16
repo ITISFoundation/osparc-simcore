@@ -1,0 +1,59 @@
+paths:
+  /projects/{project_id}/shareable:
+    post:
+      tags:
+      - project
+      summary: Checks whether services in the study are accessible for provided user
+        or group
+      operationId: shareable_project
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      - required: true
+        schema:
+          title: Gid
+          type: integer
+        name: gid
+        in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.projects._rest_schemas.UserWithoutServiceAccess__'
+components:
+  schemas:
+    Envelope_list_simcore_service_webserver.projects._rest_schemas.UserWithoutServiceAccess__:
+      title: Envelope[list[simcore_service_webserver.projects._rest_schemas.UserWithoutServiceAccess]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/UserWithoutServiceAccess'
+        error:
+          title: Error
+    UserWithoutServiceAccess:
+      title: UserWithoutServiceAccess
+      required:
+      - user_id
+      - service_key
+      - service_version
+      type: object
+      properties:
+        user_id:
+          title: User Id
+          type: integer
+        service_key:
+          title: Service Key
+          type: string
+        service_version:
+          title: Service Version
+          type: string
