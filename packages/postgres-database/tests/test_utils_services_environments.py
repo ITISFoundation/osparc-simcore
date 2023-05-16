@@ -16,7 +16,6 @@ from sqlalchemy.sql import select
 
 
 async def test_services_environments_table(connection: SAConnection):
-
     vendor_service = "simcore/services/dynamic/vendor/some_service"
 
     await connection.execute(
@@ -51,14 +50,14 @@ async def test_services_environments_table(connection: SAConnection):
                     "OSPARC_ENVIRONMENT_VENDOR_LICENSE_FILE": "license.txt",
                     "OSPARC_ENVIRONMENT_VENDOR_LICENSE_FILE_PRODUCT1": "license-p1.txt",
                     "OSPARC_ENVIRONMENT_VENDOR_LICENSE_FILE_PRODUCT2": "license-p2.txt",
-                    "OSPARC_ENVIRONMENT_VENDOR_LIST": [1, 2, 3],
+                    "OSPARC_ENVIRONMENT_VENDOR_LIST": "[1, 2, 3]",
                 }
             ),
         )
     )
 
     substitutions = await connection.scalar(
-        select([services_vendor_environments.c.identifiers_map]).where(
+        select(services_vendor_environments.c.identifiers_map).where(
             services_vendor_environments.c.service_key == vendor_service
         )
     )
@@ -72,11 +71,11 @@ async def test_services_environments_table(connection: SAConnection):
         "OSPARC_ENVIRONMENT_VENDOR_LICENSE_FILE": "license.txt",
         "OSPARC_ENVIRONMENT_VENDOR_LICENSE_FILE_PRODUCT1": "license-p1.txt",
         "OSPARC_ENVIRONMENT_VENDOR_LICENSE_FILE_PRODUCT2": "license-p2.txt",
-        "OSPARC_ENVIRONMENT_VENDOR_LIST": [1, 2, 3],
+        "OSPARC_ENVIRONMENT_VENDOR_LIST": "[1, 2, 3]",
     }
 
     vendor_substitutions = await connection.execute(
-        select([services_vendor_environments.c.identifiers_map]).where(
+        select(services_vendor_environments.c.identifiers_map).where(
             services_vendor_environments.c.service_key.like("%/vendor/%")
         )
     )
