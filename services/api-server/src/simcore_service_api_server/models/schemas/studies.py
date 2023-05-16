@@ -1,10 +1,15 @@
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 from .solvers import SolverPort
 
 StudyID = ProjectID
+
+
+# OUTPUT
+class Study(BaseModel):  # StudyGet
+    uid: StudyID
 
 
 class StudyPort(SolverPort):
