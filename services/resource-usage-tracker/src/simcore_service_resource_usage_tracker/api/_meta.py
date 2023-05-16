@@ -14,8 +14,6 @@ logger = logging.getLogger(__name__)
 # API SCHEMA MODELS
 #
 
-INVALID_INVITATION_URL_MSG = "Invalid invitation link"
-
 
 class _Meta(BaseModel):
     name: str
@@ -32,7 +30,7 @@ router = APIRouter()
 @router.get("/meta", response_model=_Meta)
 async def get_service_metadata(
     url_for: Callable = Depends(get_reverse_url_mapper),
-):
+) -> _Meta:
     return _Meta(
         name=PROJECT_NAME,
         version=API_VERSION,

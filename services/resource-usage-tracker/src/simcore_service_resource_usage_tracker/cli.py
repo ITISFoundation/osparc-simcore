@@ -1,12 +1,9 @@
-import getpass
 import logging
-import random
 
 import rich
 import typer
 from pydantic import SecretStr
 from rich.console import Console
-from servicelib.utils_secrets import generate_password
 from settings_library.utils_cli import create_settings_command
 
 from . import web_server
@@ -39,7 +36,7 @@ def main(
         )
     ),
 ):
-    """o2s2parc resource usage"""
+    """o2s2parc resource usage tracker"""
     assert ctx  # nosec
     assert version or not version  # nosec
 
@@ -63,20 +60,12 @@ def generate_dotenv(ctx: typer.Context, auto_password: bool = False):
     """
     assert ctx  # nosec
 
-    username = getpass.getuser()
-    password: str = (
-        getpass.getpass(prompt="Password [Press Enter to auto-generate]: ")
-        if not auto_password
-        else None
-    ) or generate_password(length=32)
-
     settings = ApplicationSettings.create_from_envs(
-        RESOURCE_USAGE_PROMETHEUS_URL="http://127.0.0.1:8000",
-        RESOURCE_USAGE_PROMETHEUS_PORT=random.randint(1024, 65535),
+        RESOURCE_USAGE_TRACKER_PROMETHEUS_URL="http://127.0.0.1:8000",  # NOSONAR
     )
 
     for name, value in settings.dict().items():
-        if name.startswith("RESOURCE_USAGE_"):
+        if name.startswith("RESOURCE_USAGE_TRACKER_"):
             value = (
                 f"{value.get_secret_value()}" if isinstance(value, SecretStr) else value
             )
@@ -90,7 +79,7 @@ app.command()(create_settings_command(settings_cls=ApplicationSettings, logger=l
 def serve(
     ctx: typer.Context,
     reload: bool = False,
-):
+) -> None:
     """Starts server with http API"""
     assert ctx  # nosec
     web_server.start(log_level="info", reload=reload)

@@ -14,5 +14,5 @@ router = APIRouter()
 
 
 @router.get("/", response_class=PlainTextResponse)
-async def healthcheck():
+async def healthcheck() -> str:
     return f"{__name__}@{datetime.utcnow().isoformat()}"

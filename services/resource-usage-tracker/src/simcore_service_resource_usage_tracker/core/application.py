@@ -14,7 +14,6 @@ from .settings import ApplicationSettings
 
 
 def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
-
     app = FastAPI(
         title=f"{PROJECT_NAME} web API",
         description=SUMMARY,
@@ -26,7 +25,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     override_fastapi_openapi_method(app)
 
     # STATE
-    app.state.settings = settings or ApplicationSettings()
+    app.state.settings = settings or ApplicationSettings.create_from_envs()
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
     # PLUGINS SETUP

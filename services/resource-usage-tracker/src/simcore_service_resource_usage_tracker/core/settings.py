@@ -3,7 +3,7 @@ from typing import cast
 
 from pydantic import Field, HttpUrl, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
-from settings_library.basic_types import BuildTargetEnum, LogLevel, PortInt, VersionTag
+from settings_library.basic_types import BuildTargetEnum, LogLevel, VersionTag
 from settings_library.utils_logging import MixinLoggingSettings
 
 from .._meta import API_VERSION, API_VTAG, PROJECT_NAME
@@ -37,21 +37,21 @@ class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # RUNTIME  -----------------------------------------------------------
 
-    RESOURCE_USAGE_LOGLEVEL: LogLevel = Field(
+    RESOURCE_USAGE_TRACKER_LOGLEVEL: LogLevel = Field(
         default=LogLevel.INFO, env=["INVITATIONS_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
     )
-    RESOURCE_USAGE_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
+    RESOURCE_USAGE_TRACKER_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         False,
         env=[
-            "RESOURCE_USAGE_LOG_FORMAT_LOCAL_DEV_ENABLED",
+            "RESOURCE_USAGE_TRACKER_LOG_FORMAT_LOCAL_DEV_ENABLED",
             "LOG_FORMAT_LOCAL_DEV_ENABLED",
         ],
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
 
     @cached_property
-    def LOG_LEVEL(self):
-        return self.RESOURCE_USAGE_LOGLEVEL
+    def LOG_LEVEL(self) -> LogLevel:
+        return self.RESOURCE_USAGE_TRACKER_LOGLEVEL
 
     @validator("RESOURCE_USAGE_LOGLEVEL")
     @classmethod
@@ -67,9 +67,9 @@ class MinimalApplicationSettings(_BaseApplicationSettings):
     are not related to the web server.
     """
 
-    RESOURCE_USAGE_PROMETHEUS_URL: HttpUrl = Field(..., description="Prometheus URL")
-
-    RESOURCE_USAGE_PROMETHEUS_PORT: PortInt = Field(..., description="Prometheus Port")
+    RESOURCE_USAGE_TRACKER_PROMETHEUS_URL: HttpUrl = Field(
+        ..., description="Prometheus URL"
+    )
 
 
 class ApplicationSettings(MinimalApplicationSettings):
@@ -78,21 +78,21 @@ class ApplicationSettings(MinimalApplicationSettings):
     These settings includes extra configuration for the http-API
     """
 
-    RESOURCE_USAGE_EVALUATION_INTERVAL_SEC: int = Field(
+    RESOURCE_USAGE_TRACKER_EVALUATION_INTERVAL_SEC: int = Field(
         300, description="Interval in seconds to evaluate the resource usage"
     )
-    RESOURCE_USAGE_GRANULARITY_SEC: int = Field(
+    RESOURCE_USAGE_TRACKER_GRANULARITY_SEC: int = Field(
         60,
         description="Granularity to fetch data from prometheus. This should be larger than prometheus scraping interval.",
     )
-    RESOURCE_USAGE_CONTAINER_LABEL_USER_ID_REGEX: str = Field(
+    RESOURCE_USAGE_TRACKER_CONTAINER_LABEL_USER_ID_REGEX: str = Field(
         ".*",
         # regex=r"^(([_a-zA-Z0-9:.-]+)/)?(dynamic-sidecar):([_a-zA-Z0-9.-]+)$",
         description="Regex for the prometheus timeseries label `CONTAINER_LABEL_USER_ID`.",
     )
-    RESOURCE_USAGE_PROMETHEUS_USERNAME: str | None = Field(
+    RESOURCE_USAGE_TRACKER_PROMETHEUS_USERNAME: str | None = Field(
         None, description="Username to access the prometheus server"
     )
-    RESOURCE_USAGE_PROMETHEUS_PASSWORD: str | None = Field(
+    RESOURCE_USAGE_TRACKER_PROMETHEUS_PASSWORD: str | None = Field(
         None, description="Password to access the prometheus server"
     )

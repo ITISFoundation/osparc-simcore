@@ -1,5 +1,3 @@
-from typing import Optional
-
 from fastapi import FastAPI
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 
@@ -15,8 +13,7 @@ from ..api.routes import setup_api_routes
 from .settings import ApplicationSettings
 
 
-def create_app(settings: Optional[ApplicationSettings] = None) -> FastAPI:
-
+def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     app = FastAPI(
         title=f"{PROJECT_NAME} web API",
         description=SUMMARY,
