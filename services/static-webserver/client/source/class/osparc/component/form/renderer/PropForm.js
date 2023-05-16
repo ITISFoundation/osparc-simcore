@@ -105,7 +105,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         return emptyDataPorts;
       }
       const portKeys = this.__getPortKeys();
-      for (let i=minVisibleInputs; i<portKeys.length; i++) {
+      for (let i=minVisibleInputs-1; i<portKeys.length; i++) {
         const portId = portKeys[i];
         const ctrl = this._form.getControl(portId);
         if (ctrl && ctrl.type.includes("data:") && !("link" in ctrl)) {
