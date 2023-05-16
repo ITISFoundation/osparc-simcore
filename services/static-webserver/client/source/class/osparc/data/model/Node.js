@@ -307,6 +307,10 @@ qx.Class.define("osparc.data.model.Node", {
       return bootModeSB;
     },
 
+    getMinVisibleInputs: function(metaData) {
+      return ("minVisibleInputs" in metaData) ? metaData["minVisibleInputs"] : null;
+    },
+
     getOutput: function(outputs, outputKey) {
       if (outputKey in outputs && "value" in outputs[outputKey]) {
         return outputs[outputKey]["value"];
@@ -379,6 +383,10 @@ qx.Class.define("osparc.data.model.Node", {
 
     hasBootModes: function() {
       return osparc.data.model.Node.hasBootModes(this.getMetaData());
+    },
+
+    getMinVisibleInputs: function() {
+      return osparc.data.model.Node.getMinVisibleInputs(this.getMetaData());
     },
 
     __applyNewMetaData: function() {
