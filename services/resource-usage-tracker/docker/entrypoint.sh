@@ -68,6 +68,22 @@ if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
   pip install --no-cache-dir ptvsd
 fi
 
+# Appends docker group if socket is mounted
+DOCKER_MOUNT=/var/run/docker.sock
+if stat $DOCKER_MOUNT >/dev/null 2>&1; then
+  echo "$INFO detected docker socket is mounted, adding user to group..."
+  GROUPID=$(stat --format=%g $DOCKER_MOUNT)
+  GROUPNAME=scdocker
+
+  if ! addgroup --gid "$GROUPID" $GROUPNAME >/dev/null 2>&1; then
+    echo "$WARNING docker group with $GROUPID already exists, getting group name..."
+    # if group already exists in container, then reuse name
+    GROUPNAME=$(getent group "${GROUPID}" | cut --delimiter=: --fields=1)
+    echo "$WARNING docker group with $GROUPID has name $GROUPNAME"
+  fi
+  adduser "$SC_USER_NAME" "$GROUPNAME"
+fi
+
 echo "$INFO Starting $* ..."
 echo "  $SC_USER_NAME rights    : $(id "$SC_USER_NAME")"
 echo "  local dir : $(ls -al)"

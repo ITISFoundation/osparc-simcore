@@ -1,4 +1,4 @@
-# Shortcut to install 'services/invitations' for production
+# Shortcut to install 'services/resource-usage-tracker' for production
 #
 # - As ci.txt but w/o tests
 #
@@ -10,8 +10,8 @@
 --requirement _base.txt
 
 # installs this repo's packages
+../../packages/models-library
 ../../packages/service-library[fastapi]
 ../../packages/settings-library
-../../packages/models-library
 # installs current package
 .
