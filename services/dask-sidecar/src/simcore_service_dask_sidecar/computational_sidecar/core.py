@@ -28,7 +28,7 @@ from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from settings_library.s3 import S3Settings
 from yarl import URL
 
-from ..dask_utils import TaskPublisher, create_dask_worker_logger, publish_event
+from ..dask_utils import TaskPublisher, publish_event
 from ..file_utils import pull_file_from_remote, push_file_to_remote
 from ..settings import Settings
 from .docker_utils import (
@@ -43,7 +43,7 @@ from .errors import ServiceBadFormattedOutputError
 from .models import LEGACY_INTEGRATION_VERSION
 from .task_shared_volume import TaskSharedVolumes
 
-logger = create_dask_worker_logger(__name__)
+logger = logging.getLogger(__name__)
 CONTAINER_WAIT_TIME_SECS = 2
 
 

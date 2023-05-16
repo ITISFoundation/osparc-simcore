@@ -256,11 +256,26 @@ LogMessageStr: TypeAlias = str
 def guess_message_log_level(message: str) -> LogLevelInt:
     lower_case_message = message.lower().strip()
     if lower_case_message.startswith(
-        ("error:", "err:", "error ", "err ", "[error]", "[err]")
+        (
+            "error",
+            "[error]",
+            "err",
+            "[err]",
+            "exception",
+            "[exception]",
+            "exc:",
+            "exc ",
+            "[exc]",
+        )
     ):
         return logging.ERROR
     if lower_case_message.startswith(
-        ("warning:", "warn:", "warning ", "warn ", "[warning]", "[warn]")
+        (
+            "warning",
+            "[warning]",
+            "warn",
+            "[warn]",
+        )
     ):
         return logging.WARNING
     return logging.INFO
