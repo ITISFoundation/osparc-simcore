@@ -7,15 +7,7 @@ import re
 import socket
 from pathlib import Path
 from pprint import pformat
-from typing import (
-    Any,
-    AsyncGenerator,
-    AsyncIterator,
-    Awaitable,
-    Callable,
-    Coroutine,
-    cast,
-)
+from typing import Any, AsyncGenerator, AsyncIterator, Awaitable, Callable, cast
 
 import aiofiles
 import aiofiles.tempfile
@@ -39,15 +31,10 @@ from servicelib.logging_utils import (
 )
 from settings_library.s3 import S3Settings
 
-from ..dask_utils import LogType, create_dask_worker_logger, publish_task_logs
+from ..dask_utils import LogType, publish_task_logs
 from ..file_utils import push_file_to_remote
 from ..settings import Settings
-from .constants import (
-    DOCKER_LOG_REGEXP,
-    LEGACY_SERVICE_LOG_FILE_NAME,
-    PARSE_LOG_INTERVAL_S,
-    PROGRESS_REGEXP,
-)
+from .constants import DOCKER_LOG_REGEXP, LEGACY_SERVICE_LOG_FILE_NAME, PROGRESS_REGEXP
 from .models import (
     LEGACY_INTEGRATION_VERSION,
     ContainerHostConfig,
@@ -55,7 +42,7 @@ from .models import (
 )
 from .task_shared_volume import TaskSharedVolumes
 
-logger = create_dask_worker_logger(__name__)
+logger = logging.getLogger(__name__)
 LogPublishingCB = Callable[[LogMessageStr, LogLevelInt], Awaitable[None]]
 
 
@@ -248,7 +235,6 @@ async def _parse_container_log_file(
                         log_level=log_level,
                     )
 
-                await asyncio.sleep(PARSE_LOG_INTERVAL_S)
             # finish reading the logs if possible
             async for line in file_pointer:
                 log_type, _, message, log_level = await _parse_line(line)
@@ -281,7 +267,6 @@ async def _parse_container_docker_logs(
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
 ) -> None:
-    latest_log_timestamp = arrow.utcnow().datetime
     with log_context(
         logger, logging.DEBUG, "started monitoring of >=1.0 service - using docker logs"
     ):
@@ -300,39 +285,7 @@ async def _parse_container_docker_logs(
                     await log_fp.write(log_line.encode("utf-8"))
                     (
                         log_type,
-                        latest_log_timestamp,
-                        message,
-                        log_level,
-                    ) = await _parse_line(log_line)
-                    await _publish_container_logs(
-                        service_key=service_key,
-                        service_version=service_version,
-                        container=container,
-                        container_name=container_name,
-                        progress_pub=progress_pub,
-                        logs_pub=logs_pub,
-                        log_type=log_type,
-                        message=message,
-                        log_level=log_level,
-                    )
-
-                # NOTE: The log stream may be interrupted before all the logs are gathered!
-                # therefore it is needed to get the remaining logs
-                missing_logs = await cast(
-                    Coroutine,
-                    container.log(
-                        stdout=True,
-                        stderr=True,
-                        timestamps=True,
-                        follow=False,
-                        since=latest_log_timestamp.strftime("%s"),
-                    ),
-                )
-                for log_line in missing_logs:
-                    await log_fp.write(log_line.encode("utf-8"))
-                    (
-                        log_type,
-                        latest_log_timestamp,
+                        _latest_log_timestamp,
                         message,
                         log_level,
                     ) = await _parse_line(log_line)
@@ -425,29 +378,32 @@ async def managed_monitor_container_log_task(
             # NOTE: ensure the file is present before the container is started (necessary for old services)
             log_file = task_volumes.logs_folder / LEGACY_SERVICE_LOG_FILE_NAME
             log_file.touch()
-        monitoring_task = asyncio.create_task(
-            monitor_container_logs(
-                container,
-                service_key,
-                service_version,
-                progress_pub,
-                logs_pub,
-                integration_version,
-                task_volumes,
-                log_file_url,
-                log_publishing_cb,
-                s3_settings,
-            ),
-            name=f"{service_key}:{service_version}_{container.id}_monitoring_task",
+        monitoring_task = asyncio.shield(
+            asyncio.create_task(
+                monitor_container_logs(
+                    container,
+                    service_key,
+                    service_version,
+                    progress_pub,
+                    logs_pub,
+                    integration_version,
+                    task_volumes,
+                    log_file_url,
+                    log_publishing_cb,
+                    s3_settings,
+                ),
+                name=f"{service_key}:{service_version}_{container.id}_monitoring_task",
+            )
         )
         yield monitoring_task
         # wait for task to complete, so we get the complete log
         await monitoring_task
     finally:
         if monitoring_task:
-            monitoring_task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await monitoring_task
+            with log_context(logger, logging.DEBUG, "cancel logs monitoring task"):
+                monitoring_task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await monitoring_task
 
 
 async def pull_image(

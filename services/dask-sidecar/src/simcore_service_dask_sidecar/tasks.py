@@ -18,16 +18,11 @@ from servicelib.logging_utils import config_all_loggers
 from settings_library.s3 import S3Settings
 
 from .computational_sidecar.core import ComputationalSidecar
-from .dask_utils import (
-    TaskPublisher,
-    create_dask_worker_logger,
-    get_current_task_resources,
-    monitor_task_abortion,
-)
+from .dask_utils import TaskPublisher, get_current_task_resources, monitor_task_abortion
 from .meta import print_banner
 from .settings import Settings
 
-log = create_dask_worker_logger(__name__)
+log = logging.getLogger(__name__)
 
 
 class GracefulKiller:
