@@ -53,7 +53,10 @@ qx.Class.define("osparc.product.landingPage.Chat", {
       "If something is important enough, even if the odds are stacked against you, you should still do it.",
       "Hold the vision, trust the process.",
       "Don't be afraid to give up the good to go for the great.",
-      "People who wonder if the glass is half empty or full miss the point. The glass is refillable."
+      "People who wonder if the glass is half empty or full miss the point. The glass is refillable.",
+      "To kiss a miss is strategy and miss a kiss is tragedy.",
+      "2 rules to success in life. 1. Don't tell people everything you know.",
+      "This thing, is thing, a thing, good thing, way thing, to thing, keep thing, someone thing, busy thing, for thing, 20 thing, seconds thing! … Now read without the word thing."
     ]
   },
 

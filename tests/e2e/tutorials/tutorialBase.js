@@ -231,6 +231,7 @@ class TutorialBase {
     }
     catch (err) {
       console.error(this.__templateName, "could not be started", err);
+      throw (err);
     }
     return resp;
   }
@@ -777,6 +778,34 @@ class TutorialBase {
       await this.waitFor(checkFrequency, `iframe not rendered yet: ${i/1000}s`);
     }
     return false;
+  }
+
+  async testSARValidation(sarIframe) {
+    // SAR Validation service testing
+
+    this.__responsesQueue.addResponseListener("training-set-generation/generate");
+    this.__responsesQueue.addResponseListener("training-set-generation/data");
+    this.__responsesQueue.addResponseListener("training-set-generation/distribution", false);
+    try {
+      await this.waitAndClick("createTrainingSetBtn", sarIframe);
+      await this.__responsesQueue.waitUntilResponse("training-set-generation/generate");
+      await this.__responsesQueue.waitUntilResponse("training-set-generation/data");
+      await this.__responsesQueue.waitUntilResponse("training-set-generation/distribution");
+    }
+    catch (err) {
+      console.error(this.__templateName, "training-set can't be generated", err);
+      throw (err);
+    }
+
+    this.__responsesQueue.addResponseListener("training-set-generation/xport", false);
+    try {
+      await this.waitAndClick("exportTrainingSetBtn", sarIframe);
+      await this.__responsesQueue.waitUntilResponse("training-set-generation/xport");
+    }
+    catch (err) {
+      console.error(this.__templateName, "training-set can't be exported", err);
+      throw (err);
+    }
   }
 
   async takeScreenshot(screenshotTitle) {

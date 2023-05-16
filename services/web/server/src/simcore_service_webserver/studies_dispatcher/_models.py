@@ -1,15 +1,6 @@
-import logging
-import uuid
-
 from aiopg.sa.result import RowProxy
 from models_library.services import ServiceKey, ServiceVersion
-from pydantic import BaseModel, Field, HttpUrl
-
-MEGABYTES = 1024 * 1024
-_BASE_UUID = uuid.UUID("ca2144da-eabb-4daf-a1df-a3682050e25f")
-
-
-logger = logging.getLogger(__name__)
+from pydantic import BaseModel, Field, HttpUrl, PositiveInt, parse_obj_as
 
 
 class ServiceInfo(BaseModel):
@@ -18,7 +9,9 @@ class ServiceInfo(BaseModel):
 
     label: str = Field(..., description="Display name")
 
-    thumbnail: HttpUrl = Field(default="https://via.placeholder.com/170x120.png")
+    thumbnail: HttpUrl = Field(
+        default=parse_obj_as(HttpUrl, "https://via.placeholder.com/170x120.png")
+    )
 
     is_guest_allowed: bool = True
 
@@ -58,3 +51,23 @@ class ViewerInfo(ServiceInfo):
             input_port_key=row["service_input_port"],
             is_guest_allowed=row["is_guest_allowed"],
         )
+
+
+class ServiceParams(BaseModel):
+    viewer_key: ServiceKey
+    viewer_version: ServiceVersion
+
+    @property
+    def footprint(self) -> str:
+        return f"{self.viewer_key}:{self.viewer_version}"
+
+
+class FileParams(BaseModel):
+    file_type: str
+    file_name: str = "unknown"
+    file_size: PositiveInt
+    download_link: HttpUrl
+
+    @property
+    def footprint(self) -> str:
+        return f"{self.file_name}.{self.file_type}:{self.file_size}"

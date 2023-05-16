@@ -12,7 +12,7 @@ from aiohttp.test_utils import make_mocked_request
 from aiohttp_jinja2 import render_string
 from faker import Faker
 from simcore_service_webserver._resources import resources
-from simcore_service_webserver.email import setup_email
+from simcore_service_webserver.email.plugin import setup_email
 from simcore_service_webserver.login.utils_email import themed
 
 

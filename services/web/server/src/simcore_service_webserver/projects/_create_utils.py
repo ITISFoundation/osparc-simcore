@@ -15,14 +15,15 @@ from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
-from .. import director_v2_api
 from ..application_settings import get_settings
-from ..storage_api import (
+from ..director_v2 import api
+from ..storage.api import (
     copy_data_folders_from_project,
     get_project_total_size_simcore_s3,
 )
-from ..users_api import get_user_name
+from ..users.api import get_user_name
 from . import projects_api
+from ._permalink import update_or_pop_permalink_in_project
 from ._rest_schemas import ProjectGet
 from .project_models import ProjectDict
 from .projects_db import ProjectDBAPI
@@ -151,7 +152,7 @@ async def _compose_project_data(
 
 async def create_project(
     task_progress: TaskProgress,
-    app: web.Application,
+    request: web.Request,
     new_project_was_hidden_before_data_was_copied: bool,
     from_study: ProjectID | None,
     as_template: bool,
@@ -181,8 +182,9 @@ async def create_project(
         web.HTTPUnauthorized:
 
     """
+    assert request.app  # nosec
 
-    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
+    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
 
     new_project = {}
     copy_file_coro = None
@@ -191,7 +193,7 @@ async def create_project(
         if from_study:
             # 1. prepare copy
             new_project, copy_file_coro = await _prepare_project_copy(
-                app,
+                request.app,
                 user_id=user_id,
                 src_project_uuid=from_study,
                 as_template=as_template,
@@ -224,13 +226,13 @@ async def create_project(
             )
 
         # update the network information in director-v2
-        await director_v2_api.update_dynamic_service_networks_in_project(
-            app, ProjectID(new_project["uuid"])
+        await api.update_dynamic_service_networks_in_project(
+            request.app, ProjectID(new_project["uuid"])
         )
 
         # This is a new project and every new graph needs to be reflected in the pipeline tables
-        await director_v2_api.create_or_update_pipeline(
-            app, user_id, new_project["uuid"], product_name
+        await api.create_or_update_pipeline(
+            request.app, user_id, new_project["uuid"], product_name
         )
 
         # Appends state
@@ -238,8 +240,11 @@ async def create_project(
             user_id=user_id,
             project=new_project,
             is_template=as_template,
-            app=app,
+            app=request.app,
         )
+
+        # Adds permalink
+        await update_or_pop_permalink_in_project(request, new_project)
 
         # Ensures is like ProjectGet
         data = ProjectGet.parse_obj(new_project).data(exclude_unset=True)
@@ -265,7 +270,7 @@ async def create_project(
         )
         if project_uuid := new_project.get("uuid"):
             await projects_api.submit_delete_project_task(
-                app=app,
+                app=request.app,
                 project_uuid=project_uuid,
                 user_id=user_id,
                 simcore_user_agent=simcore_user_agent,

@@ -18,9 +18,9 @@ from ...models.domain.projects import NewProjectIn, Project
 from ...models.schemas.files import File
 from ...models.schemas.jobs import ArgumentType, Job, JobInputs, JobOutputs, JobStatus
 from ...models.schemas.solvers import Solver, SolverKeyId
-from ...modules.catalog import CatalogApi
-from ...modules.director_v2 import DirectorV2Api, DownloadLink, NodeName
-from ...modules.storage import StorageApi, to_file_api_model
+from ...plugins.catalog import CatalogApi
+from ...plugins.director_v2 import DirectorV2Api, DownloadLink, NodeName
+from ...plugins.storage import StorageApi, to_file_api_model
 from ...utils.solver_job_models_converters import (
     create_job_from_project,
     create_jobstatus_from_task,
@@ -33,7 +33,7 @@ from ..dependencies.database import Engine, get_db_engine
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -73,7 +73,7 @@ async def list_jobs(
         version=version,
         product_name=product_name,
     )
-    logger.debug("Listing Jobs in Solver '%s'", solver.name)
+    _logger.debug("Listing Jobs in Solver '%s'", solver.name)
 
     projects: list[Project] = await webserver_api.list_projects(solver.name)
     jobs: deque[Job] = deque()
@@ -116,7 +116,7 @@ async def create_job(
 
     # creates NEW job as prototype
     pre_job = Job.create_solver_job(solver=solver, inputs=inputs)
-    logger.debug("Creating Job '%s'", pre_job.name)
+    _logger.debug("Creating Job '%s'", pre_job.name)
 
     # -> catalog
     # TODO: validate inputs against solver input schema
@@ -154,7 +154,7 @@ async def get_job(
     """Gets job of a given solver"""
 
     job_name = _compose_job_resource_name(solver_key, version, job_id)
-    logger.debug("Getting Job '%s'", job_name)
+    _logger.debug("Getting Job '%s'", job_name)
 
     project: Project = await webserver_api.get_project(project_id=job_id)
 
@@ -182,7 +182,7 @@ async def start_job(
     """
 
     job_name = _compose_job_resource_name(solver_key, version, job_id)
-    logger.debug("Start Job '%s'", job_name)
+    _logger.debug("Start Job '%s'", job_name)
 
     task = await director2_api.start_computation(
         project_id=job_id,
@@ -205,7 +205,7 @@ async def stop_job(
     director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
 ):
     job_name = _compose_job_resource_name(solver_key, version, job_id)
-    logger.debug("Stopping Job '%s'", job_name)
+    _logger.debug("Stopping Job '%s'", job_name)
 
     await director2_api.stop_computation(job_id, user_id)
 
@@ -226,7 +226,7 @@ async def inspect_job(
     director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
 ):
     job_name = _compose_job_resource_name(solver_key, version, job_id)
-    logger.debug("Inspecting Job '%s'", job_name)
+    _logger.debug("Inspecting Job '%s'", job_name)
 
     task = await director2_api.get_computation(job_id, user_id)
     job_status: JobStatus = create_jobstatus_from_task(task)
@@ -247,7 +247,7 @@ async def get_job_outputs(
     storage_client: StorageApi = Depends(get_api_client(StorageApi)),
 ):
     job_name = _compose_job_resource_name(solver_key, version, job_id)
-    logger.debug("Get Job '%s' outputs", job_name)
+    _logger.debug("Get Job '%s' outputs", job_name)
 
     project: Project = await webserver_api.get_project(project_id=job_id)
     node_ids = list(project.workbench.keys())
@@ -317,9 +317,21 @@ async def get_job_output_logfile(
 
     New in *version 0.4.0*
     """
+    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    _logger.debug("Get Job '%s' outputs logfile", job_name)
+
+    project_id = job_id
 
     logs_urls: dict[NodeName, DownloadLink] = await director2_api.get_computation_logs(
-        user_id=user_id, project_id=job_id
+        user_id=user_id, project_id=project_id
+    )
+
+    _logger.debug(
+        "Found %d logfiles for %s %s: %s",
+        len(logs_urls),
+        f"{project_id=}",
+        f"{user_id=}",
+        list(logs_urls.keys()),
     )
 
     # if more than one node? should rezip all of them??
@@ -328,13 +340,14 @@ async def get_job_output_logfile(
     ), "Current version only supports one node per solver"
 
     for presigned_download_link in logs_urls.values():
-        logger.info(
+        _logger.info(
             "Redirecting '%s' to %s ...",
             f"{solver_key}/releases/{version}/jobs/{job_id}/outputs/logfile",
             presigned_download_link,
         )
         return RedirectResponse(presigned_download_link)
 
+    # No log found !
     raise HTTPException(
         status.HTTP_404_NOT_FOUND,
         detail=f"Log for {solver_key}/releases/{version}/jobs/{job_id} not found."

@@ -1,7 +1,8 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-# pylint: disable=too-many-arguments
 
 
 import asyncio
@@ -30,7 +31,10 @@ from servicelib.aiohttp.rest_responses import unwrap_envelope
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.projects.projects_api import submit_delete_project_task
-from simcore_service_webserver.users_api import delete_user, get_user_role
+from simcore_service_webserver.users.api import (
+    delete_user_without_projects,
+    get_user_role,
+)
 
 
 async def _get_user_projects(client) -> list[ProjectDict]:
@@ -99,7 +103,7 @@ async def unpublished_project(
     fake_project: ProjectDict,
     tests_data_dir: Path,
     osparc_product_name: str,
-) -> ProjectDict:
+) -> AsyncIterator[ProjectDict]:
     """An unpublished template"""
 
     project_data = deepcopy(fake_project)
@@ -376,7 +380,7 @@ async def test_access_cookie_of_expired_user(
         )
         await delete_task
 
-        await delete_user(app, uid)
+        await delete_user_without_projects(app, uid)
         return uid
 
     user_id = await enforce_garbage_collect_guest(uid=data["id"])

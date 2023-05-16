@@ -51,6 +51,7 @@ from simcore_service_director_v2.models.schemas.dynamic_services import (
     ServiceState,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.volume_remover import (
+    DIND_VERSION,
     DockerVersion,
 )
 from yarl import URL
@@ -96,6 +97,11 @@ def request_scheme() -> str:
 
 
 @pytest.fixture
+def can_save() -> bool:
+    return True
+
+
+@pytest.fixture
 def request_simcore_user_agent() -> str:
     return "python/test"
 
@@ -108,6 +114,7 @@ def scheduler_data_from_http_request(
     request_dns: str,
     request_scheme: str,
     request_simcore_user_agent: str,
+    can_save: bool,
     run_id: RunID,
 ) -> SchedulerData:
     return SchedulerData.from_http_request(
@@ -117,6 +124,7 @@ def scheduler_data_from_http_request(
         request_dns=request_dns,
         request_scheme=request_scheme,
         request_simcore_user_agent=request_simcore_user_agent,
+        can_save=can_save,
         run_id=run_id,
     )
 
@@ -422,7 +430,7 @@ def caplog_debug_level(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]
 def mock_docker_api(mocker: MockerFixture) -> None:
     module_base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler"
     mocker.patch(
-        f"{module_base}._core._scheduler.get_dynamic_sidecars_to_observe",
+        f"{module_base}._core._scheduler_utils.get_dynamic_sidecars_to_observe",
         autospec=True,
         return_value=[],
     )
@@ -432,7 +440,7 @@ def mock_docker_api(mocker: MockerFixture) -> None:
         return_value=True,
     )
     mocker.patch(
-        f"{module_base}._core._scheduler.get_dynamic_sidecar_state",
+        f"{module_base}._core._scheduler_utils.get_dynamic_sidecar_state",
         return_value=(ServiceState.PENDING, ""),
     )
 
@@ -444,10 +452,5 @@ async def async_docker_client() -> AsyncIterable[aiodocker.Docker]:
 
 
 @pytest.fixture
-async def docker_version(async_docker_client: aiodocker.Docker) -> DockerVersion:
-    version_request = (
-        await async_docker_client._query_json(  # pylint: disable=protected-access
-            "version", versioned_api=False
-        )
-    )
-    return parse_obj_as(DockerVersion, version_request["Version"])
+async def docker_version() -> DockerVersion:
+    return parse_obj_as(DockerVersion, DIND_VERSION)

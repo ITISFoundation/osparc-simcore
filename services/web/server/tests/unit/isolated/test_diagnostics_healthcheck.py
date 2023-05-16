@@ -16,15 +16,15 @@ from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver._constants import APP_SETTINGS_KEY
 from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.diagnostics import setup_diagnostics
-from simcore_service_webserver.diagnostics_healthcheck import (
+from simcore_service_webserver.diagnostics._healthcheck import (
     HealthCheckFailed,
     assert_healthy_app,
     kLATENCY_PROBE,
 )
-from simcore_service_webserver.diagnostics_settings import DiagnosticsSettings
+from simcore_service_webserver.diagnostics.plugin import setup_diagnostics
+from simcore_service_webserver.diagnostics.settings import DiagnosticsSettings
 from simcore_service_webserver.rest import setup_rest
-from simcore_service_webserver.security import setup_security
+from simcore_service_webserver.security.plugin import setup_security
 from tenacity import before_log, retry, stop_after_attempt, wait_fixed
 from yarl import URL
 
@@ -89,7 +89,6 @@ def client(
     api_version_prefix,
     mock_environment: None,
 ):
-
     routes = web.RouteTableDef()
 
     @routes.get("/error")

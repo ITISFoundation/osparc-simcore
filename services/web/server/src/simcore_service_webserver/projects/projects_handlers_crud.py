@@ -5,7 +5,6 @@ Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
 """
 import json
 import logging
-from typing import Any
 
 from aiohttp import web
 from jsonschema import ValidationError as JsonSchemaValidationError
@@ -29,18 +28,18 @@ from servicelib.common_headers import (
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
-from servicelib.utils import logged_gather
-from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
-from .. import catalog, director_v2_api
+from .. import catalog
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import api_version_prefix as VTAG
+from ..director_v2 import api
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
-from ..security_api import check_permission
-from ..security_decorators import permission_required
-from ..users_api import get_user_name
-from . import _create_utils, projects_api
+from ..security.api import check_permission
+from ..security.decorators import permission_required
+from ..users.api import get_user_name
+from . import _create_utils, _read_utils, projects_api
+from ._permalink import update_or_pop_permalink_in_project
 from ._rest_schemas import (
     EmptyModel,
     ProjectCopyOverride,
@@ -149,11 +148,11 @@ async def create_project(request: web.Request):
 
     return await start_long_running_task(
         request,
-        task=_create_utils.create_project,
+        _create_utils.create_project,
         fire_and_forget=True,
         task_context=jsonable_encoder(req_ctx),
         # arguments
-        app=request.app,
+        request=request,
         new_project_was_hidden_before_data_was_copied=query_params.hidden,
         from_study=query_params.from_study,
         as_template=query_params.as_template,
@@ -201,51 +200,24 @@ async def list_projects(request: web.Request):
         web.HTTPUnprocessableEntity: (422) if validation of request parameters fail
 
     """
-
-    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
     req_ctx = RequestContext.parse_obj(request)
     query_params = parse_request_query_parameters_as(_ProjectListParams, request)
 
-    async def set_all_project_states(
-        projects: list[dict[str, Any]], project_types: list[ProjectTypeDB]
-    ):
-        await logged_gather(
-            *[
-                projects_api.add_project_states_for_user(
-                    user_id=req_ctx.user_id,
-                    project=prj,
-                    is_template=prj_type == ProjectTypeDB.TEMPLATE,
-                    app=request.app,
-                )
-                for prj, prj_type in zip(projects, project_types)
-            ],
-            reraise=True,
-            max_concurrency=100,
-        )
-
-    user_available_services: list[
-        dict
-    ] = await catalog.get_services_for_user_in_product(
-        request.app, req_ctx.user_id, req_ctx.product_name, only_key_versions=True
-    )
-
-    projects, project_types, total_number_projects = await db.list_projects(
+    projects, total_number_of_projects = await _read_utils.list_projects(
+        request,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
-        filter_by_project_type=ProjectTypeAPI.to_project_type_db(
-            query_params.project_type
-        ),
-        filter_by_services=user_available_services,
-        offset=query_params.offset,
+        project_type=query_params.project_type,
+        show_hidden=query_params.show_hidden,
         limit=query_params.limit,
-        include_hidden=query_params.show_hidden,
+        offset=query_params.offset,
     )
-    await set_all_project_states(projects, project_types)
+
     page = Page[ProjectDict].parse_obj(
         paginate_data(
             chunk=projects,
             request_url=request.url,
-            total=total_number_projects,
+            total=total_number_of_projects,
             limit=query_params.limit,
             offset=query_params.offset,
         )
@@ -295,6 +267,10 @@ async def get_active_project(request: web.Request) -> web.Response:
                 user_id=req_ctx.user_id,
                 include_state=True,
             )
+
+            # updates project's permalink field
+            await update_or_pop_permalink_in_project(request, project)
+
             data = ProjectGet.parse_obj(project).data(exclude_unset=True)
 
         return web.json_response({"data": data}, dumps=json_dumps)
@@ -349,6 +325,9 @@ async def get_project(request: web.Request):
 
         if new_uuid := request.get(RQ_REQUESTED_REPO_PROJECT_UUID_KEY):
             project["uuid"] = new_uuid
+
+        # Adds permalink
+        await update_or_pop_permalink_in_project(request, project)
 
         data = ProjectGet.parse_obj(project).data(exclude_unset=True)
         return web.json_response({"data": data}, dumps=json_dumps)
@@ -429,7 +408,7 @@ async def replace_project(request: web.Request):
         if current_project["accessRights"] != new_project["accessRights"]:
             await check_permission(request, "project.access_rights.update")
 
-        if await director_v2_api.is_pipeline_running(
+        if await api.is_pipeline_running(
             request.app, req_ctx.user_id, path_params.project_id
         ):
             if any_node_inputs_changed(new_project, current_project):
@@ -470,10 +449,10 @@ async def replace_project(request: web.Request):
             new_project=new_project,
         )
 
-        await director_v2_api.update_dynamic_service_networks_in_project(
+        await api.update_dynamic_service_networks_in_project(
             request.app, path_params.project_id
         )
-        await director_v2_api.create_or_update_pipeline(
+        await api.create_or_update_pipeline(
             request.app,
             req_ctx.user_id,
             path_params.project_id,

@@ -167,7 +167,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       });
 
       const text1 = new qx.ui.basic.Label().set({
-        value: this.tr("Preview the impossible: a native implementation of Sim4Life in the cloud"),
+        value: this.tr("Boost Your Engineering Simulations with Cloud-Native Technology"),
         font: "text-30",
         rich: true,
         wrap: true
@@ -175,7 +175,7 @@ qx.Class.define("osparc.product.landingPage.s4llite.Content", {
       leftLayout.add(text1);
 
       const text2 = new qx.ui.basic.Label().set({
-        value: this.tr("Access it without sacrificing performance and explore the many advantages. Experience the student version <i>S4L<sup>lite</sup></i>."),
+        value: this.tr("Revolutionize your engineering with S4L's cloud-based simulation platform. Streamline your processes and accelerate innovation with high-fidelity simulations accessible from anywhere and at any scale."),
         font: "text-20",
         rich: true,
         wrap: true

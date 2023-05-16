@@ -17,9 +17,9 @@ from .._constants import (
 )
 from ..db import setup_db
 from ..db_settings import get_plugin_settings as get_db_plugin_settings
-from ..email import setup_email
-from ..email_settings import get_plugin_settings as get_email_plugin_settings
-from ..invitations import setup_invitations
+from ..email.plugin import setup_email
+from ..email.settings import get_plugin_settings as get_email_plugin_settings
+from ..invitations.plugin import setup_invitations
 from ..products.plugin import ProductName, list_products, setup_products
 from ..redis import setup_redis
 from ..rest import setup_rest

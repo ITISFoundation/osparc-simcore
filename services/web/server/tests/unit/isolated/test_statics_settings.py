@@ -3,10 +3,9 @@
 # pylint: disable=unused-variable
 
 import json
-from typing import Optional
 
 from pydantic import AnyHttpUrl, BaseModel, parse_obj_as
-from simcore_service_webserver.statics_settings import (
+from simcore_service_webserver.statics.settings import (
     THIRD_PARTY_REFERENCES,
     FrontEndAppSettings,
     StaticWebserverModuleSettings,
@@ -20,7 +19,7 @@ class OsparcDependency(BaseModel):
     name: str
     version: str
     url: AnyHttpUrl
-    thumbnail: Optional[AnyHttpUrl] = None
+    thumbnail: AnyHttpUrl | None = None
 
 
 def test_valid_osparc_dependencies():

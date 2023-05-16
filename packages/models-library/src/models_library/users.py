@@ -1,4 +1,6 @@
+from typing import TypeAlias
+
 from pydantic import PositiveInt
 
-UserID = PositiveInt
-GroupID = PositiveInt
+UserID: TypeAlias = PositiveInt
+GroupID: TypeAlias = PositiveInt

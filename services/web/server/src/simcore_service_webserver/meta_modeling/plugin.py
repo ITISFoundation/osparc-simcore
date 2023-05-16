@@ -9,7 +9,7 @@ from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from .._constants import APP_SETTINGS_KEY
-from ..director_v2_api import get_project_run_policy, set_project_run_policy
+from ..director_v2.api import get_project_run_policy, set_project_run_policy
 from . import _rest_handlers
 from ._projects import meta_project_policy, projects_redirection_middleware
 

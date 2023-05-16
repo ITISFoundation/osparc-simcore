@@ -42,11 +42,13 @@ from servicelib.common_headers import (
     X_SIMCORE_USER_AGENT,
 )
 from servicelib.json_serialization import json_dumps
-from servicelib.logging_utils import log_context
+from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.utils import fire_and_forget_task, logged_gather
+from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import ProjectType
 
-from .. import catalog_client, director_v2_api, storage_api
+from .. import catalog_client
+from ..director_v2 import api as director_v2_api
 from ..products.plugin import get_product_name
 from ..redis import get_redis_lock_manager_client_sdk
 from ..resource_manager.websocket_manager import (
@@ -54,15 +56,16 @@ from ..resource_manager.websocket_manager import (
     UserSessionID,
     managed_resource,
 )
-from ..socketio.events import (
+from ..socketio.messages import (
     SOCKET_IO_NODE_UPDATED_EVENT,
     SOCKET_IO_PROJECT_UPDATED_EVENT,
     SocketMessageDict,
     send_group_messages,
     send_messages,
 )
-from ..users_api import UserRole, get_user_name, get_user_role
-from ..users_exceptions import UserNotFoundError
+from ..storage import api as storage_api
+from ..users.api import get_user_name, get_user_role
+from ..users.exceptions import UserNotFoundError
 from . import _delete_utils, _nodes_utils
 from .project_lock import (
     UserNameDict,
@@ -219,6 +222,15 @@ async def _start_dynamic_service(
 
     # this is a dynamic node, let's gather its resources and start it
 
+    save_state = False
+    user_role: UserRole = await get_user_role(request.app, user_id)
+    if user_role > UserRole.GUEST:
+        save_state = await ProjectDBAPI.get_from_app_context(
+            request.app
+        ).has_permission(
+            user_id=user_id, project_uuid=f"{project_uuid}", permission="write"
+        )
+
     lock_key = _nodes_utils.get_service_start_lock_key(user_id, project_uuid)
     redis_client_sdk = get_redis_lock_manager_client_sdk(request.app)
     project_settings: ProjectsSettings = get_plugin_settings(request.app)
@@ -252,6 +264,7 @@ async def _start_dynamic_service(
         await director_v2_api.run_dynamic_service(
             app=request.app,
             product_name=product_name,
+            save_state=save_state,
             project_id=f"{project_uuid}",
             user_id=user_id,
             service_key=service_key,
@@ -281,6 +294,7 @@ async def add_project_node(
         service_version,
         project["uuid"],
         user_id,
+        extra=get_log_record_extra(user_id=user_id),
     )
     node_uuid = service_id if service_id else f"{uuid4()}"
 
@@ -479,6 +493,7 @@ async def update_project_node_outputs(
         user_id,
         json_dumps(new_outputs),
         new_run_hash,
+        extra=get_log_record_extra(user_id=user_id),
     )
     new_outputs = new_outputs or {}
 
@@ -708,6 +723,7 @@ async def try_close_project_for_user(
                 "project [%s] is already closed for user [%s].",
                 project_uuid,
                 user_id,
+                extra=get_log_record_extra(user_id=user_id),
             )
             return
         # remove the project from our list of opened ones

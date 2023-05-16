@@ -17,6 +17,7 @@ from typing import Callable, Coroutine, Iterable
 from unittest import mock
 from uuid import uuid4
 
+import distributed
 import fsspec
 import pytest
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
@@ -31,7 +32,7 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputData,
     TaskOutputDataSchema,
 )
-from distributed import Client
+from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import BootMode
@@ -78,7 +79,7 @@ def node_id() -> NodeID:
 
 
 @pytest.fixture()
-def dask_subsystem_mock(mocker: MockerFixture) -> dict[str, MockerFixture]:
+def dask_subsystem_mock(mocker: MockerFixture) -> dict[str, mock.Mock]:
     # mock dask client
     dask_client_mock = mocker.patch("distributed.Client", autospec=True)
 
@@ -141,7 +142,7 @@ class ServiceExampleParam:
 
 
 pytest_simcore_core_services_selection = ["postgres"]
-pytest_simcore_ops_services_selection = ["minio"]
+pytest_simcore_ops_services_selection = []
 
 
 def _bash_check_env_exist(variable_name: str, variable_value: str) -> list[str]:
@@ -175,6 +176,7 @@ def ubuntu_task(
     file_on_s3_server: Callable[..., AnyUrl],
     s3_remote_file_url: Callable[..., AnyUrl],
     boot_mode: BootMode,
+    faker: Faker,
 ) -> ServiceExampleParam:
     """Creates a console task in an ubuntu distro that checks for the expected files and error in case they are missing"""
     # let's have some input files on the file server
@@ -241,6 +243,7 @@ def ubuntu_task(
     )
 
     list_of_commands += [
+        f"echo '{faker.text(max_nb_chars=17216)}'",
         f"(test -f ${{INPUT_FOLDER}}/{input_json_file_name} || (echo ${{INPUT_FOLDER}}/{input_json_file_name} file does not exists && exit 1))",
         f"echo $(cat ${{INPUT_FOLDER}}/{input_json_file_name})",
         f"sleep {randint(1,4)}",
@@ -372,7 +375,7 @@ def test_run_computational_sidecar_real_fct(
     caplog_info_level: LogCaptureFixture,
     event_loop: asyncio.AbstractEventLoop,
     mock_service_envs: None,
-    dask_subsystem_mock: dict[str, MockerFixture],
+    dask_subsystem_mock: dict[str, mock.Mock],
     ubuntu_task: ServiceExampleParam,
     mocker: MockerFixture,
     s3_settings: S3Settings,
@@ -401,7 +404,7 @@ def test_run_computational_sidecar_real_fct(
         ubuntu_task.service_version,
     )
     for event in [TaskProgressEvent, TaskLogEvent]:
-        dask_subsystem_mock["dask_event_publish"].assert_any_call(  # type: ignore
+        dask_subsystem_mock["dask_event_publish"].assert_any_call(
             name=event.topic_name()
         )
 
@@ -450,7 +453,7 @@ def test_run_computational_sidecar_real_fct(
 )
 def test_run_multiple_computational_sidecar_dask(
     event_loop: asyncio.AbstractEventLoop,
-    dask_client: Client,
+    dask_client: distributed.Client,
     ubuntu_task: ServiceExampleParam,
     mocker: MockerFixture,
     s3_settings: S3Settings,
@@ -491,15 +494,23 @@ def test_run_multiple_computational_sidecar_dask(
             assert output_data[k] == v
 
 
+@pytest.fixture
+def log_sub(
+    dask_client: distributed.Client,
+) -> distributed.Sub:
+    return distributed.Sub(TaskLogEvent.topic_name(), client=dask_client)
+
+
 @pytest.mark.parametrize(
     "integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True
 )
-def test_run_computational_sidecar_dask(
-    dask_client: Client,
+async def test_run_computational_sidecar_dask(
+    dask_client: distributed.Client,
     ubuntu_task: ServiceExampleParam,
     mocker: MockerFixture,
     s3_settings: S3Settings,
     boot_mode: BootMode,
+    log_sub: distributed.Sub,
 ):
     mocker.patch(
         "simcore_service_dask_sidecar.computational_sidecar.core.get_integration_version",
@@ -521,17 +532,15 @@ def test_run_computational_sidecar_dask(
     )
 
     worker_name = next(iter(dask_client.scheduler_info()["workers"]))
-
+    assert worker_name
     output_data = future.result()
     assert isinstance(output_data, TaskOutputData)
 
     # check that the task produces expected logs
-    worker_logs = [log for _, log in dask_client.get_worker_logs()[worker_name]]  # type: ignore
-    worker_logs.reverse()
+    worker_logs = [TaskLogEvent.parse_raw(msg).log for msg in log_sub.buffer]
+
     for log in ubuntu_task.expected_logs:
-        r = re.compile(
-            rf"\[{ubuntu_task.service_key}:{ubuntu_task.service_version} - [^\/]+\/[^\s]+ - [^\]]+\]: ({log})"
-        )
+        r = re.compile(rf"^({log}).*")
         search_results = list(filter(r.search, worker_logs))
         assert (
             len(search_results) > 0
@@ -560,7 +569,7 @@ def test_failing_service_raises_exception(
     caplog_info_level: LogCaptureFixture,
     event_loop: asyncio.AbstractEventLoop,
     mock_service_envs: None,
-    dask_subsystem_mock: dict[str, MockerFixture],
+    dask_subsystem_mock: dict[str, mock.Mock],
     ubuntu_task_fail: ServiceExampleParam,
     s3_settings: S3Settings,
 ):
@@ -584,7 +593,7 @@ def test_running_service_that_generates_unexpected_data_raises_exception(
     caplog_info_level: LogCaptureFixture,
     event_loop: asyncio.AbstractEventLoop,
     mock_service_envs: None,
-    dask_subsystem_mock: dict[str, MockerFixture],
+    dask_subsystem_mock: dict[str, mock.Mock],
     ubuntu_task_unexpected_output: ServiceExampleParam,
     s3_settings: S3Settings,
 ):

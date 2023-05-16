@@ -5,15 +5,15 @@
 
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Callable, Iterable, Iterator, Optional
+from typing import AsyncIterator, Callable, Iterable, Iterator
 
 import dask
 import distributed
 import fsspec
 import pytest
 import simcore_service_dask_sidecar
+from aiobotocore.session import AioBaseClient, get_session
 from faker import Faker
-from minio import Minio
 from pydantic import AnyUrl, parse_obj_as
 from pytest import MonkeyPatch, TempPathFactory
 from pytest_localftpserver.servers import ProcessFTPServer
@@ -23,11 +23,11 @@ from simcore_service_dask_sidecar.file_utils import _s3fs_settings_from_s3_setti
 from yarl import URL
 
 pytest_plugins = [
+    "pytest_simcore.aws_services",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
-    "pytest_simcore.minio_service",
     "pytest_simcore.monkeypatch_extra",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.repository_paths",
@@ -53,12 +53,11 @@ def installed_package_dir() -> Path:
 
 @pytest.fixture()
 def mock_service_envs(
-    mock_env_devel_environment: dict[str, Optional[str]],
+    mock_env_devel_environment: dict[str, str | None],
     monkeypatch: MonkeyPatch,
     mocker: MockerFixture,
     tmp_path_factory: TempPathFactory,
 ) -> None:
-
     # Variables directly define inside Dockerfile
     monkeypatch.setenv("SC_BOOT_MODE", "debug-ptvsd")
 
@@ -107,24 +106,55 @@ def ftp_server(ftpserver: ProcessFTPServer) -> list[URL]:
 
 
 @pytest.fixture
-def s3_endpoint_url(minio_config: dict[str, Any]) -> AnyUrl:
-    return parse_obj_as(
-        AnyUrl,
-        f"http{'s' if minio_config['client']['secure'] else ''}://{minio_config['client']['endpoint']}",
-    )
-
-
-@pytest.fixture
-def s3_settings(minio_config: dict[str, Any], minio_service: Minio) -> S3Settings:
+def s3_settings(mocked_s3_server_envs: None) -> S3Settings:
     return S3Settings.create_from_envs()
 
 
 @pytest.fixture
-def s3_remote_file_url(
-    minio_config: dict[str, Any], faker: Faker
-) -> Callable[..., AnyUrl]:
-    def creator(file_path: Optional[Path] = None) -> AnyUrl:
-        file_path_with_bucket = Path(minio_config["bucket_name"]) / (
+def s3_endpoint_url(s3_settings: S3Settings) -> AnyUrl:
+    return parse_obj_as(
+        AnyUrl,
+        f"{s3_settings.S3_ENDPOINT}",
+    )
+
+
+@pytest.fixture
+async def aiobotocore_s3_client(
+    s3_settings: S3Settings, s3_endpoint_url: AnyUrl
+) -> AsyncIterator[AioBaseClient]:
+    session = get_session()
+    async with session.create_client(
+        "s3",
+        endpoint_url=f"{s3_endpoint_url}",
+        aws_secret_access_key="xxx",
+        aws_access_key_id="xxx",
+    ) as client:
+        yield client
+
+
+@pytest.fixture
+async def bucket(
+    aiobotocore_s3_client: AioBaseClient, s3_settings: S3Settings
+) -> AsyncIterator[str]:
+    response = await aiobotocore_s3_client.create_bucket(
+        Bucket=s3_settings.S3_BUCKET_NAME
+    )
+    assert "ResponseMetadata" in response
+    assert "HTTPStatusCode" in response["ResponseMetadata"]
+    assert response["ResponseMetadata"]["HTTPStatusCode"] == 200
+
+    response = await aiobotocore_s3_client.list_buckets()
+    assert response["Buckets"]
+    assert len(response["Buckets"]) == 1
+    bucket_name = response["Buckets"][0]["Name"]
+    yield bucket_name
+    # await _clean_bucket_content(aiobotocore_s3_client, bucket_name)
+
+
+@pytest.fixture
+def s3_remote_file_url(s3_settings: S3Settings, faker: Faker) -> Callable[..., AnyUrl]:
+    def creator(file_path: Path | None = None) -> AnyUrl:
+        file_path_with_bucket = Path(s3_settings.S3_BUCKET_NAME) / (
             file_path or faker.file_name()
         )
         return parse_obj_as(AnyUrl, f"s3://{file_path_with_bucket}")
@@ -146,7 +176,7 @@ def file_on_s3_server(
         open_file = fsspec.open(new_remote_file, mode="wt", **s3_storage_kwargs)
         with open_file as fp:
             fp.write(  # type: ignore
-                f"This is the file contents of file #'{(len(list_of_created_files)+1):03}'"
+                f"This is the file contents of file #'{(len(list_of_created_files)+1):03}'\n"
             )
             for s in faker.sentences(5):
                 fp.write(f"{s}\n")  # type: ignore

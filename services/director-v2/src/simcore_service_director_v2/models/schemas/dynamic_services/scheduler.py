@@ -142,8 +142,8 @@ class ServiceRemovalState(BaseModel):
         False,
         description="when True, marks the service as ready to be removed",
     )
-    can_save: bool | None = Field(
-        None,
+    can_save: bool = Field(
+        False,
         description="when True, saves the internal state and upload outputs of the service",
     )
     was_removed: bool = Field(
@@ -154,13 +154,31 @@ class ServiceRemovalState(BaseModel):
         ),
     )
 
-    def mark_to_remove(self, can_save: bool | None) -> None:
+    def mark_to_remove(self, can_save: bool) -> None:
         self.can_remove = True
         self.can_save = can_save
 
     def mark_removed(self) -> None:
         self.can_remove = False
         self.was_removed = True
+
+    @root_validator(pre=True)
+    @classmethod
+    def _can_save_is_no_longer_none(cls, values):
+        warnings.warn(
+            (
+                "Once https://github.com/ITISFoundation/osparc-simcore/issues/4202 "
+                "reaches production this entire root_validator function "
+                "can be safely removed. Please check "
+                "https://github.com/ITISFoundation/osparc-simcore/issues/4204"
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        can_save: bool | None = values.get("can_save", None)
+        if can_save is None:
+            values["can_save"] = False
+        return values
 
 
 class DynamicSidecar(BaseModel):
@@ -411,26 +429,6 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         "If set to None, the current product is undefined. Mostly for backwards compatibility",
     )
 
-    @root_validator(pre=True)
-    @classmethod
-    def _ensure_legacy_format_compatibility(cls, values):
-        warnings.warn(
-            (
-                "Once https://github.com/ITISFoundation/osparc-simcore/pull/3990 "
-                "reaches production this entire root_validator function "
-                "can be safely removed. Please check "
-                "https://github.com/ITISFoundation/osparc-simcore/issues/3996"
-            ),
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        request_simcore_user_agent: str | None = values.get(
-            "request_simcore_user_agent"
-        )
-        if not request_simcore_user_agent:
-            values["request_simcore_user_agent"] = ""
-        return values
-
     @classmethod
     def from_http_request(
         # pylint: disable=too-many-arguments
@@ -441,6 +439,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         request_dns: str,
         request_scheme: str,
         request_simcore_user_agent: str,
+        can_save: bool,
         run_id: UUID | None = None,
     ) -> "SchedulerData":
         # This constructor method sets current product
@@ -467,7 +466,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             request_scheme=request_scheme,
             proxy_service_name=names_helper.proxy_service_name,
             request_simcore_user_agent=request_simcore_user_agent,
-            dynamic_sidecar={},
+            dynamic_sidecar={"service_removal_state": {"can_save": can_save}},
         )
         if run_id:
             obj_dict["run_id"] = run_id

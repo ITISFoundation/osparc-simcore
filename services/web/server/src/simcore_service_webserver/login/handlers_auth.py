@@ -7,14 +7,14 @@ from models_library.emails import LowerCaseEmailStr
 from pydantic import BaseModel, Field, PositiveInt, SecretStr
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.error_codes import create_error_code
-from servicelib.logging_utils import log_context
+from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.models.users import UserRole
 
 from .._meta import API_VTAG
 from ..products.plugin import Product, get_current_product
-from ..security_api import check_password, forget
+from ..security.api import check_password, forget
 from ..session_access import on_success_grant_session_access_to, session_access_required
 from ..utils_aiohttp import NextPage
 from ._2fa import (
@@ -260,6 +260,7 @@ async def logout(request: web.Request) -> web.Response:
         "logout of %s for %s",
         f"{user_id=}",
         f"{logout_.client_session_id=}",
+        extra=get_log_record_extra(user_id=user_id),
     ):
         response = flash_response(MSG_LOGGED_OUT, "INFO")
         await notify_user_logout(request.app, user_id, logout_.client_session_id)

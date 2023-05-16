@@ -7,13 +7,12 @@ import mimetypes
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, AsyncIterable, Optional, cast
+from typing import Any, AsyncIterable, cast
 from unittest import mock
 
 import fsspec
 import pytest
 from faker import Faker
-from minio import Minio
 from pydantic import AnyUrl, parse_obj_as
 from pytest import FixtureRequest
 from pytest_localftpserver.servers import ProcessFTPServer
@@ -35,16 +34,12 @@ async def mocked_log_publishing_cb(
         yield mocked_callback
 
 
-pytest_simcore_core_services_selection = [
-    "postgres"
-]  # TODO: unnecessary but test framework requires it, only minio is useful here
-pytest_simcore_ops_services_selection = ["minio"]
+pytest_simcore_core_services_selection = ["postgres"]
+pytest_simcore_ops_services_selection = []
 
 
 @pytest.fixture
-def s3_presigned_link_storage_kwargs(
-    minio_config: dict[str, Any], minio_service: Minio
-) -> dict[str, Any]:
+def s3_presigned_link_storage_kwargs(s3_settings: S3Settings) -> dict[str, Any]:
     return {}
 
 
@@ -56,30 +51,29 @@ def ftp_remote_file_url(ftpserver: ProcessFTPServer, faker: Faker) -> AnyUrl:
 
 
 @pytest.fixture
-def s3_presigned_link_remote_file_url(
-    minio_config: dict[str, Any],
-    minio_service: Minio,
+async def s3_presigned_link_remote_file_url(
+    s3_settings: S3Settings,
+    aiobotocore_s3_client,
     faker: Faker,
 ) -> AnyUrl:
-
     return parse_obj_as(
         AnyUrl,
-        minio_service.presigned_put_object(
-            minio_config["bucket_name"], faker.file_name()
+        await aiobotocore_s3_client.generate_presigned_url(
+            "put_object",
+            Params={"Bucket": s3_settings.S3_BUCKET_NAME, "Key": faker.file_name()},
+            ExpiresIn=30,
         ),
     )
 
 
 @pytest.fixture
-def s3_remote_file_url(minio_config: dict[str, Any], faker: Faker) -> AnyUrl:
-    return parse_obj_as(
-        AnyUrl, f"s3://{minio_config['bucket_name']}{faker.file_path()}"
-    )
+def s3_remote_file_url(s3_settings: S3Settings, faker: Faker) -> AnyUrl:
+    return parse_obj_as(AnyUrl, f"s3://{s3_settings.S3_BUCKET_NAME}{faker.file_path()}")
 
 
 @dataclass(frozen=True)
 class StorageParameters:
-    s3_settings: Optional[S3Settings]
+    s3_settings: S3Settings | None
     remote_file_url: AnyUrl
 
 
@@ -139,7 +133,7 @@ async def test_push_file_to_remote(
 async def test_push_file_to_remote_s3_http_presigned_link(
     s3_presigned_link_remote_file_url: AnyUrl,
     s3_settings: S3Settings,
-    minio_config: dict[str, Any],
+    bucket: str,
     tmp_path: Path,
     faker: Faker,
     mocked_log_publishing_cb: mock.AsyncMock,
@@ -243,8 +237,8 @@ async def test_pull_file_from_remote(
 async def test_pull_file_from_remote_s3_presigned_link(
     s3_settings: S3Settings,
     s3_remote_file_url: AnyUrl,
-    minio_service: Minio,
-    minio_config: dict[str, Any],
+    aiobotocore_s3_client,
+    bucket: str,
     tmp_path: Path,
     faker: Faker,
     mocked_log_publishing_cb: mock.AsyncMock,
@@ -266,9 +260,13 @@ async def test_pull_file_from_remote_s3_presigned_link(
     assert s3_remote_file_url.path
     remote_file_url = parse_obj_as(
         AnyUrl,
-        minio_service.presigned_get_object(
-            minio_config["bucket_name"],
-            s3_remote_file_url.path.removeprefix(f"/{minio_config['bucket_name']}/"),
+        await aiobotocore_s3_client.generate_presigned_url(
+            "get_object",
+            Params={
+                "Bucket": s3_settings.S3_BUCKET_NAME,
+                "Key": s3_remote_file_url.path.removeprefix("/"),
+            },
+            ExpiresIn=30,
         ),
     )
     # now let's get the file through the util

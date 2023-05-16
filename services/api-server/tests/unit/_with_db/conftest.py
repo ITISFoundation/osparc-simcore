@@ -9,7 +9,7 @@ import shutil
 import subprocess
 from pathlib import Path
 from pprint import pformat
-from typing import Callable, Dict, Union
+from typing import Callable
 
 import aiopg.sa
 import aiopg.sa.engine as aiopg_sa_engine
@@ -23,10 +23,13 @@ import yaml
 from aiopg.sa.result import RowProxy
 from faker import Faker
 from fastapi import FastAPI
+from pytest import MonkeyPatch
 from pytest_simcore.helpers.rawdata_fakers import random_user
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_postgres_database.models.base import metadata
 from simcore_service_api_server.core.application import init_app
+from simcore_service_api_server.core.settings import PostgresSettings
 from simcore_service_api_server.db.repositories import BaseRepository
 from simcore_service_api_server.db.repositories.users import UsersRepository
 from simcore_service_api_server.models.domain.api_keys import ApiKeyInDB
@@ -64,7 +67,7 @@ def docker_compose_file(
 
 
 @pytest.fixture(scope="session")
-def postgres_service(docker_services, docker_ip, docker_compose_file: Path) -> Dict:
+def postgres_service(docker_services, docker_ip, docker_compose_file: Path) -> dict:
 
     # check docker-compose's environ is resolved properly
     config = yaml.safe_load(docker_compose_file.read_text())
@@ -108,7 +111,7 @@ def postgres_service(docker_services, docker_ip, docker_compose_file: Path) -> D
 def make_engine(postgres_service: dict) -> Callable:
     dsn = postgres_service["dsn"]  # session scope freezes dsn
 
-    def maker(*, is_async=True) -> Union[aiopg_sa_engine.Engine, sa_engine.Engine]:
+    def maker(*, is_async=True) -> aiopg_sa_engine.Engine | sa_engine.Engine:
         if is_async:
             return aiopg.sa.create_engine(dsn)
         return sa.create_engine(dsn)
@@ -137,7 +140,22 @@ def migrated_db(postgres_service: dict, make_engine: Callable):
 
 
 @pytest.fixture
-def app(patched_default_app_environ: EnvVarsDict, migrated_db: None) -> FastAPI:
+def app_environment(
+    monkeypatch: MonkeyPatch, default_app_env_vars: EnvVarsDict
+) -> EnvVarsDict:
+    """app environments WITH database settings"""
+
+    envs = setenvs_from_dict(monkeypatch, default_app_env_vars)
+    assert "API_SERVER_POSTGRES" not in envs
+
+    # Should be sufficient to create settings
+    print(PostgresSettings.create_from_envs().json(indent=1))
+
+    return envs
+
+
+@pytest.fixture
+def app(app_environment: EnvVarsDict, migrated_db: None) -> FastAPI:
     """Overrides app to ensure that:
     - it uses default environ as pg
     - db is started and initialized

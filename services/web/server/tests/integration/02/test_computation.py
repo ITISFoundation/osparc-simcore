@@ -23,6 +23,7 @@ from servicelib.json_serialization import json_dumps
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.projects import projects
+from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import (
     NodeClass,
     StateType,
@@ -32,8 +33,8 @@ from simcore_postgres_database.webserver_models import (
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import setup_db
-from simcore_service_webserver.diagnostics import setup_diagnostics
-from simcore_service_webserver.director_v2 import setup_director_v2
+from simcore_service_webserver.diagnostics.plugin import setup_diagnostics
+from simcore_service_webserver.director_v2.plugin import setup_director_v2
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.notifications._utils import DB_TO_RUNNING_STATE
 from simcore_service_webserver.notifications.plugin import setup_notifications
@@ -41,11 +42,10 @@ from simcore_service_webserver.products.plugin import setup_products
 from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
-from simcore_service_webserver.security import setup_security
-from simcore_service_webserver.security_roles import UserRole
+from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio.plugin import setup_socketio
-from simcore_service_webserver.users import setup_users
+from simcore_service_webserver.users.plugin import setup_users
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay

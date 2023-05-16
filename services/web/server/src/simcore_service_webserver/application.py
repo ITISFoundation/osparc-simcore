@@ -14,39 +14,39 @@ from .application_settings import setup_settings
 from .catalog import setup_catalog
 from .clusters.plugin import setup_clusters
 from .db import setup_db
-from .diagnostics import setup_diagnostics
+from .diagnostics.plugin import setup_diagnostics
 from .director.plugin import setup_director
-from .director_v2 import setup_director_v2
-from .email import setup_email
+from .director_v2.plugin import setup_director_v2
+from .email.plugin import setup_email
 from .exporter.plugin import setup_exporter
 from .garbage_collector import setup_garbage_collector
-from .groups import setup_groups
-from .invitations import setup_invitations
+from .groups.plugin import setup_groups
+from .invitations.plugin import setup_invitations
 from .login.plugin import setup_login
 from .long_running_tasks import setup_long_running_tasks
 from .meta_modeling.plugin import setup_meta_modeling
 from .notifications.plugin import setup_notifications
 from .products.plugin import setup_products
 from .projects.plugin import setup_projects
-from .publications import setup_publications
+from .publications.plugin import setup_publications
 from .rabbitmq import setup_rabbitmq
 from .redis import setup_redis
 from .remote_debug import setup_remote_debugging
 from .resource_manager.plugin import setup_resource_manager
 from .rest import setup_rest
 from .scicrunch.plugin import setup_scicrunch
-from .security import setup_security
+from .security.plugin import setup_security
 from .session import setup_session
 from .socketio.plugin import setup_socketio
-from .statics import setup_statics
-from .storage import setup_storage
+from .statics.plugin import setup_statics
+from .storage.plugin import setup_storage
 from .studies_dispatcher.plugin import setup_studies_dispatcher
-from .tags import setup_tags
+from .tags.plugin import setup_tags
 from .tracing import setup_app_tracing
-from .users import setup_users
+from .users.plugin import setup_users
 from .version_control.plugin import setup_version_control
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def create_application() -> web.Application:
@@ -128,7 +128,7 @@ def create_application() -> web.Application:
     app.on_startup.append(welcome_banner)
     app.on_shutdown.append(finished_banner)
 
-    logger.debug("Routes in app: \n %s", pformat(app.router.named_resources()))
+    _logger.debug("Routes in app: \n %s", pformat(app.router.named_resources()))
 
     return app
 
@@ -138,7 +138,7 @@ def run_service(app: web.Application, config: dict[str, Any]):
         app,
         host=config["main"]["host"],
         port=config["main"]["port"],
-        # this gets overriden by the gunicorn config if any
+        # this gets overriden by the gunicorn config in /docker/boot.sh
         access_log_format='%a %t "%r" %s %b --- [%Dus] "%{Referer}i" "%{User-Agent}i"',
     )
 

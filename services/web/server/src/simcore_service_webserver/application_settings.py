@@ -28,20 +28,20 @@ from settings_library.utils_service import DEFAULT_AIOHTTP_PORT
 from ._constants import APP_SETTINGS_KEY
 from ._meta import API_VERSION, API_VTAG, APP_NAME
 from .catalog_settings import CatalogSettings
-from .diagnostics_settings import DiagnosticsSettings
+from .diagnostics.settings import DiagnosticsSettings
 from .director.settings import DirectorSettings
-from .director_v2_settings import DirectorV2Settings
+from .director_v2.settings import DirectorV2Settings
 from .exporter.settings import ExporterSettings
 from .garbage_collector_settings import GarbageCollectorSettings
-from .invitations_settings import InvitationsSettings
+from .invitations.settings import InvitationsSettings
 from .login.settings import LoginSettings
 from .projects.projects_settings import ProjectsSettings
 from .resource_manager.settings import ResourceManagerSettings
 from .rest_settings import RestSettings
 from .scicrunch.settings import SciCrunchSettings
 from .session_settings import SessionSettings
-from .statics_settings import FrontEndAppSettings, StaticWebserverModuleSettings
-from .storage_settings import StorageSettings
+from .statics.settings import FrontEndAppSettings, StaticWebserverModuleSettings
+from .storage.settings import StorageSettings
 from .studies_dispatcher.settings import StudiesDispatcherSettings
 
 log = logging.getLogger(__name__)

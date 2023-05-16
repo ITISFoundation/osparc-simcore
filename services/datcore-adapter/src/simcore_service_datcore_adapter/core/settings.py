@@ -5,7 +5,6 @@ from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import Field, parse_obj_as, validator
 from pydantic.networks import AnyUrl
 from settings_library.base import BaseCustomSettings
-from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 
@@ -32,8 +31,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     PENNSIEVE: PennsieveSettings = Field(auto_default_from_env=True)
-
-    DATCORE_ADAPTER_TRACING: TracingSettings | None = Field(auto_default_from_env=True)
 
     DATCORE_ADAPTER_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         False,

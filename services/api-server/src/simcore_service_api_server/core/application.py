@@ -4,7 +4,6 @@ from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from httpx import HTTPStatusError
 from models_library.basic_types import BootModeEnum
-from servicelib.fastapi.tracing import setup_tracing
 from servicelib.logging_utils import config_all_loggers
 from starlette import status
 from starlette.exceptions import HTTPException
@@ -18,13 +17,13 @@ from ..api.errors.httpx_client_error import httpx_client_error_handler
 from ..api.errors.validation_error import http422_error_handler
 from ..api.root import create_router
 from ..api.routes.health import router as health_router
-from ..modules import catalog, director_v2, remote_debug, storage, webserver
+from ..plugins import catalog, director_v2, remote_debug, storage, webserver
 from .events import create_start_app_handler, create_stop_app_handler
 from .openapi import override_openapi_method, use_route_names_as_operation_ids
 from .redoc import create_redoc_handler
 from .settings import ApplicationSettings
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
@@ -32,10 +31,10 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
         settings = ApplicationSettings.create_from_envs()
     assert settings  # nosec
 
-    logging.basicConfig(level=settings.LOG_LEVEL.value)
-    logging.root.setLevel(settings.LOG_LEVEL.value)
+    logging.basicConfig(level=settings.log_level)
+    logging.root.setLevel(settings.log_level)
     config_all_loggers(settings.API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED)
-    logger.debug("App settings:\n%s", settings.json(indent=2))
+    _logger.debug("App settings:\n%s", settings.json(indent=2))
 
     # creates app instance
     app = FastAPI(
@@ -66,9 +65,6 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     if settings.API_SERVER_DIRECTOR_V2:
         director_v2.setup(app, settings.API_SERVER_DIRECTOR_V2)
-
-    if settings.API_SERVER_TRACING:
-        setup_tracing(app, settings.API_SERVER_TRACING)
 
     # setup app
     app.add_event_handler("startup", create_start_app_handler(app))

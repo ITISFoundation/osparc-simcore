@@ -30,7 +30,7 @@ if os.environ.get("SC_BOOT_MODE") == "debug-ptvsd":
 
     multiprocessing.set_start_method("spawn", True)
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def _setup_app_from_settings(
@@ -64,7 +64,9 @@ async def app_factory() -> web.Application:
     app_settings = ApplicationSettings.create_from_envs()
     assert app_settings.SC_BUILD_TARGET  # nosec
 
-    log.info("Application settings: %s", app_settings.json(indent=2, sort_keys=True))
+    _logger.info(
+        "Application settings: %s", app_settings.json(indent=2, sort_keys=True)
+    )
 
     app, _ = _setup_app_from_settings(app_settings)
 
@@ -75,7 +77,9 @@ async def app_factory() -> web.Application:
 
 main = typer.Typer(name="simcore-service-webserver")
 
-main.command()(create_settings_command(settings_cls=ApplicationSettings, logger=log))
+main.command()(
+    create_settings_command(settings_cls=ApplicationSettings, logger=_logger)
+)
 
 main.command()(login_cli.invitations)
 

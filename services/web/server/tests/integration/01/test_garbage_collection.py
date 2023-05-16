@@ -21,14 +21,15 @@ from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
 from pytest_simcore.helpers.utils_projects import create_project, empty_project_data
 from servicelib.aiohttp.application import create_safe_application
 from settings_library.redis import RedisDatabase, RedisSettings
+from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver import garbage_collector_core
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import projects, users
 from simcore_service_webserver.director.plugin import setup_director
-from simcore_service_webserver.director_v2 import setup_director_v2
+from simcore_service_webserver.director_v2.plugin import setup_director_v2
 from simcore_service_webserver.garbage_collector import setup_garbage_collector
-from simcore_service_webserver.groups_api import (
+from simcore_service_webserver.groups.api import (
     add_user_in_group,
     create_user_group,
     list_user_groups,
@@ -40,11 +41,10 @@ from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.resource_manager.registry import get_registry
 from simcore_service_webserver.rest import setup_rest
-from simcore_service_webserver.security import setup_security
-from simcore_service_webserver.security_roles import UserRole
+from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio.plugin import setup_socketio
-from simcore_service_webserver.users import setup_users
+from simcore_service_webserver.users.plugin import setup_users
 from sqlalchemy import func, select
 
 log = logging.getLogger(__name__)

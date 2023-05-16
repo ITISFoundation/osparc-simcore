@@ -38,11 +38,11 @@ from simcore_sdk.node_ports_common.storage_client import (
     list_file_metadata,
 )
 
-from ...director_v2_api import create_or_update_pipeline
+from ...director_v2.api import create_or_update_pipeline
 from ...projects.projects_api import get_project_for_user, submit_delete_project_task
 from ...projects.projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from ...projects.projects_exceptions import ProjectsException
-from ...users_api import get_user
+from ...users.api import get_user
 from ...utils import now_str
 from ..exceptions import ExporterException
 from ..file_downloader import ParallelDownloader

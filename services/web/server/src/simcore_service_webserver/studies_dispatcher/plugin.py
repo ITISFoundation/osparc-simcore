@@ -5,12 +5,13 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 
 from ..login.decorators import login_required
 from ..products.plugin import setup_products
-from . import handlers_rest
+from . import _rest_handlers
+from ._projects_permalinks import setup_projects_permalinks
+from ._redirects_handlers import get_redirection_to_viewer
 from ._studies_access import get_redirection_to_study_page
-from .handlers_redirects import get_redirection_to_viewer
 from .settings import StudiesDispatcherSettings, get_plugin_settings
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def _setup_studies_access(app: web.Application, settings: StudiesDispatcherSettings):
@@ -35,21 +36,24 @@ def _setup_studies_access(app: web.Application, settings: StudiesDispatcherSetti
     "simcore_service_webserver.studies_dispatcher",
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_STUDIES_DISPATCHER",
-    logger=logger,
+    logger=_logger,
 )
 def setup_studies_dispatcher(app: web.Application) -> bool:
     settings: StudiesDispatcherSettings = get_plugin_settings(app)
 
+    # setup other plugins
     setup_products(app=app)
 
+    # setup internal modules
     _setup_studies_access(app, settings)
+    setup_projects_permalinks(app, settings)
 
-    # Redirects routes
+    # routes
     redirect_handler = get_redirection_to_viewer
     if settings.is_login_required():
         redirect_handler = login_required(get_redirection_to_viewer)
 
-        logger.info(
+        _logger.info(
             "'%s' config explicitly disables anonymous users from this feature",
             __name__,
         )
@@ -58,7 +62,6 @@ def setup_studies_dispatcher(app: web.Application) -> bool:
         [web.get("/view", redirect_handler, name="get_redirection_to_viewer")]
     )
 
-    # Rest-API routes: maps handlers with routes tags with "viewer" based on OAS operation_id
-    app.router.add_routes(handlers_rest.routes)
+    app.router.add_routes(_rest_handlers.routes)
 
     return True

@@ -69,7 +69,8 @@ async def requires_dynamic_sidecar(
             )
         )
     )
-    return simcore_service_labels.needs_dynamic_sidecar
+    requires_dynamic_sidecar_: bool = simcore_service_labels.needs_dynamic_sidecar
+    return requires_dynamic_sidecar_
 
 
 async def _send_network_configuration_to_dynamic_sidecar(
@@ -218,7 +219,7 @@ async def _get_networks_with_aliases_for_default_network(
                 ],
                 log_level=logging.WARNING,
             )
-            await rabbitmq_client.publish(message.channel_name, message.json())
+            await rabbitmq_client.publish(message.channel_name, message)
             continue
 
         new_networks_with_aliases[default_network][f"{node_uuid}"] = network_alias
