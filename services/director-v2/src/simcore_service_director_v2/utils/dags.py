@@ -36,8 +36,6 @@ def create_complete_dag(workbench: NodesDict) -> nx.DiGraph:
             outputs=node.outputs,
             state=node.state.current_status,
             node_class=to_node_class(node.key),
-            # TODO: project progress goes from 0 to 100, this needs a change
-            progress=node.progress / 100 if node.progress else None,
         )
         if node.input_nodes:
             for input_node_id in node.input_nodes:
@@ -192,17 +190,16 @@ async def compute_pipeline_details(
         # not acyclic
         pass
 
-    graph_data = complete_dag.nodes.data()
-    pipeline_progress = (
-        sum(
-            graph_data[node_id]["progress"]
-            for node_id in pipeline_dag.nodes
-            if graph_data[node_id]["progress"] is not None
-        )
-        / len(pipeline_dag.nodes)
-        if len(pipeline_dag.nodes) > 0
-        else None
-    )
+    # NOTE: the latest progress is available in comp_tasks only
+    node_id_to_comp_task: dict[NodeIDStr, CompTaskAtDB] = {
+        NodeIDStr(f"{task.node_id}"): task for task in comp_tasks
+    }
+    pipeline_progress = None
+    if len(pipeline_dag.nodes) > 0:
+        pipeline_progress = 0
+        for node_id in pipeline_dag.nodes:
+            if node_progress := node_id_to_comp_task[node_id].progress:
+                pipeline_progress += node_progress / len(pipeline_dag.nodes)
 
     return PipelineDetails(
         adjacency_list=nx.convert.to_dict_of_lists(pipeline_dag),
@@ -211,18 +208,8 @@ async def compute_pipeline_details(
             node_id: NodeState(
                 modified=node_data.get(kNODE_MODIFIED_STATE, False),
                 dependencies=node_data.get(kNODE_DEPENDENCIES_TO_COMPUTE, set()),
-                currentStatus=next(
-                    (task.state for task in comp_tasks if f"{task.node_id}" == node_id),
-                    RunningState.UNKNOWN,
-                ),
-                progress=next(
-                    (
-                        task.progress
-                        for task in comp_tasks
-                        if f"{task.node_id}" == node_id
-                    ),
-                    None,
-                ),
+                currentStatus=node_id_to_comp_task[node_id].state,
+                progress=node_id_to_comp_task[node_id].progress,
             )
             for node_id, node_data in complete_dag.nodes.data()
             if node_data["node_class"] is NodeClass.COMPUTATIONAL
