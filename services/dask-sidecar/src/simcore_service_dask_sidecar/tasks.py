@@ -64,8 +64,12 @@ async def dask_setup(worker: distributed.Worker) -> None:
     # set up logging
     logging.basicConfig(level=settings.LOG_LEVEL.value)
     logging.root.setLevel(level=settings.LOG_LEVEL.value)
-    config_all_loggers(settings.DASK_LOG_FORMAT_LOCAL_DEV_ENABLED)
     logger.setLevel(level=settings.LOG_LEVEL.value)
+    # NOTE: Dask attaches a StreamHandler to the logger in distributed
+    # stopping the propagation to prevent double logging
+    for handler in logging.getLogger("distributed").handlers:
+        logging.getLogger("distributed").removeHandler(handler)
+    config_all_loggers(settings.DASK_LOG_FORMAT_LOCAL_DEV_ENABLED)
 
     logger.info("Setting up worker...")
     logger.info("Settings: %s", pformat(settings.dict()))
