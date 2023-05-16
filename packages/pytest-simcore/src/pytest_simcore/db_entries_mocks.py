@@ -81,7 +81,7 @@ def project(
                 .returning(sa.literal_column("*"))
             )
 
-            inserted_project = ProjectAtDB.parse_obj(result.first())
+            inserted_project = ProjectAtDB.from_orm(result.first())
         print(f"--> created {inserted_project=}")
         created_project_ids.append(f"{inserted_project.uuid}")
         return inserted_project
