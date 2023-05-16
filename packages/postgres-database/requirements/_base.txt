@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_base.txt --resolver=backtracking --strip-extras requirements/_base.in
 #
-alembic==1.10.3
+alembic==1.10.4
     # via -r requirements/_base.in
 greenlet==2.0.2
     # via sqlalchemy
@@ -20,11 +20,11 @@ multidict==6.0.4
     # via yarl
 psycopg2-binary==2.9.6
     # via sqlalchemy
-sqlalchemy==1.4.47
+sqlalchemy==1.4.48
     # via
     #   -r requirements/_base.in
     #   alembic
 typing-extensions==4.5.0
     # via alembic
-yarl==1.8.2
+yarl==1.9.2
     # via -r requirements/_base.in
