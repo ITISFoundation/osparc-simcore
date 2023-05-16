@@ -1,6 +1,6 @@
 import yaml
 
-from .string_substitution import SubstitutionsDict, TemplateText
+from .string_substitution import SubstitutionsDict, TextTemplate
 
 # Notes on below env var names:
 # - SIMCORE_REGISTRY will be replaced by the url of the simcore docker registry
@@ -29,7 +29,7 @@ def replace_env_vars_in_compose_spec(
 
     content: str = yaml.safe_dump(service_spec)
 
-    template = TemplateText(content)
+    template = TextTemplate(content)
     substitutions = SubstitutionsDict(
         {
             "SERVICE_VERSION": replace_service_version,
