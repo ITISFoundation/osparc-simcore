@@ -35,7 +35,7 @@ def main(
             is_eager=True,
         )
     ),
-):
+) -> None:
     """o2s2parc resource usage tracker"""
     assert ctx  # nosec
     assert version or not version  # nosec

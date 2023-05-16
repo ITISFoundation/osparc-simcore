@@ -56,7 +56,7 @@ class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     def LOG_LEVEL(self) -> LogLevel:
         return self.RESOURCE_USAGE_TRACKER_LOGLEVEL
 
-    @validator("RESOURCE_USAGE_LOGLEVEL")
+    @validator("RESOURCE_USAGE_TRACKER_LOGLEVEL")
     @classmethod
     def valid_log_level(cls, value: str) -> str:
         # NOTE: mypy is not happy without the cast
