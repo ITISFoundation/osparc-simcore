@@ -1,4 +1,3 @@
-from models_library.services import ServiceKey
 from sqlalchemy.sql import select
 
 from ._protocols import DBConnection
@@ -10,7 +9,7 @@ from .models.services_environments import (
 
 async def get_vendor_environments(
     connection: DBConnection,
-    vendor_service_key: ServiceKey,
+    vendor_service_key: str,  # NOTE: ServiceKey is defined in model_library
     *,
     normalize_names: bool = True,
 ) -> OsparcEnvironmentsDict:
