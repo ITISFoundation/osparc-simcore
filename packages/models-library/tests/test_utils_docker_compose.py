@@ -72,8 +72,11 @@ def test_replace_env_vars_in_compose_spec(
 
 
 @pytest.fixture()
-def vendor_environs_for_this_service() -> dict[str, str | int]:
-    return {
+def available_osparc_environments(
+    simcore_registry: str,
+    service_version: str,
+) -> dict[str, str | int]:
+    osparc_vendor_environments = {
         "OSPARC_ENVIRONMENT_VENDOR_LICENSE_SERVER_HOST": "product_a-server",
         "OSPARC_ENVIRONMENT_VENDOR_LICENSE_SERVER_PRIMARY_PORT": 1,
         "OSPARC_ENVIRONMENT_VENDOR_LICENSE_SERVER_SECONDARY_PORT": 2,
@@ -83,6 +86,13 @@ def vendor_environs_for_this_service() -> dict[str, str | int]:
         "OSPARC_ENVIRONMENT_VENDOR_LICENSE_FILE_PRODUCT1": "license-p1.txt",
         "OSPARC_ENVIRONMENT_VENDOR_LICENSE_FILE_PRODUCT2": "license-p2.txt",
         "OSPARC_ENVIRONMENT_VENDOR_LIST": "[1, 2, 3]",
+    }
+
+    return {
+        **osparc_vendor_environments,
+        "SIMCORE_REGISTRY": simcore_registry,
+        "SERVICE_VERSION": service_version,
+        "DISPLAY": "True",
     }
 
 
@@ -144,9 +154,7 @@ def _create_text_template(compose_service_spec: dict[str, Any]) -> TextTemplate:
     ],
 )
 def test_substitutions_in_compose_spec(
-    vendor_environs_for_this_service: dict[str, str | int],
-    simcore_registry: str,
-    service_version: str,
+    available_osparc_environments: dict[str, str | int],
     service_name: str,
     service_spec: dict[str, Any],
     expected_service_spec: dict[str, Any],
@@ -156,12 +164,6 @@ def test_substitutions_in_compose_spec(
     identifiers_requested = template.get_identifiers()
 
     # pick from available oenvs only those requested
-    available_osparc_environments = {
-        **vendor_environs_for_this_service,
-        "SIMCORE_REGISTRY": simcore_registry,
-        "SERVICE_VERSION": service_version,
-        "DISPLAY": "True",
-    }
     substitutions = SubstitutionsDict(
         {
             identifier: available_osparc_environments[identifier]
