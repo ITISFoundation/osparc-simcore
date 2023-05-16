@@ -15,13 +15,9 @@ from dask_task_models_library.container_tasks.events import (
 from dask_task_models_library.container_tasks.io import TaskCancelEventName
 from distributed.worker import get_worker
 from distributed.worker_state_machine import TaskState
+from servicelib.logging_utils import LogLevelInt, LogMessageStr
 
-
-def create_dask_worker_logger(name: str) -> logging.Logger:
-    return logging.getLogger(f"distributed.worker.{name}")
-
-
-logger = create_dask_worker_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def _get_current_task_state() -> TaskState | None:
@@ -88,7 +84,9 @@ async def monitor_task_abortion(
         ):
             publish_event(
                 log_publisher,
-                TaskLogEvent.from_dask_worker(log="[sidecar] cancelling task..."),
+                TaskLogEvent.from_dask_worker(
+                    log="[sidecar] cancelling task...", log_level=logging.INFO
+                ),
             )
             logger.debug("cancelling %s....................", f"{task=}")
             task.cancel()
@@ -110,7 +108,9 @@ async def monitor_task_abortion(
     except asyncio.CancelledError as exc:
         publish_event(
             log_publisher,
-            TaskLogEvent.from_dask_worker(log="[sidecar] task run was aborted"),
+            TaskLogEvent.from_dask_worker(
+                log="[sidecar] task run was aborted", log_level=logging.INFO
+            ),
         )
         raise TaskCancelledError from exc
     finally:
@@ -139,7 +139,8 @@ def publish_task_logs(
     logs_pub: distributed.Pub,
     log_type: LogType,
     message_prefix: str,
-    message: str,
+    message: LogMessageStr,
+    log_level: LogLevelInt,
 ) -> None:
     logger.info("[%s - %s]: %s", message_prefix, log_type.name, message)
     if log_type == LogType.PROGRESS:
@@ -148,4 +149,6 @@ def publish_task_logs(
             TaskProgressEvent.from_dask_worker(progress=float(message)),
         )
     else:
-        publish_event(logs_pub, TaskLogEvent.from_dask_worker(log=message))
+        publish_event(
+            logs_pub, TaskLogEvent.from_dask_worker(log=message, log_level=log_level)
+        )

@@ -17,11 +17,11 @@ from simcore_postgres_database.webserver_models import ProjectType as ProjectTyp
 
 from ..application_settings import get_settings
 from ..director_v2 import api
-from ..storage_api import (
+from ..storage.api import (
     copy_data_folders_from_project,
     get_project_total_size_simcore_s3,
 )
-from ..users_api import get_user_name
+from ..users.api import get_user_name
 from . import projects_api
 from ._permalink import update_or_pop_permalink_in_project
 from ._rest_schemas import ProjectGet

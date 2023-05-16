@@ -21,8 +21,8 @@ from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..login.utils import ACTIVE, GUEST, get_client_ip, get_random_string
 from ..redis import get_redis_lock_manager_client
 from ..security.api import authorized_userid, encrypt_password, is_anonymous, remember
-from ..users_api import get_user
-from ..users_exceptions import UserNotFoundError
+from ..users.api import get_user
+from ..users.exceptions import UserNotFoundError
 from ._constants import MSG_GUESTS_NOT_ALLOWED
 from .settings import StudiesDispatcherSettings, get_plugin_settings
 

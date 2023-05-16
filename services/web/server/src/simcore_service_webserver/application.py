@@ -28,7 +28,7 @@ from .meta_modeling.plugin import setup_meta_modeling
 from .notifications.plugin import setup_notifications
 from .products.plugin import setup_products
 from .projects.plugin import setup_projects
-from .publications import setup_publications
+from .publications.plugin import setup_publications
 from .rabbitmq import setup_rabbitmq
 from .redis import setup_redis
 from .remote_debug import setup_remote_debugging
@@ -39,11 +39,11 @@ from .security.plugin import setup_security
 from .session import setup_session
 from .socketio.plugin import setup_socketio
 from .statics.plugin import setup_statics
-from .storage import setup_storage
+from .storage.plugin import setup_storage
 from .studies_dispatcher.plugin import setup_studies_dispatcher
-from .tags import setup_tags
+from .tags.plugin import setup_tags
 from .tracing import setup_app_tracing
-from .users import setup_users
+from .users.plugin import setup_users
 from .version_control.plugin import setup_version_control
 
 _logger = logging.getLogger(__name__)

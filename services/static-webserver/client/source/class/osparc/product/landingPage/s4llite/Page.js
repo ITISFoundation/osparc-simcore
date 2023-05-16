@@ -48,15 +48,63 @@ qx.Class.define("osparc.product.landingPage.s4llite.Page", {
     marketingScroll.add(marketingLayout);
     pagesStack.add(marketingScroll);
 
+    // Cloud Platform content
+    const cloudPlatformScroll = new qx.ui.container.Scroll();
+    const cloudPlatformLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(null, null, "separator-vertical"));
+    const cloudPlatform = new osparc.product.landingPage.s4llite.solutions.CloudPlatform();
+    cloudPlatformLayout.add(cloudPlatform);
+    const cloudPlatformFooter = new osparc.product.landingPage.s4llite.Footer().set({
+      backgroundColor: "background-main-2"
+    });
+    cloudPlatformLayout.add(cloudPlatformFooter);
+    cloudPlatformScroll.add(cloudPlatformLayout);
+    pagesStack.add(cloudPlatformScroll);
+
+    // Desktop content
+    const desktopScroll = new qx.ui.container.Scroll();
+    const desktopLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(null, null, "separator-vertical"));
+    const desktop = new osparc.product.landingPage.s4llite.solutions.Desktop();
+    desktopLayout.add(desktop);
+    const desktopFooter = new osparc.product.landingPage.s4llite.Footer().set({
+      backgroundColor: "background-main-2"
+    });
+    desktopLayout.add(desktopFooter);
+    desktopScroll.add(desktopLayout);
+    pagesStack.add(desktopScroll);
+
+    // Electromagnetics content
+    const electromagneticsScroll = new qx.ui.container.Scroll();
+    const electromagneticsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(null, null, "separator-vertical"));
+    const electromagnetics = new osparc.product.landingPage.s4llite.solutions.Electromagnetics();
+    electromagneticsLayout.add(electromagnetics);
+    const electromagneticsFooter = new osparc.product.landingPage.s4llite.Footer().set({
+      backgroundColor: "background-main-2"
+    });
+    electromagneticsLayout.add(electromagneticsFooter);
+    electromagneticsScroll.add(electromagneticsLayout);
+    pagesStack.add(electromagneticsScroll);
+
+    // NeuronalActivation content
+    const neuronalActivationScroll = new qx.ui.container.Scroll();
+    const neuronalActivationLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(null, null, "separator-vertical"));
+    const neuronalActivation = new osparc.product.landingPage.s4llite.solutions.NeuronalActivation();
+    neuronalActivationLayout.add(neuronalActivation);
+    const neuronalActivationFooter = new osparc.product.landingPage.s4llite.Footer().set({
+      backgroundColor: "background-main-2"
+    });
+    neuronalActivationLayout.add(neuronalActivationFooter);
+    neuronalActivationScroll.add(neuronalActivationLayout);
+    pagesStack.add(neuronalActivationScroll);
+
     // Pricing content
     const pricingScroll = new qx.ui.container.Scroll();
     const pricingLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(null, null, "separator-vertical"));
     const pricing = new osparc.product.landingPage.s4llite.Pricing();
     pricingLayout.add(pricing);
-    const footer2 = new osparc.product.landingPage.s4llite.Footer().set({
+    const pricingFooter = new osparc.product.landingPage.s4llite.Footer().set({
       backgroundColor: "background-main-2"
     });
-    pricingLayout.add(footer2);
+    pricingLayout.add(pricingFooter);
     pricingScroll.add(pricingLayout);
     pagesStack.add(pricingScroll);
 
@@ -64,8 +112,12 @@ qx.Class.define("osparc.product.landingPage.s4llite.Page", {
       flex: 1
     });
 
+    navBar.addListener("showCloudPlatform", () => pagesStack.setSelection([cloudPlatformScroll]));
+    navBar.addListener("showDesktop", () => pagesStack.setSelection([desktopScroll]));
+    navBar.addListener("showElectromagnetics", () => pagesStack.setSelection([electromagneticsScroll]));
+    navBar.addListener("showNeuronalActivation", () => pagesStack.setSelection([neuronalActivationScroll]));
     navBar.addListener("showPricing", () => pagesStack.setSelection([pricingScroll]));
-    pricing.addListener("backToContent", () => pagesStack.setSelection([marketingScroll]));
+    navBar.addListener("showMainContent", () => pagesStack.setSelection([marketingScroll]));
 
     const chat = osparc.product.landingPage.Chat.getInstance();
     chat.start();

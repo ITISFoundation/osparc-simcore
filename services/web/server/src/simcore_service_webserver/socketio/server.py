@@ -5,14 +5,9 @@ from typing import AsyncIterator
 from aiohttp import web
 from socketio import AsyncServer
 
-APP_CLIENT_SOCKET_SERVER_KEY = f"{__name__}.socketio_socketio"
-APP_CLIENT_SOCKET_DECORATED_HANDLERS_KEY = f"{__name__}.socketio_handlers"
+from ._utils import APP_CLIENT_SOCKET_SERVER_KEY, get_socket_server
 
-log = logging.getLogger(__name__)
-
-
-def get_socket_server(app: web.Application) -> AsyncServer:
-    return app[APP_CLIENT_SOCKET_SERVER_KEY]
+_logger = logging.getLogger(__name__)
 
 
 async def _socketio_server_cleanup_ctx(_app: web.Application) -> AsyncIterator[None]:
@@ -36,7 +31,7 @@ async def _socketio_server_cleanup_ctx(_app: web.Application) -> AsyncIterator[N
     await asyncio.gather(*cancelled_tasks, return_exceptions=True)
 
 
-def setup_socketio_server(app: web.Application):
+def setup_socketio_server(app: web.Application) -> AsyncServer:
     if app.get(APP_CLIENT_SOCKET_SERVER_KEY) is None:
         # SEE https://github.com/miguelgrinberg/python-socketio/blob/v4.6.1/docs/server.rst#aiohttp
         # TODO: ujson to speed up?
@@ -44,7 +39,7 @@ def setup_socketio_server(app: web.Application):
 
         sio_server = AsyncServer(
             async_mode="aiohttp",
-            logger=log,  # type: ignore
+            logger=_logger,
             engineio_logger=False,
         )
         sio_server.attach(app)
@@ -57,3 +52,11 @@ def setup_socketio_server(app: web.Application):
         assert sio_server == get_socket_server(app)  # nosec
 
     return get_socket_server(app)
+
+
+assert get_socket_server  # nosec
+
+__all__: tuple[str, ...] = (
+    "get_socket_server",
+    "setup_socketio_server",
+)

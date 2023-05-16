@@ -40,7 +40,7 @@ from ..projects.projects_exceptions import (
 )
 from ..redis import get_redis_lock_manager_client
 from ..security.api import is_anonymous, remember
-from ..storage_api import copy_data_folders_from_project
+from ..storage.api import copy_data_folders_from_project
 from ..utils import compose_support_error_msg
 from ..utils_aiohttp import create_redirect_response
 from ._constants import (
