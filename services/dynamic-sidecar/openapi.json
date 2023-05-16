@@ -658,28 +658,6 @@
           }
         }
       }
-    },
-    "/v1/docker/quotas:check": {
-      "post": {
-        "tags": [
-          "docker"
-        ],
-        "summary": "Are Quotas Supported",
-        "description": "Checks if docker daemon on the node has supports for volume and disk quotas",
-        "operationId": "are_quotas_supported_v1_docker_quotas_check_post",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QuotasCheckResponse"
-                }
-              }
-            }
-          }
-        }
-      }
     }
   },
   "components": {
@@ -786,19 +764,6 @@
         "properties": {
           "is_enabled": {
             "title": "Is Enabled",
-            "type": "boolean"
-          }
-        }
-      },
-      "QuotasCheckResponse": {
-        "title": "QuotasCheckResponse",
-        "required": [
-          "are_quotas_supported"
-        ],
-        "type": "object",
-        "properties": {
-          "are_quotas_supported": {
-            "title": "Are Quotas Supported",
             "type": "boolean"
           }
         }
