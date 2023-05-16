@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --resolver=backtracking --strip-extras requirements/_test.in
 #
-coverage==7.2.3
+coverage==7.2.5
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -37,7 +37,7 @@ pytest-sugar==0.9.7
     # via -r requirements/_test.in
 python-dotenv==1.0.0
     # via -r requirements/_test.in
-termcolor==2.2.0
+termcolor==2.3.0
     # via pytest-sugar
 tomli==2.0.1
     # via
