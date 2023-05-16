@@ -244,7 +244,7 @@ def create_jobstatus_from_task(task: ComputationTaskGet) -> JobStatus:
     job_status = JobStatus(
         job_id=task.id,
         state=task.state,
-        progress=task.pipeline_details.progress,
+        progress=int((task.pipeline_details.progress or 0) * 100.0),
         submitted_at=datetime.utcnow(),
     )
 
