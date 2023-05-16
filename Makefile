@@ -43,6 +43,7 @@ SERVICES_NAMES_TO_BUILD := \
 	invitations \
   migration \
 	osparc-gateway-server \
+	resource-usage-tracker \
   service-integration \
   static-webserver \
   storage \
