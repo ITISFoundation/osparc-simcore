@@ -437,9 +437,6 @@ class CreateUserServices(DynamicSchedulerEvent):
         # creates a docker compose spec given the service key and tag
         # fetching project form DB and fetching user settings
 
-        has_quota_support = await dynamic_sidecar_client.has_quota_support(
-            dynamic_sidecar_endpoint
-        )
         director_v0_client: DirectorV0Client = get_director_v0_client(app)
         simcore_service_labels: SimcoreServiceLabels = (
             await director_v0_client.get_service_labels(
@@ -465,7 +462,7 @@ class CreateUserServices(DynamicSchedulerEvent):
             dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
             swarm_network_name=scheduler_data.dynamic_sidecar.swarm_network_name,
             service_resources=scheduler_data.service_resources,
-            has_quota_support=has_quota_support,
+            has_quota_support=dynamic_sidecar_settings.DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS,
             simcore_service_labels=simcore_service_labels,
             allow_internet_access=allow_internet_access,
             product_name=scheduler_data.product_name,
