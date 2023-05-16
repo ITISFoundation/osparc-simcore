@@ -276,10 +276,6 @@ def test_run_job(
     # download log (Added in on API version 0.4.0 / client version 0.5.0 )
     if OSPARC_CLIENT_VERSION >= (0, 5, 0):
         print("Testing output logfile ...")
-
-        # NOTE: https://github.com/itisfoundation/osparc-simcore/issues/3569 shows
-        # that this test might not have the logs ready in time and returns a 404 (not found)
-        # for that reason we do a few retries before giving up
         logfile: str = solvers_api.get_job_output_logfile(
             solver.id, solver.version, job.id
         )
