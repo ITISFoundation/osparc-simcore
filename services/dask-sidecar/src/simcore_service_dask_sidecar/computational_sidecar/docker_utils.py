@@ -14,7 +14,6 @@ from typing import (
     Awaitable,
     Callable,
     Coroutine,
-    Final,
     cast,
 )
 
@@ -31,12 +30,24 @@ from packaging import version
 from pydantic import ByteSize
 from pydantic.networks import AnyUrl
 from servicelib.docker_utils import to_datetime
-from servicelib.logging_utils import log_catch, log_context
+from servicelib.logging_utils import (
+    LogLevelInt,
+    LogMessageStr,
+    guess_message_log_level,
+    log_catch,
+    log_context,
+)
 from settings_library.s3 import S3Settings
 
 from ..dask_utils import LogType, create_dask_worker_logger, publish_task_logs
 from ..file_utils import push_file_to_remote
 from ..settings import Settings
+from .constants import (
+    DOCKER_LOG_REGEXP,
+    LEGACY_SERVICE_LOG_FILE_NAME,
+    PARSE_LOG_INTERVAL_S,
+    PROGRESS_REGEXP,
+)
 from .models import (
     LEGACY_INTEGRATION_VERSION,
     ContainerHostConfig,
@@ -45,7 +56,7 @@ from .models import (
 from .task_shared_volume import TaskSharedVolumes
 
 logger = create_dask_worker_logger(__name__)
-LogPublishingCB = Callable[[str], Awaitable[None]]
+LogPublishingCB = Callable[[LogMessageStr, LogLevelInt], Awaitable[None]]
 
 
 async def create_container_config(
@@ -128,57 +139,58 @@ async def managed_container(
             raise
 
 
-_DOCKER_LOG_REGEXP: re.Pattern[str] = re.compile(
-    r"^(?P<timestamp>(?:(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}:\d{2}(?:\.\d+)?))(Z|[\+-]\d{2}:\d{2})?)"
-    r"\s(?P<log>.*)$"
-)
-_PROGRESS_REGEXP: re.Pattern[str] = re.compile(
-    r"^(?:\[?progress\]?:?)?\s*"
-    r"(?P<value>[0-1]?\.\d+|"
-    r"\d+\s*(?:(?P<percent_sign>%)|"
-    r"\d+\s*"
-    r"(?P<percent_explicit>percent))|"
-    r"\[?(?P<fraction>\d+\/\d+)\]?"
-    r"|0|1)"
-)
+def _guess_progress_value(progress_match: re.Match[str]) -> float:
+    value: float = 0.0
+    try:
+        # can be anything from "23 percent", 23%, 23/234, 0.0-1.0
+        progress_str = progress_match.group("value")
+        if progress_match.group("percent_sign"):
+            # this is of the 23% kind
+            value = float(progress_str.split("%")[0].strip()) / 100.0
+        elif progress_match.group("percent_explicit"):
+            # this is of the 23 percent kind
+            value = float(progress_str.split("percent")[0].strip()) / 100.0
+        elif progress_match.group("fraction"):
+            # this is of the 23/123 kind
+            nums = progress_match.group("fraction").strip().split("/")
+            value = float(nums[0].strip()) / float(nums[1].strip())
+        else:
+            # this is of the 0.0-1.0 kind
+            value = float(progress_str.strip())
+    except ValueError:
+        logger.exception("Could not extract progress from log line %s", progress_match)
+    return value
 
 
-async def _parse_line(line: str) -> tuple[LogType, datetime.datetime, str]:
-    match = re.search(_DOCKER_LOG_REGEXP, line)
+async def _parse_line(
+    line: str,
+) -> tuple[LogType, datetime.datetime, LogMessageStr, LogLevelInt]:
+    match = re.search(DOCKER_LOG_REGEXP, line)
     if not match:
         # try to correct the log, it might be coming from an old comp service that does not put timestamps
         corrected_line = f"{arrow.utcnow().datetime.isoformat()} {line}"
-        match = re.search(_DOCKER_LOG_REGEXP, corrected_line)
+        match = re.search(DOCKER_LOG_REGEXP, corrected_line)
     if not match:
         # default return as log
-        return (LogType.LOG, arrow.utcnow().datetime, f"{line}")
+        return (
+            LogType.LOG,
+            arrow.utcnow().datetime,
+            f"{line}",
+            guess_message_log_level(line),
+        )
 
-    log_type = LogType.LOG
     timestamp = to_datetime(match.group("timestamp"))
     log = f"{match.group('log')}"
     # now look for progress
-    match = re.search(_PROGRESS_REGEXP, log.lower())
-    if match:
-        try:
-            # can be anything from "23 percent", 23%, 23/234, 0.0-1.0
-            progress = match.group("value")
-            log_type = LogType.PROGRESS
-            if match.group("percent_sign"):
-                # this is of the 23% kind
-                log = f"{float(progress.split('%')[0].strip()) / 100.0:.2f}"
-            elif match.group("percent_explicit"):
-                # this is of the 23 percent kind
-                log = f"{float(progress.split('percent')[0].strip()) / 100.0:.2f}"
-            elif match.group("fraction"):
-                # this is of the 23/123 kind
-                nums = match.group("fraction").strip().split("/")
-                log = f"{float(nums[0].strip()) / float(nums[1].strip()):.2f}"
-            else:
-                # this is of the 0.0-1.0 kind
-                log = f"{float(progress.strip()):.2f}"
-        except ValueError:
-            logger.exception("Could not extract progress from log line %s", line)
-    return (log_type, timestamp, log)
+    if match := re.search(PROGRESS_REGEXP, log.lower()):
+        return (
+            LogType.PROGRESS,
+            timestamp,
+            f"{_guess_progress_value(match):.2f}",
+            logging.INFO,
+        )
+
+    return (LogType.LOG, timestamp, log, guess_message_log_level(log))
 
 
 async def _publish_container_logs(
@@ -189,7 +201,8 @@ async def _publish_container_logs(
     progress_pub: Pub,
     logs_pub: Pub,
     log_type: LogType,
-    message: str,
+    message: LogMessageStr,
+    log_level: LogLevelInt,
 ) -> None:
     return publish_task_logs(
         progress_pub,
@@ -197,11 +210,8 @@ async def _publish_container_logs(
         log_type,
         message_prefix=f"{service_key}:{service_version} - {container.id}{container_name}",
         message=message,
+        log_level=log_level,
     )
-
-
-LEGACY_SERVICE_LOG_FILE_NAME: Final[str] = "log.dat"
-PARSE_LOG_INTERVAL_S: Final[float] = 0.5
 
 
 async def _parse_container_log_file(
@@ -223,7 +233,7 @@ async def _parse_container_log_file(
         logger.debug("monitoring legacy-style container log file: opened %s", log_file)
         while (await container.show())["State"]["Running"]:
             if line := await file_pointer.readline():
-                log_type, _, message = await _parse_line(line)
+                log_type, _, message, log_level = await _parse_line(line)
                 await _publish_container_logs(
                     service_key=service_key,
                     service_version=service_version,
@@ -233,12 +243,13 @@ async def _parse_container_log_file(
                     logs_pub=logs_pub,
                     log_type=log_type,
                     message=message,
+                    log_level=log_level,
                 )
 
             await asyncio.sleep(PARSE_LOG_INTERVAL_S)
         # finish reading the logs if possible
         async for line in file_pointer:
-            log_type, _, message = await _parse_line(line)
+            log_type, _, message, log_level = await _parse_line(line)
             await _publish_container_logs(
                 service_key=service_key,
                 service_version=service_version,
@@ -248,6 +259,7 @@ async def _parse_container_log_file(
                 logs_pub=logs_pub,
                 log_type=log_type,
                 message=message,
+                log_level=log_level,
             )
         logger.debug(
             "monitoring legacy-style container log file: completed reading of %s",
@@ -299,7 +311,9 @@ async def _parse_container_docker_logs(
                 container.log(stdout=True, stderr=True, follow=True, timestamps=True),
             ):
                 await log_fp.write(log_line.encode("utf-8"))
-                log_type, latest_log_timestamp, message = await _parse_line(log_line)
+                log_type, latest_log_timestamp, message, log_level = await _parse_line(
+                    log_line
+                )
                 await _publish_container_logs(
                     service_key=service_key,
                     service_version=service_version,
@@ -309,6 +323,7 @@ async def _parse_container_docker_logs(
                     logs_pub=logs_pub,
                     log_type=log_type,
                     message=message,
+                    log_level=log_level,
                 )
 
             logger.debug(
@@ -330,7 +345,9 @@ async def _parse_container_docker_logs(
             )
             for log_line in missing_logs:
                 await log_fp.write(log_line.encode("utf-8"))
-                log_type, latest_log_timestamp, message = await _parse_line(log_line)
+                log_type, latest_log_timestamp, message, log_level = await _parse_line(
+                    log_line
+                )
                 await _publish_container_logs(
                     service_key=service_key,
                     service_version=service_version,
@@ -340,6 +357,7 @@ async def _parse_container_docker_logs(
                     logs_pub=logs_pub,
                     log_type=log_type,
                     message=message,
+                    log_level=log_level,
                 )
 
         logger.debug(
@@ -492,10 +510,12 @@ async def pull_image(
         },
     ):
         await log_publishing_cb(
-            f"Pulling {service_key}:{service_version}: {pull_progress}..."
+            f"Pulling {service_key}:{service_version}: {pull_progress}...",
+            logging.DEBUG,
         )
     await log_publishing_cb(
-        f"Docker image for {service_key}:{service_version} ready  on {socket.gethostname()}."
+        f"Docker image for {service_key}:{service_version} ready  on {socket.gethostname()}.",
+        logging.INFO,
     )
 
 
