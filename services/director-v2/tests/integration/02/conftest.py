@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
+from typing import AsyncIterator
 from uuid import uuid4
 
 import aiodocker
@@ -20,7 +21,9 @@ def network_name() -> str:
 
 
 @pytest.fixture
-async def ensure_swarm_and_networks(network_name: str, docker_swarm: None):
+async def ensure_swarm_and_networks(
+    network_name: str, docker_swarm: None
+) -> AsyncIterator[None]:
     """
     Make sure to always have a docker swarm network.
     If one is not present crete one. There can not be more then one.
