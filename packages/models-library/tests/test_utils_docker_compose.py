@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-import json
 from typing import Any
 
 import pytest
@@ -11,10 +10,9 @@ import yaml
 from models_library.utils.docker_compose import (
     MATCH_SERVICE_VERSION,
     MATCH_SIMCORE_REGISTRY,
-    create_text_template,
+    SpecsEnvironmentsResolver,
     replace_env_vars_in_compose_spec,
 )
-from models_library.utils.string_substitution import SubstitutionsDict
 
 
 @pytest.fixture()
@@ -142,32 +140,24 @@ def test_substitutions_in_compose_spec(
     service_spec: dict[str, Any],
     expected_service_spec: dict[str, Any],
 ):
-    template = create_text_template(service_spec, upgrade=True)
+    specs_resolver = SpecsEnvironmentsResolver(service_spec, upgrade=True)
 
-    identifiers_requested = template.get_identifiers()
+    identifiers_requested = specs_resolver.get_identifiers()
 
-    # pick from available oenvs only those requested
-    substitutions = SubstitutionsDict(
-        {
-            identifier: available_osparc_environments[identifier]
-            for identifier in identifiers_requested
-            if identifier in available_osparc_environments
-        }
-    )
+    substitutions = specs_resolver.set_substitutions(available_osparc_environments)
+    assert substitutions is specs_resolver.substitutions
 
     assert set(identifiers_requested) == set(substitutions.keys())
 
-    new_service_spec_str = template.safe_substitute(substitutions)
+    new_service_spec = specs_resolver.run()
 
     assert not substitutions.unused
     assert substitutions.used == set(identifiers_requested)
 
-    assert (
-        "$" not in new_service_spec_str
-    ), f"All should be replaced in '{service_name}': {substitutions.used}"
+    new_service_spec_text = yaml.safe_dump(new_service_spec)
 
-    # can de/serialize
-    new_service_spec: dict = yaml.safe_load(new_service_spec_str)
-    print(json.dumps(new_service_spec, indent=1))
+    assert (
+        "$" not in new_service_spec_text
+    ), f"All should be replaced in '{service_name}': {substitutions.used}"
 
     assert new_service_spec == expected_service_spec
