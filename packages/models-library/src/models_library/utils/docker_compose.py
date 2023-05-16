@@ -49,10 +49,13 @@ def replace_env_vars_in_compose_spec(
 
 
 def create_text_template(
-    compose_service_spec: dict[str, Any], *, upgrade: bool
+    compose_service_spec: dict[str, Any] | str, *, upgrade: bool
 ) -> TextTemplate:
     # convert
-    service_spec_str: str = yaml.safe_dump(compose_service_spec)
+    if isinstance(compose_service_spec, dict):
+        service_spec_str: str = yaml.safe_dump(compose_service_spec)
+    else:
+        service_spec_str = compose_service_spec
 
     if upgrade:  # legacy
         service_spec_str = substitute_all_legacy_identifiers(service_spec_str)
