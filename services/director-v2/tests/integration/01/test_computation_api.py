@@ -714,7 +714,7 @@ async def test_abort_computation(
     ), f"response code is {response.status_code}, error: {response.text}"
     task_out = ComputationGet.parse_obj(response.json())
     assert task_out.url.path == f"/v2/computations/{sleepers_project.uuid}:stop"
-    assert task_out.stop_url == None
+    assert task_out.stop_url is None
 
     # check that the pipeline is aborted/stopped
     task_out = await assert_and_wait_for_pipeline_status(
