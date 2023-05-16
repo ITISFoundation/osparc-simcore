@@ -5,13 +5,18 @@
 
 from enum import Enum
 
-from pydantic.types import conint, constr
+from pydantic import ConstrainedInt, ConstrainedStr
+
 
 # port number range
-PortInt = conint(gt=0, lt=65535)
+class PortInt(ConstrainedInt):
+    gt = 0
+    lt = 65535
+
 
 # e.g. 'v5'
-VersionTag = constr(regex=r"^v\d$")
+class VersionTag(ConstrainedStr):
+    regex = r"^v\d$"
 
 
 class LogLevel(str, Enum):
