@@ -1,30 +1,21 @@
 import asyncio
 import logging
-from asyncio import Task
 from contextlib import asynccontextmanager
 from enum import Enum
 from typing import Any, AsyncGenerator, Awaitable, Callable, Final, TypedDict
-from uuid import uuid4
 
 import aiodocker
 import yaml
-from aiocache import cached
 from aiodocker.utils import clean_filters
-from aiodocker.volumes import DockerVolume
 from models_library.basic_regex import DOCKER_GENERIC_TAG_KEY_RE
 from models_library.services import RunID
 from pydantic import PositiveInt, parse_obj_as
 from servicelib.logging_utils import log_catch
-from servicelib.utils import fire_and_forget_task
 from settings_library.docker_registry import RegistrySettings
 
 from .errors import UnexpectedDockerError, VolumeNotFoundError
 
 logger = logging.getLogger(__name__)
-
-EXPECTED_NO_QUOTAS_ERROR_MESSAGE: Final[
-    str
-] = "quota size requested but no quota support"
 
 
 @asynccontextmanager
@@ -254,40 +245,3 @@ async def _pull_image_with_progress(
             await log_cb(
                 f"pulling {shorter_image_name}: {pull_progress}...", logging.DEBUG
             )
-
-
-_fire_and_forget_tasks_collection: set[Task] = set()
-
-
-async def _volume_cleanup(docker_volume: DockerVolume) -> None:
-    await docker_volume.delete()
-
-
-@cached()
-async def supports_volumes_with_quota() -> bool:
-    async with docker_client() as docker:
-        docker_volume: DockerVolume | None = None
-        volume_name = f"check-quota-{uuid4()}"
-        try:
-            docker_volume = await docker.volumes.create(
-                {
-                    "name": volume_name,
-                    "Driver": "local",
-                    "DriverOpts": {"size": "1m"},
-                }
-            )
-        except aiodocker.DockerError as e:
-            # NOTE: below message comes from docker source code
-            # https://github.com/tiborvass/docker/blob/master/volume/local/local_unix.go#L86
-            if EXPECTED_NO_QUOTAS_ERROR_MESSAGE in e.message:
-                logger.debug("No support for volume with quota")
-                return False
-            raise e
-        if docker_volume:
-            fire_and_forget_task(
-                _volume_cleanup(docker_volume),
-                task_suffix_name=f"remove-{volume_name}",
-                fire_and_forget_tasks_collection=_fire_and_forget_tasks_collection,
-            )
-
-        return True

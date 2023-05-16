@@ -16,7 +16,6 @@ from simcore_service_dynamic_sidecar.core.docker_utils import (
     get_running_containers_count_from_names,
     get_volume_by_label,
     pull_images,
-    supports_volumes_with_quota,
 )
 from simcore_service_dynamic_sidecar.core.errors import VolumeNotFoundError
 
@@ -193,9 +192,3 @@ async def test_pull_image(repeat: str):
         progress_cb=_print_progress,
         log_cb=_print_log,
     )
-
-
-async def test_supports_volumes_with_size(
-    mock_docker_volume: None, volume_has_quota_support: bool
-):
-    assert await supports_volumes_with_quota() is volume_has_quota_support
