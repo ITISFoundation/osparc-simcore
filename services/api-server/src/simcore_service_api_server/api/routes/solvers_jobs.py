@@ -46,7 +46,7 @@ def _compose_job_resource_name(solver_key, solver_version, job_id) -> str:
     )
 
 
-## JOBS ---------------
+# JOBS ---------------
 #
 # - Similar to docker container's API design (container = job and image = solver)
 #
@@ -224,7 +224,7 @@ async def inspect_job(
     job_id: UUID,
     user_id: PositiveInt = Depends(get_current_user_id),
     director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
-):
+) -> JobStatus:
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Inspecting Job '%s'", job_name)
 
