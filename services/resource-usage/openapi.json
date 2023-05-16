@@ -1,0 +1,79 @@
+{
+  "openapi": "3.0.2",
+  "info": {
+    "title": "simcore-service-resource-usage web API",
+    "description": " Service that pushes service resource usage per userID to a postgres database",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Healthcheck",
+        "operationId": "healthcheck__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/meta": {
+      "get": {
+        "tags": [
+          "meta"
+        ],
+        "summary": "Get Service Metadata",
+        "operationId": "get_service_metadata_v1_meta_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/_Meta"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "_Meta": {
+        "title": "_Meta",
+        "required": [
+          "name",
+          "version",
+          "docs_url"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          },
+          "docs_url": {
+            "title": "Docs Url",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      }
+    }
+  }
+}
