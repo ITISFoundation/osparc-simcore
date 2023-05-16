@@ -18,7 +18,7 @@ from tenacity.wait import wait_exponential
 from ._constants import APP_DB_ENGINE_KEY
 from .login.utils import notify_user_logout
 from .security.api import clean_auth_policy_cache
-from .users_db import update_expired_users
+from .users.api import update_expired_users
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ async def notify_user_logout_all_sessions(
             logger.warning(
                 "Ignored error while notifying logout for %s",
                 f"{user_id=}",
-                exec_info=True,
+                exc_info=True,
                 extra=get_log_record_extra(user_id=user_id),
             )
 

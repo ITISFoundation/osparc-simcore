@@ -17,7 +17,6 @@ from servicelib.utils import logged_gather
 from simcore_postgres_database.errors import DatabaseError
 from simcore_postgres_database.models.users import UserRole
 
-from . import users_exceptions
 from .director.director_exceptions import DirectorException, ServiceNotFoundError
 from .director_v2 import api
 from .director_v2.exceptions import ServiceWaitingForManualIntervention
@@ -38,13 +37,14 @@ from .projects.projects_exceptions import (
 )
 from .redis import get_redis_lock_manager_client
 from .resource_manager.registry import RedisResourceRegistry, get_registry
-from .users_api import (
-    delete_user,
+from .users import exceptions
+from .users.api import (
+    delete_user_without_projects,
     get_guest_user_ids_and_names,
     get_user,
     get_user_role,
 )
-from .users_exceptions import UserNotFoundError
+from .users.exceptions import UserNotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -471,7 +471,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
     # recover user's primary_gid
     try:
         project_owner: dict = await get_user(app=app, user_id=user_id)
-    except users_exceptions.UserNotFoundError:
+    except exceptions.UserNotFoundError:
         logger.warning(
             "Could not recover user data for user '%s', stopping removal of projects!",
             f"{user_id=}",
@@ -587,7 +587,7 @@ async def remove_guest_user_with_all_its_resources(
             "Deleting user %s because it is a GUEST",
             f"{user_id=}",
         )
-        await delete_user(app, user_id)
+        await delete_user_without_projects(app, user_id)
 
     except (
         DatabaseError,

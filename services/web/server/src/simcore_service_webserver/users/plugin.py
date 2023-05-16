@@ -12,10 +12,10 @@ from servicelib.aiohttp.rest_routing import (
     map_handlers_with_operations,
 )
 
-from . import users_handlers
-from ._constants import APP_OPENAPI_SPECS_KEY
+from .._constants import APP_OPENAPI_SPECS_KEY
+from . import _handlers
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @app_module_setup(
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_USERS",
     depends=["simcore_service_webserver.rest"],
-    logger=logger,
+    logger=_logger,
 )
 def setup_users(app: web.Application):
     assert app[APP_SETTINGS_KEY].WEBSERVER_USERS  # nosec
@@ -31,7 +31,7 @@ def setup_users(app: web.Application):
     # routes related with users
     specs = app[APP_OPENAPI_SPECS_KEY]
     routes = map_handlers_with_operations(
-        get_handlers_from_namespace(users_handlers),
+        get_handlers_from_namespace(_handlers),
         filter(lambda o: "me" in o[1].split("/"), iter_path_operations(specs)),
         strict=True,
     )

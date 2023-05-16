@@ -1,7 +1,7 @@
 import logging
 from abc import abstractmethod
 from enum import Enum, auto
-from typing import Any, Literal
+from typing import Any, Literal, TypeAlias
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -10,6 +10,9 @@ from models_library.users import UserID
 from models_library.utils.enums import StrAutoEnum
 from pydantic import BaseModel, Field
 from pydantic.types import NonNegativeFloat
+
+LogLevelInt: TypeAlias = int
+LogMessageStr: TypeAlias = str
 
 
 class RabbitEventMessageType(str, Enum):
@@ -47,8 +50,8 @@ class NodeMessageBase(ProjectMessageBase):
 
 class LoggerRabbitMessage(RabbitMessageBase, NodeMessageBase):
     channel_name: Literal["simcore.services.logs.v2"] = "simcore.services.logs.v2"
-    messages: list[str]
-    log_level: int = logging.INFO
+    messages: list[LogMessageStr]
+    log_level: LogLevelInt = logging.INFO
 
     def routing_key(self) -> str:
         return f"{self.project_id}.{self.log_level}"
