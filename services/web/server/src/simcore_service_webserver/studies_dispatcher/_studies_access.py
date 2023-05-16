@@ -111,7 +111,7 @@ async def _get_published_template_project(
             raise RedirectToFrontEndPageError(
                 MSG_PUBLIC_PROJECT_NOT_PUBLISHED.format(support_email=support_email),
                 error_code="PUBLIC_PROJECT_NOT_PUBLISHED",
-                status_code=web.Unauthorized.status_code,
+                status_code=web.HTTPUnauthorized.status_code,
             ) from err
 
         raise RedirectToFrontEndPageError(
