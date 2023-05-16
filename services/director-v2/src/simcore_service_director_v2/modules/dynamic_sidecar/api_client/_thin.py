@@ -225,11 +225,3 @@ class ThinDynamicSidecarClient(BaseThinClient):
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "/containers:restart")
         return await self.client.post(url)
-
-    @retry_on_errors
-    @expect_status(status.HTTP_200_OK)
-    async def supported_docker_quotas(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl
-    ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/docker/quotas:check")
-        return await self.client.post(url)

@@ -314,20 +314,3 @@ async def test_post_containers_tasks(
     thin_client_handler = getattr(thin_client, handler_name)
     response = await thin_client_handler(dynamic_sidecar_endpoint, **extra_kwargs)
     assert_responses(mock_response, response)
-
-
-@pytest.mark.parametrize("expected_response", [Response(status.HTTP_200_OK)])
-async def test_post_docker_quotas_supported(
-    thin_client: ThinDynamicSidecarClient,
-    dynamic_sidecar_endpoint: AnyHttpUrl,
-    mock_request: MockRequestType,
-    expected_response: Response,
-) -> None:
-    mock_request(
-        "POST",
-        f"/{thin_client.API_VERSION}/docker/quotas:check",
-        expected_response,
-        None,
-    )
-    response = await thin_client.supported_docker_quotas(dynamic_sidecar_endpoint)
-    assert_responses(expected_response, response)

@@ -331,34 +331,3 @@ async def test_detach_container_from_network(
             )
             is None
         )
-
-
-@pytest.mark.parametrize(
-    "response, expected_result",
-    [
-        pytest.param(
-            Response(
-                status_code=status.HTTP_200_OK, json=dict(are_quotas_supported=True)
-            ),
-            True,
-            id="supports_quotas",
-        ),
-        pytest.param(
-            Response(
-                status_code=status.HTTP_200_OK, json=dict(are_quotas_supported=False)
-            ),
-            False,
-            id="no_quotas_support",
-        ),
-    ],
-)
-async def test_are_quotas_supported(
-    get_patched_client: Callable,
-    dynamic_sidecar_endpoint: AnyHttpUrl,
-    response: Response,
-    expected_result: bool,
-) -> None:
-    with get_patched_client("supported_docker_quotas", return_value=response) as client:
-        assert (
-            await client.has_quota_support(dynamic_sidecar_endpoint) == expected_result
-        )
