@@ -45,7 +45,7 @@ def registered_user(
             assert user
             print(f"--> created {user=}")
             created_user_ids.append(user["id"])
-        return dict(user)
+        return dict(user._asdict())
 
     yield creator
 
