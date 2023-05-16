@@ -25,6 +25,13 @@ services_vendor_environments = sa.Table(
     sa.Column(
         "identifiers_map",
         JSONB,
+        sa.CheckConstraint(
+            sa.text(
+                "jsonb_typeof(data) = 'object' AND "
+                "NOT EXISTS (SELECT 1 FROM jsonb_each(data) WHERE NOT jsonb_path_text(jsonb_object_keys(data), key_path) LIKE 'OSPARC_ENVIRONMENT_%')"
+            ),
+            name="services_vendor_environments_indentifiers_map_key_prefix_required",
+        ),
         nullable=False,
         server_default=sa.text("'{}'::jsonb"),
         doc="Maps OSPARC_ENVIRONMENT_* identifiers to a value that can be replaced at runtime in compose specs",
