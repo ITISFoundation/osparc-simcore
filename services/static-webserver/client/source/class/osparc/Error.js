@@ -186,8 +186,8 @@ qx.Class.define("osparc.Error", {
           break;
         case "actions-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(20)).set({
-          alignX: "center",
-          maxWidth: 400
+            alignX: "center",
+            maxWidth: 400
           });
           break;
         case "copy-to-clipboard": {
