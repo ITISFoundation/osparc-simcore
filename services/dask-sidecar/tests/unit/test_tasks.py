@@ -17,6 +17,7 @@ from typing import Callable, Coroutine, Iterable
 from unittest import mock
 from uuid import uuid4
 
+import distributed
 import fsspec
 import pytest
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
@@ -31,7 +32,6 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputData,
     TaskOutputDataSchema,
 )
-from distributed import Client
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -453,7 +453,7 @@ def test_run_computational_sidecar_real_fct(
 )
 def test_run_multiple_computational_sidecar_dask(
     event_loop: asyncio.AbstractEventLoop,
-    dask_client: Client,
+    dask_client: distributed.Client,
     ubuntu_task: ServiceExampleParam,
     mocker: MockerFixture,
     s3_settings: S3Settings,
@@ -494,15 +494,23 @@ def test_run_multiple_computational_sidecar_dask(
             assert output_data[k] == v
 
 
+@pytest.fixture
+def log_sub(
+    dask_client: distributed.Client,
+) -> distributed.Sub:
+    return distributed.Sub(TaskLogEvent.topic_name(), client=dask_client)
+
+
 @pytest.mark.parametrize(
     "integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True
 )
-def test_run_computational_sidecar_dask(
-    dask_client: Client,
+async def test_run_computational_sidecar_dask(
+    dask_client: distributed.Client,
     ubuntu_task: ServiceExampleParam,
     mocker: MockerFixture,
     s3_settings: S3Settings,
     boot_mode: BootMode,
+    log_sub: distributed.Sub,
 ):
     mocker.patch(
         "simcore_service_dask_sidecar.computational_sidecar.core.get_integration_version",
@@ -524,17 +532,15 @@ def test_run_computational_sidecar_dask(
     )
 
     worker_name = next(iter(dask_client.scheduler_info()["workers"]))
-
+    assert worker_name
     output_data = future.result()
     assert isinstance(output_data, TaskOutputData)
 
     # check that the task produces expected logs
-    worker_logs = [log for _, log in dask_client.get_worker_logs()[worker_name]]  # type: ignore
-    worker_logs.reverse()
+    worker_logs = [TaskLogEvent.parse_raw(msg).log for msg in log_sub.buffer]
+
     for log in ubuntu_task.expected_logs:
-        r = re.compile(
-            rf"\[{ubuntu_task.service_key}:{ubuntu_task.service_version} - [^\/]+\/[^\s]+ - [^\]]+\]: ({log})"
-        )
+        r = re.compile(rf"^({log}).*")
         search_results = list(filter(r.search, worker_logs))
         assert (
             len(search_results) > 0
