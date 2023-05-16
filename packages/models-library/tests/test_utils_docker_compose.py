@@ -21,7 +21,7 @@ from models_library.utils.string_substitution import (
 
 
 @pytest.fixture()
-def docker_compose_spec() -> "ComposeSpecLabel":
+def docker_compose_spec() -> "ComposeSpecLabelDict":
     return {
         "version": "2.3",
         "services": {
@@ -52,7 +52,9 @@ def service_version() -> str:
 
 
 def test_replace_env_vars_in_compose_spec(
-    docker_compose_spec: "ComposeSpecLabel", simcore_registry: str, service_version: str
+    docker_compose_spec: "ComposeSpecLabelDict",
+    simcore_registry: str,
+    service_version: str,
 ) -> None:
     stringified_service_spec: str = replace_env_vars_in_compose_spec(
         docker_compose_spec,
@@ -98,7 +100,6 @@ def _create_text_template(compose_service_spec: dict[str, Any]) -> TextTemplate:
     return template
 
 
-@pytest.mark.testit
 @pytest.mark.parametrize(
     "service_name,service_spec,expected_service_spec",
     [

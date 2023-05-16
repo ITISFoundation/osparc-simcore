@@ -17,7 +17,7 @@ MATCH_IMAGE_END = f":{MATCH_SERVICE_VERSION}"
 
 
 def replace_env_vars_in_compose_spec(
-    service_spec: "ComposeSpecLabel",
+    service_spec: "ComposeSpecLabelDict",
     *,
     replace_simcore_registry: str,
     replace_service_version: str,
