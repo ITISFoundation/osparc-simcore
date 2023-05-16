@@ -21,17 +21,16 @@ def read_reqs(reqs_path: Path) -> set[str]:
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-NAME = "simcore-service-resource-usage"
+NAME = "simcore-service-resource-usage-tracker"
 VERSION = (CURRENT_DIR / "VERSION").read_text().strip()
-AUTHORS = ("Dustin Kaiser (mrnicegyu11)",)
-DESCRIPTION = (
-    "Service that pushes service resource usage per userID to a postgres database"
-)
+AUTHORS = ("Dustin Kaiser (mrnicegyu11)", "Sylvain Anderegg (sanderegg)")
+DESCRIPTION = "Service that collects and stores computational resources usage used in osparc-simcore"
 README = (CURRENT_DIR / "README.md").read_text()
 
 PROD_REQUIREMENTS = tuple(
     read_reqs(CURRENT_DIR / "requirements" / "_base.txt")
     | {
+        "simcore-models-library",
         "simcore-service-library[fastapi]",
         "simcore-settings-library",
     }
@@ -58,7 +57,7 @@ SETUP = dict(
     extras_require={"test": TEST_REQUIREMENTS},
     entry_points={
         "console_scripts": [
-            "simcore-service-resource-usage = simcore_service_resource_usage.cli:app",
+            "simcore-service-resource-usage-tracker = simcore_service_resource_usage_tracker.cli:app",
         ],
     },
 )
