@@ -16,6 +16,7 @@ from pydantic import (
     Extra,
     Field,
     HttpUrl,
+    NonNegativeInt,
     StrictBool,
     StrictFloat,
     StrictInt,
@@ -482,6 +483,11 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
         alias="boot-options",
         description="Service defined boot options. These get injected in the service as env variables.",
     )
+    min_visible_inputs: NonNegativeInt | None = Field(
+        None,
+        alias="min-visible-inputs",
+        description="Service defined boot options. These get injected in the service as env variables.",
+    )
 
     class Config:
         description = "Description of a simcore node 'class' with input and output"
@@ -576,6 +582,7 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
                             1
                         ],
                     },
+                    "min-visible-inputs": 2,
                 },
             ]
         }
