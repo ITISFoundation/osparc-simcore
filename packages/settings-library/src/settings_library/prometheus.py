@@ -9,8 +9,8 @@ from .basic_types import PortInt, VersionTag
 
 class PrometheusSettings(BaseCustomSettings, MixinServiceSettings):
     PROMETHEUS_HOST: str = "prometheus"
-    PROMETHEUS_PORT: PortInt = 9090
-    PROMETHEUS_VTAG: VersionTag = "v1"
+    PROMETHEUS_PORT: PortInt = PortInt(9090)
+    PROMETHEUS_VTAG: VersionTag = VersionTag("v1")
 
     @cached_property
     def base_url(self) -> str:
