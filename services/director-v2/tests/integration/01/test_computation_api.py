@@ -531,6 +531,7 @@ async def test_run_partial_computation(
 
 
 async def test_run_computation(
+    catalog_ready: Callable[[UserID, str], Awaitable[None]],
     minimal_configuration: None,
     async_client: httpx.AsyncClient,
     registered_user: Callable,
@@ -543,6 +544,7 @@ async def test_run_computation(
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ):
     user = registered_user()
+    await catalog_ready(user["id"], osparc_product_name)
     sleepers_project = project(user, workbench=fake_workbench_without_outputs)
     # send a valid project with sleepers
     task_out = await create_pipeline(
@@ -612,6 +614,10 @@ async def test_run_computation(
                 node_id
             ].current_status
         )
+        node_data.progress = fake_workbench_computational_pipeline_details.node_states[
+            node_id
+        ].progress
+    expected_pipeline_details_forced.progress = 0
     task_out = await create_pipeline(
         async_client,
         project=sleepers_project,
