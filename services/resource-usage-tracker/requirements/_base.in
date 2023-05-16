@@ -1,5 +1,5 @@
 #
-# Specifies third-party dependencies for 'services/invitations/src'
+# Specifies third-party dependencies for 'services/resource-usage-tracker/src'
 #
 # NOTE: ALL version constraints MUST be commented
 --constraint ../../../requirements/constraints.txt
