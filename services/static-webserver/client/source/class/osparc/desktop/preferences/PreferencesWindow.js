@@ -61,13 +61,6 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
       tabView.add(tokensPage);
     }
 
-    if (osparc.product.Utils.showPreferencesExperimental()) {
-      const expPage = new osparc.desktop.preferences.pages.ExperimentalPage();
-      const expBtn = expPage.getChildControl("button");
-      osparc.utils.Utils.setIdToWidget(expBtn, "preferencesExperimentalTabBtn");
-      tabView.add(expPage);
-    }
-
     const confirmPage = new osparc.desktop.preferences.pages.ConfirmationsPage();
     tabView.add(confirmPage);
 

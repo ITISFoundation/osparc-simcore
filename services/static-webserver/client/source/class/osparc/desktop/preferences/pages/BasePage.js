@@ -21,7 +21,7 @@ qx.Class.define("osparc.desktop.preferences.pages.BasePage", {
   construct: function(title, iconSrc = null) {
     this.base(arguments, null, iconSrc);
 
-    this.setLayout(new qx.ui.layout.VBox(10).set({
+    this.setLayout(new qx.ui.layout.VBox(20).set({
       spacing: 5,
       alignX: "center"
     }));
