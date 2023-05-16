@@ -1,4 +1,11 @@
+from typing import Any
+
 import yaml
+from models_library.utils.string_substitution import (
+    SubstitutionsDict,
+    TextTemplate,
+    substitute_all_legacy_identifiers,
+)
 
 from .string_substitution import SubstitutionsDict, TextTemplate
 
@@ -39,3 +46,19 @@ def replace_env_vars_in_compose_spec(
     resolved_content: str = template.safe_substitute(substitutions)
 
     return resolved_content
+
+
+def create_text_template(
+    compose_service_spec: dict[str, Any], *, upgrade: bool
+) -> TextTemplate:
+    # convert
+    service_spec_str: str = yaml.safe_dump(compose_service_spec)
+
+    if upgrade:  # legacy
+        service_spec_str = substitute_all_legacy_identifiers(service_spec_str)
+
+    # template
+    template = TextTemplate(service_spec_str)
+    assert template.is_valid()
+
+    return template

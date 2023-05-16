@@ -11,13 +11,10 @@ import yaml
 from models_library.utils.docker_compose import (
     MATCH_SERVICE_VERSION,
     MATCH_SIMCORE_REGISTRY,
+    create_text_template,
     replace_env_vars_in_compose_spec,
 )
-from models_library.utils.string_substitution import (
-    SubstitutionsDict,
-    TextTemplate,
-    substitute_all_legacy_identifiers,
-)
+from models_library.utils.string_substitution import SubstitutionsDict
 
 
 @pytest.fixture()
@@ -96,20 +93,6 @@ def available_osparc_environments(
     }
 
 
-def _create_text_template(compose_service_spec: dict[str, Any]) -> TextTemplate:
-    # convert
-    service_spec_str: str = yaml.safe_dump(compose_service_spec)
-
-    # legacy
-    service_spec_str = substitute_all_legacy_identifiers(service_spec_str)
-
-    # template
-    template = TextTemplate(service_spec_str)
-    assert template.is_valid()
-
-    return template
-
-
 @pytest.mark.parametrize(
     "service_name,service_spec,expected_service_spec",
     [
@@ -159,7 +142,7 @@ def test_substitutions_in_compose_spec(
     service_spec: dict[str, Any],
     expected_service_spec: dict[str, Any],
 ):
-    template = _create_text_template(service_spec)
+    template = create_text_template(service_spec, upgrade=True)
 
     identifiers_requested = template.get_identifiers()
 
