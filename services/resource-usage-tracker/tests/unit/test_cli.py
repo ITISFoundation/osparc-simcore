@@ -6,14 +6,13 @@
 import os
 
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from simcore_service_resource_usage._meta import API_VERSION
-from simcore_service_resource_usage.cli import app
-from simcore_service_resource_usage.core.settings import ApplicationSettings
+from simcore_service_resource_usage_tracker._meta import API_VERSION
+from simcore_service_resource_usage_tracker.cli import app
+from simcore_service_resource_usage_tracker.core.settings import ApplicationSettings
 from typer.testing import CliRunner
 
 
 def test_cli_help_and_version(cli_runner: CliRunner):
-    # invitations-maker --help
     result = cli_runner.invoke(app, "--help")
     assert result.exit_code == os.EX_OK, result.output
 

@@ -7,7 +7,7 @@
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from simcore_service_resource_usage.core.settings import (
+from simcore_service_resource_usage_tracker.core.settings import (
     ApplicationSettings,
     MinimalApplicationSettings,
 )

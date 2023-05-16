@@ -20,9 +20,9 @@ pytest_plugins = [
 @pytest.fixture(scope="session")
 def project_slug_dir(osparc_simcore_root_dir: Path) -> Path:
     # fixtures in pytest_simcore.environs
-    service_folder = osparc_simcore_root_dir / "services" / "resource-usage"
+    service_folder = osparc_simcore_root_dir / "services" / "resource-usage-tracker"
     assert service_folder.exists()
-    assert any(service_folder.glob("src/simcore_service_resource_usage"))
+    assert any(service_folder.glob("src/simcore_service_resource_usage_tracker"))
     return service_folder
 
 
@@ -76,7 +76,6 @@ def app_environment(
     fake_url: str,
     fake_password: str,
 ) -> EnvVarsDict:
-
     envs = setenvs_from_dict(
         monkeypatch,
         {

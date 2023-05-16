@@ -6,14 +6,16 @@
 
 from fastapi import status
 from fastapi.testclient import TestClient
-from simcore_service_resource_usage._meta import API_VTAG
-from simcore_service_resource_usage.api._meta import _Meta
+from simcore_service_resource_usage_tracker._meta import API_VTAG
+from simcore_service_resource_usage_tracker.api._meta import _Meta
 
 
 def test_healthcheck(client: TestClient):
     response = client.get("/")
     assert response.status_code == status.HTTP_200_OK
-    assert response.text.startswith("simcore_service_resource_usage.api._health@")
+    assert response.text.startswith(
+        "simcore_service_resource_usage_tracker.api._health@"
+    )
 
 
 def test_meta(client: TestClient):

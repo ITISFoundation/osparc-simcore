@@ -11,7 +11,7 @@ import pytest
 from fastapi.testclient import TestClient
 from pytest import FixtureRequest
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from simcore_service_resource_usage.core.application import create_app
+from simcore_service_resource_usage_tracker.core.application import create_app
 
 
 @pytest.fixture

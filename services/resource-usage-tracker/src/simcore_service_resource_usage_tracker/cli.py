@@ -55,7 +55,7 @@ def generate_dotenv(ctx: typer.Context, auto_password: bool = False):
 
     Usage sample:
 
-    $ resource-usage-cli generate-dotenv > .env
+    $ resource-usage-tracker-cli generate-dotenv > .env
 
     $ cat .env
 

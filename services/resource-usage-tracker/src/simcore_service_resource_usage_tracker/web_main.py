@@ -5,8 +5,8 @@ import logging
 
 from fastapi import FastAPI
 from servicelib.logging_utils import config_all_loggers
-from simcore_service_resource_usage.core.application import create_app
-from simcore_service_resource_usage.core.settings import ApplicationSettings
+from simcore_service_resource_usage_tracker.core.application import create_app
+from simcore_service_resource_usage_tracker.core.settings import ApplicationSettings
 
 the_settings = ApplicationSettings.create_from_envs()
 

@@ -7,7 +7,7 @@ def start(
     log_level: Literal["info", "debug", "warning", "error"], reload: bool = False
 ):
     uvicorn.run(
-        "simcore_service_resource_usage.web_main:the_app",
+        "simcore_service_resource_usage_tracker.web_main:the_app",
         host="0.0.0.0",  # nosec
         port=8000,
         log_level=log_level,
