@@ -14,7 +14,7 @@ _logger = logging.getLogger(__name__)
     __name__,
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_GROUPS",
-    depends=["simcore_service_webserver.rest", "simcore_service_webserver.users"],
+    depends=["simcore_service_webserver.rest"],
     logger=_logger,
 )
 def setup_groups(app: web.Application):

@@ -25,13 +25,13 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import ProjectType
 
-from .. import users_api
 from .._meta import api_version_prefix as VTAG
 from ..director_v2.exceptions import DirectorServiceError
 from ..login.decorators import login_required
 from ..notifications import project_logs
 from ..products.plugin import Product, get_current_product
 from ..security.decorators import permission_required
+from ..users import api
 from . import projects_api
 from .projects_exceptions import (
     ProjectInvalidRightsError,
@@ -69,9 +69,7 @@ async def open_project(request: web.Request) -> web.Response:
         project_type: ProjectType = await projects_api.get_project_type(
             request.app, path_params.project_id
         )
-        user_role: UserRole = await users_api.get_user_role(
-            request.app, req_ctx.user_id
-        )
+        user_role: UserRole = await api.get_user_role(request.app, req_ctx.user_id)
         if project_type is ProjectType.TEMPLATE and user_role < UserRole.USER:
             # only USERS/TESTERS can do that
             raise web.HTTPForbidden(reason="Wrong user role to open/edit a template")

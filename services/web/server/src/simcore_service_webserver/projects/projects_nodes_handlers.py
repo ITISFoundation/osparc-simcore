@@ -32,7 +32,7 @@ from ..director_v2.exceptions import DirectorServiceError
 from ..login.decorators import login_required
 from ..projects.projects_db import ProjectDBAPI
 from ..security.decorators import permission_required
-from ..users_api import get_user_role
+from ..users.api import get_user_role
 from . import projects_api
 from .projects_exceptions import (
     NodeNotFoundError,

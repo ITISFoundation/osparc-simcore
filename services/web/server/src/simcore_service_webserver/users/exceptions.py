@@ -1,7 +1,5 @@
 """Defines the different exceptions that may arise in the projects subpackage"""
 
-from typing import Optional
-
 
 class UsersException(Exception):
     """Basic exception for errors raised in projects"""
@@ -13,7 +11,7 @@ class UsersException(Exception):
 class UserNotFoundError(UsersException):
     """User in group was not found in DB"""
 
-    def __init__(self, *, uid: Optional[int] = None, email: Optional[str] = None):
+    def __init__(self, *, uid: int | None = None, email: str | None = None):
         super().__init__(
             f"User id {uid} not found" if uid else f"User with email {email} not found"
         )

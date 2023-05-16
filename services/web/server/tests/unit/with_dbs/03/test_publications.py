@@ -1,12 +1,12 @@
 import pytest
 from openapi_core.schema.specs.models import Spec as OpenApiSpecs
-from simcore_service_webserver import publication_handlers
 from simcore_service_webserver._meta import api_version_prefix
+from simcore_service_webserver.publications import _handlers
 
 
 @pytest.mark.parametrize(
     "route",
-    publication_handlers.routes,
+    _handlers.routes,
     ids=lambda r: f"{r.method.upper()} {r.path}",
 )
 def test_publication_route_against_openapi_specs(route, openapi_specs: OpenApiSpecs):

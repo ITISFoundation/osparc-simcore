@@ -59,11 +59,11 @@ pytest-sugar==0.9.7
     # via -r requirements/requirements.in
 pyyaml==5.4.1
     # via -r requirements/requirements.in
-termcolor==2.2.0
+termcolor==2.3.0
     # via pytest-sugar
 tomli==2.0.1
     # via pytest
 typing-extensions==4.5.0
     # via pydantic
-yarl==1.8.2
+yarl==1.9.2
     # via aiohttp
