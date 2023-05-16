@@ -1,7 +1,7 @@
 import logging
 from abc import abstractmethod
 from enum import Enum, auto
-from typing import Any, Literal
+from typing import Any, Literal, TypeAlias
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -10,7 +10,9 @@ from models_library.users import UserID
 from models_library.utils.enums import StrAutoEnum
 from pydantic import BaseModel, Field
 from pydantic.types import NonNegativeFloat
-from servicelib.logging_utils import LogLevelInt, LogMessageStr
+
+LogLevelInt: TypeAlias = int
+LogMessageStr: TypeAlias = str
 
 
 class RabbitEventMessageType(str, Enum):

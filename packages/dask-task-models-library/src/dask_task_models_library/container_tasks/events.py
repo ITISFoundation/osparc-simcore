@@ -45,20 +45,20 @@ class TaskProgressEvent(BaseTaskEvent):
         }
 
 
-_LogMessageStr: TypeAlias = str
-_LogLevelInt: TypeAlias = int
+LogMessageStr: TypeAlias = str
+LogLevelInt: TypeAlias = int
 
 
 class TaskLogEvent(BaseTaskEvent):
-    log: _LogMessageStr
-    log_level: _LogLevelInt
+    log: LogMessageStr
+    log_level: LogLevelInt
 
     @staticmethod
     def topic_name() -> str:
         return "task_logs"
 
     @classmethod
-    def from_dask_worker(cls, log: str, log_level: _LogLevelInt) -> "TaskLogEvent":
+    def from_dask_worker(cls, log: str, log_level: LogLevelInt) -> "TaskLogEvent":
         return cls(job_id=get_worker().get_current_task(), log=log, log_level=log_level)
 
     class Config(BaseTaskEvent.Config):
