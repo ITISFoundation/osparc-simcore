@@ -61,7 +61,7 @@ async def dask_setup(worker: distributed.Worker) -> None:
     logging.root.setLevel(level=settings.LOG_LEVEL.value)
     logger.setLevel(level=settings.LOG_LEVEL.value)
     # NOTE: Dask attaches a StreamHandler to the logger in distributed
-    # stopping the propagation to prevent double logging
+    # removing them solves dual propagation of logs
     for handler in logging.getLogger("distributed").handlers:
         logging.getLogger("distributed").removeHandler(handler)
     config_all_loggers(settings.DASK_LOG_FORMAT_LOCAL_DEV_ENABLED)
