@@ -40,7 +40,7 @@ def substitute_all_legacy_identifiers(text: str) -> str:
     return re.sub(_LEGACY_IDENTIFIER_RE_PATTERN, _upgrade, text)
 
 
-class TemplateText(Template):
+class TextTemplate(Template):
     """Template strings support `$`-based substitutions, using the following rules:
 
     - `$$` is an escape; it is replaced with a single `$`.

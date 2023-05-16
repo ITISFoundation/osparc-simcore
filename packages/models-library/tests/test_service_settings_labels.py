@@ -24,7 +24,7 @@ from models_library.service_settings_labels import (
     _PortRange,
 )
 from models_library.services_resources import DEFAULT_SINGLE_SERVICE_NAME
-from models_library.utils.string_substitution import TemplateText
+from models_library.utils.string_substitution import TextTemplate
 from pydantic import BaseModel, Json, ValidationError, parse_obj_as
 
 
@@ -600,7 +600,7 @@ def test_it3(vendor_environments: dict[str, Any], service_labels: dict[str, str]
         3,
     ]
 
-    service_meta_str = TemplateText(
+    service_meta_str = TextTemplate(
         service_meta.json(include={"containers_allowed_outgoing_permit_list"})
     ).safe_substitute(vendor_environments)
 
@@ -621,7 +621,7 @@ def test_it2(vendor_environments: dict[str, Any], service_labels: dict[str, str]
         "simcore.service.settings",
         "simcore.service.containers-allowed-outgoing-permit-list",
     ):
-        template = TemplateText(service_labels[label_name])
+        template = TextTemplate(service_labels[label_name])
         if template.is_valid() and (identifiers := template.get_identifiers()):
             assert set(identifiers).issubset(vendor_environments)
             resolved_label: str = template.substitute(vendor_environments)

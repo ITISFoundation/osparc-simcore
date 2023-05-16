@@ -11,7 +11,7 @@ from textwrap import dedent
 import pytest
 from models_library.utils.string_substitution import (
     SubstitutionsDict,
-    TemplateText,
+    TextTemplate,
     substitute_all_legacy_identifiers,
     upgrade_identifier,
 )
@@ -69,7 +69,7 @@ def test_substitution_with_new_and_legacy_identifiers():
 
     stringified_config = substitute_all_legacy_identifiers(stringified_config)
 
-    template = TemplateText(stringified_config)
+    template = TextTemplate(stringified_config)
 
     assert template.is_valid()
     identifiers = template.get_identifiers()
@@ -167,7 +167,7 @@ def test_substitution_against_service_metadata_configs(metadata_path: Path):
     meta_str = metadata_path.read_text()
     meta_str = substitute_all_legacy_identifiers(meta_str)
 
-    template = TemplateText(meta_str)
+    template = TextTemplate(meta_str)
     assert template.is_valid()
 
     found = template.get_identifiers()
@@ -178,14 +178,13 @@ def test_substitution_against_service_metadata_configs(metadata_path: Path):
 
 
 def test_template_substitution_on_envfiles():
-
     envfile_template = dedent(
         """
     x=$VALUE1
     y=$VALUE2
     """
     )
-    template = TemplateText(envfile_template)
+    template = TextTemplate(envfile_template)
     assert set(template.get_identifiers()) == {"VALUE1", "VALUE2"}
 
     # NOTE how it casts string to to int
@@ -220,7 +219,6 @@ def test_template_substitution_on_envfiles():
     }
 
 
-@pytest.mark.testit
 def test_template_substitution_on_jsondumps():
     # NOTE: compare with test_template_substitution_on_envfiles
 
@@ -230,7 +228,7 @@ def test_template_substitution_on_jsondumps():
     # NOTE: that here we are enforcing the values to be strings!
     assert '{"x": "$VALUE1", "y": "$VALUE2"}' == json_dumps_template
 
-    template = TemplateText(json_dumps_template)
+    template = TextTemplate(json_dumps_template)
     assert set(template.get_identifiers()) == {"VALUE1", "VALUE2"}
 
     # NOTE how it casts string to str
