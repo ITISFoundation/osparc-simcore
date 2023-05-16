@@ -187,23 +187,16 @@ class CreateSidecars(DynamicSchedulerEvent):
         # generate a new `run_id` to avoid resource collisions
         scheduler_data.run_id = uuid4()
 
-        dynamic_sidecar_client = get_dynamic_sidecar_client(app)
-        has_quota_support = await dynamic_sidecar_client.has_quota_support(
-            scheduler_data.endpoint
-        )
-
         # WARNING: do NOT log, this structure has secrets in the open
         # If you want to log, please use an obfuscator
-        dynamic_sidecar_service_spec_base: AioDockerServiceSpec = (
-            get_dynamic_sidecar_spec(
-                scheduler_data=scheduler_data,
-                dynamic_sidecar_settings=dynamic_sidecar_settings,
-                swarm_network_id=swarm_network_id,
-                settings=settings,
-                app_settings=app.state.settings,
-                has_quota_support=has_quota_support,
-                allow_internet_access=allow_internet_access,
-            )
+        dynamic_sidecar_service_spec_base: AioDockerServiceSpec = get_dynamic_sidecar_spec(
+            scheduler_data=scheduler_data,
+            dynamic_sidecar_settings=dynamic_sidecar_settings,
+            swarm_network_id=swarm_network_id,
+            settings=settings,
+            app_settings=app.state.settings,
+            has_quota_support=dynamic_sidecar_settings.DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS,
+            allow_internet_access=allow_internet_access,
         )
 
         catalog_client = CatalogClient.instance(app)
