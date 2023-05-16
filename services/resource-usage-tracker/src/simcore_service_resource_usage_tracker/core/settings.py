@@ -2,9 +2,10 @@ from functools import cached_property
 from typing import cast
 
 from models_library.basic_types import BootModeEnum
-from pydantic import Field, HttpUrl, PositiveInt, validator
+from pydantic import Field, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import BuildTargetEnum, LogLevel, VersionTag
+from settings_library.prometheus import PrometheusSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 from .._meta import API_VERSION, API_VTAG, PROJECT_NAME
@@ -70,8 +71,8 @@ class MinimalApplicationSettings(_BaseApplicationSettings):
     are not related to the web server.
     """
 
-    RESOURCE_USAGE_TRACKER_PROMETHEUS_URL: HttpUrl = Field(
-        ..., description="Prometheus URL"
+    RESOURCE_USAGE_TRACKER_PROMETHEUS: PrometheusSettings | None = Field(
+        auto_default_from_env=True
     )
 
 
