@@ -4,7 +4,7 @@ from typing import Any
 from fastapi import APIRouter, Depends
 
 from ...core.settings import BasicSettings
-from ...models.schemas.studies import StudyID, StudyPort
+from ...models.schemas.studies import Study, StudyID, StudyPort
 from ...plugins.webserver import AuthSession
 from ..dependencies.webserver import get_webserver_session
 
@@ -14,12 +14,30 @@ settings = BasicSettings.create_from_envs()
 
 
 @router.get(
-    "/{study_id}/ports",
+    "/",
+    response_model=list[Study],
+    include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def list_studies(study_uid: StudyID):
+    raise NotImplementedError(f"list_studies {study_uid=}")
+
+
+@router.get(
+    "/{study_uid}",
+    response_model=Study,
+    include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def get_study(study_uid: StudyID):
+    raise NotImplementedError(f"get_study {study_uid=}")
+
+
+@router.get(
+    "/{study_uid}/ports",
     response_model=list[StudyPort],
     include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def list_study_ports(
-    study_id: StudyID,
+    study_uid: StudyID,
     webserver_api: AuthSession = Depends(get_webserver_session),
 ):
     """Lists metadata on ports of a given study
@@ -28,5 +46,5 @@ async def list_study_ports(
     """
     project_ports: list[
         dict[str, Any]
-    ] = await webserver_api.get_project_metadata_ports(project_id=study_id)
+    ] = await webserver_api.get_project_metadata_ports(project_id=study_uid)
     return project_ports
