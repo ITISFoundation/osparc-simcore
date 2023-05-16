@@ -241,8 +241,7 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
 
       const groupData = await osparc.store.Store.getInstance().getGroup(groupId);
       const isOrganization = (groupData && !("id" in groupData));
-      const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
-      if (isOrganization && preferencesSettings.getConfirmDemoteOrgnaization()) {
+      if (isOrganization) {
         const msg = this.tr("Demoting to Viewer will remove write access to all the members of the Organization. Are you sure?");
         const win = new osparc.ui.window.Confirmation(msg).set({
           confirmAction: "delete",

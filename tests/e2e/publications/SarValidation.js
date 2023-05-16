@@ -24,24 +24,20 @@ async function runTutorial () {
   const tutorial = new tutorialBase.TutorialBase(anonURL, screenshotPrefix, null, null, null, basicauthUsername, basicauthPassword, enableDemoMode);
 
   try {
-    const page = await tutorial.beforeScript();
+    await tutorial.beforeScript();
     const studyData = await tutorial.openStudyLink();
 
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
     console.log("Workbench Data:", workbenchData);
-    const sarIdViewer = workbenchData["nodeIds"][0];
+    const sarNodeId = workbenchData["nodeIds"][0];
     await tutorial.waitForServices(
       workbenchData["studyId"],
-      [sarIdViewer],
+      [sarNodeId],
       startTimeout,
       false
     );
 
-    await tutorial.waitFor(5000, 'Service started');
-    await utils.takeScreenshot(page, screenshotPrefix + 'service_started');
-
-    const sarIframe = await tutorial.getIframe(sarIdViewer);
-    await tutorial.testSARValidation(sarIframe);
+    await tutorial.testSARValidation(sarNodeId);
   }
   catch(err) {
     await tutorial.setTutorialFailed(true, false);

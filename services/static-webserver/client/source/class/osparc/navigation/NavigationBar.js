@@ -377,7 +377,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         font: "text-14"
       });
       const menuButton = new qx.ui.form.MenuButton(null, "@FontAwesome5Solid/book/22", menu).set({
-        toolTipText: this.tr("Manuals")
+        toolTipText: this.tr("Manuals"),
+        backgroundColor: "transparent"
       });
       osparc.store.Support.addQuickStartToMenu(menu);
       osparc.store.Support.addPanddyToMenu(menu);
@@ -390,7 +391,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         font: "text-14"
       });
       const menuButton = new qx.ui.form.MenuButton(null, "@FontAwesome5Solid/comments/22", menu).set({
-        toolTipText: this.tr("Support")
+        toolTipText: this.tr("Support"),
+        backgroundColor: "transparent"
       });
       osparc.store.Support.addSupportButtonsToMenu(menu, menuButton);
       return menuButton;
@@ -430,6 +432,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         tabButtons.forEach(tabButton => {
           tabButton.getChildControl("icon").show();
           tabButton.getChildControl("label").exclude();
+          tabButton.setToolTipText(tabButton.ttt);
         });
         // right-items
         this.getChildControl("user-menu").exclude();
@@ -446,6 +449,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         tabButtons.forEach(tabButton => {
           tabButton.getChildControl("label").show();
           tabButton.getChildControl("icon").exclude();
+          tabButton.resetToolTipText();
         });
         // right-items
         this.getChildControl("user-menu-compact").exclude();
