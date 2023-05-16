@@ -18,17 +18,11 @@ from urllib.parse import quote_plus
 from zipfile import ZipFile
 
 import osparc
-import osparc.exceptions
 import pytest
 from osparc import FilesApi, SolversApi
 from osparc.models import File, Job, JobInputs, JobOutputs, JobStatus, Solver
 from pytest import TempPathFactory
 from pytest_simcore.helpers.utils_public_api import ServiceInfoDict, ServiceNameStr
-from tenacity import Retrying, TryAgain
-from tenacity.after import after_log
-from tenacity.retry import retry_if_exception_type
-from tenacity.stop import stop_after_attempt
-from tenacity.wait import wait_fixed
 
 OSPARC_CLIENT_VERSION = tuple(map(int, osparc.__version__.split(".")))
 assert OSPARC_CLIENT_VERSION >= (0, 4, 3)
@@ -86,7 +80,6 @@ def sleeper_solver(
 
 @pytest.fixture(scope="module")
 def uploaded_input_file(tmp_path_factory: TempPathFactory, files_api: FilesApi) -> File:
-
     basedir: Path = tmp_path_factory.mktemp("uploaded_input_file")
 
     # produce an input file in place
@@ -182,30 +175,11 @@ def test_create_job(
     assert job.id != job2.id
 
 
-_RETRY_POLICY_IF_LOGFILE_404_NOT_FOUND = dict(
-    # NOTE: Only 404s https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404
-    # are retried, the rest are failures
-    #
-    # CURRENT CONSTRAINT: Log-file should be ready in AT MOST 5 secs
-    #
-    retry=retry_if_exception_type(TryAgain),
-    wait=wait_fixed(1),
-    stop=stop_after_attempt(5),
-    after=after_log(logger, logging.WARNING),
-    reraise=True,
-)
-
-
 @pytest.mark.parametrize(
     "expected_outcome",
     (
         "SUCCESS",
-        pytest.param(
-            "FAILED",
-            marks=pytest.mark.skip(
-                reason="until question in https://github.com/ITISFoundation/osparc-simcore/pull/4205  is resolved"
-            ),
-        ),
+        "FAILED",
     ),
 )
 def test_run_job(
@@ -306,17 +280,9 @@ def test_run_job(
         # NOTE: https://github.com/itisfoundation/osparc-simcore/issues/3569 shows
         # that this test might not have the logs ready in time and returns a 404 (not found)
         # for that reason we do a few retries before giving up
-        for attempt in Retrying(**_RETRY_POLICY_IF_LOGFILE_404_NOT_FOUND):
-            with attempt:
-                try:
-                    logfile: str = solvers_api.get_job_output_logfile(
-                        solver.id, solver.version, job.id
-                    )
-                except osparc.exceptions.ApiException as err:
-                    if err.status == 404:
-                        raise TryAgain(
-                            f"get_job_output_logfile failed with {err}"
-                        ) from err
+        logfile: str = solvers_api.get_job_output_logfile(
+            solver.id, solver.version, job.id
+        )
 
         zip_path = Path(logfile)
         print(
