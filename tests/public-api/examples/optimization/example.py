@@ -5,6 +5,8 @@ import numpy as np
 from tempfile import TemporaryDirectory
 from pathlib import Path
 from time import sleep
+from skopt import Optimizer
+from collections import deque
 import osparc
 
 import XCore
@@ -21,151 +23,196 @@ sys.path.insert(0, Path(__file__).parent)
 from solver import OsparcSolver
 
 
-def CreateModel(arm_len: float):
+class ObjectiveFunction:
 	"""
-	Create model.
-	Original arm_len = 249.5
+	Objective function which computes the distance of the impedance in a non-blocking way:
+	After evaluation it must be polled to check if results are ready.
 	"""
-	from s4l_v1.model import Vec3, Translation, Rotation
+	def __init__(self, reference: np.array, cfg: osparc.Configuration):
 
-	points = [ Vec3(0,0,0), Vec3(0,5.55,0), Vec3(0,0,arm_len)]
+		self._reference = reference
+		self._cfg = cfg
+		self._project_tmp_dir: TemporaryDirectory = TemporaryDirectory()
+		self._project_dir: Path = Path(self._project_tmp_dir.name)
 
-	for i, coordinates in enumerate(points):
-		pi = model.CreatePoint(coordinates)
-		pi.Name = 'p%i'%i
+		self._sim = None
+		self._solver = None
+		self._arm_len = None
 
-	center = points[0]
-	radius = (points[1]-points[0]).Length()
+	def _create_model(self, arm_len: float):
+		"""
+		Create model.
+		Original arm_len = 249.5
+		"""
+		from s4l_v1.model import Vec3, Translation, Rotation
 
-	arm_axis = points[2]-points[0]
-	arm1 = model.CreateSolidTube(base_center=points[0], axis_height=arm_axis, \
-		major_radius=radius, minor_radius=0, parametrized=True)
-	arm1.Name = 'Arm 1'
-	arm2 = arm1.Clone()
-	arm2.Name = 'Arm 2'
+		points = [ Vec3(0,0,0), Vec3(0,5.55,0), Vec3(0,0,arm_len)]
 
-	t = arm1.Transform.Translation
-	t[2] += 0.5
-	arm1.Transform = Translation(t)
+		for i, coordinates in enumerate(points):
+			pi = model.CreatePoint(coordinates)
+			pi.Name = 'p%i'%i
 
-	arm2.Transform = Translation(t)
-	arm2.Transform = Rotation(axis=Vec3(0,1,0), origin=Vec3(0,0,-arm_len/2), angle_in_rad=np.pi)
-	t = arm2.Transform.Translation
-	t[2] += arm_len/2 - 0.5
-	arm2.Transform = Translation(t)
+		center = points[0]
+		radius = (points[1]-points[0]).Length()
 
-	source = model.CreatePolyLine( points = [Vec3(0, 0, 0.5), Vec3(0, 0, -0.5)])
-	source.Name = 'SourceLine'
+		arm_axis = points[2]-points[0]
+		arm1 = model.CreateSolidTube(base_center=points[0], axis_height=arm_axis, \
+			major_radius=radius, minor_radius=0, parametrized=True)
+		arm1.Name = f'Arm 1 {arm_len}'
+		arm2 = arm1.Clone()
+		arm2.Name = f'Arm 2 {arm_len}'
 
-def CreateSimulation(use_graphcard):
+		t = arm1.Transform.Translation
+		t[2] += 0.5
+		arm1.Transform = Translation(t)
 
-	# retrieve needed entities from model
-	entities = model.AllEntities()
+		arm2.Transform = Translation(t)
+		arm2.Transform = Rotation(axis=Vec3(0,1,0), origin=Vec3(0,0,-arm_len/2), angle_in_rad=np.pi)
+		t = arm2.Transform.Translation
+		t[2] += arm_len/2 - 0.5
+		arm2.Transform = Translation(t)
 
-	arm1 = entities['Arm 1']
-	arm2 = entities['Arm 2']
-	source = entities['SourceLine']
+		source = model.CreatePolyLine( points = [Vec3(0, 0, 0.5), Vec3(0, 0, -0.5)])
+		source.Name = f'SourceLine {arm_len}'
 
-	# Setup Setttings
-	sim = fdtd.Simulation()
+	def _create_simulation(self, use_graphcard: bool, arm_len: bool):
 
-	sim.Name = 'Dipole (Broadband)'
-	sim.SetupSettings.SimulationTime = 52., units.Periods #--------------------------- = 52
+		# retrieve needed entities from model
+		entities = model.AllEntities()
 
-	options = sim.SetupSettings.GlobalAutoTermination.enum
-	sim.SetupSettings.GlobalAutoTermination = options.GlobalAutoTerminationMedium
-	
-	# Materials:
-	dipole_material = sim.AddMaterialSettings([arm1, arm2])
-	dipole_material.Name = 'Dipole Arms'
-	dipole_material.MaterialType = dipole_material.MaterialType.enum.PEC
+		arm1 = entities[f'Arm 1 {arm_len}']
+		arm2 = entities[f'Arm 2 {arm_len}']
+		source = entities[f'SourceLine {arm_len}']
 
-	# Sources
-	edgesrc_settings = sim.AddEdgeSourceSettings(source)
-	options = edgesrc_settings.ExcitationType.enum
-	edgesrc_settings.ExcitationType = options.Gaussian
-	edgesrc_settings.CenterFrequency = 300., units.MHz
-	edgesrc_settings.Bandwidth = 300., units.MHz
+		# Setup Setttings
+		sim = fdtd.Simulation()
 
-	# Sensors
-	edgesensor_settings = sim.AddEdgeSensorSettings(source)
+		sim.Name = 'Dipole (Broadband)'
+		sim.SetupSettings.SimulationTime = 52., units.Periods #--------------------------- = 52
 
-	# Boundary Conditions
-	options = sim.GlobalBoundarySettings.GlobalBoundaryType.enum
-	sim.GlobalBoundarySettings.GlobalBoundaryType = options.UpmlCpml
+		options = sim.SetupSettings.GlobalAutoTermination.enum
+		sim.SetupSettings.GlobalAutoTermination = options.GlobalAutoTerminationMedium
+		
+		# Materials:
+		dipole_material = sim.AddMaterialSettings([arm1, arm2])
+		dipole_material.Name = 'Dipole Arms'
+		dipole_material.MaterialType = dipole_material.MaterialType.enum.PEC
 
-	# Grid
-	global_grid_settings = sim.GlobalGridSettings
-	global_grid_settings.DiscretizationMode = global_grid_settings.DiscretizationMode.enum.Manual
-	global_grid_settings.MaxStep = np.array([20.0, 20.0, 20.0]), units.MilliMeters
-	manual_grid_settings = sim.AddManualGridSettings([arm1, arm2, source])
-	manual_grid_settings.MaxStep = (5.0, )*3 # model units
-	manual_grid_settings.Resolution = (1.0, )*3  # model units
+		# Sources
+		edgesrc_settings = sim.AddEdgeSourceSettings(source)
+		options = edgesrc_settings.ExcitationType.enum
+		edgesrc_settings.ExcitationType = options.Gaussian
+		edgesrc_settings.CenterFrequency = 300., units.MHz
+		edgesrc_settings.Bandwidth = 300., units.MHz
 
-	# Voxels
-	auto_voxel_settings = sim.AddAutomaticVoxelerSettings([arm1, arm2, source])
+		# Sensors
+		edgesensor_settings = sim.AddEdgeSensorSettings(source)
 
-	# Solver settings
-	options = sim.SolverSettings.Kernel.enum
-	sim.SolverSettings.Kernel = options.Cuda if use_graphcard else options.Software
+		# Boundary Conditions
+		options = sim.GlobalBoundarySettings.GlobalBoundaryType.enum
+		sim.GlobalBoundarySettings.GlobalBoundaryType = options.UpmlCpml
 
-	return sim
+		# Grid
+		global_grid_settings = sim.GlobalGridSettings
+		global_grid_settings.DiscretizationMode = global_grid_settings.DiscretizationMode.enum.Manual
+		global_grid_settings.MaxStep = np.array([20.0, 20.0, 20.0]), units.MilliMeters
+		manual_grid_settings = sim.AddManualGridSettings([arm1, arm2, source])
+		manual_grid_settings.MaxStep = (5.0, )*3 # model units
+		manual_grid_settings.Resolution = (1.0, )*3  # model units
 
-def objective(arm_len: float, project_dir: Path, reference_sol: np.array, cfg: osparc.Configuration) -> float:
-	"""
-	Objective function which should be optimized.
+		# Voxels
+		auto_voxel_settings = sim.AddAutomaticVoxelerSettings([arm1, arm2, source])
 
-	"""
-	import s4l_v1.document
+		# Solver settings
+		options = sim.SolverSettings.Kernel.enum
+		sim.SolverSettings.Kernel = options.Cuda if use_graphcard else options.Software
 
-	smash_file: Path = Path(project_dir) / 'project.smash'
-	
-	CreateModel(arm_len)
-	
-	sim = CreateSimulation(False)
-	
-	sim.UpdateGrid()
-	sim.CreateVoxels(str(smash_file))
-	sim.WriteInputFile()
+		return sim
 
-	solver = OsparcSolver("simcore/services/comp/isolve", "2.1.16", cfg)
-	solver.submit_job(Path(sim.InputFilename))
-	while not solver.job_done():
-		sleep(2)
+	def evaluate(self, arm_len: float) -> None:
+		"""
+		Evaluate the objective function.
+		Input: The armlength
+		"""
+		self._arm_len = arm_len
+		self._create_model(arm_len)
+		self._sim = self._create_simulation(False, arm_len)
+		self._sim.UpdateGrid()
+		self._sim.CreateVoxels(str(self._project_dir / 'project.smash'))
+		self._sim.WriteInputFile()
 
-	#=================================================
+		self._solver = OsparcSolver("simcore/services/comp/isolve", "2.1.16", self._cfg)
+		self._solver.submit_job(Path(self._sim.InputFilename))
 
-	cur_dir : Path = Path.cwd()
-	os.chdir(project_dir / 'project.smash_Results')
+	def result_ready(self) -> bool:
+		if self._solver is None:
+			return False
+		return self._solver.job_done()
 
-	solver.fetch_results(Path(sim.OutputFilename), Path(sim.InputFilename).parent / 'log.tgz')
-	s4l_v1.document.New()
-	s4l_v1.document.AllSimulations.Add(sim)
-	while not sim.HasResults():
-		sleep(1)
-	results = sim.Results()
+	def get_result(self) -> float:
+		assert self.result_ready(), 'The result cannot be fetched until results are ready'
+		import s4l_v1.document
 
-	impedance = results['SourceLine'][ 'EM Input Impedance(f)' ]
-	impedance.Update()
-	sol = np.c_[impedance.Data.Axis, impedance.Data.GetComponent(0)].copy()
-	result: float = float(np.linalg.norm(reference_sol - sol)**2)
-	s4l_v1.document.New()
-	os.chdir(cur_dir)
-	return result
+		cur_dir : Path = Path.cwd()
+		os.chdir(self._project_dir / 'project.smash_Results')
+		s4l_v1.document.New()
+		s4l_v1.document.AllSimulations.Add(self._sim)
+
+		self._solver.fetch_results(Path(self._sim.OutputFilename), Path(self._sim.InputFilename).parent / 'log.tgz')
+
+		while not self._sim.HasResults():
+			sleep(0.5)
+		results = self._sim.Results()
+
+		assert self._arm_len is not None, 'arm_len was None. This should not happen'
+		impedance = results[f'SourceLine {self._arm_len}'][ 'EM Input Impedance(f)' ]
+		impedance.Update()
+		sol = np.c_[impedance.Data.Axis, impedance.Data.GetComponent(0)].copy()
+		result: float = float(np.linalg.norm(self._reference - sol)**2)
+		s4l_v1.document.New()
+		os.chdir(cur_dir)
+		return result
 
 if __name__ == '__main__':
-	XCore.SetLogLevel(XCore.eLogCategory.Warning)
 
+	# run S4L
+	XCore.SetLogLevel(XCore.eLogCategory.Warning)
 	run_application()
+	
+	# setup 
 	cfg: osparc.Configuration = osparc.Configuration(username='1c9034e8-713c-5bec-b0ce-6aa070e1b329', password='a1724945-1f91-5dca-8a0c-8efb018028b0')
 	reference_file: Path = Path(__file__).parent / 'solution.npy'
 	assert reference_file.is_file(), 'Could not find reference file. It must be located in the same directory as this script.'
 	reference = np.load(reference_file)
 
+	# run optimization
+	opt = Optimizer([(240.0, 260.0)], "GP", acq_func="EI",
+					acq_optimizer="sampling",
+					initial_point_generator="lhs")
 
-	input: float = 249.5
-	with TemporaryDirectory() as tmp_dir:
-		result = objective(input, Path(tmp_dir), reference, cfg)
-		print(f"result = {result}")
-	print(f"objective({input}) = {result}")
+	deque_maxlen: int = 2
+	input_q = deque(maxlen=deque_maxlen)
+	obj_q = deque(maxlen=deque_maxlen)
+
+	max_n_samples: int = 5
+
+	n_samples: int = 0
+	all_inputs = list(elm[0] for elm in opt.ask(max_n_samples))
+	res = None
+	while n_samples < max_n_samples:
+		if len(input_q) < deque_maxlen:
+			x = all_inputs[n_samples]
+			input_q.append(x)
+			obj = ObjectiveFunction(reference, cfg)
+			obj.evaluate(x)
+			obj_q.append(obj)
+			n_samples += 1
+		if len(obj_q) > 0 and obj_q[0].result_ready():
+			x = input_q.popleft()
+			obj = obj_q.popleft()
+			y = obj.get_result()
+			res = opt.tell([x],y)
+			
+
+	print(res)
 
