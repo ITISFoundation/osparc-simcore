@@ -105,6 +105,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         return emptyDataPorts;
       }
       const portKeys = this.__getPortKeys();
+      // it will always show 1 more, so: -1
       for (let i=minVisibleInputs-1; i<portKeys.length; i++) {
         const portId = portKeys[i];
         const ctrl = this._form.getControl(portId);
@@ -754,7 +755,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         if (layoutProps.column === this.self().GRID_POS.CTRL_FIELD) {
           this._remove(child);
           const item = this._form.getControl(portId);
-
+          item.show();
           this._addAt(item, idx, {
             row: layoutProps.row,
             column: this.self().GRID_POS.CTRL_FIELD
