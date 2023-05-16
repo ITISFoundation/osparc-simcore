@@ -39,7 +39,7 @@ def registered_user(
             )
             # this is needed to get the primary_gid correctly
             result = con.execute(
-                sa.select([users]).where(users.c.id == user_config["id"])
+                sa.select(users).where(users.c.id == user_config["id"])
             )
             user = result.first()
             assert user
