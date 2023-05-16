@@ -29,6 +29,7 @@ def update_project_workbench_with_comp_tasks(
                 projects.select().where(projects.c.uuid == project_uuid)
             )
             prj_row = result.first()
+            assert prj_row
             prj_workbench = prj_row.workbench
 
             result = con.execute(
