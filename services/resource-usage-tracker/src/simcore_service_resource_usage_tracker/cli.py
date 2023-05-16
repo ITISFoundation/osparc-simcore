@@ -47,7 +47,7 @@ def main(
 
 
 @app.command()
-def generate_dotenv(ctx: typer.Context, auto_password: bool = False):
+def generate_dotenv(ctx: typer.Context) -> None:
     """Generates an example of environment variables file (or dot-envfile)
 
     Usage sample:
