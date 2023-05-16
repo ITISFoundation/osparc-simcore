@@ -7,9 +7,9 @@ from aiohttp import web
 from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from . import publication_handlers
-from .email.plugin import setup_email
-from .products.plugin import setup_products
+from ..email.plugin import setup_email
+from ..products.plugin import setup_products
+from . import _handlers
 
 logger = logging.getLogger(__name__)
 
@@ -27,4 +27,4 @@ def setup_publications(app: web.Application):
     setup_email(app)
     setup_products(app)
 
-    app.router.add_routes(publication_handlers.routes)
+    app.router.add_routes(_handlers.routes)
