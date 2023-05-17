@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import TypeAlias, Union
 
 from distributed.worker import get_worker
-from pydantic import BaseModel, Extra, NonNegativeFloat
+from pydantic import BaseModel, Extra, validator
 
 
 class BaseTaskEvent(BaseModel, ABC):
@@ -20,7 +20,7 @@ class BaseTaskEvent(BaseModel, ABC):
 
 
 class TaskProgressEvent(BaseTaskEvent):
-    progress: NonNegativeFloat
+    progress: float
 
     @staticmethod
     def topic_name() -> str:
@@ -43,6 +43,13 @@ class TaskProgressEvent(BaseTaskEvent):
                 },
             ]
         }
+
+    @validator("progress", always=True)
+    @classmethod
+    def ensure_between_0_1(cls, v):
+        if 0 <= v <= 1:
+            return v
+        return min(max(0, v), 1)
 
 
 LogMessageStr: TypeAlias = str

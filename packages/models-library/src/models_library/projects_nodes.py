@@ -85,6 +85,12 @@ class NodeState(BaseModel):
         description="the node's current state",
         alias="currentStatus",
     )
+    progress: float | None = Field(
+        default=0,
+        ge=0.0,
+        le=1.0,
+        description="current progress of the task if available (None if not started or not a computational task)",
+    )
 
     class Config:
         extra = Extra.forbid
@@ -133,7 +139,11 @@ class Node(BaseModel):
         ..., description="The short name of the node", examples=["JupyterLab"]
     )
     progress: float | None = Field(
-        default=None, ge=0, le=100, description="the node progress value"
+        default=None,
+        ge=0,
+        le=100,
+        description="the node progress value",
+        deprecated=True,
     )
     thumbnail: HttpUrlWithCustomMinLength | None = Field(
         default=None,
