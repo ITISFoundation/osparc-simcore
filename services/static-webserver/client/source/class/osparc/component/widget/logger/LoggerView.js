@@ -99,7 +99,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       20: "INFO",
       30: "WARNING",
       40: "ERROR",
-      50: "ERROR"
+      50: "ERROR" // CRITICAL
     },
 
     logLevel2Str: function(logLevel) {
