@@ -21,6 +21,8 @@ import s4l_v1.analysis as analysis
 import s4l_v1.analysis.viewers as viewers
 from s4l_v1._api.application import run_application
 import s4l_v1.units as units
+import s4l_v1.document as document
+import s4l_v1.analysis.extractors as extractors
 
 sys.path.insert(0, Path(__file__).parent)
 from solver import OsparcSolver
@@ -45,7 +47,7 @@ class ObjectiveFunction:
 	def _create_model(self, arm_len: float):
 		"""
 		Create model.
-		Original arm_len = 249.5
+		Original (optimal) arm_len = 249.5
 		"""
 		from s4l_v1.model import Vec3, Translation, Rotation
 
@@ -61,9 +63,9 @@ class ObjectiveFunction:
 		arm_axis = points[2]-points[0]
 		arm1 = model.CreateSolidTube(base_center=points[0], axis_height=arm_axis, \
 			major_radius=radius, minor_radius=0, parametrized=True)
-		arm1.Name = f'Arm 1 {arm_len}'
+		arm1.Name = 'Arm 1'
 		arm2 = arm1.Clone()
-		arm2.Name = f'Arm 2 {arm_len}'
+		arm2.Name = 'Arm 2'
 
 		t = arm1.Transform.Translation
 		t[2] += 0.5
@@ -76,16 +78,16 @@ class ObjectiveFunction:
 		arm2.Transform = Translation(t)
 
 		source = model.CreatePolyLine( points = [Vec3(0, 0, 0.5), Vec3(0, 0, -0.5)])
-		source.Name = f'SourceLine {arm_len}'
+		source.Name = 'SourceLine'
 
 	def _create_simulation(self, use_graphcard: bool, arm_len: float):
 
 		# retrieve needed entities from model
 		entities = model.AllEntities()
 
-		arm1 = entities[f'Arm 1 {arm_len}']
-		arm2 = entities[f'Arm 2 {arm_len}']
-		source = entities[f'SourceLine {arm_len}']
+		arm1 = entities['Arm 1']
+		arm2 = entities['Arm 2']
+		source = entities['SourceLine']
 
 		# Setup Setttings
 		sim = fdtd.Simulation()
@@ -146,6 +148,7 @@ class ObjectiveFunction:
 
 		self._solver = OsparcSolver("simcore/services/comp/isolve", "2.1.16", self._cfg)
 		self._solver.submit_job(Path(self._sim.InputFilename))
+		document.New() # "hack" to reset model
 
 	def result_ready(self) -> bool:
 		if self._solver is None:
@@ -154,25 +157,17 @@ class ObjectiveFunction:
 
 	def get_result(self) -> Tuple[float, np.ndarray]:
 		assert self.result_ready(), 'The result cannot be fetched until results are ready'
-		import s4l_v1.document
 
 		cur_dir : Path = Path.cwd()
 		os.chdir(self._project_dir / 'project.smash_Results')
-		s4l_v1.document.New()
-		s4l_v1.document.AllSimulations.Add(self._sim)
-
 		self._solver.fetch_results(Path(self._sim.OutputFilename), Path(self._sim.InputFilename).parent / 'log.tgz')
-
-		while not self._sim.HasResults():
-			sleep(0.5)
-		results = self._sim.Results()
-
-		assert self._arm_len is not None, 'arm_len was None. This should not happen'
-		impedance = results[f'SourceLine {self._arm_len}'][ 'EM Input Impedance(f)' ]
+		extr = extractors.SimulationExtractor()
+		extr.FileName = str(Path(self._sim.OutputFilename).resolve())
+		extr.Update()
+		impedance = extr['SourceLine'][ 'EM Input Impedance(f)' ]
 		impedance.Update()
 		sol = np.absolute(np.c_[impedance.Data.Axis, impedance.Data.GetComponent(0)].copy())
 		result: float = float(np.linalg.norm(self._reference - sol)**2)
-		s4l_v1.document.New()
 		os.chdir(cur_dir)
 		return result, sol
 
@@ -194,9 +189,9 @@ if __name__ == '__main__':
 	
 	# setup 
 	cfg: osparc.Configuration = osparc.Configuration(username=args.username, password=args.password)
-	reference_file: Path = Path(__file__).parent / 'solution.npy'
+	reference_file: Path = Path(__file__).parent / 'reference'
 	assert reference_file.is_file(), 'Could not find reference file. It must be located in the same directory as this script.'
-	reference = np.absolute(np.load(reference_file))
+	reference = np.absolute(np.loadtxt(reference_file, dtype=np.complex128))
 
 	# run optimization
 	opt = Optimizer([(240.0, 260.0)], "GP", acq_func="EI",
@@ -226,7 +221,7 @@ if __name__ == '__main__':
 				obj = obj_q.popleft()
 				y, tmp_guess = obj.get_result()
 				res = opt.tell([x],y)
-				if all( elm == x for elm in res.x) and tmp_guess is not None:
+				if all(elm == x for elm in res.x) and tmp_guess is not None:
 					best_guess = tmp_guess.copy()
 				print(20*'-' + f' completed {(n_iter * 100) / (n_batches * batch_size)}% ' + 20*'-')
 				n_iter += 1
