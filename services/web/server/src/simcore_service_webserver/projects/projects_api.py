@@ -67,6 +67,7 @@ from ..storage import api as storage_api
 from ..users.api import get_user_name, get_user_role
 from ..users.exceptions import UserNotFoundError
 from . import _delete_utils, _nodes_utils
+from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import (
     NodeNotFoundError,
     ProjectLockError,
@@ -80,7 +81,6 @@ from .project_lock import (
     is_project_locked,
     lock_project,
 )
-from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .projects_utils import extract_dns_without_default_port
 from .settings import ProjectsSettings, get_plugin_settings
 

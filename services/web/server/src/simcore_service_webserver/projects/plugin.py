@@ -22,8 +22,8 @@ from . import (
     _handlers_crud,
 )
 from ._observer import setup_project_observer_events
+from .db import setup_projects_db
 from .projects_access import setup_projects_access
-from .projects_db import setup_projects_db
 
 logger = logging.getLogger(__name__)
 

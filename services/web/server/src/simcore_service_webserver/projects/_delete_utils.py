@@ -17,13 +17,13 @@ from ..director_v2 import api
 from ..storage.api import delete_data_folders_of_project
 from ..users.api import UserNameDict
 from ..users.exceptions import UserNotFoundError
+from .db import ProjectDBAPI
 from .exceptions import (
     ProjectDeleteError,
     ProjectInvalidRightsError,
     ProjectLockError,
     ProjectNotFoundError,
 )
-from .projects_db import ProjectDBAPI
 
 log = logging.getLogger(__name__)
 

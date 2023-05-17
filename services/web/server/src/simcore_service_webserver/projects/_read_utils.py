@@ -16,8 +16,8 @@ from .. import catalog
 from . import projects_api
 from ._permalink import update_or_pop_permalink_in_project
 from ._rest_schemas import ProjectListItem
+from .db import ProjectDBAPI
 from .models import ProjectDict, ProjectTypeAPI
-from .projects_db import ProjectDBAPI
 
 
 async def _append_fields(

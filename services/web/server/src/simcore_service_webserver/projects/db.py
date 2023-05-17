@@ -33,14 +33,7 @@ from tenacity import AsyncRetrying, TryAgain, retry_if_exception_type
 
 from ..db_models import study_tags
 from ..utils import now_str
-from .exceptions import (
-    NodeNotFoundError,
-    ProjectDeleteError,
-    ProjectInvalidRightsError,
-    ProjectNotFoundError,
-)
-from .models import ProjectDict
-from .projects_db_utils import (
+from ._db_utils import (
     ANY_USER_ID_SENTINEL,
     BaseProjectDB,
     PermissionStr,
@@ -51,6 +44,13 @@ from .projects_db_utils import (
     convert_to_schema_names,
     create_project_access_rights,
 )
+from .exceptions import (
+    NodeNotFoundError,
+    ProjectDeleteError,
+    ProjectInvalidRightsError,
+    ProjectNotFoundError,
+)
+from .models import ProjectDict
 from .projects_utils import find_changed_node_keys
 
 log = logging.getLogger(__name__)

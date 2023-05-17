@@ -47,6 +47,7 @@ from ._rest_schemas import (
     ProjectGet,
     ProjectUpdate,
 )
+from .db import ProjectDBAPI
 from .exceptions import (
     ProjectDeleteError,
     ProjectInvalidRightsError,
@@ -54,7 +55,6 @@ from .exceptions import (
 )
 from .models import ProjectDict, ProjectTypeAPI
 from .project_lock import get_project_locked_state
-from .projects_db import ProjectDBAPI
 from .projects_nodes_utils import update_frontend_outputs
 from .projects_utils import (
     any_node_inputs_changed,

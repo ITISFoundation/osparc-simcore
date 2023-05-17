@@ -25,13 +25,13 @@ from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from . import _ports_utils, projects_api
 from ._handlers_crud import ProjectPathParams, RequestContext
+from .db import ProjectDBAPI
 from .exceptions import (
     NodeNotFoundError,
     ProjectInvalidRightsError,
     ProjectNotFoundError,
 )
 from .models import ProjectDict
-from .projects_db import ProjectDBAPI
 
 log = logging.getLogger(__name__)
 
