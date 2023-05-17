@@ -88,7 +88,7 @@ async def test_auto_upgrade_policy(
     service_catalog_faker: Callable,
     mocker,
 ):
-    everyone_gid, user_gid, team_gid = user_groups_ids
+    everyone_gid, user_gid, team_gid = user_groups_ids[:3]
     target_product = products_names[0]
 
     # Avoids calls to director API

@@ -363,7 +363,7 @@
             "required": true,
             "schema": {
               "title": "Service Key",
-              "pattern": "[\\w/-]+",
+              "pattern": "^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
               "type": "string"
             },
             "name": "service_key",
@@ -373,11 +373,24 @@
             "required": true,
             "schema": {
               "title": "Service Version",
-              "pattern": "[\\w/.]+",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
               "type": "string"
             },
             "name": "service_version",
             "in": "path"
+          },
+          {
+            "description": "if passed, and that user has custom resources, they will be merged with default resources and returned.",
+            "required": false,
+            "schema": {
+              "title": "User Id",
+              "exclusiveMinimum": true,
+              "type": "integer",
+              "description": "if passed, and that user has custom resources, they will be merged with default resources and returned.",
+              "minimum": 0
+            },
+            "name": "user_id",
+            "in": "query"
           }
         ],
         "responses": {
@@ -417,7 +430,7 @@
             "required": true,
             "schema": {
               "title": "Service Key",
-              "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
+              "pattern": "^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
               "type": "string"
             },
             "name": "service_key",
@@ -494,7 +507,7 @@
             "required": true,
             "schema": {
               "title": "Service Key",
-              "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
+              "pattern": "^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
               "type": "string"
             },
             "name": "service_key",
@@ -624,6 +637,73 @@
         }
       }
     },
+    "/v0/services/inaccessible": {
+      "post": {
+        "tags": [
+          "services"
+        ],
+        "summary": "List Inaccessible Services",
+        "operationId": "list_inaccessible_services_v0_services_inaccessible_post",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Gid",
+              "exclusiveMinimum": true,
+              "type": "integer",
+              "minimum": 0
+            },
+            "name": "gid",
+            "in": "query"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "X-Simcore-Products-Name",
+              "type": "string"
+            },
+            "name": "x-simcore-products-name",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/_ServicesInaccessibleBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response List Inaccessible Services V0 Services Inaccessible Post",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserWithoutServiceAccess"
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v0/services/{service_key}/{service_version}": {
       "get": {
         "tags": [
@@ -636,7 +716,7 @@
             "required": true,
             "schema": {
               "title": "Service Key",
-              "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
+              "pattern": "^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
               "type": "string"
             },
             "name": "service_key",
@@ -705,7 +785,7 @@
             "required": true,
             "schema": {
               "title": "Service Key",
-              "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
+              "pattern": "^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
               "type": "string"
             },
             "name": "service_key",
@@ -887,6 +967,16 @@
           }
         }
       },
+      "BootMode": {
+        "title": "BootMode",
+        "enum": [
+          "CPU",
+          "GPU",
+          "MPI"
+        ],
+        "type": "string",
+        "description": "An enumeration."
+      },
       "BootOption": {
         "title": "BootOption",
         "required": [
@@ -925,6 +1015,7 @@
           "on-failure",
           "any"
         ],
+        "type": "string",
         "description": "Condition for restart."
       },
       "Config1": {
@@ -1191,7 +1282,7 @@
         "properties": {
           "key": {
             "title": "Key",
-            "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
+            "pattern": "^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
             "type": "string",
             "example": "simcore/services/frontend/nodes-group/macros/1"
           },
@@ -1235,7 +1326,7 @@
         "properties": {
           "key": {
             "title": "Key",
-            "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
+            "pattern": "^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
             "type": "string",
             "example": "simcore/services/frontend/nodes-group/macros/1"
           },
@@ -1348,13 +1439,7 @@
           }
         },
         "additionalProperties": false,
-        "description": "I/O port type to hold a link to a file in DATCORE storage",
-        "example": {
-          "store": 1,
-          "dataset": "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4",
-          "path": "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce",
-          "label": "initial_WTstates"
-        }
+        "description": "I/O port type to hold a link to a file in DATCORE storage"
       },
       "DiscreteResourceSpec": {
         "title": "DiscreteResourceSpec",
@@ -1386,7 +1471,8 @@
           },
           "label": {
             "title": "Label",
-            "type": "string"
+            "type": "string",
+            "description": "Display name"
           }
         },
         "additionalProperties": false,
@@ -1476,6 +1562,7 @@
           "pause",
           "rollback"
         ],
+        "type": "string",
         "description": "    Action to take if an updated task fails to run, or stops running\nduring the update."
       },
       "FailureAction1": {
@@ -1484,6 +1571,7 @@
           "continue",
           "pause"
         ],
+        "type": "string",
         "description": "    Action to take if an rolled back task fails to run, or stops\nrunning during the rollback."
       },
       "File": {
@@ -1638,7 +1726,7 @@
         "properties": {
           "image": {
             "title": "Image",
-            "pattern": "[\\w/-]+:[\\w.@]+",
+            "pattern": "^(?:(?P<registry_host>[a-z0-9-]+(?:\\.[a-z0-9-]+)+(?::\\d+)?|[a-z0-9-]+:\\d+)/)?(?P<docker_image>(?:[a-z0-9][a-z0-9_.-]*/)*[a-z0-9-_]+[a-z0-9])(?::(?P<docker_tag>[\\w][\\w.-]{0,127}))?(?P<docker_digest>\\@sha256:[a-fA-F0-9]{32,64})?$",
             "type": "string",
             "description": "Used by the frontend to provide a context for the users.Services with a docker-compose spec will have multiple entries.Using the `image:version` instead of the docker-compose spec is more helpful for the end user."
           },
@@ -1648,6 +1736,16 @@
             "additionalProperties": {
               "$ref": "#/components/schemas/ResourceValue"
             }
+          },
+          "boot_modes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BootMode"
+            },
+            "description": "describe how a service shall be booted, using CPU, MPI, openMP or GPU",
+            "default": [
+              "CPU"
+            ]
           }
         },
         "example": {
@@ -1683,6 +1781,7 @@
           "process",
           "hyperv"
         ],
+        "type": "string",
         "description": "Isolation technology of the container. (Windows only)"
       },
       "Limit": {
@@ -1741,14 +1840,14 @@
           },
           "version": {
             "title": "Version",
-            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z]+)*)?$",
             "type": "string"
           },
           "released": {
             "title": "Released",
             "type": "object",
             "additionalProperties": {
-              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z]+)*)?$",
               "type": "string"
             },
             "description": "Maps every route's path tag with a released version"
@@ -1797,6 +1896,7 @@
           "vip",
           "dnsrr"
         ],
+        "type": "string",
         "description": "The mode of resolution to use for internal load balancing between tasks."
       },
       "Mount": {
@@ -1925,7 +2025,7 @@
         "properties": {
           "key": {
             "title": "Key",
-            "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
+            "pattern": "^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
             "type": "string",
             "description": "distinctive name for the node based on the docker registry path"
           },
@@ -1950,7 +2050,7 @@
           "thumbnail": {
             "title": "Thumbnail",
             "maxLength": 2083,
-            "minLength": 1,
+            "minLength": 0,
             "type": "string",
             "description": "url of the latest screenshot of the node",
             "format": "uri"
@@ -2087,6 +2187,7 @@
           "stop-first",
           "start-first"
         ],
+        "type": "string",
         "description": "    The order of operations when rolling out an updated task. Either\nthe old task is shut down before the new task is started, or the\nnew task is started before the old task is shut down."
       },
       "Placement": {
@@ -2313,6 +2414,7 @@
           "slave",
           "rslave"
         ],
+        "type": "string",
         "description": "A propagation mode with the value `[r]private`, `[r]shared`, or `[r]slave`."
       },
       "PublishMode": {
@@ -2321,6 +2423,7 @@
           "ingress",
           "host"
         ],
+        "type": "string",
         "description": "    The mode in which port is published.\n\n<p><br /></p>\n\n- \"ingress\" makes the target port accessible on every node,\n  regardless of whether there is a task for the service running on\n  that node or not.\n- \"host\" bypasses the routing mesh and publish the port directly on\n  the swarm node where that service is running."
       },
       "Replicated": {
@@ -2422,8 +2525,8 @@
             ],
             "description": "Define resources limits."
           },
-          "Reservation": {
-            "title": "Reservation",
+          "Reservations": {
+            "title": "Reservations",
             "allOf": [
               {
                 "$ref": "#/components/schemas/ResourceObject"
@@ -2653,8 +2756,8 @@
             "type": "object",
             "default": {}
           },
-          "access_rights": {
-            "title": "Access Rights",
+          "accessRights": {
+            "title": "Accessrights",
             "type": "object",
             "additionalProperties": {
               "$ref": "#/components/schemas/ServiceGroupAccessRights"
@@ -2663,7 +2766,7 @@
           },
           "key": {
             "title": "Key",
-            "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
+            "pattern": "^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
             "type": "string",
             "description": "distinctive name for the node based on the docker registry path"
           },
@@ -2735,7 +2838,7 @@
           "description": "File Picker",
           "classifiers": [],
           "quality": {},
-          "access_rights": {
+          "accessRights": {
             "1": {
               "execute_access": true,
               "write_access": false
@@ -2862,6 +2965,29 @@
         },
         "additionalProperties": false,
         "description": "Metadata on a service input port"
+      },
+      "ServiceKeyVersion": {
+        "title": "ServiceKeyVersion",
+        "required": [
+          "key",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "title": "Key",
+            "pattern": "^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
+            "type": "string",
+            "description": "distinctive name for the node based on the docker registry path"
+          },
+          "version": {
+            "title": "Version",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "type": "string",
+            "description": "service version number"
+          }
+        },
+        "description": "This pair uniquely identifies a services"
       },
       "ServiceOutput": {
         "title": "ServiceOutput",
@@ -3042,6 +3168,15 @@
               }
             ],
             "description": "schedule-time specifications for the service sidecar (follows Docker Service creation API, see https://docs.docker.com/engine/api/v1.25/#operation/ServiceCreate)"
+          },
+          "service": {
+            "title": "Service",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ServiceSpec"
+              }
+            ],
+            "description": "schedule-time specifications specifications for the service (follows Docker Service creation API (specifically only the Resources part), see https://docs.docker.com/engine/api/v1.41/#tag/Service/operation/ServiceCreate"
           }
         }
       },
@@ -3060,8 +3195,8 @@
         "title": "ServiceUpdate",
         "type": "object",
         "properties": {
-          "access_rights": {
-            "title": "Access Rights",
+          "accessRights": {
+            "title": "Accessrights",
             "type": "object",
             "additionalProperties": {
               "$ref": "#/components/schemas/ServiceGroupAccessRights"
@@ -3103,7 +3238,7 @@
           }
         },
         "example": {
-          "access_rights": {
+          "accessRights": {
             "1": {
               "execute_access": false,
               "write_access": false
@@ -3223,13 +3358,7 @@
           }
         },
         "additionalProperties": false,
-        "description": "I/O port type to hold a link to a file in simcore S3 storage",
-        "example": {
-          "store": 0,
-          "path": "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
-          "eTag": "859fda0cb82fc4acb4686510a172d9a9-1",
-          "label": "input.txt"
-        }
+        "description": "I/O port type to hold a link to a file in simcore S3 storage"
       },
       "Spread": {
         "title": "Spread",
@@ -3394,6 +3523,7 @@
           "udp",
           "sctp"
         ],
+        "type": "string",
         "description": "An enumeration."
       },
       "Type1": {
@@ -3404,6 +3534,7 @@
           "tmpfs",
           "npipe"
         ],
+        "type": "string",
         "description": "    The mount type:\n\n- `bind` a mount of a file or directory from the host into the container.\n- `volume` a docker volume with the given `Name`.\n- `tmpfs` a `tmpfs`.\n- `npipe` a named pipe from the host into the container."
       },
       "Ulimit1": {
@@ -3470,6 +3601,29 @@
           }
         },
         "description": "Specification for the update strategy of the service."
+      },
+      "UserWithoutServiceAccess": {
+        "title": "UserWithoutServiceAccess",
+        "required": [
+          "user_id",
+          "service_key",
+          "service_version"
+        ],
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "title": "User Id",
+            "type": "integer"
+          },
+          "service_key": {
+            "title": "Service Key",
+            "type": "string"
+          },
+          "service_version": {
+            "title": "Service Version",
+            "type": "string"
+          }
+        }
       },
       "ValidationError": {
         "title": "ValidationError",
@@ -3572,6 +3726,22 @@
         ],
         "type": "string",
         "description": "An enumeration."
+      },
+      "_ServicesInaccessibleBody": {
+        "title": "_ServicesInaccessibleBody",
+        "required": [
+          "services_to_check"
+        ],
+        "type": "object",
+        "properties": {
+          "services_to_check": {
+            "title": "Services To Check",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServiceKeyVersion"
+            }
+          }
+        }
       }
     }
   }

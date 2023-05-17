@@ -117,7 +117,7 @@ async def test_create_services(
 
 async def test_read_services(
     services_repo: ServicesRepository,
-    user_groups_ids: list[int],
+    user_groups_ids: list[int],  # check this one
     products_names: list[str],
     service_catalog_faker: Callable,
     services_db_tables_injector: Callable,
@@ -148,7 +148,7 @@ async def test_read_services(
     services = await services_repo.list_services()
     assert len(services) == 2
 
-    everyone_gid, user_gid, team_gid = user_groups_ids
+    everyone_gid, user_gid, team_gid = user_groups_ids[:3]
     assert everyone_gid == 1
 
     services = await services_repo.list_services(

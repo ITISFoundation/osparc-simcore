@@ -8,7 +8,7 @@ import random
 from copy import deepcopy
 from datetime import datetime
 from random import randint
-from typing import Any, AsyncIterator, Awaitable, Callable, Iterable, Iterator, Optional
+from typing import Any, AsyncIterator, Awaitable, Callable, Iterable, Iterator
 
 import pytest
 import respx
@@ -167,6 +167,14 @@ async def user_groups_ids(
             "STANDARD",
             "http://mib.org",
             {"email": "@(foo|testers|mib)+.(org|com)$"},
+        ),
+        (
+            66,
+            "Team Yoda",
+            "Patience you must have",
+            "STANDARD",
+            "http://mib.org",
+            # {"email": "@(foo|testers|mib)+.(org|com)$"},
         ),
     ]
     # pylint: disable=no-value-for-parameter
@@ -365,7 +373,7 @@ async def service_catalog_faker(
         owner_access, team_access, everyone_access = fake_access_rights
 
     """
-    everyone_gid, user_gid, team_gid = user_groups_ids
+    everyone_gid, user_gid, team_gid = user_groups_ids[:3]
 
     def _random_service(**overrides) -> dict[str, Any]:
         data = dict(
@@ -400,7 +408,7 @@ async def service_catalog_faker(
         team_access=None,
         everyone_access=None,
         product=products_names[0],
-        deprecated: Optional[datetime] = None,
+        deprecated: datetime | None = None,
     ) -> tuple[dict[str, Any], ...]:
 
         service = _random_service(key=key, version=version, deprecated=deprecated)

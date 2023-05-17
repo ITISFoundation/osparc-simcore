@@ -3,18 +3,25 @@
 import asyncio
 import logging
 import urllib.parse
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from aiocache import cached
-from fastapi import APIRouter, Depends, Header, HTTPException, status
-from models_library.services import ServiceKey, ServiceType, ServiceVersion
+from fastapi import APIRouter, Body, Depends, Header, HTTPException, status
+from models_library.services import (
+    ServiceKey,
+    ServiceKeyVersion,
+    ServiceType,
+    ServiceVersion,
+    UserWithoutServiceAccess,
+)
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 from pydantic.types import PositiveInt
 from starlette.requests import Request
 
 from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
+from ...db.repositories.services_shareable import ShareableServicesRepository
 from ...models.schemas.constants import (
     DIRECTOR_CACHING_TTL,
     LIST_SERVICES_CACHING_TTL,
@@ -37,8 +44,8 @@ def _prepare_service_details(
     service_in_registry: dict[str, Any],
     service_in_db: ServiceMetaDataAtDB,
     service_access_rights_in_db: list[ServiceAccessRightsAtDB],
-    service_owner: Optional[str],
-) -> Optional[ServiceGet]:
+    service_owner: str | None,
+) -> ServiceGet | None:
     # compose service from registry and DB
     composed_service = service_in_registry
     composed_service.update(
@@ -84,7 +91,7 @@ router = APIRouter()
 async def list_services(
     request: Request,  # pylint:disable=unused-argument
     user_id: PositiveInt,
-    details: Optional[bool] = True,
+    details: bool | None = True,
     director_client: DirectorApi = Depends(get_director_api),
     groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
     services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
@@ -178,6 +185,34 @@ async def list_services(
         ]
     )
     return [s for s in services_details if s is not None]
+
+
+class _ServicesInaccessibleBody(BaseModel):
+    services_to_check: list[ServiceKeyVersion]
+
+
+@router.post(
+    "/inaccessible",
+    response_model=list[UserWithoutServiceAccess],
+    **RESPONSE_MODEL_POLICY,
+)
+async def list_inaccessible_services(  # list_unavailable_project_services
+    request: Request,  # pylint:disable=unused-argument
+    gid: PositiveInt,
+    body: _ServicesInaccessibleBody = Body(...),
+    shareable_services_repo: ShareableServicesRepository = Depends(
+        get_repository(ShareableServicesRepository)
+    ),
+    x_simcore_products_name: str = Header(...),
+):
+    output: list[
+        UserWithoutServiceAccess
+    ] = await shareable_services_repo.list_inaccessible_services(
+        gid=gid,
+        product_name=x_simcore_products_name,
+        services_to_check=body.services_to_check,
+    )
+    return output
 
 
 @router.get(
