@@ -205,9 +205,9 @@ def osparc_product_name() -> str:
 
 
 @pytest.fixture
-async def catalog_subsystem_mock(
-    monkeypatch: MonkeyPatch,
-) -> Callable[[list[ProjectDict]], None]:
+def catalog_subsystem_mock(
+    mocker: MockerFixture,
+) -> Iterator[Callable[[list[ProjectDict]], None]]:
     """
     Patches some API calls in the catalog plugin
     """
@@ -222,14 +222,23 @@ async def catalog_subsystem_mock(
                 ]
             )
 
-    async def mocked_get_services_for_user(*args, **kwargs):
+    async def _mocked_get_services_for_user(*args, **kwargs):
         return services_in_project
 
-    monkeypatch.setattr(
-        catalog_plugin, "get_services_for_user_in_product", mocked_get_services_for_user
-    )
+    for namespace in (
+        "simcore_service_webserver.projects._read_utils.get_services_for_user_in_product",
+        "simcore_service_webserver.projects.projects_handlers_crud.get_services_for_user_in_product",
+    ):
+        mock = mocker.patch(
+            namespace,
+            autospec=True,
+        )
 
-    return _creator
+        mock.side_effect = _mocked_get_services_for_user
+
+    yield _creator
+
+    services_in_project.clear()
 
 
 @pytest.fixture
