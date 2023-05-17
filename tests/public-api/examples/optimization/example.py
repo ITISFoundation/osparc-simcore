@@ -11,6 +11,7 @@ from collections import deque
 from typing import Tuple, Optional, List
 from matplotlib import pyplot as plt
 from argparse import ArgumentParser
+import logging
 import osparc
 
 import XCore
@@ -28,7 +29,7 @@ from s4l_v1.model import Vec3, Translation, Rotation
 
 sys.path.insert(0, Path(__file__).parent)
 from solver import OsparcSolver
-
+logging.basicConfig(level=logging.ERROR, format='[%(levelname)s] %(message)s')
 
 class ObjectiveFunction:
 	"""
@@ -178,7 +179,7 @@ class ObjectiveFunction:
 if __name__ == '__main__':
 	doc: List[str] = []
 	doc.append('In this example we use Sim4Life and oSparc to determine the right length (arm_len) of a dipole antenna in order to achieve a given impedance profile. ')
-	doc.append('This is done using a Baysiean optimization algorithm which tries to guess the minimum of an objective function which, ')
+	doc.append('This is done using a bayesian optimization algorithm which tries to guess the minimum of an objective function which, ')
 	doc.append('given an input arm length, outputs the L2 squared distance to the reference impedance profile. I.e. the minimum of the objective function ')
 	doc.append('is the arm length giving the wished impedance profile (the optimal armlength is 249.5). N.b. this example should be run with the python interpreter ')
 	doc.append('shipped with Sim4Life and several packages must be pip installed into that. This was tested using Sim4Life v. 7.2.')
@@ -194,7 +195,7 @@ if __name__ == '__main__':
 	# setup 
 	cfg: osparc.Configuration = osparc.Configuration(username=args.username, password=args.password)
 	reference_file: Path = Path(__file__).parent / 'reference'
-	assert reference_file.is_file(), 'Could not find reference file. It must be located in the same directory as this script.'
+	assert reference_file.is_file(), f'Could not find {reference_file}. It must be located in the same directory as this script.'
 	reference = np.absolute(np.loadtxt(reference_file, dtype=np.complex128))
 
 	# run optimization

@@ -13,9 +13,6 @@ import osparc
 from osparc.models import File, Solver, Job, JobStatus, JobInputs, JobOutputs
 from osparc.api import FilesApi, SolversApi
 
-
-logging.basicConfig(level=logging.ERROR, format='[%(levelname)s] %(message)s')
-
 class OSparcServerException(Exception):
     pass
 
