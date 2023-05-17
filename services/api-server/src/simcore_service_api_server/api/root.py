@@ -1,7 +1,16 @@
 from fastapi import APIRouter
 
 from ..core.settings import ApplicationSettings
-from .routes import files, health, meta, solvers, solvers_jobs, studies, users
+from .routes import (
+    files,
+    health,
+    meta,
+    solvers,
+    solvers_jobs,
+    studies,
+    studies_jobs,
+    users,
+)
 
 
 def create_router(settings: ApplicationSettings):
@@ -18,6 +27,7 @@ def create_router(settings: ApplicationSettings):
     router.include_router(solvers.router, tags=["solvers"], prefix="/solvers")
     router.include_router(solvers_jobs.router, tags=["solvers"], prefix="/solvers")
     router.include_router(studies.router, tags=["studies"], prefix="/studies")
+    router.include_router(studies_jobs.router, tags=["studies"], prefix="/studies")
 
     # NOTE: multiple-files upload is currently disabled
     # Web form to upload files at http://localhost:8000/v0/upload-form-view

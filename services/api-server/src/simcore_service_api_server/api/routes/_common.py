@@ -2,6 +2,7 @@ from typing import Any
 
 from fastapi import status
 
+# SEE https://fastapi.tiangolo.com/advanced/additional-responses/#more-information-about-openapi-responses
 JOB_OUTPUT_LOGFILE_RESPONSES: dict[int, dict[str, Any]] = {
     status.HTTP_200_OK: {
         "content": {

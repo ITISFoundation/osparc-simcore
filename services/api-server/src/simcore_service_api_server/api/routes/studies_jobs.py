@@ -115,9 +115,9 @@ async def get_outputs(
     )
 
 
-@router.post(
+@router.get(
     "/studies/{study_uid}/job/{job_id}/outputs/logfile",
-    response_model=RedirectResponse,
+    response_class=RedirectResponse,
     include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
     responses=JOB_OUTPUT_LOGFILE_RESPONSES,
 )
