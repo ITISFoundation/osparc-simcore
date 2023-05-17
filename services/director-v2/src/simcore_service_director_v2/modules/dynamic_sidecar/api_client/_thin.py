@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import FastAPI, status
 from httpx import Response, Timeout
@@ -193,7 +193,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
     async def post_containers_tasks_ports_inputs_pull(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
-        port_keys: Optional[list[str]] = None,
+        port_keys: list[str] | None = None,
     ) -> Response:
         port_keys = [] if port_keys is None else port_keys
         url = self._get_url(dynamic_sidecar_endpoint, "/containers/ports/inputs:pull")
@@ -204,7 +204,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
     async def post_containers_tasks_ports_outputs_pull(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
-        port_keys: Optional[list[str]] = None,
+        port_keys: list[str] | None = None,
     ) -> Response:
         port_keys = [] if port_keys is None else port_keys
         url = self._get_url(dynamic_sidecar_endpoint, "/containers/ports/outputs:pull")
