@@ -14,8 +14,14 @@ from simcore_service_resource_usage_tracker.core.settings import (
 def test_valid_cli_application_settings(app_environment: EnvVarsDict):
     settings = MinimalApplicationSettings.create_from_envs()
     assert settings
+    assert settings.RESOURCE_USAGE_TRACKER_PROMETHEUS
+    assert settings.RESOURCE_USAGE_TRACKER_POSTGRES
+    assert settings.LOG_LEVEL
 
 
 def test_valid_web_application_settings(app_environment: EnvVarsDict):
     settings = ApplicationSettings.create_from_envs()
     assert settings
+    assert settings.RESOURCE_USAGE_TRACKER_PROMETHEUS
+    assert settings.RESOURCE_USAGE_TRACKER_POSTGRES
+    assert settings.LOG_LEVEL

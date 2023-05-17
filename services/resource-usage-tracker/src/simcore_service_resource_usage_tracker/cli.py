@@ -1,10 +1,12 @@
 import logging
-from typing import Optional
+from typing import Any
 
 import rich
 import typer
-from pydantic import SecretStr
+from pydantic import AnyUrl, SecretStr, parse_obj_as
 from rich.console import Console
+from settings_library.postgres import PostgresSettings
+from settings_library.prometheus import PrometheusSettings
 from settings_library.utils_cli import create_settings_command
 
 from . import web_server
@@ -27,7 +29,8 @@ def _version_callback(value: bool):
 @app.callback()
 def main(
     ctx: typer.Context,
-    version: Optional[bool] = (
+    version: bool
+    | None = (
         typer.Option(
             None,
             "--version",
@@ -60,15 +63,34 @@ def generate_dotenv(ctx: typer.Context) -> None:
     """
     assert ctx  # nosec
 
-    settings = ApplicationSettings.create_from_envs(
-        RESOURCE_USAGE_TRACKER_PROMETHEUS_URL="http://127.0.0.1:8000",  # NOSONAR
+    settings = ApplicationSettings(
+        RESOURCE_USAGE_TRACKER_PROMETHEUS=PrometheusSettings(
+            PROMETHEUS_URL=parse_obj_as(AnyUrl, "http://prometheus:9090"),
+            PROMETHEUS_USERNAME="my-username",
+            PROMETHEUS_PASSWORD=SecretStr("my-password"),
+        ),
+        RESOURCE_USAGE_TRACKER_POSTGRES=PostgresSettings(
+            POSTGRES_HOST="postgres",
+            POSTGRES_USER="postgres_user",
+            POSTGRES_PASSWORD=SecretStr("postgres-password"),
+            POSTGRES_DB="osparc",
+        ),
     )
 
-    for name, value in settings.dict().items():
+    def _resolve_settings(settings_dict: dict[str, Any]) -> dict[str, Any]:
+        resolved_settings = {}
+        for name, value in settings_dict.items():
+            if isinstance(value, dict):
+                resolved_settings[name] = _resolve_settings(value)
+            elif isinstance(value, SecretStr):
+                resolved_settings[name] = value.get_secret_value()
+            else:
+                resolved_settings[name] = f"{value}"
+        return resolved_settings
+
+    resolved_settings = _resolve_settings(settings.dict())
+    for name, value in resolved_settings.items():
         if name.startswith("RESOURCE_USAGE_TRACKER_"):
-            value = (
-                f"{value.get_secret_value()}" if isinstance(value, SecretStr) else value
-            )
             print(f"{name}={'null' if value is None else value}")
 
 

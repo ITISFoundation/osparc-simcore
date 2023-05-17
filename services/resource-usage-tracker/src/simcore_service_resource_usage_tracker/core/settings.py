@@ -5,6 +5,7 @@ from models_library.basic_types import BootModeEnum
 from pydantic import Field, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import BuildTargetEnum, LogLevel, VersionTag
+from settings_library.postgres import PostgresSettings
 from settings_library.prometheus import PrometheusSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
@@ -38,14 +39,16 @@ class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # RUNTIME  -----------------------------------------------------------
     RESOURCE_USAGE_TRACKER_DEBUG: bool = Field(
-        False, description="Debug mode", env=["RESOURCE_USAGE_TRACKER_DEBUG", "DEBUG"]
+        default=False,
+        description="Debug mode",
+        env=["RESOURCE_USAGE_TRACKER_DEBUG", "DEBUG"],
     )
     RESOURCE_USAGE_TRACKER_LOGLEVEL: LogLevel = Field(
         default=LogLevel.INFO,
         env=["RESOURCE_USAGE_TRACKER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
     )
     RESOURCE_USAGE_TRACKER_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
-        False,
+        default=False,
         env=[
             "RESOURCE_USAGE_TRACKER_LOG_FORMAT_LOCAL_DEV_ENABLED",
             "LOG_FORMAT_LOCAL_DEV_ENABLED",
@@ -65,13 +68,17 @@ class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
 
 class MinimalApplicationSettings(_BaseApplicationSettings):
-    """Extends base settings with the settings needed to create invitation links
+    """Extends base settings with the settings needed to connect with prometheus/DB
 
     Separated for convenience to run some commands of the CLI that
     are not related to the web server.
     """
 
     RESOURCE_USAGE_TRACKER_PROMETHEUS: PrometheusSettings | None = Field(
+        auto_default_from_env=True
+    )
+
+    RESOURCE_USAGE_TRACKER_POSTGRES: PostgresSettings | None = Field(
         auto_default_from_env=True
     )
 
@@ -93,10 +100,4 @@ class ApplicationSettings(MinimalApplicationSettings):
         default=".*",
         # regex=r"^(([_a-zA-Z0-9:.-]+)/)?(dynamic-sidecar):([_a-zA-Z0-9.-]+)$",
         description="Regex for the prometheus timeseries label `CONTAINER_LABEL_USER_ID`.",
-    )
-    RESOURCE_USAGE_TRACKER_PROMETHEUS_USERNAME: str | None = Field(
-        default=None, description="Username to access the prometheus server"
-    )
-    RESOURCE_USAGE_TRACKER_PROMETHEUS_PASSWORD: str | None = Field(
-        default=None, description="Password to access the prometheus server"
     )

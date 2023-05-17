@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 
 from pathlib import Path
+from random import choice
 
 import pytest
 from faker import Faker
@@ -13,6 +14,7 @@ from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 
 pytest_plugins = [
     "pytest_simcore.cli_runner",
+    "pytest_simcore.environment_configs",
     "pytest_simcore.repository_paths",
 ]
 
@@ -27,22 +29,16 @@ def project_slug_dir(osparc_simcore_root_dir: Path) -> Path:
 
 
 @pytest.fixture
-def fake_port(faker: Faker) -> int:
-    return faker.pyint(min_value=1024, max_value=65535)
-
-
-@pytest.fixture
 def app_environment(
-    monkeypatch: MonkeyPatch, fake_port: int, faker: Faker
+    mock_env_devel_environment: EnvVarsDict, monkeypatch: MonkeyPatch, faker: Faker
 ) -> EnvVarsDict:
     envs = setenvs_from_dict(
         monkeypatch,
         {
-            "RESOURCE_USAGE_PROMETHEUS_PASSWORD": faker.password(),
-            "RESOURCE_USAGE_PROMETHEUS_PORT": str(fake_port),
-            "RESOURCE_USAGE_PROMETHEUS_USERNAME": faker.user_name(),
-            "RESOURCE_USAGE_PROMETHEUS_URL": faker.url(),
+            "PROMETHEUS_URL": f"{choice(['http', 'https'])}://{faker.domain_name()}:{faker.port_number()}",
+            "PROMETHEUS_USERNAME": faker.user_name(),
+            "PROMETHEUS_PASSWORD": faker.password(),
         },
     )
 
-    return envs
+    return mock_env_devel_environment | envs
