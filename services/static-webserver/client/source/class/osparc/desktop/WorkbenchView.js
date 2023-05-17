@@ -597,10 +597,20 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const data = e.getData();
         const nodeId = data.nodeId;
         const msg = data.msg;
-        if ("level" in data && data["level"] === "ERROR") {
-          this.__loggerView.error(nodeId, msg);
-        } else {
-          this.__loggerView.info(nodeId, msg);
+        const logLevel = ("level" in data) ? data["level"] : "INFO";
+        switch (logLevel) {
+          case "DEBUG":
+            this.__loggerView.debug(nodeId, msg);
+            break;
+          case "WARNING":
+            this.__loggerView.warn(nodeId, msg);
+            break;
+          case "ERROR":
+            this.__loggerView.error(nodeId, msg);
+            break;
+          default:
+            this.__loggerView.info(nodeId, msg);
+            break;
         }
       }, this);
 
@@ -629,7 +639,22 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           }
           const nodeId = data["node_id"];
           const messages = data["messages"];
-          this.__loggerView.infos(nodeId, messages);
+          const logLevelMap = osparc.component.widget.logger.LoggerView.LOG_LEVEL_MAP;
+          const logLevel = ("log_level" in data) ? logLevelMap[data["log_level"]] : "INFO";
+          switch (logLevel) {
+            case "DEBUG":
+              this.__loggerView.debugs(nodeId, messages);
+              break;
+            case "WARNING":
+              this.__loggerView.warns(nodeId, messages);
+              break;
+            case "ERROR":
+              this.__loggerView.errors(nodeId, messages);
+              break;
+            default:
+              this.__loggerView.infos(nodeId, messages);
+              break;
+          }
           const nodeLogger = this.__getNodeLogger(nodeId);
           if (nodeLogger) {
             nodeLogger.infos(nodeId, messages);

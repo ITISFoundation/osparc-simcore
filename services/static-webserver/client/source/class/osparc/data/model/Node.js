@@ -1225,7 +1225,8 @@ qx.Class.define("osparc.data.model.Node", {
         const msg = "Starting " + metaData.key + ":" + metaData.version + "...";
         const msgData = {
           nodeId: this.getNodeId(),
-          msg: msg
+          msg,
+          level: "INFO"
         };
         this.fireDataEvent("showInLogger", msgData);
 
@@ -1242,7 +1243,8 @@ qx.Class.define("osparc.data.model.Node", {
         const msg = "Stopping " + metaData.key + ":" + metaData.version + "...";
         const msgData = {
           nodeId: this.getNodeId(),
-          msg: msg
+          msg: msg,
+          level: "INFO"
         };
         this.fireDataEvent("showInLogger", msgData);
 
@@ -1278,7 +1280,8 @@ qx.Class.define("osparc.data.model.Node", {
               `reported "${serviceMessage}"`;
             const msgData = {
               nodeId: this.getNodeId(),
-              msg: msg
+              msg: msg,
+              level: "INFO"
             };
             this.fireDataEvent("showInLogger", msgData);
           }
@@ -1446,7 +1449,8 @@ qx.Class.define("osparc.data.model.Node", {
       const msg = "Service ready on " + srvUrl;
       const msgData = {
         nodeId: this.getNodeId(),
-        msg: msg
+        msg,
+        level: "INFO"
       };
       this.fireDataEvent("showInLogger", msgData);
       this.__restartIFrame();
