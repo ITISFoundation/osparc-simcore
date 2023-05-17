@@ -159,28 +159,28 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showClusters: function() {
-      if (this.isProduct("s4llite")) {
+      if (this.isProduct("s4llite") || this.isProduct("tis")) {
         return false;
       }
       return true;
     },
 
     showDisableServiceAutoStart: function() {
-      if (this.isProduct("s4llite")) {
+      if (this.isProduct("s4llite") || this.isProduct("tis")) {
         return false;
       }
       return true;
     },
 
     showQuality: function() {
-      if (this.isProduct("s4llite")) {
+      if (this.isProduct("s4l") || this.isProduct("s4llite")) {
         return false;
       }
       return true;
     },
 
     showClassifiers: function() {
-      if (this.isProduct("s4llite")) {
+      if (this.isProduct("s4l") || this.isProduct("s4llite")) {
         return false;
       }
       return true;
