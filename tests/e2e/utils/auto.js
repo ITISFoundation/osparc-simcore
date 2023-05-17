@@ -91,7 +91,6 @@ async function dashboardPreferences(page) {
   await utils.waitAndClick(page, '[osparc-test-id="userMenuPreferencesBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="preferencesProfileTabBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="preferencesSecurityTabBtn"]');
-  await utils.waitAndClick(page, '[osparc-test-id="preferencesExperimentalTabBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="preferencesWindowCloseBtn"]');
 }
 
