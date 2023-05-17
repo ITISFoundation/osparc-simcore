@@ -81,8 +81,8 @@ from .projects_exceptions import (
     ProjectStartsTooManyDynamicNodes,
     ProjectTooManyProjectOpened,
 )
-from .projects_settings import ProjectsSettings, get_plugin_settings
 from .projects_utils import extract_dns_without_default_port
+from .settings import ProjectsSettings, get_plugin_settings
 
 log = logging.getLogger(__name__)
 
