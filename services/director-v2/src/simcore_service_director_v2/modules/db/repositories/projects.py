@@ -17,7 +17,7 @@ class ProjectsRepository(BaseRepository):
         async with self.db_engine.acquire() as conn:
             row: RowProxy | None = await (
                 await conn.execute(
-                    sa.select([projects]).where(projects.c.uuid == str(project_id))
+                    sa.select(projects).where(projects.c.uuid == str(project_id))
                 )
             ).first()
         if not row:

@@ -70,7 +70,6 @@ FULL_PROJECT_NODE_STATES: dict[str, dict[str, Any]] = {
 
 
 def create_computation_cb(url, **kwargs) -> CallbackResult:
-
     assert "json" in kwargs, f"missing body in call to {url}"
     body = kwargs["json"]
     for param in ["user_id", "project_id"]:
@@ -113,6 +112,7 @@ def create_computation_cb(url, **kwargs) -> CallbackResult:
             "pipeline_details": {
                 "adjacency_list": pipeline,
                 "node_states": node_states,
+                "progress": 0,
             },
         },
     )
@@ -131,6 +131,7 @@ def get_computation_cb(url, **kwargs) -> CallbackResult:
             "pipeline_details": {
                 "adjacency_list": pipeline,
                 "node_states": node_states,
+                "progress": 0,
             },
             "iteration": 2,
             "cluster_id": 23,
@@ -350,7 +351,6 @@ def get_upload_link_cb(url: URL, **kwargs) -> CallbackResult:
     scheme = {LinkType.PRESIGNED: "http", LinkType.S3: "s3"}
 
     if file_size := kwargs["params"].get("file_size") is not None:
-
         upload_schema = FileUploadSchema(
             chunk_size=parse_obj_as(ByteSize, "5GiB"),
             urls=[parse_obj_as(AnyUrl, f"{scheme[link_type]}://{file_id}")],

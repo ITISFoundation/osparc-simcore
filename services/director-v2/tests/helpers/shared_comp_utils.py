@@ -1,6 +1,5 @@
 import json
 import time
-from typing import Optional
 from uuid import UUID
 
 import httpx
@@ -26,8 +25,8 @@ async def assert_computation_task_out_obj(
     project: ProjectAtDB,
     exp_task_state: RunningState,
     exp_pipeline_details: PipelineDetails,
-    iteration: Optional[PositiveInt],
-    cluster_id: Optional[ClusterID],
+    iteration: PositiveInt | None,
+    cluster_id: ClusterID | None,
 ):
     assert task_out.id == project.uuid
     assert task_out.state == exp_task_state
@@ -44,7 +43,9 @@ async def assert_computation_task_out_obj(
     assert task_out.iteration == iteration
     assert task_out.cluster_id == cluster_id
     # check pipeline details contents
-    assert task_out.pipeline_details.dict() == exp_pipeline_details.dict()
+    received_task_out_pipeline = task_out.pipeline_details.dict()
+    expected_task_out_pipeline = exp_pipeline_details.dict()
+    assert received_task_out_pipeline == expected_task_out_pipeline
 
 
 async def assert_and_wait_for_pipeline_status(
@@ -52,7 +53,7 @@ async def assert_and_wait_for_pipeline_status(
     url: AnyHttpUrl,
     user_id: UserID,
     project_uuid: UUID,
-    wait_for_states: Optional[list[RunningState]] = None,
+    wait_for_states: list[RunningState] | None = None,
 ) -> ComputationGet:
     if not wait_for_states:
         wait_for_states = [

@@ -57,7 +57,6 @@ def presigned_download_link(
     bucket_name: str,
     mocked_s3_server_url: HttpUrl,
 ) -> Iterator[AnyUrl]:
-
     s3_client = boto3.client(
         "s3",
         endpoint_url=mocked_s3_server_url,
@@ -102,7 +101,6 @@ def mocked_directorv2_service_api(
         assert_all_called=False,
         assert_all_mocked=True,  # IMPORTANT: KEEP always True!
     ) as respx_mock:
-
         # check that what we emulate, actually still exists
         path = "/v2/computations/{project_id}/tasks/-/logfile"
         assert path in oas["paths"]
@@ -277,6 +275,7 @@ async def test_run_solver_job(
                         "currentStatus": "NOT_STARTED",
                     },
                 },
+                "progress": 0.0,
             },
             "iteration": 1,
             "cluster_id": 0,

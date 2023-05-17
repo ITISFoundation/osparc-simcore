@@ -38,7 +38,7 @@ class CompRunsRepository(BaseRepository):
         """
         async with self.db_engine.acquire() as conn:
             result = await conn.execute(
-                sa.select([comp_runs])
+                sa.select(comp_runs)
                 .where(
                     (comp_runs.c.user_id == user_id)
                     & (comp_runs.c.project_uuid == f"{project_id}")
@@ -60,7 +60,7 @@ class CompRunsRepository(BaseRepository):
         runs_in_db: deque[CompRunsAtDB] = deque()
         async with self.db_engine.acquire() as conn:
             async for row in conn.execute(
-                sa.select([comp_runs]).where(
+                sa.select(comp_runs).where(
                     or_(
                         *[
                             comp_runs.c.result == RUNNING_STATE_TO_DB[s]
@@ -84,7 +84,7 @@ class CompRunsRepository(BaseRepository):
                 if iteration is None:
                     # let's get the latest if it exists
                     last_iteration = await conn.scalar(
-                        sa.select([comp_runs.c.iteration])
+                        sa.select(comp_runs.c.iteration)
                         .where(
                             (comp_runs.c.user_id == user_id)
                             & (comp_runs.c.project_uuid == f"{project_id}")

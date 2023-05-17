@@ -231,6 +231,7 @@ class BaseCompScheduler(ABC):
                 project_id,
                 [NodeID(n) for n in tasks_to_set_aborted],
                 RunningState.ABORTED,
+                optional_progress=1.0,
             )
         return tasks
 
@@ -293,30 +294,36 @@ class BaseCompScheduler(ABC):
         cluster_id: ClusterID,
         project_id: ProjectID,
         pipeline_dag: nx.DiGraph,
-    ):
+    ) -> None:
         all_tasks = await self._get_pipeline_tasks(project_id, pipeline_dag)
-        processing_tasks = [
+        if processing_tasks := [
             t for t in all_tasks.values() if t.state in PROCESSING_STATES
-        ]
-        changed_tasks = await self._get_changed_tasks_from_backend(
-            user_id, cluster_id, processing_tasks
-        )
+        ]:
+            changed_tasks = await self._get_changed_tasks_from_backend(
+                user_id, cluster_id, processing_tasks
+            )
 
-        await self._publish_service_started_metrics(user_id, project_id, changed_tasks)
+            await self._publish_service_started_metrics(
+                user_id, project_id, changed_tasks
+            )
 
-        completed_tasks = [
-            current for _, current in changed_tasks if current.state in COMPLETED_STATES
-        ]
-        incomplete_tasks = [
-            current
-            for _, current in changed_tasks
-            if current.state not in COMPLETED_STATES
-        ]
+            completed_tasks = [
+                current
+                for _, current in changed_tasks
+                if current.state in COMPLETED_STATES
+            ]
+            incomplete_tasks = [
+                current
+                for _, current in changed_tasks
+                if current.state not in COMPLETED_STATES
+            ]
 
-        if completed_tasks:
-            await self._process_completed_tasks(user_id, cluster_id, completed_tasks)
-        if incomplete_tasks:
-            await self._process_incomplete_tasks(incomplete_tasks)
+            if completed_tasks:
+                await self._process_completed_tasks(
+                    user_id, cluster_id, completed_tasks
+                )
+            if incomplete_tasks:
+                await self._process_incomplete_tasks(incomplete_tasks)
 
     @abstractmethod
     async def _start_tasks(
@@ -471,7 +478,10 @@ class BaseCompScheduler(ABC):
             self.db_engine, CompTasksRepository
         )
         await comp_tasks_repo.set_project_tasks_state(
-            project_id, list(tasks_ready_to_start.keys()), RunningState.PENDING
+            project_id,
+            list(tasks_ready_to_start.keys()),
+            RunningState.PENDING,
+            optional_progress=0,
         )
 
         # we pass the tasks to the dask-client in a gather such that each task can be stopped independently
@@ -502,6 +512,7 @@ class BaseCompScheduler(ABC):
                     [r.node_id],
                     RunningState.FAILED,
                     r.get_errors(),
+                    optional_progress=1.0,
                 )
             elif isinstance(
                 r,
@@ -523,6 +534,7 @@ class BaseCompScheduler(ABC):
                         project_id,
                         list(tasks_ready_to_start.keys()),
                         RunningState.PUBLISHED,
+                        optional_progress=0,
                     ),
                 )
             elif isinstance(r, Exception):
@@ -536,7 +548,7 @@ class BaseCompScheduler(ABC):
                     "".join(traceback.format_tb(r.__traceback__)),
                 )
                 await comp_tasks_repo.set_project_tasks_state(
-                    project_id, [t], RunningState.FAILED
+                    project_id, [t], RunningState.FAILED, optional_progress=1.0
                 )
 
     def _wake_up_scheduler_now(self) -> None:

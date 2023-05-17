@@ -2,6 +2,7 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
+from typing import AsyncIterator
 from unittest.mock import AsyncMock
 
 import pytest
@@ -90,13 +91,15 @@ def mock_env(
 @pytest.fixture
 def mocked_app(mock_env: None) -> FastAPI:
     app = FastAPI()
-    app.state.settings = AppSettings()
+    app.state.settings = AppSettings.create_from_envs()
     app.state.rabbitmq_client = AsyncMock()
     return app
 
 
 @pytest.fixture
-async def dynamic_sidecar_scheduler(mocked_app: FastAPI) -> DynamicSidecarsScheduler:
+async def dynamic_sidecar_scheduler(
+    mocked_app: FastAPI,
+) -> AsyncIterator[DynamicSidecarsScheduler]:
     await setup_scheduler(mocked_app)
     await setup(mocked_app)
 

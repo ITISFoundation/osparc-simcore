@@ -12,6 +12,11 @@ from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects import projects
 from simcore_service_director_v2.models.schemas.comp_tasks import ComputationGet
 from starlette import status
+from tenacity import retry
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
+from yarl import URL
 
 
 @pytest.fixture
@@ -24,6 +29,7 @@ def update_project_workbench_with_comp_tasks(
                 projects.select().where(projects.c.uuid == project_uuid)
             )
             prj_row = result.first()
+            assert prj_row
             prj_workbench = prj_row.workbench
 
             result = con.execute(
@@ -109,3 +115,47 @@ def mock_projects_repository(mocker: MockerFixture) -> None:
         f"{module_base}.ProjectsRepository.is_node_present_in_workbench",
         return_value=mocked_obj,
     )
+
+
+@pytest.fixture
+async def catalog_ready(
+    services_endpoint: dict[str, URL]
+) -> Callable[[UserID, str], Awaitable[None]]:
+    async def _waiter(user_id: UserID, product_name: str) -> None:
+        catalog_endpoint = list(
+            filter(
+                lambda service_endpoint: "catalog" in service_endpoint[0],
+                services_endpoint.items(),
+            )
+        )
+        assert (
+            len(catalog_endpoint) == 1
+        ), f"no catalog service found! {services_endpoint=}"
+        catalog_endpoint = catalog_endpoint[0][1]
+        print(f"--> found catalog endpoint at {catalog_endpoint=}")
+        client = httpx.AsyncClient()
+
+        @retry(
+            wait=wait_fixed(1),
+            stop=stop_after_delay(60),
+            retry=retry_if_exception_type(AssertionError),
+        )
+        async def _ensure_catalog_services_answers() -> None:
+            print("--> checking catalog is up and ready...")
+            response = await client.get(
+                f"{catalog_endpoint}/v0/services",
+                params={"details": False, "user_id": user_id},
+                headers={"x-simcore-products-name": product_name},
+            )
+            assert (
+                response.status_code == status.HTTP_200_OK
+            ), f"catalog is not ready {response.status_code}:{response.text}, TIP: migration not completed or catalog broken?"
+            services = response.json()
+            assert services != [], "catalog is not ready: no services available"
+            print(
+                f"<-- catalog is up and ready, received {response.status_code}:{response.text}"
+            )
+
+        await _ensure_catalog_services_answers()
+
+    return _waiter
