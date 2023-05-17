@@ -486,7 +486,10 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
     min_visible_inputs: NonNegativeInt | None = Field(
         None,
         alias="min-visible-inputs",
-        description="The number of 'data type inputs' displayed by default in the UI.",
+        description=(
+            "The number of 'data type inputs' displayed by default in the UI. "
+            "When None all 'data type inputs' are displayed."
+        ),
     )
 
     class Config:
