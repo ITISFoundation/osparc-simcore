@@ -8,7 +8,7 @@ from time import sleep
 from skopt import Optimizer
 from skopt.plots import plot_gaussian_process
 from collections import deque
-from typing import Tuple, Optional
+from typing import Tuple, Optional, List
 from matplotlib import pyplot as plt
 from argparse import ArgumentParser
 import osparc
@@ -177,7 +177,13 @@ class ObjectiveFunction:
 		return result, sol
 
 if __name__ == '__main__':
-	parser = ArgumentParser()
+	doc: List[str] = []
+	doc.append('In this example we use Sim4Life and oSparc to determine the right length (arm_len) of a dipole antenna in order to achieve a given impedance profile. ')
+	doc.append('This is done using a Baysiean optimization algorithm which tries to guess the minimum of an objective function which, ')
+	doc.append('given an input arm length, outputs the L2 squared distance to the reference impedance profile. I.e. the minimum of the objective function ')
+	doc.append('is the arm length giving the wished impedance profile (the optimal armlength is 249.5). N.b. this example should be run with the python interpreter ')
+	doc.append('shipped with Sim4Life and several packages must be pip installed into that. This was tested using Sim4Life v. 7.2.')
+	parser = ArgumentParser('\n'.join(doc))
 	parser.add_argument('username', help='oSparc public API username', type=str)
 	parser.add_argument('password', help='oSparc public API password', type=str)
 	args = parser.parse_args()
