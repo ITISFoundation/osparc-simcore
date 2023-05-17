@@ -131,14 +131,14 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showLicenseExtra: function() {
-      if (this.isProduct("s4llite") || this.isProduct("tis")) {
+      if (this.isProduct("s4l") || this.isProduct("s4llite") || this.isProduct("tis")) {
         return true;
       }
       return false;
     },
 
     showAboutProduct: function() {
-      if (this.isProduct("s4llite")) {
+      if (this.isProduct("s4l") || this.isProduct("s4llite")) {
         return true;
       }
       return false;
