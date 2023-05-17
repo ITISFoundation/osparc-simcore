@@ -151,22 +151,6 @@ qx.Class.define("osparc.component.widget.logger.LoggerTable", {
       return this.__filteredData.length;
     },
 
-    // overloaded - called whenever the table requests the row count
-    _loadRowCount : function() {
-      this.__filteredData = [];
-      for (let i=0; i<this.__rawData.length; i++) {
-        const rowData = this.__rawData[i];
-        if (this.__checkFilters(rowData)) {
-          this.__filteredData.push(rowData);
-        }
-      }
-      this.__setRowCount(this.__filteredData.length);
-    },
-
-    _loadRowData : function(firstRow, lastRow) {
-      this.__rowDataLoadded(firstRow, lastRow);
-    },
-
     __filterByString: function(msg) {
       let searchString = this.getFilterString();
       if (searchString === null || searchString === "") {
@@ -193,16 +177,32 @@ qx.Class.define("osparc.component.widget.logger.LoggerTable", {
       return ((showStrWho || showStrWhat) && showLog);
     },
 
+    // overloaded - called whenever the table requests the row count
+    _loadRowCount : function() {
+      this.__filteredData = [];
+      for (let i=0; i<this.__rawData.length; i++) {
+        const rowData = this.__rawData[i];
+        if (this.__checkFilters(rowData)) {
+          this.__filteredData.push(rowData);
+        }
+      }
+      this.__setRowCount(this.__filteredData.length);
+    },
+
+    _loadRowData : function(firstRow, lastRow) {
+      this.__rowDataLoadded(firstRow, lastRow);
+    },
+
     // Fake the server localy
     __setRowCount : function(number) {
-      var self = this;
+      const self = this;
       self._onRowCountLoaded(number);
     },
 
     __rowDataLoadded : function(firstRow, lastRow) {
-      var self = this;
-      var data = [];
-      for (var i=firstRow; i<=lastRow; i++) {
+      const self = this;
+      const data = [];
+      for (let i=firstRow; i<=lastRow; i++) {
         data.push(this.__filteredData[i]);
       }
       self._onRowDataLoaded(data);
