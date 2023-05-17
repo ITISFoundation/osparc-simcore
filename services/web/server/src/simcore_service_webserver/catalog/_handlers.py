@@ -10,7 +10,7 @@ from typing import Any, Iterator
 import orjson
 from aiohttp import web
 from aiohttp.web import Request, RouteTableDef
-from models_library.services import ServiceInput, ServiceOutput
+from models_library.services import ServiceInput, ServiceKeyEncoded, ServiceOutput
 from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
@@ -74,7 +74,7 @@ class _RequestContext(BaseModel):
 
 
 class _ServicePathParams(BaseModel):
-    service_key: ServiceKey
+    service_key: ServiceKeyEncoded
     service_version: ServiceVersion
 
     class Config:
