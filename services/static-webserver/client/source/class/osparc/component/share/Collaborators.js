@@ -29,6 +29,10 @@ qx.Class.define("osparc.component.share.Collaborators", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
+    this.set({
+      padding: 5
+    });
+
     this.__buildLayout();
 
     this.__collaborators = {};
