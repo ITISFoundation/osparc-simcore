@@ -196,7 +196,7 @@ async def compute_pipeline_details(
     }
     pipeline_progress = None
     if len(pipeline_dag.nodes) > 0:
-        pipeline_progress = 0
+        pipeline_progress = 0.0
         for node_id in pipeline_dag.nodes:
             if node_progress := node_id_to_comp_task[node_id].progress:
                 pipeline_progress += node_progress / len(pipeline_dag.nodes)
