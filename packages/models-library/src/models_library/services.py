@@ -486,7 +486,7 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
     min_visible_inputs: NonNegativeInt | None = Field(
         None,
         alias="min-visible-inputs",
-        description="The amount of 'data type inputs (files)' displayed by deafault in the UI.",
+        description="The number of 'data type inputs' displayed by default in the UI.",
     )
 
     class Config:
