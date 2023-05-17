@@ -597,10 +597,20 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const data = e.getData();
         const nodeId = data.nodeId;
         const msg = data.msg;
-        if ("level" in data && data["level"] === "ERROR") {
-          this.__loggerView.error(nodeId, msg);
-        } else {
-          this.__loggerView.info(nodeId, msg);
+        const logLevel = ("level" in data) ? data["level"] : "INFO";
+        switch (logLevel) {
+          case "DEBUG":
+            this.__loggerView.debug(nodeId, msg);
+            break;
+          case "WARNING":
+            this.__loggerView.warn(nodeId, msg);
+            break;
+          case "ERROR":
+            this.__loggerView.error(nodeId, msg);
+            break;
+          default:
+            this.__loggerView.info(nodeId, msg);
+            break;
         }
       }, this);
 
