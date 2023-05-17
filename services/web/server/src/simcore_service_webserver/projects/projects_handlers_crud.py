@@ -31,7 +31,7 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import api_version_prefix as VTAG
-from ..catalog.plugin import get_services_for_user_in_product
+from ..catalog.client import get_services_for_user_in_product
 from ..director_v2 import api
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource

@@ -175,7 +175,7 @@ async def test_iterators_workflow(
         ] + [{"key": "simcore/services/frontend/parameter/integer", "version": "1.0.0"}]
 
     mocker.patch(
-        "simcore_service_webserver.catalog.get_services_for_user_in_product",
+        "simcore_service_webserver.catalog.client.get_services_for_user_in_product",
         side_effect=_mock_catalog_get,
     )
 
