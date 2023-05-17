@@ -7,7 +7,7 @@ from yarl import URL
 from .._constants import RQ_PRODUCT_KEY, RQT_USERID_KEY, X_PRODUCT_NAME_HEADER
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
-from . import client
+from ._utils import make_request_and_envelope_response
 from .client import to_backend_service
 from .settings import get_plugin_settings
 
@@ -55,6 +55,6 @@ async def reverse_proxy_handler(request: web.Request) -> web.Response:
     fwd_headers.update({X_PRODUCT_NAME_HEADER: product_name})
 
     # forward request
-    return await client.make_request_and_envelope_response(
+    return await make_request_and_envelope_response(
         request.app, request.method, backend_url, fwd_headers, raw
     )
