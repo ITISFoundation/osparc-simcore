@@ -51,7 +51,7 @@ from .exceptions import (
     ProjectNotFoundError,
 )
 from .models import ProjectDict
-from .projects_utils import find_changed_node_keys
+from .utils import find_changed_node_keys
 
 log = logging.getLogger(__name__)
 

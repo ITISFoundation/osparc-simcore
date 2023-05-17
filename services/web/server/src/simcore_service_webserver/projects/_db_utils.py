@@ -25,7 +25,7 @@ from ..users.exceptions import UserNotFoundError
 from ..utils import format_datetime
 from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from .models import ProjectDict, ProjectProxy
-from .projects_utils import project_uses_available_services
+from .utils import project_uses_available_services
 
 logger = logging.getLogger(__name__)
 

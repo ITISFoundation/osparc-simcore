@@ -81,8 +81,8 @@ from .project_lock import (
     is_project_locked,
     lock_project,
 )
-from .projects_utils import extract_dns_without_default_port
 from .settings import ProjectsSettings, get_plugin_settings
+from .utils import extract_dns_without_default_port
 
 log = logging.getLogger(__name__)
 
