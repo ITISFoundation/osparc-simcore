@@ -1,6 +1,6 @@
 """ Handlers for on /projects colletions
 
-Imports in standard methods (SEE projects_handlers_crud) and extends with
+Imports in standard methods (SEE _handlers_crud) and extends with
     - custom methods (https://google.aip.dev/121)
 
 """
@@ -33,13 +33,13 @@ from ..products.plugin import Product, get_current_product
 from ..security.decorators import permission_required
 from ..users import api
 from . import projects_api
+from ._handlers_crud import ProjectPathParams, RequestContext
 from .projects_exceptions import (
     ProjectInvalidRightsError,
     ProjectNotFoundError,
     ProjectStartsTooManyDynamicNodes,
     ProjectTooManyProjectOpened,
 )
-from .projects_handlers_crud import ProjectPathParams, RequestContext
 
 log = logging.getLogger(__name__)
 

@@ -10,13 +10,12 @@ This OAS are the source of truth
 
 
 from enum import Enum
-from typing import Union
 
 from fastapi import FastAPI
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
-from simcore_service_webserver.projects.projects_ports_handlers import (
+from simcore_service_webserver.projects._handlers__ports import (
     ProjectInputGet,
     ProjectInputUpdate,
     ProjectMetadataPortGet,
@@ -25,7 +24,7 @@ from simcore_service_webserver.projects.projects_ports_handlers import (
 
 app = FastAPI(redoc_url=None)
 
-TAGS: list[Union[str, Enum]] = [
+TAGS: list[str | Enum] = [
     "project",
 ]
 
