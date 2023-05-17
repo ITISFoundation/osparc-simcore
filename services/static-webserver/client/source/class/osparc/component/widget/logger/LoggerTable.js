@@ -88,7 +88,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerTable", {
       let logColor = null;
       const logLevels = osparc.component.widget.logger.LoggerView.LOG_LEVELS;
       Object.keys(logLevels).forEach(logLevelKey => {
-        const logString = logLevelKey;
+        const logString = logLevelKey.toLowerCase();
         const logNumber = logLevels[logLevelKey];
         if (logNumber === logLevel) {
           logColor = colorManager.resolve("logger-"+logString+"-message");
