@@ -23,6 +23,8 @@ from s4l_v1._api.application import run_application
 import s4l_v1.units as units
 import s4l_v1.document as document
 import s4l_v1.analysis.extractors as extractors
+from s4l_v1.model import Vec3, Translation, Rotation
+
 
 sys.path.insert(0, Path(__file__).parent)
 from solver import OsparcSolver
@@ -33,39 +35,37 @@ class ObjectiveFunction:
 	Objective function which computes the distance of the impedance in a non-blocking way:
 	After evaluation it must be polled to check if results are ready.
 	"""
-	def __init__(self, reference: np.ndarray, cfg: osparc.Configuration):
+	def __init__(self, reference: np.ndarray, cfg: osparc.Configuration) -> None:
 
 		self._reference = reference
 		self._cfg = cfg
 		self._project_tmp_dir: TemporaryDirectory = TemporaryDirectory()
 		self._project_dir: Path = Path(self._project_tmp_dir.name)
 
-		self._sim = None
-		self._solver = None
-		self._arm_len = None
+		self._sim: Optional[fdtd.Simulation] = None
+		self._solver: Optional[OsparcSolver] = None
+		self._arm_len: Optional[float] = None
 
-	def __del__(self):
+	def __del__(self) -> None:
 		self._project_tmp_dir.cleanup()
 
-	def _create_model(self, arm_len: float):
+	def _create_model(self, arm_len: float) -> None:
 		"""
 		Create model.
 		Original (optimal) arm_len = 249.5
 		"""
-		from s4l_v1.model import Vec3, Translation, Rotation
 
 		points = [ Vec3(0,0,0), Vec3(0,5.55,0), Vec3(0,0,arm_len)]
 
 		for i, coordinates in enumerate(points):
 			pi = model.CreatePoint(coordinates)
-			pi.Name = 'p%i'%i
+			pi.Name = f'p{i}'
 
 		center = points[0]
 		radius = (points[1]-points[0]).Length()
 
 		arm_axis = points[2]-points[0]
-		arm1 = model.CreateSolidTube(base_center=points[0], axis_height=arm_axis, \
-			major_radius=radius, minor_radius=0, parametrized=True)
+		arm1 = model.CreateSolidTube(base_center=points[0], axis_height=arm_axis, major_radius=radius, minor_radius=0, parametrized=True)
 		arm1.Name = 'Arm 1'
 		arm2 = arm1.Clone()
 		arm2.Name = 'Arm 2'
@@ -83,7 +83,7 @@ class ObjectiveFunction:
 		source = model.CreatePolyLine( points = [Vec3(0, 0, 0.5), Vec3(0, 0, -0.5)])
 		source.Name = 'SourceLine'
 
-	def _create_simulation(self, use_graphcard: bool, arm_len: float):
+	def _create_simulation(self, use_graphcard: bool) -> None:
 
 		# retrieve needed entities from model
 		entities = model.AllEntities()
@@ -144,7 +144,7 @@ class ObjectiveFunction:
 		"""
 		self._arm_len = arm_len
 		self._create_model(arm_len)
-		self._sim = self._create_simulation(False, arm_len)
+		self._sim = self._create_simulation(False)
 		self._sim.UpdateGrid()
 		self._sim.CreateVoxels(str(self._project_dir / 'project.smash'))
 		self._sim.WriteInputFile()
@@ -159,7 +159,8 @@ class ObjectiveFunction:
 		return self._solver.job_done()
 
 	def get_result(self) -> Tuple[float, np.ndarray]:
-		assert self.result_ready(), 'The result cannot be fetched until results are ready'
+		if not self.result_ready():
+			raise RuntimeError('The result cannot be fetched until results are ready')
 
 		cur_dir : Path = Path.cwd()
 		os.chdir(self._project_dir / 'project.smash_Results')
@@ -231,10 +232,7 @@ if __name__ == '__main__':
 			else:
 				sleep(1)
 
-	print('Results:')
-	print(100*'=')
-	print(res)
-	print(100*'=')
+	print('\n'.join(['Results:', 100*'=', str(res),  100*'=']))
 	plot_gaussian_process(res)
 	if best_guess is not None:
 		# Create a new figure and axes for the second plot

@@ -36,7 +36,7 @@ class OsparcSolver():
     An oSparc solver
     """
     @handle_api_exceptions(OSparcServerException)
-    def __init__(self, solver_key: str, solver_version: str, cfg: osparc.Configuration):
+    def __init__(self, solver_key: str, solver_version: str, cfg: osparc.Configuration) -> None:
 
         self._solver_key: str = solver_key
         self._solver_version: str = solver_version
@@ -73,7 +73,7 @@ class OsparcSolver():
         return log
 
     @handle_api_exceptions(OSparcServerException)
-    def submit_job(self, input_file: Path):
+    def submit_job(self, input_file: Path) -> None:
         """
         submit job to solver
         """
@@ -106,7 +106,7 @@ class OsparcSolver():
             return False
     
     @handle_api_exceptions(OSparcServerException)
-    def fetch_results(self, output_file: Path, log_path: Path) -> bool:
+    def fetch_results(self, output_file: Path, log_path: Path) -> None:
         """
         Fetches the results of a simulation
         """
