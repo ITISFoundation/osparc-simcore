@@ -38,7 +38,7 @@ from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resourc
 from ..security.api import check_permission
 from ..security.decorators import permission_required
 from ..users.api import get_user_name
-from . import _create_utils, _read_utils, projects_api
+from . import _crud_create_utils, _crud_read_utils, projects_api
 from ._permalink import update_or_pop_permalink_in_project
 from ._rest_schemas import (
     EmptyModel,
@@ -148,7 +148,7 @@ async def create_project(request: web.Request):
 
     return await start_long_running_task(
         request,
-        _create_utils.create_project,
+        _crud_create_utils.create_project,
         fire_and_forget=True,
         task_context=jsonable_encoder(req_ctx),
         # arguments
@@ -203,7 +203,7 @@ async def list_projects(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
     query_params = parse_request_query_parameters_as(_ProjectListParams, request)
 
-    projects, total_number_of_projects = await _read_utils.list_projects(
+    projects, total_number_of_projects = await _crud_read_utils.list_projects(
         request,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
