@@ -1,6 +1,3 @@
-""" Requests to catalog service API
-
-"""
 import asyncio
 import logging
 from contextlib import contextmanager
