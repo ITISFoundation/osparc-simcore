@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 import rich
 import typer
@@ -26,8 +27,7 @@ def _version_callback(value: bool):
 @app.callback()
 def main(
     ctx: typer.Context,
-    version: bool
-    | None = (
+    version: Optional[bool] = (
         typer.Option(
             None,
             "--version",
