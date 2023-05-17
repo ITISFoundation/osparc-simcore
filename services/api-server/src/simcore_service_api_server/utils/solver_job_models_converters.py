@@ -20,7 +20,14 @@ from ..models.domain.projects import (
     StudyUI,
 )
 from ..models.schemas.files import File
-from ..models.schemas.jobs import ArgumentType, Job, JobInputs, JobStatus, TaskStates
+from ..models.schemas.jobs import (
+    ArgumentType,
+    Job,
+    JobInputs,
+    JobStatus,
+    PercentageInt,
+    TaskStates,
+)
 from ..models.schemas.solvers import Solver, SolverKeyId
 from ..plugins.director_v2 import ComputationTaskGet
 from .typing_extra import get_types
@@ -244,7 +251,7 @@ def create_jobstatus_from_task(task: ComputationTaskGet) -> JobStatus:
     job_status = JobStatus(
         job_id=task.id,
         state=task.state,
-        progress=int((task.pipeline_details.progress or 0) * 100.0),
+        progress=PercentageInt((task.pipeline_details.progress or 0) * 100.0),
         submitted_at=datetime.utcnow(),
     )
 
