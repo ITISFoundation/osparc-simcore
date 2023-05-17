@@ -186,6 +186,15 @@ def _update_resource_limits_and_reservations(
         spec["environment"] = environment
 
 
+def _strip_service_quotas(service_spec: ComposeSpecLabel):
+    """
+    When disk quotas are not supported by the node, it is required to remove
+    any reference from the docker-compose spec.
+    """
+    for spec in service_spec["services"].values():
+        spec.pop("storage_opt", None)
+
+
 def _update_container_labels(
     service_spec: ComposeSpecLabel,
     user_id: UserID,
@@ -222,6 +231,7 @@ def assemble_spec(
     dynamic_sidecar_network_name: str,
     swarm_network_name: str,
     service_resources: ServiceResourcesDict,
+    has_quota_support: bool,
     simcore_service_labels: SimcoreServiceLabels,
     allow_internet_access: bool,
     product_name: ProductName,
@@ -277,6 +287,9 @@ def assemble_spec(
     _update_resource_limits_and_reservations(
         service_resources=service_resources, service_spec=service_spec
     )
+
+    if not has_quota_support:
+        _strip_service_quotas(service_spec)
 
     if not allow_internet_access:
         # NOTE: when service has no access to the internet,
