@@ -19,6 +19,7 @@ _logger = logging.getLogger(__name__)
 
 def create_app(settings: ApplicationSettings) -> FastAPI:
     _logger.info("app settings: %s", settings.json(indent=1))
+
     app = FastAPI(
         debug=settings.RESOURCE_USAGE_TRACKER_DEBUG,
         title=f"{PROJECT_NAME} web API",
@@ -31,7 +32,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     override_fastapi_openapi_method(app)
 
     # STATE
-    app.state.settings = settings or ApplicationSettings()
+    app.state.settings = settings
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
     # PLUGINS SETUP
