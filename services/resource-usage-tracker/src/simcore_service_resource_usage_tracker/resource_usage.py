@@ -1,5 +1,6 @@
 import json
 from datetime import datetime, timedelta
+from typing import Any
 
 from prometheus_api_client import PrometheusConnect
 
@@ -32,7 +33,7 @@ def evaluate_service_resource_usage(
     uuid: str = ".*",
     image: str = "registry.osparc.io/simcore/services/dynamic/jupyter-smash:3.0.9",
 ):
-    max_values_per_docker_id = {}
+    max_values_per_docker_id: dict[str, Any] = {}
     td = stoptime - starttime
     minutes = int(td.total_seconds() / 60)
     for currentDatetime in [stoptime - timedelta(minutes=i) for i in range(minutes)]:
@@ -106,6 +107,6 @@ def evaluate_service_resource_usage(
 
 now = datetime.utcnow()
 data = evaluate_service_resource_usage(
-    now - timedelta(hours=1), now, userid="43817"
+    now - timedelta(hours=1), now, userid=43817
 )  # This userid is puppeteer1 on osparc.io
 print(json.dumps(data, indent=4, sort_keys=True))
