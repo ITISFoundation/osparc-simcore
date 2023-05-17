@@ -6,7 +6,6 @@ import typer
 from rich.console import Console
 from settings_library.utils_cli import create_settings_command
 
-from . import web_server
 from ._meta import PROJECT_NAME, __version__
 from .core.settings import ApplicationSettings
 
@@ -46,13 +45,3 @@ def main(
 
 
 app.command()(create_settings_command(settings_cls=ApplicationSettings, logger=log))
-
-
-@app.command()
-def serve(
-    ctx: typer.Context,
-    reload: bool = False,
-) -> None:
-    """Starts server with http API"""
-    assert ctx  # nosec
-    web_server.start(log_level="info", reload=reload)
