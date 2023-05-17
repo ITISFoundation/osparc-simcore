@@ -205,6 +205,11 @@ class DynamicSidecarSettings(BaseCustomSettings):
         "3.8", description="docker-compose version used in the compose-specs"
     )
 
+    DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS: bool = Field(
+        False,
+        description="enables support for limiting service's volume size",
+    )
+
     SWARM_STACK_NAME: str = Field(
         ...,
         description="in case there are several deployments on the same docker swarm, it is attached as a label on all spawned services",

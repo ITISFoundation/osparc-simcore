@@ -436,7 +436,9 @@ async def test_get_computation_from_empty_project(
     expected_computation = ComputationGet(
         id=proj.uuid,
         state=RunningState.UNKNOWN,
-        pipeline_details=PipelineDetails(adjacency_list={}, node_states={}),
+        pipeline_details=PipelineDetails(
+            adjacency_list={}, node_states={}, progress=None
+        ),
         url=parse_obj_as(
             AnyHttpUrl, f"{async_client.base_url.join(get_computation_url)}"
         ),
@@ -485,10 +487,12 @@ async def test_get_computation_from_not_started_computation_task(
             adjacency_list=parse_obj_as(
                 dict[NodeID, list[NodeID]], fake_workbench_adjacency
             ),
+            progress=0,
             node_states={
                 t.node_id: NodeState(
                     modified=True,
                     currentStatus=RunningState.NOT_STARTED,
+                    progress=None,
                     dependencies={
                         NodeID(node)
                         for node, next_nodes in fake_workbench_adjacency.items()
@@ -528,7 +532,7 @@ async def test_get_computation_from_published_computation_task(
         project_id=proj.uuid,
         dag_adjacency_list=fake_workbench_adjacency,
     )
-    comp_tasks = tasks(user=user, project=proj, state=StateType.PUBLISHED)
+    comp_tasks = tasks(user=user, project=proj, state=StateType.PUBLISHED, progress=0)
     comp_runs = runs(user=user, project=proj, result=StateType.PUBLISHED)
     get_computation_url = httpx.URL(
         f"/v2/computations/{proj.uuid}?user_id={user['id']}"
@@ -556,10 +560,12 @@ async def test_get_computation_from_published_computation_task(
                         for node, next_nodes in fake_workbench_adjacency.items()
                         if f"{t.node_id}" in next_nodes
                     },
+                    progress=0,
                 )
                 for t in comp_tasks
                 if t.node_class == NodeClass.COMPUTATIONAL
             },
+            progress=0,
         ),
         url=parse_obj_as(
             AnyHttpUrl, f"{async_client.base_url.join(get_computation_url)}"

@@ -56,7 +56,7 @@ comp_tasks = sa.Table(
         sa.Enum(StateType),
         nullable=False,
         server_default=StateType.NOT_STARTED.value,
-        doc="Current state in the task lifecicle",
+        doc="Current state in the task lifecycle",
     ),
     sa.Column(
         "errors",
@@ -64,6 +64,12 @@ comp_tasks = sa.Table(
         nullable=True,
         doc="List[models_library.errors.ErrorDict] with error information"
         " for a failing state, otherwise set to None",
+    ),
+    sa.Column(
+        "progress",
+        sa.Numeric(precision=3, scale=2),  # numbers from 0.00 and 1.00
+        nullable=True,
+        doc="current progress of the task if available",
     ),
     # utc timestamps for submission/start/end
     sa.Column("submit", sa.DateTime, doc="UTC timestamp for task submission"),
