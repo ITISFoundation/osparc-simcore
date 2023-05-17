@@ -16,10 +16,26 @@ from osparc.api import FilesApi, SolversApi
 
 logging.basicConfig(level=logging.ERROR, format='[%(levelname)s] %(message)s')
 
+class OSparcServerException(Exception):
+    pass
+
+def osparc_api_exception_handler(osparc_server_exception):
+    def decorator(method):
+        def wrapper(*args, **kwargs):
+            try:
+                return method(*args, **kwargs)
+            except osparc.exceptions.ApiException as e:
+                args[0]._api_client.close()
+                expt = json.loads(e.body)
+                raise osparc_server_exception('\n'.join(expt["errors"])) from None
+        return wrapper
+    return decorator
+
 class OsparcSolver():
     """
     An oSparc solver
     """
+    @osparc_api_exception_handler(OSparcServerException)
     def __init__(self, solver_key: str, solver_version: str, cfg: osparc.Configuration):
 
         self._solver_key: str = solver_key
@@ -27,16 +43,11 @@ class OsparcSolver():
         self._cfg: osparc.Configuration = cfg
 
         # APIs
-        try:
-            self._api_client = osparc.ApiClient(cfg)
-            self._users_api = osparc.UsersApi(self._api_client)
-            self._files_api = FilesApi(self._api_client)
-            self._solvers_api = SolversApi(self._api_client)
-            self._users_api.get_my_profile() # validate access
-        except osparc.exceptions.ApiException as e:
-            self._api_client.close()
-            expt = json.loads(e.body)
-            raise Exception('\n'.join(expt["errors"])) from None
+        self._api_client = osparc.ApiClient(cfg)
+        self._users_api = osparc.UsersApi(self._api_client)
+        self._files_api = FilesApi(self._api_client)
+        self._solvers_api = SolversApi(self._api_client)
+        self._users_api.get_my_profile() # validate access
         
         self._solver: Optional[Solver] = None
 
@@ -44,6 +55,7 @@ class OsparcSolver():
         self._job: Optional[Job] = None
         self._status: Optional[JobStatus] = None
 
+    @osparc_api_exception_handler(OSparcServerException)
     def _generate_isolve_log(self) -> List[str]:
         """
         Unpacks the zip file containing iSolve logs and reads them in as a string
@@ -60,70 +72,58 @@ class OsparcSolver():
         os.remove(log_zip)
         return log
 
+    @osparc_api_exception_handler(OSparcServerException)
     def submit_job(self, input_file: Path):
         """
         submit job to solver
         """
-        try:
-            # create objects
-            input: File = self._files_api.upload_file(file=input_file)
-            self._solver = self._solvers_api.get_solver_release(self._solver_key, self._solver_version)
-            self._job = self._solvers_api.create_job( self._solver.id, self._solver.version, JobInputs({"input_1": input}))
+        # create objects
+        input: File = self._files_api.upload_file(file=input_file)
+        self._solver = self._solvers_api.get_solver_release(self._solver_key, self._solver_version)
+        self._job = self._solvers_api.create_job( self._solver.id, self._solver.version, JobInputs({"input_1": input}))
 
-            # solve
-            logging.info(f'Start solving job: {self._job.id}')
+        # solve
+        logging.info(f'Start solving job: {self._job.id}')
 
-            self._status = self._solvers_api.start_job(self._solver.id, self._solver.version, self._job.id)
-        except osparc.exceptions.ApiException as e:
-            self._api_client.close()
-            expt = json.loads(e.body)
-            raise Exception('\n'.join(expt["errors"])) from None
-                
+        self._status = self._solvers_api.start_job(self._solver.id, self._solver.version, self._job.id)
+    
+    @osparc_api_exception_handler(OSparcServerException)
     def job_done(self) -> bool:
         """
         Check if a submitted job is done
         """
-        try:
-            if self._job is None:
-                return True
-            self._status = self._solvers_api.inspect_job(self._solver_key, self._solver_version, self._job.id)
-            if self._status.stopped_at:
-                if self._status.state != 'SUCCESS':
-                    logging.error(f'Failed job {self._job.id} with status {self._status.state}')
-                    log: List[str] = [f'Failed to solve job with status {self._status.state}', 'Server log:']
-                    log += self._generate_isolve_log()
-                    raise Exception('\n'.join(log))
-                return True
-            else:
-                return False
-        except osparc.exceptions.ApiException as e:
-            self._api_client.close()
-            expt = json.loads(e.body)
-            raise Exception('\n'.join(expt["errors"])) from None           
-        
+        if self._job is None:
+            return True
+        self._status = self._solvers_api.inspect_job(self._solver_key, self._solver_version, self._job.id)
+        if self._status.stopped_at:
+            if self._status.state != 'SUCCESS':
+                logging.error(f'Failed job {self._job.id} with status {self._status.state}')
+                log: List[str] = [f'Failed to solve job with status {self._status.state}', 'Server log:']
+                log += self._generate_isolve_log()
+                raise OSparcServerException('\n'.join(log))
+            return True
+        else:
+            return False
+    
+    @osparc_api_exception_handler(OSparcServerException)
     def fetch_results(self, output_file: Path, log_path: Path) -> bool:
         """
         Fetches the results of a simulation
         """
-        try:
-            outputs: JobOutputs = self._solvers_api.get_job_outputs(self._solver_key, self._solver_version, self._job.id)
-            for _, result in outputs.results.items():
-                file = self._files_api.download_file(result.id)
-                if result.filename == 'output.h5':
-                    shutil.move(file, output_file)
-                elif result.filename == 'log.tgz':
-                    shutil.move(file, log_path)
-                else:
-                    os.remove(file)
-                    logging.info(f'Received unexpected output: {result.filename}')
-                    continue
-                logging.info(f'Successfully downloaded {result.filename}')
-                
-            self._job = None
-            self._status = None
-        except osparc.exceptions.ApiException as e:
-            self._api_client.close()
-            expt = json.loads(e.body)
-            raise Exception('\n'.join(expt["errors"])) from None
+        outputs: JobOutputs = self._solvers_api.get_job_outputs(self._solver_key, self._solver_version, self._job.id)
+        for _, result in outputs.results.items():
+            file = self._files_api.download_file(result.id)
+            if result.filename == 'output.h5':
+                shutil.move(file, output_file)
+            elif result.filename == 'log.tgz':
+                shutil.move(file, log_path)
+            else:
+                os.remove(file)
+                logging.info(f'Received unexpected output: {result.filename}')
+                continue
+            logging.info(f'Successfully downloaded {result.filename}')
+            
+        self._job = None
+        self._status = None
 
 
