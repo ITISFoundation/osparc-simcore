@@ -149,6 +149,7 @@ class DynamicSidecarVolumesPathsResolver:
         project_id: ProjectID,
         user_id: UserID,
         swarm_stack_name: str,
+        has_quota_support: bool,
     ) -> dict[str, Any]:
         return cls.mount_entry(
             swarm_stack_name=swarm_stack_name,
@@ -157,7 +158,7 @@ class DynamicSidecarVolumesPathsResolver:
             run_id=run_id,
             project_id=project_id,
             user_id=user_id,
-            volume_size_limit="1M",
+            volume_size_limit="1M" if has_quota_support else None,
         )
 
     @classmethod

@@ -125,6 +125,7 @@ def get_dynamic_sidecar_spec(
             run_id=scheduler_data.run_id,
             project_id=scheduler_data.project_id,
             user_id=scheduler_data.user_id,
+            has_quota_support=has_quota_support,
         ),
     ]
 
