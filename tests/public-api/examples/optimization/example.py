@@ -91,7 +91,7 @@ class ObjectiveFunction:
 		sim = fdtd.Simulation()
 
 		sim.Name = 'Dipole (Broadband)'
-		sim.SetupSettings.SimulationTime = 3., units.Periods # Set to e.g. 3 for faster execution time. Correct value: 52
+		sim.SetupSettings.SimulationTime = 52., units.Periods # Set to e.g. 3 for faster execution time. Correct value: 52
 
 		options = sim.SetupSettings.GlobalAutoTermination.enum
 		sim.SetupSettings.GlobalAutoTermination = options.GlobalAutoTerminationMedium
