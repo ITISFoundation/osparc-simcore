@@ -32,6 +32,7 @@ from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, ValidationError
 from servicelib.json_serialization import json_dumps
+from servicelib.logging_utils import log_catch, log_context
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_common.exceptions import (
     S3InvalidPathError,
@@ -375,10 +376,10 @@ async def clean_task_output_and_log_files_if_invalid(
         )
 
 
-async def dask_sub_consumer(
+async def _dask_sub_consumer(
     dask_sub: distributed.Sub,
     handler: Callable[[str], Awaitable[None]],
-):
+) -> None:
     async for dask_event in dask_sub:
         logger.debug(
             "received dask event '%s' of topic %s",
@@ -386,7 +387,6 @@ async def dask_sub_consumer(
             dask_sub.name,
         )
         await handler(dask_event)
-        await asyncio.sleep(0.010)
 
 
 _REST_TIMEOUT_S: Final[int] = 1
@@ -397,19 +397,12 @@ async def dask_sub_consumer_task(
     handler: Callable[[str], Awaitable[None]],
 ) -> NoReturn:
     while True:
-        try:
-            logger.info("starting dask consumer task for topic '%s'", dask_sub.name)
-            await dask_sub_consumer(dask_sub, handler)
-        except asyncio.CancelledError:
-            logger.info("stopped dask consumer task for topic '%s'", dask_sub.name)
-            raise
-        except Exception:  # pylint: disable=broad-except
-            logger.exception(
-                "unknown exception in dask consumer task for topic '%s', restarting task in %s sec...",
-                dask_sub.name,
-                _REST_TIMEOUT_S,
-            )
-            await asyncio.sleep(_REST_TIMEOUT_S)
+        with log_catch(logger, reraise=False), log_context(
+            logger, level=logging.DEBUG, msg=f"dask sub task for topic {dask_sub.name}"
+        ):
+            await _dask_sub_consumer(dask_sub, handler)
+        # we sleep a bit before restarting
+        await asyncio.sleep(_REST_TIMEOUT_S)
 
 
 def from_node_reqs_to_dask_resources(

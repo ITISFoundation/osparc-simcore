@@ -272,6 +272,8 @@ def running_project(
             project_id=f"{created_project.uuid}",
             dag_adjacency_list=fake_workbench_adjacency,
         ),
-        tasks=tasks(user=user, project=created_project, state=StateType.RUNNING),
+        tasks=tasks(
+            user=user, project=created_project, state=StateType.RUNNING, progress=0.0
+        ),
         runs=runs(user=user, project=created_project, result=StateType.RUNNING),
     )
