@@ -124,19 +124,6 @@ qx.Class.define("osparc.info.StudyLarge", {
         description.addAt(editInTitle, 0);
         this._add(description);
       }
-
-      this._add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
-
-      const resourceData = this.getStudy().serialize();
-      if (osparc.utils.Resources.isStudy(resourceData)) {
-        const studyLinkSection = osparc.component.share.Collaborators.createStudyLinkSection();
-        this._add(studyLinkSection);
-      } else if (osparc.utils.Resources.isTemplate(resourceData)) {
-        const templateLinkSection = osparc.component.share.Collaborators.createTemplateLinkSection();
-        this._add(templateLinkSection);
-      }
     },
 
     __createViewWithEdit: function(view, cb) {
