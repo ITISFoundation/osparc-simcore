@@ -6,12 +6,15 @@ from tempfile import TemporaryDirectory
 from pathlib import Path
 from time import sleep
 from skopt import Optimizer
+from skopt.plots import plot_gaussian_process
 from collections import deque
+from typing import Tuple, Optional
+from matplotlib import pyplot as plt
+from argparse import ArgumentParser
 import osparc
 
 import XCore
 
-import s4l_v1.document as document
 import s4l_v1.model as model
 import s4l_v1.simulation.emfdtd as fdtd
 import s4l_v1.analysis as analysis
@@ -28,7 +31,7 @@ class ObjectiveFunction:
 	Objective function which computes the distance of the impedance in a non-blocking way:
 	After evaluation it must be polled to check if results are ready.
 	"""
-	def __init__(self, reference: np.array, cfg: osparc.Configuration):
+	def __init__(self, reference: np.ndarray, cfg: osparc.Configuration):
 
 		self._reference = reference
 		self._cfg = cfg
@@ -75,7 +78,7 @@ class ObjectiveFunction:
 		source = model.CreatePolyLine( points = [Vec3(0, 0, 0.5), Vec3(0, 0, -0.5)])
 		source.Name = f'SourceLine {arm_len}'
 
-	def _create_simulation(self, use_graphcard: bool, arm_len: bool):
+	def _create_simulation(self, use_graphcard: bool, arm_len: float):
 
 		# retrieve needed entities from model
 		entities = model.AllEntities()
@@ -88,7 +91,7 @@ class ObjectiveFunction:
 		sim = fdtd.Simulation()
 
 		sim.Name = 'Dipole (Broadband)'
-		sim.SetupSettings.SimulationTime = 52., units.Periods #--------------------------- = 52
+		sim.SetupSettings.SimulationTime = 3., units.Periods # Set to e.g. 3 for faster execution time. Correct value: 52
 
 		options = sim.SetupSettings.GlobalAutoTermination.enum
 		sim.SetupSettings.GlobalAutoTermination = options.GlobalAutoTerminationMedium
@@ -149,7 +152,7 @@ class ObjectiveFunction:
 			return False
 		return self._solver.job_done()
 
-	def get_result(self) -> float:
+	def get_result(self) -> Tuple[float, np.ndarray]:
 		assert self.result_ready(), 'The result cannot be fetched until results are ready'
 		import s4l_v1.document
 
@@ -167,52 +170,77 @@ class ObjectiveFunction:
 		assert self._arm_len is not None, 'arm_len was None. This should not happen'
 		impedance = results[f'SourceLine {self._arm_len}'][ 'EM Input Impedance(f)' ]
 		impedance.Update()
-		sol = np.c_[impedance.Data.Axis, impedance.Data.GetComponent(0)].copy()
+		sol = np.absolute(np.c_[impedance.Data.Axis, impedance.Data.GetComponent(0)].copy())
 		result: float = float(np.linalg.norm(self._reference - sol)**2)
 		s4l_v1.document.New()
 		os.chdir(cur_dir)
-		return result
+		return result, sol
 
 if __name__ == '__main__':
+	parser = ArgumentParser()
+	parser.add_argument('username', help='oSparc public API username', type=str)
+	parser.add_argument('password', help='oSparc public API password', type=str)
+	args = parser.parse_args()
 
 	# run S4L
 	XCore.SetLogLevel(XCore.eLogCategory.Warning)
 	run_application()
 	
 	# setup 
-	cfg: osparc.Configuration = osparc.Configuration(username='1c9034e8-713c-5bec-b0ce-6aa070e1b329', password='a1724945-1f91-5dca-8a0c-8efb018028b0')
+	cfg: osparc.Configuration = osparc.Configuration(username=args.username, password=args.password)
 	reference_file: Path = Path(__file__).parent / 'solution.npy'
 	assert reference_file.is_file(), 'Could not find reference file. It must be located in the same directory as this script.'
-	reference = np.load(reference_file)
+	reference = np.absolute(np.load(reference_file))
 
 	# run optimization
 	opt = Optimizer([(240.0, 260.0)], "GP", acq_func="EI",
 					acq_optimizer="sampling",
 					initial_point_generator="lhs")
 
-	deque_maxlen: int = 2
-	input_q = deque(maxlen=deque_maxlen)
-	obj_q = deque(maxlen=deque_maxlen)
+	input_q: deque
+	obj_q: deque = deque()
 
-	max_n_samples: int = 5
+	n_batches: int = 2
+	batch_size: int = 5
 
-	n_samples: int = 0
-	all_inputs = list(elm[0] for elm in opt.ask(max_n_samples))
 	res = None
-	while n_samples < max_n_samples:
-		if len(input_q) < deque_maxlen:
-			x = all_inputs[n_samples]
-			input_q.append(x)
-			obj = ObjectiveFunction(reference, cfg)
-			obj.evaluate(x)
-			obj_q.append(obj)
-			n_samples += 1
-		if len(obj_q) > 0 and obj_q[0].result_ready():
-			x = input_q.popleft()
-			obj = obj_q.popleft()
-			y = obj.get_result()
-			res = opt.tell([x],y)
-			
+	best_guess: Optional[np.ndarray] = None
+	tmp_quess: Optional[np.ndarray] = None
 
+	n_iter: int = 1
+	for _ in range(n_batches):
+		input_q = deque(elm[0] for elm in opt.ask(batch_size))
+		for jj in range(len(input_q)):
+			obj = ObjectiveFunction(reference, cfg)
+			obj.evaluate(input_q[jj])
+			obj_q.append(obj)
+		while len(obj_q) > 0:
+			if obj_q[0].result_ready():
+				x = input_q.popleft()
+				obj = obj_q.popleft()
+				y, tmp_guess = obj.get_result()
+				res = opt.tell([x],y)
+				if all( elm == x for elm in res.x) and tmp_guess is not None:
+					best_guess = tmp_guess.copy()
+				print(20*'-' + f' completed {(n_iter * 100) / (n_batches * batch_size)}% ' + 20*'-')
+				n_iter += 1
+			else:
+				sleep(1)
+
+	print('Results:')
+	print(100*'=')
 	print(res)
+	print(100*'=')
+	plot_gaussian_process(res)
+	if best_guess is not None:
+		# Create a new figure and axes for the second plot
+		fig, ax = plt.subplots()
+		ax.plot(reference[:,0], reference[:,1], 'r--', label='Reference impedance')
+		ax.plot(best_guess[:,0], best_guess[:,1], 'b--', label=f'Impedance w/ arm_len={res.x[0]:.1f})')
+		ax.set_xlabel('Frequency [MHz]')
+		ax.set_ylabel('EM Input Impedance(f) [V/A]')
+		ax.set_title('Dipole Example')
+		ax.legend(loc='upper left')
+		plt.show(block=True)
+
 
