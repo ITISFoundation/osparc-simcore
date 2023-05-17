@@ -19,7 +19,7 @@ logging.basicConfig(level=logging.ERROR, format='[%(levelname)s] %(message)s')
 class OSparcServerException(Exception):
     pass
 
-def osparc_api_exception_handler(osparc_server_exception):
+def handle_api_exceptions(osparc_server_exception):
     def decorator(method):
         def wrapper(*args, **kwargs):
             try:
@@ -35,7 +35,7 @@ class OsparcSolver():
     """
     An oSparc solver
     """
-    @osparc_api_exception_handler(OSparcServerException)
+    @handle_api_exceptions(OSparcServerException)
     def __init__(self, solver_key: str, solver_version: str, cfg: osparc.Configuration):
 
         self._solver_key: str = solver_key
@@ -55,7 +55,7 @@ class OsparcSolver():
         self._job: Optional[Job] = None
         self._status: Optional[JobStatus] = None
 
-    @osparc_api_exception_handler(OSparcServerException)
+    @handle_api_exceptions(OSparcServerException)
     def _generate_isolve_log(self) -> List[str]:
         """
         Unpacks the zip file containing iSolve logs and reads them in as a string
@@ -72,7 +72,7 @@ class OsparcSolver():
         os.remove(log_zip)
         return log
 
-    @osparc_api_exception_handler(OSparcServerException)
+    @handle_api_exceptions(OSparcServerException)
     def submit_job(self, input_file: Path):
         """
         submit job to solver
@@ -87,7 +87,7 @@ class OsparcSolver():
 
         self._status = self._solvers_api.start_job(self._solver.id, self._solver.version, self._job.id)
     
-    @osparc_api_exception_handler(OSparcServerException)
+    @handle_api_exceptions(OSparcServerException)
     def job_done(self) -> bool:
         """
         Check if a submitted job is done
@@ -105,7 +105,7 @@ class OsparcSolver():
         else:
             return False
     
-    @osparc_api_exception_handler(OSparcServerException)
+    @handle_api_exceptions(OSparcServerException)
     def fetch_results(self, output_file: Path, log_path: Path) -> bool:
         """
         Fetches the results of a simulation

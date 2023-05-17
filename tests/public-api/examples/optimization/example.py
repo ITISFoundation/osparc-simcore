@@ -44,6 +44,9 @@ class ObjectiveFunction:
 		self._solver = None
 		self._arm_len = None
 
+	def __del__(self):
+		self._project_tmp_dir.cleanup()
+
 	def _create_model(self, arm_len: float):
 		"""
 		Create model.
