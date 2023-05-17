@@ -15,7 +15,7 @@ from fastapi import FastAPI
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
-from simcore_service_webserver.projects._handlers__ports import (
+from simcore_service_webserver.projects._handlers_project_ports import (
     ProjectInputGet,
     ProjectInputUpdate,
     ProjectMetadataPortGet,

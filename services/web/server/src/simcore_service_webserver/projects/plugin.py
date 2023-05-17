@@ -16,10 +16,10 @@ from servicelib.aiohttp.rest_routing import (
 from .._constants import APP_OPENAPI_SPECS_KEY, APP_SETTINGS_KEY
 from . import (
     _handlers,
-    _handlers__nodes,
-    _handlers__ports,
-    _handlers__tags,
     _handlers_crud,
+    _handlers_project_nodes,
+    _handlers_project_ports,
+    _handlers_project_tags,
 )
 from ._observer import setup_project_observer_events
 from .db import setup_projects_db
@@ -69,14 +69,14 @@ def setup_projects(app: web.Application) -> bool:
 
     app.router.add_routes(_handlers.routes)
     app.router.add_routes(_handlers_crud.routes)
-    app.router.add_routes(_handlers__ports.routes)
+    app.router.add_routes(_handlers_project_ports.routes)
 
     app.router.add_routes(
         _create_routes(
             "project",
             specs,
-            _handlers__nodes,
-            _handlers__tags,
+            _handlers_project_nodes,
+            _handlers_project_tags,
         )
     )
 
