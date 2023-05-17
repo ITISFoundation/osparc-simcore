@@ -94,6 +94,14 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       error: 2
     },
 
+    LOG_LEVEL_MAP: {
+      10: "DEBUG",
+      20: "INFO",
+      30: "WARNING",
+      40: "ERROR",
+      50: "ERROR"
+    },
+
     logLevel2Str: function(logLevel) {
       const pairFound = Object.entries(this.LOG_LEVELS).find(pair => pair[1] === logLevel);
       if (pairFound && pairFound.length) {
@@ -310,16 +318,28 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       this.__addLogs(nodeId, [msg], this.self().LOG_LEVELS.info);
     },
 
-    infos: function(nodeId, msgs = [""]) {
-      this.__addLogs(nodeId, msgs, this.self().LOG_LEVELS.info);
-    },
-
     warn: function(nodeId, msg = "") {
       this.__addLogs(nodeId, [msg], this.self().LOG_LEVELS.warning);
     },
 
     error: function(nodeId, msg = "") {
       this.__addLogs(nodeId, [msg], this.self().LOG_LEVELS.error);
+    },
+
+    debugs: function(nodeId, msgs = [""]) {
+      this.__addLogs(nodeId, msgs, this.self().LOG_LEVELS.debug);
+    },
+
+    infos: function(nodeId, msgs = [""]) {
+      this.__addLogs(nodeId, msgs, this.self().LOG_LEVELS.info);
+    },
+
+    warns: function(nodeId, msgs = [""]) {
+      this.__addLogs(nodeId, msgs, this.self().LOG_LEVELS.warning);
+    },
+
+    errors: function(nodeId, msgs = [""]) {
+      this.__addLogs(nodeId, msgs, this.self().LOG_LEVELS.error);
     },
 
     __addLogs: function(nodeId, msgs = [""], logLevel = 0) {
