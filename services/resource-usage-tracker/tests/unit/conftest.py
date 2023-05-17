@@ -27,39 +27,21 @@ def project_slug_dir(osparc_simcore_root_dir: Path) -> Path:
 
 
 @pytest.fixture
-def fake_user_name(faker: Faker) -> str:
-    return faker.user_name()
-
-
-@pytest.fixture
-def fake_password(faker: Faker) -> str:
-    return faker.password(length=10)
-
-
-@pytest.fixture
 def fake_port(faker: Faker) -> int:
     return faker.pyint(min_value=1024, max_value=65535)
 
 
 @pytest.fixture
-def fake_url(faker: Faker) -> str:
-    return faker.url()
-
-
-@pytest.fixture
 def app_environment(
-    monkeypatch: MonkeyPatch,
-    fake_user_name: str,
-    fake_port: int,
-    fake_password: str,
+    monkeypatch: MonkeyPatch, fake_port: int, faker: Faker
 ) -> EnvVarsDict:
     envs = setenvs_from_dict(
         monkeypatch,
         {
-            "RESOURCE_USAGE_PROMETHEUS_PASSWORD": fake_password,
+            "RESOURCE_USAGE_PROMETHEUS_PASSWORD": faker.password(),
             "RESOURCE_USAGE_PROMETHEUS_PORT": str(fake_port),
-            "RESOURCE_USAGE_PROMETHEUS_USERNAME": fake_user_name,
-            "RESOURCE_USAGE_PROMETHEUS_URL": "https://example.org",
+            "RESOURCE_USAGE_PROMETHEUS_USERNAME": faker.user_name(),
+            "RESOURCE_USAGE_PROMETHEUS_URL": faker.url(),
         },
     )
 
