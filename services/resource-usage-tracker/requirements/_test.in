@@ -10,7 +10,7 @@
 #
 --constraint _base.txt
 
-
+asgi-lifespan
 coverage
 faker
 httpx
@@ -20,3 +20,4 @@ pytest-cov
 pytest-runner
 pytest-sugar
 python-dotenv
+respx
