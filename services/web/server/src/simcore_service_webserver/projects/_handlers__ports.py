@@ -30,7 +30,7 @@ from .exceptions import (
     ProjectInvalidRightsError,
     ProjectNotFoundError,
 )
-from .project_models import ProjectDict
+from .models import ProjectDict
 from .projects_db import ProjectDBAPI
 
 log = logging.getLogger(__name__)

@@ -16,7 +16,7 @@ from .. import catalog
 from . import projects_api
 from ._permalink import update_or_pop_permalink_in_project
 from ._rest_schemas import ProjectListItem
-from .project_models import ProjectDict, ProjectTypeAPI
+from .models import ProjectDict, ProjectTypeAPI
 from .projects_db import ProjectDBAPI
 
 

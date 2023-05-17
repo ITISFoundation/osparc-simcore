@@ -52,8 +52,8 @@ from .exceptions import (
     ProjectInvalidRightsError,
     ProjectNotFoundError,
 )
+from .models import ProjectDict, ProjectTypeAPI
 from .project_lock import get_project_locked_state
-from .project_models import ProjectDict, ProjectTypeAPI
 from .projects_db import ProjectDBAPI
 from .projects_nodes_utils import update_frontend_outputs
 from .projects_utils import (

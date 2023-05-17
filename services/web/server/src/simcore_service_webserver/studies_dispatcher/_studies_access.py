@@ -33,7 +33,7 @@ from .._constants import INDEX_RESOURCE_NAME
 from ..garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
 from ..products.plugin import get_product_name
 from ..projects.exceptions import ProjectInvalidRightsError, ProjectNotFoundError
-from ..projects.project_models import ProjectDict
+from ..projects.models import ProjectDict
 from ..projects.projects_db import ANY_USER, ProjectDBAPI
 from ..redis import get_redis_lock_manager_client
 from ..security.api import is_anonymous, remember

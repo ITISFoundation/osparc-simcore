@@ -73,13 +73,13 @@ from .exceptions import (
     ProjectStartsTooManyDynamicNodes,
     ProjectTooManyProjectOpened,
 )
+from .models import ProjectDict
 from .project_lock import (
     UserNameDict,
     get_project_locked_state,
     is_project_locked,
     lock_project,
 )
-from .project_models import ProjectDict
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .projects_utils import extract_dns_without_default_port
 from .settings import ProjectsSettings, get_plugin_settings

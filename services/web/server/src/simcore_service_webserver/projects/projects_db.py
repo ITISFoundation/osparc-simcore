@@ -39,7 +39,7 @@ from .exceptions import (
     ProjectInvalidRightsError,
     ProjectNotFoundError,
 )
-from .project_models import ProjectDict
+from .models import ProjectDict
 from .projects_db_utils import (
     ANY_USER_ID_SENTINEL,
     BaseProjectDB,

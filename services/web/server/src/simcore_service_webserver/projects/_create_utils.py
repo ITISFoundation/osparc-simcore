@@ -26,7 +26,7 @@ from . import projects_api
 from ._permalink import update_or_pop_permalink_in_project
 from ._rest_schemas import ProjectGet
 from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
-from .project_models import ProjectDict
+from .models import ProjectDict
 from .projects_db import ProjectDBAPI
 from .projects_utils import NodesMap, clone_project_document, default_copy_project_name
 

@@ -5,7 +5,10 @@ from typing import Any, Callable, Coroutine
 from aiohttp import web
 from models_library.projects import ProjectID
 from pydantic import BaseModel, HttpUrl
-from simcore_service_webserver.projects.project_models import ProjectDict
+
+from services.web.server.src.simcore_service_webserver.projects.models import (
+    ProjectDict,
+)
 
 from .exceptions import PermalinkFactoryError, PermalinkNotAllowedError
 
