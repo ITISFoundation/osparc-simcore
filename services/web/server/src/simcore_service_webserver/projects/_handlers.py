@@ -34,7 +34,7 @@ from ..security.decorators import permission_required
 from ..users import api
 from . import projects_api
 from ._handlers_crud import ProjectPathParams, RequestContext
-from .projects_exceptions import (
+from .exceptions import (
     ProjectInvalidRightsError,
     ProjectNotFoundError,
     ProjectStartsTooManyDynamicNodes,

@@ -34,12 +34,12 @@ from ..security.decorators import permission_required
 from ..users.api import get_user_role
 from . import projects_api
 from ._handlers_crud import ProjectPathParams, RequestContext
-from .projects_db import ProjectDBAPI
-from .projects_exceptions import (
+from .exceptions import (
     NodeNotFoundError,
     ProjectNotFoundError,
     ProjectStartsTooManyDynamicNodes,
 )
+from .projects_db import ProjectDBAPI
 
 log = logging.getLogger(__name__)
 

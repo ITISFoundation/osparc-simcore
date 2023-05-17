@@ -22,6 +22,11 @@ from .director_v2 import api
 from .director_v2.exceptions import ServiceWaitingForManualIntervention
 from .garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
 from .garbage_collector_utils import get_new_project_owner_gid, replace_current_owner
+from .projects.exceptions import (
+    ProjectDeleteError,
+    ProjectLockError,
+    ProjectNotFoundError,
+)
 from .projects.projects_api import (
     get_project_for_user,
     get_workbench_node_ids_from_project_uuid,
@@ -30,11 +35,6 @@ from .projects.projects_api import (
     submit_delete_project_task,
 )
 from .projects.projects_db import ProjectDBAPI
-from .projects.projects_exceptions import (
-    ProjectDeleteError,
-    ProjectLockError,
-    ProjectNotFoundError,
-)
 from .redis import get_redis_lock_manager_client
 from .resource_manager.registry import RedisResourceRegistry, get_registry
 from .users import exceptions

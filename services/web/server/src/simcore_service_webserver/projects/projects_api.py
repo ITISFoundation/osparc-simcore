@@ -67,6 +67,12 @@ from ..storage import api as storage_api
 from ..users.api import get_user_name, get_user_role
 from ..users.exceptions import UserNotFoundError
 from . import _delete_utils, _nodes_utils
+from .exceptions import (
+    NodeNotFoundError,
+    ProjectLockError,
+    ProjectStartsTooManyDynamicNodes,
+    ProjectTooManyProjectOpened,
+)
 from .project_lock import (
     UserNameDict,
     get_project_locked_state,
@@ -75,12 +81,6 @@ from .project_lock import (
 )
 from .project_models import ProjectDict
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
-from .projects_exceptions import (
-    NodeNotFoundError,
-    ProjectLockError,
-    ProjectStartsTooManyDynamicNodes,
-    ProjectTooManyProjectOpened,
-)
 from .projects_utils import extract_dns_without_default_port
 from .settings import ProjectsSettings, get_plugin_settings
 

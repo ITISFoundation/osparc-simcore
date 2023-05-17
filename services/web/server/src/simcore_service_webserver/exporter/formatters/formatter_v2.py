@@ -2,7 +2,6 @@ import asyncio
 import logging
 from collections import deque
 from pathlib import Path
-from typing import Optional
 
 from aiohttp import web
 from aiopg.sa.engine import SAConnection
@@ -11,8 +10,8 @@ from servicelib.pools import non_blocking_process_pool_executor
 from simcore_postgres_database.models.scicrunch_resources import scicrunch_resources
 
 from ...catalog_client import get_service
+from ...projects.exceptions import ProjectsException
 from ...projects.projects_api import get_project_for_user
-from ...projects.projects_exceptions import ProjectsException
 from ...scicrunch.db import ResearchResourceRepository
 from ..exceptions import ExporterException
 from .base_formatter import BaseFormatter
@@ -31,7 +30,7 @@ from .sds.xlsx.templates.submission import SubmissionDocumentParams
 log = logging.getLogger(__name__)
 
 
-async def _get_scicrunch_resource(rrid: str, conn: SAConnection) -> Optional[RowProxy]:
+async def _get_scicrunch_resource(rrid: str, conn: SAConnection) -> RowProxy | None:
     res: ResultProxy = await conn.execute(
         scicrunch_resources.select().where(scicrunch_resources.c.rrid == rrid)
     )

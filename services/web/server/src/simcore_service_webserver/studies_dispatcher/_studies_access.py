@@ -32,12 +32,9 @@ from simcore_service_webserver.director_v2._core_computations import (
 from .._constants import INDEX_RESOURCE_NAME
 from ..garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
 from ..products.plugin import get_product_name
+from ..projects.exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from ..projects.project_models import ProjectDict
 from ..projects.projects_db import ANY_USER, ProjectDBAPI
-from ..projects.projects_exceptions import (
-    ProjectInvalidRightsError,
-    ProjectNotFoundError,
-)
 from ..redis import get_redis_lock_manager_client
 from ..security.api import is_anonymous, remember
 from ..storage.api import copy_data_folders_from_project

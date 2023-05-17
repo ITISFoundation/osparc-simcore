@@ -21,7 +21,7 @@ from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.webserver_models import DB_CHANNEL_NAME, projects
 from sqlalchemy.sql import select
 
-from ..projects import projects_api, projects_exceptions
+from ..projects import exceptions, projects_api
 from ..projects.projects_nodes_utils import update_node_outputs
 from ._utils import convert_state_from_db
 
@@ -33,7 +33,7 @@ async def _get_project_owner(conn: SAConnection, project_uuid: str) -> PositiveI
         select([projects.c.prj_owner]).where(projects.c.uuid == project_uuid)
     )
     if not the_project_owner:
-        raise projects_exceptions.ProjectOwnerNotFoundError(project_uuid)
+        raise exceptions.ProjectOwnerNotFoundError(project_uuid)
     return the_project_owner
 
 
@@ -110,17 +110,17 @@ async def _handle_db_notification(
                 node_errors=task_data.get("errors", None),
             )
 
-    except projects_exceptions.ProjectNotFoundError as exc:
+    except exceptions.ProjectNotFoundError as exc:
         _logger.warning(
             "Project %s was not found and cannot be updated. Maybe was it deleted?",
             exc.project_uuid,
         )
-    except projects_exceptions.ProjectOwnerNotFoundError as exc:
+    except exceptions.ProjectOwnerNotFoundError as exc:
         _logger.warning(
             "Project owner of project %s could not be found, is the project valid?",
             exc.project_uuid,
         )
-    except projects_exceptions.NodeNotFoundError as exc:
+    except exceptions.NodeNotFoundError as exc:
         _logger.warning(
             "Node %s of project %s not found and cannot be updated. Maybe was it deleted?",
             exc.node_uuid,

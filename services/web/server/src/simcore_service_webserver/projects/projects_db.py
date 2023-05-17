@@ -33,6 +33,12 @@ from tenacity import AsyncRetrying, TryAgain, retry_if_exception_type
 
 from ..db_models import study_tags
 from ..utils import now_str
+from .exceptions import (
+    NodeNotFoundError,
+    ProjectDeleteError,
+    ProjectInvalidRightsError,
+    ProjectNotFoundError,
+)
 from .project_models import ProjectDict
 from .projects_db_utils import (
     ANY_USER_ID_SENTINEL,
@@ -44,12 +50,6 @@ from .projects_db_utils import (
     convert_to_db_names,
     convert_to_schema_names,
     create_project_access_rights,
-)
-from .projects_exceptions import (
-    NodeNotFoundError,
-    ProjectDeleteError,
-    ProjectInvalidRightsError,
-    ProjectNotFoundError,
 )
 from .projects_utils import find_changed_node_keys
 

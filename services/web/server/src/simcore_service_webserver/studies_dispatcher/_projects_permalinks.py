@@ -5,11 +5,12 @@ import sqlalchemy as sa
 from aiohttp import web
 from models_library.projects import ProjectID, ProjectIDStr
 from simcore_postgres_database.models.projects import ProjectType, projects
-from simcore_service_webserver.projects.projects_exceptions import (
+from yarl import URL
+
+from services.web.server.src.simcore_service_webserver.projects.exceptions import (
     PermalinkNotAllowedError,
     ProjectNotFoundError,
 )
-from yarl import URL
 
 from ..db import get_database_engine
 from ..projects.api import ProjectPermalink, register_permalink_factory
