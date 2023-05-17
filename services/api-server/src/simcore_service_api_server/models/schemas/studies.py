@@ -1,10 +1,12 @@
+from typing import TypeAlias
+
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic import BaseModel, Field
 
 from .solvers import SolverPort
 
-StudyID = ProjectID
+StudyID: TypeAlias = ProjectID
 
 
 # OUTPUT
