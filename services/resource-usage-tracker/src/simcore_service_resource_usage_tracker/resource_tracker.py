@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 
 from .core.settings import ApplicationSettings
-from .resource_tracker_core import evaluate_service_resource_usage
+from .resource_tracker_core import collect_service_resource_usage
 
 _TASK_NAME = "periodic_prometheus_polling"
 
@@ -14,7 +14,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
         app_settings: ApplicationSettings = app.state.settings
 
         app.state.autoscaler_task = start_periodic_task(
-            evaluate_service_resource_usage,
+            collect_service_resource_usage,
             interval=app_settings.RESOURCE_USAGE_TRACKER_EVALUATION_INTERVAL_SEC,
             task_name=_TASK_NAME,
             app=app,

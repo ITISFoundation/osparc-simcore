@@ -2,6 +2,8 @@ import json
 from datetime import datetime, timedelta
 from typing import Any
 
+from fastapi import FastAPI
+
 # This script assumes everywhere that the minimum granularity of the data is 1 minute
 # Setting it smaller is unreasonable at least for prometheus, as the scraping interval is apprx. eq. to 1 h
 
@@ -21,13 +23,13 @@ def assureDictEntryExists(metric_data, max_values_per_docker_id, image, userid):
             }
 
 
-def evaluate_service_resource_usage(
+async def evaluate_service_resource_usage(
     starttime: datetime,
     stoptime: datetime,
     userid: int,
     uuid: str = ".*",
     image: str = "registry.osparc.io/simcore/services/dynamic/jupyter-smash:3.0.9",
-):
+) -> None:
     max_values_per_docker_id: dict[str, Any] = {}
     td = stoptime - starttime
     minutes = int(td.total_seconds() / 60)
@@ -105,3 +107,7 @@ data = evaluate_service_resource_usage(
     now - timedelta(hours=1), now, userid=43817
 )  # This userid is puppeteer1 on osparc.io
 print(json.dumps(data, indent=4, sort_keys=True))
+
+
+async def collect_service_resource_usage(app: FastAPI) -> None:
+    ...
