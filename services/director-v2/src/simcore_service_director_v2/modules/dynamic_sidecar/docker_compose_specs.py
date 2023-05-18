@@ -2,6 +2,7 @@ import logging
 from copy import deepcopy
 from typing import Any, Optional
 
+import yaml
 from fastapi.applications import FastAPI
 from models_library.docker import SimcoreServiceDockerLabelKeys
 from models_library.products import ProductName
@@ -26,6 +27,10 @@ from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 from settings_library.docker_registry import RegistrySettings
 
 from .docker_compose_egress_config import add_egress_configuration
+from .docker_compose_specs_substitutions import (
+    substitute_session_environments,
+    substitute_vendor_environments,
+)
 
 EnvKeyEqValueList = list[str]
 EnvVarsMap = dict[str, Optional[str]]
@@ -221,7 +226,7 @@ def _update_container_labels(
                 labels.append(docker_label)
 
 
-def assemble_spec(
+async def assemble_spec(
     *,
     app: FastAPI,
     service_key: ServiceKey,
@@ -310,13 +315,26 @@ def assemble_spec(
         simcore_user_agent=simcore_user_agent,
     )
 
-    # TODO: will be used in next PR
-    assert product_name  # nosec
-
     stringified_service_spec: str = replace_env_vars_in_compose_spec(
         service_spec=service_spec,
         replace_simcore_registry=docker_registry_settings.resolved_registry_url,
         replace_service_version=service_version,
     )
+
+    compose_spec = await substitute_vendor_environments(
+        app,
+        compose_spec=yaml.safe_load(stringified_service_spec),
+        service_key=service_key,
+    )
+    compose_spec = await substitute_session_environments(
+        app,
+        compose_spec=compose_spec,
+        user_id=user_id,
+        product_name=product_name,
+        project_uuid=project_id,
+        node_uuid=node_id,
+    )
+
+    stringified_service_spec = yaml.safe_dump(compose_spec)
 
     return stringified_service_spec
