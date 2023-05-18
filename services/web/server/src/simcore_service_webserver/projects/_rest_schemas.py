@@ -18,6 +18,7 @@ from pydantic import BaseModel, Extra, Field, validator
 from servicelib.aiohttp.long_running_tasks.server import TaskGet
 
 from ..rest_schemas_base import InputSchema, OutputSchema
+from ._permalink import ProjectPermalink
 
 NOT_REQUIRED = Field(default=None)
 
@@ -72,6 +73,7 @@ class ProjectGet(OutputSchema):
     ui: EmptyModel | StudyUI | None
     quality: dict[str, Any] = {}
     dev: dict | None
+    permalink: ProjectPermalink = NOT_REQUIRED
 
     _empty_description = validator("description", allow_reuse=True, pre=True)(
         none_to_empty_str

@@ -307,6 +307,10 @@ qx.Class.define("osparc.data.model.Node", {
       return bootModeSB;
     },
 
+    getMinVisibleInputs: function(metaData) {
+      return ("min-visible-inputs" in metaData) ? metaData["min-visible-inputs"] : null;
+    },
+
     getOutput: function(outputs, outputKey) {
       if (outputKey in outputs && "value" in outputs[outputKey]) {
         return outputs[outputKey]["value"];
@@ -379,6 +383,10 @@ qx.Class.define("osparc.data.model.Node", {
 
     hasBootModes: function() {
       return osparc.data.model.Node.hasBootModes(this.getMetaData());
+    },
+
+    getMinVisibleInputs: function() {
+      return osparc.data.model.Node.getMinVisibleInputs(this.getMetaData());
     },
 
     __applyNewMetaData: function() {
@@ -454,6 +462,9 @@ qx.Class.define("osparc.data.model.Node", {
             this.__addSettings(metaData.inputs);
             this.__addSettingsAccessLevelEditor(metaData.inputs);
           }
+          if (this.getPropsForm()) {
+            this.getPropsForm().makeInputsDynamic();
+          }
         }
         if (metaData.outputs) {
           this.setOutputs(metaData.outputs);
@@ -499,6 +510,9 @@ qx.Class.define("osparc.data.model.Node", {
       this.__setInputData(nodeData.inputs);
       this.__setInputUnits(nodeData.inputsUnits);
       this.__setInputDataAccess(nodeData.inputAccess);
+      if (this.getPropsForm()) {
+        this.getPropsForm().makeInputsDynamic();
+      }
       this.setOutputData(nodeData.outputs);
       this.addInputNodes(nodeData.inputNodes);
       this.addOutputNodes(nodeData.outputNodes);
@@ -1211,7 +1225,8 @@ qx.Class.define("osparc.data.model.Node", {
         const msg = "Starting " + metaData.key + ":" + metaData.version + "...";
         const msgData = {
           nodeId: this.getNodeId(),
-          msg: msg
+          msg,
+          level: "INFO"
         };
         this.fireDataEvent("showInLogger", msgData);
 
@@ -1228,7 +1243,8 @@ qx.Class.define("osparc.data.model.Node", {
         const msg = "Stopping " + metaData.key + ":" + metaData.version + "...";
         const msgData = {
           nodeId: this.getNodeId(),
-          msg: msg
+          msg: msg,
+          level: "INFO"
         };
         this.fireDataEvent("showInLogger", msgData);
 
@@ -1264,7 +1280,8 @@ qx.Class.define("osparc.data.model.Node", {
               `reported "${serviceMessage}"`;
             const msgData = {
               nodeId: this.getNodeId(),
-              msg: msg
+              msg: msg,
+              level: "INFO"
             };
             this.fireDataEvent("showInLogger", msgData);
           }
@@ -1432,7 +1449,8 @@ qx.Class.define("osparc.data.model.Node", {
       const msg = "Service ready on " + srvUrl;
       const msgData = {
         nodeId: this.getNodeId(),
-        msg: msg
+        msg,
+        level: "INFO"
       };
       this.fireDataEvent("showInLogger", msgData);
       this.__restartIFrame();

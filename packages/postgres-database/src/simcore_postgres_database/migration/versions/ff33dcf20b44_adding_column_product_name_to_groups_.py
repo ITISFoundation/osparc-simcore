@@ -20,7 +20,7 @@ def upgrade():
 
     conn = op.get_bind()
     default_product_name = conn.scalar(
-        "SELECT name from products ORDER BY priority LIMIT 1"
+        sa.DDL("SELECT name from products ORDER BY priority LIMIT 1")
     )
 
     op.add_column(

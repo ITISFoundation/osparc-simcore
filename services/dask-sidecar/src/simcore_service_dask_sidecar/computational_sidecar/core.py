@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 import os
 import socket
 from dataclasses import dataclass
@@ -23,10 +24,11 @@ from models_library.services_resources import BootMode
 from packaging import version
 from pydantic import ValidationError
 from pydantic.networks import AnyUrl
+from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from settings_library.s3 import S3Settings
 from yarl import URL
 
-from ..dask_utils import TaskPublisher, create_dask_worker_logger, publish_event
+from ..dask_utils import TaskPublisher, publish_event
 from ..file_utils import pull_file_from_remote, push_file_to_remote
 from ..settings import Settings
 from .docker_utils import (
@@ -41,7 +43,7 @@ from .errors import ServiceBadFormattedOutputError
 from .models import LEGACY_INTEGRATION_VERSION
 from .task_shared_volume import TaskSharedVolumes
 
-logger = create_dask_worker_logger(__name__)
+logger = logging.getLogger(__name__)
 CONTAINER_WAIT_TIME_SECS = 2
 
 
@@ -155,12 +157,14 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                 exc=exc,
             ) from exc
 
-    async def _publish_sidecar_log(self, log: str) -> None:
+    async def _publish_sidecar_log(
+        self, log: LogMessageStr, log_level: LogLevelInt = logging.INFO
+    ) -> None:
         publish_event(
             self.task_publishers.logs,
-            TaskLogEvent.from_dask_worker(log=f"[sidecar] {log}"),
+            TaskLogEvent.from_dask_worker(log=f"[sidecar] {log}", log_level=log_level),
         )
-        logger.info(log)
+        logger.log(log_level, log)
 
     async def run(self, command: list[str]) -> TaskOutputData:
         await self._publish_sidecar_log(
@@ -253,7 +257,9 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
         tb: TracebackType | None,
     ) -> None:
         if exc:
-            await self._publish_sidecar_log(f"Task error:\n{exc}")
             await self._publish_sidecar_log(
-                "There might be more information in the service log file"
+                f"Task error:\n{exc}", log_level=logging.ERROR
+            )
+            await self._publish_sidecar_log(
+                "TIP: There might be more information in the service log file in the service outputs",
             )

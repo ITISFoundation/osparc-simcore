@@ -74,7 +74,6 @@ def minimal_config(
     monkeypatch.setenv("DIRECTOR_ENABLED", "1")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "0")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "0")
-    monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
 
 
 @pytest.fixture(scope="session")
@@ -105,7 +104,6 @@ def mock_env(disable_rabbitmq: None, monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "false")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
-    monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
 
     monkeypatch.setenv("RABBIT_HOST", "mocked_host")
     monkeypatch.setenv("RABBIT_USER", "mocked_user")
@@ -248,7 +246,7 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
     )
 
     mocker.patch(
-        f"{module_base}._core._scheduler.Scheduler._discover_running_services",
+        f"{module_base}._core._scheduler_utils.discover_running_services",
         autospec=True,
         return_value=None,
     )

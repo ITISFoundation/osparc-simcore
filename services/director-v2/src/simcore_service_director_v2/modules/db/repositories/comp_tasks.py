@@ -151,11 +151,13 @@ async def _generate_tasks_list_from_project(
 
         assert node.state is not None  # nosec
         task_state = node.state.current_status
+        task_progress = node.state.progress
         if (
             node_id in published_nodes
             and to_node_class(node.key) == NodeClass.COMPUTATIONAL
         ):
             task_state = RunningState.PUBLISHED
+            task_progress = 0
 
         task_db = CompTaskAtDB(
             project_id=project.uuid,
@@ -172,6 +174,7 @@ async def _generate_tasks_list_from_project(
             state=task_state,
             internal_id=internal_id,
             node_class=to_node_class(node.key),
+            progress=task_progress,
         )
 
         list_comp_tasks.append(task_db)
@@ -186,9 +189,7 @@ class CompTasksRepository(BaseRepository):
         tasks: list[CompTaskAtDB] = []
         async with self.db_engine.acquire() as conn:
             async for row in conn.execute(
-                sa.select([comp_tasks]).where(
-                    comp_tasks.c.project_id == f"{project_id}"
-                )
+                sa.select(comp_tasks).where(comp_tasks.c.project_id == f"{project_id}")
             ):
                 task_db = CompTaskAtDB.from_orm(row)
                 tasks.append(task_db)
@@ -202,7 +203,7 @@ class CompTasksRepository(BaseRepository):
         tasks: list[CompTaskAtDB] = []
         async with self.db_engine.acquire() as conn:
             async for row in conn.execute(
-                sa.select([comp_tasks]).where(
+                sa.select(comp_tasks).where(
                     (comp_tasks.c.project_id == f"{project_id}")
                     & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
                 )
@@ -214,7 +215,7 @@ class CompTasksRepository(BaseRepository):
     async def check_task_exists(self, project_id: ProjectID, node_id: NodeID) -> bool:
         async with self.db_engine.acquire() as conn:
             nid: str | None = await conn.scalar(
-                sa.select([comp_tasks.c.node_id]).where(
+                sa.select(comp_tasks.c.node_id).where(
                     (comp_tasks.c.project_id == f"{project_id}")
                     & (comp_tasks.c.node_id == f"{node_id}")
                 )
@@ -244,23 +245,22 @@ class CompTasksRepository(BaseRepository):
         async with self.db_engine.acquire() as conn:
             # get current tasks
             result = await conn.execute(
-                sa.select([comp_tasks.c.node_id]).where(
+                sa.select(comp_tasks.c.node_id).where(
                     comp_tasks.c.project_id == str(project.uuid)
                 )
             )
             # remove the tasks that were removed from project workbench
-            node_ids_to_delete = [
-                t.node_id
-                for t in await result.fetchall()
-                if t.node_id not in project.workbench
-            ]
-            for node_id in node_ids_to_delete:
-                await conn.execute(
-                    sa.delete(comp_tasks).where(
-                        (comp_tasks.c.project_id == str(project.uuid))
-                        & (comp_tasks.c.node_id == node_id)
+            if all_nodes := await result.fetchall():
+                node_ids_to_delete = [
+                    t.node_id for t in all_nodes if t.node_id not in project.workbench
+                ]
+                for node_id in node_ids_to_delete:
+                    await conn.execute(
+                        sa.delete(comp_tasks).where(
+                            (comp_tasks.c.project_id == str(project.uuid))
+                            & (comp_tasks.c.node_id == node_id)
+                        )
                     )
-                )
 
             # insert or update the remaining tasks
             # NOTE: comp_tasks DB only trigger a notification to the webserver if an UPDATE on comp_tasks.outputs or comp_tasks.state is done
@@ -270,7 +270,7 @@ class CompTasksRepository(BaseRepository):
                 insert_stmt = insert(comp_tasks).values(**comp_task_db.to_db_model())
 
                 exclusion_rule = (
-                    {"state"}
+                    {"state", "progress"}
                     if str(comp_task_db.node_id) not in published_nodes
                     else set()
                 )
@@ -302,7 +302,7 @@ class CompTasksRepository(BaseRepository):
                     & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
                     & (comp_tasks.c.state == StateType.PUBLISHED)
                 )
-                .values(state=StateType.ABORTED)
+                .values(state=StateType.ABORTED, progress=1.0)
             )
         logger.debug("marked project %s published tasks as aborted", f"{project_id=}")
 
@@ -331,21 +331,46 @@ class CompTasksRepository(BaseRepository):
         tasks: list[NodeID],
         state: RunningState,
         errors: list[ErrorDict] | None = None,
+        *,
+        optional_progress: float | None = None,
     ) -> None:
         async with self.db_engine.acquire() as conn:
+            update_values = {"state": RUNNING_STATE_TO_DB[state], "errors": errors}
+            if optional_progress is not None:
+                update_values["progress"] = optional_progress
             await conn.execute(
                 sa.update(comp_tasks)
                 .where(
                     (comp_tasks.c.project_id == f"{project_id}")
                     & (comp_tasks.c.node_id.in_([str(t) for t in tasks]))
                 )
-                .values(state=RUNNING_STATE_TO_DB[state], errors=errors)
+                .values(**update_values)
             )
         logger.debug(
             "set project %s tasks %s with state %s",
             f"{project_id=}",
             f"{tasks=}",
             f"{state=}",
+        )
+
+    async def set_project_task_progress(
+        self, project_id: ProjectID, node_id: NodeID, progress: float
+    ) -> None:
+        async with self.db_engine.acquire() as conn:
+            await conn.execute(
+                sa.update(comp_tasks)
+                .where(
+                    (comp_tasks.c.project_id == f"{project_id}")
+                    & (comp_tasks.c.node_id == f"{node_id}")
+                )
+                .values(progress=progress)
+            )
+
+        logger.debug(
+            "set project %s task %s with progress %s",
+            f"{project_id=}",
+            f"{node_id=}",
+            f"{progress=}",
         )
 
     async def delete_tasks_from_project(self, project: ProjectAtDB) -> None:

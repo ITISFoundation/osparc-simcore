@@ -21,7 +21,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import select
 
 from ..db_models import GroupType, groups, study_tags, user_to_groups, users
-from ..users_exceptions import UserNotFoundError
+from ..users.exceptions import UserNotFoundError
 from ..utils import format_datetime
 from .project_models import ProjectDict, ProjectProxy
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
@@ -180,7 +180,7 @@ class BaseProjectDB:
     @classmethod
     async def _get_everyone_group(cls, conn: SAConnection) -> RowProxy:
         result = await conn.execute(
-            sa.select([groups]).where(groups.c.type == GroupType.EVERYONE)
+            sa.select(groups).where(groups.c.type == GroupType.EVERYONE)
         )
         row = await result.first()
         return row
@@ -197,7 +197,7 @@ class BaseProjectDB:
             user_groups.append(everyone_group)
         else:
             result = await conn.execute(
-                select([groups])
+                select(groups)
                 .select_from(groups.join(user_to_groups))
                 .where(user_to_groups.c.uid == user_id)
             )
@@ -208,16 +208,14 @@ class BaseProjectDB:
     async def _get_user_email(conn: SAConnection, user_id: int | None) -> str:
         if not user_id:
             return "not_a_user@unknown.com"
-        email = await conn.scalar(
-            sa.select([users.c.email]).where(users.c.id == user_id)
-        )
+        email = await conn.scalar(sa.select(users.c.email).where(users.c.id == user_id))
         assert isinstance(email, str) or email is None  # nosec
         return email or "Unknown"
 
     @staticmethod
     async def _get_user_primary_group_gid(conn: SAConnection, user_id: int) -> int:
         primary_gid = await conn.scalar(
-            sa.select([users.c.primary_gid]).where(users.c.id == str(user_id))
+            sa.select(users.c.primary_gid).where(users.c.id == str(user_id))
         )
         if not primary_gid:
             raise UserNotFoundError(uid=user_id)
@@ -226,7 +224,7 @@ class BaseProjectDB:
 
     @staticmethod
     async def _get_tags_by_project(conn: SAConnection, project_id: str) -> list:
-        query = sa.select([study_tags.c.tag_id]).where(
+        query = sa.select(study_tags.c.tag_id).where(
             study_tags.c.study_id == project_id
         )
         return [row.tag_id async for row in conn.execute(query)]
@@ -342,7 +340,7 @@ class BaseProjectDB:
         if only_published:
             conditions &= projects.c.published == "true"
 
-        query = select([projects]).where(conditions)
+        query = select(projects).where(conditions)
         if for_update:
             query = query.with_for_update()
 

@@ -24,7 +24,6 @@ def minimal_app(
 ) -> Iterator[FastAPI]:
     # disable a couple of subsystems
     monkeypatch.setenv("CATALOG_POSTGRES", "null")
-    monkeypatch.setenv("CATALOG_TRACING", "null")
     monkeypatch.setenv("SC_BOOT_MODE", "local-development")
 
     app = init_app()
@@ -60,7 +59,6 @@ async def test_director_client_setup(
     minimal_app: FastAPI,
     client: TestClient,
 ):
-
     # gets director client as used in handlers
     director_api = get_director_api(minimal_app)
 

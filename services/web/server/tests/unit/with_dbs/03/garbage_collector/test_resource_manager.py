@@ -52,11 +52,11 @@ from simcore_service_webserver.resource_manager.registry import (
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT
+from simcore_service_webserver.socketio.messages import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.socketio.plugin import setup_socketio
-from simcore_service_webserver.users import setup_users
-from simcore_service_webserver.users_api import delete_user
-from simcore_service_webserver.users_exceptions import UserNotFoundError
+from simcore_service_webserver.users.api import delete_user_without_projects
+from simcore_service_webserver.users.exceptions import UserNotFoundError
+from simcore_service_webserver.users.plugin import setup_users
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -462,6 +462,7 @@ async def test_interactive_services_removed_after_logout(
     expected_save_state: bool,
     open_project: Callable,
     mock_progress_bar: Any,
+    mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     assert client.app
 
@@ -526,6 +527,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     mocker: MockerFixture,
     open_project: Callable,
     mock_progress_bar: Any,
+    mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     # login - logged_user fixture
     # create empty study - empty_user_project fixture
@@ -656,6 +658,7 @@ async def test_interactive_services_removed_per_project(
     expected_save_state: bool,
     open_project: Callable,
     mock_progress_bar: Any,
+    mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     # create server with delay set to DELAY
     # login - logged_user fixture
@@ -819,6 +822,7 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
     expected_save_state: bool,
     open_project: Callable,
     mock_progress_bar: Any,
+    mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     # login - logged_user fixture
     # create empty study - empty_user_project fixture
@@ -889,7 +893,7 @@ async def test_regression_removing_unexisting_user(
     )
     await delete_task
     # remove user
-    await delete_user(app=client.app, user_id=logged_user["id"])
+    await delete_user_without_projects(app=client.app, user_id=logged_user["id"])
 
     with pytest.raises(UserNotFoundError):
         await remove_project_dynamic_services(

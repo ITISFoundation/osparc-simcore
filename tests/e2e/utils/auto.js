@@ -91,7 +91,6 @@ async function dashboardPreferences(page) {
   await utils.waitAndClick(page, '[osparc-test-id="userMenuPreferencesBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="preferencesProfileTabBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="preferencesSecurityTabBtn"]');
-  await utils.waitAndClick(page, '[osparc-test-id="preferencesExperimentalTabBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="preferencesWindowCloseBtn"]');
 }
 
@@ -114,7 +113,7 @@ async function dashboardNewPlan(page) {
   console.log("Creating New Plan");
 
   await dashboardStudiesBrowser(page);
-  await utils.waitAndClick(page, '[osparc-test-id="newPlanButton"]');
+  await utils.waitAndClick(page, '[osparc-test-id="newTIPlanButton"]');
 }
 
 async function dashboardStartSim4LifeLite(page) {

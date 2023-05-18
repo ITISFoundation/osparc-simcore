@@ -5,7 +5,7 @@ from pathlib import Path
 from aiohttp import web
 
 from .._resources import resources
-from ..email_core import AttachmentTuple, send_email_from_template
+from ..email.utils import AttachmentTuple, send_email_from_template
 from ..products.plugin import get_product_template_path
 
 log = logging.getLogger(__name__)

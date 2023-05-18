@@ -1,6 +1,7 @@
 import json
 import re
 from asyncio.log import logger
+from typing import Final
 from uuid import uuid4
 
 from models_library.aiodocker_api import AioDockerServiceSpec
@@ -13,6 +14,7 @@ from models_library.services_resources import (
     MEMORY_250MB,
 )
 from models_library.users import UserID
+from pydantic import parse_obj_as
 
 from ....core.settings import DynamicSidecarSettings
 from ....models.schemas.constants import DYNAMIC_VOLUME_REMOVER_PREFIX
@@ -32,12 +34,15 @@ class DockerVersion(str):
     def validate_docker_version(cls, docker_version: str) -> str:
         try:
             search_result = re.search(r"^\d\d.(\d\d|\d).(\d\d|\d)", docker_version)
+            assert search_result  # nosec
             return search_result.group()
         except AttributeError:
             raise ValueError(  # pylint: disable=raise-missing-from
                 f"{docker_version} appears not to be a valid docker version"
             )
 
+
+DIND_VERSION: Final[DockerVersion] = parse_obj_as(DockerVersion, "20.10.14")
 
 # NOTE: below `retry` function is inspired by
 # https://gist.github.com/sj26/88e1c6584397bb7c13bd11108a579746
@@ -106,7 +111,7 @@ def spec_volume_removal_service(
     project_id: ProjectID,
     node_uuid: NodeID,
     volume_names: list[str],
-    docker_version: DockerVersion,
+    docker_version: DockerVersion = DIND_VERSION,
     *,
     volume_removal_attempts: int,
     sleep_between_attempts_s: int,

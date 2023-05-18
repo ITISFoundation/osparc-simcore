@@ -14,7 +14,7 @@ integrates with osparc.
 
 import logging
 from pathlib import Path
-from typing import Any, Literal, NamedTuple, Optional
+from typing import Any, Literal, NamedTuple
 
 from models_library.service_settings_labels import (
     ContainerSpec,
@@ -30,7 +30,7 @@ from models_library.services import (
     ServiceDockerData,
     ServiceType,
 )
-from pydantic import ValidationError
+from pydantic import NonNegativeInt, ValidationError
 from pydantic.class_validators import root_validator, validator
 from pydantic.config import Extra
 from pydantic.fields import Field
@@ -73,7 +73,7 @@ class DockerComposeOverwriteCfg(ComposeSpecification):
 
     @classmethod
     def create_default(
-        cls, service_name: Optional[str] = None
+        cls, service_name: str | None = None
     ) -> "DockerComposeOverwriteCfg":
         return cls.parse_obj(
             {
@@ -186,17 +186,18 @@ class RuntimeConfig(BaseModel):
     Necessary for runtime-spec
     """
 
-    compose_spec: Optional[ComposeSpecification] = None
-    container_http_entrypoint: Optional[str] = None
+    compose_spec: ComposeSpecification | None = None
+    container_http_entrypoint: str | None = None
 
     restart_policy: RestartPolicy = RestartPolicy.NO_RESTART
 
-    paths_mapping: Optional[PathMappingsLabel] = None
+    paths_mapping: PathMappingsLabel | None = None
     boot_options: BootOptions = None
+    min_visible_inputs: NonNegativeInt | None = None
 
-    containers_allowed_outgoing_permit_list: Optional[dict[str, list[NATRule]]] = None
+    containers_allowed_outgoing_permit_list: dict[str, list[NATRule]] | None = None
 
-    containers_allowed_outgoing_internet: Optional[set[str]] = None
+    containers_allowed_outgoing_internet: set[str] | None = None
 
     settings: list[SettingsItem] = []
 

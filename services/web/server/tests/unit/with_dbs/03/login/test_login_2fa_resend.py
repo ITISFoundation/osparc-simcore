@@ -47,7 +47,8 @@ def postgres_db(postgres_db: sa.engine.Engine):
         )
         .where(products.c.name == "osparc")
     )
-    postgres_db.execute(stmt)
+    with postgres_db.connect() as conn:
+        conn.execute(stmt)
     return postgres_db
 
 

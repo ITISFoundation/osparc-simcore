@@ -19,7 +19,7 @@ class CompPipelinesRepository(BaseRepository):
     async def get_pipeline(self, project_id: ProjectID) -> CompPipelineAtDB:
         async with self.db_engine.acquire() as conn:
             result = await conn.execute(
-                sa.select([comp_pipeline]).where(
+                sa.select(comp_pipeline).where(
                     comp_pipeline.c.project_id == str(project_id)
                 )
             )

@@ -41,7 +41,22 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
   },
 
   statics: {
-    EXPECTED_TI_TEMPLATE_TITLE: "TI Planning Tool",
+    EXPECTED_TI_TEMPLATES: {
+      "TI": {
+        templateLabel: "TI Planning Tool",
+        title: "New TI Plan",
+        description: "Start new TI plan",
+        newStudyLabel: "TI Planning Tool",
+        idToWidget: "newTIPlanButton"
+      },
+      "mTI": {
+        templateLabel: "mTI Planning Tool",
+        title: "New mTI Plan",
+        description: "Start multiple TI plan",
+        newStudyLabel: "mTI Planning Tool",
+        idToWidget: "newMTIPlanButton"
+      }
+    },
     EXPECTED_S4L_SERVICE_KEYS: {
       "simcore/services/dynamic/jupyter-smash": {
         title: "Start Sim4Life lab",
@@ -371,7 +386,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.__addNewStudyButton();
           break;
         case "tis":
-          this.__addNewPlanButton();
+          this.__addNewPlanButtons();
           break;
         case "s4l":
           this.__addNewS4LServiceButtons();
@@ -396,25 +411,27 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.addNonResourceCard(newStudyBtn);
     },
 
-    __addNewPlanButton: function() {
+    __addNewPlanButtons: function() {
       const mode = this._resourcesContainer.getMode();
       osparc.data.Resources.get("templates")
         .then(templates => {
-          // replace if a "TI Planning Tool" template exists
-          const templateData = templates.find(t => t.name === this.self().EXPECTED_TI_TEMPLATE_TITLE);
-          if (templateData) {
-            const title = this.tr("New Plan");
-            const desc = this.tr("Start a new plan");
-            const newPlanButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
-            newPlanButton.setCardKey("new-plan");
-            osparc.utils.Utils.setIdToWidget(newPlanButton, "newPlanButton");
-            newPlanButton.addListener("execute", () => this.__newPlanBtnClicked(newPlanButton, templateData));
-            if (this._resourcesContainer.getMode() === "list") {
-              const width = this._resourcesContainer.getBounds().width - 15;
-              newPlanButton.setWidth(width);
+          // replace if a "TI Planning Tool" templates exist
+          Object.values(this.self().EXPECTED_TI_TEMPLATES).forEach(templateInfo => {
+            const templateData = templates.find(t => t.name === templateInfo.templateLabel);
+            if (templateData) {
+              const title = templateInfo.title;
+              const desc = templateInfo.description;
+              const newPlanButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
+              newPlanButton.setCardKey(templateInfo.idToWidget);
+              osparc.utils.Utils.setIdToWidget(newPlanButton, templateInfo.idToWidget);
+              newPlanButton.addListener("execute", () => this.__newPlanBtnClicked(newPlanButton, templateData));
+              if (this._resourcesContainer.getMode() === "list") {
+                const width = this._resourcesContainer.getBounds().width - 15;
+                newPlanButton.setWidth(width);
+              }
+              this._resourcesContainer.addNonResourceCard(newPlanButton);
             }
-            this._resourcesContainer.addNonResourceCard(newPlanButton);
-          }
+          });
         });
     },
 
@@ -650,11 +667,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __newPlanBtnClicked: function(button, templateData) {
+      // do not override cached template data
+      const templateCopyData = osparc.utils.Utils.deepCloneObject(templateData);
       button.setValue(false);
-      const title = osparc.utils.Utils.getUniqueStudyName(templateData.name, this._resourcesList);
-      templateData.name = title;
-      this._showLoadingPage(this.tr("Creating ") + (templateData.name || osparc.product.Utils.getStudyAlias()));
-      osparc.utils.Study.createStudyFromTemplate(templateData, this._loadingPage)
+      const title = osparc.utils.Utils.getUniqueStudyName(templateCopyData.name, this._resourcesList);
+      templateCopyData.name = title;
+      this._showLoadingPage(this.tr("Creating ") + (templateCopyData.name || osparc.product.Utils.getStudyAlias()));
+      osparc.utils.Study.createStudyFromTemplate(templateCopyData, this._loadingPage)
         .then(studyId => {
           this._hideLoadingPage();
           this.__startStudyById(studyId);

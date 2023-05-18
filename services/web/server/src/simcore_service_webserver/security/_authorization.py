@@ -49,7 +49,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
             async with self.engine.acquire() as conn:
                 # NOTE: sometimes it raises psycopg2.DatabaseError in #880 and #1160
                 result: ResultProxy = await conn.execute(
-                    sa.select([users.c.id, users.c.role]).where(
+                    sa.select(users.c.id, users.c.role).where(
                         (users.c.email == identity)
                         & (users.c.status == UserStatus.ACTIVE)
                     )

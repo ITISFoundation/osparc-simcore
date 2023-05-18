@@ -1,3 +1,4 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
@@ -15,7 +16,9 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from models_library.projects_state import ProjectState
+from pydantic import parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     ExpectedResponse,
     MockedStorageSubsystem,
@@ -26,6 +29,7 @@ from simcore_postgres_database.models.projects_to_products import projects_to_pr
 from simcore_service_webserver._constants import X_PRODUCT_NAME_HEADER
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db_models import UserRole
+from simcore_service_webserver.projects._permalink import ProjectPermalink
 from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.utils import to_datetime
 from yarl import URL
@@ -125,10 +129,10 @@ async def _list_projects(
 
 
 async def _assert_get_same_project(
-    client,
+    client: TestClient,
     project: dict,
     expected: type[web.HTTPException],
-) -> dict:
+) -> None:
     # GET /v0/projects/{project_id}
 
     # with a project owned by user
@@ -138,21 +142,30 @@ async def _assert_get_same_project(
     data, error = await assert_status(resp, expected)
 
     if not error:
+        # Optional fields are not part of reference 'project'
         project_state = data.pop("state")
+        project_permalink = data.pop("permalink", None)
+
         assert data == project
-        assert ProjectState(**project_state)
-    return data
+
+        if project_state:
+            assert parse_obj_as(ProjectState, project_state)
+
+        if project_permalink:
+            assert parse_obj_as(ProjectPermalink, project_permalink)
 
 
 async def _replace_project(
-    client, project_update: dict, expected: type[web.HTTPException]
+    client: TestClient, project_update: dict, expected: type[web.HTTPException]
 ) -> dict:
+    assert client.app
+
     # PUT /v0/projects/{project_id}
     url = client.app.router["replace_project"].url_for(
         project_id=project_update["uuid"]
     )
     assert str(url) == f"{API_PREFIX}/projects/{project_update['uuid']}"
-    resp = await client.put(url, json=project_update)
+    resp = await client.put(f"{url}", json=project_update)
     data, error = await assert_status(resp, expected)
     if not error:
         assert_replaced(current_project=data, update_data=project_update)
@@ -183,36 +196,54 @@ async def test_list_projects(
     if data:
         assert len(data) == 2
 
+        # template project
         project_state = data[0].pop("state")
+        project_permalink = data[0].pop("permalink")
+
         assert data[0] == template_project
         assert not ProjectState(
             **project_state
         ).locked.value, "Templates are not locked"
+        assert parse_obj_as(ProjectPermalink, project_permalink)
 
+        # standard project
         project_state = data[1].pop("state")
+        project_permalink = data[1].pop("permalink", None)
+
         assert data[1] == user_project
         assert ProjectState(**project_state)
+        assert project_permalink is None
 
     # GET /v0/projects?type=user
     data, *_ = await _list_projects(client, expected, {"type": "user"})
     if data:
         assert len(data) == 1
+
+        # standad project
         project_state = data[0].pop("state")
+        project_permalink = data[0].pop("permalink", None)
+
         assert data[0] == user_project
         assert not ProjectState(
             **project_state
         ).locked.value, "Single user does not lock"
+        assert project_permalink is None
 
     # GET /v0/projects?type=template
     # instead /v0/projects/templates ??
     data, *_ = await _list_projects(client, expected, {"type": "template"})
     if data:
         assert len(data) == 1
+
+        # template project
         project_state = data[0].pop("state")
+        project_permalink = data[0].pop("permalink")
+
         assert data[0] == template_project
         assert not ProjectState(
             **project_state
         ).locked.value, "Templates are not locked"
+        assert parse_obj_as(ProjectPermalink, project_permalink)
 
 
 @pytest.fixture(scope="session")
@@ -224,13 +255,15 @@ def s4l_product_name() -> str:
 def s4l_products_db_name(
     postgres_db: sa.engine.Engine, s4l_product_name: str
 ) -> Iterator[str]:
-    postgres_db.execute(
-        products.insert().values(
-            name=s4l_product_name, host_regex="pytest", display_name="pytest"
+    with postgres_db.connect() as conn:
+        conn.execute(
+            products.insert().values(
+                name=s4l_product_name, host_regex="pytest", display_name="pytest"
+            )
         )
-    )
     yield s4l_product_name
-    postgres_db.execute(products.delete().where(products.c.name == s4l_product_name))
+    with postgres_db.connect() as conn:
+        conn.execute(products.delete().where(products.c.name == s4l_product_name))
 
 
 @pytest.fixture
@@ -266,7 +299,8 @@ async def test_list_projects_with_innaccessible_services(
     assert len(data) == 0
     # use-case 3: remove the links to products
     # shall still return 0 because the user has no access to the services
-    postgres_db.execute(projects_to_products.delete())
+    with postgres_db.connect() as conn:
+        conn.execute(projects_to_products.delete())
     data, *_ = await _list_projects(client, expected, headers=s4l_product_headers)
     assert len(data) == 0
     data, *_ = await _list_projects(client, expected)
@@ -290,10 +324,10 @@ async def test_list_projects_with_innaccessible_services(
     ],
 )
 async def test_get_project(
-    client,
-    logged_user,
-    user_project,
-    template_project,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    template_project: ProjectDict,
     expected,
     catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
 ):
@@ -311,8 +345,8 @@ async def test_get_project(
 
 @pytest.mark.parametrize(*standard_role_response())
 async def test_new_project(
-    client,
-    logged_user,
+    client: TestClient,
+    logged_user: UserInfoDict,
     primary_group,
     expected,
     storage_subsystem_mock,
@@ -326,8 +360,8 @@ async def test_new_project(
 
 @pytest.mark.parametrize(*standard_role_response())
 async def test_new_project_from_template(
-    client,
-    logged_user,
+    client: TestClient,
+    logged_user: UserInfoDict,
     primary_group: dict[str, str],
     template_project,
     expected,
@@ -355,10 +389,10 @@ async def test_new_project_from_template(
 
 @pytest.mark.parametrize(*standard_role_response())
 async def test_new_project_from_other_study(
-    client,
-    logged_user,
+    client: TestClient,
+    logged_user: UserInfoDict,
     primary_group: dict[str, str],
-    user_project,
+    user_project: ProjectDict,
     expected,
     storage_subsystem_mock,
     catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
@@ -387,8 +421,8 @@ async def test_new_project_from_other_study(
 
 @pytest.mark.parametrize(*standard_role_response())
 async def test_new_project_from_template_with_body(
-    client,
-    logged_user,
+    client: TestClient,
+    logged_user: UserInfoDict,
     primary_group: dict[str, str],
     standard_groups: list[dict[str, str]],
     template_project,
@@ -572,9 +606,9 @@ async def test_new_template_from_project(
     ],
 )
 async def test_replace_project(
-    client,
-    logged_user,
-    user_project,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
     expected,
     expected_change_access,
     all_group,
@@ -601,7 +635,11 @@ async def test_replace_project(
     ],
 )
 async def test_replace_project_updated_inputs(
-    client, logged_user, user_project, expected, ensure_run_in_sequence_context_is_empty
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    expected,
+    ensure_run_in_sequence_context_is_empty,
 ):
     project_update = deepcopy(user_project)
     #
@@ -629,7 +667,11 @@ async def test_replace_project_updated_inputs(
     ],
 )
 async def test_replace_project_updated_readonly_inputs(
-    client, logged_user, user_project, expected, ensure_run_in_sequence_context_is_empty
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    expected,
+    ensure_run_in_sequence_context_is_empty,
 ):
     project_update = deepcopy(user_project)
     project_update["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]["inputs"][

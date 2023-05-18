@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: osparc-simcore web API
-  version: 0.18.0
+  version: 0.19.0
   description: API designed for the front-end app
   contact:
     name: IT'IS Foundation
@@ -2366,7 +2366,6 @@ paths:
               - user
             type: string
             description: An enumeration.
-            default: all
           name: type
           in: query
         - description: includes projects marked as hidden in the listing
@@ -2466,11 +2465,13 @@ paths:
                         - uuid
                         - name
                         - description
+                        - thumbnail
                         - creationDate
                         - lastChangeDate
                         - workbench
                         - prjOwner
                         - accessRights
+                        - tags
                       type: object
                       properties:
                         uuid:
@@ -2512,19 +2513,28 @@ paths:
                           type: array
                           items:
                             type: integer
-                          default: []
                         classifiers:
                           title: Classifiers
                           type: array
                           items:
                             type: string
+                          default: []
                         state:
                           $ref: '#/paths/~1projects~1active/get/responses/200/content/application~1json/schema/properties/data/properties/state'
                         ui:
-                          $ref: '#/paths/~1projects~1%7Bproject_id%7D/put/requestBody/content/application~1json/schema/properties/ui'
+                          title: Ui
+                          anyOf:
+                            - $ref: '#/paths/~1projects~1active/get/responses/200/content/application~1json/schema/properties/data/properties/ui/anyOf/0'
+                            - $ref: '#/paths/~1projects~1%7Bproject_id%7D/put/requestBody/content/application~1json/schema/properties/ui'
                         quality:
                           title: Quality
                           type: object
+                          default: {}
+                        dev:
+                          title: Dev
+                          type: object
+                        permalink:
+                          $ref: '#/paths/~1projects~1active/get/responses/200/content/application~1json/schema/properties/data/properties/permalink'
                 additionalProperties: false
                 description: Paginated response model of ItemTs
     post:
@@ -2578,10 +2588,14 @@ paths:
                 - title: ProjectCreateNew
                   required:
                     - name
-                    - description
                     - workbench
+                    - accessRights
                   type: object
                   properties:
+                    uuid:
+                      title: Uuid
+                      type: string
+                      format: uuid
                     name:
                       title: Name
                       type: string
@@ -2597,12 +2611,14 @@ paths:
                     workbench:
                       title: Workbench
                       type: object
+                    accessRights:
+                      title: Accessrights
+                      type: object
                     tags:
                       title: Tags
                       type: array
                       items:
                         type: integer
-                      default: []
                     classifiers:
                       title: Classifiers
                       type: array
@@ -2613,7 +2629,6 @@ paths:
                 - title: ProjectCopyOverride
                   required:
                     - name
-                    - description
                     - prjOwner
                   type: object
                   properties:
@@ -2698,11 +2713,13 @@ paths:
                       - uuid
                       - name
                       - description
+                      - thumbnail
                       - creationDate
                       - lastChangeDate
                       - workbench
                       - prjOwner
                       - accessRights
+                      - tags
                     type: object
                     properties:
                       uuid:
@@ -2744,12 +2761,12 @@ paths:
                         type: array
                         items:
                           type: integer
-                        default: []
                       classifiers:
                         title: Classifiers
                         type: array
                         items:
                           type: string
+                        default: []
                       state:
                         title: ProjectState
                         required:
@@ -2840,10 +2857,36 @@ paths:
                             description: The project running state
                         additionalProperties: false
                       ui:
-                        $ref: '#/paths/~1projects~1%7Bproject_id%7D/put/requestBody/content/application~1json/schema/properties/ui'
+                        title: Ui
+                        anyOf:
+                          - title: EmptyModel
+                            type: object
+                            properties: {}
+                            additionalProperties: false
+                          - $ref: '#/paths/~1projects~1%7Bproject_id%7D/put/requestBody/content/application~1json/schema/properties/ui'
                       quality:
                         title: Quality
                         type: object
+                        default: {}
+                      dev:
+                        title: Dev
+                        type: object
+                      permalink:
+                        title: ProjectPermalink
+                        required:
+                          - url
+                          - is_public
+                        type: object
+                        properties:
+                          url:
+                            title: Url
+                            maxLength: 2083
+                            minLength: 1
+                            type: string
+                            format: uri
+                          is_public:
+                            title: Is Public
+                            type: boolean
                   error:
                     title: Error
   '/projects/{project_id}':
@@ -3002,40 +3045,11 @@ paths:
               title: ProjectUpdate
               type: object
               properties:
-                name:
-                  title: Name
-                  type: string
-                description:
-                  title: Description
-                  type: string
-                thumbnail:
-                  title: Thumbnail
-                  maxLength: 2083
-                  minLength: 0
-                  type: string
-                  format: uri
-                workbench:
-                  title: Workbench
+                permalink:
+                  title: Permalink
                   type: object
-                accessRights:
-                  title: Accessrights
-                  type: object
-                tags:
-                  title: Tags
-                  type: array
-                  items:
-                    type: integer
-                  default: []
-                classifiers:
-                  title: Classifiers
-                  type: array
-                  items:
-                    type: string
                 ui:
                   $ref: '#/paths/~1projects~1%7Bproject_id%7D/put/requestBody/content/application~1json/schema/properties/ui'
-                quality:
-                  title: Quality
-                  type: object
         required: true
       responses:
         '200':
@@ -4996,57 +5010,6 @@ paths:
                     type: string
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_id}:shareable':
-    post:
-      tags:
-        - project
-      summary: Checks whether services in the study are accessible for users in provided group
-      operationId: shareable_project
-      parameters:
-        - required: true
-          schema:
-            title: Project Id
-            type: string
-            format: uuid
-          name: project_id
-          in: path
-        - required: true
-          schema:
-            title: Gid
-            type: integer
-          name: gid
-          in: query
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                title: 'Envelope[list[models_library.services.UserWithoutServiceAccess]]'
-                type: object
-                properties:
-                  data:
-                    title: Data
-                    type: array
-                    items:
-                      title: UserWithoutServiceAccess
-                      required:
-                        - user_id
-                        - service_key
-                        - service_version
-                      type: object
-                      properties:
-                        user_id:
-                          title: User Id
-                          type: integer
-                        service_key:
-                          title: Service Key
-                          type: string
-                        service_version:
-                          title: Service Version
-                          type: string
-                  error:
-                    title: Error
   '/projects:import':
     post:
       tags:
@@ -8136,7 +8099,7 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[list[simcore_service_webserver.studies_dispatcher.handlers_rest.ServiceGet]]'
+                title: 'Envelope[list[simcore_service_webserver.studies_dispatcher._rest_handlers.ServiceGet]]'
                 type: object
                 properties:
                   data:
@@ -8221,7 +8184,7 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[list[simcore_service_webserver.studies_dispatcher.handlers_rest.Viewer]]'
+                title: 'Envelope[list[simcore_service_webserver.studies_dispatcher._rest_handlers.Viewer]]'
                 type: object
                 properties:
                   data:

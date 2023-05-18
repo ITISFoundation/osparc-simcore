@@ -328,8 +328,8 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
             )
             assert new_project["accessRights"] == expected_data["accessRights"]
 
-            # invariant fields
             modified_fields = [
+                # invariant fields
                 "uuid",
                 "prjOwner",
                 "creationDate",
@@ -337,7 +337,9 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
                 "accessRights",
                 "workbench" if from_study else None,
                 "ui" if from_study else None,
+                # dynamic
                 "state",
+                "permalink",
             ]
 
             for key in new_project.keys():

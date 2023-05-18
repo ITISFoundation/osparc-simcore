@@ -20,7 +20,14 @@ from ..models.domain.projects import (
     StudyUI,
 )
 from ..models.schemas.files import File
-from ..models.schemas.jobs import ArgumentType, Job, JobInputs, JobStatus, TaskStates
+from ..models.schemas.jobs import (
+    ArgumentType,
+    Job,
+    JobInputs,
+    JobStatus,
+    PercentageInt,
+    TaskStates,
+)
 from ..models.schemas.solvers import Solver, SolverKeyId
 from ..plugins.director_v2 import ComputationTaskGet
 from .typing_extra import get_types
@@ -52,13 +59,11 @@ def now_str() -> str:
 
 
 def create_node_inputs_from_job_inputs(inputs: JobInputs) -> dict[InputID, InputTypes]:
-
     # map Job inputs with solver inputs
     # TODO: ArgumentType -> InputTypes dispatcher
 
     node_inputs: dict[InputID, InputTypes] = {}
     for name, value in inputs.values.items():
-
         assert isinstance(value, get_types(ArgumentType))  # nosec
 
         if isinstance(value, File):
@@ -84,7 +89,6 @@ def create_job_inputs_from_node_inputs(inputs: dict[InputID, InputTypes]) -> Job
     """
     input_values: dict[str, ArgumentType] = {}
     for name, value in inputs.items():
-
         assert isinstance(name, get_types(InputID))  # nosec
         assert isinstance(value, get_types(InputTypes))  # nosec
 
@@ -244,11 +248,10 @@ def create_job_from_project(
 
 
 def create_jobstatus_from_task(task: ComputationTaskGet) -> JobStatus:
-
     job_status = JobStatus(
         job_id=task.id,
         state=task.state,
-        progress=task.guess_progress(),
+        progress=PercentageInt((task.pipeline_details.progress or 0) * 100.0),
         submitted_at=datetime.utcnow(),
     )
 

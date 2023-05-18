@@ -189,15 +189,14 @@ class CreateSidecars(DynamicSchedulerEvent):
 
         # WARNING: do NOT log, this structure has secrets in the open
         # If you want to log, please use an obfuscator
-        dynamic_sidecar_service_spec_base: AioDockerServiceSpec = (
-            get_dynamic_sidecar_spec(
-                scheduler_data=scheduler_data,
-                dynamic_sidecar_settings=dynamic_sidecar_settings,
-                swarm_network_id=swarm_network_id,
-                settings=settings,
-                app_settings=app.state.settings,
-                allow_internet_access=allow_internet_access,
-            )
+        dynamic_sidecar_service_spec_base: AioDockerServiceSpec = get_dynamic_sidecar_spec(
+            scheduler_data=scheduler_data,
+            dynamic_sidecar_settings=dynamic_sidecar_settings,
+            swarm_network_id=swarm_network_id,
+            settings=settings,
+            app_settings=app.state.settings,
+            has_quota_support=dynamic_sidecar_settings.DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS,
+            allow_internet_access=allow_internet_access,
         )
 
         catalog_client = CatalogClient.instance(app)
@@ -463,6 +462,7 @@ class CreateUserServices(DynamicSchedulerEvent):
             dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
             swarm_network_name=scheduler_data.dynamic_sidecar.swarm_network_name,
             service_resources=scheduler_data.service_resources,
+            has_quota_support=dynamic_sidecar_settings.DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS,
             simcore_service_labels=simcore_service_labels,
             allow_internet_access=allow_internet_access,
             product_name=scheduler_data.product_name,
@@ -489,9 +489,15 @@ class CreateUserServices(DynamicSchedulerEvent):
             dynamic_sidecar_endpoint, compose_spec, progress_create_containers
         )
 
-        await dynamic_sidecar_client.enable_service_outputs_watcher(
-            dynamic_sidecar_endpoint
-        )
+        # NOTE: when in READ ONLY mode disable the outputs watcher
+        if scheduler_data.dynamic_sidecar.service_removal_state.can_save:
+            await dynamic_sidecar_client.enable_service_outputs_watcher(
+                dynamic_sidecar_endpoint
+            )
+        else:
+            await dynamic_sidecar_client.disable_service_outputs_watcher(
+                dynamic_sidecar_endpoint
+            )
 
         # Starts PROXY -----------------------------------------------
         # The entrypoint container name was now computed

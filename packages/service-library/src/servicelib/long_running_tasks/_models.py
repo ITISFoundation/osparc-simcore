@@ -2,13 +2,13 @@ import logging
 import urllib.parse
 from asyncio import Task
 from datetime import datetime
-from typing import Any, Awaitable, Callable, Coroutine, Optional
+from typing import Any, Awaitable, Callable, Coroutine
 
 from pydantic import (
     BaseModel,
+    ConstrainedFloat,
     Field,
     PositiveFloat,
-    confloat,
     validate_arguments,
     validator,
 )
@@ -20,7 +20,13 @@ TaskId = str
 TaskType = Callable[..., Coroutine[Any, Any, Any]]
 
 ProgressMessage = str
-ProgressPercent = confloat(ge=0.0, le=1.0)
+
+
+class ProgressPercent(ConstrainedFloat):
+    ge = 0.0
+    le = 1.0
+
+
 ProgressCallback = Callable[[ProgressMessage, ProgressPercent, TaskId], Awaitable[None]]
 
 
@@ -41,8 +47,8 @@ class TaskProgress(BaseModel):
     def update(
         self,
         *,
-        message: Optional[ProgressMessage] = None,
-        percent: Optional[ProgressPercent] = None,
+        message: ProgressMessage | None = None,
+        percent: ProgressPercent | None = None,
     ) -> None:
         """`percent` must be between 0.0 and 1.0 otherwise ValueError is raised"""
         if message:
@@ -77,7 +83,7 @@ class TrackedTask(BaseModel):
     )
 
     started: datetime = Field(default_factory=datetime.utcnow)
-    last_status_check: Optional[datetime] = Field(
+    last_status_check: datetime | None = Field(
         default=None,
         description=(
             "used to detect when if the task is not actively "
@@ -96,8 +102,8 @@ class TaskStatus(BaseModel):
 
 
 class TaskResult(BaseModel):
-    result: Optional[Any]
-    error: Optional[Any]
+    result: Any | None
+    error: Any | None
 
 
 class ClientConfiguration(BaseModel):
