@@ -9,7 +9,7 @@ from models_library.users import UserID
 from models_library.utils.docker_compose import SpecsEnvironmentsResolver
 
 from ...utils.db import get_repository
-from ..db.repositories.services_specifications import ServicesSpecificationsRepository
+from ..db.repositories.services_environments import ServicesEnvironmentsRepository
 
 
 async def substitute_vendor_environments(
@@ -26,10 +26,8 @@ async def substitute_vendor_environments(
         idr.startswith("OSPARC_ENVIRONMENT_VENDOR_")
         for idr in specs_resolver.get_identifiers()
     ):
-        repo = get_repository(app, ServicesSpecificationsRepository)
-        vendor_environments = await repo.get_vendor_environments(
-            service_key=service_key
-        )
+        repo = get_repository(app, ServicesEnvironmentsRepository)
+        vendor_environments = await repo.get_vendor_secrets(service_key=service_key)
 
         specs_resolver.set_substitutions(environs=vendor_environments)
         new_compose_spec = specs_resolver.run()

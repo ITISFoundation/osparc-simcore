@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Final, TypeAlias
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
@@ -6,16 +6,21 @@ from sqlalchemy.dialects.postgresql import JSONB
 from ._common import column_created_datetime, column_modified_datetime
 from .base import metadata
 
-# alias
-OsparcEnvironmentsDict = dict[str, Any]
+VendorSecretsDict: TypeAlias = dict[str, Any]
+
+# NOTE: this prefix intentionally stresses that the value is secret to avoid leaking this value
+#       on a public domain
+VENDOR_SECRET_PREFIX: Final[str] = "OSPARC_VENDOR_SECRET_"
+
 
 #
-#  Service vendor environments
-#      a vendor can associate identifiers (e.g. a license code) to one of its services
-#
+#  Service vendor secret environments
+#    - a vendor can associate secrets (e.g. a license code) to one of its services
+#    - values could be encrypted
 
-services_vendor_environments = sa.Table(
-    "services_vendor_environments",
+
+services_vendor_secrets = sa.Table(
+    "services_vendor_secrets",
     metadata,
     sa.Column(
         "service_key",
@@ -23,11 +28,11 @@ services_vendor_environments = sa.Table(
         doc="A single environment is allowed per service",
     ),
     sa.Column(
-        "identifiers_map",
+        "secrets_map",
         JSONB,
         nullable=False,
         server_default=sa.text("'{}'::jsonb"),
-        doc="Maps OSPARC_ENVIRONMENT_* identifiers to a value that can be replaced at runtime in compose specs",
+        doc="Maps OSPARC_VENDOR_SECRET_* identifiers to a secret value that can be replaced at runtime in compose specs",
     ),
     # TIME STAMPS ----
     column_created_datetime(),
@@ -36,6 +41,6 @@ services_vendor_environments = sa.Table(
     # CONSTRAINTS --
     #
     sa.PrimaryKeyConstraint(
-        "service_key", name="services_vendor_environments_service_key_pk"
+        "service_key", name="services_vendor_secrets_service_key_pk"
     ),
 )

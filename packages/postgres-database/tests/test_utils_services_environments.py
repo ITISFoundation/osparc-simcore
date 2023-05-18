@@ -6,16 +6,15 @@
 from aiopg.sa.connection import SAConnection
 from simcore_postgres_database.models.services import services_meta_data
 from simcore_postgres_database.models.services_environments import (
-    OsparcEnvironmentsDict,
-    services_vendor_environments,
+    VENDOR_SECRET_PREFIX,
+    VendorSecretsDict,
+    services_vendor_secrets,
 )
-from simcore_postgres_database.utils_services_specifications import (
-    get_vendor_environments,
-)
+from simcore_postgres_database.utils_services_environments import get_vendor_secrets
 from sqlalchemy.sql import select
 
 
-async def test_services_environments_table(connection: SAConnection):
+async def test_services_vendor_secrets_table(connection: SAConnection):
     vendor_service = "simcore/services/dynamic/vendor/some_service"
 
     await connection.execute(
@@ -38,50 +37,50 @@ async def test_services_environments_table(connection: SAConnection):
 
     await connection.execute(
         # a vendor exposes these environs to its services to everybody
-        services_vendor_environments.insert().values(
+        services_vendor_secrets.insert().values(
             service_key=vendor_service,
-            identifiers_map=OsparcEnvironmentsDict(
+            secrets_map=VendorSecretsDict(
                 {
-                    "OSPARC_ENVIRONMENT_VENDOR_LICENSE_SERVER_HOST": "product_a-server",
-                    "OSPARC_ENVIRONMENT_VENDOR_LICENSE_SERVER_PRIMARY_PORT": 1,
-                    "OSPARC_ENVIRONMENT_VENDOR_LICENSE_SERVER_SECONDARY_PORT": 2,
-                    "OSPARC_ENVIRONMENT_VENDOR_LICENSE_DNS_RESOLVER_IP": "1.1.1.1",
-                    "OSPARC_ENVIRONMENT_VENDOR_LICENSE_DNS_RESOLVER_PORT": "21",
-                    "OSPARC_ENVIRONMENT_VENDOR_LICENSE_FILE": "license.txt",
-                    "OSPARC_ENVIRONMENT_VENDOR_LICENSE_FILE_PRODUCT1": "license-p1.txt",
-                    "OSPARC_ENVIRONMENT_VENDOR_LICENSE_FILE_PRODUCT2": "license-p2.txt",
-                    "OSPARC_ENVIRONMENT_VENDOR_LIST": "[1, 2, 3]",
+                    f"{VENDOR_SECRET_PREFIX}LICENSE_SERVER_HOST": "product_a-server",
+                    f"{VENDOR_SECRET_PREFIX}LICENSE_SERVER_PRIMARY_PORT": 1,
+                    f"{VENDOR_SECRET_PREFIX}LICENSE_SERVER_SECONDARY_PORT": 2,
+                    f"{VENDOR_SECRET_PREFIX}LICENSE_DNS_RESOLVER_IP": "1.1.1.1",
+                    f"{VENDOR_SECRET_PREFIX}LICENSE_DNS_RESOLVER_PORT": "21",
+                    f"{VENDOR_SECRET_PREFIX}LICENSE_FILE": "license.txt",
+                    f"{VENDOR_SECRET_PREFIX}LICENSE_FILE_PRODUCT1": "license-p1.txt",
+                    f"{VENDOR_SECRET_PREFIX}LICENSE_FILE_PRODUCT2": "license-p2.txt",
+                    f"{VENDOR_SECRET_PREFIX}LIST": "[1, 2, 3]",
                 }
             ),
         )
     )
 
     substitutions = await connection.scalar(
-        select(services_vendor_environments.c.identifiers_map).where(
-            services_vendor_environments.c.service_key == vendor_service
+        select(services_vendor_secrets.c.secrets_map).where(
+            services_vendor_secrets.c.service_key == vendor_service
         )
     )
 
     assert substitutions == {
-        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_SERVER_HOST": "product_a-server",
-        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_SERVER_PRIMARY_PORT": 1,
-        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_SERVER_SECONDARY_PORT": 2,
-        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_DNS_RESOLVER_IP": "1.1.1.1",
-        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_DNS_RESOLVER_PORT": "21",
-        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_FILE": "license.txt",
-        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_FILE_PRODUCT1": "license-p1.txt",
-        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_FILE_PRODUCT2": "license-p2.txt",
-        "OSPARC_ENVIRONMENT_VENDOR_LIST": "[1, 2, 3]",
+        f"{VENDOR_SECRET_PREFIX}LICENSE_SERVER_HOST": "product_a-server",
+        f"{VENDOR_SECRET_PREFIX}LICENSE_SERVER_PRIMARY_PORT": 1,
+        f"{VENDOR_SECRET_PREFIX}LICENSE_SERVER_SECONDARY_PORT": 2,
+        f"{VENDOR_SECRET_PREFIX}LICENSE_DNS_RESOLVER_IP": "1.1.1.1",
+        f"{VENDOR_SECRET_PREFIX}LICENSE_DNS_RESOLVER_PORT": "21",
+        f"{VENDOR_SECRET_PREFIX}LICENSE_FILE": "license.txt",
+        f"{VENDOR_SECRET_PREFIX}LICENSE_FILE_PRODUCT1": "license-p1.txt",
+        f"{VENDOR_SECRET_PREFIX}LICENSE_FILE_PRODUCT2": "license-p2.txt",
+        f"{VENDOR_SECRET_PREFIX}LIST": "[1, 2, 3]",
     }
 
     vendor_substitutions = await connection.execute(
-        select(services_vendor_environments.c.identifiers_map).where(
-            services_vendor_environments.c.service_key.like("%/vendor/%")
+        select(services_vendor_secrets.c.secrets_map).where(
+            services_vendor_secrets.c.service_key.like("%/vendor/%")
         )
     )
 
-    assert [row.identifiers_map for row in await vendor_substitutions.fetchall()] == [
+    assert [row.secrets_map for row in await vendor_substitutions.fetchall()] == [
         substitutions
     ]
 
-    assert await get_vendor_environments(connection, vendor_service) == substitutions
+    assert await get_vendor_secrets(connection, vendor_service) == substitutions
