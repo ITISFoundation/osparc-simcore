@@ -19,6 +19,8 @@ async def substitute_vendor_environments(
 ) -> dict[str, Any]:
     specs_resolver = SpecsEnvironmentsResolver(compose_spec, upgrade=False)
 
+    new_compose_spec: dict[str, Any] = {}
+
     # TODO: define OSPARC_ENVIRONMENT_VENDOR_ once!
     if any(
         idr.startswith("OSPARC_ENVIRONMENT_VENDOR_")

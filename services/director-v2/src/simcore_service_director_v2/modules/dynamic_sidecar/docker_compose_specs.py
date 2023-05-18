@@ -192,7 +192,7 @@ def _update_resource_limits_and_reservations(
         spec["environment"] = environment
 
 
-def _strip_service_quotas(service_spec: ComposeSpecLabel):
+def _strip_service_quotas(service_spec: ComposeSpecLabelDict):
     """
     When disk quotas are not supported by the node, it is required to remove
     any reference from the docker-compose spec.
