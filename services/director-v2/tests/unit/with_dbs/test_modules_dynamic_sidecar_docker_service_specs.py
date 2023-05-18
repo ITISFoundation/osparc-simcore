@@ -159,6 +159,8 @@ def expected_dynamic_sidecar_spec(
                     "version": "2.4.5",
                 }
             ).as_label_data(),
+            "key": "simcore/services/dynamic/3dviewer",
+            "version": "2.4.5",
             "port": "8888",
             "service_image": "local/dynamic-sidecar:MOCK",
             "service_port": "8888",
