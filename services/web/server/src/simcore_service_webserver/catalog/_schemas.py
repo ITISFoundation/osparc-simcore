@@ -1,33 +1,28 @@
-from typing import Any
+from typing import Any, TypeAlias
 
 import orjson
 from models_library.services import (
-    SERVICE_KEY_RE,
-    VERSION_RE,
     ServiceInput,
+    ServiceKey,
     ServiceOutput,
     ServicePortKey,
+    ServiceVersion,
 )
 from models_library.utils.change_case import snake_to_camel
 from pint import UnitRegistry
-from pydantic import ConstrainedStr, Extra, Field, constr
+from pydantic import Extra, Field
 from pydantic.main import BaseModel
 
-from .catalog_units import UnitHtmlFormat, get_html_formatted_unit
+from ._units import UnitHtmlFormat, get_html_formatted_unit
 
-
-class ServiceKey(ConstrainedStr):
-    regex = SERVICE_KEY_RE
-
-
-ServiceVersion = constr(regex=VERSION_RE)
-ServiceInputKey = ServicePortKey
-ServiceOutputKey = ServicePortKey
+ServiceInputKey: TypeAlias = ServicePortKey
+ServiceOutputKey: TypeAlias = ServicePortKey
 
 
 def json_dumps(v, *, default=None) -> str:
     # orjson.dumps returns bytes, to match standard json.dumps we need to decode
-    return orjson.dumps(v, default=default).decode()
+    dump: str = orjson.dumps(v, default=default).decode()
+    return dump
 
 
 #####
@@ -40,8 +35,6 @@ def json_dumps(v, *, default=None) -> str:
 #  - warning with couplings! Add example to ensure that API model maintain
 #    backwards compatibility
 #   - schema samples could have multiple schemas to tests backwards compatibility
-#
-# TODO: reduce to a minimum returned input/output models (ask OM)
 class _BaseCommonApiExtension(BaseModel):
     unit_long: str | None = Field(
         None,
@@ -53,10 +46,11 @@ class _BaseCommonApiExtension(BaseModel):
     )
 
     class Config:
-        extra = Extra.forbid
         alias_generator = snake_to_camel
-        json_loads = orjson.loads
+        allow_population_by_field_name = True
+        extra = Extra.forbid
         json_dumps = json_dumps
+        json_loads = orjson.loads
 
 
 class ServiceInputGet(ServiceInput, _BaseCommonApiExtension):
@@ -104,15 +98,15 @@ class ServiceInputGet(ServiceInput, _BaseCommonApiExtension):
         ureg: UnitRegistry | None = None,
     ):
         data = service["inputs"][input_key]
-        port = cls(keyId=input_key, **data)  # validated!
-        unit_html: UnitHtmlFormat
+        port = cls(key_id=input_key, **data)  # validated!
+        unit_html: UnitHtmlFormat | None
 
         if ureg and (unit_html := get_html_formatted_unit(port, ureg)):
             # we know data is ok since it was validated above
             return cls.construct(
-                keyId=input_key,
-                unitLong=unit_html.long,
-                unitShort=unit_html.short,
+                key_id=input_key,
+                unit_long=unit_html.long,
+                unit_short=unit_html.short,
                 **data,
             )
         return port
@@ -143,24 +137,24 @@ class ServiceOutputGet(ServiceOutput, _BaseCommonApiExtension):
         service: dict[str, Any],
         output_key: ServiceOutputKey,
         ureg: UnitRegistry | None = None,
-    ):
+    ) -> "ServiceOutputGet":
         data = service["outputs"][output_key]
         # NOTE: prunes invalid field that might have remained in database
-        # TODO: remove from root and remove this cleanup operation
         if "defaultValue" in data:
             data.pop("defaultValue")
 
-        port = cls(keyId=output_key, **data)  # validated
+        port = cls(key_id=output_key, **data)  # validated
 
-        unit_html: UnitHtmlFormat
+        unit_html: UnitHtmlFormat | None
         if ureg and (unit_html := get_html_formatted_unit(port, ureg)):
             # we know data is ok since it was validated above
             return cls.construct(
-                keyId=output_key,
-                unitLong=unit_html.long,
-                unitShort=unit_html.short,
+                key_id=output_key,
+                unit_long=unit_html.long,
+                unit_short=unit_html.short,
                 **data,
             )
+
         return port
 
 
@@ -189,3 +183,9 @@ def replace_service_input_outputs(
             service, output_key, unit_registry
         )
         service["outputs"][output_key] = new_output.dict(**export_options)
+
+
+assert ServiceKey  # nosec
+assert ServiceVersion  # nosec
+
+__all__: tuple[str, ...] = ("ServiceKey", "ServiceVersion")

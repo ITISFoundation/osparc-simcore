@@ -4,14 +4,14 @@ from aiohttp import web
 from servicelib.logging_utils import get_log_record_extra
 from yarl import URL
 
-from . import catalog_client
-from ._constants import RQ_PRODUCT_KEY, X_PRODUCT_NAME_HEADER
-from .catalog_client import to_backend_service
-from .catalog_settings import get_plugin_settings
-from .login.decorators import RQT_USERID_KEY, login_required
-from .security.decorators import permission_required
+from .._constants import RQ_PRODUCT_KEY, RQT_USERID_KEY, X_PRODUCT_NAME_HEADER
+from ..login.decorators import login_required
+from ..security.decorators import permission_required
+from ._utils import make_request_and_envelope_response
+from .client import to_backend_service
+from .settings import get_plugin_settings
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -33,10 +33,11 @@ async def reverse_proxy_handler(request: web.Request) -> web.Response:
         URL(settings.base_url),
         settings.CATALOG_VTAG,
     )
-    # FIXME: hack
+    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/4237
     if "/services" in backend_url.path:
         backend_url = backend_url.update_query({"user_id": user_id})
-    logger.debug(
+
+    _logger.debug(
         "Redirecting '%s' -> '%s'",
         request.url,
         backend_url,
@@ -54,6 +55,6 @@ async def reverse_proxy_handler(request: web.Request) -> web.Response:
     fwd_headers.update({X_PRODUCT_NAME_HEADER: product_name})
 
     # forward request
-    return await catalog_client.make_request_and_envelope_response(
+    return await make_request_and_envelope_response(
         request.app, request.method, backend_url, fwd_headers, raw
     )

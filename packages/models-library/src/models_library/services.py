@@ -20,7 +20,6 @@ from pydantic import (
     StrictBool,
     StrictFloat,
     StrictInt,
-    constr,
     validator,
 )
 
@@ -37,10 +36,19 @@ from .utils.json_schema import (
 
 # CONSTANTS -------------------------------------------
 # NOTE: move to _constants.py: SEE https://github.com/ITISFoundation/osparc-simcore/issues/3486
+
+# e.g. simcore/services/comp/opencor
 SERVICE_KEY_RE: Final[re.Pattern[str]] = re.compile(
     r"^simcore/services/"
     r"(?P<type>(comp|dynamic|frontend))/"
     r"(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*"
+    r"(?P<name>[a-z0-9-_]+[a-z0-9])$"
+)
+# e.g. simcore%2Fservices%2Fcomp%2Fopencor
+SERVICE_ENCODED_KEY_RE: Final[re.Pattern[str]] = re.compile(
+    r"^simcore%2Fservices%2F"
+    r"(?P<type>(comp|dynamic|frontend))%2F"
+    r"(?P<subdir>[a-z0-9][a-z0-9_.-]*%2F)*"
     r"(?P<name>[a-z0-9-_]+[a-z0-9])$"
 )
 
@@ -63,13 +71,29 @@ PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]+$"  # TODO: PC->* it would be advisable to ha
 LATEST_INTEGRATION_VERSION = "1.0.0"
 
 # CONSTRAINT TYPES -------------------------------------------
+class ServicePortKey(ConstrainedStr):
+    regex = re.compile(PROPERTY_KEY_RE)
 
-ServicePortKey = constr(regex=PROPERTY_KEY_RE)
-FileName = constr(regex=FILENAME_RE)
+    class Config:
+        frozen = True
+
+
+class FileName(ConstrainedStr):
+    regex = re.compile(FILENAME_RE)
+
+    class Config:
+        frozen = True
 
 
 class ServiceKey(ConstrainedStr):
     regex = SERVICE_KEY_RE
+
+    class Config:
+        frozen = True
+
+
+class ServiceKeyEncoded(ConstrainedStr):
+    regex = re.compile(SERVICE_ENCODED_KEY_RE)
 
     class Config:
         frozen = True

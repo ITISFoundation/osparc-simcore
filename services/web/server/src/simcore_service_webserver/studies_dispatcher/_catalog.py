@@ -72,13 +72,11 @@ async def iter_latest_product_services(
 
     query = (
         sa.select(
-            [
-                services_meta_data.c.key,
-                services_meta_data.c.version,
-                services_meta_data.c.name,
-                services_meta_data.c.description,
-                services_meta_data.c.thumbnail,
-            ]
+            services_meta_data.c.key,
+            services_meta_data.c.version,
+            services_meta_data.c.name,
+            services_meta_data.c.description,
+            services_meta_data.c.thumbnail,
         )
         .select_from(
             latest_services.join(
@@ -139,11 +137,9 @@ async def validate_requested_service(
 
     async with engine.acquire() as conn:
         query = sa.select(
-            [
-                services_meta_data.c.name,
-                services_meta_data.c.key,
-                services_meta_data.c.thumbnail,
-            ]
+            services_meta_data.c.name,
+            services_meta_data.c.key,
+            services_meta_data.c.thumbnail,
         ).where(
             (services_meta_data.c.key == service_key)
             & (services_meta_data.c.version == service_version)
