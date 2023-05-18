@@ -196,7 +196,7 @@ class _ServicesInaccessibleBody(BaseModel):
     response_model=list[UserWithoutServiceAccess],
     **RESPONSE_MODEL_POLICY,
 )
-async def list_inaccessible_services(  # list_unavailable_project_services
+async def list_inaccessible_services(
     request: Request,  # pylint:disable=unused-argument
     gid: PositiveInt,
     body: _ServicesInaccessibleBody = Body(...),
