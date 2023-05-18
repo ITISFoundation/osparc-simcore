@@ -6,7 +6,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKey
 from models_library.users import UserID
-from models_library.utils.docker_compose import SpecsEnvironmentsResolver
+from models_library.utils.specs_substitution import SpecsEnvironmentsResolver
 
 from ...utils.db import get_repository
 from ..db.repositories.services_environments import ServicesEnvironmentsRepository
