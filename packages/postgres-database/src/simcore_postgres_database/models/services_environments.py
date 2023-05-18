@@ -1,12 +1,10 @@
-from typing import Any, Final, TypeAlias
+from typing import Final
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 
 from ._common import column_created_datetime, column_modified_datetime
 from .base import metadata
-
-VendorSecretsDict: TypeAlias = dict[str, Any]
 
 # Intentionally includes the term "SECRET" to avoid leaking this value on a public domain
 VENDOR_SECRET_PREFIX: Final[str] = "OSPARC_VENDOR_SECRET_"

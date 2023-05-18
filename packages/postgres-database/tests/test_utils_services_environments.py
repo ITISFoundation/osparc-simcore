@@ -3,6 +3,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import pytest
 from aiopg.sa.connection import SAConnection
 from simcore_postgres_database.models.services import services_meta_data
 from simcore_postgres_database.models.services_environments import (
@@ -11,12 +12,17 @@ from simcore_postgres_database.models.services_environments import (
     services_vendor_secrets,
 )
 from simcore_postgres_database.utils_services_environments import get_vendor_secrets
-from sqlalchemy.sql import select
 
 
-async def test_services_vendor_secrets_table(connection: SAConnection):
-    vendor_service = "simcore/services/dynamic/vendor/some_service"
+@pytest.fixture
+async def vendor_service() -> str:
+    return "simcore/services/dynamic/vendor/some_service"
 
+
+@pytest.fixture
+async def expected_secrets(
+    connection: SAConnection, vendor_service: str
+) -> VendorSecretsDict:
     await connection.execute(
         services_meta_data.insert().values(
             key=vendor_service,
@@ -35,33 +41,7 @@ async def test_services_vendor_secrets_table(connection: SAConnection):
         )
     )
 
-    await connection.execute(
-        # a vendor exposes these environs to its services to everybody
-        services_vendor_secrets.insert().values(
-            service_key=vendor_service,
-            secrets_map=VendorSecretsDict(
-                {
-                    f"{VENDOR_SECRET_PREFIX}LICENSE_SERVER_HOST": "product_a-server",
-                    f"{VENDOR_SECRET_PREFIX}LICENSE_SERVER_PRIMARY_PORT": 1,
-                    f"{VENDOR_SECRET_PREFIX}LICENSE_SERVER_SECONDARY_PORT": 2,
-                    f"{VENDOR_SECRET_PREFIX}LICENSE_DNS_RESOLVER_IP": "1.1.1.1",
-                    f"{VENDOR_SECRET_PREFIX}LICENSE_DNS_RESOLVER_PORT": "21",
-                    f"{VENDOR_SECRET_PREFIX}LICENSE_FILE": "license.txt",
-                    f"{VENDOR_SECRET_PREFIX}LICENSE_FILE_PRODUCT1": "license-p1.txt",
-                    f"{VENDOR_SECRET_PREFIX}LICENSE_FILE_PRODUCT2": "license-p2.txt",
-                    f"{VENDOR_SECRET_PREFIX}LIST": "[1, 2, 3]",
-                }
-            ),
-        )
-    )
-
-    substitutions = await connection.scalar(
-        select(services_vendor_secrets.c.secrets_map).where(
-            services_vendor_secrets.c.service_key == vendor_service
-        )
-    )
-
-    assert substitutions == {
+    vendor_secrets: VendorSecretsDict = {
         f"{VENDOR_SECRET_PREFIX}LICENSE_SERVER_HOST": "product_a-server",
         f"{VENDOR_SECRET_PREFIX}LICENSE_SERVER_PRIMARY_PORT": 1,
         f"{VENDOR_SECRET_PREFIX}LICENSE_SERVER_SECONDARY_PORT": 2,
@@ -73,14 +53,24 @@ async def test_services_vendor_secrets_table(connection: SAConnection):
         f"{VENDOR_SECRET_PREFIX}LIST": "[1, 2, 3]",
     }
 
-    vendor_substitutions = await connection.execute(
-        select(services_vendor_secrets.c.secrets_map).where(
-            services_vendor_secrets.c.service_key.like("%/vendor/%")
+    await connection.execute(
+        # a vendor exposes these environs to its services to everybody
+        services_vendor_secrets.insert().values(
+            service_key=vendor_service,
+            secrets_map=VendorSecretsDict(
+                {
+                    (key.removeprefix(VENDOR_SECRET_PREFIX) if True else key): value
+                    for key, value in vendor_secrets.items()
+                }
+            ),
         )
     )
 
-    assert [row.secrets_map for row in await vendor_substitutions.fetchall()] == [
-        substitutions
-    ]
+    return vendor_secrets
 
-    assert await get_vendor_secrets(connection, vendor_service) == substitutions
+
+async def test_get_vendor_secrets(
+    connection: SAConnection, expected_secrets: VendorSecretsDict
+):
+
+    assert await get_vendor_secrets(connection, vendor_service) == expected_secrets

@@ -18,22 +18,21 @@ async def substitute_vendor_environments(
     service_key: ServiceKey,
 ) -> dict[str, Any]:
     specs_resolver = SpecsEnvironmentsResolver(compose_spec, upgrade=False)
+    repo = get_repository(app, ServicesEnvironmentsRepository)
 
-    new_compose_spec: dict[str, Any] = {}
-
-    # TODO: define OSPARC_ENVIRONMENT_VENDOR_ once!
     if any(
-        idr.startswith("OSPARC_ENVIRONMENT_VENDOR_")
+        repo.is_vendor_secret_identifier(idr)
         for idr in specs_resolver.get_identifiers()
     ):
-        repo = get_repository(app, ServicesEnvironmentsRepository)
-        vendor_environments = await repo.get_vendor_secrets(service_key=service_key)
+        # checks before to avoid unnecesary calls to pg
+        vendor_secrets = await repo.get_vendor_secrets(service_key=service_key)
 
-        specs_resolver.set_substitutions(environs=vendor_environments)
+        # resolve substitutions
+        specs_resolver.set_substitutions(environs=vendor_secrets)
         new_compose_spec = specs_resolver.run()
-    else:
-        new_compose_spec = deepcopy(compose_spec)
-    return new_compose_spec
+        return new_compose_spec
+
+    return deepcopy(compose_spec)
 
 
 async def substitute_session_environments(
@@ -54,12 +53,13 @@ async def substitute_session_environments(
         "OSPARC_ENVIRONMENT_PRODUCT_NAME": product_name,
         "OSPARC_ENVIRONMENT_STUDY_UUID": project_uuid,
         "OSPARC_ENVIRONMENT_NODE_UUID": node_uuid,
+        # TODO: might include in the resolver to execute the callback!!
         # TODO: "OSPARC_ENVIRONMENT_USER_EMAIL": request_user_email(app, user_id),
     }
 
     specs_resolver.set_substitutions(environs=environs)
-    new_pod_compose_spec = specs_resolver.run()
-    return new_pod_compose_spec
+    new_compose_spec = specs_resolver.run()
+    return new_compose_spec
 
 
 async def substitute_request_environments(

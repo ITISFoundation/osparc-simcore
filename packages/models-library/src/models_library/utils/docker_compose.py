@@ -49,6 +49,8 @@ def replace_env_vars_in_compose_spec(
 
 
 class SpecsEnvironmentsResolver:
+    # TODO: this does not belongs here! knows nothing about docker so far!
+
     def __init__(self, specs: dict[str, Any], upgrade: bool):
         self._template = self._create_text_template(specs, upgrade=upgrade)
         self._substitutions: SubstitutionsDict = SubstitutionsDict()
@@ -81,6 +83,7 @@ class SpecsEnvironmentsResolver:
         return self._substitutions
 
     def set_substitutions(self, environs: dict[str, str | int]) -> SubstitutionsDict:
+        # FIXME: test values different from str and int!!! Note that secrets can be Any!
         identifiers_needed = self.get_identifiers()
 
         # picks only needed for substitution
