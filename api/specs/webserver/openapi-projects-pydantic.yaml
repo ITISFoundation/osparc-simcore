@@ -3,8 +3,8 @@ paths:
     post:
       tags:
       - project
-      summary: Checks whether services in the study are accessible for provided user
-        or group
+      summary: Checks whether services in the study are accessible for users in provided
+        group
       operationId: shareable_project
       parameters:
       - required: true
@@ -26,11 +26,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.projects._rest_schemas.UserWithoutServiceAccess__'
+                $ref: '#/components/schemas/Envelope_list_models_library.services.UserWithoutServiceAccess__'
 components:
   schemas:
-    Envelope_list_simcore_service_webserver.projects._rest_schemas.UserWithoutServiceAccess__:
-      title: Envelope[list[simcore_service_webserver.projects._rest_schemas.UserWithoutServiceAccess]]
+    Envelope_list_models_library.services.UserWithoutServiceAccess__:
+      title: Envelope[list[models_library.services.UserWithoutServiceAccess]]
       type: object
       properties:
         data:

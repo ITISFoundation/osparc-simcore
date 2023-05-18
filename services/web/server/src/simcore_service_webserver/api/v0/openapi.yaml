@@ -5000,7 +5000,7 @@ paths:
     post:
       tags:
         - project
-      summary: Checks whether services in the study are accessible for provided user or group
+      summary: Checks whether services in the study are accessible for users in provided group
       operationId: shareable_project
       parameters:
         - required: true
@@ -5022,7 +5022,7 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[list[simcore_service_webserver.projects._rest_schemas.UserWithoutServiceAccess]]'
+                title: 'Envelope[list[models_library.services.UserWithoutServiceAccess]]'
                 type: object
                 properties:
                   data:

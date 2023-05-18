@@ -19,7 +19,7 @@ from _common import (
 from fastapi import FastAPI
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
-from simcore_service_webserver.projects._rest_schemas import UserWithoutServiceAccess
+from models_library.services import UserWithoutServiceAccess
 from simcore_service_webserver.projects.projects_handlers_crud import ProjectPathParams
 
 app = FastAPI(redoc_url=None)
@@ -39,7 +39,7 @@ TAGS: list[str | Enum] = [
     response_model=Envelope[list[UserWithoutServiceAccess]],
     tags=TAGS,
     operation_id="shareable_project",
-    summary="Checks whether services in the study are accessible for provided user or group",
+    summary="Checks whether services in the study are accessible for users in provided group",
 )
 async def shareable_project(project_id: ProjectID, gid: int):
     ...
