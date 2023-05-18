@@ -15,6 +15,12 @@ from faker import Faker
 _RANDOM = -1
 
 
+def _range(faker: Faker, num_items: int = _RANDOM, min_: int = 1, max_: int = 4):
+    if num_items == _RANDOM:
+        num_items = faker.random_int(min=min_, max=max_)
+    return range(num_items)
+
+
 def generate_fake_docker_compose(
     faker: Faker, num_services: int = _RANDOM
 ) -> dict[str, Any]:
@@ -31,12 +37,7 @@ def generate_fake_docker_compose(
 
     # SEE https://faker.readthedocs.io/en/master/providers/baseprovider.html?highlight=random
 
-    if num_services is _RANDOM:
-        num_services = faker.random_digit_not_null_or_empty()  # [1, 9]
-
-    assert num_services > 0
-
-    for _ in range(num_services):
+    for _ in _range(faker, num_services, max_=4):
         service_name, service = generate_fake_service_specs(faker)
 
         docker_compose["services"][service_name] = service
@@ -45,14 +46,13 @@ def generate_fake_docker_compose(
 
 
 def generate_fake_service_specs(faker: Faker) -> tuple[str, dict[str, Any]]:
-
     service_name = faker.word()
     service = {
         "image": faker.word(),
-        "environment": {faker.word(): faker.word() for _ in faker.random_digit()},
+        "environment": {faker.word(): faker.word() for _ in _range(faker, max_=10)},
         "ports": [
             f"{faker.random_int(1000, 9999)}:{faker.random_int(1000, 9999)}"
-            for _ in faker.random_digit()
+            for _ in _range(faker)
         ],
     }
     return service_name, service
