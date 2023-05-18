@@ -13,6 +13,7 @@ from .._meta import (
 )
 from ..api.routes import setup_api_routes
 from ..modules.prometheus import setup as setup_prometheus_api_client
+from ..resource_tracker import setup as setup_background_task
 from .settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
@@ -42,6 +43,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     # ERROR HANDLERS
     # ... add here ...
     setup_prometheus_api_client(app)
+    setup_background_task(app)
 
     # EVENTS
     async def _on_startup() -> None:

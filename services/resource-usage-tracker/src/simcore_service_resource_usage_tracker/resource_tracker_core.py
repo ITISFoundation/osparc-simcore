@@ -1,14 +1,23 @@
+import datetime
 import json
-from datetime import datetime, timedelta
+import logging
 from typing import Any
 
+import arrow
 from fastapi import FastAPI
+from models_library.users import UserID
+from simcore_service_resource_usage_tracker.modules.prometheus import (
+    get_prometheus_api_client,
+)
 
 # This script assumes everywhere that the minimum granularity of the data is 1 minute
 # Setting it smaller is unreasonable at least for prometheus, as the scraping interval is apprx. eq. to 1 h
 
 
-def assureDictEntryExists(metric_data, max_values_per_docker_id, image, userid):
+_logger = logging.getLogger(__name__)
+
+
+def _assureDictEntryExists(metric_data, max_values_per_docker_id, image, userid):
     for metric in metric_data:
         current_id = metric["metric"]["id"]
         if current_id not in max_values_per_docker_id.keys():
@@ -23,32 +32,37 @@ def assureDictEntryExists(metric_data, max_values_per_docker_id, image, userid):
             }
 
 
-async def evaluate_service_resource_usage(
-    starttime: datetime,
-    stoptime: datetime,
-    userid: int,
+async def _evaluate_service_resource_usage(
+    app: FastAPI,
+    start_time: datetime.datetime,
+    stop_time: datetime.datetime,
+    user_id: UserID,
     uuid: str = ".*",
     image: str = "registry.osparc.io/simcore/services/dynamic/jupyter-smash:3.0.9",
-) -> None:
+) -> dict[str, Any]:
+    prometheus_client = get_prometheus_api_client(app)
     max_values_per_docker_id: dict[str, Any] = {}
-    td = stoptime - starttime
-    minutes = int(td.total_seconds() / 60)
-    for currentDatetime in [stoptime - timedelta(minutes=i) for i in range(minutes)]:
+    time_delta = stop_time - start_time
+    minutes = round(time_delta.total_seconds() / 60)
+
+    for currentDatetime in [
+        stop_time - datetime.timedelta(minutes=i) for i in range(minutes)
+    ]:
         rfc3339_str = currentDatetime.isoformat("T") + "-00:00"
         # Query CPU seconds
-        promql_cpu_query = f"sum without (cpu) (container_cpu_usage_seconds_total{{container_label_user_id='{userid}',image='{image}',container_label_uuid=~'{uuid}'}})"
-        container_cpu_seconds_usage = prom.custom_query(
+        promql_cpu_query = f"sum without (cpu) (container_cpu_usage_seconds_total{{container_label_user_id='{user_id}',image='{image}',container_label_uuid=~'{uuid}'}})"
+        container_cpu_seconds_usage = prometheus_client.custom_query(
             promql_cpu_query, params={"time": rfc3339_str}
         )
         # Query network egress
-        promql_network_query = f"container_network_transmit_bytes_total{{container_label_user_id='{userid}',image='{image}',container_label_uuid=~'{uuid}'}}"
-        container_network_egress = prom.custom_query(
+        promql_network_query = f"container_network_transmit_bytes_total{{container_label_user_id='{user_id}',image='{image}',container_label_uuid=~'{uuid}'}}"
+        container_network_egress = prometheus_client.custom_query(
             promql_network_query, params={"time": rfc3339_str}
         )
 
         if container_cpu_seconds_usage:
-            assureDictEntryExists(
-                container_cpu_seconds_usage, max_values_per_docker_id, image, userid
+            _assureDictEntryExists(
+                container_cpu_seconds_usage, max_values_per_docker_id, image, user_id
             )
             metric_data = container_cpu_seconds_usage
             for metric in metric_data:
@@ -61,8 +75,8 @@ async def evaluate_service_resource_usage(
                         metric["value"][-1]
                     )
         if container_network_egress:
-            assureDictEntryExists(
-                container_network_egress, max_values_per_docker_id, image, userid
+            _assureDictEntryExists(
+                container_network_egress, max_values_per_docker_id, image, user_id
             )
             metric_data = container_network_egress
             for metric in metric_data:
@@ -102,12 +116,9 @@ async def evaluate_service_resource_usage(
     return max_values_per_docker_id
 
 
-now = datetime.utcnow()
-data = evaluate_service_resource_usage(
-    now - timedelta(hours=1), now, userid=43817
-)  # This userid is puppeteer1 on osparc.io
-print(json.dumps(data, indent=4, sort_keys=True))
-
-
 async def collect_service_resource_usage(app: FastAPI) -> None:
-    ...
+    now = arrow.utcnow().datetime
+    data = await _evaluate_service_resource_usage(
+        app, now - datetime.timedelta(hours=1), now, user_id=43817
+    )
+    _logger.info(json.dumps(data, indent=2, sort_keys=True))
