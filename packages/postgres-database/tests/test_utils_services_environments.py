@@ -3,12 +3,13 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+from typing import Any
+
 import pytest
 from aiopg.sa.connection import SAConnection
 from simcore_postgres_database.models.services import services_meta_data
 from simcore_postgres_database.models.services_environments import (
     VENDOR_SECRET_PREFIX,
-    VendorSecretsDict,
     services_vendor_secrets,
 )
 from simcore_postgres_database.utils_services_environments import get_vendor_secrets
@@ -22,7 +23,7 @@ async def vendor_service() -> str:
 @pytest.fixture
 async def expected_secrets(
     connection: SAConnection, vendor_service: str
-) -> VendorSecretsDict:
+) -> dict[str, Any]:
     await connection.execute(
         services_meta_data.insert().values(
             key=vendor_service,
@@ -41,7 +42,7 @@ async def expected_secrets(
         )
     )
 
-    vendor_secrets: VendorSecretsDict = {
+    vendor_secrets = {
         f"{VENDOR_SECRET_PREFIX}LICENSE_SERVER_HOST": "product_a-server",
         f"{VENDOR_SECRET_PREFIX}LICENSE_SERVER_PRIMARY_PORT": 1,
         f"{VENDOR_SECRET_PREFIX}LICENSE_SERVER_SECONDARY_PORT": 2,
@@ -57,12 +58,10 @@ async def expected_secrets(
         # a vendor exposes these environs to its services to everybody
         services_vendor_secrets.insert().values(
             service_key=vendor_service,
-            secrets_map=VendorSecretsDict(
-                {
-                    (key.removeprefix(VENDOR_SECRET_PREFIX) if True else key): value
-                    for key, value in vendor_secrets.items()
-                }
-            ),
+            secrets_map={
+                (key.removeprefix(VENDOR_SECRET_PREFIX) if True else key): value
+                for key, value in vendor_secrets.items()
+            },
         )
     )
 
@@ -70,7 +69,7 @@ async def expected_secrets(
 
 
 async def test_get_vendor_secrets(
-    connection: SAConnection, expected_secrets: VendorSecretsDict
+    connection: SAConnection, vendor_service: str, expected_secrets: dict[str, Any]
 ):
 
     assert await get_vendor_secrets(connection, vendor_service) == expected_secrets
