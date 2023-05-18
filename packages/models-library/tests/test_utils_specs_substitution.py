@@ -7,8 +7,10 @@ from typing import Any
 
 import pytest
 import yaml
-from models_library.utils.docker_compose import SubstitutionValues
-from models_library.utils.specs_substitution import SpecsEnvironmentsResolver
+from models_library.utils.specs_substitution import (
+    SpecsEnvironmentsResolver,
+    SubstitutionValue,
+)
 from pydantic import parse_obj_as
 
 
@@ -26,7 +28,7 @@ def service_version() -> str:
 def available_osparc_environments(
     simcore_registry: str,
     service_version: str,
-) -> dict[str, SubstitutionValues]:
+) -> dict[str, SubstitutionValue]:
     osparc_vendor_environments = {
         "OSPARC_ENVIRONMENT_VENDOR_LICENSE_SERVER_HOST": "product_a-server",
         "OSPARC_ENVIRONMENT_VENDOR_LICENSE_SERVER_PRIMARY_PORT": 1,
@@ -45,7 +47,7 @@ def available_osparc_environments(
         "SERVICE_VERSION": service_version,
         "DISPLAY": "True",
     }
-    return parse_obj_as(dict[str, SubstitutionValues], environs)
+    return parse_obj_as(dict[str, SubstitutionValue], environs)
 
 
 @pytest.mark.parametrize(
@@ -92,7 +94,7 @@ def available_osparc_environments(
     ],
 )
 def test_substitutions_in_compose_spec(
-    available_osparc_environments: dict[str, SubstitutionValues],
+    available_osparc_environments: dict[str, SubstitutionValue],
     service_name: str,
     service_spec: dict[str, Any],
     expected_service_spec: dict[str, Any],
@@ -131,7 +133,7 @@ def test_nothing_to_substitute():
 
 
 def test_no_identifier_present(
-    available_osparc_environments: dict[str, SubstitutionValues]
+    available_osparc_environments: dict[str, SubstitutionValue]
 ):
 
     original_spec = {"x": 33, "y": {"z": True}, "foo": "$UNREGISTERED_ID"}

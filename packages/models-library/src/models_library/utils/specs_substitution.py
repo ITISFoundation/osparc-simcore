@@ -9,8 +9,9 @@ from models_library.utils.string_substitution import (
 
 from .string_substitution import SubstitutionsDict, TextTemplate
 
-# This constraint is to avoid deserialization issues after substitution!
-SubstitutionValues = bool | int | float | str
+# This constraint on substitution values is to avoid
+# deserialization issues on the TextTemplate substitution!
+SubstitutionValue = bool | int | float | str
 
 
 class SpecsEnvironmentsResolver:
@@ -50,7 +51,7 @@ class SpecsEnvironmentsResolver:
         return self._substitutions
 
     def set_substitutions(
-        self, environs: dict[str, SubstitutionValues]
+        self, environs: dict[str, SubstitutionValue]
     ) -> SubstitutionsDict:
         """NOTE: ONLY targets identifiers declared in the specs"""
         identifiers_needed = self.get_identifiers()
