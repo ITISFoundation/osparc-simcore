@@ -1,3 +1,4 @@
+import datetime
 from functools import cached_property
 from typing import cast
 
@@ -89,8 +90,9 @@ class ApplicationSettings(MinimalApplicationSettings):
     These settings includes extra configuration for the http-API
     """
 
-    RESOURCE_USAGE_TRACKER_EVALUATION_INTERVAL_SEC: int = Field(
-        default=300, description="Interval in seconds to evaluate the resource usage"
+    RESOURCE_USAGE_TRACKER_EVALUATION_INTERVAL_SEC: datetime.timedelta = Field(
+        default=datetime.timedelta(minutes=5),
+        description="Interval to evaluate the resource usage (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
     RESOURCE_USAGE_TRACKER_GRANULARITY_SEC: int = Field(
         default=60,
