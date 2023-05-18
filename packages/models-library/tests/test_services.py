@@ -212,3 +212,31 @@ def test_boot_option_wrong_default() -> None:
         with pytest.raises(ValueError):
             example["default"] = "__undefined__"
             assert BootOption(**example)
+
+
+# NOTE: do not add items to this list, you are wrong to do so!
+FIELD_NAME_EXCEPTIONS: set[str] = {
+    "integration-version",
+    "boot-options",
+    "min-visible-inputs",
+}
+
+
+def test_service_docker_data_labels_convesion():
+    # tests that no future fields have "dashed names"
+    # we want labels to look like io.simcore.a_label_property
+    convension_breaking_fields: set[tuple[str, str]] = set()
+
+    fiedls_with_aliases: list[tuple[str, str]] = [
+        (x.name, x.alias) for x in ServiceDockerData.__fields__.values()
+    ]
+
+    for name, alias in fiedls_with_aliases:
+        if alias in FIELD_NAME_EXCEPTIONS:
+            continue
+        # check dashes and uppercase
+        if alias.lower() != alias or "-" in alias:
+            convension_breaking_fields.add((name, alias))
+    assert (
+        len(convension_breaking_fields) == 0
+    ), "You are no longer allowed to add labels with dashes in them. All lables should be snake cased!"
