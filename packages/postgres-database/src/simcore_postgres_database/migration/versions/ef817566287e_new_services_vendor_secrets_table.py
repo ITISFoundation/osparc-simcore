@@ -1,8 +1,8 @@
-"""new services_vendor_environments table
+"""new services_vendor_secrets table
 
-Revision ID: 4e48c058077a
+Revision ID: ef817566287e
 Revises: 0c084cb1091c
-Create Date: 2023-05-18 10:48:19.234075+00:00
+Create Date: 2023-05-18 11:38:51.671239+00:00
 
 """
 import sqlalchemy as sa
@@ -10,7 +10,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = "4e48c058077a"
+revision = "ef817566287e"
 down_revision = "0c084cb1091c"
 branch_labels = None
 depends_on = None
@@ -18,10 +18,10 @@ depends_on = None
 
 def upgrade():
     op.create_table(
-        "services_vendor_environments",
+        "services_vendor_secrets",
         sa.Column("service_key", sa.String(), nullable=False),
         sa.Column(
-            "identifiers_map",
+            "secrets_map",
             postgresql.JSONB(astext_type=sa.Text()),
             server_default=sa.text("'{}'::jsonb"),
             nullable=False,
@@ -33,11 +33,11 @@ def upgrade():
             "modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False
         ),
         sa.PrimaryKeyConstraint(
-            "service_key", name="services_vendor_environments_service_key_pk"
+            "service_key", name="services_vendor_secrets_service_key_pk"
         ),
     )
     op.create_unique_constraint(
-        "services_specifications_service_key_unique",
+        "services_vendor_secrets_service_key_unique",
         "services_specifications",
         ["service_key"],
     )
@@ -45,8 +45,8 @@ def upgrade():
 
 def downgrade():
     op.drop_constraint(
-        "services_specifications_service_key_unique",
+        "services_vendor_secrets_service_key_unique",
         "services_specifications",
         type_="unique",
     )
-    op.drop_table("services_vendor_environments")
+    op.drop_table("services_vendor_secrets")
