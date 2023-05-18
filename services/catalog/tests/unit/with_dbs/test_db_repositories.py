@@ -117,7 +117,7 @@ async def test_create_services(
 
 async def test_read_services(
     services_repo: ServicesRepository,
-    user_groups_ids: list[int],  # check this one
+    user_groups_ids: list[int],
     products_names: list[str],
     service_catalog_faker: Callable,
     services_db_tables_injector: Callable,

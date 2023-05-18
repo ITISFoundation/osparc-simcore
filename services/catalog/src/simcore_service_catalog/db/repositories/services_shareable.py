@@ -8,8 +8,6 @@ from sqlalchemy.sql import and_, or_
 from ..tables import services_access_rights
 from ._base import BaseRepository
 
-# from aiopg.sa.result import ResultProxy
-
 logger = logging.getLogger(__name__)
 
 

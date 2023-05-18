@@ -114,7 +114,6 @@ async def test_inaccessible_services_for_primary_group(
             )
             .returning(services_access_rights)
         )
-        # cleanup_after_test.append(result.returned_defaults[0])
 
     url = URL("/v0/services/inaccessible").with_query({"gid": 1})
     response = client.post(

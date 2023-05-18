@@ -174,7 +174,6 @@ async def user_groups_ids(
             "Patience you must have",
             "STANDARD",
             "http://mib.org",
-            # {"email": "@(foo|testers|mib)+.(org|com)$"},
         ),
     ]
     # pylint: disable=no-value-for-parameter
