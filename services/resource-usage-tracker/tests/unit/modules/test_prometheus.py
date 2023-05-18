@@ -20,7 +20,7 @@ def mocked_prometheus_fail_response(
 ) -> None:
     assert app_settings.RESOURCE_USAGE_TRACKER_PROMETHEUS
     requests_mock.get(
-        f"{app_settings.RESOURCE_USAGE_TRACKER_PROMETHEUS.PROMETHEUS_URL}/",
+        f"{app_settings.RESOURCE_USAGE_TRACKER_PROMETHEUS.api_url}/",
         status_code=401,
     )
 

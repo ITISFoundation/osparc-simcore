@@ -20,3 +20,13 @@ class PrometheusSettings(BaseCustomSettings, MixinServiceSettings):
     @cached_property
     def origin(self) -> str:
         return self._build_origin_url(prefix="PROMETHEUS")
+
+    @cached_property
+    def api_url(self) -> str:
+        return AnyUrl.build(
+            scheme=self.PROMETHEUS_URL.scheme,
+            user=self.PROMETHEUS_USERNAME,
+            password=self.PROMETHEUS_PASSWORD.get_secret_value(),
+            host=self.PROMETHEUS_URL.host,
+            port=self.PROMETHEUS_URL.port,
+        )

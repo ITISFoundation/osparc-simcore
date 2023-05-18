@@ -96,6 +96,4 @@ async def async_client(initialized_app: FastAPI) -> AsyncIterator[httpx.AsyncCli
 @pytest.fixture
 def mocked_prometheus(requests_mock: Mocker, app_settings: ApplicationSettings) -> None:
     assert app_settings.RESOURCE_USAGE_TRACKER_PROMETHEUS
-    requests_mock.get(
-        f"{app_settings.RESOURCE_USAGE_TRACKER_PROMETHEUS.PROMETHEUS_URL}/"
-    )
+    requests_mock.get(f"{app_settings.RESOURCE_USAGE_TRACKER_PROMETHEUS.api_url}/")

@@ -46,7 +46,7 @@ def setup(app: FastAPI) -> None:
             _logger.warning("Prometheus API client is de-activated in the settings")
             return
         with log_context(_logger, logging.INFO, msg="connect with prometheus"):
-            client = PrometheusConnect(f"{settings.PROMETHEUS_URL}")
+            client = PrometheusConnect(f"{settings.api_url}")
             if await _wait_till_prometheus_responsive(client) is False:
                 raise ConfigurationError(
                     msg="Prometheus API client could be reached but returned value is not expected. TIP: check configuration"
