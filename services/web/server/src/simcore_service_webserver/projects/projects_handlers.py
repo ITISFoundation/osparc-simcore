@@ -10,6 +10,7 @@ import logging
 
 from aiohttp import web
 from models_library.projects_state import ProjectState
+from models_library.services import ServiceKeyVersion, UserWithoutServiceAccess
 from pydantic import BaseModel
 from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
@@ -25,7 +26,7 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import ProjectType
 
-from .. import users_api
+from .. import catalog, users_api
 from .._meta import api_version_prefix as VTAG
 from ..director_v2.exceptions import DirectorServiceError
 from ..login.decorators import login_required
@@ -48,6 +49,10 @@ routes = web.RouteTableDef()
 
 class _OpenProjectQuery(BaseModel):
     disable_service_auto_start: bool = False
+
+
+class _ShareableProjectQuery(BaseModel):
+    gid: str | None = None
 
 
 @routes.post(f"/{VTAG}/projects/{{project_id}}:open", name="open_project")
@@ -217,3 +222,31 @@ async def get_project_state(request: web.Request) -> web.Response:
     )
     project_state = ProjectState(**validated_project["state"])
     return web.json_response({"data": project_state.dict()}, dumps=json_dumps)
+
+
+@routes.post(f"/{VTAG}/projects/{{project_id}}:shareable", name="shareable_project")
+@login_required
+@permission_required("project.read")
+async def shareable_project(request: web.Request) -> web.Response:
+    req_ctx = RequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(ProjectPathParams, request)
+    query_params = parse_request_query_parameters_as(_ShareableProjectQuery, request)
+
+    project = await projects_api.get_project_for_user(
+        request.app,
+        project_uuid=f"{path_params.project_id}",
+        user_id=req_ctx.user_id,
+        include_state=True,
+    )
+    project_services: list[ServiceKeyVersion] = [
+        ServiceKeyVersion(key=s["key"], version=s["version"])
+        for _, s in project["workbench"].items()
+    ]
+
+    output: list[
+        UserWithoutServiceAccess
+    ] = await catalog.get_inaccessible_services_for_gid_in_project(
+        request.app, query_params.gid, req_ctx.product_name, project_services
+    )
+
+    return web.json_response({"data": output}, dumps=json_dumps)

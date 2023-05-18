@@ -4,7 +4,7 @@
 import asyncio
 import logging
 import urllib.parse
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping
 
 from aiohttp import ClientSession, ClientTimeout, web
 from aiohttp.client_exceptions import (
@@ -12,9 +12,10 @@ from aiohttp.client_exceptions import (
     ClientResponseError,
     InvalidURL,
 )
+from models_library.services import ServiceKeyVersion, UserWithoutServiceAccess
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
-from pydantic import parse_obj_as
+from pydantic import PositiveInt, parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.rest_responses import wrap_as_envelope
 from servicelib.json_serialization import json_dumps
@@ -63,8 +64,8 @@ async def make_request_and_envelope_response(
     app: web.Application,
     method: str,
     url: URL,
-    headers: Optional[Mapping[str, str]] = None,
-    data: Optional[bytes] = None,
+    headers: Mapping[str, str] | None = None,
+    data: bytes | None = None,
 ) -> web.Response:
     """
     Helper to forward a request to the catalog service
@@ -210,6 +211,34 @@ async def update_service(
             url, headers={X_PRODUCT_NAME_HEADER: product_name}, json=update_data
         ) as resp:
             resp.raise_for_status()  # FIXME: error handling for session and response exceptions
+            return await resp.json()
+
+    except asyncio.TimeoutError as err:
+        logger.warning("Catalog service connection timeout error")
+        raise web.HTTPServiceUnavailable(
+            reason="catalog is currently unavailable"
+        ) from err
+
+
+async def get_inaccessible_services_for_gid_in_project(
+    app: web.Application,
+    gid: PositiveInt,
+    product_name: str,
+    project_services: list[ServiceKeyVersion],
+) -> list[UserWithoutServiceAccess]:
+    session: ClientSession = get_client_session(app)
+    settings: CatalogSettings = get_plugin_settings(app)
+
+    url = (URL(settings.api_base_url) / "services" / "inaccessible").with_query(
+        {"gid": gid}
+    )
+
+    try:
+        async with session.post(
+            url,
+            headers={X_PRODUCT_NAME_HEADER: product_name},
+            json={"services_to_check": project_services},
+        ) as resp:
             return await resp.json()
 
     except asyncio.TimeoutError as err:

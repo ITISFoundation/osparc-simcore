@@ -12,6 +12,7 @@ from servicelib.aiohttp.rest_routing import iter_path_operations
 from . import catalog_handlers
 from ._constants import APP_OPENAPI_SPECS_KEY
 from .catalog_client import (
+    get_inaccessible_services_for_gid_in_project,
     get_services_for_user_in_product,
     is_catalog_service_responsive,
 )
@@ -63,4 +64,5 @@ __all__ = (
     "get_services_for_user_in_product",
     "is_catalog_service_responsive",
     "setup_catalog",
+    "get_inaccessible_services_for_gid_in_project",
 )
