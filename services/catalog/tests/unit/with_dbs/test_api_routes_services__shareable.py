@@ -314,7 +314,7 @@ async def test_inaccessible_services_for_more_services(
     assert response.status_code == 200
     data = response.json()
     response_users = {item["user_id"] for item in data}
-    user_id not in response_users
+    assert user_id not in response_users
     assert len(data) == 8
 
     # We share one service with other user primary group
