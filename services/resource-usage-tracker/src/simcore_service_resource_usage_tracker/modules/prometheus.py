@@ -25,17 +25,11 @@ _logger = logging.getLogger(__name__)
     before_sleep=before_sleep_log(_logger, logging.WARNING),
     retry=retry_if_exception_type(ConfigurationError),
 )
-async def _wait_till_prometheus_responsive(client: PrometheusConnect) -> None:
+async def _wait_till_prometheus_responsive(client: PrometheusConnect) -> bool:
     try:
-        if (
-            await asyncio.get_event_loop().run_in_executor(
-                None, client.check_prometheus_connection
-            )
-            is False
-        ):
-            raise ConfigurationError(
-                msg="Prometheus API client could be reached but returned value is not expected. TIP: check configuration"
-            )
+        return await asyncio.get_event_loop().run_in_executor(
+            None, client.check_prometheus_connection
+        )
     except requests.exceptions.ConnectionError as exc:
         raise ConfigurationError(
             msg="Prometheus API client could not be reached. TIP: check configuration"
@@ -53,7 +47,10 @@ def setup(app: FastAPI) -> None:
             return
         with log_context(_logger, logging.INFO, msg="connect with prometheus"):
             client = PrometheusConnect(f"{settings.PROMETHEUS_URL}")
-            await _wait_till_prometheus_responsive(client)
+            if await _wait_till_prometheus_responsive(client) is False:
+                raise ConfigurationError(
+                    msg="Prometheus API client could be reached but returned value is not expected. TIP: check configuration"
+                )
             app.state.prometheus_api_client = client
 
     async def on_shutdown() -> None:

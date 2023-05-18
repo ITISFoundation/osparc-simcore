@@ -1,6 +1,6 @@
 from functools import cached_property
 
-from pydantic import AnyUrl, SecretStr, parse_obj_as
+from pydantic import AnyUrl, SecretStr
 from settings_library.base import BaseCustomSettings
 from settings_library.utils_service import MixinServiceSettings
 
@@ -8,7 +8,7 @@ from .basic_types import VersionTag
 
 
 class PrometheusSettings(BaseCustomSettings, MixinServiceSettings):
-    PROMETHEUS_URL: AnyUrl = parse_obj_as(AnyUrl, "http://prometheus:9090")
+    PROMETHEUS_URL: AnyUrl
     PROMETHEUS_VTAG: VersionTag = VersionTag("v1")
     PROMETHEUS_USERNAME: str | None = None
     PROMETHEUS_PASSWORD: SecretStr | None = None

@@ -10,7 +10,7 @@ from simcore_service_resource_usage_tracker._meta import API_VTAG
 from simcore_service_resource_usage_tracker.api._meta import _Meta
 
 
-def test_healthcheck(client: TestClient):
+def test_healthcheck(disabled_prometheus: None, client: TestClient):
     response = client.get("/")
     assert response.status_code == status.HTTP_200_OK
     assert response.text.startswith(
@@ -18,7 +18,7 @@ def test_healthcheck(client: TestClient):
     )
 
 
-def test_meta(client: TestClient):
+def test_meta(disabled_prometheus: None, client: TestClient):
     response = client.get(f"/{API_VTAG}/meta")
     assert response.status_code == status.HTTP_200_OK
     meta = _Meta.parse_obj(response.json())
