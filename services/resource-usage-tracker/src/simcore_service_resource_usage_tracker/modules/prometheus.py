@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import cast
 
@@ -22,13 +23,16 @@ _logger = logging.getLogger(__name__)
     stop=stop_after_delay(120),
     wait=wait_random_exponential(max=30),
     before_sleep=before_sleep_log(_logger, logging.WARNING),
-    retry=retry_if_exception_type(
-        (ConfigurationError, requests.exceptions.ConnectionError)
-    ),
+    retry=retry_if_exception_type(ConfigurationError),
 )
 async def _wait_till_prometheus_responsive(client: PrometheusConnect) -> None:
     try:
-        if client.check_prometheus_connection() is False:
+        if (
+            await asyncio.get_event_loop().run_in_executor(
+                None, client.check_prometheus_connection
+            )
+            is False
+        ):
             raise ConfigurationError(
                 msg="Prometheus API client could be reached but returned value is not expected. TIP: check configuration"
             )
