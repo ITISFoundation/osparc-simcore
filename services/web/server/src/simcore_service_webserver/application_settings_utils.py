@@ -269,8 +269,9 @@ def convert_to_environ_vars(cfg: dict[str, Any]) -> dict[str, Any]:
 
     if section := cfg.get("activity"):
         _set_if_disabled("WEBSERVER_ACTIVITY", section)
-
-        envs["PROMETHEUS_PORT"] = section.get("prometheus_port")
+        envs["PROMETHEUS_URL"] = section.get("prometheus_url")
+        envs["PROMETHEUS_USERNAME"] = section.get("prometheus_username")
+        envs["PROMETHEUS_PASSWORD"] = section.get("prometheus_password")
         envs["PROMETHEUS_VTAG"] = section.get("prometheus_api_version")
 
     if section := cfg.get("computation"):
