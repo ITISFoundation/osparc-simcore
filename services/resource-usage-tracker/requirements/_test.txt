@@ -15,6 +15,11 @@ certifi==2023.5.7
     #   -c requirements/_base.txt
     #   httpcore
     #   httpx
+    #   requests
+charset-normalizer==3.1.0
+    # via
+    #   -c requirements/_base.txt
+    #   requests
 coverage==7.2.5
     # via
     #   -r requirements/_test.in
@@ -27,7 +32,7 @@ h11==0.14.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
-httpcore==0.17.0
+httpcore==0.17.1
     # via
     #   -c requirements/_base.txt
     #   httpx
@@ -40,6 +45,7 @@ idna==3.4
     #   -c requirements/_base.txt
     #   anyio
     #   httpx
+    #   requests
 iniconfig==2.0.0
     # via pytest
 packaging==23.1
@@ -69,12 +75,19 @@ python-dateutil==2.8.2
     #   faker
 python-dotenv==1.0.0
     # via -r requirements/_test.in
+requests==2.30.0
+    # via
+    #   -c requirements/_base.txt
+    #   requests-mock
+requests-mock==1.10.0
+    # via -r requirements/_test.in
 respx==0.20.1
     # via -r requirements/_test.in
 six==1.16.0
     # via
     #   -c requirements/_base.txt
     #   python-dateutil
+    #   requests-mock
 sniffio==1.3.0
     # via
     #   -c requirements/_base.txt
@@ -88,3 +101,7 @@ tomli==2.0.1
     # via
     #   coverage
     #   pytest
+urllib3==2.0.2
+    # via
+    #   -c requirements/_base.txt
+    #   requests

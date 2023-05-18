@@ -68,7 +68,7 @@ h11==0.14.0
     #   uvicorn
 httmock==1.4.0
     # via prometheus-api-client
-httpcore==0.17.0
+httpcore==0.17.1
     # via httpx
 httptools==0.5.0
     # via uvicorn

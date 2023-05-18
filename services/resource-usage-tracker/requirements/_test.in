@@ -20,4 +20,5 @@ pytest-cov
 pytest-runner
 pytest-sugar
 python-dotenv
+requests-mock
 respx
