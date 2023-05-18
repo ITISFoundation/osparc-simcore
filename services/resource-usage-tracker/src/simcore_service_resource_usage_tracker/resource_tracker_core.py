@@ -2,11 +2,6 @@ import json
 from datetime import datetime, timedelta
 from typing import Any
 
-from prometheus_api_client import PrometheusConnect
-
-# create PrometheusConnect object with remote URL
-prom = PrometheusConnect(url="http://user:pass@monitoring.osparc.io/prometheus")
-
 # This script assumes everywhere that the minimum granularity of the data is 1 minute
 # Setting it smaller is unreasonable at least for prometheus, as the scraping interval is apprx. eq. to 1 h
 
