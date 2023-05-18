@@ -10,8 +10,8 @@ from .basic_types import VersionTag
 class PrometheusSettings(BaseCustomSettings, MixinServiceSettings):
     PROMETHEUS_URL: AnyUrl = parse_obj_as(AnyUrl, "http://prometheus:9090")
     PROMETHEUS_VTAG: VersionTag = VersionTag("v1")
-    PROMETHEUS_USERNAME: str
-    PROMETHEUS_PASSWORD: SecretStr
+    PROMETHEUS_USERNAME: str | None = None
+    PROMETHEUS_PASSWORD: SecretStr | None = None
 
     @cached_property
     def base_url(self) -> str:
