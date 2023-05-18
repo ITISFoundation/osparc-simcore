@@ -26,8 +26,8 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import ProjectType
 
-from .. import catalog
 from .._meta import api_version_prefix as VTAG
+from ..catalog import client as catalog_client
 from ..director_v2.exceptions import DirectorServiceError
 from ..login.decorators import login_required
 from ..notifications import project_logs
@@ -249,7 +249,7 @@ async def shareable_project(request: web.Request) -> web.Response:
 
     output: list[
         UserWithoutServiceAccess
-    ] = await catalog.client.get_inaccessible_services_for_gid_in_project(
+    ] = await catalog_client.get_inaccessible_services_for_gid_in_project(
         request.app, query_params.gid, req_ctx.product_name, project_services
     )
 

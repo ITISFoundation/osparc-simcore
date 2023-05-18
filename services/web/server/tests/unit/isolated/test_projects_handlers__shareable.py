@@ -132,7 +132,7 @@ def mock_projects_api_get_project_for_user(mocker: MockerFixture):
 @pytest.fixture
 def mock_catalog_get_inaccessible_services_for_gid_in_project(mocker: MockerFixture):
     return mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers.catalog.get_inaccessible_services_for_gid_in_project",
+        "simcore_service_webserver.projects.projects_handlers.catalog_client.get_inaccessible_services_for_gid_in_project",
         spec=True,
         return_value=[],
     )
