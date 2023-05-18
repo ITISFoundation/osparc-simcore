@@ -7,7 +7,9 @@ from typing import Any
 
 import pytest
 import yaml
+from models_library.utils.docker_compose import SubstitutionValues
 from models_library.utils.specs_substitution import SpecsEnvironmentsResolver
+from pydantic import parse_obj_as
 
 
 @pytest.fixture()
@@ -24,7 +26,7 @@ def service_version() -> str:
 def available_osparc_environments(
     simcore_registry: str,
     service_version: str,
-) -> dict[str, str | int]:
+) -> dict[str, SubstitutionValues]:
     osparc_vendor_environments = {
         "OSPARC_ENVIRONMENT_VENDOR_LICENSE_SERVER_HOST": "product_a-server",
         "OSPARC_ENVIRONMENT_VENDOR_LICENSE_SERVER_PRIMARY_PORT": 1,
@@ -37,12 +39,13 @@ def available_osparc_environments(
         "OSPARC_ENVIRONMENT_VENDOR_LIST": "[1, 2, 3]",
     }
 
-    return {
+    environs = {
         **osparc_vendor_environments,
         "SIMCORE_REGISTRY": simcore_registry,
         "SERVICE_VERSION": service_version,
         "DISPLAY": "True",
     }
+    return parse_obj_as(dict[str, SubstitutionValues], environs)
 
 
 @pytest.mark.parametrize(
@@ -57,7 +60,7 @@ def available_osparc_environments(
             },
             {
                 "depends_on": ["this_service"],
-                "image": "mock_reg/simcore/services/dynamic/other_service:1.2.3",
+                "image": "mock_registry_basename/simcore/services/dynamic/other_service:1.2.3",
                 "init": True,
             },
         ),
@@ -80,7 +83,7 @@ def available_osparc_environments(
                     "SOME_LIST=[1, 2, 3]",
                     "MY_LICENSE=license.txt",
                 ],
-                "image": "mock_reg/simcore/services/dynamic/this_service:1.2.3",
+                "image": "mock_registry_basename/simcore/services/dynamic/this_service:1.2.3",
                 "init": True,
                 "runtime": "nvidia",
                 "volumes": ["/tmp/.X11-unix:/tmp/.X11-unix"],
@@ -89,7 +92,7 @@ def available_osparc_environments(
     ],
 )
 def test_substitutions_in_compose_spec(
-    available_osparc_environments: dict[str, str | int],
+    available_osparc_environments: dict[str, SubstitutionValues],
     service_name: str,
     service_spec: dict[str, Any],
     expected_service_spec: dict[str, Any],
@@ -115,3 +118,28 @@ def test_substitutions_in_compose_spec(
     ), f"All should be replaced in '{service_name}': {substitutions.used}"
 
     assert new_service_spec == expected_service_spec
+
+
+def test_nothing_to_substitute():
+
+    original_spec = {"x": 33, "y": {"z": True}}
+
+    specs_resolver = SpecsEnvironmentsResolver(original_spec, upgrade=False)
+
+    # no substitutions
+    assert specs_resolver.run() == original_spec
+
+
+def test_no_identifier_present(
+    available_osparc_environments: dict[str, SubstitutionValues]
+):
+
+    original_spec = {"x": 33, "y": {"z": True}, "foo": "$UNREGISTERED_ID"}
+
+    specs_resolver = SpecsEnvironmentsResolver(original_spec, upgrade=False)
+
+    assert specs_resolver.get_identifiers() == ["UNREGISTERED_ID"]
+    assert specs_resolver.set_substitutions(available_osparc_environments) == {}
+
+    # no substitutions
+    assert specs_resolver.run() == original_spec

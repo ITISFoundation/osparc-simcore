@@ -12,6 +12,7 @@ class ServicesEnvironmentsRepository(BaseRepository):
     async def get_vendor_secrets(
         self, service_key: ServiceKey
     ) -> dict[str, VendorSecret]:
+        """Fetches vendor secrets for a service using normalized names"""
         async with self.db_engine.acquire() as conn:
             vendor_secrets = await get_vendor_secrets(
                 conn, vendor_service_key=service_key, normalize_names=True

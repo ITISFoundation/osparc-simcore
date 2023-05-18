@@ -14,6 +14,10 @@ SubstitutionValues = bool | int | float | str
 
 
 class SpecsEnvironmentsResolver:
+    """
+    Resolve specs dict by substituting identifiers
+    """
+
     def __init__(self, specs: dict[str, Any], upgrade: bool):
         self._template = self._create_text_template(specs, upgrade=upgrade)
         self._substitutions: SubstitutionsDict = SubstitutionsDict()
@@ -48,6 +52,7 @@ class SpecsEnvironmentsResolver:
     def set_substitutions(
         self, environs: dict[str, SubstitutionValues]
     ) -> SubstitutionsDict:
+        """NOTE: ONLY targets identifiers declared in the specs"""
         identifiers_needed = self.get_identifiers()
 
         # picks only needed for substitution
