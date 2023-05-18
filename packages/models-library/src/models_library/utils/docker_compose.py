@@ -65,7 +65,7 @@ class SpecsEnvironmentsResolver:
 
         # template
         template = TextTemplate(service_spec_str)
-        assert template.is_valid()
+        assert template.is_valid()  # nosec
 
         return template
 
