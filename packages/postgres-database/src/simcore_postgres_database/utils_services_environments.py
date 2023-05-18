@@ -1,9 +1,10 @@
-from typing import Any
-
 from sqlalchemy.sql import select
 
 from ._protocols import DBConnection
 from .models.services_environments import VENDOR_SECRET_PREFIX, services_vendor_secrets
+
+# This constraint is to avoid deserialization issues after substitution!
+VendorSecret = bool | int | float | str
 
 
 async def get_vendor_secrets(
@@ -11,10 +12,8 @@ async def get_vendor_secrets(
     vendor_service_key: str,  # NOTE: ServiceKey is defined in model_library
     *,
     normalize_names: bool = True,
-) -> dict[str, Any]:
-
-    # NOTE: a secret value can be Any! even a json!
-    secrets: dict[str, Any] = {}
+) -> dict[str, VendorSecret]:
+    secrets: dict[str, VendorSecret] = {}
 
     secrets_map = await conn.scalar(
         select(services_vendor_secrets.c.secrets_map).where(

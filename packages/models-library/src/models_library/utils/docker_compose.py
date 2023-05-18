@@ -48,9 +48,14 @@ def replace_env_vars_in_compose_spec(
     return resolved_content
 
 
-class SpecsEnvironmentsResolver:
-    # TODO: this does not belongs here! knows nothing about docker so far!
+# TODO: this does not belongs here! knows nothing about docker so far! --------------------
 
+
+# This constraint is to avoid deserialization issues after substitution!
+SubstitutionValues = bool | int | float | str
+
+
+class SpecsEnvironmentsResolver:
     def __init__(self, specs: dict[str, Any], upgrade: bool):
         self._template = self._create_text_template(specs, upgrade=upgrade)
         self._substitutions: SubstitutionsDict = SubstitutionsDict()
@@ -82,8 +87,9 @@ class SpecsEnvironmentsResolver:
     def substitutions(self):
         return self._substitutions
 
-    def set_substitutions(self, environs: dict[str, str | int]) -> SubstitutionsDict:
-        # FIXME: test values different from str and int!!! Note that secrets can be Any!
+    def set_substitutions(
+        self, environs: dict[str, SubstitutionValues]
+    ) -> SubstitutionsDict:
         identifiers_needed = self.get_identifiers()
 
         # picks only needed for substitution

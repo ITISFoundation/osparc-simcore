@@ -3,6 +3,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import random
 from typing import Any
 
 import pytest
@@ -24,6 +25,7 @@ async def vendor_service() -> str:
 async def expected_secrets(
     connection: SAConnection, vendor_service: str
 ) -> dict[str, Any]:
+
     await connection.execute(
         services_meta_data.insert().values(
             key=vendor_service,
@@ -59,7 +61,11 @@ async def expected_secrets(
         services_vendor_secrets.insert().values(
             service_key=vendor_service,
             secrets_map={
-                (key.removeprefix(VENDOR_SECRET_PREFIX) if True else key): value
+                (
+                    key.removeprefix(VENDOR_SECRET_PREFIX)
+                    if bool(random.getrandbits(1))
+                    else key
+                ): value
                 for key, value in vendor_secrets.items()
             },
         )

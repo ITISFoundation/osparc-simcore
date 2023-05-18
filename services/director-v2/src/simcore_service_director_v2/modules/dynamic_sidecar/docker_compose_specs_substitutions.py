@@ -48,13 +48,14 @@ async def substitute_session_environments(
 
     specs_resolver = SpecsEnvironmentsResolver(compose_spec, upgrade=False)
 
-    # TODO: listing of all session envs.
+    # TODO: listing of all published session oenvs
     environs = {
         "OSPARC_ENVIRONMENT_PRODUCT_NAME": product_name,
         "OSPARC_ENVIRONMENT_STUDY_UUID": project_uuid,
         "OSPARC_ENVIRONMENT_NODE_UUID": node_uuid,
         # TODO: might include in the resolver to execute the callback!!
         # TODO: "OSPARC_ENVIRONMENT_USER_EMAIL": request_user_email(app, user_id),
+        # TODO: "OSPARC_ENVIRONMENT_USER_ROLE": request_user_role(app, user_id),
     }
 
     specs_resolver.set_substitutions(environs=environs)
