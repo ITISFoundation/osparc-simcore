@@ -17,7 +17,7 @@ from simcore_service_resource_usage_tracker.modules.prometheus import (
 _logger = logging.getLogger(__name__)
 
 
-def _assureDictEntryExists(
+def _assure_dict_entry_exists(
     metric_data, max_values_per_docker_id, image, userid
 ) -> None:
     for metric in metric_data:
@@ -64,7 +64,7 @@ async def _evaluate_service_resource_usage(
         )
 
         if container_cpu_seconds_usage:
-            _assureDictEntryExists(
+            _assure_dict_entry_exists(
                 container_cpu_seconds_usage, max_values_per_docker_id, image, user_id
             )
             metric_data = container_cpu_seconds_usage
@@ -78,7 +78,7 @@ async def _evaluate_service_resource_usage(
                         metric["value"][-1]
                     )
         if container_network_egress:
-            _assureDictEntryExists(
+            _assure_dict_entry_exists(
                 container_network_egress, max_values_per_docker_id, image, user_id
             )
             metric_data = container_network_egress
