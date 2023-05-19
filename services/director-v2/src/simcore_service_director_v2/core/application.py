@@ -24,6 +24,7 @@ from ..modules import (
     director_v0,
     dynamic_services,
     dynamic_sidecar,
+    environments_substitutions,
     node_rights,
     rabbitmq,
     remote_debug,
@@ -38,7 +39,7 @@ from .errors import (
 from .events import on_shutdown, on_startup
 from .settings import AppSettings
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def _set_exception_handlers(app: FastAPI):
@@ -85,8 +86,8 @@ def _set_exception_handlers(app: FastAPI):
     )
 
 
-LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
-NOISY_LOGGERS = (
+_LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
+_NOISY_LOGGERS = (
     "aio_pika",
     "aiormq",
 )
@@ -100,14 +101,14 @@ def create_base_app(settings: AppSettings | None = None) -> FastAPI:
     logging.basicConfig(level=settings.LOG_LEVEL.value)
     logging.root.setLevel(settings.LOG_LEVEL.value)
     config_all_loggers(settings.DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED)
-    logger.debug(settings.json(indent=2))
+    _logger.debug(settings.json(indent=2))
 
     # keep mostly quiet noisy loggers
     quiet_level: int = max(
-        min(logging.root.level + LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING
+        min(logging.root.level + _LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING
     )
 
-    for name in NOISY_LOGGERS:
+    for name in _NOISY_LOGGERS:
         logging.getLogger(name).setLevel(quiet_level)
 
     app = FastAPI(
@@ -130,6 +131,8 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
     if settings is None:
         settings = app.state.settings
     assert settings  # nosec
+
+    environments_substitutions.setup(app)
 
     if settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
         remote_debug.setup(app)

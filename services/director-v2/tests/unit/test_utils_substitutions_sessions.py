@@ -17,12 +17,12 @@ from models_library.utils.specs_substitution import SubstitutionValue
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.faker_compose_specs import generate_fake_docker_compose
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_director_v2.modules.dynamic_sidecar.docker_compose_specs_substitutions import (
+from simcore_service_director_v2.modules.environments_substitutions import (
     substitute_request_environments,
     substitute_session_environments,
     substitute_vendor_environments,
 )
-from simcore_service_director_v2.utils.substitutions_sessions import (
+from simcore_service_director_v2.utils.session_environments import (
     ContextDict,
     SessionEnvironmentsTable,
     factory_context_getter,

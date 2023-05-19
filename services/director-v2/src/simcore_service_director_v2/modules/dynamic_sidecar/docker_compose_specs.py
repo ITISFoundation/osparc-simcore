@@ -26,11 +26,11 @@ from servicelib.json_serialization import json_dumps
 from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 from settings_library.docker_registry import RegistrySettings
 
-from .docker_compose_egress_config import add_egress_configuration
-from .docker_compose_specs_substitutions import (
+from ..environments_substitutions import (
     substitute_session_environments,
     substitute_vendor_environments,
 )
+from .docker_compose_egress_config import add_egress_configuration
 
 EnvKeyEqValueList = list[str]
 EnvVarsMap = dict[str, Optional[str]]

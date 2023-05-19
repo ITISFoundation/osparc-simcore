@@ -10,9 +10,6 @@ from fastapi import FastAPI, Response
 
 from ..core.settings import DynamicServicesSettings
 from ..utils.client_decorators import handle_errors, handle_retry
-from .dynamic_sidecar.docker_compose_specs_substitutions import (
-    setup_session_environments,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -28,8 +25,6 @@ def setup(app: FastAPI, settings: DynamicServicesSettings):
                 timeout=app.state.settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT
             ),
         )
-
-        setup_session_environments(app)
 
     async def on_shutdown() -> None:
         client = ServicesClient.instance(app).client

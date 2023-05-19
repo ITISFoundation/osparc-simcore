@@ -11,13 +11,13 @@ from models_library.users import UserID
 from models_library.utils.specs_substitution import SpecsSubstitutionsResolver
 from pydantic import EmailStr
 
-from ...utils.db import get_repository
-from ...utils.substitutions_sessions import (
+from ..utils.db import get_repository
+from ..utils.session_environments import (
     ContextDict,
     SessionEnvironmentsTable,
     resolve_session_environments,
 )
-from ..db.repositories.services_environments import ServicesEnvironmentsRepository
+from .db.repositories.services_environments import ServicesEnvironmentsRepository
 
 _logger = logging.getLogger(__name__)
 
@@ -99,7 +99,7 @@ async def _request_user_role(app: FastAPI, user_id: UserID):
     return await repo.get_user_role(user_id=user_id)
 
 
-def setup_session_environments(app: FastAPI):
+def _setup_session_environments(app: FastAPI):
     app.state.session_environments_table = table = SessionEnvironmentsTable()
 
     # Registers some session oenvs
@@ -117,3 +117,10 @@ def setup_session_environments(app: FastAPI):
     _logger.debug(
         "Registered session_environments_table=%s", sorted(list(table.name_keys()))
     )
+
+
+def setup(app: FastAPI):
+    def on_startup() -> None:
+        _setup_session_environments(app)
+
+    app.add_event_handler("startup", on_startup)
