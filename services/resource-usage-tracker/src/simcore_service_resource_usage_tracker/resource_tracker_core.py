@@ -48,10 +48,10 @@ async def _evaluate_service_resource_usage(
     time_delta = stop_time - start_time
     minutes = round(time_delta.total_seconds() / 60)
 
-    for currentDatetime in [
+    for current_datetime in [
         stop_time - datetime.timedelta(minutes=i) for i in range(minutes)
     ]:
-        rfc3339_str = currentDatetime.isoformat("T") + "-00:00"
+        rfc3339_str = current_datetime.isoformat("T") + "-00:00"
         # Query CPU seconds
         promql_cpu_query = f"sum without (cpu) (container_cpu_usage_seconds_total{{container_label_user_id='{user_id}',image='{image}',container_label_uuid=~'{uuid}'}})"
         container_cpu_seconds_usage = prometheus_client.custom_query(
