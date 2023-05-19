@@ -22,34 +22,30 @@ class ShareableServicesRepository(BaseRepository):
         async with self.db_engine.begin() as conn:
             stmts = [
                 sa.select(
-                    [
-                        sa.literal(service.key).label("service_key"),
-                        sa.literal(service.version).label("service_version"),
-                    ]
+                    sa.literal(service.key).label("service_key"),
+                    sa.literal(service.version).label("service_version"),
                 )
                 for service in services_to_check
             ]
             services_to_check = sa.union_all(*stmts).cte(name="services_to_check")
 
             users_ids = (
-                sa.select([user_to_groups.c.uid])
+                sa.select(user_to_groups.c.uid)
                 .where(user_to_groups.c.gid == gid)
                 .cte("users_ids")
             )
 
             users_gids = (
-                sa.select([user_to_groups.c.uid, user_to_groups.c.gid])
+                sa.select(user_to_groups.c.uid, user_to_groups.c.gid)
                 .where(user_to_groups.c.uid.in_(users_ids))
                 .cte("users_gids")
             )
 
             users_services = (
                 sa.select(
-                    [
-                        users_gids.c.uid,
-                        services_access_rights.c.key,
-                        services_access_rights.c.version,
-                    ]
+                    users_gids.c.uid,
+                    services_access_rights.c.key,
+                    services_access_rights.c.version,
                 )
                 .join(
                     users_gids,
