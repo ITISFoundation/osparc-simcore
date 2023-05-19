@@ -146,7 +146,7 @@ async def test_shareable_project_handler(
     mock_projects_api_get_project_for_user,
     mock_catalog_get_inaccessible_services_for_gid_in_project,
 ):
-    GID = "5"
+    GID = 5
     PROJECT_UUID = "da5068e0-8a8d-4fb9-9516-56e5ddaef15b"
     PRODUCT_NAME = "osparc"
 

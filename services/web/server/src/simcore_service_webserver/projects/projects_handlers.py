@@ -11,7 +11,7 @@ import logging
 from aiohttp import web
 from models_library.projects_state import ProjectState
 from models_library.services import ServiceKeyVersion, UserWithoutServiceAccess
-from pydantic import BaseModel
+from pydantic import BaseModel, PositiveInt
 from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
@@ -54,7 +54,7 @@ class _OpenProjectQuery(BaseModel):
 
 
 class _ShareableProjectQuery(BaseModel):
-    gid: str
+    gid: PositiveInt
 
 
 @routes.post(f"/{VTAG}/projects/{{project_id}}:open", name="open_project")
