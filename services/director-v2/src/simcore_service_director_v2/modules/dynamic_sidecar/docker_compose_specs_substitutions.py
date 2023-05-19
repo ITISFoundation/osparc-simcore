@@ -8,7 +8,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import ComposeSpecLabelDict
 from models_library.services import ServiceKey
 from models_library.users import UserID
-from models_library.utils.specs_substitution import SpecsEnvironmentsResolver
+from models_library.utils.specs_substitution import SpecsSubstitutionsResolver
 from pydantic import EmailStr
 
 from ...utils.db import get_repository
@@ -40,7 +40,7 @@ async def substitute_vendor_environments(
     assert compose_spec  # nosec
     new_compose_spec: ComposeSpecLabelDict
 
-    resolver = SpecsEnvironmentsResolver(compose_spec, upgrade=False)
+    resolver = SpecsSubstitutionsResolver(compose_spec, upgrade=False)
     repo = get_repository(app, ServicesEnvironmentsRepository)
 
     if any(repo.is_vendor_secret_identifier(idr) for idr in resolver.get_identifiers()):
@@ -67,7 +67,7 @@ async def substitute_session_environments(
     new_compose_spec: ComposeSpecLabelDict
 
     table: SessionEnvironmentsTable = app.state.session_environments_table
-    resolver = SpecsEnvironmentsResolver(compose_spec, upgrade=False)
+    resolver = SpecsSubstitutionsResolver(compose_spec, upgrade=False)
 
     if requested := set(resolver.get_identifiers()):
         available = set(table.name_keys())

@@ -14,9 +14,11 @@ from .string_substitution import SubstitutionsDict, TextTemplate
 SubstitutionValue = bool | int | float | str
 
 
-class SpecsEnvironmentsResolver:
+class SpecsSubstitutionsResolver:
     """
     Resolve specs dict by substituting identifiers
+
+    'specs' is defined here as dict[str, Any] !
     """
 
     def __init__(self, specs: dict[str, Any], upgrade: bool):

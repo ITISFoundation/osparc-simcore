@@ -8,7 +8,7 @@ from typing import Any
 import pytest
 import yaml
 from models_library.utils.specs_substitution import (
-    SpecsEnvironmentsResolver,
+    SpecsSubstitutionsResolver,
     SubstitutionValue,
 )
 from pydantic import parse_obj_as
@@ -99,7 +99,7 @@ def test_substitutions_in_compose_spec(
     service_spec: dict[str, Any],
     expected_service_spec: dict[str, Any],
 ):
-    specs_resolver = SpecsEnvironmentsResolver(service_spec, upgrade=True)
+    specs_resolver = SpecsSubstitutionsResolver(service_spec, upgrade=True)
 
     identifiers_requested = specs_resolver.get_identifiers()
 
@@ -126,7 +126,7 @@ def test_nothing_to_substitute():
 
     original_spec = {"x": 33, "y": {"z": True}}
 
-    specs_resolver = SpecsEnvironmentsResolver(original_spec, upgrade=False)
+    specs_resolver = SpecsSubstitutionsResolver(original_spec, upgrade=False)
 
     # no substitutions
     assert specs_resolver.run() == original_spec
@@ -138,7 +138,7 @@ def test_no_identifier_present(
 
     original_spec = {"x": 33, "y": {"z": True}, "foo": "$UNREGISTERED_ID"}
 
-    specs_resolver = SpecsEnvironmentsResolver(original_spec, upgrade=False)
+    specs_resolver = SpecsSubstitutionsResolver(original_spec, upgrade=False)
 
     assert specs_resolver.get_identifiers() == ["UNREGISTERED_ID"]
     assert specs_resolver.set_substitutions(available_osparc_environments) == {}
