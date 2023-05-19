@@ -3,6 +3,7 @@ import inspect
 from typing import Any, Callable, NamedTuple, TypeAlias
 
 from models_library.utils.specs_substitution import SubstitutionValue
+from pydantic import NonNegativeInt
 
 ContextDict: TypeAlias = dict[str, Any]
 ContextGetter: TypeAlias = Callable[[ContextDict], Any]
@@ -50,16 +51,54 @@ def factory_handler(coro: Callable) -> Callable[[ContextDict], RequestTuple]:
     return _create
 
 
-async def resolve_session_environs(
-    oenvs_table: dict[str, ContextGetter], session_context: ContextDict
-):
+class SessionEnvironmentsTable:
+    def __init__(self):
+        self._oenv_getters: dict[str, ContextGetter] = {}
 
-    # prepares environs from context:
+    def register(self, table: dict[str, Callable]):
+        assert all(
+            name.startswith("OSPARC_ENVIRONMENT_") for name in table.keys()
+        )  # nosec
+        self._oenv_getters.update(table)
+
+    def register_from_context(self, name: str, context_name: str):
+        self.register({name: factory_context_getter(context_name)})
+
+    def register_from_handler(self, name: str):
+        def _decorator(coro: Callable):
+            assert inspect.iscoroutinefunction(coro)
+            # TODO: check coro signature
+            self.register({name: factory_handler(coro)})
+
+        return _decorator
+
+    def name_keys(self):
+        return self._oenv_getters.keys()
+
+    def copy(self, include: set[str] | None = None, exclude: set[str] | None = None):
+        all_ = set(self._oenv_getters.keys())
+        exclude = exclude or set()
+        include = include or all_
+
+        assert exclude.issubset(all_)  # nosec
+        assert include.issubset(all_)  # nosec
+
+        selection = include.difference(exclude)
+        return {k: self._oenv_getters[k] for k in selection}
+
+
+async def resolve_session_environments(
+    oenvs_getters: dict[str, ContextGetter],
+    session_context: ContextDict,
+    *,
+    handlers_timeout: NonNegativeInt = 4
+) -> dict[str, SubstitutionValue]:
+
+    # evaluate getters to get context values
     pre_environs: dict[str, SubstitutionValue | RequestTuple] = {
-        key: fun(session_context) for key, fun in oenvs_table.items()
+        key: fun(session_context) for key, fun in oenvs_getters.items()
     }
 
-    # execute
     environs: dict[str, SubstitutionValue] = {}
 
     coros = {}
@@ -67,14 +106,15 @@ async def resolve_session_environs(
         if isinstance(value, RequestTuple):
             handler, kwargs = value
             coro = handler(**kwargs)
-            # wraps to control timeout
-            coros[key] = asyncio.wait_for(coro, timeout=3)
+            # extra wrap to control timeout
+            coros[key] = asyncio.wait_for(coro, timeout=handlers_timeout)
         else:
             environs[key] = value
 
+    # evaluates handlers
     values = await asyncio.gather(*coros.values())
     for key, value in zip(coros.keys(), values):
         environs[key] = value
 
-    assert set(environs.keys()) == set(oenvs_table.keys())
+    assert set(environs.keys()) == set(oenvs_getters.keys())  # nosec
     return environs
