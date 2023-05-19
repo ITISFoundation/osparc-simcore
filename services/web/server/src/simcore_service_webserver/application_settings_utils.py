@@ -136,9 +136,8 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
         },
         "activity": {
             "enabled": app_settings.WEBSERVER_ACTIVITY is not None,
-            "prometheus_host": getattr(app_settings.WEBSERVER_ACTIVITY, "origin", None),
-            "prometheus_port": getattr(
-                app_settings.WEBSERVER_ACTIVITY, "PROMETHEUS_PORT", None
+            "prometheus_url": getattr(
+                app_settings.WEBSERVER_ACTIVITY, "PROMETHEUS_URL", None
             ),
             "prometheus_api_version": getattr(
                 app_settings.WEBSERVER_ACTIVITY, "PROMETHEUS_VTAG", None
