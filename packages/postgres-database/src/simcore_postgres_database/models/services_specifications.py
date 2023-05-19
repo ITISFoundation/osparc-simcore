@@ -17,10 +17,14 @@ services_specifications = sa.Table(
         "service_key",
         sa.String,
         nullable=False,
-        unique=True,
-        doc="Service Key Identifier (independenty from the version)",
+        doc="Service Key Identifier",
     ),
-    sa.Column("service_version", sa.String, nullable=False, doc="Service version"),
+    sa.Column(
+        "service_version",
+        sa.String,
+        nullable=False,
+        doc="Service version",
+    ),
     sa.Column(
         "gid",
         sa.BigInteger,

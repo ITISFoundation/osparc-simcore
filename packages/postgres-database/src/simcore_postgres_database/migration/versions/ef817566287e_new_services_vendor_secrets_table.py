@@ -36,17 +36,7 @@ def upgrade():
             "service_key", name="services_vendor_secrets_service_key_pk"
         ),
     )
-    op.create_unique_constraint(
-        "services_vendor_secrets_service_key_unique",
-        "services_specifications",
-        ["service_key"],
-    )
 
 
 def downgrade():
-    op.drop_constraint(
-        "services_vendor_secrets_service_key_unique",
-        "services_specifications",
-        type_="unique",
-    )
     op.drop_table("services_vendor_secrets")

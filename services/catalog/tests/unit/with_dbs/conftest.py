@@ -143,7 +143,7 @@ def user_db(postgres_db: sa.engine.Engine, user_id: UserID) -> Iterator[dict]:
             .returning(sa.literal_column("*"))
         )
         # this is needed to get the primary_gid correctly
-        result = con.execute(sa.select([users]).where(users.c.id == user_id))
+        result = con.execute(sa.select(users).where(users.c.id == user_id))
         user = result.first()
         assert user
         yield dict(user)
