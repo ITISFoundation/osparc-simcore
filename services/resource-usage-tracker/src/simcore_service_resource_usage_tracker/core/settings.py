@@ -100,6 +100,5 @@ class ApplicationSettings(MinimalApplicationSettings):
     )
     RESOURCE_USAGE_TRACKER_CONTAINER_LABEL_USER_ID_REGEX: str = Field(
         default=".*",
-        # regex=r"^(([_a-zA-Z0-9:.-]+)/)?(dynamic-sidecar):([_a-zA-Z0-9.-]+)$",
         description="Regex for the prometheus timeseries label `CONTAINER_LABEL_USER_ID`.",
     )
