@@ -17,14 +17,16 @@ from ..core.errors import ConfigurationError
 
 _logger = logging.getLogger(__name__)
 
-
-@retry(
+_PROMETHEUS_INIT_RETRY = dict(
     reraise=True,
     stop=stop_after_delay(120),
     wait=wait_random_exponential(max=30),
     before_sleep=before_sleep_log(_logger, logging.WARNING),
     retry=retry_if_exception_type(ConfigurationError),
 )
+
+
+@retry(**_PROMETHEUS_INIT_RETRY)
 async def _wait_till_prometheus_responsive(client: PrometheusConnect) -> bool:
     try:
         return await asyncio.get_event_loop().run_in_executor(

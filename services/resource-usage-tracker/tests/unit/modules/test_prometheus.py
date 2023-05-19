@@ -2,9 +2,10 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import asgi_lifespan
 import pytest
-from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
+from pytest_mock import MockerFixture
 from requests_mock.mocker import Mocker
 from simcore_service_resource_usage_tracker.core.application import create_app
 from simcore_service_resource_usage_tracker.core.errors import ConfigurationError
@@ -42,10 +43,20 @@ def test_mocked_prometheus_initialize(
     assert get_prometheus_api_client(initialized_app)
 
 
-async def test_prometheus_raises_on_init_if_connection_fails(
+async def test_prometheus_raises_on_init_if_connection_returns_not_ok(
     mocked_prometheus_fail_response: None, app_settings: ApplicationSettings
 ):
     app = create_app(app_settings)
     with pytest.raises(ConfigurationError):
-        async with LifespanManager(app):
+        async with asgi_lifespan.LifespanManager(app):
+            ...
+
+
+async def test_prometheus_raises_on_init_if_no_prometheus_reached(
+    app_settings: ApplicationSettings, mocker: MockerFixture
+):
+    app = create_app(app_settings)
+    with pytest.raises(TimeoutError):
+        # NOTE: this ensures the code for retrying connection to prometheus is hit
+        async with asgi_lifespan.LifespanManager(app, startup_timeout=10):
             ...
