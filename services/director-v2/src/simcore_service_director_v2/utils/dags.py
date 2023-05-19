@@ -1,7 +1,9 @@
+import datetime
 import logging
 from copy import deepcopy
 from typing import Any
 
+import arrow
 import networkx as nx
 from models_library.projects import NodesDict
 from models_library.projects_nodes import NodeID, NodeState
@@ -177,6 +179,56 @@ async def create_minimal_computational_graph_based_on_selection(
                 minimal_nodes_selection.add(f"{node}")
 
     return complete_dag.subgraph(minimal_nodes_selection)
+
+
+def compute_pipeline_started_timestamp(
+    pipeline_dag: nx.DiGraph, comp_tasks: list[CompTaskAtDB]
+) -> datetime.datetime | None:
+    if not pipeline_dag.nodes:
+        return
+    node_id_to_comp_task: dict[NodeIDStr, CompTaskAtDB] = {
+        NodeIDStr(f"{task.node_id}"): task for task in comp_tasks
+    }
+    TOMORROW = arrow.utcnow().shift(days=1).datetime
+    pipeline_started_at = min(
+        node_id_to_comp_task[node_id].start or TOMORROW
+        for node_id in pipeline_dag.nodes
+    )
+    if pipeline_started_at == TOMORROW:
+        pipeline_started_at = None
+    return pipeline_started_at
+
+
+def compute_pipeline_stopped_timestamp(
+    pipeline_dag: nx.DiGraph, comp_tasks: list[CompTaskAtDB]
+) -> datetime.datetime | None:
+    if not pipeline_dag.nodes:
+        return
+    node_id_to_comp_task: dict[NodeIDStr, CompTaskAtDB] = {
+        NodeIDStr(f"{task.node_id}"): task for task in comp_tasks
+    }
+    TOMORROW = arrow.utcnow().shift(days=1).datetime
+    pipeline_stopped_at = max(
+        node_id_to_comp_task[node_id].end or TOMORROW for node_id in pipeline_dag.nodes
+    )
+    if pipeline_stopped_at == TOMORROW:
+        pipeline_stopped_at = None
+    return pipeline_stopped_at
+
+
+def compute_pipeline_submitted_timestamp(
+    pipeline_dag: nx.DiGraph, comp_tasks: list[CompTaskAtDB]
+) -> datetime.datetime | None:
+    if not pipeline_dag.nodes:
+        return
+    node_id_to_comp_task: dict[NodeIDStr, CompTaskAtDB] = {
+        NodeIDStr(f"{task.node_id}"): task for task in comp_tasks
+    }
+    pipeline_submitted_at = max(
+        node_id_to_comp_task[node_id].submit for node_id in pipeline_dag.nodes
+    )
+
+    return pipeline_submitted_at
 
 
 async def compute_pipeline_details(

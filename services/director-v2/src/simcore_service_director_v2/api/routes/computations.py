@@ -67,6 +67,9 @@ from ...utils.computations import (
 )
 from ...utils.dags import (
     compute_pipeline_details,
+    compute_pipeline_started_timestamp,
+    compute_pipeline_stopped_timestamp,
+    compute_pipeline_submitted_timestamp,
     create_complete_dag,
     create_complete_dag_from_tasks,
     create_minimal_computational_graph_based_on_selection,
@@ -245,6 +248,15 @@ async def create_computation(
             iteration=last_run.iteration if last_run else None,
             cluster_id=last_run.cluster_id if last_run else None,
             result=None,
+            started=compute_pipeline_started_timestamp(
+                minimal_computational_dag, inserted_comp_tasks
+            ),
+            stopped=compute_pipeline_stopped_timestamp(
+                minimal_computational_dag, inserted_comp_tasks
+            ),
+            submitted=compute_pipeline_submitted_timestamp(
+                minimal_computational_dag, inserted_comp_tasks
+            ),
         )
 
     except ProjectNotFoundError as e:
@@ -317,6 +329,9 @@ async def get_computation(
         iteration=last_run.iteration if last_run else None,
         cluster_id=last_run.cluster_id if last_run else None,
         result=None,
+        started=compute_pipeline_started_timestamp(pipeline_dag, all_tasks),
+        stopped=compute_pipeline_stopped_timestamp(pipeline_dag, all_tasks),
+        submitted=compute_pipeline_submitted_timestamp(pipeline_dag, all_tasks),
     )
     return task_out
 
@@ -383,6 +398,9 @@ async def stop_computation(
             iteration=last_run.iteration if last_run else None,
             cluster_id=last_run.cluster_id if last_run else None,
             result=None,
+            started=compute_pipeline_started_timestamp(pipeline_dag, tasks),
+            stopped=compute_pipeline_stopped_timestamp(pipeline_dag, tasks),
+            submitted=compute_pipeline_submitted_timestamp(pipeline_dag, tasks),
         )
 
     except ProjectNotFoundError as e:

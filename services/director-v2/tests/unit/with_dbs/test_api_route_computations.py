@@ -446,6 +446,9 @@ async def test_get_computation_from_empty_project(
         result=None,
         iteration=None,
         cluster_id=None,
+        started=None,
+        stopped=None,
+        submitted=None,
     )
     assert returned_computation.dict() == expected_computation.dict()
 
@@ -458,7 +461,6 @@ async def test_get_computation_from_not_started_computation_task(
     project: Callable[..., ProjectAtDB],
     pipeline: Callable[..., CompPipelineAtDB],
     tasks: Callable[..., list[CompTaskAtDB]],
-    faker: Faker,
     async_client: httpx.AsyncClient,
 ):
     user = registered_user()
@@ -510,9 +512,17 @@ async def test_get_computation_from_not_started_computation_task(
         result=None,
         iteration=None,
         cluster_id=None,
+        started=None,
+        stopped=None,
+        submitted=None,
     )
-
-    assert returned_computation.dict() == expected_computation.dict()
+    _CHANGED_FIELDS = {"submitted"}
+    assert returned_computation.dict(
+        exclude=_CHANGED_FIELDS
+    ) == expected_computation.dict(exclude=_CHANGED_FIELDS)
+    assert returned_computation.dict(
+        include=_CHANGED_FIELDS
+    ) != expected_computation.dict(include=_CHANGED_FIELDS)
 
 
 async def test_get_computation_from_published_computation_task(
@@ -574,6 +584,15 @@ async def test_get_computation_from_published_computation_task(
         result=None,
         iteration=1,
         cluster_id=DEFAULT_CLUSTER_ID,
+        started=None,
+        stopped=None,
+        submitted=None,
     )
 
-    assert returned_computation.dict() == expected_computation.dict()
+    _CHANGED_FIELDS = {"submitted"}
+    assert returned_computation.dict(
+        exclude=_CHANGED_FIELDS
+    ) == expected_computation.dict(exclude=_CHANGED_FIELDS)
+    assert returned_computation.dict(
+        include=_CHANGED_FIELDS
+    ) != expected_computation.dict(include=_CHANGED_FIELDS)
