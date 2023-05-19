@@ -23,6 +23,7 @@ class PrometheusSettings(BaseCustomSettings, MixinServiceSettings):
 
     @cached_property
     def api_url(self) -> str:
+        assert self.PROMETHEUS_URL.host  # nosec
         return AnyUrl.build(
             scheme=self.PROMETHEUS_URL.scheme,
             user=self.PROMETHEUS_USERNAME,
