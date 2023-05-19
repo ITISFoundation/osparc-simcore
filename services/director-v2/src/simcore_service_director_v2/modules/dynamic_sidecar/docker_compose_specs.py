@@ -321,18 +321,20 @@ async def assemble_spec(
         replace_service_version=service_version,
     )
 
+    # TODO: define error policy: required vs optional
     compose_spec = await substitute_vendor_environments(
         app,
         compose_spec=yaml.safe_load(stringified_service_spec),
         service_key=service_key,
     )
+
     compose_spec = await substitute_session_environments(
         app,
         compose_spec=compose_spec,
         user_id=user_id,
         product_name=product_name,
-        project_uuid=project_id,
-        node_uuid=node_id,
+        project_id=project_id,
+        node_id=node_id,
     )
 
     stringified_service_spec = yaml.safe_dump(compose_spec)

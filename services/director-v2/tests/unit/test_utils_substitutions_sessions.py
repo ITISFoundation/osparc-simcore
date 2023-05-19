@@ -45,6 +45,7 @@ def session_context(faker: Faker) -> ContextDict:
     )
 
 
+@pytest.mark.acceptance_test
 async def test_resolve_session_environs(faker: Faker, session_context: ContextDict):
     assert substitute_session_environments
     assert substitute_vendor_environments

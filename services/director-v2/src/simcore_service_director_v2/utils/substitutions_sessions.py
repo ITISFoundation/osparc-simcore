@@ -1,9 +1,9 @@
 import asyncio
 import inspect
-from typing import Any, Callable, NamedTuple, TypeAlias
+from typing import Any, Callable, Final, NamedTuple, TypeAlias
 
 from models_library.utils.specs_substitution import SubstitutionValue
-from pydantic import NonNegativeInt
+from pydantic import NonNegativeInt, parse_obj_as
 
 ContextDict: TypeAlias = dict[str, Any]
 ContextGetter: TypeAlias = Callable[[ContextDict], Any]
@@ -75,7 +75,9 @@ class SessionEnvironmentsTable:
     def name_keys(self):
         return self._oenv_getters.keys()
 
-    def copy(self, include: set[str] | None = None, exclude: set[str] | None = None):
+    def copy(
+        self, include: set[str] | None = None, exclude: set[str] | None = None
+    ) -> dict[str, ContextGetter]:
         all_ = set(self._oenv_getters.keys())
         exclude = exclude or set()
         include = include or all_
@@ -87,11 +89,12 @@ class SessionEnvironmentsTable:
         return {k: self._oenv_getters[k] for k in selection}
 
 
+_HANDLERS_TIMEOUT: Final[NonNegativeInt] = parse_obj_as(NonNegativeInt, 4)
+
+
 async def resolve_session_environments(
     oenvs_getters: dict[str, ContextGetter],
     session_context: ContextDict,
-    *,
-    handlers_timeout: NonNegativeInt = 4
 ) -> dict[str, SubstitutionValue]:
 
     # evaluate getters to get context values
@@ -107,7 +110,7 @@ async def resolve_session_environments(
             handler, kwargs = value
             coro = handler(**kwargs)
             # extra wrap to control timeout
-            coros[key] = asyncio.wait_for(coro, timeout=handlers_timeout)
+            coros[key] = asyncio.wait_for(coro, timeout=_HANDLERS_TIMEOUT)
         else:
             environs[key] = value
 
