@@ -6,17 +6,19 @@
 from pathlib import Path
 from random import choice
 from typing import AsyncIterator, Iterator
+from unittest import mock
 
 import httpx
 import pytest
+import requests_mock
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pytest import MonkeyPatch
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from requests_mock import Mocker
 from simcore_service_resource_usage_tracker.core.application import create_app
 from simcore_service_resource_usage_tracker.core.settings import ApplicationSettings
 
@@ -94,6 +96,23 @@ async def async_client(initialized_app: FastAPI) -> AsyncIterator[httpx.AsyncCli
 
 
 @pytest.fixture
-def mocked_prometheus(requests_mock: Mocker, app_settings: ApplicationSettings) -> None:
+def mocked_prometheus(
+    requests_mock: requests_mock.Mocker, app_settings: ApplicationSettings
+) -> requests_mock.Mocker:
     assert app_settings.RESOURCE_USAGE_TRACKER_PROMETHEUS
     requests_mock.get(f"{app_settings.RESOURCE_USAGE_TRACKER_PROMETHEUS.api_url}/")
+    return requests_mock
+
+
+@pytest.fixture
+def disabled_tracker_background_task(mocker: MockerFixture) -> dict[str, mock.Mock]:
+    mocked_start = mocker.patch(
+        "simcore_service_resource_usage_tracker.resource_tracker.start_periodic_task",
+        autospec=True,
+    )
+
+    mocked_stop = mocker.patch(
+        "simcore_service_resource_usage_tracker.resource_tracker.stop_periodic_task",
+        autospec=True,
+    )
+    return {"start_task": mocked_start, "stop_task": mocked_stop}

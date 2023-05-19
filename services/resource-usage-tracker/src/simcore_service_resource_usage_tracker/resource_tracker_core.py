@@ -17,7 +17,9 @@ from simcore_service_resource_usage_tracker.modules.prometheus import (
 _logger = logging.getLogger(__name__)
 
 
-def _assureDictEntryExists(metric_data, max_values_per_docker_id, image, userid):
+def _assureDictEntryExists(
+    metric_data, max_values_per_docker_id, image, userid
+) -> None:
     for metric in metric_data:
         current_id = metric["metric"]["id"]
         if current_id not in max_values_per_docker_id.keys():
@@ -41,6 +43,7 @@ async def _evaluate_service_resource_usage(
     image: str = "registry.osparc.io/simcore/services/dynamic/jupyter-smash:3.0.9",
 ) -> dict[str, Any]:
     prometheus_client = get_prometheus_api_client(app)
+
     max_values_per_docker_id: dict[str, Any] = {}
     time_delta = stop_time - start_time
     minutes = round(time_delta.total_seconds() / 60)
