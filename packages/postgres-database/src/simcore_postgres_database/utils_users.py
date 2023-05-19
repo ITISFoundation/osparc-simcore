@@ -4,7 +4,6 @@
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
-from models_library.users import UserID
 
 from .models.users import UserRole, users
 
@@ -19,7 +18,7 @@ class UserNotFoundInRepoError(BaseUserRepoError):
 
 class UsersRepo:
     @staticmethod
-    async def get_role(conn: SAConnection, user_id: UserID) -> UserRole:
+    async def get_role(conn: SAConnection, user_id: int) -> UserRole:
         if value := await conn.scalar(
             sa.select(users.c.role).where(users.c.id == user_id)
         ):
@@ -27,9 +26,9 @@ class UsersRepo:
         raise UserNotFoundInRepoError()
 
     @staticmethod
-    async def get_email(conn: SAConnection, user_id: UserID) -> str:
+    async def get_email(conn: SAConnection, user_id: int) -> str:
         if value := await conn.scalar(
             sa.select(users.c.email).where(users.c.id == user_id)
         ):
-            return str(value)
+            return f"{value}"
         raise UserNotFoundInRepoError()
