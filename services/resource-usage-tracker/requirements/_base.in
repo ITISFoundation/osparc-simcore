@@ -13,8 +13,8 @@
 --requirement ../../../packages/service-library/requirements/_fastapi.in
 
 
-prometheus_api_client
 fastapi
 packaging
+prometheus_api_client
 typer[all]
 uvicorn[standard]
