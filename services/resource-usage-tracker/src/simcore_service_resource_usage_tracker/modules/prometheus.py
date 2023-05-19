@@ -1,9 +1,9 @@
 import logging
 from typing import cast
 
+import requests
 from fastapi import FastAPI
 from prometheus_api_client import PrometheusConnect
-from requests import ConnectionError
 from servicelib.logging_utils import log_context
 from settings_library.prometheus import PrometheusSettings
 from tenacity import retry
@@ -30,7 +30,7 @@ async def _wait_till_prometheus_responsive(client: PrometheusConnect) -> bool:
     try:
         connected: bool = client.check_prometheus_connection()
         return connected
-    except ConnectionError as exc:
+    except requests.ConnectionError as exc:
         raise ConfigurationError(
             msg="Prometheus API client could not be reached. TIP: check configuration"
         ) from exc
