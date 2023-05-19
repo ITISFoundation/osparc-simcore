@@ -12,6 +12,10 @@ from ._base import BaseRepository
 
 
 class ServicesEnvironmentsRepository(BaseRepository):
+    """
+    Access to Vendor settings for a service
+    """
+
     async def get_vendor_secrets(
         self, service_key: ServiceKey
     ) -> dict[str, VendorSecret]:
@@ -28,7 +32,8 @@ class ServicesEnvironmentsRepository(BaseRepository):
 
             return vendor_secrets
 
-    def is_vendor_secret_identifier(self, identifier: str) -> bool:
+    @classmethod
+    def is_vendor_secret_identifier(cls, identifier: str) -> bool:
         return identifier.startswith(VENDOR_SECRET_PREFIX)
 
     async def get_user_role(self, user_id: UserID):
