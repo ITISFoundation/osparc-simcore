@@ -10,7 +10,7 @@ from unittest import mock
 import pytest
 from fastapi import FastAPI
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.utils_envs import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_resource_usage_tracker.core.settings import ApplicationSettings
 
 _FAST_POLL_INTERVAL = 1
@@ -22,13 +22,10 @@ def app_environment(
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
     # fast interval
-    monkeypatch.setenv(
-        "RESOURCE_USAGE_TRACKER_EVALUATION_INTERVAL_SEC", f"{_FAST_POLL_INTERVAL}"
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {"RESOURCE_USAGE_TRACKER_EVALUATION_INTERVAL_SEC": f"{_FAST_POLL_INTERVAL}"},
     )
-    app_environment[
-        "RESOURCE_USAGE_TRACKER_EVALUATION_INTERVAL_SEC"
-    ] = f"{_FAST_POLL_INTERVAL}"
-    return app_environment
 
 
 @pytest.fixture
