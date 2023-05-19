@@ -4,7 +4,6 @@
 # pylint: disable=unused-variable
 
 from datetime import datetime, timedelta
-from typing import Optional
 
 import pytest
 import sqlalchemy as sa
@@ -78,7 +77,7 @@ async def test_trial_accounts(pg_engine: Engine):
 
         # creates trial user
         client_now = datetime.utcnow()
-        user_id: Optional[int] = await conn.scalar(
+        user_id: int | None = await conn.scalar(
             users.insert()
             .values(
                 **random_user(
@@ -97,7 +96,7 @@ async def test_trial_accounts(pg_engine: Engine):
                 users.c.id == user_id
             )
         )
-        row: Optional[RowProxy] = await result.first()
+        row: RowProxy | None = await result.first()
         assert row
         assert row.created_at - client_now < timedelta(
             minutes=1
