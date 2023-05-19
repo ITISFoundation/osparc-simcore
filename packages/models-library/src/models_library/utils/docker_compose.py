@@ -1,5 +1,4 @@
 import yaml
-from models_library.utils.string_substitution import SubstitutionsDict, TextTemplate
 
 from .string_substitution import SubstitutionsDict, TextTemplate
 
