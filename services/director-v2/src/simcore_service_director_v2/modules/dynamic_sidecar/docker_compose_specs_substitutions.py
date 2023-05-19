@@ -22,16 +22,6 @@ from ..db.repositories.services_environments import ServicesEnvironmentsReposito
 _logger = logging.getLogger(__name__)
 
 
-async def _request_user_email(app: FastAPI, user_id: UserID) -> EmailStr:
-    repo = get_repository(app, ServicesEnvironmentsRepository)
-    return await repo.get_user_email(user_id=user_id)
-
-
-async def _request_user_role(app: FastAPI, user_id: UserID):
-    repo = get_repository(app, ServicesEnvironmentsRepository)
-    return await repo.get_user_role(user_id=user_id)
-
-
 async def substitute_vendor_environments(
     app: FastAPI,
     compose_spec: ComposeSpecLabelDict,
@@ -99,6 +89,16 @@ async def substitute_request_environments(
     raise NotImplementedError()
 
 
+async def _request_user_email(app: FastAPI, user_id: UserID) -> EmailStr:
+    repo = get_repository(app, ServicesEnvironmentsRepository)
+    return await repo.get_user_email(user_id=user_id)
+
+
+async def _request_user_role(app: FastAPI, user_id: UserID):
+    repo = get_repository(app, ServicesEnvironmentsRepository)
+    return await repo.get_user_role(user_id=user_id)
+
+
 def setup_session_environments(app: FastAPI):
     app.state.session_environments_table = table = SessionEnvironmentsTable()
 
@@ -114,4 +114,6 @@ def setup_session_environments(app: FastAPI):
     table.register_from_handler("OSPARC_ENVIRONMENT_USER_EMAIL")(_request_user_email)
     table.register_from_handler("OSPARC_ENVIRONMENT_USER_ROLE")(_request_user_role)
 
-    _logger.debug("Registered %s", sorted(list(table.name_keys())))
+    _logger.debug(
+        "Registered session_environments_table=%s", sorted(list(table.name_keys()))
+    )

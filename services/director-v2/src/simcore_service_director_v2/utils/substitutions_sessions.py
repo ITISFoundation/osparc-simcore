@@ -56,7 +56,7 @@ class SessionEnvironmentsTable:
         self._oenv_getters: dict[str, ContextGetter] = {}
 
     def register(self, table: dict[str, Callable]):
-        assert all(
+        assert all(  # nosec
             name.startswith("OSPARC_ENVIRONMENT_") for name in table.keys()
         )  # nosec
         self._oenv_getters.update(table)
@@ -66,7 +66,7 @@ class SessionEnvironmentsTable:
 
     def register_from_handler(self, name: str):
         def _decorator(coro: Callable):
-            assert inspect.iscoroutinefunction(coro)
+            assert inspect.iscoroutinefunction(coro)  # nosec
             # TODO: check coro signature
             self.register({name: factory_handler(coro)})
 
@@ -97,7 +97,7 @@ async def resolve_session_environments(
     session_context: ContextDict,
 ) -> dict[str, SubstitutionValue]:
 
-    # evaluate getters to get context values
+    # evaluate getters from context values
     pre_environs: dict[str, SubstitutionValue | RequestTuple] = {
         key: fun(session_context) for key, fun in oenvs_getters.items()
     }
