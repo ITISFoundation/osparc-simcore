@@ -1,3 +1,4 @@
+import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, Field, PositiveInt
@@ -40,6 +41,18 @@ class ComputationTask(BaseModel):
     cluster_id: ClusterID | None = Field(
         ...,
         description="the cluster on which the computaional task runs/ran (none if no task ran yet)",
+    )
+    started: datetime.datetime | None = Field(
+        ...,
+        description="the timestamp when the computation was started or None if not started yet",
+    )
+    stopped: datetime.datetime | None = Field(
+        ...,
+        description="the timestamp when the computation was stopped or None if not started nor stopped yet",
+    )
+    submitted: datetime.datetime | None = Field(
+        ...,
+        description="task last modification timestamp or None if the there is no task",
     )
 
     class Config:
