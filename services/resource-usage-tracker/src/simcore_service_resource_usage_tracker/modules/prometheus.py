@@ -27,15 +27,23 @@ _PROMETHEUS_INIT_RETRY = dict(
 
 
 @retry(**_PROMETHEUS_INIT_RETRY)
-async def _wait_till_prometheus_responsive(client: PrometheusConnect) -> bool:
+def _wait_till_prometheus_responsive(client: PrometheusConnect) -> bool:
     try:
-        return await asyncio.get_event_loop().run_in_executor(
-            None, client.check_prometheus_connection
-        )
+        return client.check_prometheus_connection()
     except requests.exceptions.ConnectionError as exc:
         raise ConfigurationError(
             msg="Prometheus API client could not be reached. TIP: check configuration"
         ) from exc
+
+
+def create_client(settings: PrometheusSettings) -> PrometheusConnect:
+    with log_context(_logger, logging.INFO, msg="connect with prometheus"):
+        client = PrometheusConnect(f"{settings.api_url}")
+        if _wait_till_prometheus_responsive(client) is False:
+            raise ConfigurationError(
+                msg="Prometheus API client could be reached but returned value is not expected. TIP: check configuration"
+            )
+    return client
 
 
 def setup(app: FastAPI) -> None:
@@ -47,13 +55,10 @@ def setup(app: FastAPI) -> None:
         if not settings:
             _logger.warning("Prometheus API client is de-activated in the settings")
             return
-        with log_context(_logger, logging.INFO, msg="connect with prometheus"):
-            client = PrometheusConnect(f"{settings.api_url}")
-            if await _wait_till_prometheus_responsive(client) is False:
-                raise ConfigurationError(
-                    msg="Prometheus API client could be reached but returned value is not expected. TIP: check configuration"
-                )
-            app.state.prometheus_api_client = client
+
+        app.state.prometheus_api_client = asyncio.get_event_loop().run_in_executor(
+            None, create_client, settings
+        )
 
     async def on_shutdown() -> None:
         if app.state.prometheus_api_client:
