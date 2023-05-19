@@ -27,7 +27,7 @@ class ShareableServicesRepository(BaseRepository):
                 )
                 for service in services_to_check
             ]
-            services_to_check = sa.union_all(*stmts).cte(name="services_to_check")
+            services_to_check = sa.union_all(*stmts).cte(name="services_to_check")  # type: ignore[assignment]
 
             users_ids = (
                 sa.select(user_to_groups.c.uid)
@@ -61,8 +61,8 @@ class ShareableServicesRepository(BaseRepository):
             # Cross join (cartesian product) between services_to_check and users_services
             services_to_check_modified = sa.select(
                 users_ids.c.uid,
-                services_to_check.c.service_key,
-                services_to_check.c.service_version,
+                services_to_check.c.service_key,  # type: ignore[attr-defined]
+                services_to_check.c.service_version,  # type: ignore[attr-defined]
             ).cte("services_to_check_modified")
 
             final_statement = (
