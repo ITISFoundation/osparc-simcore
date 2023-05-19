@@ -6,6 +6,7 @@ from typing import Any
 import arrow
 from fastapi import FastAPI
 from models_library.users import UserID
+from prometheus_api_client import PrometheusConnect
 from simcore_service_resource_usage_tracker.modules.prometheus import (
     get_prometheus_api_client,
 )
@@ -35,15 +36,13 @@ def _assure_dict_entry_exists(
 
 
 async def _evaluate_service_resource_usage(
-    app: FastAPI,
+    prometheus_client: PrometheusConnect,
     start_time: datetime.datetime,
     stop_time: datetime.datetime,
     user_id: UserID,
     uuid: str = ".*",
     image: str = "registry.osparc.io/simcore/services/dynamic/jupyter-smash:3.0.9",
 ) -> dict[str, Any]:
-    prometheus_client = get_prometheus_api_client(app)
-
     max_values_per_docker_id: dict[str, Any] = {}
     time_delta = stop_time - start_time
     minutes = round(time_delta.total_seconds() / 60)
@@ -51,7 +50,7 @@ async def _evaluate_service_resource_usage(
     for current_datetime in [
         stop_time - datetime.timedelta(minutes=i) for i in range(minutes)
     ]:
-        rfc3339_str = current_datetime.isoformat("T") + "-00:00"
+        rfc3339_str = current_datetime.isoformat("T")
         # Query CPU seconds
         promql_cpu_query = f"sum without (cpu) (container_cpu_usage_seconds_total{{container_label_user_id='{user_id}',image='{image}',container_label_uuid=~'{uuid}'}})"
         container_cpu_seconds_usage = prometheus_client.custom_query(
@@ -119,9 +118,18 @@ async def _evaluate_service_resource_usage(
     return max_values_per_docker_id
 
 
-async def collect_service_resource_usage(app: FastAPI) -> None:
+async def collect_and_return_service_resource_usage(
+    prometheus_client: PrometheusConnect, user_id: UserID
+) -> dict[str, Any]:
     now = arrow.utcnow().datetime
     data = await _evaluate_service_resource_usage(
-        app, now - datetime.timedelta(hours=1), now, user_id=43817
+        prometheus_client, now - datetime.timedelta(hours=1), now, user_id=user_id
     )
     _logger.info(json.dumps(data, indent=2, sort_keys=True))
+    return data
+
+
+async def collect_service_resource_usage_task(app: FastAPI) -> None:
+    await collect_and_return_service_resource_usage(
+        get_prometheus_api_client(app), 43817
+    )

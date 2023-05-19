@@ -3,9 +3,11 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+import json
+import re
 from pathlib import Path
 from random import choice
-from typing import AsyncIterator, Iterator
+from typing import Any, AsyncIterator, Callable, Iterator
 from unittest import mock
 
 import httpx
@@ -102,6 +104,56 @@ def mocked_prometheus(
     assert app_settings.RESOURCE_USAGE_TRACKER_PROMETHEUS
     requests_mock.get(f"{app_settings.RESOURCE_USAGE_TRACKER_PROMETHEUS.api_url}/")
     return requests_mock
+
+
+@pytest.fixture
+def get_metric_response(faker: Faker) -> Callable[..., dict[str, Any]]:
+    def _get_metric(request, context) -> dict[str, Any]:
+        return {
+            "data": {
+                "result": [
+                    {
+                        "metric": {
+                            "id": "cpu",
+                            "container_label_uuid": faker.uuid4(),
+                            "container_label_simcore_service_settings": json.dumps(
+                                [
+                                    {
+                                        "name": "Resources",
+                                        "type": "Resources",
+                                        "resources": faker.pystr(),
+                                        "value": {
+                                            "Limits": {
+                                                "NanoCPUs": faker.pyint(min_value=1000)
+                                            }
+                                        },
+                                    }
+                                ]
+                            ),
+                        },
+                        "value": faker.pylist(allowed_types=(int,)),
+                    }
+                ]
+            }
+        }
+
+    return _get_metric
+
+
+@pytest.fixture
+def mocked_prometheus_with_query(
+    mocked_prometheus: requests_mock.Mocker,
+    app_settings: ApplicationSettings,
+    faker: Faker,
+    get_metric_response,
+) -> requests_mock.Mocker:
+    """overrides with needed calls here"""
+    assert app_settings.RESOURCE_USAGE_TRACKER_PROMETHEUS
+    pattern = re.compile(
+        rf"^{re.escape(app_settings.RESOURCE_USAGE_TRACKER_PROMETHEUS.api_url)}/api/v1/query\?.*$"
+    )
+    mocked_prometheus.get(pattern, json=get_metric_response)
+    return mocked_prometheus
 
 
 @pytest.fixture
