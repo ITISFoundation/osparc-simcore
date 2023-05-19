@@ -151,7 +151,6 @@ async def get_inaccessible_services_for_gid_in_project(
     product_name: str,
     project_services: list[ServiceKeyVersion],
 ) -> list[UserWithoutServiceAccess]:
-    session: ClientSession = get_client_session(app)
     settings: CatalogSettings = get_plugin_settings(app)
 
     url = (URL(settings.api_base_url) / "services" / "inaccessible").with_query(
