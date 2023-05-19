@@ -64,6 +64,7 @@ async def _get_resources(
 
 @app.command()
 def evaluate(ctx: typer.Context, user_id: int) -> None:
+    """Evaluates resources and does blahblahb TBD @mrnicegyu11"""
     assert ctx  # nosec
     settings = MinimalApplicationSettings.create_from_envs()
     err_console.print(
