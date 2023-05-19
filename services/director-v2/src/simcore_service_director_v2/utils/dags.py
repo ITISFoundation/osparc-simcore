@@ -185,7 +185,7 @@ def compute_pipeline_started_timestamp(
     pipeline_dag: nx.DiGraph, comp_tasks: list[CompTaskAtDB]
 ) -> datetime.datetime | None:
     if not pipeline_dag.nodes:
-        return
+        return None
     node_id_to_comp_task: dict[NodeIDStr, CompTaskAtDB] = {
         NodeIDStr(f"{task.node_id}"): task for task in comp_tasks
     }
@@ -203,7 +203,7 @@ def compute_pipeline_stopped_timestamp(
     pipeline_dag: nx.DiGraph, comp_tasks: list[CompTaskAtDB]
 ) -> datetime.datetime | None:
     if not pipeline_dag.nodes:
-        return
+        return None
     node_id_to_comp_task: dict[NodeIDStr, CompTaskAtDB] = {
         NodeIDStr(f"{task.node_id}"): task for task in comp_tasks
     }
@@ -220,7 +220,7 @@ def compute_pipeline_submitted_timestamp(
     pipeline_dag: nx.DiGraph, comp_tasks: list[CompTaskAtDB]
 ) -> datetime.datetime | None:
     if not pipeline_dag.nodes:
-        return
+        return None
     node_id_to_comp_task: dict[NodeIDStr, CompTaskAtDB] = {
         NodeIDStr(f"{task.node_id}"): task for task in comp_tasks
     }
