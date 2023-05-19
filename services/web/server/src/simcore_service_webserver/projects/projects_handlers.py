@@ -54,7 +54,7 @@ class _OpenProjectQuery(BaseModel):
 
 
 class _ShareableProjectQuery(BaseModel):
-    gid: str | None = None
+    gid: str
 
 
 @routes.post(f"/{VTAG}/projects/{{project_id}}:open", name="open_project")
