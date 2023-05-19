@@ -6,17 +6,15 @@
 import json
 from copy import deepcopy
 from pprint import pformat
-from typing import Any, NamedTuple, Optional, Union, get_args, get_origin
+from typing import Any, NamedTuple
 
 import pytest
-from models_library.basic_types import PortInt
 from models_library.service_settings_labels import (
     DEFAULT_DNS_SERVER_ADDRESS,
     DEFAULT_DNS_SERVER_PORT,
     DNSResolver,
     DynamicSidecarServiceLabels,
     NATRule,
-    OEnvSubstitutionStr,
     PathMappingsLabel,
     SimcoreServiceLabels,
     SimcoreServiceSettingLabelEntry,
@@ -25,7 +23,7 @@ from models_library.service_settings_labels import (
 )
 from models_library.services_resources import DEFAULT_SINGLE_SERVICE_NAME
 from models_library.utils.string_substitution import TextTemplate
-from pydantic import BaseModel, Json, ValidationError, parse_obj_as
+from pydantic import BaseModel, ValidationError
 
 
 class _Parametrization(NamedTuple):
@@ -526,70 +524,10 @@ def service_labels() -> dict[str, str]:
     }
 
 
-class Leaf(NamedTuple):
-    parent: Any
-    field: str
-    value: Any
-
-
-def iter_leafs(parent: BaseModel):
-    for field in parent.__fields__.values():
-        value = getattr(parent, field.name)
-        if isinstance(value, BaseModel):
-            yield from iter_leafs(value)
-
-        elif isinstance(value, dict):
-            for item_key, item_valye in value.items():
-                yield value, item_key, item_valye
-
-        else:
-            yield parent, field.name, value
-
-
-@pytest.mark.testit
-def test_it():
-    obj = {"x": [1, 2, 3], "y": 1}
-    parsed = parse_obj_as(Json, json.dumps(obj))
-
-    assert parsed == obj
-
-    obj = {"x": [1, 2, 3], "y": "$VALUE1"}
-    parsed = parse_obj_as(Json, json.dumps(obj))
-    assert parsed == obj
-
-    obj = ["1", 2, 3]
-    parsed = parse_obj_as(list[int], obj)
-    assert parsed == [1, 2, 3]
-
-    def get_flat_args(tp):
-        args = get_args(tp)
-
-        if args:
-            flat_args = []
-            for a in args:
-                if get_origin(a) is not None:
-                    flat_a = get_flat_args(a)
-                    flat_args.extend(flat_a)
-                else:
-                    flat_args.append(a)
-            return tuple(flat_args)
-        return args
-
-    assert get_flat_args(Optional[list[Union[int, float]]]) == (
-        int,
-        float,
-        None.__class__,
-    )
-
-    assert get_flat_args(list[Union[int, float]]) == (int, float)
-    assert get_flat_args(Union[str, OEnvSubstitutionStr]) == (str, OEnvSubstitutionStr)
-    assert get_flat_args(
-        list[Union[_PortRange, PortInt, OEnvSubstitutionStr, list[int]]]
-    ) == (_PortRange, PortInt, OEnvSubstitutionStr, int)
-
-
-def test_it3(vendor_environments: dict[str, Any], service_labels: dict[str, str]):
-    # can load OSPARC_ENVIRONMENT_ identifiers
+def test_can_parse_labels_with_osparc_identifiers(
+    vendor_environments: dict[str, Any], service_labels: dict[str, str]
+):
+    # can load OSPARC_ENVIRONMENT_ identifiers!!
     service_meta = SimcoreServiceLabels.parse_obj(service_labels)
 
     assert service_meta.containers_allowed_outgoing_permit_list["s4l-core"][
@@ -607,10 +545,9 @@ def test_it3(vendor_environments: dict[str, Any], service_labels: dict[str, str]
     assert "$" not in service_meta_str
 
 
-def test_it2(vendor_environments: dict[str, Any], service_labels: dict[str, str]):
-    # in db
-
-    # submitted w/ service in labels
+def test_resolving_some_service_labels_at_load_time(
+    vendor_environments: dict[str, Any], service_labels: dict[str, str]
+):
 
     print(json.dumps(service_labels, indent=1))
 

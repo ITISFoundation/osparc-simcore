@@ -4,7 +4,8 @@ from simcore_postgres_database.models.services_environments import VENDOR_SECRET
 
 
 def test_vendor_secret_names_are_osparc_environments():
-    # NOTE that this test
+    # NOTE that this is tested here because the constants are defined in
+    # packages simcore_postgres_database and models_library which are indenpendent
     assert VENDOR_SECRET_PREFIX.endswith("_")
 
-    parse_obj_as(OEnvSubstitutionStr, VENDOR_SECRET_PREFIX + "fake_secret")
+    parse_obj_as(OEnvSubstitutionStr, f"${VENDOR_SECRET_PREFIX}FAKE_SECRET")
