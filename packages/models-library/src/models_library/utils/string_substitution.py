@@ -7,7 +7,7 @@ from collections import UserDict
 from string import Template
 from typing import Any
 
-OSPARC_IDENTIFIER_PREFIX = "OSPARC_ENVIRONMENT"
+OSPARC_IDENTIFIER_PREFIX = "OSPARC_ENVIRONMENT_"
 
 
 def upgrade_identifier(identifier: str) -> str:
@@ -18,7 +18,8 @@ def upgrade_identifier(identifier: str) -> str:
     identifier = re.sub(r"[.-]", "_", identifier)
     identifier = identifier.upper()
     if not identifier.startswith(OSPARC_IDENTIFIER_PREFIX):
-        identifier = f"{OSPARC_IDENTIFIER_PREFIX}_{identifier}"
+        assert OSPARC_IDENTIFIER_PREFIX.endswith("_")  # nosec
+        identifier = OSPARC_IDENTIFIER_PREFIX + identifier
     return identifier
 
 

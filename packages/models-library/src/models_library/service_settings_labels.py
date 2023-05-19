@@ -24,6 +24,7 @@ from pydantic import (
 from .basic_types import PortInt
 from .generics import ListModel
 from .services_resources import DEFAULT_SINGLE_SERVICE_NAME
+from .utils.string_substitution import OSPARC_IDENTIFIER_PREFIX
 
 # Cloudflare DNS server address
 DEFAULT_DNS_SERVER_ADDRESS: Final[str] = "1.1.1.1"  # NOSONAR
@@ -32,7 +33,7 @@ DEFAULT_DNS_SERVER_PORT: Final[PortInt] = parse_obj_as(PortInt, 53)
 
 # NOTE: To allow parametrized value, set the type to Union[..., OEnvSubstitutionStr]
 class OEnvSubstitutionStr(ConstrainedStr):
-    regex = re.compile(r"^\$OSPARC_ENVIRONMENT_\w+$")
+    regex = re.compile(rf"^\${OSPARC_IDENTIFIER_PREFIX}\w+$")
 
 
 class _BaseConfig:
