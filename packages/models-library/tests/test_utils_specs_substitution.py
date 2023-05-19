@@ -30,15 +30,15 @@ def available_osparc_environments(
     service_version: str,
 ) -> dict[str, SubstitutionValue]:
     osparc_vendor_environments = {
-        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_SERVER_HOST": "product_a-server",
-        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_SERVER_PRIMARY_PORT": 1,
-        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_SERVER_SECONDARY_PORT": 2,
-        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_DNS_RESOLVER_IP": "1.1.1.1",
-        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_DNS_RESOLVER_PORT": "21",
-        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_FILE": "license.txt",
-        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_FILE_PRODUCT1": "license-p1.txt",
-        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_FILE_PRODUCT2": "license-p2.txt",
-        "OSPARC_ENVIRONMENT_VENDOR_LIST": "[1, 2, 3]",
+        "OSPARC_VENDOR_SECRET_LICENSE_SERVER_HOST": "product_a-server",
+        "OSPARC_VENDOR_SECRET_LICENSE_SERVER_PRIMARY_PORT": 1,
+        "OSPARC_VENDOR_SECRET_LICENSE_SERVER_SECONDARY_PORT": 2,
+        "OSPARC_VENDOR_SECRET_LICENSE_DNS_RESOLVER_IP": "1.1.1.1",
+        "OSPARC_VENDOR_SECRET_LICENSE_DNS_RESOLVER_PORT": "21",
+        "OSPARC_VENDOR_SECRET_LICENSE_FILE": "license.txt",
+        "OSPARC_VENDOR_SECRET_LICENSE_FILE_PRODUCT1": "license-p1.txt",
+        "OSPARC_VENDOR_SECRET_LICENSE_FILE_PRODUCT2": "license-p2.txt",
+        "OSPARC_VENDOR_SECRET_LIST": "[1, 2, 3]",
     }
 
     environs = {
@@ -74,8 +74,8 @@ def available_osparc_environments(
                 "init": True,
                 "environment": [
                     "DISPLAY=${DISPLAY}",
-                    "SOME_LIST=$OSPARC_ENVIRONMENT_VENDOR_LIST",
-                    "MY_LICENSE=$OSPARC_ENVIRONMENT_VENDOR_LICENSE_FILE",
+                    "SOME_LIST=$OSPARC_VENDOR_SECRET_LIST",
+                    "MY_LICENSE=$OSPARC_VENDOR_SECRET_LICENSE_FILE",
                 ],
                 "volumes": ["/tmp/.X11-unix:/tmp/.X11-unix"],
             },

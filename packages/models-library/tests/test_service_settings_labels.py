@@ -396,10 +396,10 @@ def test_not_allowed_in_both_permit_list_and_outgoing_internet():
 def vendor_environments() -> dict[str, Any]:
     return {
         # NO list or dict!
-        "OSPARC_ENVIRONMENT_VENDOR_DNS_RESOLVER_ADDRESS": "172.0.0.1",
-        "OSPARC_ENVIRONMENT_VENDOR_DNS_RESOLVER_PORT": 1234,
-        "OSPARC_ENVIRONMENT_VENDOR_LICENCE_HOSTNAME": "hostname",
-        "OSPARC_ENVIRONMENT_VENDOR_TCP_PORTS": [
+        "OSPARC_VENDOR_SECRET_DNS_RESOLVER_ADDRESS": "172.0.0.1",
+        "OSPARC_VENDOR_SECRET_DNS_RESOLVER_PORT": 1234,
+        "OSPARC_VENDOR_SECRET_LICENCE_HOSTNAME": "hostname",
+        "OSPARC_VENDOR_SECRET_TCP_PORTS": [
             1,
             2,
             3,
@@ -410,9 +410,9 @@ def vendor_environments() -> dict[str, Any]:
         # can only cast primitive types upon parse
         # Using Json[T] would be an alternative but there are some edge cases
         #
-        "OSPARC_ENVIRONMENT_VENDOR_TCP_PORTS_1": 1,
-        "OSPARC_ENVIRONMENT_VENDOR_TCP_PORTS_2": 2,
-        "OSPARC_ENVIRONMENT_VENDOR_TCP_PORTS_3": 3,
+        "OSPARC_VENDOR_SECRET_TCP_PORTS_1": 1,
+        "OSPARC_VENDOR_SECRET_TCP_PORTS_2": 2,
+        "OSPARC_VENDOR_SECRET_TCP_PORTS_3": 3,
     }
 
 
@@ -454,13 +454,13 @@ def service_labels() -> dict[str, str]:
                     {
                         "hostname": "license.com",
                         "tcp_ports": [
-                            "$OSPARC_ENVIRONMENT_VENDOR_TCP_PORTS_1",
-                            "$OSPARC_ENVIRONMENT_VENDOR_TCP_PORTS_2",
+                            "$OSPARC_VENDOR_SECRET_TCP_PORTS_1",
+                            "$OSPARC_VENDOR_SECRET_TCP_PORTS_2",
                             3,
                         ],
                         "dns_resolver": {
-                            "address": "$OSPARC_ENVIRONMENT_VENDOR_DNS_RESOLVER_ADDRESS",
-                            "port": "$OSPARC_ENVIRONMENT_VENDOR_DNS_RESOLVER_PORT",
+                            "address": "$OSPARC_VENDOR_SECRET_DNS_RESOLVER_ADDRESS",
+                            "port": "$OSPARC_VENDOR_SECRET_DNS_RESOLVER_PORT",
                         },
                     }
                 ]
@@ -595,8 +595,8 @@ def test_it3(vendor_environments: dict[str, Any], service_labels: dict[str, str]
     assert service_meta.containers_allowed_outgoing_permit_list["s4l-core"][
         0
     ].tcp_ports == [
-        "$OSPARC_ENVIRONMENT_VENDOR_TCP_PORTS_1",
-        "$OSPARC_ENVIRONMENT_VENDOR_TCP_PORTS_2",
+        "$OSPARC_VENDOR_SECRET_TCP_PORTS_1",
+        "$OSPARC_VENDOR_SECRET_TCP_PORTS_2",
         3,
     ]
 
