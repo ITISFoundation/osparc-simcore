@@ -9,6 +9,7 @@ from functools import lru_cache
 from typing import Callable
 
 from models_library.projects_nodes import InputID, InputTypes
+from models_library.utils.pydantic_tools_extension import parse_obj_or_none
 
 from ..models.basic_types import VersionStr
 from ..models.domain.projects import (
@@ -89,8 +90,8 @@ def create_job_inputs_from_node_inputs(inputs: dict[InputID, InputTypes]) -> Job
     """
     input_values: dict[str, ArgumentType] = {}
     for name, value in inputs.items():
-        assert isinstance(name, get_types(InputID))  # nosec
-        assert isinstance(value, get_types(InputTypes))  # nosec
+        assert parse_obj_or_none(InputID, name)  # nosec
+        assert parse_obj_or_none(InputTypes, value)  # nosec
 
         if isinstance(value, SimCoreFileLink):
             # FIXME: ensure this aligns with storage policy

@@ -4,7 +4,16 @@ from enum import Enum
 from typing import TypeAlias, Union
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConstrainedInt, Field, HttpUrl, validator
+from pydantic import (
+    BaseModel,
+    ConstrainedInt,
+    Field,
+    HttpUrl,
+    StrictBool,
+    StrictFloat,
+    StrictInt,
+    validator,
+)
 
 from ...models.config import BaseConfig
 from ...models.schemas.files import File
@@ -15,9 +24,9 @@ from ..api_resources import (
     split_resource_name,
 )
 
-# FIXME: all ints and bools will be floats
-# TODO: evaluate how coupled is this to InputTypes/OUtputTypes
-ArgumentType: TypeAlias = Union[File, float, int, bool, str, None]
+ArgumentType: TypeAlias = Union[
+    File, StrictFloat, StrictInt, StrictBool, str, list, None
+]
 KeywordArguments: TypeAlias = dict[str, ArgumentType]
 PositionalArguments: TypeAlias = list[ArgumentType]
 

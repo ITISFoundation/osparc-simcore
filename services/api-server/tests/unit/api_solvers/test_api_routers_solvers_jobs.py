@@ -329,7 +329,7 @@ async def test_run_solver_job(
         },
     )
 
-    # ---------
+    # ---------------------------------------------------------------------------------------------------------
 
     resp = await client.get("/v0/meta")
     assert resp.status_code == 200
@@ -339,7 +339,12 @@ async def test_run_solver_job(
         f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs",
         auth=auth,
         json=JobInputs(
-            values={"x": 3.14, "n": 42, "kwargs": {"b": True, "n": 3.14, "i": 42}}
+            values={
+                "x": 3.14,
+                "n": 42,
+                # Tests https://github.com/ITISFoundation/osparc-issues/issues/948
+                "a_list": [1, 2, 3],
+            }
         ).dict(),
     )
     assert resp.status_code == status.HTTP_200_OK
