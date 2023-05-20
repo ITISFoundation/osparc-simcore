@@ -5,7 +5,7 @@
 import pytest
 from models_library.projects import Project
 from models_library.projects_nodes import InputsDict, InputTypes, SimCoreFileLink
-from pydantic import create_model
+from pydantic import create_model, parse_obj_as
 from simcore_service_api_server.models.schemas.files import File
 from simcore_service_api_server.models.schemas.jobs import ArgumentTypes, Job, JobInputs
 from simcore_service_api_server.models.schemas.solvers import Solver
@@ -15,7 +15,6 @@ from simcore_service_api_server.utils.solver_job_models_converters import (
     create_jobstatus_from_task,
     create_new_project_for_job,
     create_node_inputs_from_job_inputs,
-    get_types,
 )
 
 
@@ -76,13 +75,14 @@ def test_job_to_node_inputs_conversion():
         }
     )
     for name, value in job_inputs.values.items():
-        assert isinstance(value, get_types(ArgumentTypes)), f"Invalid type in {name}"
+        assert parse_obj_as(ArgumentTypes, value) == value
 
     node_inputs: InputsDict = {
         "x": 4.33,
         "n": 55,
         "title": "Temperature",
         "enabled": True,
+        "some_list": [1, 2, "foo"],
         "input_file": SimCoreFileLink(
             store=0,
             path="api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
@@ -92,8 +92,7 @@ def test_job_to_node_inputs_conversion():
     }
 
     for name, value in node_inputs.items():
-        # TODO: py3.8 use typings.get_args
-        assert isinstance(value, get_types(InputTypes)), f"Invalid type in {name}"
+        assert parse_obj_as(InputTypes, value) == value
 
     # test transformations in both directions
     got_node_inputs = create_node_inputs_from_job_inputs(inputs=job_inputs)

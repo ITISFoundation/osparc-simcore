@@ -9,7 +9,7 @@ from functools import lru_cache
 from typing import Callable
 
 from models_library.projects_nodes import InputID, InputTypes
-from models_library.utils.pydantic_tools_extension import parse_obj_or_none
+from pydantic import parse_obj_as
 
 from ..models.basic_types import VersionStr
 from ..models.domain.projects import (
@@ -64,7 +64,7 @@ def create_node_inputs_from_job_inputs(inputs: JobInputs) -> dict[InputID, Input
 
     node_inputs: dict[InputID, InputTypes] = {}
     for name, value in inputs.values.items():
-        assert parse_obj_or_none(ArgumentTypes, value)  # nosec
+        assert parse_obj_as(ArgumentTypes, value) == value  # nosec
 
         if isinstance(value, File):
             # FIXME: ensure this aligns with storage policy
@@ -89,8 +89,8 @@ def create_job_inputs_from_node_inputs(inputs: dict[InputID, InputTypes]) -> Job
     """
     input_values: dict[str, ArgumentTypes] = {}
     for name, value in inputs.items():
-        assert parse_obj_or_none(InputID, name)  # nosec
-        assert parse_obj_or_none(InputTypes, value)  # nosec
+        assert parse_obj_as(InputID, name) == name  # nosec
+        assert parse_obj_as(InputTypes, value) == value  # nosec
 
         if isinstance(value, SimCoreFileLink):
             # FIXME: ensure this aligns with storage policy

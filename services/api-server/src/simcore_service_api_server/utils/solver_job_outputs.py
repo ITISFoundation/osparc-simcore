@@ -7,8 +7,7 @@ from fastapi.exceptions import HTTPException
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import BaseFileLink
-from models_library.utils.pydantic_tools_extension import parse_obj_or_none
-from pydantic import StrictBool, StrictFloat, StrictInt
+from pydantic import StrictBool, StrictFloat, StrictInt, parse_obj_as
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_v2 import DBManager, Nodeports
 
@@ -40,7 +39,7 @@ async def get_solver_output_results(
         solver_output_results = {}
         for port in (await solver.outputs).values():
             log.debug("Getting %s [%s]: %s", port.key, port.property_type, port.value)
-            assert parse_obj_or_none(ResultsTypes, port.value)  # nosec
+            assert parse_obj_as(ResultsTypes, port.value) == port.value  # nosec
             solver_output_results[port.key] = port.value
 
         return solver_output_results
