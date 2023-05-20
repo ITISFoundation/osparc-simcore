@@ -61,9 +61,8 @@ def redefine_operation_id_in_router(router: APIRouter, operation_id_prefix: str)
 
 
 # https://swagger.io/docs/specification/data-models/data-types/#numbers
-SCHEMA_TO_PYTHON_TYPES = {"integer": int, "number": float}
-
-SKIP = (
+_SCHEMA_TO_PYTHON_TYPES = {"integer": int, "number": float}
+_SKIP = (
     "examples",
     # SEE openapi-standard: https://swagger.io/docs/specification/adding-examples/
     # - exampleS are Dicts and not Lists
@@ -90,13 +89,15 @@ def patch_openapi_specs(app_openapi: dict[str, Any]):
     def _patch_node(key, node):
         # SEE fastapi ISSUE: https://github.com/tiangolo/fastapi/issues/240 (test_openap.py::test_exclusive_min_openapi_issue )
         # SEE openapi-standard: https://swagger.io/docs/specification/data-models/data-types/#range
+        node_type = node.get("type")
+
         if key == "exclusiveMinimum":
-            cast_to_python = SCHEMA_TO_PYTHON_TYPES[node["type"]]
+            cast_to_python = _SCHEMA_TO_PYTHON_TYPES[node_type]
             node["minimum"] = cast_to_python(node[key])
             node["exclusiveMinimum"] = True
 
         elif key == "exclusiveMaximum":
-            cast_to_python = SCHEMA_TO_PYTHON_TYPES[node["type"]]
+            cast_to_python = _SCHEMA_TO_PYTHON_TYPES[node_type]
             node["maximum"] = cast_to_python(node[key])
             node["exclusiveMaximum"] = True
 
@@ -104,15 +105,16 @@ def patch_openapi_specs(app_openapi: dict[str, Any]):
             # NOTE: Security Audit Report:
             #   The property in question requires a value of the type integer, but the value you have defined does not match this.
             #   SEE https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.2.md#dataTypeFormat
-            cast_to_python = SCHEMA_TO_PYTHON_TYPES[node["type"]]
+            cast_to_python = _SCHEMA_TO_PYTHON_TYPES[node_type]
             node[key] = cast_to_python(node[key])
-        elif key == "pattern" and node["type"] == "string":
-            node["pattern"] = _remove_named_groups(node["pattern"])
+
+        elif key == "pattern" and node_type == "string":
+            node[key] = _remove_named_groups(regex=node[key])
 
     def _patch(node):
         if isinstance(node, dict):
             for key in list(node.keys()):
-                if key in SKIP:
+                if key in _SKIP:
                     node.pop(key)
                     continue
                 _patch_node(key, node)
@@ -122,6 +124,7 @@ def patch_openapi_specs(app_openapi: dict[str, Any]):
 
         elif isinstance(node, list):
             for value in node:
+                # recursive
                 _patch(value)
 
     _patch(app_openapi)
