@@ -64,7 +64,7 @@ def create_node_inputs_from_job_inputs(inputs: JobInputs) -> dict[InputID, Input
 
     node_inputs: dict[InputID, InputTypes] = {}
     for name, value in inputs.values.items():
-        assert parse_obj_as(ArgumentTypes, value) == value  # nosec
+        assert parse_obj_as(ArgumentTypes, value) == value  # type: ignore  # nosec
 
         if isinstance(value, File):
             # FIXME: ensure this aligns with storage policy

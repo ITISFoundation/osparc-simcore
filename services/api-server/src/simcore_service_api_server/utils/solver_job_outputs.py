@@ -39,7 +39,7 @@ async def get_solver_output_results(
         solver_output_results = {}
         for port in (await solver.outputs).values():
             log.debug("Getting %s [%s]: %s", port.key, port.property_type, port.value)
-            assert parse_obj_as(ResultsTypes, port.value) == port.value  # nosec
+            assert parse_obj_as(ResultsTypes, port.value) == port.value  # type: ignore  # nosec
             solver_output_results[port.key] = port.value
 
         return solver_output_results
