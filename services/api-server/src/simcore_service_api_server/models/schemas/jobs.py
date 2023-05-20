@@ -24,11 +24,12 @@ from ..api_resources import (
     split_resource_name,
 )
 
-ArgumentType: TypeAlias = Union[
+# ArgumentTypes are types used in the job inputs (see ResultsTypes)
+ArgumentTypes: TypeAlias = Union[
     File, StrictFloat, StrictInt, StrictBool, str, list, None
 ]
-KeywordArguments: TypeAlias = dict[str, ArgumentType]
-PositionalArguments: TypeAlias = list[ArgumentType]
+KeywordArguments: TypeAlias = dict[str, ArgumentTypes]
+PositionalArguments: TypeAlias = list[ArgumentTypes]
 
 
 def compute_checksum(kwargs: KeywordArguments):

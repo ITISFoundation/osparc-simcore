@@ -22,7 +22,7 @@ from ..models.domain.projects import (
 )
 from ..models.schemas.files import File
 from ..models.schemas.jobs import (
-    ArgumentType,
+    ArgumentTypes,
     Job,
     JobInputs,
     JobStatus,
@@ -31,7 +31,6 @@ from ..models.schemas.jobs import (
 )
 from ..models.schemas.solvers import Solver, SolverKeyId
 from ..plugins.director_v2 import ComputationTaskGet
-from .typing_extra import get_types
 
 # UTILS ------
 _BASE_UUID = uuid.UUID("231e13db-6bc6-4f64-ba56-2ee2c73b9f09")
@@ -65,7 +64,7 @@ def create_node_inputs_from_job_inputs(inputs: JobInputs) -> dict[InputID, Input
 
     node_inputs: dict[InputID, InputTypes] = {}
     for name, value in inputs.values.items():
-        assert isinstance(value, get_types(ArgumentType))  # nosec
+        assert parse_obj_or_none(ArgumentTypes, value)  # nosec
 
         if isinstance(value, File):
             # FIXME: ensure this aligns with storage policy
@@ -88,7 +87,7 @@ def create_job_inputs_from_node_inputs(inputs: dict[InputID, InputTypes]) -> Job
 
     raises ValidationError
     """
-    input_values: dict[str, ArgumentType] = {}
+    input_values: dict[str, ArgumentTypes] = {}
     for name, value in inputs.items():
         assert parse_obj_or_none(InputID, name)  # nosec
         assert parse_obj_or_none(InputTypes, value)  # nosec

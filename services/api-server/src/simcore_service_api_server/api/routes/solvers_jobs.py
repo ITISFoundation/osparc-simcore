@@ -16,7 +16,7 @@ from pydantic.types import PositiveInt
 from ...models.basic_types import VersionStr
 from ...models.domain.projects import NewProjectIn, Project
 from ...models.schemas.files import File
-from ...models.schemas.jobs import ArgumentType, Job, JobInputs, JobOutputs, JobStatus
+from ...models.schemas.jobs import ArgumentTypes, Job, JobInputs, JobOutputs, JobStatus
 from ...models.schemas.solvers import Solver, SolverKeyId
 from ...plugins.catalog import CatalogApi
 from ...plugins.director_v2 import DirectorV2Api, DownloadLink, NodeName
@@ -262,7 +262,7 @@ async def get_job_outputs(
         db_engine=db_engine,
     )
 
-    results: dict[str, ArgumentType] = {}
+    results: dict[str, ArgumentTypes] = {}
     for name, value in outputs.items():
         if isinstance(value, BaseFileLink):
             # TODO: value.path exists??

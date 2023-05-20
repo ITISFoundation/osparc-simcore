@@ -7,7 +7,7 @@ from models_library.projects import Project
 from models_library.projects_nodes import InputsDict, InputTypes, SimCoreFileLink
 from pydantic import create_model
 from simcore_service_api_server.models.schemas.files import File
-from simcore_service_api_server.models.schemas.jobs import ArgumentType, Job, JobInputs
+from simcore_service_api_server.models.schemas.jobs import ArgumentTypes, Job, JobInputs
 from simcore_service_api_server.models.schemas.solvers import Solver
 from simcore_service_api_server.utils.solver_job_models_converters import (
     create_job_from_project,
@@ -76,7 +76,7 @@ def test_job_to_node_inputs_conversion():
         }
     )
     for name, value in job_inputs.values.items():
-        assert isinstance(value, get_types(ArgumentType)), f"Invalid type in {name}"
+        assert isinstance(value, get_types(ArgumentTypes)), f"Invalid type in {name}"
 
     node_inputs: InputsDict = {
         "x": 4.33,
