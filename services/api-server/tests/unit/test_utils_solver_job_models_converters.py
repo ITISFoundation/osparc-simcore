@@ -67,6 +67,7 @@ def test_job_to_node_inputs_conversion():
             "n": 55,
             "title": "Temperature",
             "enabled": True,
+            "some_list": [1, 2, "foo"],
             "input_file": File(
                 filename="input.txt",
                 id="0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
@@ -186,7 +187,7 @@ def test_create_job_from_project():
             "name": "simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/2.0.2/jobs/f925e30f-19de-42dc-acab-3ce93ea0a0a7",
             "created_at": "2021-03-26T10:43:27.867Z",
             "runner_name": "solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.2",
-            "inputs_checksum": "8f57551eb8c0798a7986b63face0eef8fed8da79dd66f871a73c27e64cd01c5f",
+            "inputs_checksum": "24700556239a25d0da46ccb7d863c10ec8c074d46c8c521742d52ba68a2c69ae",
             "url": None,
             "runner_url": None,
             "outputs_url": None,
