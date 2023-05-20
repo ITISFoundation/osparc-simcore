@@ -1,6 +1,7 @@
 """ Common utils for core/application openapi specs
 """
 
+import re
 import types
 from typing import Any
 
@@ -79,6 +80,13 @@ def patch_openapi_specs(app_openapi: dict[str, Any]):
     Modifies fastapi auto-generated OAS to pass our openapi validation.
     """
 
+    def _remove_named_groups(regex: str) -> str:
+        # Fixes structure error produce by named groups like
+        # ^simcore/services/comp/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$
+        # into
+        # ^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+        return re.sub(r"\(\?P<[^>]+>", "(", regex)
+
     def _patch(node):
         if isinstance(node, dict):
             for key in list(node.keys()):
@@ -93,6 +101,15 @@ def patch_openapi_specs(app_openapi: dict[str, Any]):
                     cast_to_python = SCHEMA_TO_PYTHON_TYPES[node["type"]]
                     node["maximum"] = cast_to_python(node[key])
                     node["exclusiveMaximum"] = True
+
+                elif key in ("minimum", "maximum"):
+                    # NOTE: Security Audit Report:
+                    #   The property in question requires a value of the type integer, but the value you have defined does not match this.
+                    #   SEE https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.2.md#dataTypeFormat
+                    cast_to_python = SCHEMA_TO_PYTHON_TYPES[node["type"]]
+                    node[key] = cast_to_python(node[key])
+                elif key == "pattern" and node["type"] == "string":
+                    node["pattern"] = _remove_named_groups(node["pattern"])
 
                 elif key in SKIP:
                     node.pop(key)
