@@ -377,7 +377,7 @@
             "required": true,
             "schema": {
               "title": "Solver Key",
-              "pattern": "^(simcore)/(services)/comp(/[\\w/-]+)+$",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "type": "string"
             },
             "name": "solver_key",
@@ -426,7 +426,7 @@
             "required": true,
             "schema": {
               "title": "Solver Key",
-              "pattern": "^(simcore)/(services)/comp(/[\\w/-]+)+$",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "type": "string"
             },
             "name": "solver_key",
@@ -479,7 +479,7 @@
             "required": true,
             "schema": {
               "title": "Solver Key",
-              "pattern": "^(simcore)/(services)/comp(/[\\w/-]+)+$",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "type": "string"
             },
             "name": "solver_key",
@@ -538,7 +538,7 @@
             "required": true,
             "schema": {
               "title": "Solver Key",
-              "pattern": "^(simcore)/(services)/comp(/[\\w/-]+)+$",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "type": "string"
             },
             "name": "solver_key",
@@ -599,7 +599,7 @@
             "required": true,
             "schema": {
               "title": "Solver Key",
-              "pattern": "^(simcore)/(services)/comp(/[\\w/-]+)+$",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "type": "string"
             },
             "name": "solver_key",
@@ -668,7 +668,7 @@
             "required": true,
             "schema": {
               "title": "Solver Key",
-              "pattern": "^(simcore)/(services)/comp(/[\\w/-]+)+$",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "type": "string"
             },
             "name": "solver_key",
@@ -737,7 +737,7 @@
             "required": true,
             "schema": {
               "title": "Solver Key",
-              "pattern": "^(simcore)/(services)/comp(/[\\w/-]+)+$",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "type": "string"
             },
             "name": "solver_key",
@@ -767,7 +767,7 @@
             "required": false,
             "schema": {
               "title": "Cluster Id",
-              "minimum": 0.0,
+              "minimum": 0,
               "type": "integer"
             },
             "name": "cluster_id",
@@ -815,7 +815,7 @@
             "required": true,
             "schema": {
               "title": "Solver Key",
-              "pattern": "^(simcore)/(services)/comp(/[\\w/-]+)+$",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "type": "string"
             },
             "name": "solver_key",
@@ -883,7 +883,7 @@
             "required": true,
             "schema": {
               "title": "Solver Key",
-              "pattern": "^(simcore)/(services)/comp(/[\\w/-]+)+$",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "type": "string"
             },
             "name": "solver_key",
@@ -951,7 +951,7 @@
             "required": true,
             "schema": {
               "title": "Solver Key",
-              "pattern": "^(simcore)/(services)/comp(/[\\w/-]+)+$",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "type": "string"
             },
             "name": "solver_key",
@@ -1020,7 +1020,7 @@
             "required": true,
             "schema": {
               "title": "Solver Key",
-              "pattern": "^(simcore)/(services)/comp(/[\\w/-]+)+$",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "type": "string"
             },
             "name": "solver_key",
@@ -1201,7 +1201,7 @@
           },
           "name": {
             "title": "Name",
-            "pattern": "^([^\\s/]+/?)+$",
+            "pattern": "^([^\\s/]+/?){1,10}$",
             "type": "string"
           },
           "inputs_checksum": {
@@ -1217,7 +1217,7 @@
           },
           "runner_name": {
             "title": "Runner Name",
-            "pattern": "^([^\\s/]+/?)+$",
+            "pattern": "^([^\\s/]+/?){1,10}$",
             "type": "string",
             "description": "Runner that executes job"
           },
@@ -1283,6 +1283,10 @@
                 },
                 {
                   "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {}
                 }
               ]
             }
@@ -1295,9 +1299,8 @@
             "title": "Temperature",
             "enabled": true,
             "input_file": {
-              "id": "0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
               "filename": "input.txt",
-              "content_type": "text/plain"
+              "id": "0a3b2c56-dbcd-4871-b93b-d454b7883f9f"
             }
           }
         }
@@ -1335,6 +1338,10 @@
                 },
                 {
                   "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {}
                 }
               ]
             }
@@ -1348,9 +1355,8 @@
             "title": "Specific Absorption Rate",
             "enabled": false,
             "output_file": {
-              "id": "0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
               "filename": "sar_matrix.txt",
-              "content_type": "text/plain"
+              "id": "0a3b2c56-dbcd-4871-b93b-d454b7883f9f"
             }
           }
         }
@@ -1374,8 +1380,8 @@
           },
           "progress": {
             "title": "Progress",
-            "maximum": 100.0,
-            "minimum": 0.0,
+            "maximum": 100,
+            "minimum": 0,
             "type": "integer",
             "default": 0
           },
@@ -1409,7 +1415,9 @@
         "title": "Meta",
         "required": [
           "name",
-          "version"
+          "version",
+          "docs_url",
+          "docs_dev_url"
         ],
         "type": "object",
         "properties": {
@@ -1436,16 +1444,14 @@
             "maxLength": 65536,
             "minLength": 1,
             "type": "string",
-            "format": "uri",
-            "default": "https://docs.osparc.io"
+            "format": "uri"
           },
           "docs_dev_url": {
             "title": "Docs Dev Url",
             "maxLength": 65536,
             "minLength": 1,
             "type": "string",
-            "format": "uri",
-            "default": "https://api.osparc.io/dev/docs"
+            "format": "uri"
           }
         },
         "example": {
@@ -1455,8 +1461,8 @@
             "v1": "1.3.4",
             "v2": "2.4.45"
           },
-          "doc_url": "https://api.osparc.io/doc",
-          "doc_dev_url": "https://api.osparc.io/dev/doc"
+          "docs_url": "https://api.osparc.io/doc",
+          "docs_dev_url": "https://api.osparc.io/dev/doc"
         }
       },
       "Profile": {
@@ -1545,7 +1551,7 @@
         "properties": {
           "id": {
             "title": "Id",
-            "pattern": "^(simcore)/(services)/comp(/[\\w/-]+)+$",
+            "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
             "type": "string",
             "description": "Solver identifier"
           },
