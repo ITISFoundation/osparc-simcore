@@ -27,8 +27,6 @@ from ..file_downloader import ParallelDownloader
 from .base_formatter import BaseFormatter
 from .models import LinkAndPath2, ManifestFile, ProjectFile
 
-UPLOAD_HTTP_TIMEOUT = 60 * 60  # 1 hour
-
 log = logging.getLogger(__name__)
 
 

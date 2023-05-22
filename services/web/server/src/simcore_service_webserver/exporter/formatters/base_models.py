@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict, Union
+from typing import Any
 
 import aiofiles
 from pydantic import BaseModel, DirectoryPath, Field, validator
@@ -29,10 +29,6 @@ class BaseModelSavePath(BaseModel):
     def path(self) -> Path:
         return self.root_dir / self.path_in_root_dir
 
-    def is_store_path_present(self) -> bool:
-        """Used to check if the file is present in the expected location"""
-        return self.path.exists()
-
     async def data_from_file(self) -> str:
         async with aiofiles.open(self.path, "r") as input_file:
             return await input_file.read()
@@ -49,7 +45,7 @@ class BaseLoadingModel(BaseModel):
     """
 
     # path relative to the export folder
-    _RELATIVE_STORAGE_PATH: Union[str, Path] = ""
+    _RELATIVE_STORAGE_PATH: str | Path = ""
 
     storage_path: BaseModelSavePath = Field(
         None, description="Where the file is peristed or from where is loaded"
@@ -85,7 +81,7 @@ class BaseLoadingModel(BaseModel):
         return new_obj
 
     @classmethod
-    async def model_to_file(cls, root_dir: Path, **kwargs: Dict[str, Any]) -> None:
+    async def model_to_file(cls, root_dir: Path, **kwargs: dict[str, Any]) -> None:
         """Given some new data stores it inside the _RELATIVE_STORAGE_PATH file in root_dir"""
         cls.validate_storage_path()
 
