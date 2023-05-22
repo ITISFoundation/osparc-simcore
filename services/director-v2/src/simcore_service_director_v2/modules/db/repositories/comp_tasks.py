@@ -349,6 +349,14 @@ class CompTasksRepository(BaseRepository):
         optional_started: datetime | None = None,
         optional_stopped: datetime | None = None,
     ) -> None:
+        """update the task state values in the database
+        passing None for the optional arguments will not update the respective values in the database
+        Keyword Arguments:
+            errors -- _description_ (default: {None})
+            optional_progress -- _description_ (default: {None})
+            optional_started -- _description_ (default: {None})
+            optional_stopped -- _description_ (default: {None})
+        """
         update_values = {"state": RUNNING_STATE_TO_DB[state], "errors": errors}
         if optional_progress is not None:
             update_values["progress"] = optional_progress
