@@ -177,6 +177,3 @@ Untitled*
 
 # service settings.schemas.json
 services/**/settings-schema.json
-
-# openapi for development mode
-services/api-server/openapi-dev.json
