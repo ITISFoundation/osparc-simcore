@@ -1,4 +1,4 @@
-from typing import Any, TypeVar
+from typing import Any, Iterable, TypeVar
 
 from openpyxl.utils import get_column_letter
 from pydantic import BaseModel
@@ -33,7 +33,7 @@ def get_max_array_length(*arrays_of_elements) -> int:
     return max(len(x) for x in arrays_of_elements)
 
 
-def column_iter(start_from: int, elements: int) -> str:
+def column_iter(start_from: int, elements: int) -> Iterable[str]:
     """maps columns index to letters"""
     for column_index in range(start_from, start_from + elements):
         yield get_column_letter(column_index)
