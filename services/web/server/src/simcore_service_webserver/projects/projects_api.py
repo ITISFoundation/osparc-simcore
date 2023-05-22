@@ -64,7 +64,7 @@ from ..socketio.messages import (
     send_messages,
 )
 from ..storage import api as storage_api
-from ..users.api import get_user_name, get_user_role
+from ..users.api import UserNameDict, get_user_name, get_user_role
 from ..users.exceptions import UserNotFoundError
 from . import _crud_delete_utils, _nodes_utils
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
@@ -74,12 +74,7 @@ from .exceptions import (
     ProjectStartsTooManyDynamicNodes,
     ProjectTooManyProjectOpened,
 )
-from .lock import (
-    UserNameDict,
-    get_project_locked_state,
-    is_project_locked,
-    lock_project,
-)
+from .lock import get_project_locked_state, is_project_locked, lock_project
 from .models import ProjectDict
 from .settings import ProjectsSettings, get_plugin_settings
 from .utils import extract_dns_without_default_port
@@ -118,7 +113,7 @@ async def get_project_for_user(
     project, project_type = await db.get_project(
         user_id,
         project_uuid,
-        check_permissions=check_permissions,
+        check_permissions=check_permissions,  # type: ignore[arg-type]
     )
 
     # adds state if it is not a template
@@ -907,7 +902,8 @@ async def is_service_deprecated(
     )
     if deprecation_date := service.get("deprecated"):
         deprecation_date = parse_obj_as(datetime.datetime, deprecation_date)
-        return datetime.datetime.utcnow() > deprecation_date
+        deprecation_date_bool: bool = datetime.datetime.utcnow() > deprecation_date
+        return deprecation_date_bool
     return False
 
 
