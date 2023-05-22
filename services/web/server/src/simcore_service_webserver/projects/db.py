@@ -666,7 +666,7 @@ class ProjectDBAPI(BaseProjectDB):
                 .select_from(projects)
                 .where(projects.c.uuid == f"{project_uuid}")
             ):
-                result.update(row.as_tuple())  # type: ignore
+                result.update(row.as_tuple())
         return result
 
     #
