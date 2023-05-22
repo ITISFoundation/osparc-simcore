@@ -9,9 +9,11 @@ import json
 import logging
 
 from aiohttp import web
+from models_library.api_schemas_catalog import UserInaccessibleService
 from models_library.projects_state import ProjectState
-from models_library.services import ServiceKeyVersion, UserWithoutServiceAccess
-from pydantic import BaseModel, PositiveInt
+from models_library.services import ServiceKeyVersion
+from models_library.users import GroupID
+from pydantic import BaseModel
 from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
@@ -54,7 +56,7 @@ class _OpenProjectQuery(BaseModel):
 
 
 class _ShareableProjectQuery(BaseModel):
-    gid: PositiveInt
+    with_gid: GroupID
 
 
 @routes.post(f"/{VTAG}/projects/{{project_id}}:open", name="open_project")
@@ -228,10 +230,13 @@ async def get_project_state(request: web.Request) -> web.Response:
     return web.json_response({"data": project_state.dict()}, dumps=json_dumps)
 
 
-@routes.post(f"/{VTAG}/projects/{{project_id}}:shareable", name="shareable_project")
+@routes.get(
+    f"/{VTAG}/projects/{{project_id}}/shareAccess:denied",
+    name="denied_share_access_project",
+)
 @login_required
 @permission_required("project.read")
-async def shareable_project(request: web.Request) -> web.Response:
+async def denied_share_access_project(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     query_params = parse_request_query_parameters_as(_ShareableProjectQuery, request)
@@ -247,10 +252,12 @@ async def shareable_project(request: web.Request) -> web.Response:
         for _, s in project["workbench"].items()
     ]
 
-    output: list[
-        UserWithoutServiceAccess
-    ] = await catalog_client.get_inaccessible_services_for_gid_in_project(
-        request.app, query_params.gid, req_ctx.product_name, project_services
+    list_of_user_inaccessible_services: list[
+        UserInaccessibleService
+    ] = await catalog_client.list_inaccessible_services(
+        request.app, query_params.with_gid, req_ctx.product_name, project_services
     )
 
-    return web.json_response({"data": output}, dumps=json_dumps)
+    return web.json_response(
+        {"data": list_of_user_inaccessible_services}, dumps=json_dumps
+    )

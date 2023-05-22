@@ -11,7 +11,8 @@ from aiohttp.client_exceptions import (
     ClientResponseError,
     InvalidURL,
 )
-from models_library.services import ServiceKeyVersion, UserWithoutServiceAccess
+from models_library.api_schemas_catalog import UserInaccessibleService
+from models_library.services import ServiceKeyVersion
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from pydantic import PositiveInt, parse_obj_as
@@ -145,23 +146,21 @@ async def update_service(
             return body
 
 
-async def get_inaccessible_services_for_gid_in_project(
+async def list_inaccessible_services(
     app: web.Application,
     gid: PositiveInt,
     product_name: str,
     project_services: list[ServiceKeyVersion],
-) -> list[UserWithoutServiceAccess]:
+) -> list[UserInaccessibleService]:
     settings: CatalogSettings = get_plugin_settings(app)
 
-    url = (URL(settings.api_base_url) / "services" / "inaccessible").with_query(
-        {"gid": gid}
-    )
+    url = URL(settings.api_base_url) / "services:inaccessible"
 
     with handle_client_exceptions(app) as session:
         async with session.post(
             url,
             headers={X_PRODUCT_NAME_HEADER: product_name},
-            json={"services_to_check": project_services},
+            json={"services_to_check": project_services, "with_gid": gid},
         ) as resp:
             resp.raise_for_status()
             body: dict[str, Any] = await resp.json()
