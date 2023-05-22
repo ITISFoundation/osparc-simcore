@@ -393,7 +393,6 @@ def test_not_allowed_in_both_permit_list_and_outgoing_internet():
 @pytest.fixture
 def vendor_environments() -> dict[str, Any]:
     return {
-        # NO list or dict!
         "OSPARC_ENVIRONMENT_VENDOR_SECRET_DNS_RESOLVER_ADDRESS": "172.0.0.1",
         "OSPARC_ENVIRONMENT_VENDOR_SECRET_DNS_RESOLVER_PORT": 1234,
         "OSPARC_ENVIRONMENT_VENDOR_SECRET_LICENCE_HOSTNAME": "hostname",
@@ -403,11 +402,6 @@ def vendor_environments() -> dict[str, Any]:
             3,
             4,
         ],
-        # NOT ALLOWED since x="$QUOTED_IDENTIFIER" -> x="[1, 2, 3, 4]"
-        # enforces ALWAYS a string value before pydantic parsing and pydantic
-        # can only cast primitive types upon parse
-        # Using Json[T] would be an alternative but there are some edge cases
-        #
         "OSPARC_ENVIRONMENT_VENDOR_SECRET_TCP_PORTS_1": 1,
         "OSPARC_ENVIRONMENT_VENDOR_SECRET_TCP_PORTS_2": 2,
         "OSPARC_ENVIRONMENT_VENDOR_SECRET_TCP_PORTS_3": 3,
