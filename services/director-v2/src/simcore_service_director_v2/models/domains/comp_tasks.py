@@ -1,5 +1,5 @@
+import datetime
 from contextlib import suppress
-from datetime import datetime
 from typing import Any
 
 from models_library.basic_regex import VERSION_RE
@@ -115,9 +115,9 @@ class CompTaskAtDB(BaseModel):
         description="the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated",
     )
     image: Image
-    submit: datetime
-    start: datetime | None = Field(default=None)
-    end: datetime | None = Field(default=None)
+    submit: datetime.datetime
+    start: datetime.datetime | None = Field(default=None)
+    end: datetime.datetime | None = Field(default=None)
     state: RunningState
     task_id: PositiveInt | None = Field(default=None)
     internal_id: PositiveInt
@@ -140,6 +140,13 @@ class CompTaskAtDB(BaseModel):
                 v = StateType(v)
         if isinstance(v, StateType):
             return RunningState(DB_TO_RUNNING_STATE[StateType(v)])
+        return v
+
+    @validator("start", "end", "submit")
+    @classmethod
+    def ensure_utc(cls, v: datetime.datetime | None) -> datetime.datetime | None:
+        if v is not None and v.tzinfo is None:
+            v = v.replace(tzinfo=datetime.timezone.utc)
         return v
 
     def to_db_model(self, **exclusion_rules) -> dict[str, Any]:
