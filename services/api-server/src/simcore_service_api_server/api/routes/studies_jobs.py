@@ -2,7 +2,7 @@ import logging
 from typing import TypeAlias
 from uuid import UUID
 
-from fastapi import APIRouter
+from fastapi import APIRouter, status
 from fastapi.responses import RedirectResponse
 
 from ...core.settings import BasicSettings
@@ -56,6 +56,17 @@ async def get_study_job(
 ):
     raise NotImplementedError(
         f"get study job {study_uid=} {job_id=}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
+    )
+
+
+@router.delete(
+    "/studies/{study_uid:uuid}/jobs/{job_id:uuid}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def delete_study_job(study_uid: StudyID, job_id: JobID):
+    raise NotImplementedError(
+        f"delete study job {study_uid=} {job_id=}.  SEE https://github.com/ITISFoundation/osparc-simcore/issues/4111"
     )
 
 
