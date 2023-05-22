@@ -5010,7 +5010,7 @@ paths:
                     type: string
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_id}/shareAccess:denied':
+  '/projects/{project_id}/share-access:denied':
     get:
       tags:
         - project
