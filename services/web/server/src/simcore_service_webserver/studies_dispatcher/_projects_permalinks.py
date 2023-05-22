@@ -9,7 +9,6 @@ from simcore_service_webserver.projects.exceptions import (
     PermalinkNotAllowedError,
     ProjectNotFoundError,
 )
-from yarl import URL
 
 from ..db import get_database_engine
 from ..projects.api import ProjectPermalink, register_permalink_factory
@@ -66,7 +65,7 @@ def create_permalink_for_study(
     )
 
     return ProjectPermalink(
-        url=URL(permalink),
+        url=permalink,  # MATUS
         is_public=project_is_public,
     )
 
