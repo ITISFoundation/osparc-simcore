@@ -28,7 +28,7 @@ JobID: TypeAlias = UUID
     response_model=list[Job],
     include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
 )
-async def list_(study_uid: StudyID):
+async def list_study_jobs(study_uid: StudyID):
     raise NotImplementedError(
         f"list study jobs {study_uid=}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
     )
@@ -39,7 +39,7 @@ async def list_(study_uid: StudyID):
     response_model=Job,
     include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
 )
-async def create(study_uid: StudyID):
+async def create_study_job(study_uid: StudyID):
     raise NotImplementedError(
         f"create study job {study_uid=}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
     )
@@ -50,7 +50,7 @@ async def create(study_uid: StudyID):
     response_model=Job,
     include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
 )
-async def get(
+async def get_study_job(
     study_uid: StudyID,
     job_id: JobID,
 ):
@@ -64,7 +64,7 @@ async def get(
     response_model=JobStatus,
     include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
 )
-async def start(
+async def start_study_job(
     study_uid: StudyID,
     job_id: JobID,
 ):
@@ -78,7 +78,7 @@ async def start(
     response_model=Job,
     include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
 )
-async def stop(
+async def stop_study_job(
     study_uid: StudyID,
     job_id: JobID,
 ):
@@ -92,7 +92,7 @@ async def stop(
     response_model=JobStatus,
     include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
 )
-async def inspect(
+async def inspect_study_job(
     study_uid: StudyID,
     job_id: JobID,
 ):
@@ -106,7 +106,7 @@ async def inspect(
     response_model=JobOutputs,
     include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
 )
-async def get_outputs(
+async def get_study_job_outputs(
     study_uid: StudyID,
     job_id: JobID,
 ):
@@ -117,11 +117,11 @@ async def get_outputs(
 
 @router.post(
     "/studies/{study_uid}/job/{job_id}/outputs/logfile",
-    response_model=RedirectResponse,
+    response_class=RedirectResponse,
     include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
     responses=JOB_OUTPUT_LOGFILE_RESPONSES,
 )
-async def get_output_logfile(study_uid: StudyID, job_id: JobID):
+async def get_study_job_output_logfile(study_uid: StudyID, job_id: JobID):
     raise NotImplementedError(
         f"get study job output logfile {study_uid=} {job_id=}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
     )
