@@ -479,7 +479,7 @@ async def delete_computation(
                 )
 
         # delete the pipeline now
-        await comp_tasks_repo.delete_tasks_from_project(project)
+        await comp_tasks_repo.delete_tasks_from_project(project.uuid)
         await comp_pipelines_repo.delete_pipeline(project_id)
 
     except ProjectNotFoundError as e:

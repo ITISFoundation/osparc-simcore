@@ -382,11 +382,9 @@ class CompTasksRepository(BaseRepository):
             f"{progress=}",
         )
 
-    async def delete_tasks_from_project(self, project: ProjectAtDB) -> None:
+    async def delete_tasks_from_project(self, project_id: ProjectID) -> None:
         async with self.db_engine.acquire() as conn:
             await conn.execute(
-                sa.delete(comp_tasks).where(
-                    comp_tasks.c.project_id == str(project.uuid)
-                )
+                sa.delete(comp_tasks).where(comp_tasks.c.project_id == f"{project_id}")
             )
-        logger.debug("deleted tasks from project %s", f"{project.uuid=}")
+        logger.debug("deleted tasks from project %s", f"{project_id=}")
