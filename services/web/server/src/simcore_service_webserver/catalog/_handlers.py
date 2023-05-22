@@ -105,9 +105,7 @@ async def get_service_handler(request: Request):
     ctx = _RequestContext.create(request)
     path_params = parse_request_path_parameters_as(_ServicePathParams, request)
 
-    data = await get_service(
-        path_params.service_key.to_service_key(), path_params.service_version, ctx
-    )
+    data = await get_service(path_params.service_key, path_params.service_version, ctx)
 
     return envelope_json_response(data)
 
