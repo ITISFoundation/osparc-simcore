@@ -352,11 +352,10 @@ class DynamicSidecarNamesHelper(BaseModel):
         )
 
 
-class SchedulerData(CommonServiceDetails):
+class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     # TODO: ANE this object is just the context of the dy-sidecar. Should
     # be called like so and subcontexts for different handlers should
     # also be added. It will make keeping track of env vars more easily
-    DynamicSidecarServiceLabels
 
     service_name: ServiceName = Field(
         ...,
