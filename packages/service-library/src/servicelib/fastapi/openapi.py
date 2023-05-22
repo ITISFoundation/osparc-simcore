@@ -80,7 +80,7 @@ def patch_openapi_specs(app_openapi: dict[str, Any]):
     """
 
     def _remove_named_groups(regex: str) -> str:
-        # Fixes structure error produce by named groups like
+        # Fixes structure error produced by named groups like
         # ^simcore/services/comp/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$
         # into
         # ^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
