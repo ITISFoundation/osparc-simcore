@@ -1,20 +1,9 @@
-from typing import Any, Iterable, TypeVar
+from typing import Iterable, TypeVar
 
 from openpyxl.utils import get_column_letter
 from pydantic import BaseModel
 
 T = TypeVar("T")
-
-
-def ensure_same_field_length(
-    fields_to_check: list[str], values: dict[str, Any]
-) -> None:
-    field_lengths = {field: values.get(field, -1) for field in fields_to_check}
-    # expecting one single entry in a set if all lengths are the same
-    if len(set(field_lengths.values())) != 1:
-        raise ValueError(
-            f"Not all fields had the same length, please check {field_lengths}"
-        )
 
 
 def ensure_correct_instance(

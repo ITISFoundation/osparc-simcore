@@ -19,19 +19,6 @@ def _get_osparc_export_name(sha256_sum: str, algorithm: Algorithm) -> str:
     return f"{_get_random_chars(4)}#{algorithm.name}={sha256_sum}.osparc"
 
 
-def search_for_unzipped_path(search_path: Path) -> Path:
-    found_dirs = []
-    for path in search_path.iterdir():
-        if path.is_dir():
-            found_dirs.append(path)
-
-    if len(found_dirs) != 1:
-        raise ExporterException(
-            f"Unexpected number of directories after unzipping {[str(x) for x in found_dirs]}"
-        )
-    return search_path / found_dirs[0]
-
-
 async def zip_folder(folder_to_zip: Path, destination_folder: Path) -> Path:
     """Zips a folder and returns the path to the new archive"""
 
