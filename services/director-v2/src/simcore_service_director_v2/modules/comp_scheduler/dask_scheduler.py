@@ -100,7 +100,7 @@ class DaskScheduler(BaseCompScheduler):
         )
         await asyncio.gather(
             *[
-                comp_tasks_repo.set_project_task_job_id(project_id, node_id, job_id)
+                comp_tasks_repo.update_project_task_job_id(project_id, node_id, job_id)
                 for node_id, job_id in task_job_ids
             ]
         )

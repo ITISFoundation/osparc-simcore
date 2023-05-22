@@ -309,7 +309,7 @@ class CompTasksRepository(BaseRepository):
             )
         logger.debug("marked project %s published tasks as aborted", f"{project_id=}")
 
-    async def set_project_task_job_id(
+    async def update_project_task_job_id(
         self, project_id: ProjectID, task: NodeID, job_id: str
     ) -> None:
         async with self.db_engine.acquire() as conn:
