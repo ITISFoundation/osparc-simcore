@@ -208,15 +208,3 @@ class FormatterV2(BaseFormatter):
             user_id=user_id,
             product_name=product_name,
         )
-
-        # continue filling up everuthing here
-
-    async def validate_and_import_directory(self, **kwargs) -> str:
-        kwargs["manifest_root_folder"] = self.root_folder
-
-        formatter_v1 = FormatterV1(root_folder=self.code_folder, version=self.version)
-        imported_project_uuid = await formatter_v1.validate_and_import_directory(
-            **kwargs
-        )
-        # no ulterior action is required
-        return imported_project_uuid
