@@ -212,8 +212,8 @@ paths:
   /projects/{project_id}:duplicate:
     $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1duplicate"
 
-  /projects/{project_id}/share-access:denied:
-    $ref: "./openapi-projects-pydantic.yaml#/paths/~1projects~1{project_id}~1share-access:denied"
+  /projects/{project_id}/shareAccesses:denied:
+    $ref: "./openapi-projects-pydantic.yaml#/paths/~1projects~1{project_id}~1shareAccesses:denied"
 
   /projects:import:
     $ref: "./openapi-projects.yaml#/paths/~1projects~1import"

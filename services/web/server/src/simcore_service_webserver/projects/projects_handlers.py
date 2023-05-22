@@ -231,7 +231,7 @@ async def get_project_state(request: web.Request) -> web.Response:
 
 
 @routes.get(
-    f"/{VTAG}/projects/{{project_id}}/share-access:denied",
+    f"/{VTAG}/projects/{{project_id}}/shareAccesses:denied",
     name="denied_share_access_project",
 )
 @login_required

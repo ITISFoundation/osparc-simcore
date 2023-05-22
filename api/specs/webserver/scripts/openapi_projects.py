@@ -36,7 +36,7 @@ TAGS: list[str | Enum] = [
 
 
 @app.get(
-    "/projects/{project_id}/share-access:denied",
+    "/projects/{project_id}/shareAccesses:denied",
     response_model=Envelope[list[UserInaccessibleService]],
     tags=TAGS,
     operation_id="denied_share_access_project",

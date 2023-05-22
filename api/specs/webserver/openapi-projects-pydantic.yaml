@@ -1,5 +1,5 @@
 paths:
-  /projects/{project_id}/share-access:denied:
+  /projects/{project_id}/shareAccesses:denied:
     get:
       tags:
       - project
