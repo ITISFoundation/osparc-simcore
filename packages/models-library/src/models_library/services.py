@@ -661,9 +661,3 @@ class ServiceMetaData(_BaseServiceCommonDataModel):
                 },
             }
         }
-
-
-class UserWithoutServiceAccess(BaseModel):
-    user_id: int
-    service_key: str
-    service_version: str

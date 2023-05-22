@@ -637,7 +637,7 @@
         }
       }
     },
-    "/v0/services/inaccessible": {
+    "/v0/services:inaccessible": {
       "post": {
         "tags": [
           "services"
@@ -645,17 +645,6 @@
         "summary": "List Inaccessible Services",
         "operationId": "list_inaccessible_services_v0_services_inaccessible_post",
         "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "title": "Gid",
-              "exclusiveMinimum": true,
-              "type": "integer",
-              "minimum": 0
-            },
-            "name": "gid",
-            "in": "query"
-          },
           {
             "required": true,
             "schema": {
@@ -685,7 +674,7 @@
                   "title": "Response List Inaccessible Services V0 Services Inaccessible Post",
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/UserWithoutServiceAccess"
+                    "$ref": "#/components/schemas/UserInaccessibleService"
                   }
                 }
               }
@@ -2045,7 +2034,8 @@
             "maximum": 100.0,
             "minimum": 0.0,
             "type": "number",
-            "description": "the node progress value"
+            "description": "the node progress value",
+            "deprecated": true
           },
           "thumbnail": {
             "title": "Thumbnail",
@@ -2177,6 +2167,14 @@
             ],
             "description": "the node's current state",
             "default": "NOT_STARTED"
+          },
+          "progress": {
+            "title": "Progress",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "type": "number",
+            "description": "current progress of the task if available (None if not started or not a computational task)",
+            "default": 0
           }
         },
         "additionalProperties": false
@@ -2825,6 +2823,12 @@
             "title": "Boot-Options",
             "type": "object",
             "description": "Service defined boot options. These get injected in the service as env variables."
+          },
+          "min-visible-inputs": {
+            "title": "Min-Visible-Inputs",
+            "minimum": 0.0,
+            "type": "integer",
+            "description": "The number of 'data type inputs' displayed by default in the UI. When None all 'data type inputs' are displayed."
           },
           "owner": {
             "title": "Owner",
@@ -3602,8 +3606,8 @@
         },
         "description": "Specification for the update strategy of the service."
       },
-      "UserWithoutServiceAccess": {
-        "title": "UserWithoutServiceAccess",
+      "UserInaccessibleService": {
+        "title": "UserInaccessibleService",
         "required": [
           "user_id",
           "service_key",
@@ -3613,14 +3617,18 @@
         "properties": {
           "user_id": {
             "title": "User Id",
-            "type": "integer"
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "minimum": 0
           },
           "service_key": {
             "title": "Service Key",
+            "pattern": "^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
             "type": "string"
           },
           "service_version": {
             "title": "Service Version",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
             "type": "string"
           }
         }
@@ -3730,7 +3738,8 @@
       "_ServicesInaccessibleBody": {
         "title": "_ServicesInaccessibleBody",
         "required": [
-          "services_to_check"
+          "services_to_check",
+          "with_gid"
         ],
         "type": "object",
         "properties": {
@@ -3740,6 +3749,12 @@
             "items": {
               "$ref": "#/components/schemas/ServiceKeyVersion"
             }
+          },
+          "with_gid": {
+            "title": "With Gid",
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "minimum": 0
           }
         }
       }

@@ -7,14 +7,15 @@ from typing import Any, cast
 
 from aiocache import cached
 from fastapi import APIRouter, Body, Depends, Header, HTTPException, status
+from models_library.api_schemas_catalog import UserInaccessibleService
 from models_library.services import (
     ServiceKey,
     ServiceKeyVersion,
     ServiceType,
     ServiceVersion,
-    UserWithoutServiceAccess,
 )
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
+from models_library.users import GroupID
 from pydantic import BaseModel, ValidationError
 from pydantic.types import PositiveInt
 from starlette.requests import Request
@@ -189,16 +190,16 @@ async def list_services(
 
 class _ServicesInaccessibleBody(BaseModel):
     services_to_check: list[ServiceKeyVersion]
+    with_gid: GroupID
 
 
 @router.post(
-    "/inaccessible",
-    response_model=list[UserWithoutServiceAccess],
+    ":inaccessible",
+    response_model=list[UserInaccessibleService],
     **RESPONSE_MODEL_POLICY,
 )
 async def list_inaccessible_services(
     request: Request,  # pylint:disable=unused-argument
-    gid: PositiveInt,
     body: _ServicesInaccessibleBody = Body(...),
     shareable_services_repo: ShareableServicesRepository = Depends(
         get_repository(ShareableServicesRepository)
@@ -206,9 +207,9 @@ async def list_inaccessible_services(
     x_simcore_products_name: str = Header(...),
 ):
     output: list[
-        UserWithoutServiceAccess
+        UserInaccessibleService
     ] = await shareable_services_repo.list_inaccessible_services(
-        gid=gid,
+        gid=body.with_gid,
         product_name=x_simcore_products_name,
         services_to_check=body.services_to_check,
     )

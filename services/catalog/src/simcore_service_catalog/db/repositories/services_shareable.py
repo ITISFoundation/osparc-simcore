@@ -1,7 +1,9 @@
 import logging
 
 import sqlalchemy as sa
-from models_library.services import ServiceKeyVersion, UserWithoutServiceAccess
+from models_library.api_schemas_catalog import UserInaccessibleService
+from models_library.services import ServiceKeyVersion
+from models_library.users import GroupID
 from simcore_postgres_database.models.groups import user_to_groups
 from sqlalchemy.sql import and_, or_
 
@@ -17,8 +19,11 @@ class ShareableServicesRepository(BaseRepository):
     """
 
     async def list_inaccessible_services(
-        self, gid: int, product_name: str, services_to_check: list[ServiceKeyVersion]
-    ) -> list[UserWithoutServiceAccess]:
+        self,
+        gid: GroupID,
+        product_name: str,
+        services_to_check: list[ServiceKeyVersion],
+    ) -> list[UserInaccessibleService]:
         async with self.db_engine.begin() as conn:
             stmts = [
                 sa.select(
@@ -27,7 +32,9 @@ class ShareableServicesRepository(BaseRepository):
                 )
                 for service in services_to_check
             ]
-            services_to_check = sa.union_all(*stmts).cte(name="services_to_check")  # type: ignore[assignment]
+            services_to_check_table = sa.union_all(*stmts).cte(
+                name="services_to_check_table"
+            )
 
             users_ids = (
                 sa.select(user_to_groups.c.uid)
@@ -58,27 +65,27 @@ class ShareableServicesRepository(BaseRepository):
                 .cte("users_services")
             )
 
-            # Cross join (cartesian product) between services_to_check and users_services
-            services_to_check_modified = sa.select(
+            # Cross join (cartesian product) between services_to_check_table and users_services
+            services_to_check_table_modified = sa.select(
                 users_ids.c.uid,
-                services_to_check.c.service_key,  # type: ignore[attr-defined]
-                services_to_check.c.service_version,  # type: ignore[attr-defined]
-            ).cte("services_to_check_modified")
+                services_to_check_table.c.service_key,
+                services_to_check_table.c.service_version,
+            ).cte("services_to_check_table_modified")
 
             final_statement = (
                 sa.select(
-                    services_to_check_modified.c.uid,
-                    services_to_check_modified.c.service_key,
-                    services_to_check_modified.c.service_version,
+                    services_to_check_table_modified.c.uid,
+                    services_to_check_table_modified.c.service_key,
+                    services_to_check_table_modified.c.service_version,
                 )
                 .join(
                     users_services,
                     and_(
-                        services_to_check_modified.c.service_key
+                        services_to_check_table_modified.c.service_key
                         == users_services.c.key,
-                        services_to_check_modified.c.service_version
+                        services_to_check_table_modified.c.service_version
                         == users_services.c.version,
-                        services_to_check_modified.c.uid == users_services.c.uid,
+                        services_to_check_table_modified.c.uid == users_services.c.uid,
                     ),
                     isouter=True,
                 )
@@ -88,13 +95,11 @@ class ShareableServicesRepository(BaseRepository):
             )
 
             result = await conn.execute(final_statement)
-            users_without_service_access: list[UserWithoutServiceAccess] = [
-                UserWithoutServiceAccess(
+            users_without_service_access: list[UserInaccessibleService] = [
+                UserInaccessibleService(
                     user_id=row[0],
                     service_key=row[1],
-                    service_version=row[
-                        2
-                    ],  # NOTE: maybe add service owner, so user can contact him?
+                    service_version=row[2],
                 )
                 for row in result.fetchall()
             ]

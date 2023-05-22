@@ -371,7 +371,7 @@ async def service_catalog_faker(
         owner_access, team_access, everyone_access = fake_access_rights
 
     """
-    everyone_gid, user_gid, team_gid = user_groups_ids[:3]
+    everyone_gid, user_gid, team_gid, *_ = user_groups_ids
 
     def _random_service(**overrides) -> dict[str, Any]:
         data = dict(

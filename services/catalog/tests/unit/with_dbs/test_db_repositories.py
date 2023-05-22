@@ -148,7 +148,7 @@ async def test_read_services(
     services = await services_repo.list_services()
     assert len(services) == 2
 
-    everyone_gid, user_gid, team_gid = user_groups_ids[:3]
+    everyone_gid, user_gid, team_gid, *_ = user_groups_ids
     assert everyone_gid == 1
 
     services = await services_repo.list_services(
