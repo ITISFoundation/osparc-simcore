@@ -233,8 +233,9 @@ class JobStatus(BaseModel):
     progress: PercentageInt = Field(default=PercentageInt(0))
 
     # Timestamps on states
-    # TODO: sync state events and timestamps
-    submitted_at: datetime
+    submitted_at: datetime = Field(
+        ..., description="Last modification timestamp of the solver job"
+    )
     started_at: datetime | None = Field(
         None,
         description="Timestamp that indicate the moment the solver starts execution or None if the event did not occur",
