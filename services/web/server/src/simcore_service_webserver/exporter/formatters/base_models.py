@@ -29,10 +29,6 @@ class BaseModelSavePath(BaseModel):
     def path(self) -> Path:
         return self.root_dir / self.path_in_root_dir
 
-    async def data_from_file(self) -> str:
-        async with aiofiles.open(self.path, "r") as input_file:
-            return await input_file.read()
-
     async def data_to_file(self, payload: str) -> None:
         async with aiofiles.open(self.path, "w") as output_file:
             await output_file.write(payload)
@@ -65,20 +61,6 @@ class BaseLoadingModel(BaseModel):
                 f"instead of value={cls._RELATIVE_STORAGE_PATH}, type={type(cls._RELATIVE_STORAGE_PATH)}"
             )
             raise ValueError(message)
-
-    @classmethod
-    async def model_from_file(cls, root_dir: Path) -> "Manifest":
-        """Validates and returns the model inside root_dir expected at _RELATIVE_STORAGE_PATH"""
-        cls.validate_storage_path()
-
-        storage_path = BaseModelSavePath(
-            root_dir=root_dir, path_in_root_dir=cls._RELATIVE_STORAGE_PATH
-        )
-
-        stored_data = await storage_path.data_from_file()
-        new_obj = cls.parse_raw(stored_data)
-        new_obj.storage_path = storage_path
-        return new_obj
 
     @classmethod
     async def model_to_file(cls, root_dir: Path, **kwargs: dict[str, Any]) -> None:

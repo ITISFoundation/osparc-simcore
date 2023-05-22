@@ -12,7 +12,6 @@ from ...projects.projects_exceptions import ProjectsException
 from ...scicrunch.db import ResearchResourceRepository
 from ..exceptions import ExporterException
 from .base_formatter import BaseFormatter
-from .formatter_v1 import FormatterV1
 from .sds import write_sds_directory_content
 from .sds.xlsx.templates.code_description import (
     CodeDescriptionModel,
@@ -173,22 +172,11 @@ class FormatterV2(BaseFormatter):
     def __init__(self, root_folder: Path):
         super().__init__(version="2", root_folder=root_folder)
 
-    @property
-    def code_folder(self) -> Path:
-        return self.root_folder / "code"
-
     async def format_export_directory(
         self, app: web.Application, project_id: str, user_id: int, **kwargs
     ) -> None:
         kwargs["manifest_root_folder"] = self.root_folder
 
-        self.code_folder.mkdir(parents=True, exist_ok=True)
-        formatter_v1 = FormatterV1(root_folder=self.code_folder, version=self.version)
-
-        # generate structure for directory
-        await formatter_v1.format_export_directory(
-            app=app, project_id=project_id, user_id=user_id, **kwargs
-        )
         # extract data to pass to the rest
 
         product_name: str = kwargs["product_name"]

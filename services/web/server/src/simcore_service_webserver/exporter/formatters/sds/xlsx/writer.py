@@ -14,7 +14,7 @@ from .templates.directory_manifest import (
 )
 from .templates.submission import SubmissionDocumentParams, SubmissionXLSXDocument
 
-MANIFEST_DIRS = ["code", "docs", "derivative"]
+MANIFEST_DIRS = ["docs", "derivative"]
 
 
 def write_xlsx_files(
