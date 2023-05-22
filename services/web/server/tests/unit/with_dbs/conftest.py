@@ -52,7 +52,7 @@ from simcore_service_webserver.groups.api import (
     delete_user_group,
     list_user_groups,
 )
-from simcore_service_webserver.projects.project_models import ProjectDict
+from simcore_service_webserver.projects.models import ProjectDict
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 

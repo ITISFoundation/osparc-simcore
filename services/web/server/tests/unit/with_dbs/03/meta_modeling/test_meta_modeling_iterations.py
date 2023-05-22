@@ -33,7 +33,7 @@ from simcore_service_webserver.meta_modeling._rest_handlers import (
     ProjectIterationItem,
     ProjectIterationResultItem,
 )
-from simcore_service_webserver.projects.project_models import ProjectDict
+from simcore_service_webserver.projects.models import ProjectDict
 
 REQUEST_MODEL_POLICY = {
     "by_alias": True,

@@ -36,8 +36,8 @@ from simcore_service_webserver.groups.api import (
 )
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.projects._crud_delete_utils import get_scheduled_tasks
+from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.plugin import setup_projects
-from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.resource_manager.registry import get_registry
 from simcore_service_webserver.rest import setup_rest

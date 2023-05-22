@@ -5,7 +5,7 @@
 import json
 
 import pytest
-from simcore_service_webserver.projects.projects_utils import (
+from simcore_service_webserver.projects.utils import (
     VARIABLE_PATTERN,
     substitute_parameterized_inputs,
 )

@@ -27,7 +27,7 @@ from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects._crud_create_utils import (
     OVERRIDABLE_DOCUMENT_KEYS,
 )
-from simcore_service_webserver.projects.project_models import ProjectDict
+from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.utils import to_datetime
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type

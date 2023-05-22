@@ -26,8 +26,8 @@ from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db_models import UserRole
-from simcore_service_webserver.projects import _delete_utils
-from simcore_service_webserver.projects.project_models import ProjectDict
+from simcore_service_webserver.projects import _crud_delete_utils
+from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.projects_api import lock_with_notification
 from socketio.exceptions import ConnectionError as SocketConnectionError
 
@@ -66,7 +66,7 @@ async def test_delete_project(
 
     await _request_delete_project(client, user_project, expected.no_content)
 
-    tasks = _delete_utils.get_scheduled_tasks(
+    tasks = _crud_delete_utils.get_scheduled_tasks(
         project_uuid=user_project["uuid"], user_id=logged_user["id"]
     )
 
