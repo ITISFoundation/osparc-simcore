@@ -65,11 +65,10 @@ class ContainerSpec(BaseModel):
         }
 
 
-#
-# "simcore.service.settings" label
-#
 class SimcoreServiceSettingLabelEntry(BaseModel):
-    """These values are used to build the request body of https://docs.docker.com/engine/api/v1.41/#operation/ServiceCreate
+    """Content of "simcore.service.settings" label
+
+    These values are used to build the request body of https://docs.docker.com/engine/api/v1.41/#operation/ServiceCreate
     Specifically the section under ``TaskTemplate``
     """
 
@@ -161,12 +160,10 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
 
 SimcoreServiceSettingsLabel = ListModel[SimcoreServiceSettingLabelEntry]
 
-#
-# "simcore.service.paths-mapping" label
-#
-
 
 class PathMappingsLabel(BaseModel):
+    """Content of "simcore.service.paths-mapping" label"""
+
     inputs_path: Path = Field(
         ..., description="folder path where the service expects all the inputs"
     )
@@ -260,13 +257,12 @@ ComposeSpecLabelDict: TypeAlias = dict[str, Any]
 
 
 class RestartPolicy(str, Enum):
+    """Content of "simcore.service.restart-policy" label"""
+
     NO_RESTART = "no-restart"
     ON_INPUTS_DOWNLOADED = "on-inputs-downloaded"
 
 
-#
-# "simcore.service.containers-allowed-outgoing-permit-list" label
-#
 class _PortRange(BaseModel):
     """`lower` and `upper` are included"""
 
@@ -300,6 +296,8 @@ class DNSResolver(BaseModel):
 
 
 class NATRule(BaseModel):
+    """Content of "simcore.service.containers-allowed-outgoing-permit-list" label"""
+
     hostname: str
     tcp_ports: list[_PortRange | PortInt]
     dns_resolver: DNSResolver = Field(
@@ -317,12 +315,9 @@ class NATRule(BaseModel):
                 yield port
 
 
-#
-#  "simcore.service.*" labels
-#
-
-
 class DynamicSidecarServiceLabels(BaseModel):
+    """All "simcore.service.*" labels including keys"""
+
     paths_mapping: Json[PathMappingsLabel] | None = Field(
         None,
         alias="simcore.service.paths-mapping",
