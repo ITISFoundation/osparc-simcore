@@ -50,7 +50,10 @@ def create_permalink_for_study(
             f"Got {project_uuid=} with {project_type=}"
         )
 
-    if not project_access_rights.get("1", {}).get("read", False):
+    project_access_rights_group_1_or_empty: _GroupAccessRightsDict | dict = (
+        project_access_rights.get("1", {})
+    )
+    if not project_access_rights_group_1_or_empty.get("read", False):
         raise PermalinkNotAllowedError(
             "Cannot create permalink if not shared with everyone. "
             f"Got {project_uuid=} with {project_access_rights=}"
@@ -64,7 +67,7 @@ def create_permalink_for_study(
     )
 
     return ProjectPermalink(
-        url=f"{URL(permalink)}",
+        url=URL(permalink),
         is_public=project_is_public,
     )
 
