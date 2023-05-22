@@ -99,7 +99,7 @@ async def stop_study_job(
 
 
 @router.post(
-    "/studies/{study_uid}/job/{job_id}:start",
+    "/studies/{study_uid}/job/{job_id}:inspect",
     response_model=JobStatus,
     include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
 )
