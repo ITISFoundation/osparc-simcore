@@ -197,7 +197,7 @@ class CompTasksRepository(BaseRepository):
 
         return tasks
 
-    async def get_comp_tasks(
+    async def list_computational_tasks(
         self,
         project_id: ProjectID,
     ) -> list[CompTaskAtDB]:

@@ -169,7 +169,7 @@ class BaseCompScheduler(ABC):
         )
         pipeline_comp_tasks: dict[str, CompTaskAtDB] = {
             f"{t.node_id}": t
-            for t in await comp_tasks_repo.get_comp_tasks(project_id)
+            for t in await comp_tasks_repo.list_computational_tasks(project_id)
             if (f"{t.node_id}" in list(pipeline_dag.nodes()))
         }
         if len(pipeline_comp_tasks) != len(pipeline_dag.nodes()):

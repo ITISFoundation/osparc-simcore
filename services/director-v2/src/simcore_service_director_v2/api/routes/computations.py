@@ -122,7 +122,7 @@ async def create_computation(
         # FIXME: this could not be valid anymore if the user deletes the project in between right?
 
         # check if current state allow to modify the computation
-        comp_tasks: list[CompTaskAtDB] = await comp_tasks_repo.get_comp_tasks(
+        comp_tasks: list[CompTaskAtDB] = await comp_tasks_repo.list_computational_tasks(
             computation.project_id
         )
         pipeline_state = get_pipeline_state_from_task_states(comp_tasks)
@@ -429,7 +429,7 @@ async def delete_computation(
         # get the project
         project: ProjectAtDB = await project_repo.get_project(project_id)
         # check if current state allow to stop the computation
-        comp_tasks: list[CompTaskAtDB] = await comp_tasks_repo.get_comp_tasks(
+        comp_tasks: list[CompTaskAtDB] = await comp_tasks_repo.list_computational_tasks(
             project_id
         )
         pipeline_state = get_pipeline_state_from_task_states(comp_tasks)
@@ -462,9 +462,9 @@ async def delete_computation(
                 before_sleep=before_sleep_log(log, logging.INFO),
             )
             async def check_pipeline_stopped() -> bool:
-                comp_tasks: list[CompTaskAtDB] = await comp_tasks_repo.get_comp_tasks(
-                    project_id
-                )
+                comp_tasks: list[
+                    CompTaskAtDB
+                ] = await comp_tasks_repo.list_computational_tasks(project_id)
                 pipeline_state = get_pipeline_state_from_task_states(
                     comp_tasks,
                 )
