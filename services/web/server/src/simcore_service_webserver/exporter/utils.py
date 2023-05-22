@@ -1,7 +1,7 @@
 import asyncio
 import os
 from pathlib import Path
-from typing import Any, Callable, Coroutine, Optional, Union
+from typing import Any, Callable, Coroutine
 
 from aiofiles import os as aiofiles_os
 from aiohttp.abc import AbstractStreamWriter
@@ -10,7 +10,6 @@ from aiohttp.web import FileResponse
 
 makedirs = aiofiles_os.wrap(os.makedirs)  # as in aiofiles.os.py module
 rename = aiofiles_os.wrap(os.rename)  # as in aiofiles.os.py module
-path_getsize = aiofiles_os.wrap(os.path.getsize)  # as in aiofiles.os.py module
 
 
 class CleanupFileResponse(FileResponse):  # pylint: disable=too-many-ancestors
@@ -22,11 +21,11 @@ class CleanupFileResponse(FileResponse):  # pylint: disable=too-many-ancestors
     def __init__(
         self,
         remove_tmp_dir_cb: Callable[[], Coroutine[Any, Any, None]],
-        path: Union[str, Path],
+        path: str | Path,
         chunk_size: int = 256 * 1024,
         status: int = 200,
-        reason: Optional[str] = None,
-        headers: Optional[LooseHeaders] = None,
+        reason: str | None = None,
+        headers: LooseHeaders | None = None,
     ) -> None:
         super().__init__(
             path=path,
@@ -38,7 +37,7 @@ class CleanupFileResponse(FileResponse):  # pylint: disable=too-many-ancestors
         self.remove_tmp_dir_cb = remove_tmp_dir_cb
         self.path = path
 
-    async def prepare(self, request: "BaseRequest") -> Optional[AbstractStreamWriter]:
+    async def prepare(self, request: "BaseRequest") -> AbstractStreamWriter | None:
         try:
             return await super().prepare(request=request)
         finally:

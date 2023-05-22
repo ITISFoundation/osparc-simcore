@@ -16,8 +16,6 @@ from .exceptions import ExporterException
 from .export_import import study_export
 from .utils import CleanupFileResponse
 
-ONE_GB: int = 1024 * 1024 * 1024
-
 log = logging.getLogger(__name__)
 
 
