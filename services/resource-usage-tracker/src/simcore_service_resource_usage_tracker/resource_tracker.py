@@ -16,6 +16,7 @@ _logger = logging.getLogger(__name__)
 def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _startup() -> None:
         app_settings: ApplicationSettings = app.state.settings
+        app.state.resource_tracker_task = None
         settings: PrometheusSettings | None = (
             app_settings.RESOURCE_USAGE_TRACKER_PROMETHEUS
         )
@@ -35,7 +36,8 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
 
 def on_app_shutdown(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _stop() -> None:
-        await stop_periodic_task(app.state.resource_tracker_task)
+        if app.state.resource_tracker_task:
+            await stop_periodic_task(app.state.resource_tracker_task)
 
     return _stop
 
