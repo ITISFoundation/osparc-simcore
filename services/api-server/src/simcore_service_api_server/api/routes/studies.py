@@ -19,7 +19,9 @@ settings = BasicSettings.create_from_envs()
     include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def list_studies(study_uid: StudyID):
-    raise NotImplementedError(f"list_studies {study_uid=}")
+    raise NotImplementedError(
+        f"list_studies {study_uid=}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
+    )
 
 
 @router.get(
@@ -28,7 +30,9 @@ async def list_studies(study_uid: StudyID):
     include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_study(study_uid: StudyID):
-    raise NotImplementedError(f"get_study {study_uid=}")
+    raise NotImplementedError(
+        f"get_study {study_uid=}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
+    )
 
 
 @router.get(
