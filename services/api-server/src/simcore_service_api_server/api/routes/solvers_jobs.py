@@ -13,6 +13,7 @@ from models_library.clusters import ClusterID
 from models_library.projects_nodes_io import BaseFileLink
 from pydantic.types import PositiveInt
 
+from ...core.settings import BasicSettings
 from ...models.basic_types import VersionStr
 from ...models.domain.projects import NewProjectIn, Project
 from ...models.schemas.files import File
@@ -37,6 +38,7 @@ from ._common import JOB_OUTPUT_LOGFILE_RESPONSES
 _logger = logging.getLogger(__name__)
 
 router = APIRouter()
+settings = BasicSettings.create_from_envs()
 
 
 def _compose_job_resource_name(solver_key, solver_version, job_id) -> str:
@@ -162,6 +164,17 @@ async def get_job(
     job = create_job_from_project(solver_key, version, project, url_for)
     assert job.id == job_id  # nosec
     return job  # nosec
+
+
+@router.delete(
+    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def delete_job(solver_key: SolverKeyId, version: VersionStr, job_id: UUID):
+    raise NotImplementedError(
+        f"delete job {solver_key=} {version=} {job_id=}.  SEE https://github.com/ITISFoundation/osparc-simcore/issues/4111"
+    )
 
 
 @router.post(
