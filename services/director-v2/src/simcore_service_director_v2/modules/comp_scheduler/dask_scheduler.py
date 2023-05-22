@@ -212,7 +212,7 @@ class DaskScheduler(BaseCompScheduler):
             )
             await self.rabbitmq_client.publish(message.channel_name, message)
 
-        await CompTasksRepository(self.db_engine).set_project_tasks_state(
+        await CompTasksRepository(self.db_engine).update_project_tasks_state(
             task.project_id,
             [task.node_id],
             task_final_state,

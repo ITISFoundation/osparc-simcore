@@ -228,7 +228,7 @@ class BaseCompScheduler(ABC):
             comp_tasks_repo: CompTasksRepository = get_repository(
                 self.db_engine, CompTasksRepository
             )
-            await comp_tasks_repo.set_project_tasks_state(
+            await comp_tasks_repo.update_project_tasks_state(
                 project_id,
                 [NodeID(n) for n in tasks_to_set_aborted],
                 RunningState.ABORTED,
@@ -259,7 +259,7 @@ class BaseCompScheduler(ABC):
         comp_tasks_repo = CompTasksRepository(self.db_engine)
         await asyncio.gather(
             *(
-                comp_tasks_repo.set_project_tasks_state(
+                comp_tasks_repo.update_project_tasks_state(
                     t.project_id, [t.node_id], t.state
                 )
                 for t in tasks
@@ -479,7 +479,7 @@ class BaseCompScheduler(ABC):
         comp_tasks_repo: CompTasksRepository = get_repository(
             self.db_engine, CompTasksRepository
         )
-        await comp_tasks_repo.set_project_tasks_state(
+        await comp_tasks_repo.update_project_tasks_state(
             project_id,
             list(tasks_ready_to_start.keys()),
             RunningState.PENDING,
@@ -510,7 +510,7 @@ class BaseCompScheduler(ABC):
                     f"{r}",
                 )
 
-                await comp_tasks_repo.set_project_tasks_state(
+                await comp_tasks_repo.update_project_tasks_state(
                     project_id,
                     [r.node_id],
                     RunningState.FAILED,
@@ -534,7 +534,7 @@ class BaseCompScheduler(ABC):
                 # in the meantime we cannot schedule tasks on the scheduler,
                 # let's put these tasks back to PUBLISHED, so they might be re-submitted later
                 await asyncio.gather(
-                    comp_tasks_repo.set_project_tasks_state(
+                    comp_tasks_repo.update_project_tasks_state(
                         project_id,
                         list(tasks_ready_to_start.keys()),
                         RunningState.PUBLISHED,
@@ -551,7 +551,7 @@ class BaseCompScheduler(ABC):
                     f"{r}",
                     "".join(traceback.format_tb(r.__traceback__)),
                 )
-                await comp_tasks_repo.set_project_tasks_state(
+                await comp_tasks_repo.update_project_tasks_state(
                     project_id,
                     [t],
                     RunningState.FAILED,

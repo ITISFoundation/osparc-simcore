@@ -328,7 +328,7 @@ class CompTasksRepository(BaseRepository):
             f"{job_id=}",
         )
 
-    async def set_project_tasks_state(
+    async def update_project_tasks_state(
         self,
         project_id: ProjectID,
         tasks: list[NodeID],
