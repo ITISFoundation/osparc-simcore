@@ -17,12 +17,12 @@ from models_library.utils.specs_substitution import SubstitutionValue
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.faker_compose_specs import generate_fake_docker_compose
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_director_v2.modules.environments_substitutions import (
-    substitute_request_environments,
-    substitute_session_environments,
-    substitute_vendor_environments,
+from simcore_service_director_v2.modules.oenvs_substitutions import (
+    substitute_lifespan_oenvs,
+    substitute_session_oenvs,
+    substitute_vendor_secrets_oenvs,
 )
-from simcore_service_director_v2.utils.session_environments import (
+from simcore_service_director_v2.utils.session_oenvs import (
     ContextDict,
     SessionEnvironmentsTable,
     factory_context_getter,
@@ -47,9 +47,9 @@ def session_context(faker: Faker) -> ContextDict:
 
 @pytest.mark.acceptance_test
 async def test_resolve_session_environs(faker: Faker, session_context: ContextDict):
-    assert substitute_session_environments
-    assert substitute_vendor_environments
-    assert substitute_request_environments
+    assert substitute_session_oenvs
+    assert substitute_vendor_secrets_oenvs
+    assert substitute_lifespan_oenvs
 
     async def _request_user_role(app: FastAPI, user_id: UserID) -> SubstitutionValue:
         print(app, user_id)

@@ -26,9 +26,9 @@ from servicelib.json_serialization import json_dumps
 from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 from settings_library.docker_registry import RegistrySettings
 
-from ..environments_substitutions import (
-    substitute_session_environments,
-    substitute_vendor_environments,
+from ..oenvs_substitutions import (
+    substitute_session_oenvs,
+    substitute_vendor_secrets_oenvs,
 )
 from .docker_compose_egress_config import add_egress_configuration
 
@@ -322,13 +322,13 @@ async def assemble_spec(
     )
 
     # TODO: define error policy: required vs optional
-    compose_spec = await substitute_vendor_environments(
+    compose_spec = await substitute_vendor_secrets_oenvs(
         app,
         compose_spec=yaml.safe_load(stringified_service_spec),
         service_key=service_key,
     )
 
-    compose_spec = await substitute_session_environments(
+    compose_spec = await substitute_session_oenvs(
         app,
         compose_spec=compose_spec,
         user_id=user_id,

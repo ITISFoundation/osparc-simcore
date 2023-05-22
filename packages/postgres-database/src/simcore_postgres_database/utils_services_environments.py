@@ -1,10 +1,12 @@
+from typing import TypeAlias
+
 from sqlalchemy.sql import select
 
 from ._protocols import DBConnection
 from .models.services_environments import VENDOR_SECRET_PREFIX, services_vendor_secrets
 
 # This constraint is to avoid deserialization issues after substitution!
-VendorSecret = bool | int | float | str
+VendorSecret: TypeAlias = bool | int | float | str
 
 
 async def get_vendor_secrets(
