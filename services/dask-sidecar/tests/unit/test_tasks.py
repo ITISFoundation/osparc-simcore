@@ -460,10 +460,8 @@ def test_run_computational_sidecar_real_fct(
     "integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True
 )
 def test_run_multiple_computational_sidecar_dask(
-    event_loop: asyncio.AbstractEventLoop,
     dask_client: distributed.Client,
     ubuntu_task: ServiceExampleParam,
-    mocker: MockerFixture,
     s3_settings: S3Settings,
     boot_mode: BootMode,
     mocked_get_integration_version: mock.Mock,
@@ -486,7 +484,7 @@ def test_run_multiple_computational_sidecar_dask(
         )
         for _ in range(NUMBER_OF_TASKS)
     ]
-
+    mocked_get_integration_version.assert_called()
     results = dask_client.gather(futures)
     assert results
     assert not isinstance(results, Coroutine)
@@ -511,7 +509,6 @@ def log_sub(
 async def test_run_computational_sidecar_dask(
     dask_client: distributed.Client,
     ubuntu_task: ServiceExampleParam,
-    mocker: MockerFixture,
     s3_settings: S3Settings,
     boot_mode: BootMode,
     log_sub: distributed.Sub,
@@ -530,6 +527,7 @@ async def test_run_computational_sidecar_dask(
         resources={},
         boot_mode=boot_mode,
     )
+    mocked_get_integration_version.assert_called()
 
     worker_name = next(iter(dask_client.scheduler_info()["workers"]))
     assert worker_name
@@ -569,7 +567,6 @@ async def test_run_computational_sidecar_dask(
 )
 def test_failing_service_raises_exception(
     caplog_info_level: LogCaptureFixture,
-    event_loop: asyncio.AbstractEventLoop,
     mock_service_envs: None,
     dask_subsystem_mock: dict[str, mock.Mock],
     ubuntu_task_fail: ServiceExampleParam,
@@ -593,7 +590,6 @@ def test_failing_service_raises_exception(
 )
 def test_running_service_that_generates_unexpected_data_raises_exception(
     caplog_info_level: LogCaptureFixture,
-    event_loop: asyncio.AbstractEventLoop,
     mock_service_envs: None,
     dask_subsystem_mock: dict[str, mock.Mock],
     ubuntu_task_unexpected_output: ServiceExampleParam,
