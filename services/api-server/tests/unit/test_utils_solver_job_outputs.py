@@ -11,7 +11,7 @@ from simcore_service_api_server.utils.solver_job_outputs import (
 )
 
 
-def test_resultstypes_and_argument_type_sinc():
+def test_resultstypes_and_argument_type_sync():
     # I/O types returned by node-ports must be one-to-one mapped
     # with those returned as output results
 
