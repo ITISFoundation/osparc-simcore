@@ -1,11 +1,13 @@
-from typing import Any, Dict, List, Type
+from typing import Any, TypeVar
 
 from openpyxl.utils import get_column_letter
 from pydantic import BaseModel
 
+T = TypeVar("T")
+
 
 def ensure_same_field_length(
-    fields_to_check: List[str], values: Dict[str, Any]
+    fields_to_check: list[str], values: dict[str, Any]
 ) -> None:
     field_lengths = {field: values.get(field, -1) for field in fields_to_check}
     # expecting one single entry in a set if all lengths are the same
@@ -16,14 +18,12 @@ def ensure_same_field_length(
 
 
 def ensure_correct_instance(
-    template_data: BaseModel, class_to_check_against: Type[BaseModel]
-) -> BaseModel:
+    template_data: BaseModel, class_to_check_against: type[T]
+) -> T:
     if not isinstance(template_data, class_to_check_against):
         raise ValueError(
-            (
-                f"Expected '{class_to_check_against.__name__}', but "
-                f"'{template_data.__class__.__name__}' was provided"
-            )
+            f"Expected '{class_to_check_against.__name__}', but "
+            f"'{template_data.__class__.__name__}' was provided"
         )
 
     return template_data

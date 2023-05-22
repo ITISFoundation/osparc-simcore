@@ -103,11 +103,11 @@ class DatasetDescriptionParams(BaseModel):
         [], description="list of contributor data"
     )
 
-    acknowledgements = Field(
+    acknowledgements: str = Field(
         "Thank you everyone!",
         description="Acknowledgements beyond funding and contributors",
     )
-    funding = Field("", description="Funding sources")
+    funding: str = Field("", description="Funding sources")
 
     doi_entries: list[DoiEntryModel] = Field(
         [], description="data relative to doi entries"
@@ -161,7 +161,7 @@ class DatasetDescriptionParams(BaseModel):
 
 class SheetFirstDatasetDescription(BaseXLSXSheet):
     name = "Sheet1"
-    cell_styles = [
+    cell_styles: list[tuple[str, BaseXLSXCellData]] = [
         (
             "A1",
             TB("Metadata element")
