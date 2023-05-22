@@ -2,7 +2,6 @@ import logging
 from copy import deepcopy
 from typing import Any, Optional
 
-import yaml
 from fastapi.applications import FastAPI
 from models_library.docker import SimcoreServiceDockerLabelKeys
 from models_library.products import ProductName
@@ -26,10 +25,6 @@ from servicelib.json_serialization import json_dumps
 from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 from settings_library.docker_registry import RegistrySettings
 
-from ..oenvs_substitutions import (
-    substitute_session_oenvs,
-    substitute_vendor_secrets_oenvs,
-)
 from .docker_compose_egress_config import add_egress_configuration
 
 EnvKeyEqValueList = list[str]
@@ -320,23 +315,5 @@ async def assemble_spec(
         replace_simcore_registry=docker_registry_settings.resolved_registry_url,
         replace_service_version=service_version,
     )
-
-    # TODO: define error policy: required vs optional
-    compose_spec = await substitute_vendor_secrets_oenvs(
-        app,
-        compose_spec=yaml.safe_load(stringified_service_spec),
-        service_key=service_key,
-    )
-
-    compose_spec = await substitute_session_oenvs(
-        app,
-        compose_spec=compose_spec,
-        user_id=user_id,
-        product_name=product_name,
-        project_id=project_id,
-        node_id=node_id,
-    )
-
-    stringified_service_spec = yaml.safe_dump(compose_spec)
 
     return stringified_service_spec
