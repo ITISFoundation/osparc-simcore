@@ -1,17 +1,27 @@
+import logging
 from typing import Awaitable, Callable
 
 from fastapi import FastAPI
 from servicelib.background_task import start_periodic_task, stop_periodic_task
+from settings_library.prometheus import PrometheusSettings
 
 from .core.settings import ApplicationSettings
 from .resource_tracker_core import collect_service_resource_usage_task
 
 _TASK_NAME = "periodic_prometheus_polling"
 
+_logger = logging.getLogger(__name__)
+
 
 def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _startup() -> None:
         app_settings: ApplicationSettings = app.state.settings
+        settings: PrometheusSettings | None = (
+            app_settings.RESOURCE_USAGE_TRACKER_PROMETHEUS
+        )
+        if not settings:
+            _logger.warning("Prometheus API client is de-activated in the settings")
+            return
 
         app.state.resource_tracker_task = start_periodic_task(
             collect_service_resource_usage_task,
