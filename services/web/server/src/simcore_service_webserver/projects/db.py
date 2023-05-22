@@ -837,3 +837,6 @@ class ProjectDBAPI(BaseProjectDB):
 def setup_projects_db(app: web.Application):
     # NOTE: inits once per app
     return ProjectDBAPI.set_once_in_app_context(app)
+
+
+__all__ = ("ProjectAccessRights",)
