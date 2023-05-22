@@ -22,7 +22,7 @@ class T(BaseXLSXCellData):
 
     def __init__(self, text: str | int | float | None):
         # when text is none write emptystring
-        super().__init__(value="" if text is None else f"{text}")
+        super().__init__(value="" if text is None else text)
 
 
 class TB(T):

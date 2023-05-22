@@ -47,7 +47,9 @@ async def _write_sds_content(
     log.debug("Project data: %s", project_data)
 
     # assemble params here
-    submission_params = SubmissionDocumentParams()
+    submission_params = SubmissionDocumentParams(
+        award_number="", milestone_archived="", milestone_completion_date=None
+    )
     dataset_description_params = DatasetDescriptionParams(
         name=project_data["name"], description=project_data["description"]
     )

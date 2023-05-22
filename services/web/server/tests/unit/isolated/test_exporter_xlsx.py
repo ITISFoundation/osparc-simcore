@@ -89,6 +89,23 @@ def column_iter(start_letter: str, elements: int) -> str:
 # tests below
 
 
+@pytest.mark.parametrize(
+    "inputs",
+    [
+        {
+            "award_number": "",
+            "milestone_archived": "",
+            "milestone_completion_date": None,
+        }
+    ],
+)
+def test_submission_document_params(inputs: dict[str, Any]):
+    params = SubmissionDocumentParams(**inputs)
+    assert params.award_number == ""
+    assert params.milestone_archived == ""
+    assert params.milestone_completion_date == ""
+
+
 def test_code_submission(temp_dir: Path):
     award_number = random_text()
     milestone_archived = random_text()

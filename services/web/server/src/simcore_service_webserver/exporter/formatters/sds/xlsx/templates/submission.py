@@ -1,3 +1,5 @@
+import datetime
+
 from pydantic import BaseModel, Field, StrictStr, validator
 
 from ..styling_components import TB, Backgrounds, Borders, T
@@ -12,8 +14,8 @@ class SubmissionDocumentParams(BaseModel):
     milestone_archived: StrictStr = Field(
         "", description="From milestones supplied to NIH"
     )
-    milestone_completion_date: str = Field(
-        "",
+    milestone_completion_date: datetime.datetime | None = Field(
+        None,
         description=(
             "Date of milestone completion. This date starts the countdown for submission "
             "(30 days after completion), length of embargo and publication date (12 "
@@ -21,10 +23,11 @@ class SubmissionDocumentParams(BaseModel):
         ),
     )
 
-    # pylint: disable=unused-argument
     @validator("milestone_completion_date")
     @classmethod
-    def format_milestone_completion_date(cls, v, values):
+    def format_milestone_completion_date(cls, v):
+        if v is None:
+            return ""
         return v.strftime("%d/%m/%Y")
 
 
