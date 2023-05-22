@@ -37,7 +37,7 @@ def mock_background_task(mocker: MockerFixture) -> mock.Mock:
     return mocked_task
 
 
-async def test_resource_tracker_task_created_and_deleted(
+async def test_resource_tracker_disabled_if_prometheus_disabled_task_created_and_deleted(
     app_environment: EnvVarsDict,
     disabled_prometheus: None,
     mock_background_task: mock.Mock,
@@ -49,5 +49,22 @@ async def test_resource_tracker_task_created_and_deleted(
         == _FAST_POLL_INTERVAL
     )
     assert hasattr(initialized_app.state, "resource_tracker_task")
+    assert initialized_app.state.resource_tracker_task is None
+    await asyncio.sleep(5 * _FAST_POLL_INTERVAL)
+    mock_background_task.assert_not_called()
+
+
+async def test_resource_tracker_task_created_and_deleted(
+    app_environment: EnvVarsDict,
+    mock_background_task: mock.Mock,
+    initialized_app: FastAPI,
+    app_settings: ApplicationSettings,
+):
+    assert (
+        app_settings.RESOURCE_USAGE_TRACKER_EVALUATION_INTERVAL_SEC.total_seconds()
+        == _FAST_POLL_INTERVAL
+    )
+    assert hasattr(initialized_app.state, "resource_tracker_task")
+    # assert initialized_app.state.resource_tracker_task is not None
     await asyncio.sleep(5 * _FAST_POLL_INTERVAL)
     mock_background_task.assert_called()
