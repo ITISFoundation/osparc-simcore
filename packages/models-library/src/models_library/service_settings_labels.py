@@ -32,6 +32,7 @@ DEFAULT_DNS_SERVER_PORT: Final[PortInt] = parse_obj_as(PortInt, 53)
 
 
 # NOTE: To allow parametrized value, set the type to Union[OEnvSubstitutionStr, ...]
+# TODO: will be used in next PR!!!
 class OEnvSubstitutionStr(ConstrainedStr):
     regex = re.compile(rf"^\${OSPARC_IDENTIFIER_PREFIX}\w+$")
 
@@ -283,10 +284,10 @@ class _PortRange(BaseModel):
 
 
 class DNSResolver(BaseModel):
-    address: OEnvSubstitutionStr | str = Field(
+    address: str = Field(
         ..., description="this is not an url address is derived from IP address"
     )
-    port: OEnvSubstitutionStr | PortInt
+    port: PortInt
 
     class Config(_BaseConfig):
         extra = Extra.allow
@@ -299,8 +300,8 @@ class DNSResolver(BaseModel):
 
 
 class NATRule(BaseModel):
-    hostname: OEnvSubstitutionStr | str
-    tcp_ports: list[OEnvSubstitutionStr | _PortRange | PortInt]
+    hostname: str
+    tcp_ports: list[_PortRange | PortInt]
     dns_resolver: DNSResolver = Field(
         default_factory=lambda: DNSResolver(
             address=DEFAULT_DNS_SERVER_ADDRESS, port=DEFAULT_DNS_SERVER_PORT
