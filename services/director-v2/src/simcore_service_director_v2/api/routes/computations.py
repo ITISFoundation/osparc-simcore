@@ -368,7 +368,7 @@ async def stop_computation(
         )
         pipeline_dag: nx.DiGraph = pipeline_at_db.get_graph()
         # get the project task states
-        tasks: list[CompTaskAtDB] = await comp_tasks_repo.get_all_tasks(project_id)
+        tasks: list[CompTaskAtDB] = await comp_tasks_repo.list_tasks(project_id)
         # create the complete DAG graph
         complete_dag = create_complete_dag_from_tasks(tasks)
         # filter the tasks by the effective pipeline

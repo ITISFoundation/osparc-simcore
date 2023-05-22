@@ -183,7 +183,7 @@ async def _generate_tasks_list_from_project(
 
 
 class CompTasksRepository(BaseRepository):
-    async def get_all_tasks(
+    async def list_tasks(
         self,
         project_id: ProjectID,
     ) -> list[CompTaskAtDB]:
@@ -213,7 +213,7 @@ class CompTasksRepository(BaseRepository):
                 tasks.append(task_db)
         return tasks
 
-    async def check_task_exists(self, project_id: ProjectID, node_id: NodeID) -> bool:
+    async def task_exists(self, project_id: ProjectID, node_id: NodeID) -> bool:
         async with self.db_engine.acquire() as conn:
             nid: str | None = await conn.scalar(
                 sa.select(comp_tasks.c.node_id).where(
