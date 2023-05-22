@@ -13,8 +13,10 @@ import osparc
 from osparc.models import File, Solver, Job, JobStatus, JobInputs, JobOutputs
 from osparc.api import FilesApi, SolversApi
 
+
 class OSparcServerException(Exception):
     pass
+
 
 def handle_api_exceptions(osparc_server_exception):
     def decorator(method):
@@ -24,17 +26,22 @@ def handle_api_exceptions(osparc_server_exception):
             except osparc.exceptions.ApiException as e:
                 args[0]._api_client.close()
                 expt = json.loads(e.body)
-                raise osparc_server_exception('\n'.join(expt["errors"])) from None
+                raise osparc_server_exception("\n".join(expt["errors"])) from None
+
         return wrapper
+
     return decorator
 
-class OsparcSolver():
+
+class OsparcSolver:
     """
     An oSparc solver
     """
-    @handle_api_exceptions(OSparcServerException)
-    def __init__(self, solver_key: str, solver_version: str, cfg: osparc.Configuration) -> None:
 
+    @handle_api_exceptions(OSparcServerException)
+    def __init__(
+        self, solver_key: str, solver_version: str, cfg: osparc.Configuration
+    ) -> None:
         self._solver_key: str = solver_key
         self._solver_version: str = solver_version
         self._cfg: osparc.Configuration = cfg
@@ -44,8 +51,8 @@ class OsparcSolver():
         self._users_api = osparc.UsersApi(self._api_client)
         self._files_api = FilesApi(self._api_client)
         self._solvers_api = SolversApi(self._api_client)
-        self._users_api.get_my_profile() # validate access
-        
+        self._users_api.get_my_profile()  # validate access
+
         self._solver: Optional[Solver] = None
 
         # Job dependent data
@@ -57,13 +64,17 @@ class OsparcSolver():
         """
         Unpacks the zip file containing iSolve logs and reads them in as a string
         """
-        log_zip = Path(self._solvers_api.get_job_output_logfile(self._solver_key, self._solver_version, self._job.id))
+        log_zip = Path(
+            self._solvers_api.get_job_output_logfile(
+                self._solver_key, self._solver_version, self._job.id
+            )
+        )
         log: List[str] = []
         with TemporaryDirectory() as tmp_dir:
-            with zipfile.ZipFile(log_zip, 'r') as zip_ref:
+            with zipfile.ZipFile(log_zip, "r") as zip_ref:
                 zip_ref.extractall(tmp_dir)
             for pth in Path(tmp_dir).iterdir():
-                if pth.is_file() and pth.name.endswith('.logs'):
+                if pth.is_file() and pth.name.endswith(".logs"):
                     with open(pth, "r") as f:
                         log.append(f.read())
         os.remove(log_zip)
@@ -76,14 +87,20 @@ class OsparcSolver():
         """
         # create objects
         input: File = self._files_api.upload_file(file=input_file)
-        self._solver = self._solvers_api.get_solver_release(self._solver_key, self._solver_version)
-        self._job = self._solvers_api.create_job( self._solver.id, self._solver.version, JobInputs({"input_1": input}))
+        self._solver = self._solvers_api.get_solver_release(
+            self._solver_key, self._solver_version
+        )
+        self._job = self._solvers_api.create_job(
+            self._solver.id, self._solver.version, JobInputs({"input_1": input})
+        )
 
         # solve
-        logging.info(f'Start solving job: {self._job.id}')
+        logging.info(f"Start solving job: {self._job.id}")
 
-        self._status = self._solvers_api.start_job(self._solver.id, self._solver.version, self._job.id)
-    
+        self._status = self._solvers_api.start_job(
+            self._solver.id, self._solver.version, self._job.id
+        )
+
     @handle_api_exceptions(OSparcServerException)
     def job_done(self) -> bool:
         """
@@ -91,36 +108,43 @@ class OsparcSolver():
         """
         if self._job is None:
             return True
-        self._status = self._solvers_api.inspect_job(self._solver_key, self._solver_version, self._job.id)
+        self._status = self._solvers_api.inspect_job(
+            self._solver_key, self._solver_version, self._job.id
+        )
         if self._status.stopped_at:
-            if self._status.state != 'SUCCESS':
-                logging.error(f'Failed job {self._job.id} with status {self._status.state}')
-                log: List[str] = [f'Failed to solve job with status {self._status.state}', 'Server log:']
+            if self._status.state != "SUCCESS":
+                logging.error(
+                    f"Failed job {self._job.id} with status {self._status.state}"
+                )
+                log: List[str] = [
+                    f"Failed to solve job with status {self._status.state}",
+                    "Server log:",
+                ]
                 log += self._generate_isolve_log()
-                raise OSparcServerException('\n'.join(log))
+                raise OSparcServerException("\n".join(log))
             return True
         else:
             return False
-    
+
     @handle_api_exceptions(OSparcServerException)
     def fetch_results(self, output_file: Path, log_path: Path) -> None:
         """
         Fetches the results of a simulation
         """
-        outputs: JobOutputs = self._solvers_api.get_job_outputs(self._solver_key, self._solver_version, self._job.id)
+        outputs: JobOutputs = self._solvers_api.get_job_outputs(
+            self._solver_key, self._solver_version, self._job.id
+        )
         for _, result in outputs.results.items():
             file = self._files_api.download_file(result.id)
-            if result.filename == 'output.h5':
+            if result.filename == "output.h5":
                 shutil.move(file, output_file)
-            elif result.filename == 'log.tgz':
+            elif result.filename == "log.tgz":
                 shutil.move(file, log_path)
             else:
                 os.remove(file)
-                logging.info(f'Received unexpected output: {result.filename}')
+                logging.info(f"Received unexpected output: {result.filename}")
                 continue
-            logging.info(f'Successfully downloaded {result.filename}')
-            
+            logging.info(f"Successfully downloaded {result.filename}")
+
         self._job = None
         self._status = None
-
-
