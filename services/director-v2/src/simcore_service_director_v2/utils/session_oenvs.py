@@ -67,7 +67,6 @@ class SessionEnvironmentsTable:
     def register_from_handler(self, name: str):
         def _decorator(coro: Callable):
             assert inspect.iscoroutinefunction(coro)  # nosec
-            # TODO: check coro signature
             self.register({name: factory_handler(coro)})
 
         return _decorator
