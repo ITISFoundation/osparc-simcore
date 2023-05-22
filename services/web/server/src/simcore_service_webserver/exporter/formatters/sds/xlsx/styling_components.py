@@ -1,5 +1,3 @@
-from typing import List
-
 from openpyxl.comments import Comment as PyXLComment
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.styles.borders import BORDER_MEDIUM, BORDER_THIN
@@ -22,9 +20,9 @@ class T(BaseXLSXCellData):
 
     alignment = Alignment(wrap_text=True)
 
-    def __init__(self, text: str):
+    def __init__(self, text: str | int | float | None):
         # when text is none write emptystring
-        super().__init__(value="" if text is None else text)
+        super().__init__(value="" if text is None else f"{text}")
 
 
 class TB(T):
@@ -72,7 +70,7 @@ class BorderWithStyle(BaseXLSXCellData):
         super().__init__(border=Border(**{x: side for x in borders_sides}))
 
 
-def _all_borders() -> List[str]:
+def _all_borders() -> list[str]:
     return ["top", "left", "right", "bottom", "outline", "vertical", "horizontal"]
 
 

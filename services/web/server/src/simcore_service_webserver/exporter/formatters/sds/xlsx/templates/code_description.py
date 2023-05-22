@@ -280,7 +280,7 @@ class CodeDescriptionParams(BaseModel):
 
 class SheetCodeDescription(BaseXLSXSheet):
     name = "Code Description"
-    cell_styles = [
+    cell_styles: list[tuple[str, BaseXLSXCellData]] = [
         ## Header
         ("A1", TB("Metadata element")),
         ("B1", TB("Description")),
@@ -797,7 +797,7 @@ class SheetCodeDescription(BaseXLSXSheet):
 
 class SheetInputs(BaseXLSXSheet):
     name = "Inputs"
-    cell_styles = [
+    cell_styles: list[tuple[str, BaseXLSXCellData]] = [
         # column A
         ("A1", T("Field")),
         ("A2", T("Description")),
@@ -905,7 +905,7 @@ class SheetInputs(BaseXLSXSheet):
 
 class SheetOutputs(BaseXLSXSheet):
     name = "Outputs"
-    cell_styles = [
+    cell_styles: list[tuple[str, BaseXLSXCellData]] = [
         # column A
         ("A1", T("Field")),
         ("A2", T("Description")),
@@ -1010,7 +1010,7 @@ class SheetOutputs(BaseXLSXSheet):
 
 class SheetTSRRating(BaseXLSXSheet):
     name = "TSR Rating Rubric"
-    cell_styles = [
+    cell_styles: list[tuple[str, BaseXLSXCellData]] = [
         ("A1", T("Conformance Level")),
         ("A3", T("Description")),
         ("B1", T("Comprehensive")),
