@@ -9,7 +9,7 @@ from aiopg.sa.result import ResultProxy, RowProxy
 from servicelib.pools import non_blocking_process_pool_executor
 from simcore_postgres_database.models.scicrunch_resources import scicrunch_resources
 
-from ...catalog_client import get_service
+from ...catalog.client import get_service
 from ...projects.exceptions import ProjectsException
 from ...projects.projects_api import get_project_for_user
 from ...scicrunch.db import ResearchResourceRepository

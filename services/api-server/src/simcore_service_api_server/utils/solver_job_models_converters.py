@@ -9,6 +9,7 @@ from functools import lru_cache
 from typing import Callable
 
 from models_library.projects_nodes import InputID, InputTypes
+from pydantic import parse_obj_as
 
 from ..models.basic_types import VersionStr
 from ..models.domain.projects import (
@@ -21,7 +22,7 @@ from ..models.domain.projects import (
 )
 from ..models.schemas.files import File
 from ..models.schemas.jobs import (
-    ArgumentType,
+    ArgumentTypes,
     Job,
     JobInputs,
     JobStatus,
@@ -30,7 +31,6 @@ from ..models.schemas.jobs import (
 )
 from ..models.schemas.solvers import Solver, SolverKeyId
 from ..plugins.director_v2 import ComputationTaskGet
-from .typing_extra import get_types
 
 # UTILS ------
 _BASE_UUID = uuid.UUID("231e13db-6bc6-4f64-ba56-2ee2c73b9f09")
@@ -64,7 +64,7 @@ def create_node_inputs_from_job_inputs(inputs: JobInputs) -> dict[InputID, Input
 
     node_inputs: dict[InputID, InputTypes] = {}
     for name, value in inputs.values.items():
-        assert isinstance(value, get_types(ArgumentType))  # nosec
+        assert parse_obj_as(ArgumentTypes, value) == value  # type: ignore  # nosec
 
         if isinstance(value, File):
             # FIXME: ensure this aligns with storage policy
@@ -87,10 +87,10 @@ def create_job_inputs_from_node_inputs(inputs: dict[InputID, InputTypes]) -> Job
 
     raises ValidationError
     """
-    input_values: dict[str, ArgumentType] = {}
+    input_values: dict[str, ArgumentTypes] = {}
     for name, value in inputs.items():
-        assert isinstance(name, get_types(InputID))  # nosec
-        assert isinstance(value, get_types(InputTypes))  # nosec
+        assert parse_obj_as(InputID, name) == name  # nosec
+        assert parse_obj_as(InputTypes, value) == value  # nosec
 
         if isinstance(value, SimCoreFileLink):
             # FIXME: ensure this aligns with storage policy

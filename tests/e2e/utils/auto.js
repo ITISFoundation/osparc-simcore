@@ -113,7 +113,7 @@ async function dashboardNewPlan(page) {
   console.log("Creating New Plan");
 
   await dashboardStudiesBrowser(page);
-  await utils.waitAndClick(page, '[osparc-test-id="newPlanButton"]');
+  await utils.waitAndClick(page, '[osparc-test-id="newTIPlanButton"]');
 }
 
 async function dashboardStartSim4LifeLite(page) {
