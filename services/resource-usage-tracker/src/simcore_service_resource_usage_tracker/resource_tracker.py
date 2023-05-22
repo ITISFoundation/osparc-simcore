@@ -23,7 +23,6 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
         if not settings:
             _logger.warning("Prometheus API client is de-activated in the settings")
             return
-
         app.state.resource_tracker_task = start_periodic_task(
             collect_service_resource_usage_task,
             interval=app_settings.RESOURCE_USAGE_TRACKER_EVALUATION_INTERVAL_SEC,

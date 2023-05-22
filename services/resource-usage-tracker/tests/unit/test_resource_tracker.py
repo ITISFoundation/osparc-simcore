@@ -8,6 +8,7 @@ import asyncio
 from unittest import mock
 
 import pytest
+import requests_mock
 from fastapi import FastAPI
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
@@ -56,6 +57,7 @@ async def test_resource_tracker_disabled_if_prometheus_disabled_task_created_and
 
 async def test_resource_tracker_task_created_and_deleted(
     app_environment: EnvVarsDict,
+    mocked_prometheus: requests_mock.Mocker,
     mock_background_task: mock.Mock,
     initialized_app: FastAPI,
     app_settings: ApplicationSettings,
@@ -64,6 +66,7 @@ async def test_resource_tracker_task_created_and_deleted(
         app_settings.RESOURCE_USAGE_TRACKER_EVALUATION_INTERVAL_SEC.total_seconds()
         == _FAST_POLL_INTERVAL
     )
+
     assert hasattr(initialized_app.state, "resource_tracker_task")
     # assert initialized_app.state.resource_tracker_task is not None
     await asyncio.sleep(5 * _FAST_POLL_INTERVAL)
