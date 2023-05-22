@@ -82,7 +82,6 @@ python-dateutil==2.8.2
     # via
     #   -c requirements/_base.txt
     #   faker
-    # via faker
 python-dotenv==1.0.0
     # via -r requirements/_test.in
 pyyaml==6.0
