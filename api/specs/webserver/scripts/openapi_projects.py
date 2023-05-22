@@ -17,9 +17,10 @@ from _common import (
     create_openapi_specs,
 )
 from fastapi import FastAPI
+from models_library.api_schemas_catalog import UserInaccessibleService
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
-from models_library.services import UserWithoutServiceAccess
+from models_library.users import GroupID
 from simcore_service_webserver.projects.projects_handlers_crud import ProjectPathParams
 
 app = FastAPI(redoc_url=None)
@@ -34,18 +35,21 @@ TAGS: list[str | Enum] = [
 #
 
 
-@app.post(
-    "/projects/{project_id}/shareable",
-    response_model=Envelope[list[UserWithoutServiceAccess]],
+@app.get(
+    "/projects/{project_id}/shareAccess:denied",
+    response_model=Envelope[list[UserInaccessibleService]],
     tags=TAGS,
-    operation_id="shareable_project",
-    summary="Checks whether services in the study are accessible for users in provided group",
+    operation_id="denied_share_access_project",
+    summary="Checks which users do not have access to the project in provided group",
 )
-async def shareable_project(project_id: ProjectID, gid: int):
-    ...
+async def denied_share_access_project(project_id: ProjectID, with_gid: GroupID):
+    """
+    This check is done based on whether users would be able to access the services
+    in the project.
+    """
 
 
-assert_handler_signature_against_model(shareable_project, ProjectPathParams)
+assert_handler_signature_against_model(denied_share_access_project, ProjectPathParams)
 
 
 if __name__ == "__main__":

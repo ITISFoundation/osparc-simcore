@@ -1,11 +1,14 @@
 paths:
-  /projects/{project_id}/shareable:
-    post:
+  /projects/{project_id}/shareAccess:denied:
+    get:
       tags:
       - project
-      summary: Checks whether services in the study are accessible for users in provided
-        group
-      operationId: shareable_project
+      summary: Checks which users do not have access to the project in provided group
+      description: 'This check is done based on whether users would be able to access
+        the services
+
+        in the project.'
+      operationId: denied_share_access_project
       parameters:
       - required: true
         schema:
@@ -16,9 +19,11 @@ paths:
         in: path
       - required: true
         schema:
-          title: Gid
+          title: With Gid
+          exclusiveMinimum: true
           type: integer
-        name: gid
+          minimum: 0
+        name: with_gid
         in: query
       responses:
         '200':
@@ -26,22 +31,22 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_models_library.services.UserWithoutServiceAccess__'
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_catalog.UserInaccessibleService__'
 components:
   schemas:
-    Envelope_list_models_library.services.UserWithoutServiceAccess__:
-      title: Envelope[list[models_library.services.UserWithoutServiceAccess]]
+    Envelope_list_models_library.api_schemas_catalog.UserInaccessibleService__:
+      title: Envelope[list[models_library.api_schemas_catalog.UserInaccessibleService]]
       type: object
       properties:
         data:
           title: Data
           type: array
           items:
-            $ref: '#/components/schemas/UserWithoutServiceAccess'
+            $ref: '#/components/schemas/UserInaccessibleService'
         error:
           title: Error
-    UserWithoutServiceAccess:
-      title: UserWithoutServiceAccess
+    UserInaccessibleService:
+      title: UserInaccessibleService
       required:
       - user_id
       - service_key
@@ -50,10 +55,14 @@ components:
       properties:
         user_id:
           title: User Id
+          exclusiveMinimum: true
           type: integer
+          minimum: 0
         service_key:
           title: Service Key
+          pattern: ^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$
           type: string
         service_version:
           title: Service Version
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
           type: string
