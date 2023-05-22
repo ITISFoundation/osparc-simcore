@@ -107,7 +107,7 @@ class ObjectiveFunction:
 
         sim.Name = "Dipole (Broadband)"
         sim.SetupSettings.SimulationTime = (
-            52.0,
+            2.0,
             units.Periods,
         )  # Set to e.g. 3 for faster execution time. Correct value: 52
 
@@ -197,23 +197,14 @@ class ObjectiveFunction:
 
 
 if __name__ == "__main__":
-    doc: List[str] = []
-    doc.append(
-        "In this example we use Sim4Life and oSparc to determine the right length (arm_len) of a dipole antenna in order to achieve a given impedance profile. "
-    )
-    doc.append(
-        "This is done using a bayesian optimization algorithm which tries to guess the minimum of an objective function which, "
-    )
-    doc.append(
-        "given an input arm length, outputs the L2 squared distance to the reference impedance profile. I.e. the minimum of the objective function "
-    )
-    doc.append(
-        "is the arm length giving the wished impedance profile (the optimal armlength is 249.5). N.b. this example should be run with the python interpreter "
-    )
-    doc.append(
-        "shipped with Sim4Life and several packages must be pip installed into that. This was tested using Sim4Life v. 7.2."
-    )
-    parser = ArgumentParser("\n".join(doc))
+    endl: str = "\n"
+    doc: str = "In this example we use Sim4Life and oSparc to determine the right length (arm_len) of a dipole antenna in order to achieve a given impedance profile." + endl
+    doc += "This is done using a bayesian optimization algorithm which tries to guess the minimum of an objective function which," + endl
+    doc += "given an input arm length, outputs the L2 squared distance to the reference impedance profile. I.e. the minimum of the objective function" + endl
+    doc += "is the arm length giving the wished impedance profile (the optimal armlength is 249.5). N.b. this example should be run with the python interpreter" + endl
+    doc += "shipped with Sim4Life and several packages must be pip installed into that. This was tested using Sim4Life v. 7.2." + endl
+
+    parser = ArgumentParser(doc)
     parser.add_argument("username", help="oSparc public API username", type=str)
     parser.add_argument("password", help="oSparc public API password", type=str)
     args = parser.parse_args()
@@ -287,7 +278,7 @@ if __name__ == "__main__":
             "b--",
             label=f"Impedance w/ arm_len={res.x[0]:.1f})",
         )
-        ax.set_xlabel("Frequency [MHz]")
+        ax.set_xlabel("Frequency [Hz]")
         ax.set_ylabel("EM Input Impedance(f) [V/A]")
         ax.set_title("Dipole Example")
         ax.legend(loc="upper left")
