@@ -484,7 +484,7 @@ def test_run_multiple_computational_sidecar_dask(
         )
         for _ in range(NUMBER_OF_TASKS)
     ]
-    mocked_get_integration_version.assert_called()
+
     results = dask_client.gather(futures)
     assert results
     assert not isinstance(results, Coroutine)
@@ -494,6 +494,8 @@ def test_run_multiple_computational_sidecar_dask(
         for k, v in ubuntu_task.expected_output_data.items():
             assert k in output_data
             assert output_data[k] == v
+
+    mocked_get_integration_version.assert_called()
 
 
 @pytest.fixture
@@ -527,7 +529,6 @@ async def test_run_computational_sidecar_dask(
         resources={},
         boot_mode=boot_mode,
     )
-    mocked_get_integration_version.assert_called()
 
     worker_name = next(iter(dask_client.scheduler_info()["workers"]))
     assert worker_name
@@ -560,6 +561,7 @@ async def test_run_computational_sidecar_dask(
         if isinstance(v, FileUrl):
             with fsspec.open(f"{v.url}", **s3_storage_kwargs) as fp:
                 assert fp.details.get("size") > 0  # type: ignore
+    mocked_get_integration_version.assert_called()
 
 
 @pytest.mark.parametrize(
