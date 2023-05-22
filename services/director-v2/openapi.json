@@ -2288,6 +2288,9 @@
           "pipeline_details",
           "iteration",
           "cluster_id",
+          "started",
+          "stopped",
+          "submitted",
           "url"
         ],
         "type": "object",
@@ -2332,6 +2335,24 @@
             "minimum": 0.0,
             "type": "integer",
             "description": "the cluster on which the computaional task runs/ran (none if no task ran yet)"
+          },
+          "started": {
+            "title": "Started",
+            "type": "string",
+            "description": "the timestamp when the computation was started or None if not started yet",
+            "format": "date-time"
+          },
+          "stopped": {
+            "title": "Stopped",
+            "type": "string",
+            "description": "the timestamp when the computation was stopped or None if not started nor stopped yet",
+            "format": "date-time"
+          },
+          "submitted": {
+            "title": "Submitted",
+            "type": "string",
+            "description": "task last modification timestamp or None if the there is no task",
+            "format": "date-time"
           },
           "url": {
             "title": "Url",
@@ -2405,7 +2426,8 @@
           "project_id",
           "service_uuid",
           "service_resources",
-          "product_name"
+          "product_name",
+          "can_save"
         ],
         "type": "object",
         "properties": {
@@ -2451,6 +2473,11 @@
             "title": "Product Name",
             "type": "string",
             "description": "Current product name"
+          },
+          "can_save": {
+            "title": "Can Save",
+            "type": "boolean",
+            "description": "the service data must be saved when closing"
           }
         },
         "example": {
@@ -2461,6 +2488,7 @@
           "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
           "basepath": "/x/75c7f3f4-18f9-4678-8610-54a2ade78eaa",
           "product_name": "osparc",
+          "can_save": true,
           "service_resources": {
             "container": {
               "image": "simcore/services/dynamic/jupyter-math:2.0.5",
@@ -2701,6 +2729,14 @@
             ],
             "description": "the node's current state",
             "default": "NOT_STARTED"
+          },
+          "progress": {
+            "title": "Progress",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "type": "number",
+            "description": "current progress of the task if available (None if not started or not a computational task)",
+            "default": 0
           }
         },
         "additionalProperties": false
@@ -2722,6 +2758,7 @@
         "title": "PipelineDetails",
         "required": [
           "adjacency_list",
+          "progress",
           "node_states"
         ],
         "type": "object",
@@ -2737,6 +2774,13 @@
               }
             },
             "description": "The adjacency list of the current pipeline in terms of {NodeID: [successor NodeID]}"
+          },
+          "progress": {
+            "title": "Progress",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "type": "number",
+            "description": "the progress of the pipeline (None if there are no computational tasks)"
           },
           "node_states": {
             "title": "Node States",
@@ -3070,7 +3114,11 @@
             "description": "The running status of the scheduler"
           },
           "workers": {
-            "$ref": "#/components/schemas/WorkersDict"
+            "title": "Workers",
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Worker"
+            }
           }
         }
       },
@@ -3219,6 +3267,12 @@
             "title": "Boot-Options",
             "type": "object",
             "description": "Service defined boot options. These get injected in the service as env variables."
+          },
+          "min-visible-inputs": {
+            "title": "Min-Visible-Inputs",
+            "minimum": 0.0,
+            "type": "integer",
+            "description": "The number of 'data type inputs' displayed by default in the UI. When None all 'data type inputs' are displayed."
           }
         },
         "additionalProperties": false,
@@ -3701,13 +3755,6 @@
             ],
             "description": "task details"
           }
-        }
-      },
-      "WorkersDict": {
-        "title": "WorkersDict",
-        "type": "object",
-        "additionalProperties": {
-          "$ref": "#/components/schemas/Worker"
         }
       }
     }

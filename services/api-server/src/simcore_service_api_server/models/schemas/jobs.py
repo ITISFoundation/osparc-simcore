@@ -1,6 +1,5 @@
 import hashlib
 from datetime import datetime
-from enum import Enum
 from typing import TypeAlias, Union
 from uuid import UUID, uuid4
 
@@ -14,6 +13,8 @@ from pydantic import (
     StrictInt,
     validator,
 )
+
+from models_library.projects_state import RunningState
 
 from ...models.config import BaseConfig
 from ...models.schemas.files import File
@@ -217,19 +218,6 @@ class Job(BaseModel):
         return self.name
 
 
-# TODO: these need to be in sync with computational task states
-class TaskStates(str, Enum):
-    UNKNOWN = "UNKNOWN"
-    PUBLISHED = "PUBLISHED"
-    NOT_STARTED = "NOT_STARTED"
-    PENDING = "PENDING"
-    STARTED = "STARTED"
-    RETRY = "RETRY"
-    SUCCESS = "SUCCESS"
-    FAILED = "FAILED"
-    ABORTED = "ABORTED"
-
-
 class PercentageInt(ConstrainedInt):
     ge = 0
     le = 100
@@ -241,12 +229,13 @@ class JobStatus(BaseModel):
     #  SEE https://english.stackexchange.com/questions/12958/status-vs-state
 
     job_id: UUID
-    state: TaskStates
+    state: RunningState
     progress: PercentageInt = Field(default=PercentageInt(0))
 
     # Timestamps on states
-    # TODO: sync state events and timestamps
-    submitted_at: datetime
+    submitted_at: datetime = Field(
+        ..., description="Last modification timestamp of the solver job"
+    )
     started_at: datetime | None = Field(
         None,
         description="Timestamp that indicate the moment the solver starts execution or None if the event did not occur",
@@ -262,14 +251,10 @@ class JobStatus(BaseModel):
         schema_extra = {
             "example": {
                 "job_id": "145beae4-a3a8-4fde-adbb-4e8257c2c083",
-                "state": TaskStates.STARTED,
+                "state": RunningState.STARTED,
                 "progress": 3,
                 "submitted_at": "2021-04-01 07:15:54.631007",
                 "started_at": "2021-04-01 07:16:43.670610",
                 "stopped_at": None,
             }
         }
-
-    def take_snapshot(self, event: str = "submitted"):
-        setattr(self, f"{event}_at", datetime.utcnow())
-        return getattr(self, f"{event}_at")
