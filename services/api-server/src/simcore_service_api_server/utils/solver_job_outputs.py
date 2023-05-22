@@ -1,5 +1,5 @@
 import logging
-from typing import Union
+from typing import TypeAlias, Union
 
 import aiopg
 from fastapi import status
@@ -7,15 +7,16 @@ from fastapi.exceptions import HTTPException
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import BaseFileLink
+from pydantic import StrictBool, StrictFloat, StrictInt, parse_obj_as
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_v2 import DBManager, Nodeports
 
-from .typing_extra import get_types
-
 log = logging.getLogger(__name__)
 
-
-ResultsTypes = Union[float, int, bool, BaseFileLink, str, None]
+# ResultsTypes are types used in the job outputs (see ArgumentType)
+ResultsTypes: TypeAlias = Union[
+    StrictFloat, StrictInt, StrictBool, BaseFileLink, str, list, None
+]
 
 
 async def get_solver_output_results(
@@ -31,14 +32,14 @@ async def get_solver_output_results(
     try:
         solver: Nodeports = await node_ports_v2.ports(
             user_id=user_id,
-            project_id=str(project_uuid),
-            node_uuid=str(node_uuid),
+            project_id=f"{project_uuid}",
+            node_uuid=f"{node_uuid}",
             db_manager=db_manager,
         )
         solver_output_results = {}
         for port in (await solver.outputs).values():
             log.debug("Getting %s [%s]: %s", port.key, port.property_type, port.value)
-            assert isinstance(port.value, get_types(ResultsTypes))  # nosec
+            assert parse_obj_as(ResultsTypes, port.value) == port.value  # type: ignore  # nosec
             solver_output_results[port.key] = port.value
 
         return solver_output_results
