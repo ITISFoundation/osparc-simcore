@@ -221,7 +221,7 @@ def _update_container_labels(
                 labels.append(docker_label)
 
 
-async def assemble_spec(
+def assemble_spec(
     *,
     app: FastAPI,
     service_key: ServiceKey,
