@@ -166,7 +166,7 @@ def boot_mode(request: FixtureRequest) -> BootMode:
     ids=lambda v: f"integration.version.{v}",
 )
 def integration_version(request: FixtureRequest) -> version.Version:
-    print("Using service integration:", request.param)
+    print("--> Using service integration:", request.param)
     return version.Version(request.param)
 
 
@@ -371,6 +371,18 @@ def caplog_info_level(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
         yield caplog
 
 
+@pytest.fixture
+def mocked_get_integration_version(
+    integration_version: version.Version, mocker: MockerFixture
+) -> mock.Mock:
+    mocked_get_integration_version = mocker.patch(
+        "simcore_service_dask_sidecar.computational_sidecar.core.get_integration_version",
+        autospec=True,
+        return_value=integration_version,
+    )
+    return mocked_get_integration_version
+
+
 def test_run_computational_sidecar_real_fct(
     caplog_info_level: LogCaptureFixture,
     event_loop: asyncio.AbstractEventLoop,
@@ -380,12 +392,8 @@ def test_run_computational_sidecar_real_fct(
     mocker: MockerFixture,
     s3_settings: S3Settings,
     boot_mode: BootMode,
+    mocked_get_integration_version: mock.Mock,
 ):
-    mocked_get_integration_version = mocker.patch(
-        "simcore_service_dask_sidecar.computational_sidecar.core.get_integration_version",
-        autospec=True,
-        return_value=ubuntu_task.integration_version,
-    )
     output_data = run_computational_sidecar(
         ubuntu_task.docker_basic_auth,
         ubuntu_task.service_key,
@@ -458,14 +466,10 @@ def test_run_multiple_computational_sidecar_dask(
     mocker: MockerFixture,
     s3_settings: S3Settings,
     boot_mode: BootMode,
+    mocked_get_integration_version: mock.Mock,
 ):
     NUMBER_OF_TASKS = 50
 
-    mocker.patch(
-        "simcore_service_dask_sidecar.computational_sidecar.core.get_integration_version",
-        autospec=True,
-        return_value=ubuntu_task.integration_version,
-    )
     futures = [
         dask_client.submit(
             run_computational_sidecar,
@@ -511,12 +515,8 @@ async def test_run_computational_sidecar_dask(
     s3_settings: S3Settings,
     boot_mode: BootMode,
     log_sub: distributed.Sub,
+    mocked_get_integration_version: mock.Mock,
 ):
-    mocker.patch(
-        "simcore_service_dask_sidecar.computational_sidecar.core.get_integration_version",
-        autospec=True,
-        return_value=ubuntu_task.integration_version,
-    )
     future = dask_client.submit(
         run_computational_sidecar,
         ubuntu_task.docker_basic_auth,
@@ -534,10 +534,12 @@ async def test_run_computational_sidecar_dask(
     worker_name = next(iter(dask_client.scheduler_info()["workers"]))
     assert worker_name
     output_data = future.result()
+    assert output_data
     assert isinstance(output_data, TaskOutputData)
 
     # check that the task produces expected logs
     worker_logs = [TaskLogEvent.parse_raw(msg).log for msg in log_sub.buffer]
+    print(f"<-- we got {len(worker_logs)} lines of logs")
 
     for log in ubuntu_task.expected_logs:
         r = re.compile(rf"^({log}).*")
