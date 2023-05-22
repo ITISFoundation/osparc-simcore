@@ -362,7 +362,7 @@ class CompTasksRepository(BaseRepository):
             f"{state=}",
         )
 
-    async def set_project_task_progress(
+    async def update_project_task_progress(
         self, project_id: ProjectID, node_id: NodeID, progress: float
     ) -> None:
         async with self.db_engine.acquire() as conn:

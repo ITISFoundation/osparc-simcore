@@ -226,7 +226,7 @@ class DaskScheduler(BaseCompScheduler):
         logger.debug("received task progress update: %s", task_progress_event)
         *_, user_id, project_id, node_id = parse_dask_job_id(task_progress_event.job_id)
 
-        await CompTasksRepository(self.db_engine).set_project_task_progress(
+        await CompTasksRepository(self.db_engine).update_project_task_progress(
             project_id, node_id, task_progress_event.progress
         )
 
