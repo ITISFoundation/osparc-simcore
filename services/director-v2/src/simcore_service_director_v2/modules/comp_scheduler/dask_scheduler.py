@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from typing import AsyncIterator
 
+import arrow
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import (
     TaskLogEvent,
@@ -11,6 +12,7 @@ from dask_task_models_library.container_tasks.events import (
 )
 from dask_task_models_library.container_tasks.io import TaskOutputData
 from models_library.clusters import DEFAULT_CLUSTER_ID, Cluster, ClusterID
+from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -143,7 +145,7 @@ class DaskScheduler(BaseCompScheduler):
     ) -> None:
         logger.debug("received %s result: %s", f"{task=}", f"{result=}")
         task_final_state = RunningState.FAILED
-        errors = None
+        errors: list[ErrorDict] = []
 
         if task.job_id is not None:
             (
@@ -172,6 +174,16 @@ class DaskScheduler(BaseCompScheduler):
                         task_final_state = RunningState.ABORTED
                     else:
                         task_final_state = RunningState.FAILED
+                        errors.append(
+                            {
+                                "loc": (
+                                    f"{task.project_id}",
+                                    f"{task.node_id}",
+                                ),
+                                "msg": f"{result}",
+                                "type": "runtime",
+                            }
+                        )
                     # we need to remove any invalid files in the storage
                     await clean_task_output_and_log_files_if_invalid(
                         self.db_engine, user_id, project_id, node_id
@@ -206,6 +218,7 @@ class DaskScheduler(BaseCompScheduler):
             task_final_state,
             errors=errors,
             optional_progress=1,
+            optional_stopped=arrow.utcnow().datetime,
         )
 
     async def _task_progress_change_handler(self, event: str) -> None:

@@ -3,6 +3,7 @@ import logging
 from datetime import datetime
 from typing import Any
 
+import arrow
 import sqlalchemy as sa
 from models_library.errors import ErrorDict
 from models_library.function_services_catalog import iter_service_docker_data
@@ -302,7 +303,9 @@ class CompTasksRepository(BaseRepository):
                     & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
                     & (comp_tasks.c.state == StateType.PUBLISHED)
                 )
-                .values(state=StateType.ABORTED, progress=1.0)
+                .values(
+                    state=StateType.ABORTED, progress=1.0, end=arrow.utcnow().datetime
+                )
             )
         logger.debug("marked project %s published tasks as aborted", f"{project_id=}")
 
@@ -333,11 +336,17 @@ class CompTasksRepository(BaseRepository):
         errors: list[ErrorDict] | None = None,
         *,
         optional_progress: float | None = None,
+        optional_started: datetime | None = None,
+        optional_stopped: datetime | None = None,
     ) -> None:
         async with self.db_engine.acquire() as conn:
             update_values = {"state": RUNNING_STATE_TO_DB[state], "errors": errors}
             if optional_progress is not None:
                 update_values["progress"] = optional_progress
+            if optional_started is not None:
+                update_values["start"] = optional_started
+            if optional_stopped is not None:
+                update_values["end"] = optional_stopped
             await conn.execute(
                 sa.update(comp_tasks)
                 .where(

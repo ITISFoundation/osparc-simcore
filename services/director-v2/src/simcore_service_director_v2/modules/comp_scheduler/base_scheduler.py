@@ -16,6 +16,7 @@ import traceback
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 
+import arrow
 import networkx as nx
 from aiopg.sa.engine import Engine
 from models_library.clusters import ClusterID
@@ -232,6 +233,7 @@ class BaseCompScheduler(ABC):
                 [NodeID(n) for n in tasks_to_set_aborted],
                 RunningState.ABORTED,
                 optional_progress=1.0,
+                optional_stopped=arrow.utcnow().datetime,
             )
         return tasks
 
@@ -482,6 +484,7 @@ class BaseCompScheduler(ABC):
             list(tasks_ready_to_start.keys()),
             RunningState.PENDING,
             optional_progress=0,
+            optional_started=arrow.utcnow().datetime,
         )
 
         # we pass the tasks to the dask-client in a gather such that each task can be stopped independently
@@ -513,6 +516,7 @@ class BaseCompScheduler(ABC):
                     RunningState.FAILED,
                     r.get_errors(),
                     optional_progress=1.0,
+                    optional_stopped=arrow.utcnow().datetime,
                 )
             elif isinstance(
                 r,
@@ -548,7 +552,11 @@ class BaseCompScheduler(ABC):
                     "".join(traceback.format_tb(r.__traceback__)),
                 )
                 await comp_tasks_repo.set_project_tasks_state(
-                    project_id, [t], RunningState.FAILED, optional_progress=1.0
+                    project_id,
+                    [t],
+                    RunningState.FAILED,
+                    optional_progress=1.0,
+                    optional_stopped=arrow.utcnow().datetime,
                 )
 
     def _wake_up_scheduler_now(self) -> None:
