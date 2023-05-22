@@ -27,7 +27,6 @@ aiohttp==3.8.3
     #   aiohttp-session
     #   aiohttp-swagger
     #   aiozipkin
-    #   parfive
 aiohttp-jinja2==1.5
     # via -r requirements/_base.in
 aiohttp-security==0.4.0
@@ -53,7 +52,9 @@ alembic==1.8.1
     #   -r requirements/../../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
 arrow==1.2.3
-    # via -r requirements/../../../../packages/models-library/requirements/_base.in
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../../packages/models-library/requirements/_base.in
 async-timeout==4.0.2
     # via
     #   aiohttp
@@ -155,8 +156,6 @@ packaging==21.3
     #   -r requirements/_base.in
 pamqp==3.2.1
     # via aiormq
-parfive==1.5.1
-    # via -r requirements/_base.in
 passlib==1.7.4
     # via -r requirements/_base.in
 pint==0.19.2
@@ -233,7 +232,6 @@ tqdm==4.64.0
     # via
     #   -c requirements/../../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
-    #   parfive
 twilio==7.12.0
     # via -r requirements/_base.in
 typer==0.4.1

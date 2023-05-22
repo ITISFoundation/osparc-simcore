@@ -4,7 +4,7 @@ from pathlib import Path
 from aiohttp import web
 
 from .archiving import zip_folder
-from .formatters import BaseFormatter, FormatterV2
+from .formatters import FormatterV2
 
 log = logging.getLogger(__name__)
 
@@ -16,7 +16,6 @@ async def study_export(
     user_id: int,
     product_name: str,
     archive: bool = False,
-    formatter_class: type[BaseFormatter] = FormatterV2,
 ) -> Path:
     """
     Generates a folder with all the data necessary for exporting a project.
@@ -31,7 +30,7 @@ async def study_export(
     destination.mkdir(parents=True, exist_ok=True)
 
     # The formatter will always be chosen to be the highest availabel version
-    formatter = formatter_class(root_folder=destination)
+    formatter = FormatterV2(root_folder=destination)
     await formatter.format_export_directory(
         app=app, project_id=project_id, user_id=user_id, product_name=product_name
     )

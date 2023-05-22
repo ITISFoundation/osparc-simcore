@@ -11,7 +11,6 @@ from ...projects.projects_api import get_project_for_user
 from ...projects.projects_exceptions import ProjectsException
 from ...scicrunch.db import ResearchResourceRepository
 from ..exceptions import ExporterException
-from .base_formatter import BaseFormatter
 from .sds import write_sds_directory_content
 from .sds.xlsx.templates.code_description import (
     CodeDescriptionModel,
@@ -166,11 +165,12 @@ async def _write_sds_content(
         )
 
 
-class FormatterV2(BaseFormatter):
+class FormatterV2:
     """Formates into the SDS format"""
 
     def __init__(self, root_folder: Path):
-        super().__init__(version="2", root_folder=root_folder)
+        self.version: str = "2"
+        self.root_folder: Path = root_folder
 
     async def format_export_directory(
         self, app: web.Application, project_id: str, user_id: int, **kwargs
