@@ -145,7 +145,7 @@ class CompTaskAtDB(BaseModel):
     @validator("start", "end", "submit")
     @classmethod
     def ensure_utc(cls, v: datetime.datetime | None) -> datetime.datetime | None:
-        if v:
+        if v is not None and v.tzinfo is None:
             v = v.replace(tzinfo=datetime.timezone.utc)
         return v
 
