@@ -10,7 +10,7 @@ from typing import Any, Iterator
 import orjson
 from aiohttp import web
 from aiohttp.web import Request, RouteTableDef
-from models_library.services import ServiceInput, ServiceKeyEncoded, ServiceOutput
+from models_library.services import ServiceInput, ServiceOutput
 from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
@@ -74,7 +74,7 @@ class _RequestContext(BaseModel):
 
 
 class _ServicePathParams(BaseModel):
-    service_key: ServiceKeyEncoded
+    service_key: ServiceKey
     service_version: ServiceVersion
 
     class Config:
@@ -105,7 +105,9 @@ async def get_service_handler(request: Request):
     ctx = _RequestContext.create(request)
     path_params = parse_request_path_parameters_as(_ServicePathParams, request)
 
-    data = await get_service(path_params.service_key, path_params.service_version, ctx)
+    data = await get_service(
+        path_params.service_key.to_service_key(), path_params.service_version, ctx
+    )
 
     return envelope_json_response(data)
 
@@ -120,7 +122,10 @@ async def update_service_handler(request: Request):
 
     # Evaluate and return validated model
     data = await update_service(
-        path_params.service_key, path_params.service_version, update_data, ctx
+        path_params.service_key,
+        path_params.service_version,
+        update_data,
+        ctx,
     )
 
     return envelope_json_response(data)
@@ -157,7 +162,10 @@ async def get_service_input_handler(request: Request):
 
     # Evaluate and return validated model
     response_model = await get_service_input(
-        path_params.service_key, path_params.service_version, path_params.input_key, ctx
+        path_params.service_key,
+        path_params.service_version,
+        path_params.input_key,
+        ctx,
     )
 
     data = response_model.dict(**RESPONSE_MODEL_POLICY)
@@ -357,7 +365,6 @@ async def update_service(
 async def list_service_inputs(
     service_key: ServiceKey, service_version: ServiceVersion, ctx: _RequestContext
 ) -> list[ServiceOutputGet]:
-
     service = await client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
@@ -376,7 +383,6 @@ async def get_service_input(
     input_key: ServiceInputKey,
     ctx: _RequestContext,
 ) -> ServiceInputGet:
-
     service = await client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
@@ -471,7 +477,6 @@ async def get_compatible_outputs_given_target_input(
     to_input_key: ServiceInputKey,
     ctx: _RequestContext,
 ) -> list[ServiceOutputKey]:
-
     # N outputs
     service_outputs = await list_service_outputs(service_key, service_version, ctx)
 
