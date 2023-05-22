@@ -382,3 +382,47 @@ async def test_run_solver_job(
     ].called
 
     job_status = JobStatus.parse_obj(resp.json())
+
+
+@pytest.mark.xfail(reason="Still not implemented")
+@pytest.mark.acceptance_test(
+    "For https://github.com/ITISFoundation/osparc-simcore/issues/4111"
+)
+async def test_delete_solver_job(
+    auth: httpx.BasicAuth,
+    client: httpx.AsyncClient,
+    solver_key: str,
+    solver_version: str,
+    faker: Faker,
+):
+
+    # Cannot delete if it does not exists
+    resp = await client.delete(
+        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs/{faker.uuid4()}",
+        auth=auth,
+    )
+    assert resp.status_code == status.HTTP_404_NOT_FOUND
+
+    # Create Job
+    resp = await client.post(
+        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs",
+        auth=auth,
+        json=JobInputs(
+            values={
+                "x": 3.14,
+                "n": 42,
+            }
+        ).dict(),
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    job = Job.parse_obj(resp.json())
+
+    # Delete Job after creation
+    resp = await client.delete(
+        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs/{job.id}",
+        auth=auth,
+    )
+    assert resp.status_code == status.HTTP_204_NO_CONTENT
+
+    # Run job and try to delete while running
+    # Run a job and delete when finished
