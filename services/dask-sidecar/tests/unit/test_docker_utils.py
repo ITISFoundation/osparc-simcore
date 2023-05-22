@@ -162,6 +162,12 @@ async def test_create_container_config(
             "err: this is some error",
             logging.ERROR,
         ),
+        (
+            "progress: 10/0 asd this is a 15% 10/asdf progress without progress it will not break the system",
+            LogType.LOG,
+            "progress: 10/0 asd this is a 15% 10/asdf progress without progress it will not break the system",
+            logging.INFO,
+        ),
     ],
 )
 async def test_parse_line(

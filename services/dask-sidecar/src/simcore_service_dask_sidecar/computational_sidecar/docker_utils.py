@@ -127,54 +127,45 @@ async def managed_container(
 
 
 def _guess_progress_value(progress_match: re.Match[str]) -> float:
-    value: float = 0.0
-    try:
-        # can be anything from "23 percent", 23%, 23/234, 0.0-1.0
-        progress_str = progress_match.group("value")
-        if progress_match.group("percent_sign"):
-            # this is of the 23% kind
-            value = float(progress_str.split("%")[0].strip()) / 100.0
-        elif progress_match.group("percent_explicit"):
-            # this is of the 23 percent kind
-            value = float(progress_str.split("percent")[0].strip()) / 100.0
-        elif progress_match.group("fraction"):
-            # this is of the 23/123 kind
-            nums = progress_match.group("fraction").strip().split("/")
-            value = float(nums[0].strip()) / float(nums[1].strip())
-        else:
-            # this is of the 0.0-1.0 kind
-            value = float(progress_str.strip())
-    except ValueError:
-        logger.exception("Could not extract progress from log line %s", progress_match)
-    return value
+    # can be anything from "23 percent", 23%, 23/234, 0.0-1.0
+    value_str = progress_match.group("value")
+    if progress_match.group("percent_sign"):
+        # this is of the 23% kind
+        return float(value_str.split("%")[0].strip()) / 100.0
+    if progress_match.group("percent_explicit"):
+        # this is of the 23 percent kind
+        return float(value_str.split("percent")[0].strip()) / 100.0
+    if progress_match.group("fraction"):
+        # this is of the 23/123 kind
+        nums = progress_match.group("fraction").strip().split("/")
+        return float(nums[0].strip()) / float(nums[1].strip())
+    # this is of the 0.0-1.0 kind
+    return float(value_str.strip())
 
 
 async def _parse_line(
     line: str,
 ) -> tuple[LogType, datetime.datetime, LogMessageStr, LogLevelInt]:
-    match = re.search(DOCKER_LOG_REGEXP, line)
-    if not match:
-        # try to correct the log, it might be coming from an old comp service that does not put timestamps
-        corrected_line = f"{arrow.utcnow().datetime.isoformat()} {line}"
-        match = re.search(DOCKER_LOG_REGEXP, corrected_line)
-    if not match:
-        # default return as log
-        return (
-            LogType.LOG,
-            arrow.utcnow().datetime,
-            f"{line}",
-            guess_message_log_level(line),
-        )
+    if match := re.search(DOCKER_LOG_REGEXP, line):
+        timestamp = to_datetime(match.group("timestamp"))
+        log = f"{match.group('log')}"
+    else:
+        # we did not find the timestamp, so we go for now (might be an old service)
+        timestamp = arrow.utcnow().datetime
+        log = line
 
-    timestamp = to_datetime(match.group("timestamp"))
-    log = f"{match.group('log')}"
-    # now look for progress
-    if match := re.search(PROGRESS_REGEXP, log.lower()):
-        return (
-            LogType.PROGRESS,
-            timestamp,
-            f"{_guess_progress_value(match):.2f}",
-            logging.INFO,
+    # try to find if it is a progress log
+    try:
+        if match := re.search(PROGRESS_REGEXP, log.lower()):
+            return (
+                LogType.PROGRESS,
+                timestamp,
+                f"{_guess_progress_value(match):.2f}",
+                logging.INFO,
+            )
+    except (ValueError, ZeroDivisionError):
+        logger.warning(
+            "potential progress log could not be parsed. problematic log: %s", log
         )
 
     return (LogType.LOG, timestamp, log, guess_message_log_level(log))
