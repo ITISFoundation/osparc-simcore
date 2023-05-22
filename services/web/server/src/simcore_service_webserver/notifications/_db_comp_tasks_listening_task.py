@@ -22,7 +22,7 @@ from simcore_postgres_database.webserver_models import DB_CHANNEL_NAME, projects
 from sqlalchemy.sql import select
 
 from ..projects import exceptions, projects_api
-from ..projects.projects_nodes_utils import update_node_outputs
+from ..projects.nodes_utils import update_node_outputs
 from ._utils import convert_state_from_db
 
 _logger = logging.getLogger(__name__)

@@ -54,8 +54,8 @@ from .exceptions import (
     ProjectNotFoundError,
 )
 from .models import ProjectDict, ProjectTypeAPI
+from .nodes_utils import update_frontend_outputs
 from .project_lock import get_project_locked_state
-from .projects_nodes_utils import update_frontend_outputs
 from .utils import (
     any_node_inputs_changed,
     get_project_unavailable_services,
