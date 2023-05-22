@@ -1,5 +1,7 @@
+import datetime
 from uuid import UUID
 
+import arrow
 from pydantic import BaseModel, Field, PositiveInt
 
 from .clusters import ClusterID
@@ -41,6 +43,18 @@ class ComputationTask(BaseModel):
         ...,
         description="the cluster on which the computaional task runs/ran (none if no task ran yet)",
     )
+    started: datetime.datetime | None = Field(
+        ...,
+        description="the timestamp when the computation was started or None if not started yet",
+    )
+    stopped: datetime.datetime | None = Field(
+        ...,
+        description="the timestamp when the computation was stopped or None if not started nor stopped yet",
+    )
+    submitted: datetime.datetime | None = Field(
+        ...,
+        description="task last modification timestamp or None if the there is no task",
+    )
 
     class Config:
         schema_extra = {
@@ -73,6 +87,9 @@ class ComputationTask(BaseModel):
                     },
                     "iteration": None,
                     "cluster_id": None,
+                    "started": arrow.utcnow().shift(minutes=-50).datetime,
+                    "stopped": None,
+                    "submitted": arrow.utcnow().shift(hours=-1).datetime,
                 },
                 {
                     "id": "f81d7994-9ccc-4c95-8c32-aa70d6bbb1b0",
@@ -102,6 +119,9 @@ class ComputationTask(BaseModel):
                     },
                     "iteration": 2,
                     "cluster_id": 0,
+                    "started": arrow.utcnow().shift(minutes=-50).datetime,
+                    "stopped": arrow.utcnow().shift(minutes=-20).datetime,
+                    "submitted": arrow.utcnow().shift(hours=-1).datetime,
                 },
             ]
         }

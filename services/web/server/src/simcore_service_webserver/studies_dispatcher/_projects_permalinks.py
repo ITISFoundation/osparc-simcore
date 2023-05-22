@@ -81,12 +81,10 @@ async def permalink_factory(
     engine = get_database_engine(request.app)
     async with engine.acquire() as conn:
         stmt = sa.select(
-            [
-                projects.c.uuid,
-                projects.c.type,
-                projects.c.access_rights,
-                projects.c.published,
-            ]
+            projects.c.uuid,
+            projects.c.type,
+            projects.c.access_rights,
+            projects.c.published,
         ).where(projects.c.uuid == f"{project_uuid}")
         result = await conn.execute(stmt)
         row = await result.first()

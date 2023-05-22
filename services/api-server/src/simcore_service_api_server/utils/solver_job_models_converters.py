@@ -8,7 +8,8 @@ from datetime import datetime
 from functools import lru_cache
 from typing import Callable
 
-from models_library.projects_nodes import InputID, InputTypes
+import arrow
+from models_library.projects_nodes import InputID
 from pydantic import parse_obj_as
 
 from ..models.basic_types import VersionStr
@@ -27,7 +28,6 @@ from ..models.schemas.jobs import (
     JobInputs,
     JobStatus,
     PercentageInt,
-    TaskStates,
 )
 from ..models.schemas.solvers import Solver, SolverKeyId
 from ..plugins.director_v2 import ComputationTaskGet
@@ -252,19 +252,9 @@ def create_jobstatus_from_task(task: ComputationTaskGet) -> JobStatus:
         job_id=task.id,
         state=task.state,
         progress=PercentageInt((task.pipeline_details.progress or 0) * 100.0),
-        submitted_at=datetime.utcnow(),
+        submitted_at=task.submitted or arrow.utcnow().datetime,
+        started_at=task.started,
+        stopped_at=task.stopped,
     )
-
-    # FIXME: timestamp is wrong but at least it will stop run
-    if job_status.state in [
-        TaskStates.SUCCESS,
-        TaskStates.FAILED,
-        TaskStates.ABORTED,
-    ]:
-        job_status.take_snapshot("stopped")
-    elif job_status.state in [
-        TaskStates.STARTED,
-    ]:
-        job_status.take_snapshot("started")
 
     return job_status
