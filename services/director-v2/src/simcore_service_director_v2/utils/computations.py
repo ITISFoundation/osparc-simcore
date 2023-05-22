@@ -1,5 +1,5 @@
+import datetime
 import logging
-from datetime import datetime
 from typing import Any
 
 from models_library.projects_state import RunningState
@@ -121,11 +121,13 @@ async def find_deprecated_tasks(
         ): details
         for details in services_details
     }
-    today = datetime.utcnow()
+    today = datetime.datetime.now(tz=datetime.timezone.utc)
 
     def _is_service_deprecated(service: dict[str, Any]) -> bool:
         if deprecation_date := service.get("deprecated"):
-            deprecation_date = parse_obj_as(datetime, deprecation_date)
+            deprecation_date = parse_obj_as(
+                datetime.datetime, deprecation_date
+            ).replace(tzinfo=datetime.timezone.utc)
             is_deprecated: bool = today > deprecation_date
             return is_deprecated
         return False

@@ -1,6 +1,6 @@
+import datetime
 import logging
 from collections import deque
-from datetime import datetime
 from typing import Any
 
 import sqlalchemy as sa
@@ -103,7 +103,7 @@ class CompRunsRepository(BaseRepository):
                         else None,
                         iteration=iteration,
                         result=RUNNING_STATE_TO_DB[RunningState.PUBLISHED],
-                        started=datetime.utcnow(),
+                        started=datetime.datetime.now(tz=datetime.timezone.utc),
                     )
                     .returning(literal_column("*"))
                 )
@@ -139,7 +139,7 @@ class CompRunsRepository(BaseRepository):
     ) -> CompRunsAtDB | None:
         values: dict[str, Any] = {"result": RUNNING_STATE_TO_DB[result_state]}
         if final_state:
-            values.update({"ended": datetime.utcnow()})
+            values.update({"ended": datetime.datetime.now(tz=datetime.timezone.utc)})
         return await self.update(
             user_id,
             project_id,

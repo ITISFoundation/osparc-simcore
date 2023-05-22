@@ -5,10 +5,10 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import datetime
 import json
 import re
 import urllib.parse
-from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Callable
 
@@ -198,7 +198,8 @@ def mocked_catalog_service_fcts_deprecated(
                         "key": urllib.parse.unquote(service_key),
                         "version": service_version,
                         "deprecated": (
-                            datetime.utcnow() - timedelta(days=1)
+                            datetime.datetime.now(tz=datetime.timezone.utc)
+                            - datetime.timedelta(days=1)
                         ).isoformat(),
                     }
                 ),
@@ -544,6 +545,7 @@ async def test_get_computation_from_published_computation_task(
     )
     comp_tasks = tasks(user=user, project=proj, state=StateType.PUBLISHED, progress=0)
     comp_runs = runs(user=user, project=proj, result=StateType.PUBLISHED)
+    assert comp_runs
     get_computation_url = httpx.URL(
         f"/v2/computations/{proj.uuid}?user_id={user['id']}"
     )

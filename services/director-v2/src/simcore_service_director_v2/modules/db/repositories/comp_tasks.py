@@ -173,7 +173,7 @@ async def _generate_tasks_list_from_project(
             inputs=node.inputs,
             outputs=node.outputs,
             image=image,
-            submit=datetime.utcnow(),
+            submit=arrow.utcnow().datetime,
             state=task_state,
             internal_id=internal_id,
             node_class=to_node_class(node.key),
