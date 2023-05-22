@@ -5,6 +5,7 @@ should live in the catalog service in his final version
 
 """
 import logging
+import urllib.parse
 from typing import Any, Iterator
 
 import orjson
@@ -17,7 +18,7 @@ from models_library.services_resources import (
 )
 from models_library.users import UserID
 from pint import UnitRegistry
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, Extra, Field, validator
 from servicelib.aiohttp.requests_validation import (
     handle_validation_as_http_error,
     parse_request_path_parameters_as,
@@ -80,6 +81,14 @@ class _ServicePathParams(BaseModel):
     class Config:
         allow_population_by_field_name = True
         extra = Extra.forbid
+
+    @validator("service_key", pre=True)
+    @classmethod
+    def ensure_unquoted(cls, v):
+        # NOTE: this is needed as in pytest mode, the aiohttp server does not seem to unquote automatically
+        if v is not None:
+            return urllib.parse.unquote(v)
+        return v
 
 
 @routes.get(f"{VTAG}/catalog/services")
@@ -284,7 +293,6 @@ async def get_service_resources_handler(request: Request):
     """
     ctx = _RequestContext.create(request)
     path_params = parse_request_path_parameters_as(_ServicePathParams, request)
-
     service_resources: ServiceResourcesDict = await client.get_service_resources(
         request.app,
         user_id=ctx.user_id,
