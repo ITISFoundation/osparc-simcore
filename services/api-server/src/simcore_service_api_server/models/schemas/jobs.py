@@ -1,10 +1,19 @@
 import hashlib
 from datetime import datetime
 from enum import Enum
-from typing import Union
+from typing import TypeAlias, Union
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConstrainedInt, Field, HttpUrl, validator
+from pydantic import (
+    BaseModel,
+    ConstrainedInt,
+    Field,
+    HttpUrl,
+    StrictBool,
+    StrictFloat,
+    StrictInt,
+    validator,
+)
 
 from ...models.config import BaseConfig
 from ...models.schemas.files import File
@@ -15,19 +24,20 @@ from ..api_resources import (
     split_resource_name,
 )
 
-# FIXME: all ints and bools will be floats
-# TODO: evaluate how coupled is this to InputTypes/OUtputTypes
-ArgumentType = Union[File, float, int, bool, str, None]
-KeywordArguments = dict[str, ArgumentType]
-PositionalArguments = list[ArgumentType]
+# ArgumentTypes are types used in the job inputs (see ResultsTypes)
+ArgumentTypes: TypeAlias = Union[
+    File, StrictFloat, StrictInt, StrictBool, str, list, None
+]
+KeywordArguments: TypeAlias = dict[str, ArgumentTypes]
+PositionalArguments: TypeAlias = list[ArgumentTypes]
 
 
-def compute_checksum(kwargs: KeywordArguments):
+def _compute_keyword_arguments_checksum(kwargs: KeywordArguments):
     _dump_str = ""
     for key in sorted(kwargs.keys()):
         value = kwargs[key]
         if isinstance(value, File):
-            value = compute_checksum(value.dict())
+            value = _compute_keyword_arguments_checksum(value.dict())
         else:
             value = str(value)
         _dump_str += f"{key}:{value}"
@@ -66,7 +76,7 @@ class JobInputs(BaseModel):
         }
 
     def compute_checksum(self):
-        return compute_checksum(self.values)
+        return _compute_keyword_arguments_checksum(self.values)
 
 
 class JobOutputs(BaseModel):
@@ -101,7 +111,7 @@ class JobOutputs(BaseModel):
         }
 
     def compute_results_checksum(self):
-        return compute_checksum(self.results)
+        return _compute_keyword_arguments_checksum(self.results)
 
 
 # JOBS ----------

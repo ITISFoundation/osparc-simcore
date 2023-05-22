@@ -1,14 +1,11 @@
 from dataclasses import dataclass
-from typing import Optional
 
 from models_library.services import BaseServiceIOModel, ServiceInput, ServiceOutput
 from pint import PintError, UnitRegistry
 
-##  MODELS UTILS ---------------------------------
 
-
-def _get_unit_name(port: BaseServiceIOModel) -> str:
-    unit = port.unit
+def _get_unit_name(port: BaseServiceIOModel) -> str | None:
+    unit: str | None = port.unit
     if port.property_type == "ref_contentSchema":
         assert port.content_schema is not None  # nosec
         # NOTE: content schema might not be resolved (i.e. has $ref!! )
@@ -23,10 +20,10 @@ def _get_unit_name(port: BaseServiceIOModel) -> str:
 
 
 def _get_type_name(port: BaseServiceIOModel) -> str:
-    _type = port.property_type
+    _type: str = port.property_type
     if port.property_type == "ref_contentSchema":
         assert port.content_schema is not None  # nosec
-        _type = port.content_schema.get("type")
+        _type = port.content_schema["type"]
     return _type
 
 
@@ -38,7 +35,7 @@ class UnitHtmlFormat:
 
 def get_html_formatted_unit(
     port: BaseServiceIOModel, ureg: UnitRegistry
-) -> Optional[UnitHtmlFormat]:
+) -> UnitHtmlFormat | None:
     try:
         unit_name = _get_unit_name(port)
         if unit_name is None:
@@ -57,9 +54,10 @@ def _can_convert_units(from_unit: str, to_unit: str, ureg: UnitRegistry) -> bool
     assert from_unit  # nosec
     assert to_unit  # nosec
     try:
-        return ureg.Quantity(from_unit).check(to_unit)
+        can: bool = ureg.Quantity(from_unit).check(to_unit)
     except (TypeError, PintError):
-        return False
+        can = False
+    return can
 
 
 def can_connect(

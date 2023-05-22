@@ -249,6 +249,8 @@ def get_dynamic_sidecar_spec(
             "swarm_stack_name": dynamic_sidecar_settings.SWARM_STACK_NAME,  # required for listing services with uuid
             DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL: scheduler_data.as_label_data(),
             "service_image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,
+            "key": scheduler_data.key,
+            "version": scheduler_data.version,
         },
         "name": scheduler_data.service_name,
         "networks": [{"Target": swarm_network_id}],
