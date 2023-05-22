@@ -14,6 +14,8 @@ from models_library.projects_state import RunningState
 from models_library.services import ServiceDockerData, ServiceKeyVersion
 from models_library.services_resources import BootMode
 from models_library.users import UserID
+from servicelib.logging_utils import log_context
+from servicelib.utils import logged_gather
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert
 
@@ -291,6 +293,28 @@ class CompTasksRepository(BaseRepository):
             )
             return inserted_comp_tasks_db
 
+    async def _update_task(
+        self, project_id: ProjectID, task: NodeID, **task_kwargs
+    ) -> CompTaskAtDB:
+        with log_context(
+            logger,
+            logging.DEBUG,
+            msg=f"update task {project_id=}:{task=} with '{task_kwargs}'",
+        ):
+            async with self.db_engine.acquire() as conn:
+                result = await conn.execute(
+                    sa.update(comp_tasks)
+                    .where(
+                        (comp_tasks.c.project_id == f"{project_id}")
+                        & (comp_tasks.c.node_id == f"{task}")
+                    )
+                    .values(**task_kwargs)
+                    .returning(literal_column("*"))
+                )
+                row = await result.fetchone()
+                assert row  # nosec
+                return CompTaskAtDB.from_orm(row)
+
     async def mark_project_published_tasks_as_aborted(
         self, project_id: ProjectID
     ) -> None:
@@ -312,21 +336,7 @@ class CompTasksRepository(BaseRepository):
     async def update_project_task_job_id(
         self, project_id: ProjectID, task: NodeID, job_id: str
     ) -> None:
-        async with self.db_engine.acquire() as conn:
-            await conn.execute(
-                sa.update(comp_tasks)
-                .where(
-                    (comp_tasks.c.project_id == f"{project_id}")
-                    & (comp_tasks.c.node_id == f"{task}")
-                )
-                .values(job_id=job_id)
-            )
-        logger.debug(
-            "set project %s task %s with job id: %s",
-            f"{project_id=}",
-            f"{task=}",
-            f"{job_id=}",
-        )
+        await self._update_task(project_id, task, job_id=job_id)
 
     async def update_project_tasks_state(
         self,
@@ -339,48 +349,24 @@ class CompTasksRepository(BaseRepository):
         optional_started: datetime | None = None,
         optional_stopped: datetime | None = None,
     ) -> None:
-        async with self.db_engine.acquire() as conn:
-            update_values = {"state": RUNNING_STATE_TO_DB[state], "errors": errors}
-            if optional_progress is not None:
-                update_values["progress"] = optional_progress
-            if optional_started is not None:
-                update_values["start"] = optional_started
-            if optional_stopped is not None:
-                update_values["end"] = optional_stopped
-            await conn.execute(
-                sa.update(comp_tasks)
-                .where(
-                    (comp_tasks.c.project_id == f"{project_id}")
-                    & (comp_tasks.c.node_id.in_([str(t) for t in tasks]))
-                )
-                .values(**update_values)
+        update_values = {"state": RUNNING_STATE_TO_DB[state], "errors": errors}
+        if optional_progress is not None:
+            update_values["progress"] = optional_progress
+        if optional_started is not None:
+            update_values["start"] = optional_started
+        if optional_stopped is not None:
+            update_values["end"] = optional_stopped
+        await logged_gather(
+            *(
+                self._update_task(project_id, task_id, **update_values)
+                for task_id in tasks
             )
-        logger.debug(
-            "set project %s tasks %s with state %s",
-            f"{project_id=}",
-            f"{tasks=}",
-            f"{state=}",
         )
 
     async def update_project_task_progress(
         self, project_id: ProjectID, node_id: NodeID, progress: float
     ) -> None:
-        async with self.db_engine.acquire() as conn:
-            await conn.execute(
-                sa.update(comp_tasks)
-                .where(
-                    (comp_tasks.c.project_id == f"{project_id}")
-                    & (comp_tasks.c.node_id == f"{node_id}")
-                )
-                .values(progress=progress)
-            )
-
-        logger.debug(
-            "set project %s task %s with progress %s",
-            f"{project_id=}",
-            f"{node_id=}",
-            f"{progress=}",
-        )
+        await self._update_task(project_id, node_id, progress=progress)
 
     async def delete_tasks_from_project(self, project_id: ProjectID) -> None:
         async with self.db_engine.acquire() as conn:
