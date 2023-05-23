@@ -11,7 +11,7 @@ from ...projects.projects_api import get_project_for_user
 from ...projects.projects_exceptions import ProjectsException
 from ...scicrunch.db import ResearchResourceRepository
 from ..exceptions import ExporterException
-from .text_files import write_text_files
+from ._text_files import write_text_files
 from .xlsx.templates.code_description import (
     CodeDescriptionModel,
     CodeDescriptionParams,
@@ -23,7 +23,7 @@ from .xlsx.templates.dataset_description import DatasetDescriptionParams
 from .xlsx.templates.submission import SubmissionDocumentParams
 from .xlsx.writer import write_xlsx_files
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def _write_sds_directory_content(
@@ -41,9 +41,9 @@ def _write_sds_directory_content(
     )
 
 
-async def _write_sds_content(
-    base_path: Path,
+async def create_sds_directory(
     app: web.Application,
+    base_path: Path,
     project_id: str,
     user_id: int,
     product_name: str,
@@ -58,7 +58,7 @@ async def _write_sds_content(
     except ProjectsException as e:
         raise ExporterException(f"Could not find project {project_id}") from e
 
-    log.debug("Project data: %s", project_data)
+    _logger.debug("Project data: %s", project_data)
 
     # assemble params here
     submission_params = SubmissionDocumentParams(
@@ -109,7 +109,7 @@ async def _write_sds_content(
                 params_code_description[rating_store_key] = tsr_entry["level"]
                 params_code_description[reference_store_key] = tsr_entry["references"]
         else:
-            log.warning(
+            _logger.warning(
                 "Skipping TSR entries, not all 10 entries were present: %s",
                 quality_data,
             )
@@ -179,19 +179,3 @@ async def _write_sds_content(
             dataset_description_params,
             code_description_params,
         )
-
-
-async def create_sds_directory(
-    app: web.Application,
-    root_folder: Path,
-    project_id: str,
-    user_id: int,
-    product_name: str,
-) -> None:
-    await _write_sds_content(
-        base_path=root_folder,
-        app=app,
-        project_id=project_id,
-        user_id=user_id,
-        product_name=product_name,
-    )

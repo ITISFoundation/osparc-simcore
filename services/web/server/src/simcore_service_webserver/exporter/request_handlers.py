@@ -13,7 +13,7 @@ from ..projects.projects_api import retrieve_and_notify_project_locked_state
 from ..security.decorators import permission_required
 from ..users.api import get_user_name
 from .exceptions import ExporterException
-from .export_import import study_export
+from .sds.archive import get_sds_archive_path
 from .utils import CleanupFileResponse
 
 log = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ async def export_project(request: web.Request):
                 user_id, project_uuid, request.app
             )
             tmp_dir = await tmp_dir_stack.enter_async_context(AioTemporaryDirectory())
-            file_to_download = await study_export(
+            file_to_download = await get_sds_archive_path(
                 app=request.app,
                 tmp_dir=f"{tmp_dir}",
                 project_id=project_uuid,
