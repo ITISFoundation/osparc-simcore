@@ -137,10 +137,10 @@ class BaseXLSXCellData:
 
 class BaseXLSXSheet:
     # name of the sheet
-    name: str = None
+    name: str | None = None
     # cell style contents, using a list of tuples instead of dict
     # to allow for "duplicate keys"
-    cell_styles: list[tuple[str, dict[str, BaseXLSXCellData]]] = None
+    cell_styles: list[tuple[str, dict[str, BaseXLSXCellData]]] | None = None
 
     # used to merge cells via ranges like A1:B2
     cell_merge: set[str] = set()

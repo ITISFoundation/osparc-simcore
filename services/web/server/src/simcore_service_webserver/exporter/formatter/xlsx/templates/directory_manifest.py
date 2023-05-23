@@ -4,6 +4,7 @@ from pathlib import Path
 
 import magic
 from pydantic import BaseModel, Field, StrictStr, validator
+from pyparsing import Iterable
 
 from ..styling_components import TB, Backgrounds, Borders, T
 from ..xlsx_base import BaseXLSXCellData, BaseXLSXDocument, BaseXLSXSheet
@@ -16,7 +17,7 @@ DESCRIPTION_OVERWRITES: dict[str, str] = {
 }
 
 
-def get_files_in_dir(dir_path: Path) -> list[tuple[Path, str]]:
+def _get_files_in_dir(dir_path: Path) -> Iterable[tuple[Path, str]]:
     str_dir_path = str(dir_path) + "/"
     for entry in dir_path.rglob("*"):
         if entry.is_file():
@@ -49,7 +50,7 @@ class DirectoryManifestParams(BaseModel):
         cls, start_path: Path
     ) -> list["DirectoryManifestParams"]:
         file_entries = deque()
-        for file_entry in get_files_in_dir(start_path):
+        for file_entry in _get_files_in_dir(start_path):
             full_file_path, relative_file_name = file_entry
             last_modified_date = datetime.datetime.fromtimestamp(
                 full_file_path.stat().st_mtime
