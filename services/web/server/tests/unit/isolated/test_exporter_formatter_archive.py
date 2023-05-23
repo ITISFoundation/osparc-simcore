@@ -6,7 +6,7 @@ from typing import Iterator
 
 import pytest
 from faker import Faker
-from simcore_service_webserver.exporter.exceptions import ExporterException
+from simcore_service_webserver.exporter.exceptions import SDSException
 from simcore_service_webserver.exporter.formatter.archive import _compress_dir
 
 
@@ -47,14 +47,14 @@ def temp_dir_with_existing_archive(temp_dir, project_id) -> Path:
 
 async def test_archive_already_exists(temp_dir, project_id):
     tmp_dir_to_compress = temp_dir_with_existing_archive(temp_dir, project_id)
-    with pytest.raises(ExporterException) as exc_info:
+    with pytest.raises(SDSException) as exc_info:
         await _compress_dir(
             folder_to_zip=tmp_dir_to_compress,
             destination_folder=tmp_dir_to_compress,
             project_id=project_id,
         )
 
-    assert exc_info.type is ExporterException
+    assert exc_info.type is SDSException
     assert (
         exc_info.value.args[0]
         == f"Cannot archive '{temp_dir}/nested' because '{temp_dir}/nested/sds_{project_id}.zip' already exists"

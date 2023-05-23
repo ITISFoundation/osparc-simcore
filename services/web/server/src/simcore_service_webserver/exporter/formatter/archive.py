@@ -3,7 +3,7 @@ from pathlib import Path
 from aiohttp import web
 from servicelib.archiving_utils import archive_dir
 
-from ..exceptions import ExporterException
+from ..exceptions import SDSException
 from ._sds import create_sds_directory
 
 
@@ -14,7 +14,7 @@ async def _compress_dir(
 
     archive_name: Path = destination_folder / f"sds_{project_id}.zip"
     if archive_name.is_file():
-        raise ExporterException(
+        raise SDSException(
             f"Cannot archive '{folder_to_zip}' because '{archive_name}' already exists"
         )
 

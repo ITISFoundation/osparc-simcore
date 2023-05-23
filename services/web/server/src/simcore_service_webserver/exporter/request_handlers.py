@@ -12,7 +12,7 @@ from ..projects.project_lock import lock_project
 from ..projects.projects_api import retrieve_and_notify_project_locked_state
 from ..security.decorators import permission_required
 from ..users.api import get_user_name
-from .exceptions import ExporterException
+from .exceptions import SDSException
 from .formatter.archive import get_sds_archive_path
 from .utils import CleanupFileResponse
 
@@ -59,7 +59,7 @@ async def export_project(request: web.Request):
             log.info("File to download '%s'", file_to_download)
 
             if not file_to_download.is_file():
-                raise ExporterException(
+                raise SDSException(
                     f"Must provide a file to download, not {str(file_to_download)}"
                 )
             # this allows to transfer deletion of the tmp dir responsibility

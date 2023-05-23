@@ -10,7 +10,7 @@ from ...catalog.client import get_service
 from ...projects.projects_api import get_project_for_user
 from ...projects.projects_exceptions import ProjectsException
 from ...scicrunch.db import ResearchResourceRepository
-from ..exceptions import ExporterException
+from ..exceptions import SDSException
 from ._text_files import write_text_files
 from .xlsx.templates.code_description import (
     CodeDescriptionModel,
@@ -56,7 +56,7 @@ async def create_sds_directory(
             include_state=True,
         )
     except ProjectsException as e:
-        raise ExporterException(f"Could not find project {project_id}") from e
+        raise SDSException(f"Could not find project {project_id}") from e
 
     _logger.debug("Project data: %s", project_data)
 
