@@ -55,6 +55,7 @@ async def users_data(
             await conn.execute(users.delete().where(users.c.id == id_))
 
 
+@pytest.mark.testit
 async def test_inaccessible_services_for_primary_group(
     mock_catalog_background_task: None,
     director_mockup: MockRouter,
@@ -96,7 +97,7 @@ async def test_inaccessible_services_for_primary_group(
                     "version": service_to_check["version"],
                 },
             ],
-            "with_gid": 1,
+            "for_gid": 1,
         },
     )
     assert response.status_code == 200
@@ -130,7 +131,7 @@ async def test_inaccessible_services_for_primary_group(
                     "version": service_to_check["version"],
                 },
             ],
-            "with_gid": 1,
+            "for_gid": 1,
         },
     )
     assert response.status_code == 200
@@ -184,7 +185,7 @@ async def test_inaccessible_services_for_standard_group(
                     "version": service_to_check["version"],
                 },
             ],
-            "with_gid": team_yoda_gid,
+            "for_gid": team_yoda_gid,
         },
     )
     assert response.status_code == 200
@@ -226,7 +227,7 @@ async def test_inaccessible_services_for_standard_group(
                     "version": service_to_check["version"],
                 },
             ],
-            "with_gid": team_yoda_gid,
+            "for_gid": team_yoda_gid,
         },
     )
     assert response.status_code == 200
@@ -259,7 +260,7 @@ async def test_inaccessible_services_for_standard_group(
                     "version": service_to_check["version"],
                 },
             ],
-            "with_gid": team_yoda_gid,
+            "for_gid": team_yoda_gid,
         },
     )
     assert response.status_code == 200
@@ -317,7 +318,7 @@ async def test_inaccessible_services_for_more_services(
                     "version": service_to_check_2["version"],
                 },
             ],
-            "with_gid": 1,
+            "for_gid": 1,
         },
     )
     assert response.status_code == 200
@@ -353,7 +354,7 @@ async def test_inaccessible_services_for_more_services(
                     "version": service_to_check_2["version"],
                 },
             ],
-            "with_gid": 1,
+            "for_gid": 1,
         },
     )
     assert response.status_code == 200

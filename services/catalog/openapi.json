@@ -3739,7 +3739,7 @@
         "title": "_ServicesInaccessibleBody",
         "required": [
           "services_to_check",
-          "with_gid"
+          "for_gid"
         ],
         "type": "object",
         "properties": {
@@ -3750,8 +3750,8 @@
               "$ref": "#/components/schemas/ServiceKeyVersion"
             }
           },
-          "with_gid": {
-            "title": "With Gid",
+          "for_gid": {
+            "title": "For Gid",
             "exclusiveMinimum": true,
             "type": "integer",
             "minimum": 0

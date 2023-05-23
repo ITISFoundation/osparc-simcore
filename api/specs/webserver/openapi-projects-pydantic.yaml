@@ -1,5 +1,5 @@
 paths:
-  /projects/{project_id}/shareAccesses:denied:
+  /projects/{project_id}/shareAccessDenied:
     get:
       tags:
       - project
@@ -19,11 +19,11 @@ paths:
         in: path
       - required: true
         schema:
-          title: With Gid
+          title: For Gid
           exclusiveMinimum: true
           type: integer
           minimum: 0
-        name: with_gid
+        name: for_gid
         in: query
       responses:
         '200':

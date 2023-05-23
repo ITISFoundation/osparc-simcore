@@ -36,13 +36,13 @@ TAGS: list[str | Enum] = [
 
 
 @app.get(
-    "/projects/{project_id}/shareAccesses:denied",
+    "/projects/{project_id}/shareAccessDenied",
     response_model=Envelope[list[UserInaccessibleService]],
     tags=TAGS,
     operation_id="denied_share_access_project",
     summary="Checks which users do not have access to the project in provided group",
 )
-async def denied_share_access_project(project_id: ProjectID, with_gid: GroupID):
+async def denied_share_access_project(project_id: ProjectID, for_gid: GroupID):
     """
     This check is done based on whether users would be able to access the services
     in the project.

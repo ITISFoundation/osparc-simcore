@@ -190,7 +190,7 @@ async def list_services(
 
 class _ServicesInaccessibleBody(BaseModel):
     services_to_check: list[ServiceKeyVersion]
-    with_gid: GroupID
+    for_gid: GroupID
 
 
 @router.post(
@@ -209,7 +209,7 @@ async def list_inaccessible_services(
     output: list[
         UserInaccessibleService
     ] = await shareable_services_repo.list_inaccessible_services(
-        gid=body.with_gid,
+        gid=body.for_gid,
         product_name=x_simcore_products_name,
         services_to_check=body.services_to_check,
     )
