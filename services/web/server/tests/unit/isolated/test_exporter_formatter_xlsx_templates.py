@@ -13,7 +13,7 @@ import openpyxl
 import pytest
 from faker import Faker
 from openpyxl import Workbook
-from simcore_service_webserver.exporter.formatter.xlsx.templates.code_description import (
+from simcore_service_webserver.exporter.formatter.xlsx.code_description import (
     CodeDescriptionModel,
     CodeDescriptionParams,
     CodeDescriptionXLSXDocument,
@@ -21,19 +21,19 @@ from simcore_service_webserver.exporter.formatter.xlsx.templates.code_descriptio
     OutputsEntryModel,
     RRIDEntry,
 )
-from simcore_service_webserver.exporter.formatter.xlsx.templates.dataset_description import (
+from simcore_service_webserver.exporter.formatter.xlsx.dataset_description import (
     ContributorEntryModel,
     DatasetDescriptionParams,
     DatasetDescriptionXLSXDocument,
     DoiEntryModel,
     LinkEntryModel,
 )
-from simcore_service_webserver.exporter.formatter.xlsx.templates.directory_manifest import (
+from simcore_service_webserver.exporter.formatter.xlsx.directory_manifest import (
     DirectoryManifestParams,
     DirectoryManifestXLSXDocument,
     FileEntryModel,
 )
-from simcore_service_webserver.exporter.formatter.xlsx.templates.submission import (
+from simcore_service_webserver.exporter.formatter.xlsx.submission import (
     SubmissionDocumentParams,
     SubmissionXLSXDocument,
 )

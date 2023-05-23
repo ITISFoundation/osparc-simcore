@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field, StrictStr
 
-from ..styling_components import TB, Backgrounds, Borders, Comment, Link, T
-from ..xlsx_base import BaseXLSXCellData, BaseXLSXDocument, BaseXLSXSheet
+from .core.styling_components import TB, Backgrounds, Borders, Comment, Link, T
+from .core.xlsx_base import BaseXLSXCellData, BaseXLSXDocument, BaseXLSXSheet
 from .utils import column_iter, ensure_correct_instance, get_max_array_length
 
 

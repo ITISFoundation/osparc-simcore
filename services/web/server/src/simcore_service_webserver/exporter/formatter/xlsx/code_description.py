@@ -3,7 +3,7 @@ from collections import deque
 from models_library.services import ServiceVersion
 from pydantic import BaseModel, Field, StrictStr
 
-from ..styling_components import (
+from .core.styling_components import (
     TB,
     AllignTop,
     AllignTopCenter,
@@ -12,7 +12,7 @@ from ..styling_components import (
     Link,
     T,
 )
-from ..xlsx_base import BaseXLSXCellData, BaseXLSXDocument, BaseXLSXSheet
+from .core.xlsx_base import BaseXLSXCellData, BaseXLSXDocument, BaseXLSXSheet
 from .utils import column_iter, ensure_correct_instance
 
 

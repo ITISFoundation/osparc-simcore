@@ -2,8 +2,8 @@ import datetime
 
 from pydantic import BaseModel, Field, StrictStr, validator
 
-from ..styling_components import TB, Backgrounds, Borders, T
-from ..xlsx_base import BaseXLSXCellData, BaseXLSXDocument, BaseXLSXSheet
+from .core.styling_components import TB, Backgrounds, Borders, T
+from .core.xlsx_base import BaseXLSXCellData, BaseXLSXDocument, BaseXLSXSheet
 from .utils import ensure_correct_instance
 
 

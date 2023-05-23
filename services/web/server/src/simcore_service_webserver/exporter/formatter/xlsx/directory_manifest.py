@@ -6,8 +6,8 @@ import magic
 from pydantic import BaseModel, Field, StrictStr, validator
 from pyparsing import Iterable
 
-from ..styling_components import TB, Backgrounds, Borders, T
-from ..xlsx_base import BaseXLSXCellData, BaseXLSXDocument, BaseXLSXSheet
+from .core.styling_components import TB, Backgrounds, Borders, T
+from .core.xlsx_base import BaseXLSXCellData, BaseXLSXDocument, BaseXLSXSheet
 from .utils import column_iter, ensure_correct_instance, get_max_array_length
 
 # replaces lib-magic's description with these
