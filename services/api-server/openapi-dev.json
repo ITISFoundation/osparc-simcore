@@ -1226,7 +1226,7 @@
               "type": "string",
               "format": "uuid"
             },
-            "name": "study_uid",
+            "name": "study_id",
             "in": "query"
           }
         ],
@@ -1258,7 +1258,7 @@
         }
       }
     },
-    "/v0/studies/{study_uid}": {
+    "/v0/studies/{study_id}": {
       "get": {
         "tags": [
           "studies"
@@ -1273,7 +1273,7 @@
               "type": "string",
               "format": "uuid"
             },
-            "name": "study_uid",
+            "name": "study_id",
             "in": "path"
           }
         ],
@@ -1301,7 +1301,7 @@
         }
       }
     },
-    "/v0/studies/{study_uid}/ports": {
+    "/v0/studies/{study_id}/ports": {
       "get": {
         "tags": [
           "studies"
@@ -1317,7 +1317,7 @@
               "type": "string",
               "format": "uuid"
             },
-            "name": "study_uid",
+            "name": "study_id",
             "in": "path"
           }
         ],
@@ -1354,7 +1354,7 @@
         ]
       }
     },
-    "/v0/studies/studies/{study_uid}/jobs": {
+    "/v0/studies/studies/{study_id}/jobs": {
       "get": {
         "tags": [
           "studies"
@@ -1369,7 +1369,7 @@
               "type": "string",
               "format": "uuid"
             },
-            "name": "study_uid",
+            "name": "study_id",
             "in": "path"
           }
         ],
@@ -1414,7 +1414,7 @@
               "type": "string",
               "format": "uuid"
             },
-            "name": "study_uid",
+            "name": "study_id",
             "in": "path"
           }
         ],
@@ -1442,7 +1442,7 @@
         }
       }
     },
-    "/v0/studies/studies/{study_uid}/jobs/{job_id}": {
+    "/v0/studies/studies/{study_id}/jobs/{job_id}": {
       "get": {
         "tags": [
           "studies"
@@ -1457,7 +1457,7 @@
               "type": "string",
               "format": "uuid"
             },
-            "name": "study_uid",
+            "name": "study_id",
             "in": "path"
           },
           {
@@ -1508,7 +1508,7 @@
               "type": "string",
               "format": "uuid"
             },
-            "name": "study_uid",
+            "name": "study_id",
             "in": "path"
           },
           {
@@ -1539,7 +1539,7 @@
         }
       }
     },
-    "/v0/studies/studies/{study_uid}/jobs/{job_id}:start": {
+    "/v0/studies/studies/{study_id}/jobs/{job_id}:start": {
       "post": {
         "tags": [
           "studies"
@@ -1554,7 +1554,7 @@
               "type": "string",
               "format": "uuid"
             },
-            "name": "study_uid",
+            "name": "study_id",
             "in": "path"
           },
           {
@@ -1592,7 +1592,7 @@
         }
       }
     },
-    "/v0/studies/studies/{study_uid}/jobs/{job_id}:stop": {
+    "/v0/studies/studies/{study_id}/jobs/{job_id}:stop": {
       "post": {
         "tags": [
           "studies"
@@ -1607,7 +1607,7 @@
               "type": "string",
               "format": "uuid"
             },
-            "name": "study_uid",
+            "name": "study_id",
             "in": "path"
           },
           {
@@ -1645,7 +1645,7 @@
         }
       }
     },
-    "/v0/studies/studies/{study_uid}/job/{job_id}:inspect": {
+    "/v0/studies/studies/{study_id}/job/{job_id}:inspect": {
       "post": {
         "tags": [
           "studies"
@@ -1660,7 +1660,7 @@
               "type": "string",
               "format": "uuid"
             },
-            "name": "study_uid",
+            "name": "study_id",
             "in": "path"
           },
           {
@@ -1698,7 +1698,7 @@
         }
       }
     },
-    "/v0/studies/studies/{study_uid}/job/{job_id}/outputs": {
+    "/v0/studies/studies/{study_id}/job/{job_id}/outputs": {
       "post": {
         "tags": [
           "studies"
@@ -1713,7 +1713,7 @@
               "type": "string",
               "format": "uuid"
             },
-            "name": "study_uid",
+            "name": "study_id",
             "in": "path"
           },
           {
@@ -1751,7 +1751,7 @@
         }
       }
     },
-    "/v0/studies/studies/{study_uid}/job/{job_id}/outputs/logfile": {
+    "/v0/studies/studies/{study_id}/job/{job_id}/outputs/logfile": {
       "post": {
         "tags": [
           "studies"
@@ -1766,7 +1766,7 @@
               "type": "string",
               "format": "uuid"
             },
-            "name": "study_uid",
+            "name": "study_id",
             "in": "path"
           },
           {
