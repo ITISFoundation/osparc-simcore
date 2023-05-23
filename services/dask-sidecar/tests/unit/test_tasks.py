@@ -351,9 +351,39 @@ def sleeper_task(
 
 
 @pytest.fixture()
-def sleeper_task_fail(sleeper_task: ServiceExampleParam) -> ServiceExampleParam:
-    sleeper_task.command = ["/bin/bash", "-c", "some stupid failing command"]
-    return sleeper_task
+def empty_ubuntu_task(
+    integration_version: version.Version,
+    file_on_s3_server: Callable[..., AnyUrl],
+    s3_remote_file_url: Callable[..., AnyUrl],
+    boot_mode: BootMode,
+    faker: Faker,
+) -> ServiceExampleParam:
+    return ServiceExampleParam(
+        docker_basic_auth=DockerBasicAuth(
+            server_address="docker.io", username="pytest", password=SecretStr("")
+        ),
+        #
+        # NOTE: we use sleeper because it defines a user
+        # that can write in outputs and the
+        # sidecar can remove the outputs dirs
+        # it is based on ubuntu though but the bad part is that now it uses sh instead of bash...
+        # cause the entrypoint uses sh
+        service_key="ubuntu",
+        service_version="latest",
+        command=["/bin/bash", "-c", "echo 'hello I'm an empty ubuntu task!"],
+        input_data=TaskInputData.parse_obj({}),
+        output_data_keys=TaskOutputDataSchema.parse_obj({}),
+        log_file_url=s3_remote_file_url(file_path="log.dat"),
+        expected_output_data=TaskOutputData.parse_obj({}),
+        expected_logs=[],
+        integration_version=integration_version,
+    )
+
+
+@pytest.fixture()
+def failing_ubuntu_task(empty_ubuntu_task: ServiceExampleParam) -> ServiceExampleParam:
+    empty_ubuntu_task.command = ["/bin/bash", "-c", "some stupid failing command"]
+    return empty_ubuntu_task
 
 
 @pytest.fixture()
@@ -586,7 +616,7 @@ async def test_run_computational_sidecar_dask(
 )
 async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub(
     dask_client: distributed.Client,
-    sleeper_task: ServiceExampleParam,
+    empty_ubuntu_task: ServiceExampleParam,
     s3_settings: S3Settings,
     boot_mode: BootMode,
     log_sub: distributed.Sub,
@@ -596,19 +626,19 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
     mocked_get_integration_version.assert_not_called()
     future = dask_client.submit(
         run_computational_sidecar,
-        sleeper_task.docker_basic_auth,
-        sleeper_task.service_key,
-        sleeper_task.service_version,
-        sleeper_task.input_data,
-        sleeper_task.output_data_keys,
-        sleeper_task.log_file_url,
-        sleeper_task.command,
+        empty_ubuntu_task.docker_basic_auth,
+        empty_ubuntu_task.service_key,
+        empty_ubuntu_task.service_version,
+        empty_ubuntu_task.input_data,
+        empty_ubuntu_task.output_data_keys,
+        empty_ubuntu_task.log_file_url,
+        empty_ubuntu_task.command,
         s3_settings,
         resources={},
         boot_mode=boot_mode,
     )
     output_data = future.result()
-    assert output_data
+    assert output_data is not None
     assert isinstance(output_data, TaskOutputData)
 
     # check that the task produces expected logs
@@ -623,7 +653,7 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
     assert worker_progresses[-1] == 1, "missing/incorrect final progress value"
 
     worker_logs = [TaskLogEvent.parse_raw(msg).log for msg in log_sub.buffer]
-    mocked_get_integration_version.assert_has_calls()
+    mocked_get_integration_version.assert_called()
 
 
 @pytest.mark.parametrize(
@@ -633,18 +663,18 @@ def test_failing_service_raises_exception(
     caplog_info_level: LogCaptureFixture,
     mock_service_envs: None,
     dask_subsystem_mock: dict[str, mock.Mock],
-    sleeper_task_fail: ServiceExampleParam,
+    failing_ubuntu_task: ServiceExampleParam,
     s3_settings: S3Settings,
 ):
     with pytest.raises(ServiceRuntimeError):
         run_computational_sidecar(
-            sleeper_task_fail.docker_basic_auth,
-            sleeper_task_fail.service_key,
-            sleeper_task_fail.service_version,
-            sleeper_task_fail.input_data,
-            sleeper_task_fail.output_data_keys,
-            sleeper_task_fail.log_file_url,
-            sleeper_task_fail.command,
+            failing_ubuntu_task.docker_basic_auth,
+            failing_ubuntu_task.service_key,
+            failing_ubuntu_task.service_version,
+            failing_ubuntu_task.input_data,
+            failing_ubuntu_task.output_data_keys,
+            failing_ubuntu_task.log_file_url,
+            failing_ubuntu_task.command,
             s3_settings,
         )
 
