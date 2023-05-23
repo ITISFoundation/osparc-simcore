@@ -1,18 +1,12 @@
 from pathlib import Path
 
-from .templates.code_description import (
-    CodeDescriptionParams,
-    CodeDescriptionXLSXDocument,
-)
-from .templates.dataset_description import (
+from ..code_description import CodeDescriptionParams, CodeDescriptionXLSXDocument
+from ..dataset_description import (
     DatasetDescriptionParams,
     DatasetDescriptionXLSXDocument,
 )
-from .templates.directory_manifest import (
-    DirectoryManifestParams,
-    DirectoryManifestXLSXDocument,
-)
-from .templates.submission import SubmissionDocumentParams, SubmissionXLSXDocument
+from ..directory_manifest import DirectoryManifestParams, DirectoryManifestXLSXDocument
+from ..submission import SubmissionDocumentParams, SubmissionXLSXDocument
 
 MANIFEST_DIRS = ["docs", "derivative"]
 

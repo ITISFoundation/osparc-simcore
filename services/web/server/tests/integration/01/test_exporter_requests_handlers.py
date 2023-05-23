@@ -170,18 +170,18 @@ def temp_dir(tmpdir: Path) -> Path:
 
 @pytest.fixture
 def dir_downloaded(temp_dir: Path) -> Path:
-    dir = temp_dir / "downloaded"
-    dir.mkdir(parents=True, exist_ok=True)
-    assert dir.exists()
-    return dir
+    new_dir = temp_dir / "downloaded"
+    new_dir.mkdir(parents=True, exist_ok=True)
+    assert new_dir.exists()
+    return new_dir
 
 
 @pytest.fixture
 def dir_generated(temp_dir: Path) -> Path:
-    dir = temp_dir / "generated"
-    dir.mkdir(parents=True, exist_ok=True)
-    assert dir.exists()
-    return dir
+    new_dir = temp_dir / "generated"
+    new_dir.mkdir(parents=True, exist_ok=True)
+    assert new_dir.exists()
+    return new_dir
 
 
 async def test_export_project(
