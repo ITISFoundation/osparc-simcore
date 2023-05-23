@@ -58,7 +58,7 @@ def get_current_task_resources() -> dict[str, float]:
 @dataclass()
 class TaskPublisher:
     progress: distributed.Pub = field(init=False)
-    _last_published_progress: float = 0
+    _last_published_progress_value: float = -1
     logs: distributed.Pub = field(init=False)
 
     def __post_init__(self) -> None:
@@ -66,10 +66,13 @@ class TaskPublisher:
         self.logs = distributed.Pub(TaskLogEvent.topic_name())
 
     def publish_progress(self, value: float) -> None:
-        if value > self._last_published_progress:
+        rounded_value = round(value, ndigits=2)
+        if rounded_value > self._last_published_progress_value:
             publish_event(
-                self.progress, TaskProgressEvent.from_dask_worker(progress=value)
+                self.progress,
+                TaskProgressEvent.from_dask_worker(progress=rounded_value),
             )
+            self._last_published_progress_value = rounded_value
 
     def publish_logs(
         self,

@@ -600,7 +600,6 @@ async def test_run_computational_sidecar_dask(
     mocked_get_integration_version.assert_called()
 
 
-@pytest.mark.skip(reason="in dev")
 @pytest.mark.parametrize(
     "integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True
 )
@@ -615,7 +614,7 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
     faker: Faker,
 ):
     mocked_get_integration_version.assert_not_called()
-    NUMBER_OF_LOGS = 10000
+    NUMBER_OF_LOGS = 20000
     future = dask_client.submit(
         run_computational_sidecar,
         **sidecar_task(
@@ -641,15 +640,16 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
     worker_progresses = [
         TaskProgressEvent.parse_raw(msg).progress for msg in progress_sub.buffer
     ]
-    # check ordering
-    assert worker_progresses == list(
+    # check length
+    assert len(worker_progresses) == len(
         set(worker_progresses)
-    ), "ordering of progress values incorrectly sorted!"
+    ), "there are duplicate progresses!"
+    assert sorted(worker_progresses) == worker_progresses, "ordering issue"
     assert worker_progresses[0] == 0, "missing/incorrect initial progress value"
     assert worker_progresses[-1] == 1, "missing/incorrect final progress value"
 
     worker_logs = [TaskLogEvent.parse_raw(msg).log for msg in log_sub.buffer]
-    assert len(worker_logs) == 2 * NUMBER_OF_LOGS + 15
+    assert len(worker_logs) == NUMBER_OF_LOGS + 15
     mocked_get_integration_version.assert_called()
 
 

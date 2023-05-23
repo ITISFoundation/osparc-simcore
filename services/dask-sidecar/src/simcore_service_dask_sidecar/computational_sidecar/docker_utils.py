@@ -135,7 +135,8 @@ def _guess_progress_value(progress_match: re.Match[str]) -> float:
     if progress_match.group("fraction"):
         # this is of the 23/123 kind
         nums = progress_match.group("fraction").strip().split("/")
-        return float(nums[0].strip()) / float(nums[1].strip())
+        value = float(nums[0].strip()) / float(nums[1].strip())
+        return value
     # this is of the 0.0-1.0 kind
     return float(value_str.strip())
 
@@ -145,12 +146,11 @@ async def _try_parse_progress(
 ) -> float | None:
     try:
         # pattern might be like "timestamp log"
-        log = line
-        splitted_log = line.split(" ", maxsplit=1)
+        log = line.strip("\n")
+        splitted_log = log.split(" ", maxsplit=1)
         with contextlib.suppress(arrow.ParserError):
             if len(splitted_log) == 2 and arrow.get(splitted_log[0]):
                 log = splitted_log[1]
-
         if match := re.search(PROGRESS_REGEXP, log.lower()):
             return _guess_progress_value(match)
     except (ValueError, ZeroDivisionError):
@@ -165,7 +165,8 @@ async def _parse_and_publish_logs(
     *,
     task_publishers: TaskPublisher,
 ) -> None:
-    if progress_value := await _try_parse_progress(log_line) is not None:
+    progress_value = await _try_parse_progress(log_line)
+    if progress_value is not None:
         task_publishers.publish_progress(progress_value)
     else:
         task_publishers.publish_logs(
