@@ -544,6 +544,15 @@ async def test_run_computational_sidecar_dask(
     assert isinstance(output_data, TaskOutputData)
 
     # check that the task produces expected logs
+    worker_progresses = [
+        TaskProgressEvent.parse_raw(msg).progress for msg in progress_sub.buffer
+    ]
+    # check ordering
+    assert worker_progresses == list(
+        set(worker_progresses)
+    ), "ordering of progress values incorrectly sorted!"
+    assert worker_progresses[0] == 0, "missing/incorrect initial progress value"
+    assert worker_progresses[-1] == 1, "missing/incorrect final progress value"
     worker_logs = [TaskLogEvent.parse_raw(msg).log for msg in log_sub.buffer]
     print(f"<-- we got {len(worker_logs)} lines of logs")
 
