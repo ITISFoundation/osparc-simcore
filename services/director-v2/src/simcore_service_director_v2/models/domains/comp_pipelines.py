@@ -1,5 +1,4 @@
 from contextlib import suppress
-from typing import Dict, List
 
 import networkx as nx
 from models_library.projects import ProjectID
@@ -12,7 +11,7 @@ from ...utils.db import DB_TO_RUNNING_STATE
 
 class CompPipelineAtDB(BaseModel):
     project_id: ProjectID
-    dag_adjacency_list: Dict[str, List[str]]  # json serialization issue if using NodeID
+    dag_adjacency_list: dict[str, list[str]]  # json serialization issue if using NodeID
     state: RunningState
 
     @validator("state", pre=True)
@@ -35,7 +34,9 @@ class CompPipelineAtDB(BaseModel):
         return {str(key): [str(n) for n in value] for key, value in v.items()}
 
     def get_graph(self) -> nx.DiGraph:
-        return nx.from_dict_of_lists(self.dag_adjacency_list, create_using=nx.DiGraph)
+        return nx.convert.from_dict_of_lists(
+            self.dag_adjacency_list, create_using=nx.DiGraph
+        )
 
     class Config:
         orm_mode = True

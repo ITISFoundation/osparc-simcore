@@ -3,6 +3,7 @@ import logging
 from datetime import datetime
 from typing import Any
 
+import arrow
 import sqlalchemy as sa
 from models_library.errors import ErrorDict
 from models_library.function_services_catalog import iter_service_docker_data
@@ -13,6 +14,8 @@ from models_library.projects_state import RunningState
 from models_library.services import ServiceDockerData, ServiceKeyVersion
 from models_library.services_resources import BootMode
 from models_library.users import UserID
+from servicelib.logging_utils import log_context
+from servicelib.utils import logged_gather
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert
 
@@ -170,7 +173,7 @@ async def _generate_tasks_list_from_project(
             inputs=node.inputs,
             outputs=node.outputs,
             image=image,
-            submit=datetime.utcnow(),
+            submit=arrow.utcnow().datetime,
             state=task_state,
             internal_id=internal_id,
             node_class=to_node_class(node.key),
@@ -182,7 +185,7 @@ async def _generate_tasks_list_from_project(
 
 
 class CompTasksRepository(BaseRepository):
-    async def get_all_tasks(
+    async def list_tasks(
         self,
         project_id: ProjectID,
     ) -> list[CompTaskAtDB]:
@@ -196,7 +199,7 @@ class CompTasksRepository(BaseRepository):
 
         return tasks
 
-    async def get_comp_tasks(
+    async def list_computational_tasks(
         self,
         project_id: ProjectID,
     ) -> list[CompTaskAtDB]:
@@ -212,7 +215,7 @@ class CompTasksRepository(BaseRepository):
                 tasks.append(task_db)
         return tasks
 
-    async def check_task_exists(self, project_id: ProjectID, node_id: NodeID) -> bool:
+    async def task_exists(self, project_id: ProjectID, node_id: NodeID) -> bool:
         async with self.db_engine.acquire() as conn:
             nid: str | None = await conn.scalar(
                 sa.select(comp_tasks.c.node_id).where(
@@ -290,6 +293,28 @@ class CompTasksRepository(BaseRepository):
             )
             return inserted_comp_tasks_db
 
+    async def _update_task(
+        self, project_id: ProjectID, task: NodeID, **task_kwargs
+    ) -> CompTaskAtDB:
+        with log_context(
+            logger,
+            logging.DEBUG,
+            msg=f"update task {project_id=}:{task=} with '{task_kwargs}'",
+        ):
+            async with self.db_engine.acquire() as conn:
+                result = await conn.execute(
+                    sa.update(comp_tasks)
+                    .where(
+                        (comp_tasks.c.project_id == f"{project_id}")
+                        & (comp_tasks.c.node_id == f"{task}")
+                    )
+                    .values(**task_kwargs)
+                    .returning(literal_column("*"))
+                )
+                row = await result.fetchone()
+                assert row  # nosec
+                return CompTaskAtDB.from_orm(row)
+
     async def mark_project_published_tasks_as_aborted(
         self, project_id: ProjectID
     ) -> None:
@@ -302,30 +327,18 @@ class CompTasksRepository(BaseRepository):
                     & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
                     & (comp_tasks.c.state == StateType.PUBLISHED)
                 )
-                .values(state=StateType.ABORTED, progress=1.0)
+                .values(
+                    state=StateType.ABORTED, progress=1.0, end=arrow.utcnow().datetime
+                )
             )
         logger.debug("marked project %s published tasks as aborted", f"{project_id=}")
 
-    async def set_project_task_job_id(
+    async def update_project_task_job_id(
         self, project_id: ProjectID, task: NodeID, job_id: str
     ) -> None:
-        async with self.db_engine.acquire() as conn:
-            await conn.execute(
-                sa.update(comp_tasks)
-                .where(
-                    (comp_tasks.c.project_id == f"{project_id}")
-                    & (comp_tasks.c.node_id == f"{task}")
-                )
-                .values(job_id=job_id)
-            )
-        logger.debug(
-            "set project %s task %s with job id: %s",
-            f"{project_id=}",
-            f"{task=}",
-            f"{job_id=}",
-        )
+        await self._update_task(project_id, task, job_id=job_id)
 
-    async def set_project_tasks_state(
+    async def update_project_tasks_state(
         self,
         project_id: ProjectID,
         tasks: list[NodeID],
@@ -333,51 +346,39 @@ class CompTasksRepository(BaseRepository):
         errors: list[ErrorDict] | None = None,
         *,
         optional_progress: float | None = None,
+        optional_started: datetime | None = None,
+        optional_stopped: datetime | None = None,
     ) -> None:
-        async with self.db_engine.acquire() as conn:
-            update_values = {"state": RUNNING_STATE_TO_DB[state], "errors": errors}
-            if optional_progress is not None:
-                update_values["progress"] = optional_progress
-            await conn.execute(
-                sa.update(comp_tasks)
-                .where(
-                    (comp_tasks.c.project_id == f"{project_id}")
-                    & (comp_tasks.c.node_id.in_([str(t) for t in tasks]))
-                )
-                .values(**update_values)
+        """update the task state values in the database
+        passing None for the optional arguments will not update the respective values in the database
+        Keyword Arguments:
+            errors -- _description_ (default: {None})
+            optional_progress -- _description_ (default: {None})
+            optional_started -- _description_ (default: {None})
+            optional_stopped -- _description_ (default: {None})
+        """
+        update_values = {"state": RUNNING_STATE_TO_DB[state], "errors": errors}
+        if optional_progress is not None:
+            update_values["progress"] = optional_progress
+        if optional_started is not None:
+            update_values["start"] = optional_started
+        if optional_stopped is not None:
+            update_values["end"] = optional_stopped
+        await logged_gather(
+            *(
+                self._update_task(project_id, task_id, **update_values)
+                for task_id in tasks
             )
-        logger.debug(
-            "set project %s tasks %s with state %s",
-            f"{project_id=}",
-            f"{tasks=}",
-            f"{state=}",
         )
 
-    async def set_project_task_progress(
+    async def update_project_task_progress(
         self, project_id: ProjectID, node_id: NodeID, progress: float
     ) -> None:
+        await self._update_task(project_id, node_id, progress=progress)
+
+    async def delete_tasks_from_project(self, project_id: ProjectID) -> None:
         async with self.db_engine.acquire() as conn:
             await conn.execute(
-                sa.update(comp_tasks)
-                .where(
-                    (comp_tasks.c.project_id == f"{project_id}")
-                    & (comp_tasks.c.node_id == f"{node_id}")
-                )
-                .values(progress=progress)
+                sa.delete(comp_tasks).where(comp_tasks.c.project_id == f"{project_id}")
             )
-
-        logger.debug(
-            "set project %s task %s with progress %s",
-            f"{project_id=}",
-            f"{node_id=}",
-            f"{progress=}",
-        )
-
-    async def delete_tasks_from_project(self, project: ProjectAtDB) -> None:
-        async with self.db_engine.acquire() as conn:
-            await conn.execute(
-                sa.delete(comp_tasks).where(
-                    comp_tasks.c.project_id == str(project.uuid)
-                )
-            )
-        logger.debug("deleted tasks from project %s", f"{project.uuid=}")
+        logger.debug("deleted tasks from project %s", f"{project_id=}")

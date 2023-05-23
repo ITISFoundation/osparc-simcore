@@ -5,10 +5,10 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import datetime
 import json
 import re
 import urllib.parse
-from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Callable
 
@@ -198,7 +198,8 @@ def mocked_catalog_service_fcts_deprecated(
                         "key": urllib.parse.unquote(service_key),
                         "version": service_version,
                         "deprecated": (
-                            datetime.utcnow() - timedelta(days=1)
+                            datetime.datetime.now(tz=datetime.timezone.utc)
+                            - datetime.timedelta(days=1)
                         ).isoformat(),
                     }
                 ),
@@ -446,6 +447,9 @@ async def test_get_computation_from_empty_project(
         result=None,
         iteration=None,
         cluster_id=None,
+        started=None,
+        stopped=None,
+        submitted=None,
     )
     assert returned_computation.dict() == expected_computation.dict()
 
@@ -458,7 +462,6 @@ async def test_get_computation_from_not_started_computation_task(
     project: Callable[..., ProjectAtDB],
     pipeline: Callable[..., CompPipelineAtDB],
     tasks: Callable[..., list[CompTaskAtDB]],
-    faker: Faker,
     async_client: httpx.AsyncClient,
 ):
     user = registered_user()
@@ -510,9 +513,17 @@ async def test_get_computation_from_not_started_computation_task(
         result=None,
         iteration=None,
         cluster_id=None,
+        started=None,
+        stopped=None,
+        submitted=None,
     )
-
-    assert returned_computation.dict() == expected_computation.dict()
+    _CHANGED_FIELDS = {"submitted"}
+    assert returned_computation.dict(
+        exclude=_CHANGED_FIELDS
+    ) == expected_computation.dict(exclude=_CHANGED_FIELDS)
+    assert returned_computation.dict(
+        include=_CHANGED_FIELDS
+    ) != expected_computation.dict(include=_CHANGED_FIELDS)
 
 
 async def test_get_computation_from_published_computation_task(
@@ -534,6 +545,7 @@ async def test_get_computation_from_published_computation_task(
     )
     comp_tasks = tasks(user=user, project=proj, state=StateType.PUBLISHED, progress=0)
     comp_runs = runs(user=user, project=proj, result=StateType.PUBLISHED)
+    assert comp_runs
     get_computation_url = httpx.URL(
         f"/v2/computations/{proj.uuid}?user_id={user['id']}"
     )
@@ -574,6 +586,15 @@ async def test_get_computation_from_published_computation_task(
         result=None,
         iteration=1,
         cluster_id=DEFAULT_CLUSTER_ID,
+        started=None,
+        stopped=None,
+        submitted=None,
     )
 
-    assert returned_computation.dict() == expected_computation.dict()
+    _CHANGED_FIELDS = {"submitted"}
+    assert returned_computation.dict(
+        exclude=_CHANGED_FIELDS
+    ) == expected_computation.dict(exclude=_CHANGED_FIELDS)
+    assert returned_computation.dict(
+        include=_CHANGED_FIELDS
+    ) != expected_computation.dict(include=_CHANGED_FIELDS)

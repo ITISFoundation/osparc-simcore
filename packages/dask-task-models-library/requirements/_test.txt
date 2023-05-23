@@ -80,11 +80,15 @@ pytest-runner==6.0.0
 pytest-sugar==0.9.7
     # via -r requirements/_test.in
 python-dateutil==2.8.2
-    # via faker
+    # via
+    #   -c requirements/_base.txt
+    #   faker
 pyyaml==6.0
     # via -r requirements/_test.in
 six==1.16.0
-    # via python-dateutil
+    # via
+    #   -c requirements/_base.txt
+    #   python-dateutil
 termcolor==2.3.0
     # via pytest-sugar
 tomli==2.0.1
