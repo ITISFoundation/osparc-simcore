@@ -13,7 +13,7 @@ from ..projects.projects_api import retrieve_and_notify_project_locked_state
 from ..security.decorators import permission_required
 from ..users.api import get_user_name
 from .exceptions import ExporterException
-from .sds.archive import get_sds_archive_path
+from .formatter.archive import get_sds_archive_path
 from .utils import CleanupFileResponse
 
 log = logging.getLogger(__name__)

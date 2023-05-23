@@ -4,7 +4,7 @@ from aiohttp import web
 from servicelib.archiving_utils import archive_dir
 
 from ..exceptions import ExporterException
-from ._formatter import create_sds_directory
+from ._sds import create_sds_directory
 
 
 async def _compress_dir(
