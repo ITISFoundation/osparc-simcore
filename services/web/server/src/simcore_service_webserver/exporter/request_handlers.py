@@ -31,7 +31,7 @@ async def export_project(request: web.Request):
     directory (serialized data and storage files).
     - The `/tmp/SOME_TMP_DIR/uuid/` is zipped producing the archive to be downloaded
     in this path `/tmp/SOME_TMP_DIR/sds_PROJECT_ID.zip`
-    - When the request finishes, for any reason (HTTO_OK, HTTP_ERROR, etc...), the
+    - When the request finishes, for any reason (HTTP_OK, HTTP_ERROR, etc...), the
     `/tmp/SOME_TMP_DIR/` si removed from the disk."""
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
