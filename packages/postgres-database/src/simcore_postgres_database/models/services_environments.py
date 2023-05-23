@@ -28,7 +28,7 @@ services_vendor_secrets = sa.Table(
     sa.Column(
         "service_from_version",
         sa.String,
-        doc="",
+        doc="Defines the minimum version (included) from which these secrets apply",
     ),
     sa.Column(
         "secrets_map",
@@ -42,7 +42,15 @@ services_vendor_secrets = sa.Table(
     column_created_datetime(),
     column_modified_datetime(),
     # CONSTRAINTS --
+    sa.ForeignKeyConstraint(
+        ["service_key", "service_from_version"],
+        ["services_meta_data.key", "services_meta_data.version"],
+        onupdate="CASCADE",
+        ondelete="CASCADE",
+        # NOTE: this might be a problem: if a version in the metadata is deleted,
+        # all versions above will take the secret_map for the previous one.
+    ),
     sa.PrimaryKeyConstraint(
-        "service_key", name="services_vendor_secrets_service_key_pk"
+        "service_key", "service_from_version", name="services_vendor_secrets_pk"
     ),
 )
