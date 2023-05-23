@@ -44,7 +44,7 @@ def _is_docker_swarm_init(docker_client: docker.client.DockerClient) -> bool:
 
 
 @retry(
-    wait=wait_fixed(5),
+    wait=wait_fixed(1),
     stop=stop_after_delay(8 * MINUTE),
     before_sleep=before_sleep_log(log, logging.WARNING),
     reraise=True,
@@ -183,25 +183,26 @@ def docker_swarm(
     retry=retry_if_exception_type(AssertionError),
     stop=stop_after_delay(30),
 )
-def _wait_for_new_task_to_be_started(service: Any, old_task_ids: set[str]) -> None:
-    service.reload()
-    new_task_ids = {t["ID"] for t in service.tasks()}
-    assert len(new_task_ids.difference(old_task_ids)) == 1
+def _wait_for_migration_service_to_be_removed(
+    docker_client: docker.client.DockerClient,
+) -> None:
+    for service in docker_client.services.list():
+        if "migration" in service.name:  # type: ignore
+            raise TryAgain
 
 
-def _force_restart_migration_service(docker_client: docker.client.DockerClient) -> None:
+def _force_remove_migration_service(docker_client: docker.client.DockerClient) -> None:
     for migration_service in (
         service
         for service in docker_client.services.list()
-        if "migration" in service.name
+        if "migration" in service.name  # type: ignore
     ):
         print(
-            "WARNING: migration service detected before updating stack, it will be force-updated"
+            "WARNING: migration service detected before updating stack, it will be force-removed now and re-deployed to ensure DB update"
         )
-        before_update_task_ids = {t["ID"] for t in migration_service.tasks()}
-        migration_service.force_update()
-        _wait_for_new_task_to_be_started(migration_service, before_update_task_ids)
-        print(f"forced updated {migration_service.name}.")
+        migration_service.remove()  # type: ignore
+        _wait_for_migration_service_to_be_removed(docker_client)
+        print(f"forced updated {migration_service.name}.")  # type: ignore
 
 
 def _deploy_stack(compose_file: Path, stack_name: str) -> None:
@@ -273,7 +274,7 @@ def docker_stack(
 
     # NOTE: if the migration service was already running prior to this call it must
     # be force updated so that it does its job. else it remains and tests will fail
-    _force_restart_migration_service(docker_client)
+    _force_remove_migration_service(docker_client)
 
     # make up-version
     stacks_deployed: dict[str, dict] = {}

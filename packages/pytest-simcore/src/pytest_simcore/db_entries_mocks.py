@@ -39,13 +39,13 @@ def registered_user(
             )
             # this is needed to get the primary_gid correctly
             result = con.execute(
-                sa.select([users]).where(users.c.id == user_config["id"])
+                sa.select(users).where(users.c.id == user_config["id"])
             )
             user = result.first()
             assert user
             print(f"--> created {user=}")
             created_user_ids.append(user["id"])
-        return dict(user)
+        return dict(user._asdict())
 
     yield creator
 
@@ -81,7 +81,7 @@ def project(
                 .returning(sa.literal_column("*"))
             )
 
-            inserted_project = ProjectAtDB.parse_obj(result.first())
+            inserted_project = ProjectAtDB.from_orm(result.first())
         print(f"--> created {inserted_project=}")
         created_project_ids.append(f"{inserted_project.uuid}")
         return inserted_project

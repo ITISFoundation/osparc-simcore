@@ -16,6 +16,7 @@ from dask_task_models_library.container_tasks.io import TaskCancelEventName
 from distributed.worker import get_worker
 from distributed.worker_state_machine import TaskState
 from servicelib.logging_utils import LogLevelInt, LogMessageStr
+from servicelib.logging_utils import log_catch
 
 logger = logging.getLogger(__name__)
 
@@ -143,12 +144,14 @@ def publish_task_logs(
     log_level: LogLevelInt,
 ) -> None:
     logger.info("[%s - %s]: %s", message_prefix, log_type.name, message)
-    if log_type == LogType.PROGRESS:
-        publish_event(
-            progress_pub,
-            TaskProgressEvent.from_dask_worker(progress=float(message)),
-        )
-    else:
-        publish_event(
-            logs_pub, TaskLogEvent.from_dask_worker(log=message, log_level=log_level)
-        )
+    with log_catch(logger, reraise=False):
+        if log_type == LogType.PROGRESS:
+            publish_event(
+                progress_pub,
+                TaskProgressEvent.from_dask_worker(progress=float(message)),
+            )
+        else:
+            publish_event(
+                logs_pub,
+                TaskLogEvent.from_dask_worker(log=message, log_level=log_level),
+            )

@@ -16,7 +16,7 @@ from pydantic.types import PositiveInt
 from ...models.basic_types import VersionStr
 from ...models.domain.projects import NewProjectIn, Project
 from ...models.schemas.files import File
-from ...models.schemas.jobs import ArgumentType, Job, JobInputs, JobOutputs, JobStatus
+from ...models.schemas.jobs import ArgumentTypes, Job, JobInputs, JobOutputs, JobStatus
 from ...models.schemas.solvers import Solver, SolverKeyId
 from ...plugins.catalog import CatalogApi
 from ...plugins.director_v2 import DirectorV2Api, DownloadLink, NodeName
@@ -26,7 +26,7 @@ from ...utils.solver_job_models_converters import (
     create_jobstatus_from_task,
     create_new_project_for_job,
 )
-from ...utils.solver_job_outputs import get_solver_output_results
+from ...utils.solver_job_outputs import ResultsTypes, get_solver_output_results
 from ..dependencies.application import get_product_name, get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.database import Engine, get_db_engine
@@ -46,7 +46,7 @@ def _compose_job_resource_name(solver_key, solver_version, job_id) -> str:
     )
 
 
-## JOBS ---------------
+# JOBS ---------------
 #
 # - Similar to docker container's API design (container = job and image = solver)
 #
@@ -224,7 +224,7 @@ async def inspect_job(
     job_id: UUID,
     user_id: PositiveInt = Depends(get_current_user_id),
     director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
-):
+) -> JobStatus:
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Inspecting Job '%s'", job_name)
 
@@ -253,16 +253,14 @@ async def get_job_outputs(
     node_ids = list(project.workbench.keys())
     assert len(node_ids) == 1  # nosec
 
-    outputs: dict[
-        str, float | int | bool | BaseFileLink | str | None
-    ] = await get_solver_output_results(
+    outputs: dict[str, ResultsTypes] = await get_solver_output_results(
         user_id=user_id,
         project_uuid=job_id,
         node_uuid=UUID(node_ids[0]),
         db_engine=db_engine,
     )
 
-    results: dict[str, ArgumentType] = {}
+    results: dict[str, ArgumentTypes] = {}
     for name, value in outputs.items():
         if isinstance(value, BaseFileLink):
             # TODO: value.path exists??

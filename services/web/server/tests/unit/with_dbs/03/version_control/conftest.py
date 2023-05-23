@@ -55,7 +55,7 @@ def fake_project(faker: Faker) -> ProjectDict:
 
 
 @pytest.fixture
-async def catalog_subsystem_mock_override(
+def catalog_subsystem_mock_override(
     catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     fake_project: ProjectDict,
 ) -> None:

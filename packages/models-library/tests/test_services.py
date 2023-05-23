@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import re
+import urllib.parse
 from copy import deepcopy
 from pprint import pformat
 from typing import Any, Callable
@@ -12,6 +13,7 @@ from models_library.basic_regex import VERSION_RE
 from models_library.services import (
     COMPUTATIONAL_SERVICE_KEY_FORMAT,
     DYNAMIC_SERVICE_KEY_FORMAT,
+    SERVICE_ENCODED_KEY_RE,
     SERVICE_KEY_RE,
     BootOption,
     ServiceDockerData,
@@ -85,6 +87,8 @@ def test_service_models_examples(model_cls, model_cls_examples):
         assert model_instance, f"Failed with {name}"
 
 
+@pytest.mark.testit
+@pytest.mark.parametrize("pattern", (SERVICE_KEY_RE, SERVICE_ENCODED_KEY_RE))
 @pytest.mark.parametrize(
     "service_key",
     [
@@ -136,8 +140,11 @@ def test_service_models_examples(model_cls, model_cls_examples):
     ],
     ids=str,
 )
-def test_SERVICE_KEY_RE(service_key: str):
-    match = re.match(SERVICE_KEY_RE, service_key)
+def test_SERVICE_KEY_RE(service_key: str, pattern: re.Pattern):
+    if pattern == SERVICE_ENCODED_KEY_RE:
+        service_key = urllib.parse.quote(service_key, safe="")
+
+    match = re.match(pattern, service_key)
     assert match
 
     assert match.group("type") in ["comp", "dynamic", "frontend"]
@@ -157,7 +164,7 @@ def test_SERVICE_KEY_RE(service_key: str):
         new_service_key = DYNAMIC_SERVICE_KEY_FORMAT.format(service_name=service_name)
 
     if new_service_key:
-        new_match = re.match(SERVICE_KEY_RE, new_service_key)
+        new_match = re.match(pattern, new_service_key)
         assert new_match
         assert new_match.groups() == match.groups()
 
@@ -212,3 +219,31 @@ def test_boot_option_wrong_default() -> None:
         with pytest.raises(ValueError):
             example["default"] = "__undefined__"
             assert BootOption(**example)
+
+
+# NOTE: do not add items to this list, you are wrong to do so!
+FIELD_NAME_EXCEPTIONS: set[str] = {
+    "integration-version",
+    "boot-options",
+    "min-visible-inputs",
+}
+
+
+def test_service_docker_data_labels_convesion():
+    # tests that no future fields have "dashed names"
+    # we want labels to look like io.simcore.a_label_property
+    convension_breaking_fields: set[tuple[str, str]] = set()
+
+    fiedls_with_aliases: list[tuple[str, str]] = [
+        (x.name, x.alias) for x in ServiceDockerData.__fields__.values()
+    ]
+
+    for name, alias in fiedls_with_aliases:
+        if alias in FIELD_NAME_EXCEPTIONS:
+            continue
+        # check dashes and uppercase
+        if alias.lower() != alias or "-" in alias:
+            convension_breaking_fields.add((name, alias))
+    assert (
+        len(convension_breaking_fields) == 0
+    ), "You are no longer allowed to add labels with dashes in them. All lables should be snake cased!"

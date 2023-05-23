@@ -47,14 +47,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         title: "New TI Plan",
         description: "Start new TI plan",
         newStudyLabel: "TI Planning Tool",
-        idToWidget: "newPlanButton"
+        idToWidget: "newTIPlanButton"
       },
       "mTI": {
         templateLabel: "mTI Planning Tool",
         title: "New mTI Plan",
         description: "Start multiple TI plan",
         newStudyLabel: "mTI Planning Tool",
-        idToWidget: "newMPlanButton"
+        idToWidget: "newMTIPlanButton"
       }
     },
     EXPECTED_S4L_SERVICE_KEYS: {
@@ -667,11 +667,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __newPlanBtnClicked: function(button, templateData) {
+      // do not override cached template data
+      const templateCopyData = osparc.utils.Utils.deepCloneObject(templateData);
       button.setValue(false);
-      const title = osparc.utils.Utils.getUniqueStudyName(templateData.name, this._resourcesList);
-      templateData.name = title;
-      this._showLoadingPage(this.tr("Creating ") + (templateData.name || osparc.product.Utils.getStudyAlias()));
-      osparc.utils.Study.createStudyFromTemplate(templateData, this._loadingPage)
+      const title = osparc.utils.Utils.getUniqueStudyName(templateCopyData.name, this._resourcesList);
+      templateCopyData.name = title;
+      this._showLoadingPage(this.tr("Creating ") + (templateCopyData.name || osparc.product.Utils.getStudyAlias()));
+      osparc.utils.Study.createStudyFromTemplate(templateCopyData, this._loadingPage)
         .then(studyId => {
           this._hideLoadingPage();
           this.__startStudyById(studyId);

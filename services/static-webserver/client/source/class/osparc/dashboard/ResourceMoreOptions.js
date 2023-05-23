@@ -153,11 +153,11 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       [
         this.__getInfoPage,
         this.__getPermissionsPage,
-        this.__getClassifiersPage,
-        this.__getQualityPage,
         this.__getTagsPage,
         this.__getServicesUpdatePage,
         this.__getServicesBootOptionsPage,
+        this.__getQualityPage,
+        this.__getClassifiersPage,
         this.__getSaveAsTemplatePage
       ].forEach(pageCallee => {
         if (pageCallee) {

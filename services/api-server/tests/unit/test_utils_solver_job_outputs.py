@@ -2,25 +2,30 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from simcore_service_api_server.models.schemas.jobs import ArgumentType, File
+from typing import Union, get_args, get_origin
+
+from simcore_service_api_server.models.schemas.jobs import ArgumentTypes, File
 from simcore_service_api_server.utils.solver_job_outputs import (
     BaseFileLink,
     ResultsTypes,
 )
-from simcore_service_api_server.utils.typing_extra import get_types
 
 
-def test_result_type_mapped():
+def test_resultstypes_and_argument_type_sync():
     # I/O types returned by node-ports must be one-to-one mapped
     # with those returned as output results
 
-    api_arg_types = list(get_types(ArgumentType))
-    output_arg_types = list(get_types(ResultsTypes))
+    assert get_origin(ArgumentTypes) == Union
+    argument_types_args = set(get_args(ArgumentTypes))
 
-    assert File in api_arg_types
-    assert BaseFileLink in output_arg_types
+    assert get_origin(ResultsTypes) == Union
+    results_types_args = set(get_args(ResultsTypes))
 
-    api_arg_types.remove(File)
-    output_arg_types.remove(BaseFileLink)
+    # files are in the inputs as File (or Raises KeyError if not)
+    argument_types_args.remove(File)
 
-    assert set(api_arg_types) == set(output_arg_types)
+    # files are in the outputs as Links (or Raises KeyError if not)
+    results_types_args.remove(BaseFileLink)
+
+    # identical except for File/BaseFileLink
+    assert argument_types_args == results_types_args

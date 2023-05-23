@@ -276,21 +276,21 @@ class ProjectDBAPI(BaseProjectDB):
             user_groups: list[RowProxy] = await self._list_user_groups(conn, user_id)
 
             query = (
-                sa.select([projects, projects_to_products.c.product_name])
+                sa.select(projects, projects_to_products.c.product_name)
                 .select_from(projects.join(projects_to_products, isouter=True))
                 .where(
                     (
                         (projects.c.type == filter_by_project_type.value)
                         if filter_by_project_type
-                        else (projects.c.type != None)
+                        else (projects.c.type.is_not(None))
                     )
                     & (
-                        (projects.c.published == True)
+                        (projects.c.published.is_(True))
                         if only_published
                         else sa.text("")
                     )
                     & (
-                        (projects.c.hidden == False)
+                        (projects.c.hidden.is_(False))
                         if not include_hidden
                         else sa.text("")
                     )
@@ -302,14 +302,14 @@ class ProjectDBAPI(BaseProjectDB):
                     )
                     & (
                         (projects_to_products.c.product_name == product_name)
-                        | (projects_to_products.c.product_name == None)
+                        | (projects_to_products.c.product_name.is_(None))
                     )
                 )
                 .order_by(desc(projects.c.last_change_date), projects.c.id)
             )
 
             total_number_of_projects = await conn.scalar(
-                query.with_only_columns([func.count()]).order_by(None)
+                query.with_only_columns(func.count()).order_by(None)
             )
             assert total_number_of_projects is not None  # nosec
 
@@ -331,7 +331,7 @@ class ProjectDBAPI(BaseProjectDB):
         result = deque()
         async with self.engine.acquire() as conn:
             async for row in conn.execute(
-                sa.select([projects.c.uuid]).where(projects.c.prj_owner == user_id)
+                sa.select(projects.c.uuid).where(projects.c.prj_owner == user_id)
             ):
                 result.append(row[projects.c.uuid])
             return list(result)
@@ -649,7 +649,7 @@ class ProjectDBAPI(BaseProjectDB):
         """Returns True if the node id exists in any of the available projects"""
         async with self.engine.acquire() as conn:
             num_entries = await conn.scalar(
-                sa.select([func.count()])
+                sa.select(func.count())
                 .select_from(projects)
                 .where(projects.c.workbench.op("->>")(f"{node_id}") != None)
             )
@@ -759,9 +759,7 @@ class ProjectDBAPI(BaseProjectDB):
     async def is_hidden(self, project_uuid: ProjectID) -> bool:
         async with self.engine.acquire() as conn:
             result = await conn.scalar(
-                sa.select([projects.c.hidden]).where(
-                    projects.c.uuid == f"{project_uuid}"
-                )
+                sa.select(projects.c.hidden).where(projects.c.uuid == f"{project_uuid}")
             )
         return bool(result)
 
@@ -781,7 +779,7 @@ class ProjectDBAPI(BaseProjectDB):
     async def get_project_type(self, project_uuid: ProjectID) -> ProjectType:
         async with self.engine.acquire() as conn:
             result = await conn.execute(
-                sa.select([projects.c.type]).where(projects.c.uuid == f"{project_uuid}")
+                sa.select(projects.c.type).where(projects.c.uuid == f"{project_uuid}")
             )
             row = await result.first()
             if row:
@@ -826,7 +824,7 @@ class ProjectDBAPI(BaseProjectDB):
             while True:
                 project_uuid = str(uuidlib.uuid1())
                 result = await conn.execute(
-                    select([projects]).where(projects.c.uuid == project_uuid)
+                    select(projects).where(projects.c.uuid == project_uuid)
                 )
                 found = await result.first()
                 if not found:
