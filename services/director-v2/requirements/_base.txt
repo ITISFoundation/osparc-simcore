@@ -309,7 +309,7 @@ ujson==5.5.0
     # via
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   fastapi
-urllib3==1.26.15
+urllib3==1.26.16
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
