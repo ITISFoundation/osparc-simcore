@@ -58,9 +58,9 @@ async def test_shared_store_updates(
     assert store_file_path.exists() is False
 
     # change some data and trigger a persist
-    for attr_name, attr_value in update_fields.items():
-        setattr(shared_store, attr_name, attr_value)
-    await shared_store.persist_to_disk()
+    async with shared_store:
+        for attr_name, attr_value in update_fields.items():
+            setattr(shared_store, attr_name, attr_value)
 
     # check the contes of the file should be the same as the shared_store's
     assert store_file_path.exists() is True

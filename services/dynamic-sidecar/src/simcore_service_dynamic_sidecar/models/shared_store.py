@@ -1,5 +1,6 @@
+from asyncio import Lock
 from pathlib import Path
-from typing import Final, Optional
+from typing import Final
 
 import aiofiles
 from fastapi import FastAPI
@@ -12,10 +13,18 @@ ContainerNameStr = str
 STORE_FILE_NAME: Final[str] = "data.json"
 
 
-class SharedStore(BaseModel):
-    _shared_store_dir: Path = PrivateAttr()
+# TODO: Objects with volume state and volume status that stores the information
 
-    compose_spec: Optional[str] = Field(
+
+class SharedStore(BaseModel):
+    """
+    When used as a context manager will persist the state to the disk upon exit.
+    """
+
+    _shared_store_dir: Path | None = PrivateAttr()
+    _persist_lock: Lock | None = PrivateAttr()
+
+    compose_spec: str | None = Field(
         default=None, description="stores the stringified compose spec"
     )
     container_names: list[ContainerNameStr] = Field(
@@ -23,14 +32,15 @@ class SharedStore(BaseModel):
         description="stores the container names from the compose_spec",
     )
 
-    # NOTE: setting up getter and setter does not work.
-    def set_shared_store_dir(self, shared_store_dir: Path) -> None:
-        self._shared_store_dir = shared_store_dir
+    async def __aenter__(self) -> None:
+        return None
 
-    async def clear(self):
-        self.compose_spec = None
-        self.container_names = []
-        await self.persist_to_disk()
+    async def __aexit__(self, *args) -> None:
+        await self._persist_to_disk()
+
+    def post_init(self, shared_store_dir: Path) -> None:
+        self._shared_store_dir = shared_store_dir
+        self._persist_lock = Lock()
 
     @classmethod
     async def init_from_disk(cls, shared_store_dir: Path) -> "SharedStore":
@@ -45,14 +55,21 @@ class SharedStore(BaseModel):
         else:
             obj = cls()
 
-        obj.set_shared_store_dir(shared_store_dir)
+        obj.post_init(shared_store_dir)
         return obj
 
-    async def persist_to_disk(self) -> None:
-        async with aiofiles.open(
-            self._shared_store_dir / STORE_FILE_NAME, "w"
-        ) as data_file:
-            await data_file.write(self.json())
+    async def _persist_to_disk(self) -> None:
+        # NOTE: avoids having 2 persist operations running at the same time
+        # creating partially saved data or out of date data
+
+        assert self._persist_lock  # nosec
+        assert self._shared_store_dir  # nosec
+
+        async with self._persist_lock:
+            async with aiofiles.open(
+                self._shared_store_dir / STORE_FILE_NAME, "w"
+            ) as data_file:
+                await data_file.write(self.json())
 
 
 def setup_shared_store(app: FastAPI) -> None:
