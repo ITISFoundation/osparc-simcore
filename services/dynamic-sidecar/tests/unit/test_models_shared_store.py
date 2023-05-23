@@ -1,8 +1,8 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import pytest
 from async_asgi_testclient import TestClient
@@ -11,7 +11,6 @@ from pytest_mock.plugin import MockerFixture
 from simcore_service_dynamic_sidecar.core import application
 from simcore_service_dynamic_sidecar.models.shared_store import (
     STORE_FILE_NAME,
-    ContainerNameStr,
     SharedStore,
 )
 
@@ -36,38 +35,31 @@ def mock_docker_compose(mocker: MockerFixture) -> None:
     mocker.patch.object(application, "docker_compose_down")
 
 
-@dataclass
-class UpdateFields:
-    compose_spec: str | None
-    container_names: list[ContainerNameStr]
-
-
 @pytest.mark.parametrize(
     "update_fields",
     [
-        UpdateFields(compose_spec=None, container_names=[]),
-        UpdateFields(compose_spec="some_random_fake_spec", container_names=[]),
-        UpdateFields(
-            compose_spec="some_random_fake_spec", container_names=["a_continaer"]
-        ),
-        UpdateFields(
-            compose_spec="some_random_fake_spec", container_names=["a_ctnr", "b_cont"]
-        ),
+        {"compose_spec": None, "container_names": []},
+        {"compose_spec": "some_random_fake_spec", "container_names": []},
+        {"compose_spec": "some_random_fake_spec", "container_names": ["a_continaer"]},
+        {
+            "compose_spec": "some_random_fake_spec",
+            "container_names": ["a_ctnr", "b_cont"],
+        },
     ],
 )
 async def test_shared_store_updates(
     mock_docker_compose: None,
     shared_store: SharedStore,
     ensure_shared_store_dir: Path,
-    update_fields: UpdateFields,
+    update_fields: dict[str, Any],
 ):
     # check no file is present on the disk from where the data was created
     store_file_path = ensure_shared_store_dir / STORE_FILE_NAME
     assert store_file_path.exists() is False
 
     # change some data and trigger a persist
-    shared_store.compose_spec = update_fields.compose_spec
-    shared_store.container_names = update_fields.container_names
+    for attr_name, attr_value in update_fields.items():
+        setattr(shared_store, attr_name, attr_value)
     await shared_store.persist_to_disk()
 
     # check the contes of the file should be the same as the shared_store's
