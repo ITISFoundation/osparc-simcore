@@ -15,8 +15,7 @@ from dask_task_models_library.container_tasks.events import (
 from dask_task_models_library.container_tasks.io import TaskCancelEventName
 from distributed.worker import get_worker
 from distributed.worker_state_machine import TaskState
-from servicelib.logging_utils import LogLevelInt, LogMessageStr
-from servicelib.logging_utils import log_catch
+from servicelib.logging_utils import LogLevelInt, LogMessageStr, log_catch
 
 logger = logging.getLogger(__name__)
 
@@ -143,6 +142,7 @@ def publish_task_logs(
     message: LogMessageStr,
     log_level: LogLevelInt,
 ) -> None:
+    """raises nothing but CancelledError"""
     logger.info("[%s - %s]: %s", message_prefix, log_type.name, message)
     with log_catch(logger, reraise=False):
         if log_type == LogType.PROGRESS:
