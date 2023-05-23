@@ -13,7 +13,7 @@ import re
 from dataclasses import dataclass
 from pprint import pformat
 from random import randint
-from typing import Callable, Coroutine, Iterable
+from typing import Any, Callable, Coroutine, Iterable
 from unittest import mock
 from uuid import uuid4
 
@@ -139,6 +139,17 @@ class ServiceExampleParam:
     expected_output_data: TaskOutputData
     expected_logs: list[str]
     integration_version: version.Version
+
+    def sidecar_params(self) -> dict[str, Any]:
+        return {
+            "docker_auth": self.docker_basic_auth,
+            "service_key": self.service_key,
+            "service_version": self.service_version,
+            "input_data": self.input_data,
+            "output_data_keys": self.output_data_keys,
+            "log_file_url": self.log_file_url,
+            "command": self.command,
+        }
 
 
 pytest_simcore_core_services_selection = ["postgres"]
@@ -351,39 +362,38 @@ def sleeper_task(
 
 
 @pytest.fixture()
-def empty_ubuntu_task(
+def sidecar_task(
     integration_version: version.Version,
     file_on_s3_server: Callable[..., AnyUrl],
     s3_remote_file_url: Callable[..., AnyUrl],
     boot_mode: BootMode,
     faker: Faker,
-) -> ServiceExampleParam:
-    return ServiceExampleParam(
-        docker_basic_auth=DockerBasicAuth(
-            server_address="docker.io", username="pytest", password=SecretStr("")
-        ),
-        #
-        # NOTE: we use sleeper because it defines a user
-        # that can write in outputs and the
-        # sidecar can remove the outputs dirs
-        # it is based on ubuntu though but the bad part is that now it uses sh instead of bash...
-        # cause the entrypoint uses sh
-        service_key="ubuntu",
-        service_version="latest",
-        command=["/bin/bash", "-c", "echo 'hello I'm an empty ubuntu task!"],
-        input_data=TaskInputData.parse_obj({}),
-        output_data_keys=TaskOutputDataSchema.parse_obj({}),
-        log_file_url=s3_remote_file_url(file_path="log.dat"),
-        expected_output_data=TaskOutputData.parse_obj({}),
-        expected_logs=[],
-        integration_version=integration_version,
-    )
+) -> Callable[..., ServiceExampleParam]:
+    def _creator(command: list[str] | None) -> ServiceExampleParam:
+        return ServiceExampleParam(
+            docker_basic_auth=DockerBasicAuth(
+                server_address="docker.io", username="pytest", password=SecretStr("")
+            ),
+            service_key="ubuntu",
+            service_version="latest",
+            command=command
+            or ["/bin/bash", "-c", "echo 'hello I'm an empty ubuntu task!"],
+            input_data=TaskInputData.parse_obj({}),
+            output_data_keys=TaskOutputDataSchema.parse_obj({}),
+            log_file_url=s3_remote_file_url(file_path="log.dat"),
+            expected_output_data=TaskOutputData.parse_obj({}),
+            expected_logs=[],
+            integration_version=integration_version,
+        )
+
+    return _creator
 
 
 @pytest.fixture()
-def failing_ubuntu_task(empty_ubuntu_task: ServiceExampleParam) -> ServiceExampleParam:
-    empty_ubuntu_task.command = ["/bin/bash", "-c", "some stupid failing command"]
-    return empty_ubuntu_task
+def failing_ubuntu_task(
+    sidecar_task: Callable[..., ServiceExampleParam]
+) -> ServiceExampleParam:
+    return sidecar_task(command=["/bin/bash", "-c", "some stupid failing command"])
 
 
 @pytest.fixture()
@@ -426,15 +436,9 @@ def test_run_computational_sidecar_real_fct(
     mocked_get_integration_version: mock.Mock,
 ):
     output_data = run_computational_sidecar(
-        sleeper_task.docker_basic_auth,
-        sleeper_task.service_key,
-        sleeper_task.service_version,
-        sleeper_task.input_data,
-        sleeper_task.output_data_keys,
-        sleeper_task.log_file_url,
-        sleeper_task.command,
-        s3_settings,
-        boot_mode,
+        **sleeper_task.sidecar_params(),
+        s3_settings=s3_settings,
+        boot_mode=boot_mode,
     )
     mocked_get_integration_version.assert_called_once_with(
         mock.ANY,
@@ -502,14 +506,8 @@ def test_run_multiple_computational_sidecar_dask(
     futures = [
         dask_client.submit(
             run_computational_sidecar,
-            sleeper_task.docker_basic_auth,
-            sleeper_task.service_key,
-            sleeper_task.service_version,
-            sleeper_task.input_data,
-            sleeper_task.output_data_keys,
-            sleeper_task.log_file_url,
-            sleeper_task.command,
-            s3_settings,
+            **sleeper_task.sidecar_params(),
+            s3_settings=s3_settings,
             resources={},
             boot_mode=boot_mode,
         )
@@ -555,14 +553,8 @@ async def test_run_computational_sidecar_dask(
 ):
     future = dask_client.submit(
         run_computational_sidecar,
-        sleeper_task.docker_basic_auth,
-        sleeper_task.service_key,
-        sleeper_task.service_version,
-        sleeper_task.input_data,
-        sleeper_task.output_data_keys,
-        sleeper_task.log_file_url,
-        sleeper_task.command,
-        s3_settings,
+        **sleeper_task.sidecar_params(),
+        s3_settings=s3_settings,
         resources={},
         boot_mode=boot_mode,
     )
@@ -616,7 +608,7 @@ async def test_run_computational_sidecar_dask(
 )
 async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub(
     dask_client: distributed.Client,
-    empty_ubuntu_task: ServiceExampleParam,
+    sidecar_task: ServiceExampleParam,
     s3_settings: S3Settings,
     boot_mode: BootMode,
     log_sub: distributed.Sub,
@@ -626,14 +618,8 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
     mocked_get_integration_version.assert_not_called()
     future = dask_client.submit(
         run_computational_sidecar,
-        empty_ubuntu_task.docker_basic_auth,
-        empty_ubuntu_task.service_key,
-        empty_ubuntu_task.service_version,
-        empty_ubuntu_task.input_data,
-        empty_ubuntu_task.output_data_keys,
-        empty_ubuntu_task.log_file_url,
-        empty_ubuntu_task.command,
-        s3_settings,
+        **sidecar_task.sidecar_params(),
+        s3_settings=s3_settings,
         resources={},
         boot_mode=boot_mode,
     )
@@ -668,14 +654,8 @@ def test_failing_service_raises_exception(
 ):
     with pytest.raises(ServiceRuntimeError):
         run_computational_sidecar(
-            failing_ubuntu_task.docker_basic_auth,
-            failing_ubuntu_task.service_key,
-            failing_ubuntu_task.service_version,
-            failing_ubuntu_task.input_data,
-            failing_ubuntu_task.output_data_keys,
-            failing_ubuntu_task.log_file_url,
-            failing_ubuntu_task.command,
-            s3_settings,
+            **failing_ubuntu_task.sidecar_params(),
+            s3_settings=s3_settings,
         )
 
 
@@ -691,12 +671,6 @@ def test_running_service_that_generates_unexpected_data_raises_exception(
 ):
     with pytest.raises(ServiceBadFormattedOutputError):
         run_computational_sidecar(
-            sleeper_task_unexpected_output.docker_basic_auth,
-            sleeper_task_unexpected_output.service_key,
-            sleeper_task_unexpected_output.service_version,
-            sleeper_task_unexpected_output.input_data,
-            sleeper_task_unexpected_output.output_data_keys,
-            sleeper_task_unexpected_output.log_file_url,
-            sleeper_task_unexpected_output.command,
-            s3_settings,
+            **sleeper_task_unexpected_output.sidecar_params(),
+            s3_settings=s3_settings,
         )
