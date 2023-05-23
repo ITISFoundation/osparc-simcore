@@ -106,7 +106,7 @@ def _patch_node_properties(key: str, node: dict):
             node[key] = _remove_named_groups(regex=node[key])
 
 
-def _patch(node: dict | list):
+def _patch(node: Any):
     if isinstance(node, dict):
         for key in list(node.keys()):
             if key in _SKIP:
