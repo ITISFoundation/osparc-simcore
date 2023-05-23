@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, TypeAlias
 
 import yaml
 from models_library.utils.string_substitution import (
@@ -6,19 +6,21 @@ from models_library.utils.string_substitution import (
     TextTemplate,
     substitute_all_legacy_identifiers,
 )
+from pydantic import StrictBool, StrictFloat, StrictInt
 
 from .string_substitution import SubstitutionsDict, TextTemplate
 
 # This constraint on substitution values is to avoid
 # deserialization issues on the TextTemplate substitution!
-SubstitutionValue = bool | int | float | str
+SubstitutionValue: TypeAlias = StrictBool | StrictInt | StrictFloat | str
 
 
 class SpecsSubstitutionsResolver:
     """
     Resolve specs dict by substituting identifiers
 
-    'specs' is defined here as dict[str, Any] !
+    'specs' is defined here as dict[str, Any]. E.g. a docker-compose.yml loaded as a dict are 'specs'.
+
     """
 
     def __init__(self, specs: dict[str, Any], upgrade: bool):

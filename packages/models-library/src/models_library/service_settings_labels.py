@@ -32,7 +32,8 @@ DEFAULT_DNS_SERVER_PORT: Final[PortInt] = parse_obj_as(PortInt, 53)
 
 
 # NOTE: To allow parametrized value, set the type to Union[OEnvSubstitutionStr, ...]
-# TODO: will be used in next PR!!!
+
+
 class OEnvSubstitutionStr(ConstrainedStr):
     regex = re.compile(rf"^\${OSPARC_IDENTIFIER_PREFIX}\w+$")
 
