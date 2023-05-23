@@ -228,7 +228,7 @@ redis==4.5.4
     #   fakeredis
 regex==2023.5.5
     # via cfn-lint
-requests==2.30.0
+requests==2.31.0
     # via
     #   docker
     #   moto
