@@ -73,7 +73,7 @@ async def expected_secrets(
     return vendor_secrets
 
 
-def test_vendor_secret_prefix_has_underscore():
+def test_vendor_secret_prefix_must_end_with_underscore():
     assert VENDOR_SECRET_PREFIX.endswith("_")  # should allow
 
 
