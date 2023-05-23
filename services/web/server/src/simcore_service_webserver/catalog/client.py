@@ -160,7 +160,7 @@ async def list_inaccessible_services(
         async with session.post(
             url,
             headers={X_PRODUCT_NAME_HEADER: product_name},
-            json={"services_to_check": project_services, "with_gid": gid},
+            json={"services_to_check": project_services, "for_gid": gid},
         ) as resp:
             resp.raise_for_status()
             body: dict[str, Any] = await resp.json()

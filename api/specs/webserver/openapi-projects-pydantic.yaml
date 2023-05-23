@@ -8,7 +8,7 @@ paths:
         the services
 
         in the project.'
-      operationId: denied_share_access_project
+      operationId: share_access_denied_project
       parameters:
       - required: true
         schema:

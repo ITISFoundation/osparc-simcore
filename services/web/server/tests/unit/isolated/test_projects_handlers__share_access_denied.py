@@ -138,7 +138,7 @@ def mock_catalog_client_list_inaccessible_services(mocker: MockerFixture):
     )
 
 
-async def test_denied_share_access_project_handler(
+async def test_share_access_denied_project_handler(
     client: TestClient,
     mock_user_logged_in,
     mock_perimission,
@@ -150,10 +150,10 @@ async def test_denied_share_access_project_handler(
     PRODUCT_NAME = "osparc"
 
     assert client.app
-    url = client.app.router["denied_share_access_project"].url_for(
+    url = client.app.router["share_access_denied_project"].url_for(
         project_id=PROJECT_UUID
     )
-    resp = await client.get(f"{url}?with_gid={GID}")
+    resp = await client.get(f"{url}?for_gid={GID}")
     resp_json = await resp.json()
 
     assert resp.status == 200

@@ -5018,7 +5018,7 @@ paths:
       description: |-
         This check is done based on whether users would be able to access the services
         in the project.
-      operationId: denied_share_access_project
+      operationId: share_access_denied_project
       parameters:
         - required: true
           schema:

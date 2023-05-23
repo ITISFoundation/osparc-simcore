@@ -39,7 +39,7 @@ TAGS: list[str | Enum] = [
     "/projects/{project_id}/shareAccessDenied",
     response_model=Envelope[list[UserInaccessibleService]],
     tags=TAGS,
-    operation_id="denied_share_access_project",
+    operation_id="share_access_denied_project",
     summary="Checks which users do not have access to the project in provided group",
 )
 async def denied_share_access_project(project_id: ProjectID, for_gid: GroupID):

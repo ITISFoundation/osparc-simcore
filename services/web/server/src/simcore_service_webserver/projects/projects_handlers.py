@@ -56,7 +56,7 @@ class _OpenProjectQuery(BaseModel):
 
 
 class _ShareableProjectQuery(BaseModel):
-    with_gid: GroupID
+    for_gid: GroupID
 
 
 @routes.post(f"/{VTAG}/projects/{{project_id}}:open", name="open_project")
@@ -231,8 +231,8 @@ async def get_project_state(request: web.Request) -> web.Response:
 
 
 @routes.get(
-    f"/{VTAG}/projects/{{project_id}}/shareAccesses:denied",
-    name="denied_share_access_project",
+    f"/{VTAG}/projects/{{project_id}}/shareAccessDenied",
+    name="share_access_denied_project",
 )
 @login_required
 @permission_required("project.read")
@@ -255,7 +255,7 @@ async def denied_share_access_project(request: web.Request) -> web.Response:
     list_of_user_inaccessible_services: list[
         UserInaccessibleService
     ] = await catalog_client.list_inaccessible_services(
-        request.app, query_params.with_gid, req_ctx.product_name, project_services
+        request.app, query_params.for_gid, req_ctx.product_name, project_services
     )
 
     return web.json_response(
