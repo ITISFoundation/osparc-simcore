@@ -10,14 +10,14 @@ from servicelib.aiohttp.rest_routing import (
 from .._constants import APP_OPENAPI_SPECS_KEY
 from .request_handlers import rest_handler_functions
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @app_module_setup(
     "simcore_service_webserver.exporter",
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_EXPORTER",
-    logger=logger,
+    logger=_logger,
 )
 def setup_exporter(app: web.Application) -> bool:
 

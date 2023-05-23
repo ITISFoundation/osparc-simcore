@@ -16,7 +16,7 @@ from .exceptions import SDSException
 from .formatter.archive import get_sds_archive_path
 from .utils import CleanupFileResponse
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -56,7 +56,7 @@ async def export_project(request: web.Request):
                 user_id=user_id,
                 product_name=request[RQ_PRODUCT_KEY],
             )
-            log.info("File to download '%s'", file_to_download)
+            _logger.info("File to download '%s'", file_to_download)
 
             if not file_to_download.is_file():
                 raise SDSException(
