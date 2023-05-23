@@ -3,11 +3,9 @@
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 import pytest
 from async_asgi_testclient import TestClient
-from faker import Faker
 from fastapi import FastAPI
 from pytest_mock.plugin import MockerFixture
 from simcore_service_dynamic_sidecar.core import application
@@ -32,11 +30,6 @@ def shared_store(trigger_setup_shutdown_events: None, app: FastAPI) -> SharedSto
     return app.state.shared_store
 
 
-@pytest.fixture
-def fake_compose_spec(faker: Faker) -> str:
-    return f"just_a_string_pretending_to_be_a_compose_spec_{faker.uuid4()}"
-
-
 # mock docker_compose_down in application
 @pytest.fixture
 def mock_docker_compose(mocker: MockerFixture) -> None:
@@ -45,7 +38,7 @@ def mock_docker_compose(mocker: MockerFixture) -> None:
 
 @dataclass
 class UpdateFields:
-    compose_spec: Optional[str]
+    compose_spec: str | None
     container_names: list[ContainerNameStr]
 
 
@@ -65,7 +58,6 @@ class UpdateFields:
 async def test_shared_store_updates(
     mock_docker_compose: None,
     shared_store: SharedStore,
-    fake_compose_spec: str,
     ensure_shared_store_dir: Path,
     update_fields: UpdateFields,
 ):
