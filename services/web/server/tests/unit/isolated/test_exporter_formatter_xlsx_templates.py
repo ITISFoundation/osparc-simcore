@@ -13,7 +13,7 @@ import openpyxl
 import pytest
 from faker import Faker
 from openpyxl import Workbook
-from simcore_service_webserver.exporter.formatters.sds.xlsx.templates.code_description import (
+from simcore_service_webserver.exporter.formatter.xlsx.templates.code_description import (
     CodeDescriptionModel,
     CodeDescriptionParams,
     CodeDescriptionXLSXDocument,
@@ -21,19 +21,19 @@ from simcore_service_webserver.exporter.formatters.sds.xlsx.templates.code_descr
     OutputsEntryModel,
     RRIDEntry,
 )
-from simcore_service_webserver.exporter.formatters.sds.xlsx.templates.dataset_description import (
+from simcore_service_webserver.exporter.formatter.xlsx.templates.dataset_description import (
     ContributorEntryModel,
     DatasetDescriptionParams,
     DatasetDescriptionXLSXDocument,
     DoiEntryModel,
     LinkEntryModel,
 )
-from simcore_service_webserver.exporter.formatters.sds.xlsx.templates.directory_manifest import (
+from simcore_service_webserver.exporter.formatter.xlsx.templates.directory_manifest import (
     DirectoryManifestParams,
     DirectoryManifestXLSXDocument,
     FileEntryModel,
 )
-from simcore_service_webserver.exporter.formatters.sds.xlsx.templates.submission import (
+from simcore_service_webserver.exporter.formatter.xlsx.templates.submission import (
     SubmissionDocumentParams,
     SubmissionXLSXDocument,
 )
@@ -46,7 +46,6 @@ MAX_ENTRIES_IN_ARRAYS = 10
 
 @pytest.fixture
 def temp_dir(tmpdir) -> Path:
-    # cast to Path object
     yield Path(tmpdir)
 
 
