@@ -67,6 +67,9 @@ from ...utils.computations import (
 )
 from ...utils.dags import (
     compute_pipeline_details,
+    compute_pipeline_started_timestamp,
+    compute_pipeline_stopped_timestamp,
+    compute_pipeline_submitted_timestamp,
     create_complete_dag,
     create_complete_dag_from_tasks,
     create_minimal_computational_graph_based_on_selection,
@@ -119,7 +122,7 @@ async def create_computation(
         # FIXME: this could not be valid anymore if the user deletes the project in between right?
 
         # check if current state allow to modify the computation
-        comp_tasks: list[CompTaskAtDB] = await comp_tasks_repo.get_comp_tasks(
+        comp_tasks: list[CompTaskAtDB] = await comp_tasks_repo.list_computational_tasks(
             computation.project_id
         )
         pipeline_state = get_pipeline_state_from_task_states(comp_tasks)
@@ -245,6 +248,15 @@ async def create_computation(
             iteration=last_run.iteration if last_run else None,
             cluster_id=last_run.cluster_id if last_run else None,
             result=None,
+            started=compute_pipeline_started_timestamp(
+                minimal_computational_dag, inserted_comp_tasks
+            ),
+            stopped=compute_pipeline_stopped_timestamp(
+                minimal_computational_dag, inserted_comp_tasks
+            ),
+            submitted=compute_pipeline_submitted_timestamp(
+                minimal_computational_dag, inserted_comp_tasks
+            ),
         )
 
     except ProjectNotFoundError as e:
@@ -317,6 +329,9 @@ async def get_computation(
         iteration=last_run.iteration if last_run else None,
         cluster_id=last_run.cluster_id if last_run else None,
         result=None,
+        started=compute_pipeline_started_timestamp(pipeline_dag, all_tasks),
+        stopped=compute_pipeline_stopped_timestamp(pipeline_dag, all_tasks),
+        submitted=compute_pipeline_submitted_timestamp(pipeline_dag, all_tasks),
     )
     return task_out
 
@@ -353,7 +368,7 @@ async def stop_computation(
         )
         pipeline_dag: nx.DiGraph = pipeline_at_db.get_graph()
         # get the project task states
-        tasks: list[CompTaskAtDB] = await comp_tasks_repo.get_all_tasks(project_id)
+        tasks: list[CompTaskAtDB] = await comp_tasks_repo.list_tasks(project_id)
         # create the complete DAG graph
         complete_dag = create_complete_dag_from_tasks(tasks)
         # filter the tasks by the effective pipeline
@@ -383,6 +398,9 @@ async def stop_computation(
             iteration=last_run.iteration if last_run else None,
             cluster_id=last_run.cluster_id if last_run else None,
             result=None,
+            started=compute_pipeline_started_timestamp(pipeline_dag, tasks),
+            stopped=compute_pipeline_stopped_timestamp(pipeline_dag, tasks),
+            submitted=compute_pipeline_submitted_timestamp(pipeline_dag, tasks),
         )
 
     except ProjectNotFoundError as e:
@@ -411,7 +429,7 @@ async def delete_computation(
         # get the project
         project: ProjectAtDB = await project_repo.get_project(project_id)
         # check if current state allow to stop the computation
-        comp_tasks: list[CompTaskAtDB] = await comp_tasks_repo.get_comp_tasks(
+        comp_tasks: list[CompTaskAtDB] = await comp_tasks_repo.list_computational_tasks(
             project_id
         )
         pipeline_state = get_pipeline_state_from_task_states(comp_tasks)
@@ -444,9 +462,9 @@ async def delete_computation(
                 before_sleep=before_sleep_log(log, logging.INFO),
             )
             async def check_pipeline_stopped() -> bool:
-                comp_tasks: list[CompTaskAtDB] = await comp_tasks_repo.get_comp_tasks(
-                    project_id
-                )
+                comp_tasks: list[
+                    CompTaskAtDB
+                ] = await comp_tasks_repo.list_computational_tasks(project_id)
                 pipeline_state = get_pipeline_state_from_task_states(
                     comp_tasks,
                 )
@@ -461,7 +479,7 @@ async def delete_computation(
                 )
 
         # delete the pipeline now
-        await comp_tasks_repo.delete_tasks_from_project(project)
+        await comp_tasks_repo.delete_tasks_from_project(project.uuid)
         await comp_pipelines_repo.delete_pipeline(project_id)
 
     except ProjectNotFoundError as e:

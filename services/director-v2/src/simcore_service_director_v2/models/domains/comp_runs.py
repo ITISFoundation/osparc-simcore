@@ -1,6 +1,5 @@
+import datetime
 from contextlib import suppress
-from datetime import datetime
-from typing import Optional
 
 from models_library.clusters import DEFAULT_CLUSTER_ID, ClusterID
 from models_library.projects import ProjectID
@@ -16,13 +15,13 @@ class CompRunsAtDB(BaseModel):
     run_id: PositiveInt
     project_uuid: ProjectID
     user_id: UserID
-    cluster_id: Optional[ClusterID]
+    cluster_id: ClusterID | None
     iteration: PositiveInt
     result: RunningState
-    created: datetime
-    modified: datetime
-    started: Optional[datetime]
-    ended: Optional[datetime]
+    created: datetime.datetime
+    modified: datetime.datetime
+    started: datetime.datetime | None
+    ended: datetime.datetime | None
 
     @validator("result", pre=True)
     @classmethod
@@ -41,6 +40,13 @@ class CompRunsAtDB(BaseModel):
     def concert_null_to_default_cluster_id(cls, v):
         if v is None:
             v = DEFAULT_CLUSTER_ID
+        return v
+
+    @validator("created", "modified", "started", "ended")
+    @classmethod
+    def ensure_utc(cls, v: datetime.datetime | None) -> datetime.datetime | None:
+        if v is not None and v.tzinfo is None:
+            v = v.replace(tzinfo=datetime.timezone.utc)
         return v
 
     class Config:

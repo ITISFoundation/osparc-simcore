@@ -3,9 +3,9 @@
 # pylint: disable=protected-access
 
 import asyncio
+import datetime
 import logging
 import sys
-from datetime import datetime
 from typing import Any, AsyncIterable, AsyncIterator
 from uuid import UUID, uuid4
 
@@ -335,8 +335,10 @@ def labels_example(request: FixtureRequest) -> SimcoreServiceLabels:
     return request.param
 
 
-@pytest.fixture(params=[None, datetime.utcnow()])
-def time_dy_sidecar_became_unreachable(request: FixtureRequest) -> datetime | None:
+@pytest.fixture(params=[None, datetime.datetime.now(tz=datetime.timezone.utc)])
+def time_dy_sidecar_became_unreachable(
+    request: FixtureRequest,
+) -> datetime.datetime | None:
     return request.param
 
 
@@ -344,7 +346,7 @@ def time_dy_sidecar_became_unreachable(request: FixtureRequest) -> datetime | No
 def mock_scheduler_data(
     labels_example: SimcoreServiceLabels,
     scheduler_data: SchedulerData,
-    time_dy_sidecar_became_unreachable: datetime | None,
+    time_dy_sidecar_became_unreachable: datetime.datetime | None,
     service_name: str,
 ) -> SchedulerData:
     # test all possible cases
