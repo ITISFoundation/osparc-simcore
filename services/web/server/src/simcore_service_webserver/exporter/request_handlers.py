@@ -30,7 +30,7 @@ async def export_project(request: web.Request):
     - All contents from the project are written inside the `/tmp/SOME_TMP_DIR/uuid/`
     directory (serialized data and storage files).
     - The `/tmp/SOME_TMP_DIR/uuid/` is zipped producing the archive to be downloaded
-    in this path `/tmp/SOME_TMP_DIR/some_name#SHA256=SOME_HASH.osparc`
+    in this path `/tmp/SOME_TMP_DIR/sds_PROJECT_ID.zip`
     - When the request finishes, for any reason (HTTO_OK, HTTP_ERROR, etc...), the
     `/tmp/SOME_TMP_DIR/` si removed from the disk."""
     user_id = request[RQT_USERID_KEY]
@@ -55,7 +55,6 @@ async def export_project(request: web.Request):
                 project_id=project_uuid,
                 user_id=user_id,
                 product_name=request[RQ_PRODUCT_KEY],
-                archive=True,
             )
             log.info("File to download '%s'", file_to_download)
 

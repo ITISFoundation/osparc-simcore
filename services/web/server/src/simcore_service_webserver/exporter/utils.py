@@ -1,14 +1,10 @@
 import asyncio
-import os
 from pathlib import Path
 from typing import Any, Callable, Coroutine
 
-from aiofiles import os as aiofiles_os
 from aiohttp.abc import AbstractStreamWriter
 from aiohttp.typedefs import LooseHeaders
 from aiohttp.web import BaseRequest, FileResponse
-
-rename = aiofiles_os.wrap(os.rename)  # as in aiofiles.os.py module
 
 
 class CleanupFileResponse(FileResponse):  # pylint: disable=too-many-ancestors
