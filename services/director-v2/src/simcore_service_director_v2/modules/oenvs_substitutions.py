@@ -5,7 +5,6 @@ from typing import Any, Callable, Mapping
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.service_settings_labels import ComposeSpecLabelDict
 from models_library.services import ServiceKey
 from models_library.users import UserID
 from models_library.utils.specs_substitution import SpecsSubstitutionsResolver
@@ -24,13 +23,13 @@ _logger = logging.getLogger(__name__)
 
 async def substitute_vendor_secrets_oenvs(
     app: FastAPI,
-    compose_spec: ComposeSpecLabelDict,
+    specs: dict[str, Any],
     service_key: ServiceKey,
-) -> ComposeSpecLabelDict:
-    assert compose_spec  # nosec
-    new_compose_spec: ComposeSpecLabelDict
+) -> dict[str, Any]:
+    assert specs  # nosec
+    new_specs: dict[str, Any]
 
-    resolver = SpecsSubstitutionsResolver(compose_spec, upgrade=False)
+    resolver = SpecsSubstitutionsResolver(specs, upgrade=False)
     repo = get_repository(app, ServicesEnvironmentsRepository)
 
     if any(repo.is_vendor_secret_identifier(idr) for idr in resolver.get_identifiers()):
@@ -39,25 +38,26 @@ async def substitute_vendor_secrets_oenvs(
 
         # resolve substitutions
         resolver.set_substitutions(environs=vendor_secrets)
-        new_compose_spec = resolver.run()
-        return new_compose_spec
+        new_specs = resolver.run()
+        return new_specs
 
-    return deepcopy(compose_spec)
+    return deepcopy(specs)
 
 
 async def substitute_session_oenvs(
     app: FastAPI,
-    compose_spec: ComposeSpecLabelDict,
+    specs: dict[str, Any],
     user_id: UserID,
     product_name: str,
     project_id: ProjectID,
     node_id: NodeID,
-) -> ComposeSpecLabelDict:
-    assert compose_spec  # nosec
-    new_compose_spec: ComposeSpecLabelDict
+) -> dict[str, Any]:
+
+    assert specs  # nosec
+    new_specs: dict[str, Any]
 
     table: SessionEnvironmentsTable = app.state.session_environments_table
-    resolver = SpecsSubstitutionsResolver(compose_spec, upgrade=False)
+    resolver = SpecsSubstitutionsResolver(specs, upgrade=False)
 
     if requested := set(resolver.get_identifiers()):
         available = set(table.name_keys())
@@ -75,15 +75,15 @@ async def substitute_session_oenvs(
             )
 
             resolver.set_substitutions(environs=environs)
-            new_compose_spec = resolver.run()
+            new_specs = resolver.run()
 
-            return new_compose_spec
-    return deepcopy(compose_spec)
+            return new_specs
+    return deepcopy(specs)
 
 
 async def substitute_lifespan_oenvs(
     _app: FastAPI,
-    _pod_compose_spec: dict[str, Any],
+    _specs: dict[str, Any],
     _callbacks_registry: Mapping[str, Callable],
 ):
     raise NotImplementedError()

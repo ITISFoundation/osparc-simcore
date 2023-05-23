@@ -26,6 +26,11 @@ services_vendor_secrets = sa.Table(
         doc="A single environment is allowed per service",
     ),
     sa.Column(
+        "service_from_version",
+        sa.String,
+        doc="",
+    ),
+    sa.Column(
         "secrets_map",
         JSONB,
         nullable=False,
