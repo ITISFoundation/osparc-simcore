@@ -369,7 +369,7 @@ def sidecar_task(
     boot_mode: BootMode,
     faker: Faker,
 ) -> Callable[..., ServiceExampleParam]:
-    def _creator(command: list[str] | None) -> ServiceExampleParam:
+    def _creator(command: list[str] | None = None) -> ServiceExampleParam:
         return ServiceExampleParam(
             docker_basic_auth=DockerBasicAuth(
                 server_address="docker.io", username="pytest", password=SecretStr("")
@@ -608,17 +608,29 @@ async def test_run_computational_sidecar_dask(
 )
 async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub(
     dask_client: distributed.Client,
-    sidecar_task: ServiceExampleParam,
+    sidecar_task: Callable[..., ServiceExampleParam],
     s3_settings: S3Settings,
     boot_mode: BootMode,
     log_sub: distributed.Sub,
     progress_sub: distributed.Sub,
     mocked_get_integration_version: mock.Mock,
+    faker: Faker,
 ):
     mocked_get_integration_version.assert_not_called()
+    NUMBER_OF_LOGS = 10000
     future = dask_client.submit(
         run_computational_sidecar,
-        **sidecar_task.sidecar_params(),
+        **sidecar_task(
+            command=[
+                "/bin/bash",
+                "-c",
+                " && ".join(
+                    [
+                        f'N={NUMBER_OF_LOGS}; for ((i=1; i<=N; i++));do echo "This is iteration $i"; done '
+                    ]
+                ),
+            ],
+        ).sidecar_params(),
         s3_settings=s3_settings,
         resources={},
         boot_mode=boot_mode,
@@ -639,6 +651,7 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
     assert worker_progresses[-1] == 1, "missing/incorrect final progress value"
 
     worker_logs = [TaskLogEvent.parse_raw(msg).log for msg in log_sub.buffer]
+    assert len(worker_logs) == NUMBER_OF_LOGS + 15
     mocked_get_integration_version.assert_called()
 
 
