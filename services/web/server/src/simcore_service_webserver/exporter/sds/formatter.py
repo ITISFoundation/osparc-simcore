@@ -11,18 +11,34 @@ from ...projects.projects_api import get_project_for_user
 from ...projects.projects_exceptions import ProjectsException
 from ...scicrunch.db import ResearchResourceRepository
 from ..exceptions import ExporterException
-from .sds import write_sds_directory_content
-from .sds.xlsx.templates.code_description import (
+from .text_files import write_text_files
+from .xlsx.templates.code_description import (
     CodeDescriptionModel,
     CodeDescriptionParams,
     InputsEntryModel,
     OutputsEntryModel,
     RRIDEntry,
 )
-from .sds.xlsx.templates.dataset_description import DatasetDescriptionParams
-from .sds.xlsx.templates.submission import SubmissionDocumentParams
+from .xlsx.templates.dataset_description import DatasetDescriptionParams
+from .xlsx.templates.submission import SubmissionDocumentParams
+from .xlsx.writer import write_xlsx_files
 
 log = logging.getLogger(__name__)
+
+
+def _write_sds_directory_content(
+    base_path: Path,
+    submission_params: SubmissionDocumentParams,
+    dataset_description_params: DatasetDescriptionParams,
+    code_description_params: CodeDescriptionParams,
+) -> None:
+    write_text_files(base_path=base_path)
+    write_xlsx_files(
+        base_path=base_path,
+        submission_params=submission_params,
+        dataset_description_params=dataset_description_params,
+        code_description_params=code_description_params,
+    )
 
 
 async def _write_sds_content(
@@ -157,7 +173,7 @@ async def _write_sds_content(
     with non_blocking_process_pool_executor(max_workers=1) as pool:
         return await asyncio.get_event_loop().run_in_executor(
             pool,
-            write_sds_directory_content,
+            _write_sds_directory_content,
             base_path,
             submission_params,
             dataset_description_params,
@@ -165,26 +181,17 @@ async def _write_sds_content(
         )
 
 
-class FormatterV2:
-    """Formates into the SDS format"""
-
-    def __init__(self, root_folder: Path):
-        self.version: str = "2"
-        self.root_folder: Path = root_folder
-
-    async def format_export_directory(
-        self, app: web.Application, project_id: str, user_id: int, **kwargs
-    ) -> None:
-        kwargs["manifest_root_folder"] = self.root_folder
-
-        # extract data to pass to the rest
-
-        product_name: str = kwargs["product_name"]
-
-        await _write_sds_content(
-            base_path=self.root_folder,
-            app=app,
-            project_id=project_id,
-            user_id=user_id,
-            product_name=product_name,
-        )
+async def create_sds_directory(
+    app: web.Application,
+    root_folder: Path,
+    project_id: str,
+    user_id: int,
+    product_name: str,
+) -> None:
+    await _write_sds_content(
+        base_path=root_folder,
+        app=app,
+        project_id=project_id,
+        user_id=user_id,
+        product_name=product_name,
+    )

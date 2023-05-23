@@ -4,7 +4,7 @@ from pathlib import Path
 from aiohttp import web
 
 from .archiving import zip_folder
-from .formatters import FormatterV2
+from .sds.formatter import create_sds_directory
 
 log = logging.getLogger(__name__)
 
@@ -29,10 +29,12 @@ async def study_export(
     destination = base_temp_dir / project_id
     destination.mkdir(parents=True, exist_ok=True)
 
-    # The formatter will always be chosen to be the highest availabel version
-    formatter = FormatterV2(root_folder=destination)
-    await formatter.format_export_directory(
-        app=app, project_id=project_id, user_id=user_id, product_name=product_name
+    await create_sds_directory(
+        app=app,
+        root_folder=destination,
+        project_id=project_id,
+        user_id=user_id,
+        product_name=product_name,
     )
 
     if archive is False:

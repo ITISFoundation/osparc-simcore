@@ -6,9 +6,8 @@ from typing import Any, Callable, Coroutine
 from aiofiles import os as aiofiles_os
 from aiohttp.abc import AbstractStreamWriter
 from aiohttp.typedefs import LooseHeaders
-from aiohttp.web import FileResponse
+from aiohttp.web import BaseRequest, FileResponse
 
-makedirs = aiofiles_os.wrap(os.makedirs)  # as in aiofiles.os.py module
 rename = aiofiles_os.wrap(os.rename)  # as in aiofiles.os.py module
 
 
@@ -37,7 +36,7 @@ class CleanupFileResponse(FileResponse):  # pylint: disable=too-many-ancestors
         self.remove_tmp_dir_cb = remove_tmp_dir_cb
         self.path = path
 
-    async def prepare(self, request: "BaseRequest") -> AbstractStreamWriter | None:
+    async def prepare(self, request: BaseRequest) -> AbstractStreamWriter | None:
         try:
             return await super().prepare(request=request)
         finally:
