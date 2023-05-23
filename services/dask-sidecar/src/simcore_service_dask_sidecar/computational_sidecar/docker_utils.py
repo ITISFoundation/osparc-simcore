@@ -1,6 +1,5 @@
 import asyncio
 import contextlib
-import datetime
 import json
 import logging
 import re
@@ -16,12 +15,10 @@ from aiodocker import Docker, DockerError
 from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
-from distributed.pubsub import Pub
 from models_library.services_resources import BootMode
 from packaging import version
 from pydantic import ByteSize
 from pydantic.networks import AnyUrl
-from servicelib.docker_utils import to_datetime
 from servicelib.logging_utils import (
     LogLevelInt,
     LogMessageStr,
@@ -31,10 +28,10 @@ from servicelib.logging_utils import (
 )
 from settings_library.s3 import S3Settings
 
-from ..dask_utils import LogType, publish_task_logs
+from ..dask_utils import TaskPublisher, publish_task_logs, publish_task_progress
 from ..file_utils import push_file_to_remote
 from ..settings import Settings
-from .constants import DOCKER_LOG_REGEXP, LEGACY_SERVICE_LOG_FILE_NAME, PROGRESS_REGEXP
+from .constants import LEGACY_SERVICE_LOG_FILE_NAME, PROGRESS_REGEXP
 from .models import (
     LEGACY_INTEGRATION_VERSION,
     ContainerHostConfig,
@@ -143,53 +140,39 @@ def _guess_progress_value(progress_match: re.Match[str]) -> float:
     return float(value_str.strip())
 
 
-async def _parse_line(
+async def _try_parse_progress(
     line: str,
-) -> tuple[LogType, datetime.datetime, LogMessageStr, LogLevelInt]:
-    if match := re.search(DOCKER_LOG_REGEXP, line):
-        timestamp = to_datetime(match.group("timestamp"))
-        log = f"{match.group('log')}"
-    else:
-        # we did not find the timestamp, so we go for now (might be an old service)
-        timestamp = arrow.utcnow().datetime
-        log = line
-
-    # try to find if it is a progress log
+) -> float | None:
     try:
+        # pattern might be like "timestamp log"
+        log = line
+        splitted_log = line.split(" ", maxsplit=1)
+        with contextlib.suppress(arrow.ParserError):
+            if len(splitted_log) == 2 and arrow.get(splitted_log[0]):
+                log = splitted_log[1]
+
         if match := re.search(PROGRESS_REGEXP, log.lower()):
-            return (
-                LogType.PROGRESS,
-                timestamp,
-                f"{_guess_progress_value(match):.2f}",
-                logging.INFO,
-            )
+            return _guess_progress_value(match)
     except (ValueError, ZeroDivisionError):
         logger.warning(
-            "potential progress log could not be parsed. problematic log: %s", log
+            "potential progress log could not be parsed. problematic log: %s", line
         )
+    return None
 
-    return (LogType.LOG, timestamp, log, guess_message_log_level(log))
 
-
-async def _publish_container_logs(
-    service_key: str,
-    service_version: str,
-    container: DockerContainer,
-    container_name: str,
-    progress_pub: Pub,
-    logs_pub: Pub,
-    log_type: LogType,
-    message: LogMessageStr,
-    log_level: LogLevelInt,
+async def _parse_and_publish_logs(
+    log_line: str,
+    *,
+    task_publishers: TaskPublisher,
 ) -> None:
-    return publish_task_logs(
-        progress_pub,
-        logs_pub,
-        log_type,
-        message_prefix=f"{service_key}:{service_version} - {container.id}{container_name}",
-        message=message,
-        log_level=log_level,
-    )
+    if progress_value := await _try_parse_progress(log_line) is not None:
+        publish_task_progress(task_publishers.progress, progress_value)
+    else:
+        publish_task_logs(
+            task_publishers.logs,
+            message=log_line,
+            log_level=guess_message_log_level(log_line),
+        )
 
 
 async def _parse_container_log_file(
@@ -197,8 +180,7 @@ async def _parse_container_log_file(
     service_key: str,
     service_version: str,
     container_name: str,
-    progress_pub: Pub,
-    logs_pub: Pub,
+    task_publishers: TaskPublisher,
     task_volumes: TaskSharedVolumes,
     log_file_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
@@ -210,35 +192,29 @@ async def _parse_container_log_file(
         logging.DEBUG,
         "started monitoring of pre-1.0 service - using log file in /logs folder",
     ):
-        async with aiofiles.open(log_file, mode="r") as file_pointer:
+        async with aiofiles.open(log_file, mode="rt") as file_pointer:
             while (await container.show())["State"]["Running"]:
                 if line := await file_pointer.readline():
-                    log_type, _, message, log_level = await _parse_line(line)
-                    await _publish_container_logs(
-                        service_key=service_key,
-                        service_version=service_version,
-                        container=container,
-                        container_name=container_name,
-                        progress_pub=progress_pub,
-                        logs_pub=logs_pub,
-                        log_type=log_type,
-                        message=message,
-                        log_level=log_level,
+                    logger.info(
+                        "[%s]: %s",
+                        f"{service_key}:{service_version} - {container.id}{container_name}",
+                        line,
+                    )
+                    await _parse_and_publish_logs(
+                        line,
+                        task_publishers=task_publishers,
                     )
 
             # finish reading the logs if possible
             async for line in file_pointer:
-                log_type, _, message, log_level = await _parse_line(line)
-                await _publish_container_logs(
-                    service_key=service_key,
-                    service_version=service_version,
-                    container=container,
-                    container_name=container_name,
-                    progress_pub=progress_pub,
-                    logs_pub=logs_pub,
-                    log_type=log_type,
-                    message=message,
-                    log_level=log_level,
+                logger.info(
+                    "[%s]: %s",
+                    f"{service_key}:{service_version} - {container.id}{container_name}",
+                    line,
+                )
+                await _parse_and_publish_logs(
+                    line,
+                    task_publishers=task_publishers,
                 )
 
             # copy the log file to the log_file_url
@@ -252,8 +228,7 @@ async def _parse_container_docker_logs(
     service_key: str,
     service_version: str,
     container_name: str,
-    progress_pub: Pub,
-    logs_pub: Pub,
+    task_publishers: TaskPublisher,
     log_file_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
@@ -271,26 +246,18 @@ async def _parse_container_docker_logs(
                 async for log_line in cast(
                     AsyncGenerator[str, None],
                     container.log(
-                        stdout=True, stderr=True, follow=True, timestamps=True
+                        stdout=True, stderr=True, follow=True, timestamp=True
                     ),
                 ):
+                    logger.info(
+                        "[%s]: %s",
+                        f"{service_key}:{service_version} - {container.id}{container_name}",
+                        log_line,
+                    )
                     await log_fp.write(log_line.encode("utf-8"))
-                    (
-                        log_type,
-                        _latest_log_timestamp,
-                        message,
-                        log_level,
-                    ) = await _parse_line(log_line)
-                    await _publish_container_logs(
-                        service_key=service_key,
-                        service_version=service_version,
-                        container=container,
-                        container_name=container_name,
-                        progress_pub=progress_pub,
-                        logs_pub=logs_pub,
-                        log_type=log_type,
-                        message=message,
-                        log_level=log_level,
+                    await _parse_and_publish_logs(
+                        log_line,
+                        task_publishers=task_publishers,
                     )
 
             # copy the log file to the log_file_url
@@ -299,12 +266,11 @@ async def _parse_container_docker_logs(
             )
 
 
-async def monitor_container_logs(
+async def _monitor_container_logs(
     container: DockerContainer,
     service_key: str,
     service_version: str,
-    progress_pub: Pub,
-    logs_pub: Pub,
+    task_publishers: TaskPublisher,
     integration_version: version.Version,
     task_volumes: TaskSharedVolumes,
     log_file_url: AnyUrl,
@@ -330,8 +296,7 @@ async def monitor_container_logs(
                     service_key,
                     service_version,
                     container_name,
-                    progress_pub,
-                    logs_pub,
+                    task_publishers,
                     log_file_url,
                     log_publishing_cb,
                     s3_settings,
@@ -342,8 +307,7 @@ async def monitor_container_logs(
                     service_key,
                     service_version,
                     container_name,
-                    progress_pub,
-                    logs_pub,
+                    task_publishers,
                     task_volumes,
                     log_file_url,
                     log_publishing_cb,
@@ -356,8 +320,7 @@ async def managed_monitor_container_log_task(
     container: DockerContainer,
     service_key: str,
     service_version: str,
-    progress_pub: Pub,
-    logs_pub: Pub,
+    task_publishers: TaskPublisher,
     integration_version: version.Version,
     task_volumes: TaskSharedVolumes,
     log_file_url: AnyUrl,
@@ -372,12 +335,11 @@ async def managed_monitor_container_log_task(
             log_file.touch()
         monitoring_task = asyncio.shield(
             asyncio.create_task(
-                monitor_container_logs(
+                _monitor_container_logs(
                     container,
                     service_key,
                     service_version,
-                    progress_pub,
-                    logs_pub,
+                    task_publishers,
                     integration_version,
                     task_volumes,
                     log_file_url,

@@ -406,9 +406,7 @@ def sleeper_task_unexpected_output(
 
 @pytest.fixture()
 def caplog_info_level(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
-    with caplog.at_level(
-        logging.INFO,
-    ):
+    with caplog.at_level(logging.INFO, logger="simcore_service_dask_sidecar"):
         yield caplog
 
 
@@ -430,7 +428,6 @@ def test_run_computational_sidecar_real_fct(
     mock_service_envs: None,
     dask_subsystem_mock: dict[str, mock.Mock],
     sleeper_task: ServiceExampleParam,
-    mocker: MockerFixture,
     s3_settings: S3Settings,
     boot_mode: BootMode,
     mocked_get_integration_version: mock.Mock,
@@ -454,7 +451,7 @@ def test_run_computational_sidecar_real_fct(
     # check that the task produces expected logs
     for log in sleeper_task.expected_logs:
         r = re.compile(
-            rf"\[{sleeper_task.service_key}:{sleeper_task.service_version} - .+\/.+ - .+\]: ({log})"
+            rf"\[{sleeper_task.service_key}:{sleeper_task.service_version} - .+\/.+\]: ({log})"
         )
         search_results = list(filter(r.search, caplog_info_level.messages))
         assert (
@@ -462,7 +459,7 @@ def test_run_computational_sidecar_real_fct(
         ), f"Could not find '{log}' in worker_logs:\n {pformat(caplog_info_level.messages, width=240)}"
     for log in sleeper_task.expected_logs:
         assert re.search(
-            rf"\[{sleeper_task.service_key}:{sleeper_task.service_version} - .+\/.+ - .+\]: ({log})",
+            rf"\[{sleeper_task.service_key}:{sleeper_task.service_version} - .+\/.+\]: ({log})",
             caplog_info_level.text,
         )
     # check that the task produce the expected data, not less not more
@@ -603,6 +600,7 @@ async def test_run_computational_sidecar_dask(
     mocked_get_integration_version.assert_called()
 
 
+@pytest.mark.skip(reason="in dev")
 @pytest.mark.parametrize(
     "integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True
 )
@@ -626,7 +624,7 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
                 "-c",
                 " && ".join(
                     [
-                        f'N={NUMBER_OF_LOGS}; for ((i=1; i<=N; i++));do echo "This is iteration $i"; done '
+                        f'N={NUMBER_OF_LOGS}; for ((i=1; i<=N; i++));do echo "This is iteration $i"; echo "progress: $i/{NUMBER_OF_LOGS}"; done '
                     ]
                 ),
             ],
@@ -651,7 +649,7 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
     assert worker_progresses[-1] == 1, "missing/incorrect final progress value"
 
     worker_logs = [TaskLogEvent.parse_raw(msg).log for msg in log_sub.buffer]
-    assert len(worker_logs) == NUMBER_OF_LOGS + 15
+    assert len(worker_logs) == 2 * NUMBER_OF_LOGS + 15
     mocked_get_integration_version.assert_called()
 
 

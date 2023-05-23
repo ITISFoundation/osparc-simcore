@@ -2,7 +2,6 @@ import asyncio
 import contextlib
 import logging
 from dataclasses import dataclass, field
-from enum import Enum
 from typing import AsyncIterator, Final
 
 import distributed
@@ -128,30 +127,21 @@ def publish_event(dask_pub: distributed.Pub, event: BaseTaskEvent) -> None:
     dask_pub.put(event.json())
 
 
-class LogType(Enum):
-    LOG = 1
-    PROGRESS = 2
-    INSTRUMENTATION = 3
+def publish_task_progress(progress_pub: distributed.Pub, value: float) -> None:
+    """raises nothing but CancelledError"""
+    with log_catch(logger, reraise=False):
+        publish_event(progress_pub, TaskProgressEvent.from_dask_worker(progress=value))
 
 
 def publish_task_logs(
-    progress_pub: distributed.Pub,
     logs_pub: distributed.Pub,
-    log_type: LogType,
-    message_prefix: str,
+    *,
     message: LogMessageStr,
     log_level: LogLevelInt,
 ) -> None:
     """raises nothing but CancelledError"""
-    logger.info("[%s - %s]: %s", message_prefix, log_type.name, message)
+    # logger.info("[%s]: %s", message_prefix, message)
     with log_catch(logger, reraise=False):
-        if log_type == LogType.PROGRESS:
-            publish_event(
-                progress_pub,
-                TaskProgressEvent.from_dask_worker(progress=float(message)),
-            )
-        else:
-            publish_event(
-                logs_pub,
-                TaskLogEvent.from_dask_worker(log=message, log_level=log_level),
-            )
+        publish_event(
+            logs_pub, TaskLogEvent.from_dask_worker(log=message, log_level=log_level)
+        )
