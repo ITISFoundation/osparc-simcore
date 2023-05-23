@@ -205,7 +205,7 @@ def ubuntu_task(
     )
     # check in the console that the expected files are present in the expected INPUT folder (set as ${INPUT_FOLDER} in the service)
     file_names = [file.path for file in list_of_files]
-    list_of_commands = [
+    list_of_bash_commands = [
         "echo User: $(id $(whoami))",
         "echo Inputs:",
         "ls -tlah -R ${INPUT_FOLDER}",
@@ -218,20 +218,21 @@ def ubuntu_task(
     ]
 
     # check expected ENVS are set
-    list_of_commands += _bash_check_env_exist(
-        variable_name="SC_COMP_SERVICES_SCHEDULED_AS", variable_value=boot_mode.value
+    list_of_bash_commands += _bash_check_env_exist(
+        variable_name="SC_COMP_SERVICES_SCHEDULED_AS",
+        variable_value=f"{boot_mode.value}",
     )
-    list_of_commands += _bash_check_env_exist(
+    list_of_bash_commands += _bash_check_env_exist(
         variable_name="SIMCORE_NANO_CPUS_LIMIT",
         variable_value=f"{int(_DEFAULT_MAX_RESOURCES['CPU']*1e9)}",
     )
-    list_of_commands += _bash_check_env_exist(
+    list_of_bash_commands += _bash_check_env_exist(
         variable_name="SIMCORE_MEMORY_BYTES_LIMIT",
         variable_value=f"{_DEFAULT_MAX_RESOURCES['RAM']}",
     )
 
     # check input files
-    list_of_commands += [
+    list_of_bash_commands += [
         f"(test -f ${{INPUT_FOLDER}}/{file} || (echo ${{INPUT_FOLDER}}/{file} does not exist && exit 1))"
         for file in file_names
     ] + [f"echo $(cat ${{INPUT_FOLDER}}/{file})" for file in file_names]
@@ -242,7 +243,7 @@ def ubuntu_task(
         else "input.json"
     )
 
-    list_of_commands += [
+    list_of_bash_commands += [
         f"echo '{faker.text(max_nb_chars=17216)}'",
         f"(test -f ${{INPUT_FOLDER}}/{input_json_file_name} || (echo ${{INPUT_FOLDER}}/{input_json_file_name} file does not exists && exit 1))",
         f"echo $(cat ${{INPUT_FOLDER}}/{input_json_file_name})",
@@ -297,17 +298,17 @@ def ubuntu_task(
     )
 
     # check for the log file if legacy version
-    list_of_commands += [
+    list_of_bash_commands += [
         "echo $(ls -tlah ${LOG_FOLDER})",
         f"(test {'!' if integration_version > LEGACY_INTEGRATION_VERSION else ''} -f ${{LOG_FOLDER}}/{LEGACY_SERVICE_LOG_FILE_NAME} || (echo ${{LOG_FOLDER}}/{LEGACY_SERVICE_LOG_FILE_NAME} file does {'' if integration_version > LEGACY_INTEGRATION_VERSION else 'not'} exists && exit 1))",
     ]
     if integration_version == LEGACY_INTEGRATION_VERSION:
-        list_of_commands = [
+        list_of_bash_commands = [
             f"{c} >> ${{LOG_FOLDER}}/{LEGACY_SERVICE_LOG_FILE_NAME}"
-            for c in list_of_commands
+            for c in list_of_bash_commands
         ]
     # set the final command to generate the output file(s) (files and json output)
-    list_of_commands += [
+    list_of_bash_commands += [
         f"echo {jsonized_outputs} > ${{OUTPUT_FOLDER}}/{output_json_file_name}",
         "echo 'some data for the output file' > ${OUTPUT_FOLDER}/a_outputfile",
         "mkdir -p ${OUTPUT_FOLDER}/subfolder",
@@ -331,7 +332,7 @@ def ubuntu_task(
         command=[
             "/bin/bash",
             "-c",
-            " && ".join(list_of_commands),
+            " && ".join(list_of_bash_commands),
         ],
         input_data=input_data,
         output_data_keys=expected_output_keys,
@@ -505,6 +506,11 @@ def log_sub(
     return distributed.Sub(TaskLogEvent.topic_name(), client=dask_client)
 
 
+@pytest.fixture
+def progress_sub(dask_client: distributed.Client) -> distributed.Sub:
+    return distributed.Sub(TaskProgressEvent.topic_name(), client=dask_client)
+
+
 @pytest.mark.parametrize(
     "integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True
 )
@@ -514,6 +520,7 @@ async def test_run_computational_sidecar_dask(
     s3_settings: S3Settings,
     boot_mode: BootMode,
     log_sub: distributed.Sub,
+    progress_sub: distributed.Sub,
     mocked_get_integration_version: mock.Mock,
 ):
     future = dask_client.submit(
