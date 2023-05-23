@@ -170,6 +170,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
         logger.log(log_level, log)
 
     async def run(self, command: list[str]) -> TaskOutputData:
+        # ensure we pass the initial logs and progress
         await self._publish_sidecar_log(
             f"Starting task for {self.service_key}:{self.service_version} on {socket.gethostname()}..."
         )
@@ -183,7 +184,6 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
         async with Docker() as docker_client, TaskSharedVolumes(
             Path(f"{settings.SIDECAR_COMP_SERVICES_SHARED_FOLDER}/{run_id}")
         ) as task_volumes:
-            # PRE-PROCESSING
             await pull_image(
                 docker_client,
                 self.docker_auth,
@@ -270,6 +270,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
             await self._publish_sidecar_log(
                 "TIP: There might be more information in the service log file in the service outputs",
             )
+        # ensure we pass the final progress
         publish_event(
             self.task_publishers.progress,
             TaskProgressEvent.from_dask_worker(progress=1),
