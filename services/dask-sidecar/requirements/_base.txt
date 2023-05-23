@@ -145,7 +145,7 @@ pillow==9.5.0
     # via bokeh
 psutil==5.9.5
     # via distributed
-pydantic==1.10.7
+pydantic==1.10.8
     # via
     #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/_base.in
@@ -210,7 +210,7 @@ typing-extensions==4.6.0
     #   typer
 tzdata==2023.3
     # via pandas
-urllib3==1.26.15
+urllib3==1.26.16
     # via
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   botocore
