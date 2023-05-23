@@ -28,7 +28,7 @@ from servicelib.logging_utils import (
 )
 from settings_library.s3 import S3Settings
 
-from ..dask_utils import TaskPublisher, publish_task_logs, publish_task_progress
+from ..dask_utils import TaskPublisher
 from ..file_utils import push_file_to_remote
 from ..settings import Settings
 from .constants import LEGACY_SERVICE_LOG_FILE_NAME, PROGRESS_REGEXP
@@ -166,12 +166,10 @@ async def _parse_and_publish_logs(
     task_publishers: TaskPublisher,
 ) -> None:
     if progress_value := await _try_parse_progress(log_line) is not None:
-        publish_task_progress(task_publishers.progress, progress_value)
+        task_publishers.publish_progress(progress_value)
     else:
-        publish_task_logs(
-            task_publishers.logs,
-            message=log_line,
-            log_level=guess_message_log_level(log_line),
+        task_publishers.publish_logs(
+            message=log_line, log_level=guess_message_log_level(log_line)
         )
 
 

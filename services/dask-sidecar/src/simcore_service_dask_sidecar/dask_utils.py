@@ -58,11 +58,28 @@ def get_current_task_resources() -> dict[str, float]:
 @dataclass()
 class TaskPublisher:
     progress: distributed.Pub = field(init=False)
+    _last_published_progress: float = 0
     logs: distributed.Pub = field(init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.progress = distributed.Pub(TaskProgressEvent.topic_name())
         self.logs = distributed.Pub(TaskLogEvent.topic_name())
+
+    def publish_progress(self, value: float) -> None:
+        if value > self._last_published_progress:
+            publish_event(
+                self.progress, TaskProgressEvent.from_dask_worker(progress=value)
+            )
+
+    def publish_logs(
+        self,
+        *,
+        message: LogMessageStr,
+        log_level: LogLevelInt,
+    ) -> None:
+        publish_event(
+            self.logs, TaskLogEvent.from_dask_worker(log=message, log_level=log_level)
+        )
 
 
 _TASK_ABORTION_INTERVAL_CHECK_S: int = 2
@@ -124,24 +141,6 @@ async def monitor_task_abortion(
 
 
 def publish_event(dask_pub: distributed.Pub, event: BaseTaskEvent) -> None:
-    dask_pub.put(event.json())
-
-
-def publish_task_progress(progress_pub: distributed.Pub, value: float) -> None:
-    """raises nothing but CancelledError"""
+    """never reraises, only CancellationError"""
     with log_catch(logger, reraise=False):
-        publish_event(progress_pub, TaskProgressEvent.from_dask_worker(progress=value))
-
-
-def publish_task_logs(
-    logs_pub: distributed.Pub,
-    *,
-    message: LogMessageStr,
-    log_level: LogLevelInt,
-) -> None:
-    """raises nothing but CancelledError"""
-    # logger.info("[%s]: %s", message_prefix, message)
-    with log_catch(logger, reraise=False):
-        publish_event(
-            logs_pub, TaskLogEvent.from_dask_worker(log=message, log_level=log_level)
-        )
+        dask_pub.put(event.json())

@@ -13,10 +13,7 @@ from uuid import uuid4
 from aiodocker import Docker
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import ServiceRuntimeError
-from dask_task_models_library.container_tasks.events import (
-    TaskLogEvent,
-    TaskProgressEvent,
-)
+from dask_task_models_library.container_tasks.events import TaskLogEvent
 from dask_task_models_library.container_tasks.io import (
     FileUrl,
     TaskInputData,
@@ -174,10 +171,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
         await self._publish_sidecar_log(
             f"Starting task for {self.service_key}:{self.service_version} on {socket.gethostname()}..."
         )
-        publish_event(
-            self.task_publishers.progress,
-            TaskProgressEvent.from_dask_worker(progress=0),
-        )
+        self.task_publishers.publish_progress(0)
 
         settings = Settings.create_from_envs()
         run_id = f"{uuid4()}"
@@ -270,7 +264,4 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                 "TIP: There might be more information in the service log file in the service outputs",
             )
         # ensure we pass the final progress
-        publish_event(
-            self.task_publishers.progress,
-            TaskProgressEvent.from_dask_worker(progress=1),
-        )
+        self.task_publishers.publish_progress(1)
