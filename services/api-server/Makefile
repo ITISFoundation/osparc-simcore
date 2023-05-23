@@ -90,7 +90,6 @@ define create_and_validate_openapi
 	source .env; \
 	set +o allexport; \
 	export API_SERVER_DEV_FEATURES_ENABLED=$1; \
-	export LOG_FORMAT_LOCAL_DEV_ENABLED=1; \
 	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
 
 	# validates OAS file: $@
