@@ -12,15 +12,15 @@ from ...projects.projects_exceptions import ProjectsException
 from ...scicrunch.db import ResearchResourceRepository
 from ..exceptions import SDSException
 from ._text_files import write_text_files
-from .xlsx.templates.code_description import (
+from .xlsx.code_description import (
     CodeDescriptionModel,
     CodeDescriptionParams,
     InputsEntryModel,
     OutputsEntryModel,
     RRIDEntry,
 )
-from .xlsx.templates.dataset_description import DatasetDescriptionParams
-from .xlsx.templates.submission import SubmissionDocumentParams
+from .xlsx.dataset_description import DatasetDescriptionParams
+from .xlsx.submission import SubmissionDocumentParams
 from .xlsx.writer import write_xlsx_files
 
 _logger = logging.getLogger(__name__)
