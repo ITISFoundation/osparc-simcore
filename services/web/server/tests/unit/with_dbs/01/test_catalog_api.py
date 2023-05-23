@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import re
+import urllib.parse
 
 import pytest
 from aiohttp import web
@@ -118,7 +119,7 @@ async def test_get_service_resources(
     assert client.app
     assert client.app.router
     url = client.app.router["get_service_resources_handler"].url_for(
-        service_key="simcore%2Fservices%2Fdynamic%2Fsomeservice",
+        service_key=urllib.parse.quote("simcore/services/dynamic/someservice", safe=""),
         service_version="3.4.5",
     )
     response = await client.get(f"{url}")
