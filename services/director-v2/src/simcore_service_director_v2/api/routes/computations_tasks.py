@@ -60,7 +60,7 @@ async def analyze_pipeline(
     pipeline_dag: nx.DiGraph = pipeline_at_db.get_graph()
 
     # get the project task states
-    all_tasks: list[CompTaskAtDB] = await comp_tasks_repo.get_all_tasks(project_id)
+    all_tasks: list[CompTaskAtDB] = await comp_tasks_repo.list_tasks(project_id)
 
     # filter the tasks by the effective pipeline
     filtered_tasks = [
@@ -151,7 +151,7 @@ async def get_task_log_file(
     The log is only available when the task is done
     """
 
-    if not await comp_tasks_repo.check_task_exists(project_id, node_uuid):
+    if not await comp_tasks_repo.task_exists(project_id, node_uuid):
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
             detail=[f"No task_id={node_uuid} found under computation {project_id}"],

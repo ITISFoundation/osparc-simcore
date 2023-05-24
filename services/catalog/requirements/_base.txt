@@ -32,7 +32,7 @@ anyio==3.6.2
 arrow==1.2.3
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
-    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
 asgiref==3.5.2
     # via uvicorn
 async-timeout==4.0.2
@@ -148,7 +148,7 @@ redis==4.5.4
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-requests==2.27.1
+requests==2.31.0
     # via fastapi
 six==1.15.0
     # via

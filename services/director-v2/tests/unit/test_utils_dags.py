@@ -12,6 +12,7 @@ import networkx as nx
 import pytest
 from models_library.projects import NodesDict
 from models_library.projects_nodes_io import NodeID
+from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_service_director_v2.utils.dags import (
     create_complete_dag,
     create_minimal_computational_graph_based_on_selection,
@@ -214,9 +215,18 @@ async def test_create_minimal_graph(fake_workbench: NodesDict, graph: MinimalGra
         pytest.param(
             {"node_1": ["node_2", "node_3"], "node_2": ["node_3"], "node_3": []},
             {
-                "node_1": {"key": "simcore/services/comp/fake"},
-                "node_2": {"key": "simcore/services/comp/fake"},
-                "node_3": {"key": "simcore/services/comp/fake"},
+                "node_1": {
+                    "key": "simcore/services/comp/fake",
+                    "node_class": NodeClass.COMPUTATIONAL,
+                },
+                "node_2": {
+                    "key": "simcore/services/comp/fake",
+                    "node_class": NodeClass.COMPUTATIONAL,
+                },
+                "node_3": {
+                    "key": "simcore/services/comp/fake",
+                    "node_class": NodeClass.COMPUTATIONAL,
+                },
             },
             [],
             id="cycle less dag expect no cycle",
@@ -228,9 +238,18 @@ async def test_create_minimal_graph(fake_workbench: NodesDict, graph: MinimalGra
                 "node_3": ["node_1"],
             },
             {
-                "node_1": {"key": "simcore/services/comp/fake"},
-                "node_2": {"key": "simcore/services/comp/fake"},
-                "node_3": {"key": "simcore/services/comp/fake"},
+                "node_1": {
+                    "key": "simcore/services/comp/fake",
+                    "node_class": NodeClass.COMPUTATIONAL,
+                },
+                "node_2": {
+                    "key": "simcore/services/comp/fake",
+                    "node_class": NodeClass.COMPUTATIONAL,
+                },
+                "node_3": {
+                    "key": "simcore/services/comp/fake",
+                    "node_class": NodeClass.COMPUTATIONAL,
+                },
             },
             [["node_1", "node_2", "node_3"]],
             id="dag with 1 cycle",
@@ -242,9 +261,18 @@ async def test_create_minimal_graph(fake_workbench: NodesDict, graph: MinimalGra
                 "node_3": ["node_1"],
             },
             {
-                "node_1": {"key": "simcore/services/comp/fake"},
-                "node_2": {"key": "simcore/services/comp/fake"},
-                "node_3": {"key": "simcore/services/comp/fake"},
+                "node_1": {
+                    "key": "simcore/services/comp/fake",
+                    "node_class": NodeClass.COMPUTATIONAL,
+                },
+                "node_2": {
+                    "key": "simcore/services/comp/fake",
+                    "node_class": NodeClass.COMPUTATIONAL,
+                },
+                "node_3": {
+                    "key": "simcore/services/comp/fake",
+                    "node_class": NodeClass.COMPUTATIONAL,
+                },
             },
             [["node_1", "node_2", "node_3"], ["node_1", "node_2"]],
             id="dag with 2 cycles",
@@ -256,9 +284,18 @@ async def test_create_minimal_graph(fake_workbench: NodesDict, graph: MinimalGra
                 "node_3": ["node_1"],
             },
             {
-                "node_1": {"key": "simcore/services/comp/fake"},
-                "node_2": {"key": "simcore/services/comp/fake"},
-                "node_3": {"key": "simcore/services/dynamic/fake"},
+                "node_1": {
+                    "key": "simcore/services/comp/fake",
+                    "node_class": NodeClass.COMPUTATIONAL,
+                },
+                "node_2": {
+                    "key": "simcore/services/comp/fake",
+                    "node_class": NodeClass.COMPUTATIONAL,
+                },
+                "node_3": {
+                    "key": "simcore/services/dynamic/fake",
+                    "node_class": NodeClass.INTERACTIVE,
+                },
             },
             [["node_1", "node_2", "node_3"]],
             id="dag with 1 cycle and 1 dynamic services should fail",
@@ -270,9 +307,18 @@ async def test_create_minimal_graph(fake_workbench: NodesDict, graph: MinimalGra
                 "node_3": ["node_1"],
             },
             {
-                "node_1": {"key": "simcore/services/dynamic/fake"},
-                "node_2": {"key": "simcore/services/comp/fake"},
-                "node_3": {"key": "simcore/services/dynamic/fake"},
+                "node_1": {
+                    "key": "simcore/services/dynamic/fake",
+                    "node_class": NodeClass.INTERACTIVE,
+                },
+                "node_2": {
+                    "key": "simcore/services/comp/fake",
+                    "node_class": NodeClass.COMPUTATIONAL,
+                },
+                "node_3": {
+                    "key": "simcore/services/dynamic/fake",
+                    "node_class": NodeClass.INTERACTIVE,
+                },
             },
             [["node_1", "node_2", "node_3"]],
             id="dag with 1 cycle and 2 dynamic services should fail",
@@ -284,9 +330,18 @@ async def test_create_minimal_graph(fake_workbench: NodesDict, graph: MinimalGra
                 "node_3": ["node_1"],
             },
             {
-                "node_1": {"key": "simcore/services/dynamic/fake"},
-                "node_2": {"key": "simcore/services/dynamic/fake"},
-                "node_3": {"key": "simcore/services/dynamic/fake"},
+                "node_1": {
+                    "key": "simcore/services/dynamic/fake",
+                    "node_class": NodeClass.INTERACTIVE,
+                },
+                "node_2": {
+                    "key": "simcore/services/dynamic/fake",
+                    "node_class": NodeClass.INTERACTIVE,
+                },
+                "node_3": {
+                    "key": "simcore/services/dynamic/fake",
+                    "node_class": NodeClass.INTERACTIVE,
+                },
             },
             [],
             id="dag with 1 cycle and 3 dynamic services should be ok",

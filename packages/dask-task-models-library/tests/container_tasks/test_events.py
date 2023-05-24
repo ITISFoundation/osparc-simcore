@@ -5,6 +5,8 @@
 # pylint:disable=protected-access
 # pylint:disable=too-many-arguments
 
+import logging
+
 import pytest
 from dask_task_models_library.container_tasks.events import (
     BaseTaskEvent,
@@ -51,7 +53,10 @@ def test_task_progress_from_worker(mocked_dask_worker_job_id: str):
 
 
 def test_task_log_from_worker(mocked_dask_worker_job_id: str):
-    event = TaskLogEvent.from_dask_worker(log="here is the amazing logs")
+    event = TaskLogEvent.from_dask_worker(
+        log="here is the amazing logs", log_level=logging.INFO
+    )
 
     assert event.job_id == mocked_dask_worker_job_id
     assert event.log == "here is the amazing logs"
+    assert event.log_level == logging.INFO

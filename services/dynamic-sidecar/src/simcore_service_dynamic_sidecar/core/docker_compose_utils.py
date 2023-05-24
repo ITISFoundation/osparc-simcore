@@ -11,6 +11,7 @@ from copy import deepcopy
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import ProgressType
 from servicelib.async_utils import run_sequentially_in_context
+from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from settings_library.basic_types import LogLevel
 from simcore_service_dynamic_sidecar.core.rabbitmq import (
     post_progress_message,
@@ -109,8 +110,8 @@ async def docker_compose_pull(app: FastAPI, compose_spec_yaml: str) -> None:
             float(current / (total or 1)),
         )
 
-    async def _log_cb(msg: str) -> None:
-        await post_sidecar_log_message(app, msg, log_level=logging.INFO)
+    async def _log_cb(msg: LogMessageStr, log_level: LogLevelInt) -> None:
+        await post_sidecar_log_message(app, msg, log_level=log_level)
 
     await pull_images(list_of_images, registry_settings, _progress_cb, _log_cb)
 

@@ -170,7 +170,8 @@ class DynamicSidecarEgressSettings(BaseCustomSettings):
         description="envoy image to use",
     )
     DYNAMIC_SIDECAR_ENVOY_LOG_LEVEL: EnvoyLogLevel = Field(
-        default=EnvoyLogLevel.ERROR, description="log level for envoy proxy service"
+        default=EnvoyLogLevel.ERROR,  # type: ignore
+        description="log level for envoy proxy service",
     )
 
 
@@ -202,6 +203,11 @@ class DynamicSidecarSettings(BaseCustomSettings):
 
     DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION: str = Field(
         "3.8", description="docker-compose version used in the compose-specs"
+    )
+
+    DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS: bool = Field(
+        False,
+        description="enables support for limiting service's volume size",
     )
 
     SWARM_STACK_NAME: str = Field(

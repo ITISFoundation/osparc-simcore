@@ -18,12 +18,9 @@ from models_library.services import ServiceKey, ServiceVersion
 from pydantic import AnyUrl, HttpUrl, parse_obj_as
 from servicelib.logging_utils import log_decorator
 
+from ..projects.db import ProjectDBAPI
+from ..projects.exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from ..projects.projects_api import get_project_for_user
-from ..projects.projects_db import ProjectDBAPI
-from ..projects.projects_exceptions import (
-    ProjectInvalidRightsError,
-    ProjectNotFoundError,
-)
 from ..utils import now_str
 from ._core import compose_uuid_from
 from ._models import FileParams, ServiceInfo, ViewerInfo
@@ -185,7 +182,7 @@ async def _add_new_project(
     # TODO: this piece was taken from the end of projects.projects_handlers.create_projects
 
     from ..director_v2.api import create_or_update_pipeline
-    from ..projects.projects_db import APP_PROJECT_DBAPI
+    from ..projects.db import APP_PROJECT_DBAPI
 
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 

@@ -8,7 +8,9 @@ from datetime import datetime
 from functools import lru_cache
 from typing import Callable
 
-from models_library.projects_nodes import InputID, InputTypes
+import arrow
+from models_library.projects_nodes import InputID
+from pydantic import parse_obj_as
 
 from ..models.basic_types import VersionStr
 from ..models.domain.projects import (
@@ -20,10 +22,15 @@ from ..models.domain.projects import (
     StudyUI,
 )
 from ..models.schemas.files import File
-from ..models.schemas.jobs import ArgumentType, Job, JobInputs, JobStatus, TaskStates
+from ..models.schemas.jobs import (
+    ArgumentTypes,
+    Job,
+    JobInputs,
+    JobStatus,
+    PercentageInt,
+)
 from ..models.schemas.solvers import Solver, SolverKeyId
 from ..plugins.director_v2 import ComputationTaskGet
-from .typing_extra import get_types
 
 # UTILS ------
 _BASE_UUID = uuid.UUID("231e13db-6bc6-4f64-ba56-2ee2c73b9f09")
@@ -52,14 +59,12 @@ def now_str() -> str:
 
 
 def create_node_inputs_from_job_inputs(inputs: JobInputs) -> dict[InputID, InputTypes]:
-
     # map Job inputs with solver inputs
     # TODO: ArgumentType -> InputTypes dispatcher
 
     node_inputs: dict[InputID, InputTypes] = {}
     for name, value in inputs.values.items():
-
-        assert isinstance(value, get_types(ArgumentType))  # nosec
+        assert parse_obj_as(ArgumentTypes, value) == value  # type: ignore  # nosec
 
         if isinstance(value, File):
             # FIXME: ensure this aligns with storage policy
@@ -82,11 +87,10 @@ def create_job_inputs_from_node_inputs(inputs: dict[InputID, InputTypes]) -> Job
 
     raises ValidationError
     """
-    input_values: dict[str, ArgumentType] = {}
+    input_values: dict[str, ArgumentTypes] = {}
     for name, value in inputs.items():
-
-        assert isinstance(name, get_types(InputID))  # nosec
-        assert isinstance(value, get_types(InputTypes))  # nosec
+        assert parse_obj_as(InputID, name) == name  # nosec
+        assert parse_obj_as(InputTypes, value) == value  # nosec
 
         if isinstance(value, SimCoreFileLink):
             # FIXME: ensure this aligns with storage policy
@@ -244,24 +248,13 @@ def create_job_from_project(
 
 
 def create_jobstatus_from_task(task: ComputationTaskGet) -> JobStatus:
-
     job_status = JobStatus(
         job_id=task.id,
         state=task.state,
-        progress=task.guess_progress(),
-        submitted_at=datetime.utcnow(),
+        progress=PercentageInt((task.pipeline_details.progress or 0) * 100.0),
+        submitted_at=task.submitted or arrow.utcnow().datetime,
+        started_at=task.started,
+        stopped_at=task.stopped,
     )
-
-    # FIXME: timestamp is wrong but at least it will stop run
-    if job_status.state in [
-        TaskStates.SUCCESS,
-        TaskStates.FAILED,
-        TaskStates.ABORTED,
-    ]:
-        job_status.take_snapshot("stopped")
-    elif job_status.state in [
-        TaskStates.STARTED,
-    ]:
-        job_status.take_snapshot("started")
 
     return job_status

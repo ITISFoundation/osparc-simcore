@@ -4,7 +4,7 @@
 import functools
 import itertools
 from dataclasses import dataclass
-from typing import Optional, TypedDict
+from typing import TypedDict
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -103,9 +103,9 @@ class TagsRepo:
         conn: SAConnection,
         tag_id: int,
         *,
-        read: Optional[bool] = None,
-        write: Optional[bool] = None,
-        delete: Optional[bool] = None,
+        read: bool | None = None,
+        write: bool | None = None,
+        delete: bool | None = None,
     ) -> int:
         """
         Returns 0 if tag does not match access
@@ -129,7 +129,7 @@ class TagsRepo:
         stmt = sa.select(sa.func.count(user_to_groups.c.uid)).select_from(j)
 
         # The number of occurrences of the user_id = how many groups are giving this access permission
-        permissions_count: Optional[int] = await conn.scalar(stmt)
+        permissions_count: int | None = await conn.scalar(stmt)
         return permissions_count if permissions_count else 0
 
     #
@@ -142,7 +142,7 @@ class TagsRepo:
         *,
         name: str,
         color: str,
-        description: Optional[str] = None,  # =nullable
+        description: str | None = None,  # =nullable
         read: bool = True,
         write: bool = True,
         delete: bool = True,
@@ -182,7 +182,7 @@ class TagsRepo:
 
     async def list(self, conn: SAConnection) -> list[TagDict]:
         select_stmt = (
-            sa.select(_COLUMNS)
+            sa.select(*_COLUMNS)
             .select_from(self._join_user_to_tags(tags_to_groups.c.read == True))
             .order_by(tags.c.id)
         )
@@ -190,7 +190,7 @@ class TagsRepo:
         return [TagDict(row.items()) async for row in conn.execute(select_stmt)]  # type: ignore
 
     async def get(self, conn: SAConnection, tag_id: int) -> TagDict:
-        select_stmt = sa.select(_COLUMNS).select_from(
+        select_stmt = sa.select(*_COLUMNS).select_from(
             self._join_user_to_given_tag(tags_to_groups.c.read == True, tag_id=tag_id)
         )
 
@@ -208,7 +208,6 @@ class TagsRepo:
         tag_id: int,
         **fields,
     ) -> TagDict:
-
         updates = {
             name: value
             for name, value in fields.items()

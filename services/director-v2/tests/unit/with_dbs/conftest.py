@@ -5,8 +5,8 @@
 # pylint:disable=no-name-in-module
 
 
+import datetime
 import json
-from datetime import datetime
 from typing import Any, Callable, Iterator
 from uuid import uuid4
 
@@ -101,7 +101,7 @@ def tasks(
                 ),  # type: ignore
                 "node_class": to_node_class(node_data.key),
                 "internal_id": internal_id + 1,
-                "submit": datetime.utcnow(),
+                "submit": datetime.datetime.now(tz=datetime.timezone.utc),
                 "job_id": generate_dask_job_id(
                     service_key=node_data.key,
                     service_version=node_data.version,
@@ -272,6 +272,8 @@ def running_project(
             project_id=f"{created_project.uuid}",
             dag_adjacency_list=fake_workbench_adjacency,
         ),
-        tasks=tasks(user=user, project=created_project, state=StateType.RUNNING),
+        tasks=tasks(
+            user=user, project=created_project, state=StateType.RUNNING, progress=0.0
+        ),
         runs=runs(user=user, project=created_project, result=StateType.RUNNING),
     )

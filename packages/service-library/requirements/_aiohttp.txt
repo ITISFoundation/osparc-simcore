@@ -74,15 +74,15 @@ six==1.16.0
     #   isodate
     #   jsonschema
     #   openapi-core
-sqlalchemy==1.4.47
+sqlalchemy==1.4.48
     # via
     #   -c requirements/./../../../requirements/constraints.txt
     #   aiopg
 strict-rfc3339==0.7
     # via openapi-core
-werkzeug==2.2.3
+werkzeug==2.3.4
     # via -r requirements/_aiohttp.in
-yarl==1.8.2
+yarl==1.9.2
     # via aiohttp
 
 # The following packages are considered to be unsafe in a requirements file:

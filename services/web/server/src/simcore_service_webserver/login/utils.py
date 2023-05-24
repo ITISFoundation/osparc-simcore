@@ -7,7 +7,7 @@ import passlib.hash
 from aiohttp import web
 from models_library.users import UserID
 from passlib import pwd
-from servicelib import observer
+from servicelib.aiohttp import observer
 from servicelib.aiohttp.rest_models import LogMessageType
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -73,7 +73,7 @@ async def notify_user_logout(
 
     Listeners (e.g. sockets) will trigger logout mechanisms
     """
-    await observer.emit("SIGNAL_USER_LOGOUT", user_id, client_session_id, app)
+    await observer.emit(app, "SIGNAL_USER_LOGOUT", user_id, client_session_id, app)
 
 
 def encrypt_password(password: str) -> str:

@@ -15,15 +15,15 @@ from servicelib.aiohttp.rest_routing import (
 
 from .._constants import APP_OPENAPI_SPECS_KEY, APP_SETTINGS_KEY
 from . import (
-    projects_handlers,
-    projects_handlers_crud,
-    projects_nodes_handlers,
-    projects_ports_handlers,
-    projects_tags_handlers,
+    _handlers,
+    _handlers_crud,
+    _handlers_project_nodes,
+    _handlers_project_ports,
+    _handlers_project_tags,
 )
-from .projects_access import setup_projects_access
-from .projects_db import setup_projects_db
-from .projects_events import setup_project_events
+from ._observer import setup_project_observer_events
+from ._projects_access import setup_projects_access
+from .db import setup_projects_db
 
 logger = logging.getLogger(__name__)
 
@@ -65,18 +65,18 @@ def setup_projects(app: web.Application) -> bool:
     setup_projects_db(app)
 
     # registers event handlers (e.g. on_user_disconnect)
-    setup_project_events(app)
+    setup_project_observer_events(app)
 
-    app.router.add_routes(projects_handlers.routes)
-    app.router.add_routes(projects_handlers_crud.routes)
-    app.router.add_routes(projects_ports_handlers.routes)
+    app.router.add_routes(_handlers.routes)
+    app.router.add_routes(_handlers_crud.routes)
+    app.router.add_routes(_handlers_project_ports.routes)
 
     app.router.add_routes(
         _create_routes(
             "project",
             specs,
-            projects_nodes_handlers,
-            projects_tags_handlers,
+            _handlers_project_nodes,
+            _handlers_project_tags,
         )
     )
 

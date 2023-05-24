@@ -11,11 +11,9 @@ import jsonschema
 import pytest
 from jsonschema import ValidationError
 from models_library.projects import Project
-from simcore_service_webserver.projects.project_models import ProjectDict
-from simcore_service_webserver.projects.projects_nodes_utils import (
-    project_get_depending_nodes,
-)
-from simcore_service_webserver.projects.projects_utils import (
+from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.projects.nodes_utils import project_get_depending_nodes
+from simcore_service_webserver.projects.utils import (
     any_node_inputs_changed,
     clone_project_document,
     default_copy_project_name,

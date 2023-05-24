@@ -44,8 +44,8 @@ from servicelib.aiohttp.web_exceptions_extension import HTTPLocked
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.products import products
 from simcore_service_webserver.db_models import UserRole
-from simcore_service_webserver.projects.project_models import ProjectDict
-from simcore_service_webserver.socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT
+from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.socketio.messages import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.utils import to_datetime
 from socketio.exceptions import ConnectionError as SocketConnectionError
 
@@ -908,7 +908,7 @@ async def test_project_node_lifetime(
     faker: Faker,
 ):
     mock_storage_api_delete_data_folders_of_project_node = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers_crud.projects_api.storage_api.delete_data_folders_of_project_node",
+        "simcore_service_webserver.projects._handlers_crud.projects_api.storage_api.delete_data_folders_of_project_node",
         return_value="",
     )
 

@@ -2,19 +2,22 @@
   "3a710d8b-565c-5f46-870b-b45ebe195fc7": {
     "modified": true,
     "dependencies": [],
-    "currentStatus": "PUBLISHED"
+    "currentStatus": "PUBLISHED",
+    "progress": 0
   },
   "e1e2ea96-ce8f-5abc-8712-b8ed312a782c": {
     "modified": true,
     "dependencies": [],
-    "currentStatus": "PUBLISHED"
+    "currentStatus": "PUBLISHED",
+    "progress": 0
   },
   "415fefd1-d08b-53c1-adb0-16bed3a687ef": {
     "modified": true,
     "dependencies": [
       "3a710d8b-565c-5f46-870b-b45ebe195fc7"
     ],
-    "currentStatus": "PUBLISHED"
+    "currentStatus": "PUBLISHED",
+    "progress": 0
   },
   "6ede1209-b459-5735-91fc-761aa584808d": {
     "modified": true,
@@ -22,6 +25,7 @@
       "e1e2ea96-ce8f-5abc-8712-b8ed312a782c",
       "415fefd1-d08b-53c1-adb0-16bed3a687ef"
     ],
-    "currentStatus": "PUBLISHED"
+    "currentStatus": "PUBLISHED",
+    "progress": 0
   }
 }

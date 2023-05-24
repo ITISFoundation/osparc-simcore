@@ -97,11 +97,11 @@ def expected_dynamic_sidecar_spec(
                 {
                     "compose_spec": '{"version": "2.3", "services": {"rt-web": {"image": '
                     '"${SIMCORE_REGISTRY}/simcore/services/dynamic/sim4life:${SERVICE_VERSION}", '
-                    '"init": true, "depends_on": ["s4l-core"]}, "s4l-core": '
-                    '{"image": '
+                    '"init": true, "depends_on": ["s4l-core"], "storage_opt": {"size": "10M"} }, '
+                    '"s4l-core": {"image": '
                     '"${SIMCORE_REGISTRY}/simcore/services/dynamic/s4l-core:${SERVICE_VERSION}", '
-                    '"runtime": "nvidia", "init": true, "environment": '
-                    '["DISPLAY=${DISPLAY}"], "volumes": '
+                    '"runtime": "nvidia", "storage_opt": {"size": "5G"}, "init": true, '
+                    '"environment": ["DISPLAY=${DISPLAY}"], "volumes": '
                     '["/tmp/.X11-unix:/tmp/.X11-unix"]}}}',
                     "container_http_entry": "rt-web",
                     "hostname": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
@@ -159,6 +159,8 @@ def expected_dynamic_sidecar_spec(
                     "version": "2.4.5",
                 }
             ).as_label_data(),
+            "key": "simcore/services/dynamic/3dviewer",
+            "version": "2.4.5",
             "port": "8888",
             "service_image": "local/dynamic-sidecar:MOCK",
             "service_port": "8888",
@@ -187,7 +189,7 @@ def expected_dynamic_sidecar_spec(
                     "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": "False",
                     "FORWARD_ENV_DISPLAY": ":0",
                     "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
-                    "DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED": "False",
+                    "DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED": "False",
                     "POSTGRES_DB": "test",
                     "POSTGRES_HOST": "localhost",
                     "POSTGRES_PORT": "5432",
@@ -217,6 +219,7 @@ def expected_dynamic_sidecar_spec(
                     "STORAGE_HOST": "storage",
                     "STORAGE_PORT": "8080",
                 },
+                "CapabilityAdd": ["CAP_LINUX_IMMUTABLE"],
                 "Hosts": [],
                 "Image": "local/dynamic-sidecar:MOCK",
                 "Init": True,
@@ -238,6 +241,7 @@ def expected_dynamic_sidecar_spec(
                         "Target": "/dy-volumes/shared-store",
                         "Type": "volume",
                         "VolumeOptions": {
+                            "DriverConfig": None,
                             "Labels": {
                                 "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                                 "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
@@ -245,7 +249,7 @@ def expected_dynamic_sidecar_spec(
                                 "source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_erots-derahs_",
                                 "swarm_stack_name": "test_swarm_name",
                                 "user_id": "234",
-                            }
+                            },
                         },
                     },
                     {
@@ -260,7 +264,7 @@ def expected_dynamic_sidecar_spec(
                                 "source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_stupni_pmt_",
                                 "swarm_stack_name": "test_swarm_name",
                                 "user_id": "234",
-                            }
+                            },
                         },
                     },
                     {
@@ -275,7 +279,7 @@ def expected_dynamic_sidecar_spec(
                                 "source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_stuptuo_pmt_",
                                 "swarm_stack_name": "test_swarm_name",
                                 "user_id": "234",
-                            }
+                            },
                         },
                     },
                     {
@@ -290,7 +294,7 @@ def expected_dynamic_sidecar_spec(
                                 "source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_1_evas_pmt_",
                                 "swarm_stack_name": "test_swarm_name",
                                 "user_id": "234",
-                            }
+                            },
                         },
                     },
                     {
@@ -305,7 +309,7 @@ def expected_dynamic_sidecar_spec(
                                 "source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_2_evas_pmt_",
                                 "swarm_stack_name": "test_swarm_name",
                                 "user_id": "234",
-                            }
+                            },
                         },
                     },
                     {
@@ -367,6 +371,7 @@ def test_get_dynamic_proxy_spec(
             swarm_network_id=swarm_network_id,
             settings=cast(SimcoreServiceSettingsLabel, simcore_service_labels.settings),
             app_settings=minimal_app.state.settings,
+            has_quota_support=False,
             allow_internet_access=False,
         )
 
@@ -421,7 +426,6 @@ def test_get_dynamic_proxy_spec(
     # TODO: finish test when working on https://github.com/ITISFoundation/osparc-simcore/issues/2454
 
 
-@pytest.mark.testit
 async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
     mocked_catalog_service_api: respx.MockRouter,
     minimal_app: FastAPI,
@@ -439,6 +443,7 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
         swarm_network_id=swarm_network_id,
         settings=cast(SimcoreServiceSettingsLabel, simcore_service_labels.settings),
         app_settings=minimal_app.state.settings,
+        has_quota_support=False,
         allow_internet_access=False,
     )
     assert dynamic_sidecar_spec

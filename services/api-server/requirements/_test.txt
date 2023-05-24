@@ -7,7 +7,9 @@
 alembic==1.8.1
     # via -r requirements/_test.in
 anyio==3.6.2
-    # via httpcore
+    # via
+    #   -c requirements/_base.txt
+    #   httpcore
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
 attrs==21.4.0
@@ -23,19 +25,19 @@ aws-sam-translator==1.55.0
     #   cfn-lint
 aws-xray-sdk==2.12.0
     # via moto
-boto3==1.26.114
+boto3==1.26.133
     # via
     #   aws-sam-translator
     #   moto
-boto3-stubs==1.26.114
+boto3-stubs==1.26.133
     # via types-boto3
-botocore==1.29.114
+botocore==1.29.133
     # via
     #   aws-xray-sdk
     #   boto3
     #   moto
     #   s3transfer
-botocore-stubs==1.29.114
+botocore-stubs==1.29.130
     # via boto3-stubs
 certifi==2022.12.7
     # via
@@ -59,7 +61,7 @@ click==8.1.3
     # via
     #   -r requirements/_test.in
     #   flask
-coverage==7.2.3
+coverage==7.2.5
     # via pytest-cov
 cryptography==39.0.1
     # via
@@ -67,7 +69,7 @@ cryptography==39.0.1
     #   moto
     #   python-jose
     #   sshpubkeys
-docker==6.0.1
+docker==6.1.2
     # via
     #   -r requirements/_test.in
     #   moto
@@ -78,7 +80,7 @@ ecdsa==0.18.0
     #   sshpubkeys
 exceptiongroup==1.1.1
     # via pytest
-faker==18.4.0
+faker==18.7.0
     # via -r requirements/_test.in
 flask==2.1.3
     # via
@@ -157,7 +159,7 @@ markupsafe==2.1.1
     #   moto
 moto==4.0.1
     # via -r requirements/_test.in
-mypy==1.2.0
+mypy==1.3.0
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
@@ -180,7 +182,7 @@ pbr==5.11.1
     #   sarif-om
 pluggy==1.0.0
     # via pytest
-pyasn1==0.4.8
+pyasn1==0.5.0
     # via
     #   python-jose
     #   rsa
@@ -231,9 +233,8 @@ pyyaml==5.4.1
     #   moto
     #   openapi-spec-validator
     #   responses
-requests==2.27.1
+requests==2.31.0
     # via
-    #   -c requirements/_base.txt
     #   docker
     #   moto
     #   responses
@@ -245,7 +246,7 @@ rsa==4.9
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   python-jose
-s3transfer==0.6.0
+s3transfer==0.6.1
     # via boto3
 sarif-om==1.0.4
     # via cfn-lint
@@ -268,7 +269,7 @@ sqlalchemy==1.4.47
     # via
     #   -r requirements/_test.in
     #   alembic
-sqlalchemy2-stubs==0.0.2a33
+sqlalchemy2-stubs==0.0.2a34
     # via sqlalchemy
 sshpubkeys==3.3.1
     # via moto
@@ -277,7 +278,7 @@ tomli==2.0.1
     #   coverage
     #   mypy
     #   pytest
-types-awscrt==0.16.14
+types-awscrt==0.16.17
     # via
     #   botocore-stubs
     #   types-s3transfer
@@ -285,7 +286,7 @@ types-boto3==1.0.2
     # via -r requirements/_test.in
 types-pyyaml==6.0.12.9
     # via responses
-types-s3transfer==0.6.0.post7
+types-s3transfer==0.6.1
     # via boto3-stubs
 typing-extensions==4.3.0
     # via

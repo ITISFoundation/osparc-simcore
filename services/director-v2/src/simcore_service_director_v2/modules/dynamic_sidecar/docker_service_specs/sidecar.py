@@ -58,7 +58,7 @@ def _get_environment_variables(
         "DY_SIDECAR_USER_ID": f"{scheduler_data.user_id}",
         "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
         "DYNAMIC_SIDECAR_LOG_LEVEL": app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_LOG_LEVEL,
-        "DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED": f"{app_settings.DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED}",
+        "DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED": f"{app_settings.DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED}",
         "POSTGRES_DB": f"{app_settings.POSTGRES.POSTGRES_DB}",
         "POSTGRES_ENDPOINT": f"{app_settings.POSTGRES.POSTGRES_HOST}:{app_settings.POSTGRES.POSTGRES_PORT}",
         "POSTGRES_HOST": f"{app_settings.POSTGRES.POSTGRES_HOST}",
@@ -98,6 +98,7 @@ def get_dynamic_sidecar_spec(
     swarm_network_id: str,
     settings: SimcoreServiceSettingsLabel,
     app_settings: AppSettings,
+    has_quota_support: bool,
     allow_internet_access: bool,
 ) -> AioDockerServiceSpec:
     """
@@ -124,8 +125,15 @@ def get_dynamic_sidecar_spec(
             run_id=scheduler_data.run_id,
             project_id=scheduler_data.project_id,
             user_id=scheduler_data.user_id,
+            has_quota_support=has_quota_support,
         ),
     ]
+
+    volume_size_limits = (
+        scheduler_data.paths_mapping.volume_size_limits or {}
+        if has_quota_support
+        else {}
+    )
 
     # Docker does not allow mounting of subfolders from volumes as the following:
     #   `volume_name/inputs:/target_folder/inputs`
@@ -149,6 +157,7 @@ def get_dynamic_sidecar_spec(
                 run_id=scheduler_data.run_id,
                 project_id=scheduler_data.project_id,
                 user_id=scheduler_data.user_id,
+                volume_size_limit=volume_size_limits.get(f"{path_to_mount}"),
             )
         )
     # state paths now get mounted via different driver and are synced to s3 automatically
@@ -175,6 +184,7 @@ def get_dynamic_sidecar_spec(
                     run_id=scheduler_data.run_id,
                     project_id=scheduler_data.project_id,
                     user_id=scheduler_data.user_id,
+                    volume_size_limit=volume_size_limits.get(f"{path_to_mount}"),
                 )
             )
 
@@ -239,6 +249,8 @@ def get_dynamic_sidecar_spec(
             "swarm_stack_name": dynamic_sidecar_settings.SWARM_STACK_NAME,  # required for listing services with uuid
             DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL: scheduler_data.as_label_data(),
             "service_image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,
+            "key": scheduler_data.key,
+            "version": scheduler_data.version,
         },
         "name": scheduler_data.service_name,
         "networks": [{"Target": swarm_network_id}],
@@ -253,6 +265,9 @@ def get_dynamic_sidecar_spec(
                 "Hosts": [],
                 "Image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,
                 "Init": True,
+                "CapabilityAdd": [
+                    "CAP_LINUX_IMMUTABLE",
+                ],
                 "Labels": {
                     # NOTE: these labels get on the tasks and that is also useful to trace
                     "user_id": f"{scheduler_data.user_id}",

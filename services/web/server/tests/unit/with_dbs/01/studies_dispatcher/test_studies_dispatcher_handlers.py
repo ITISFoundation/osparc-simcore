@@ -16,14 +16,13 @@ from aiohttp.test_utils import TestClient, TestServer
 from aioresponses import aioresponses
 from models_library.projects_state import ProjectLocked, ProjectStatus
 from pydantic import BaseModel, ByteSize, parse_obj_as
-from pytest import FixtureRequest, MonkeyPatch
+from pytest import FixtureRequest
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserRole
 from pytest_simcore.pydantic_models import iter_model_examples_in_module
 from servicelib.json_serialization import json_dumps
 from settings_library.redis import RedisSettings
-from simcore_service_webserver import catalog
 from simcore_service_webserver.studies_dispatcher._core import ViewerInfo
 from simcore_service_webserver.studies_dispatcher._rest_handlers import ServiceGet
 from sqlalchemy.sql import text
@@ -34,7 +33,7 @@ from yarl import URL
 #
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def postgres_db(postgres_db: sa.engine.Engine) -> sa.engine.Engine:
     #
     # Extends postgres_db fixture (called with web_server) to inject tables and start redis
@@ -270,17 +269,23 @@ async def test_api_list_services(client: TestClient):
 
 
 @pytest.fixture
-async def catalog_subsystem_mock(monkeypatch: MonkeyPatch) -> None:
+def catalog_subsystem_mock(mocker: MockerFixture) -> None:
     services_in_project = [
         {"key": "simcore/services/frontend/file-picker", "version": "1.0.0"}
-    ] + [{"key": s.key, "version": s.version} for s in FAKE_VIEWS_LIST]
+    ]
+    services_in_project += [
+        {"key": s.key, "version": s.version} for s in FAKE_VIEWS_LIST
+    ]
 
-    async def mocked_get_services_for_user(*args, **kwargs):
+    mock = mocker.patch(
+        "simcore_service_webserver.projects._crud_read_utils.get_services_for_user_in_product",
+        autospec=True,
+    )
+
+    async def _mocked_get_services_for_user(*args, **kwargs):
         return services_in_project
 
-    monkeypatch.setattr(
-        catalog, "get_services_for_user_in_product", mocked_get_services_for_user
-    )
+    mock.side_effect = _mocked_get_services_for_user
 
 
 @pytest.fixture

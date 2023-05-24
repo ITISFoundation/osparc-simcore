@@ -4,6 +4,7 @@ import os
 import socket
 
 import aiopg.sa
+import sqlalchemy as sa
 import tenacity
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import RowProxy
@@ -31,7 +32,7 @@ async def _get_node_from_db(
         project_id,
     )
     result = await connection.execute(
-        comp_tasks.select(
+        sa.select(comp_tasks).where(
             and_(
                 comp_tasks.c.node_id == node_uuid,
                 comp_tasks.c.project_id == project_id,

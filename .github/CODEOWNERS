@@ -37,7 +37,7 @@ Makefile                                  @pcrespov @sanderegg
 /services/static-webserver                @GitHK
 /services/static-webserver/client/        @odeimaiz
 /services/storage/                        @sanderegg @pcrespov
-/services/web/server/                     @pcrespov @sanderegg @GitHK
+/services/web/server/                     @pcrespov @sanderegg @GitHK @matusdrobuliak66
 /tests/environment-setup/                 @pcrespov
 /tests/performance/                       @pcrespov
 /tests/public-api/                        @pcrespov

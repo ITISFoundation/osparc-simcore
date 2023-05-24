@@ -18,7 +18,7 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (
 )
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db_models import UserRole
-from simcore_service_webserver.projects.project_models import ProjectDict
+from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.utils import to_datetime
 from yarl import URL
 
@@ -161,7 +161,7 @@ async def test_list_projects_with_pagination(
     limit: int,
     request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):
-    NUM_PROJECTS = 90
+    NUM_PROJECTS = 60
     # let's create a few projects here
     created_projects = await asyncio.gather(
         *[

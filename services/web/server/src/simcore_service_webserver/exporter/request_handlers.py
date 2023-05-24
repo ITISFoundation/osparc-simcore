@@ -10,10 +10,10 @@ from models_library.projects_state import ProjectStatus
 
 from .._constants import RQ_PRODUCT_KEY
 from ..login.decorators import RQT_USERID_KEY, login_required
-from ..projects.project_lock import lock_project
+from ..projects.lock import lock_project
 from ..projects.projects_api import retrieve_and_notify_project_locked_state
 from ..security.decorators import permission_required
-from ..users_api import get_user_name
+from ..users.api import get_user_name
 from .exceptions import ExporterException
 from .export_import import study_duplicate, study_export, study_import
 from .formatters import FormatterV1

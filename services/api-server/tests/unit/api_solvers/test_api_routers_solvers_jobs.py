@@ -7,6 +7,7 @@ from pprint import pprint
 from typing import Any, Iterator
 from zipfile import ZipFile
 
+import arrow
 import boto3
 import httpx
 import pytest
@@ -14,10 +15,12 @@ import respx
 from faker import Faker
 from fastapi import FastAPI
 from models_library.services import ServiceDockerData
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, HttpUrl, parse_obj_as
 from respx import MockRouter
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.models.schemas.jobs import Job, JobInputs, JobStatus
+from simcore_service_api_server.plugins.director_v2 import ComputationTaskGet
 from starlette import status
 
 
@@ -57,7 +60,6 @@ def presigned_download_link(
     bucket_name: str,
     mocked_s3_server_url: HttpUrl,
 ) -> Iterator[AnyUrl]:
-
     s3_client = boto3.client(
         "s3",
         endpoint_url=mocked_s3_server_url,
@@ -102,7 +104,6 @@ def mocked_directorv2_service_api(
         assert_all_called=False,
         assert_all_mocked=True,  # IMPORTANT: KEEP always True!
     ) as respx_mock:
-
         # check that what we emulate, actually still exists
         path = "/v2/computations/{project_id}/tasks/-/logfile"
         assert path in oas["paths"]
@@ -252,6 +253,9 @@ async def test_run_solver_job(
         "cluster_id",
         "url",
         "stop_url",
+        "submitted",
+        "started",
+        "stopped",
     } == set(oas["components"]["schemas"]["ComputationGet"]["properties"].keys())
 
     # CREATE and optionally start
@@ -260,29 +264,39 @@ async def test_run_solver_job(
         name="create_computation_v2_computations_post",
     ).respond(
         status.HTTP_201_CREATED,
-        json={
-            "id": project_id,
-            "state": "UNKNOWN",
-            "result": "string",
-            "pipeline_details": {
-                "adjacency_list": {
-                    "3fa85f64-5717-4562-b3fc-2c963f66afa6": [
-                        "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-                    ],
-                },
-                "node_states": {
-                    "3fa85f64-5717-4562-b3fc-2c963f66afa6": {
-                        "modified": True,
-                        "dependencies": ["3fa85f64-5717-4562-b3fc-2c963f66afa6"],
-                        "currentStatus": "NOT_STARTED",
+        json=jsonable_encoder(
+            ComputationTaskGet.parse_obj(
+                {
+                    "id": project_id,
+                    "state": "UNKNOWN",
+                    "result": "string",
+                    "pipeline_details": {
+                        "adjacency_list": {
+                            "3fa85f64-5717-4562-b3fc-2c963f66afa6": [
+                                "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                            ],
+                        },
+                        "node_states": {
+                            "3fa85f64-5717-4562-b3fc-2c963f66afa6": {
+                                "modified": True,
+                                "dependencies": [
+                                    "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                                ],
+                                "currentStatus": "NOT_STARTED",
+                            },
+                        },
+                        "progress": 0.0,
                     },
-                },
-            },
-            "iteration": 1,
-            "cluster_id": 0,
-            "url": "http://test.com",
-            "stop_url": "http://test.com",
-        },
+                    "iteration": 1,
+                    "cluster_id": 0,
+                    "url": "http://test.com",
+                    "stop_url": "http://test.com",
+                    "started": None,
+                    "stopped": None,
+                    "submitted": arrow.utcnow().datetime.isoformat(),
+                }
+            )
+        ),
     )
 
     # catalog_client.get_solver
@@ -330,7 +344,7 @@ async def test_run_solver_job(
         },
     )
 
-    # ---------
+    # ---------------------------------------------------------------------------------------------------------
 
     resp = await client.get("/v0/meta")
     assert resp.status_code == 200
@@ -339,7 +353,14 @@ async def test_run_solver_job(
     resp = await client.post(
         f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs",
         auth=auth,
-        json=JobInputs(values={"x": 3.14, "n": 42}).dict(),
+        json=JobInputs(
+            values={
+                "x": 3.14,
+                "n": 42,
+                # Tests https://github.com/ITISFoundation/osparc-issues/issues/948
+                "a_list": [1, 2, 3],
+            }
+        ).dict(),
     )
     assert resp.status_code == status.HTTP_200_OK
 

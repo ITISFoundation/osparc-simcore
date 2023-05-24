@@ -3,9 +3,9 @@
 # pylint: disable=protected-access
 
 import asyncio
+import datetime
 import logging
 import sys
-from datetime import datetime
 from typing import Any, AsyncIterable, AsyncIterator
 from uuid import UUID, uuid4
 
@@ -335,8 +335,10 @@ def labels_example(request: FixtureRequest) -> SimcoreServiceLabels:
     return request.param
 
 
-@pytest.fixture(params=[None, datetime.utcnow()])
-def time_dy_sidecar_became_unreachable(request: FixtureRequest) -> datetime | None:
+@pytest.fixture(params=[None, datetime.datetime.now(tz=datetime.timezone.utc)])
+def time_dy_sidecar_became_unreachable(
+    request: FixtureRequest,
+) -> datetime.datetime | None:
     return request.param
 
 
@@ -344,7 +346,7 @@ def time_dy_sidecar_became_unreachable(request: FixtureRequest) -> datetime | No
 def mock_scheduler_data(
     labels_example: SimcoreServiceLabels,
     scheduler_data: SchedulerData,
-    time_dy_sidecar_became_unreachable: datetime | None,
+    time_dy_sidecar_became_unreachable: datetime.datetime | None,
     service_name: str,
 ) -> SchedulerData:
     # test all possible cases
@@ -840,13 +842,11 @@ async def named_volumes(
 async def is_volume_present(
     async_docker_client: aiodocker.Docker, volume_name: str
 ) -> bool:
-    docker_volume = DockerVolume(async_docker_client, volume_name)
-    try:
-        await docker_volume.show()
-        return True
-    except aiodocker.DockerError as e:
-        assert e.message == f"get {volume_name}: no such volume"
-        return False
+    list_of_volumes = await async_docker_client.volumes.list()
+    for volume in list_of_volumes.get("Volumes", []):
+        if volume["Name"] == volume_name:
+            return True
+    return False
 
 
 async def test_remove_volume_from_node_ok(

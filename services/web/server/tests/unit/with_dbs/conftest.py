@@ -35,6 +35,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict
+from pytest_simcore.helpers.utils_projects import NewProject
 from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
 from redis import Redis
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
@@ -43,16 +44,15 @@ from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.common_aiopg_utils import DSN
 from settings_library.email import SMTPSettings
 from settings_library.redis import RedisDatabase, RedisSettings
-from simcore_service_webserver import catalog
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
-from simcore_service_webserver.groups_api import (
+from simcore_service_webserver.groups.api import (
     add_user_in_group,
     create_user_group,
     delete_user_group,
     list_user_groups,
 )
-from simcore_service_webserver.projects.project_models import ProjectDict
+from simcore_service_webserver.projects.models import ProjectDict
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -204,9 +204,9 @@ def osparc_product_name() -> str:
 
 
 @pytest.fixture
-async def catalog_subsystem_mock(
-    monkeypatch: MonkeyPatch,
-) -> Callable[[list[ProjectDict]], None]:
+def catalog_subsystem_mock(
+    mocker: MockerFixture,
+) -> Iterator[Callable[[list[ProjectDict]], None]]:
     """
     Patches some API calls in the catalog plugin
     """
@@ -221,14 +221,23 @@ async def catalog_subsystem_mock(
                 ]
             )
 
-    async def mocked_get_services_for_user(*args, **kwargs):
+    async def _mocked_get_services_for_user(*args, **kwargs):
         return services_in_project
 
-    monkeypatch.setattr(
-        catalog, "get_services_for_user_in_product", mocked_get_services_for_user
-    )
+    for namespace in (
+        "simcore_service_webserver.projects._crud_read_utils.get_services_for_user_in_product",
+        "simcore_service_webserver.projects._handlers_crud.get_services_for_user_in_product",
+    ):
+        mock = mocker.patch(
+            namespace,
+            autospec=True,
+        )
 
-    return _creator
+        mock.side_effect = _mocked_get_services_for_user
+
+    yield _creator
+
+    services_in_project.clear()
 
 
 @pytest.fixture
@@ -296,14 +305,14 @@ async def storage_subsystem_mock(mocker: MockerFixture) -> MockedStorageSubsyste
         )
 
     mock = mocker.patch(
-        "simcore_service_webserver.projects._create_utils.copy_data_folders_from_project",
+        "simcore_service_webserver.projects._crud_create_utils.copy_data_folders_from_project",
         autospec=True,
         side_effect=_mock_copy_data_from_project,
     )
 
     async_mock = mocker.AsyncMock(return_value="")
     mock1 = mocker.patch(
-        "simcore_service_webserver.projects._delete_utils.delete_data_folders_of_project",
+        "simcore_service_webserver.projects._crud_delete_utils.delete_data_folders_of_project",
         autospec=True,
         side_effect=async_mock,
     )
@@ -315,7 +324,7 @@ async def storage_subsystem_mock(mocker: MockerFixture) -> MockedStorageSubsyste
     )
 
     mock3 = mocker.patch(
-        "simcore_service_webserver.projects._create_utils.get_project_total_size_simcore_s3",
+        "simcore_service_webserver.projects._crud_create_utils.get_project_total_size_simcore_s3",
         autospec=True,
         return_value=parse_obj_as(ByteSize, "1Gib"),
     )
@@ -441,7 +450,7 @@ def postgres_service(docker_services, postgres_dsn):
     return url
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="module")
 def postgres_db(
     postgres_dsn: dict, postgres_service: str
 ) -> Iterator[sa.engine.Engine]:
@@ -654,3 +663,19 @@ def mock_progress_bar(mocker: MockerFixture) -> Any:
         return_value=mock_bar,
     )
     return mock_bar
+
+
+@pytest.fixture
+async def user_project(
+    client, fake_project, logged_user, tests_data_dir: Path, osparc_product_name: str
+) -> AsyncIterator[ProjectDict]:
+    async with NewProject(
+        fake_project,
+        client.app,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+        tests_data_dir=tests_data_dir,
+    ) as project:
+        print("-----> added project", project["name"])
+        yield project
+        print("<----- removed project", project["name"])

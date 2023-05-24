@@ -32,15 +32,12 @@ from simcore_service_webserver.director_v2._core_computations import (
 from .._constants import INDEX_RESOURCE_NAME
 from ..garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
 from ..products.plugin import get_product_name
-from ..projects.project_models import ProjectDict
-from ..projects.projects_db import ANY_USER, ProjectDBAPI
-from ..projects.projects_exceptions import (
-    ProjectInvalidRightsError,
-    ProjectNotFoundError,
-)
+from ..projects.db import ANY_USER, ProjectDBAPI
+from ..projects.exceptions import ProjectInvalidRightsError, ProjectNotFoundError
+from ..projects.models import ProjectDict
 from ..redis import get_redis_lock_manager_client
 from ..security.api import is_anonymous, remember
-from ..storage_api import copy_data_folders_from_project
+from ..storage.api import copy_data_folders_from_project
 from ..utils import compose_support_error_msg
 from ..utils_aiohttp import create_redirect_response
 from ._constants import (
@@ -205,11 +202,8 @@ async def copy_study_to_account(
     - Replaces template parameters by values passed in query
     - Avoids multiple copies of the same template on each account
     """
-    from ..projects.projects_db import APP_PROJECT_DBAPI
-    from ..projects.projects_utils import (
-        clone_project_document,
-        substitute_parameterized_inputs,
-    )
+    from ..projects.db import APP_PROJECT_DBAPI
+    from ..projects.utils import clone_project_document, substitute_parameterized_inputs
 
     db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
     template_parameters = dict(request.query)
