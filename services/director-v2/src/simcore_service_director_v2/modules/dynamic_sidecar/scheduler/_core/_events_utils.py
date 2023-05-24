@@ -12,6 +12,7 @@ from models_library.projects_nodes_io import NodeIDStr
 from models_library.rabbitmq_messages import InstrumentationRabbitMessage
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
+from models_library.volumes import VolumeCategory, VolumeStatus
 from servicelib.fastapi.long_running_tasks.client import (
     ProgressCallback,
     TaskClientResultError,
@@ -141,6 +142,11 @@ async def service_save_state(
     await dynamic_sidecar_client.save_service_state(
         scheduler_data.endpoint, progress_callback=progress_callback
     )
+    await dynamic_sidecar_client.update_volume_state(
+        scheduler_data.endpoint,
+        volume_category=VolumeCategory.STATES,
+        volume_status=VolumeStatus.CONTENT_WAS_SAVED,
+    )
 
 
 async def service_push_outputs(
@@ -152,6 +158,11 @@ async def service_push_outputs(
     scheduler_data: SchedulerData = _get_scheduler_data(app, node_uuid)
     await dynamic_sidecar_client.push_service_output_ports(
         scheduler_data.endpoint, progress_callback=progress_callback
+    )
+    await dynamic_sidecar_client.update_volume_state(
+        scheduler_data.endpoint,
+        volume_category=VolumeCategory.OUTPUTS,
+        volume_status=VolumeStatus.CONTENT_WAS_SAVED,
     )
 
 
@@ -414,6 +425,28 @@ async def prepare_services_environment(
     app_settings: AppSettings = app.state.settings
     dynamic_sidecar_client = get_dynamic_sidecar_client(app, scheduler_data.node_uuid)
     dynamic_sidecar_endpoint = scheduler_data.endpoint
+
+    # update if volume requires saving
+    volume_status: VolumeStatus = (
+        VolumeStatus.CONTENT_NEEDS_TO_BE_SAVED
+        if scheduler_data.dynamic_sidecar.service_removal_state.can_save
+        else VolumeStatus.CONTENT_NO_SAVE_REQUIRED
+    )
+
+    await logged_gather(
+        *(
+            dynamic_sidecar_client.update_volume_state(
+                scheduler_data.endpoint,
+                volume_category=VolumeCategory.STATES,
+                volume_status=volume_status,
+            ),
+            dynamic_sidecar_client.update_volume_state(
+                scheduler_data.endpoint,
+                volume_category=VolumeCategory.OUTPUTS,
+                volume_status=volume_status,
+            ),
+        )
+    )
 
     async def _pull_outputs_and_state():
         tasks = [

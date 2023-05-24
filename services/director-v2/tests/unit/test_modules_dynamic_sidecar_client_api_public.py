@@ -9,6 +9,7 @@ import pytest
 from faker import Faker
 from fastapi import FastAPI, status
 from httpx import HTTPError, Response
+from models_library.volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl, parse_obj_as
 from pytest import LogCaptureFixture, MonkeyPatch
 from pytest_mock import MockerFixture
@@ -328,6 +329,28 @@ async def test_detach_container_from_network(
                 dynamic_sidecar_endpoint,
                 container_id="container_id",
                 network_id="network_id",
+            )
+            is None
+        )
+
+
+@pytest.mark.parametrize("volume_category", VolumeCategory)
+@pytest.mark.parametrize("volume_status", VolumeStatus)
+async def test_update_volume_state(
+    get_patched_client: Callable,
+    dynamic_sidecar_endpoint: AnyHttpUrl,
+    volume_category: VolumeCategory,
+    volume_status: VolumeStatus,
+) -> None:
+    with get_patched_client(
+        "put_volumes",
+        return_value=Response(status_code=status.HTTP_204_NO_CONTENT),
+    ) as client:
+        assert (
+            await client.update_volume_state(
+                dynamic_sidecar_endpoint,
+                volume_category=volume_category,
+                volume_status=volume_status,
             )
             is None
         )

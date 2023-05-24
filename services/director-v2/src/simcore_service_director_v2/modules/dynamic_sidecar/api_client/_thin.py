@@ -4,6 +4,7 @@ from typing import Any
 
 from fastapi import FastAPI, status
 from httpx import Response, Timeout
+from models_library.volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 
@@ -225,3 +226,15 @@ class ThinDynamicSidecarClient(BaseThinClient):
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "/containers:restart")
         return await self.client.post(url)
+
+    @retry_on_errors
+    @expect_status(status.HTTP_204_NO_CONTENT)
+    async def put_volumes(
+        self,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
+        volume_category: VolumeCategory,
+        volume_status: VolumeStatus,
+    ) -> Response:
+        url = self._get_url(dynamic_sidecar_endpoint, f"/volumes/{volume_category}")
+
+        return await self.client.put(url, json={"status": volume_status})

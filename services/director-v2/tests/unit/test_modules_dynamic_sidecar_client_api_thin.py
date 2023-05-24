@@ -7,6 +7,7 @@ from typing import Any, Callable, Optional
 import pytest
 from fastapi import FastAPI, status
 from httpx import Response
+from models_library.volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl, parse_obj_as
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -238,6 +239,31 @@ async def test_post_containers_networks_detach(
 
     response = await thin_client.post_containers_networks_detach(
         dynamic_sidecar_endpoint, container_id=container_id, network_id="network_id"
+    )
+    assert_responses(mock_response, response)
+
+
+@pytest.mark.parametrize("volume_category", VolumeCategory)
+@pytest.mark.parametrize("volume_status", VolumeStatus)
+async def test_put_volumes(
+    thin_client: ThinDynamicSidecarClient,
+    dynamic_sidecar_endpoint: AnyHttpUrl,
+    mock_request: MockRequestType,
+    volume_category: str,
+    volume_status: VolumeStatus,
+) -> None:
+    mock_response = Response(status.HTTP_204_NO_CONTENT)
+    mock_request(
+        "PUT",
+        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/volumes/{volume_category}",
+        mock_response,
+        None,
+    )
+
+    response = await thin_client.put_volumes(
+        dynamic_sidecar_endpoint,
+        volume_category=volume_category,
+        volume_status=volume_status,
     )
     assert_responses(mock_response, response)
 
