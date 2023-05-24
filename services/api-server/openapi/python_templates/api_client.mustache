@@ -297,9 +297,9 @@ class ApiClient(object):
             if klass in self.NATIVE_TYPES_MAPPING:
                 klass = self.NATIVE_TYPES_MAPPING[klass]
             elif klass.startswith("AnyOf"):
-                for klass in [File, float, int, bool, str]:
+                for tmp_klass in [File, float, int, bool, str]:
                     with suppress(Exception):
-                        return self.__deserialize(data, klass)
+                        return self.__deserialize(data, tmp_klass)
                 raise ValueError(f"Cannot deserialize {data}")
             else:
                 klass = getattr({{modelPackage}}, klass)
