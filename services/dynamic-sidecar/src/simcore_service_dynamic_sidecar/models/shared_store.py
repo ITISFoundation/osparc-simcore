@@ -7,14 +7,37 @@ from fastapi import FastAPI
 from pydantic import BaseModel, Field, PrivateAttr
 
 from ..core.settings import ApplicationSettings
-from .volumes import VolumeCategory, VolumeState
+from .volumes import VolumeCategory, VolumeState, VolumeStatus
 
 ContainerNameStr: TypeAlias = str
 
 STORE_FILE_NAME: Final[str] = "data.json"
 
 
-class SharedStore(BaseModel):
+class _StoreMixin(BaseModel):
+    _shared_store_dir: Path | None = PrivateAttr()
+    _persist_lock: Lock | None = PrivateAttr()
+
+    async def __aenter__(self) -> None:
+        assert self._persist_lock  # nosec
+        await self._persist_lock.acquire()
+        return None
+
+    async def __aexit__(self, *args) -> None:
+        await self._persist_to_disk()
+
+        assert self._persist_lock  # nosec
+        self._persist_lock.release()
+
+    async def _persist_to_disk(self) -> None:
+        assert self._shared_store_dir  # nosec
+        async with aiofiles.open(
+            self._shared_store_dir / STORE_FILE_NAME, "w"
+        ) as data_file:
+            await data_file.write(self.json())
+
+
+class SharedStore(_StoreMixin):
     """
     When used as a context manager will persist the state to the disk upon exit.
 
@@ -28,9 +51,6 @@ class SharedStore(BaseModel):
             shared_store.container_names = copied_list
     """
 
-    _shared_store_dir: Path | None = PrivateAttr()
-    _persist_lock: Lock | None = PrivateAttr()
-
     compose_spec: str | None = Field(
         default=None, description="stores the stringified compose spec"
     )
@@ -43,43 +63,39 @@ class SharedStore(BaseModel):
         default_factory=dict, description="persist the state of each volume"
     )
 
-    async def __aenter__(self) -> None:
-        assert self._persist_lock  # nosec
-        await self._persist_lock.acquire()
-        return None
-
-    async def __aexit__(self, *args) -> None:
-        await self._persist_to_disk()
-
-        assert self._persist_lock  # nosec
-        self._persist_lock.release()
-
-    def post_init(self, shared_store_dir: Path) -> None:
-        self._shared_store_dir = shared_store_dir
-        self._persist_lock = Lock()
+    async def _setup_initial_volume_states(self) -> None:
+        async with self:
+            for category, status in [
+                (VolumeCategory.INPUTS, VolumeStatus.CONTENT_NO_SAVE_REQUIRED),
+                (VolumeCategory.SHARED_STORE, VolumeStatus.CONTENT_NO_SAVE_REQUIRED),
+                (VolumeCategory.OUTPUTS, VolumeStatus.CONTENT_NEEDS_TO_BE_SAVED),
+                (VolumeCategory.STATES, VolumeStatus.CONTENT_NEEDS_TO_BE_SAVED),
+            ]:
+                self.volume_states[category] = VolumeState(status=status)
 
     @classmethod
     async def init_from_disk(cls, shared_store_dir: Path) -> "SharedStore":
+        def _init_private(obj: SharedStore):
+            # pylint: disable=protected-access
+            obj._shared_store_dir = shared_store_dir
+            obj._persist_lock = Lock()
+
         data_file_path = shared_store_dir / STORE_FILE_NAME
-        if data_file_path.exists():
-            # if the sidecar is started for a second time (usually the container dies)
-            # it will load the previous data which was stored
-            async with aiofiles.open(shared_store_dir / STORE_FILE_NAME) as data_file:
-                file_content = await data_file.read()
 
-            obj = cls.parse_obj(file_content)
-        else:
+        if not data_file_path.exists():
             obj = cls()
+            _init_private(obj)
+            await obj._setup_initial_volume_states()
+            return obj
 
-        obj.post_init(shared_store_dir)
+        # if the sidecar is started for a second time (usually the container dies)
+        # it will load the previous data which was stored
+        async with aiofiles.open(shared_store_dir / STORE_FILE_NAME) as data_file:
+            file_content = await data_file.read()
+
+        obj = cls.parse_obj(file_content)
+        _init_private(obj)
         return obj
-
-    async def _persist_to_disk(self) -> None:
-        assert self._shared_store_dir  # nosec
-        async with aiofiles.open(
-            self._shared_store_dir / STORE_FILE_NAME, "w"
-        ) as data_file:
-            await data_file.write(self.json())
 
 
 def setup_shared_store(app: FastAPI) -> None:

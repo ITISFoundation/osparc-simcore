@@ -41,6 +41,7 @@ class VolumeState(BaseModel):
     status: VolumeStatus
     last_changed: datetime = Field(default_factory=lambda: arrow.utcnow().datetime)
 
-    def __eq__(self, other: "VolumeState") -> bool:
+    def __eq__(self, other: object) -> bool:
         # only include status for equality last_changed is not important
-        return self.status == other.status
+        is_equal: bool = self.status == getattr(other, "status", None)
+        return is_equal
