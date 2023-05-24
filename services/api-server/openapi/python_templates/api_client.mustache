@@ -23,7 +23,8 @@ from {{packageName}}.configuration import Configuration
 import {{modelPackage}}
 from {{packageName}} import rest
 from {{packageName}}.exceptions import ApiValueError
-
+from .file import File
+from contextlib import suppress
 
 class ApiClient(object):
     """Generic API client for OpenAPI client library builds.
@@ -295,6 +296,11 @@ class ApiClient(object):
             # convert str to class
             if klass in self.NATIVE_TYPES_MAPPING:
                 klass = self.NATIVE_TYPES_MAPPING[klass]
+            elif klass.startswith("AnyOf"):
+                for klass in [File, float, int, bool, str]:
+                    with suppress(Exception):
+                        return self.__deserialize(data, klass)
+                raise ValueError(f"Cannot deserialize {data}")
             else:
                 klass = getattr({{modelPackage}}, klass)
 
@@ -560,8 +566,12 @@ class ApiClient(object):
                                  content_disposition).group(1)
             path = os.path.join(os.path.dirname(path), filename)
 
-        with open(path, "wb") as f:
-            f.write(response.data)
+        try:
+            with open(path, "w") as f:
+                f.write(response.data)
+        except TypeError:
+            with open(path, "wb") as f:
+                f.write(response.data)
 
         return path
 
