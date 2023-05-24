@@ -9,7 +9,7 @@ import datetime
 import functools
 import traceback
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Awaitable, Callable, NoReturn
+from typing import Any, AsyncIterator, Awaitable, Callable, Coroutine, NoReturn
 from unittest import mock
 from uuid import uuid4
 
@@ -233,6 +233,22 @@ async def dask_client(
 
     try:
         assert client.app.state.engine is not None
+
+        # check we can run some simple python script
+        def _square(x):
+            return x**2
+
+        def neg(x):
+            return -x
+
+        a = client.backend.client.map(_square, range(10))
+        b = client.backend.client.map(neg, a)
+        total = client.backend.client.submit(sum, b)
+        future = total.result()
+        assert future
+        assert isinstance(future, Coroutine)
+        result = await future
+        assert result == -285
     except AttributeError:
         # enforces existance of 'app.state.engine' and sets to None
         client.app.state.engine = None
