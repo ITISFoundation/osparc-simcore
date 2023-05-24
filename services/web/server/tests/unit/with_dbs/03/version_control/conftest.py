@@ -27,7 +27,7 @@ from simcore_service_webserver._meta import API_VTAG as VX
 from simcore_service_webserver.db import APP_DB_ENGINE_KEY
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.log import setup_logging
-from simcore_service_webserver.projects.project_models import ProjectDict
+from simcore_service_webserver.projects.models import ProjectDict
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
 
@@ -205,7 +205,7 @@ async def request_delete_project(
         autospec=True,
     )
     fire_and_forget_call_to_storage: mock.Mock = mocker.patch(
-        "simcore_service_webserver.projects._delete_utils.delete_data_folders_of_project",
+        "simcore_service_webserver.projects._crud_delete_utils.delete_data_folders_of_project",
         autospec=True,
     )
 

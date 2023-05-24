@@ -266,7 +266,7 @@ pyyaml==5.4.1
     #   responses
 regex==2023.5.5
     # via cfn-lint
-requests==2.30.0
+requests==2.31.0
     # via
     #   -r requirements/_test.in
     #   docker

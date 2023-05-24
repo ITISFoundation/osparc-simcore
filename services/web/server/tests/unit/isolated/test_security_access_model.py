@@ -14,7 +14,7 @@ from pathlib import Path
 
 import jsondiff
 import pytest
-from simcore_service_webserver.projects.project_models import ProjectDict
+from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.security._access_model import (
     RoleBasedAccessModel,
     check_access,

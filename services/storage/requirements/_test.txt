@@ -244,7 +244,7 @@ pyyaml==5.4.1
     #   moto
     #   openapi-spec-validator
     #   responses
-requests==2.30.0
+requests==2.31.0
     # via
     #   docker
     #   moto

@@ -32,7 +32,7 @@ from pytest_simcore.helpers.utils_projects import NewProject, delete_all_project
 from settings_library.catalog import CatalogSettings
 from simcore_service_webserver.application_settings import get_settings
 from simcore_service_webserver.catalog.settings import get_plugin_settings
-from simcore_service_webserver.projects.project_models import ProjectDict
+from simcore_service_webserver.projects.models import ProjectDict
 
 
 @pytest.fixture

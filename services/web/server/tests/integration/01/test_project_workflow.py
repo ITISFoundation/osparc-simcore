@@ -37,8 +37,8 @@ from simcore_service_webserver.director_v2.plugin import setup_director_v2
 from simcore_service_webserver.garbage_collector import setup_garbage_collector
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.products.plugin import setup_products
+from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.plugin import setup_projects
-from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security.plugin import setup_security
@@ -128,14 +128,14 @@ async def storage_subsystem_mock(mocker: MockerFixture):
         )
 
     mock = mocker.patch(
-        "simcore_service_webserver.projects._create_utils.copy_data_folders_from_project",
+        "simcore_service_webserver.projects._crud_create_utils.copy_data_folders_from_project",
         autospec=True,
         side_effect=_mock_copy_data_from_project,
     )
 
     # requests storage to delete data
     mock1 = mocker.patch(
-        "simcore_service_webserver.projects._delete_utils.delete_data_folders_of_project",
+        "simcore_service_webserver.projects._crud_delete_utils.delete_data_folders_of_project",
         return_value="",
     )
     return mock, mock1
@@ -163,8 +163,8 @@ def catalog_subsystem_mock(
         return services_in_project
 
     for namespace in (
-        "simcore_service_webserver.projects._read_utils.get_services_for_user_in_product",
-        "simcore_service_webserver.projects.projects_handlers_crud.get_services_for_user_in_product",
+        "simcore_service_webserver.projects._crud_read_utils.get_services_for_user_in_product",
+        "simcore_service_webserver.projects._handlers_crud.get_services_for_user_in_product",
     ):
         mock = mocker.patch(
             namespace,

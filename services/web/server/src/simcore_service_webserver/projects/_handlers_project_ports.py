@@ -24,14 +24,14 @@ from .._meta import api_version_prefix as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from . import _ports_utils, projects_api
-from .project_models import ProjectDict
-from .projects_db import ProjectDBAPI
-from .projects_exceptions import (
+from ._handlers_crud import ProjectPathParams, RequestContext
+from .db import ProjectDBAPI
+from .exceptions import (
     NodeNotFoundError,
     ProjectInvalidRightsError,
     ProjectNotFoundError,
 )
-from .projects_handlers_crud import ProjectPathParams, RequestContext
+from .models import ProjectDict
 
 log = logging.getLogger(__name__)
 

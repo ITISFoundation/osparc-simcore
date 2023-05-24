@@ -130,7 +130,7 @@ pyyaml==5.4.1
     # via
     #   -c requirements/_aiohttp.txt
     #   openapi-spec-validator
-requests==2.30.0
+requests==2.31.0
     # via docker
 six==1.16.0
     # via

@@ -64,25 +64,20 @@ from ..socketio.messages import (
     send_messages,
 )
 from ..storage import api as storage_api
-from ..users.api import get_user_name, get_user_role
+from ..users.api import UserNameDict, get_user_name, get_user_role
 from ..users.exceptions import UserNotFoundError
-from . import _delete_utils, _nodes_utils
-from .project_lock import (
-    UserNameDict,
-    get_project_locked_state,
-    is_project_locked,
-    lock_project,
-)
-from .project_models import ProjectDict
-from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
-from .projects_exceptions import (
+from . import _crud_delete_utils, _nodes_utils
+from .db import APP_PROJECT_DBAPI, ProjectDBAPI
+from .exceptions import (
     NodeNotFoundError,
     ProjectLockError,
     ProjectStartsTooManyDynamicNodes,
     ProjectTooManyProjectOpened,
 )
-from .projects_settings import ProjectsSettings, get_plugin_settings
-from .projects_utils import extract_dns_without_default_port
+from .lock import get_project_locked_state, is_project_locked, lock_project
+from .models import ProjectDict
+from .settings import ProjectsSettings, get_plugin_settings
+from .utils import extract_dns_without_default_port
 
 log = logging.getLogger(__name__)
 
@@ -118,7 +113,7 @@ async def get_project_for_user(
     project, project_type = await db.get_project(
         user_id,
         project_uuid,
-        check_permissions=check_permissions,
+        check_permissions=check_permissions,  # type: ignore[arg-type]
     )
 
     # adds state if it is not a template
@@ -176,12 +171,12 @@ async def submit_delete_project_task(
     raises ProjectInvalidRightsError
     raises ProjectNotFoundError
     """
-    await _delete_utils.mark_project_as_deleted(app, project_uuid, user_id)
+    await _crud_delete_utils.mark_project_as_deleted(app, project_uuid, user_id)
 
     # Ensures ONE delete task per (project,user) pair
     task = get_delete_project_task(project_uuid, user_id)
     if not task:
-        task = _delete_utils.schedule_task(
+        task = _crud_delete_utils.schedule_task(
             app,
             project_uuid,
             user_id,
@@ -195,7 +190,7 @@ async def submit_delete_project_task(
 def get_delete_project_task(
     project_uuid: ProjectID, user_id: UserID
 ) -> asyncio.Task | None:
-    if tasks := _delete_utils.get_scheduled_tasks(project_uuid, user_id):
+    if tasks := _crud_delete_utils.get_scheduled_tasks(project_uuid, user_id):
         assert len(tasks) == 1, f"{tasks=}"  # nosec
         task = tasks[0]
         return task
@@ -907,7 +902,8 @@ async def is_service_deprecated(
     )
     if deprecation_date := service.get("deprecated"):
         deprecation_date = parse_obj_as(datetime.datetime, deprecation_date)
-        return datetime.datetime.utcnow() > deprecation_date
+        deprecation_date_bool: bool = datetime.datetime.utcnow() > deprecation_date
+        return deprecation_date_bool
     return False
 
 
