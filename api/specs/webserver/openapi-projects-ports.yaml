@@ -20,7 +20,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_dict_uuid.UUID__simcore_service_webserver.projects.projects_ports_handlers.ProjectInputGet__'
+                $ref: '#/components/schemas/Envelope_dict_uuid.UUID__simcore_service_webserver.projects._handlers__ports.ProjectInputGet__'
     patch:
       tags:
       - project
@@ -50,7 +50,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_dict_uuid.UUID__simcore_service_webserver.projects.projects_ports_handlers.ProjectInputGet__'
+                $ref: '#/components/schemas/Envelope_dict_uuid.UUID__simcore_service_webserver.projects._handlers__ports.ProjectInputGet__'
   /projects/{project_id}/outputs:
     get:
       tags:
@@ -72,7 +72,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_dict_uuid.UUID__simcore_service_webserver.projects.projects_ports_handlers.ProjectOutputGet__'
+                $ref: '#/components/schemas/Envelope_dict_uuid.UUID__simcore_service_webserver.projects._handlers__ports.ProjectOutputGet__'
   /projects/{project_id}/metadata/ports:
     get:
       tags:
@@ -94,11 +94,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.projects.projects_ports_handlers.ProjectMetadataPortGet__'
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.projects._handlers__ports.ProjectMetadataPortGet__'
 components:
   schemas:
-    Envelope_dict_uuid.UUID__simcore_service_webserver.projects.projects_ports_handlers.ProjectInputGet__:
-      title: Envelope[dict[uuid.UUID, simcore_service_webserver.projects.projects_ports_handlers.ProjectInputGet]]
+    Envelope_dict_uuid.UUID__simcore_service_webserver.projects._handlers__ports.ProjectInputGet__:
+      title: Envelope[dict[uuid.UUID, simcore_service_webserver.projects._handlers__ports.ProjectInputGet]]
       type: object
       properties:
         data:
@@ -108,8 +108,8 @@ components:
             $ref: '#/components/schemas/ProjectInputGet'
         error:
           title: Error
-    Envelope_dict_uuid.UUID__simcore_service_webserver.projects.projects_ports_handlers.ProjectOutputGet__:
-      title: Envelope[dict[uuid.UUID, simcore_service_webserver.projects.projects_ports_handlers.ProjectOutputGet]]
+    Envelope_dict_uuid.UUID__simcore_service_webserver.projects._handlers__ports.ProjectOutputGet__:
+      title: Envelope[dict[uuid.UUID, simcore_service_webserver.projects._handlers__ports.ProjectOutputGet]]
       type: object
       properties:
         data:
@@ -119,8 +119,8 @@ components:
             $ref: '#/components/schemas/ProjectOutputGet'
         error:
           title: Error
-    Envelope_list_simcore_service_webserver.projects.projects_ports_handlers.ProjectMetadataPortGet__:
-      title: Envelope[list[simcore_service_webserver.projects.projects_ports_handlers.ProjectMetadataPortGet]]
+    Envelope_list_simcore_service_webserver.projects._handlers__ports.ProjectMetadataPortGet__:
+      title: Envelope[list[simcore_service_webserver.projects._handlers__ports.ProjectMetadataPortGet]]
       type: object
       properties:
         data:

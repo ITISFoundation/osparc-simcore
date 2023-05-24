@@ -25,10 +25,10 @@ from ..users.api import get_user_name
 from . import projects_api
 from ._permalink import update_or_pop_permalink_in_project
 from ._rest_schemas import ProjectGet
-from .project_models import ProjectDict
-from .projects_db import ProjectDBAPI
-from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
-from .projects_utils import NodesMap, clone_project_document, default_copy_project_name
+from .db import ProjectDBAPI
+from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
+from .models import ProjectDict
+from .utils import NodesMap, clone_project_document, default_copy_project_name
 
 OVERRIDABLE_DOCUMENT_KEYS = [
     "name",

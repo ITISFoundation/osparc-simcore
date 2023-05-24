@@ -5,7 +5,7 @@
 import datetime
 
 import pytest
-from simcore_service_webserver.projects.projects_db_utils import (
+from simcore_service_webserver.projects._db_utils import (
     convert_to_db_names,
     convert_to_schema_names,
 )

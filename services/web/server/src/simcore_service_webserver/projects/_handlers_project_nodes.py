@@ -30,16 +30,16 @@ from .._meta import api_version_prefix as VTAG
 from ..director_v2 import api
 from ..director_v2.exceptions import DirectorServiceError
 from ..login.decorators import login_required
-from ..projects.projects_db import ProjectDBAPI
 from ..security.decorators import permission_required
 from ..users.api import get_user_role
 from . import projects_api
-from .projects_exceptions import (
+from ._handlers_crud import ProjectPathParams, RequestContext
+from .db import ProjectDBAPI
+from .exceptions import (
     NodeNotFoundError,
     ProjectNotFoundError,
     ProjectStartsTooManyDynamicNodes,
 )
-from .projects_handlers_crud import ProjectPathParams, RequestContext
 
 log = logging.getLogger(__name__)
 

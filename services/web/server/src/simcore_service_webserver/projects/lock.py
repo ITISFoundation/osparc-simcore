@@ -12,7 +12,7 @@ from servicelib.background_task import periodic_task
 
 from ..redis import get_redis_lock_manager_client
 from ..users.api import UserNameDict
-from .projects_exceptions import ProjectLockError
+from .exceptions import ProjectLockError
 
 PROJECT_REDIS_LOCK_KEY: str = "project_lock:{}"
 PROJECT_LOCK_TIMEOUT: Final[datetime.timedelta] = datetime.timedelta(seconds=10)

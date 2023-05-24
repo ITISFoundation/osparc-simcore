@@ -19,7 +19,7 @@ from pydantic import BaseModel, ValidationError
 from pydantic.fields import Field
 from pydantic.types import PositiveInt
 
-from ..projects.project_models import ProjectDict
+from ..projects.models import ProjectDict
 from ..utils import compute_sha1_on_small_dataset, now_str
 from ..version_control.errors import UserUndefined
 from ..version_control.models import CommitID
