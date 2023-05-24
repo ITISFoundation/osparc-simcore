@@ -135,8 +135,7 @@ def _guess_progress_value(progress_match: re.Match[str]) -> float:
     if progress_match.group("fraction"):
         # this is of the 23/123 kind
         nums = progress_match.group("fraction").strip().split("/")
-        value = float(nums[0].strip()) / float(nums[1].strip())
-        return value
+        return float(nums[0].strip()) / float(nums[1].strip())
     # this is of the 0.0-1.0 kind
     return float(value_str.strip())
 
@@ -144,7 +143,7 @@ def _guess_progress_value(progress_match: re.Match[str]) -> float:
 async def _try_parse_progress(
     line: str,
 ) -> float | None:
-    try:
+    with log_catch(logger, reraise=False):
         # pattern might be like "timestamp log"
         log = line.strip("\n")
         splitted_log = log.split(" ", maxsplit=1)
@@ -153,10 +152,7 @@ async def _try_parse_progress(
                 log = splitted_log[1]
         if match := re.search(PROGRESS_REGEXP, log.lower()):
             return _guess_progress_value(match)
-    except (ValueError, ZeroDivisionError):
-        logger.warning(
-            "potential progress log could not be parsed. problematic log: %s", line
-        )
+
     return None
 
 
