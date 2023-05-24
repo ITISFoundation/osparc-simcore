@@ -8,7 +8,7 @@ from servicelib.aiohttp.rest_routing import (
 )
 
 from .._constants import APP_OPENAPI_SPECS_KEY
-from .request_handlers import rest_handler_functions
+from ._handlers import rest_handler_functions
 
 _logger = logging.getLogger(__name__)
 
