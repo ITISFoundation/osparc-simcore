@@ -129,12 +129,14 @@ null  :=
 space := $(null) #
 comma := ,
 
+CONTAINER_TEMPL_DIR := /tmp/openapi_templates
+export DOCKER_MOUNT := $(REPO_BASE_DIR)/services/api-server/openapi/python_templates:$(CONTAINER_TEMPL_DIR)
+
 client:
 	# cloning $(GIT_USER_ID)/$(GIT_REPO_ID) -> $@
 	git clone git@github.com:$(GIT_USER_ID)/$(GIT_REPO_ID).git $@
 	# TODO: if fails, add -b
-	cd client; git checkout "upgrade-${APP_VERSION}"
-
+	cd client; git checkout -b "upgrade-${APP_VERSION}"
 
 python-client: client openapi.json ## runs python client generator
 	# copies latest version of the openapi
@@ -150,8 +152,8 @@ python-client: client openapi.json ## runs python client generator
 		--output=/local/client \
 		--additional-properties=$(subst $(space),$(comma),$(strip $(ADDITIONAL_PROPS)))\
 		--package-name=osparc\
-		--release-note="Updated to $(APP_VERSION)"
-
+		--release-note="Updated to $(APP_VERSION)" \
+		--template-dir=$(CONTAINER_TEMPL_DIR)
 
 
 generator-help: ## help on client-api generator

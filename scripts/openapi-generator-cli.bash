@@ -30,7 +30,14 @@ GROUPID=$(stat --format=%g "$PWD")
 # TODO: check SAME digest. Perhaps push into itisfoundation repo?
 # openapitools/openapi-generator-cli   v4.2.3   sha256:c90e7f2d63340574bba015ad88a5abb55d5b25ab3d5460c02e14a566574e8d55
 
+# to mount a directory (e.g. to find custom templates, define the DOCKER_MOUNT environment variable)
+docker_mount=""
+if [ -v DOCKER_MOUNT ]; then
+  docker_mount="-v ${DOCKER_MOUNT}"
+fi
+
 exec docker run --rm \
+    ${docker_mount} \
     --user "$USERID:$GROUPID" \
     --volume "$PWD:/local" \
     openapitools/openapi-generator-cli:v4.2.3 "$@"
