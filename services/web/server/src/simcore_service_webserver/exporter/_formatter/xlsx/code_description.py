@@ -13,7 +13,7 @@ from .core.styling_components import (
     T,
 )
 from .core.xlsx_base import BaseXLSXCellData, BaseXLSXDocument, BaseXLSXSheet
-from .utils import column_iter, ensure_correct_instance
+from .utils import column_generator, ensure_correct_instance
 
 
 class RRIDEntry(BaseModel):
@@ -715,7 +715,7 @@ class SheetCodeDescription(BaseXLSXSheet):
 
         # assemble "Value x" headers
         max_number_of_headers = max(1, len(code_description.rrid_entires))
-        for k, column_letter in enumerate(column_iter(4, max_number_of_headers)):
+        for k, column_letter in enumerate(column_generator(4, max_number_of_headers)):
             cell_entry = (
                 f"{column_letter}1",
                 T(f"Value {k + 1}") | Backgrounds.blue | Borders.medium_grid,
@@ -725,7 +725,7 @@ class SheetCodeDescription(BaseXLSXSheet):
         # assemble RRIDs
         rrid_entry: RRIDEntry
         for column_letter, rrid_entry in zip(
-            column_iter(4, len(code_description.rrid_entires)),
+            column_generator(4, len(code_description.rrid_entires)),
             code_description.rrid_entires,
         ):
             cells.append(

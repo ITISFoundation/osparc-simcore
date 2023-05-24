@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field, StrictStr
 
 from .core.styling_components import TB, Backgrounds, Borders, Comment, Link, T
 from .core.xlsx_base import BaseXLSXCellData, BaseXLSXDocument, BaseXLSXSheet
-from .utils import column_iter, ensure_correct_instance, get_max_array_length
+from .utils import column_generator, ensure_correct_instance, get_max_array_length
 
 
 class ContributorEntryModel(BaseModel):
@@ -335,7 +335,7 @@ class SheetFirstDatasetDescription(BaseXLSXSheet):
             ),
         )
 
-        for k, column_letter in enumerate(column_iter(4, max_number_of_headers)):
+        for k, column_letter in enumerate(column_generator(4, max_number_of_headers)):
             cell_entry = (
                 f"{column_letter}1",
                 T(f"Value {k + 1}") | Backgrounds.blue | Borders.medium_grid,
@@ -353,7 +353,7 @@ class SheetFirstDatasetDescription(BaseXLSXSheet):
         # adding contributors entries horizontally
         contributor_entry: ContributorEntryModel
         for column_letter, contributor_entry in zip(
-            column_iter(4, len(params.contributor_entries)),
+            column_generator(4, len(params.contributor_entries)),
             params.contributor_entries,
         ):
             cells.append(
@@ -394,7 +394,7 @@ class SheetFirstDatasetDescription(BaseXLSXSheet):
         # adding doi entries horizontally
         doi_entry: DoiEntryModel
         for column_letter, doi_entry in zip(
-            column_iter(4, len(params.doi_entries)), params.doi_entries
+            column_generator(4, len(params.doi_entries)), params.doi_entries
         ):
             cells.append(
                 (
@@ -412,7 +412,7 @@ class SheetFirstDatasetDescription(BaseXLSXSheet):
         # adding link entries horizontally
         link_entry: LinkEntryModel
         for column_letter, link_entry in zip(
-            column_iter(4, len(params.link_entries)), params.link_entries
+            column_generator(4, len(params.link_entries)), params.link_entries
         ):
             cells.append(
                 (

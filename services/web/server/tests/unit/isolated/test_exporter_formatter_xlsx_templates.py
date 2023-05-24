@@ -7,13 +7,13 @@
 import datetime
 import random
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
 
 import openpyxl
 import pytest
 from faker import Faker
 from openpyxl import Workbook
-from simcore_service_webserver.exporter.formatter.xlsx.code_description import (
+from simcore_service_webserver.exporter._formatter.xlsx.code_description import (
     CodeDescriptionModel,
     CodeDescriptionParams,
     CodeDescriptionXLSXDocument,
@@ -21,19 +21,19 @@ from simcore_service_webserver.exporter.formatter.xlsx.code_description import (
     OutputsEntryModel,
     RRIDEntry,
 )
-from simcore_service_webserver.exporter.formatter.xlsx.dataset_description import (
+from simcore_service_webserver.exporter._formatter.xlsx.dataset_description import (
     ContributorEntryModel,
     DatasetDescriptionParams,
     DatasetDescriptionXLSXDocument,
     DoiEntryModel,
     LinkEntryModel,
 )
-from simcore_service_webserver.exporter.formatter.xlsx.directory_manifest import (
+from simcore_service_webserver.exporter._formatter.xlsx.directory_manifest import (
     DirectoryManifestParams,
     DirectoryManifestXLSXDocument,
     FileEntryModel,
 )
-from simcore_service_webserver.exporter.formatter.xlsx.submission import (
+from simcore_service_webserver.exporter._formatter.xlsx.submission import (
     SubmissionDocumentParams,
     SubmissionXLSXDocument,
 )
@@ -76,7 +76,7 @@ def random_text(prefix: str = "") -> str:
     return prefix_str + Faker().text()
 
 
-def column_iter(start_letter: str, elements: int) -> str:
+def column_generator(start_letter: str, elements: int) -> Iterable[str]:
     """
     will only work with a low amount of columns that's why
     MAX_ENTRIES_IN_ARRAYS is a low number
@@ -211,7 +211,7 @@ def test_dataset_description(temp_dir: Path):
 
     contributor_entry: ContributorEntryModel
     for column_letter, contributor_entry in zip(
-        column_iter("D", len(contributor_entries)), contributor_entries
+        column_generator("D", len(contributor_entries)), contributor_entries
     ):
         expected_sheet1[f"{column_letter}5"] = contributor_entry.contributor
         expected_sheet1[f"{column_letter}6"] = contributor_entry.orcid_id
@@ -221,14 +221,14 @@ def test_dataset_description(temp_dir: Path):
 
     doi_entry: DoiEntryModel
     for column_letter, doi_entry in zip(
-        column_iter("D", len(doi_entries)), doi_entries
+        column_generator("D", len(doi_entries)), doi_entries
     ):
         expected_sheet1[f"{column_letter}12"] = doi_entry.originating_article_doi
         expected_sheet1[f"{column_letter}13"] = doi_entry.protocol_url_or_doi
 
     link_entry: LinkEntryModel
     for column_letter, link_entry in zip(
-        column_iter("D", len(link_entries)), link_entries
+        column_generator("D", len(link_entries)), link_entries
     ):
         expected_sheet1[f"{column_letter}14"] = link_entry.additional_link
         expected_sheet1[f"{column_letter}15"] = link_entry.link_description
@@ -402,7 +402,7 @@ def test_code_description(temp_dir: Path):
 
     expected_code_description = expected_layout["Code Description"]
     for column_letter, rrid_entry in zip(
-        column_iter("D", len(rrid_entires)), rrid_entires
+        column_generator("D", len(rrid_entires)), rrid_entires
     ):
         rrid_entry: RRIDEntry = rrid_entry
 
@@ -478,7 +478,7 @@ def test_directory_manifest(temp_dir: Path, dir_with_random_content: Path):
         # write down additional_metadata
         for k, column_letter, metadata_string in zip(
             range(len(file_entry.additional_metadata)),
-            column_iter("E", len(file_entry.additional_metadata)),
+            column_generator("E", len(file_entry.additional_metadata)),
             file_entry.additional_metadata,
         ):
             expected_sheet1[f"{column_letter}{row}"] = metadata_string

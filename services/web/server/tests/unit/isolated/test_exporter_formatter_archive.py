@@ -6,8 +6,8 @@ from typing import Iterator
 
 import pytest
 from faker import Faker
+from simcore_service_webserver.exporter._formatter.archive import _compress_dir
 from simcore_service_webserver.exporter.exceptions import SDSException
-from simcore_service_webserver.exporter.formatter.archive import _compress_dir
 
 
 @pytest.fixture

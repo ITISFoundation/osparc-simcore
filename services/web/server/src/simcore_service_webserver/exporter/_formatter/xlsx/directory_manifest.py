@@ -8,7 +8,7 @@ from pyparsing import Iterable
 
 from .core.styling_components import TB, Backgrounds, Borders, T
 from .core.xlsx_base import BaseXLSXCellData, BaseXLSXDocument, BaseXLSXSheet
-from .utils import column_iter, ensure_correct_instance, get_max_array_length
+from .utils import column_generator, ensure_correct_instance, get_max_array_length
 
 # replaces lib-magic's description with these
 DESCRIPTION_OVERWRITES: dict[str, str] = {
@@ -103,7 +103,7 @@ class SheetFirstDirectoryManifest(BaseXLSXSheet):
         # if file_entries is empty this would max function to fail, always concatenate an
         not_empty_file_entries = [x.additional_metadata for x in file_entries] + [[]]
         max_number_of_headers = get_max_array_length(*not_empty_file_entries)
-        for k, column_letter in enumerate(column_iter(5, max_number_of_headers)):
+        for k, column_letter in enumerate(column_generator(5, max_number_of_headers)):
             cell_entry = (
                 f"{column_letter}1",
                 T(f"Additional Metadata {k + 1}")
@@ -127,7 +127,8 @@ class SheetFirstDirectoryManifest(BaseXLSXSheet):
 
             # write additional metadata for each file
             for column_letter, additional_metadata_entry in zip(
-                column_iter(5, max_number_of_headers), file_entry.additional_metadata
+                column_generator(5, max_number_of_headers),
+                file_entry.additional_metadata,
             ):
                 cell_entry = (
                     f"{column_letter}{row_index}",
