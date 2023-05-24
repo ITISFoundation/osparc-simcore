@@ -38,7 +38,7 @@ from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.exporter import settings as exporter_settings
 from simcore_service_webserver.exporter._formatter.archive import get_sds_archive_path
-from simcore_service_webserver.projects.project_models import ProjectDict
+from simcore_service_webserver.projects.models import ProjectDict
 from yarl import URL
 
 pytest_simcore_core_services_selection = [
