@@ -58,7 +58,7 @@ python-dateutil==2.8.2
     # via arrow
 pyyaml==6.0
     # via -r requirements/_base.in
-requests==2.30.0
+requests==2.31.0
     # via docker
 rich==13.3.5
     # via typer

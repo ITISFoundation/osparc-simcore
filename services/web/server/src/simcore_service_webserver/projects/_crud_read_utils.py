@@ -16,8 +16,8 @@ from ..catalog.client import get_services_for_user_in_product
 from . import projects_api
 from ._permalink import update_or_pop_permalink_in_project
 from ._rest_schemas import ProjectListItem
-from .project_models import ProjectDict, ProjectTypeAPI
-from .projects_db import ProjectDBAPI
+from .db import ProjectDBAPI
+from .models import ProjectDict, ProjectTypeAPI
 
 
 async def _append_fields(

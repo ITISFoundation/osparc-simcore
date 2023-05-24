@@ -7,7 +7,7 @@ from models_library.users import UserID
 from pydantic import NonNegativeFloat, NonNegativeInt
 
 from ..application_settings import get_settings
-from .projects_exceptions import ProjectStartsTooManyDynamicNodes
+from .exceptions import ProjectStartsTooManyDynamicNodes
 
 _NODE_START_INTERVAL_S: Final[datetime.timedelta] = datetime.timedelta(seconds=15)
 

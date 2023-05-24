@@ -16,7 +16,7 @@ packaging==23.1
     # via docker
 pyyaml==6.0
     # via -r requirements/requirements.in
-requests==2.30.0
+requests==2.31.0
     # via docker
 tenacity==8.2.2
     # via -r requirements/requirements.in

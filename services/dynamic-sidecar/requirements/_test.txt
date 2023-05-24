@@ -66,10 +66,8 @@ python-dateutil==2.8.2
     # via
     #   -c requirements/_base.txt
     #   faker
-requests==2.27.1
-    # via
-    #   -c requirements/_base.txt
-    #   async-asgi-testclient
+requests==2.31.0
+    # via async-asgi-testclient
 six==1.16.0
     # via
     #   -c requirements/_base.txt

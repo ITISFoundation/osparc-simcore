@@ -6,7 +6,7 @@ from pydantic.error_wrappers import ValidationError
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.json_serialization import json_dumps
 
-from ..projects.projects_exceptions import ProjectNotFoundError
+from ..projects.exceptions import ProjectNotFoundError
 from .errors import InvalidParameterError, NoCommitError, NotFoundError
 
 logger = logging.getLogger(__name__)

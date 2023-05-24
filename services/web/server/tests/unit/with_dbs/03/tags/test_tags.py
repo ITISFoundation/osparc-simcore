@@ -28,7 +28,7 @@ from simcore_postgres_database.models.tags import tags
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db import get_database_engine
 from simcore_service_webserver.db_models import UserRole
-from simcore_service_webserver.projects.project_models import ProjectDict
+from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.tags import _handlers
 
 

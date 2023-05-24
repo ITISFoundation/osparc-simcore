@@ -1,6 +1,6 @@
 import logging
 from collections import deque
-from typing import Any, Coroutine, Optional
+from typing import Any, Coroutine
 
 from aiohttp import web
 from models_library.errors import ErrorDict
@@ -12,7 +12,7 @@ from servicelib.logging_utils import log_decorator
 from servicelib.utils import fire_and_forget_task, logged_gather
 
 from . import projects_api
-from .projects_utils import get_frontend_node_outputs_changes
+from .utils import get_frontend_node_outputs_changes
 
 log = logging.getLogger(__name__)
 
@@ -39,10 +39,10 @@ async def update_node_outputs(
     project_uuid: ProjectID,
     node_uuid: NodeIDStr,
     outputs: dict,
-    run_hash: Optional[str],
-    node_errors: Optional[list[ErrorDict]],
+    run_hash: str | None,
+    node_errors: list[ErrorDict] | None,
     *,
-    ui_changed_keys: Optional[set[str]],
+    ui_changed_keys: set[str] | None,
 ) -> None:
     # the new outputs might be {}, or {key_name: payload}
     project, keys_changed = await projects_api.update_project_node_outputs(

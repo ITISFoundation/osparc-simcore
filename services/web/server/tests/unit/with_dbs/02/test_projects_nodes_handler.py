@@ -27,7 +27,7 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.projects import projects as projects_db_model
 from simcore_service_webserver.db_models import UserRole
-from simcore_service_webserver.projects.project_models import ProjectDict
+from simcore_service_webserver.projects.models import ProjectDict
 
 
 @pytest.mark.parametrize(

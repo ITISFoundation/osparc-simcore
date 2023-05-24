@@ -7,8 +7,8 @@ from aiohttp import web
 from servicelib.pools import non_blocking_process_pool_executor
 
 from ...catalog.client import get_service
+from ...projects.exceptions import ProjectsException
 from ...projects.projects_api import get_project_for_user
-from ...projects.projects_exceptions import ProjectsException
 from ...scicrunch.db import ResearchResourceRepository
 from ..exceptions import SDSException
 from ._text_files import write_text_files
