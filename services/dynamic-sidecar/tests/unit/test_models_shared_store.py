@@ -77,6 +77,8 @@ async def test_shared_store_updates(
 ):
     # check no file is present on the disk from where the data was created
     store_file_path = ensure_shared_store_dir / STORE_FILE_NAME
+    # file already exists since it was initialized, removing it for this test
+    store_file_path.unlink()
     assert store_file_path.exists() is False
 
     # change some data and trigger a persist
