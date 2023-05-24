@@ -32,7 +32,7 @@ markupsafe==2.1.2
     #   mako
 packaging==23.1
     # via docker
-requests==2.30.0
+requests==2.31.0
     # via docker
 six==1.16.0
     # via websocket-client

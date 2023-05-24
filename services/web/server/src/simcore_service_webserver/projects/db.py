@@ -33,8 +33,7 @@ from tenacity import AsyncRetrying, TryAgain, retry_if_exception_type
 
 from ..db_models import study_tags
 from ..utils import now_str
-from .project_models import ProjectDict
-from .projects_db_utils import (
+from ._db_utils import (
     ANY_USER_ID_SENTINEL,
     BaseProjectDB,
     PermissionStr,
@@ -45,13 +44,14 @@ from .projects_db_utils import (
     convert_to_schema_names,
     create_project_access_rights,
 )
-from .projects_exceptions import (
+from .exceptions import (
     NodeNotFoundError,
     ProjectDeleteError,
     ProjectInvalidRightsError,
     ProjectNotFoundError,
 )
-from .projects_utils import find_changed_node_keys
+from .models import ProjectDict
+from .utils import find_changed_node_keys
 
 log = logging.getLogger(__name__)
 
@@ -666,7 +666,7 @@ class ProjectDBAPI(BaseProjectDB):
                 .select_from(projects)
                 .where(projects.c.uuid == f"{project_uuid}")
             ):
-                result.update(row.as_tuple())  # type: ignore
+                result.update(row.as_tuple())
         return result
 
     #
@@ -835,3 +835,6 @@ class ProjectDBAPI(BaseProjectDB):
 def setup_projects_db(app: web.Application):
     # NOTE: inits once per app
     return ProjectDBAPI.set_once_in_app_context(app)
+
+
+__all__ = ("ProjectAccessRights",)

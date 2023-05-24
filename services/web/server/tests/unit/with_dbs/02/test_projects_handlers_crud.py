@@ -30,7 +30,7 @@ from simcore_service_webserver._constants import X_PRODUCT_NAME_HEADER
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects._permalink import ProjectPermalink
-from simcore_service_webserver.projects.project_models import ProjectDict
+from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.utils import to_datetime
 from yarl import URL
 
