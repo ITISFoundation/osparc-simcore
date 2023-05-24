@@ -22,35 +22,19 @@ from simcore_service_dask_sidecar.dask_utils import (
     monitor_task_abortion,
     publish_event,
 )
-from tenacity._asyncio import AsyncRetrying
-from tenacity.retry import retry_if_exception_type
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
 
 DASK_TASK_STARTED_EVENT = "task_started"
 DASK_TESTING_TIMEOUT_S = 25
 
 
 async def test_publish_event(dask_client: distributed.Client):
-    dask_pub = distributed.Pub("some_topic")
-    dask_sub = distributed.Sub("some_topic")
-    async for attempt in AsyncRetrying(
-        reraise=True,
-        retry=retry_if_exception_type(AssertionError),
-        wait=wait_fixed(0.01),
-        stop=stop_after_delay(60),
-    ):
-        with attempt:
-            print(
-                f"waiting for subscribers... attempt={attempt.retry_state.attempt_number}"
-            )
-            assert dask_pub.subscribers
-            print("we do have subscribers!")
-
+    dask_pub = distributed.Pub("some_topic", client=dask_client)
+    dask_sub = distributed.Sub("some_topic", client=dask_client)
     event_to_publish = TaskLogEvent(
         job_id="some_fake_job_id", log="the log", log_level=logging.INFO
     )
     publish_event(dask_pub=dask_pub, event=event_to_publish)
+
     # NOTE: this tests runs a sync dask client,
     # and the CI seems to have sometimes difficulties having this run in a reasonable time
     # hence the long time out
@@ -71,7 +55,7 @@ def _notify_task_is_started_and_ready():
 
 
 def _some_long_running_task() -> int:
-    assert is_current_task_aborted() == False
+    assert is_current_task_aborted() is False
     _notify_task_is_started_and_ready()
 
     for i in range(300):
@@ -110,7 +94,7 @@ def test_task_is_aborted_using_event(dask_client: distributed.Client):
 
 
 def _some_long_running_task_with_monitoring() -> int:
-    assert is_current_task_aborted() == False
+    assert is_current_task_aborted() is False
     # we are started now
     start_event = distributed.Event(DASK_TASK_STARTED_EVENT)
     start_event.set()
