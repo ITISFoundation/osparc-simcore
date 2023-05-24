@@ -4,10 +4,11 @@ from typing import Final, TypeAlias
 
 import aiofiles
 from fastapi import FastAPI
+from models_library.volumes import VolumeCategory, VolumeStatus
 from pydantic import BaseModel, Field, PrivateAttr
 
 from ..core.settings import ApplicationSettings
-from .volumes import VolumeCategory, VolumeState, VolumeStatus
+from .volumes import VolumeState
 
 ContainerNameStr: TypeAlias = str
 

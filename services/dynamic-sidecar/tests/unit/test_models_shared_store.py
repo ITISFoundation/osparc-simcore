@@ -8,6 +8,7 @@ from typing import Any
 import pytest
 from async_asgi_testclient import TestClient
 from fastapi import FastAPI
+from models_library.volumes import VolumeCategory, VolumeStatus
 from pydantic import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from servicelib.utils import logged_gather
@@ -16,11 +17,7 @@ from simcore_service_dynamic_sidecar.models.shared_store import (
     STORE_FILE_NAME,
     SharedStore,
 )
-from simcore_service_dynamic_sidecar.models.volumes import (
-    VolumeCategory,
-    VolumeState,
-    VolumeStatus,
-)
+from simcore_service_dynamic_sidecar.models.volumes import VolumeState
 
 
 @pytest.fixture

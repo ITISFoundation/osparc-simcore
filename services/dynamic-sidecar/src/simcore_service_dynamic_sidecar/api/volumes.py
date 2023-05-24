@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends
 from fastapi import Path as PathParam
 from fastapi import status
+from models_library.volumes import VolumeCategory, VolumeStatus
 from pydantic import BaseModel
 
 from ..models.shared_store import SharedStore
-from ..models.volumes import VolumeCategory, VolumeState, VolumeStatus
+from ..models.volumes import VolumeState
 from ._dependencies import get_shared_store
 
 router = APIRouter()
