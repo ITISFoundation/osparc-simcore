@@ -35,12 +35,6 @@ from ..products.plugin import get_current_product, get_product_name
 from ..projects.db import ANY_USER, ProjectDBAPI
 from ..projects.exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from ..projects.models import ProjectDict
-from ..projects.project_models import ProjectDict
-from ..projects.projects_db import ANY_USER, ProjectDBAPI
-from ..projects.projects_exceptions import (
-    ProjectInvalidRightsError,
-    ProjectNotFoundError,
-)
 from ..redis import get_redis_lock_manager_client
 from ..security.api import is_anonymous, remember
 from ..storage.api import copy_data_folders_from_project
