@@ -8,7 +8,7 @@ import asyncio
 import concurrent.futures
 import logging
 import time
-from typing import Any
+from typing import Any, Coroutine
 
 import distributed
 import pytest
@@ -22,12 +22,16 @@ from simcore_service_dask_sidecar.dask_utils import (
     monitor_task_abortion,
     publish_event,
 )
+from tenacity._asyncio import AsyncRetrying
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
 DASK_TASK_STARTED_EVENT = "task_started"
 DASK_TESTING_TIMEOUT_S = 25
 
 
-async def test_publish_event(dask_client: distributed.Client):
+def test_publish_event(dask_client: distributed.Client):
     dask_pub = distributed.Pub("some_topic", client=dask_client)
     dask_sub = distributed.Sub("some_topic", client=dask_client)
     event_to_publish = TaskLogEvent(
@@ -41,6 +45,66 @@ async def test_publish_event(dask_client: distributed.Client):
     message = dask_sub.get(timeout=DASK_TESTING_TIMEOUT_S)
     assert message is not None
     received_task_log_event = TaskLogEvent.parse_raw(message)  # type: ignore
+    assert received_task_log_event == event_to_publish
+
+
+async def test_publish_event_async(async_dask_client: distributed.Client):
+    dask_pub = distributed.Pub("some_topic", client=async_dask_client)
+    dask_sub = distributed.Sub("some_topic", client=async_dask_client)
+    event_to_publish = TaskLogEvent(
+        job_id="some_fake_job_id", log="the log", log_level=logging.INFO
+    )
+    publish_event(dask_pub=dask_pub, event=event_to_publish)
+
+    # NOTE: this tests runs a sync dask client,
+    # and the CI seems to have sometimes difficulties having this run in a reasonable time
+    # hence the long time out
+    message = dask_sub.get(timeout=DASK_TESTING_TIMEOUT_S)
+    assert isinstance(message, Coroutine)
+    message = await message
+    assert message is not None
+    received_task_log_event = TaskLogEvent.parse_raw(message)  # type: ignore
+    assert received_task_log_event == event_to_publish
+
+
+async def test_publish_event_async_using_task(async_dask_client: distributed.Client):
+    dask_pub = distributed.Pub("some_topic", client=async_dask_client)
+    dask_sub = distributed.Sub("some_topic", client=async_dask_client)
+
+    received_messages = []
+
+    async def _dask_sub_consumer_task(sub: distributed.Sub) -> None:
+        print("--> starting consumer task")
+        async for dask_event in sub:
+            print(f"received {dask_event}")
+            received_messages.append(dask_event)
+        print("<-- finished consumer task")
+
+    task = asyncio.create_task(
+        _dask_sub_consumer_task(dask_sub), name="pytest_dask_sub_consumer"
+    )
+
+    event_to_publish = TaskLogEvent(
+        job_id="some_fake_job_id", log="the log", log_level=logging.INFO
+    )
+    publish_event(dask_pub=dask_pub, event=event_to_publish)
+    async for attempt in AsyncRetrying(
+        retry=retry_if_exception_type(AssertionError),
+        stop=stop_after_delay(DASK_TESTING_TIMEOUT_S),
+        wait=wait_fixed(0.01),
+        reraise=True,
+    ):
+        with attempt:
+            print(f"checking number of received messages...{received_messages=}")
+            assert len(received_messages) == 1
+
+    # NOTE: this tests runs a sync dask client,
+    # and the CI seems to have sometimes difficulties having this run in a reasonable time
+    # hence the long time out
+
+    message = received_messages[0]
+    assert message is not None
+    received_task_log_event = TaskLogEvent.parse_raw(message)
     assert received_task_log_event == event_to_publish
 
 
