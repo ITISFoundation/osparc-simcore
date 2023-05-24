@@ -164,21 +164,16 @@ async def project(
 
 
 @pytest.fixture
-def temp_dir(tmpdir: Path) -> Path:
-    return Path(tmpdir)
-
-
-@pytest.fixture
-def dir_downloaded(temp_dir: Path) -> Path:
-    new_dir = temp_dir / "downloaded"
+def dir_downloaded(tmp_path: Path) -> Path:
+    new_dir = tmp_path / "downloaded"
     new_dir.mkdir(parents=True, exist_ok=True)
     assert new_dir.exists()
     return new_dir
 
 
 @pytest.fixture
-def dir_generated(temp_dir: Path) -> Path:
-    new_dir = temp_dir / "generated"
+def dir_generated(tmp_path: Path) -> Path:
+    new_dir = tmp_path / "generated"
     new_dir.mkdir(parents=True, exist_ok=True)
     assert new_dir.exists()
     return new_dir
