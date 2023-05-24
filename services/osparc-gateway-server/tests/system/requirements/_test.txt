@@ -40,6 +40,7 @@ coverage==7.2.5
     # via pytest-cov
 dask==2023.5.0
     # via
+    #   -c requirements/../../../../dask-sidecar/requirements/_dask-distributed.txt
     #   dask-gateway
     #   distributed
 dask-gateway==2023.1.1
