@@ -53,6 +53,8 @@ class CustomFormatter(logging.Formatter):
     """
 
     def __init__(self, fmt: str, log_format_local_dev_enabled: bool):
+        if log_format_local_dev_enabled:
+            fmt = LOCAL_FORMATTING
         super().__init__(fmt)
         self.log_format_local_dev_enabled = log_format_local_dev_enabled
 
@@ -76,6 +78,7 @@ class CustomFormatter(logging.Formatter):
 
 # SEE https://docs.python.org/3/library/logging.html#logrecord-attributes
 DEFAULT_FORMATTING = "log_level=%(levelname)s | log_timestamp=%(asctime)s | log_source=%(name)s:%(funcName)s(%(lineno)d) | log_uid=%(log_uid)s | log_msg=%(message)s"
+LOCAL_FORMATTING = "%(levelname)s: [%(asctime)s/%(processName)s] [%(name)s:%(funcName)s(%(lineno)d)]  -  %(message)s"
 
 # Graylog Grok pattern extractor:
 # log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{DATA:log_source} \| log_msg=%{GREEDYDATA:log_msg}

@@ -172,6 +172,7 @@ async def _replace_project(
     return data
 
 
+@pytest.mark.testit
 @pytest.mark.parametrize(
     "user_role,expected",
     [
