@@ -18,13 +18,12 @@ from servicelib.aiohttp.monitor_services import (
     service_started,
     service_stopped,
 )
-from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 
 from ..projects import projects_api
-from ..projects.exceptions import NodeNotFoundError, ProjectNotFoundError
+from ..projects.exceptions import ProjectNotFoundError
 from ..rabbitmq import get_rabbitmq_client
 from ..socketio.messages import (
     SOCKET_IO_EVENT,
@@ -47,6 +46,9 @@ async def _handle_computation_running_progress(
         project = await projects_api.get_project_for_user(
             app, f"{message.project_id}", message.user_id
         )
+        if f"{message.node_id}" not in project["workbench"]:
+            _logger.warning("node not found in project: '%s'", message.dict())
+            return True
         # update the project node progress with the latest value
         project["workbench"][f"{message.node_id}"].update(
             {"progress": round(message.progress * 100.0)}
@@ -64,16 +66,7 @@ async def _handle_computation_running_progress(
         await send_messages(app, message.user_id, messages)
         return True
     except ProjectNotFoundError:
-        _logger.warning(
-            "project related to received rabbitMQ progress message not found: '%s'",
-            json_dumps(message, indent=2),
-        )
-        return True
-    except NodeNotFoundError:
-        _logger.warning(
-            "node related to received rabbitMQ progress message not found: '%s'",
-            json_dumps(message, indent=2),
-        )
+        _logger.warning("project not found: '%s'", message.dict())
         return True
     return True
 
