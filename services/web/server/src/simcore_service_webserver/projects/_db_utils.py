@@ -23,9 +23,9 @@ from sqlalchemy.sql import select
 from ..db_models import GroupType, groups, study_tags, user_to_groups, users
 from ..users.exceptions import UserNotFoundError
 from ..utils import format_datetime
-from .project_models import ProjectDict, ProjectProxy
-from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
-from .projects_utils import project_uses_available_services
+from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
+from .models import ProjectDict, ProjectProxy
+from .utils import project_uses_available_services
 
 logger = logging.getLogger(__name__)
 

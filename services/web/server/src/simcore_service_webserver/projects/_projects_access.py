@@ -2,7 +2,7 @@ import jsondiff
 from aiohttp import web
 
 from ..security.api import UserRole, get_access_model
-from .projects_db import ProjectDBAPI
+from .db import ProjectDBAPI
 
 
 async def can_update_node_inputs(context):

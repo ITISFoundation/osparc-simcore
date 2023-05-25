@@ -10,8 +10,8 @@ from servicelib.pools import non_blocking_process_pool_executor
 from simcore_postgres_database.models.scicrunch_resources import scicrunch_resources
 
 from ...catalog.client import get_service
+from ...projects.exceptions import ProjectsException
 from ...projects.projects_api import get_project_for_user
-from ...projects.projects_exceptions import ProjectsException
 from ...scicrunch.db import ResearchResourceRepository
 from ..exceptions import ExporterException
 from .base_formatter import BaseFormatter

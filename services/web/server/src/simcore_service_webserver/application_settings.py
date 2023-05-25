@@ -35,7 +35,7 @@ from .exporter.settings import ExporterSettings
 from .garbage_collector_settings import GarbageCollectorSettings
 from .invitations.settings import InvitationsSettings
 from .login.settings import LoginSettings
-from .projects.projects_settings import ProjectsSettings
+from .projects.settings import ProjectsSettings
 from .resource_manager.settings import ResourceManagerSettings
 from .rest_settings import RestSettings
 from .scicrunch.settings import SciCrunchSettings

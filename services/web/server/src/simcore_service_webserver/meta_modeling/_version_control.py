@@ -9,7 +9,7 @@ from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectIDStr
 from models_library.utils.fastapi_encoders import jsonable_encoder
 
-from ..projects.project_models import ProjectDict
+from ..projects.models import ProjectDict
 from ..version_control.db import VersionControlRepository
 from ..version_control.errors import UserUndefined
 from ..version_control.models import CommitID, TagProxy

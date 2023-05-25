@@ -5499,7 +5499,7 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[dict[uuid.UUID, simcore_service_webserver.projects.projects_ports_handlers.ProjectInputGet]]'
+                title: 'Envelope[dict[uuid.UUID, simcore_service_webserver.projects._handlers__ports.ProjectInputGet]]'
                 type: object
                 properties:
                   data:
@@ -5590,7 +5590,7 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[dict[uuid.UUID, simcore_service_webserver.projects.projects_ports_handlers.ProjectOutputGet]]'
+                title: 'Envelope[dict[uuid.UUID, simcore_service_webserver.projects._handlers__ports.ProjectOutputGet]]'
                 type: object
                 properties:
                   data:
@@ -5638,7 +5638,7 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[list[simcore_service_webserver.projects.projects_ports_handlers.ProjectMetadataPortGet]]'
+                title: 'Envelope[list[simcore_service_webserver.projects._handlers__ports.ProjectMetadataPortGet]]'
                 type: object
                 properties:
                   data:

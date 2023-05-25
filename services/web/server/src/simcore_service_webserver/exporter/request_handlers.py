@@ -10,7 +10,7 @@ from models_library.projects_state import ProjectStatus
 
 from .._constants import RQ_PRODUCT_KEY
 from ..login.decorators import RQT_USERID_KEY, login_required
-from ..projects.project_lock import lock_project
+from ..projects.lock import lock_project
 from ..projects.projects_api import retrieve_and_notify_project_locked_state
 from ..security.decorators import permission_required
 from ..users.api import get_user_name
