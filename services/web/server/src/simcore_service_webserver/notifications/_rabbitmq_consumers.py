@@ -44,26 +44,25 @@ async def _handle_computation_running_progress(
     app: web.Application, message: ProgressRabbitMessageNode
 ) -> bool:
     try:
-        if not await projects_api.is_project_hidden(app, message.project_id):
-            project = await projects_api.get_project_for_user(
-                app, f"{message.project_id}", message.user_id
-            )
-            # update the project node progress with the latest value
-            project["workbench"][f"{message.node_id}"].update(
-                {"progress": round(message.progress * 100.0)}
-            )
-            messages: list[SocketMessageDict] = [
-                {
-                    "event_type": SOCKET_IO_NODE_UPDATED_EVENT,
-                    "data": {
-                        "project_id": message.project_id,
-                        "node_id": message.node_id,
-                        "data": project["workbench"][f"{message.node_id}"],
-                    },
-                }
-            ]
-            await send_messages(app, message.user_id, messages)
-            return True
+        project = await projects_api.get_project_for_user(
+            app, f"{message.project_id}", message.user_id
+        )
+        # update the project node progress with the latest value
+        project["workbench"][f"{message.node_id}"].update(
+            {"progress": round(message.progress * 100.0)}
+        )
+        messages: list[SocketMessageDict] = [
+            {
+                "event_type": SOCKET_IO_NODE_UPDATED_EVENT,
+                "data": {
+                    "project_id": message.project_id,
+                    "node_id": message.node_id,
+                    "data": project["workbench"][f"{message.node_id}"],
+                },
+            }
+        ]
+        await send_messages(app, message.user_id, messages)
+        return True
     except ProjectNotFoundError:
         _logger.warning(
             "project related to received rabbitMQ progress message not found: '%s'",
@@ -76,7 +75,7 @@ async def _handle_computation_running_progress(
             json_dumps(message, indent=2),
         )
         return True
-    return False
+    return True
 
 
 async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
@@ -115,15 +114,13 @@ async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
 
 async def _log_message_parser(app: web.Application, data: bytes) -> bool:
     rabbit_message = LoggerRabbitMessage.parse_raw(data)
-
-    if not await projects_api.is_project_hidden(app, rabbit_message.project_id):
-        socket_messages: list[SocketMessageDict] = [
-            {
-                "event_type": SOCKET_IO_LOG_EVENT,
-                "data": rabbit_message.dict(exclude={"user_id", "channel_name"}),
-            }
-        ]
-        await send_messages(app, rabbit_message.user_id, socket_messages)
+    socket_messages: list[SocketMessageDict] = [
+        {
+            "event_type": SOCKET_IO_LOG_EVENT,
+            "data": rabbit_message.dict(exclude={"user_id", "channel_name"}),
+        }
+    ]
+    await send_messages(app, rabbit_message.user_id, socket_messages)
     return True
 
 
