@@ -226,7 +226,8 @@ async def _assert_redirected_to_study(
 # - Direct link to study in workbench : https://github.com/ITISFoundation/osparc-simcore/issues/730
 #
 # -----------------------------------------------------------
-# @pytest.mark.testit
+
+
 async def test_access_to_invalid_study(client: TestClient, faker: Faker):
     response = await client.get(f"/study/{faker.uuid4()}")
 
@@ -237,7 +238,6 @@ async def test_access_to_invalid_study(client: TestClient, faker: Faker):
     )
 
 
-@pytest.mark.testit
 async def test_access_to_forbidden_study(
     client: TestClient, unpublished_project: ProjectDict
 ):

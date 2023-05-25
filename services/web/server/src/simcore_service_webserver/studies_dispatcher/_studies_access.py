@@ -344,6 +344,18 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
         # NOTE: covers valid cookie with unauthorized user (e.g. expired guest/banned)
         user = await get_authorized_user(request)
 
+    # This was added so it fails right away if study doesn't exist.
+    # Check if there is a PROJECT with project_id
+    if not user:
+        db = ProjectDBAPI.get_from_app_context(request.app)
+        prj, _ = await db.get_project(user_id=user, project_uuid=project_id)
+        if not prj:
+            raise RedirectToFrontEndPageError(
+                MSG_PROJECT_NOT_FOUND.format(project_id=project_id),
+                error_code="PROJECT_NOT_FOUND",
+                status_code=web.HTTPNotFound.status_code,
+            )
+
     # Get published PROJECT referenced in link
     template_project = await _get_published_template_project(
         request,
