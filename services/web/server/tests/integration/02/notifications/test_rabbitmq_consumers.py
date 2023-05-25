@@ -299,6 +299,9 @@ async def test_log_workflow_only_receives_messages_if_subscribed(
 
 @pytest.mark.parametrize("user_role", [UserRole.GUEST], ids=str)
 @pytest.mark.parametrize(
+    "project_hidden", [False, True], ids=lambda id: f"ProjectHidden={id}"
+)
+@pytest.mark.parametrize(
     "progress_type",
     [p for p in ProgressType if p is not ProgressType.COMPUTATION_RUNNING],
     ids=str,
@@ -306,21 +309,26 @@ async def test_log_workflow_only_receives_messages_if_subscribed(
 @pytest.mark.parametrize(
     "sender_same_user_id", [True, False], ids=lambda id: f"same_sender_id={id}"
 )
+@pytest.mark.parametrize(
+    "subscribe_to_logs", [True, False], ids=lambda id: f"subscribed={id}"
+)
 async def test_progress_non_computational_workflow(
     client: TestClient,
     rabbitmq_publisher: RabbitMQClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
+    faker: Faker,
     socketio_client_factory: Callable[
         [str | None, TestClient | None], Awaitable[socketio.AsyncClient]
     ],
     mocker: MockerFixture,
+    project_hidden: bool,
     progress_type: ProgressType,
     sender_same_user_id: bool,
-    faker: Faker,
+    subscribe_to_logs: bool,
 ):
     """
-    RabbitMQ --> Webserver -->  Redis --> webclient (socketio)
+    RabbitMQ (TOPIC) --> Webserver -->  Redis --> webclient (socketio)
 
     """
     socket_io_conn = await socketio_client_factory(None, client)
