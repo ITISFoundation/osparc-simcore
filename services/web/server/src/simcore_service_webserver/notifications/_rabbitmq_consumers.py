@@ -174,7 +174,7 @@ EXCHANGE_TO_PARSER_CONFIG: Final[
     (
         ProgressRabbitMessageNode.get_channel_name(),
         _progress_message_parser,
-        {},
+        dict(topics=[]),
     ),
     (
         InstrumentationRabbitMessage.get_channel_name(),
