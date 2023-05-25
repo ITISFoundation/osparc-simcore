@@ -53,8 +53,6 @@ class CustomFormatter(logging.Formatter):
     """
 
     def __init__(self, fmt: str, log_format_local_dev_enabled: bool):
-        if log_format_local_dev_enabled:
-            fmt = LOCAL_FORMATTING
         super().__init__(fmt)
         self.log_format_local_dev_enabled = log_format_local_dev_enabled
 
@@ -88,6 +86,7 @@ def config_all_loggers(log_format_local_dev_enabled: bool):
     """
     Applies common configuration to ALL registered loggers
     """
+    fmt = DEFAULT_FORMATTING
     the_manager: logging.Manager = logging.Logger.manager
     root_logger = logging.getLogger()
 
@@ -95,8 +94,11 @@ def config_all_loggers(log_format_local_dev_enabled: bool):
         logging.getLogger(name) for name in the_manager.loggerDict
     ]
 
+    if log_format_local_dev_enabled:
+        fmt = LOCAL_FORMATTING
+
     for logger in loggers:
-        set_logging_handler(logger, DEFAULT_FORMATTING, log_format_local_dev_enabled)
+        set_logging_handler(logger, fmt, log_format_local_dev_enabled)
 
 
 def set_logging_handler(
