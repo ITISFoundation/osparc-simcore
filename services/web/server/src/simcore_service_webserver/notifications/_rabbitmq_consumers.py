@@ -44,16 +44,14 @@ async def _handle_computation_running_progress(
     app: web.Application, message: ProgressRabbitMessageNode
 ) -> bool:
     try:
-        project = await projects_api.update_project_node_progress(
-            app,
-            message.user_id,
-            f"{message.project_id}",
-            f"{message.node_id}",
-            progress=message.progress,
-        )
-        if project and not await projects_api.is_project_hidden(
-            app, message.project_id
-        ):
+        if not await projects_api.is_project_hidden(app, message.project_id):
+            project = await projects_api.get_project_for_user(
+                app, f"{message.project_id}", message.user_id
+            )
+            # update the project node progress with the latest value
+            project["workbench"][f"{message.node_id}"].update(
+                {"progress": round(message.progress * 100.0)}
+            )
             messages: list[SocketMessageDict] = [
                 {
                     "event_type": SOCKET_IO_NODE_UPDATED_EVENT,
