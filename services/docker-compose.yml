@@ -180,6 +180,16 @@ services:
       - INVITATIONS_PASSWORD=${INVITATIONS_PASSWORD}
       - LOG_FORMAT_LOCAL_DEV_ENABLED=${LOG_FORMAT_LOCAL_DEV_ENABLED}
 
+  resource-usage-tracker:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/resource-usage-tracker:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    networks:
+      - default
+    environment:
+      - RESOURCE_USAGE_TRACKER_LOGLEVEL=${LOG_LEVEL:-INFO}
+      - LOG_FORMAT_LOCAL_DEV_ENABLED=${LOG_FORMAT_LOCAL_DEV_ENABLED}
+
   static-webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true

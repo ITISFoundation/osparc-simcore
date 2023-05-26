@@ -3,15 +3,21 @@
 #       This is a minor evil to avoid the maintenance burden that creates
 #       an extra dependency to a larger models_library (intra-repo library)
 
+import re
 from enum import Enum
 
-from pydantic.types import conint, constr
+from pydantic import ConstrainedInt, ConstrainedStr
+
 
 # port number range
-PortInt = conint(gt=0, lt=65535)
+class PortInt(ConstrainedInt):
+    gt = 0
+    lt = 65535
+
 
 # e.g. 'v5'
-VersionTag = constr(regex=r"^v\d$")
+class VersionTag(ConstrainedStr):
+    regex = re.compile(r"^v\d$")
 
 
 class LogLevel(str, Enum):

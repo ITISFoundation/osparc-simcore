@@ -44,6 +44,7 @@ MAP_SERVICE_HEALTHCHECK_ENTRYPOINT = {
     "datcore-adapter": "/v0/live",
     "director-v2": "/",
     "invitations": "/",
+    "resource-usage-tracker": "/",
 }
 AIOHTTP_BASED_SERVICE_PORT: int = 8080
 FASTAPI_BASED_SERVICE_PORT: int = 8000
@@ -54,7 +55,6 @@ _ONE_SEC_TIMEOUT = ClientTimeout(total=1)  # type: ignore
 
 
 async def wait_till_service_healthy(service_name: str, endpoint: URL):
-
     log.info(
         "Connecting to %s",
         f"{service_name=} at {endpoint=}",
