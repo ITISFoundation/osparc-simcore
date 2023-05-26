@@ -39,9 +39,23 @@ from ._constants import APP_RABBITMQ_CONSUMERS_KEY
 _logger = logging.getLogger(__name__)
 
 
-async def _handle_computation_running_progress(
+def _convert_to_project_progress_event(
+    message: ProgressRabbitMessageProject,
+) -> SocketMessageDict:
+    return SocketMessageDict(
+        event_type=SOCKET_IO_PROJECT_PROGRESS_EVENT,
+        data={
+            "project_id": message.project_id,
+            "user_id": message.user_id,
+            "progress_type": message.progress_type,
+            "progress": message.progress,
+        },
+    )
+
+
+async def _convert_to_node_update_event(
     app: web.Application, message: ProgressRabbitMessageNode
-) -> None:
+) -> SocketMessageDict | None:
     try:
         project = await projects_api.get_project_for_user(
             app, f"{message.project_id}", message.user_id
@@ -51,55 +65,49 @@ async def _handle_computation_running_progress(
             project["workbench"][f"{message.node_id}"].update(
                 {"progress": round(message.progress * 100.0)}
             )
-            messages: list[SocketMessageDict] = [
-                {
-                    "event_type": SOCKET_IO_NODE_UPDATED_EVENT,
-                    "data": {
-                        "project_id": message.project_id,
-                        "node_id": message.node_id,
-                        "data": project["workbench"][f"{message.node_id}"],
-                    },
-                }
-            ]
-            await send_messages(app, message.user_id, messages)
-        else:
-            _logger.warning("node not found in project: '%s'", message.dict())
+            return SocketMessageDict(
+                event_type=SOCKET_IO_NODE_UPDATED_EVENT,
+                data={
+                    "project_id": message.project_id,
+                    "node_id": message.node_id,
+                    "data": project["workbench"][f"{message.node_id}"],
+                },
+            )
+        _logger.warning("node not found: '%s'", message.dict())
     except ProjectNotFoundError:
         _logger.warning("project not found: '%s'", message.dict())
+    return None
+
+
+def _convert_to_node_progress_event(
+    message: ProgressRabbitMessageNode,
+) -> SocketMessageDict:
+    return SocketMessageDict(
+        event_type=SOCKET_IO_NODE_PROGRESS_EVENT,
+        data={
+            "project_id": message.project_id,
+            "node_id": message.node_id,
+            "user_id": message.user_id,
+            "progress_type": message.progress_type,
+            "progress": message.progress,
+        },
+    )
 
 
 async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
-    # update corresponding project, node, progress value
-    rabbit_message: (
-        ProgressRabbitMessageNode | ProgressRabbitMessageProject
-    ) = parse_raw_as(
+    rabbit_message = parse_raw_as(
         Union[ProgressRabbitMessageNode, ProgressRabbitMessageProject], data
     )
+    socket_message: SocketMessageDict | None = None
+    if isinstance(rabbit_message, ProgressRabbitMessageProject):
+        socket_message = _convert_to_project_progress_event(rabbit_message)
+    elif rabbit_message.progress_type is ProgressType.COMPUTATION_RUNNING:
+        socket_message = await _convert_to_node_update_event(app, rabbit_message)
+    else:
+        socket_message = _convert_to_node_progress_event(rabbit_message)
+    if socket_message:
+        await send_messages(app, rabbit_message.user_id, [socket_message])
 
-    if rabbit_message.progress_type is ProgressType.COMPUTATION_RUNNING:
-        # NOTE: backward compatibility, this progress is kept in the project
-        assert isinstance(rabbit_message, ProgressRabbitMessageNode)  # nosec
-        await _handle_computation_running_progress(app, rabbit_message)
-        return True
-
-    # NOTE: other types of progress are transient
-    is_type_message_node = type(rabbit_message) == ProgressRabbitMessageNode
-    socket_message: SocketMessageDict = {
-        "event_type": (
-            SOCKET_IO_NODE_PROGRESS_EVENT
-            if is_type_message_node
-            else SOCKET_IO_PROJECT_PROGRESS_EVENT
-        ),
-        "data": {
-            "project_id": rabbit_message.project_id,
-            "user_id": rabbit_message.user_id,
-            "progress_type": rabbit_message.progress_type,
-            "progress": rabbit_message.progress,
-        },
-    }
-    if is_type_message_node:
-        socket_message["data"]["node_id"] = rabbit_message.node_id
-    await send_messages(app, rabbit_message.user_id, [socket_message])
     return True
 
 
