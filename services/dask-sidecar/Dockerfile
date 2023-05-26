@@ -81,8 +81,8 @@ RUN  --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=loc
 # NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
 RUN python -m venv "${VIRTUAL_ENV}"
 
-RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
-  pip install --upgrade \
+RUN --mount=type=cache,id=pipbasecache,mode=0777,target=/root/.cache/pip \
+  pip --no-cache-dir install --upgrade  \
   pip~=23.1  \
   wheel \
   setuptools
