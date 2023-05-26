@@ -23,6 +23,7 @@ RUN  --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=loc
   curl \
   gosu \
   && apt-get clean \
+  && apt-get autoremove -y \
   && rm -rf /var/lib/apt/lists/* \
   # verify that the binary works
   && gosu nobody true
@@ -79,6 +80,7 @@ RUN  --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=loc
 
 # NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
 RUN python -m venv "${VIRTUAL_ENV}"
+
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
   pip install --upgrade \
   pip~=23.1  \
@@ -109,8 +111,9 @@ COPY --chown=scu:scu services/dask-sidecar /build/services/dask-sidecar
 WORKDIR /build/services/dask-sidecar
 
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
-  pip install \
-  --requirement requirements/prod.txt
+  pip --no-cache-dir install \
+  --requirement requirements/prod.txt \
+  && pip --no-cache-dir list -v
 
 # --------------------------Production stage -------------------
 # Final cleanup up to reduce image size and startup setup
@@ -132,6 +135,7 @@ WORKDIR /home/scu
 COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 # copy docker entrypoint and boot scripts
 COPY --chown=scu:scu services/dask-sidecar/docker services/dask-sidecar/docker
+RUN chmod +x services/dask-sidecar/docker/*.sh
 # ensure home folder is read/writable for user scu
 RUN chown -R scu /home/scu
 

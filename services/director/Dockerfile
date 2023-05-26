@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 ARG PYTHON_VERSION="3.6.10"
 FROM python:${PYTHON_VERSION}-slim-buster as base
 #
@@ -10,12 +11,17 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 
 LABEL maintainer=sanderegg
 
-RUN set -eux && \
+RUN --mount=type=cache,id=basecache36,target=/var/cache/apt,mode=0755,sharing=locked \
+  --mount=type=cache,id=baseapt36,target=/var/lib/apt,mode=0755,sharing=locked \
+  set -eux && \
   apt-get update && \
-  apt-get install -y gosu && \
-  rm -rf /var/lib/apt/lists/* && \
+  apt-get install -y --no-install-recommends \
+  gosu \
+  && apt-get autoclean -y \
+  && apt-get autoremove -y \
+  && rm -rf /var/lib/apt/lists/* \
   # verify that the binary works
-  gosu nobody true
+  && gosu nobody true
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 ENV SC_USER_ID=8004 \
@@ -64,8 +70,11 @@ FROM base as build
 
 ENV SC_BUILD_TARGET=build
 
-RUN apt-get update \
-  &&  apt-get install -y --no-install-recommends \
+RUN --mount=type=cache,id=basecache36,target=/var/cache/apt,mode=0755,sharing=locked \
+  --mount=type=cache,id=baseapt36,target=/var/lib/apt,mode=0755,sharing=locked \
+  set -eux \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends \
   build-essential \
   git \
   && apt-get clean \
@@ -75,7 +84,8 @@ RUN apt-get update \
 # NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
 RUN python -m venv "${VIRTUAL_ENV}"
 
-RUN pip --no-cache-dir install --upgrade \
+RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
+  pip --no-cache-dir install --upgrade \
   pip~=21.3  \
   wheel \
   setuptools

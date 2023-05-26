@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 ARG PYTHON_VERSION="3.10.10"
 FROM python:${PYTHON_VERSION}-slim-buster as base
 #
@@ -12,13 +13,17 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 
 LABEL maintainer=pcrespov
 
-RUN set -eux && \
+RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=locked \
+  --mount=type=cache,id=baseapt,target=/var/lib/apt,mode=0755,sharing=locked \
+  set -eux && \
   apt-get update && \
   apt-get install -y --no-install-recommends \
-  gosu && \
-  rm -rf /var/lib/apt/lists/* && \
+  gosu \
+  && apt-get autoclean -y \
+  && apt-get autoremove -y \
+  && rm -rf /var/lib/apt/lists/* \
   # verify that the binary works
-  gosu nobody true
+  && gosu nobody true
 
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
@@ -66,7 +71,10 @@ FROM base as build
 
 ENV SC_BUILD_TARGET build
 
-RUN apt-get update \
+RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=locked \
+  --mount=type=cache,id=baseapt,target=/var/lib/apt,mode=0755,sharing=locked \
+  set -eux \
+  && apt-get update \
   && apt-get install -y --no-install-recommends \
   build-essential \
   libmagic1 \
@@ -78,7 +86,8 @@ RUN apt-get update \
 # packages may be moved to production image easily by copying the venv
 RUN python -m venv "${VIRTUAL_ENV}"
 
-RUN pip --no-cache-dir install --upgrade \
+RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
+  pip --no-cache-dir install --upgrade  \
   pip~=23.1  \
   wheel \
   setuptools
@@ -87,7 +96,9 @@ WORKDIR /build
 
 # install only base 3rd party dependencies
 COPY  --chown=scu:scu services/web/server/requirements/_base.txt requirements_base.txt
-RUN pip --no-cache-dir --quiet install -r requirements_base.txt
+RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
+  pip --no-cache-dir install \
+  --requirement requirements_base.txt
 
 # --------------------------Prod-depends-only stage -------------------
 # This stage is for production only dependencies that get partially wiped out afterwards (final docker image concerns)
@@ -105,7 +116,10 @@ COPY --chown=scu:scu services/web/server /build/services/web/server
 
 WORKDIR /build/services/web/server
 
-RUN pip --no-cache-dir --quiet install -r requirements/prod.txt
+RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
+  pip --no-cache-dir install \
+  --requirement requirements/prod.txt \
+  && pip --no-cache-dir list -v
 
 # --------------------------Production stage -------------------
 # Final cleanup up to reduce image size and startup setup

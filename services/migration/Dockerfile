@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 ARG PYTHON_VERSION="3.10.10"
 FROM python:${PYTHON_VERSION}-slim-buster as base
 
@@ -31,7 +32,10 @@ ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 # --------------------------------------------
 FROM base as build
 
-RUN apt-get update \
+RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=locked \
+  --mount=type=cache,id=baseapt,target=/var/lib/apt,mode=0755,sharing=locked \
+  set -eux \
+  && apt-get update \
   && apt-get install -y --no-install-recommends \
   build-essential \
   git \
@@ -42,7 +46,8 @@ RUN apt-get update \
 # NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
 RUN python -m venv "${VIRTUAL_ENV}"
 
-RUN pip --no-cache-dir install --upgrade \
+RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
+  pip --no-cache-dir install --upgrade  \
   pip~=23.1  \
   wheel \
   setuptools

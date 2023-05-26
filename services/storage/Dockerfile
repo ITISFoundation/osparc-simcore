@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 ARG PYTHON_VERSION="3.10.10"
 FROM python:${PYTHON_VERSION}-slim-buster as base
 #
@@ -10,12 +11,17 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 
 LABEL maintainer=mguidon
 
-RUN set -eux && \
+RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=locked \
+  --mount=type=cache,id=baseapt,target=/var/lib/apt,mode=0755,sharing=locked \
+  set -eux && \
   apt-get update && \
-  apt-get install -y gosu && \
-  rm -rf /var/lib/apt/lists/* && \
+  apt-get install -y --no-install-recommends \
+  gosu \
+  && apt-get autoclean -y \
+  && apt-get autoremove -y \
+  && rm -rf /var/lib/apt/lists/* \
   # verify that the binary works
-  gosu nobody true
+  && gosu nobody true
 
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
@@ -63,7 +69,10 @@ FROM base as build
 
 ENV SC_BUILD_TARGET build
 
-RUN apt-get update \
+RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=locked \
+  --mount=type=cache,id=baseapt,target=/var/lib/apt,mode=0755,sharing=locked \
+  set -eux \
+  && apt-get update \
   && apt-get install -y --no-install-recommends \
   build-essential \
   git \
@@ -84,7 +93,9 @@ WORKDIR /build
 
 # install only base 3rd party dependencies
 COPY  --chown=scu:scu services/storage/requirements/_base.txt requirements_base.txt
-RUN pip --no-cache-dir --quiet install -r requirements_base.txt
+RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
+  pip --no-cache-dir install \
+  --requirement requirements_base.txt
 # -------------------------- -------------------------------
 
 
@@ -106,7 +117,10 @@ COPY --chown=scu:scu services/storage /build/services/storage
 
 WORKDIR /build/services/storage
 
-RUN pip --no-cache-dir --quiet install -r requirements/prod.txt
+RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
+  pip --no-cache-dir install \
+  --requirement requirements/prod.txt \
+  && pip --no-cache-dir list -v
 # -------------------------- -------------------------------
 
 
