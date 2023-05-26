@@ -38,9 +38,7 @@ RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=lock
   && apt-get update \
   && apt-get install -y --no-install-recommends \
   build-essential \
-  git \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
+  git
 
 
 # NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv

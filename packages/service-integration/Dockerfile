@@ -42,9 +42,7 @@ FROM base as build
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
-  build-essential \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
+  build-essential
 
 
 # NOTE: python virtualenv is used here such that installed

@@ -84,9 +84,7 @@ RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=lock
   set -eux \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
-  build-essential \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
+  build-essential
 
 
 # NOTE: python virtualenv is used here such that installed

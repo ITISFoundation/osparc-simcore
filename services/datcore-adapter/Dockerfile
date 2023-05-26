@@ -18,9 +18,7 @@ RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=lock
   apt-get update && \
   apt-get install -y --no-install-recommends \
   gosu \
-  && apt-get autoclean -y \
-  && apt-get autoremove -y \
-  && rm -rf /var/lib/apt/lists/* \
+  && apt-get clean -y \
   # verify that the binary works
   && gosu nobody true
 
@@ -67,9 +65,7 @@ RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=lock
   set -eux \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
-  build-essential \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
+  build-essential
 
 
 # NOTE: python virtualenv is used here such that installed

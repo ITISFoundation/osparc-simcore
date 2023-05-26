@@ -17,9 +17,7 @@ RUN --mount=type=cache,id=basecache36,target=/var/cache/apt,mode=0755,sharing=lo
   apt-get update && \
   apt-get install -y --no-install-recommends \
   gosu \
-  && apt-get autoclean -y \
-  && apt-get autoremove -y \
-  && rm -rf /var/lib/apt/lists/* \
+  && apt-get clean -y \
   # verify that the binary works
   && gosu nobody true
 
@@ -76,9 +74,7 @@ RUN --mount=type=cache,id=basecache36,target=/var/cache/apt,mode=0755,sharing=lo
   && apt-get update \
   && apt-get install -y --no-install-recommends \
   build-essential \
-  git \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
+  git
 
 
 # NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv

@@ -19,9 +19,7 @@ RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=lock
   apt-get update && \
   apt-get install -y --no-install-recommends \
   gosu \
-  && apt-get autoclean -y \
-  && apt-get autoremove -y \
-  && rm -rf /var/lib/apt/lists/* \
+  && apt-get clean -y \
   # verify that the binary works
   && gosu nobody true
 
@@ -77,9 +75,7 @@ RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=lock
   && apt-get update \
   && apt-get install -y --no-install-recommends \
   build-essential \
-  libmagic1 \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
+  libmagic1
 
 
 # NOTE: python virtualenv is used here such that installed
@@ -117,8 +113,8 @@ COPY --chown=scu:scu services/web/server /build/services/web/server
 WORKDIR /build/services/web/server
 
 # libmagic is requried by the exporter
-RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=locked \
-  --mount=type=cache,id=baseapt,target=/var/lib/apt,mode=0755,sharing=locked \
+RUN --mount=type=cache,id=webprodcache,target=/var/cache/apt,mode=0755,sharing=locked \
+  --mount=type=cache,id=webprodapt,target=/var/lib/apt,mode=0755,sharing=locked \
   set -eux \
   && apt-get update \
   && apt-get install -y --no-install-recommends \

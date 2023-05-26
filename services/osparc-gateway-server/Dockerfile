@@ -16,8 +16,6 @@ RUN  --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=loc
   gosu \
   libffi-dev \
   libffi7 \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/* \
   # verify that the binary works
   && gosu nobody true
 
@@ -67,9 +65,7 @@ RUN  --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=loc
   && apt-get install -y --no-install-recommends \
   build-essential \
   git \
-  golang-go \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
+  golang-go
 
 
 # NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv

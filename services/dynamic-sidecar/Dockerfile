@@ -78,9 +78,7 @@ RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=lock
   set -eux \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
-  build-essential \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
+  build-essential
 
 # NOTE: python virtualenv is used here such that installed
 # packages may be moved to production image easily by copying the venv
@@ -121,8 +119,8 @@ WORKDIR /build/services/dynamic-sidecar
 
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
   pip --no-cache-dir install \
-  --requirement requirements/prod.txt &&\
-  pip --no-cache-dir list -v
+  --requirement requirements/prod.txt \
+  && pip --no-cache-dir list -v
 
 # --------------------------Production stage -------------------
 # Final cleanup up to reduce image size and startup setup
