@@ -124,7 +124,8 @@ COPY --chown=scu:scu --from=prod-only-deps  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 # Copies booting scripts
 COPY --chown=scu:scu services/agent/docker services/agent/docker
 RUN chmod +x services/agent/docker/*.sh
-
+# ensure home folder is read/writable for user scu
+RUN chown -R scu /home/scu
 
 HEALTHCHECK --interval=30s \
   --timeout=20s \

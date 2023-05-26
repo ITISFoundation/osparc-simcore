@@ -135,7 +135,8 @@ WORKDIR /home/scu
 COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 # copy docker entrypoint and boot scripts
 COPY --chown=scu:scu services/osparc-gateway-server/docker services/osparc-gateway-server/docker
-
+# ensure home folder is read/writable for user scu
+RUN chown -R scu /home/scu
 
 # TODO: Create healthcheck
 # HEALTHCHECK \

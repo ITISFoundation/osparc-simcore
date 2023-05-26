@@ -147,7 +147,8 @@ COPY --chown=scu:scu --from=prod-only-deps  ${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_D
 # Copies booting scripts
 COPY --chown=scu:scu services/dynamic-sidecar/docker services/dynamic-sidecar/docker
 RUN chmod +x services/dynamic-sidecar/docker/*.sh
-
+# ensure home folder is read/writable for user scu
+RUN chown -R scu /home/scu
 # disabled healthcheck as director-v2 is already taking care of it
 # in oder to have similar performance a more aggressive healethcek
 # would be required.

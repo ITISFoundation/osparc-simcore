@@ -135,7 +135,8 @@ RUN apt-get update \
 # copy docker entrypoint and boot scripts
 COPY --chown=scu:scu services/web/server/docker services/web/server/docker
 RUN chmod +x services/web/server/docker/*.sh
-
+# ensure home folder is read/writable for user scu
+RUN chown -R scu /home/scu
 
 # healthcheck.
 # NOTE: do not forget to update variable
