@@ -375,6 +375,7 @@ services:
       - storage_subnet
     environment:
       - TRACING_THRIFT_COMPACT_ENDPOINT=${TRACING_THRIFT_COMPACT_ENDPOINT}
+      - DATCORE_ADAPTER_LOG_FORMAT_LOCAL_DEV_ENABLED=${LOG_FORMAT_LOCAL_DEV_ENABLED}
 
   storage:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
