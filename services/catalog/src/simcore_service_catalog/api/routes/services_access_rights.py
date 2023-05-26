@@ -46,6 +46,6 @@ async def get_service_access_rights(
 
     return ServiceAccessRightsGet(
         service_key=service_key,
-        service_version=service_version,  # Add product! (MATUS)
+        service_version=service_version,
         gids_with_access_rights=output,
     )
