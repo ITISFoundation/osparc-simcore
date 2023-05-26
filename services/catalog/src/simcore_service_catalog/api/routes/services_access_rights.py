@@ -37,9 +37,9 @@ async def get_service_access_rights(
         key=service_key, version=service_version, product_name=x_simcore_products_name
     )
 
-    output = {}
+    gids_with_access_rights = {}
     for s in service_access_rights:
-        output[s.gid] = {
+        gids_with_access_rights[s.gid] = {
             "execute_access": s.execute_access,
             "write_access": s.write_access,
         }
@@ -47,5 +47,5 @@ async def get_service_access_rights(
     return ServiceAccessRightsGet(
         service_key=service_key,
         service_version=service_version,
-        gids_with_access_rights=output,
+        gids_with_access_rights=gids_with_access_rights,
     )
