@@ -198,11 +198,19 @@ class RabbitMQClient:
                 message: aio_pika.abc.AbstractIncomingMessage,
             ) -> None:
                 async with message.process(requeue=True):
-                    with log_context(
-                        _logger, logging.DEBUG, msg=f"Message received {message}"
-                    ):
-                        if not await message_handler(message.body):
-                            await message.nack()
+                    try:
+                        with log_context(
+                            _logger, logging.DEBUG, msg=f"Message received {message}"
+                        ):
+                            if not await message_handler(message.body):
+                                await message.nack()
+                    except Exception:  # pylint: disable=broad-exception-caught
+                        _logger.exception(
+                            "unhandled exception when consuming RabbitMQ message, "
+                            "this is catched but should not happen. "
+                            "Please check, message will be queued back!"
+                        )
+                        await message.nack()
 
             await queue.consume(_on_message)
             return queue.name
