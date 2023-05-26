@@ -10,7 +10,6 @@ import logging
 
 from aiohttp import web
 from models_library.projects_state import ProjectState
-from models_library.users import GroupID
 from pydantic import BaseModel
 from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
@@ -50,10 +49,6 @@ routes = web.RouteTableDef()
 
 class _OpenProjectQuery(BaseModel):
     disable_service_auto_start: bool = False
-
-
-class _ShareableProjectQuery(BaseModel):
-    for_gid: GroupID
 
 
 @routes.post(f"/{VTAG}/projects/{{project_id}}:open", name="open_project")
