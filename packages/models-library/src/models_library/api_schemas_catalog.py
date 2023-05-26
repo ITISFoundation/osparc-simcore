@@ -3,11 +3,6 @@ from pydantic import BaseModel
 from .services import ServiceKey, ServiceVersion
 
 
-class AccessRightsRules(BaseModel):
-    execute_access: bool
-    write_access: bool
-
-
 class ServiceAccessRightsGet(BaseModel):
     service_key: ServiceKey
     service_version: ServiceVersion
