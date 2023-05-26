@@ -41,34 +41,31 @@ _logger = logging.getLogger(__name__)
 
 async def _handle_computation_running_progress(
     app: web.Application, message: ProgressRabbitMessageNode
-) -> bool:
+) -> None:
     try:
         project = await projects_api.get_project_for_user(
             app, f"{message.project_id}", message.user_id
         )
-        if f"{message.node_id}" not in project["workbench"]:
+        if f"{message.node_id}" in project["workbench"]:
+            # update the project node progress with the latest value
+            project["workbench"][f"{message.node_id}"].update(
+                {"progress": round(message.progress * 100.0)}
+            )
+            messages: list[SocketMessageDict] = [
+                {
+                    "event_type": SOCKET_IO_NODE_UPDATED_EVENT,
+                    "data": {
+                        "project_id": message.project_id,
+                        "node_id": message.node_id,
+                        "data": project["workbench"][f"{message.node_id}"],
+                    },
+                }
+            ]
+            await send_messages(app, message.user_id, messages)
+        else:
             _logger.warning("node not found in project: '%s'", message.dict())
-            return True
-        # update the project node progress with the latest value
-        project["workbench"][f"{message.node_id}"].update(
-            {"progress": round(message.progress * 100.0)}
-        )
-        messages: list[SocketMessageDict] = [
-            {
-                "event_type": SOCKET_IO_NODE_UPDATED_EVENT,
-                "data": {
-                    "project_id": message.project_id,
-                    "node_id": message.node_id,
-                    "data": project["workbench"][f"{message.node_id}"],
-                },
-            }
-        ]
-        await send_messages(app, message.user_id, messages)
-        return True
     except ProjectNotFoundError:
         _logger.warning("project not found: '%s'", message.dict())
-        return True
-    return True
 
 
 async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
@@ -82,7 +79,8 @@ async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
     if rabbit_message.progress_type is ProgressType.COMPUTATION_RUNNING:
         # NOTE: backward compatibility, this progress is kept in the project
         assert isinstance(rabbit_message, ProgressRabbitMessageNode)  # nosec
-        return await _handle_computation_running_progress(app, rabbit_message)
+        await _handle_computation_running_progress(app, rabbit_message)
+        return True
 
     # NOTE: other types of progress are transient
     is_type_message_node = type(rabbit_message) == ProgressRabbitMessageNode
