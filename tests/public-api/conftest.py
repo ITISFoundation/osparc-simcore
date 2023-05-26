@@ -51,7 +51,7 @@ pytest_plugins = [
 
 @pytest.fixture(scope="session")
 def testing_environ_vars(testing_environ_vars: EnvVarsDict) -> EnvVarsDict:
-    ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::testing_environ_vars fixture
+    # OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::testing_environ_vars fixture
 
     # help faster update of service_metadata table by catalog
     testing_environ_vars["CATALOG_BACKGROUND_TASK_REST_TIME"] = "1"
@@ -61,7 +61,7 @@ def testing_environ_vars(testing_environ_vars: EnvVarsDict) -> EnvVarsDict:
 @pytest.fixture(scope="module")
 def core_services_selection(simcore_docker_compose: dict) -> list[str]:
     """Selection of services from the simcore stack"""
-    ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::core_services_selection fixture
+    # OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::core_services_selection fixture
     all_core_services = list(simcore_docker_compose["services"].keys())
     return all_core_services
 
@@ -69,8 +69,11 @@ def core_services_selection(simcore_docker_compose: dict) -> list[str]:
 @pytest.fixture(scope="module")
 def ops_services_selection(ops_docker_compose: dict) -> list[str]:
     """Selection of services from the ops stack"""
-    ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::ops_services_selection fixture
+    # OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::ops_services_selection fixture
     all_ops_services = list(ops_docker_compose["services"].keys())
+    if "CI" in os.environ:
+        all_ops_services = ["minio"]
+        print(f"WARNING: Only required services will be started {all_ops_services=}")
     return all_ops_services
 
 
@@ -112,7 +115,6 @@ def simcore_docker_stack_and_registry_ready(
 def registered_user(
     simcore_docker_stack_and_registry_ready: StacksDeployedDict,
 ) -> Iterator[RegisteredUserDict]:
-
     first_name = "john"
     last_name = "smith"
     user = RegisteredUserDict(

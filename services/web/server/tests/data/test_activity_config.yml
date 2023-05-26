@@ -47,6 +47,7 @@ session:
   secret_key: "REPLACE_ME_with_result__Fernet_generate_key="
 activity:
   enabled: True
-  prometheus_host: http://prometheus
-  prometheus_port: 9090
+  prometheus_url: http://prometheus:9090
+  prometheus_username: fake
+  prometheus_password: fake
   prometheus_api_version: v1
