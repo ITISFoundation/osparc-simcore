@@ -6,23 +6,15 @@ import urllib.parse
 from typing import Any, cast
 
 from aiocache import cached
-from fastapi import APIRouter, Body, Depends, Header, HTTPException, status
-from models_library.api_schemas_catalog import UserInaccessibleService
-from models_library.services import (
-    ServiceKey,
-    ServiceKeyVersion,
-    ServiceType,
-    ServiceVersion,
-)
+from fastapi import APIRouter, Depends, Header, HTTPException, status
+from models_library.services import ServiceKey, ServiceType, ServiceVersion
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
-from models_library.users import GroupID
-from pydantic import BaseModel, ValidationError
+from pydantic import ValidationError
 from pydantic.types import PositiveInt
 from starlette.requests import Request
 
 from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
-from ...db.repositories.services_shareable import ShareableServicesRepository
 from ...models.schemas.constants import (
     DIRECTOR_CACHING_TTL,
     LIST_SERVICES_CACHING_TTL,
@@ -186,34 +178,6 @@ async def list_services(
         ]
     )
     return [s for s in services_details if s is not None]
-
-
-class _ServicesInaccessibleBody(BaseModel):
-    services_to_check: list[ServiceKeyVersion]
-    for_gid: GroupID
-
-
-@router.post(
-    ":inaccessible",
-    response_model=list[UserInaccessibleService],
-    **RESPONSE_MODEL_POLICY,
-)
-async def list_inaccessible_services(
-    request: Request,  # pylint:disable=unused-argument
-    body: _ServicesInaccessibleBody = Body(...),
-    shareable_services_repo: ShareableServicesRepository = Depends(
-        get_repository(ShareableServicesRepository)
-    ),
-    x_simcore_products_name: str = Header(...),
-):
-    output: list[
-        UserInaccessibleService
-    ] = await shareable_services_repo.list_inaccessible_services(
-        gid=body.for_gid,
-        product_name=x_simcore_products_name,
-        services_to_check=body.services_to_check,
-    )
-    return output
 
 
 @router.get(

@@ -2,14 +2,18 @@
 
 """
 
+import asyncio
 import json
 import logging
 
 from aiohttp import web
+from models_library.api_schemas_catalog import ServiceAccessRightsGet
+from models_library.groups import EVERYONE_GROUP_ID
 from models_library.projects_nodes import NodeID
-from models_library.services import ServiceKey, ServiceVersion
+from models_library.services import ServiceKey, ServiceKeyVersion, ServiceVersion
+from models_library.users import GroupID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from servicelib.aiohttp.long_running_tasks.server import (
     TaskProgress,
     start_long_running_task,
@@ -17,6 +21,7 @@ from servicelib.aiohttp.long_running_tasks.server import (
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
+    parse_request_query_parameters_as,
 )
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
@@ -27,6 +32,7 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserRole
 
 from .._meta import api_version_prefix as VTAG
+from ..catalog import client as catalog_client
 from ..director_v2 import api
 from ..director_v2.exceptions import DirectorServiceError
 from ..login.decorators import login_required
@@ -221,7 +227,6 @@ async def start_node(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_NodePathParams, request)
     try:
-
         await projects_api.start_project_node(
             request,
             product_name=req_ctx.product_name,
@@ -359,7 +364,6 @@ async def replace_node_resources(request: web.Request) -> web.Response:
         raise web.HTTPBadRequest(reason=f"Invalid request body: {exc}") from exc
 
     try:
-
         # ensure the project exists
         _project = await projects_api.get_project_for_user(
             request.app,
@@ -381,3 +385,83 @@ async def replace_node_resources(request: web.Request) -> web.Response:
         raise web.HTTPNotFound(
             reason=f"Node {path_params.node_id} not found in project"
         ) from exc
+
+
+class _ServicesAccessQuery(BaseModel):
+    for_gid: GroupID
+
+
+class _ProjectGroupAccess(BaseModel):
+    gid: GroupID
+    accessible: bool
+    inaccessible_services: list[ServiceKeyVersion] | None = Field(default=None)
+
+
+@routes.get(
+    f"/{VTAG}/projects/{{project_id}}/nodes/-/services:access",
+    name="get_project_services_access_for_gid",
+)
+@login_required
+@permission_required("project.read")
+async def get_project_services_access_for_gid(request: web.Request) -> web.Response:
+    req_ctx = RequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(ProjectPathParams, request)
+    query_params = parse_request_query_parameters_as(_ServicesAccessQuery, request)
+
+    project = await projects_api.get_project_for_user(
+        request.app,
+        project_uuid=f"{path_params.project_id}",
+        user_id=req_ctx.user_id,
+        include_state=True,
+    )
+    project_services: list[ServiceKeyVersion] = [
+        ServiceKeyVersion(key=s["key"], version=s["version"])
+        for _, s in project["workbench"].items()
+    ]
+
+    project_services_access_rights: list[ServiceAccessRightsGet] = await asyncio.gather(
+        *[
+            catalog_client.get_service_access_rights(
+                app=request.app,
+                user_id=req_ctx.user_id,
+                service_key=service.key,
+                service_version=service.version,
+                product_name=req_ctx.product_name,
+            )
+            for service in project_services
+        ]
+    )
+
+    inaccessible_services = []
+    for service in project_services_access_rights:
+        service_access_rights = service.gids_with_access_rights
+
+        # Ignore services shared with everyone
+        if service_access_rights.get(EVERYONE_GROUP_ID):
+            continue
+
+        # Check if service is accessible to the provided group
+        service_access_rights_for_gid = service_access_rights.get(
+            query_params.for_gid, {}
+        )
+
+        if (
+            not service_access_rights_for_gid
+            or service_access_rights_for_gid.get("execute_access", False) is False
+        ):
+            inaccessible_services.append(service)
+
+    project_accessible = not inaccessible_services
+    project_inaccessible_services = (
+        inaccessible_services if inaccessible_services else None
+    )
+
+    project_group_access = _ProjectGroupAccess(
+        gid=query_params.for_gid,
+        accessible=project_accessible,
+        inaccessible_services=project_inaccessible_services,
+    )
+
+    return web.json_response(
+        {"data": project_group_access.dict(exclude_none=True)}, dumps=json_dumps
+    )

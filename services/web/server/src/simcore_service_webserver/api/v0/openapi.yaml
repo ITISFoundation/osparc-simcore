@@ -5010,66 +5010,6 @@ paths:
                     type: string
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_id}/shareAccessDenied':
-    get:
-      tags:
-        - project
-      summary: Checks which users do not have access to the project in provided group
-      description: |-
-        This check is done based on whether users would be able to access the services
-        in the project.
-      operationId: share_access_denied_project
-      parameters:
-        - required: true
-          schema:
-            title: Project Id
-            type: string
-            format: uuid
-          name: project_id
-          in: path
-        - required: true
-          schema:
-            title: For Gid
-            exclusiveMinimum: true
-            type: integer
-            minimum: 0
-          name: for_gid
-          in: query
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                title: 'Envelope[list[models_library.api_schemas_catalog.UserInaccessibleService]]'
-                type: object
-                properties:
-                  data:
-                    title: Data
-                    type: array
-                    items:
-                      title: UserInaccessibleService
-                      required:
-                        - user_id
-                        - service_key
-                        - service_version
-                      type: object
-                      properties:
-                        user_id:
-                          title: User Id
-                          exclusiveMinimum: true
-                          type: integer
-                          minimum: 0
-                        service_key:
-                          title: Service Key
-                          pattern: '^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$'
-                          type: string
-                        service_version:
-                          title: Service Version
-                          pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
-                          type: string
-                  error:
-                    title: Error
   '/projects:import':
     post:
       tags:
@@ -5478,6 +5418,75 @@ paths:
                 $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/get/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
+  '/projects/{project_id}/nodes/-/services:access':
+    get:
+      tags:
+        - project
+      summary: Check whether provided group has access to the project services
+      operationId: get_project_services_access_for_gid
+      parameters:
+        - required: true
+          schema:
+            title: Project Id
+            type: string
+            format: uuid
+          name: project_id
+          in: path
+        - required: true
+          schema:
+            title: For Gid
+            exclusiveMinimum: true
+            type: integer
+            minimum: 0
+          name: for_gid
+          in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: 'Envelope[_ProjectGroupAccess]'
+                type: object
+                properties:
+                  data:
+                    title: _ProjectGroupAccess
+                    required:
+                      - gid
+                      - accessible
+                    type: object
+                    properties:
+                      gid:
+                        title: Gid
+                        exclusiveMinimum: true
+                        type: integer
+                        minimum: 0
+                      accessible:
+                        title: Accessible
+                        type: boolean
+                      inaccessible_services:
+                        title: Inaccessible Services
+                        type: array
+                        items:
+                          title: ServiceKeyVersion
+                          required:
+                            - key
+                            - version
+                          type: object
+                          properties:
+                            key:
+                              title: Key
+                              pattern: '^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$'
+                              type: string
+                              description: distinctive name for the node based on the docker registry path
+                            version:
+                              title: Version
+                              pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
+                              type: string
+                              description: service version number
+                          description: This pair uniquely identifies a services
+                  error:
+                    title: Error
   '/projects/{project_id}/inputs':
     get:
       tags:

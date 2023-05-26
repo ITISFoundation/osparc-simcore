@@ -1,10 +1,14 @@
-from models_library.users import UserID
 from pydantic import BaseModel
 
 from .services import ServiceKey, ServiceVersion
 
 
-class UserInaccessibleService(BaseModel):
-    user_id: UserID
+class AccessRightsRules(BaseModel):
+    execute_access: bool
+    write_access: bool
+
+
+class ServiceAccessRightsGet(BaseModel):
     service_key: ServiceKey
     service_version: ServiceVersion
+    gids_with_access_rights: dict[int, dict[str, bool]]

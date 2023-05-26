@@ -1,14 +1,10 @@
 paths:
-  /projects/{project_id}/shareAccessDenied:
+  /projects/{project_id}/nodes/-/services:access:
     get:
       tags:
       - project
-      summary: Checks which users do not have access to the project in provided group
-      description: 'This check is done based on whether users would be able to access
-        the services
-
-        in the project.'
-      operationId: share_access_denied_project
+      summary: Check whether provided group has access to the project services
+      operationId: get_project_services_access_for_gid
       parameters:
       - required: true
         schema:
@@ -31,38 +27,53 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_catalog.UserInaccessibleService__'
+                $ref: '#/components/schemas/Envelope__ProjectGroupAccess_'
 components:
   schemas:
-    Envelope_list_models_library.api_schemas_catalog.UserInaccessibleService__:
-      title: Envelope[list[models_library.api_schemas_catalog.UserInaccessibleService]]
+    Envelope__ProjectGroupAccess_:
+      title: Envelope[_ProjectGroupAccess]
       type: object
       properties:
         data:
-          title: Data
-          type: array
-          items:
-            $ref: '#/components/schemas/UserInaccessibleService'
+          $ref: '#/components/schemas/_ProjectGroupAccess'
         error:
           title: Error
-    UserInaccessibleService:
-      title: UserInaccessibleService
+    ServiceKeyVersion:
+      title: ServiceKeyVersion
       required:
-      - user_id
-      - service_key
-      - service_version
+      - key
+      - version
       type: object
       properties:
-        user_id:
-          title: User Id
+        key:
+          title: Key
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          type: string
+          description: distinctive name for the node based on the docker registry
+            path
+        version:
+          title: Version
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
+          description: service version number
+      description: This pair uniquely identifies a services
+    _ProjectGroupAccess:
+      title: _ProjectGroupAccess
+      required:
+      - gid
+      - accessible
+      type: object
+      properties:
+        gid:
+          title: Gid
           exclusiveMinimum: true
           type: integer
           minimum: 0
-        service_key:
-          title: Service Key
-          pattern: ^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$
-          type: string
-        service_version:
-          title: Service Version
-          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
-          type: string
+        accessible:
+          title: Accessible
+          type: boolean
+        inaccessible_services:
+          title: Inaccessible Services
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceKeyVersion'

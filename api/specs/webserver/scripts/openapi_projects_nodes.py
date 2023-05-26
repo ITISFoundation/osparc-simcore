@@ -17,11 +17,13 @@ from _common import (
     create_openapi_specs,
 )
 from fastapi import FastAPI
-from models_library.api_schemas_catalog import UserInaccessibleService
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.users import GroupID
-from simcore_service_webserver.projects.projects_handlers_crud import ProjectPathParams
+from simcore_service_webserver.projects._handlers_crud import ProjectPathParams
+from simcore_service_webserver.projects._handlers_project_nodes import (
+    _ProjectGroupAccess,
+)
 
 app = FastAPI(redoc_url=None)
 
@@ -36,20 +38,19 @@ TAGS: list[str | Enum] = [
 
 
 @app.get(
-    "/projects/{project_id}/shareAccessDenied",
-    response_model=Envelope[list[UserInaccessibleService]],
+    "/projects/{project_id}/nodes/-/services:access",
+    response_model=Envelope[_ProjectGroupAccess],
     tags=TAGS,
-    operation_id="share_access_denied_project",
-    summary="Checks which users do not have access to the project in provided group",
+    operation_id="get_project_services_access_for_gid",
+    summary="Check whether provided group has access to the project services",
 )
-async def denied_share_access_project(project_id: ProjectID, for_gid: GroupID):
-    """
-    This check is done based on whether users would be able to access the services
-    in the project.
-    """
+async def get_project_services_access_for_gid(project_id: ProjectID, for_gid: GroupID):
+    ...
 
 
-assert_handler_signature_against_model(denied_share_access_project, ProjectPathParams)
+assert_handler_signature_against_model(
+    get_project_services_access_for_gid, ProjectPathParams
+)
 
 
 if __name__ == "__main__":

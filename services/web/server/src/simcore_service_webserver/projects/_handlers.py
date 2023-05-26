@@ -9,9 +9,7 @@ import json
 import logging
 
 from aiohttp import web
-from models_library.api_schemas_catalog import UserInaccessibleService
 from models_library.projects_state import ProjectState
-from models_library.services import ServiceKeyVersion
 from models_library.users import GroupID
 from pydantic import BaseModel
 from servicelib.aiohttp.requests_validation import (
@@ -29,7 +27,6 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import ProjectType
 
 from .._meta import api_version_prefix as VTAG
-from ..catalog import client as catalog_client
 from ..director_v2.exceptions import DirectorServiceError
 from ..login.decorators import login_required
 from ..notifications import project_logs
@@ -228,36 +225,3 @@ async def get_project_state(request: web.Request) -> web.Response:
     )
     project_state = ProjectState(**validated_project["state"])
     return web.json_response({"data": project_state.dict()}, dumps=json_dumps)
-
-
-@routes.get(
-    f"/{VTAG}/projects/{{project_id}}/shareAccessDenied",
-    name="share_access_denied_project",
-)
-@login_required
-@permission_required("project.read")
-async def denied_share_access_project(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.parse_obj(request)
-    path_params = parse_request_path_parameters_as(ProjectPathParams, request)
-    query_params = parse_request_query_parameters_as(_ShareableProjectQuery, request)
-
-    project = await projects_api.get_project_for_user(
-        request.app,
-        project_uuid=f"{path_params.project_id}",
-        user_id=req_ctx.user_id,
-        include_state=True,
-    )
-    project_services: list[ServiceKeyVersion] = [
-        ServiceKeyVersion(key=s["key"], version=s["version"])
-        for _, s in project["workbench"].items()
-    ]
-
-    list_of_user_inaccessible_services: list[
-        UserInaccessibleService
-    ] = await catalog_client.list_inaccessible_services(
-        request.app, query_params.for_gid, req_ctx.product_name, project_services
-    )
-
-    return web.json_response(
-        {"data": list_of_user_inaccessible_services}, dumps=json_dumps
-    )

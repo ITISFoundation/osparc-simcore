@@ -11,11 +11,10 @@ from aiohttp.client_exceptions import (
     ClientResponseError,
     InvalidURL,
 )
-from models_library.api_schemas_catalog import UserInaccessibleService
-from models_library.services import ServiceKeyVersion
+from models_library.api_schemas_catalog import ServiceAccessRightsGet
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
-from pydantic import PositiveInt, parse_obj_as
+from pydantic import parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
 from settings_library.catalog import CatalogSettings
 from yarl import URL
@@ -122,6 +121,28 @@ async def get_service_resources(
             return parse_obj_as(ServiceResourcesDict, dict_response)
 
 
+async def get_service_access_rights(
+    app: web.Application,
+    user_id: UserID,
+    service_key: str,
+    service_version: str,
+    product_name: str,
+) -> ServiceAccessRightsGet:
+    settings: CatalogSettings = get_plugin_settings(app)
+    url = (
+        URL(settings.api_base_url)
+        / f"services/{urllib.parse.quote_plus(service_key)}/{service_version}/accessRights"
+    ).with_query({"user_id": user_id})
+
+    with handle_client_exceptions(app) as session:
+        async with session.get(
+            url, headers={X_PRODUCT_NAME_HEADER: product_name}
+        ) as resp:
+            resp.raise_for_status()
+            body = await resp.json()
+            return ServiceAccessRightsGet.parse_obj(body)
+
+
 async def update_service(
     app: web.Application,
     user_id: UserID,
@@ -140,27 +161,6 @@ async def update_service(
     with handle_client_exceptions(app) as session:
         async with session.patch(
             url, headers={X_PRODUCT_NAME_HEADER: product_name}, json=update_data
-        ) as resp:
-            resp.raise_for_status()
-            body: dict[str, Any] = await resp.json()
-            return body
-
-
-async def list_inaccessible_services(
-    app: web.Application,
-    gid: PositiveInt,
-    product_name: str,
-    project_services: list[ServiceKeyVersion],
-) -> list[UserInaccessibleService]:
-    settings: CatalogSettings = get_plugin_settings(app)
-
-    url = URL(settings.api_base_url) / "services:inaccessible"
-
-    with handle_client_exceptions(app) as session:
-        async with session.post(
-            url,
-            headers={X_PRODUCT_NAME_HEADER: product_name},
-            json={"services_to_check": project_services, "for_gid": gid},
         ) as resp:
             resp.raise_for_status()
             body: dict[str, Any] = await resp.json()

@@ -130,9 +130,9 @@ def mock_projects_api_get_project_for_user(mocker: MockerFixture):
 
 
 @pytest.fixture
-def mock_catalog_client_list_inaccessible_services(mocker: MockerFixture):
+def mock_catalog_client_list_group_users_inaccesible_services(mocker: MockerFixture):
     return mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers.catalog_client.list_inaccessible_services",
+        "simcore_service_webserver.projects.projects_handlers.catalog_client.list_group_users_inaccesible_services",
         spec=True,
         return_value=[],
     )
@@ -143,7 +143,7 @@ async def test_share_access_denied_project_handler(
     mock_user_logged_in,
     mock_perimission,
     mock_projects_api_get_project_for_user,
-    mock_catalog_client_list_inaccessible_services,
+    mock_catalog_client_list_group_users_inaccesible_services,
 ):
     GID = 5
     PROJECT_UUID = "da5068e0-8a8d-4fb9-9516-56e5ddaef15b"
@@ -164,7 +164,7 @@ async def test_share_access_denied_project_handler(
         user_id=mock_user_logged_in,
         include_state=True,
     )
-    mock_catalog_client_list_inaccessible_services.assert_called_once_with(
+    mock_catalog_client_list_group_users_inaccesible_services.assert_called_once_with(
         client.app,
         GID,
         PRODUCT_NAME,
