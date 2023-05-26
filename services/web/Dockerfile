@@ -86,7 +86,7 @@ RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=lock
 # packages may be moved to production image easily by copying the venv
 RUN python -m venv "${VIRTUAL_ENV}"
 
-RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
+RUN --mount=type=cache,id=pipbasecache,mode=0777,target=/root/.cache/pip \
   pip --no-cache-dir install --upgrade  \
   pip~=23.1  \
   wheel \
@@ -116,6 +116,16 @@ COPY --chown=scu:scu services/web/server /build/services/web/server
 
 WORKDIR /build/services/web/server
 
+# libmagic is requried by the exporter
+RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=locked \
+  --mount=type=cache,id=baseapt,target=/var/lib/apt,mode=0755,sharing=locked \
+  set -eux \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends \
+  libmagic1 \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
   pip --no-cache-dir install \
   --requirement requirements/prod.txt \
@@ -136,21 +146,15 @@ ARG VCS_REF
 
 WORKDIR /home/scu
 
+# ensure home folder is read/writable for user scu
+RUN chown -R scu /home/scu
 # bring installed package without build tools
 COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
-
-# libmagic is requried by the exporter
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends \
-  libmagic1 \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
 
 # copy docker entrypoint and boot scripts
 COPY --chown=scu:scu services/web/server/docker services/web/server/docker
 RUN chmod +x services/web/server/docker/*.sh
-# ensure home folder is read/writable for user scu
-RUN chown -R scu /home/scu
+
 
 # healthcheck.
 # NOTE: do not forget to update variable

@@ -75,7 +75,7 @@ RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=lock
 # packages may be moved to production image easily by copying the venv
 RUN python -m venv "${VIRTUAL_ENV}"
 
-RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
+RUN --mount=type=cache,id=pipbasecache,mode=0777,target=/root/.cache/pip \
   pip --no-cache-dir install --upgrade  \
   pip~=23.1  \
   wheel \
@@ -128,14 +128,15 @@ ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/scu
 
+# ensure home folder is read/writable for user scu
+RUN chown -R scu /home/scu
 # Starting from clean base image, copies pre-installed virtualenv from prod-only-deps
 COPY --chown=scu:scu --from=prod-only-deps  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 # Copies booting scripts
 COPY --chown=scu:scu services/catalog/docker services/catalog/docker
 RUN chmod +x services/catalog/docker/*.sh
-# ensure home folder is read/writable for user scu
-RUN chown -R scu /home/scu
+
 HEALTHCHECK --interval=10s \
   --timeout=5s \
   --start-period=5s \

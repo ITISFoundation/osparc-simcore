@@ -46,7 +46,7 @@ RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=lock
 # NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
 RUN python -m venv "${VIRTUAL_ENV}"
 
-RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
+RUN --mount=type=cache,id=pipbasecache,mode=0777,target=/root/.cache/pip \
   pip --no-cache-dir install --upgrade  \
   pip~=23.1  \
   wheel \
@@ -81,11 +81,12 @@ WORKDIR /home/scu
 
 USER ${SC_USER_NAME}
 
+# ensure home folder is read/writable for user scu
+RUN chown -R scu /home/scu
 # bring installed package without build tools
 COPY --chown=scu:scu --from=build ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY --chown=scu:scu services/migration/docker services/migration/docker
-# ensure home folder is read/writable for user scu
-RUN chown -R scu /home/scu
+
 HEALTHCHECK \
   --interval=5s \
   --timeout=10s \
