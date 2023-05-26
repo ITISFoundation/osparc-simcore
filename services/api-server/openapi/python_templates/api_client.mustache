@@ -23,7 +23,6 @@ from {{packageName}}.configuration import Configuration
 import {{modelPackage}}
 from {{packageName}} import rest
 from {{packageName}}.exceptions import ApiValueError
-from .models.file import File
 from contextlib import suppress
 
 class ApiClient(object):
@@ -297,7 +296,7 @@ class ApiClient(object):
             if klass in self.NATIVE_TYPES_MAPPING:
                 klass = self.NATIVE_TYPES_MAPPING[klass]
             elif klass.startswith("AnyOf"):
-                for tmp_klass in [File, float, int, bool, str]:
+                for tmp_klass in [{{modelPackage}}.file.File, float, int, bool, str]:
                     with suppress(Exception):
                         return self.__deserialize(data, tmp_klass)
                 raise ValueError(f"Cannot deserialize {data}")
