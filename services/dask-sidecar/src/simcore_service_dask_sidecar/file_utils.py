@@ -127,7 +127,7 @@ async def pull_file_from_remote(
 ) -> None:
     assert src_url.path  # nosec
     await log_publishing_cb(
-        f"Downloading '{src_url.path.strip('/')}' into local file '{dst_path.name}'...",
+        f"Downloading '{src_url}' into local file '{dst_path}'...",
         logging.INFO,
     )
     if not dst_path.parent.exists():
@@ -151,7 +151,7 @@ async def pull_file_from_remote(
     )
 
     await log_publishing_cb(
-        f"Download of '{src_url.path.strip('/')}' into local file '{dst_path.name}' complete.",
+        f"Download of '{src_url}' into local file '{dst_path}' complete.",
         logging.INFO,
     )
 

@@ -33,6 +33,9 @@ services:
   osparc-gateway-server:
     image: ${DOCKER_REGISTRY:-itisfoundation}/osparc-gateway-server:${DOCKER_IMAGE_TAG:-latest}
 
+  resource-usage-tracker:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/resource-usage-tracker:${DOCKER_IMAGE_TAG:-latest}
+
   service-integration:
     image: ${DOCKER_REGISTRY:-itisfoundation}/service-integration:${DOCKER_IMAGE_TAG:-latest}
 
