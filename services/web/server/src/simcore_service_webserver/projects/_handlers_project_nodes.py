@@ -453,7 +453,15 @@ async def get_project_services_access_for_gid(request: web.Request) -> web.Respo
 
     project_accessible = not inaccessible_services
     project_inaccessible_services = (
-        inaccessible_services if inaccessible_services else None
+        [
+            ServiceKeyVersion(
+                key=s.service_key,
+                version=s.service_version,
+            )
+            for s in inaccessible_services
+        ]
+        if inaccessible_services
+        else None
     )
 
     project_group_access = _ProjectGroupAccess(
