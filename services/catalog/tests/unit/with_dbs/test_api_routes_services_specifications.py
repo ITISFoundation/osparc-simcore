@@ -200,7 +200,7 @@ async def test_get_service_specifications(
     assert service_specs
     assert service_specs == app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS
 
-    everyone_gid, user_gid, team_gid, *_ = user_groups_ids
+    everyone_gid, user_gid, team_gid = user_groups_ids
     # let's inject some rights for everyone group
     everyone_service_specs = create_service_specifications(
         SERVICE_KEY, SERVICE_VERSION, everyone_gid
@@ -299,7 +299,7 @@ async def test_get_service_specifications_are_passed_to_newer_versions_of_servic
         ]
     )
 
-    everyone_gid, user_gid, team_gid, *_ = user_groups_ids
+    everyone_gid, user_gid, team_gid = user_groups_ids
     # let's inject some rights for everyone group ONLY for some versions
     INDEX_FIRST_SERVICE_VERSION_WITH_SPEC = 2
     INDEX_SECOND_SERVICE_VERSION_WITH_SPEC = 6

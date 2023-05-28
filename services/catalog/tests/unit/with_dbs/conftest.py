@@ -166,14 +166,7 @@ async def user_groups_ids(
             "STANDARD",
             "http://mib.org",
             {"email": "@(foo|testers|mib)+.(org|com)$"},
-        ),
-        (
-            66,
-            "Team Yoda",
-            "Patience you must have",
-            "STANDARD",
-            "http://mib.org",
-        ),
+        )
     ]
     # pylint: disable=no-value-for-parameter
     async with sqlalchemy_async_engine.begin() as conn:
@@ -371,7 +364,7 @@ async def service_catalog_faker(
         owner_access, team_access, everyone_access = fake_access_rights
 
     """
-    everyone_gid, user_gid, team_gid, *_ = user_groups_ids
+    everyone_gid, user_gid, team_gid = user_groups_ids
 
     def _random_service(**overrides) -> dict[str, Any]:
         data = dict(
