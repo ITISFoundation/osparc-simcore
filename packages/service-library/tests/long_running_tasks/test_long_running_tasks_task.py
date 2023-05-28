@@ -17,14 +17,24 @@ from servicelib.long_running_tasks._errors import (
     TaskNotCompletedError,
     TaskNotFoundError,
 )
-from servicelib.long_running_tasks._models import TaskProgress, TaskResult, TaskStatus
+from servicelib.long_running_tasks._models import (
+    ProgressPercent,
+    TaskProgress,
+    TaskResult,
+    TaskStatus,
+)
 from servicelib.long_running_tasks._task import TasksManager, start_task
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-# UTILS
+_RETRY_PARAMS = dict(
+    reraise=True,
+    wait=wait_fixed(0.1),
+    stop=stop_after_delay(60),
+    retry=retry_if_exception_type(AssertionError),
+)
 
 
 async def a_background_task(
@@ -35,7 +45,7 @@ async def a_background_task(
     """sleeps and raises an error or returns 42"""
     for i in range(total_sleep):
         await asyncio.sleep(1)
-        task_progress.update(percent=float((i + 1) / total_sleep))
+        task_progress.update(percent=ProgressPercent((i + 1) / total_sleep))
     if raise_when_finished:
         raise RuntimeError("raised this error as instructed")
 
@@ -73,12 +83,14 @@ async def test_unchecked_task_is_auto_removed(tasks_manager: TasksManager):
         total_sleep=10 * TEST_CHECK_STALE_INTERVAL_S,
     )
     await asyncio.sleep(2 * TEST_CHECK_STALE_INTERVAL_S + 1)
-    with pytest.raises(TaskNotFoundError):
-        tasks_manager.get_task_status(task_id, with_task_context=None)
-    with pytest.raises(TaskNotFoundError):
-        tasks_manager.get_task_result(task_id, with_task_context=None)
-    with pytest.raises(TaskNotFoundError):
-        tasks_manager.get_task_result_old(task_id)
+    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
+        with attempt:
+            with pytest.raises(TaskNotFoundError):
+                tasks_manager.get_task_status(task_id, with_task_context=None)
+            with pytest.raises(TaskNotFoundError):
+                tasks_manager.get_task_result(task_id, with_task_context=None)
+            with pytest.raises(TaskNotFoundError):
+                tasks_manager.get_task_result_old(task_id)
 
 
 async def test_checked_once_task_is_auto_removed(tasks_manager: TasksManager):
@@ -91,12 +103,14 @@ async def test_checked_once_task_is_auto_removed(tasks_manager: TasksManager):
     # check once (different branch in code)
     tasks_manager.get_task_status(task_id, with_task_context=None)
     await asyncio.sleep(2 * TEST_CHECK_STALE_INTERVAL_S + 1)
-    with pytest.raises(TaskNotFoundError):
-        tasks_manager.get_task_status(task_id, with_task_context=None)
-    with pytest.raises(TaskNotFoundError):
-        tasks_manager.get_task_result(task_id, with_task_context=None)
-    with pytest.raises(TaskNotFoundError):
-        tasks_manager.get_task_result_old(task_id)
+    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
+        with attempt:
+            with pytest.raises(TaskNotFoundError):
+                tasks_manager.get_task_status(task_id, with_task_context=None)
+            with pytest.raises(TaskNotFoundError):
+                tasks_manager.get_task_result(task_id, with_task_context=None)
+            with pytest.raises(TaskNotFoundError):
+                tasks_manager.get_task_result_old(task_id)
 
 
 async def test_checked_task_is_not_auto_removed(tasks_manager: TasksManager):
@@ -106,12 +120,7 @@ async def test_checked_task_is_not_auto_removed(tasks_manager: TasksManager):
         raise_when_finished=False,
         total_sleep=5 * TEST_CHECK_STALE_INTERVAL_S,
     )
-    async for attempt in AsyncRetrying(
-        reraise=True,
-        wait=wait_fixed(TEST_CHECK_STALE_INTERVAL_S / 10.0),
-        stop=stop_after_delay(60),
-        retry=retry_if_exception_type(AssertionError),
-    ):
+    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
             status = tasks_manager.get_task_status(task_id, with_task_context=None)
             assert status.done, f"task {task_id} not complete"
@@ -220,12 +229,7 @@ async def test_get_result_missing(tasks_manager: TasksManager):
 async def test_get_result_finished_with_error(tasks_manager: TasksManager):
     task_id = start_task(tasks_manager=tasks_manager, task=failing_background_task)
     # wait for result
-    async for attempt in AsyncRetrying(
-        reraise=True,
-        wait=wait_fixed(0.1),
-        stop=stop_after_delay(60),
-        retry=retry_if_exception_type(AssertionError),
-    ):
+    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
             assert tasks_manager.get_task_status(task_id, with_task_context=None).done
 
@@ -236,12 +240,7 @@ async def test_get_result_finished_with_error(tasks_manager: TasksManager):
 async def test_get_result_old_finished_with_error(tasks_manager: TasksManager):
     task_id = start_task(tasks_manager=tasks_manager, task=failing_background_task)
     # wait for result
-    async for attempt in AsyncRetrying(
-        reraise=True,
-        wait=wait_fixed(0.1),
-        stop=stop_after_delay(60),
-        retry=retry_if_exception_type(AssertionError),
-    ):
+    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
             assert tasks_manager.get_task_status(task_id, with_task_context=None).done
 

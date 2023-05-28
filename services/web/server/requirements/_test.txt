@@ -167,7 +167,9 @@ pyyaml==5.4.1
 redis==4.5.4
     # via -r requirements/_test.in
 requests==2.31.0
-    # via docker
+    # via
+    #   -c requirements/_base.txt
+    #   docker
 six==1.16.0
     # via
     #   -c requirements/_base.txt

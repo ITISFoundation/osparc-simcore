@@ -235,6 +235,7 @@ pyyaml==5.4.1
     #   responses
 requests==2.31.0
     # via
+    #   -c requirements/_base.txt
     #   docker
     #   moto
     #   responses
