@@ -22,6 +22,7 @@ import redis.asyncio as aioredis
 from aiohttp import web
 from aiohttp_session import get_session
 from models_library.emails import LowerCaseEmailStr
+from models_library.projects import ProjectID
 from pydantic import parse_obj_as
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.error_codes import create_error_code
@@ -31,7 +32,7 @@ from simcore_service_webserver.director_v2._core_computations import (
 
 from .._constants import INDEX_RESOURCE_NAME
 from ..garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
-from ..products.plugin import get_product_name
+from ..products.plugin import get_current_product, get_product_name
 from ..projects.db import ANY_USER, ProjectDBAPI
 from ..projects.exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from ..projects.models import ProjectDict
@@ -65,7 +66,7 @@ def _compose_uuid(template_uuid, user_id, query="") -> str:
 
 
 async def _get_published_template_project(
-    app: web.Application,
+    request: web.Request,
     project_uuid: str,
     *,
     is_user_authenticated: bool,
@@ -73,7 +74,7 @@ async def _get_published_template_project(
     """
     raises RedirectToFrontEndPageError
     """
-    db = ProjectDBAPI.get_from_app_context(app)
+    db = ProjectDBAPI.get_from_app_context(request.app)
 
     only_public_projects = not is_user_authenticated
 
@@ -103,11 +104,12 @@ async def _get_published_template_project(
             err.detailed_message(),
         )
 
+        support_email = get_current_product(request).support_email
         if only_public_projects:
             raise RedirectToFrontEndPageError(
-                MSG_PUBLIC_PROJECT_NOT_PUBLISHED.format(project_id=project_uuid),
+                MSG_PUBLIC_PROJECT_NOT_PUBLISHED.format(support_email=support_email),
                 error_code="PUBLIC_PROJECT_NOT_PUBLISHED",
-                status_code=web.HTTPNotFound.status_code,
+                status_code=web.HTTPUnauthorized.status_code,
             ) from err
 
         raise RedirectToFrontEndPageError(
@@ -301,9 +303,7 @@ def _handle_errors_with_error_page(handler: Handler):
             raise create_redirect_response(
                 request.app,
                 page="error",
-                message=compose_support_error_msg(
-                    msg=err.human_readable_message, error_code=err.error_code
-                ),
+                message=err.human_readable_message,
                 status_code=err.status_code,
             ) from err
 
@@ -345,9 +345,21 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
         # NOTE: covers valid cookie with unauthorized user (e.g. expired guest/banned)
         user = await get_authorized_user(request)
 
+    # This was added so it fails right away if study doesn't exist.
+    # Work-around to check if there is a PROJECT with project_id: check the type of the project.
+    try:
+        db = ProjectDBAPI.get_from_app_context(request.app)
+        await db.get_project_type(project_uuid=ProjectID(project_id))
+    except ProjectNotFoundError as exc:
+        raise RedirectToFrontEndPageError(
+            MSG_PROJECT_NOT_FOUND.format(project_id=project_id),
+            error_code="PROJECT_NOT_FOUND",
+            status_code=web.HTTPNotFound.status_code,
+        ) from exc
+
     # Get published PROJECT referenced in link
     template_project = await _get_published_template_project(
-        request.app,
+        request,
         project_id,
         is_user_authenticated=bool(user),
     )
