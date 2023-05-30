@@ -178,7 +178,11 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
       });
       Promise.all(promises)
         .then(values => {
-          console.log(values);
+          const noAccessible = values.filter(value => value["accessible"] === false);
+          if (noAccessible.length) {
+            const asdf = new osparc.component.share.ShareePermissions(noAccessible);
+            console.log(asdf);
+          }
         });
     },
 
