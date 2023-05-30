@@ -494,7 +494,7 @@ def rabbit_service(docker_services, docker_ip) -> RabbitSettings:
     rabbit_settings = RabbitSettings(RABBIT_HOST=docker_ip, RABBIT_PORT=port)
 
     docker_services.wait_until_responsive(
-        check=lambda: _is_rabbit_responsive(host, port),
+        check=lambda: _is_rabbit_responsive(rabbit_settings),
         timeout=30.0,
         pause=0.1,
     )
