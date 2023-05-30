@@ -43,6 +43,7 @@ SERVICES_NAMES_TO_BUILD := \
 	invitations \
   migration \
 	osparc-gateway-server \
+	resource-usage-tracker \
   service-integration \
   static-webserver \
   storage \
@@ -266,16 +267,25 @@ CPU_COUNT = $(shell cat /proc/cpuinfo | grep processor | wc -l )
 	python3 scripts/filestash/create_config.py))
 	# Creating config for ops stack to $@
 	# -> filestash config at $(TMP_PATH_TO_FILESTASH_CONFIG)
+ifdef ops_ci
+	@$(shell \
+		export TMP_PATH_TO_FILESTASH_CONFIG="${TMP_PATH_TO_FILESTASH_CONFIG}" && \
+		scripts/docker/docker-compose-config.bash -e .env \
+		services/docker-compose-ops-ci.yml \
+		> $@ \
+	)
+else
 	@$(shell \
 		export TMP_PATH_TO_FILESTASH_CONFIG="${TMP_PATH_TO_FILESTASH_CONFIG}" && \
 		scripts/docker/docker-compose-config.bash -e .env \
 		services/docker-compose-ops.yml \
 		> $@ \
 	)
+endif
 
 
 
-.PHONY: up-devel up-prod up-version up-latest .deploy-ops
+.PHONY: up-devel up-prod up-prod-ci up-version up-latest .deploy-ops
 
 .deploy-ops: .stack-ops.yml
 	# Deploy stack 'ops'
@@ -329,7 +339,7 @@ up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Dep
 	@$(MAKE_C) services/static-webserver/client follow-dev-logs
 
 
-up-prod: .stack-simcore-production.yml .init-swarm ## Deploys local production stack and ops stack (pass 'make ops_disabled=1 up-...' to disable or target=<service-name> to deploy a single service)
+up-prod: .stack-simcore-production.yml .init-swarm ## Deploys local production stack and ops stack (pass 'make ops_disabled=1 ops_ci=1 up-...' to disable or target=<service-name> to deploy a single service)
 ifeq ($(target),)
 	# Deploy stack $(SWARM_STACK_NAME)
 	@docker stack deploy --with-registry-auth -c $< $(SWARM_STACK_NAME)

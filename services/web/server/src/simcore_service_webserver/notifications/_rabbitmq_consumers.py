@@ -18,13 +18,12 @@ from servicelib.aiohttp.monitor_services import (
     service_started,
     service_stopped,
 )
-from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 
 from ..projects import projects_api
-from ..projects.projects_exceptions import NodeNotFoundError, ProjectNotFoundError
+from ..projects.exceptions import ProjectNotFoundError
 from ..rabbitmq import get_rabbitmq_client
 from ..socketio.messages import (
     SOCKET_IO_EVENT,
@@ -40,92 +39,87 @@ from ._constants import APP_RABBITMQ_CONSUMERS_KEY
 _logger = logging.getLogger(__name__)
 
 
-async def _handle_computation_running_progress(
+def _convert_to_project_progress_event(
+    message: ProgressRabbitMessageProject,
+) -> SocketMessageDict:
+    return SocketMessageDict(
+        event_type=SOCKET_IO_PROJECT_PROGRESS_EVENT,
+        data={
+            "project_id": message.project_id,
+            "user_id": message.user_id,
+            "progress_type": message.progress_type,
+            "progress": message.progress,
+        },
+    )
+
+
+async def _convert_to_node_update_event(
     app: web.Application, message: ProgressRabbitMessageNode
-) -> bool:
+) -> SocketMessageDict | None:
     try:
-        project = await projects_api.update_project_node_progress(
-            app,
-            message.user_id,
-            f"{message.project_id}",
-            f"{message.node_id}",
-            progress=message.progress,
+        project = await projects_api.get_project_for_user(
+            app, f"{message.project_id}", message.user_id
         )
-        if project and not await projects_api.is_project_hidden(
-            app, message.project_id
-        ):
-            messages: list[SocketMessageDict] = [
-                {
-                    "event_type": SOCKET_IO_NODE_UPDATED_EVENT,
-                    "data": {
-                        "project_id": message.project_id,
-                        "node_id": message.node_id,
-                        "data": project["workbench"][f"{message.node_id}"],
-                    },
-                }
-            ]
-            await send_messages(app, f"{message.user_id}", messages)
-            return True
+        if f"{message.node_id}" in project["workbench"]:
+            # update the project node progress with the latest value
+            project["workbench"][f"{message.node_id}"].update(
+                {"progress": round(message.progress * 100.0)}
+            )
+            return SocketMessageDict(
+                event_type=SOCKET_IO_NODE_UPDATED_EVENT,
+                data={
+                    "project_id": message.project_id,
+                    "node_id": message.node_id,
+                    "data": project["workbench"][f"{message.node_id}"],
+                },
+            )
+        _logger.warning("node not found: '%s'", message.dict())
     except ProjectNotFoundError:
-        _logger.warning(
-            "project related to received rabbitMQ progress message not found: '%s'",
-            json_dumps(message, indent=2),
-        )
-        return True
-    except NodeNotFoundError:
-        _logger.warning(
-            "node related to received rabbitMQ progress message not found: '%s'",
-            json_dumps(message, indent=2),
-        )
-        return True
-    return False
+        _logger.warning("project not found: '%s'", message.dict())
+    return None
+
+
+def _convert_to_node_progress_event(
+    message: ProgressRabbitMessageNode,
+) -> SocketMessageDict:
+    return SocketMessageDict(
+        event_type=SOCKET_IO_NODE_PROGRESS_EVENT,
+        data={
+            "project_id": message.project_id,
+            "node_id": message.node_id,
+            "user_id": message.user_id,
+            "progress_type": message.progress_type,
+            "progress": message.progress,
+        },
+    )
 
 
 async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
-    # update corresponding project, node, progress value
-    rabbit_message: (
-        ProgressRabbitMessageNode | ProgressRabbitMessageProject
-    ) = parse_raw_as(
+    rabbit_message = parse_raw_as(
         Union[ProgressRabbitMessageNode, ProgressRabbitMessageProject], data
     )
+    socket_message: SocketMessageDict | None = None
+    if isinstance(rabbit_message, ProgressRabbitMessageProject):
+        socket_message = _convert_to_project_progress_event(rabbit_message)
+    elif rabbit_message.progress_type is ProgressType.COMPUTATION_RUNNING:
+        socket_message = await _convert_to_node_update_event(app, rabbit_message)
+    else:
+        socket_message = _convert_to_node_progress_event(rabbit_message)
+    if socket_message:
+        await send_messages(app, rabbit_message.user_id, [socket_message])
 
-    if rabbit_message.progress_type is ProgressType.COMPUTATION_RUNNING:
-        # NOTE: backward compatibility, this progress is kept in the project
-        assert isinstance(rabbit_message, ProgressRabbitMessageNode)  # nosec
-        return await _handle_computation_running_progress(app, rabbit_message)
-
-    # NOTE: other types of progress are transient
-    is_type_message_node = type(rabbit_message) == ProgressRabbitMessageNode
-    socket_message: SocketMessageDict = {
-        "event_type": (
-            SOCKET_IO_NODE_PROGRESS_EVENT
-            if is_type_message_node
-            else SOCKET_IO_PROJECT_PROGRESS_EVENT
-        ),
-        "data": {
-            "project_id": rabbit_message.project_id,
-            "user_id": rabbit_message.user_id,
-            "progress_type": rabbit_message.progress_type,
-            "progress": rabbit_message.progress,
-        },
-    }
-    if is_type_message_node:
-        socket_message["data"]["node_id"] = rabbit_message.node_id
-    await send_messages(app, f"{rabbit_message.user_id}", [socket_message])
     return True
 
 
 async def _log_message_parser(app: web.Application, data: bytes) -> bool:
     rabbit_message = LoggerRabbitMessage.parse_raw(data)
-
-    if not await projects_api.is_project_hidden(app, rabbit_message.project_id):
-        socket_messages: list[SocketMessageDict] = [
-            {
-                "event_type": SOCKET_IO_LOG_EVENT,
-                "data": rabbit_message.dict(exclude={"user_id", "channel_name"}),
-            }
-        ]
-        await send_messages(app, f"{rabbit_message.user_id}", socket_messages)
+    socket_messages: list[SocketMessageDict] = [
+        {
+            "event_type": SOCKET_IO_LOG_EVENT,
+            "data": rabbit_message.dict(exclude={"user_id", "channel_name"}),
+        }
+    ]
+    await send_messages(app, rabbit_message.user_id, socket_messages)
     return True
 
 
@@ -154,7 +148,7 @@ async def _events_message_parser(app: web.Application, data: bytes) -> bool:
             },
         }
     ]
-    await send_messages(app, f"{rabbit_message.user_id}", socket_messages)
+    await send_messages(app, rabbit_message.user_id, socket_messages)
     return True
 
 
@@ -176,7 +170,7 @@ EXCHANGE_TO_PARSER_CONFIG: Final[
     (
         ProgressRabbitMessageNode.get_channel_name(),
         _progress_message_parser,
-        {},
+        dict(topics=[]),
     ),
     (
         InstrumentationRabbitMessage.get_channel_name(),

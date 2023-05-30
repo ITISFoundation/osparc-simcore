@@ -52,7 +52,7 @@ from simcore_service_webserver.groups.api import (
     delete_user_group,
     list_user_groups,
 )
-from simcore_service_webserver.projects.project_models import ProjectDict
+from simcore_service_webserver.projects.models import ProjectDict
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -225,8 +225,8 @@ def catalog_subsystem_mock(
         return services_in_project
 
     for namespace in (
-        "simcore_service_webserver.projects._read_utils.get_services_for_user_in_product",
-        "simcore_service_webserver.projects.projects_handlers_crud.get_services_for_user_in_product",
+        "simcore_service_webserver.projects._crud_read_utils.get_services_for_user_in_product",
+        "simcore_service_webserver.projects._handlers_crud.get_services_for_user_in_product",
     ):
         mock = mocker.patch(
             namespace,
@@ -305,14 +305,14 @@ async def storage_subsystem_mock(mocker: MockerFixture) -> MockedStorageSubsyste
         )
 
     mock = mocker.patch(
-        "simcore_service_webserver.projects._create_utils.copy_data_folders_from_project",
+        "simcore_service_webserver.projects._crud_create_utils.copy_data_folders_from_project",
         autospec=True,
         side_effect=_mock_copy_data_from_project,
     )
 
     async_mock = mocker.AsyncMock(return_value="")
     mock1 = mocker.patch(
-        "simcore_service_webserver.projects._delete_utils.delete_data_folders_of_project",
+        "simcore_service_webserver.projects._crud_delete_utils.delete_data_folders_of_project",
         autospec=True,
         side_effect=async_mock,
     )
@@ -324,7 +324,7 @@ async def storage_subsystem_mock(mocker: MockerFixture) -> MockedStorageSubsyste
     )
 
     mock3 = mocker.patch(
-        "simcore_service_webserver.projects._create_utils.get_project_total_size_simcore_s3",
+        "simcore_service_webserver.projects._crud_create_utils.get_project_total_size_simcore_s3",
         autospec=True,
         return_value=parse_obj_as(ByteSize, "1Gib"),
     )

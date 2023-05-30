@@ -27,8 +27,12 @@ from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
 from simcore_postgres_database.models.groups import GroupType
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.projects.project_models import ProjectDict
-from simcore_service_webserver.projects.projects_db import (
+from simcore_service_webserver.projects._db_utils import (
+    DB_EXCLUSIVE_COLUMNS,
+    SCHEMA_NON_NULL_KEYS,
+    PermissionStr,
+)
+from simcore_service_webserver.projects.db import (
     ANY_USER,
     ProjectAccessRights,
     ProjectDBAPI,
@@ -38,15 +42,11 @@ from simcore_service_webserver.projects.projects_db import (
     convert_to_schema_names,
     create_project_access_rights,
 )
-from simcore_service_webserver.projects.projects_db_utils import (
-    DB_EXCLUSIVE_COLUMNS,
-    SCHEMA_NON_NULL_KEYS,
-    PermissionStr,
-)
-from simcore_service_webserver.projects.projects_exceptions import (
+from simcore_service_webserver.projects.exceptions import (
     NodeNotFoundError,
     ProjectNotFoundError,
 )
+from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.users.exceptions import UserNotFoundError
 from simcore_service_webserver.utils import to_datetime
 from sqlalchemy.engine.result import Row

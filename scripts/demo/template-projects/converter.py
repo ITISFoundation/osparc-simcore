@@ -3,7 +3,7 @@ import json
 import sys
 from pathlib import Path
 
-from simcore_service_webserver.projects.projects_db_utils import convert_to_schema_names
+from simcore_service_webserver.projects._db_utils import convert_to_schema_names
 
 SEPARATOR = ","
 

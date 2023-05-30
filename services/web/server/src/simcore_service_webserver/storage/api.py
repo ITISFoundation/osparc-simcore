@@ -25,8 +25,8 @@ from servicelib.aiohttp.long_running_tasks.client import (
 from servicelib.logging_utils import get_log_record_extra, log_context
 from yarl import URL
 
-from ..projects.project_models import ProjectDict
-from ..projects.projects_utils import NodesMap
+from ..projects.models import ProjectDict
+from ..projects.utils import NodesMap
 from .settings import StorageSettings, get_plugin_settings
 
 log = logging.getLogger(__name__)
