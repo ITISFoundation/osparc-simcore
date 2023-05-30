@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 from async_asgi_testclient import TestClient
 from fastapi import status
-from models_library.volumes import VolumeCategory, VolumeState, VolumeStatus
+from models_library.sidecar_volumes import VolumeCategory, VolumeState, VolumeStatus
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 

@@ -4,7 +4,7 @@ from typing import Any
 
 from fastapi import FastAPI, status
 from httpx import Response, Timeout
-from models_library.volumes import VolumeCategory, VolumeStatus
+from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 

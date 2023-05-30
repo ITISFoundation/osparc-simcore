@@ -7,7 +7,7 @@ from typing import Any, Callable, Optional
 import pytest
 from fastapi import FastAPI, status
 from httpx import Response
-from models_library.volumes import VolumeCategory, VolumeStatus
+from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl, parse_obj_as
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict

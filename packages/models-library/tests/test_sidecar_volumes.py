@@ -1,7 +1,7 @@
 # pylint: disable=redefined-outer-name
 
 import pytest
-from models_library.volumes import VolumeState, VolumeStatus
+from models_library.sidecar_volumes import VolumeState, VolumeStatus
 from pytest import FixtureRequest
 
 

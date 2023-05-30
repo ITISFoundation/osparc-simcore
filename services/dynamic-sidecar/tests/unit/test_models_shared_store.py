@@ -8,7 +8,7 @@ from typing import Any
 import pytest
 from async_asgi_testclient import TestClient
 from fastapi import FastAPI
-from models_library.volumes import VolumeCategory, VolumeState, VolumeStatus
+from models_library.sidecar_volumes import VolumeCategory, VolumeState, VolumeStatus
 from pydantic import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from servicelib.utils import logged_gather

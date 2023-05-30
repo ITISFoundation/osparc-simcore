@@ -9,7 +9,7 @@ import pytest
 from faker import Faker
 from fastapi import FastAPI, status
 from httpx import HTTPError, Response
-from models_library.volumes import VolumeCategory, VolumeStatus
+from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl, parse_obj_as
 from pytest import LogCaptureFixture, MonkeyPatch
 from pytest_mock import MockerFixture
