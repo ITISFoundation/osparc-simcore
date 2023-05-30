@@ -419,40 +419,7 @@ async def update_project_node_state(
     partial_workbench_data: dict[str, Any] = {
         node_id: {"state": {"currentStatus": new_state}},
     }
-    if RunningState(new_state) in [
-        RunningState.PUBLISHED,
-        RunningState.PENDING,
-        RunningState.STARTED,
-    ]:
-        partial_workbench_data[node_id]["progress"] = 0
-    elif RunningState(new_state) in [RunningState.SUCCESS, RunningState.FAILED]:
-        partial_workbench_data[node_id]["progress"] = 100
 
-    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-    updated_project, _ = await db.update_project_workbench(
-        partial_workbench_data=partial_workbench_data,
-        user_id=user_id,
-        project_uuid=project_id,
-    )
-    updated_project = await add_project_states_for_user(
-        user_id=user_id, project=updated_project, is_template=False, app=app
-    )
-    return updated_project
-
-
-async def update_project_node_progress(
-    app: web.Application, user_id: int, project_id: str, node_id: str, progress: float
-) -> dict | None:
-    log.debug(
-        "updating node %s progress in project %s for user %s with %s",
-        node_id,
-        project_id,
-        user_id,
-        progress,
-    )
-    partial_workbench_data = {
-        node_id: {"progress": int(100.0 * float(progress) + 0.5)},
-    }
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     updated_project, _ = await db.update_project_workbench(
         partial_workbench_data=partial_workbench_data,
@@ -880,6 +847,8 @@ async def add_project_states_for_user(
                     node_state.json(by_alias=True, exclude_unset=True)
                 )
                 prj_node.setdefault("state", {}).update(node_state_dict)
+                prj_node_progress = node_state_dict.get("progress", None) or 0
+                prj_node.update({"progress": round(prj_node_progress * 100.0)})
 
     project["state"] = ProjectState(
         locked=lock_state, state=ProjectRunningState(value=running_state)
