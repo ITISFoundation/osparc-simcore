@@ -54,8 +54,6 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
     });
     this.__setNotHoveredStyle();
     this.__attachEventHandlers();
-
-    osparc.utils.Utils.setIdToWidget(this, "nodeTreeItem");
   },
 
   properties: {
@@ -290,7 +288,9 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
 
       // The standard tree icon follows
       this.addIcon();
-      this.getChildControl("icon").set({
+      const icon = this.getChildControl("icon");
+      osparc.utils.Utils.setIdToWidget(icon, "nodeTreeItem");
+      icon.set({
         alignX: "center",
         alignY: "middle",
         paddingTop: 1, // alignY: "middle" is not very effective
