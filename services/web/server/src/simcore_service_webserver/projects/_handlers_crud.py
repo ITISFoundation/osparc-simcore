@@ -5,6 +5,8 @@ Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
 """
 import json
 import logging
+import re
+from enum import Enum
 
 from aiohttp import web
 from jsonschema import ValidationError as JsonSchemaValidationError
@@ -14,7 +16,7 @@ from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Pag
 from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import BaseModel, Extra, Field, NonNegativeInt
+from pydantic import BaseModel, Extra, Field, NonNegativeInt, PositiveInt, validator
 from servicelib.aiohttp.long_running_tasks.server import start_long_running_task
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -171,6 +173,33 @@ async def create_project(request: web.Request):
 #
 
 
+class OrderDirection(str, Enum):
+    ASC = "asc"
+    DESC = "desc"
+
+
+class _ProjectListFilters(BaseModel):
+    tags: list[PositiveInt] = Field(default=[])
+    classifiers: list[str] = Field(default=[])
+
+    class Config:
+        extra = Extra.forbid
+
+
+class _ProjectOrderBy(BaseModel):
+    field: str = Field(default=None)
+    direction: OrderDirection = Field(default=OrderDirection.DESC)
+
+    class Config:
+        extra = Extra.forbid
+
+
+def _replace_multiple_spaces(text):
+    # Use regular expression to replace multiple spaces with a single space
+    cleaned_text = re.sub(r"\s+", " ", text)
+    return cleaned_text
+
+
 class _ProjectListParams(BaseModel):
     limit: int = Field(
         default=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
@@ -185,6 +214,57 @@ class _ProjectListParams(BaseModel):
     show_hidden: bool = Field(
         default=False, description="includes projects marked as hidden in the listing"
     )
+
+    order_by: list[_ProjectOrderBy] = Field(
+        default=None,
+        description="Comma separated list of fields for ordering. The default sorting order is ascending. To specify descending order for a field, users append a 'desc' suffix",
+        example="field_name desc, bar",
+    )
+    filters: _ProjectListFilters = Field(
+        default=None,
+        description="Filters to process on the projects list, encoded as JSON",
+        example='{"tags": [1, 5], "classifiers": ["foo", "bar"]}',
+    )
+    search: str = Field(
+        default=None,
+        description="Multi column full text search",
+        max_length=25,
+        example="search for string",
+    )
+
+    @validator("order_by", pre=True)
+    @classmethod
+    def sort_by_should_have_special_format(cls, v):
+        if not v:
+            return v
+
+        parse_fields_with_direction = []
+        fields = v.split(",")
+        for field in fields:
+            field_info = _replace_multiple_spaces(field.strip()).split(" ")
+            field_name = field_info[0]
+            direction = OrderDirection.ASC
+
+            if len(field_info) == 2:
+                if field_info[1] == OrderDirection.DESC.value:
+                    direction = OrderDirection.DESC
+                else:
+                    raise ValueError(
+                        "Field direction in the order_by parameter must contain either 'desc' direction or empty value for 'asc' direction."
+                    )
+
+            parse_fields_with_direction.append(
+                _ProjectOrderBy(field=field_name, direction=direction)
+            )
+
+        return parse_fields_with_direction
+
+    @validator("filters", pre=True)
+    @classmethod
+    def filters_parse_to_object(cls, v):
+        if v:
+            v = json.loads(v)
+        return v
 
     class Config:
         extra = Extra.forbid
@@ -211,6 +291,7 @@ async def list_projects(request: web.Request):
         show_hidden=query_params.show_hidden,
         limit=query_params.limit,
         offset=query_params.offset,
+        search=query_params.search,
     )
 
     page = Page[ProjectDict].parse_obj(
