@@ -12,9 +12,6 @@ qx.Class.define("osparc.component.share.ShareePermissions", {
     this.base(arguments);
 
     this.__populateLayout(shareesData);
-
-    this.center();
-    this.open();
   },
 
   members: {
