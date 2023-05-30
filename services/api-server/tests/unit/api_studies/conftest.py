@@ -7,12 +7,11 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, Iterator
 
-import httpx
 import pytest
 import respx
 import yaml
 from faker import Faker
-from fastapi import FastAPI, status
+from fastapi import FastAPI
 from pytest_simcore.helpers.faker_webserver import (
     PROJECTS_METADATA_PORTS_RESPONSE_BODY_DATA,
 )
@@ -100,44 +99,3 @@ def mocked_webserver_service_api(
         )
 
         yield respx_mock
-
-
-def test_mocked_webserver_service_api(
-    app: FastAPI,
-    mocked_webserver_service_api: MockRouter,
-    study_id: StudyID,
-    fake_study_ports: list[dict[str, Any]],
-):
-    #
-    # This test intends to help building the urls in mocked_webserver_service_api
-    # At some point, it can be skipped and reenabled only for development
-    #
-    settings: ApplicationSettings = app.state.settings
-    assert settings.API_SERVER_WEBSERVER
-    webserver_api_baseurl = settings.API_SERVER_WEBSERVER.api_base_url
-
-    resp = httpx.get(f"{webserver_api_baseurl}/health")
-    assert resp.status_code == status.HTTP_200_OK
-
-    # Sometimes is difficult to adjust respx.Mock
-    resp = httpx.get(f"{webserver_api_baseurl}/projects/{study_id}/metadata/ports")
-    assert resp.status_code == status.HTTP_200_OK
-
-    payload = resp.json()
-    assert payload.get("error") is None
-    assert payload.get("data") == fake_study_ports
-
-    mocked_webserver_service_api.assert_all_called()
-
-
-async def test_list_study_ports(
-    client: httpx.AsyncClient,
-    auth: httpx.BasicAuth,
-    mocked_webserver_service_api: MockRouter,
-    fake_study_ports: list[dict[str, Any]],
-    study_id: StudyID,
-):
-    # list_study_ports
-    resp = await client.get(f"/v0/studies/{study_id}/ports", auth=auth)
-    assert resp.status_code == status.HTTP_200_OK
-    assert resp.json() == fake_study_ports
