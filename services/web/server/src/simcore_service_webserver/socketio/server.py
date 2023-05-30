@@ -3,8 +3,9 @@ import logging
 from typing import AsyncIterator
 
 from aiohttp import web
-from socketio import AsyncServer
+from socketio import AsyncAioPikaManager, AsyncServer
 
+from ..rabbitmq_settings import get_plugin_settings as get_rabbitmq_settings
 from ._utils import APP_CLIENT_SOCKET_SERVER_KEY, get_socket_server
 
 _logger = logging.getLogger(__name__)
@@ -36,11 +37,14 @@ def setup_socketio_server(app: web.Application) -> AsyncServer:
         # SEE https://github.com/miguelgrinberg/python-socketio/blob/v4.6.1/docs/server.rst#aiohttp
         # TODO: ujson to speed up?
         # TODO: client_manager= to socketio.AsyncRedisManager/AsyncAioPikaManager for horizontal scaling (shared sessions)
-
+        server_manager = AsyncAioPikaManager(
+            url=get_rabbitmq_settings(app).dsn, logger=_logger
+        )
         sio_server = AsyncServer(
             async_mode="aiohttp",
             logger=_logger,
             engineio_logger=False,
+            client_manager=server_manager,
         )
         sio_server.attach(app)
 
