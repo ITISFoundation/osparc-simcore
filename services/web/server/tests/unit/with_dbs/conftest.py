@@ -43,6 +43,7 @@ from servicelib.aiohttp.long_running_tasks.client import LRTask
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.common_aiopg_utils import DSN
 from settings_library.email import SMTPSettings
+from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
@@ -477,9 +478,30 @@ def postgres_db(
     engine.dispose()
 
 
+# RABBITMQ SERVICE ------------------------------------------------------
+
+
+def _is_rabbit_responsive(settings: RabbitSettings) -> bool:
+    return True
+
+
+@pytest.fixture(scope="session")
+def rabbit_service(docker_services, docker_ip) -> RabbitSettings:
+    # WARNING: overrides pytest_simcore.redis_service.redis_server function-scoped fixture!
+
+    host = docker_ip
+    port = docker_services.port_for("rabbit", 5672)
+    rabbit_settings = RabbitSettings(RABBIT_HOST=docker_ip, RABBIT_PORT=port)
+
+    docker_services.wait_until_responsive(
+        check=lambda: _is_rabbit_responsive(host, port),
+        timeout=30.0,
+        pause=0.1,
+    )
+    return rabbit_settings
+
+
 # REDIS CORE SERVICE ------------------------------------------------------
-
-
 def _is_redis_responsive(host: str, port: int) -> bool:
     r = redis.Redis(host=host, port=port)
     return r.ping() == True
