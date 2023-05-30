@@ -33,10 +33,10 @@ from simcore_postgres_database.webserver_models import (
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import setup_db
+from simcore_service_webserver.db_listener._utils import DB_TO_RUNNING_STATE
 from simcore_service_webserver.diagnostics.plugin import setup_diagnostics
 from simcore_service_webserver.director_v2.plugin import setup_director_v2
 from simcore_service_webserver.login.plugin import setup_login
-from simcore_service_webserver.notifications._utils import DB_TO_RUNNING_STATE
 from simcore_service_webserver.notifications.plugin import setup_notifications
 from simcore_service_webserver.products.plugin import setup_products
 from simcore_service_webserver.projects.plugin import setup_projects
