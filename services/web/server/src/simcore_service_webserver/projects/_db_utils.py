@@ -279,7 +279,7 @@ class BaseProjectDB:
 
             if (
                 filter_by_services is not None
-                # This checks only old projects not in the projects_to_products table.
+                # This checks only old projects that are not in the projects_to_products table.
                 and row[projects_to_products.c.product_name] is None
                 and not await project_uses_available_services(prj, filter_by_services)
             ):

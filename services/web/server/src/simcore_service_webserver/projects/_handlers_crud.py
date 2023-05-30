@@ -218,7 +218,7 @@ class _ProjectListParams(BaseModel):
     order_by: list[_ProjectOrderBy] = Field(
         default=None,
         description="Comma separated list of fields for ordering. The default sorting order is ascending. To specify descending order for a field, users append a 'desc' suffix",
-        example="field_name desc, bar",
+        example="foo desc, bar",
     )
     filters: _ProjectListFilters = Field(
         default=None,
@@ -229,7 +229,7 @@ class _ProjectListParams(BaseModel):
         default=None,
         description="Multi column full text search",
         max_length=25,
-        example="search for string",
+        example="search for this string",
     )
 
     @validator("order_by", pre=True)

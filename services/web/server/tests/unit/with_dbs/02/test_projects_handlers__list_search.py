@@ -2,10 +2,10 @@
 # pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=too-many-statemants
 
 import random
 from copy import deepcopy
-from os import name
 from pathlib import Path
 from typing import Any
 
