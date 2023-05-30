@@ -5,7 +5,6 @@ Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
 """
 import json
 import logging
-import re
 from enum import Enum
 
 from aiohttp import web
@@ -62,6 +61,7 @@ from .utils import (
     any_node_inputs_changed,
     get_project_unavailable_services,
     project_uses_available_services,
+    replace_multiple_spaces,
 )
 
 # When the user requests a project with a repo, the working copy might differ from
@@ -194,12 +194,6 @@ class _ProjectOrderBy(BaseModel):
         extra = Extra.forbid
 
 
-def _replace_multiple_spaces(text: str) -> str:
-    # Use regular expression to replace multiple spaces with a single space
-    cleaned_text = re.sub(r"\s+", " ", text)
-    return cleaned_text
-
-
 class _ProjectListParams(BaseModel):
     limit: int = Field(
         default=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
@@ -241,7 +235,7 @@ class _ProjectListParams(BaseModel):
         parse_fields_with_direction = []
         fields = v.split(",")
         for field in fields:
-            field_info = _replace_multiple_spaces(field.strip()).split(" ")
+            field_info = replace_multiple_spaces(field.strip()).split(" ")
             field_name = field_info[0]
             direction = OrderDirection.ASC
 

@@ -30,9 +30,7 @@ paths:
         in: query
       - required: false
         schema:
-          allOf:
-          - $ref: '#/components/schemas/ProjectTypeAPI'
-          default: all
+          $ref: '#/components/schemas/ProjectTypeAPI'
         name: type
         in: query
       - description: includes projects marked as hidden in the listing
@@ -752,14 +750,10 @@ components:
           type: string
         thumbnail:
           title: Thumbnail
-          anyOf:
-          - maxLength: 2083
-            minLength: 0
-            type: string
-            format: uri
-          - enum:
-            - ''
-            type: string
+          maxLength: 2083
+          minLength: 0
+          type: string
+          format: uri
         creationDate:
           title: Creationdate
           pattern: \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
@@ -832,14 +826,10 @@ components:
           type: string
         thumbnail:
           title: Thumbnail
-          anyOf:
-          - maxLength: 2083
-            minLength: 0
-            type: string
-            format: uri
-          - enum:
-            - ''
-            type: string
+          maxLength: 2083
+          minLength: 0
+          type: string
+          format: uri
         creationDate:
           title: Creationdate
           pattern: \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
