@@ -16,17 +16,14 @@ STORE_FILE_NAME: Final[str] = "data.json"
 
 class _StoreMixin(BaseModel):
     _shared_store_dir: Path | None = PrivateAttr()
-    _persist_lock: Lock | None = PrivateAttr()
+    _persist_lock: Lock = PrivateAttr(default_factory=Lock)
 
     async def __aenter__(self) -> None:
-        assert self._persist_lock  # nosec
         await self._persist_lock.acquire()
         return None
 
     async def __aexit__(self, *args) -> None:
         await self._persist_to_disk()
-
-        assert self._persist_lock  # nosec
         self._persist_lock.release()
 
     async def _persist_to_disk(self) -> None:
@@ -35,6 +32,9 @@ class _StoreMixin(BaseModel):
             self._shared_store_dir / STORE_FILE_NAME, "w"
         ) as data_file:
             await data_file.write(self.json())
+
+    def post_init(self, shared_store_dir: Path):
+        self._shared_store_dir = shared_store_dir
 
 
 class SharedStore(_StoreMixin):
@@ -75,16 +75,11 @@ class SharedStore(_StoreMixin):
 
     @classmethod
     async def init_from_disk(cls, shared_store_dir: Path) -> "SharedStore":
-        def _init_private(obj: SharedStore):
-            # pylint: disable=protected-access
-            obj._shared_store_dir = shared_store_dir
-            obj._persist_lock = Lock()
-
         data_file_path = shared_store_dir / STORE_FILE_NAME
 
         if not data_file_path.exists():
             obj = cls()
-            _init_private(obj)
+            obj.post_init(shared_store_dir)
             await obj._setup_initial_volume_states()
             return obj
 
@@ -94,7 +89,7 @@ class SharedStore(_StoreMixin):
             file_content = await data_file.read()
 
         obj = cls.parse_obj(file_content)
-        _init_private(obj)
+        obj.post_init(shared_store_dir)
         return obj
 
 
