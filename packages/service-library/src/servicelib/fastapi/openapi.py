@@ -73,24 +73,18 @@ _SKIP = (
 )
 
 
-def patch_openapi_specs(app_openapi: dict[str, Any]):
-    """Patches app.openapi with some fixes and osparc conventions
+def _remove_named_groups(regex: str) -> str:
+    # Fixes structure error produced by named groups like
+    # ^simcore/services/comp/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$
+    # into
+    # ^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+    return re.sub(r"\(\?P<[^>]+>", "(", regex)
 
-    Modifies fastapi auto-generated OAS to pass our openapi validation.
-    """
 
-    def _remove_named_groups(regex: str) -> str:
-        # Fixes structure error produce by named groups like
-        # ^simcore/services/comp/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$
-        # into
-        # ^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
-        return re.sub(r"\(\?P<[^>]+>", "(", regex)
-
-    def _patch_node(key, node):
-        # SEE fastapi ISSUE: https://github.com/tiangolo/fastapi/issues/240 (test_openap.py::test_exclusive_min_openapi_issue )
-        # SEE openapi-standard: https://swagger.io/docs/specification/data-models/data-types/#range
-        node_type = node.get("type")
-
+def _patch_node_properties(key: str, node: dict):
+    # SEE fastapi ISSUE: https://github.com/tiangolo/fastapi/issues/240 (test_openap.py::test_exclusive_min_openapi_issue )
+    # SEE openapi-standard: https://swagger.io/docs/specification/data-models/data-types/#range
+    if node_type := node.get("type"):
         if key == "exclusiveMinimum":
             cast_to_python = _SCHEMA_TO_PYTHON_TYPES[node_type]
             node["minimum"] = cast_to_python(node[key])
@@ -111,22 +105,29 @@ def patch_openapi_specs(app_openapi: dict[str, Any]):
         elif key == "pattern" and node_type == "string":
             node[key] = _remove_named_groups(regex=node[key])
 
-    def _patch(node):
-        if isinstance(node, dict):
-            for key in list(node.keys()):
-                if key in _SKIP:
-                    node.pop(key)
-                    continue
-                _patch_node(key, node)
 
-                # recursive
-                _patch(node[key])
+def _patch(node: Any):
+    if isinstance(node, dict):
+        for key in list(node.keys()):
+            if key in _SKIP:
+                node.pop(key)
+                continue
+            _patch_node_properties(key, node)
 
-        elif isinstance(node, list):
-            for value in node:
-                # recursive
-                _patch(value)
+            # recursive
+            _patch(node[key])
 
+    elif isinstance(node, list):
+        for value in node:
+            # recursive
+            _patch(value)
+
+
+def patch_openapi_specs(app_openapi: dict[str, Any]):
+    """Patches app.openapi with some fixes and osparc conventions
+
+    Modifies fastapi auto-generated OAS to pass our openapi validation.
+    """
     _patch(app_openapi)
 
 
