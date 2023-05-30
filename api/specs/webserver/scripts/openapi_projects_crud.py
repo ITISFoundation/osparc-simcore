@@ -105,10 +105,17 @@ async def list_projects(
     show_hidden: bool = Query(
         default=False, description="includes projects marked as hidden in the listing"
     ),
+    search: str = Query(
+        default=None,
+        description="Multi column full text search",
+        max_length=25,
+        example="search for this string",
+    ),
 ):
     ...
 
 
+# NOTE: filters and order_by are not yet implemented
 assert_handler_signature_against_model(list_projects, _ProjectListParams)
 
 

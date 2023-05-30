@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: osparc-simcore web API
-  version: 0.20.0
+  version: 0.21.0
   description: API designed for the front-end app
   contact:
     name: IT'IS Foundation
@@ -2359,13 +2359,15 @@ paths:
           in: query
         - required: false
           schema:
-            title: ProjectTypeAPI
-            enum:
-              - all
-              - template
-              - user
-            type: string
-            description: An enumeration.
+            allOf:
+              - title: ProjectTypeAPI
+                enum:
+                  - all
+                  - template
+                  - user
+                type: string
+                description: An enumeration.
+            default: all
           name: type
           in: query
         - description: includes projects marked as hidden in the listing
@@ -2376,6 +2378,16 @@ paths:
             description: includes projects marked as hidden in the listing
             default: false
           name: show_hidden
+          in: query
+        - description: Multi column full text search
+          required: false
+          schema:
+            title: Search
+            maxLength: 25
+            type: string
+            description: Multi column full text search
+          example: search for this string
+          name: search
           in: query
       responses:
         '200':
@@ -2486,10 +2498,14 @@ paths:
                           type: string
                         thumbnail:
                           title: Thumbnail
-                          maxLength: 2083
-                          minLength: 0
-                          type: string
-                          format: uri
+                          anyOf:
+                            - maxLength: 2083
+                              minLength: 0
+                              type: string
+                              format: uri
+                            - enum:
+                                - ''
+                              type: string
                         creationDate:
                           title: Creationdate
                           pattern: '\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z'
@@ -2734,10 +2750,14 @@ paths:
                         type: string
                       thumbnail:
                         title: Thumbnail
-                        maxLength: 2083
-                        minLength: 0
-                        type: string
-                        format: uri
+                        anyOf:
+                          - maxLength: 2083
+                            minLength: 0
+                            type: string
+                            format: uri
+                          - enum:
+                              - ''
+                            type: string
                       creationDate:
                         title: Creationdate
                         pattern: '\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z'
