@@ -426,13 +426,14 @@ async def prepare_services_environment(
     dynamic_sidecar_client = get_dynamic_sidecar_client(app, scheduler_data.node_uuid)
     dynamic_sidecar_endpoint = scheduler_data.endpoint
 
-    # update if volume requires saving
+    # Before starting, update the volume states. It is not always
+    # required to save the data from these volumes, eg: when services
+    # are opened in read only mode.
     volume_status: VolumeStatus = (
         VolumeStatus.CONTENT_NEEDS_TO_BE_SAVED
         if scheduler_data.dynamic_sidecar.service_removal_state.can_save
         else VolumeStatus.CONTENT_NO_SAVE_REQUIRED
     )
-
     await logged_gather(
         *(
             dynamic_sidecar_client.update_volume_state(

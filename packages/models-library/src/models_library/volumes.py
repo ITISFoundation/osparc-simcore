@@ -31,6 +31,11 @@ class VolumeCategory(StrAutoEnum):
 
 
 class VolumeStatus(StrAutoEnum):
+    """
+    Used by the agent to figure out what to do with the data
+    present on the volume.
+    """
+
     CONTENT_NEEDS_TO_BE_SAVED = auto()
     CONTENT_WAS_SAVED = auto()
     CONTENT_NO_SAVE_REQUIRED = auto()
