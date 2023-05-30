@@ -22,6 +22,7 @@ _logger = logging.getLogger(__name__)
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_SOCKETIO",
     logger=_logger,
+    depends=["simcore_service_webserver.rabbitmq"],
 )
 def setup_socketio(app: web.Application):
     assert app[APP_SETTINGS_KEY].WEBSERVER_SOCKETIO  # nosec
