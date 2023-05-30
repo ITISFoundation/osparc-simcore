@@ -56,6 +56,12 @@ projects:
   enabled: true
 publications:
   enabled: true
+rabbitmq:
+  enabled: true
+  host: 127.0.0.1
+  port: 5672
+  user: admin
+  password: adminadmin
 remote_debug:
   enabled: false
 resource_manager:
