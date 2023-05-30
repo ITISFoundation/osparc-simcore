@@ -100,7 +100,7 @@ async def _handle_db_notification(
             )
 
         if "state" in task_changes:
-            new_state = convert_state_from_db(task_data["state"]).value
+            new_state = convert_state_from_db(task_data["state"])
             await _update_project_state(
                 app,
                 the_project_owner,
