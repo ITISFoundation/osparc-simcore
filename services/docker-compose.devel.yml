@@ -86,7 +86,7 @@ services:
       SC_BOOT_MODE: debug-ptvsd
       WEBSERVER_LOGLEVEL: ${LOG_LEVEL:-DEBUG}
 
-  wb-db-to-rabbit-adapter:
+  wb-db-event-listener:
     volumes: *webserver-volumes-dev
     environment:
       <<: *webserver-environment-dev
