@@ -11,6 +11,8 @@ qx.Class.define("osparc.component.share.ShareePermissions", {
   construct: function(shareesData) {
     this.base(arguments);
 
+    this._setLayout(new qx.ui.layout.VBox(25));
+
     this.__populateLayout(shareesData);
   },
 
@@ -37,10 +39,24 @@ qx.Class.define("osparc.component.share.ShareePermissions", {
                 column: 0
               });
 
-              const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+              const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(8));
               shareeData["inaccessible_services"].forEach(inaccessibleService => {
+                const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
                 const metaData = osparc.utils.Services.getMetaData(inaccessibleService.key, inaccessibleService.version);
-                vBox.add(new qx.ui.basic.Label(metaData.name + " : " + metaData.version));
+                const infoButton = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/14");
+                infoButton.addListener("execute", () => {
+                  const moreOpts = new osparc.dashboard.ResourceMoreOptions(metaData);
+                  const title = this.tr("Service Info");
+                  osparc.ui.window.Window.popUpInWindow(
+                    moreOpts,
+                    title,
+                    osparc.dashboard.ResourceMoreOptions.WIDTH,
+                    osparc.dashboard.ResourceMoreOptions.HEIGHT
+                  );
+                }, this);
+                hBox.add(infoButton);
+                hBox.add(new qx.ui.basic.Label(metaData.name + " : " + metaData.version));
+                vBox.add(hBox);
               });
               layout.add(vBox, {
                 row: i,
