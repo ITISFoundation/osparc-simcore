@@ -2,7 +2,7 @@
 # pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-# pylint: disable=too-many-statemants
+# pylint: disable=too-many-statements
 
 import random
 from copy import deepcopy
