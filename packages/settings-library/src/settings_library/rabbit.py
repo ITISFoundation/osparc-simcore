@@ -14,7 +14,7 @@ class RabbitDsn(AnyUrl):
 class RabbitSettings(BaseCustomSettings):
     # host
     RABBIT_HOST: str
-    RABBIT_PORT: PortInt = 5672
+    RABBIT_PORT: PortInt = PortInt(5672)
 
     # auth
     RABBIT_USER: str
