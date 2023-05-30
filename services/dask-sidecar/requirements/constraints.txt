@@ -5,7 +5,7 @@
 #
 # Breaking changes
 #
-
+dask[distributed]<2023.4 # issue with publish_dataset: https://github.com/dask/distributed/issues/7859
 #
 # Bugs
 #

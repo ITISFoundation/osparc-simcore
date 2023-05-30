@@ -4,6 +4,8 @@
 #
 #    pip-compile --output-file=requirements/_base.txt --resolver=backtracking --strip-extras requirements/_base.in
 #
+arrow==1.2.3
+    # via -r requirements/../../../packages/models-library/requirements/_base.in
 attrs==23.1.0
     # via jsonschema
 certifi==2023.5.7
@@ -52,14 +54,18 @@ pyrsistent==0.19.3
     # via jsonschema
 pytest==7.3.1
     # via -r requirements/_base.in
+python-dateutil==2.8.2
+    # via arrow
 pyyaml==6.0
     # via -r requirements/_base.in
-requests==2.30.0
+requests==2.31.0
     # via docker
 rich==13.3.5
     # via typer
 shellingham==1.5.0.post1
     # via typer
+six==1.16.0
+    # via python-dateutil
 tomli==2.0.1
     # via pytest
 typer==0.9.0

@@ -11,7 +11,7 @@ from servicelib.aiohttp.application import create_safe_application
 from ._meta import WELCOME_GC_MSG, WELCOME_MSG, info
 from .activity.plugin import setup_activity
 from .application_settings import setup_settings
-from .catalog import setup_catalog
+from .catalog.plugin import setup_catalog
 from .clusters.plugin import setup_clusters
 from .db import setup_db
 from .diagnostics.plugin import setup_diagnostics

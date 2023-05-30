@@ -37,8 +37,8 @@ alembic==1.10.4
     #   -r requirements/_test.in
 arrow==1.2.3
     # via
-    #   -r requirements/../../../packages/service-library/requirements/_base.in
-    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/_base.in
 async-timeout==4.0.2
     # via
     #   aiohttp
@@ -168,7 +168,7 @@ redis==4.5.5
     # via
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-requests==2.30.0
+requests==2.31.0
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   docker

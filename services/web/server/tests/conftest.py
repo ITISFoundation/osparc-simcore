@@ -24,8 +24,10 @@ from servicelib.aiohttp.long_running_tasks.server import TaskStatus
 from servicelib.json_serialization import json_dumps
 from simcore_service_webserver.application_settings_utils import convert_to_environ_vars
 from simcore_service_webserver.db_models import UserRole
-from simcore_service_webserver.projects._create_utils import OVERRIDABLE_DOCUMENT_KEYS
-from simcore_service_webserver.projects.project_models import ProjectDict
+from simcore_service_webserver.projects._crud_create_utils import (
+    OVERRIDABLE_DOCUMENT_KEYS,
+)
+from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.utils import to_datetime
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -148,7 +150,6 @@ def monkeypatch_setenv_from_app_config(
             "  - convert_to_environ_vars(app_cfg)=\n",
             json_dumps(envs, indent=1, sort_keys=True),
         )
-
         for env_key, env_value in envs.items():
             monkeypatch.setenv(env_key, f"{env_value}")
 

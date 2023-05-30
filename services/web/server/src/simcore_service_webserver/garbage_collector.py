@@ -8,7 +8,7 @@ from .garbage_collector_task import run_background_task
 from .garbage_collector_tasks_api_keys import create_background_task_to_prune_api_keys
 from .garbage_collector_tasks_users import create_background_task_for_trial_accounts
 from .login.plugin import setup_login_storage
-from .projects.plugin import setup_projects_db
+from .projects.db import setup_projects_db
 from .socketio.plugin import setup_socketio_server
 
 logger = logging.getLogger(__name__)

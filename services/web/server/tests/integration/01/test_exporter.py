@@ -57,7 +57,7 @@ from simcore_service_webserver.application import (
     setup_users,
 )
 from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.catalog import setup_catalog
+from simcore_service_webserver.catalog.plugin import setup_catalog
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import projects
 from simcore_service_webserver.exporter.async_hashing import Algorithm, checksum
@@ -105,6 +105,7 @@ KEYS_TO_IGNORE_FROM_COMPARISON = {
     "last_change_date",
     "runHash",  # this changes after import, but the runnable states should remain the same
     "eTag",  # this must change
+    "progress",  # this key is deprecated and removed
     REMAPPING_KEY,
 }
 
@@ -335,7 +336,6 @@ def dict_with_keys(dict_data: dict[str, Any], kept_keys: set[str]) -> dict[str, 
 def dict_without_keys(
     dict_data: dict[str, Any], skipped_keys: set[str]
 ) -> dict[str, Any]:
-
     modified_dict = {}
     for key, value in dict_data.items():
         if key not in skipped_keys:

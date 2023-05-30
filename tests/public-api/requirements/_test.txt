@@ -75,7 +75,7 @@ python-dotenv==1.0.0
     # via -r requirements/_test.in
 pyyaml==6.0
     # via -r requirements/_test.in
-requests==2.30.0
+requests==2.31.0
     # via docker
 six==1.16.0
     # via python-dateutil

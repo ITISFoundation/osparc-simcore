@@ -27,7 +27,7 @@ from settings_library.utils_service import DEFAULT_AIOHTTP_PORT
 
 from ._constants import APP_SETTINGS_KEY
 from ._meta import API_VERSION, API_VTAG, APP_NAME
-from .catalog_settings import CatalogSettings
+from .catalog.settings import CatalogSettings
 from .diagnostics.settings import DiagnosticsSettings
 from .director.settings import DirectorSettings
 from .director_v2.settings import DirectorV2Settings
@@ -35,7 +35,7 @@ from .exporter.settings import ExporterSettings
 from .garbage_collector_settings import GarbageCollectorSettings
 from .invitations.settings import InvitationsSettings
 from .login.settings import LoginSettings
-from .projects.projects_settings import ProjectsSettings
+from .projects.settings import ProjectsSettings
 from .resource_manager.settings import ResourceManagerSettings
 from .rest_settings import RestSettings
 from .scicrunch.settings import SciCrunchSettings

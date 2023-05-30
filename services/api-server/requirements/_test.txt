@@ -233,7 +233,7 @@ pyyaml==5.4.1
     #   moto
     #   openapi-spec-validator
     #   responses
-requests==2.27.1
+requests==2.31.0
     # via
     #   -c requirements/_base.txt
     #   docker

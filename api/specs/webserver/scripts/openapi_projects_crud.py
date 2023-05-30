@@ -22,6 +22,13 @@ from models_library.projects import ProjectID
 from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Page
 from pydantic import NonNegativeInt
 from servicelib.aiohttp.long_running_tasks.server import TaskGet
+from simcore_service_webserver.projects._handlers_crud import (
+    ProjectPathParams,
+    ProjectTypeAPI,
+    _ProjectActiveParams,
+    _ProjectCreateParams,
+    _ProjectListParams,
+)
 from simcore_service_webserver.projects._rest_schemas import (
     ProjectCopyOverride,
     ProjectCreateNew,
@@ -30,13 +37,6 @@ from simcore_service_webserver.projects._rest_schemas import (
     ProjectReplace,
     ProjectUpdate,
     TaskGet,
-)
-from simcore_service_webserver.projects.projects_handlers_crud import (
-    ProjectPathParams,
-    ProjectTypeAPI,
-    _ProjectActiveParams,
-    _ProjectCreateParams,
-    _ProjectListParams,
 )
 
 app = FastAPI(redoc_url=None)

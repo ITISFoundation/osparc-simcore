@@ -76,6 +76,7 @@ class CustomFormatter(logging.Formatter):
 
 # SEE https://docs.python.org/3/library/logging.html#logrecord-attributes
 DEFAULT_FORMATTING = "log_level=%(levelname)s | log_timestamp=%(asctime)s | log_source=%(name)s:%(funcName)s(%(lineno)d) | log_uid=%(log_uid)s | log_msg=%(message)s"
+LOCAL_FORMATTING = "%(levelname)s: [%(asctime)s/%(processName)s] [%(name)s:%(funcName)s(%(lineno)d)]  -  %(message)s"
 
 # Graylog Grok pattern extractor:
 # log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{DATA:log_source} \| log_msg=%{GREEDYDATA:log_msg}
@@ -85,6 +86,7 @@ def config_all_loggers(log_format_local_dev_enabled: bool):
     """
     Applies common configuration to ALL registered loggers
     """
+    fmt = DEFAULT_FORMATTING
     the_manager: logging.Manager = logging.Logger.manager
     root_logger = logging.getLogger()
 
@@ -92,8 +94,11 @@ def config_all_loggers(log_format_local_dev_enabled: bool):
         logging.getLogger(name) for name in the_manager.loggerDict
     ]
 
+    if log_format_local_dev_enabled:
+        fmt = LOCAL_FORMATTING
+
     for logger in loggers:
-        set_logging_handler(logger, DEFAULT_FORMATTING, log_format_local_dev_enabled)
+        set_logging_handler(logger, fmt, log_format_local_dev_enabled)
 
 
 def set_logging_handler(
