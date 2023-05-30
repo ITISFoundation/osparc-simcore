@@ -847,9 +847,8 @@ async def add_project_states_for_user(
                     node_state.json(by_alias=True, exclude_unset=True)
                 )
                 prj_node.setdefault("state", {}).update(node_state_dict)
-                prj_node.update(
-                    {"progress": round(node_state_dict.get("progress", 0) * 100.0)}
-                )
+                prj_node_progress = node_state_dict.get("progress", None) or 0
+                prj_node.update({"progress": round(prj_node_progress * 100.0)})
 
     project["state"] = ProjectState(
         locked=lock_state, state=ProjectRunningState(value=running_state)
