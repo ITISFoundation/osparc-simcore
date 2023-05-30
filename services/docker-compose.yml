@@ -297,6 +297,24 @@ services:
     networks:
       - default
       - interactive_services_subnet
+  wb-db-to-rabbit-adapter:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    environment:
+      <<: *webserver-environment
+    env_file:
+      - ../.env
+      - ../.env-wb-db-to-rabbit-adapter
+    deploy:
+      # NOTE: this MUSTN'T change, or weird things might happen
+      # this will stay until all legacy dynamic services are gone.
+      replicas: 1
+      placement:
+        constraints:
+          - node.platform.os == linux
+    networks:
+      - default
 
   wb-garbage-collector:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
