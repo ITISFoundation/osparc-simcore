@@ -56,9 +56,7 @@ SIMCORE_SERVICE_EXAMPLES = [
     [(x.example, x.items, x.uses_dynamic_sidecar) for x in SIMCORE_SERVICE_EXAMPLES],
     ids=[x.id for x in SIMCORE_SERVICE_EXAMPLES],
 )
-def test_simcore_service_labels(
-    example: dict, items: int, uses_dynamic_sidecar: bool
-) -> None:
+def test_simcore_service_labels(example: dict, items: int, uses_dynamic_sidecar: bool):
     simcore_service_labels = SimcoreServiceLabels.parse_obj(example)
 
     assert simcore_service_labels
@@ -66,7 +64,7 @@ def test_simcore_service_labels(
     assert simcore_service_labels.needs_dynamic_sidecar == uses_dynamic_sidecar
 
 
-def test_service_settings() -> None:
+def test_service_settings():
     simcore_settings_settings_label = SimcoreServiceSettingsLabel.parse_obj(
         SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
     )
@@ -92,7 +90,7 @@ def test_service_settings() -> None:
 )
 def test_service_settings_model_examples(
     model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
-) -> None:
+):
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))
         model_instance = model_cls(**example)
@@ -105,7 +103,7 @@ def test_service_settings_model_examples(
 )
 def test_correctly_detect_dynamic_sidecar_boot(
     model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
-) -> None:
+):
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))
         model_instance = model_cls(**example)
@@ -114,7 +112,7 @@ def test_correctly_detect_dynamic_sidecar_boot(
         )
 
 
-def test_raises_error_if_http_entrypoint_is_missing() -> None:
+def test_raises_error_if_http_entrypoint_is_missing():
     simcore_service_labels: dict[str, Any] = deepcopy(
         SimcoreServiceLabels.Config.schema_extra["examples"][2]
     )
@@ -124,14 +122,14 @@ def test_raises_error_if_http_entrypoint_is_missing() -> None:
         SimcoreServiceLabels(**simcore_service_labels)
 
 
-def test_path_mappings_none_state_paths() -> None:
+def test_path_mappings_none_state_paths():
     sample_data = deepcopy(PathMappingsLabel.Config.schema_extra["examples"][0])
     sample_data["state_paths"] = None
     with pytest.raises(ValidationError):
         PathMappingsLabel(**sample_data)
 
 
-def test_path_mappings_json_encoding() -> None:
+def test_path_mappings_json_encoding():
     for example in PathMappingsLabel.Config.schema_extra["examples"]:
         path_mappings = PathMappingsLabel.parse_obj(example)
         print(path_mappings)
@@ -147,7 +145,7 @@ def test_simcore_services_labels_compose_spec_null_container_http_entry_provided
         SimcoreServiceLabels(**sample_data)
 
 
-def test_raises_error_wrong_restart_policy() -> None:
+def test_raises_error_wrong_restart_policy():
     simcore_service_labels: dict[str, Any] = deepcopy(
         SimcoreServiceLabels.Config.schema_extra["examples"][2]
     )
