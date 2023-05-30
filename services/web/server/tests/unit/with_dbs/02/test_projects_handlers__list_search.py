@@ -85,7 +85,7 @@ class _ProjectInfo(BaseModel):
 
 
 @pytest.mark.parametrize(*standard_user_role())
-async def test_list_projects_with_invalid_pagination_parameters(
+async def test_list_projects_with_search_parameter(
     client: TestClient,
     logged_user: dict[str, Any],
     expected: ExpectedResponse,

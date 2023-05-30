@@ -194,7 +194,7 @@ class _ProjectOrderBy(BaseModel):
         extra = Extra.forbid
 
 
-def _replace_multiple_spaces(text):
+def _replace_multiple_spaces(text: str) -> str:
     # Use regular expression to replace multiple spaces with a single space
     cleaned_text = re.sub(r"\s+", " ", text)
     return cleaned_text
