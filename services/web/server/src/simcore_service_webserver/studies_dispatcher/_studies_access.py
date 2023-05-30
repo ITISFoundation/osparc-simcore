@@ -353,7 +353,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
     except ProjectNotFoundError as exc:
         raise RedirectToFrontEndPageError(
             MSG_PROJECT_NOT_FOUND.format(project_id=project_id),
-            error_code="PROJECT_NOT_PUBLISHED",
+            error_code="PROJECT_NOT_FOUND",
             status_code=web.HTTPNotFound.status_code,
         ) from exc
 
