@@ -299,6 +299,7 @@ services:
       - default
       - interactive_services_subnet
   wb-db-event-listener:
+
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
@@ -309,6 +310,7 @@ services:
       - ../.env
       - ../.env-wb-db-event-listener
     deploy:
+      # NOTE: https://github.com/ITISFoundation/osparc-simcore/pull/4286
       # NOTE: this MUSTN'T change, or weird things might happen
       # this will stay until all legacy dynamic services are gone.
       replicas: 1
