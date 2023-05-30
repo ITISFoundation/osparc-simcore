@@ -100,13 +100,15 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
     __optionsMenu: null,
 
     __applyStudy: function() {
-      osparc.utils.Utils.setMoreToWidget(this, "root");
+      const label = this.getChildControl("label");
+      osparc.utils.Utils.setMoreToWidget(label, "root");
 
       this.getChildControl("delete-button").exclude();
     },
 
     __applyNode: function(node) {
-      osparc.utils.Utils.setMoreToWidget(this, node.getNodeId());
+      const label = this.getChildControl("label");
+      osparc.utils.Utils.setMoreToWidget(label, node.getNodeId());
 
       if (node.isDynamic()) {
         this.getChildControl("fullscreen-button").show();
@@ -288,9 +290,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
 
       // The standard tree icon follows
       this.addIcon();
-      const icon = this.getChildControl("icon");
-      osparc.utils.Utils.setIdToWidget(icon, "nodeTreeItem");
-      icon.set({
+      this.getChildControl("icon").set({
         alignX: "center",
         alignY: "middle",
         paddingTop: 1, // alignY: "middle" is not very effective
@@ -300,6 +300,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
       // The label
       this.addLabel();
       const label = this.getChildControl("label");
+      osparc.utils.Utils.setIdToWidget(label, "nodeTreeItem");
       label.set({
         allowGrowX: true,
         allowShrinkX: true
