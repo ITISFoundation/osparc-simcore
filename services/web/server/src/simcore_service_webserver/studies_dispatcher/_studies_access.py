@@ -22,6 +22,7 @@ import redis.asyncio as aioredis
 from aiohttp import web
 from aiohttp_session import get_session
 from models_library.emails import LowerCaseEmailStr
+from models_library.projects import ProjectID
 from pydantic import parse_obj_as
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.error_codes import create_error_code
@@ -345,16 +346,16 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
         user = await get_authorized_user(request)
 
     # This was added so it fails right away if study doesn't exist.
-    # Check if there is a PROJECT with project_id
-    if not user:
+    # Work-around to check if there is a PROJECT with project_id: check the type of the project.
+    try:
         db = ProjectDBAPI.get_from_app_context(request.app)
-        prj, _ = await db.get_project(user_id=user, project_uuid=project_id)
-        if not prj:
-            raise RedirectToFrontEndPageError(
-                MSG_PROJECT_NOT_FOUND.format(project_id=project_id),
-                error_code="PROJECT_NOT_FOUND",
-                status_code=web.HTTPNotFound.status_code,
-            )
+        await db.get_project_type(project_uuid=ProjectID(project_id))
+    except ProjectNotFoundError as exc:
+        raise RedirectToFrontEndPageError(
+            MSG_PROJECT_NOT_FOUND.format(project_id=project_id),
+            error_code="PROJECT_NOT_PUBLISHED",
+            status_code=web.HTTPNotFound.status_code,
+        ) from exc
 
     # Get published PROJECT referenced in link
     template_project = await _get_published_template_project(
