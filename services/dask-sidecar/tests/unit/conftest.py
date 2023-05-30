@@ -5,7 +5,7 @@
 
 from pathlib import Path
 from pprint import pformat
-from typing import AsyncIterator, Callable, Iterable, Iterator
+from typing import AsyncIterator, Callable, Iterator
 
 import dask
 import distributed
@@ -76,7 +76,7 @@ def mock_service_envs(
 
 
 @pytest.fixture
-def dask_client(mock_service_envs: None) -> Iterable[distributed.Client]:
+def local_cluster(mock_service_envs: None) -> Iterator[distributed.LocalCluster]:
     print(pformat(dask.config.get("distributed")))
     with distributed.LocalCluster(
         worker_class=distributed.Worker,
@@ -85,8 +85,43 @@ def dask_client(mock_service_envs: None) -> Iterable[distributed.Client]:
             "preload": "simcore_service_dask_sidecar.tasks",
         },
     ) as cluster:
-        with distributed.Client(cluster) as client:
-            yield client
+        assert cluster
+        assert isinstance(cluster, distributed.LocalCluster)
+        yield cluster
+
+
+@pytest.fixture
+def dask_client(
+    local_cluster: distributed.LocalCluster,
+) -> Iterator[distributed.Client]:
+    with distributed.Client(local_cluster) as client:
+        yield client
+
+
+@pytest.fixture
+async def async_local_cluster(
+    mock_service_envs: None,
+) -> AsyncIterator[distributed.LocalCluster]:
+    print(pformat(dask.config.get("distributed")))
+    async with distributed.LocalCluster(
+        worker_class=distributed.Worker,
+        **{
+            "resources": {"CPU": 10, "GPU": 10},
+            "preload": "simcore_service_dask_sidecar.tasks",
+        },
+        asynchronous=True,
+    ) as cluster:
+        assert cluster
+        assert isinstance(cluster, distributed.LocalCluster)
+        yield cluster
+
+
+@pytest.fixture
+async def async_dask_client(
+    async_local_cluster: distributed.LocalCluster,
+) -> AsyncIterator[distributed.Client]:
+    async with distributed.Client(async_local_cluster, asynchronous=True) as client:
+        yield client
 
 
 @pytest.fixture(scope="module")

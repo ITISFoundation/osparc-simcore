@@ -3,7 +3,7 @@
 import asyncio
 import logging
 import urllib.parse
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from aiocache import cached
 from fastapi import APIRouter, Depends, Header, HTTPException, status
@@ -37,8 +37,8 @@ def _prepare_service_details(
     service_in_registry: dict[str, Any],
     service_in_db: ServiceMetaDataAtDB,
     service_access_rights_in_db: list[ServiceAccessRightsAtDB],
-    service_owner: Optional[str],
-) -> Optional[ServiceGet]:
+    service_owner: str | None,
+) -> ServiceGet | None:
     # compose service from registry and DB
     composed_service = service_in_registry
     composed_service.update(
@@ -84,7 +84,7 @@ router = APIRouter()
 async def list_services(
     request: Request,  # pylint:disable=unused-argument
     user_id: PositiveInt,
-    details: Optional[bool] = True,
+    details: bool | None = True,
     director_client: DirectorApi = Depends(get_director_api),
     groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
     services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),

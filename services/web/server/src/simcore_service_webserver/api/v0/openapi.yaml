@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: osparc-simcore web API
-  version: 0.19.0
+  version: 0.20.0
   description: API designed for the front-end app
   contact:
     name: IT'IS Foundation
@@ -5418,6 +5418,75 @@ paths:
                 $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/get/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
+  '/projects/{project_id}/nodes/-/services:access':
+    get:
+      tags:
+        - project
+      summary: Check whether provided group has access to the project services
+      operationId: get_project_services_access_for_gid
+      parameters:
+        - required: true
+          schema:
+            title: Project Id
+            type: string
+            format: uuid
+          name: project_id
+          in: path
+        - required: true
+          schema:
+            title: For Gid
+            exclusiveMinimum: true
+            type: integer
+            minimum: 0
+          name: for_gid
+          in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: 'Envelope[_ProjectGroupAccess]'
+                type: object
+                properties:
+                  data:
+                    title: _ProjectGroupAccess
+                    required:
+                      - gid
+                      - accessible
+                    type: object
+                    properties:
+                      gid:
+                        title: Gid
+                        exclusiveMinimum: true
+                        type: integer
+                        minimum: 0
+                      accessible:
+                        title: Accessible
+                        type: boolean
+                      inaccessible_services:
+                        title: Inaccessible Services
+                        type: array
+                        items:
+                          title: ServiceKeyVersion
+                          required:
+                            - key
+                            - version
+                          type: object
+                          properties:
+                            key:
+                              title: Key
+                              pattern: '^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$'
+                              type: string
+                              description: distinctive name for the node based on the docker registry path
+                            version:
+                              title: Version
+                              pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
+                              type: string
+                              description: service version number
+                          description: This pair uniquely identifies a services
+                  error:
+                    title: Error
   '/projects/{project_id}/inputs':
     get:
       tags:
