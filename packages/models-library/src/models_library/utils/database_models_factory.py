@@ -6,7 +6,7 @@ SEE: Copied and adapted from https://github.com/tiangolo/pydantic-sqlalchemy/blo
 import json
 import warnings
 from datetime import datetime
-from typing import Any, Callable, Container, Optional
+from typing import Any, Callable, Container
 from uuid import UUID
 
 import sqlalchemy as sa
@@ -42,8 +42,8 @@ def _eval_defaults(
     parsing both the client and the server (if include_server_defaults==True) defaults
     in the sa model.
     """
-    default: Optional[Any] = None
-    default_factory: Optional[Callable] = None
+    default: Any | None = None
+    default_factory: Callable | None = None
 
     if (
         column.default is None
@@ -104,11 +104,10 @@ def create_pydantic_model_from_sa_table(
     table: sa.Table,
     *,
     config: type = OrmConfig,
-    exclude: Optional[Container[str]] = None,
+    exclude: Container[str] | None = None,
     include_server_defaults: bool = False,
-    extra_policies: Optional[list[PolicyCallable]] = None,
+    extra_policies: list[PolicyCallable] | None = None,
 ) -> type[BaseModel]:
-
     fields = {}
     exclude = exclude or []
     extra_policies = extra_policies or DEFAULT_EXTRA_POLICIES
@@ -126,7 +125,7 @@ def create_pydantic_model_from_sa_table(
             name = f"{table.name.lower()}_{name}"
 
         # type ---
-        pydantic_type: Optional[type] = None
+        pydantic_type: type | None = None
         if hasattr(column.type, "impl"):
             if hasattr(column.type.impl, "python_type"):
                 pydantic_type = column.type.impl.python_type

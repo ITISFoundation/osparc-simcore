@@ -138,7 +138,9 @@ def test_path_mappings_json_encoding() -> None:
         assert PathMappingsLabel.parse_raw(path_mappings.json()) == path_mappings
 
 
-def test_simcore_services_labels_compose_spec_null_container_http_entry_provided() -> None:
+def test_simcore_services_labels_compose_spec_null_container_http_entry_provided() -> (
+    None
+):
     sample_data = deepcopy(SimcoreServiceLabels.Config.schema_extra["examples"][2])
     assert sample_data["simcore.service.container-http-entrypoint"]
 

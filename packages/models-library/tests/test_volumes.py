@@ -1,9 +1,8 @@
 # pylint: disable=redefined-outer-name
 
 import pytest
-from models_library.volumes import VolumeStatus
+from models_library.volumes import VolumeState, VolumeStatus
 from pytest import FixtureRequest
-from simcore_service_dynamic_sidecar.models.volumes import VolumeState
 
 
 @pytest.fixture(params=VolumeStatus)

@@ -37,7 +37,6 @@ def test_upgrade_identifiers(legacy: str, expected: str):
 
 
 def test_substitution_with_new_and_legacy_identifiers():
-
     stringified_config = """
     compose_spec:
         service-one:
@@ -162,7 +161,6 @@ KNOWN_IDENTIFIERS = {
     ids=lambda p: f"{p.parent.name}/{p.name}",
 )
 def test_substitution_against_service_metadata_configs(metadata_path: Path):
-
     meta_str = metadata_path.read_text()
     meta_str = substitute_all_legacy_identifiers(meta_str)
 

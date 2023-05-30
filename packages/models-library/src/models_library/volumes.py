@@ -1,4 +1,8 @@
+from datetime import datetime
 from enum import auto
+
+import arrow
+from pydantic import BaseModel, Field
 
 from .utils.enums import StrAutoEnum
 
@@ -39,3 +43,13 @@ class VolumeStatus(StrAutoEnum):
     CONTENT_NEEDS_TO_BE_SAVED = auto()
     CONTENT_WAS_SAVED = auto()
     CONTENT_NO_SAVE_REQUIRED = auto()
+
+
+class VolumeState(BaseModel):
+    status: VolumeStatus
+    last_changed: datetime = Field(default_factory=lambda: arrow.utcnow().datetime)
+
+    def __eq__(self, other: object) -> bool:
+        # only include status for equality last_changed is not important
+        is_equal: bool = self.status == getattr(other, "status", None)
+        return is_equal
