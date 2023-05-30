@@ -166,7 +166,7 @@ async def user_groups_ids(
             "STANDARD",
             "http://mib.org",
             {"email": "@(foo|testers|mib)+.(org|com)$"},
-        ),
+        )
     ]
     # pylint: disable=no-value-for-parameter
     async with sqlalchemy_async_engine.begin() as conn:
