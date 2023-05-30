@@ -10,14 +10,14 @@ qx.Class.define("osparc.component.share.ShareePermissions", {
   construct: function(shareesData) {
     this.base(arguments, "collaboratorsManager", this.tr("Sharee permissions"));
     this.set({
-      layout: new qx.ui.layout.VBox(),
+      layout: new qx.ui.layout.VBox(20),
       allowMinimize: false,
       allowMaximize: false,
       showMinimize: false,
       showMaximize: false,
       autoDestroy: true,
       modal: true,
-      width: 262,
+      width: 500,
       maxHeight: 500,
       clickAwayClose: true
     });
@@ -30,8 +30,7 @@ qx.Class.define("osparc.component.share.ShareePermissions", {
 
   members: {
     __populateLayout: function(shareesData) {
-      console.log(shareesData);
-      const text = this.tr("The following users will not be able to open the shared study:");
+      const text = this.tr("The following users/groups will not be able to open the shared study:");
       this.add(new qx.ui.basic.Label().set({
         value: text,
         font: "text-14",
@@ -39,11 +38,7 @@ qx.Class.define("osparc.component.share.ShareePermissions", {
         wrap: true
       }));
 
-      const grid = new qx.ui.layout.Grid(10, 6);
-      Object.values(this.self().GridPos).forEach(gridPos => {
-        grid.setColumnAlign(gridPos, "left", "middle");
-      });
-      grid.setColumnFlex(this.self().GridPos.reference, 1);
+      const grid = new qx.ui.layout.Grid(20, 10);
       const layout = new qx.ui.container.Composite(grid);
       this.add(layout);
       for (let i=0; i<shareesData.length; i++) {
@@ -51,8 +46,7 @@ qx.Class.define("osparc.component.share.ShareePermissions", {
         osparc.store.Store.getInstance().getGroup(shareeData.gid)
           .then(group => {
             if (group) {
-              console.log(group);
-              layout.add(new qx.ui.basic.Label(text), {
+              layout.add(new qx.ui.basic.Label(group.label), {
                 row: i,
                 column: 0
               });
