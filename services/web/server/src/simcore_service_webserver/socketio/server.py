@@ -38,7 +38,9 @@ async def _socketio_server_cleanup_ctx(app: web.Application) -> AsyncIterator[No
     # cleanup its background tasks properly.
     # https://github.com/miguelgrinberg/python-socketio/discussions/1092
     cancelled_tasks = []
-    if server_thread := getattr(server_manager, "thread"):
+
+    if hasattr(server_manager, "thread"):
+        server_thread = server_manager.thread
         assert isinstance(server_thread, asyncio.Task)  # nosec
         server_thread.cancel()
         cancelled_tasks.append(server_thread)
