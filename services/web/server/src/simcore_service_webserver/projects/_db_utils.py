@@ -355,7 +355,10 @@ class BaseProjectDB:
             )
 
         # check the access rights
-        check_project_permissions(project_row, user_id, user_groups, check_permissions)
+        if user_id:
+            check_project_permissions(
+                project_row, user_id, user_groups, check_permissions
+            )
 
         project: dict[str, Any] = dict(project_row.items())
 

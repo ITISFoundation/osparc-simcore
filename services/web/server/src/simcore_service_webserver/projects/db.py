@@ -360,7 +360,7 @@ class ProjectDBAPI(BaseProjectDB):
         """Returns all projects *owned* by the user
 
             - prj_owner
-            - Notice that a user can have access to a template but he might not onw it
+            - Notice that a user can have access to a template but he might not own it
             - Notice that a user can have access to a project where he/she has read access
 
         :raises ProjectNotFoundError: project is not assigned to user
