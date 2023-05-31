@@ -7,7 +7,11 @@ from socketio import AsyncAioPikaManager, AsyncServer
 
 from ..rabbitmq_settings import get_plugin_settings as get_rabbitmq_settings
 from . import _handlers
-from ._utils import APP_CLIENT_SOCKET_SERVER_KEY, register_socketio_handlers
+from ._utils import (
+    APP_CLIENT_SOCKET_SERVER_KEY,
+    get_socket_server,
+    register_socketio_handlers,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -53,6 +57,8 @@ async def _socketio_server_cleanup_ctx(app: web.Application) -> AsyncIterator[No
 def setup_socketio_server(app: web.Application) -> None:
     app.cleanup_ctx.append(_socketio_server_cleanup_ctx)
 
+
+assert get_socket_server  # nosec
 
 __all__: tuple[str, ...] = (
     "get_socket_server",
