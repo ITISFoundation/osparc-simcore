@@ -178,7 +178,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerModel", {
     },
 
     // overloaded - called whenever the table requests the row count
-    _loadRowCount : function() {
+    _loadRowCount: function() {
       this.__filteredData = [];
       for (let i=0; i<this.__rawData.length; i++) {
         const rowData = this.__rawData[i];
@@ -191,7 +191,8 @@ qx.Class.define("osparc.component.widget.logger.LoggerModel", {
       self._onRowCountLoaded(this.__filteredData.length);
     },
 
-    _loadRowData : function(firstRow, lastRow) {
+    // overridden
+    _loadRowData: function(firstRow, lastRow) {
       const data = [];
       for (let i=firstRow; i<=lastRow; i++) {
         data.push(this.__filteredData[i]);
