@@ -109,7 +109,7 @@ async def list_projects(
         default=None,
         description="Multi column full text search",
         max_length=25,
-        example="search for this string",
+        example="My project",
     ),
 ):
     ...
