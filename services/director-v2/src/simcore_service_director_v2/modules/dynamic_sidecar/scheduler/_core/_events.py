@@ -31,7 +31,7 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-from .....core.settings import DynamicSidecarSettings
+from .....core.settings import DynamicSidecarProxySettings, DynamicSidecarSettings
 from .....models.schemas.dynamic_services import DynamicSidecarStatus, SchedulerData
 from .....models.schemas.dynamic_services.scheduler import (
     DockerContainerInspect,
@@ -65,6 +65,7 @@ from ...docker_service_specs import (
 )
 from ...errors import EntrypointContainerNotFoundError, UnexpectedContainerStatusError
 from ._abc import DynamicSchedulerEvent
+from ._dirty_proxy_client import configure_proxy
 from ._events_utils import (
     are_all_user_services_containers_running,
     attach_project_networks,
@@ -253,6 +254,23 @@ class CreateSidecars(DynamicSchedulerEvent):
         scheduler_data.service_port = extract_service_port_from_compose_start_spec(
             dynamic_sidecar_service_final_spec
         )
+
+        dynamic_sidecar_proxy_create_service_params: dict[
+            str, Any
+        ] = get_dynamic_proxy_spec(
+            scheduler_data=scheduler_data,
+            dynamic_sidecar_settings=dynamic_sidecar_settings,
+            dynamic_sidecar_network_id=dynamic_sidecar_network_id,
+            swarm_network_id=swarm_network_id,
+            swarm_network_name=swarm_network_name,
+        )
+        logger.debug(
+            "dynamic-sidecar-proxy create_service_params %s",
+            json_dumps(dynamic_sidecar_proxy_create_service_params),
+        )
+
+        # no need for the id any longer
+        await create_service_and_get_id(dynamic_sidecar_proxy_create_service_params)
 
         # finally mark services created
         scheduler_data.dynamic_sidecar.dynamic_sidecar_id = dynamic_sidecar_id
@@ -528,25 +546,17 @@ class CreateUserServices(DynamicSchedulerEvent):
                     "Fetched container entrypoint name %s", entrypoint_container
                 )
 
-        dynamic_sidecar_proxy_create_service_params: dict[
-            str, Any
-        ] = get_dynamic_proxy_spec(
-            scheduler_data=scheduler_data,
-            dynamic_sidecar_settings=dynamic_sidecar_settings,
-            dynamic_sidecar_network_id=scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id,
-            swarm_network_id=scheduler_data.dynamic_sidecar.swarm_network_id,
-            swarm_network_name=scheduler_data.dynamic_sidecar.swarm_network_name,
+        proxy_settings: DynamicSidecarProxySettings = (
+            dynamic_sidecar_settings.DYNAMIC_SIDECAR_PROXY_SETTINGS
+        )
+
+        await configure_proxy(
+            node_id=scheduler_data.node_uuid,
+            admin_api_port=proxy_settings.DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT,
             entrypoint_container_name=entrypoint_container,
             service_port=scheduler_data.service_port,
         )
 
-        logger.debug(
-            "dynamic-sidecar-proxy create_service_params %s",
-            json_dumps(dynamic_sidecar_proxy_create_service_params),
-        )
-
-        # no need for the id any longer
-        await create_service_and_get_id(dynamic_sidecar_proxy_create_service_params)
         scheduler_data.dynamic_sidecar.were_containers_created = True
 
         scheduler_data.dynamic_sidecar.was_compose_spec_submitted = True

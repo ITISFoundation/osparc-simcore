@@ -6,7 +6,6 @@ from models_library.services_resources import (
     MEMORY_50MB,
     MEMORY_250MB,
 )
-from pydantic.types import PositiveInt
 
 from ....core.settings import DynamicSidecarProxySettings, DynamicSidecarSettings
 from ....models.schemas.dynamic_services import SchedulerData, ServiceType
@@ -19,8 +18,6 @@ def get_dynamic_proxy_spec(
     dynamic_sidecar_network_id: str,
     swarm_network_id: str,
     swarm_network_name: str,
-    entrypoint_container_name: str,
-    service_port: PositiveInt,
 ) -> dict[str, Any]:
     """
     The Traefik proxy is the entrypoint which forwards
@@ -40,6 +37,9 @@ def get_dynamic_proxy_spec(
     ]
     proxy_settings: DynamicSidecarProxySettings = (
         dynamic_sidecar_settings.DYNAMIC_SIDECAR_PROXY_SETTINGS
+    )
+    caddy_file = (
+        f"{{\n admin 0.0.0.0:{proxy_settings.DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT} \n}}"
     )
 
     # expose this service on an empty port
@@ -91,12 +91,11 @@ def get_dynamic_proxy_spec(
                     "uuid": f"{scheduler_data.node_uuid}",
                 },
                 "Command": [
-                    "caddy",
-                    "reverse-proxy",
-                    "--from",
-                    ":80",
-                    "--to",
-                    f"{entrypoint_container_name}:{service_port}",
+                    "sh",
+                    "-c",
+                    f"echo -e '{caddy_file}' > /etc/caddy/Caddyfile && "
+                    "cat /etc/caddy/Caddyfile && "
+                    "caddy run --adapter caddyfile --config /etc/caddy/Caddyfile",
                 ],
                 "Mounts": mounts,
             },
