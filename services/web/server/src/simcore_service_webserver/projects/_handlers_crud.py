@@ -209,21 +209,21 @@ class _ProjectListParams(BaseModel):
         default=False, description="includes projects marked as hidden in the listing"
     )
 
-    order_by: list[_ProjectOrderBy] = Field(
+    order_by: list[_ProjectOrderBy] | None = Field(
         default=None,
         description="Comma separated list of fields for ordering. The default sorting order is ascending. To specify descending order for a field, users append a 'desc' suffix",
         example="foo desc, bar",
     )
-    filters: _ProjectListFilters = Field(
+    filters: _ProjectListFilters | None = Field(
         default=None,
         description="Filters to process on the projects list, encoded as JSON",
         example='{"tags": [1, 5], "classifiers": ["foo", "bar"]}',
     )
-    search: str = Field(
+    search: str | None = Field(
         default=None,
         description="Multi column full text search",
         max_length=25,
-        example="search for this string",
+        example="My Project",
     )
 
     @validator("order_by", pre=True)
@@ -258,6 +258,13 @@ class _ProjectListParams(BaseModel):
     def filters_parse_to_object(cls, v):
         if v:
             v = json.loads(v)
+        return v
+
+    @validator("search", pre=True)
+    @classmethod
+    def search_check_empty_string(cls, v):
+        if not v:
+            return None
         return v
 
     class Config:

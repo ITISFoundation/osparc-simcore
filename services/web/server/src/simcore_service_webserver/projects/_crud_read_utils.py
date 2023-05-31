@@ -51,7 +51,7 @@ async def list_projects(
     show_hidden: bool,
     offset: NonNegativeInt,
     limit: int,
-    search: str,
+    search: str | None,
 ) -> tuple[list[ProjectDict], int]:
 
     app = request.app

@@ -2384,7 +2384,7 @@ paths:
             maxLength: 25
             type: string
             description: Multi column full text search
-          example: search for this string
+          example: My Project
           name: search
           in: query
       responses:

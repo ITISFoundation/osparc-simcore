@@ -143,6 +143,7 @@ async def test_list_projects_with_search_parameter(
             )
         )
 
+    # Now we will test without search parameter
     base_url = client.app.router["list_projects"].url_for()
     assert f"{base_url}" == f"/{api_version_prefix}/projects"
 
@@ -152,17 +153,28 @@ async def test_list_projects_with_search_parameter(
     assert resp.status == 200
     _assert_response_data(data, 5, 0, 5, "/v0/projects?offset=0&limit=20", 5)
 
-    # Now we will test upper/lower case search
-    query_parameters = {"search": "name 5"}
+    # Now we will test with empty search parameter
+    query_parameters = {"search": ""}
     url = base_url.with_query(**query_parameters)
-    assert f"{url}" == f"/{api_version_prefix}/projects?search=name+5"
+    assert f"{url}" == f"/{api_version_prefix}/projects?search="
+
+    resp = await client.get(url)
+    data = await resp.json()
+
+    assert resp.status == 200
+    _assert_response_data(data, 5, 0, 5, "/v0/projects?search=&offset=0&limit=20", 5)
+
+    # Now we will test upper/lower case search
+    query_parameters = {"search": "nAmE 5"}
+    url = base_url.with_query(**query_parameters)
+    assert f"{url}" == f"/{api_version_prefix}/projects?search=nAmE+5"
 
     resp = await client.get(url)
     data = await resp.json()
 
     assert resp.status == 200
     _assert_response_data(
-        data, 1, 0, 1, "/v0/projects?search=name+5&offset=0&limit=20", 1
+        data, 1, 0, 1, "/v0/projects?search=nAmE+5&offset=0&limit=20", 1
     )
 
     # Now we will test part of uuid search
