@@ -26,7 +26,7 @@ from ....models.schemas.dynamic_services import SchedulerData
 from ....modules.dynamic_sidecar.docker_api import get_or_create_networks_ids
 from ..errors import EntrypointContainerNotFoundError
 from ._errors import BaseClientHTTPError, UnexpectedStatusError
-from ._thin import ThinDynamicSidecarClient
+from ._thin import ThinSidecarsClient
 
 STATUS_POLL_INTERVAL: Final[PositiveFloat] = 1
 
@@ -48,7 +48,7 @@ class SidecarsClient:
 
     def __init__(self, app: FastAPI):
         self._app = app
-        self._thin_client: ThinDynamicSidecarClient = ThinDynamicSidecarClient(app)
+        self._thin_client: ThinSidecarsClient = ThinSidecarsClient(app)
 
     @cached_property
     def _async_client(self) -> AsyncClient:

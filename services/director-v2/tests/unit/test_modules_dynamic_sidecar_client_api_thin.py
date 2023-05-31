@@ -15,7 +15,7 @@ from respx.types import SideEffectTypes
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._thin import (
-    ThinDynamicSidecarClient,
+    ThinSidecarsClient,
 )
 
 # NOTE: typing and callables cannot
@@ -53,8 +53,8 @@ def mocked_app(monkeypatch: MonkeyPatch, mock_env: EnvVarsDict) -> FastAPI:
 
 
 @pytest.fixture
-def thin_client(mocked_app: FastAPI) -> ThinDynamicSidecarClient:
-    return ThinDynamicSidecarClient(mocked_app)
+def thin_client(mocked_app: FastAPI) -> ThinSidecarsClient:
+    return ThinSidecarsClient(mocked_app)
 
 
 @pytest.fixture
@@ -79,7 +79,7 @@ def mock_request(respx_mock: MockRouter) -> MockRequestType:
 
 
 async def test_get_health(
-    thin_client: ThinDynamicSidecarClient,
+    thin_client: ThinSidecarsClient,
     dynamic_sidecar_endpoint: AnyHttpUrl,
     mock_request: MockRequestType,
 ) -> None:
@@ -91,7 +91,7 @@ async def test_get_health(
 
 
 async def test_get_health_no_retry(
-    thin_client: ThinDynamicSidecarClient,
+    thin_client: ThinSidecarsClient,
     dynamic_sidecar_endpoint: AnyHttpUrl,
     mock_request: MockRequestType,
 ):
@@ -104,7 +104,7 @@ async def test_get_health_no_retry(
 
 @pytest.mark.parametrize("only_status", [False, True])
 async def test_get_containers(
-    thin_client: ThinDynamicSidecarClient,
+    thin_client: ThinSidecarsClient,
     dynamic_sidecar_endpoint: AnyHttpUrl,
     mock_request: MockRequestType,
     only_status: bool,
@@ -125,7 +125,7 @@ async def test_get_containers(
 
 @pytest.mark.parametrize("is_enabled", [False, True])
 async def test_post_patch_containers_outputs_watcher(
-    thin_client: ThinDynamicSidecarClient,
+    thin_client: ThinSidecarsClient,
     dynamic_sidecar_endpoint: AnyHttpUrl,
     mock_request: MockRequestType,
     is_enabled: bool,
@@ -146,7 +146,7 @@ async def test_post_patch_containers_outputs_watcher(
 
 @pytest.mark.parametrize("outputs_labels", [{}, {"some": "data"}])
 async def test_post_containers_ports_outputs_dirs(
-    thin_client: ThinDynamicSidecarClient,
+    thin_client: ThinSidecarsClient,
     dynamic_sidecar_endpoint: AnyHttpUrl,
     mock_request: MockRequestType,
     outputs_labels: dict[str, Any],
@@ -167,7 +167,7 @@ async def test_post_containers_ports_outputs_dirs(
 
 @pytest.mark.parametrize("dynamic_sidecar_network_name", ["test_nw_name"])
 async def test_get_containers_name(
-    thin_client: ThinDynamicSidecarClient,
+    thin_client: ThinSidecarsClient,
     dynamic_sidecar_endpoint: AnyHttpUrl,
     mock_request: MockRequestType,
     dynamic_sidecar_network_name: str,
@@ -199,7 +199,7 @@ async def test_get_containers_name(
 
 @pytest.mark.parametrize("network_aliases", [[], ["an_alias"], ["multuple_aliases"]])
 async def test_post_containers_networks_attach(
-    thin_client: ThinDynamicSidecarClient,
+    thin_client: ThinSidecarsClient,
     dynamic_sidecar_endpoint: AnyHttpUrl,
     mock_request: MockRequestType,
     network_aliases: list[str],
@@ -223,7 +223,7 @@ async def test_post_containers_networks_attach(
 
 
 async def test_post_containers_networks_detach(
-    thin_client: ThinDynamicSidecarClient,
+    thin_client: ThinSidecarsClient,
     dynamic_sidecar_endpoint: AnyHttpUrl,
     mock_request: MockRequestType,
 ) -> None:
@@ -296,7 +296,7 @@ async def test_post_containers_networks_detach(
     ],
 )
 async def test_post_containers_tasks(
-    thin_client: ThinDynamicSidecarClient,
+    thin_client: ThinSidecarsClient,
     dynamic_sidecar_endpoint: AnyHttpUrl,
     mock_request: MockRequestType,
     handler_name: str,

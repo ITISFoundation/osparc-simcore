@@ -16,7 +16,7 @@ from ._base import BaseThinClient, expect_status, retry_on_errors
 logger = logging.getLogger(__name__)
 
 
-class ThinDynamicSidecarClient(BaseThinClient):
+class ThinSidecarsClient(BaseThinClient):
     """
     NOTE: all calls can raise the following errors.
     - `UnexpectedStatusError`

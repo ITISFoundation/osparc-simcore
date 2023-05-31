@@ -5,7 +5,7 @@ import os
 import re
 import traceback
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterable, AsyncIterator, Callable, Optional
+from typing import Any, AsyncIterable, AsyncIterator, Callable
 
 import pytest
 import respx
@@ -79,7 +79,7 @@ def mock_requires_dynamic_sidecar(mocker: MockerFixture) -> None:
 @pytest.fixture
 def mock_save_service_state(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.api_client._public.DynamicSidecarClient.save_service_state",
+        "simcore_service_director_v2.modules.dynamic_sidecar.api_client._public.SidecarsClient.save_service_state",
         spec=True,
     )
 
@@ -90,7 +90,7 @@ def mock_save_service_state_as_failing(mocker: MockerFixture) -> None:
         raise Exception("I AM FAILING NOW")  # pylint: disable=broad-exception-raised
 
     mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.api_client._public.DynamicSidecarClient.save_service_state",
+        "simcore_service_director_v2.modules.dynamic_sidecar.api_client._public.SidecarsClient.save_service_state",
         side_effect=_always_raise,
     )
 
@@ -148,7 +148,7 @@ async def mock_close_service_routes(
             task_id: Any,
             *,
             task_timeout: Any,
-            progress_callback: Optional[ProgressCallback] = None,
+            progress_callback: ProgressCallback | None = None,
             status_poll_interval: Any = 5,
         ) -> AsyncIterator[None]:
             assert progress_callback

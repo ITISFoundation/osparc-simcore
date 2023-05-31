@@ -213,7 +213,9 @@ async def ensure_services_stopped(
 
 @pytest.fixture
 def mock_sidecars_client(mocker: MockerFixture) -> None:
-    class_path = "simcore_service_director_v2.modules.dynamic_sidecar.api_client.DynamicSidecarClient"
+    class_path = (
+        "simcore_service_director_v2.modules.dynamic_sidecar.api_client.SidecarsClient"
+    )
     for function_name, return_value in [
         ("pull_service_output_ports", None),
         ("restore_service_state", None),
