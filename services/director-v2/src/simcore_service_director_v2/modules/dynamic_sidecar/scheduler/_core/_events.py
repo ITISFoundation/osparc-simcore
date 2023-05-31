@@ -65,7 +65,6 @@ from ...docker_service_specs import (
 )
 from ...errors import EntrypointContainerNotFoundError, UnexpectedContainerStatusError
 from ._abc import DynamicSchedulerEvent
-from ._dirty_proxy_client import configure_proxy
 from ._events_utils import (
     are_all_user_services_containers_running,
     attach_project_networks,
@@ -550,7 +549,7 @@ class CreateUserServices(DynamicSchedulerEvent):
             dynamic_sidecar_settings.DYNAMIC_SIDECAR_PROXY_SETTINGS
         )
 
-        await configure_proxy(
+        await dynamic_sidecar_client.configure_proxy(
             node_id=scheduler_data.node_uuid,
             admin_api_port=proxy_settings.DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT,
             entrypoint_container_name=entrypoint_container,

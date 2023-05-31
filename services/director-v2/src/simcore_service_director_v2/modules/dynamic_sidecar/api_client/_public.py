@@ -5,6 +5,7 @@ from typing import Any, Coroutine, Final
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient
+from models_library.basic_types import PortInt
 from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkAlias
 from models_library.projects_nodes_io import NodeID
@@ -406,6 +407,52 @@ class DynamicSidecarClient:
             self._dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_RESTART_CONTAINERS_TIMEOUT,
             _debug_progress_callback,
         )
+
+    async def configure_proxy(
+        self,
+        node_id: NodeID,
+        admin_api_port: PortInt,
+        entrypoint_container_name: str,
+        service_port: PortInt,
+    ) -> None:
+        proxy_configuration = _get_proxy_configuration(
+            entrypoint_container_name, service_port
+        )
+        await self._thin_client.proxy_config_load(
+            node_id, admin_api_port, proxy_configuration
+        )
+
+
+def _get_proxy_configuration(
+    entrypoint_container_name: str, service_port: PortInt
+) -> dict[str, Any]:
+    return {
+        # NOTE: the admin endpoint is not present any more.
+        # This avoids user services from being able to access it.
+        "apps": {
+            "http": {
+                "servers": {
+                    "userservice": {
+                        "listen": ["0.0.0.0:80"],
+                        "routes": [
+                            {
+                                "handle": [
+                                    {
+                                        "handler": "reverse_proxy",
+                                        "upstreams": [
+                                            {
+                                                "dial": f"{entrypoint_container_name}:{service_port}"
+                                            }
+                                        ],
+                                    }
+                                ]
+                            }
+                        ],
+                    }
+                }
+            }
+        },
+    }
 
 
 async def setup(app: FastAPI) -> None:

@@ -4,10 +4,13 @@ from typing import Any
 
 from fastapi import FastAPI, status
 from httpx import Response, Timeout
-from pydantic import AnyHttpUrl
+from models_library.basic_types import PortInt
+from models_library.projects_nodes_io import NodeID
+from pydantic import AnyHttpUrl, parse_obj_as
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 
 from ....core.settings import DynamicSidecarSettings
+from ....models.schemas.constants import DYNAMIC_PROXY_SERVICE_PREFIX
 from ._base import BaseThinClient, expect_status, retry_on_errors
 
 logger = logging.getLogger(__name__)
@@ -225,3 +228,18 @@ class ThinDynamicSidecarClient(BaseThinClient):
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "/containers:restart")
         return await self.client.post(url)
+
+    @retry_on_errors
+    @expect_status(status.HTTP_200_OK)
+    async def proxy_config_load(
+        self,
+        node_id: NodeID,
+        admin_api_port: PortInt,
+        proxy_configuration: dict[str, Any],
+    ) -> Response:
+        base_url = parse_obj_as(
+            AnyHttpUrl,
+            f"http://{DYNAMIC_PROXY_SERVICE_PREFIX}_{node_id}:{admin_api_port}",
+        )
+        url = self._get_url(base_url, "/load", no_api_version=True)
+        return await self.client.post(url, json=proxy_configuration)
