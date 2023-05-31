@@ -156,26 +156,30 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     },
 
     __showPort: function(portId) {
-      const entry = this.self().GRID_POS;
-      Object.values(entry).forEach(entryPos => {
+      const entries = this.self().GRID_POS;
+      Object.values(entries).forEach(entryPos => {
         const layoutElement = this._getLayoutChild(portId, entryPos);
         if (layoutElement && layoutElement.child) {
           const control = layoutElement.child;
           if (control) {
             control.show();
+            const row = control.getLayoutProperties().row;
+            this._getLayout().setRowHeight(row, osparc.component.form.renderer.PropFormBase.ROW_HEIGHT);
           }
         }
       });
     },
 
     __excludePort: function(portId) {
-      const entry = this.self().GRID_POS;
-      Object.values(entry).forEach(entryPos => {
+      const entries = this.self().GRID_POS;
+      Object.values(entries).forEach(entryPos => {
         const layoutElement = this._getLayoutChild(portId, entryPos);
         if (layoutElement && layoutElement.child) {
           const control = layoutElement.child;
           if (control) {
             control.exclude();
+            const row = control.getLayoutProperties().row;
+            this._getLayout().setRowHeight(row, 0);
           }
         }
       });
