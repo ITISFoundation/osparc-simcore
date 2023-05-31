@@ -5,12 +5,14 @@
 # pylint: disable=too-many-statements
 
 import random
+from collections import UserDict
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
 import pytest
 from aiohttp.test_utils import TestClient
+from models_library.projects import ProjectID
 from models_library.users import UserID
 from pydantic import BaseModel, PositiveInt
 from pytest_mock import MockerFixture
@@ -21,6 +23,7 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (
 )
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db_models import UserRole
+from simcore_service_webserver.projects.models import ProjectDict
 
 
 def standard_user_role() -> tuple[str, tuple[UserRole, ExpectedResponse]]:
@@ -79,7 +82,7 @@ def _pick_random_substring(text, length):
 
 
 class _ProjectInfo(BaseModel):
-    uuid: str
+    uuid: ProjectID
     name: str
     description: str
 
@@ -87,9 +90,9 @@ class _ProjectInfo(BaseModel):
 @pytest.mark.parametrize(*standard_user_role())
 async def test_list_projects_with_search_parameter(
     client: TestClient,
-    logged_user: dict[str, Any],
+    logged_user: UserDict,
     expected: ExpectedResponse,
-    fake_project: dict,
+    fake_project: ProjectDict,
     tests_data_dir: Path,
     osparc_product_name: str,
     project_db_cleaner,
