@@ -64,7 +64,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       FIELD_LINK_UNLINK: 4
     },
 
-    ROW_HEIGHT: 30,
+    ROW_HEIGHT: 28,
 
     getDisableables: function() {
       return [
