@@ -45,8 +45,8 @@ from ....db.repositories.projects import ProjectsRepository
 from ....director_v0 import DirectorV0Client
 from ...api_client import (
     BaseClientHTTPError,
-    get_dynamic_sidecar_client,
     get_dynamic_sidecar_service_health,
+    get_sidecars_client,
 )
 from ...docker_api import (
     constrain_service_to_node,
@@ -331,9 +331,7 @@ class GetStatus(DynamicSchedulerEvent):
 
     @classmethod
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
-        dynamic_sidecar_client = get_dynamic_sidecar_client(
-            app, scheduler_data.node_uuid
-        )
+        sidecars_client = get_sidecars_client(app, scheduler_data.node_uuid)
         dynamic_sidecar_endpoint = scheduler_data.endpoint
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
@@ -345,9 +343,7 @@ class GetStatus(DynamicSchedulerEvent):
         try:
             containers_inspect: dict[
                 str, Any
-            ] = await dynamic_sidecar_client.containers_inspect(
-                dynamic_sidecar_endpoint
-            )
+            ] = await sidecars_client.containers_inspect(dynamic_sidecar_endpoint)
         except BaseClientHTTPError as e:
             were_service_containers_previously_present = (
                 len(scheduler_data.dynamic_sidecar.containers_inspect) > 0
@@ -430,9 +426,7 @@ class CreateUserServices(DynamicSchedulerEvent):
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
-        dynamic_sidecar_client = get_dynamic_sidecar_client(
-            app, scheduler_data.node_uuid
-        )
+        sidecars_client = get_sidecars_client(app, scheduler_data.node_uuid)
         dynamic_sidecar_endpoint = scheduler_data.endpoint
 
         # check values have been set by previous step
@@ -502,17 +496,17 @@ class CreateUserServices(DynamicSchedulerEvent):
             # of the service to pulling
             logger.debug("%s: %.2f %s", task_id, percent, message)
 
-        await dynamic_sidecar_client.create_containers(
+        await sidecars_client.create_containers(
             dynamic_sidecar_endpoint, compose_spec, progress_create_containers
         )
 
         # NOTE: when in READ ONLY mode disable the outputs watcher
         if scheduler_data.dynamic_sidecar.service_removal_state.can_save:
-            await dynamic_sidecar_client.enable_service_outputs_watcher(
+            await sidecars_client.enable_service_outputs_watcher(
                 dynamic_sidecar_endpoint
             )
         else:
-            await dynamic_sidecar_client.disable_service_outputs_watcher(
+            await sidecars_client.disable_service_outputs_watcher(
                 dynamic_sidecar_endpoint
             )
 
@@ -537,7 +531,7 @@ class CreateUserServices(DynamicSchedulerEvent):
                     )
                     return
 
-                entrypoint_container = await dynamic_sidecar_client.get_entrypoint_container_name(
+                entrypoint_container = await sidecars_client.get_entrypoint_container_name(
                     dynamic_sidecar_endpoint=dynamic_sidecar_endpoint,
                     dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
                 )
@@ -549,7 +543,7 @@ class CreateUserServices(DynamicSchedulerEvent):
             dynamic_sidecar_settings.DYNAMIC_SIDECAR_PROXY_SETTINGS
         )
 
-        await dynamic_sidecar_client.configure_proxy(
+        await sidecars_client.configure_proxy(
             node_id=scheduler_data.node_uuid,
             admin_api_port=proxy_settings.DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT,
             entrypoint_container_name=entrypoint_container,

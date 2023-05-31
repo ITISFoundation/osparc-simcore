@@ -39,7 +39,13 @@ async def _debug_progress_callback(
     logger.debug("%s: %.2f %s", task_id, percent, message)
 
 
-class DynamicSidecarClient:
+class SidecarsClient:
+    """
+    API client used for talking with:
+        - dynamic-sidecar
+        - caddy proxy
+    """
+
     def __init__(self, app: FastAPI):
         self._app = app
         self._thin_client: ThinDynamicSidecarClient = ThinDynamicSidecarClient(app)
@@ -457,7 +463,7 @@ def _get_proxy_configuration(
 
 async def setup(app: FastAPI) -> None:
     with log_context(logger, logging.DEBUG, "dynamic-sidecar api client setup"):
-        app.state.dynamic_sidecar_api_clients = {}
+        app.state.sidecars_api_clients = {}
 
 
 async def shutdown(app: FastAPI) -> None:
@@ -465,32 +471,30 @@ async def shutdown(app: FastAPI) -> None:
         await logged_gather(
             *(
                 x._thin_client.close()  # pylint: disable=protected-access
-                for x in app.state.dynamic_sidecar_api_clients.values()
+                for x in app.state.sidecars_api_clients.values()
             ),
             reraise=False,
         )
 
 
-def get_dynamic_sidecar_client(
-    app: FastAPI, node_id: str | NodeID
-) -> DynamicSidecarClient:
+def get_sidecars_client(app: FastAPI, node_id: str | NodeID) -> SidecarsClient:
     str_node_id = f"{node_id}"
 
-    if str_node_id not in app.state.dynamic_sidecar_api_clients:
-        app.state.dynamic_sidecar_api_clients[str_node_id] = DynamicSidecarClient(app)
+    if str_node_id not in app.state.sidecars_api_clients:
+        app.state.sidecars_api_clients[str_node_id] = SidecarsClient(app)
 
-    client: DynamicSidecarClient = app.state.dynamic_sidecar_api_clients[str_node_id]
+    client: SidecarsClient = app.state.sidecars_api_clients[str_node_id]
     return client
 
 
-def remove_dynamic_sidecar_client(app: FastAPI, node_id: NodeID) -> None:
-    app.state.dynamic_sidecar_api_clients.pop(f"{node_id}", None)
+def remove_sidecars_client(app: FastAPI, node_id: NodeID) -> None:
+    app.state.sidecars_api_clients.pop(f"{node_id}", None)
 
 
 async def get_dynamic_sidecar_service_health(
     app: FastAPI, scheduler_data: SchedulerData, *, with_retry: bool = True
 ) -> bool:
-    api_client = get_dynamic_sidecar_client(app, scheduler_data.node_uuid)
+    api_client = get_sidecars_client(app, scheduler_data.node_uuid)
 
     # update service health
     is_healthy = await api_client.is_healthy(

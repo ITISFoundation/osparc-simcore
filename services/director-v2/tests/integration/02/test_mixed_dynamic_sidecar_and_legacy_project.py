@@ -212,7 +212,7 @@ async def ensure_services_stopped(
 
 
 @pytest.fixture
-def mock_dynamic_sidecar_client(mocker: MockerFixture) -> None:
+def mock_sidecars_client(mocker: MockerFixture) -> None:
     class_path = "simcore_service_director_v2.modules.dynamic_sidecar.api_client.DynamicSidecarClient"
     for function_name, return_value in [
         ("pull_service_output_ports", None),
@@ -246,7 +246,7 @@ async def test_legacy_and_dynamic_sidecar_run(
     osparc_product_name: str,
     ensure_services_stopped: None,
     mock_projects_networks_repository: None,
-    mock_dynamic_sidecar_client: None,
+    mock_sidecars_client: None,
     service_resources: ServiceResourcesDict,
     mocked_service_awaits_manual_interventions: None,
 ):
