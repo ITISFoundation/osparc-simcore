@@ -179,6 +179,10 @@ class OrderDirection(str, Enum):
 
 
 class _ProjectListFilters(BaseModel):
+    """inspired by Docker API https://docs.docker.com/engine/api/v1.43/#tag/Container/operation/ContainerList.
+    Encoded as JSON. Each available filter can have its own logic (should be well documented)
+    """
+
     tags: list[PositiveInt] = Field(default=[])
     classifiers: list[str] = Field(default=[])
 
@@ -187,6 +191,8 @@ class _ProjectListFilters(BaseModel):
 
 
 class _ProjectOrderBy(BaseModel):
+    """inspired by Google AIP https://google.aip.dev/132#ordering"""
+
     field: str = Field(default=None)
     direction: OrderDirection = Field(default=OrderDirection.DESC)
 
