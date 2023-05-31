@@ -4,10 +4,12 @@
 Read operations are list, get
 
 """
+from enum import Enum
+
 from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from pydantic import NonNegativeInt
+from pydantic import BaseModel, Extra, Field, NonNegativeInt, PositiveInt
 from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 from simcore_service_webserver.rest_schemas_base import OutputSchema
@@ -98,3 +100,30 @@ async def get_project(
     project_type: ProjectTypeAPI,
 ):
     raise NotImplementedError()
+
+
+class OrderDirection(str, Enum):
+    ASC = "asc"
+    DESC = "desc"
+
+
+class ProjectListFilters(BaseModel):
+    """inspired by Docker API https://docs.docker.com/engine/api/v1.43/#tag/Container/operation/ContainerList.
+    Encoded as JSON. Each available filter can have its own logic (should be well documented)
+    """
+
+    tags: list[PositiveInt] = Field(default=[])
+    classifiers: list[str] = Field(default=[])
+
+    class Config:
+        extra = Extra.forbid
+
+
+class ProjectOrderBy(BaseModel):
+    """inspired by Google AIP https://google.aip.dev/132#ordering"""
+
+    field: str = Field(default=None)
+    direction: OrderDirection = Field(default=OrderDirection.DESC)
+
+    class Config:
+        extra = Extra.forbid

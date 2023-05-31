@@ -5,7 +5,6 @@ Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
 """
 import json
 import logging
-from enum import Enum
 
 from aiohttp import web
 from jsonschema import ValidationError as JsonSchemaValidationError
@@ -15,7 +14,7 @@ from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Pag
 from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import BaseModel, Extra, Field, NonNegativeInt, PositiveInt, validator
+from pydantic import BaseModel, Extra, Field, NonNegativeInt, validator
 from servicelib.aiohttp.long_running_tasks.server import start_long_running_task
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -40,6 +39,7 @@ from ..security.api import check_permission
 from ..security.decorators import permission_required
 from ..users.api import get_user_name
 from . import _crud_create_utils, _crud_read_utils, projects_api
+from ._crud_read_utils import OrderDirection, ProjectListFilters, ProjectOrderBy
 from ._permalink import update_or_pop_permalink_in_project
 from ._rest_schemas import (
     EmptyModel,
@@ -173,33 +173,6 @@ async def create_project(request: web.Request):
 #
 
 
-class OrderDirection(str, Enum):
-    ASC = "asc"
-    DESC = "desc"
-
-
-class _ProjectListFilters(BaseModel):
-    """inspired by Docker API https://docs.docker.com/engine/api/v1.43/#tag/Container/operation/ContainerList.
-    Encoded as JSON. Each available filter can have its own logic (should be well documented)
-    """
-
-    tags: list[PositiveInt] = Field(default=[])
-    classifiers: list[str] = Field(default=[])
-
-    class Config:
-        extra = Extra.forbid
-
-
-class _ProjectOrderBy(BaseModel):
-    """inspired by Google AIP https://google.aip.dev/132#ordering"""
-
-    field: str = Field(default=None)
-    direction: OrderDirection = Field(default=OrderDirection.DESC)
-
-    class Config:
-        extra = Extra.forbid
-
-
 class _ProjectListParams(BaseModel):
     limit: int = Field(
         default=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
@@ -215,12 +188,12 @@ class _ProjectListParams(BaseModel):
         default=False, description="includes projects marked as hidden in the listing"
     )
 
-    order_by: list[_ProjectOrderBy] | None = Field(
+    order_by: list[ProjectOrderBy] | None = Field(
         default=None,
         description="Comma separated list of fields for ordering. The default sorting order is ascending. To specify descending order for a field, users append a 'desc' suffix",
         example="foo desc, bar",
     )
-    filters: _ProjectListFilters | None = Field(
+    filters: ProjectListFilters | None = Field(
         default=None,
         description="Filters to process on the projects list, encoded as JSON",
         example='{"tags": [1, 5], "classifiers": ["foo", "bar"]}',
@@ -254,7 +227,7 @@ class _ProjectListParams(BaseModel):
                     )
 
             parse_fields_with_direction.append(
-                _ProjectOrderBy(field=field_name, direction=direction)
+                ProjectOrderBy(field=field_name, direction=direction)
             )
 
         return parse_fields_with_direction
