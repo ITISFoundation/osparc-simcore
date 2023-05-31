@@ -114,7 +114,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
   members: {
     __textFilterField: null,
     __loggerModel: null,
-    __logView: null,
+    __loggerTable: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -250,7 +250,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       };
 
       // table
-      const table = this.__logView = new qx.ui.table.Table(loggerModel, custom).set({
+      const table = this.__loggerTable = new qx.ui.table.Table(loggerModel, custom).set({
         selectable: true,
         statusBarVisible: false,
         showCellFocusIndicator: false,
@@ -382,9 +382,10 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
     __updateTable: function() {
       if (this.__loggerModel) {
         this.__loggerModel.reloadData();
-        if (!this.isLockLogs()) {
+        // checkIsOnScreen will avoid rendering every single line when the user click on the Logger button the first time
+        if (!this.isLockLogs() && osparc.utils.Utils.checkIsOnScreen(this.__loggerTable)) {
           const nFilteredRows = this.__loggerModel.getFilteredRowCount();
-          this.__logView.scrollCellVisible(0, nFilteredRows);
+          this.__loggerTable.scrollCellVisible(0, nFilteredRows);
         }
       }
     },
