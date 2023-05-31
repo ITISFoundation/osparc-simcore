@@ -163,6 +163,11 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects/{studyId}/nodes/{nodeId}/errors"
           },
+          checkShareePermissions: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/projects/{studyId}/nodes/-/services:access?for_gid={gid}"
+          },
           addTag: {
             useCache: false,
             method: "PUT",
