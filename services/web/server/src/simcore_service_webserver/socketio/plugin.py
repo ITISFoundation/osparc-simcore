@@ -7,6 +7,7 @@ import logging
 
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
+from simcore_service_webserver.rabbitmq import setup_rabbitmq
 
 from .._constants import APP_SETTINGS_KEY
 from ._observer import setup_socketio_observer_events
@@ -20,11 +21,10 @@ _logger = logging.getLogger(__name__)
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_SOCKETIO",
     logger=_logger,
-    depends=["simcore_service_webserver.rabbitmq"],
 )
 def setup_socketio(app: web.Application):
     assert app[APP_SETTINGS_KEY].WEBSERVER_SOCKETIO  # nosec
-
+    setup_rabbitmq(app)  # for horizontal scaling
     setup_socketio_server(app)
 
     setup_socketio_observer_events(app)
