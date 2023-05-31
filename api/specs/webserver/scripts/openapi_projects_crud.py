@@ -105,8 +105,7 @@ async def list_projects(
     show_hidden: bool = Query(
         default=False, description="includes projects marked as hidden in the listing"
     ),
-    search: str
-    | None = Query(
+    search: str = Query(
         default=None,
         description="Multi column full text search",
         max_length=25,
