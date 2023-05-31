@@ -33,12 +33,19 @@ async def _socketio_server_cleanup_ctx(app: web.Application) -> AsyncIterator[No
 
     register_socketio_handlers(app, _handlers)
     yield
-    # cast(AsyncPubSubManager, server_manager).thread.cancel()
-    # NOTE: this is ugly. It seems though that python-enginio does not
+
+    # NOTE: this is ugly. It seems though that python-socketio does not
     # cleanup its background tasks properly.
     # https://github.com/miguelgrinberg/python-socketio/discussions/1092
-    current_tasks = asyncio.tasks.all_tasks()
     cancelled_tasks = []
+    if server_thread := getattr(server_manager, "thread"):
+        assert isinstance(server_thread, asyncio.Task)  # nosec
+        server_thread.cancel()
+        cancelled_tasks.append(server_thread)
+    if server_manager.publisher_connection:
+        await server_manager.publisher_connection.close()
+    current_tasks = asyncio.tasks.all_tasks()
+
     for task in current_tasks:
         coro = task.get_coro()
         if any(
@@ -51,6 +58,7 @@ async def _socketio_server_cleanup_ctx(app: web.Application) -> AsyncIterator[No
         ):
             task.cancel()
             cancelled_tasks.append(task)
+    await asyncio.sleep(2)
     await asyncio.gather(*cancelled_tasks, return_exceptions=True)
 
 
