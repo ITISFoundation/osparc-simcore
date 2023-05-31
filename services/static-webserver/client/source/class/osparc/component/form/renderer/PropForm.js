@@ -223,7 +223,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       const fieldOptsBtn = new qx.ui.form.MenuButton().set({
         menu: optionsMenu,
         icon: "@FontAwesome5Solid/link/12",
-        height: 23,
+        maxHeight: 23,
         focusable: false,
         allowGrowX: false,
         alignX: "center"
@@ -242,7 +242,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     __createUnlinkButton: function(field) {
       const unlinkBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/unlink/12").set({
         toolTipText: this.tr("Unlink"),
-        height: 23
+        maxHeight: 23
       });
       unlinkBtn.addListener("execute", () => this.removePortLink(field.key), this);
       return unlinkBtn;
@@ -342,7 +342,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
     __getSelectFileButton: function(portId) {
       const selectFileButton = new qx.ui.menu.Button(this.tr("Select File"));
-      // selectFileButton.addListener("execute", () => this.fireDataEvent("fileRequested", portId), this);
       selectFileButton.addListener("execute", () => this.fireDataEvent("filePickerRequested", {
         portId,
         file: null
