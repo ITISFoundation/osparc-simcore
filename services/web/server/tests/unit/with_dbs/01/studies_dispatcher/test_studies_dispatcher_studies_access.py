@@ -246,7 +246,7 @@ async def test_access_to_forbidden_study(
     _assert_redirected_to_error_page(
         response,
         expected_page="error",
-        expected_status_code=web.HTTPNotFound.status_code,
+        expected_status_code=web.HTTPUnauthorized.status_code,
     )
 
 

@@ -14,7 +14,7 @@ from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Pag
 from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import BaseModel, Extra, Field, NonNegativeInt
+from pydantic import BaseModel, Extra, Field, NonNegativeInt, validator
 from servicelib.aiohttp.long_running_tasks.server import start_long_running_task
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -39,6 +39,7 @@ from ..security.api import check_permission
 from ..security.decorators import permission_required
 from ..users.api import get_user_name
 from . import _crud_create_utils, _crud_read_utils, projects_api
+from ._crud_read_utils import OrderDirection, ProjectListFilters, ProjectOrderBy
 from ._permalink import update_or_pop_permalink_in_project
 from ._rest_schemas import (
     EmptyModel,
@@ -60,6 +61,7 @@ from .utils import (
     any_node_inputs_changed,
     get_project_unavailable_services,
     project_uses_available_services,
+    replace_multiple_spaces,
 )
 
 # When the user requests a project with a repo, the working copy might differ from
@@ -186,6 +188,64 @@ class _ProjectListParams(BaseModel):
         default=False, description="includes projects marked as hidden in the listing"
     )
 
+    order_by: list[ProjectOrderBy] | None = Field(
+        default=None,
+        description="Comma separated list of fields for ordering. The default sorting order is ascending. To specify descending order for a field, users append a 'desc' suffix",
+        example="foo desc, bar",
+    )
+    filters: ProjectListFilters | None = Field(
+        default=None,
+        description="Filters to process on the projects list, encoded as JSON",
+        example='{"tags": [1, 5], "classifiers": ["foo", "bar"]}',
+    )
+    search: str | None = Field(
+        default=None,
+        description="Multi column full text search",
+        max_length=25,
+        example="My Project",
+    )
+
+    @validator("order_by", pre=True)
+    @classmethod
+    def sort_by_should_have_special_format(cls, v):
+        if not v:
+            return v
+
+        parse_fields_with_direction = []
+        fields = v.split(",")
+        for field in fields:
+            field_info = replace_multiple_spaces(field.strip()).split(" ")
+            field_name = field_info[0]
+            direction = OrderDirection.ASC
+
+            if len(field_info) == 2:
+                if field_info[1] == OrderDirection.DESC.value:
+                    direction = OrderDirection.DESC
+                else:
+                    raise ValueError(
+                        "Field direction in the order_by parameter must contain either 'desc' direction or empty value for 'asc' direction."
+                    )
+
+            parse_fields_with_direction.append(
+                ProjectOrderBy(field=field_name, direction=direction)
+            )
+
+        return parse_fields_with_direction
+
+    @validator("filters", pre=True)
+    @classmethod
+    def filters_parse_to_object(cls, v):
+        if v:
+            v = json.loads(v)
+        return v
+
+    @validator("search", pre=True)
+    @classmethod
+    def search_check_empty_string(cls, v):
+        if not v:
+            return None
+        return v
+
     class Config:
         extra = Extra.forbid
 
@@ -211,6 +271,7 @@ async def list_projects(request: web.Request):
         show_hidden=query_params.show_hidden,
         limit=query_params.limit,
         offset=query_params.offset,
+        search=query_params.search,
     )
 
     page = Page[ProjectDict].parse_obj(
