@@ -204,7 +204,11 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
             await self._write_input_data(task_volumes, integration_version)
 
             # PROCESSING
-            async with managed_container(docker_client, config) as container:
+            async with managed_container(
+                docker_client,
+                config,
+                name=f"{self.service_key.split(sep='/')[-1]}_{run_id}",
+            ) as container:
                 async with managed_monitor_container_log_task(
                     container=container,
                     service_key=self.service_key,
