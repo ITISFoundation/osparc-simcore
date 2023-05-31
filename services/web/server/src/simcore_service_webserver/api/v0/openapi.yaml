@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: osparc-simcore web API
-  version: 0.20.0
+  version: 0.21.0
   description: API designed for the front-end app
   contact:
     name: IT'IS Foundation
@@ -2376,6 +2376,16 @@ paths:
             description: includes projects marked as hidden in the listing
             default: false
           name: show_hidden
+          in: query
+        - description: Multi column full text search
+          required: false
+          schema:
+            title: Search
+            maxLength: 25
+            type: string
+            description: Multi column full text search
+          example: My Project
+          name: search
           in: query
       responses:
         '200':
