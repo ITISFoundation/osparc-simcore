@@ -42,7 +42,7 @@
  * @asset(demobrowser/backend/remote_table.php)
  */
 
-qx.Class.define("osparc.component.widget.logger.LoggerTable", {
+qx.Class.define("osparc.component.widget.logger.LoggerModel", {
   extend : qx.ui.table.model.Remote,
 
   construct : function() {

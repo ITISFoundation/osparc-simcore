@@ -241,7 +241,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
     },
 
     __createTableLayout: function() {
-      const loggerModel = this.__loggerModel = new osparc.component.widget.logger.LoggerTable();
+      const loggerModel = this.__loggerModel = new osparc.component.widget.logger.LoggerModel();
 
       const custom = {
         tableColumnModel : function(obj) {
