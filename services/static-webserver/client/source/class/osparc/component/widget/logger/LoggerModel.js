@@ -186,25 +186,17 @@ qx.Class.define("osparc.component.widget.logger.LoggerModel", {
           this.__filteredData.push(rowData);
         }
       }
-      this.__setRowCount(this.__filteredData.length);
+      // Fake the server localy
+      const self = this;
+      self._onRowCountLoaded(this.__filteredData.length);
     },
 
     _loadRowData : function(firstRow, lastRow) {
-      this.__rowDataLoadded(firstRow, lastRow);
-    },
-
-    // Fake the server localy
-    __setRowCount : function(number) {
-      const self = this;
-      self._onRowCountLoaded(number);
-    },
-
-    __rowDataLoadded : function(firstRow, lastRow) {
-      const self = this;
       const data = [];
       for (let i=firstRow; i<=lastRow; i++) {
         data.push(this.__filteredData[i]);
       }
+      const self = this;
       self._onRowDataLoaded(data);
     }
   }
