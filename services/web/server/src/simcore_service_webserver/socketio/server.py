@@ -42,7 +42,7 @@ def setup_socketio_server(app: web.Application) -> AsyncServer:
         )
         sio_server = AsyncServer(
             async_mode="aiohttp",
-            logger=_logger,
+            logger=_logger,  # type: ignore
             engineio_logger=False,
             client_manager=server_manager,
         )
