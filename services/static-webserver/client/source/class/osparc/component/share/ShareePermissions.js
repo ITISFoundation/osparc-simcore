@@ -18,7 +18,7 @@ qx.Class.define("osparc.component.share.ShareePermissions", {
 
   members: {
     __populateLayout: function(shareesData) {
-      const text = this.tr("The following users/groups will not be able to open the shared study:");
+      const text = this.tr("The following users/groups will not be able to open the shared study, because they don't have access to some services. Please contact the service owner(s) to give permission.");
       this._add(new qx.ui.basic.Label().set({
         value: text,
         font: "text-14",
