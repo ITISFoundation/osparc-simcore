@@ -44,6 +44,8 @@ async def _socketio_server_cleanup_ctx(app: web.Application) -> AsyncIterator[No
         assert isinstance(server_thread, asyncio.Task)  # nosec
         server_thread.cancel()
         cancelled_tasks.append(server_thread)
+    if server_manager.publisher_channel:
+        await server_manager.publisher_channel.close()
     if server_manager.publisher_connection:
         await server_manager.publisher_connection.close()
     current_tasks = asyncio.tasks.all_tasks()
