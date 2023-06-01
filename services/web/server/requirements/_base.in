@@ -39,7 +39,6 @@ jsondiff
 openpyxl # excel
 orjson  # json
 packaging
-parfive  # excel
 passlib
 pint # units
 pydantic[email] # models

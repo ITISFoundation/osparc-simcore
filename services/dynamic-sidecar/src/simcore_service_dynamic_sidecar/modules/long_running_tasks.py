@@ -126,13 +126,15 @@ async def task_create_service_containers(
 ) -> list[str]:
     progress.update(message="validating service spec", percent=0)
 
-    shared_store.compose_spec = await validate_compose_spec(
-        settings=settings,
-        compose_file_content=containers_create.docker_compose_yaml,
-        mounted_volumes=mounted_volumes,
-    )
-    shared_store.container_names = assemble_container_names(shared_store.compose_spec)
-    await shared_store.persist_to_disk()
+    async with shared_store:
+        shared_store.compose_spec = await validate_compose_spec(
+            settings=settings,
+            compose_file_content=containers_create.docker_compose_yaml,
+            mounted_volumes=mounted_volumes,
+        )
+        shared_store.container_names = assemble_container_names(
+            shared_store.compose_spec
+        )
 
     logger.info("Validated compose-spec:\n%s", f"{shared_store.compose_spec}")
 
@@ -207,7 +209,9 @@ async def task_runs_docker_compose_down(
     _raise_for_errors(result, "rm")
 
     # removing compose-file spec
-    await shared_store.clear()
+    async with shared_store:
+        shared_store.compose_spec = None
+        shared_store.container_names = []
     progress.update(message="done", percent=0.99)
 
 

@@ -1,34 +1,28 @@
-from __future__ import absolute_import
-from __future__ import print_function
-import sys, os
-import numpy as np
-from tempfile import TemporaryDirectory
-from pathlib import Path
-from time import sleep
-from skopt import Optimizer
-from skopt.plots import plot_gaussian_process
-from collections import deque
-from typing import Tuple, Optional, List
-from matplotlib import pyplot as plt
-from argparse import ArgumentParser
 import logging
+import os
+import sys
+from argparse import ArgumentParser
+from collections import deque
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from time import sleep
+
+import numpy as np
 import osparc
-
-import XCore
-
+import s4l_v1.analysis.extractors as extractors
+import s4l_v1.document as document
 import s4l_v1.model as model
 import s4l_v1.simulation.emfdtd as fdtd
-import s4l_v1.analysis as analysis
-import s4l_v1.analysis.viewers as viewers
-from s4l_v1._api.application import run_application
 import s4l_v1.units as units
-import s4l_v1.document as document
-import s4l_v1.analysis.extractors as extractors
-from s4l_v1.model import Vec3, Translation, Rotation
-
+import XCore
+from matplotlib import pyplot as plt
+from s4l_v1._api.application import run_application
+from s4l_v1.model import Rotation, Translation, Vec3
+from skopt import Optimizer
+from skopt.plots import plot_gaussian_process
+from solver import OsparcSolver
 
 sys.path.insert(0, Path(__file__).parent)
-from solver import OsparcSolver
 
 logging.basicConfig(level=logging.ERROR, format="[%(levelname)s] %(message)s")
 
@@ -45,9 +39,9 @@ class ObjectiveFunction:
         self._project_tmp_dir: TemporaryDirectory = TemporaryDirectory()
         self._project_dir: Path = Path(self._project_tmp_dir.name)
 
-        self._sim: Optional[fdtd.Simulation] = None
-        self._solver: Optional[OsparcSolver] = None
-        self._arm_len: Optional[float] = None
+        self._sim: fdtd.Simulation | None = None
+        self._solver: OsparcSolver | None = None
+        self._arm_len: float | None = None
 
     def __del__(self) -> None:
         self._project_tmp_dir.cleanup()
@@ -107,7 +101,7 @@ class ObjectiveFunction:
 
         sim.Name = "Dipole (Broadband)"
         sim.SetupSettings.SimulationTime = (
-            2.0,
+            52.0,
             units.Periods,
         )  # Set to e.g. 3 for faster execution time. Correct value: 52
 
@@ -173,7 +167,7 @@ class ObjectiveFunction:
             return False
         return self._solver.job_done()
 
-    def get_result(self) -> Tuple[float, np.ndarray]:
+    def get_result(self) -> tuple[float, np.ndarray]:
         if not self.result_ready():
             raise RuntimeError("The result cannot be fetched until results are ready")
 
@@ -198,11 +192,26 @@ class ObjectiveFunction:
 
 if __name__ == "__main__":
     endl: str = "\n"
-    doc: str = "In this example we use Sim4Life and oSparc to determine the right length (arm_len) of a dipole antenna in order to achieve a given impedance profile." + endl
-    doc += "This is done using a bayesian optimization algorithm which tries to guess the minimum of an objective function which," + endl
-    doc += "given an input arm length, outputs the L2 squared distance to the reference impedance profile. I.e. the minimum of the objective function" + endl
-    doc += "is the arm length giving the wished impedance profile (the optimal armlength is 249.5). N.b. this example should be run with the python interpreter" + endl
-    doc += "shipped with Sim4Life and several packages must be pip installed into that. This was tested using Sim4Life v. 7.2." + endl
+    doc: str = (
+        "In this example we use Sim4Life and oSparc to determine the right length (arm_len) of a dipole antenna in order to achieve a given impedance profile."
+        + endl
+    )
+    doc += (
+        "This is done using a bayesian optimization algorithm which tries to guess the minimum of an objective function which,"
+        + endl
+    )
+    doc += (
+        "given an input arm length, outputs the L2 squared distance to the reference impedance profile. I.e. the minimum of the objective function"
+        + endl
+    )
+    doc += (
+        "is the arm length giving the wished impedance profile (the optimal armlength is 249.5). N.b. this example should be run with the python interpreter"
+        + endl
+    )
+    doc += (
+        "shipped with Sim4Life and several packages must be pip installed into that. This was tested using Sim4Life v. 7.2."
+        + endl
+    )
 
     parser = ArgumentParser(doc)
     parser.add_argument("username", help="oSparc public API username", type=str)
@@ -239,8 +248,8 @@ if __name__ == "__main__":
     batch_size: int = 5
 
     res = None
-    best_guess: Optional[np.ndarray] = None
-    tmp_quess: Optional[np.ndarray] = None
+    best_guess: np.ndarray | None = None
+    tmp_quess: np.ndarray | None = None
 
     n_iter: int = 1
     for _ in range(n_batches):

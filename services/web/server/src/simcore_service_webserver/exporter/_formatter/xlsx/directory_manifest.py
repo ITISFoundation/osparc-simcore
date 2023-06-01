@@ -4,10 +4,11 @@ from pathlib import Path
 
 import magic
 from pydantic import BaseModel, Field, StrictStr, validator
+from pyparsing import Iterable
 
-from ..styling_components import TB, Backgrounds, Borders, T
-from ..xlsx_base import BaseXLSXCellData, BaseXLSXDocument, BaseXLSXSheet
-from .utils import column_iter, ensure_correct_instance, get_max_array_length
+from .core.styling_components import TB, Backgrounds, Borders, T
+from .core.xlsx_base import BaseXLSXCellData, BaseXLSXDocument, BaseXLSXSheet
+from .utils import column_generator, ensure_correct_instance, get_max_array_length
 
 # replaces lib-magic's description with these
 DESCRIPTION_OVERWRITES: dict[str, str] = {
@@ -16,7 +17,7 @@ DESCRIPTION_OVERWRITES: dict[str, str] = {
 }
 
 
-def get_files_in_dir(dir_path: Path) -> list[tuple[Path, str]]:
+def _get_files_in_dir(dir_path: Path) -> Iterable[tuple[Path, str]]:
     str_dir_path = str(dir_path) + "/"
     for entry in dir_path.rglob("*"):
         if entry.is_file():
@@ -49,7 +50,7 @@ class DirectoryManifestParams(BaseModel):
         cls, start_path: Path
     ) -> list["DirectoryManifestParams"]:
         file_entries = deque()
-        for file_entry in get_files_in_dir(start_path):
+        for file_entry in _get_files_in_dir(start_path):
             full_file_path, relative_file_name = file_entry
             last_modified_date = datetime.datetime.fromtimestamp(
                 full_file_path.stat().st_mtime
@@ -102,7 +103,7 @@ class SheetFirstDirectoryManifest(BaseXLSXSheet):
         # if file_entries is empty this would max function to fail, always concatenate an
         not_empty_file_entries = [x.additional_metadata for x in file_entries] + [[]]
         max_number_of_headers = get_max_array_length(*not_empty_file_entries)
-        for k, column_letter in enumerate(column_iter(5, max_number_of_headers)):
+        for k, column_letter in enumerate(column_generator(5, max_number_of_headers)):
             cell_entry = (
                 f"{column_letter}1",
                 T(f"Additional Metadata {k + 1}")
@@ -126,7 +127,8 @@ class SheetFirstDirectoryManifest(BaseXLSXSheet):
 
             # write additional metadata for each file
             for column_letter, additional_metadata_entry in zip(
-                column_iter(5, max_number_of_headers), file_entry.additional_metadata
+                column_generator(5, max_number_of_headers),
+                file_entry.additional_metadata,
             ):
                 cell_entry = (
                     f"{column_letter}{row_index}",

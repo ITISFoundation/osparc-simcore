@@ -451,9 +451,9 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
       // add port button
       const addPortButton = this.__addInputPortButton = new qx.ui.form.Button().set({
+        label: this.tr("Input"),
         icon: "@FontAwesome5Solid/plus/14",
-        toolTipText: this.tr("Add input"),
-        alignX: "center",
+        marginTop: 6,
         allowGrowX: false
       });
       addPortButton.addListener("execute", () => this.__addInputPortButtonClicked());
