@@ -56,7 +56,7 @@ Modified from https://oschvr.com/posts/what-id-like-as-sre/
 -->
 
 <!---
-Have you though about the CIA triad?
+Have you thought about the CIA triad?
 
 1. Confidentiality: ensures that information is accessible only to authorized individuals or entities. It involves measures to prevent unauthorized disclosure, access, or use of sensitive data. Confidentiality can be maintained through mechanisms such as encryption, access controls, and secure communication channels.
 
