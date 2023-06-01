@@ -411,7 +411,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const options = {
         resolveWResponse: true
       };
-      return osparc.data.Resources.fetch("studies", "getPage", params, undefined, options);
+      return osparc.data.Resources.fetch("studies", "getPageFilterSearch", params, undefined, options);
     },
 
     invalidateStudies: function() {
