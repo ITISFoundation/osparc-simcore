@@ -139,7 +139,7 @@ body:
         make up-maintenance
         make down-maintenance
         ```
-        - [ ] Check hanging sidecars `simcore-service-director-v2 close-and-save-service --skip-container-removal --skip-state-saving --skip-outputs-pushing`
+        - [ ] Check hanging sidecars `simcore-service-director-v2 close-and-save-service --skip-container-removal --skip-state-saving --skip-outputs-pushing <uuid>`
         - [ ] Release by publishing [draft](https://github.com/ITISFoundation/osparc-simcore/releases)
         - [ ] Check release CI
         - [ ] Check deployed

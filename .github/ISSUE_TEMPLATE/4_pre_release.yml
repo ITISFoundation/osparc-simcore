@@ -115,7 +115,7 @@ body:
     attributes:
       label: Releasing
       value: |
-        - [ ] Check hanging sidecars `simcore-service-director-v2 close-and-save-service --skip-container-removal --skip-state-saving --skip-outputs-pushing`
+        - [ ] Check hanging sidecars `simcore-service-director-v2 close-and-save-service --skip-container-removal --skip-state-saving --skip-outputs-pushing <uuid>`
         - [ ] Release (release draft)
         - [ ] Check Release CI
         - [ ] Check deployed
