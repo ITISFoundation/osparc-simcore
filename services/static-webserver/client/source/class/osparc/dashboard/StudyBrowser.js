@@ -375,6 +375,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .catch(err => console.error(err));
     },
 
+    __getNextRequestParams: function() {
+      if ("nextRequest" in this._resourcesContainer.getFlatList() &&
+        this._resourcesContainer.getFlatList().nextRequest !== null &&
+        osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "offset") &&
+        osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "limit")
+      ) {
+        return {
+          offset: osparc.utils.Utils.getParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "offset"),
+          limit: osparc.utils.Utils.getParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "limit")
+        };
+      }
+      return null;
+    },
+
     __getNextRequest: function() {
       const params = {
         url: {
@@ -382,13 +396,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           limit: osparc.dashboard.ResourceBrowserBase.PAGINATED_STUDIES
         }
       };
-      if ("nextRequest" in this._resourcesContainer.getFlatList() &&
-        this._resourcesContainer.getFlatList().nextRequest !== null &&
-        osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "offset") &&
-        osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "limit")
-      ) {
-        params.url.offset = osparc.utils.Utils.getParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "offset");
-        params.url.limit = osparc.utils.Utils.getParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "limit");
+      const nextRequestParams = this.__getNextRequestParams();
+      if (nextRequestParams) {
+        params.url.offset = nextRequestParams.offset;
+        params.url.limit = nextRequestParams.limit;
       }
       const options = {
         resolveWResponse: true
@@ -404,13 +415,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           text
         }
       };
-      if ("nextRequest" in this._resourcesContainer.getFlatList() &&
-        this._resourcesContainer.getFlatList().nextRequest !== null &&
-        osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "offset") &&
-        osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "limit")
-      ) {
-        params.url.offset = osparc.utils.Utils.getParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "offset");
-        params.url.limit = osparc.utils.Utils.getParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "limit");
+      const nextRequestParams = this.__getNextRequestParams();
+      if (nextRequestParams) {
+        params.url.offset = nextRequestParams.offset;
+        params.url.limit = nextRequestParams.limit;
       }
       const options = {
         resolveWResponse: true
