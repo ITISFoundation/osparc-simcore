@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import Field, validator
 
 from .generated_models.docker_rest_api import (
@@ -13,7 +11,7 @@ from .utils.converters import to_snake_case
 
 
 class AioDockerContainerSpec(ContainerSpec):
-    Env: Optional[dict[str, Optional[str]]] = Field(
+    Env: dict[str, str | None] | None = Field(
         None,
         description="aiodocker expects here a dictionary and re-convert it back internally`.\n",
     )
@@ -35,7 +33,7 @@ class AioDockerContainerSpec(ContainerSpec):
 class AioDockerResources1(Resources1):
     # NOTE: The Docker REST API documentation is wrong!!!
     # Do not set that back to singular Reservation.
-    Reservation: Optional[ResourceObject] = Field(
+    Reservation: ResourceObject | None = Field(
         None, description="Define resources reservation.", alias="Reservations"
     )
 
@@ -44,19 +42,18 @@ class AioDockerResources1(Resources1):
 
 
 class AioDockerTaskSpec(TaskSpec):
-    ContainerSpec: Optional[AioDockerContainerSpec] = Field(
+    ContainerSpec: AioDockerContainerSpec | None = Field(
         None,
     )
 
-    Resources: Optional[AioDockerResources1] = Field(
+    Resources: AioDockerResources1 | None = Field(
         None,
         description="Resource requirements which apply to each individual container created\nas part of the service.\n",
     )
 
 
 class AioDockerServiceSpec(ServiceSpec):
-
-    TaskTemplate: Optional[AioDockerTaskSpec] = None
+    TaskTemplate: AioDockerTaskSpec | None = None
 
     class Config(ServiceSpec.Config):
         alias_generator = to_snake_case

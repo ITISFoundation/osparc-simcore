@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Any, Dict, Iterator, List, Tuple
+from typing import Any, Iterator
 
 from pydantic import schema_of
 
@@ -8,7 +8,7 @@ from ...services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceTy
 from .._key_labels import FUNCTION_SERVICE_KEY_PREFIX
 from .._utils import EN, OM, FunctionServices, create_fake_thumbnail_url
 
-LIST_NUMBERS_SCHEMA: Dict[str, Any] = schema_of(List[float], title="list[number]")
+LIST_NUMBERS_SCHEMA: dict[str, Any] = schema_of(list[float], title="list[number]")
 
 
 META = ServiceDockerData.parse_obj(
@@ -66,11 +66,10 @@ META = ServiceDockerData.parse_obj(
 
 def eval_sensitivity(
     *,
-    paramrefs: List[float],
-    paramdiff: List[float],
+    paramrefs: list[float],
+    paramdiff: list[float],
     diff_or_fact: bool,
-) -> Iterator[Tuple[int, List[float], List[float]]]:
-
+) -> Iterator[tuple[int, list[float], list[float]]]:
     # This code runs in the backend
     assert len(paramrefs) == len(paramdiff)  # nosec
 
@@ -95,7 +94,7 @@ def eval_sensitivity(
 
 
 def _sensitivity_generator(
-    paramrefs: List[float], paramdiff: List[float], diff_or_fact: bool
+    paramrefs: list[float], paramdiff: list[float], diff_or_fact: bool
 ) -> Iterator[OutputsDict]:
     for i, paramtestplus, paramtestminus in eval_sensitivity(
         paramrefs=paramrefs, paramdiff=paramdiff, diff_or_fact=diff_or_fact
