@@ -230,6 +230,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
       this.__resetResourcesToList();
       this._loadingResourcesBtn.setFetching(true);
+      this._loadingResourcesBtn.setVisibility("visible");
       const request = this.__getTextFilteredNextRequest(text);
       request
         .then(resp => {
