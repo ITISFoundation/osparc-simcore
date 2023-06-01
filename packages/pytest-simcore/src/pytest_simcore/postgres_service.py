@@ -9,7 +9,6 @@ import pytest
 import sqlalchemy as sa
 import tenacity
 from servicelib.json_serialization import json_dumps
-from sqlalchemy.orm import sessionmaker
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
@@ -237,15 +236,3 @@ def postgres_host_config(
         "POSTGRES_ENDPOINT", f"{postgres_dsn['host']}:{postgres_dsn['port']}"
     )
     return postgres_dsn
-
-
-@pytest.fixture(scope="module")
-def postgres_session(postgres_db: sa.engine.Engine) -> Iterator[sa.orm.session.Session]:
-    from sqlalchemy.orm.session import Session
-
-    Session_cls = sessionmaker(postgres_db)
-    session: Session = Session_cls()
-
-    yield session
-
-    session.close()  # pylint: disable=no-member
