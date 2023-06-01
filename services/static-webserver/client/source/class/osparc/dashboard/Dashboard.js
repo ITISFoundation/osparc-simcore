@@ -143,7 +143,6 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         });
         const tabButton = tabPage.getChildControl("button");
         tabButton.set({
-          alignX: "center",
           minWidth: 50
         });
         tabButton.ttt = label;
@@ -153,6 +152,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         tabButton.getChildControl("icon").set({
           visibility: "excluded"
         });
+        osparc.utils.Utils.centerTabIcon(tabPage);
         osparc.utils.Utils.setIdToWidget(tabButton, id);
         tabPage.setLayout(new qx.ui.layout.Grow());
 
