@@ -39,6 +39,8 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     this.__buildFiltersMenu();
 
     this.__attachEventHandlers();
+
+    this.__currentFilter = null;
   },
 
   statics: {
@@ -66,6 +68,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
 
   members: {
     __resourceType: null,
+    __currentFilter: null,
     __filtersMenu: null,
 
     _createChildControlImpl: function(id) {
@@ -157,13 +160,16 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       osparc.store.Store.getInstance().addListener("changeTags", () => this.__buildFiltersMenu(), this);
     },
 
+    getTextFilterValue: function() {
+      return this.getChildControl("text-field").getValue();
+    },
+
     __showFilterMenu: function() {
-      const textField = this.getChildControl("text-field");
-      const textValue = textField.getValue();
-      if (textValue) {
+      if (this.getTextFilterValue()) {
         return;
       }
 
+      const textField = this.getChildControl("text-field");
       const element = textField.getContentElement().getDomElement();
       const {
         top,
@@ -301,36 +307,38 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       this.__filter();
     },
 
-    __filter: function() {
+    getFilterData: function() {
       const filterData = {
         tags: [],
         classifiers: [],
         sharedWith: null,
-        text: this.getChildControl("text-field").getValue() ? this.getChildControl("text-field").getValue() : ""
+        text: ""
       };
+      const textFilter = this.getTextFilterValue();
+      filterData["text"] = textFilter ? textFilter : "";
       this.getChildControl("active-filters").getChildren().forEach(chip => {
         switch (chip.type) {
           case "tag":
             filterData.tags.push(chip.id);
             break;
-          case "shared-with":
-            if (chip.id === "show-all") {
-              filterData.sharedWith = null;
-            } else {
-              filterData.sharedWith = chip.id;
-            }
-            break;
           case "classifier":
             filterData.classifiers.push(chip.id);
             break;
+          case "shared-with":
+            filterData.sharedWith = chip.id === "show-all" ? null : chip.id;
+            break;
         }
       });
-      this.__filterChange(filterData);
+      return filterData;
     },
 
-    __filterChange: function(filterData) {
-      this.fireDataEvent("filterChanged", filterData);
-      this._filterChange(filterData);
+    __filter: function() {
+      const filterData = this.getFilterData();
+      if (JSON.stringify(this.__currentFilter) !== JSON.stringify(filterData)) {
+        this.__currentFilter = filterData;
+        this.fireDataEvent("filterChanged", filterData);
+        this._filterChange(filterData);
+      }
     }
   }
 });
