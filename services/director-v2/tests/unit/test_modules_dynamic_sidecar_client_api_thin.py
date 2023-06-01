@@ -246,7 +246,7 @@ async def test_post_containers_networks_detach(
 @pytest.mark.parametrize("volume_category", VolumeCategory)
 @pytest.mark.parametrize("volume_status", VolumeStatus)
 async def test_put_volumes(
-    thin_client: ThinDynamicSidecarClient,
+    thin_client: ThinSidecarsClient,
     dynamic_sidecar_endpoint: AnyHttpUrl,
     mock_request: MockRequestType,
     volume_category: str,

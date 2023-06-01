@@ -142,7 +142,7 @@ async def service_save_state(
     await sidecars_client.save_service_state(
         scheduler_data.endpoint, progress_callback=progress_callback
     )
-    await dynamic_sidecar_client.update_volume_state(
+    await sidecars_client.update_volume_state(
         scheduler_data.endpoint,
         volume_category=VolumeCategory.STATES,
         volume_status=VolumeStatus.CONTENT_WAS_SAVED,
@@ -159,7 +159,7 @@ async def service_push_outputs(
     await sidecars_client.push_service_output_ports(
         scheduler_data.endpoint, progress_callback=progress_callback
     )
-    await dynamic_sidecar_client.update_volume_state(
+    await sidecars_client.update_volume_state(
         scheduler_data.endpoint,
         volume_category=VolumeCategory.OUTPUTS,
         volume_status=VolumeStatus.CONTENT_WAS_SAVED,
@@ -432,12 +432,12 @@ async def prepare_services_environment(
     )
     await logged_gather(
         *(
-            dynamic_sidecar_client.update_volume_state(
+            sidecars_client.update_volume_state(
                 scheduler_data.endpoint,
                 volume_category=VolumeCategory.STATES,
                 volume_status=volume_status,
             ),
-            dynamic_sidecar_client.update_volume_state(
+            sidecars_client.update_volume_state(
                 scheduler_data.endpoint,
                 volume_category=VolumeCategory.OUTPUTS,
                 volume_status=volume_status,
