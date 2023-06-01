@@ -25,6 +25,8 @@ import redis
 import redis.asyncio as aioredis
 import simcore_postgres_database.cli as pg_cli
 import simcore_service_webserver.db_models as orm
+import simcore_service_webserver.email
+import simcore_service_webserver.email._core
 import simcore_service_webserver.utils
 import sqlalchemy as sa
 from aiohttp import web
@@ -40,10 +42,9 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSub
 from redis import Redis
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.aiohttp.long_running_tasks.client import LRTask
-from servicelib.aiohttp.long_running_tasks.server import TaskProgress
+from servicelib.aiohttp.long_running_tasks.server import ProgressPercent, TaskProgress
 from servicelib.common_aiopg_utils import DSN
 from settings_library.email import SMTPSettings
-from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
@@ -54,6 +55,7 @@ from simcore_service_webserver.groups.api import (
     list_user_groups,
 )
 from simcore_service_webserver.projects.models import ProjectDict
+from sqlalchemy import exc as sql_exceptions
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -301,7 +303,9 @@ async def storage_subsystem_mock(mocker: MockerFixture) -> MockedStorageSubsyste
             return None
 
         yield LRTask(
-            TaskProgress(message="pytest mocked fct, finished", percent=1.0),
+            TaskProgress(
+                message="pytest mocked fct, finished", percent=ProgressPercent(1.0)
+            ),
             _result=_mock_result(),
         )
 
@@ -385,12 +389,6 @@ def create_dynamic_service_mock(
         SERVICE_KEY = "simcore/services/dynamic/3d-viewer"
         SERVICE_VERSION = "1.4.2"
         assert client.app
-        url = client.app.router["create_node"].url_for(project_id=project_id)
-        create_node_data = {
-            "service_key": SERVICE_KEY,
-            "service_version": SERVICE_VERSION,
-            "service_uuid": SERVICE_UUID,
-        }
 
         running_service_dict = {
             "published_port": "23423",
@@ -415,16 +413,13 @@ def create_dynamic_service_mock(
     return _create
 
 
-# POSTGRES CORE SERVICE ---------------------------------------------------
-
-
 def _is_postgres_responsive(url):
     """Check if something responds to url"""
     try:
         engine = sa.create_engine(url)
         conn = engine.connect()
         conn.close()
-    except sa.exc.OperationalError:
+    except sql_exceptions.OperationalError:
         return False
     return True
 
@@ -478,35 +473,10 @@ def postgres_db(
     engine.dispose()
 
 
-# RABBITMQ SERVICE ------------------------------------------------------
-
-
-def _is_rabbit_responsive(settings: RabbitSettings) -> bool:
-    return True
-
-
-@pytest.fixture(scope="session")
-def rabbit_service(docker_services, docker_ip) -> RabbitSettings:
-    # WARNING: overrides pytest_simcore.redis_service.redis_server function-scoped fixture!
-
-    host = docker_ip
-    port = docker_services.port_for("rabbit", 5672)
-    rabbit_settings = RabbitSettings.create_from_envs(
-        RABBIT_HOST=host, RABBIT_PORT=port
-    )
-
-    docker_services.wait_until_responsive(
-        check=lambda: _is_rabbit_responsive(rabbit_settings),
-        timeout=30.0,
-        pause=0.1,
-    )
-    return rabbit_settings
-
-
 # REDIS CORE SERVICE ------------------------------------------------------
 def _is_redis_responsive(host: str, port: int) -> bool:
     r = redis.Redis(host=host, port=port)
-    return r.ping() == True
+    return r.ping() is True
 
 
 @pytest.fixture(scope="session")
