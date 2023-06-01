@@ -254,6 +254,13 @@ class CreateSidecars(DynamicSchedulerEvent):
             dynamic_sidecar_service_final_spec
         )
 
+        proxy_settings: DynamicSidecarProxySettings = (
+            dynamic_sidecar_settings.DYNAMIC_SIDECAR_PROXY_SETTINGS
+        )
+        scheduler_data.proxy_admin_api_port = (
+            proxy_settings.DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT
+        )
+
         dynamic_sidecar_proxy_create_service_params: dict[
             str, Any
         ] = get_dynamic_proxy_spec(
@@ -435,13 +442,15 @@ class CreateUserServices(DynamicSchedulerEvent):
             or scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id is None
             or scheduler_data.dynamic_sidecar.swarm_network_id is None
             or scheduler_data.dynamic_sidecar.swarm_network_name is None
+            or scheduler_data.proxy_admin_api_port is not None
         ):
             raise ValueError(
                 "Expected a value for all the following values: "
                 f"{scheduler_data.dynamic_sidecar.dynamic_sidecar_id=} "
                 f"{scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id=} "
                 f"{scheduler_data.dynamic_sidecar.swarm_network_id=} "
-                f"{scheduler_data.dynamic_sidecar.swarm_network_name=}"
+                f"{scheduler_data.dynamic_sidecar.swarm_network_name=} "
+                f"{scheduler_data.proxy_admin_api_port=}"
             )
 
         # Starts dynamic SIDECAR -------------------------------------
@@ -539,13 +548,8 @@ class CreateUserServices(DynamicSchedulerEvent):
                     "Fetched container entrypoint name %s", entrypoint_container
                 )
 
-        proxy_settings: DynamicSidecarProxySettings = (
-            dynamic_sidecar_settings.DYNAMIC_SIDECAR_PROXY_SETTINGS
-        )
-
         await sidecars_client.configure_proxy(
-            node_id=scheduler_data.node_uuid,
-            admin_api_port=proxy_settings.DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT,
+            proxy_endpoint=scheduler_data.get_proxy_endpoint,
             entrypoint_container_name=entrypoint_container,
             service_port=scheduler_data.service_port,
         )

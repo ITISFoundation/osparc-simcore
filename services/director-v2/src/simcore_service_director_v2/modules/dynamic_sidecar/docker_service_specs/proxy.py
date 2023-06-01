@@ -43,12 +43,21 @@ def get_dynamic_proxy_spec(
     )
 
     # expose this service on an empty port
-    endpint_spec = {}
+
+    ports = []
+    if dynamic_sidecar_settings.DYNAMIC_SIDECAR_EXPOSE_PORT:
+        ports.append(
+            # server port
+            {
+                "Protocol": "tcp",
+                "TargetPort": proxy_settings.DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT,
+            }
+        )
     if dynamic_sidecar_settings.PROXY_EXPOSE_PORT:
-        endpint_spec["Ports"] = [{"Protocol": "tcp", "TargetPort": 80}]
+        ports.append({"Protocol": "tcp", "TargetPort": 80})
 
     return {
-        "endpoint_spec": endpint_spec,
+        "endpoint_spec": {"Ports": ports} if ports else {},
         "labels": {
             # TODO: let's use a pydantic model with descriptions
             "io.simcore.zone": f"{dynamic_sidecar_settings.TRAEFIK_SIMCORE_ZONE}",

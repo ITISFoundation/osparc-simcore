@@ -422,6 +422,19 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         description="used as label to filter out the metrics from the cAdvisor prometheus metrics",
     )
     proxy_service_name: str = Field(None, description="service name given to the proxy")
+    proxy_admin_api_port: PortInt | None = Field(
+        None, description="used as the admin endpoint API port"
+    )
+
+    @property
+    def get_proxy_endpoint(self) -> AnyHttpUrl:
+        """get the endpoint where the proxy's admin API is exposed"""
+        assert self.proxy_admin_api_port  # nosec
+        url: AnyHttpUrl = parse_obj_as(
+            AnyHttpUrl,
+            f"http://{self.proxy_service_name}:{self.proxy_admin_api_port}",  # NOSONAR
+        )
+        return url
 
     product_name: str = Field(
         None,

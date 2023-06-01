@@ -416,17 +416,14 @@ class SidecarsClient:
 
     async def configure_proxy(
         self,
-        node_id: NodeID,
-        admin_api_port: PortInt,
+        proxy_endpoint: AnyHttpUrl,
         entrypoint_container_name: str,
         service_port: PortInt,
     ) -> None:
         proxy_configuration = _get_proxy_configuration(
             entrypoint_container_name, service_port
         )
-        await self._thin_client.proxy_config_load(
-            node_id, admin_api_port, proxy_configuration
-        )
+        await self._thin_client.proxy_config_load(proxy_endpoint, proxy_configuration)
 
 
 def _get_proxy_configuration(
