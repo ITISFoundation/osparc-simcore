@@ -5,7 +5,7 @@ from typing import Any, Callable, Mapping
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.services import ServiceKey
+from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.utils.specs_substitution import SpecsSubstitutionsResolver
 from pydantic import EmailStr
@@ -25,6 +25,7 @@ async def substitute_vendor_secrets_oenvs(
     app: FastAPI,
     specs: dict[str, Any],
     service_key: ServiceKey,
+    service_version: ServiceVersion,
 ) -> dict[str, Any]:
     assert specs  # nosec
     new_specs: dict[str, Any]
@@ -34,7 +35,9 @@ async def substitute_vendor_secrets_oenvs(
 
     if any(repo.is_vendor_secret_identifier(idr) for idr in resolver.get_identifiers()):
         # checks before to avoid unnecesary calls to pg
-        vendor_secrets = await repo.get_vendor_secrets(service_key=service_key)
+        vendor_secrets = await repo.get_vendor_secrets(
+            service_key=service_key, service_version=service_version
+        )
 
         # resolve substitutions
         resolver.set_substitutions(environs=vendor_secrets)

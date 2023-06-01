@@ -1,4 +1,6 @@
-from models_library.services import ServiceKey
+from typing import Literal
+
+from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import EmailStr, parse_obj_as
 from simcore_postgres_database.utils_services_environments import (
@@ -17,12 +19,17 @@ class ServicesEnvironmentsRepository(BaseRepository):
     """
 
     async def get_vendor_secrets(
-        self, service_key: ServiceKey
+        self,
+        service_key: ServiceKey,
+        service_version: ServiceVersion | Literal["latest"],
     ) -> dict[str, VendorSecret]:
         """Fetches vendor secrets for a service using normalized names"""
         async with self.db_engine.acquire() as conn:
             vendor_secrets: dict[str, VendorSecret] = await get_vendor_secrets(
-                conn, vendor_service_key=service_key, normalize_names=True
+                conn,
+                vendor_service_key=service_key,
+                vendor_service_version=service_version,
+                normalize_names=True,
             )
 
             # NOTE: normalize_names = True
