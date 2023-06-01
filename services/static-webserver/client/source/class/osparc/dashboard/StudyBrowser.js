@@ -148,7 +148,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (osparc.data.Permissions.getInstance().canDo("studies.user.read")) {
         this.__reloadStudies();
       } else {
-        this.__resetResourcesToList();
+        this.__resetStudiesList();
       }
     },
 
@@ -229,7 +229,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (this._loadingResourcesBtn.isFetching()) {
         return;
       }
-      this.__resetResourcesToList();
+      this.__resetStudiesList();
       this._loadingResourcesBtn.setFetching(true);
       this._loadingResourcesBtn.setVisibility("visible");
       const request = this.__getTextFilteredNextRequest(text);
@@ -248,7 +248,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __resetResourcesToList: function() {
+    __resetStudiesList: function() {
       this._resourcesList = [];
       osparc.dashboard.ResourceBrowserBase.sortStudyList(this._resourcesList);
       this._reloadCards();
@@ -420,7 +420,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     invalidateStudies: function() {
       osparc.store.Store.getInstance().invalidate("studies");
-      this.__resetResourcesToList();
+      this.__resetStudiesList();
       this._resourcesContainer.getFlatList().nextRequest = null;
     },
 
