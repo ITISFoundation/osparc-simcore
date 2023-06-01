@@ -216,9 +216,29 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             }
           }
         })
-        .catch(err => {
-          console.error(err);
+        .catch(err => console.error(err))
+        .finally(() => {
+          this._loadingResourcesBtn.setFetching(false);
+          this._loadingResourcesBtn.setVisibility(this._resourcesContainer.getFlatList().nextRequest === null ? "excluded" : "visible");
+          this._moreResourcesRequired();
+        });
+    },
+
+    __reloadFilteredStudies: function(text) {
+      if (this._loadingResourcesBtn.isFetching()) {
+        return;
+      }
+      this.__resetResourcesToList();
+      this._loadingResourcesBtn.setFetching(true);
+      const request = this.__getTextFilteredNextRequest(text);
+      request
+        .then(resp => {
+          console.log("filteredStudies", resp);
+          const filteredStudies = resp["data"];
+          this._resourcesContainer.getFlatList().nextRequest = resp["_links"]["next"];
+          this.__addResourcesToList(filteredStudies);
         })
+        .catch(err => console.error(err))
         .finally(() => {
           this._loadingResourcesBtn.setFetching(false);
           this._loadingResourcesBtn.setVisibility(this._resourcesContainer.getFlatList().nextRequest === null ? "excluded" : "visible");
@@ -373,12 +393,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return osparc.data.Resources.fetch("studies", "getPage", params, undefined, options);
     },
 
-    __getFilteredNextRequest: function() {
+    __getTextFilteredNextRequest: function(text) {
       const params = {
         url: {
           offset: 0,
           limit: osparc.dashboard.ResourceBrowserBase.PAGINATED_STUDIES,
-          text: ""
+          text
         }
       };
       if ("nextRequest" in this._resourcesContainer.getFlatList() &&
@@ -568,24 +588,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._searchBarFilter.addListener("filterChanged", e => {
         const filterData = e.getData();
         if (filterData.text) {
-          const params = {
-            url: {
-              offset: 0,
-              limit: osparc.dashboard.ResourceBrowserBase.PAGINATED_STUDIES,
-              text: filterData.text
-            }
-          };
-          osparc.data.Resources.fetch("studies", "getPageFilterSearch", params)
-            .then(filteredStudies => {
-              console.log("filteredStudies", filteredStudies);
-              this.__resetResourcesToList();
-              this._resourcesContainer.getFlatList().nextRequest = resp["_links"]["next"];
-              this.__addResourcesToList(filteredStudies);
-              sharedWithButton.filterChanged(filterData);
-            });
-        } else {
-          sharedWithButton.filterChanged(filterData);
+          this.__reloadFilteredStudies(filterData.text);
         }
+        sharedWithButton.filterChanged(filterData);
       }, this);
 
       this._toolbar.add(sharedWithButton);
