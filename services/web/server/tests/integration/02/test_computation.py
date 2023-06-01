@@ -380,7 +380,7 @@ async def test_start_stop_computation(
     project_id = user_project["uuid"]
     fake_workbench_payload = user_project["workbench"]
 
-    url_start = client.app.router["stop_computation"].url_for(project_id=project_id)
+    url_start = client.app.router["start_computation"].url_for(project_id=project_id)
     assert url_start == URL(f"/{API_VTAG}/computations/{project_id}:start")
 
     # POST /v0/computations/{project_id}:start
