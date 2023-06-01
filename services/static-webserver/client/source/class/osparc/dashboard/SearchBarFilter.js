@@ -301,13 +301,16 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       this.__filter();
     },
 
-    __filter: function() {
+    getFilterData: function() {
       const filterData = {
         tags: [],
         classifiers: [],
-        sharedWith: null,
-        text: this.getChildControl("text-field").getValue() ? this.getChildControl("text-field").getValue() : ""
+        sharedWith: null
       };
+      if (this.__resourceType !== "study") {
+        // study text filtering is done in the backend
+        filterData["text"] = this.getChildControl("text-field").getValue() ? this.getChildControl("text-field").getValue() : "";
+      }
       this.getChildControl("active-filters").getChildren().forEach(chip => {
         switch (chip.type) {
           case "tag":
@@ -325,6 +328,11 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
             break;
         }
       });
+      return filterData;
+    },
+
+    __filter: function() {
+      const filterData = this.getFilterData();
       this.__filterChange(filterData);
     },
 
