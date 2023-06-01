@@ -9,7 +9,7 @@ from .garbage_collector_tasks_api_keys import create_background_task_to_prune_ap
 from .garbage_collector_tasks_users import create_background_task_for_trial_accounts
 from .login.plugin import setup_login_storage
 from .projects.db import setup_projects_db
-from .socketio.plugin import setup_socketio_server
+from .socketio.plugin import setup_socketio
 
 logger = logging.getLogger(__name__)
 
@@ -21,14 +21,13 @@ logger = logging.getLogger(__name__)
     logger=logger,
 )
 def setup_garbage_collector(app: web.Application):
-
     # TODO: review these partial inits! project-api is code smell!!
 
     ## needs a partial init of projects plugin since this plugin uses projects-api
     # - project-api needs access to db
     setup_projects_db(app)
     # - project needs access to socketio via notify_project_state_update
-    setup_socketio_server(app)
+    setup_socketio(app)
     # - project needs access to user-api that is connected to login plugin
     setup_login_storage(app)
 
