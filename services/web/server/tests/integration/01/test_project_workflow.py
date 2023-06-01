@@ -13,12 +13,15 @@
 
 import asyncio
 from copy import deepcopy
-from typing import Awaitable, Callable, Iterator
+from typing import Any, Awaitable, Callable, Iterator
+from unittest import mock
 from uuid import uuid4
 
 import pytest
+import redis.asyncio as aioredis
 import sqlalchemy as sa
 from aiohttp import web
+from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.projects_state import ProjectState
 from pytest_mock import MockerFixture
@@ -29,6 +32,7 @@ from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.aiohttp.long_running_tasks.server import (
     setup as setup_long_running_tasks,
 )
+from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.catalog.plugin import setup_catalog
@@ -60,12 +64,15 @@ pytest_simcore_ops_services_selection = ["adminer"]  # + ["adminer"]
 
 @pytest.fixture
 def client(
-    event_loop,
-    mock_orphaned_services,
-    aiohttp_client,
-    app_config,  # waits until swarm with *_services are up
+    event_loop: asyncio.AbstractEventLoop,
+    mock_orphaned_services: mock.Mock,
+    aiohttp_client: Callable[..., Awaitable[TestClient]],
+    app_config: dict[str, Any],  # waits until swarm with *_services are up
     monkeypatch_setenv_from_app_config: Callable,
-):
+    redis_client: aioredis.Redis,
+    rabbit_service: RabbitSettings,
+    simcore_services_ready: None,
+) -> Iterator[TestClient]:
     assert app_config["rest"]["version"] == API_VERSION
 
     app_config["main"]["testing"] = True
@@ -222,7 +229,6 @@ async def _request_delete(client, pid):
 async def test_workflow(
     postgres_db: sa.engine.Engine,
     docker_registry: str,
-    simcore_services_ready,
     fake_project: ProjectDict,
     catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     client,
@@ -321,7 +327,6 @@ async def test_get_invalid_project(
     client,
     postgres_db: sa.engine.Engine,
     docker_registry: str,
-    simcore_services_ready,
     logged_user,
     faker: Faker,
 ):
@@ -336,7 +341,6 @@ async def test_update_invalid_project(
     client,
     postgres_db: sa.engine.Engine,
     docker_registry: str,
-    simcore_services_ready,
     logged_user,
     faker: Faker,
 ):
@@ -351,7 +355,6 @@ async def test_delete_invalid_project(
     client,
     postgres_db: sa.engine.Engine,
     docker_registry: str,
-    simcore_services_ready,
     logged_user,
     faker: Faker,
 ):
