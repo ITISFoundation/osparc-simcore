@@ -12,6 +12,7 @@ import aio_pika
 import pytest
 import tenacity
 from servicelib.rabbitmq import RabbitMQClient
+from settings_library.basic_types import PortInt
 from settings_library.rabbit import RabbitSettings
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_attempt
@@ -48,7 +49,7 @@ async def rabbit_settings(
         RABBIT_USER=testing_environ_vars["RABBIT_USER"],
         RABBIT_PASSWORD=testing_environ_vars["RABBIT_PASSWORD"],
         RABBIT_HOST=get_localhost_ip(),
-        RABBIT_PORT=int(port),
+        RABBIT_PORT=PortInt(port),
     )
 
     await wait_till_rabbit_responsive(settings.dsn)
