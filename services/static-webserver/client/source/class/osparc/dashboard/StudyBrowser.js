@@ -148,7 +148,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (osparc.data.Permissions.getInstance().canDo("studies.user.read")) {
         this.__reloadStudies();
       } else {
-        this.__setResourcesToList([]);
+        this.__resetResourcesToList();
       }
     },
 
@@ -226,9 +226,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __setResourcesToList: function(studiesList) {
-      studiesList.forEach(study => study["resourceType"] = "study");
-      this._resourcesList = studiesList;
+    __resetResourcesToList: function() {
+      this._resourcesList = [];
       osparc.dashboard.ResourceBrowserBase.sortStudyList(this._resourcesList);
       this._reloadCards();
     },
@@ -376,7 +375,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     invalidateStudies: function() {
       osparc.store.Store.getInstance().invalidate("studies");
-      this.__setResourcesToList([]);
+      this.__resetResourcesToList();
       this._resourcesContainer.getFlatList().nextRequest = null;
     },
 
@@ -556,6 +555,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           osparc.data.Resources.fetch("studies", "getFilterSearch", params)
             .then(filteredStudies => {
               console.log("filteredStudies", filteredStudies);
+              this.invalidateStudies();
               sharedWithButton.filterChanged(filterData);
             });
         } else {
