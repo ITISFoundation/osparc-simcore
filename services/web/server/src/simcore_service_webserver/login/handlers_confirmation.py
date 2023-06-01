@@ -13,8 +13,8 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.errors import UniqueViolation
 from yarl import URL
 
-from ..products import Product, get_current_product
-from ..security_api import encrypt_password
+from ..products.plugin import Product, get_current_product
+from ..security.api import encrypt_password
 from ..session_access import session_access_required
 from ..utils import MINUTE
 from ..utils_aiohttp import create_redirect_response
@@ -155,7 +155,6 @@ async def phone_confirmation(request: web.Request):
     )
 
     db: AsyncpgStorage = get_plugin_storage(request.app)
-    product: Product = get_current_product(request)
 
     if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(

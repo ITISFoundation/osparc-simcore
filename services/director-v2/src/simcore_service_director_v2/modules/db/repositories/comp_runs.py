@@ -1,6 +1,6 @@
+import datetime
 import logging
 from collections import deque
-from datetime import datetime
 from typing import Any
 
 import sqlalchemy as sa
@@ -38,7 +38,7 @@ class CompRunsRepository(BaseRepository):
         """
         async with self.db_engine.acquire() as conn:
             result = await conn.execute(
-                sa.select([comp_runs])
+                sa.select(comp_runs)
                 .where(
                     (comp_runs.c.user_id == user_id)
                     & (comp_runs.c.project_uuid == f"{project_id}")
@@ -57,10 +57,10 @@ class CompRunsRepository(BaseRepository):
     ) -> list[CompRunsAtDB]:
         if not filter_by_state:
             filter_by_state = set()
-        runs_in_db = deque()
+        runs_in_db: deque[CompRunsAtDB] = deque()
         async with self.db_engine.acquire() as conn:
             async for row in conn.execute(
-                sa.select([comp_runs]).where(
+                sa.select(comp_runs).where(
                     or_(
                         *[
                             comp_runs.c.result == RUNNING_STATE_TO_DB[s]
@@ -84,7 +84,7 @@ class CompRunsRepository(BaseRepository):
                 if iteration is None:
                     # let's get the latest if it exists
                     last_iteration = await conn.scalar(
-                        sa.select([comp_runs.c.iteration])
+                        sa.select(comp_runs.c.iteration)
                         .where(
                             (comp_runs.c.user_id == user_id)
                             & (comp_runs.c.project_uuid == f"{project_id}")
@@ -103,7 +103,7 @@ class CompRunsRepository(BaseRepository):
                         else None,
                         iteration=iteration,
                         result=RUNNING_STATE_TO_DB[RunningState.PUBLISHED],
-                        started=datetime.utcnow(),
+                        started=datetime.datetime.now(tz=datetime.timezone.utc),
                     )
                     .returning(literal_column("*"))
                 )
@@ -139,7 +139,7 @@ class CompRunsRepository(BaseRepository):
     ) -> CompRunsAtDB | None:
         values: dict[str, Any] = {"result": RUNNING_STATE_TO_DB[result_state]}
         if final_state:
-            values.update({"ended": datetime.utcnow()})
+            values.update({"ended": datetime.datetime.now(tz=datetime.timezone.utc)})
         return await self.update(
             user_id,
             project_id,

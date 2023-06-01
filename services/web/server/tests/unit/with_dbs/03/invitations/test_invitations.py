@@ -11,16 +11,16 @@ from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import NewUser
 from simcore_service_webserver.application_settings import ApplicationSettings
-from simcore_service_webserver.invitations import (
-    InvalidInvitation,
-    InvitationsServiceUnavailable,
-    validate_invitation_url,
-)
-from simcore_service_webserver.invitations_client import (
+from simcore_service_webserver.invitations._client import (
     InvitationContent,
     InvitationsServiceApi,
     get_invitations_service_api,
 )
+from simcore_service_webserver.invitations.errors import (
+    InvalidInvitation,
+    InvitationsServiceUnavailable,
+)
+from simcore_service_webserver.invitations.plugin import validate_invitation_url
 from yarl import URL
 
 
@@ -32,7 +32,7 @@ def app_environment(
         monkeypatch,
         {
             "WEBSERVER_ACTIVITY": "null",
-            "WEBSERVER_COMPUTATION": "0",
+            "WEBSERVER_NOTIFICATIONS": "0",
             "WEBSERVER_DIAGNOSTICS": "null",
             "WEBSERVER_DIRECTOR": "null",
             "WEBSERVER_EXPORTER": "null",

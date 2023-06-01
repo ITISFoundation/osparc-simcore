@@ -7,8 +7,7 @@ from models_library.projects_state import RunningState
 from settings_library.utils_cli import create_json_encoder_wo_secrets
 from simcore_postgres_database.models.comp_pipeline import StateType
 
-from ..api.dependencies.database import get_base_repository
-from ..modules.db.repositories import BaseRepository
+from ..api.dependencies.database import RepoType, get_base_repository
 
 DB_TO_RUNNING_STATE = {
     StateType.FAILED: RunningState.FAILED,
@@ -39,5 +38,5 @@ def to_clusters_db(cluster: BaseCluster, only_update: bool) -> dict[str, Any]:
     return db_model
 
 
-def get_repository(app: FastAPI, repo_type: type[BaseRepository]) -> BaseRepository:
+def get_repository(app: FastAPI, repo_type: type[RepoType]) -> RepoType:
     return get_base_repository(engine=app.state.engine, repo_type=repo_type)

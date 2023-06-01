@@ -1,14 +1,14 @@
 import logging
 from collections import deque
 from functools import cached_property
-from typing import Any, Final
+from typing import Any, Coroutine, Final
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkAlias
 from models_library.projects_nodes_io import NodeID
-from models_library.volumes import VolumeCategory
+from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl, PositiveFloat
 from servicelib.fastapi.long_running_tasks.client import (
     Client,
@@ -18,14 +18,12 @@ from servicelib.fastapi.long_running_tasks.client import (
     TaskId,
     periodic_task_result,
 )
-from servicelib.logging_utils import log_context
+from servicelib.logging_utils import log_context, log_decorator
 from servicelib.utils import logged_gather
-from servicelib.volumes_utils import VolumeStatus
 from simcore_service_director_v2.core.settings import DynamicSidecarSettings
 
 from ....models.schemas.dynamic_services import SchedulerData
 from ....modules.dynamic_sidecar.docker_api import get_or_create_networks_ids
-from ....utils.logging_utils import log_decorator
 from ..errors import EntrypointContainerNotFoundError
 from ._errors import BaseClientHTTPError, UnexpectedStatusError
 from ._thin import ThinDynamicSidecarClient
@@ -52,7 +50,10 @@ class DynamicSidecarClient:
 
     @cached_property
     def _dynamic_sidecar_settings(self) -> DynamicSidecarSettings:
-        return self._app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+        settings: DynamicSidecarSettings = (
+            self._app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+        )
+        return settings
 
     async def is_healthy(
         self, dynamic_sidecar_endpoint: AnyHttpUrl, *, with_retry: bool = True
@@ -66,7 +67,8 @@ class DynamicSidecarClient:
                 response = await self._thin_client.get_health_no_retry(
                     dynamic_sidecar_endpoint
                 )
-            return response.json()["is_healthy"]
+            result: bool = response.json()["is_healthy"]
+            return result
         except BaseClientHTTPError:
             return False
 
@@ -80,7 +82,8 @@ class DynamicSidecarClient:
         response = await self._thin_client.get_containers(
             dynamic_sidecar_endpoint, only_status=False
         )
-        return response.json()
+        result: dict[str, Any] = response.json()
+        return result
 
     @log_decorator(logger=logger)
     async def containers_docker_status(
@@ -90,7 +93,8 @@ class DynamicSidecarClient:
             response = await self._thin_client.get_containers(
                 dynamic_sidecar_endpoint, only_status=True
             )
-            return response.json()
+            result: dict[str, dict[str, str]] = response.json()
+            return result
         except UnexpectedStatusError:
             return {}
 
@@ -132,7 +136,8 @@ class DynamicSidecarClient:
                 dynamic_sidecar_endpoint,
                 dynamic_sidecar_network_name=dynamic_sidecar_network_name,
             )
-            return response.json()
+            container_name: str = response.json()
+            return container_name
         except UnexpectedStatusError as e:
             if e.response.status_code == status.HTTP_404_NOT_FOUND:
                 raise EntrypointContainerNotFoundError() from e
@@ -196,7 +201,7 @@ class DynamicSidecarClient:
         )
         network_id = network_names_to_ids[project_network]
 
-        tasks = deque()
+        coroutines: deque[Coroutine] = deque()
 
         for k, container_name in enumerate(sorted_container_names):
             # by default we attach `alias-0`, `alias-1`, etc...
@@ -206,7 +211,7 @@ class DynamicSidecarClient:
                 # by definition the entrypoint container will be exposed as the `alias`
                 aliases.append(network_alias)
 
-            tasks.append(
+            coroutines.append(
                 self._attach_container_to_network(
                     dynamic_sidecar_endpoint=dynamic_sidecar_endpoint,
                     container_id=container_name,
@@ -215,7 +220,7 @@ class DynamicSidecarClient:
                 )
             )
 
-        await logged_gather(*tasks)
+        await logged_gather(*coroutines)
 
     async def detach_service_containers_from_project_network(
         self,
@@ -403,7 +408,6 @@ class DynamicSidecarClient:
             _debug_progress_callback,
         )
 
-    @log_decorator(logger=logger)
     async def update_volume_state(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
@@ -419,7 +423,7 @@ class DynamicSidecarClient:
 
 async def setup(app: FastAPI) -> None:
     with log_context(logger, logging.DEBUG, "dynamic-sidecar api client setup"):
-        app.state.dynamic_sidecar_api_clients: dict[str, DynamicSidecarClient] = {}
+        app.state.dynamic_sidecar_api_clients = {}
 
 
 async def shutdown(app: FastAPI) -> None:
@@ -441,7 +445,8 @@ def get_dynamic_sidecar_client(
     if str_node_id not in app.state.dynamic_sidecar_api_clients:
         app.state.dynamic_sidecar_api_clients[str_node_id] = DynamicSidecarClient(app)
 
-    return app.state.dynamic_sidecar_api_clients[str_node_id]
+    client: DynamicSidecarClient = app.state.dynamic_sidecar_api_clients[str_node_id]
+    return client
 
 
 def remove_dynamic_sidecar_client(app: FastAPI, node_id: NodeID) -> None:

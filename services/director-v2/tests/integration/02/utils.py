@@ -281,8 +281,8 @@ async def assert_start_service(
         service_key=service_key,
         service_version=service_version,
         service_uuid=service_uuid,
-        basepath=basepath,
         can_save=True,
+        basepath=basepath,
         service_resources=ServiceResourcesDictHelpers.create_jsonable(
             service_resources
         ),

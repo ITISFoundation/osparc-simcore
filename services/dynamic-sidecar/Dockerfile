@@ -19,6 +19,7 @@ RUN  --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=loc
   apt-get install -y --no-install-recommends\
   curl \
   gosu \
+  libcap2-bin \
   ca-certificates \
   # required by python-magic
   libmagic1 \
@@ -59,7 +60,7 @@ ENV DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR="/dy-volumes"
 
 # create direcotry to persist SharedStore data accessiable
 # between dynamic-sidecar reboots
-ENV DYNAMIC_SIDECAR_SHARED_STORE_DIR="/shared-store"
+ENV DYNAMIC_SIDECAR_SHARED_STORE_DIR="${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}/shared-store"
 RUN mkdir -p "${DYNAMIC_SIDECAR_SHARED_STORE_DIR}" && \
   chown -R scu:scu "${DYNAMIC_SIDECAR_SHARED_STORE_DIR}"
 
@@ -88,7 +89,7 @@ RUN python -m venv "${VIRTUAL_ENV}" \
 
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
   pip --no-cache-dir install --upgrade  \
-  pip~=23.0  \
+  pip~=23.1  \
   wheel \
   setuptools
 

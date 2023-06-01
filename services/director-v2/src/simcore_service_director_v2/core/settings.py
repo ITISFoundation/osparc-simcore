@@ -22,7 +22,7 @@ from models_library.clusters import (
     NoAuthentication,
 )
 from models_library.docker import DockerGenericTag
-from models_library.projects_networks import SERVICE_NETWORK_RE
+from models_library.projects_networks import DockerNetworkName
 from models_library.utils.enums import StrAutoEnum
 from pydantic import (
     AnyHttpUrl,
@@ -31,6 +31,7 @@ from pydantic import (
     Field,
     PositiveFloat,
     PositiveInt,
+    parse_obj_as,
     validator,
 )
 from settings_library.base import BaseCustomSettings
@@ -41,13 +42,11 @@ from settings_library.postgres import PostgresSettings
 from settings_library.r_clone import RCloneSettings as SettingsLibraryRCloneSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
-from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from settings_library.utils_service import DEFAULT_FASTAPI_PORT
 from simcore_postgres_database.models.clusters import ClusterType
 from simcore_sdk.node_ports_v2 import FileLinkType
 
-from ..meta import API_VTAG
 from ..models.schemas.constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE
 
 logger = logging.getLogger(__name__)
@@ -171,7 +170,8 @@ class DynamicSidecarEgressSettings(BaseCustomSettings):
         description="envoy image to use",
     )
     DYNAMIC_SIDECAR_ENVOY_LOG_LEVEL: EnvoyLogLevel = Field(
-        EnvoyLogLevel.ERROR, description="log level for envoy proxy service"
+        default=EnvoyLogLevel.ERROR,  # type: ignore
+        description="log level for envoy proxy service",
     )
 
 
@@ -196,14 +196,18 @@ class DynamicSidecarSettings(BaseCustomSettings):
         description="used by the director to start a specific version of the dynamic-sidecar",
     )
 
-    SIMCORE_SERVICES_NETWORK_NAME: str = Field(
+    SIMCORE_SERVICES_NETWORK_NAME: DockerNetworkName = Field(
         ...,
-        regex=SERVICE_NETWORK_RE,
         description="network all dynamic services are connected to",
     )
 
     DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION: str = Field(
         "3.8", description="docker-compose version used in the compose-specs"
+    )
+
+    DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS: bool = Field(
+        False,
+        description="enables support for limiting service's volume size",
     )
 
     SWARM_STACK_NAME: str = Field(
@@ -450,7 +454,7 @@ class ComputationalBackendSettings(BaseCustomSettings):
         True,
     )
     COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL: AnyUrl = Field(
-        "tcp://dask-scheduler:8786",
+        parse_obj_as(AnyUrl, "tcp://dask-scheduler:8786"),
         description="This is the cluster that will be used by default"
         " when submitting computational services (typically "
         "tcp://dask-scheduler:8786 for the internal cluster, or "
@@ -497,6 +501,14 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
         LogLevel.INFO.value,
         env=["DIRECTOR_V2_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
     )
+    DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
+        False,
+        env=[
+            "DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED",
+            "LOG_FORMAT_LOCAL_DEV_ENABLED",
+        ],
+        description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
+    )
     DIRECTOR_V2_DEV_FEATURES_ENABLED: bool = False
 
     DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED: bool = Field(
@@ -525,11 +537,6 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     EXTRA_HOSTS_SUFFIX: str = Field("undefined", env="EXTRA_HOSTS_SUFFIX")
     PUBLISHED_HOSTS_NAME: str = Field("", env="PUBLISHED_HOSTS_NAME")
     SWARM_STACK_NAME: str = Field("undefined-please-check", env="SWARM_STACK_NAME")
-
-    NODE_SCHEMA_LOCATION: str = Field(
-        f"{API_ROOT}/{API_VTAG}/schemas/node-meta-v0.0.1-pydantic.json",
-        description="used when in devel mode vs release mode",
-    )
 
     SIMCORE_SERVICES_NETWORK_NAME: str | None = Field(
         None,
@@ -571,8 +578,6 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     DIRECTOR_V2_COMPUTATIONAL_BACKEND: ComputationalBackendSettings = Field(
         auto_default_from_env=True
     )
-
-    DIRECTOR_V2_TRACING: TracingSettings | None = Field(auto_default_from_env=True)
 
     DIRECTOR_V2_DOCKER_REGISTRY: RegistrySettings = Field(auto_default_from_env=True)
 

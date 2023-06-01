@@ -1,4 +1,4 @@
-from typing import Dict, Final, Literal, Optional, Union
+from typing import Final, Literal, Union
 
 from pydantic import AnyUrl, BaseModel, Extra, Field, HttpUrl, SecretStr, root_validator
 from pydantic.types import NonNegativeInt
@@ -48,6 +48,7 @@ class SimpleAuthentication(BaseAuthentication):
 
 class KerberosAuthentication(BaseAuthentication):
     type: Literal["kerberos"] = "kerberos"
+
     # NOTE: the entries here still need to be defined
     class Config(BaseAuthentication.Config):
         schema_extra = {
@@ -87,10 +88,10 @@ ClusterAuthentication = Union[
 
 class BaseCluster(BaseModel):
     name: str = Field(..., description="The human readable name of the cluster")
-    description: Optional[str] = None
+    description: str | None = None
     type: ClusterType
     owner: GroupID
-    thumbnail: Optional[HttpUrl] = Field(
+    thumbnail: HttpUrl | None = Field(
         None,
         description="url to the image describing this cluster",
         examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
@@ -99,7 +100,7 @@ class BaseCluster(BaseModel):
     authentication: ClusterAuthentication = Field(
         ..., description="Dask gateway authentication"
     )
-    access_rights: Dict[GroupID, ClusterAccessRights] = Field(default_factory=dict)
+    access_rights: dict[GroupID, ClusterAccessRights] = Field(default_factory=dict)
 
     class Config:
         extra = Extra.forbid

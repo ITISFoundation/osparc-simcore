@@ -7,7 +7,7 @@ from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
 )
-from servicelib.fastapi.tracing import setup_tracing
+from servicelib.logging_utils import config_all_loggers
 
 from ..api.entrypoints import api_router
 from ..api.errors.http_error import (
@@ -29,7 +29,6 @@ from ..modules import (
     remote_debug,
     storage,
 )
-from ..utils.logging_utils import config_all_loggers
 from .errors import (
     ClusterAccessForbiddenError,
     ClusterNotFoundError,
@@ -100,6 +99,7 @@ def create_base_app(settings: AppSettings | None = None) -> FastAPI:
 
     logging.basicConfig(level=settings.LOG_LEVEL.value)
     logging.root.setLevel(settings.LOG_LEVEL.value)
+    config_all_loggers(settings.DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED)
     logger.debug(settings.json(indent=2))
 
     # keep mostly quiet noisy loggers
@@ -173,14 +173,9 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
 
     node_rights.setup(app)
 
-    if settings.DIRECTOR_V2_TRACING:
-        setup_tracing(app, settings.DIRECTOR_V2_TRACING)
-
     # setup app --
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
     _set_exception_handlers(app)
-
-    config_all_loggers()
 
     return app

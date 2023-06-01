@@ -114,6 +114,15 @@ services:
       endpoint_mode: vip
       replicas: 1
 
+  resource-usage-tracker:
+    environment:
+      - SC_BOOT_MODE=debug-ptvsd
+      - RESOURCE_USAGE_TRACKER_LOGLEVEL=DEBUG
+      - DEBUG=true
+    volumes:
+      - ./resource-usage-tracker:/devel/services/resource-usage-tracker
+      - ../packages:/devel/packages
+
   storage:
     volumes:
       - ./storage:/devel/services/storage

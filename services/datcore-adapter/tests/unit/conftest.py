@@ -4,7 +4,7 @@
 
 import json
 from pathlib import Path
-from typing import Any, AsyncIterator, Callable, Optional
+from typing import Any, AsyncIterator, Callable
 from uuid import uuid4
 
 import faker
@@ -77,7 +77,7 @@ def client(minimal_app: FastAPI) -> TestClient:
 @pytest.fixture
 def app_envs(monkeypatch: MonkeyPatch):
     # disable tracing as together with LifespanManager, it does not remove itself nicely
-    monkeypatch.setenv("DATCORE_ADAPTER_TRACING", "null")
+    ...
 
 
 @pytest.fixture()
@@ -90,7 +90,6 @@ async def initialized_app(
 
 @pytest.fixture(scope="function")
 async def async_client(initialized_app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
-
     async with httpx.AsyncClient(
         app=initialized_app,
         base_url="http://datcore-adapter.testserver.io",
@@ -262,7 +261,7 @@ async def pennsieve_subsystem_mock(
     pennsieve_collection_id: str,
     pennsieve_file_id: str,
     faker: faker.Faker,
-) -> AsyncIterator[Optional[respx.MockRouter]]:
+) -> AsyncIterator[respx.MockRouter | None]:
     if use_real_pennsieve_interface:
         yield
     else:

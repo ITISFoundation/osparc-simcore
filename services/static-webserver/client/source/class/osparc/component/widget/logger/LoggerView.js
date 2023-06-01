@@ -88,16 +88,24 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
     },
 
     LOG_LEVELS: {
-      debug: -1,
-      info: 0,
-      warning: 1,
-      error: 2
+      DEBUG: -1,
+      INFO: 0,
+      WARNING: 1,
+      ERROR: 2
+    },
+
+    LOG_LEVEL_MAP: {
+      10: "DEBUG",
+      20: "INFO",
+      30: "WARNING",
+      40: "ERROR",
+      50: "ERROR" // CRITICAL
     },
 
     logLevel2Str: function(logLevel) {
-      const pairFound = Object.entries(this.LOG_LEVELS).find(pair => pair[1] === logLevel);
+      const pairFound = Object.entries(this.LOG_LEVELS).find(pair => pair[1] === logLevel.toUpperCase());
       if (pairFound && pairFound.length) {
-        return pairFound[0].toUpperCase();
+        return pairFound[0];
       }
       return undefined;
     }
@@ -106,7 +114,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
   members: {
     __textFilterField: null,
     __loggerModel: null,
-    __logView: null,
+    __loggerTable: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -147,7 +155,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
           let logLevelSet = false;
           Object.keys(this.self().LOG_LEVELS).forEach(logLevelKey => {
             const logLevel = this.self().LOG_LEVELS[logLevelKey];
-            if (logLevelKey === "debug" && !osparc.data.Permissions.getInstance().canDo("study.logger.debug.read")) {
+            if (logLevelKey === "DEBUG" && !osparc.data.Permissions.getInstance().canDo("study.logger.debug.read")) {
               return;
             }
             const label = qx.lang.String.firstUp(logLevelKey);
@@ -233,7 +241,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
     },
 
     __createTableLayout: function() {
-      const loggerModel = this.__loggerModel = new osparc.component.widget.logger.LoggerTable();
+      const loggerModel = this.__loggerModel = new osparc.component.widget.logger.LoggerModel();
 
       const custom = {
         tableColumnModel : function(obj) {
@@ -242,7 +250,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       };
 
       // table
-      const table = this.__logView = new qx.ui.table.Table(loggerModel, custom).set({
+      const table = this.__loggerTable = new qx.ui.table.Table(loggerModel, custom).set({
         selectable: true,
         statusBarVisible: false,
         showCellFocusIndicator: false,
@@ -303,23 +311,35 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
     },
 
     debug: function(nodeId, msg = "") {
-      this.__addLogs(nodeId, [msg], this.self().LOG_LEVELS.debug);
+      this.__addLogs(nodeId, [msg], this.self().LOG_LEVELS.DEBUG);
     },
 
     info: function(nodeId, msg = "") {
-      this.__addLogs(nodeId, [msg], this.self().LOG_LEVELS.info);
-    },
-
-    infos: function(nodeId, msgs = [""]) {
-      this.__addLogs(nodeId, msgs, this.self().LOG_LEVELS.info);
+      this.__addLogs(nodeId, [msg], this.self().LOG_LEVELS.INFO);
     },
 
     warn: function(nodeId, msg = "") {
-      this.__addLogs(nodeId, [msg], this.self().LOG_LEVELS.warning);
+      this.__addLogs(nodeId, [msg], this.self().LOG_LEVELS.WARNING);
     },
 
     error: function(nodeId, msg = "") {
-      this.__addLogs(nodeId, [msg], this.self().LOG_LEVELS.error);
+      this.__addLogs(nodeId, [msg], this.self().LOG_LEVELS.ERROR);
+    },
+
+    debugs: function(nodeId, msgs = [""]) {
+      this.__addLogs(nodeId, msgs, this.self().LOG_LEVELS.DEBUG);
+    },
+
+    infos: function(nodeId, msgs = [""]) {
+      this.__addLogs(nodeId, msgs, this.self().LOG_LEVELS.INFO);
+    },
+
+    warns: function(nodeId, msgs = [""]) {
+      this.__addLogs(nodeId, msgs, this.self().LOG_LEVELS.WARNING);
+    },
+
+    errors: function(nodeId, msgs = [""]) {
+      this.__addLogs(nodeId, msgs, this.self().LOG_LEVELS.ERROR);
     },
 
     __addLogs: function(nodeId, msgs = [""], logLevel = 0) {
@@ -362,9 +382,10 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
     __updateTable: function() {
       if (this.__loggerModel) {
         this.__loggerModel.reloadData();
-        if (!this.isLockLogs()) {
+        // checkIsOnScreen will avoid rendering every single line when the user click on the Logger button the first time
+        if (!this.isLockLogs() && osparc.utils.Utils.checkIsOnScreen(this.__loggerTable)) {
           const nFilteredRows = this.__loggerModel.getFilteredRowCount();
-          this.__logView.scrollCellVisible(0, nFilteredRows);
+          this.__loggerTable.scrollCellVisible(0, nFilteredRows);
         }
       }
     },

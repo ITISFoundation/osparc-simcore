@@ -15,18 +15,19 @@ from typing import Any, Awaitable, Callable
 import httpx
 import pytest
 import sqlalchemy as sa
+from helpers.shared_comp_utils import (
+    assert_and_wait_for_pipeline_status,
+    assert_computation_task_out_obj,
+)
 from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import NodeState
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
+from models_library.users import UserID
 from pytest import MonkeyPatch
 from settings_library.rabbit import RabbitSettings
-from shared_comp_utils import (
-    assert_and_wait_for_pipeline_status,
-    assert_computation_task_out_obj,
-)
 from simcore_service_director_v2.models.schemas.comp_tasks import ComputationGet
 from starlette import status
 from starlette.testclient import TestClient
@@ -55,7 +56,6 @@ def mock_env(
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "1")
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
-    monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
     monkeypatch.setenv(
         "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL",
         dask_scheduler_service,
@@ -98,7 +98,7 @@ def fake_workbench_computational_pipeline_details(
     adjacency_list = json.loads(fake_workbench_computational_adjacency_file.read_text())
     node_states = json.loads(fake_workbench_node_states_file.read_text())
     return PipelineDetails.parse_obj(
-        {"adjacency_list": adjacency_list, "node_states": node_states}
+        {"adjacency_list": adjacency_list, "node_states": node_states, "progress": 0}
     )
 
 
@@ -111,6 +111,8 @@ def fake_workbench_computational_pipeline_details_completed(
         node_state.modified = False
         node_state.dependencies = set()
         node_state.current_status = RunningState.SUCCESS
+        node_state.progress = 1
+    completed_pipeline_details.progress = 1
     return completed_pipeline_details
 
 
@@ -217,18 +219,22 @@ class PartialComputationParams:
                         "modified": True,
                         "dependencies": [],
                         "currentStatus": RunningState.PUBLISHED,
+                        "progress": 0,
                     },
                     2: {
                         "modified": True,
                         "dependencies": [1],
+                        "progress": 0,
                     },
                     3: {
                         "modified": True,
                         "dependencies": [],
+                        "progress": 0,
                     },
                     4: {
                         "modified": True,
                         "dependencies": [2, 3],
+                        "progress": 0,
                     },
                 },
                 exp_node_states_after_run={
@@ -236,18 +242,22 @@ class PartialComputationParams:
                         "modified": False,
                         "dependencies": [],
                         "currentStatus": RunningState.SUCCESS,
+                        "progress": 1,
                     },
                     2: {
                         "modified": True,
                         "dependencies": [],
+                        "progress": 0,
                     },
                     3: {
                         "modified": True,
                         "dependencies": [],
+                        "progress": 0,
                     },
                     4: {
                         "modified": True,
                         "dependencies": [2, 3],
+                        "progress": 0,
                     },
                 },
                 exp_pipeline_adj_list_after_force_run={1: []},
@@ -256,21 +266,25 @@ class PartialComputationParams:
                         "modified": False,
                         "dependencies": [],
                         "currentStatus": RunningState.PUBLISHED,
+                        "progress": 0,
                     },
                     2: {
                         "modified": True,
                         "dependencies": [],
                         "currentStatus": RunningState.NOT_STARTED,
+                        "progress": 0,
                     },
                     3: {
                         "modified": True,
                         "dependencies": [],
                         "currentStatus": RunningState.NOT_STARTED,
+                        "progress": 0,
                     },
                     4: {
                         "modified": True,
                         "dependencies": [2, 3],
                         "currentStatus": RunningState.NOT_STARTED,
+                        "progress": 0,
                     },
                 },
             ),
@@ -285,21 +299,25 @@ class PartialComputationParams:
                         "modified": True,
                         "dependencies": [],
                         "currentStatus": RunningState.PUBLISHED,
+                        "progress": 0,
                     },
                     2: {
                         "modified": True,
                         "dependencies": [1],
                         "currentStatus": RunningState.PUBLISHED,
+                        "progress": 0,
                     },
                     3: {
                         "modified": True,
                         "dependencies": [],
                         "currentStatus": RunningState.PUBLISHED,
+                        "progress": 0,
                     },
                     4: {
                         "modified": True,
                         "dependencies": [2, 3],
                         "currentStatus": RunningState.PUBLISHED,
+                        "progress": 0,
                     },
                 },
                 exp_node_states_after_run={
@@ -307,21 +325,25 @@ class PartialComputationParams:
                         "modified": False,
                         "dependencies": [],
                         "currentStatus": RunningState.SUCCESS,
+                        "progress": 1,
                     },
                     2: {
                         "modified": False,
                         "dependencies": [],
                         "currentStatus": RunningState.SUCCESS,
+                        "progress": 1,
                     },
                     3: {
                         "modified": False,
                         "dependencies": [],
                         "currentStatus": RunningState.SUCCESS,
+                        "progress": 1,
                     },
                     4: {
                         "modified": False,
                         "dependencies": [],
                         "currentStatus": RunningState.SUCCESS,
+                        "progress": 1,
                     },
                 },
                 exp_pipeline_adj_list_after_force_run={1: [2], 2: [4], 4: []},
@@ -330,21 +352,25 @@ class PartialComputationParams:
                         "modified": False,
                         "dependencies": [],
                         "currentStatus": RunningState.PUBLISHED,
+                        "progress": 0,
                     },
                     2: {
                         "modified": False,
                         "dependencies": [],
                         "currentStatus": RunningState.PUBLISHED,
+                        "progress": 0,
                     },
                     3: {
                         "modified": False,
                         "dependencies": [],
                         "currentStatus": RunningState.SUCCESS,
+                        "progress": 1,
                     },
                     4: {
                         "modified": False,
                         "dependencies": [],
                         "currentStatus": RunningState.PUBLISHED,
+                        "progress": 0,
                     },
                 },
             ),
@@ -353,6 +379,7 @@ class PartialComputationParams:
     ],
 )
 async def test_run_partial_computation(
+    catalog_ready: Callable[[UserID, str], Awaitable[None]],
     minimal_configuration: None,
     async_client: httpx.AsyncClient,
     registered_user: Callable,
@@ -364,6 +391,7 @@ async def test_run_partial_computation(
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ):
     user = registered_user()
+    await catalog_ready(user["id"], osparc_product_name)
     sleepers_project: ProjectAtDB = project(
         user, workbench=fake_workbench_without_outputs
     )
@@ -386,11 +414,18 @@ async def test_run_partial_computation(
                     NodeID(workbench_node_uuids[dep_n]) for dep_n in s["dependencies"]
                 },
                 currentStatus=s.get("currentStatus", RunningState.NOT_STARTED),
+                progress=s.get("progress"),
             )
             for n, s in exp_node_states.items()
         }
+        pipeline_progress = 0
+        for node_id in converted_adj_list:
+            node = converted_node_states[node_id]
+            pipeline_progress += (node.progress or 0) / len(converted_adj_list)
         return PipelineDetails(
-            adjacency_list=converted_adj_list, node_states=converted_node_states
+            adjacency_list=converted_adj_list,
+            node_states=converted_node_states,
+            progress=pipeline_progress,
         )
 
     # convert the ids to the node uuids from the project
@@ -496,6 +531,7 @@ async def test_run_partial_computation(
 
 
 async def test_run_computation(
+    catalog_ready: Callable[[UserID, str], Awaitable[None]],
     minimal_configuration: None,
     async_client: httpx.AsyncClient,
     registered_user: Callable,
@@ -508,6 +544,7 @@ async def test_run_computation(
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ):
     user = registered_user()
+    await catalog_ready(user["id"], osparc_product_name)
     sleepers_project = project(user, workbench=fake_workbench_without_outputs)
     # send a valid project with sleepers
     task_out = await create_pipeline(
@@ -577,6 +614,10 @@ async def test_run_computation(
                 node_id
             ].current_status
         )
+        node_data.progress = fake_workbench_computational_pipeline_details.node_states[
+            node_id
+        ].progress
+    expected_pipeline_details_forced.progress = 0
     task_out = await create_pipeline(
         async_client,
         project=sleepers_project,
@@ -673,7 +714,7 @@ async def test_abort_computation(
     ), f"response code is {response.status_code}, error: {response.text}"
     task_out = ComputationGet.parse_obj(response.json())
     assert task_out.url.path == f"/v2/computations/{sleepers_project.uuid}:stop"
-    assert task_out.stop_url == None
+    assert task_out.stop_url is None
 
     # check that the pipeline is aborted/stopped
     task_out = await assert_and_wait_for_pipeline_status(

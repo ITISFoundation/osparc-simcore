@@ -64,8 +64,7 @@ class Worker(BaseModel):
     metrics: WorkerMetrics
 
 
-class WorkersDict(DictModel[AnyUrl, Worker]):
-    ...
+WorkersDict: TypeAlias = dict[AnyUrl, Worker]
 
 
 class Scheduler(BaseModel):

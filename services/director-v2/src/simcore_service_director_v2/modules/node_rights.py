@@ -63,7 +63,7 @@ class ExtendLock:
 
     @property
     def name(self) -> str:
-        return self._redis_lock.name
+        return f"{self._redis_lock.name!r}"
 
     async def initialize(self) -> None:
         await self._redis_lock.do_reacquire()

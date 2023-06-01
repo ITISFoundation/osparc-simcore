@@ -7,6 +7,7 @@ from pprint import pprint
 from typing import Any, Iterator
 from zipfile import ZipFile
 
+import arrow
 import boto3
 import httpx
 import pytest
@@ -14,10 +15,12 @@ import respx
 from faker import Faker
 from fastapi import FastAPI
 from models_library.services import ServiceDockerData
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, HttpUrl, parse_obj_as
 from respx import MockRouter
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.models.schemas.jobs import Job, JobInputs, JobStatus
+from simcore_service_api_server.plugins.director_v2 import ComputationTaskGet
 from starlette import status
 
 
@@ -57,7 +60,6 @@ def presigned_download_link(
     bucket_name: str,
     mocked_s3_server_url: HttpUrl,
 ) -> Iterator[AnyUrl]:
-
     s3_client = boto3.client(
         "s3",
         endpoint_url=mocked_s3_server_url,
@@ -98,11 +100,10 @@ def mocked_directorv2_service_api(
 
     # pylint: disable=not-context-manager
     with respx.mock(
-        base_url=settings.API_SERVER_DIRECTOR_V2.base_url,
+        base_url=settings.API_SERVER_DIRECTOR_V2.api_base_url,
         assert_all_called=False,
-        assert_all_mocked=False,
+        assert_all_mocked=True,  # IMPORTANT: KEEP always True!
     ) as respx_mock:
-
         # check that what we emulate, actually still exists
         path = "/v2/computations/{project_id}/tasks/-/logfile"
         assert path in oas["paths"]
@@ -121,7 +122,7 @@ def mocked_directorv2_service_api(
 
         respx_mock.get(
             path__regex=r"/computations/(?P<project_id>[\w-]+)/tasks/-/logfile",
-            name="get_computation_logs",
+            name="get_computation_logs",  # = operation_id
         ).respond(
             status.HTTP_200_OK,
             json=[
@@ -218,7 +219,6 @@ def solver_version() -> str:
 @pytest.mark.acceptance_test(
     "New feature https://github.com/ITISFoundation/osparc-simcore/issues/3940"
 )
-@pytest.mark.xfail  # TODO: will fix in next PR
 async def test_run_solver_job(
     client: httpx.AsyncClient,
     directorv2_service_openapi_specs: dict[str, Any],
@@ -253,6 +253,9 @@ async def test_run_solver_job(
         "cluster_id",
         "url",
         "stop_url",
+        "submitted",
+        "started",
+        "stopped",
     } == set(oas["components"]["schemas"]["ComputationGet"]["properties"].keys())
 
     # CREATE and optionally start
@@ -261,27 +264,39 @@ async def test_run_solver_job(
         name="create_computation_v2_computations_post",
     ).respond(
         status.HTTP_201_CREATED,
-        json={
-            "id": project_id,
-            "state": "UNKNOWN",
-            "result": "string",
-            "pipeline_details": {
-                "adjacency_list": {
-                    "additionalProp1": ["3fa85f64-5717-4562-b3fc-2c963f66afa6"],
-                },
-                "node_states": {
-                    "additionalProp1": {
-                        "modified": True,
-                        "dependencies": ["3fa85f64-5717-4562-b3fc-2c963f66afa6"],
-                        "currentStatus": "NOT_STARTED",
+        json=jsonable_encoder(
+            ComputationTaskGet.parse_obj(
+                {
+                    "id": project_id,
+                    "state": "UNKNOWN",
+                    "result": "string",
+                    "pipeline_details": {
+                        "adjacency_list": {
+                            "3fa85f64-5717-4562-b3fc-2c963f66afa6": [
+                                "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                            ],
+                        },
+                        "node_states": {
+                            "3fa85f64-5717-4562-b3fc-2c963f66afa6": {
+                                "modified": True,
+                                "dependencies": [
+                                    "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                                ],
+                                "currentStatus": "NOT_STARTED",
+                            },
+                        },
+                        "progress": 0.0,
                     },
-                },
-            },
-            "iteration": 1,
-            "cluster_id": 0,
-            "url": "string",
-            "stop_url": "string",
-        },
+                    "iteration": 1,
+                    "cluster_id": 0,
+                    "url": "http://test.com",
+                    "stop_url": "http://test.com",
+                    "started": None,
+                    "stopped": None,
+                    "submitted": arrow.utcnow().datetime.isoformat(),
+                }
+            )
+        ),
     )
 
     # catalog_client.get_solver
@@ -329,7 +344,7 @@ async def test_run_solver_job(
         },
     )
 
-    # ---------
+    # ---------------------------------------------------------------------------------------------------------
 
     resp = await client.get("/v0/meta")
     assert resp.status_code == 200
@@ -338,12 +353,16 @@ async def test_run_solver_job(
     resp = await client.post(
         f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs",
         auth=auth,
-        json=JobInputs(values={"x": 3.14, "n": 42}).dict(),
+        json=JobInputs(
+            values={
+                "x": 3.14,
+                "n": 42,
+                # Tests https://github.com/ITISFoundation/osparc-issues/issues/948
+                "a_list": [1, 2, 3],
+            }
+        ).dict(),
     )
     assert resp.status_code == status.HTTP_200_OK
-    assert mocked_directorv2_service_api[
-        "create_computation_v2_computations_post"
-    ].called
 
     assert mocked_webserver_service_api["create_projects"].called
     assert mocked_webserver_service_api["get_task_status"].called
@@ -353,9 +372,9 @@ async def test_run_solver_job(
 
     # Start Job
     resp = await client.post(
-        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs/{job.id}",
+        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs/{job.id}:start",
         auth=auth,
-        params={"cluster_id", 1},
+        params={"cluster_id": 1},
     )
     assert resp.status_code == status.HTTP_200_OK
     assert mocked_directorv2_service_api[
@@ -363,3 +382,47 @@ async def test_run_solver_job(
     ].called
 
     job_status = JobStatus.parse_obj(resp.json())
+
+
+@pytest.mark.xfail(reason="Still not implemented")
+@pytest.mark.acceptance_test(
+    "For https://github.com/ITISFoundation/osparc-simcore/issues/4111"
+)
+async def test_delete_solver_job(
+    auth: httpx.BasicAuth,
+    client: httpx.AsyncClient,
+    solver_key: str,
+    solver_version: str,
+    faker: Faker,
+):
+
+    # Cannot delete if it does not exists
+    resp = await client.delete(
+        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs/{faker.uuid4()}",
+        auth=auth,
+    )
+    assert resp.status_code == status.HTTP_404_NOT_FOUND
+
+    # Create Job
+    resp = await client.post(
+        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs",
+        auth=auth,
+        json=JobInputs(
+            values={
+                "x": 3.14,
+                "n": 42,
+            }
+        ).dict(),
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    job = Job.parse_obj(resp.json())
+
+    # Delete Job after creation
+    resp = await client.delete(
+        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs/{job.id}",
+        auth=auth,
+    )
+    assert resp.status_code == status.HTTP_204_NO_CONTENT
+
+    # Run job and try to delete while running
+    # Run a job and delete when finished

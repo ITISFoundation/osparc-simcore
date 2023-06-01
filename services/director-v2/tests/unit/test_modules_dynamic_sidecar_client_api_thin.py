@@ -7,14 +7,13 @@ from typing import Any, Callable, Optional
 import pytest
 from fastapi import FastAPI, status
 from httpx import Response
-from models_library.volumes import VolumeCategory
+from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl, parse_obj_as
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx import MockRouter, Route
 from respx.types import SideEffectTypes
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
-from servicelib.volumes_utils import VolumeStatus
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._thin import (
     ThinDynamicSidecarClient,
@@ -29,7 +28,7 @@ MockRequestType = Callable[
 # UTILS
 
 
-def assert_responses(mocked: Response, result: Optional[Response]) -> None:
+def assert_responses(mocked: Response, result: Response | None) -> None:
     assert result is not None
     assert mocked.status_code == result.status_code
     assert mocked.headers == result.headers
@@ -65,19 +64,17 @@ def dynamic_sidecar_endpoint() -> AnyHttpUrl:
 
 
 @pytest.fixture
-def mock_request(
-    dynamic_sidecar_endpoint: AnyHttpUrl, respx_mock: MockRouter
-) -> MockRequestType:
+def mock_request(respx_mock: MockRouter) -> MockRequestType:
     def request_mock(
         method: str,
         path: str,
-        return_value: Optional[Response] = None,
-        side_effect: Optional[SideEffectTypes] = None,
+        return_value: Response | None = None,
+        side_effect: SideEffectTypes | None = None,
     ) -> Route:
         print(f"Mocking {path=}")
-        return respx_mock.request(
-            method=method, url=f"{dynamic_sidecar_endpoint}{path}"
-        ).mock(return_value=return_value, side_effect=side_effect)
+        return respx_mock.request(method=method, url=f"{path}").mock(
+            return_value=return_value, side_effect=side_effect
+        )
 
     return request_mock
 

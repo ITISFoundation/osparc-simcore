@@ -6,7 +6,9 @@
     "e6becb37-4699-47f5-81ef-e58fbdf8a9e5": {
       "modified": true,
       "dependencies": [],
-      "currentStatus": "PUBLISHED"
+      "currentStatus": "PUBLISHED",
+      "progress": 0
     }
-  }
+  },
+  "progress": 0
 }

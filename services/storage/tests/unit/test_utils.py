@@ -1,7 +1,14 @@
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
+
 import datetime
 import random
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable
 from uuid import uuid4
 
 import pytest
@@ -9,7 +16,7 @@ from aiohttp import ClientSession
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, HttpUrl, parse_obj_as
 from simcore_service_storage.constants import S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID
 from simcore_service_storage.models import ETag, FileMetaData, S3BucketName, UploadID
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
@@ -21,14 +28,14 @@ from simcore_service_storage.utils import (
 )
 
 
-async def test_download_files(tmpdir):
+async def test_download_files(tmp_path: Path, httpbin_base_url: HttpUrl):
 
-    destination = Path(tmpdir) / "data"
+    destination = tmp_path / "data"
     expected_size = MAX_CHUNK_SIZE * 3 + 1000
 
     async with ClientSession() as session:
         total_size = await download_to_file_or_raise(
-            session, f"https://httpbin.org/bytes/{expected_size}", destination
+            session, f"{httpbin_base_url}/bytes/{expected_size}", destination
         )
         assert destination.exists()
         assert expected_size == total_size
@@ -62,9 +69,9 @@ async def test_download_files(tmpdir):
 )
 def test_file_entry_valid(
     file_size: ByteSize,
-    entity_tag: Optional[ETag],
-    upload_id: Optional[UploadID],
-    upload_expires_at: Optional[datetime.datetime],
+    entity_tag: ETag | None,
+    upload_id: UploadID | None,
+    upload_expires_at: datetime.datetime | None,
     expected_validity: bool,
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
     faker: Faker,

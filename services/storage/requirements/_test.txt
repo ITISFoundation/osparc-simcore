@@ -43,7 +43,7 @@ botocore==1.24.21
     #   boto3
     #   moto
     #   s3transfer
-certifi==2022.12.7
+certifi==2023.5.7
     # via
     #   requests
     #   simcore-service-storage-sdk
@@ -60,7 +60,7 @@ click==8.1.3
     # via
     #   -c requirements/_base.txt
     #   flask
-coverage==7.2.3
+coverage==7.2.5
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -70,7 +70,7 @@ cryptography==40.0.2
     #   moto
     #   python-jose
     #   sshpubkeys
-docker==6.0.1
+docker==6.1.2
     # via
     #   -r requirements/_test.in
     #   moto
@@ -81,9 +81,9 @@ ecdsa==0.18.0
     #   sshpubkeys
 exceptiongroup==1.1.1
     # via pytest
-faker==18.4.0
+faker==18.7.0
     # via -r requirements/_test.in
-flask==2.2.3
+flask==2.2.5
     # via
     #   flask-cors
     #   moto
@@ -145,20 +145,20 @@ markupsafe==2.1.1
     #   -c requirements/_base.txt
     #   jinja2
     #   werkzeug
-moto==4.1.7
+moto==4.1.9
     # via -r requirements/_test.in
 multidict==6.0.2
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-mypy==1.2.0
+mypy==1.3.0
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
 networkx==2.8.8
     # via cfn-lint
-numpy==1.24.2
+numpy==1.24.3
     # via pandas
 openapi-schema-validator==0.2.3
     # via
@@ -173,7 +173,7 @@ packaging==23.1
     #   docker
     #   pytest
     #   pytest-sugar
-pandas==2.0.0
+pandas==2.0.1
     # via -r requirements/_test.in
 pbr==5.11.1
     # via
@@ -183,9 +183,9 @@ pluggy==1.0.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-py-partiql-parser==0.1.0
+py-partiql-parser==0.3.0
     # via moto
-pyasn1==0.4.8
+pyasn1==0.5.0
     # via
     #   python-jose
     #   rsa
@@ -244,7 +244,7 @@ pyyaml==5.4.1
     #   moto
     #   openapi-spec-validator
     #   responses
-requests==2.28.2
+requests==2.31.0
     # via
     #   docker
     #   moto
@@ -274,11 +274,11 @@ six==1.16.0
     #   simcore-service-storage-sdk
 sqlalchemy==1.4.47
     # via -r requirements/_test.in
-sqlalchemy2-stubs==0.0.2a33
+sqlalchemy2-stubs==0.0.2a34
     # via sqlalchemy
 sshpubkeys==3.3.1
     # via moto
-termcolor==2.2.0
+termcolor==2.3.0
     # via pytest-sugar
 tomli==2.0.1
     # via

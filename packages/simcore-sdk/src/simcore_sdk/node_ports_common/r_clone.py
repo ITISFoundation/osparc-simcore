@@ -5,7 +5,7 @@ import shlex
 import urllib.parse
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncGenerator, Optional
+from typing import AsyncIterator
 
 from aiocache import cached
 from aiofiles import tempfile
@@ -22,14 +22,15 @@ class RCloneFailedError(PydanticErrorMixin, RuntimeError):
 
 
 @asynccontextmanager
-async def _config_file(config: str) -> AsyncGenerator[str, None]:
+async def _config_file(config: str) -> AsyncIterator[str]:
     async with tempfile.NamedTemporaryFile("w") as f:
         await f.write(config)
         await f.flush()
+        assert isinstance(f.name, str)  # nosec
         yield f.name
 
 
-async def _async_command(*cmd: str, cwd: Optional[str] = None) -> str:
+async def _async_command(*cmd: str, cwd: str | None = None) -> str:
     str_cmd = " ".join(cmd)
     proc = await asyncio.create_subprocess_shell(
         str_cmd,
@@ -49,7 +50,7 @@ async def _async_command(*cmd: str, cwd: Optional[str] = None) -> str:
 
 
 @cached()
-async def is_r_clone_available(r_clone_settings: Optional[RCloneSettings]) -> bool:
+async def is_r_clone_available(r_clone_settings: RCloneSettings | None) -> bool:
     """returns: True if the `rclone` cli is installed and a configuration is provided"""
     if r_clone_settings is None:
         return False

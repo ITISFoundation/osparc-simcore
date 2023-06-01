@@ -17,7 +17,7 @@ import pytest
 import simcore_service_director_v2
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
-from models_library.projects import Node, Workbench
+from models_library.projects import Node, NodesDict
 from pytest import MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -167,8 +167,6 @@ def mock_env(
         "R_CLONE_PROVIDER": "MINIO",
         "DIRECTOR_V2_POSTGRES_ENABLED": "false",
         "SC_BOOT_MODE": "production",
-        # disable tracing as together with LifespanManager, it does not remove itself nicely
-        "DIRECTOR_V2_TRACING": "null",
     }
     setenvs_from_dict(monkeypatch, env_vars)
     return env_vars
@@ -195,7 +193,6 @@ async def initialized_app(mock_env: EnvVarsDict) -> AsyncIterable[FastAPI]:
 
 @pytest.fixture(scope="function")
 async def async_client(initialized_app: FastAPI) -> AsyncIterable[httpx.AsyncClient]:
-
     async with httpx.AsyncClient(
         app=initialized_app,
         base_url="http://director-v2.testserver.io",
@@ -215,7 +212,7 @@ def minimal_app(client: TestClient) -> ASGI3App:
 
 
 @pytest.fixture
-def fake_workbench(fake_workbench_file: Path) -> Workbench:
+def fake_workbench(fake_workbench_file: Path) -> NodesDict:
     workbench_dict = json.loads(fake_workbench_file.read_text())
     workbench = {}
     for node_id, node_data in workbench_dict.items():

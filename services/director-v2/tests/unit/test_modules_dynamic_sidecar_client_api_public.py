@@ -9,12 +9,11 @@ import pytest
 from faker import Faker
 from fastapi import FastAPI, status
 from httpx import HTTPError, Response
-from models_library.volumes import VolumeCategory
+from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl, parse_obj_as
 from pytest import LogCaptureFixture, MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from servicelib.volumes_utils import VolumeStatus
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._errors import (
     ClientHttpError,

@@ -15,8 +15,8 @@ import logging
 import traceback
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import cast
 
+import arrow
 import networkx as nx
 from aiopg.sa.engine import Engine
 from models_library.clusters import ClusterID
@@ -93,7 +93,7 @@ class BaseCompScheduler(ABC):
 
         runs_repo: CompRunsRepository = get_repository(
             self.db_engine, CompRunsRepository
-        )  # type: ignore
+        )
         new_run: CompRunsAtDB = await runs_repo.create(
             user_id=user_id,
             project_id=project_id,
@@ -153,7 +153,7 @@ class BaseCompScheduler(ABC):
     async def _get_pipeline_dag(self, project_id: ProjectID) -> nx.DiGraph:
         comp_pipeline_repo: CompPipelinesRepository = get_repository(
             self.db_engine, CompPipelinesRepository
-        )  # type: ignore
+        )
         pipeline_at_db: CompPipelineAtDB = await comp_pipeline_repo.get_pipeline(
             project_id
         )
@@ -166,10 +166,10 @@ class BaseCompScheduler(ABC):
     ) -> dict[str, CompTaskAtDB]:
         comp_tasks_repo: CompTasksRepository = get_repository(
             self.db_engine, CompTasksRepository
-        )  # type: ignore
+        )
         pipeline_comp_tasks: dict[str, CompTaskAtDB] = {
             f"{t.node_id}": t
-            for t in await comp_tasks_repo.get_comp_tasks(project_id)
+            for t in await comp_tasks_repo.list_computational_tasks(project_id)
             if (f"{t.node_id}" in list(pipeline_dag.nodes()))
         }
         if len(pipeline_comp_tasks) != len(pipeline_dag.nodes()):
@@ -203,7 +203,7 @@ class BaseCompScheduler(ABC):
     ) -> None:
         comp_runs_repo: CompRunsRepository = get_repository(
             self.db_engine, CompRunsRepository
-        )  # type: ignore
+        )
         await comp_runs_repo.set_run_result(
             user_id=user_id,
             project_id=project_id,
@@ -225,14 +225,15 @@ class BaseCompScheduler(ABC):
             tasks[f"{task}"].state = RunningState.ABORTED
         if tasks_to_set_aborted:
             # update the current states back in DB
-            comp_tasks_repo: CompTasksRepository = cast(
-                CompTasksRepository,
-                get_repository(self.db_engine, CompTasksRepository),
+            comp_tasks_repo: CompTasksRepository = get_repository(
+                self.db_engine, CompTasksRepository
             )
-            await comp_tasks_repo.set_project_tasks_state(
+            await comp_tasks_repo.update_project_tasks_state(
                 project_id,
                 [NodeID(n) for n in tasks_to_set_aborted],
                 RunningState.ABORTED,
+                optional_progress=1.0,
+                optional_stopped=arrow.utcnow().datetime,
             )
         return tasks
 
@@ -258,7 +259,7 @@ class BaseCompScheduler(ABC):
         comp_tasks_repo = CompTasksRepository(self.db_engine)
         await asyncio.gather(
             *(
-                comp_tasks_repo.set_project_tasks_state(
+                comp_tasks_repo.update_project_tasks_state(
                     t.project_id, [t.node_id], t.state
                 )
                 for t in tasks
@@ -287,7 +288,7 @@ class BaseCompScheduler(ABC):
                     service_tag=current.image.tag,
                     simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                 )
-                await self.rabbitmq_client.publish(message.channel_name, message.json())
+                await self.rabbitmq_client.publish(message.channel_name, message)
 
     async def _update_states_from_comp_backend(
         self,
@@ -295,30 +296,36 @@ class BaseCompScheduler(ABC):
         cluster_id: ClusterID,
         project_id: ProjectID,
         pipeline_dag: nx.DiGraph,
-    ):
+    ) -> None:
         all_tasks = await self._get_pipeline_tasks(project_id, pipeline_dag)
-        processing_tasks = [
+        if processing_tasks := [
             t for t in all_tasks.values() if t.state in PROCESSING_STATES
-        ]
-        changed_tasks = await self._get_changed_tasks_from_backend(
-            user_id, cluster_id, processing_tasks
-        )
+        ]:
+            changed_tasks = await self._get_changed_tasks_from_backend(
+                user_id, cluster_id, processing_tasks
+            )
 
-        await self._publish_service_started_metrics(user_id, project_id, changed_tasks)
+            await self._publish_service_started_metrics(
+                user_id, project_id, changed_tasks
+            )
 
-        completed_tasks = [
-            current for _, current in changed_tasks if current.state in COMPLETED_STATES
-        ]
-        incomplete_tasks = [
-            current
-            for _, current in changed_tasks
-            if current.state not in COMPLETED_STATES
-        ]
+            completed_tasks = [
+                current
+                for _, current in changed_tasks
+                if current.state in COMPLETED_STATES
+            ]
+            incomplete_tasks = [
+                current
+                for _, current in changed_tasks
+                if current.state not in COMPLETED_STATES
+            ]
 
-        if completed_tasks:
-            await self._process_completed_tasks(user_id, cluster_id, completed_tasks)
-        if incomplete_tasks:
-            await self._process_incomplete_tasks(incomplete_tasks)
+            if completed_tasks:
+                await self._process_completed_tasks(
+                    user_id, cluster_id, completed_tasks
+                )
+            if incomplete_tasks:
+                await self._process_incomplete_tasks(incomplete_tasks)
 
     @abstractmethod
     async def _start_tasks(
@@ -426,7 +433,7 @@ class BaseCompScheduler(ABC):
         # get any running task and stop them
         comp_tasks_repo: CompTasksRepository = get_repository(
             self.db_engine, CompTasksRepository
-        )  # type: ignore
+        )
         await comp_tasks_repo.mark_project_published_tasks_as_aborted(project_id)
         # stop any remaining running task, these are already submitted
         tasks_to_stop = [
@@ -453,7 +460,9 @@ class BaseCompScheduler(ABC):
                 if t.state == RunningState.SUCCESS
             }
         )
-        next_task_node_ids = [node_id for node_id, degree in dag.in_degree() if degree == 0]  # type: ignore
+        next_task_node_ids = [
+            node_id for node_id, degree in dag.in_degree() if degree == 0
+        ]
 
         # get the tasks to start
         tasks_ready_to_start: dict[NodeID, CompTaskAtDB] = {
@@ -469,9 +478,13 @@ class BaseCompScheduler(ABC):
         # Change the tasks state to PENDING
         comp_tasks_repo: CompTasksRepository = get_repository(
             self.db_engine, CompTasksRepository
-        )  # type: ignore
-        await comp_tasks_repo.set_project_tasks_state(
-            project_id, list(tasks_ready_to_start.keys()), RunningState.PENDING
+        )
+        await comp_tasks_repo.update_project_tasks_state(
+            project_id,
+            list(tasks_ready_to_start.keys()),
+            RunningState.PENDING,
+            optional_progress=0,
+            optional_started=arrow.utcnow().datetime,
         )
 
         # we pass the tasks to the dask-client in a gather such that each task can be stopped independently
@@ -497,11 +510,13 @@ class BaseCompScheduler(ABC):
                     f"{r}",
                 )
 
-                await comp_tasks_repo.set_project_tasks_state(
+                await comp_tasks_repo.update_project_tasks_state(
                     project_id,
                     [r.node_id],
                     RunningState.FAILED,
                     r.get_errors(),
+                    optional_progress=1.0,
+                    optional_stopped=arrow.utcnow().datetime,
                 )
             elif isinstance(
                 r,
@@ -519,10 +534,11 @@ class BaseCompScheduler(ABC):
                 # in the meantime we cannot schedule tasks on the scheduler,
                 # let's put these tasks back to PUBLISHED, so they might be re-submitted later
                 await asyncio.gather(
-                    comp_tasks_repo.set_project_tasks_state(
+                    comp_tasks_repo.update_project_tasks_state(
                         project_id,
                         list(tasks_ready_to_start.keys()),
                         RunningState.PUBLISHED,
+                        optional_progress=0,
                     ),
                 )
             elif isinstance(r, Exception):
@@ -535,8 +551,12 @@ class BaseCompScheduler(ABC):
                     f"{r}",
                     "".join(traceback.format_tb(r.__traceback__)),
                 )
-                await comp_tasks_repo.set_project_tasks_state(
-                    project_id, [t], RunningState.FAILED
+                await comp_tasks_repo.update_project_tasks_state(
+                    project_id,
+                    [t],
+                    RunningState.FAILED,
+                    optional_progress=1.0,
+                    optional_stopped=arrow.utcnow().datetime,
                 )
 
     def _wake_up_scheduler_now(self) -> None:

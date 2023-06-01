@@ -3,7 +3,6 @@ from typing import Callable
 
 from fastapi import FastAPI
 from models_library.basic_types import BootModeEnum
-from servicelib.fastapi.tracing import setup_tracing
 
 from ..db.events import close_db_connection, connect_to_db, setup_default_product
 from ..services.director import close_director, setup_director
@@ -34,9 +33,6 @@ def create_start_app_handler(app: FastAPI) -> Callable:
             # FIXME: check director service is in place and ready. Hand-shake??
             # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1728
             await start_registry_sync_task(app)
-
-        if app.state.settings.CATALOG_TRACING:
-            setup_tracing(app, app.state.settings.CATALOG_TRACING)
 
     return start_app
 

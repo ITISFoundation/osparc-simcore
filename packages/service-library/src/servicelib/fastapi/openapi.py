@@ -1,6 +1,7 @@
 """ Common utils for core/application openapi specs
 """
 
+import re
 import types
 from typing import Any
 
@@ -60,9 +61,8 @@ def redefine_operation_id_in_router(router: APIRouter, operation_id_prefix: str)
 
 
 # https://swagger.io/docs/specification/data-models/data-types/#numbers
-SCHEMA_TO_PYTHON_TYPES = {"integer": int, "number": float}
-
-SKIP = (
+_SCHEMA_TO_PYTHON_TYPES = {"integer": int, "number": float}
+_SKIP = (
     "examples",
     # SEE openapi-standard: https://swagger.io/docs/specification/adding-examples/
     # - exampleS are Dicts and not Lists
@@ -73,37 +73,61 @@ SKIP = (
 )
 
 
+def _remove_named_groups(regex: str) -> str:
+    # Fixes structure error produced by named groups like
+    # ^simcore/services/comp/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$
+    # into
+    # ^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+    return re.sub(r"\(\?P<[^>]+>", "(", regex)
+
+
+def _patch_node_properties(key: str, node: dict):
+    # SEE fastapi ISSUE: https://github.com/tiangolo/fastapi/issues/240 (test_openap.py::test_exclusive_min_openapi_issue )
+    # SEE openapi-standard: https://swagger.io/docs/specification/data-models/data-types/#range
+    if node_type := node.get("type"):
+        if key == "exclusiveMinimum":
+            cast_to_python = _SCHEMA_TO_PYTHON_TYPES[node_type]
+            node["minimum"] = cast_to_python(node[key])
+            node["exclusiveMinimum"] = True
+
+        elif key == "exclusiveMaximum":
+            cast_to_python = _SCHEMA_TO_PYTHON_TYPES[node_type]
+            node["maximum"] = cast_to_python(node[key])
+            node["exclusiveMaximum"] = True
+
+        elif key in ("minimum", "maximum"):
+            # NOTE: Security Audit Report:
+            #   The property in question requires a value of the type integer, but the value you have defined does not match this.
+            #   SEE https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.2.md#dataTypeFormat
+            cast_to_python = _SCHEMA_TO_PYTHON_TYPES[node_type]
+            node[key] = cast_to_python(node[key])
+
+        elif key == "pattern" and node_type == "string":
+            node[key] = _remove_named_groups(regex=node[key])
+
+
+def _patch(node: Any):
+    if isinstance(node, dict):
+        for key in list(node.keys()):
+            if key in _SKIP:
+                node.pop(key)
+                continue
+            _patch_node_properties(key, node)
+
+            # recursive
+            _patch(node[key])
+
+    elif isinstance(node, list):
+        for value in node:
+            # recursive
+            _patch(value)
+
+
 def patch_openapi_specs(app_openapi: dict[str, Any]):
     """Patches app.openapi with some fixes and osparc conventions
 
     Modifies fastapi auto-generated OAS to pass our openapi validation.
     """
-
-    def _patch(node):
-        if isinstance(node, dict):
-            for key in list(node.keys()):
-                # SEE fastapi ISSUE: https://github.com/tiangolo/fastapi/issues/240 (test_openap.py::test_exclusive_min_openapi_issue )
-                # SEE openapi-standard: https://swagger.io/docs/specification/data-models/data-types/#range
-                if key == "exclusiveMinimum":
-                    cast_to_python = SCHEMA_TO_PYTHON_TYPES[node["type"]]
-                    node["minimum"] = cast_to_python(node[key])
-                    node["exclusiveMinimum"] = True
-
-                elif key == "exclusiveMaximum":
-                    cast_to_python = SCHEMA_TO_PYTHON_TYPES[node["type"]]
-                    node["maximum"] = cast_to_python(node[key])
-                    node["exclusiveMaximum"] = True
-
-                elif key in SKIP:
-                    node.pop(key)
-                    continue
-
-                _patch(node[key])
-
-        elif isinstance(node, list):
-            for value in node:
-                _patch(value)
-
     _patch(app_openapi)
 
 

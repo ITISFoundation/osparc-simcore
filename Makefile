@@ -43,6 +43,7 @@ SERVICES_NAMES_TO_BUILD := \
 	invitations \
   migration \
 	osparc-gateway-server \
+	resource-usage-tracker \
   service-integration \
   static-webserver \
   storage \
@@ -266,16 +267,25 @@ CPU_COUNT = $(shell cat /proc/cpuinfo | grep processor | wc -l )
 	python3 scripts/filestash/create_config.py))
 	# Creating config for ops stack to $@
 	# -> filestash config at $(TMP_PATH_TO_FILESTASH_CONFIG)
+ifdef ops_ci
+	@$(shell \
+		export TMP_PATH_TO_FILESTASH_CONFIG="${TMP_PATH_TO_FILESTASH_CONFIG}" && \
+		scripts/docker/docker-compose-config.bash -e .env \
+		services/docker-compose-ops-ci.yml \
+		> $@ \
+	)
+else
 	@$(shell \
 		export TMP_PATH_TO_FILESTASH_CONFIG="${TMP_PATH_TO_FILESTASH_CONFIG}" && \
 		scripts/docker/docker-compose-config.bash -e .env \
 		services/docker-compose-ops.yml \
 		> $@ \
 	)
+endif
 
 
 
-.PHONY: up-devel up-prod up-version up-latest .deploy-ops
+.PHONY: up-devel up-prod up-prod-ci up-version up-latest .deploy-ops
 
 .deploy-ops: .stack-ops.yml
 	# Deploy stack 'ops'
@@ -329,7 +339,7 @@ up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Dep
 	@$(MAKE_C) services/static-webserver/client follow-dev-logs
 
 
-up-prod: .stack-simcore-production.yml .init-swarm ## Deploys local production stack and ops stack (pass 'make ops_disabled=1 up-...' to disable or target=<service-name> to deploy a single service)
+up-prod: .stack-simcore-production.yml .init-swarm ## Deploys local production stack and ops stack (pass 'make ops_disabled=1 ops_ci=1 up-...' to disable or target=<service-name> to deploy a single service)
 ifeq ($(target),)
 	# Deploy stack $(SWARM_STACK_NAME)
 	@docker stack deploy --with-registry-auth -c $< $(SWARM_STACK_NAME)
@@ -431,12 +441,12 @@ push-version: tag-version
 	python3 -m venv $@
 	## upgrading tools to latest version in $(shell python3 --version)
 	$@/bin/pip3 --quiet install --upgrade \
-		pip~=23.0 \
+		pip~=23.1 \
 		wheel \
 		setuptools
 	@$@/bin/pip3 list --verbose
 
-devenv: .venv ## create a python virtual environment with dev tools (e.g. linters, etc)
+devenv: .venv .vscode/settings.json .vscode/launch.json ## create a development environment (configs, virtual-env, hooks, ...)
 	$</bin/pip3 --quiet install -r requirements/devenv.txt
 	# Installing pre-commit hooks in current .git repo
 	@$</bin/pre-commit install
@@ -465,10 +475,16 @@ nodenv: node_modules ## builds node_modules local environ (TODO)
 	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
 
 
-.vscode/settings.json: .vscode-template/settings.json
-	$(info WARNING: #####  $< is newer than $@ ####)
-	@diff -uN $@ $<
-	@false
+.vscode/settings.json: .vscode/settings.template.json
+	$(if $(wildcard $@), \
+	@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
+	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
+
+
+.vscode/launch.json: .vscode/launch.template.json
+	$(if $(wildcard $@), \
+	@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
+	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
 
 
 
@@ -511,6 +527,7 @@ settings-schema.json: ## [container] dumps json-schema settings of all services
 	@$(MAKE_C) services/api-server $@
 	@$(MAKE_C) services/autoscaling $@
 	@$(MAKE_C) services/catalog $@
+	@$(MAKE_C) services/datcore-adapter $@
 	@$(MAKE_C) services/director-v2 $@
 	@$(MAKE_C) services/invitations $@
 	@$(MAKE_C) services/storage $@

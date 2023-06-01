@@ -1002,7 +1002,7 @@
           "CONTENT_NO_SAVE_REQUIRED"
         ],
         "type": "string",
-        "description": "An enumeration."
+        "description": "Used by the agent to figure out what to do with the data\npresent on the volume."
       },
       "Widget": {
         "title": "Widget",

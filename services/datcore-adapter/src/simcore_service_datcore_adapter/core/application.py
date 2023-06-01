@@ -1,15 +1,14 @@
 import logging
-from typing import Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
-from servicelib.fastapi.tracing import setup_tracing
+from servicelib.logging_utils import config_all_loggers
 
+from .._meta import API_VERSION, API_VTAG
 from ..api.errors.http_error import http_error_handler
 from ..api.errors.validation_error import http422_error_handler
 from ..api.module_setup import setup_api
-from ..meta import api_version, api_vtag
 from ..modules import pennsieve
 from .events import (
     create_start_app_handler,
@@ -17,7 +16,7 @@ from .events import (
     on_shutdown,
     on_startup,
 )
-from .settings import Settings
+from .settings import ApplicationSettings
 
 LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
 NOISY_LOGGERS = (
@@ -29,13 +28,15 @@ NOISY_LOGGERS = (
 logger = logging.getLogger(__name__)
 
 
-def create_app(settings: Optional[Settings] = None) -> FastAPI:
+def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     if settings is None:
-        settings = Settings.create_from_envs()
+        settings = ApplicationSettings.create_from_envs()
     assert settings  # nosec
 
     logging.basicConfig(level=settings.LOG_LEVEL.value)
     logging.root.setLevel(settings.LOG_LEVEL.value)
+    config_all_loggers(settings.DATCORE_ADAPTER_LOG_FORMAT_LOCAL_DEV_ENABLED)
+
     # keep mostly quiet noisy loggers
     quiet_level: int = max(
         min(logging.root.level + LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING
@@ -49,8 +50,8 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         debug=settings.debug,
         title="Datcore Adapter Service",
         description="Interfaces with Pennsieve storage service",
-        version=api_version,
-        openapi_url=f"/api/{api_vtag}/openapi.json",
+        version=API_VERSION,
+        openapi_url=f"/api/{API_VTAG}/openapi.json",
         docs_url="/dev/doc",
         redoc_url=None,  # default disabled
     )
@@ -69,9 +70,6 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
 
     if settings.PENNSIEVE.PENNSIEVE_ENABLED:
         pennsieve.setup(app, settings.PENNSIEVE)
-
-    if settings.DATCORE_ADAPTER_TRACING:
-        setup_tracing(app, settings.DATCORE_ADAPTER_TRACING)
 
     app.add_exception_handler(HTTPException, http_error_handler)
     app.add_exception_handler(RequestValidationError, http422_error_handler)

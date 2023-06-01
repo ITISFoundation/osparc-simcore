@@ -2,7 +2,6 @@ from typing import Final
 
 from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import Field, NonNegativeInt, validator
-from servicelib.file_constants import AGENT_FILE_NAME, HIDDEN_FILE_NAME
 from settings_library.base import BaseCustomSettings
 from settings_library.r_clone import S3Provider
 from settings_library.rabbit import RabbitSettings
@@ -17,6 +16,14 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
     SC_BOOT_MODE: BootModeEnum | None
 
+    AGENT_VOLUMES_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
+        False,
+        env=[
+            "AGENT_VOLUMES_LOG_FORMAT_LOCAL_DEV_ENABLED",
+            "LOG_FORMAT_LOCAL_DEV_ENABLED",
+        ],
+        description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
+    )
     AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME: str = Field(
         ..., description="Exactly the same as director-v2's `SWARM_STACK_NAME` env var"
     )
@@ -34,7 +41,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         5, description="parallel transfers to s3"
     )
     AGENT_VOLUMES_CLEANUP_EXCLUDE_FILES: list[str] = Field(
-        [AGENT_FILE_NAME, HIDDEN_FILE_NAME, "key_values.json"],
+        [".hidden_do_not_remove", "key_values.json"],
         description="Files to ignore when syncing to s3",
     )
     AGENT_VOLUMES_CLEANUP_INTERVAL_S: NonNegativeInt = Field(

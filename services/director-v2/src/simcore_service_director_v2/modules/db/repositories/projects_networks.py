@@ -14,9 +14,9 @@ from ._base import BaseRepository
 class ProjectsNetworksRepository(BaseRepository):
     async def get_projects_networks(self, project_id: ProjectID) -> ProjectsNetworks:
         async with self.db_engine.acquire() as conn:
-            row: RowProxy = await (
+            row: RowProxy | None = await (
                 await conn.execute(
-                    sa.select([projects_networks]).where(
+                    sa.select(projects_networks).where(
                         projects_networks.c.project_uuid == f"{project_id}"
                     )
                 )

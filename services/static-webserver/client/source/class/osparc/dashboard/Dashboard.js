@@ -144,15 +144,13 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         const tabButton = tabPage.getChildControl("button");
         tabButton.set({
           alignX: "center",
-          toolTipText: label,
           minWidth: 50
         });
+        tabButton.ttt = label;
         tabButton.getChildControl("label").set({
-          font: "text-16",
-          alignX: "center"
+          font: "text-16"
         });
         tabButton.getChildControl("icon").set({
-          alignX: "center",
           visibility: "excluded"
         });
         osparc.utils.Utils.setIdToWidget(tabButton, id);

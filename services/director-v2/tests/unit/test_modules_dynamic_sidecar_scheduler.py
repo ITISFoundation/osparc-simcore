@@ -209,7 +209,7 @@ def mocked_api_client(scheduler_data: SchedulerData) -> Iterator[MockRouter]:
 @pytest.fixture
 def mock_service_running(mock_docker_api, mocker: MockerFixture) -> Iterator[AsyncMock]:
     mock = mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._scheduler.get_dynamic_sidecar_state",
+        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._scheduler_utils.get_dynamic_sidecar_state",
         return_value=(ServiceState.RUNNING, ""),
     )
 
@@ -315,7 +315,6 @@ async def test_scheduler_health_timing_out(
     mock_max_status_api_duration: None,
     mocked_dynamic_scheduler_events: None,
 ):
-
     await manually_trigger_scheduler()
     await scheduler._scheduler._add_service(scheduler_data)
     await manually_trigger_scheduler()

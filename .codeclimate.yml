@@ -82,3 +82,4 @@ exclude_patterns:
   - "**/sandbox/"
   - packages/models-library/src/models_library/utils/_original_fastapi_encoders.py
   - services/web/server/src/simcore_service_webserver/exporter/formatters/sds/xlsx/templates/code_description.py
+  - services/web/server/src/simcore_service_webserver/projects/db.py  # NOTE: refactor will be done in upcomming PRs

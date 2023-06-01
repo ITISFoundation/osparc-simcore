@@ -72,7 +72,6 @@ class DynamicSidecarsScheduler(SchedulerInternalsInterface, SchedulerPublicInter
         request_simcore_user_agent: str,
         can_save: bool,
     ) -> None:
-
         return await self._scheduler.add_service(
             service,
             simcore_service_labels,

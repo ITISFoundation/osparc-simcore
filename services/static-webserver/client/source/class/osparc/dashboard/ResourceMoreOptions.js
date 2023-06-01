@@ -153,11 +153,11 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       [
         this.__getInfoPage,
         this.__getPermissionsPage,
-        this.__getClassifiersPage,
-        this.__getQualityPage,
         this.__getTagsPage,
         this.__getServicesUpdatePage,
         this.__getServicesBootOptionsPage,
+        this.__getQualityPage,
+        this.__getClassifiersPage,
         this.__getSaveAsTemplatePage
       ].forEach(pageCallee => {
         if (pageCallee) {
@@ -304,6 +304,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         permissionsView = new osparc.component.share.CollaboratorsStudy(resourceData);
         if (osparc.utils.Resources.isStudy(resourceData)) {
           permissionsView.getChildControl("study-link").show();
+        } else if (osparc.utils.Resources.isTemplate(resourceData)) {
+          permissionsView.getChildControl("template-link").show();
         }
         permissionsView.addListener("updateAccessRights", e => {
           const updatedData = e.getData();

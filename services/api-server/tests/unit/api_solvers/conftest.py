@@ -8,12 +8,15 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, Iterator
 
+import httpx
 import pytest
 import respx
 import yaml
+from faker import Faker
 from fastapi import FastAPI, status
+from models_library.projects import Project
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_simcore.helpers import faker_catalog
-from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
 from respx import MockRouter
 from simcore_service_api_server.core.settings import ApplicationSettings
 
@@ -48,7 +51,7 @@ def webserver_service_openapi_specs(
 
 @pytest.fixture
 def mocked_webserver_service_api(
-    app: FastAPI, webserver_service_openapi_specs: dict[str, Any]
+    app: FastAPI, webserver_service_openapi_specs: dict[str, Any], faker: Faker
 ) -> Iterator[MockRouter]:
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_WEBSERVER
@@ -57,22 +60,21 @@ def mocked_webserver_service_api(
 
     # pylint: disable=not-context-manager
     with respx.mock(
-        base_url=settings.API_SERVER_WEBSERVER.base_url,
+        base_url=settings.API_SERVER_WEBSERVER.api_base_url,
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
 
         # include /v0
-        assert settings.API_SERVER_WEBSERVER.base_url.endswith("/v0")
+        assert settings.API_SERVER_WEBSERVER.api_base_url.endswith("/v0")
 
         # healthcheck_readiness_probe, healthcheck_liveness_probe
-        response_body = (
-            {
-                "data": openapi["paths"]["/"]["get"]["responses"]["200"]["content"][
-                    "application/json"
-                ]["schema"]["properties"]["data"]["example"]
-            },
-        )
+        response_body = {
+            "data": openapi["paths"]["/"]["get"]["responses"]["200"]["content"][
+                "application/json"
+            ]["schema"]["properties"]["data"]["example"]
+        }
+
         respx_mock.get(path="/v0/", name="healthcheck_readiness_probe").respond(
             status.HTTP_200_OK, json=response_body
         )
@@ -80,7 +82,55 @@ def mocked_webserver_service_api(
             status.HTTP_200_OK, json=response_body
         )
 
-        # get_task_status
+        class _SideEffects:
+            def __init__(self):
+                # cached
+                self._projects: dict[str, Project] = {}
+
+            @staticmethod
+            def get_body_as_json(request):
+                return json.load(request)
+
+            def create_project(self, request: httpx.Request):
+                task_id = faker.uuid4()
+
+                project_create = self.get_body_as_json(request)
+                self._projects[task_id] = Project(**project_create)
+
+                return httpx.Response(
+                    status.HTTP_202_ACCEPTED,
+                    json={
+                        "data": {
+                            "task_id": task_id,
+                            "status_href": f"{settings.API_SERVER_WEBSERVER.api_base_url}/tasks/{task_id}",
+                            "result_href": f"{settings.API_SERVER_WEBSERVER.api_base_url}/tasks/{task_id}/result",
+                        }
+                    },
+                )
+
+            def get_result(self, request: httpx.Request, *, task_id: str):
+                # TODO: replace with ProjectGet
+                project_get = jsonable_encoder(
+                    self._projects[task_id].dict(by_alias=True)
+                )
+                return httpx.Response(
+                    status.HTTP_200_OK,
+                    json={"data": project_get},
+                )
+
+        fake_workflow = _SideEffects()
+
+        # http://webserver:8080/v0/projects?hidden=true
+        respx_mock.post(
+            path__regex="/projects$",
+            name="create_projects",
+        ).mock(side_effect=fake_workflow.create_project)
+
+        respx_mock.get(
+            path__regex=r"/tasks/(?P<task_id>[\w-]+)/result$",
+            name="get_task_result",
+        ).mock(side_effect=fake_workflow.get_result)
+
         respx_mock.get(
             path__regex=r"/tasks/(?P<task_id>[\w/%]+)",
             name="get_task_status",
@@ -88,35 +138,13 @@ def mocked_webserver_service_api(
             status.HTTP_200_OK,
             json={
                 "data": {
-                    "task_progress": 1,
+                    "task_progress": {"message": "fake job done", "percent": 1},
                     "done": True,
                     "started": "2018-07-01T11:13:43Z",
                 }
             },
         )
 
-        # get_task_result
-        respx_mock.get(
-            path__regex=r"/tasks/(?P<task_id>[\w/%]+)/result",
-            name="get_task_result",
-        ).respond(
-            status.HTTP_200_OK,
-            json=GET_PROJECT.response_body,
-        )
-
-        # create_projects
-        task_id = "abc"
-        # http://webserver:8080/v0/projects?hidden=true
-        respx_mock.post(path__regex="/projects$", name="create_projects").respond(
-            status.HTTP_202_ACCEPTED,
-            json={
-                "data": {
-                    "task_id": "123",
-                    "status_hef": f"{settings.API_SERVER_WEBSERVER.base_url}/task/{task_id}",
-                    "result_href": f"{settings.API_SERVER_WEBSERVER.base_url}/task/{task_id}/result",
-                }
-            },
-        )
         yield respx_mock
 
 

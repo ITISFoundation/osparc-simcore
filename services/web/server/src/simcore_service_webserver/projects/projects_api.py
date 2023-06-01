@@ -20,7 +20,7 @@ from uuid import UUID, uuid4
 
 from aiohttp import web
 from models_library.errors import ErrorDict
-from models_library.projects import ProjectID
+from models_library.projects import Project, ProjectID
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import (
@@ -35,54 +35,49 @@ from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import parse_obj_as
-from servicelib.aiohttp.application_keys import (
-    APP_FIRE_AND_FORGET_TASKS_KEY,
-    APP_JSONSCHEMA_SPECS_KEY,
-)
-from servicelib.aiohttp.jsonschema_validation import validate_instance
+from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_FORWARDED_PROTO,
     X_SIMCORE_USER_AGENT,
 )
 from servicelib.json_serialization import json_dumps
-from servicelib.logging_utils import log_context
+from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.utils import fire_and_forget_task, logged_gather
+from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import ProjectType
 
-from .. import catalog_client, director_v2_api, storage_api
-from ..products import get_product_name
+from ..catalog import client as catalog_client
+from ..director_v2 import api as director_v2_api
+from ..products.plugin import get_product_name
 from ..redis import get_redis_lock_manager_client_sdk
 from ..resource_manager.websocket_manager import (
     PROJECT_ID_KEY,
     UserSessionID,
     managed_resource,
 )
-from ..socketio.events import (
+from ..socketio.messages import (
     SOCKET_IO_NODE_UPDATED_EVENT,
     SOCKET_IO_PROJECT_UPDATED_EVENT,
     SocketMessageDict,
     send_group_messages,
     send_messages,
 )
-from ..users_api import UserRole, get_user_name, get_user_role
-from ..users_exceptions import UserNotFoundError
-from . import _delete, _nodes_utils
-from .project_lock import (
-    UserNameDict,
-    get_project_locked_state,
-    is_project_locked,
-    lock_project,
-)
-from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
-from .projects_exceptions import (
+from ..storage import api as storage_api
+from ..users.api import UserNameDict, get_user_name, get_user_role
+from ..users.exceptions import UserNotFoundError
+from . import _crud_delete_utils, _nodes_utils
+from .db import APP_PROJECT_DBAPI, ProjectDBAPI
+from .exceptions import (
     NodeNotFoundError,
     ProjectLockError,
     ProjectStartsTooManyDynamicNodes,
     ProjectTooManyProjectOpened,
 )
-from .projects_settings import ProjectsSettings, get_plugin_settings
-from .projects_utils import extract_dns_without_default_port
+from .lock import get_project_locked_state, is_project_locked, lock_project
+from .models import ProjectDict
+from .settings import ProjectsSettings, get_plugin_settings
+from .utils import extract_dns_without_default_port
 
 log = logging.getLogger(__name__)
 
@@ -91,13 +86,6 @@ PROJECT_REDIS_LOCK_KEY: str = "project:{}"
 
 def _is_node_dynamic(node_key: str) -> bool:
     return "/dynamic/" in node_key
-
-
-async def validate_project(app: web.Application, project: dict):
-    project_schema = app[APP_JSONSCHEMA_SPECS_KEY]["projects"]
-    await asyncio.get_event_loop().run_in_executor(
-        None, validate_instance, project, project_schema
-    )
 
 
 #
@@ -112,10 +100,11 @@ async def get_project_for_user(
     *,
     include_state: bool | None = False,
     check_permissions: str = "read",
-) -> dict:
+) -> ProjectDict:
     """Returns a VALID project accessible to user
 
     :raises ProjectNotFoundError: if no match found
+    :
     :return: schema-compliant project data
     :rtype: Dict
     """
@@ -124,7 +113,7 @@ async def get_project_for_user(
     project, project_type = await db.get_project(
         user_id,
         project_uuid,
-        check_permissions=check_permissions,
+        check_permissions=check_permissions,  # type: ignore[arg-type]
     )
 
     # adds state if it is not a template
@@ -133,7 +122,7 @@ async def get_project_for_user(
             user_id, project, project_type is ProjectType.TEMPLATE, app
         )
 
-    await validate_project(app, project)
+    Project.parse_obj(project)  # NOTE: only validates
     return project
 
 
@@ -182,12 +171,12 @@ async def submit_delete_project_task(
     raises ProjectInvalidRightsError
     raises ProjectNotFoundError
     """
-    await _delete.mark_project_as_deleted(app, project_uuid, user_id)
+    await _crud_delete_utils.mark_project_as_deleted(app, project_uuid, user_id)
 
     # Ensures ONE delete task per (project,user) pair
     task = get_delete_project_task(project_uuid, user_id)
     if not task:
-        task = _delete.schedule_task(
+        task = _crud_delete_utils.schedule_task(
             app,
             project_uuid,
             user_id,
@@ -201,7 +190,7 @@ async def submit_delete_project_task(
 def get_delete_project_task(
     project_uuid: ProjectID, user_id: UserID
 ) -> asyncio.Task | None:
-    if tasks := _delete.get_scheduled_tasks(project_uuid, user_id):
+    if tasks := _crud_delete_utils.get_scheduled_tasks(project_uuid, user_id):
         assert len(tasks) == 1, f"{tasks=}"  # nosec
         task = tasks[0]
         return task
@@ -300,6 +289,7 @@ async def add_project_node(
         service_version,
         project["uuid"],
         user_id,
+        extra=get_log_record_extra(user_id=user_id),
     )
     node_uuid = service_id if service_id else f"{uuid4()}"
 
@@ -429,40 +419,7 @@ async def update_project_node_state(
     partial_workbench_data: dict[str, Any] = {
         node_id: {"state": {"currentStatus": new_state}},
     }
-    if RunningState(new_state) in [
-        RunningState.PUBLISHED,
-        RunningState.PENDING,
-        RunningState.STARTED,
-    ]:
-        partial_workbench_data[node_id]["progress"] = 0
-    elif RunningState(new_state) in [RunningState.SUCCESS, RunningState.FAILED]:
-        partial_workbench_data[node_id]["progress"] = 100
 
-    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-    updated_project, _ = await db.update_project_workbench(
-        partial_workbench_data=partial_workbench_data,
-        user_id=user_id,
-        project_uuid=project_id,
-    )
-    updated_project = await add_project_states_for_user(
-        user_id=user_id, project=updated_project, is_template=False, app=app
-    )
-    return updated_project
-
-
-async def update_project_node_progress(
-    app: web.Application, user_id: int, project_id: str, node_id: str, progress: float
-) -> dict | None:
-    log.debug(
-        "updating node %s progress in project %s for user %s with %s",
-        node_id,
-        project_id,
-        user_id,
-        progress,
-    )
-    partial_workbench_data = {
-        node_id: {"progress": int(100.0 * float(progress) + 0.5)},
-    }
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     updated_project, _ = await db.update_project_workbench(
         partial_workbench_data=partial_workbench_data,
@@ -498,6 +455,7 @@ async def update_project_node_outputs(
         user_id,
         json_dumps(new_outputs),
         new_run_hash,
+        extra=get_log_record_extra(user_id=user_id),
     )
     new_outputs = new_outputs or {}
 
@@ -727,6 +685,7 @@ async def try_close_project_for_user(
                 "project [%s] is already closed for user [%s].",
                 project_uuid,
                 user_id,
+                extra=get_log_record_extra(user_id=user_id),
             )
             return
         # remove the project from our list of opened ones
@@ -857,10 +816,10 @@ async def get_project_states_for_user(
 
 async def add_project_states_for_user(
     user_id: int,
-    project: dict[str, Any],
+    project: ProjectDict,
     is_template: bool,
     app: web.Application,
-) -> dict[str, Any]:
+) -> ProjectDict:
     log.debug(
         "adding project states for %s with project %s",
         f"{user_id=}",
@@ -888,6 +847,8 @@ async def add_project_states_for_user(
                     node_state.json(by_alias=True, exclude_unset=True)
                 )
                 prj_node.setdefault("state", {}).update(node_state_dict)
+                prj_node_progress = node_state_dict.get("progress", None) or 0
+                prj_node.update({"progress": round(prj_node_progress * 100.0)})
 
     project["state"] = ProjectState(
         locked=lock_state, state=ProjectRunningState(value=running_state)
@@ -910,7 +871,8 @@ async def is_service_deprecated(
     )
     if deprecation_date := service.get("deprecated"):
         deprecation_date = parse_obj_as(datetime.datetime, deprecation_date)
-        return datetime.datetime.utcnow() > deprecation_date
+        deprecation_date_bool: bool = datetime.datetime.utcnow() > deprecation_date
+        return deprecation_date_bool
     return False
 
 

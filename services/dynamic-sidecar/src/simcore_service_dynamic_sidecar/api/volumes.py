@@ -1,13 +1,11 @@
 from fastapi import APIRouter, Depends
 from fastapi import Path as PathParam
 from fastapi import status
-from models_library.volumes import VolumeCategory
+from models_library.sidecar_volumes import VolumeCategory, VolumeState, VolumeStatus
 from pydantic import BaseModel
-from servicelib.volumes_utils import VolumeStatus
 
-from ..modules.mounted_fs import MountedVolumes
-from ..modules.volume_files import set_volume_state
-from ._dependencies import get_mounted_volumes
+from ..models.shared_store import SharedStore
+from ._dependencies import get_shared_store
 
 router = APIRouter()
 
@@ -24,6 +22,7 @@ class PutVolumeItem(BaseModel):
 async def put_volume_state(
     item: PutVolumeItem,
     volume_category: VolumeCategory = PathParam(..., alias="id"),
-    mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
+    shared_store: SharedStore = Depends(get_shared_store),
 ) -> None:
-    await set_volume_state(mounted_volumes, volume_category, status=item.status)
+    async with shared_store:
+        shared_store.volume_states[volume_category] = VolumeState(status=item.status)

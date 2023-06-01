@@ -14,9 +14,9 @@ from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
 )
-from simcore_service_webserver import director_v2_core_dynamic_services
 from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.director_v2_exceptions import (
+from simcore_service_webserver.director_v2 import _core_dynamic_services
+from simcore_service_webserver.director_v2.exceptions import (
     ServiceWaitingForManualIntervention,
 )
 from yarl import URL
@@ -31,7 +31,7 @@ def app(mock_env_devel_environment: dict[str, str]) -> Application:
 
 @pytest.fixture
 def mocked_director_v2_request(mocker: MockerFixture) -> Iterable[MagicMock]:
-    yield mocker.patch.object(director_v2_core_dynamic_services, "request_director_v2")
+    yield mocker.patch.object(_core_dynamic_services, "request_director_v2")
 
 
 @pytest.fixture
@@ -46,7 +46,7 @@ async def test_stop_dynamic_service_signature(
     mocked_director_v2_request: MagicMock,
     can_save: bool,
 ):
-    await director_v2_core_dynamic_services.stop_dynamic_service(
+    await _core_dynamic_services.stop_dynamic_service(
         app,
         NodeIDStr(node_uuid),
         UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,

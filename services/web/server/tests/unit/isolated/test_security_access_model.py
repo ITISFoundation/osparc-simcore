@@ -1,7 +1,9 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-# pylint:disable=protected-access
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 
 # REFERENCES
 #   https://blog.nodeswat.com/implement-access-control-in-node-js-8567e7b484d1
@@ -12,12 +14,12 @@ from pathlib import Path
 
 import jsondiff
 import pytest
-from simcore_service_webserver.projects.project_models import ProjectDict
-from simcore_service_webserver.security_access_model import (
+from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.security._access_model import (
     RoleBasedAccessModel,
     check_access,
 )
-from simcore_service_webserver.security_roles import ROLES_PERMISSIONS, UserRole
+from simcore_service_webserver.security._access_roles import ROLES_PERMISSIONS, UserRole
 
 
 @pytest.fixture

@@ -1,30 +1,36 @@
+# pylint: disable=unused-argument
+
 from pathlib import Path
 
 import pytest
+from async_asgi_testclient import TestClient
 from fastapi import status
-from fastapi.testclient import TestClient
-from models_library.volumes import VolumeCategory
-from servicelib.file_constants import AGENT_FILE_NAME
-from servicelib.volumes_utils import VolumeState, VolumeStatus, load_volume_state
+from models_library.sidecar_volumes import VolumeCategory, VolumeState, VolumeStatus
 from simcore_service_dynamic_sidecar._meta import API_VTAG
-from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
+from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 
 
 @pytest.mark.parametrize(
-    "volume_category", [VolumeCategory.STATES, VolumeCategory.OUTPUTS]
+    "volume_category, initial_expected_status",
+    [
+        (VolumeCategory.STATES, VolumeStatus.CONTENT_NEEDS_TO_BE_SAVED),
+        (VolumeCategory.OUTPUTS, VolumeStatus.CONTENT_NEEDS_TO_BE_SAVED),
+        (VolumeCategory.INPUTS, VolumeStatus.CONTENT_NO_SAVE_REQUIRED),
+        (VolumeCategory.SHARED_STORE, VolumeStatus.CONTENT_NO_SAVE_REQUIRED),
+    ],
 )
-async def test_volumes_state_saved_ok(test_client: TestClient, volume_category: str):
-    mounted_volumes: MountedVolumes = test_client.application.state.mounted_volumes
+async def test_volumes_state_saved_ok(
+    ensure_shared_store_dir: Path,
+    test_client: TestClient,
+    volume_category: VolumeCategory,
+    initial_expected_status: VolumeStatus,
+):
+    shared_store: SharedStore = test_client.application.state.shared_store
 
-    volumes_path_map: dict[str, list[Path]] = {
-        VolumeCategory.STATES: list(mounted_volumes.disk_state_paths()),
-        VolumeCategory.OUTPUTS: [mounted_volumes.disk_outputs_path],
-    }
-
-    for path in volumes_path_map[volume_category]:
-        assert await load_volume_state(path / AGENT_FILE_NAME) == VolumeState(
-            status=VolumeStatus.CONTENT_NEEDS_TO_BE_SAVED
-        )
+    # check that initial status is as expected
+    assert shared_store.volume_states[volume_category] == VolumeState(
+        status=initial_expected_status
+    )
 
     response = await test_client.put(
         f"/{API_VTAG}/volumes/{volume_category}",
@@ -32,15 +38,17 @@ async def test_volumes_state_saved_ok(test_client: TestClient, volume_category: 
     )
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
 
-    for path in volumes_path_map[volume_category]:
-        assert await load_volume_state(path / AGENT_FILE_NAME) == VolumeState(
-            status=VolumeStatus.CONTENT_WAS_SAVED
-        )
+    # check that
+    assert shared_store.volume_states[volume_category] == VolumeState(
+        status=VolumeStatus.CONTENT_WAS_SAVED
+    )
 
 
 @pytest.mark.parametrize("invalid_volume_category", ["outputs", "outputS"])
 async def test_volumes_state_saved_error(
-    test_client: TestClient, invalid_volume_category: str
+    ensure_shared_store_dir: Path,
+    test_client: TestClient,
+    invalid_volume_category: VolumeCategory,
 ):
     response = await test_client.put(
         f"/{API_VTAG}/volumes/{invalid_volume_category}",

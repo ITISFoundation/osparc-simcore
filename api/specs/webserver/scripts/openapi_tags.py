@@ -8,15 +8,14 @@
 
 
 from enum import Enum
-from typing import Union
 
 from fastapi import FastAPI, status
 from models_library.generics import Envelope
-from simcore_service_webserver.tags_handlers import TagCreate, TagGet, TagUpdate
+from simcore_service_webserver.tags._handlers import TagCreate, TagGet, TagUpdate
 
 app = FastAPI(redoc_url=None)
 
-TAGS: list[Union[str, Enum]] = [
+TAGS: list[str | Enum] = [
     "tag",
 ]
 

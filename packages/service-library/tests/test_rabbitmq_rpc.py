@@ -2,7 +2,7 @@
 # pylint:disable=unused-argument
 
 import asyncio
-from typing import Any, Awaitable, Callable, Final
+from typing import Any, AsyncIterator, Awaitable, Callable, Final
 
 import pytest
 from docker.client import DockerClient
@@ -14,7 +14,7 @@ from servicelib.rabbitmq_errors import (
     RemoteMethodNotRegisteredError,
     RPCNotInitializedError,
 )
-from servicelib.rabbitmq_utils import RPCNamespace, rpc_register_entries
+from servicelib.rabbitmq_utils import RPCMethodName, RPCNamespace, rpc_register_entries
 from settings_library.rabbit import RabbitSettings
 
 pytest_simcore_core_services_selection = [
@@ -34,7 +34,9 @@ def namespace() -> RPCNamespace:
 
 
 @pytest.fixture
-async def rabbit_requester(rabbit_service: RabbitSettings) -> RabbitMQClient:
+async def rabbit_requester(
+    rabbit_service: RabbitSettings,
+) -> AsyncIterator[RabbitMQClient]:
     client = RabbitMQClient(client_name="requester", settings=rabbit_service)
     await client.rpc_initialize()
     yield client
@@ -42,7 +44,9 @@ async def rabbit_requester(rabbit_service: RabbitSettings) -> RabbitMQClient:
 
 
 @pytest.fixture
-async def rabbit_replier(rabbit_service: RabbitSettings) -> RabbitMQClient:
+async def rabbit_replier(
+    rabbit_service: RabbitSettings,
+) -> AsyncIterator[RabbitMQClient]:
     client = RabbitMQClient(client_name="replier", settings=rabbit_service)
     await client.rpc_initialize()
     yield client
@@ -132,7 +136,9 @@ async def test_base_rpc_pattern(
     expected_type: type,
     namespace: RPCNamespace,
 ):
-    await rabbit_replier.rpc_register_handler(namespace, add_me.__name__, add_me)
+    await rabbit_replier.rpc_register_handler(
+        namespace, RPCMethodName(add_me.__name__), add_me
+    )
 
     request_result = await rabbit_requester.rpc_request(
         namespace,
@@ -153,7 +159,9 @@ async def test_multiple_requests_sequence_same_replier_and_requester(
     rabbit_replier: RabbitMQClient,
     namespace: RPCNamespace,
 ):
-    await rabbit_replier.rpc_register_handler(namespace, add_me.__name__, add_me)
+    await rabbit_replier.rpc_register_handler(
+        namespace, RPCMethodName(add_me.__name__), add_me
+    )
 
     for i in range(MULTIPLE_REQUESTS_COUNT):
         assert (
@@ -174,7 +182,9 @@ async def test_multiple_requests_parallel_same_replier_and_requester(
     rabbit_replier: RabbitMQClient,
     namespace: RPCNamespace,
 ):
-    await rabbit_replier.rpc_register_handler(namespace, add_me.__name__, add_me)
+    await rabbit_replier.rpc_register_handler(
+        namespace, RPCMethodName(add_me.__name__), add_me
+    )
 
     expected_result: list[int] = []
     requests: list[Awaitable] = []
@@ -199,7 +209,9 @@ async def test_multiple_requests_parallel_same_replier_different_requesters(
     rabbit_replier: RabbitMQClient,
     namespace: RPCNamespace,
 ):
-    await rabbit_replier.rpc_register_handler(namespace, add_me.__name__, add_me)
+    await rabbit_replier.rpc_register_handler(
+        namespace, RPCMethodName(add_me.__name__), add_me
+    )
 
     clients: list[RabbitMQClient] = []
     for _ in range(MULTIPLE_REQUESTS_COUNT):
@@ -250,7 +262,9 @@ async def test_raise_error_if_not_started(
 
     replier = RabbitMQClient("", settings=rabbit_service)
     with pytest.raises(RPCNotInitializedError):
-        await replier.rpc_register_handler(namespace, add_me.__name__, add_me)
+        await replier.rpc_register_handler(
+            namespace, RPCMethodName(add_me.__name__), add_me
+        )
 
     with pytest.raises(RPCNotInitializedError):
         await replier.rpc_unregister_handler(add_me)
@@ -275,7 +289,7 @@ async def _assert_event_not_registered(
             == 3
         )
     assert (
-        f"Could not find a remote method named: '{namespace}.{add_me.__name__}'"
+        f"Could not find a remote method named: '{namespace}.{RPCMethodName(add_me.__name__)}'"
         in f"{exec_info.value}"
     )
 
@@ -299,7 +313,9 @@ async def test_request_is_missing_arguments(
     rabbit_replier: RabbitMQClient,
     namespace: RPCNamespace,
 ):
-    await rabbit_replier.rpc_register_handler(namespace, add_me.__name__, add_me)
+    await rabbit_replier.rpc_register_handler(
+        namespace, RPCMethodName(add_me.__name__), add_me
+    )
 
     # missing 1 argument
     with pytest.raises(TypeError) as exec_info:
@@ -311,7 +327,7 @@ async def test_request_is_missing_arguments(
             timeout_s_connection_error=DEFAULT_TIMEOUT_S_CONNECTION_ERROR,
         )
     assert (
-        f"{add_me.__name__}() missing 1 required keyword-only argument: 'y'"
+        f"{RPCMethodName(add_me.__name__)}() missing 1 required keyword-only argument: 'y'"
         in f"{exec_info.value}"
     )
 
@@ -324,7 +340,7 @@ async def test_request_is_missing_arguments(
             timeout_s_connection_error=DEFAULT_TIMEOUT_S_CONNECTION_ERROR,
         )
     assert (
-        f"{add_me.__name__}() missing 2 required keyword-only arguments: 'x' and 'y'"
+        f"{RPCMethodName(add_me.__name__)}() missing 2 required keyword-only arguments: 'x' and 'y'"
         in f"{exec_info.value}"
     )
 
@@ -338,7 +354,7 @@ async def test_requester_cancels_long_running_request_or_requester_takes_too_muc
         await asyncio.sleep(time_to_sleep)
 
     await rabbit_replier.rpc_register_handler(
-        namespace, _long_running.__name__, _long_running
+        namespace, RPCMethodName(_long_running.__name__), _long_running
     )
 
     with pytest.raises(asyncio.TimeoutError):
@@ -360,7 +376,7 @@ async def test_replier_handler_raises_error(
         raise RuntimeError("failed as requested")
 
     await rabbit_replier.rpc_register_handler(
-        namespace, _raising_error.__name__, _raising_error
+        namespace, RPCMethodName(_raising_error.__name__), _raising_error
     )
 
     with pytest.raises(RuntimeError) as exec_info:
@@ -387,7 +403,9 @@ async def test_replier_responds_with_not_locally_defined_object_instance(
         async def _get_custom(x: Any) -> Custom:
             return Custom(x)
 
-        await rabbit_replier.rpc_register_handler(namespace, "a_name", _get_custom)
+        await rabbit_replier.rpc_register_handler(
+            namespace, RPCMethodName("a_name"), _get_custom
+        )
 
     async def _requester_scope() -> None:
         # NOTE: what is happening here?
@@ -419,10 +437,12 @@ async def test_register_handler_under_same_name_raises_error(
     async def _another_handler() -> None:
         pass
 
-    await rabbit_replier.rpc_register_handler(namespace, "same_name", _a_handler)
+    await rabbit_replier.rpc_register_handler(
+        namespace, RPCMethodName("same_name"), _a_handler
+    )
     with pytest.raises(RuntimeError) as exec_info:
         await rabbit_replier.rpc_register_handler(
-            namespace, "same_name", _another_handler
+            namespace, RPCMethodName("same_name"), _another_handler
         )
     assert "Method name already used for" in f"{exec_info.value}"
 
@@ -445,7 +465,9 @@ async def test_rpc_register_for_is_equivalent_to_rpc_register(
         )
         assert result == 42
 
-    await rabbit_replier.rpc_register_handler(namespace, "_a_handler", _a_handler)
+    await rabbit_replier.rpc_register_handler(
+        namespace, RPCMethodName("_a_handler"), _a_handler
+    )
     await _assert_call_ok()
 
     await rabbit_replier.rpc_unregister_handler(_a_handler)
@@ -469,7 +491,9 @@ async def test_get_namespaced_method_name_max_length(
 
     if expect_fail:
         with pytest.raises(ValidationError) as exec_info:
-            await rabbit_replier.rpc_register_handler("a", handler_name, _a_handler)
+            await rabbit_replier.rpc_register_handler(
+                RPCNamespace("a"), RPCMethodName(handler_name), _a_handler
+            )
         assert "ensure this value has at most 255 characters" in f"{exec_info.value}"
     else:
         await rabbit_replier.rpc_register_handler("a", handler_name, _a_handler)

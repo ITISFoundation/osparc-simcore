@@ -8,15 +8,14 @@ from typing import Any
 from unittest.mock import call
 
 import aiodocker
+import arrow
 import pytest
 from models_library.services_resources import BootMode
 from pytest_mock.plugin import MockerFixture
 from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
-    DEFAULT_TIME_STAMP,
-    LogType,
+    _try_parse_progress,
     create_container_config,
     managed_container,
-    parse_line,
 )
 
 
@@ -95,105 +94,52 @@ async def test_create_container_config(
     )
 
 
+@pytest.mark.parametrize("with_timestamp", [True, False], ids=str)
 @pytest.mark.parametrize(
-    "log_line, expected_parsing",
+    "log_line, expected_progress_value",
     [
+        ("hello from the logs", None),
+        ("[progress] this is some whatever progress without number", None),
+        ("[Progress] 34%", 0.34),
+        ("[PROGRESS] .34", 0.34),
+        ("[progress] 0.44", 0.44),
+        ("[progress] 44 percent done", 0.44),
+        ("[progress] 44/150", 44.0 / 150.0),
+        ("Progress: this is some progress", None),
+        ("progress: 34%", 0.34),
+        ("PROGRESS: .34", 0.34),
+        ("progress: 0.44", 0.44),
+        ("progress: 44 percent done", 0.44),
+        ("44 percent done", 0.44),
+        ("progress: 44/150", 44.0 / 150.0),
+        ("progress: 44/150...", 44.0 / 150.0),
+        ("any kind of message even with progress inside", None),
+        ("[PROGRESS]1.000000\n", 1.00),
+        ("[PROGRESS] 1\n", 1.00),
+        ("[PROGRESS] 0\n", 0.00),
         (
-            "2021-10-05T09:53:48.873236400Z hello from the logs",
-            (
-                LogType.LOG,
-                "2021-10-05T09:53:48.873236400Z",
-                "hello from the logs",
-            ),
+            "[PROGRESS]: 1% [ 10 / 624 ] Time Update, estimated remaining time 1 seconds @ 26.43 MCells/s",
+            0.01,
         ),
+        ("[warn]: this is some warning", None),
+        ("err: this is some error", None),
         (
-            "This is not an expected docker log",
-            (
-                LogType.LOG,
-                DEFAULT_TIME_STAMP,
-                "This is not an expected docker log",
-            ),
-        ),
-        (
-            "2021-10-05T09:53:48.873236400Z [progress] this is some whatever progress without number",
-            (
-                LogType.LOG,
-                "2021-10-05T09:53:48.873236400Z",
-                "[progress] this is some whatever progress without number",
-            ),
-        ),
-        (
-            "2021-10-05T09:53:48.873236400Z [Progress] 34%",
-            (LogType.PROGRESS, "2021-10-05T09:53:48.873236400Z", "0.34"),
-        ),
-        (
-            "2021-10-05T09:53:48.873236400Z [PROGRESS] .34",
-            (LogType.PROGRESS, "2021-10-05T09:53:48.873236400Z", "0.34"),
-        ),
-        (
-            "2021-10-05T09:53:48.873236400Z [progress] 0.44",
-            (LogType.PROGRESS, "2021-10-05T09:53:48.873236400Z", "0.44"),
-        ),
-        (
-            "2021-10-05T09:53:48.873236400Z [progress] 44 percent done",
-            (LogType.PROGRESS, "2021-10-05T09:53:48.873236400Z", "0.44"),
-        ),
-        (
-            "2021-10-05T09:53:48.873236400Z [progress] 44/150",
-            (
-                LogType.PROGRESS,
-                "2021-10-05T09:53:48.873236400Z",
-                f"{(44.0 / 150.0):.2f}",
-            ),
-        ),
-        (
-            "2021-10-05T09:53:48.873236400Z Progress: this is some progress",
-            (
-                LogType.LOG,
-                "2021-10-05T09:53:48.873236400Z",
-                "Progress: this is some progress",
-            ),
-        ),
-        (
-            "2021-10-05T09:53:48.873236400Z progress: 34%",
-            (LogType.PROGRESS, "2021-10-05T09:53:48.873236400Z", "0.34"),
-        ),
-        (
-            "2021-10-05T09:53:48.873236400Z PROGRESS: .34",
-            (LogType.PROGRESS, "2021-10-05T09:53:48.873236400Z", "0.34"),
-        ),
-        (
-            "2021-10-05T09:53:48.873236400Z progress: 0.44",
-            (LogType.PROGRESS, "2021-10-05T09:53:48.873236400Z", "0.44"),
-        ),
-        (
-            "2021-10-05T09:53:48.873236400Z progress: 44 percent done",
-            (LogType.PROGRESS, "2021-10-05T09:53:48.873236400Z", "0.44"),
-        ),
-        (
-            "2021-10-05T09:53:48.873236400Z progress: 44/150",
-            (LogType.PROGRESS, "2021-10-05T09:53:48.873236400Z", f"{(44.0/150.0):.2f}"),
-        ),
-        (
-            "2021-10-05T09:53:48.873236400Z any kind of message even with progress inside",
-            (
-                LogType.LOG,
-                "2021-10-05T09:53:48.873236400Z",
-                "any kind of message even with progress inside",
-            ),
-        ),
-        (
-            "2021-10-05T09:53:48.873236400Z [PROGRESS]1.000000\n",
-            (LogType.PROGRESS, "2021-10-05T09:53:48.873236400Z", "1.00"),
-        ),
-        (
-            "2021-10-05T09:53:48.873236400Z [PROGRESS]: 1% [ 10 / 624 ] Time Update, estimated remaining time 1 seconds @ 26.43 MCells/s",
-            (LogType.PROGRESS, "2021-10-05T09:53:48.873236400Z", "0.01"),
+            "progress: 10/0 asd this is a 15% 10/asdf progress without progress it will not break the system",
+            None,
         ),
     ],
 )
-async def test_parse_line(log_line: str, expected_parsing: tuple[LogType, str, str]):
-    assert await parse_line(log_line) == expected_parsing
+async def test__try_parse_progress(
+    with_timestamp: bool,
+    log_line: str,
+    expected_progress_value: float,
+):
+    expected_time_stamp = arrow.utcnow().datetime
+    if with_timestamp:
+        log_line = f"{expected_time_stamp.isoformat()} {log_line}"
+
+    received_progress = await _try_parse_progress(log_line)
+    assert received_progress == expected_progress_value
 
 
 @pytest.mark.parametrize(

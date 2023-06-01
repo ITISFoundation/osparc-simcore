@@ -16,6 +16,7 @@ import textwrap
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, AsyncIterator, Callable, Iterator
+from unittest import mock
 from unittest.mock import AsyncMock, MagicMock, Mock
 from uuid import uuid4
 
@@ -30,10 +31,11 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 from pydantic import ByteSize, parse_obj_as
 from pytest import MonkeyPatch
-from pytest_mock.plugin import MockerFixture
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict
+from pytest_simcore.helpers.utils_projects import NewProject
 from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
 from redis import Redis
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
@@ -42,16 +44,15 @@ from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.common_aiopg_utils import DSN
 from settings_library.email import SMTPSettings
 from settings_library.redis import RedisDatabase, RedisSettings
-from simcore_service_webserver import catalog
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
-from simcore_service_webserver.groups_api import (
+from simcore_service_webserver.groups.api import (
     add_user_in_group,
     create_user_group,
     delete_user_group,
     list_user_groups,
 )
-from simcore_service_webserver.projects.project_models import ProjectDict
+from simcore_service_webserver.projects.models import ProjectDict
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -138,7 +139,7 @@ def mocked_send_email(monkeypatch: MonkeyPatch) -> None:
         )
 
     monkeypatch.setattr(
-        simcore_service_webserver.email_core,
+        simcore_service_webserver.email._core,  # pylint: disable=protected-access
         "send_email",
         _print_mail_to_stdout,
     )
@@ -203,9 +204,9 @@ def osparc_product_name() -> str:
 
 
 @pytest.fixture
-async def catalog_subsystem_mock(
-    monkeypatch: MonkeyPatch,
-) -> Callable[[list[ProjectDict]], None]:
+def catalog_subsystem_mock(
+    mocker: MockerFixture,
+) -> Iterator[Callable[[list[ProjectDict]], None]]:
     """
     Patches some API calls in the catalog plugin
     """
@@ -220,14 +221,23 @@ async def catalog_subsystem_mock(
                 ]
             )
 
-    async def mocked_get_services_for_user(*args, **kwargs):
+    async def _mocked_get_services_for_user(*args, **kwargs):
         return services_in_project
 
-    monkeypatch.setattr(
-        catalog, "get_services_for_user_in_product", mocked_get_services_for_user
-    )
+    for namespace in (
+        "simcore_service_webserver.projects._crud_read_utils.get_services_for_user_in_product",
+        "simcore_service_webserver.projects._handlers_crud.get_services_for_user_in_product",
+    ):
+        mock = mocker.patch(
+            namespace,
+            autospec=True,
+        )
 
-    return _creator
+        mock.side_effect = _mocked_get_services_for_user
+
+    yield _creator
+
+    services_in_project.clear()
 
 
 @pytest.fixture
@@ -271,7 +281,7 @@ def disable_static_webserver(monkeypatch: MonkeyPatch) -> Callable:
 
 
 @pytest.fixture
-async def storage_subsystem_mock(mocker: MonkeyPatch) -> MockedStorageSubsystem:
+async def storage_subsystem_mock(mocker: MockerFixture) -> MockedStorageSubsystem:
     """
     Patches client calls to storage service
 
@@ -295,14 +305,14 @@ async def storage_subsystem_mock(mocker: MonkeyPatch) -> MockedStorageSubsystem:
         )
 
     mock = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers_crud.copy_data_folders_from_project",
+        "simcore_service_webserver.projects._crud_create_utils.copy_data_folders_from_project",
         autospec=True,
         side_effect=_mock_copy_data_from_project,
     )
 
     async_mock = mocker.AsyncMock(return_value="")
     mock1 = mocker.patch(
-        "simcore_service_webserver.projects._delete.delete_data_folders_of_project",
+        "simcore_service_webserver.projects._crud_delete_utils.delete_data_folders_of_project",
         autospec=True,
         side_effect=async_mock,
     )
@@ -314,7 +324,7 @@ async def storage_subsystem_mock(mocker: MonkeyPatch) -> MockedStorageSubsystem:
     )
 
     mock3 = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers_crud.get_project_total_size_simcore_s3",
+        "simcore_service_webserver.projects._crud_create_utils.get_project_total_size_simcore_s3",
         autospec=True,
         return_value=parse_obj_as(ByteSize, "1Gib"),
     )
@@ -345,15 +355,18 @@ async def mocked_director_v2_api(mocker: MockerFixture) -> dict[str, MagicMock]:
         "run_dynamic_service",
         "stop_dynamic_service",
     ):
-        for mod_name in ("director_v2_api", "director_v2_core_dynamic_services"):
+        for mod_name in (
+            "director_v2.api",
+            "director_v2._core_dynamic_services",
+        ):
             name = f"{mod_name}.{func_name}"
             mock[name] = mocker.patch(
                 f"simcore_service_webserver.{name}",
                 autospec=True,
                 return_value={},
             )
-    mock["director_v2_api.create_or_update_pipeline"] = mocker.patch(
-        "simcore_service_webserver.director_v2_api.create_or_update_pipeline",
+    mock["director_v2.api.create_or_update_pipeline"] = mocker.patch(
+        "simcore_service_webserver.director_v2.api.create_or_update_pipeline",
         autospec=True,
         return_value=None,
     )
@@ -391,10 +404,10 @@ def create_dynamic_service_mock(
         services.append(running_service_dict)
         # reset the future or an invalidStateError will appear as set_result sets the future to done
         mocked_director_v2_api[
-            "director_v2_api.list_dynamic_services"
+            "director_v2.api.list_dynamic_services"
         ].return_value = services
         mocked_director_v2_api[
-            "director_v2_core_dynamic_services.list_dynamic_services"
+            "director_v2._core_dynamic_services.list_dynamic_services"
         ].return_value = services
         return running_service_dict
 
@@ -437,7 +450,7 @@ def postgres_service(docker_services, postgres_dsn):
     return url
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="module")
 def postgres_db(
     postgres_dsn: dict, postgres_service: str
 ) -> Iterator[sa.engine.Engine]:
@@ -530,6 +543,7 @@ async def primary_group(
     client: TestClient,
     logged_user: UserInfoDict,
 ) -> dict[str, Any]:
+    assert client.app
     primary_group, _, _ = await list_user_groups(client.app, logged_user["id"])
     return primary_group
 
@@ -539,6 +553,7 @@ async def standard_groups(
     client: TestClient,
     logged_user: UserInfoDict,
 ) -> AsyncIterator[list[dict[str, Any]]]:
+    assert client.app
     sparc_group = {
         "gid": "5",  # this will be replaced
         "label": "SPARC",
@@ -598,6 +613,7 @@ async def all_group(
     client: TestClient,
     logged_user: UserInfoDict,
 ) -> dict[str, str]:
+    assert client.app
     _, _, all_group = await list_user_groups(client.app, logged_user["id"])
     return all_group
 
@@ -605,10 +621,24 @@ async def all_group(
 @pytest.fixture
 def mock_rabbitmq(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_webserver.director_v2_core_dynamic_services.get_rabbitmq_client",
+        "simcore_service_webserver.director_v2._core_dynamic_services.get_rabbitmq_client",
         autospec=True,
         return_value=AsyncMock(),
     )
+
+
+@pytest.fixture
+def mocked_notifications_plugin(mocker: MockerFixture) -> dict[str, mock.Mock]:
+    mocked_subscribe = mocker.patch(
+        "simcore_service_webserver.notifications.project_logs.subscribe",
+        autospec=True,
+    )
+    mocked_unsubscribe = mocker.patch(
+        "simcore_service_webserver.notifications.project_logs.unsubscribe",
+        autospec=True,
+    )
+
+    return {"subscribe": mocked_subscribe, "unsubscribe": mocked_unsubscribe}
 
 
 @pytest.fixture
@@ -628,8 +658,24 @@ def mock_progress_bar(mocker: MockerFixture) -> Any:
     mock_bar = MockedProgress()
 
     mocker.patch(
-        "simcore_service_webserver.director_v2_core_dynamic_services.ProgressBarData",
+        "simcore_service_webserver.director_v2._core_dynamic_services.ProgressBarData",
         autospec=True,
         return_value=mock_bar,
     )
     return mock_bar
+
+
+@pytest.fixture
+async def user_project(
+    client, fake_project, logged_user, tests_data_dir: Path, osparc_product_name: str
+) -> AsyncIterator[ProjectDict]:
+    async with NewProject(
+        fake_project,
+        client.app,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+        tests_data_dir=tests_data_dir,
+    ) as project:
+        print("-----> added project", project["name"])
+        yield project
+        print("<----- removed project", project["name"])

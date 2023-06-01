@@ -1,5 +1,5 @@
+import datetime
 import logging
-from datetime import datetime
 from typing import Any
 
 from models_library.projects_state import RunningState
@@ -56,7 +56,6 @@ _TASK_TO_PIPELINE_CONVERSIONS = {
 
 
 def get_pipeline_state_from_task_states(tasks: list[CompTaskAtDB]) -> RunningState:
-
     # compute pipeline state from task states
     if not tasks:
         return RunningState.UNKNOWN
@@ -91,7 +90,8 @@ def to_node_class(service_key: str) -> NodeClass:
 
 
 def is_pipeline_running(pipeline_state: RunningState) -> bool:
-    return pipeline_state.is_running()
+    is_running: bool = pipeline_state.is_running()
+    return is_running
 
 
 def is_pipeline_stopped(pipeline_state: RunningState) -> bool:
@@ -104,7 +104,6 @@ async def find_deprecated_tasks(
     task_key_versions: list[ServiceKeyVersion],
     catalog_client: CatalogClient,
 ) -> list[ServiceKeyVersion]:
-
     services_details = await logged_gather(
         *(
             catalog_client.get_service(
@@ -122,12 +121,15 @@ async def find_deprecated_tasks(
         ): details
         for details in services_details
     }
-    today = datetime.utcnow()
+    today = datetime.datetime.now(tz=datetime.timezone.utc)
 
     def _is_service_deprecated(service: dict[str, Any]) -> bool:
         if deprecation_date := service.get("deprecated"):
-            deprecation_date = parse_obj_as(datetime, deprecation_date)
-            return today > deprecation_date
+            deprecation_date = parse_obj_as(
+                datetime.datetime, deprecation_date
+            ).replace(tzinfo=datetime.timezone.utc)
+            is_deprecated: bool = today > deprecation_date
+            return is_deprecated
         return False
 
     deprecated_tasks = [

@@ -12,7 +12,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.studies_dispatcher.handlers_rest.ServiceGet__'
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.studies_dispatcher._rest_handlers.ServiceGet__'
   /viewers:
     get:
       tags:
@@ -39,7 +39,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.studies_dispatcher.handlers_rest.Viewer__'
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.studies_dispatcher._rest_handlers.Viewer__'
   /viewers/default:
     get:
       tags:
@@ -70,7 +70,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.studies_dispatcher.handlers_rest.Viewer__'
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.studies_dispatcher._rest_handlers.Viewer__'
   /view:
     get:
       tags:
@@ -145,8 +145,8 @@ paths:
           description: Opens osparc and opens a copy of publised study
 components:
   schemas:
-    Envelope_list_simcore_service_webserver.studies_dispatcher.handlers_rest.ServiceGet__:
-      title: Envelope[list[simcore_service_webserver.studies_dispatcher.handlers_rest.ServiceGet]]
+    Envelope_list_simcore_service_webserver.studies_dispatcher._rest_handlers.ServiceGet__:
+      title: Envelope[list[simcore_service_webserver.studies_dispatcher._rest_handlers.ServiceGet]]
       type: object
       properties:
         data:
@@ -156,8 +156,8 @@ components:
             $ref: '#/components/schemas/ServiceGet'
         error:
           title: Error
-    Envelope_list_simcore_service_webserver.studies_dispatcher.handlers_rest.Viewer__:
-      title: Envelope[list[simcore_service_webserver.studies_dispatcher.handlers_rest.Viewer]]
+    Envelope_list_simcore_service_webserver.studies_dispatcher._rest_handlers.Viewer__:
+      title: Envelope[list[simcore_service_webserver.studies_dispatcher._rest_handlers.Viewer]]
       type: object
       properties:
         data:

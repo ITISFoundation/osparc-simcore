@@ -11,18 +11,19 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.json_serialization import json_dumps
+from servicelib.request_keys import RQT_USERID_KEY
 
-from .. import director_v2_api
 from .._meta import api_version_prefix
-from ..director_v2_exceptions import (
+from ..director_v2 import api as director_v2_api
+from ..director_v2._models import ClusterCreate, ClusterPatch, ClusterPing
+from ..director_v2.exceptions import (
     ClusterAccessForbidden,
     ClusterNotFoundError,
     ClusterPingError,
     DirectorServiceError,
 )
-from ..director_v2_models import ClusterCreate, ClusterPatch, ClusterPing
-from ..login.decorators import RQT_USERID_KEY, login_required
-from ..security_decorators import permission_required
+from ..login.decorators import login_required
+from ..security.decorators import permission_required
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +56,7 @@ def _handle_cluster_exceptions(handler: Handler):
 
 
 class _RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore
 
 
 class _ClusterPathParams(BaseModel):

@@ -3,29 +3,26 @@
     might affect the others. E.g. files uploaded in one test can be listed in rext
 
 """
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
 
 import logging
 import time
 from operator import attrgetter
 from pathlib import Path
-from typing import Any
 from urllib.parse import quote_plus
 from zipfile import ZipFile
 
 import osparc
-import osparc.exceptions
 import pytest
 from osparc import FilesApi, SolversApi
 from osparc.models import File, Job, JobInputs, JobOutputs, JobStatus, Solver
-from tenacity import Retrying, TryAgain
-from tenacity.after import after_log
-from tenacity.retry import retry_if_exception_type
-from tenacity.stop import stop_after_attempt
-from tenacity.wait import wait_fixed
+from pytest import TempPathFactory
+from pytest_simcore.helpers.utils_public_api import ServiceInfoDict, ServiceNameStr
 
 OSPARC_CLIENT_VERSION = tuple(map(int, osparc.__version__.split(".")))
 assert OSPARC_CLIENT_VERSION >= (0, 4, 3)
@@ -37,7 +34,7 @@ logger = logging.getLogger(__name__)
 @pytest.fixture(scope="module")
 def sleeper_solver(
     solvers_api: SolversApi,
-    services_registry: dict[str, Any],
+    services_registry: dict[ServiceNameStr, ServiceInfoDict],
 ) -> Solver:
     # this part is tested in test_solvers_api so it becomes a fixture here
 
@@ -82,12 +79,11 @@ def sleeper_solver(
 
 
 @pytest.fixture(scope="module")
-def uploaded_input_file(tmpdir_factory, files_api: FilesApi) -> File:
-
-    tmpdir = tmpdir_factory.mktemp("uploaded_input_file")
+def uploaded_input_file(tmp_path_factory: TempPathFactory, files_api: FilesApi) -> File:
+    basedir: Path = tmp_path_factory.mktemp("uploaded_input_file")
 
     # produce an input file in place
-    input_path = Path(tmpdir) / "file-with-number.txt"
+    input_path = basedir / "file-with-number.txt"
     input_path.write_text("2")
 
     # upload resource to server
@@ -179,21 +175,13 @@ def test_create_job(
     assert job.id != job2.id
 
 
-_RETRY_POLICY_IF_LOGFILE_404_NOT_FOUND = dict(
-    # NOTE: Only 404s https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404
-    # are retried, the rest are failures
-    #
-    # CURRENT CONSTRAINT: Log-file should be ready in AT MOST 5 secs
-    #
-    retry=retry_if_exception_type(TryAgain),
-    wait=wait_fixed(1),
-    stop=stop_after_attempt(5),
-    after=after_log(logger, logging.WARNING),
-    reraise=True,
+@pytest.mark.parametrize(
+    "expected_outcome",
+    (
+        "SUCCESS",
+        "FAILED",
+    ),
 )
-
-
-@pytest.mark.parametrize("expected_outcome", ("SUCCESS", "FAILED"))
 def test_run_job(
     uploaded_input_file: File,
     files_api: FilesApi,
@@ -288,21 +276,9 @@ def test_run_job(
     # download log (Added in on API version 0.4.0 / client version 0.5.0 )
     if OSPARC_CLIENT_VERSION >= (0, 5, 0):
         print("Testing output logfile ...")
-
-        # NOTE: https://github.com/itisfoundation/osparc-simcore/issues/3569 shows
-        # that this test might not have the logs ready in time and returns a 404 (not found)
-        # for that reason we do a few retries before giving up
-        for attempt in Retrying(**_RETRY_POLICY_IF_LOGFILE_404_NOT_FOUND):
-            with attempt:
-                try:
-                    logfile: str = solvers_api.get_job_output_logfile(
-                        solver.id, solver.version, job.id
-                    )
-                except osparc.exceptions.ApiException as err:
-                    if err.status == 404:
-                        raise TryAgain(
-                            f"get_job_output_logfile failed with {err}"
-                        ) from err
+        logfile: str = solvers_api.get_job_output_logfile(
+            solver.id, solver.version, job.id
+        )
 
         zip_path = Path(logfile)
         print(

@@ -16,7 +16,7 @@ from models_library.basic_types import SHA1Str
 from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes import Node
 
-from ..projects.project_models import ProjectProxy
+from ..projects.models import ProjectProxy
 from ..utils import compute_sha1_on_small_dataset
 
 

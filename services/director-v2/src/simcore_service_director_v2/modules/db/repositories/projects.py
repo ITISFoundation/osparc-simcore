@@ -15,9 +15,9 @@ logger = logging.getLogger(__name__)
 class ProjectsRepository(BaseRepository):
     async def get_project(self, project_id: ProjectID) -> ProjectAtDB:
         async with self.db_engine.acquire() as conn:
-            row: RowProxy = await (
+            row: RowProxy | None = await (
                 await conn.execute(
-                    sa.select([projects]).where(projects.c.uuid == str(project_id))
+                    sa.select(projects).where(projects.c.uuid == str(project_id))
                 )
             ).first()
         if not row:

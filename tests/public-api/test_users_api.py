@@ -1,42 +1,84 @@
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
 import hashlib
+from typing import TypedDict
 
 import pytest
-from osparc import UsersApi
+from osparc import ApiClient, UsersApi
 from osparc.models import Profile, ProfileUpdate, UserRoleEnum
+from pytest_simcore.helpers.utils_public_api import RegisteredUserDict
 
 
 @pytest.fixture(scope="module")
-def users_api(api_client):
+def users_api(api_client: ApiClient) -> UsersApi:
     return UsersApi(api_client)
 
 
+class GroupDict(TypedDict):
+    gid: str
+    label: str
+    description: str
+
+
+class ProfileGroupsDict(TypedDict):
+    me: GroupDict
+    organizations: GroupDict
+    all: GroupDict
+
+
+class ProfileDict(TypedDict):
+    first_name: str
+    last_name: str
+    email: str
+    role: UserRoleEnum
+    groups: ProfileGroupsDict
+    gravatar_id: str
+
+
 @pytest.fixture
-def expected_profile(registered_user):
-    email = registered_user["email"]
-    name, _ = email.split("@")[0].split(".")
+def expected_profile(registered_user: RegisteredUserDict) -> ProfileDict:
+    first_name = registered_user["first_name"]
+    email = registered_user["email"].lower()  # all emails are stored this way
+    username = email.split("@")[0]
 
-    return {
-        "first_name": name.capitalize(),
-        "last_name": name.capitalize(),
-        "login": email,
-        "role": UserRoleEnum.USER,
-        "groups": {
-            "me": {"gid": "123", "label": "maxy", "description": "primary group"},
-            "organizations": [],
-            "all": {"gid": "1", "label": "Everyone", "description": "all users"},
-        },
-        "gravatar_id": hashlib.md5(email.encode()).hexdigest(),  # nosec
-    }
+    return ProfileDict(
+        **{
+            "first_name": first_name,
+            "last_name": registered_user["last_name"],
+            "login": email,
+            "role": UserRoleEnum.USER,
+            "groups": {
+                "all": {
+                    "gid": "1",
+                    "label": "Everyone",
+                    "description": "all users",
+                },
+                "organizations": [
+                    {
+                        "gid": "2",
+                        "label": "osparc",
+                        "description": "osparc product group",
+                    }
+                ],
+                "me": {
+                    "gid": "3",
+                    "label": username,
+                    "description": "primary group",
+                },
+            },
+            "gravatar_id": hashlib.md5(email.encode()).hexdigest(),  # nosec
+        }
+    )
 
 
-def test_get_user(users_api: UsersApi, expected_profile):
+def test_get_user(users_api: UsersApi, expected_profile: ProfileDict):
     user: Profile = users_api.get_my_profile()
 
-    # TODO: check all fields automatically
     assert user.login == expected_profile["login"]
+    # NOTE: cannot predict gid! assert user.to_dict() == expected_profile
 
 
 def test_update_user(users_api: UsersApi):

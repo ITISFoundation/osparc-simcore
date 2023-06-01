@@ -12,6 +12,7 @@ from typing import Any, Callable
 from unittest import mock
 
 import aiopg
+import aiopg.sa
 import httpx
 import pytest
 from _helpers import PublishedProject, set_comp_task_inputs, set_comp_task_outputs
@@ -224,7 +225,7 @@ def fake_task_output_data(
 
 
 async def test_parse_output_data(
-    aiopg_engine: aiopg.sa.engine.Engine,  # type: ignore
+    aiopg_engine: aiopg.sa.engine.Engine,
     published_project: PublishedProject,
     user_id: UserID,
     fake_io_schema: dict[str, dict[str, str]],
@@ -279,7 +280,7 @@ def app_with_db(
 
 async def test_compute_input_data(
     app_with_db: None,
-    aiopg_engine: aiopg.sa.engine.Engine,  # type: ignore
+    aiopg_engine: aiopg.sa.engine.Engine,
     async_client: httpx.AsyncClient,
     user_id: UserID,
     published_project: PublishedProject,
@@ -307,6 +308,7 @@ async def test_compute_input_data(
     await set_comp_task_inputs(
         aiopg_engine, sleeper_task.node_id, fake_io_schema, fake_inputs
     )
+
     # mock the get_value function so we can test it is called correctly
     def return_fake_input_value(*args, **kwargs):
         for value, value_type in zip(fake_inputs.values(), fake_io_schema.values()):
@@ -347,7 +349,7 @@ def tasks_file_link_scheme(tasks_file_link_type: FileLinkType) -> tuple:
 
 async def test_compute_output_data_schema(
     app_with_db: None,
-    aiopg_engine: aiopg.sa.engine.Engine,  # type: ignore
+    aiopg_engine: aiopg.sa.engine.Engine,
     async_client: httpx.AsyncClient,
     user_id: UserID,
     published_project: PublishedProject,
@@ -389,7 +391,7 @@ async def test_compute_output_data_schema(
 
 @pytest.mark.parametrize("entry_exists_returns", [True, False])
 async def test_clean_task_output_and_log_files_if_invalid(
-    aiopg_engine: aiopg.sa.engine.Engine,  # type: ignore
+    aiopg_engine: aiopg.sa.engine.Engine,
     user_id: UserID,
     published_project: PublishedProject,
     mocked_node_ports_filemanager_fcts: dict[str, mock.MagicMock],

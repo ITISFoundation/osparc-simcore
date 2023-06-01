@@ -3,7 +3,6 @@ import logging
 import signal
 import threading
 from pprint import pformat
-from typing import Optional
 
 import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
@@ -15,19 +14,15 @@ from dask_task_models_library.container_tasks.io import (
 from distributed.worker import logger
 from models_library.services_resources import BootMode
 from pydantic.networks import AnyUrl
+from servicelib.logging_utils import config_all_loggers
 from settings_library.s3 import S3Settings
 
 from .computational_sidecar.core import ComputationalSidecar
-from .dask_utils import (
-    TaskPublisher,
-    create_dask_worker_logger,
-    get_current_task_resources,
-    monitor_task_abortion,
-)
+from .dask_utils import TaskPublisher, get_current_task_resources, monitor_task_abortion
 from .meta import print_banner
 from .settings import Settings
 
-log = create_dask_worker_logger(__name__)
+log = logging.getLogger(__name__)
 
 
 class GracefulKiller:
@@ -65,6 +60,11 @@ async def dask_setup(worker: distributed.Worker) -> None:
     logging.basicConfig(level=settings.LOG_LEVEL.value)
     logging.root.setLevel(level=settings.LOG_LEVEL.value)
     logger.setLevel(level=settings.LOG_LEVEL.value)
+    # NOTE: Dask attaches a StreamHandler to the logger in distributed
+    # removing them solves dual propagation of logs
+    for handler in logging.getLogger("distributed").handlers:
+        logging.getLogger("distributed").removeHandler(handler)
+    config_all_loggers(settings.DASK_LOG_FORMAT_LOCAL_DEV_ENABLED)
 
     logger.info("Setting up worker...")
     logger.info("Settings: %s", pformat(settings.dict()))
@@ -91,7 +91,7 @@ async def _run_computational_sidecar_async(
     output_data_keys: TaskOutputDataSchema,
     log_file_url: AnyUrl,
     command: list[str],
-    s3_settings: Optional[S3Settings],
+    s3_settings: S3Settings | None,
     boot_mode: BootMode,
 ) -> TaskOutputData:
     task_publishers = TaskPublisher()
@@ -131,7 +131,7 @@ def run_computational_sidecar(
     output_data_keys: TaskOutputDataSchema,
     log_file_url: AnyUrl,
     command: list[str],
-    s3_settings: Optional[S3Settings],
+    s3_settings: S3Settings | None,
     boot_mode: BootMode = BootMode.CPU,
 ) -> TaskOutputData:
     # NOTE: The event loop MUST BE created in the main thread prior to this

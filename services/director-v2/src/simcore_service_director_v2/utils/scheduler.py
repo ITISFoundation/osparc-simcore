@@ -2,7 +2,7 @@ from aiopg.sa.engine import Engine
 from models_library.projects_state import RunningState
 from pydantic import PositiveInt
 
-from ..modules.db.repositories import BaseRepository
+from ..api.dependencies.database import RepoType
 
 SCHEDULED_STATES: set[RunningState] = {
     RunningState.PUBLISHED,
@@ -30,7 +30,7 @@ COMPLETED_STATES: set[RunningState] = {
 }
 
 
-def get_repository(db_engine: Engine, repo_cls: type[BaseRepository]) -> BaseRepository:
+def get_repository(db_engine: Engine, repo_cls: type[RepoType]) -> RepoType:
     return repo_cls(db_engine=db_engine)
 
 

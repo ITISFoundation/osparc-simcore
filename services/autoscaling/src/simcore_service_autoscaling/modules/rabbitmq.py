@@ -1,6 +1,6 @@
 import contextlib
 import logging
-from typing import Optional, cast
+from typing import cast
 
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import RabbitMessageBase
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 def setup(app: FastAPI) -> None:
     async def on_startup() -> None:
         app.state.rabbitmq_client = None
-        settings: Optional[RabbitSettings] = app.state.settings.AUTOSCALING_RABBITMQ
+        settings: RabbitSettings | None = app.state.settings.AUTOSCALING_RABBITMQ
         if not settings:
             logger.warning("Rabbit MQ client is de-activated in the settings")
             return
@@ -45,4 +45,4 @@ def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
 async def post_message(app: FastAPI, message: RabbitMessageBase) -> None:
     with log_catch(logger, reraise=False), contextlib.suppress(ConfigurationError):
         # NOTE: if rabbitmq was not initialized the error does not need to flood the logs
-        await get_rabbitmq_client(app).publish(message.channel_name, message.json())
+        await get_rabbitmq_client(app).publish(message.channel_name, message)

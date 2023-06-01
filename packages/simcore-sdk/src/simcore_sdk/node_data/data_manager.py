@@ -3,7 +3,6 @@ from contextlib import AsyncExitStack
 from pathlib import Path
 from shutil import move
 from tempfile import TemporaryDirectory
-from typing import Optional, Union
 
 from models_library.projects_nodes_io import StorageFileID
 from pydantic import parse_obj_as
@@ -11,16 +10,16 @@ from servicelib.archiving_utils import archive_dir, unarchive_dir
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.progress_bar import ProgressBarData
 from settings_library.r_clone import RCloneSettings
-from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 
 from ..node_ports_common import filemanager
-from ..node_ports_common.filemanager import LogRedirectCB
+from ..node_ports_common.constants import SIMCORE_LOCATION
+from ..node_ports_common.file_io_utils import LogRedirectCB
 
 log = logging.getLogger(__name__)
 
 
 def _create_s3_object(
-    project_id: str, node_uuid: str, file_path: Union[Path, str]
+    project_id: str, node_uuid: str, file_path: Path | str
 ) -> StorageFileID:
     file_name = file_path.name if isinstance(file_path, Path) else file_path
     return parse_obj_as(StorageFileID, f"{project_id}/{node_uuid}/{file_name}")
@@ -32,9 +31,9 @@ async def _push_file(
     node_uuid: str,
     file_path: Path,
     *,
-    rename_to: Optional[str],
-    io_log_redirect_cb: Optional[LogRedirectCB],
-    r_clone_settings: Optional[RCloneSettings] = None,
+    rename_to: str | None,
+    io_log_redirect_cb: LogRedirectCB | None,
+    r_clone_settings: RCloneSettings | None = None,
     progress_bar: ProgressBarData,
 ) -> None:
     store_id = SIMCORE_LOCATION
@@ -61,10 +60,10 @@ async def push(
     node_uuid: str,
     file_or_folder: Path,
     *,
-    io_log_redirect_cb: Optional[LogRedirectCB],
-    rename_to: Optional[str] = None,
-    r_clone_settings: Optional[RCloneSettings] = None,
-    archive_exclude_patterns: Optional[set[str]] = None,
+    io_log_redirect_cb: LogRedirectCB | None,
+    rename_to: str | None = None,
+    r_clone_settings: RCloneSettings | None = None,
+    archive_exclude_patterns: set[str] | None = None,
     progress_bar: ProgressBarData,
 ) -> None:
     if file_or_folder.is_file():
@@ -128,8 +127,8 @@ async def _pull_file(
     node_uuid: str,
     file_path: Path,
     *,
-    io_log_redirect_cb: Optional[LogRedirectCB],
-    save_to: Optional[Path] = None,
+    io_log_redirect_cb: LogRedirectCB | None,
+    save_to: Path | None = None,
     progress_bar: ProgressBarData,
 ) -> None:
     destination_path = file_path if save_to is None else save_to
@@ -160,8 +159,8 @@ async def pull(
     node_uuid: str,
     file_or_folder: Path,
     *,
-    io_log_redirect_cb: Optional[LogRedirectCB],
-    save_to: Optional[Path] = None,
+    io_log_redirect_cb: LogRedirectCB | None,
+    save_to: Path | None = None,
     progress_bar: ProgressBarData,
 ) -> None:
     if file_or_folder.is_file():

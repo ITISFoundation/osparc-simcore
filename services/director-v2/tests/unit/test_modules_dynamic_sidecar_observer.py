@@ -2,7 +2,7 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
-from typing import Optional
+from typing import AsyncIterator
 from unittest.mock import AsyncMock
 
 import pytest
@@ -91,13 +91,15 @@ def mock_env(
 @pytest.fixture
 def mocked_app(mock_env: None) -> FastAPI:
     app = FastAPI()
-    app.state.settings = AppSettings()
+    app.state.settings = AppSettings.create_from_envs()
     app.state.rabbitmq_client = AsyncMock()
     return app
 
 
 @pytest.fixture
-async def dynamic_sidecar_scheduler(mocked_app: FastAPI) -> DynamicSidecarsScheduler:
+async def dynamic_sidecar_scheduler(
+    mocked_app: FastAPI,
+) -> AsyncIterator[DynamicSidecarsScheduler]:
     await setup_scheduler(mocked_app)
     await setup(mocked_app)
 
@@ -124,7 +126,7 @@ async def test_regression_break_endless_loop_cancellation_edge_case(
     mock_events: None,
     dynamic_sidecar_scheduler: DynamicSidecarsScheduler,
     scheduler_data_from_http_request: SchedulerData,
-    can_save: Optional[bool],
+    can_save: bool | None,
 ):
     # in this situation the scheduler would never end loops forever
     await dynamic_sidecar_scheduler._scheduler._add_service(
@@ -154,9 +156,11 @@ async def test_regression_break_endless_loop_cancellation_edge_case(
         is True
     )
 
-    await _apply_observation_cycle(
-        dynamic_sidecar_scheduler, scheduler_data_from_http_request
-    )
+    # requires an extra pass to remove the service
+    for _ in range(2):
+        await _apply_observation_cycle(
+            dynamic_sidecar_scheduler, scheduler_data_from_http_request
+        )
 
     assert (
         _is_observation_task_present(

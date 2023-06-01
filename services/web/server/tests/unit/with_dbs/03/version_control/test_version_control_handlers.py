@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import Any, Awaitable, Callable
+from typing import Awaitable, Callable
 from uuid import UUID
 
 import aiohttp
@@ -15,12 +15,11 @@ from models_library.users import UserID
 from pydantic.main import BaseModel
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_service_webserver._meta import API_VTAG as VX
+from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.version_control.models import (
     CheckpointApiModel,
     RepoApiModel,
 )
-
-ProjectDict = dict[str, Any]
 
 
 async def assert_resp_page(
