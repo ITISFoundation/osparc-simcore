@@ -193,12 +193,12 @@ def disable_garbage_collector_task(mocker: MockerFixture) -> Iterator[mock.Mock]
     async def _fake_background_task(*args, **kwargs):
         yield
 
-    mocked_gc_setup = mocker.patch(
+    mocked_run_background = mocker.patch(
         "simcore_service_webserver.garbage_collector.run_background_task",
         side_effect=_fake_background_task,
     )
-    yield mocked_gc_setup
-    mocked_gc_setup.assert_called()
+    yield mocked_run_background
+    mocked_run_background.assert_called()
 
 
 async def login_user(client: TestClient):
@@ -430,7 +430,6 @@ async def assert_one_owner_for_project(
     assert q_project["prj_owner"] in {user["id"] for user in q_owners if user}
 
 
-@pytest.mark.testit
 async def test_t1_while_guest_is_connected_no_resources_are_removed(
     disable_garbage_collector_task: None,
     client: TestClient,
