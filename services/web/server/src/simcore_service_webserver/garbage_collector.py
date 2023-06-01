@@ -20,10 +20,10 @@ logger = logging.getLogger(__name__)
     settings_name="WEBSERVER_GARBAGE_COLLECTOR",
     logger=logger,
 )
-def setup_garbage_collector(app: web.Application):
+def setup_garbage_collector(app: web.Application) -> None:
     # TODO: review these partial inits! project-api is code smell!!
 
-    ## needs a partial init of projects plugin since this plugin uses projects-api
+    # needs a partial init of projects plugin since this plugin uses projects-api
     # - project-api needs access to db
     setup_projects_db(app)
     # - project needs access to socketio via notify_project_state_update
