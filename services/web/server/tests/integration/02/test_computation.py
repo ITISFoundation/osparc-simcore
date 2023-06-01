@@ -21,7 +21,6 @@ from servicelib.aiohttp.application import create_safe_application
 from servicelib.json_serialization import json_dumps
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
-from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import (
