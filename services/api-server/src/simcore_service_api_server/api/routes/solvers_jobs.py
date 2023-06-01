@@ -13,6 +13,7 @@ from models_library.clusters import ClusterID
 from models_library.projects_nodes_io import BaseFileLink
 from pydantic.types import PositiveInt
 
+from ...core.settings import BasicSettings
 from ...models.basic_types import VersionStr
 from ...models.domain.projects import NewProjectIn, Project
 from ...models.schemas.files import File
@@ -32,10 +33,12 @@ from ..dependencies.authentication import get_current_user_id
 from ..dependencies.database import Engine, get_db_engine
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
+from ._common import JOB_OUTPUT_LOGFILE_RESPONSES
 
 _logger = logging.getLogger(__name__)
 
 router = APIRouter()
+settings = BasicSettings.create_from_envs()
 
 
 def _compose_job_resource_name(solver_key, solver_version, job_id) -> str:
@@ -163,6 +166,17 @@ async def get_job(
     return job  # nosec
 
 
+@router.delete(
+    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def delete_job(solver_key: SolverKeyId, version: VersionStr, job_id: UUID):
+    raise NotImplementedError(
+        f"delete job {solver_key=} {version=} {job_id=}.  SEE https://github.com/ITISFoundation/osparc-simcore/issues/4111"
+    )
+
+
 @router.post(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}:start",
     response_model=JobStatus,
@@ -287,19 +301,7 @@ async def get_job_outputs(
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/outputs/logfile",
     response_class=RedirectResponse,
-    responses={
-        status.HTTP_200_OK: {
-            "content": {
-                "application/octet-stream": {
-                    "schema": {"type": "string", "format": "binary"}
-                },
-                "application/zip": {"schema": {"type": "string", "format": "binary"}},
-                "text/plain": {"schema": {"type": "string"}},
-            },
-            "description": "Returns a log file",
-        },
-        status.HTTP_404_NOT_FOUND: {"description": "Log not found"},
-    },
+    responses=JOB_OUTPUT_LOGFILE_RESPONSES,
 )
 async def get_job_output_logfile(
     solver_key: SolverKeyId,
