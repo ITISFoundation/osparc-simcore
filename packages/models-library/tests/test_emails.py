@@ -12,4 +12,3 @@ def test_lowercase_email(email_input: str):
 
     data = Profile(email=email_input)
     assert data.email == "bla@gmail.com"
-

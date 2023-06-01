@@ -167,16 +167,17 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
         logger.log(log_level, log)
 
     async def run(self, command: list[str]) -> TaskOutputData:
+        # ensure we pass the initial logs and progress
         await self._publish_sidecar_log(
             f"Starting task for {self.service_key}:{self.service_version} on {socket.gethostname()}..."
         )
+        self.task_publishers.publish_progress(0)
 
         settings = Settings.create_from_envs()
         run_id = f"{uuid4()}"
         async with Docker() as docker_client, TaskSharedVolumes(
             Path(f"{settings.SIDECAR_COMP_SERVICES_SHARED_FOLDER}/{run_id}")
         ) as task_volumes:
-            # PRE-PROCESSING
             await pull_image(
                 docker_client,
                 self.docker_auth,
@@ -203,13 +204,16 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
             await self._write_input_data(task_volumes, integration_version)
 
             # PROCESSING
-            async with managed_container(docker_client, config) as container:
+            async with managed_container(
+                docker_client,
+                config,
+                name=f"{self.service_key.split(sep='/')[-1]}_{run_id}",
+            ) as container:
                 async with managed_monitor_container_log_task(
                     container=container,
                     service_key=self.service_key,
                     service_version=self.service_version,
-                    progress_pub=self.task_publishers.progress,
-                    logs_pub=self.task_publishers.logs,
+                    task_publishers=self.task_publishers,
                     integration_version=integration_version,
                     task_volumes=task_volumes,
                     log_file_url=self.log_file_url,
@@ -263,3 +267,5 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
             await self._publish_sidecar_log(
                 "TIP: There might be more information in the service log file in the service outputs",
             )
+        # ensure we pass the final progress
+        self.task_publishers.publish_progress(1)

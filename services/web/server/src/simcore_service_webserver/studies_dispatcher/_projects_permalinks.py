@@ -65,7 +65,7 @@ def create_permalink_for_study(
     )
 
     return ProjectPermalink(
-        url=permalink,  # MATUS
+        url=permalink,
         is_public=project_is_public,
     )
 

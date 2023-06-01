@@ -11,6 +11,7 @@ from aiohttp.client_exceptions import (
     ClientResponseError,
     InvalidURL,
 )
+from models_library.api_schemas_catalog import ServiceAccessRightsGet
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from pydantic import parse_obj_as
@@ -118,6 +119,28 @@ async def get_service_resources(
             resp.raise_for_status()
             dict_response = await resp.json()
             return parse_obj_as(ServiceResourcesDict, dict_response)
+
+
+async def get_service_access_rights(
+    app: web.Application,
+    user_id: UserID,
+    service_key: str,
+    service_version: str,
+    product_name: str,
+) -> ServiceAccessRightsGet:
+    settings: CatalogSettings = get_plugin_settings(app)
+    url = (
+        URL(settings.api_base_url)
+        / f"services/{urllib.parse.quote_plus(service_key)}/{service_version}/accessRights"
+    ).with_query({"user_id": user_id})
+
+    with handle_client_exceptions(app) as session:
+        async with session.get(
+            url, headers={X_PRODUCT_NAME_HEADER: product_name}
+        ) as resp:
+            resp.raise_for_status()
+            body = await resp.json()
+            return ServiceAccessRightsGet.parse_obj(body)
 
 
 async def update_service(

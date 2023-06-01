@@ -54,8 +54,6 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
     });
     this.__setNotHoveredStyle();
     this.__attachEventHandlers();
-
-    osparc.utils.Utils.setIdToWidget(this, "nodeTreeItem");
   },
 
   properties: {
@@ -102,13 +100,15 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
     __optionsMenu: null,
 
     __applyStudy: function() {
-      osparc.utils.Utils.setMoreToWidget(this, "root");
+      const label = this.getChildControl("label");
+      osparc.utils.Utils.setMoreToWidget(label, "root");
 
       this.getChildControl("delete-button").exclude();
     },
 
     __applyNode: function(node) {
-      osparc.utils.Utils.setMoreToWidget(this, node.getNodeId());
+      const label = this.getChildControl("label");
+      osparc.utils.Utils.setMoreToWidget(label, node.getNodeId());
 
       if (node.isDynamic()) {
         this.getChildControl("fullscreen-button").show();
@@ -300,6 +300,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
       // The label
       this.addLabel();
       const label = this.getChildControl("label");
+      osparc.utils.Utils.setIdToWidget(label, "nodeTreeItem");
       label.set({
         allowGrowX: true,
         allowShrinkX: true

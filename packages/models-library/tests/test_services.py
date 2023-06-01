@@ -198,6 +198,7 @@ def test_same_regex_patterns_in_jsonschema_and_python(
 ):
     # read file in
     json_schema_config = json_schema_dict(json_schema_file_name)
+
     # go to keys
     def _find_pattern_entry(obj: dict[str, Any], key: str) -> Any:
         if key in obj:

@@ -150,7 +150,7 @@ async def test_post_task_progress_message(
     await client.subscribe(
         ProgressRabbitMessageNode.get_channel_name(),
         mocked_message_handler,
-        topics=None,
+        topics=[BIND_TO_ALL_TOPICS],
     )
 
     service_with_labels = await create_service(

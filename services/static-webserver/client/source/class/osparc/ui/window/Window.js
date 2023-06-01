@@ -58,8 +58,8 @@ qx.Class.define("osparc.ui.window.Window", {
   },
 
   statics: {
-    popUpInWindow: function(widget, title = "", width = 400, height = 400) {
-      const win = new osparc.ui.window.Window(title).set({
+    popUpInWindow: function(widget, title = "", width = 400, height = 400, icon) {
+      const win = new osparc.ui.window.Window(title, icon).set({
         layout: new qx.ui.layout.VBox(10),
         autoDestroy: true,
         contentPadding: 10,

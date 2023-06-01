@@ -378,3 +378,9 @@ def default_copy_project_name(name: str) -> str:
             new_copy_index = parse_obj_as(int, current_copy_index.strip("()")) + 1
         return f"{match.group(1)}({new_copy_index})"
     return f"{name} (Copy)"
+
+
+def replace_multiple_spaces(text: str) -> str:
+    # Use regular expression to replace multiple spaces with a single space
+    cleaned_text = re.sub(r"\s+", " ", text)
+    return cleaned_text

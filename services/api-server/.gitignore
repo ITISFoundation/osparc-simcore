@@ -1,2 +1,5 @@
 # outputs from makefile
 client
+
+# openapi for development mode
+# openapi-dev.json TODO: activate before merging in master
