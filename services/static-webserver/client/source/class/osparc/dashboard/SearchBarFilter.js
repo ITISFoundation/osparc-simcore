@@ -39,6 +39,8 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     this.__buildFiltersMenu();
 
     this.__attachEventHandlers();
+
+    this.__currentFilter = null;
   },
 
   statics: {
@@ -66,6 +68,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
 
   members: {
     __resourceType: null,
+    __currentFilter: null,
     __filtersMenu: null,
 
     _createChildControlImpl: function(id) {
@@ -308,13 +311,11 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       const filterData = {
         tags: [],
         classifiers: [],
-        sharedWith: null
+        sharedWith: null,
+        text: ""
       };
-      if (this.__resourceType !== "study") {
-        // study text filtering is done in the backend
-        const textFilter = this.getTextFilterValue();
-        filterData["text"] = textFilter ? textFilter : "";
-      }
+      const textFilter = this.getTextFilterValue();
+      filterData["text"] = textFilter ? textFilter : "";
       this.getChildControl("active-filters").getChildren().forEach(chip => {
         switch (chip.type) {
           case "tag":
@@ -337,8 +338,11 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
 
     __filter: function() {
       const filterData = this.getFilterData();
-      this.fireDataEvent("filterChanged", filterData);
-      this._filterChange(filterData);
+      if (JSON.stringify(this.__currentFilter) !== JSON.stringify(filterData)) {
+        this.__currentFilter = filterData;
+        this.fireDataEvent("filterChanged", filterData);
+        this._filterChange(filterData);
+      }
     }
   }
 });
