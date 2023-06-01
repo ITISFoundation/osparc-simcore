@@ -1,5 +1,6 @@
 from functools import cached_property
 
+from pydantic import parse_obj_as
 from pydantic.networks import AnyUrl
 from pydantic.types import SecretStr
 
@@ -14,7 +15,7 @@ class RabbitDsn(AnyUrl):
 class RabbitSettings(BaseCustomSettings):
     # host
     RABBIT_HOST: str
-    RABBIT_PORT: PortInt = PortInt(5672)
+    RABBIT_PORT: PortInt = parse_obj_as(PortInt, 5672)
 
     # auth
     RABBIT_USER: str
