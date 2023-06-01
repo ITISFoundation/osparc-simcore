@@ -23,29 +23,30 @@ def vendor_service() -> str:
 
 class ExpectedSecrets(NamedTuple):
     old_secrets: dict[str, Any]
-    vendor_secrets: dict[str, Any]
+    new_secrets: dict[str, Any]
 
 
 @pytest.fixture
 async def expected_secrets(
     connection: SAConnection, vendor_service: str
 ) -> ExpectedSecrets:
-    # other-service
+    # 'other-service'
     await connection.execute(
         services_meta_data.insert().values(
             key="simcore/services/dynamic/vendor/other_service",
             version="1.0.0",
-            name="some-service",
-            description="Some service from a vendor",
+            name="other-service",
+            description="Some other service from a vendor",
         )
     )
 
-    # Three versions of 'some_service'
+    # Some versions of 'some_service'
     for version, description in [
-        ("0.0.1", "First version from a vendor"),  # has no secrets
-        ("0.0.2", "Second version from a vendor"),  # has old secrets
-        ("1.0.0", "Third version from a vendor"),  # has secrets
-        ("1.2.0", "Lastest version from a vendor"),
+        ("0.0.1", "This has no secrets"),
+        ("0.0.2", "This has old_secrets"),  # defined old_secrets
+        ("0.1.0", "This should inherit old_secrets"),
+        ("1.0.0", "This has new_secrets"),  # defined new_secrets
+        ("1.2.0", "Latest version inherits new_secrets"),
     ]:
         await connection.execute(
             services_meta_data.insert().values(
@@ -56,6 +57,7 @@ async def expected_secrets(
             )
         )
 
+    # We define old and new secrets
     old_secrets = {
         VENDOR_SECRET_PREFIX + "LICENSE_SERVER_HOST": "product_a-server",
         VENDOR_SECRET_PREFIX + "LICENSE_SERVER_PRIMARY_PORT": 1,
@@ -70,7 +72,7 @@ async def expected_secrets(
         )
     )
 
-    vendor_secrets = {
+    new_secrets = {
         **old_secrets,
         VENDOR_SECRET_PREFIX + "LICENSE_DNS_RESOLVER_IP": "1.1.1.1",
         VENDOR_SECRET_PREFIX + "LICENSE_DNS_RESOLVER_PORT": "21",
@@ -91,12 +93,12 @@ async def expected_secrets(
                     if bool(random.getrandbits(1))
                     else key
                 ): value
-                for key, value in vendor_secrets.items()
+                for key, value in new_secrets.items()
             },
         )
     )
 
-    return ExpectedSecrets(old_secrets, vendor_secrets)
+    return ExpectedSecrets(old_secrets, new_secrets)
 
 
 def test_vendor_secret_prefix_must_end_with_underscore():
@@ -109,13 +111,19 @@ async def test_get_latest_service_vendor_secrets(
     # latest i.e. 1.2.0
     assert (
         await get_vendor_secrets(connection, vendor_service)
-        == expected_secrets.vendor_secrets
+        == expected_secrets.new_secrets
     )
 
 
 @pytest.mark.parametrize(
     "service_version,expected_result",
-    [("0.0.1", "Empty"), ("0.0.2", "Old"), ("1.0.0", "Latest"), ("1.2.0", "Latest")],
+    [
+        ("0.0.1", "Empty"),
+        ("0.0.2", "Old"),
+        ("0.1.0", "Old"),
+        ("1.0.0", "New"),
+        ("1.2.0", "New"),
+    ],
 )
 async def test_get_service_vendor_secrets(
     connection: SAConnection,
@@ -124,13 +132,19 @@ async def test_get_service_vendor_secrets(
     service_version: str,
     expected_result: str,
 ):
+    # ("0.0.1", "This has no secrets"),
+    # ("0.0.2", "This has old_secrets"),  # defined old_secrets
+    # ("0.1.0", "This should inherit old_secrets"),
+    # ("1.0.0", "This has new_secrets"), # defined new_secrets
+    # ("1.2.0", "Latest version inherits new_secrets"),
+
     match expected_result:
         case "Empty":
             expected = {}
         case "Old":
             expected = expected_secrets.old_secrets
-        case "Latest":
-            expected = expected_secrets.vendor_secrets
+        case "New":
+            expected = expected_secrets.new_secrets
 
     assert (
         await get_vendor_secrets(connection, vendor_service, service_version)

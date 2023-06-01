@@ -19,13 +19,11 @@ async def get_vendor_secrets(
     *,
     normalize_names: bool = True,
 ) -> dict[str, VendorSecret]:
-
-    select_stmt = sa.select(services_vendor_secrets.c.secrets_map)
-    where_stmt = services_vendor_secrets.c.service_key == vendor_service_key
-
     def _version(column_or_value):
         # converts version value string to array[integer] that can be compared
         return sa.func.string_to_array(column_or_value, ".").cast(ARRAY(INTEGER))
+
+    query = sa.select(services_vendor_secrets.c.secrets_map)
 
     if vendor_service_version == LATEST:
         latest_version = sa.select(
@@ -35,20 +33,18 @@ async def get_vendor_secrets(
             )
         ).where(services_vendor_secrets.c.service_key == vendor_service_key)
 
-        where_stmt &= (
-            services_vendor_secrets.c.service_from_version == latest_version.subquery()
+        query = query.where(
+            services_vendor_secrets.c.service_from_version
+            == latest_version.scalar_subquery()
         )
-
-        query = select_stmt.where(where_stmt)
     else:
         assert len([int(p) for p in vendor_service_version.split(".")]) == 3  # nosec
 
-        where_stmt &= _version(
-            services_vendor_secrets.c.service_from_version
-        ) <= _version(vendor_service_version)
-
         query = (
-            select_stmt.where(where_stmt)
+            query.where(
+                _version(services_vendor_secrets.c.service_from_version)
+                <= _version(vendor_service_version)
+            )
             .order_by(_version(services_vendor_secrets.c.service_from_version).desc())
             .limit(1)
         )
