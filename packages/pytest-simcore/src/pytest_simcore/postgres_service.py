@@ -29,7 +29,8 @@ def execute_queries(
         for statement in sql_statements:
             try:
                 with con.begin():
-                    con.execution_options(autocommit=True).execute(statement)
+                    con.execute(statement)
+
             except Exception as e:  # pylint: disable=broad-except
                 # when running tests initially the TEMPLATE_DB_TO_RESTORE dose not exist and will cause an error
                 # which can safely be ignored. The debug message is here to catch future errors which and
