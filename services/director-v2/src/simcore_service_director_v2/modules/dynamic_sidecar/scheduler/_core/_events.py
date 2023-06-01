@@ -445,7 +445,7 @@ class CreateUserServices(DynamicSchedulerEvent):
             or scheduler_data.proxy_admin_api_port is None
         ):
             raise ValueError(
-                "Expected a value for all the following values: "
+                "Did not expect None for any of the following: "
                 f"{scheduler_data.dynamic_sidecar.dynamic_sidecar_id=} "
                 f"{scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id=} "
                 f"{scheduler_data.dynamic_sidecar.swarm_network_id=} "
