@@ -7,7 +7,6 @@ from pydantic.tools import parse_obj_as
 
 @pytest.mark.skip(reason="DEV: testing parse_obj_as")
 def test_parse_uuid_as_a_string(faker: Faker):
-
     expected_uuid = faker.uuid4()
     got_uuid = parse_obj_as(UUIDStr, expected_uuid)
 

@@ -120,7 +120,7 @@
             "required": true,
             "schema": {
               "title": "Service Key",
-              "pattern": "^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
+              "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "type": "string",
               "description": "Distinctive name for the node based on the docker registry path"
             },
@@ -178,7 +178,7 @@
             "required": true,
             "schema": {
               "title": "Service Key",
-              "pattern": "^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
+              "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "type": "string",
               "description": "Distinctive name for the node based on the docker registry path"
             },
@@ -312,7 +312,7 @@
             "required": true,
             "schema": {
               "title": "Service Key",
-              "pattern": "^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
+              "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "type": "string",
               "description": "distinctive name for the node based on the docker registry path"
             },
@@ -1205,7 +1205,7 @@
             "required": true,
             "schema": {
               "title": "Cluster Id",
-              "minimum": 0.0,
+              "minimum": 0,
               "type": "integer"
             },
             "name": "cluster_id",
@@ -1257,7 +1257,7 @@
             "required": true,
             "schema": {
               "title": "Cluster Id",
-              "minimum": 0.0,
+              "minimum": 0,
               "type": "integer"
             },
             "name": "cluster_id",
@@ -1302,7 +1302,7 @@
             "required": true,
             "schema": {
               "title": "Cluster Id",
-              "minimum": 0.0,
+              "minimum": 0,
               "type": "integer"
             },
             "name": "cluster_id",
@@ -1410,7 +1410,7 @@
             "required": true,
             "schema": {
               "title": "Cluster Id",
-              "minimum": 0.0,
+              "minimum": 0,
               "type": "integer"
             },
             "name": "cluster_id",
@@ -1512,7 +1512,7 @@
             "required": true,
             "schema": {
               "title": "Cluster Id",
-              "minimum": 0.0,
+              "minimum": 0,
               "type": "integer"
             },
             "name": "cluster_id",
@@ -2097,7 +2097,7 @@
           },
           "id": {
             "title": "Id",
-            "minimum": 0.0,
+            "minimum": 0,
             "type": "integer",
             "description": "The cluster ID"
           }
@@ -2253,7 +2253,7 @@
           },
           "cluster_id": {
             "title": "Cluster Id",
-            "minimum": 0.0,
+            "minimum": 0,
             "type": "integer",
             "description": "the computation shall use the cluster described by its id, 0 is the default cluster"
           }
@@ -2332,7 +2332,7 @@
           },
           "cluster_id": {
             "title": "Cluster Id",
-            "minimum": 0.0,
+            "minimum": 0,
             "type": "integer",
             "description": "the cluster on which the computaional task runs/ran (none if no task ran yet)"
           },
@@ -2433,7 +2433,7 @@
         "properties": {
           "service_key": {
             "title": "Service Key",
-            "pattern": "^simcore/services/dynamic/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
+            "pattern": "^simcore/services/dynamic/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
             "type": "string",
             "description": "distinctive name for the node based on the docker registry path"
           },
@@ -2532,7 +2532,7 @@
         "properties": {
           "image": {
             "title": "Image",
-            "pattern": "^(?:(?P<registry_host>[a-z0-9-]+(?:\\.[a-z0-9-]+)+(?::\\d+)?|[a-z0-9-]+:\\d+)/)?(?P<docker_image>(?:[a-z0-9][a-z0-9_.-]*/)*[a-z0-9-_]+[a-z0-9])(?::(?P<docker_tag>[\\w][\\w.-]{0,127}))?(?P<docker_digest>\\@sha256:[a-fA-F0-9]{32,64})?$",
+            "pattern": "^(?:([a-z0-9-]+(?:\\.[a-z0-9-]+)+(?::\\d+)?|[a-z0-9-]+:\\d+)/)?((?:[a-z0-9][a-z0-9_.-]*/)*[a-z0-9-_]+[a-z0-9])(?::([\\w][\\w.-]{0,127}))?(\\@sha256:[a-fA-F0-9]{32,64})?$",
             "type": "string",
             "description": "Used by the frontend to provide a context for the users.Services with a docker-compose spec will have multiple entries.Using the `image:version` instead of the docker-compose spec is more helpful for the end user."
           },
@@ -2685,7 +2685,7 @@
           },
           "GPU": {
             "title": "Gpu",
-            "minimum": 0.0,
+            "minimum": 0,
             "type": "integer",
             "description": "defines the required (maximum) GPU for running the services"
           },
@@ -2890,7 +2890,7 @@
         "properties": {
           "service_key": {
             "title": "Service Key",
-            "pattern": "^simcore/services/dynamic/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
+            "pattern": "^simcore/services/dynamic/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
             "type": "string",
             "description": "distinctive name for the node based on the docker registry path"
           },
@@ -3013,7 +3013,7 @@
           },
           "service_key": {
             "title": "Service Key",
-            "pattern": "^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
+            "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
             "type": "string",
             "description": "distinctive name for the node based on the docker registry path",
             "example": [
@@ -3208,7 +3208,7 @@
           },
           "key": {
             "title": "Key",
-            "pattern": "^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
+            "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
             "type": "string",
             "description": "distinctive name for the node based on the docker registry path"
           },
@@ -3270,7 +3270,7 @@
           },
           "min-visible-inputs": {
             "title": "Min-Visible-Inputs",
-            "minimum": 0.0,
+            "minimum": 0,
             "type": "integer",
             "description": "The number of 'data type inputs' displayed by default in the UI. When None all 'data type inputs' are displayed."
           }
