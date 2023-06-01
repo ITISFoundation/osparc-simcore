@@ -28,13 +28,13 @@ async def get_vendor_secrets(
     if vendor_service_version == LATEST:
         latest_version = sa.select(
             sa.func.array_to_string(
-                sa.func.max(_version(services_vendor_secrets.c.service_from_version)),
+                sa.func.max(_version(services_vendor_secrets.c.service_base_version)),
                 ".",
             )
         ).where(services_vendor_secrets.c.service_key == vendor_service_key)
 
         query = query.where(
-            services_vendor_secrets.c.service_from_version
+            services_vendor_secrets.c.service_base_version
             == latest_version.scalar_subquery()
         )
     else:
@@ -42,10 +42,10 @@ async def get_vendor_secrets(
 
         query = (
             query.where(
-                _version(services_vendor_secrets.c.service_from_version)
+                _version(services_vendor_secrets.c.service_base_version)
                 <= _version(vendor_service_version)
             )
-            .order_by(_version(services_vendor_secrets.c.service_from_version).desc())
+            .order_by(_version(services_vendor_secrets.c.service_base_version).desc())
             .limit(1)
         )
 

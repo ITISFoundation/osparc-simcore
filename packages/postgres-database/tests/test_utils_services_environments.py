@@ -145,6 +145,8 @@ async def test_get_service_vendor_secrets(
             expected = expected_secrets.old_secrets
         case "New":
             expected = expected_secrets.new_secrets
+        case _:
+            pytest.fail(f"{expected_result} not considered")
 
     assert (
         await get_vendor_secrets(connection, vendor_service, service_version)

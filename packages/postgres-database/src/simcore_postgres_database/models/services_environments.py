@@ -26,7 +26,7 @@ services_vendor_secrets = sa.Table(
         doc="A single environment is allowed per service",
     ),
     sa.Column(
-        "service_from_version",
+        "service_base_version",
         sa.String,
         doc="Defines the minimum version (included) from which these secrets apply",
     ),
@@ -39,11 +39,11 @@ services_vendor_secrets = sa.Table(
         "that can be replaced at runtime if found in the compose-specs",
     ),
     # TIME STAMPS ----
-    column_created_datetime(),
-    column_modified_datetime(),
+    column_created_datetime(timezone=True),
+    column_modified_datetime(timezone=True),
     # CONSTRAINTS --
     sa.ForeignKeyConstraint(
-        ["service_key", "service_from_version"],
+        ["service_key", "service_base_version"],
         ["services_meta_data.key", "services_meta_data.version"],
         onupdate="CASCADE",
         ondelete="CASCADE",
