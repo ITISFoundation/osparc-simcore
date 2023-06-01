@@ -1,10 +1,9 @@
 import datetime
-from typing import Dict, List, Tuple
 
 from pydantic import BaseModel, Field, StrictStr, validator
 
-from ..styling_components import TB, Backgrounds, Borders, T
-from ..xlsx_base import BaseXLSXCellData, BaseXLSXDocument, BaseXLSXSheet
+from .core.styling_components import TB, Backgrounds, Borders, T
+from .core.xlsx_base import BaseXLSXCellData, BaseXLSXDocument, BaseXLSXSheet
 from .utils import ensure_correct_instance
 
 
@@ -15,8 +14,8 @@ class SubmissionDocumentParams(BaseModel):
     milestone_archived: StrictStr = Field(
         "", description="From milestones supplied to NIH"
     )
-    milestone_completion_date: datetime.datetime = Field(
-        "",
+    milestone_completion_date: datetime.datetime | None = Field(
+        None,
         description=(
             "Date of milestone completion. This date starts the countdown for submission "
             "(30 days after completion), length of embargo and publication date (12 "
@@ -24,16 +23,17 @@ class SubmissionDocumentParams(BaseModel):
         ),
     )
 
-    # pylint: disable=unused-argument
     @validator("milestone_completion_date")
     @classmethod
-    def format_milestone_completion_date(cls, v, values):
+    def format_milestone_completion_date(cls, v):
+        if v is None:
+            return ""
         return v.strftime("%d/%m/%Y")
 
 
 class SheetFirstSubmission(BaseXLSXSheet):
     name = "Sheet1"
-    cell_styles = [
+    cell_styles: list[tuple[str, BaseXLSXCellData]] = [
         ("A1", TB("Submission Item")),
         ("B1", TB("Definition")),
         ("C1", TB("Value")),
@@ -55,7 +55,7 @@ class SheetFirstSubmission(BaseXLSXSheet):
 
     def assemble_data_for_template(
         self, template_data: BaseModel
-    ) -> List[Tuple[str, Dict[str, BaseXLSXCellData]]]:
+    ) -> list[tuple[str, BaseXLSXCellData]]:
         params: SubmissionDocumentParams = ensure_correct_instance(
             template_data, SubmissionDocumentParams
         )
@@ -63,7 +63,7 @@ class SheetFirstSubmission(BaseXLSXSheet):
         return [
             ("C2", T(params.award_number)),
             ("C3", T(params.milestone_archived)),
-            ("C4", T(params.milestone_completion_date)),
+            ("C4", T(f"{params.milestone_completion_date}")),
         ]
 
 

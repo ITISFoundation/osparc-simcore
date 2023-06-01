@@ -156,26 +156,30 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     },
 
     __showPort: function(portId) {
-      const entry = this.self().GRID_POS;
-      Object.values(entry).forEach(entryPos => {
+      const entries = this.self().GRID_POS;
+      Object.values(entries).forEach(entryPos => {
         const layoutElement = this._getLayoutChild(portId, entryPos);
         if (layoutElement && layoutElement.child) {
           const control = layoutElement.child;
           if (control) {
             control.show();
+            const row = control.getLayoutProperties().row;
+            this._getLayout().setRowHeight(row, osparc.component.form.renderer.PropFormBase.ROW_HEIGHT);
           }
         }
       });
     },
 
     __excludePort: function(portId) {
-      const entry = this.self().GRID_POS;
-      Object.values(entry).forEach(entryPos => {
+      const entries = this.self().GRID_POS;
+      Object.values(entries).forEach(entryPos => {
         const layoutElement = this._getLayoutChild(portId, entryPos);
         if (layoutElement && layoutElement.child) {
           const control = layoutElement.child;
           if (control) {
             control.exclude();
+            const row = control.getLayoutProperties().row;
+            this._getLayout().setRowHeight(row, 0);
           }
         }
       });
@@ -223,7 +227,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       const fieldOptsBtn = new qx.ui.form.MenuButton().set({
         menu: optionsMenu,
         icon: "@FontAwesome5Solid/link/12",
-        height: 23,
+        maxHeight: 23,
         focusable: false,
         allowGrowX: false,
         alignX: "center"
@@ -242,7 +246,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     __createUnlinkButton: function(field) {
       const unlinkBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/unlink/12").set({
         toolTipText: this.tr("Unlink"),
-        height: 23
+        maxHeight: 23
       });
       unlinkBtn.addListener("execute", () => this.removePortLink(field.key), this);
       return unlinkBtn;
@@ -342,7 +346,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
     __getSelectFileButton: function(portId) {
       const selectFileButton = new qx.ui.menu.Button(this.tr("Select File"));
-      // selectFileButton.addListener("execute", () => this.fireDataEvent("fileRequested", portId), this);
       selectFileButton.addListener("execute", () => this.fireDataEvent("filePickerRequested", {
         portId,
         file: null

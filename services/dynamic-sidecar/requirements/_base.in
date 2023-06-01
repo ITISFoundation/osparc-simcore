@@ -28,6 +28,7 @@ aio-pika
 aiodocker
 aiofiles
 aioprocessing
+arrow
 docker-compose
 fastapi
 httpx

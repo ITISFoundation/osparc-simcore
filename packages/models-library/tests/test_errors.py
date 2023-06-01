@@ -3,15 +3,13 @@
 # pylint: disable=unused-variable
 
 
-from typing import List
-
 import pytest
 from models_library.errors import ErrorDict
 from pydantic import BaseModel, ValidationError, conint
 
 
 class B(BaseModel):
-    y: List[int]
+    y: list[int]
 
 
 class A(BaseModel):
@@ -20,14 +18,13 @@ class A(BaseModel):
 
 
 def test_pydantic_error_dict():
-
     with pytest.raises(ValidationError) as exc_info:
         A(x=-1, b={"y": [0, "wrong"]})
 
     assert isinstance(exc_info.value, ValidationError)
 
     # demos ValidationError.errors() work
-    errors: List[ErrorDict] = exc_info.value.errors()
+    errors: list[ErrorDict] = exc_info.value.errors()
     assert len(errors) == 2
 
     # checks ErrorDict interface

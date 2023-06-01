@@ -25,7 +25,7 @@ from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import get_log_record_extra, log_context
 from simcore_postgres_database.errors import UniqueViolation
 from simcore_postgres_database.models.projects_to_products import projects_to_products
-from simcore_postgres_database.webserver_models import ProjectType, projects
+from simcore_postgres_database.webserver_models import ProjectType, projects, users
 from sqlalchemy import desc, func, literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import and_, select
@@ -271,6 +271,7 @@ class ProjectDBAPI(BaseProjectDB):
         include_hidden: bool | None = False,
         offset: int | None = 0,
         limit: int | None = None,
+        search: str | None = None,
     ) -> tuple[list[dict[str, Any]], list[ProjectType], int]:
         async with self.engine.acquire() as conn:
             user_groups: list[RowProxy] = await self._list_user_groups(conn, user_id)
@@ -302,11 +303,22 @@ class ProjectDBAPI(BaseProjectDB):
                     )
                     & (
                         (projects_to_products.c.product_name == product_name)
+                        # This was added for backward compatibility, including old projects not in the projects_to_products table.
                         | (projects_to_products.c.product_name.is_(None))
                     )
                 )
-                .order_by(desc(projects.c.last_change_date), projects.c.id)
             )
+            if search:
+                query = query.join(users, isouter=True)
+                query = query.where(
+                    (projects.c.name.ilike(f"%{search}%"))
+                    | (projects.c.description.ilike(f"%{search}%"))
+                    | (projects.c.uuid.ilike(f"%{search}%"))
+                    | (users.c.name.ilike(f"%{search}%"))
+                )
+
+            # Default ordering
+            query = query.order_by(desc(projects.c.last_change_date), projects.c.id)
 
             total_number_of_projects = await conn.scalar(
                 query.with_only_columns(func.count()).order_by(None)

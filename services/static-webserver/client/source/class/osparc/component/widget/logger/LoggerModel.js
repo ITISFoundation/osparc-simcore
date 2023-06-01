@@ -42,7 +42,7 @@
  * @asset(demobrowser/backend/remote_table.php)
  */
 
-qx.Class.define("osparc.component.widget.logger.LoggerTable", {
+qx.Class.define("osparc.component.widget.logger.LoggerModel", {
   extend : qx.ui.table.model.Remote,
 
   construct : function() {
@@ -178,7 +178,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerTable", {
     },
 
     // overloaded - called whenever the table requests the row count
-    _loadRowCount : function() {
+    _loadRowCount: function() {
       this.__filteredData = [];
       for (let i=0; i<this.__rawData.length; i++) {
         const rowData = this.__rawData[i];
@@ -186,25 +186,18 @@ qx.Class.define("osparc.component.widget.logger.LoggerTable", {
           this.__filteredData.push(rowData);
         }
       }
-      this.__setRowCount(this.__filteredData.length);
-    },
-
-    _loadRowData : function(firstRow, lastRow) {
-      this.__rowDataLoadded(firstRow, lastRow);
-    },
-
-    // Fake the server localy
-    __setRowCount : function(number) {
+      // Fake the server localy
       const self = this;
-      self._onRowCountLoaded(number);
+      self._onRowCountLoaded(this.__filteredData.length);
     },
 
-    __rowDataLoadded : function(firstRow, lastRow) {
-      const self = this;
+    // overridden
+    _loadRowData: function(firstRow, lastRow) {
       const data = [];
       for (let i=firstRow; i<=lastRow; i++) {
         data.push(this.__filteredData[i]);
       }
+      const self = this;
       self._onRowDataLoaded(data);
     }
   }

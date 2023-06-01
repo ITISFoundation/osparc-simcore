@@ -10,7 +10,6 @@ try:
     from fastapi.encoders import jsonable_encoder
 
 except ImportError:  # for aiohttp-only services
-
     # Taken 'as is' from https://github.com/tiangolo/fastapi/blob/master/fastapi/encoders.py
     # to be used in aiohttp-based services w/o having to install fastapi
     #

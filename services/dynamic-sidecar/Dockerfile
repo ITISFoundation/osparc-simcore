@@ -60,7 +60,7 @@ ENV DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR="/dy-volumes"
 
 # create direcotry to persist SharedStore data accessiable
 # between dynamic-sidecar reboots
-ENV DYNAMIC_SIDECAR_SHARED_STORE_DIR="/shared-store"
+ENV DYNAMIC_SIDECAR_SHARED_STORE_DIR="${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}/shared-store"
 RUN mkdir -p "${DYNAMIC_SIDECAR_SHARED_STORE_DIR}" && \
   chown -R scu:scu "${DYNAMIC_SIDECAR_SHARED_STORE_DIR}"
 

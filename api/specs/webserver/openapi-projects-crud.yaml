@@ -11,7 +11,7 @@ paths:
         schema:
           title: Limit
           exclusiveMaximum: true
-          minimum: 1.0
+          minimum: 1
           type: integer
           description: maximum number of items to return (pagination)
           default: 20
@@ -22,7 +22,7 @@ paths:
         required: false
         schema:
           title: Offset
-          minimum: 0.0
+          minimum: 0
           type: integer
           description: index to the first item to return (pagination)
           default: 0
@@ -41,6 +41,16 @@ paths:
           description: includes projects marked as hidden in the listing
           default: false
         name: show_hidden
+        in: query
+      - description: Multi column full text search
+        required: false
+        schema:
+          title: Search
+          maxLength: 25
+          type: string
+          description: Multi column full text search
+        example: My Project
+        name: search
         in: query
       responses:
         '200':
@@ -376,7 +386,7 @@ components:
       properties:
         key:
           title: Key
-          pattern: ^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
           type: string
           description: distinctive name for the node based on the docker registry
             path
@@ -394,7 +404,9 @@ components:
           maximum: 100.0
           minimum: 0.0
           type: number
-          description: the node progress value
+          description: the node progress value (deprecated in DB, still used for API
+            only)
+          deprecated: true
         thumbnail:
           title: Thumbnail
           maxLength: 2083
@@ -491,6 +503,14 @@ components:
           - $ref: '#/components/schemas/RunningState'
           description: the node's current state
           default: NOT_STARTED
+        progress:
+          title: Progress
+          maximum: 1.0
+          minimum: 0.0
+          type: number
+          description: current progress of the task if available (None if not started
+            or not a computational task)
+          default: 0
       additionalProperties: false
     Owner:
       title: Owner
@@ -567,16 +587,16 @@ components:
           minimum: 0
         total:
           title: Total
-          minimum: 0.0
+          minimum: 0
           type: integer
         offset:
           title: Offset
-          minimum: 0.0
+          minimum: 0
           type: integer
           default: 0
         count:
           title: Count
-          minimum: 0.0
+          minimum: 0
           type: integer
       additionalProperties: false
     Page_ProjectListItem_:
