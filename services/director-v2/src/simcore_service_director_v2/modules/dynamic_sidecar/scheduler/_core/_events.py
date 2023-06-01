@@ -442,7 +442,7 @@ class CreateUserServices(DynamicSchedulerEvent):
             or scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id is None
             or scheduler_data.dynamic_sidecar.swarm_network_id is None
             or scheduler_data.dynamic_sidecar.swarm_network_name is None
-            or scheduler_data.proxy_admin_api_port is not None
+            or scheduler_data.proxy_admin_api_port is None
         ):
             raise ValueError(
                 "Expected a value for all the following values: "
