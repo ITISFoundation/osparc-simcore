@@ -80,6 +80,6 @@ async def update_or_pop_permalink_in_project(
 
     except (PermalinkNotAllowedError, PermalinkFactoryError) as err:
         project.pop("permalink", None)
-        _logger.debug("Failed to create permalink %s", f"{err}")
+        _logger.debug("Skips permalink entry in project: %s", f"{err}")
 
     return None
