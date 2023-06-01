@@ -51,6 +51,6 @@ services_vendor_secrets = sa.Table(
         # all versions above will take the secret_map for the previous one.
     ),
     sa.PrimaryKeyConstraint(
-        "service_key", "service_from_version", name="services_vendor_secrets_pk"
+        "service_key", "service_base_version", name="services_vendor_secrets_pk"
     ),
 )

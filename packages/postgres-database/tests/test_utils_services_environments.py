@@ -67,7 +67,7 @@ async def expected_secrets(
     await connection.execute(
         services_vendor_secrets.insert().values(
             service_key=vendor_service,
-            service_from_version="0.0.2",
+            service_base_version="0.0.2",
             secrets_map=old_secrets,
         )
     )
@@ -86,7 +86,7 @@ async def expected_secrets(
         # a vendor exposes these environs to its services to everybody
         services_vendor_secrets.insert().values(
             service_key=vendor_service,
-            service_from_version="1.0.0",  # valid from
+            service_base_version="1.0.0",  # valid from
             secrets_map={
                 (
                     key.removeprefix(VENDOR_SECRET_PREFIX)
