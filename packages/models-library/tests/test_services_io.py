@@ -32,7 +32,6 @@ def test_service_port_units(project_tests_dir: Path):
 
 
 def test_build_input_ports_from_json_schemas():
-
     # builds ServiceInput using json-schema
     port_meta = ServiceInput.from_json_schema(
         port_schema={

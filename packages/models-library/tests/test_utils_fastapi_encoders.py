@@ -19,7 +19,6 @@ def servicelib__json_serialization__json_dumps(obj: Any, **kwargs):
 
 
 def test_using_uuids_as_keys(faker: Faker):
-
     uuid_key = uuid4()
 
     with pytest.raises(TypeError):

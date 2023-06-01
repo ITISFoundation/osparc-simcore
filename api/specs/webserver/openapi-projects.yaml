@@ -80,59 +80,6 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
-  /projects/{project_id}/duplicate:
-    parameters:
-      - name: project_id
-        in: path
-        required: true
-        schema:
-          type: string
-    post:
-      tags:
-        - exporter
-      summary: duplicates an existing project
-      operationId: duplicate_project
-      responses:
-        "200":
-          description: project was duplicated correctly
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  uuid:
-                    type: string
-        default:
-          $ref: "#/components/responses/DefaultErrorResponse"
-
-  /projects/import:
-    post:
-      tags:
-        - exporter
-      summary: Create new project from an archive
-      operationId: import_project
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                fileName:
-                  type: string
-                  format: binary
-      responses:
-        "200":
-          description: creates a new project from an archive
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  uuid:
-                    type: string
-        default:
-          $ref: "#/components/responses/DefaultErrorResponse"
-
   /projects/{project_id}/close:
     parameters:
       - name: project_id

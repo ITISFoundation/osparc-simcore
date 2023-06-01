@@ -1,13 +1,10 @@
 from pathlib import Path
-from typing import Union
 
 from pydantic import BaseModel, Field
 
 
 class BaseTextFile(BaseModel):
-    path: Union[str, Path] = Field(
-        ..., description="relative path where to store this file"
-    )
+    path: str | Path = Field(..., description="relative path where to store this file")
     text: str = Field(..., description="contens of the text file")
 
     def store_in_base_path(self, base_path: Path) -> None:
@@ -27,10 +24,6 @@ CHANGES_FILE = BaseTextFile(
 README_ROOT_LEVEL_FILE = BaseTextFile(
     path="README",
     text="",
-)
-README_CODE_FOLDER_FILE = BaseTextFile(
-    path="code/README",
-    text="Optional folder meant to contain any supporting code",
 )
 
 README_DERIVATIVE_FOLDER_FILE = BaseTextFile(
@@ -55,7 +48,6 @@ def write_text_files(base_path: Path) -> None:
     text_files_to_store = [
         CHANGES_FILE,
         README_ROOT_LEVEL_FILE,
-        README_CODE_FOLDER_FILE,
         README_DERIVATIVE_FOLDER_FILE,
         README_DOCS_FOLDER_FILE,
     ]

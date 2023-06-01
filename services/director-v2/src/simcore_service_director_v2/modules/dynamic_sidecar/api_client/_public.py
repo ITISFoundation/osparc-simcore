@@ -9,6 +9,7 @@ from models_library.basic_types import PortInt
 from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkAlias
 from models_library.projects_nodes_io import NodeID
+from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl, PositiveFloat
 from servicelib.fastapi.long_running_tasks.client import (
     Client,
@@ -412,6 +413,18 @@ class SidecarsClient:
             dynamic_sidecar_endpoint,
             self._dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_RESTART_CONTAINERS_TIMEOUT,
             _debug_progress_callback,
+        )
+
+    async def update_volume_state(
+        self,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
+        volume_category: VolumeCategory,
+        volume_status: VolumeStatus,
+    ) -> None:
+        await self._thin_client.put_volumes(
+            dynamic_sidecar_endpoint,
+            volume_category=volume_category,
+            volume_status=volume_status,
         )
 
     async def configure_proxy(

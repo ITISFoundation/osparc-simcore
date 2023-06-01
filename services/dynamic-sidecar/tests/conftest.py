@@ -124,6 +124,20 @@ def run_id(faker: Faker) -> RunID:
 
 
 @pytest.fixture
+def ensure_shared_store_dir(shared_store_dir: Path) -> Iterator[Path]:
+    shared_store_dir.mkdir(parents=True, exist_ok=True)
+    assert shared_store_dir.exists() is True
+
+    yield shared_store_dir
+
+    # remove files and dir
+    for f in shared_store_dir.glob("*"):
+        f.unlink()
+    shared_store_dir.rmdir()
+    assert shared_store_dir.exists() is False
+
+
+@pytest.fixture
 def mock_environment(
     monkeypatch: MonkeyPatch,
     dy_volumes: Path,
@@ -137,6 +151,7 @@ def mock_environment(
     project_id: ProjectID,
     node_id: NodeID,
     run_id: RunID,
+    ensure_shared_store_dir: None,
 ) -> EnvVarsDict:
     """Main test environment used to build the application
 
@@ -191,20 +206,6 @@ def mock_environment_with_envdevel(
     env_file = project_slug_dir / ".env-devel"
     envs = setenvs_from_envfile(monkeypatch, env_file.read_text())
     return envs
-
-
-@pytest.fixture
-def ensure_shared_store_dir(shared_store_dir: Path) -> Iterator[Path]:
-    shared_store_dir.mkdir(parents=True, exist_ok=True)
-    assert shared_store_dir.exists() is True
-
-    yield shared_store_dir
-
-    # remove files and dir
-    for f in shared_store_dir.glob("*"):
-        f.unlink()
-    shared_store_dir.rmdir()
-    assert shared_store_dir.exists() is False
 
 
 @pytest.fixture()
