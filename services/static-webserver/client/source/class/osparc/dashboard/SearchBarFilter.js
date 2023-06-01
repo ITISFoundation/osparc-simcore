@@ -157,13 +157,16 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       osparc.store.Store.getInstance().addListener("changeTags", () => this.__buildFiltersMenu(), this);
     },
 
+    getTextFilterValue: function() {
+      return this.getChildControl("text-field").getValue();
+    },
+
     __showFilterMenu: function() {
-      const textField = this.getChildControl("text-field");
-      const textValue = textField.getValue();
-      if (textValue) {
+      if (this.getTextFilterValue()) {
         return;
       }
 
+      const textField = this.getChildControl("text-field");
       const element = textField.getContentElement().getDomElement();
       const {
         top,
@@ -309,7 +312,8 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       };
       if (this.__resourceType !== "study") {
         // study text filtering is done in the backend
-        filterData["text"] = this.getChildControl("text-field").getValue() ? this.getChildControl("text-field").getValue() : "";
+        const textFilter = this.getTextFilterValue();
+        filterData["text"] = textFilter ? textFilter : "";
       }
       this.getChildControl("active-filters").getChildren().forEach(chip => {
         switch (chip.type) {
@@ -333,10 +337,6 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
 
     __filter: function() {
       const filterData = this.getFilterData();
-      this.__filterChange(filterData);
-    },
-
-    __filterChange: function(filterData) {
       this.fireDataEvent("filterChanged", filterData);
       this._filterChange(filterData);
     }
