@@ -547,7 +547,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }, this);
       this._searchBarFilter.addListener("filterChanged", e => {
         const filterData = e.getData();
-        sharedWithButton.filterChanged(filterData);
+        if (filterData.text) {
+          const params = {
+            url: {
+              text: filterData.text
+            }
+          };
+          osparc.data.Resources.fetch("studies", "getFilterSearch", params)
+            .then(filteredStudies => {
+              console.log("filteredStudies", filteredStudies);
+              sharedWithButton.filterChanged(filterData);
+            });
+        } else {
+          sharedWithButton.filterChanged(filterData);
+        }
       }, this);
 
       this._toolbar.add(sharedWithButton);
