@@ -2,7 +2,6 @@ import asyncio
 import contextlib
 import logging
 from dataclasses import dataclass, field
-from enum import Enum
 from typing import AsyncIterator, Final
 
 import distributed
@@ -15,8 +14,7 @@ from dask_task_models_library.container_tasks.events import (
 from dask_task_models_library.container_tasks.io import TaskCancelEventName
 from distributed.worker import get_worker
 from distributed.worker_state_machine import TaskState
-from servicelib.logging_utils import LogLevelInt, LogMessageStr
-from servicelib.logging_utils import log_catch
+from servicelib.logging_utils import LogLevelInt, LogMessageStr, log_catch
 
 logger = logging.getLogger(__name__)
 
@@ -60,11 +58,31 @@ def get_current_task_resources() -> dict[str, float]:
 @dataclass()
 class TaskPublisher:
     progress: distributed.Pub = field(init=False)
+    _last_published_progress_value: float = -1
     logs: distributed.Pub = field(init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.progress = distributed.Pub(TaskProgressEvent.topic_name())
         self.logs = distributed.Pub(TaskLogEvent.topic_name())
+
+    def publish_progress(self, value: float) -> None:
+        rounded_value = round(value, ndigits=2)
+        if rounded_value > self._last_published_progress_value:
+            publish_event(
+                self.progress,
+                TaskProgressEvent.from_dask_worker(progress=rounded_value),
+            )
+            self._last_published_progress_value = rounded_value
+
+    def publish_logs(
+        self,
+        *,
+        message: LogMessageStr,
+        log_level: LogLevelInt,
+    ) -> None:
+        publish_event(
+            self.logs, TaskLogEvent.from_dask_worker(log=message, log_level=log_level)
+        )
 
 
 _TASK_ABORTION_INTERVAL_CHECK_S: int = 2
@@ -126,32 +144,6 @@ async def monitor_task_abortion(
 
 
 def publish_event(dask_pub: distributed.Pub, event: BaseTaskEvent) -> None:
-    dask_pub.put(event.json())
-
-
-class LogType(Enum):
-    LOG = 1
-    PROGRESS = 2
-    INSTRUMENTATION = 3
-
-
-def publish_task_logs(
-    progress_pub: distributed.Pub,
-    logs_pub: distributed.Pub,
-    log_type: LogType,
-    message_prefix: str,
-    message: LogMessageStr,
-    log_level: LogLevelInt,
-) -> None:
-    logger.info("[%s - %s]: %s", message_prefix, log_type.name, message)
+    """never reraises, only CancellationError"""
     with log_catch(logger, reraise=False):
-        if log_type == LogType.PROGRESS:
-            publish_event(
-                progress_pub,
-                TaskProgressEvent.from_dask_worker(progress=float(message)),
-            )
-        else:
-            publish_event(
-                logs_pub,
-                TaskLogEvent.from_dask_worker(log=message, log_level=log_level),
-            )
+        dask_pub.put(event.json())

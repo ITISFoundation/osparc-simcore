@@ -3,7 +3,6 @@ This module takes care of sending events to the connected webclient through the 
 """
 
 import logging
-from collections import deque
 from typing import Any, Final, Sequence, TypedDict
 
 from aiohttp.web import Application
@@ -41,13 +40,16 @@ async def send_messages(
     with managed_resource(user_id, None, app) as rt:
         socket_ids = await rt.find_socket_ids()
 
-    send_tasks: deque = deque()
-    for sid in socket_ids:
-        for message in messages:
-            send_tasks.append(
-                sio.emit(message["event_type"], json_dumps(message["data"]), room=sid)
-            )
-    await logged_gather(*send_tasks, reraise=False, log=_logger, max_concurrency=10)
+    await logged_gather(
+        *(
+            sio.emit(message["event_type"], json_dumps(message["data"]), room=sid)
+            for message in messages
+            for sid in socket_ids
+        ),
+        reraise=False,
+        log=_logger,
+        max_concurrency=100,
+    )
 
 
 async def post_messages(

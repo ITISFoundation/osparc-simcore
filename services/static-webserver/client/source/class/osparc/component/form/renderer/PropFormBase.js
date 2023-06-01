@@ -39,6 +39,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
     this.base(arguments, form);
 
     const fl = this._getLayout();
+    fl.setSpacingY(0); // so that the "excluded" rows do not take any space
     fl.setColumnFlex(this.self().GRID_POS.LABEL, 0);
     fl.setColumnAlign(this.self().GRID_POS.LABEL, "left", "top");
     fl.setColumnFlex(this.self().GRID_POS.INFO, 0);
@@ -62,6 +63,8 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       UNIT: 3,
       FIELD_LINK_UNLINK: 4
     },
+
+    ROW_HEIGHT: 28,
 
     getDisableables: function() {
       return [
@@ -112,6 +115,10 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
         const item = items[i];
 
         const label = this._createLabel(names[i], item);
+        // compensate the SpacingY: 0
+        label.set({
+          marginTop: 3
+        });
         label.setBuddy(item);
         this._add(label, {
           row: this._row,
@@ -144,6 +151,9 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
             item: items[i]
           });
         }
+
+        // compensate the SpacingY: 0
+        this._getLayout().setRowHeight(this._row, this.self().ROW_HEIGHT);
 
         this._row++;
       }

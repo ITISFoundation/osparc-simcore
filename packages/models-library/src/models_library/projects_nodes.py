@@ -142,7 +142,7 @@ class Node(BaseModel):
         default=None,
         ge=0,
         le=100,
-        description="the node progress value",
+        description="the node progress value (deprecated in DB, still used for API only)",
         deprecated=True,
     )
     thumbnail: HttpUrlWithCustomMinLength | None = Field(

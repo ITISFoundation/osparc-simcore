@@ -16,7 +16,7 @@ async-timeout==4.0.2
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-attrs==22.2.0
+attrs==23.1.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -42,16 +42,15 @@ coverage==7.2.5
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-dask==2023.3.0
+dask==2023.3.2
     # via
-    #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
     #   dask-gateway
     #   distributed
 dask-gateway==2023.1.1
     # via -r requirements/_test.in
 debugpy==1.6.7
     # via -r requirements/_test.in
-distributed==2023.3.0
+distributed==2023.3.2
     # via
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
     #   dask-gateway
@@ -59,14 +58,14 @@ docker==6.1.2
     # via -r requirements/_test.in
 exceptiongroup==1.1.1
     # via pytest
-faker==18.7.0
+faker==18.9.0
     # via -r requirements/_test.in
 frozenlist==1.3.3
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
-fsspec==2023.3.0
+fsspec==2023.5.0
     # via
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
     #   dask
@@ -74,10 +73,6 @@ greenlet==2.0.2
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
-heapdict==1.0.1
-    # via
-    #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
-    #   zict
 icdiff==2.0.6
     # via pytest-icdiff
 idna==3.4
@@ -85,6 +80,10 @@ idna==3.4
     #   -c requirements/_base.txt
     #   requests
     #   yarl
+importlib-metadata==6.6.0
+    # via
+    #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
+    #   dask
 iniconfig==2.0.0
     # via pytest
 jinja2==3.1.2
@@ -113,7 +112,7 @@ mypy==1.3.0
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
-packaging==23.0
+packaging==23.1
     # via
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
     #   dask
@@ -121,7 +120,7 @@ packaging==23.0
     #   docker
     #   pytest
     #   pytest-sugar
-partd==1.3.0
+partd==1.4.0
     # via
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
     #   dask
@@ -129,7 +128,7 @@ pluggy==1.0.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-psutil==5.9.4
+psutil==5.9.5
     # via
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
@@ -170,7 +169,7 @@ sortedcontainers==2.4.0
     # via
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
-sqlalchemy==1.4.47
+sqlalchemy==1.4.48
     # via -r requirements/_test.in
 sqlalchemy2-stubs==0.0.2a34
     # via sqlalchemy
@@ -193,29 +192,33 @@ toolz==0.12.0
     #   dask
     #   distributed
     #   partd
-tornado==6.2
+tornado==6.3.2
     # via
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
     #   dask-gateway
     #   distributed
-typing-extensions==4.5.0
+typing-extensions==4.6.0
     # via
     #   -c requirements/_base.txt
     #   mypy
     #   sqlalchemy2-stubs
-urllib3==1.26.14
+urllib3==1.26.16
     # via
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
     #   docker
     #   requests
-websocket-client==1.5.1
+websocket-client==1.5.2
     # via docker
-yarl==1.8.2
+yarl==1.9.2
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-zict==2.2.0
+zict==3.0.0
     # via
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
+zipp==3.15.0
+    # via
+    #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
+    #   importlib-metadata
