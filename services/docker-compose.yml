@@ -299,13 +299,13 @@ services:
       - default
       - interactive_services_subnet
   wb-db-event-listener:
-
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
       <<: *webserver-environment
       WEBSERVER_DB_LISTENER: 1
+      WEBSERVER_SOCKETIO: 1
     env_file:
       - ../.env
       - ../.env-wb-db-event-listener
