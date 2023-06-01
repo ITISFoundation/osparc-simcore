@@ -12,6 +12,7 @@ qx.Class.define("osparc.component.form.tag.TagToggleButton", {
   extend: qx.ui.form.ToggleButton,
   include: osparc.component.filter.MFilterable,
   implement: osparc.component.filter.IFilterable,
+
   construct: function(tag, value) {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.HBox(8).set({
@@ -23,11 +24,16 @@ qx.Class.define("osparc.component.form.tag.TagToggleButton", {
     });
     this.setIcon("@FontAwesome5Solid/square/14");
     this.getChildControl("icon").setTextColor(tag.color);
-    this.setLabel(tag.name);
+    if (tag.description) {
+      this.setLabel(tag.name + " : " + tag.description);
+    } else {
+      this.setLabel(tag.name);
+    }
     this.getChildControl("check");
 
     this.setValue(value ? true : false); // eslint-disable-line no-unneeded-ternary
   },
+
   properties: {
     fetching: {
       check: "Boolean",
@@ -37,6 +43,7 @@ qx.Class.define("osparc.component.form.tag.TagToggleButton", {
       apply: "_applyFetching"
     }
   },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
@@ -71,6 +78,7 @@ qx.Class.define("osparc.component.form.tag.TagToggleButton", {
       }
       return control || this.base(arguments, id);
     },
+
     _applyFetching: function(isFetching) {
       const check = this.getChildControl("check");
       if (isFetching) {
