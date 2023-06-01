@@ -26,11 +26,7 @@ def setup_socketio(app: web.Application):
     assert app[APP_SETTINGS_KEY].WEBSERVER_SOCKETIO  # nosec
     setup_rabbitmq(app)  # for horizontal scaling
     setup_socketio_server(app)
-
     setup_socketio_observer_events(app)
 
 
-__all__: tuple[str, ...] = (
-    "setup_socketio",
-    "setup_socketio_server",
-)
+__all__: tuple[str, ...] = ("setup_socketio",)

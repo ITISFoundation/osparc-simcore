@@ -62,7 +62,6 @@ async def _socketio_server_cleanup_ctx(app: web.Application) -> AsyncIterator[No
         ):
             task.cancel()
             cancelled_tasks.append(task)
-    await asyncio.sleep(2)
     await asyncio.gather(*cancelled_tasks, return_exceptions=True)
 
 
