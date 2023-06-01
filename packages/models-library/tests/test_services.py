@@ -87,7 +87,6 @@ def test_service_models_examples(model_cls, model_cls_examples):
         assert model_instance, f"Failed with {name}"
 
 
-@pytest.mark.testit
 @pytest.mark.parametrize("pattern", (SERVICE_KEY_RE, SERVICE_ENCODED_KEY_RE))
 @pytest.mark.parametrize(
     "service_key",

@@ -29,7 +29,7 @@ repos:
           - "--py310-plus"
         name: upgrade code
   - repo: https://github.com/hadialqattan/pycln
-    rev: v1.2.5
+    rev: v2.1.4
     hooks:
       - id: pycln
         args: [--all, --expand-stars]

@@ -31,7 +31,7 @@ projects_to_products = sa.Table(
         doc="Products unique name",
     ),
     # TIME STAMPS ----
-    column_created_datetime(),
-    column_modified_datetime(),
+    column_created_datetime(timezone=False),
+    column_modified_datetime(timezone=False),
     sa.UniqueConstraint("project_uuid", "product_name"),
 )
