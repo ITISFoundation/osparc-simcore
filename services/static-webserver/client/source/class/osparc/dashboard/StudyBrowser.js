@@ -383,7 +383,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if ("nextRequest" in this._resourcesContainer.getFlatList() &&
         this._resourcesContainer.getFlatList().nextRequest !== null &&
         osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "offset") &&
-        osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "limit")) {
+        osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "limit")
+      ) {
         params.url.offset = osparc.utils.Utils.getParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "offset");
         params.url.limit = osparc.utils.Utils.getParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "limit");
       }
@@ -404,7 +405,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if ("nextRequest" in this._resourcesContainer.getFlatList() &&
         this._resourcesContainer.getFlatList().nextRequest !== null &&
         osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "offset") &&
-        osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "limit")) {
+        osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "limit")
+      ) {
         params.url.offset = osparc.utils.Utils.getParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "offset");
         params.url.limit = osparc.utils.Utils.getParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "limit");
       }
