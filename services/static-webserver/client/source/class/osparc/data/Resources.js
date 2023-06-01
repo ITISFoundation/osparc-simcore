@@ -80,10 +80,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects?type=user&offset={offset}&limit={limit}"
           },
-          getFilterSearch: {
+          getPageFilterSearch: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/projects?type=user&search={text}"
+            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&search={text}"
           },
           getOne: {
             useCache: false,

@@ -373,6 +373,27 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return osparc.data.Resources.fetch("studies", "getPage", params, undefined, options);
     },
 
+    __getFilteredNextRequest: function() {
+      const params = {
+        url: {
+          offset: 0,
+          limit: osparc.dashboard.ResourceBrowserBase.PAGINATED_STUDIES,
+          text: ""
+        }
+      };
+      if ("nextRequest" in this._resourcesContainer.getFlatList() &&
+        this._resourcesContainer.getFlatList().nextRequest !== null &&
+        osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "offset") &&
+        osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "limit")) {
+        params.url.offset = osparc.utils.Utils.getParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "offset");
+        params.url.limit = osparc.utils.Utils.getParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "limit");
+      }
+      const options = {
+        resolveWResponse: true
+      };
+      return osparc.data.Resources.fetch("studies", "getPage", params, undefined, options);
+    },
+
     invalidateStudies: function() {
       osparc.store.Store.getInstance().invalidate("studies");
       this.__resetResourcesToList();
@@ -549,13 +570,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (filterData.text) {
           const params = {
             url: {
+              offset: 0,
+              limit: osparc.dashboard.ResourceBrowserBase.PAGINATED_STUDIES,
               text: filterData.text
             }
           };
-          osparc.data.Resources.fetch("studies", "getFilterSearch", params)
+          osparc.data.Resources.fetch("studies", "getPageFilterSearch", params)
             .then(filteredStudies => {
               console.log("filteredStudies", filteredStudies);
-              this.invalidateStudies();
+              this.__resetResourcesToList();
+              this._resourcesContainer.getFlatList().nextRequest = resp["_links"]["next"];
+              this.__addResourcesToList(filteredStudies);
               sharedWithButton.filterChanged(filterData);
             });
         } else {
