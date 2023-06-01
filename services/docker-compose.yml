@@ -425,8 +425,6 @@ services:
     environment:
       - RABBITMQ_DEFAULT_USER=${RABBIT_USER}
       - RABBITMQ_DEFAULT_PASS=${RABBIT_PASSWORD}
-    volumes:
-      - rabbit_data:/var/lib/rabbitmq
     networks:
       - default
       - interactive_services_subnet
@@ -606,8 +604,6 @@ volumes:
     name: ${SWARM_STACK_NAME}_computational_shared_data
   redis-data:
     name: ${SWARM_STACK_NAME}_redis-data
-  rabbit_data:
-    name: ${SWARM_STACK_NAME}_rabbit_data
 
 networks:
   default:
