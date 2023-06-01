@@ -5,9 +5,7 @@ from settings_library.base import BaseCustomSettings
 
 
 class ExporterSettings(BaseCustomSettings):
-    # NOTE: class will be renamed to `SDSSettings` in the next refactoring
-    # that's why the env var is indexed with `SDS_`
-    SDS_ENABLED: bool = Field(
+    EXPORTER_ENABLED: bool = Field(
         False, description="disabled by default since it is half finished"
     )
 
