@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import Any, Callable, NamedTuple
 
 import pytest
-import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.projects_state import RunningState
@@ -46,13 +45,13 @@ from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio.plugin import setup_socketio
 from simcore_service_webserver.users.plugin import setup_users
+from sqlalchemy.orm import session
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 from yarl import URL
 
-API_VTAG = "v0"
 API_PREFIX = "/" + API_VTAG
 
 
@@ -143,12 +142,12 @@ def standard_role_response() -> tuple[str, list[tuple[UserRole, ExpectedResponse
 @pytest.fixture
 def client(
     event_loop: asyncio.AbstractEventLoop,
-    postgres_session: sa.orm.session.Session,
+    postgres_session: session.Session,
     rabbit_service: RabbitSettings,
     redis_settings: RedisSettings,
     simcore_services_ready: None,
     aiohttp_client: Callable,
-    app_config: dict[str, Any],  ## waits until swarm with *_services are up
+    app_config: dict[str, Any],  # waits until swarm with *_services are up
     mocker: MockerFixture,
     monkeypatch_setenv_from_app_config: Callable,
 ) -> TestClient:
@@ -199,7 +198,7 @@ def fake_workbench_adjacency_list(tests_data_dir: Path) -> dict[str, Any]:
 
 def _assert_db_contents(
     project_id: str,
-    postgres_session: sa.orm.session.Session,
+    postgres_session: session.Session,
     fake_workbench_payload: dict[str, Any],
     fake_workbench_adjacency_list: dict[str, Any],
     check_outputs: bool,
@@ -240,7 +239,7 @@ NodeIdStr = str
 
 def _get_computational_tasks_from_db(
     project_id: str,
-    postgres_session: sa.orm.session.Session,
+    postgres_session: session.Session,
 ) -> dict[NodeIdStr, Any]:
     # this check is only there to check the comp_pipeline is there
     assert (
@@ -264,7 +263,7 @@ def _get_computational_tasks_from_db(
 
 def _get_project_workbench_from_db(
     project_id: str,
-    postgres_session: sa.orm.session.Session,
+    postgres_session: session.Session,
 ) -> dict[str, Any]:
     # this check is only there to check the comp_pipeline is there
     print(f"--> looking for project {project_id=} in projects table...")
@@ -316,7 +315,7 @@ async def _assert_and_wait_for_pipeline_state(
 
 async def _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(
     project_id: str,
-    postgres_session: sa.orm.session.Session,
+    postgres_session: session.Session,
 ):
     async for attempt in AsyncRetrying(
         reraise=True,
@@ -365,7 +364,7 @@ async def _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(
 async def test_start_stop_computation(
     client: TestClient,
     sleeper_service: dict[str, str],
-    postgres_session: sa.orm.session.Session,
+    postgres_session: session.Session,
     logged_user: dict[str, Any],
     user_project: dict[str, Any],
     fake_workbench_adjacency_list: dict[str, Any],
@@ -438,7 +437,7 @@ async def test_start_stop_computation(
 async def test_run_pipeline_and_check_state(
     client: TestClient,
     sleeper_service: dict[str, str],
-    postgres_session: sa.orm.session.Session,
+    postgres_session: session.Session,
     logged_user: dict[str, Any],
     user_project: dict[str, Any],
     fake_workbench_adjacency_list: dict[str, Any],
