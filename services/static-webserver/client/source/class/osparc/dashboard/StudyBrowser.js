@@ -163,6 +163,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           }
         });
       this._loadingResourcesBtn.setFetching(true);
+      this._loadingResourcesBtn.setVisibility("visible");
       const request = this.__getNextRequest();
       request
         .then(resp => {
@@ -592,6 +593,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const filterData = e.getData();
         if (filterData.text) {
           this.__reloadFilteredStudies(filterData.text);
+        } else {
+          this.__reloadStudies();
         }
         sharedWithButton.filterChanged(filterData);
       }, this);
