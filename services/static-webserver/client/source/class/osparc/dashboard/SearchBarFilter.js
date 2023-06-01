@@ -325,11 +325,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
             filterData.classifiers.push(chip.id);
             break;
           case "shared-with":
-            if (chip.id === "show-all") {
-              filterData.sharedWith = null;
-            } else {
-              filterData.sharedWith = chip.id;
-            }
+            filterData.sharedWith = chip.id === "show-all" ? null : chip.id;
             break;
         }
       });
