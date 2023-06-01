@@ -209,12 +209,6 @@ paths:
   /projects/{project_id}:xport: # do not change there "export" will not work
     $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1xport"
 
-  /projects/{project_id}:duplicate:
-    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1duplicate"
-
-  /projects:import:
-    $ref: "./openapi-projects.yaml#/paths/~1projects~1import"
-
   /projects/{project_id}:close:
     $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1close"
 
