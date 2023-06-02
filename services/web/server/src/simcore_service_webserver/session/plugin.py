@@ -3,7 +3,6 @@
 """
 import base64
 import logging
-from typing import Union
 
 import aiohttp_session
 from aiohttp import web
@@ -11,7 +10,7 @@ from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from cryptography import fernet
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from .session_settings import SessionSettings, get_plugin_settings
+from .settings import SessionSettings, get_plugin_settings
 
 logger = logging.getLogger(__name__)
 
@@ -23,9 +22,7 @@ def generate_fernet_secret_key() -> bytes:
     return secret_key
 
 
-def _setup_encrypted_cookie_sessions(
-    *, app: web.Application, secret_key: Union[str, bytes]
-):
+def _setup_encrypted_cookie_sessions(*, app: web.Application, secret_key: str | bytes):
     # EncryptedCookieStorage urlsafe_b64decode inside if passes bytes
     encrypted_cookie_sessions = EncryptedCookieStorage(
         secret_key=secret_key,

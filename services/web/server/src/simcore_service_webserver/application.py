@@ -37,7 +37,7 @@ from .resource_manager.plugin import setup_resource_manager
 from .rest import setup_rest
 from .scicrunch.plugin import setup_scicrunch
 from .security.plugin import setup_security
-from .session import setup_session
+from .session.plugin import setup_session
 from .socketio.plugin import setup_socketio
 from .statics.plugin import setup_statics
 from .storage.plugin import setup_storage

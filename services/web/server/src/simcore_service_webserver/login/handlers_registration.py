@@ -15,7 +15,10 @@ from ..groups.api import auto_add_user_to_groups, auto_add_user_to_product_group
 from ..invitations.plugin import is_service_invitation_code
 from ..products.plugin import Product, get_current_product
 from ..security.api import encrypt_password
-from ..session_access import on_success_grant_session_access_to, session_access_required
+from ..session.session_access import (
+    on_success_grant_session_access_to,
+    session_access_required,
+)
 from ..utils import MINUTE
 from ..utils_aiohttp import NextPage, envelope_json_response
 from ..utils_rate_limiting import global_rate_limit_route

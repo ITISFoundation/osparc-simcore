@@ -2,15 +2,15 @@ import functools
 import logging
 import time
 from contextlib import contextmanager
-from typing import Iterator, Optional, TypedDict
+from typing import Iterator, TypedDict
 
 from aiohttp import web
 from aiohttp_session import Session
 from pydantic import PositiveInt, validate_arguments
 from servicelib.aiohttp.typing_extension import Handler
 
-from .session import get_session
-from .session_settings import SessionSettings, get_plugin_settings
+from .plugin import get_session
+from .settings import SessionSettings, get_plugin_settings
 
 SESSION_GRANTED_ACCESS_TOKENS_KEY = f"{__name__}.SESSION_GRANTED_ACCESS_TOKENS_KEY"
 
@@ -92,7 +92,7 @@ def on_success_grant_session_access_to(
 def session_access_required(
     name: str,
     *,
-    unauthorized_reason: Optional[str] = None,
+    unauthorized_reason: str | None = None,
     one_time_access: bool = True,
     remove_all_on_success: bool = False,
 ):
@@ -102,7 +102,7 @@ def session_access_required(
             session = await get_session(request)
 
             with access_tokens_cleanup_ctx(session) as access_tokens:
-                access: Optional[AccessToken] = access_tokens.get(name, None)
+                access: AccessToken | None = access_tokens.get(name, None)
                 if not access:
                     raise web.HTTPUnauthorized(reason=unauthorized_reason)
 
