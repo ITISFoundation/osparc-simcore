@@ -12,7 +12,7 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 
 from .settings import SessionSettings, get_plugin_settings
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def generate_fernet_secret_key() -> bytes:
@@ -36,7 +36,7 @@ get_session = aiohttp_session.get_session
 
 
 @app_module_setup(
-    __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_SESSION", logger=logger
+    __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_SESSION", logger=_logger
 )
 def setup_session(app: web.Application):
     """
