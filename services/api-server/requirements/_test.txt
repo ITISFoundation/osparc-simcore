@@ -171,9 +171,8 @@ openapi-spec-validator==0.4.0
     # via
     #   -c requirements/./constraints.txt
     #   moto
-packaging==21.3
+packaging==23.1
     # via
-    #   -c requirements/_base.txt
     #   docker
     #   pytest
 pbr==5.11.1
@@ -191,10 +190,7 @@ pycparser==2.21
     #   -c requirements/_base.txt
     #   cffi
 pyparsing==3.0.9
-    # via
-    #   -c requirements/_base.txt
-    #   moto
-    #   packaging
+    # via moto
 pyrsistent==0.18.1
     # via
     #   -c requirements/_base.txt
