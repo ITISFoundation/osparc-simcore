@@ -19,7 +19,6 @@ import functools
 import logging
 from asyncio import Lock, Queue, Task, sleep
 from dataclasses import dataclass, field
-from typing import Final
 
 from fastapi import FastAPI
 from models_library.basic_types import PortInt
@@ -36,11 +35,7 @@ from simcore_service_director_v2.models.schemas.dynamic_services.scheduler impor
     ServiceName,
 )
 
-from .....core.settings import (
-    AppSettings,
-    DynamicServicesSchedulerSettings,
-    DynamicSidecarSettings,
-)
+from .....core.settings import DynamicServicesSchedulerSettings, DynamicSidecarSettings
 from .....models.domains.dynamic_services import (
     DynamicServiceCreate,
     RetrieveDataOutEnveloped,
@@ -86,12 +81,6 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes
     _trigger_observation_queue_task: Task | None = None
     _trigger_observation_queue: Queue = field(default_factory=Queue)
     _observation_counter: int = 0
-
-    @property
-    def _app_settings(self) -> AppSettings:
-        # NOTE: added since pylint tests were confused with returned value
-        app_settings: Final[AppSettings] = self.app.state.settings
-        return app_settings
 
     async def start(self) -> None:
         # run as a background task
@@ -209,7 +198,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes
         self, task_progress: TaskProgress, node_uuid: NodeID
     ) -> None:
         dynamic_sidecar_settings: DynamicSidecarSettings = (
-            self._app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+            self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
         await service_remove_sidecar_proxy_docker_networks_and_volumes(
             task_progress=task_progress,
@@ -362,10 +351,10 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes
 
             # recreate new observation
             dynamic_sidecar_settings: DynamicSidecarSettings = (
-                self._app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+                self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
             )
             dynamic_scheduler: DynamicServicesSchedulerSettings = (
-                self._app_settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
+                self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
             )
             self._service_observation_task[
                 service_name
@@ -529,10 +518,10 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes
     async def _run_trigger_observation_queue_task(self) -> None:
         """generates events at regular time interval"""
         dynamic_sidecar_settings: DynamicSidecarSettings = (
-            self._app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+            self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
         dynamic_scheduler: DynamicServicesSchedulerSettings = (
-            self._app_settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
+            self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
         )
 
         service_name: ServiceName
@@ -557,7 +546,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes
 
     async def _run_scheduler_task(self) -> None:
         settings: DynamicServicesSchedulerSettings = (
-            self._app_settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
+            self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
         )
         logger.debug(
             "dynamic-sidecars observation interval %s",
