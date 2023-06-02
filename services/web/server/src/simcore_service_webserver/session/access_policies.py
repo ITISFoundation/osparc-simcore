@@ -12,7 +12,7 @@ from servicelib.aiohttp.typing_extension import Handler
 from .plugin import get_session
 from .settings import SessionSettings, get_plugin_settings
 
-_SESSION_GRANTED_ACCESS_TOKENS_KEY = f"{__name__}.SESSION_GRANTED_ACCESS_TOKENS_KEY"
+_SESSION_GRANTED_ACCESS_TOKENS_KEY = f"{__name__}._SESSION_GRANTED_ACCESS_TOKENS_KEY"
 
 _logger = logging.getLogger(__name__)
 
