@@ -1,10 +1,9 @@
 import urllib.parse
 from typing import Any, Literal
 
-import packaging.version
 from models_library.basic_regex import PUBLIC_VARIABLE_NAME_RE
 from models_library.services import COMPUTATIONAL_SERVICE_KEY_RE, ServiceDockerData
-from packaging.version import LegacyVersion, Version
+from packaging.version import Version
 from pydantic import BaseModel, ConstrainedStr, Extra, Field, HttpUrl
 
 from ..api_resources import compose_resource_name
@@ -85,9 +84,9 @@ class Solver(BaseModel):
         )
 
     @property
-    def pep404_version(self) -> Version | LegacyVersion:
+    def pep404_version(self) -> Version:
         """Rich version type that can be used e.g. to compare"""
-        return packaging.version.parse(self.version)
+        return Version(self.version)
 
     @property
     def url_friendly_id(self) -> str:
