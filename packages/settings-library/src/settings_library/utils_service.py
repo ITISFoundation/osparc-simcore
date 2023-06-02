@@ -61,8 +61,6 @@ class MixinServiceSettings:
             AttributeError
 
         """
-        # TODO: convert AttributeError in ValidationError field required
-
         if req == URLPart.EXCLUDE:
             return None
 
@@ -87,6 +85,12 @@ class MixinServiceSettings:
         port: URLPart = URLPart.EXCLUDE,
         vtag: URLPart = URLPart.EXCLUDE,
     ) -> str:
+        """
+
+        Raises:
+            AttributeError
+
+        """
         assert prefix  # nosec
         prefix = prefix.upper()
 
