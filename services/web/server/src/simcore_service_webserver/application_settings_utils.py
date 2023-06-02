@@ -215,6 +215,12 @@ def convert_to_environ_vars(cfg: dict[str, Any]) -> dict[str, Any]:
 
         _set_if_disabled("WEBSERVER_DB", db)
 
+    if section := cfg.get("rabbitmq"):
+        envs["RABBIT_HOST"] = section.get("host")
+        envs["RABBIT_PORT"] = section.get("port")
+        envs["RABBIT_USER"] = section.get("user")
+        envs["RABBIT_PASSWORD"] = section.get("password")
+
     if section := cfg.get("resource_manager"):
         _set_if_disabled("WEBSERVER_RESOURCE_MANAGER", section)
 

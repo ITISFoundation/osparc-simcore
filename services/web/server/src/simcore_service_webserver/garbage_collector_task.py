@@ -6,6 +6,7 @@ Specifics of the gc implementation should go into garbage_collector_core.py
 
 import asyncio
 import logging
+from typing import AsyncGenerator
 
 from aiohttp import web
 from servicelib.logging_utils import log_context
@@ -21,7 +22,7 @@ GC_TASK_CONFIG = f"{GC_TASK_NAME}.config"
 GC_TASK = f"{GC_TASK_NAME}.task"
 
 
-async def run_background_task(app: web.Application):
+async def run_background_task(app: web.Application) -> AsyncGenerator:
     # SETUP ------
     # create a background task to collect garbage periodically
     assert not any(  # nosec

@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import logging
-from typing import AsyncIterable, Awaitable, Callable, Optional
+from typing import AsyncIterable, Awaitable, Callable
 from uuid import uuid4
 
 import pytest
@@ -25,8 +25,8 @@ def client_session_id_factory() -> Callable[[], str]:
 
 
 @pytest.fixture()
-def socketio_url_factory(client) -> Callable[[Optional[TestClient]], str]:
-    def _create(client_override: Optional[TestClient] = None) -> str:
+def socketio_url_factory(client) -> Callable[[TestClient | None], str]:
+    def _create(client_override: TestClient | None = None) -> str:
         SOCKET_IO_PATH = "/socket.io/"
         return str((client_override or client).make_url(SOCKET_IO_PATH))
 
@@ -36,8 +36,8 @@ def socketio_url_factory(client) -> Callable[[Optional[TestClient]], str]:
 @pytest.fixture()
 async def security_cookie_factory(
     client: TestClient,
-) -> Callable[[Optional[TestClient]], Awaitable[str]]:
-    async def _create(client_override: Optional[TestClient] = None) -> str:
+) -> Callable[[TestClient | None], Awaitable[str]]:
+    async def _create(client_override: TestClient | None = None) -> str:
         # get the cookie by calling the root entrypoint
         resp = await (client_override or client).get("/v0/")
         data, error = await assert_status(resp, web.HTTPOk)
@@ -60,14 +60,13 @@ async def socketio_client_factory(
     security_cookie_factory: Callable,
     client_session_id_factory: Callable,
 ) -> AsyncIterable[
-    Callable[[Optional[str], Optional[TestClient]], Awaitable[socketio.AsyncClient]]
+    Callable[[str | None, TestClient | None], Awaitable[socketio.AsyncClient]]
 ]:
     clients: list[socketio.AsyncClient] = []
 
     async def _connect(
-        client_session_id: Optional[str] = None, client: Optional[TestClient] = None
+        client_session_id: str | None = None, client: TestClient | None = None
     ) -> socketio.AsyncClient:
-
         if client_session_id is None:
             client_session_id = client_session_id_factory()
 
@@ -86,7 +85,7 @@ async def socketio_client_factory(
             headers.update({"Cookie": cookie})
 
         print(f"--> Connecting socketio client to {url} ...")
-        await sio.connect(url, headers=headers)
+        await sio.connect(url, headers=headers, wait_timeout=10)
         assert sio.sid
         print("... connection done")
         clients.append(sio)

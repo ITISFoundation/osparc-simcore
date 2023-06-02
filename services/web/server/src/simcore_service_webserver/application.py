@@ -8,12 +8,13 @@ from typing import Any
 from aiohttp import web
 from servicelib.aiohttp.application import create_safe_application
 
-from ._meta import WELCOME_GC_MSG, WELCOME_MSG, info
+from ._meta import WELCOME_DB_LISTENER_MSG, WELCOME_GC_MSG, WELCOME_MSG, info
 from .activity.plugin import setup_activity
 from .application_settings import setup_settings
 from .catalog.plugin import setup_catalog
 from .clusters.plugin import setup_clusters
 from .db import setup_db
+from .db_listener.plugin import setup_db_listener
 from .diagnostics.plugin import setup_diagnostics
 from .director.plugin import setup_director
 from .director_v2.plugin import setup_director_v2
@@ -81,6 +82,7 @@ def create_application() -> web.Application:
     setup_activity(app)
     setup_notifications(app)
     setup_socketio(app)
+    setup_db_listener(app)
 
     # login
     setup_email(app)
@@ -120,6 +122,8 @@ def create_application() -> web.Application:
         print(WELCOME_MSG, flush=True)
         if settings.WEBSERVER_GARBAGE_COLLECTOR:
             print("with", WELCOME_GC_MSG, flush=True)
+        if settings.WEBSERVER_DB_LISTENER:
+            print("with", WELCOME_DB_LISTENER_MSG, flush=True)
 
     async def finished_banner(_app: web.Application):
         print(info.get_finished_banner(), flush=True)

@@ -39,7 +39,7 @@ async def _rabbitmq_client_cleanup_ctx(app: web.Application) -> AsyncIterator[No
     logger=log,
     depends=[],
 )
-def setup_rabbitmq(app: web.Application):
+def setup_rabbitmq(app: web.Application) -> None:
     app.cleanup_ctx.append(_rabbitmq_client_cleanup_ctx)
 
 

@@ -265,9 +265,7 @@ def app_environment(
 ) -> EnvVarsDict:
     envs_plugins = setenvs_from_dict(
         monkeypatch,
-        {
-            "WEBSERVER_RABBITMQ": "null",
-        },
+        {},
     )
     return app_environment | envs_plugins
 

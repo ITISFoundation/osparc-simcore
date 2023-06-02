@@ -5,7 +5,7 @@ from typing import Any, cast
 
 from models_library.boot_options import BootOption, EnvVarKey
 from models_library.service_settings_labels import (
-    ComposeSpecLabel,
+    ComposeSpecLabelDict,
     SimcoreServiceLabels,
     SimcoreServiceSettingLabelEntry,
     SimcoreServiceSettingsLabel,
@@ -196,8 +196,8 @@ async def _extract_osparc_involved_service_labels(
         # remaps from image_name as key to compose_spec key
         return {reverse_mapping[k]: v for k, v in docker_image_name_by_services.items()}
 
-    compose_spec: ComposeSpecLabel | None = cast(
-        ComposeSpecLabel, service_labels.compose_spec
+    compose_spec: ComposeSpecLabelDict | None = cast(
+        ComposeSpecLabelDict, service_labels.compose_spec
     )
     if compose_spec is None:
         return remap_to_compose_spec_key()
