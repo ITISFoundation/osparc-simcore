@@ -66,7 +66,7 @@ multidict==6.0.2
     # via
     #   aiohttp
     #   yarl
-packaging==21.3
+packaging==23.1
     # via -r requirements/_base.in
 pamqp==3.2.1
     # via aiormq
@@ -77,8 +77,6 @@ pydantic==1.10.2
     #   fastapi
 pyinstrument==4.3.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-pyparsing==3.0.9
-    # via packaging
 pyrsistent==0.19.2
     # via jsonschema
 python-dateutil==2.8.2

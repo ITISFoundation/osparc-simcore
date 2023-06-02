@@ -38,7 +38,7 @@ idna==3.4
     #   httpx
 iniconfig==2.0.0
     # via pytest
-packaging==23.0
+packaging==23.1
     # via
     #   -c requirements/_base.txt
     #   pytest

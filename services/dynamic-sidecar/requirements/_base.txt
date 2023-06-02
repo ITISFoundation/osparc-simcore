@@ -41,7 +41,9 @@ anyio==3.6.2
     #   httpcore
     #   starlette
 arrow==1.2.3
-    # via -r requirements/../../../packages/models-library/requirements/_base.in
+    # via
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/_base.in
 asgiref==3.5.2
     # via uvicorn
 async-timeout==4.0.2
@@ -134,7 +136,7 @@ multidict==6.0.2
     # via
     #   aiohttp
     #   yarl
-packaging==21.3
+packaging==23.1
     # via
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   docker
@@ -165,8 +167,6 @@ pyinstrument==4.1.1
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 pynacl==1.4.0
     # via paramiko
-pyparsing==3.0.9
-    # via packaging
 pyrsistent==0.18.1
     # via jsonschema
 python-dateutil==2.8.2

@@ -200,7 +200,6 @@ numpy==1.24.3
     # via bokeh
 packaging==23.1
     # via
-    #   -c requirements/_base.txt
     #   bokeh
     #   dask
     #   distributed

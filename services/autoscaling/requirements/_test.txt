@@ -160,9 +160,8 @@ openapi-spec-validator==0.4.0
     # via moto
 ordered-set==4.1.0
     # via deepdiff
-packaging==23.0
+packaging==23.1
     # via
-    #   -c requirements/_base.txt
     #   docker
     #   pytest
 pbr==5.11.1

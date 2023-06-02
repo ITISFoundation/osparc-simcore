@@ -107,7 +107,7 @@ multidict==6.0.4
     # via
     #   aiohttp
     #   yarl
-packaging==23.0
+packaging==23.1
     # via -r requirements/_base.in
 pamqp==3.2.1
     # via aiormq

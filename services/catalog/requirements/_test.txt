@@ -95,9 +95,8 @@ mypy==1.3.0
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
-packaging==21.3
+packaging==23.1
     # via
-    #   -c requirements/_base.txt
     #   docker
     #   pytest
 pluggy==1.0.0
@@ -106,10 +105,6 @@ ptvsd==4.3.2
     # via -r requirements/_test.in
 py-cpuinfo==9.0.0
     # via pytest-benchmark
-pyparsing==3.0.9
-    # via
-    #   -c requirements/_base.txt
-    #   packaging
 pyrsistent==0.18.1
     # via
     #   -c requirements/_base.txt
