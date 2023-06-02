@@ -15,7 +15,7 @@ from ..groups.api import auto_add_user_to_groups, auto_add_user_to_product_group
 from ..invitations.plugin import is_service_invitation_code
 from ..products.plugin import Product, get_current_product
 from ..security.api import encrypt_password
-from ..session.session_access import (
+from ..session.access_policies import (
     on_success_grant_session_access_to,
     session_access_required,
 )

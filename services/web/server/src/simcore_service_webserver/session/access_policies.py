@@ -12,31 +12,31 @@ from servicelib.aiohttp.typing_extension import Handler
 from .plugin import get_session
 from .settings import SessionSettings, get_plugin_settings
 
-SESSION_GRANTED_ACCESS_TOKENS_KEY = f"{__name__}.SESSION_GRANTED_ACCESS_TOKENS_KEY"
+_SESSION_GRANTED_ACCESS_TOKENS_KEY = f"{__name__}.SESSION_GRANTED_ACCESS_TOKENS_KEY"
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
-class AccessToken(TypedDict, total=True):
+class _AccessToken(TypedDict, total=True):
     count: int
     expires: int  # time in seconds since the epoch as a floating point number.
 
 
-def is_expired(token: AccessToken) -> bool:
+def _is_expired(token: _AccessToken) -> bool:
     expired = token["expires"] <= time.time()
-    logger.debug("%s -> %s", f"{token=}", f"{expired=}")
+    _logger.debug("%s -> %s", f"{token=}", f"{expired=}")
     return expired
 
 
 @contextmanager
-def access_tokens_cleanup_ctx(session: Session) -> Iterator[dict[str, AccessToken]]:
+def _access_tokens_cleanup_ctx(session: Session) -> Iterator[dict[str, _AccessToken]]:
     # WARNING: make sure this does not wrapp any ``await handler(request)``
     # Note that these access_tokens correspond to the values BEFORE that call
     # and all the tokens added/removed in the decorators nested on the handler
     # are not updated on ``access_tokens`` returned.
     access_tokens = {}
     try:
-        access_tokens = session.setdefault(SESSION_GRANTED_ACCESS_TOKENS_KEY, {})
+        access_tokens = session.setdefault(_SESSION_GRANTED_ACCESS_TOKENS_KEY, {})
 
         yield access_tokens
 
@@ -46,7 +46,7 @@ def access_tokens_cleanup_ctx(session: Session) -> Iterator[dict[str, AccessToke
             # NOTE: We have experience (old) tokens that
             # were not deserialized as AccessToken dicts
             try:
-                return token["count"] > 0 and not is_expired(token)
+                return token["count"] > 0 and not _is_expired(token)
             except (KeyError, TypeError):
                 return False
 
@@ -54,7 +54,7 @@ def access_tokens_cleanup_ctx(session: Session) -> Iterator[dict[str, AccessToke
         pruned_access_tokens = {
             name: token for name, token in access_tokens.items() if _is_valid(token)
         }
-        session[SESSION_GRANTED_ACCESS_TOKENS_KEY] = pruned_access_tokens
+        session[_SESSION_GRANTED_ACCESS_TOKENS_KEY] = pruned_access_tokens
 
 
 @validate_arguments
@@ -74,12 +74,14 @@ def on_success_grant_session_access_to(
 
             if response.status < 400:  # success
                 settings: SessionSettings = get_plugin_settings(request.app)
-                with access_tokens_cleanup_ctx(session) as access_tokens:
+                with _access_tokens_cleanup_ctx(session) as access_tokens:
                     # NOTE: does NOT add up access counts but re-assigns to max_access_count
-                    access_tokens[name] = AccessToken(
+                    access_tokens[name] = _AccessToken(
                         count=max_access_count,
-                        expires=time.time()
-                        + settings.SESSION_ACCESS_TOKENS_EXPIRATION_INTERVAL_SECS,
+                        expires=int(
+                            time.time()
+                            + settings.SESSION_ACCESS_TOKENS_EXPIRATION_INTERVAL_SECS
+                        ),
                     )
 
             return response
@@ -101,13 +103,13 @@ def session_access_required(
         async def _wrapper(request: web.Request):
             session = await get_session(request)
 
-            with access_tokens_cleanup_ctx(session) as access_tokens:
-                access: AccessToken | None = access_tokens.get(name, None)
+            with _access_tokens_cleanup_ctx(session) as access_tokens:
+                access: _AccessToken | None = access_tokens.get(name, None)
                 if not access:
                     raise web.HTTPUnauthorized(reason=unauthorized_reason)
 
                 access["count"] -= 1  # consume access count
-                if access["count"] < 0 or is_expired(access):
+                if access["count"] < 0 or _is_expired(access):
                     raise web.HTTPUnauthorized(reason=unauthorized_reason)
 
                 # update and keep for future accesses (e.g. retry this route)
@@ -117,7 +119,7 @@ def session_access_required(
             response = await handler(request)
 
             if response.status < 400:  # success
-                with access_tokens_cleanup_ctx(session) as access_tokens:
+                with _access_tokens_cleanup_ctx(session) as access_tokens:
                     if one_time_access:
                         # avoids future accesses by clearing all tokens
                         access_tokens.pop(name, None)

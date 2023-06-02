@@ -20,11 +20,11 @@ from simcore_service_webserver.login._constants import (
     MSG_UNAUTHORIZED_PHONE_CONFIRMATION,
     MSG_UNAUTHORIZED_REGISTER_PHONE,
 )
-from simcore_service_webserver.session.plugin import setup_session
-from simcore_service_webserver.session.session_access import (
+from simcore_service_webserver.session.access_policies import (
     on_success_grant_session_access_to,
     session_access_required,
 )
+from simcore_service_webserver.session.plugin import setup_session
 
 
 @pytest.fixture

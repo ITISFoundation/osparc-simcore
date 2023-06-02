@@ -15,7 +15,7 @@ from yarl import URL
 
 from ..products.plugin import Product, get_current_product
 from ..security.api import encrypt_password
-from ..session.session_access import session_access_required
+from ..session.access_policies import session_access_required
 from ..utils import MINUTE
 from ..utils_aiohttp import create_redirect_response
 from ..utils_rate_limiting import global_rate_limit_route
