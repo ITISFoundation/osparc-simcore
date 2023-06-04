@@ -93,7 +93,7 @@ class FrontEndAppSettings(BaseCustomSettings):
 
 class StaticWebserverModuleSettings(BaseCustomSettings):
     STATIC_WEBSERVER_URL: AnyHttpUrl = Field(
-        default=parse_obj_as(AnyHttpUrl, "http://static-webserver:8000"),  # NOSONAR
+        default=parse_obj_as(AnyHttpUrl, "http://static-webserver:8000"),
         description="url fort static content",
         env=[
             "STATIC_WEBSERVER_URL",
