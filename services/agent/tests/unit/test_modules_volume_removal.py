@@ -43,11 +43,7 @@ async def test_remove_volumes(faker: Faker):
         for volume in volumes:
             assert await is_volume_present(volume.name) is True
 
-        await remove_volumes(
-            [v.name for v in volumes],
-            volume_removal_attempts=15,
-            sleep_between_attempts_s=3,
-        )
+        await remove_volumes([v.name for v in volumes], volume_remove_timeout_s=5)
 
         for volume in volumes:
             assert await is_volume_present(volume.name) is False
@@ -69,11 +65,7 @@ async def test_remove_volumes_a_volume_does_not_exist(faker: Faker):
         with pytest.raises(
             RPCExceptionGroup, match="get fake_volume: no such volume"
         ) as exec_info:
-            await remove_volumes(
-                volumes_to_remove,
-                volume_removal_attempts=3,
-                sleep_between_attempts_s=0.1,
-            )
+            await remove_volumes(volumes_to_remove, volume_remove_timeout_s=5)
         assert len(exec_info.value.errors) == 1, f"{exec_info.value.errors}"
 
         for volume in volumes:
