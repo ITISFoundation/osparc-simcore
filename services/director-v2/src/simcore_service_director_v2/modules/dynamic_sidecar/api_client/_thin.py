@@ -227,6 +227,7 @@ class ThinSidecarsClient(BaseThinClient):
         url = self._get_url(dynamic_sidecar_endpoint, "/containers:restart")
         return await self.client.post(url)
 
+    @retry_on_errors
     @expect_status(status.HTTP_204_NO_CONTENT)
     async def put_volumes(
         self,
