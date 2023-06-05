@@ -2,7 +2,6 @@ import asyncio
 import logging
 import os
 import socket
-from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable, Final, Protocol
 
@@ -56,6 +55,8 @@ async def _get_connection(
     url = f"{rabbit_broker}?name={connection_name}_{socket.gethostname()}_{os.getpid()}"
     connection = await aio_pika.connect_robust(
         url,
+        heartbeat=5,
+        timeout=5,
         client_properties={"connection_name": connection_name},
     )
     connection.close_callbacks.add(_connection_close_callback)
@@ -90,8 +91,6 @@ class RabbitMQClient:
     _rpc_channel: aio_pika.abc.AbstractChannel | None = None
     _rpc: RPC | None = None
 
-    _queue_to_consumer: defaultdict = field(default_factory=lambda: defaultdict(list))
-
     def __post_init__(self):
         # recommendations are 1 connection per process
         self._connection_pool = aio_pika.pool.Pool(
@@ -118,15 +117,6 @@ class RabbitMQClient:
             logging.INFO,
             msg=f"{self.client_name} closing connection to RabbitMQ",
         ):
-            # for queue_name, consumer_tags in self._queue_to_consumer.items():
-            #     assert self._channel_pool  # nosec
-            #     async with self._channel_pool.acquire() as channel:
-            #         channel: aio_pika.RobustChannel
-            #         with contextlib.suppress(aio_pika.exceptions.ChannelClosed):
-            #             queue = await channel.declare_queue(queue_name, passive=True)
-            #             for consumer_tag in consumer_tags:
-            #                 await queue.cancel(consumer_tag)
-
             assert self._channel_pool  # nosec
             await self._channel_pool.close()
             assert self._connection_pool  # nosec
@@ -229,8 +219,7 @@ class RabbitMQClient:
                         )
                         await message.nack()
 
-            consumer_tag = await queue.consume(_on_message)
-            self._queue_to_consumer[queue.name].append(consumer_tag)
+            await queue.consume(_on_message)
             return queue.name
 
     async def add_topics(
