@@ -190,7 +190,7 @@ def expected_dynamic_sidecar_spec(
                     "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": "False",
                     "FORWARD_ENV_DISPLAY": ":0",
                     "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
-                    "DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED": "False",
+                    "DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED": "True",
                     "POSTGRES_DB": "test",
                     "POSTGRES_HOST": "localhost",
                     "POSTGRES_PORT": "5432",
