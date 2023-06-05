@@ -6,6 +6,7 @@
 from typing import Callable
 
 import docker
+import pytest
 from servicelib.rabbitmq import RabbitMQClient
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
@@ -16,22 +17,34 @@ pytest_simcore_core_services_selection = [
 ]
 
 
+@pytest.fixture
+def paused_container(
+    docker_client: docker.client.DockerClient,
+) -> Callable[[str], None]:
+    paused_containers = []
+
+    def _pauser(container_name: str) -> None:
+        containers = docker_client.containers.list(filters={"name": container_name})
+        for container in containers:
+            container.pause()
+            paused_containers.append(container)
+
+    yield _pauser
+    for container in paused_containers:
+        container.unpause()
+
+
 async def test_rabbit_client_lose_connection(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     docker_client: docker.client.DockerClient,
+    paused_container: Callable[[str], None],
 ):
     rabbit_client = rabbitmq_client("pinger")
     assert await rabbit_client.ping() is True
-    # now let's put down the rabbit service
-    for rabbit_docker_service in (
-        docker_service
-        for docker_service in docker_client.services.list()
-        if "rabbit" in docker_service.name  # type: ignore
-    ):
-        rabbit_docker_service.remove()  # type: ignore
+    paused_container("rabbit")
     # check that connection was lost
     async for attempt in AsyncRetrying(
-        stop=stop_after_delay(60), wait=wait_fixed(0.5), reraise=True
+        stop=stop_after_delay(15), wait=wait_fixed(0.5), reraise=True
     ):
         with attempt:
             assert await rabbit_client.ping() is False

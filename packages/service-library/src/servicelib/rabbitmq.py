@@ -8,7 +8,7 @@ from typing import Any, Awaitable, Callable, Final, Protocol
 import aio_pika
 from aio_pika.patterns import RPC
 from pydantic import PositiveInt
-from servicelib.logging_utils import log_context
+from servicelib.logging_utils import log_catch, log_context
 from settings_library.rabbit import RabbitSettings
 
 from .rabbitmq_errors import RemoteMethodNotRegisteredError, RPCNotInitializedError
@@ -49,7 +49,10 @@ async def _get_connection(
     #
     url = f"{rabbit_broker}?name={connection_name}_{socket.gethostname()}_{os.getpid()}"
     connection = await aio_pika.connect_robust(
-        url, client_properties={"connection_name": connection_name}
+        url,
+        timeout=5,
+        heartbeat=5,
+        client_properties={"connection_name": connection_name},
     )
     connection.close_callbacks.add(_connection_close_callback)
     return connection
@@ -129,10 +132,11 @@ class RabbitMQClient:
             return channel
 
     async def ping(self) -> bool:
-        assert self._connection_pool  # nosec
-        async with self._connection_pool.acquire() as connection:
-            connection: aio_pika.RobustConnection
-            return connection.connected.is_set()
+        with log_catch(_logger, reraise=False):
+            connection = await aio_pika.connect(self.settings.dsn, timeout=2)
+            await connection.close()
+            return True
+        return False
 
     async def subscribe(
         self,
