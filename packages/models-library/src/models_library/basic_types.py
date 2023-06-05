@@ -34,7 +34,7 @@ class MD5Str(ConstrainedStr):
 
 # env var
 class EnvVarKey(ConstrainedStr):
-    regex = re.compile(r"[a-zA-Z][a-azA-Z0-9_]*")
+    regex = re.compile(r"[a-zA-Z][a-zA-Z0-9_]*")
 
 
 # e.g. '5c833a78-1af3-43a7-9ed7-6a63b188f4d8'
