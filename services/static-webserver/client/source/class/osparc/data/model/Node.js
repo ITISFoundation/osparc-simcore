@@ -264,6 +264,10 @@ qx.Class.define("osparc.data.model.Node", {
       return (metaData && metaData.type && metaData.type === "computational");
     },
 
+    isUpdatable: function(metaData) {
+      return osparc.utils.Services.isUpdatable(metaData);
+    },
+
     isDeprecated: function(metaData) {
       return osparc.utils.Services.isDeprecated(metaData);
     },
@@ -371,6 +375,10 @@ qx.Class.define("osparc.data.model.Node", {
 
     isComputational: function() {
       return osparc.data.model.Node.isComputational(this.getMetaData());
+    },
+
+    isUpdatable: function() {
+      return osparc.data.model.Node.isUpdatable(this.getMetaData());
     },
 
     isDeprecated: function() {

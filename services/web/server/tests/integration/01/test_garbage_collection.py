@@ -50,7 +50,7 @@ from simcore_service_webserver.resource_manager.registry import (
 )
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security.plugin import setup_security
-from simcore_service_webserver.session import setup_session
+from simcore_service_webserver.session.plugin import setup_session
 from simcore_service_webserver.socketio.plugin import setup_socketio
 from simcore_service_webserver.users.plugin import setup_users
 from sqlalchemy import func, select

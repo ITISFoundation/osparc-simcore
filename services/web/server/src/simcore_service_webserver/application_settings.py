@@ -39,7 +39,7 @@ from .projects.settings import ProjectsSettings
 from .resource_manager.settings import ResourceManagerSettings
 from .rest_settings import RestSettings
 from .scicrunch.settings import SciCrunchSettings
-from .session_settings import SessionSettings
+from .session.settings import SessionSettings
 from .statics.settings import FrontEndAppSettings, StaticWebserverModuleSettings
 from .storage.settings import StorageSettings
 from .studies_dispatcher.settings import StudiesDispatcherSettings

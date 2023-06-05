@@ -286,6 +286,11 @@ qx.Class.define("osparc.utils.Services", {
     DEPRECATED_AUTOUPDATABLE_INSTRUCTIONS: qx.locale.Manager.tr("Please Stop the Service and then Update it"),
     RETIRED_AUTOUPDATABLE_INSTRUCTIONS: qx.locale.Manager.tr("Please Update the Service"),
 
+    isUpdatable: function(metadata) {
+      const latestCompatibleMetadata = this.getLatestCompatible(null, metadata["key"], metadata["version"]);
+      return latestCompatibleMetadata && metadata["version"] !== latestCompatibleMetadata["version"];
+    },
+
     isDeprecated: function(metadata) {
       if (metadata && "deprecated" in metadata && ![null, undefined].includes(metadata["deprecated"])) {
         const deprecationTime = new Date(metadata["deprecated"]);
