@@ -55,8 +55,6 @@ async def _get_connection(
     url = f"{rabbit_broker}?name={connection_name}_{socket.gethostname()}_{os.getpid()}"
     connection = await aio_pika.connect_robust(
         url,
-        heartbeat=5,
-        timeout=5,
         client_properties={"connection_name": connection_name},
     )
     connection.close_callbacks.add(_connection_close_callback)
