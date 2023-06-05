@@ -34,21 +34,24 @@ async def _request_volume_removal(
     settings: ApplicationSettings = initialized_app.state.settings
 
     namespace = RPCNamespace.from_entries(
-        {"service": "agent", "docker_node_id": settings.AGENT_DOCKER_NODE_ID}
+        {
+            "service": "agent",
+            "docker_node_id": settings.AGENT_DOCKER_NODE_ID,
+            "swarm_stack_name": settings.AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME,
+        }
     )
     await test_rabbit_client.rpc_request(
         namespace,
         "remove_volumes",
         volume_names=volumes,
-        volume_removal_attempts=1,
-        sleep_between_attempts_s=0.1,
+        volume_remove_timeout_s=2,
         timeout_s_method=5,
         timeout_s_connection_error=1,
     )
 
 
 @asynccontextmanager
-async def _create_volumes(count: int) -> list[str]:
+async def _create_volumes(count: int) -> AsyncIterator[list[str]]:
     volumes: set[DockerVolume] = set()
     async with aiodocker.Docker() as docker_client:
         result = await asyncio.gather(
@@ -153,7 +156,7 @@ async def test_rpc_remove_volumes_volume_does_not_exist(
 ):
     missing_volume_name = "volume_does_not_exit"
     with pytest.raises(
-        RPCExceptionGroup, match=f"get {missing_volume_name}: no such volume"
+        RPCExceptionGroup, match=f"volume {missing_volume_name} not found"
     ) as exec_info:
         await _request_volume_removal(
             initialized_app, test_rabbit_client, [missing_volume_name]
