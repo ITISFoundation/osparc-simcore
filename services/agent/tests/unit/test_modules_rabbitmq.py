@@ -154,7 +154,7 @@ async def test_rpc_remove_volumes_with_already_running_volumes_removal_task_ok(
 async def test_rpc_remove_volumes_volume_does_not_exist(
     initialized_app: FastAPI, test_rabbit_client: RabbitMQClient
 ):
-    with pytest.raises(RPCExceptionGroup, match=f"DockerError(404") as exec_info:
+    with pytest.raises(RPCExceptionGroup, match="DockerError(404") as exec_info:
         await _request_volume_removal(
             initialized_app, test_rabbit_client, ["volume_does_not_exit"]
         )
