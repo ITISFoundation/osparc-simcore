@@ -23,7 +23,7 @@ from simcore_service_webserver.login._constants import (
     MSG_USER_EXPIRED,
     MSG_WRONG_PASSWORD,
 )
-from simcore_service_webserver.session_settings import get_plugin_settings
+from simcore_service_webserver.session.settings import get_plugin_settings
 
 
 def test_login_plugin_setup_succeeded(client: TestClient):

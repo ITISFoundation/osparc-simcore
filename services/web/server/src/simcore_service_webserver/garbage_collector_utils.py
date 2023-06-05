@@ -44,7 +44,7 @@ async def _fetch_new_project_owner_from_groups(
                     possible_user_id,
                 )
 
-        return None
+    return None
 
 
 async def get_new_project_owner_gid(
