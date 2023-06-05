@@ -364,7 +364,7 @@ class RabbitMQClient:
         namespaced_method_name = RPCNamespacedMethodName.from_namespace_and_method(
             namespace, method_name
         )
-        log.info(
+        _logger.info(
             "RPC registered handler '%s' to queue '%s'", handler, namespaced_method_name
         )
         await self._rpc.register(
