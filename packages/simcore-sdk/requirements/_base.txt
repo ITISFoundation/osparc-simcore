@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_base.txt --resolver=backtracking --strip-extras requirements/_base.in
 #
-aio-pika==9.0.7
+aio-pika==9.1.2
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiocache==0.12.1
     # via -r requirements/_base.in
