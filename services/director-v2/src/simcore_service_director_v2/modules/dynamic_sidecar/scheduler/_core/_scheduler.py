@@ -43,7 +43,6 @@ from .....models.schemas.dynamic_services import (
     ServiceName,
 )
 from ...api_client import SidecarsClient, get_sidecars_client
-from .....models.schemas.dynamic_services.scheduler import ServiceName
 from ...docker_api import update_scheduler_data_label
 from ...errors import DynamicSidecarError, DynamicSidecarNotFoundError
 from .._abc import SchedulerPublicInterface
