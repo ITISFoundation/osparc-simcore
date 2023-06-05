@@ -35,9 +35,9 @@ def expected_md5sum() -> MD5Str:
     # $ echo -n "This is a test" | md5sum -
     # ce114e4501d2f4e2dcea3e17b546f339  -
     #
-    expected_md5sum = "ce114e4501d2f4e2dcea3e17b546f339"
-    assert hashlib.md5(FILE_CONTENT.encode()).hexdigest() == expected_md5sum
-    return parse_obj_as(MD5Str, expected_md5sum)
+    _md5sum: MD5Str = parse_obj_as(MD5Str, "ce114e4501d2f4e2dcea3e17b546f339")
+    assert hashlib.md5(FILE_CONTENT.encode()).hexdigest() == _md5sum
+    return _md5sum
 
 
 async def test_create_filemetadata_from_path(
