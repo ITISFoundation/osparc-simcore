@@ -31,7 +31,11 @@ def rabbit_client_name(faker: Faker) -> str:
     return faker.pystr()
 
 
-async def test_rabbit_client(rabbit_client_name: str, rabbit_service: RabbitSettings):
+async def test_rabbit_client(
+    rabbit_client_name: str,
+    rabbit_service: RabbitSettings,
+    assert_rabbitmq_has_no_errors: None,
+):
     client = RabbitMQClient(rabbit_client_name, rabbit_service)
     assert client
     # check it is correctly initialized
@@ -111,6 +115,7 @@ async def _assert_message_received(
 
 
 async def test_rabbit_client_pub_sub_message_is_lost_if_no_consumer_present(
+    assert_rabbitmq_has_no_errors: None,
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
@@ -128,6 +133,7 @@ async def test_rabbit_client_pub_sub_message_is_lost_if_no_consumer_present(
 
 
 async def test_rabbit_client_pub_sub(
+    assert_rabbitmq_has_no_errors: None,
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
@@ -145,6 +151,7 @@ async def test_rabbit_client_pub_sub(
 
 @pytest.mark.parametrize("num_subs", [10])
 async def test_rabbit_client_pub_many_subs(
+    assert_rabbitmq_has_no_errors: None,
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocker: MockerFixture,
@@ -176,6 +183,7 @@ async def test_rabbit_client_pub_many_subs(
 
 
 async def test_rabbit_client_pub_sub_republishes_if_exception_raised(
+    assert_rabbitmq_has_no_errors: None,
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
@@ -205,6 +213,7 @@ async def test_rabbit_client_pub_sub_republishes_if_exception_raised(
 
 @pytest.mark.parametrize("num_subs", [10])
 async def test_pub_sub_with_non_exclusive_queue(
+    assert_rabbitmq_has_no_errors: None,
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocker: MockerFixture,
@@ -242,6 +251,7 @@ async def test_pub_sub_with_non_exclusive_queue(
 
 
 def test_rabbit_pub_sub_performance(
+    assert_rabbitmq_has_no_errors: None,
     benchmark,
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
@@ -269,6 +279,7 @@ def test_rabbit_pub_sub_performance(
 
 
 async def test_rabbit_pub_sub_with_topic(
+    assert_rabbitmq_has_no_errors: None,
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocker: MockerFixture,
@@ -321,6 +332,7 @@ async def test_rabbit_pub_sub_with_topic(
 
 
 async def test_rabbit_pub_sub_bind_and_unbind_topics(
+    assert_rabbitmq_has_no_errors: None,
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
@@ -392,21 +404,8 @@ async def test_rabbit_pub_sub_bind_and_unbind_topics(
     await _assert_message_received(mocked_message_parser, 0)
 
 
-async def test_rabbit_not_using_the_same_exchange_type_raises(
-    rabbitmq_client: Callable[[str], RabbitMQClient],
-    random_exchange_name: Callable[[], str],
-    mocked_message_parser: mock.AsyncMock,
-):
-    exchange_name = f"{random_exchange_name()}_fanout"
-    client = rabbitmq_client("consumer")
-    # this will create a FANOUT exchange
-    await client.subscribe(exchange_name, mocked_message_parser)
-    # now do a second subscribtion wiht topics, will create a TOPICS exchange
-    with pytest.raises(aio_pika.exceptions.ChannelPreconditionFailed):
-        await client.subscribe(exchange_name, mocked_message_parser, topics=[])
-
-
 async def test_rabbit_adding_topics_to_a_fanout_exchange(
+    assert_rabbitmq_has_no_errors: None,
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
@@ -434,3 +433,17 @@ async def test_rabbit_adding_topics_to_a_fanout_exchange(
     await consumer.unsubscribe(queue_name)
     await publisher.publish(exchange_name, message)
     await _assert_message_received(mocked_message_parser, 0)
+
+
+async def test_rabbit_not_using_the_same_exchange_type_raises(
+    rabbitmq_client: Callable[[str], RabbitMQClient],
+    random_exchange_name: Callable[[], str],
+    mocked_message_parser: mock.AsyncMock,
+):
+    exchange_name = f"{random_exchange_name()}_fanout"
+    client = rabbitmq_client("consumer")
+    # this will create a FANOUT exchange
+    await client.subscribe(exchange_name, mocked_message_parser)
+    # now do a second subscribtion wiht topics, will create a TOPICS exchange
+    with pytest.raises(aio_pika.exceptions.ChannelPreconditionFailed):
+        await client.subscribe(exchange_name, mocked_message_parser, topics=[])

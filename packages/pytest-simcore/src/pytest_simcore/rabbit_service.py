@@ -4,13 +4,13 @@
 
 import asyncio
 import logging
-import os
-import socket
-from typing import Any, AsyncIterator, Callable
+from typing import AsyncIterator, Callable, Iterator, cast
 
 import aio_pika
+import docker
 import pytest
 import tenacity
+from docker.models.containers import Container as DockerContainer
 from servicelib.rabbitmq import RabbitMQClient
 from settings_library.basic_types import PortInt
 from settings_library.rabbit import RabbitSettings
@@ -23,6 +23,32 @@ from .helpers.utils_docker import get_localhost_ip, get_service_published_port
 _logger = logging.getLogger(__name__)
 
 
+@pytest.fixture
+def assert_rabbitmq_has_no_errors(
+    docker_client: docker.client.DockerClient,
+) -> Iterator[None]:
+    yield
+    print("--> checking for errors/warnings in rabbitmq logs...")
+    containers = docker_client.containers.list(filters={"name": "rabbit"})
+    assert len(containers) == 1, "missing rabbit container!"
+    rabbit_container: DockerContainer = cast(DockerContainer, containers[0])
+    rabbit_logs: bytes = rabbit_container.logs()
+    converted_logs = rabbit_logs.decode().splitlines()
+    warning_logs = [log for log in converted_logs if "warning" in log]
+    error_logs = [log for log in converted_logs if "error" in log]
+    RABBIT_SKIPPED_WARNINGS = [
+        "rebuilding indices from scratch",
+    ]
+    filtered_warning_logs = [
+        log
+        for log in warning_logs
+        if all(w not in log for w in RABBIT_SKIPPED_WARNINGS)
+    ]
+    assert not filtered_warning_logs
+    assert not error_logs
+    print("<-- no error founds in rabbitmq server logs, that's great. good job!")
+
+
 @tenacity.retry(
     wait=wait_fixed(5),
     stop=stop_after_attempt(60),
@@ -30,13 +56,14 @@ _logger = logging.getLogger(__name__)
     reraise=True,
 )
 async def wait_till_rabbit_responsive(url: str) -> None:
-    connection = await aio_pika.connect(url)
-    await connection.close()
+    async with await aio_pika.connect(url):
+        ...
 
 
 @pytest.fixture
 async def rabbit_settings(
-    docker_stack: dict, testing_environ_vars: dict  # stack is up
+    docker_stack: dict,
+    testing_environ_vars: dict,
 ) -> RabbitSettings:
     """Returns the settings of a rabbit service that is up and responsive"""
 
@@ -73,53 +100,6 @@ async def rabbit_service(
     )
 
     return rabbit_settings
-
-
-@pytest.fixture
-async def rabbit_connection(
-    rabbit_settings: RabbitSettings,
-) -> AsyncIterator[aio_pika.abc.AbstractConnection]:
-    def _reconnect_callback():
-        pytest.fail("rabbit reconnected")
-
-    def _connection_close_callback(sender: Any, exc: BaseException | None = None):
-        if exc and not isinstance(exc, asyncio.CancelledError):
-            pytest.fail(f"rabbit connection closed with exception {exc} from {sender}!")
-        print("<-- connection closed")
-
-    # create connection
-    # NOTE: to show the connection name in the rabbitMQ UI see there
-    # https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url
-    connection = await aio_pika.connect_robust(
-        rabbit_settings.dsn + f"?name={__name__}_{socket.gethostname()}_{os.getpid()}",
-        client_properties={"connection_name": "pytest read connection"},
-    )
-    assert connection
-    assert not connection.is_closed
-    connection.reconnect_callbacks.add(_reconnect_callback)
-    connection.close_callbacks.add(_connection_close_callback)
-
-    yield connection
-    # close connection
-    await connection.close()
-    assert connection.is_closed
-
-
-@pytest.fixture
-async def rabbit_channel(
-    rabbit_connection: aio_pika.abc.AbstractConnection,
-) -> AsyncIterator[aio_pika.abc.AbstractChannel]:
-    def _channel_close_callback(sender: Any, exc: BaseException | None = None):
-        if exc and not isinstance(exc, asyncio.CancelledError):
-            pytest.fail(f"rabbit channel closed with exception {exc} from {sender}!")
-        print("<-- rabbit channel closed")
-
-    # create channel
-    async with rabbit_connection.channel() as channel:
-        print("--> rabbit channel created")
-        channel.close_callbacks.add(_channel_close_callback)
-        yield channel
-    assert channel.is_closed
 
 
 @pytest.fixture
