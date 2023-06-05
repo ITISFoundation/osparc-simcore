@@ -50,8 +50,6 @@ async def _get_connection(
     url = f"{rabbit_broker}?name={connection_name}_{socket.gethostname()}_{os.getpid()}"
     connection = await aio_pika.connect_robust(
         url,
-        timeout=5,
-        heartbeat=5,
         client_properties={"connection_name": connection_name},
     )
     connection.close_callbacks.add(_connection_close_callback)
@@ -133,9 +131,8 @@ class RabbitMQClient:
 
     async def ping(self) -> bool:
         with log_catch(_logger, reraise=False):
-            connection = await aio_pika.connect(self.settings.dsn, timeout=2)
-            await connection.close()
-            return True
+            async with await aio_pika.connect(self.settings.dsn, timeout=1):
+                return True
         return False
 
     async def subscribe(
