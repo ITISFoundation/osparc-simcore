@@ -104,9 +104,8 @@ openapi-schema-validator==0.2.3
     #   openapi-spec-validator
 openapi-spec-validator==0.4.0
     # via -r requirements/_test.in
-packaging==21.3
+packaging==23.1
     # via
-    #   -c requirements/_base.txt
     #   docker
     #   pytest
     #   pytest-sugar
@@ -114,10 +113,6 @@ pluggy==1.0.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-pyparsing==3.0.9
-    # via
-    #   -c requirements/_base.txt
-    #   packaging
 pyrsistent==0.18.1
     # via
     #   -c requirements/_base.txt
