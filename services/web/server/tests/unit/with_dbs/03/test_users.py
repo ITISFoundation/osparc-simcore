@@ -45,7 +45,7 @@ from simcore_service_webserver.redis import (
 )
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security.plugin import setup_security
-from simcore_service_webserver.session import setup_session
+from simcore_service_webserver.session.plugin import setup_session
 from simcore_service_webserver.users._handlers import _get_user_notifications
 from simcore_service_webserver.users._notifications import (
     MAX_NOTIFICATIONS_FOR_USER_TO_KEEP,
