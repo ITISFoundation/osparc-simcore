@@ -5,9 +5,9 @@ from typing import Any, Callable, Coroutine
 from aiohttp import web
 from models_library.projects import ProjectID
 from pydantic import BaseModel, HttpUrl
-from simcore_service_webserver.projects.models import ProjectDict
 
 from .exceptions import PermalinkFactoryError, PermalinkNotAllowedError
+from .models import ProjectDict
 
 _PROJECT_PERMALINK = f"{__name__}"
 _logger = logging.getLogger(__name__)
