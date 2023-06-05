@@ -2,11 +2,11 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+
 import json
-from collections import namedtuple
 from copy import deepcopy
 from pprint import pformat
-from typing import Any
+from typing import Any, NamedTuple
 
 import pytest
 from models_library.service_settings_labels import (
@@ -22,39 +22,39 @@ from models_library.service_settings_labels import (
     _PortRange,
 )
 from models_library.services_resources import DEFAULT_SINGLE_SERVICE_NAME
+from models_library.utils.string_substitution import TextTemplate
 from pydantic import BaseModel, ValidationError
 
-SimcoreServiceExample = namedtuple(
-    "SimcoreServiceExample", "example, items, uses_dynamic_sidecar, id"
-)
+
+class _Parametrization(NamedTuple):
+    example: dict[str, Any]
+    items: int
+    uses_dynamic_sidecar: bool
 
 
-SIMCORE_SERVICE_EXAMPLES = [
-    SimcoreServiceExample(
+SIMCORE_SERVICE_EXAMPLES = {
+    "legacy": _Parametrization(
         example=SimcoreServiceLabels.Config.schema_extra["examples"][0],
         items=1,
         uses_dynamic_sidecar=False,
-        id="legacy",
     ),
-    SimcoreServiceExample(
+    "dynamic-service": _Parametrization(
         example=SimcoreServiceLabels.Config.schema_extra["examples"][1],
         items=3,
         uses_dynamic_sidecar=True,
-        id="dynamic-service",
     ),
-    SimcoreServiceExample(
+    "dynamic-service-with-compose-spec": _Parametrization(
         example=SimcoreServiceLabels.Config.schema_extra["examples"][2],
         items=5,
         uses_dynamic_sidecar=True,
-        id="dynamic-service-with-compose-spec",
     ),
-]
+}
 
 
 @pytest.mark.parametrize(
     "example, items, uses_dynamic_sidecar",
-    [(x.example, x.items, x.uses_dynamic_sidecar) for x in SIMCORE_SERVICE_EXAMPLES],
-    ids=[x.id for x in SIMCORE_SERVICE_EXAMPLES],
+    list(SIMCORE_SERVICE_EXAMPLES.values()),
+    ids=list(SIMCORE_SERVICE_EXAMPLES.keys()),
 )
 def test_simcore_service_labels(example: dict, items: int, uses_dynamic_sidecar: bool):
     simcore_service_labels = SimcoreServiceLabels.parse_obj(example)
@@ -137,7 +137,10 @@ def test_path_mappings_json_encoding():
 
 
 def test_simcore_services_labels_compose_spec_null_container_http_entry_provided():
-    sample_data = deepcopy(SimcoreServiceLabels.Config.schema_extra["examples"][2])
+    sample_data: dict[str, Any] = deepcopy(
+        SimcoreServiceLabels.Config.schema_extra["examples"][2]
+    )
+
     assert sample_data["simcore.service.container-http-entrypoint"]
 
     sample_data["simcore.service.compose-spec"] = None
@@ -385,3 +388,183 @@ def test_not_allowed_in_both_permit_list_and_outgoing_internet():
         f"Not allowed common_containers={{'{container_name}'}} detected"
         in f"{exec_info.value}"
     )
+
+
+@pytest.fixture
+def vendor_environments() -> dict[str, Any]:
+    return {
+        "OSPARC_ENVIRONMENT_VENDOR_SECRET_DNS_RESOLVER_ADDRESS": "172.0.0.1",
+        "OSPARC_ENVIRONMENT_VENDOR_SECRET_DNS_RESOLVER_PORT": 1234,
+        "OSPARC_ENVIRONMENT_VENDOR_SECRET_LICENCE_HOSTNAME": "hostname",
+        "OSPARC_ENVIRONMENT_VENDOR_SECRET_TCP_PORTS": [
+            1,
+            2,
+            3,
+            4,
+        ],
+        "OSPARC_ENVIRONMENT_VENDOR_SECRET_TCP_PORTS_1": 1,
+        "OSPARC_ENVIRONMENT_VENDOR_SECRET_TCP_PORTS_2": 2,
+        "OSPARC_ENVIRONMENT_VENDOR_SECRET_TCP_PORTS_3": 3,
+    }
+
+
+@pytest.fixture
+def service_labels() -> dict[str, str]:
+    return {
+        "simcore.service.paths-mapping": json.dumps(
+            {
+                "inputs_path": "/tmp/inputs",
+                "outputs_path": "/tmp/outputs",
+                "state_paths": ["/tmp/save_1", "/tmp_save_2"],
+                "state_exclude": ["/tmp/strip_me/*", "*.py"],
+            }
+        ),
+        "simcore.service.compose-spec": json.dumps(
+            {
+                "version": "2.3",
+                "services": {
+                    "rt-web": {
+                        "image": "${SIMCORE_REGISTRY}/simcore/services/dynamic/sim4life:${SERVICE_VERSION}",
+                        "init": True,
+                        "depends_on": ["s4l-core"],
+                    },
+                    "s4l-core": {
+                        "image": "${SIMCORE_REGISTRY}/simcore/services/dynamic/s4l-core:${SERVICE_VERSION}",
+                        "runtime": "nvidia",
+                        "init": True,
+                        "environment": ["DISPLAY=${DISPLAY}"],
+                        "volumes": ["/tmp/.X11-unix:/tmp/.X11-unix"],
+                    },
+                },
+            }
+        ),
+        "simcore.service.container-http-entrypoint": "rt-web",
+        "simcore.service.restart-policy": "on-inputs-downloaded",
+        "simcore.service.containers-allowed-outgoing-permit-list": json.dumps(
+            {
+                "s4l-core": [
+                    {
+                        "hostname": "license.com",
+                        "tcp_ports": [
+                            "$OSPARC_ENVIRONMENT_VENDOR_SECRET_TCP_PORTS_1",
+                            "$OSPARC_ENVIRONMENT_VENDOR_SECRET_TCP_PORTS_2",
+                            3,
+                        ],
+                        "dns_resolver": {
+                            "address": "$OSPARC_ENVIRONMENT_VENDOR_SECRET_DNS_RESOLVER_ADDRESS",
+                            "port": "$OSPARC_ENVIRONMENT_VENDOR_SECRET_DNS_RESOLVER_PORT",
+                        },
+                    }
+                ]
+            }
+        ),
+        "simcore.service.settings": json.dumps(
+            [
+                {
+                    "name": "constraints",
+                    "type": "string",
+                    "value": ["node.platform.os == linux"],
+                },
+                {
+                    "name": "ContainerSpec",
+                    "type": "ContainerSpec",
+                    "value": {"Command": ["run"]},
+                },
+                {
+                    "name": "Resources",
+                    "type": "Resources",
+                    "value": {
+                        "Limits": {"NanoCPUs": 4000000000, "MemoryBytes": 17179869184},
+                        "Reservations": {
+                            "NanoCPUs": 100000000,
+                            "MemoryBytes": 536870912,
+                            "GenericResources": [
+                                {"DiscreteResourceSpec": {"Kind": "VRAM", "Value": 1}}
+                            ],
+                        },
+                    },
+                },
+                {
+                    "name": "mount",
+                    "type": "object",
+                    "value": [
+                        {
+                            "ReadOnly": True,
+                            "Source": "/tmp/.X11-unix",
+                            "Target": "/tmp/.X11-unix",
+                            "Type": "bind",
+                        }
+                    ],
+                },
+                {
+                    "name": "env",
+                    "type": "string",
+                    "value": ["DISPLAY=${DISPLAY}"],
+                },
+                {
+                    "name": "ports",
+                    "type": "int",
+                    "value": 8888,
+                },
+                {
+                    "name": "resources",
+                    "type": "Resources",
+                    "value": {
+                        "Limits": {"NanoCPUs": 4000000000, "MemoryBytes": 8589934592}
+                    },
+                },
+            ]
+        ),
+    }
+
+
+@pytest.mark.xfail(reason="Needs enabling OEnvSubstitutionStr (coming PR)")
+def test_can_parse_labels_with_osparc_identifiers(
+    vendor_environments: dict[str, Any], service_labels: dict[str, str]
+):
+    # can load OSPARC_ENVIRONMENT_ identifiers!!
+    service_meta = SimcoreServiceLabels.parse_obj(service_labels)
+
+    assert service_meta.containers_allowed_outgoing_permit_list["s4l-core"][
+        0
+    ].tcp_ports == [
+        "$OSPARC_ENVIRONMENT_VENDOR_SECRET_TCP_PORTS_1",
+        "$OSPARC_ENVIRONMENT_VENDOR_SECRET_TCP_PORTS_2",
+        3,
+    ]
+
+    service_meta_str = TextTemplate(
+        service_meta.json(include={"containers_allowed_outgoing_permit_list"})
+    ).safe_substitute(vendor_environments)
+
+    assert "$" not in service_meta_str
+
+
+@pytest.mark.xfail(reason="Needs enabling OEnvSubstitutionStr (coming PR)")
+def test_resolving_some_service_labels_at_load_time(
+    vendor_environments: dict[str, Any], service_labels: dict[str, str]
+):
+
+    print(json.dumps(service_labels, indent=1))
+
+    # Resolving at load-time (some of them are possible)
+
+    for label_name in (
+        "simcore.service.compose-spec",
+        "simcore.service.settings",
+        "simcore.service.containers-allowed-outgoing-permit-list",
+    ):
+        template = TextTemplate(service_labels[label_name])
+        if template.is_valid() and (identifiers := template.get_identifiers()):
+            assert set(identifiers).issubset(vendor_environments)
+            resolved_label: str = template.substitute(vendor_environments)
+            service_labels[label_name] = json.dumps(json.loads(resolved_label))
+
+    print(json.dumps(service_labels, indent=1))
+
+    # NOTE: that this model needs all values to be resolved before parsing them
+    # otherwise it might fail!! The question is whether these values can be resolved at this point
+    # NOTE: vendor values are in the database and therefore are available at this point
+    labels = SimcoreServiceLabels.parse_obj(service_labels)
+
+    print("After", labels.json(indent=1))
