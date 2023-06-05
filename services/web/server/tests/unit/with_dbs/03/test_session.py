@@ -14,7 +14,7 @@ from cryptography.fernet import Fernet
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_login import NewUser
 from simcore_service_webserver.application import create_application
-from simcore_service_webserver.session_settings import SessionSettings
+from simcore_service_webserver.session.settings import SessionSettings
 
 
 @pytest.fixture

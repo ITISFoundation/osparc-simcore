@@ -15,7 +15,10 @@ from simcore_postgres_database.models.users import UserRole
 from .._meta import API_VTAG
 from ..products.plugin import Product, get_current_product
 from ..security.api import check_password, forget
-from ..session_access import on_success_grant_session_access_to, session_access_required
+from ..session.access_policies import (
+    on_success_grant_session_access_to,
+    session_access_required,
+)
 from ..utils_aiohttp import NextPage
 from ._2fa import (
     create_2fa_code,
