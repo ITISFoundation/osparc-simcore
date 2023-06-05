@@ -430,9 +430,10 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     def get_proxy_endpoint(self) -> AnyHttpUrl:
         """get the endpoint where the proxy's admin API is exposed"""
         assert self.proxy_admin_api_port  # nosec
-        return AnyHttpUrl.build(
-            scheme="http", host=self.proxy_service_name, port=self.proxy_admin_api_port
+        url: AnyHttpUrl = parse_obj_as(
+            AnyHttpUrl, f"http://{self.proxy_service_name}:{self.proxy_admin_api_port}"
         )
+        return url
 
     product_name: str = Field(
         None,
