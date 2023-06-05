@@ -73,7 +73,6 @@ def minimal_configuration(
 
 @pytest.fixture
 def mock_env(mock_env: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
-    monkeypatch.setenv("LOG_FORMAT_LOCAL_DEV_ENABLED", "True")
     monkeypatch.setenv("RABBIT_USER", "admin")
     monkeypatch.setenv("RABBIT_PASSWORD", "adminadmin")
     return mock_env | {"RABBIT_USER": "admin", "RABBIT_PASSWORD": "adminadmin"}

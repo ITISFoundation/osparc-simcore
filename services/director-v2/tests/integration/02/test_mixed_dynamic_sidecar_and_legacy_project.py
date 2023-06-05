@@ -138,8 +138,6 @@ async def director_v2_client(
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
 
-    monkeypatch.setenv("LOG_FORMAT_LOCAL_DEV_ENABLED", "True")
-
     registry = os.environ.get("DOCKER_REGISTRY", "local")
     image_tag = os.environ.get("DOCKER_IMAGE_TAG", "production")
 
