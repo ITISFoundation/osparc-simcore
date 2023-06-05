@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from typing import Final
 
@@ -6,7 +5,7 @@ from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
 from servicelib.fastapi.long_running_tasks.client import ProgressCallback
 
-from .....core.settings import DynamicServicesSchedulerSettings, DynamicSidecarSettings
+from .....core.settings import DynamicSidecarSettings
 from .....models.schemas.dynamic_services import (
     DynamicSidecarStatus,
     RunningDynamicServiceDetails,
@@ -14,11 +13,7 @@ from .....models.schemas.dynamic_services import (
     ServiceState,
 )
 from ...api_client import DynamicSidecarClient, get_dynamic_sidecar_client
-from ...docker_api import (
-    get_dynamic_sidecar_state,
-    get_dynamic_sidecars_to_observe,
-    remove_pending_volume_removal_services,
-)
+from ...docker_api import get_dynamic_sidecar_state, get_dynamic_sidecars_to_observe
 from ...docker_states import extract_containers_minimum_statuses
 from ...errors import DockerServiceNotFoundError
 from ._events_utils import service_push_outputs
@@ -59,35 +54,6 @@ async def service_awaits_manual_interventions(scheduler_data: SchedulerData) -> 
         scheduler_data.dynamic_sidecar.wait_for_manual_intervention_logged = True
         logger.warning(" %s %s", LOG_MSG_MANUAL_INTERVENTION, scheduler_data.node_uuid)
     return service_awaits_intervention
-
-
-async def cleanup_volume_removal_services(app: FastAPI) -> None:
-    settings: DynamicServicesSchedulerSettings = (
-        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
-    )
-    dynamic_sidecar_settings: DynamicSidecarSettings = (
-        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-    )
-
-    logger.debug(
-        "dynamic-sidecars cleanup pending volume removal services every %s seconds",
-        settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_PENDING_VOLUME_REMOVAL_INTERVAL_S,
-    )
-    while await asyncio.sleep(
-        settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_PENDING_VOLUME_REMOVAL_INTERVAL_S,
-        True,
-    ):
-        logger.debug("Removing pending volume removal services...")
-
-        try:
-            await remove_pending_volume_removal_services(dynamic_sidecar_settings)
-        except asyncio.CancelledError:
-            logger.info("Stopped pending volume removal services task")
-            raise
-        except Exception:  # pylint: disable=broad-except
-            logger.exception(
-                "Unexpected error while cleaning up pending volume removal services"
-            )
 
 
 async def discover_running_services(schduler: "Scheduler") -> None:  # type: ignore

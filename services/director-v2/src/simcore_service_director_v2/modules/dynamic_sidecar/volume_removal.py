@@ -1,6 +1,5 @@
+from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq_utils import RPCMethodName, RPCNamespace
-
-from ..rabbitmq import RabbitMQClient
 
 
 async def remove_volumes_from_node(
