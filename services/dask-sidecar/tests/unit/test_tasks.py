@@ -600,7 +600,6 @@ async def test_run_computational_sidecar_dask(
     mocked_get_integration_version.assert_called()
 
 
-@pytest.mark.skip("SAN is taking care of it hopefully")
 @pytest.mark.parametrize(
     "integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True
 )
