@@ -34,8 +34,6 @@ anyio==3.6.2
     #   httpcore
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
-astroid==2.15.5
-    # via pylint
 async-asgi-testclient==1.4.11
     # via -r requirements/_test.in
 async-timeout==4.0.2
@@ -94,8 +92,6 @@ dask==2023.3.2
     #   distributed
 dask-gateway-server==2023.1.1
     # via -r requirements/_test.in
-dill==0.3.6
-    # via pylint
 distributed==2023.3.2
     # via
     #   -c requirements/_base.txt
@@ -150,8 +146,6 @@ importlib-metadata==6.6.0
     #   dask
 iniconfig==2.0.0
     # via pytest
-isort==5.12.0
-    # via pylint
 jinja2==3.1.2
     # via
     #   -c requirements/_base.txt
@@ -162,8 +156,6 @@ jmespath==1.0.1
     # via
     #   boto3
     #   botocore
-lazy-object-proxy==1.9.0
-    # via astroid
 locket==1.0.0
     # via
     #   -c requirements/_base.txt
@@ -178,8 +170,6 @@ markupsafe==2.1.2
     #   -c requirements/_base.txt
     #   jinja2
     #   mako
-mccabe==0.7.0
-    # via pylint
 minio==7.0.4
     # via -r requirements/_test.in
 msgpack==1.0.5
@@ -216,8 +206,6 @@ partd==1.4.0
     #   dask
 pillow==9.5.0
     # via bokeh
-platformdirs==3.5.1
-    # via pylint
 pluggy==1.0.0
     # via pytest
 pprintpp==0.4.0
@@ -228,8 +216,6 @@ psutil==5.9.5
     #   distributed
 pycparser==2.21
     # via cffi
-pylint==2.17.4
-    # via -r requirements/_test.in
 pytest==7.3.1
     # via
     #   -r requirements/_test.in
@@ -306,10 +292,7 @@ tomli==2.0.1
     # via
     #   coverage
     #   mypy
-    #   pylint
     #   pytest
-tomlkit==0.11.8
-    # via pylint
 toolz==0.12.0
     # via
     #   -c requirements/_base.txt
@@ -326,7 +309,6 @@ traitlets==5.9.0
 typing-extensions==4.3.0
     # via
     #   -c requirements/_base.txt
-    #   astroid
     #   bokeh
     #   mypy
     #   sqlalchemy2-stubs

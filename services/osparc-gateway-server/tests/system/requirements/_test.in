@@ -9,7 +9,6 @@ docker
 faker
 lz4
 numpy
-pylint
 pytest
 pytest-asyncio
 pytest-cov
