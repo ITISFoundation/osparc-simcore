@@ -103,7 +103,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
     },
 
     logLevel2Str: function(logLevel) {
-      const pairFound = Object.entries(this.LOG_LEVELS).find(pair => pair[1] === logLevel.toUpperCase());
+      const pairFound = Object.entries(this.LOG_LEVELS).find(pair => pair[1] === logLevel);
       if (pairFound && pairFound.length) {
         return pairFound[0];
       }

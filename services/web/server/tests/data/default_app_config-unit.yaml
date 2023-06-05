@@ -60,6 +60,12 @@ projects:
   projects_max_copy_size_bytes: 5368709120
 publications:
   enabled: true
+rabbitmq:
+  enabled: true
+  host: 127.0.0.1
+  port: 5672
+  user: admin
+  password: adminadmin
 remote_debug:
   enabled: false
 # https://github.com/ITISFoundation/osparc-simcore/blob/0e9a59a76a88c12d59d4a568339a1757adab464a/services/web/server/src/simcore_service_webserver/resource_manager/_schema.py

@@ -765,6 +765,18 @@ qx.Class.define("osparc.utils.Utils", {
       return typeof v === "object" && v !== null;
     },
 
+    centerTabIcon: function(tabpage) {
+      const button = tabpage.getButton();
+      button.set({
+        alignX: "center",
+        alignY: "middle"
+      });
+      // eslint-disable-next-line no-underscore-dangle
+      const btnLayout = button._getLayout();
+      btnLayout.setColumnFlex(0, 1); // icon
+      btnLayout.setColumnAlign(0, "center", "middle"); // icon
+    },
+
     addClass: function(element, className) {
       if (element) {
         const currentClass = element.getAttribute("class");

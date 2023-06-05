@@ -43,6 +43,6 @@ groups_extra_properties = sa.Table(
         "service can access the internet.",
     ),
     # TIME STAMPS ----
-    column_created_datetime(),
-    column_modified_datetime(),
+    column_created_datetime(timezone=False),
+    column_modified_datetime(timezone=False),
 )
