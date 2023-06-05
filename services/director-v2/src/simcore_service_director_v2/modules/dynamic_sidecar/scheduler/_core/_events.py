@@ -275,7 +275,6 @@ class CreateSidecars(DynamicSchedulerEvent):
             json_dumps(dynamic_sidecar_proxy_create_service_params),
         )
 
-        # no need for the id any longer
         await create_service_and_get_id(dynamic_sidecar_proxy_create_service_params)
 
         # finally mark services created
