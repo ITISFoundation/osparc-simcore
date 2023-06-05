@@ -1128,6 +1128,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__nodeOptionsPage.add(bootOptionsView);
       }
 
+      // if it's deprecated or retired show the LifeCycleView right away
       if (node.hasOutputs() && node.isDynamic() && (node.isDeprecated() || node.isRetired())) {
         this.getChildControl("side-panel-right-tabs").setSelection([this.__nodeOptionsPage]);
       }

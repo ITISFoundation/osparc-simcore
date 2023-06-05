@@ -35,7 +35,6 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
             "WEBSERVER_NOTIFICATIONS": "0",
             "WEBSERVER_PROJECTS": "null",
             "WEBSERVER_PUBLICATIONS": "0",
-            "WEBSERVER_RABBITMQ": "null",
             "WEBSERVER_REMOTE_DEBUG": "0",
             "WEBSERVER_SOCKETIO": "1",  # <--- activate only sockets
             "WEBSERVER_STORAGE": "null",

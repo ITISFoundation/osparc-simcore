@@ -92,8 +92,8 @@ tags_to_groups = sa.Table(
         doc="If true, group can *delete* the tag",
     ),
     # TIME STAMPS ----
-    column_created_datetime(),
-    column_modified_datetime(),
+    column_created_datetime(timezone=False),
+    column_modified_datetime(timezone=False),
     sa.UniqueConstraint("tag_id", "group_id"),
 )
 
