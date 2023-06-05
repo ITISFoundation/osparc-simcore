@@ -1,4 +1,5 @@
 import asyncio
+import functools
 import logging
 import os
 import socket
@@ -26,7 +27,7 @@ def _connection_close_callback(
         if isinstance(exc, asyncio.CancelledError):
             _logger.info("Rabbit connection cancelled")
         elif isinstance(exc, aiormq.exceptions.ConnectionClosed):
-            _logger.info("Rabbit connection closed")
+            _logger.info("Rabbit connection closed: %s", exc)
         else:
             _logger.error(
                 "Rabbit connection closed with exception from %s",
@@ -41,6 +42,10 @@ def _channel_close_callback(
     if exc:
         if isinstance(exc, asyncio.CancelledError):
             _logger.info("Rabbit channel cancelled")
+        elif isinstance(exc, aiormq.exceptions.ChannelNotFoundEntity):
+            _logger.error("QUEUE NOT FOUND ENTITY!!!! %s", exc)
+            client.bad_state = True
+            # ideally we need to re-init. close the client and re-init it completely.
         elif isinstance(exc, aiormq.exceptions.ChannelClosed):
             _logger.info("Rabbit channel closed")
         else:
@@ -56,7 +61,7 @@ async def _get_connection(
     # NOTE: to show the connection name in the rabbitMQ UI see there
     # https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url
     #
-    url = f"{rabbit_broker}?name={connection_name}_{socket.gethostname()}_{os.getpid()}"
+    url = f"{rabbit_broker}?name={connection_name}_{socket.gethostname()}_{os.getpid()}&heartbeat=5"
     connection = await aio_pika.connect_robust(
         url,
         client_properties={"connection_name": connection_name},
@@ -101,6 +106,10 @@ class RabbitMQClient:
         # channels are not thread safe, what about python?
         self._channel_pool = aio_pika.pool.Pool(self._get_channel, max_size=10)
 
+    async def reset(self):
+        await self.close()
+        self.__post_init__()
+
     async def rpc_initialize(self) -> None:
         self._rpc_connection = await aio_pika.connect_robust(
             self.settings.dsn,
@@ -137,7 +146,9 @@ class RabbitMQClient:
         async with self._connection_pool.acquire() as connection:
             connection: aio_pika.RobustConnection
             channel = await connection.channel()
-            channel.close_callbacks.add(_channel_close_callback)
+            channel.close_callbacks.add(
+                functools.partial(_channel_close_callback, self)
+            )
             return channel
 
     async def ping(self) -> bool:
@@ -256,7 +267,8 @@ class RabbitMQClient:
             queue = await channel.get_queue(queue_name)
 
             await asyncio.gather(
-                *(queue.unbind(exchange, routing_key=topic) for topic in topics)
+                *(queue.unbind(exchange, routing_key=topic) for topic in topics),
+                return_exceptions=True,
             )
 
     async def unsubscribe(
