@@ -137,8 +137,8 @@ qx.Class.define("osparc.component.node.LifeCycleView", {
         backgroundColor: "strong-main"
       });
       const isUpdatable = this.getNode().isUpdatable();
-      stopButton.bind("enabled", updateButton, "enabled", {
-        converter: enabled => !enabled && isUpdatable
+      node.getStatus().bind("interactive", updateButton, "enabled", {
+        converter: state => ["idle", "failed", "deprecated", "retired"].includes(state) && isUpdatable
       });
       updateButton.addListener("execute", () => {
         updateButton.setFetching(true);
