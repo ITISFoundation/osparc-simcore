@@ -326,7 +326,7 @@ class RabbitMQClient:
                 retry=retry_if_exception_type(
                     (AMQPConnectionError, ChannelInvalidStateError)
                 ),
-                before_sleep=before_sleep_log(log, logging.WARNING),
+                before_sleep=before_sleep_log(_logger, logging.WARNING),
                 reraise=True,
             ):
                 with attempt:
