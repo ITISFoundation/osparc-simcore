@@ -782,7 +782,7 @@ class TutorialBase {
 
   async testSARValidation(sarNodeId) {
     // SAR Validation service testing
-    await this.waitFor(5000, 'SAR Service started');
+    await this.waitFor(15000, 'SAR Service started');
     await this.takeScreenshot("testSARValidation_before");
 
     this.__responsesQueue.addResponseListener("training-set-generation/generate");
