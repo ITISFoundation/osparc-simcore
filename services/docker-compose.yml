@@ -327,7 +327,6 @@ services:
     environment:
       <<: *webserver-environment
       WEBSERVER_GARBAGE_COLLECTOR: '{"GARBAGE_COLLECTOR_INTERVAL_S": 30}'
-      WEBSERVER_SOCKETIO: ${GC_WEBSERVER_SOCKETIO}
     env_file:
       - ../.env
       - ../.env-wb-garbage-collector
