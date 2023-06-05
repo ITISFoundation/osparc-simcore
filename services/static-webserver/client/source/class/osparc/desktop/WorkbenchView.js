@@ -1114,7 +1114,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       outputFilesBtn.addListener("execute", () => osparc.component.node.BaseNodeView.openNodeDataManager(node));
       this.__outputsPage.add(outputFilesBtn);
 
-      if (node.isDynamic() && (node.isDeprecated() || node.isRetired())) {
+      if (node.isDynamic() && (node.isUpdatable() || node.isDeprecated() || node.isRetired())) {
         this.__nodeOptionsPage.getChildControl("button").show();
         const lifeCycleView = new osparc.component.node.LifeCycleView(node);
         node.addListener("versionChanged", () => this.__populateSecondPanel(node));

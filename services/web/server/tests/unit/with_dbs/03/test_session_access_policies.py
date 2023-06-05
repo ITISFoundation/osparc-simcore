@@ -5,7 +5,7 @@
 
 
 from asyncio import AbstractEventLoop
-from typing import Callable, Optional, Protocol
+from typing import Callable, Protocol
 
 import pytest
 from aiohttp import ClientResponse, web
@@ -20,11 +20,11 @@ from simcore_service_webserver.login._constants import (
     MSG_UNAUTHORIZED_PHONE_CONFIRMATION,
     MSG_UNAUTHORIZED_REGISTER_PHONE,
 )
-from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.session_access import (
+from simcore_service_webserver.session.access_policies import (
     on_success_grant_session_access_to,
     session_access_required,
 )
+from simcore_service_webserver.session.plugin import setup_session
 
 
 @pytest.fixture
@@ -118,7 +118,7 @@ def client(
 
 class ClientRequestCallable(Protocol):
     async def __call__(
-        self, client: TestClient, name: str, return_status: Optional[int] = None
+        self, client: TestClient, name: str, return_status: int | None = None
     ) -> ClientResponse:
         ...
 

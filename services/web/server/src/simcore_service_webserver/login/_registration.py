@@ -7,7 +7,7 @@
 import logging
 from contextlib import contextmanager
 from datetime import datetime
-from typing import Iterator, Literal, cast
+from typing import Iterator, Literal
 
 from aiohttp import web
 from models_library.basic_types import IdInt
@@ -176,7 +176,7 @@ def _invitations_request_context(invitation_code: str) -> Iterator[URL]:
 
     except (ValidationError, InvalidInvitation) as err:
         msg = f"{err}"
-        if isinstance(ValidationError, err):
+        if isinstance(err, ValidationError):
             msg = f"{InvalidInvitation(reason='')}"
         raise web.HTTPForbidden(
             reason=f"{msg}. {MSG_INVITATIONS_CONTACT_SUFFIX}",
@@ -235,8 +235,10 @@ async def check_and_consume_invitation(
 
     if confirmation_token := await validate_confirmation_code(invitation_code, db, cfg):
         try:
-            invitation = _InvitationValidator.parse_obj(confirmation_token)
-            return cast(InvitationData, invitation.data)
+            invitation_data: InvitationData = _InvitationValidator.parse_obj(
+                confirmation_token
+            ).data
+            return invitation_data
 
         except ValidationError as err:
             log.warning(

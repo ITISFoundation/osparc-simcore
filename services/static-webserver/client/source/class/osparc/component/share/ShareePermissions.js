@@ -27,6 +27,8 @@ qx.Class.define("osparc.component.share.ShareePermissions", {
       }));
 
       const grid = new qx.ui.layout.Grid(20, 10);
+      grid.setColumnAlign(0, "center", "middle");
+      grid.setColumnAlign(1, "center", "middle");
       const layout = new qx.ui.container.Composite(grid);
       this._add(layout);
       for (let i=0; i<shareesData.length; i++) {
@@ -41,9 +43,12 @@ qx.Class.define("osparc.component.share.ShareePermissions", {
 
               const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(8));
               shareeData["inaccessible_services"].forEach(inaccessibleService => {
-                const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+                const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
+                  alignY: "middle"
+                });
                 const metaData = osparc.utils.Services.getMetaData(inaccessibleService.key, inaccessibleService.version);
                 const infoButton = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/14");
+                infoButton.setAppearance("strong-button");
                 infoButton.addListener("execute", () => {
                   const moreOpts = new osparc.dashboard.ResourceMoreOptions(metaData);
                   const title = this.tr("Service Info");
