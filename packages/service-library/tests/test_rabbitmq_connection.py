@@ -3,10 +3,11 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=protected-access
 
-from typing import Callable
+from typing import Callable, Iterator, cast
 
 import docker
 import pytest
+from docker.models.containers import Container
 from servicelib.rabbitmq import RabbitMQClient
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
@@ -20,17 +21,19 @@ pytest_simcore_core_services_selection = [
 @pytest.fixture
 def paused_container(
     docker_client: docker.client.DockerClient,
-) -> Callable[[str], None]:
+) -> Iterator[Callable[[str], None]]:
     paused_containers = []
 
     def _pauser(container_name: str) -> None:
         containers = docker_client.containers.list(filters={"name": container_name})
         for container in containers:
+            container = cast(Container, container)
             container.pause()
             paused_containers.append(container)
 
     yield _pauser
     for container in paused_containers:
+        container = cast(Container, container)
         container.unpause()
 
 
