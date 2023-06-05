@@ -17,10 +17,8 @@ certifi==2022.12.7
     #   httpx
     #   requests
 charset-normalizer==3.1.0
-    # via
-    #   -c requirements/_base.txt
-    #   requests
-coverage==7.2.5
+    # via requests
+coverage==7.2.7
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -28,7 +26,7 @@ exceptiongroup==1.1.1
     # via pytest
 execnet==1.9.0
     # via pytest-xdist
-faker==18.7.0
+faker==18.10.1
     # via -r requirements/_test.in
 h11==0.12.0
     # via
@@ -72,7 +70,7 @@ pytest==7.3.1
     #   pytest-xdist
 pytest-asyncio==0.21.0
     # via -r requirements/_test.in
-pytest-cov==4.0.0
+pytest-cov==4.1.0
     # via -r requirements/_test.in
 pytest-icdiff==0.6
     # via -r requirements/_test.in
@@ -84,7 +82,7 @@ pytest-runner==6.0.0
     # via -r requirements/_test.in
 pytest-sugar==0.9.7
     # via -r requirements/_test.in
-pytest-xdist==3.3.0
+pytest-xdist==3.3.1
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via

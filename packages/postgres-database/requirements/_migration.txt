@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_migration.txt --resolver=backtracking --strip-extras requirements/_migration.in
 #
-alembic==1.10.4
+alembic==1.11.1
     # via -r requirements/_migration.in
 certifi==2023.5.7
     # via requests
@@ -12,7 +12,7 @@ charset-normalizer==3.1.0
     # via requests
 click==8.1.3
     # via -r requirements/_migration.in
-docker==6.1.2
+docker==6.1.3
     # via -r requirements/_migration.in
 greenlet==2.0.2
     # via
@@ -26,7 +26,7 @@ mako==1.2.4
     # via
     #   -c requirements/_base.txt
     #   alembic
-markupsafe==2.1.2
+markupsafe==2.1.3
     # via
     #   -c requirements/_base.txt
     #   mako
@@ -42,7 +42,7 @@ sqlalchemy==1.4.48
     #   alembic
 tenacity==8.2.2
     # via -r requirements/_migration.in
-typing-extensions==4.5.0
+typing-extensions==4.6.3
     # via
     #   -c requirements/_base.txt
     #   alembic
