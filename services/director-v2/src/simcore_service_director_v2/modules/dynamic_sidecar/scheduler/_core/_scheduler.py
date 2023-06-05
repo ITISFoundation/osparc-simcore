@@ -31,9 +31,6 @@ from pydantic import AnyHttpUrl
 from servicelib.background_task import cancel_task
 from servicelib.fastapi.long_running_tasks.client import ProgressCallback
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
-from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
-    ServiceName,
-)
 
 from .....core.settings import DynamicServicesSchedulerSettings, DynamicSidecarSettings
 from .....models.domains.dynamic_services import (
@@ -46,6 +43,7 @@ from .....models.schemas.dynamic_services import (
     ServiceName,
 )
 from ...api_client import SidecarsClient, get_sidecars_client
+from .....models.schemas.dynamic_services.scheduler import ServiceName
 from ...docker_api import update_scheduler_data_label
 from ...errors import DynamicSidecarError, DynamicSidecarNotFoundError
 from .._abc import SchedulerPublicInterface
