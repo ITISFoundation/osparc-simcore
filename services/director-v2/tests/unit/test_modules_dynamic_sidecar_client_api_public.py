@@ -20,8 +20,8 @@ from simcore_service_director_v2.modules.dynamic_sidecar.api_client._errors impo
     UnexpectedStatusError,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
-    DynamicSidecarClient,
-    get_dynamic_sidecar_client,
+    SidecarsClient,
+    get_sidecars_client,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
     setup as api_client_setup,
@@ -57,15 +57,15 @@ def mock_env(monkeypatch: MonkeyPatch, mock_env: EnvVarsDict) -> None:
 
 
 @pytest.fixture
-async def dynamic_sidecar_client(
+async def sidecars_client(
     mock_env: EnvVarsDict, faker: Faker
-) -> AsyncIterable[DynamicSidecarClient]:
+) -> AsyncIterable[SidecarsClient]:
     app = FastAPI()
     app.state.settings = AppSettings.create_from_envs()
 
     # WARNING: pytest gets confused with 'setup', use instead alias 'api_client_setup'
     await api_client_setup(app)
-    yield get_dynamic_sidecar_client(app, faker.uuid4())
+    yield get_sidecars_client(app, faker.uuid4())
     await shutdown(app)
 
 
@@ -84,20 +84,20 @@ def raise_request_timeout(
 
 @pytest.fixture
 def get_patched_client(
-    dynamic_sidecar_client: DynamicSidecarClient, mocker: MockerFixture
+    sidecars_client: SidecarsClient, mocker: MockerFixture
 ) -> Callable:
     @contextmanager
     def wrapper(
         method: str,
         return_value: Any | None = None,
         side_effect: Callable | None = None,
-    ) -> Iterator[DynamicSidecarClient]:
+    ) -> Iterator[SidecarsClient]:
         mocker.patch(
-            f"simcore_service_director_v2.modules.dynamic_sidecar.api_client._thin.ThinDynamicSidecarClient.{method}",
+            f"simcore_service_director_v2.modules.dynamic_sidecar.api_client._thin.ThinSidecarsClient.{method}",
             return_value=return_value,
             side_effect=side_effect,
         )
-        yield dynamic_sidecar_client
+        yield sidecars_client
 
     return wrapper
 
@@ -123,11 +123,11 @@ async def test_is_healthy(
 
 async def test_is_healthy_times_out(
     raise_request_timeout: None,
-    dynamic_sidecar_client: DynamicSidecarClient,
+    sidecars_client: SidecarsClient,
     dynamic_sidecar_endpoint: AnyHttpUrl,
     caplog_info_level: LogCaptureFixture,
 ) -> None:
-    assert await dynamic_sidecar_client.is_healthy(dynamic_sidecar_endpoint) is False
+    assert await sidecars_client.is_healthy(dynamic_sidecar_endpoint) is False
     # check if the right amount of messages was captured by the logs
     unexpected_counter = 1
     for log_message in caplog_info_level.messages:

@@ -21,7 +21,7 @@ from simcore_service_director_v2.models.schemas.dynamic_services.scheduler impor
     SchedulerData,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
-    DynamicSidecarClient,
+    SidecarsClient,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core import (
     _events_utils,
@@ -94,10 +94,10 @@ def mock_containers_docker_status(
 
 
 @pytest.fixture
-def mock_dynamic_sidecar_client(mocker: MockerFixture) -> None:
-    mocker.patch.object(DynamicSidecarClient, "push_service_output_ports")
-    mocker.patch.object(DynamicSidecarClient, "save_service_state")
-    mocker.patch.object(DynamicSidecarClient, "stop_service")
+def mock_sidecars_client(mocker: MockerFixture) -> None:
+    mocker.patch.object(SidecarsClient, "push_service_output_ports")
+    mocker.patch.object(SidecarsClient, "save_service_state")
+    mocker.patch.object(SidecarsClient, "stop_service")
 
 
 @pytest.fixture
@@ -113,7 +113,7 @@ def mock_is_dynamic_sidecar_stack_missing(mocker: MockerFixture) -> None:
 @pytest.fixture
 def scheduler(
     mock_containers_docker_status: MockRouter,
-    mock_dynamic_sidecar_client: None,
+    mock_sidecars_client: None,
     mock_is_dynamic_sidecar_stack_missing: None,
     minimal_app: FastAPI,
 ) -> DynamicSidecarsScheduler:

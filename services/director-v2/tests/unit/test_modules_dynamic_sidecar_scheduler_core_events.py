@@ -53,17 +53,17 @@ def mock_env(
 
 
 @pytest.fixture
-def mock_dynamic_sidecar_client_always_fail(mocker: MockerFixture) -> None:
+def mock_sidecars_client_always_fail(mocker: MockerFixture) -> None:
     class MockedObj:
         @classmethod
         async def containers_inspect(cls, *args, **kwargs) -> None:
             raise BaseClientHTTPError("will always fail")
 
-    mocker.patch.object(_events, "get_dynamic_sidecar_client", return_value=MockedObj())
+    mocker.patch.object(_events, "get_sidecars_client", return_value=MockedObj())
 
 
 @pytest.fixture
-def mock_dynamic_sidecar_client_stops_failing(mocker: MockerFixture) -> None:
+def mock_sidecars_client_stops_failing(mocker: MockerFixture) -> None:
     class MockedObj:
         def __init__(self) -> None:
             self.counter = 0
@@ -73,7 +73,7 @@ def mock_dynamic_sidecar_client_stops_failing(mocker: MockerFixture) -> None:
             if self.counter < STEPS / 2:
                 raise BaseClientHTTPError("will always fail")
 
-    mocker.patch.object(_events, "get_dynamic_sidecar_client", return_value=MockedObj())
+    mocker.patch.object(_events, "get_sidecars_client", return_value=MockedObj())
 
 
 @pytest.fixture
@@ -100,7 +100,7 @@ def caplog_debug(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
 
 
 async def test_event_get_status_network_connectivity(
-    mock_dynamic_sidecar_client_always_fail: None,
+    mock_sidecars_client_always_fail: None,
     minimal_app: FastAPI,
     scheduler_data: SchedulerData,
     caplog_debug: LogCaptureFixture,
@@ -115,7 +115,7 @@ async def test_event_get_status_network_connectivity(
 
 
 async def test_event_get_status_recovers_after_error(
-    mock_dynamic_sidecar_client_stops_failing: None,
+    mock_sidecars_client_stops_failing: None,
     minimal_app: FastAPI,
     scheduler_data: SchedulerData,
     caplog_debug: LogCaptureFixture,
