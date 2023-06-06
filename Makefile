@@ -498,12 +498,14 @@ pylint: ## python linting
 	@/bin/bash -c "pylint --version"
 	# Running linter in services and packages
 	@folders=$$(find $(CURDIR)/services $(CURDIR)/packages  -type d -name 'src' -exec dirname {} \; | sort -u); \
+	exit_status=0; \
 	for folder in $$folders; do \
-		pushd "$$folder" || exit 1; \
-		make pylint; \
+		pushd "$$folder"; \
+		make pylint || exit_status=1; \
 		popd; \
-	done
-	# Running linter elsewhere
+	done;\
+	exit $$exit_status
+	# Running linter $(CURDIR)/tests
 	@pylint --rcfile=.pylintrc -v $(CURDIR)/tests --ignore=examples
 	# See exit codes and command line https://pylint.readthedocs.io/en/latest/user_guide/run.html#exit-codes
 
