@@ -81,7 +81,7 @@ exceptiongroup==1.1.1
     # via pytest
 faker==18.10.1
     # via -r requirements/_test.in
-fakeredis==2.13.0
+fakeredis==2.14.0
     # via -r requirements/_test.in
 flask==2.3.2
     # via

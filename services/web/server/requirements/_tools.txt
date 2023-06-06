@@ -6,7 +6,7 @@
 #
 astroid==2.15.5
     # via pylint
-black==22.12.0
+black==23.3.0
     # via -r requirements/../../../../requirements/devenv.txt
 build==0.10.0
     # via pip-tools
@@ -48,7 +48,10 @@ nodeenv==1.8.0
 nose==1.3.7
     # via inotify
 packaging==23.1
-    # via build
+    # via
+    #   -c requirements/_test.txt
+    #   black
+    #   build
 pathspec==0.11.1
     # via black
 pip-tools==6.13.0

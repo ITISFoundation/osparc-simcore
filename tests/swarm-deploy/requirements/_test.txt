@@ -132,7 +132,7 @@ pydantic==1.10.8
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
-pyinstrument==4.4.0
+pyinstrument==4.5.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
