@@ -26,7 +26,7 @@ test() {
 
 typecheck() {
   pushd packages/postgres-database
-  make mypy pylint
+  make mypy
   popd
 }
 

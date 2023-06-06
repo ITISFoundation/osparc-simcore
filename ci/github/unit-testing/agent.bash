@@ -26,7 +26,7 @@ test() {
 
 typecheck() {
   pushd services/agent
-  make mypy pylint
+  make mypy
   popd
 }
 

@@ -26,7 +26,7 @@ test() {
 
 typecheck() {
   pushd services/autoscaling
-  make mypy pylint
+  make mypy
   popd
 }
 

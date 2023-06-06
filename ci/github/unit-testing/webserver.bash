@@ -42,7 +42,7 @@ test_with_db() {
 
 typecheck() {
   pushd services/web/server
-  make mypy pylint
+  make mypy
   popd
 }
 

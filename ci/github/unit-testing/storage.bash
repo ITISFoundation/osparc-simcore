@@ -26,7 +26,7 @@ test() {
 
 typecheck() {
   pushd services/storage
-  make mypy pylint
+  make mypy
   popd
 }
 

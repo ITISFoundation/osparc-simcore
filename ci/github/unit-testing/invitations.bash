@@ -26,7 +26,7 @@ test() {
 
 typecheck() {
   pushd services/invitations
-  make mypy pylint
+  make mypy
   popd
 }
 

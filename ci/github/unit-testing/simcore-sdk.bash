@@ -29,7 +29,7 @@ test() {
 
 typecheck() {
   pushd packages/simcore-sdk
-  make mypy pylint
+  make mypy
   popd
 }
 

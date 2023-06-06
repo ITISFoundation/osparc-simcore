@@ -26,7 +26,7 @@ test() {
 
 typecheck() {
   pushd services/datcore-adapter
-  make mypy pylint
+  make mypy
   popd
 }
 

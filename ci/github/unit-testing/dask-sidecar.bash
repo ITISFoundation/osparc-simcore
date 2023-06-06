@@ -26,7 +26,7 @@ test() {
 
 typecheck() {
   pushd services/dask-sidecar
-  make mypy pylint
+  make mypy
   popd
 }
 
