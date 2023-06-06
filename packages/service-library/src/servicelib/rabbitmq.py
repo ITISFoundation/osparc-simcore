@@ -18,7 +18,10 @@ from .rabbitmq_utils import RPCMethodName, RPCNamespace, RPCNamespacedMethodName
 _logger = logging.getLogger(__name__)
 
 
-def _connection_close_callback(sender: Any, exc: BaseException | None) -> None:
+def _connection_close_callback(
+    sender: Any,  # pylint: disable=unused-argument
+    exc: BaseException | None,
+) -> None:
     if exc:
         if isinstance(exc, asyncio.CancelledError):
             _logger.info("Rabbit connection cancelled")
@@ -26,13 +29,15 @@ def _connection_close_callback(sender: Any, exc: BaseException | None) -> None:
             _logger.info("Rabbit connection closed")
         else:
             _logger.error(
-                "Rabbit connection closed with exception from %s:%s",
-                sender,
+                "Rabbit connection closed with exception from %s",
                 exc,
             )
 
 
-def _channel_close_callback(sender: Any, exc: BaseException | None) -> None:
+def _channel_close_callback(
+    sender: Any,  # pylint: disable=unused-argument
+    exc: BaseException | None,
+) -> None:
     if exc:
         if isinstance(exc, asyncio.CancelledError):
             _logger.info("Rabbit channel cancelled")
@@ -40,8 +45,7 @@ def _channel_close_callback(sender: Any, exc: BaseException | None) -> None:
             _logger.info("Rabbit channel closed")
         else:
             _logger.error(
-                "Rabbit channel closed with exception from %s:%s",
-                sender,
+                "Rabbit channel closed with exception from %s",
                 exc,
             )
 
