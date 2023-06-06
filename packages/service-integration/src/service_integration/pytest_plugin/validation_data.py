@@ -4,7 +4,7 @@
 
 import json
 from pathlib import Path
-from typing import Iterator, Optional
+from typing import Iterator
 
 import pytest
 import yaml
@@ -33,7 +33,7 @@ def validation_folder(validation_dir: Path, port_type: str) -> Path:
 
 
 @pytest.fixture
-def validation_cfg(validation_dir: Path, port_type: str) -> Optional[dict]:
+def validation_cfg(validation_dir: Path, port_type: str) -> dict | None:
     validation_file = validation_dir / port_type / (f"{port_type}s.json")
     if validation_file.exists():
         with validation_file.open() as fp:
@@ -93,7 +93,7 @@ def assert_validation_data_follows_definition(
         for key, value in validation_cfg.items():
             # check the key is defined in the labels
             assert key in label_cfg
-            label2types = {
+            label2types: dict[str, type | tuple[type, ...]] = {
                 "number": (float, int),
                 "integer": int,
                 "boolean": bool,
