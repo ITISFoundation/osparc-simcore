@@ -66,7 +66,7 @@ def _get_dynamic_sidecar_endpoint(
 
 async def _save_node_state(
     app,
-    dynamic_sidecar_client: api_client.DynamicSidecarClient,
+    sidecars_client: api_client.SidecarsClient,
     save_attempts: int,
     node_uuid: NodeIDStr,
     label: str,
@@ -79,7 +79,7 @@ async def _save_node_state(
     ):
         with attempt:
             typer.echo(f"Attempting to save {node_uuid} {label}")
-            await dynamic_sidecar_client.save_service_state(
+            await sidecars_client.save_service_state(
                 _get_dynamic_sidecar_endpoint(app.state.settings, node_uuid)
             )
 
@@ -105,7 +105,7 @@ async def async_project_save_state(project_id: ProjectID, save_attempts: int) ->
             try:
                 await _save_node_state(
                     app,
-                    api_client.get_dynamic_sidecar_client(app, node_uuid),
+                    api_client.get_sidecars_client(app, node_uuid),
                     save_attempts,
                     node_uuid,
                     node_content.label,
