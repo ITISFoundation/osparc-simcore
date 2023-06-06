@@ -1,10 +1,10 @@
 # pylint: disable=unused-argument
 
-from fastapi import APIRouter, Depends, Path, Query, Response
+from fastapi import APIRouter, Depends, Path, Query
 from models_library.services import SERVICE_KEY_RE, VERSION_RE, ServiceType
 
 from ...models.schemas.services import ServiceExtrasEnveloped, ServicesArrayEnveloped
-from ..dependencies.director_v0 import forward_to_director_v0
+from ..dependencies.director_v0 import Forwarded, forward_to_director_v0
 
 router = APIRouter()
 
@@ -24,9 +24,9 @@ async def list_services(
             "   - interactive - an interactive service\n"
         ),
     ),
-    forward_request: Response = Depends(forward_to_director_v0),
+    forward_request: Forwarded = Depends(forward_to_director_v0),
 ):
-    return forward_request
+    return forward_request.response
 
 
 ServiceKeyPath = Path(
@@ -47,9 +47,9 @@ ServiceKeyVersionPath = Path(
 async def get_extra_service_versioned(
     service_key: str = ServiceKeyPath,
     service_version: str = ServiceKeyVersionPath,
-    forward_request: Response = Depends(forward_to_director_v0),
+    forward_request: Forwarded = Depends(forward_to_director_v0),
 ):
-    return forward_request
+    return forward_request.response
 
 
 @router.get(
@@ -60,6 +60,6 @@ async def get_extra_service_versioned(
 async def get_service_versioned(
     service_key: str = ServiceKeyPath,
     service_version: str = ServiceKeyVersionPath,
-    forward_request: Response = Depends(forward_to_director_v0),
+    forward_request: Forwarded = Depends(forward_to_director_v0),
 ):
-    return forward_request
+    return forward_request.response

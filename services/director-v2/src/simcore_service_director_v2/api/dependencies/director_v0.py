@@ -1,3 +1,5 @@
+from typing import NamedTuple
+
 from fastapi import Depends, Request, Response
 
 from ...modules.director_v0 import DirectorV0Client
@@ -8,9 +10,15 @@ def get_director_v0_client(request: Request) -> DirectorV0Client:
     return client
 
 
+# NOTE: Wraps response because it cannot be returned by a Dependency
+#   AssertionError: Cannot specify `Depends` for type <class 'starlette.responses.Response'>
+class Forwarded(NamedTuple):
+    response: Response
+
+
 async def forward_to_director_v0(
     request: Request,
     response: Response,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
-) -> Response:
-    return await director_v0_client.forward(request, response)
+) -> Forwarded:
+    return Forwarded(await director_v0_client.forward(request, response))

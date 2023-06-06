@@ -1,9 +1,9 @@
 # pylint: disable=unused-argument
-from fastapi import APIRouter, Depends, Query, Response, status
+from fastapi import APIRouter, Depends, Query, status
 from models_library.services import SERVICE_KEY_RE, VERSION_RE
 
 from ...models.schemas.services import RunningServicesDetailsArrayEnveloped
-from ..dependencies.director_v0 import forward_to_director_v0
+from ..dependencies.director_v0 import Forwarded, forward_to_director_v0
 
 router = APIRouter()
 
@@ -25,9 +25,9 @@ ProjectIdQuery = Query(
 async def list_running_interactive_services(
     user_id: str = UserIdQuery,
     project_id: str = ProjectIdQuery,
-    forward_request: Response = Depends(forward_to_director_v0),
+    forward_request: Forwarded = Depends(forward_to_director_v0),
 ):
-    return forward_request
+    return forward_request.response
 
 
 @router.post(
@@ -59,9 +59,9 @@ async def start_interactive_service(
         description="predefined basepath for the backend service otherwise uses root",
         example="/x/EycCXbU0H/",
     ),
-    forward_request: Response = Depends(forward_to_director_v0),
+    forward_request: Forwarded = Depends(forward_to_director_v0),
 ):
-    return forward_request
+    return forward_request.response
 
 
 @router.delete(
@@ -69,6 +69,6 @@ async def start_interactive_service(
 )
 async def stop_interactive_service(
     service_uuid: str,
-    forward_request: Response = Depends(forward_to_director_v0),
+    forward_request: Forwarded = Depends(forward_to_director_v0),
 ):
-    return forward_request
+    return forward_request.response
