@@ -9,3 +9,6 @@ def get_plugin_settings(app: Application) -> PostgresSettings:
     assert settings, "setup_settings not called?"  # nosec
     assert isinstance(settings, PostgresSettings)  # nosec
     return settings
+
+
+__all__: tuple[str, ...] = ("PostgresSettings",)

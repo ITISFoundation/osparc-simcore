@@ -77,6 +77,7 @@ async def iter_latest_product_services(
             services_meta_data.c.name,
             services_meta_data.c.description,
             services_meta_data.c.thumbnail,
+            services_meta_data.c.deprecated,
         )
         .select_from(
             latest_services.join(
@@ -94,6 +95,7 @@ async def iter_latest_product_services(
                 services_meta_data.c.key.like("simcore/services/dynamic/%%")
                 | (services_meta_data.c.key.like("simcore/services/comp/%%"))
             )
+            & (services_meta_data.c.deprecated.is_(None))
             & (services_access_rights.c.gid == EVERYONE_GROUP_ID)
             & (services_access_rights.c.execute_access == True)
             & (services_access_rights.c.product_name == product_name)

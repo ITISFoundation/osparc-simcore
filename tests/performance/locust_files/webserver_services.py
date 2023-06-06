@@ -29,7 +29,7 @@ class WebApiUser(FastHttpUser):
     @task(weight=5)
     def get_services(self):
         self.client.get(
-            f"/v0/catalog/services",
+            "/v0/catalog/services",
         )
 
     def on_start(self):

@@ -4,10 +4,8 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --resolver=backtracking --strip-extras requirements/_test.in
 #
-aio-pika==9.0.7
-    # via
-    #   -r requirements/../../../packages/service-library/requirements/_base.in
-    #   -r requirements/_test.in
+aio-pika==9.1.2
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiocache==0.12.1
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 aiodebug==2.3.0
@@ -15,7 +13,9 @@ aiodebug==2.3.0
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 aiodocker==0.21.0
-    # via -r requirements/_test.in
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/_test.in
 aiofiles==23.1.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
