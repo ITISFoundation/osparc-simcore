@@ -36,13 +36,13 @@ def get_routes_view(routes: RouteTableDef) -> str:
 def create_url_for_function(request: web.Request) -> Callable:
     app = request.app
 
-    def url_for(route_name: str, **params: dict[str, Any]) -> str:
+    def _url_for(route_name: str, **params: dict[str, Any]) -> str:
         """Reverse URL constructing using named resources"""
         try:
             rel_url: URL = app.router[route_name].url_for(
                 **{k: f"{v}" for k, v in params.items()}
             )
-            url = (
+            url: URL = (
                 request.url.origin()
                 .with_scheme(
                     # Custom header by traefik. See labels in docker-compose as:
@@ -59,7 +59,7 @@ def create_url_for_function(request: web.Request) -> Callable:
                 "Check name spelling or whether the router was not registered"
             ) from err
 
-    return url_for
+    return _url_for
 
 
 def envelope_json_response(

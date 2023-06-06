@@ -259,11 +259,12 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     @cached_property
     def log_level(self) -> int:
-        return getattr(logging, self.WEBSERVER_LOGLEVEL.upper())
+        level: int = getattr(logging, self.WEBSERVER_LOGLEVEL.upper())
+        return level
 
     @validator("WEBSERVER_LOGLEVEL")
     @classmethod
-    def valid_log_level(cls, value) -> str:
+    def valid_log_level(cls, value):
         return cls.validate_log_level(value)
 
     @validator("SC_HEALTHCHECK_TIMEOUT", pre=True)
@@ -323,7 +324,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         }
         config_alias_generator = lambda s: s.lower()
 
-        data = self.dict(**kwargs)
+        data: dict[str, Any] = self.dict(**kwargs)
         current_keys = list(data.keys())
 
         for key in current_keys:
@@ -375,8 +376,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
 
 def setup_settings(app: web.Application) -> ApplicationSettings:
-    app[APP_SETTINGS_KEY] = settings = ApplicationSettings.create_from_envs()
-    log.info(
+    settings: ApplicationSettings = ApplicationSettings.create_from_envs()
+    app[APP_SETTINGS_KEY] = settings
+    log.debug(
         "Captured app settings:\n%s",
         app[APP_SETTINGS_KEY].json(indent=1, sort_keys=True),
     )
@@ -384,4 +386,6 @@ def setup_settings(app: web.Application) -> ApplicationSettings:
 
 
 def get_settings(app: web.Application) -> ApplicationSettings:
-    return app[APP_SETTINGS_KEY]
+    settings: ApplicationSettings = app[APP_SETTINGS_KEY]
+    assert settings, "Forgot to setup plugin?"  # nosec
+    return settings
