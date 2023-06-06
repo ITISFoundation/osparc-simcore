@@ -36,6 +36,7 @@ def _connection_close_callback(
 
 
 def _channel_close_callback(
+    client: "RabbitMQClient",
     sender: Any,  # pylint: disable=unused-argument
     exc: BaseException | None,
 ) -> None:
@@ -43,8 +44,8 @@ def _channel_close_callback(
         if isinstance(exc, asyncio.CancelledError):
             _logger.info("Rabbit channel cancelled")
         elif isinstance(exc, aiormq.exceptions.ChannelNotFoundEntity):
-            _logger.error("QUEUE NOT FOUND ENTITY!!!! %s", exc)
-            client.bad_state = True
+            _logger.error("The RabbitMQ client is in a bad state! %s", exc)
+            client._bad_state = True  # pylint: disable=protected-access
             # ideally we need to re-init. close the client and re-init it completely.
         elif isinstance(exc, aiormq.exceptions.ChannelClosed):
             _logger.info("Rabbit channel closed")
@@ -98,6 +99,8 @@ class RabbitMQClient:
     _rpc_channel: aio_pika.abc.AbstractChannel | None = None
     _rpc: RPC | None = None
 
+    _bad_state: bool = False
+
     def __post_init__(self):
         # recommendations are 1 connection per process
         self._connection_pool = aio_pika.pool.Pool(
@@ -105,6 +108,10 @@ class RabbitMQClient:
         )
         # channels are not thread safe, what about python?
         self._channel_pool = aio_pika.pool.Pool(self._get_channel, max_size=10)
+
+    @property
+    def bad_state(self) -> bool:
+        return self._bad_state
 
     async def reset(self):
         await self.close()
