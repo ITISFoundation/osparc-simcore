@@ -6,14 +6,12 @@
 
 
 import asyncio
-from typing import Any, Callable, Iterator, cast
+from dataclasses import dataclass
+from typing import Any, Callable
 from unittest import mock
 
 import aio_pika
-import docker
 import pytest
-from attr import dataclass
-from docker.models.containers import Container as DockerContainer
 from faker import Faker
 from pytest_mock.plugin import MockerFixture
 from servicelib.rabbitmq import BIND_TO_ALL_TOPICS, RabbitMQClient
@@ -26,32 +24,6 @@ from tenacity.wait import wait_fixed
 pytest_simcore_core_services_selection = [
     "rabbit",
 ]
-
-
-@pytest.fixture
-def cleanup_check_rabbitmq_server_has_no_errors(
-    docker_client: docker.client.DockerClient,
-) -> Iterator[None]:
-    yield
-    print("--> checking for errors/warnings in rabbitmq logs...")
-    containers = docker_client.containers.list(filters={"name": "rabbit"})
-    assert len(containers) == 1, "missing rabbit container!"
-    rabbit_container: DockerContainer = cast(DockerContainer, containers[0])
-    rabbit_logs: bytes = rabbit_container.logs()
-    converted_logs = rabbit_logs.decode().splitlines()
-    warning_logs = [log for log in converted_logs if "warning" in log]
-    error_logs = [log for log in converted_logs if "error" in log]
-    RABBIT_SKIPPED_WARNINGS = [
-        "rebuilding indices from scratch",
-    ]
-    filtered_warning_logs = [
-        log
-        for log in warning_logs
-        if all(w not in log for w in RABBIT_SKIPPED_WARNINGS)
-    ]
-    assert not filtered_warning_logs
-    assert not error_logs
-    print("<-- no error founds in rabbitmq server logs, that's great. good job!")
 
 
 @pytest.fixture
