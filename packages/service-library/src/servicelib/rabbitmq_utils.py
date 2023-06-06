@@ -106,6 +106,7 @@ async def rpc_register_entries(
 def connection_close_callback(
     sender: Any,  # pylint: disable=unused-argument
     exc: BaseException | None,
+    client: "RabbitMQClient",  # type: ignore
 ) -> None:
     if exc:
         if isinstance(exc, asyncio.CancelledError):
@@ -114,9 +115,11 @@ def connection_close_callback(
             _logger.info("Rabbit connection closed: %s", exc)
         else:
             _logger.error(
-                "Rabbit connection closed with exception from %s",
+                "Rabbit connection closed with exception from %s:%s",
+                type(exc),
                 exc,
             )
+            client._bad_state = True  # pylint: disable=protected-access
 
 
 def get_rabbitmq_client_unique_name(base_name: str) -> str:
@@ -124,39 +127,22 @@ def get_rabbitmq_client_unique_name(base_name: str) -> str:
 
 
 def channel_close_callback(
-    client: "RabbitMQClient",
     sender: Any,  # pylint: disable=unused-argument
     exc: BaseException | None,
+    client: "RabbitMQClient",  # type: ignore
 ) -> None:
     if exc:
         if isinstance(exc, asyncio.CancelledError):
             _logger.info("Rabbit channel cancelled")
-        elif isinstance(exc, aiormq.exceptions.ChannelNotFoundEntity):
-            _logger.error("The RabbitMQ client is in a bad state! %s", exc)
-            client._bad_state = True  # pylint: disable=protected-access
-            # ideally we need to re-init. close the client and re-init it completely.
         elif isinstance(exc, aiormq.exceptions.ChannelClosed):
             _logger.info("Rabbit channel closed")
         else:
             _logger.error(
-                "Rabbit channel closed with exception from %s",
+                "Rabbit channel closed with exception from %s:%s",
+                type(exc),
                 exc,
             )
-
-
-async def get_connection(
-    rabbit_broker: str, connection_name: str
-) -> aio_pika.abc.AbstractRobustConnection:
-    # NOTE: to show the connection name in the rabbitMQ UI see there
-    # https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url
-    #
-    url = f"{rabbit_broker}?name={get_rabbitmq_client_unique_name(connection_name)}&heartbeat=5"
-    connection = await aio_pika.connect_robust(
-        url,
-        client_properties={"connection_name": connection_name},
-    )
-    connection.close_callbacks.add(connection_close_callback)
-    return connection
+            client._bad_state = True  # pylint: disable=protected-access
 
 
 async def declare_queue(

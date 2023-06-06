@@ -16,8 +16,8 @@ from .rabbitmq_utils import (
     RPCNamespace,
     RPCNamespacedMethodName,
     channel_close_callback,
+    connection_close_callback,
     declare_queue,
-    get_connection,
     get_rabbitmq_client_unique_name,
 )
 
@@ -50,13 +50,29 @@ class RabbitMQClient:
 
     _bad_state: bool = False
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         # recommendations are 1 connection per process
         self._connection_pool = aio_pika.pool.Pool(
-            get_connection, self.settings.dsn, self.client_name, max_size=1
+            self._get_connection, self.settings.dsn, self.client_name, max_size=1
         )
         # channels are not thread safe, what about python?
         self._channel_pool = aio_pika.pool.Pool(self._get_channel, max_size=10)
+
+    async def _get_connection(
+        self, rabbit_broker: str, connection_name: str
+    ) -> aio_pika.abc.AbstractRobustConnection:
+        # NOTE: to show the connection name in the rabbitMQ UI see there
+        # https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url
+        #
+        url = f"{rabbit_broker}?name={get_rabbitmq_client_unique_name(connection_name)}&heartbeat=5"
+        connection = await aio_pika.connect_robust(
+            url,
+            client_properties={"connection_name": connection_name},
+        )
+        connection.close_callbacks.add(
+            functools.partial(connection_close_callback, client=self)
+        )
+        return connection
 
     @property
     def bad_state(self) -> bool:
@@ -102,7 +118,9 @@ class RabbitMQClient:
         async with self._connection_pool.acquire() as connection:
             connection: aio_pika.RobustConnection
             channel = await connection.channel()
-            channel.close_callbacks.add(functools.partial(channel_close_callback, self))
+            channel.close_callbacks.add(
+                functools.partial(channel_close_callback, client=self)
+            )
             return channel
 
     async def ping(self) -> bool:
