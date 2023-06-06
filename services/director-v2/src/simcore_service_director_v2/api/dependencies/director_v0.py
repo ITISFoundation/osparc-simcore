@@ -21,4 +21,6 @@ async def forward_to_director_v0(
     response: Response,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
 ) -> Forwarded:
-    return Forwarded(await director_v0_client.forward(request, response))
+    director_v0_response = await director_v0_client.forward(request, response)
+    assert response is director_v0_response  # nosec
+    return Forwarded(response=director_v0_response)
