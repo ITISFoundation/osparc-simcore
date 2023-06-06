@@ -493,11 +493,11 @@ nodenv: node_modules ## builds node_modules local environ (TODO)
 .PHONY: pylint
 
 
-pylint:
+pylint: ## python linting
 	# pylint version info
 	@/bin/bash -c "pylint --version"
 	# Running linter in services and packages
-	folders=$$(find $(CURDIR)/services $(CURDIR)/packages  -type d -name 'src' -exec dirname {} \; | sort -u); \
+	@folders=$$(find $(CURDIR)/services $(CURDIR)/packages  -type d -name 'src' -exec dirname {} \; | sort -u); \
 	for folder in $$folders; do \
 		pushd "$$folder" || exit 1; \
 		make pylint; \
