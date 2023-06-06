@@ -118,12 +118,11 @@ def simcore_stack_deployed_services(
         # ...
 
     # TODO: find a more reliable way to list services in a stack
-    core_stack_services: list[Service] = [
-        service
-        for service in docker_client.services.list(
+    core_stack_services: list[Service] = list(
+        docker_client.services.list(
             filters={"label": f"com.docker.stack.namespace={core_stack_namespace}"}
         )
-    ]  # type: ignore
+    )
 
     assert (
         core_stack_services
