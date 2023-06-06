@@ -101,6 +101,36 @@ openapi.json: .env
 	$(SCRIPTS_DIR)/openapi-generator-cli.bash validate --input-spec /local/$@
 
 
+# FETCH OPENAPI GENERATOR TEMPLATES ##################################################################
+.PHONY: fetch-openapi-templates
+
+fetch-openapi-templates:
+	$(eval TMPDIR := $(shell mktemp -d))
+
+
+	set -o allexport; \
+	source .env; \
+	cd $(CURDIR)/openapi/python_templates; \
+	mkdir $(CURDIR)/openapi/python_templates; \
+	echo "TMPDIR: $(TMPDIR)"; \
+	echo "CURDIR: $(CURDIR)"; \
+	echo "OPENAPI_GENERATOR_VERSION: $${OPENAPI_GENERATOR_VERSION}"; \
+	echo "https://github.com/OpenAPITools/openapi-generator/archive/refs/tags/$${OPENAPI_GENERATOR_VERSION}.zip"; \
+	wget -O $(TMPDIR)/openapi_zip.zip "https://github.com/OpenAPITools/openapi-generator/archive/refs/tags/$${OPENAPI_GENERATOR_VERSION}.zip"; \
+	unzip -q $(TMPDIR)/openapi_zip.zip -d $(TMPDIR); \
+
+	cd $(TMPDIR); \
+	OPENAPIDIR=$$(ls . | grep openapi-generator); \
+	echo "OPENAPIDIR: $(OPENAPIDIR)"
+
+	cd $(TMPDIR); \
+	openapi_dir=$(ls . | grep openapi-generator); \
+	echo "openapi_dir: $(openapi_dir)"; \
+	cp -r $(TMPDIR)/
+
+#rm -r "${TMPDIR}"
+
+
 
 # GENERATION python client ###########################################################################
 .PHONY: python-client generator-help
