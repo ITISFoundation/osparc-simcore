@@ -72,12 +72,15 @@ qx.Class.define("osparc.component.editor.AnnotationEditor", {
         return;
       }
 
-      const colorPicker = this.__addColor();
-      annotation.bind("color", colorPicker, "color");
-      colorPicker.bind("color", annotation, "color");
+      let row = 0;
+      if (["text", "rect"].includes(annotation.getType())) {
+        const colorPicker = this.__addColor();
+        annotation.bind("color", colorPicker, "color");
+        colorPicker.bind("color", annotation, "color");
+        row++;
+      }
 
-      let row = 1;
-      if (annotation.getType() === "text") {
+      if (["text", "note"].includes(annotation.getType())) {
         const attrs = annotation.getAttributes();
         this._add(new qx.ui.basic.Label(this.tr("Text")), {
           row,
@@ -90,7 +93,10 @@ qx.Class.define("osparc.component.editor.AnnotationEditor", {
           column: 1
         });
         row++;
+      }
 
+      if (["text"].includes(annotation.getType())) {
+        const attrs = annotation.getAttributes();
         this._add(new qx.ui.basic.Label(this.tr("Size")), {
           row,
           column: 0
