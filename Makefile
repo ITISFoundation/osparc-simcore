@@ -492,21 +492,19 @@ nodenv: node_modules ## builds node_modules local environ (TODO)
 
 .PHONY: pylint
 
-pylint: ## Runs python linter framework's wide
+
+pylint:
 	# pylint version info
 	@/bin/bash -c "pylint --version"
-	# Running linter
-	@/bin/bash -c "pylint --jobs=0 --rcfile=.pylintrc $(strip $(shell find services packages -iname '*.py' \
-											-not -path "*ignore*" \
-											-not -path "*.venv*" \
-											-not -path "*/client/*" \
-											-not -path "*egg*" \
-											-not -path "*migration*" \
-											-not -path "*sandbox*" \
-											-not -path "*-sdk/python*" \
-											-not -path "*generated_code*" \
-											-not -path "*build*" \
-											-not -path "*/director/*"))"
+	# Running linter in services and packages
+	folders=$$(find $(CURDIR)/services $(CURDIR)/packages  -type d -name 'src' -exec dirname {} \; | sort -u); \
+	for folder in $$folders; do \
+		pushd "$$folder" || exit 1; \
+		make pylint; \
+		popd; \
+	done
+	# Running linter elsewhere
+	@pylint --rcfile=.pylintrc -v $(CURDIR)/tests --ignore=examples
 	# See exit codes and command line https://pylint.readthedocs.io/en/latest/user_guide/run.html#exit-codes
 
 
