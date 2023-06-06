@@ -3,7 +3,7 @@
 """
 
 import logging
-from typing import Any, AsyncIterator, Optional
+from typing import Any, AsyncIterator
 
 from aiohttp import web
 from aiopg.sa import Engine, create_engine
@@ -44,7 +44,7 @@ async def _ensure_pg_ready(settings: PostgresSettings) -> Engine:
         raise
 
     log.info("Connection to postgres with %s succeeded", f"{settings=}")
-    return engine  # type: ignore # tenacity rules guarantee exit with exc
+    return engine  # tenacity rules guarantee exit with exc
 
 
 async def postgres_cleanup_ctx(app: web.Application) -> AsyncIterator[None]:
@@ -83,9 +83,10 @@ async def is_service_responsive(app: web.Application):
 
 
 def get_engine_state(app: web.Application) -> dict[str, Any]:
-    engine: Optional[Engine] = app.get(APP_DB_ENGINE_KEY)
+    engine: Engine | None = app.get(APP_DB_ENGINE_KEY)
     if engine:
-        return get_pg_engine_stateinfo(engine)
+        pg_engine_stateinfo: dict[str, Any] = get_pg_engine_stateinfo(engine)
+        return pg_engine_stateinfo
     return {}
 
 
