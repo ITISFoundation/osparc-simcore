@@ -1,17 +1,41 @@
+from typing import NamedTuple
+
 import pytest
-from faker import Faker
-from models_library.basic_types import UUIDStr
-from pydantic import ValidationError
+from models_library.basic_types import EnvVarKey, UUIDStr
+from pydantic import ConstrainedStr, ValidationError
 from pydantic.tools import parse_obj_as
 
 
-@pytest.mark.skip(reason="DEV: testing parse_obj_as")
-def test_parse_uuid_as_a_string(faker: Faker):
-    expected_uuid = faker.uuid4()
-    got_uuid = parse_obj_as(UUIDStr, expected_uuid)
+class _Example(NamedTuple):
+    constr: type[ConstrainedStr]
+    good: str
+    bad: str
 
-    assert isinstance(got_uuid, str)
-    assert got_uuid == expected_uuid
 
+_EXAMPLES = [
+    _Example(constr=EnvVarKey, good="env_VAR", bad="12envar"),
+    _Example(
+        constr=UUIDStr,
+        good="d2cbbd98-d0f8-4de1-864e-b390713194eb",
+        bad="123456-is-not-an-uuid",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "constraint_str_type,sample",
+    [(p.constr, p.good) for p in _EXAMPLES],
+)
+def test_constrained_str_succeeds(
+    constraint_str_type: type[ConstrainedStr], sample: str
+):
+    assert parse_obj_as(constraint_str_type, sample) == sample
+
+
+@pytest.mark.parametrize(
+    "constraint_str_type,sample",
+    [(p.constr, p.bad) for p in _EXAMPLES],
+)
+def test_constrained_str_fails(constraint_str_type: type[ConstrainedStr], sample: str):
     with pytest.raises(ValidationError):
-        parse_obj_as(UUIDStr, "123456-is-not-an-uuid")
+        parse_obj_as(constraint_str_type, sample)
