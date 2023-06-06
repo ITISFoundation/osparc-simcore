@@ -962,8 +962,16 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       annotationsSection.add(annotationsButtons);
 
       const buttonsHeight = 28;
+      const addNoteBtn = new qx.ui.form.Button().set({
+        label: this.tr("Note"),
+        icon: "@FontAwesome5Solid/plus/14",
+        height: buttonsHeight
+      });
+      addNoteBtn.addListener("execute", () => this.__workbenchUI.startAnnotationsNote(), this);
+      annotationsButtons.add(addNoteBtn);
+
       const addRectBtn = new qx.ui.form.Button().set({
-        label: this.tr("Rect"),
+        label: this.tr("Rectangle"),
         icon: "@FontAwesome5Solid/plus/14",
         height: buttonsHeight
       });

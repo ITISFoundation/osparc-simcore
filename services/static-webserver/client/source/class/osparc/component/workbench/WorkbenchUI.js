@@ -135,6 +135,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __isDraggingFile: null,
     __isDraggingLink: null,
     __annotations: null,
+    __annotatingNote: null,
     __annotatingRect: null,
     __annotatingText: null,
     __annotationInitPos: null,
@@ -1326,7 +1327,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __mouseDownOnSVG: function(e) {
       if (e.isLeftPressed()) {
-        if (this.__annotatingRect || this.__annotatingText) {
+        if (this.__annotatingNote || this.__annotatingRect || this.__annotatingText) {
           this.__annotationInitPos = this.__pointerEventToWorkbenchPos(e);
         } else {
           this.__selectionRectInitPos = this.__pointerEventToWorkbenchPos(e);
@@ -1337,7 +1338,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __mouseMove: function(e) {
       if (this.__isDraggingLink) {
         this.__draggingLink(e, true);
-      } else if (this.__tempEdgeRepr === null && (this.__annotatingRect || this.__annotatingText) && this.__annotationInitPos && e.isLeftPressed()) {
+      } else if (this.__tempEdgeRepr === null && (this.__annotatingNote || this.__annotatingRect || this.__annotatingText) && this.__annotationInitPos && e.isLeftPressed()) {
         this.__drawingAnnotation(e);
       } else if (this.__tempEdgeRepr === null && this.__selectionRectInitPos && e.isLeftPressed()) {
         this.__drawingSelectionRect(e);
@@ -1366,10 +1367,19 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (this.__annotationInitPos) {
         this.__annotationInitPos = null;
       }
-      if (this.__annotatingRect || this.__annotatingText) {
-        if (this.__consolidateAnnotation(this.__rectAnnotationRepr, this.__annotatingRect ? "rect" : "text")) {
+      if (this.__annotatingNote || this.__annotatingRect || this.__annotatingText) {
+        let annotationType = null;
+        if (this.__annotatingNote) {
+          annotationType = "note";
+        } else if (this.__annotatingRect) {
+          annotationType = "rect";
+        } else if (this.__annotatingText) {
+          annotationType = "text";
+        }
+        if (this.__consolidateAnnotation(this.__rectAnnotationRepr, annotationType)) {
           osparc.wrapper.Svg.removeItem(this.__rectAnnotationRepr);
           this.__rectAnnotationRepr = null;
+          this.__annotatingNote = false;
           this.__annotatingRect = false;
           this.__annotatingText = false;
           this.__toolHint.setValue(null);
@@ -1508,13 +1518,22 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this.setScale(closestDown);
     },
 
+    startAnnotationsNote: function() {
+      this.__annotatingNote = true;
+      this.__annotatingRect = false;
+      this.__annotatingText = false;
+      this.__toolHint.setValue(this.tr("Draw a rectangle"));
+    },
+
     startAnnotationsRect: function() {
+      this.__annotatingNote = false;
       this.__annotatingRect = true;
       this.__annotatingText = false;
       this.__toolHint.setValue(this.tr("Draw a rectangle"));
     },
 
     startAnnotationsText: function() {
+      this.__annotatingNote = false;
       this.__annotatingText = true;
       this.__annotatingRect = false;
       this.__toolHint.setValue(this.tr("Draw a rectangle first"));
