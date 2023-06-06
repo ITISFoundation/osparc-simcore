@@ -64,7 +64,7 @@ class RabbitMQClient:
         # NOTE: to show the connection name in the rabbitMQ UI see there
         # https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url
         #
-        url = f"{rabbit_broker}?name={get_rabbitmq_client_unique_name(connection_name)}&heartbeat=5"
+        url = f"{rabbit_broker}?name={get_rabbitmq_client_unique_name(connection_name)}"
         connection = await aio_pika.connect_robust(
             url,
             client_properties={"connection_name": connection_name},
