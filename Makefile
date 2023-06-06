@@ -501,7 +501,7 @@ pylint: ## python linting
 	exit_status=0; \
 	for folder in $$folders; do \
 		pushd "$$folder"; \
-		echo make pylint || exit_status=1; \
+		make pylint || exit_status=1; \
 		popd; \
 	done;\
 	exit $$exit_status
