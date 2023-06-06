@@ -29,7 +29,7 @@ ALIVE_SUFFIX = "alive"
 RESOURCE_SUFFIX = "resources"
 
 
-class RegistryKeyPrefixDict(TypedDict):
+class RegistryKeyPrefixDict(TypedDict, total=False):
     """Parts of the redis key w/o suffix"""
 
     user_id: str | int
@@ -61,7 +61,7 @@ class RedisResourceRegistry:
 
     @classmethod
     def _hash_key(cls, key: RegistryKeyPrefixDict) -> str:
-        hash_key = ":".join(f"{item[0]}={item[1]}" for item in key.items())
+        hash_key = ":".join(f"{k}={v}" for k, v in key.items())
         return hash_key
 
     @classmethod
@@ -71,8 +71,8 @@ class RedisResourceRegistry:
             if hash_key.endswith(f":{RESOURCE_SUFFIX}")
             else hash_key[: -len(f":{ALIVE_SUFFIX}")]
         )
-        key = dict(x.split("=") for x in tmp_key.split(":"))
-        return RegistryKeyPrefixDict(**key)
+        key = dict(part.split("=") for part in tmp_key.split(":"))
+        return RegistryKeyPrefixDict(**key)  # type: ignore
 
     @property
     def client(self) -> aioredis.Redis:
@@ -89,7 +89,7 @@ class RedisResourceRegistry:
     async def get_resources(self, key: RegistryKeyPrefixDict) -> ResourcesValueDict:
         hash_key = f"{self._hash_key(key)}:{RESOURCE_SUFFIX}"
         fields = await self.client.hgetall(hash_key)
-        return ResourcesValueDict(**fields)
+        return ResourcesValueDict(**fields)  # type: ignore
 
     async def remove_resource(
         self, key: RegistryKeyPrefixDict, resource_name: str
@@ -109,7 +109,7 @@ class RedisResourceRegistry:
         return resources
 
     async def find_keys(self, resource: tuple[str, str]) -> list[RegistryKeyPrefixDict]:
-        keys = []
+        keys: list[RegistryKeyPrefixDict] = []
         if not resource:
             return keys
 
@@ -153,4 +153,6 @@ class RedisResourceRegistry:
 
 
 def get_registry(app: web.Application) -> RedisResourceRegistry:
-    return app[APP_CLIENT_SOCKET_REGISTRY_KEY]
+    client: RedisResourceRegistry = app[APP_CLIENT_SOCKET_REGISTRY_KEY]
+    assert isinstance(client, RedisResourceRegistry)  # nosec
+    return client

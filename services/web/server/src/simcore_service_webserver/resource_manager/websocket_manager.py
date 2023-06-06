@@ -22,13 +22,17 @@ from typing import Iterator
 from aiohttp import web
 from servicelib.logging_utils import get_log_record_extra, log_context
 
-from .registry import get_registry
+from .registry import RegistryKeyPrefixDict, ResourcesValueDict, get_registry
 from .settings import ResourceManagerSettings, get_plugin_settings
 
 log = logging.getLogger(__name__)
 
+
 SOCKET_ID_KEY = "socket_id"
 PROJECT_ID_KEY = "project_id"
+
+assert SOCKET_ID_KEY in ResourcesValueDict.__optional_keys__  # nosec
+assert PROJECT_ID_KEY in ResourcesValueDict.__optional_keys__  # nosec
 
 
 def get_service_deletion_timeout(app: web.Application) -> int:
@@ -59,13 +63,11 @@ class WebsocketRegistry:
     client_session_id: str | None
     app: web.Application
 
-    def _resource_key(self) -> dict[str, str]:
-        return {
-            "user_id": f"{self.user_id}",
-            "client_session_id": self.client_session_id
-            if self.client_session_id
-            else "*",
-        }
+    def _resource_key(self) -> RegistryKeyPrefixDict:
+        return RegistryKeyPrefixDict(
+            user_id=f"{self.user_id}",
+            client_session_id=self.client_session_id or "*",
+        )
 
     async def set_socket_id(self, socket_id: str) -> None:
         log.debug(
@@ -90,7 +92,8 @@ class WebsocketRegistry:
         )
         registry = get_registry(self.app)
         resources = await registry.get_resources(self._resource_key())
-        return resources.get(SOCKET_ID_KEY, None)
+        key: str | None = resources.get("socket_id", None)
+        return key
 
     async def user_pressed_disconnect(self) -> None:
         """When the user disconnects expire as soon as possible the alive key
