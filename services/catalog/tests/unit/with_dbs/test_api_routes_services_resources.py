@@ -269,7 +269,7 @@ def create_mock_director_service_labels(
                         },
                     },
                     "busybox": {
-                        "image": "busybox:latest",
+                        "image": "busybox:1.2.3",
                         "resources": {
                             "CPU": {"limit": 0.1, "reservation": 0.1},
                             "RAM": {
