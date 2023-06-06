@@ -600,7 +600,6 @@ async def test_run_computational_sidecar_dask(
     mocked_get_integration_version.assert_called()
 
 
-@pytest.mark.skip("SAN is taking care of it hopefully")
 @pytest.mark.parametrize(
     "integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True
 )
@@ -612,7 +611,6 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
     log_sub: distributed.Sub,
     progress_sub: distributed.Sub,
     mocked_get_integration_version: mock.Mock,
-    faker: Faker,
 ):
     mocked_get_integration_version.assert_not_called()
     NUMBER_OF_LOGS = 20000
