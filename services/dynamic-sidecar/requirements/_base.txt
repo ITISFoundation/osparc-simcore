@@ -4,10 +4,8 @@
 #
 #    pip-compile --output-file=requirements/_base.txt --resolver=backtracking --strip-extras requirements/_base.in
 #
-aio-pika==8.2.4
-    # via
-    #   -r requirements/../../../packages/service-library/requirements/_base.in
-    #   -r requirements/_base.in
+aio-pika==9.1.2
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiocache==0.11.1
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 aiodebug==2.3.0
@@ -15,7 +13,9 @@ aiodebug==2.3.0
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 aiodocker==0.19.1
-    # via -r requirements/_base.in
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/_base.in
 aiofiles==0.8.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -28,7 +28,7 @@ aiopg==1.4.0
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 aioprocessing==2.0.1
     # via -r requirements/_base.in
-aiormq==6.4.2
+aiormq==6.7.6
     # via aio-pika
 aiosignal==1.2.0
     # via aiohttp
@@ -41,7 +41,9 @@ anyio==3.6.2
     #   httpcore
     #   starlette
 arrow==1.2.3
-    # via -r requirements/../../../packages/models-library/requirements/_base.in
+    # via
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/_base.in
 asgiref==3.5.2
     # via uvicorn
 async-timeout==4.0.2
@@ -244,7 +246,7 @@ websocket-client==0.59.0
     # via
     #   docker
     #   docker-compose
-yarl==1.7.2
+yarl==1.9.2
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in

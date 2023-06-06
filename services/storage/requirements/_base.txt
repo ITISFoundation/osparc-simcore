@@ -4,10 +4,8 @@
 #
 #    pip-compile --output-file=requirements/_base.txt --resolver=backtracking --strip-extras requirements/_base.in
 #
-aio-pika==8.2.5
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.in
-    #   -r requirements/../../../packages/service-library/requirements/_base.in
+aio-pika==9.1.2
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 aioboto3==9.6.0
     # via -r requirements/_base.in
 aiobotocore==2.3.0
@@ -15,6 +13,10 @@ aiobotocore==2.3.0
     #   aioboto3
     #   types-aiobotocore
 aiodebug==2.3.0
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+aiodocker==0.21.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -27,6 +29,7 @@ aiohttp==3.8.3
     #   -r requirements/../../../packages/service-library/requirements/_aiohttp.in
     #   -r requirements/_base.in
     #   aiobotocore
+    #   aiodocker
     #   aiohttp-swagger
     #   aiozipkin
 aiohttp-swagger==1.0.16
@@ -37,7 +40,7 @@ aiopg==1.4.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_aiohttp.in
     #   -r requirements/_base.in
-aiormq==6.4.2
+aiormq==6.7.6
     # via aio-pika
 aiosignal==1.2.0
     # via aiohttp
@@ -195,6 +198,7 @@ types-aiobotocore-s3==2.3.3
 typing-extensions==4.3.0
     # via
     #   aiodebug
+    #   aiodocker
     #   botocore-stubs
     #   pydantic
     #   types-aiobotocore
@@ -211,7 +215,7 @@ werkzeug==2.2.2
     # via -r requirements/../../../packages/service-library/requirements/_aiohttp.in
 wrapt==1.14.1
     # via aiobotocore
-yarl==1.7.2
+yarl==1.9.2
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   aio-pika
