@@ -1,4 +1,3 @@
-import datetime
 import functools
 import logging
 from typing import Any, AsyncIterator, Callable, Coroutine, Final
@@ -19,8 +18,7 @@ from servicelib.aiohttp.monitor_services import (
     service_started,
     service_stopped,
 )
-from servicelib.background_task import periodic_task
-from servicelib.logging_utils import log_context
+from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 
@@ -187,7 +185,7 @@ EXCHANGE_TO_PARSER_CONFIG: Final[
 )
 
 
-async def _subscribe_to_rabbitmq(app):
+async def _subscribe_to_rabbitmq(app) -> dict[str, str]:
     with log_context(_logger, logging.INFO, msg="Subscribing to rabbitmq channels"):
         rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
         subscribed_queues = await logged_gather(
@@ -199,45 +197,30 @@ async def _subscribe_to_rabbitmq(app):
             ),
             reraise=False,
         )
-    return subscribed_queues
-
-
-async def _unsubscribe_from_rabbitmq(app) -> None:
-    with log_context(_logger, logging.INFO, msg="Unsubscribing from rabbitmq channels"):
-        await logged_gather(
-            *(
-                rabbit_client.unsubscribe(queue_name)
-                for queue_name in app[APP_RABBITMQ_CONSUMERS_KEY].values()
-            ),
-            reraise=False,
-        )
-
-
-async def _check_rabbitmq_client_state(app: web.Application):
-    rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
-    if hasattr(rabbit_client, "bad_state"):
-        _logger.error("SOMETHING BAD HAPPENED WITH OUR CLIENT we will restart it!!!")
-        await _unsubscribe_from_rabbitmq(app)
-        with log_context(_logger, logging.ERROR, msg="closing the client!"):
-            await rabbit_client.reset()
-        await _subscribe_to_rabbitmq(app)
-
-
-async def setup_rabbitmq_consumers(app: web.Application) -> AsyncIterator[None]:
-    subscribed_queues = await _subscribe_to_rabbitmq(app)
-    app[APP_RABBITMQ_CONSUMERS_KEY] = {
+    return {
         exchange_name: queue_name
         for (exchange_name, *_), queue_name in zip(
             EXCHANGE_TO_PARSER_CONFIG, subscribed_queues
         )
     }
-    async with periodic_task(
-        _check_rabbitmq_client_state,
-        interval=datetime.timedelta(seconds=10),
-        task_name="check_rabbitmq",
-        app=app,
-    ):
-        yield
+
+
+async def _unsubscribe_from_rabbitmq(app) -> None:
+    with log_context(
+        _logger, logging.INFO, msg="Unsubscribing from rabbitmq channels"
+    ), log_catch(_logger, reraise=False):
+        rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
+        await logged_gather(
+            *(
+                rabbit_client.unsubscribe(queue_name)
+                for queue_name in app[APP_RABBITMQ_CONSUMERS_KEY].values()
+            ),
+        )
+
+
+async def setup_rabbitmq_consumers(app: web.Application) -> AsyncIterator[None]:
+    app[APP_RABBITMQ_CONSUMERS_KEY] = await _subscribe_to_rabbitmq(app)
+    yield
 
     # cleanup
     await _unsubscribe_from_rabbitmq(app)
