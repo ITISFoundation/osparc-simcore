@@ -45,10 +45,10 @@ from ....node_rights import (
 )
 from ...api_client import (
     BaseClientHTTPError,
-    DynamicSidecarClient,
-    get_dynamic_sidecar_client,
+    SidecarsClient,
     get_dynamic_sidecar_service_health,
-    remove_dynamic_sidecar_client,
+    get_sidecars_client,
+    remove_sidecars_client,
 )
 from ...docker_api import (
     get_projects_networks_containers,
@@ -111,13 +111,13 @@ def _get_scheduler_data(app: FastAPI, node_uuid: NodeID) -> SchedulerData:
 async def service_remove_containers(
     app: FastAPI,
     node_uuid: NodeID,
-    dynamic_sidecar_client: DynamicSidecarClient,
+    sidecars_client: SidecarsClient,
     progress_callback: ProgressCallback | None = None,
 ) -> None:
     scheduler_data: SchedulerData = _get_scheduler_data(app, node_uuid)
 
     try:
-        await dynamic_sidecar_client.stop_service(
+        await sidecars_client.stop_service(
             scheduler_data.endpoint, progress_callback=progress_callback
         )
     except (BaseClientHTTPError, TaskClientResultError) as e:
@@ -134,14 +134,14 @@ async def service_remove_containers(
 async def service_save_state(
     app: FastAPI,
     node_uuid: NodeID,
-    dynamic_sidecar_client: DynamicSidecarClient,
+    sidecars_client: SidecarsClient,
     progress_callback: ProgressCallback | None = None,
 ) -> None:
     scheduler_data: SchedulerData = _get_scheduler_data(app, node_uuid)
-    await dynamic_sidecar_client.save_service_state(
+    await sidecars_client.save_service_state(
         scheduler_data.endpoint, progress_callback=progress_callback
     )
-    await dynamic_sidecar_client.update_volume_state(
+    await sidecars_client.update_volume_state(
         scheduler_data.endpoint,
         volume_category=VolumeCategory.STATES,
         volume_status=VolumeStatus.CONTENT_WAS_SAVED,
@@ -151,14 +151,14 @@ async def service_save_state(
 async def service_push_outputs(
     app: FastAPI,
     node_uuid: NodeID,
-    dynamic_sidecar_client: DynamicSidecarClient,
+    sidecars_client: SidecarsClient,
     progress_callback: ProgressCallback | None = None,
 ) -> None:
     scheduler_data: SchedulerData = _get_scheduler_data(app, node_uuid)
-    await dynamic_sidecar_client.push_service_output_ports(
+    await sidecars_client.push_service_output_ports(
         scheduler_data.endpoint, progress_callback=progress_callback
     )
-    await dynamic_sidecar_client.update_volume_state(
+    await sidecars_client.update_volume_state(
         scheduler_data.endpoint,
         volume_category=VolumeCategory.OUTPUTS,
         volume_status=VolumeStatus.CONTENT_WAS_SAVED,
@@ -254,13 +254,11 @@ async def attempt_pod_removal_and_data_saving(
     )
 
     async def _remove_containers_save_state_and_outputs() -> None:
-        dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
+        sidecars_client: SidecarsClient = get_sidecars_client(
             app, scheduler_data.node_uuid
         )
 
-        await service_remove_containers(
-            app, scheduler_data.node_uuid, dynamic_sidecar_client
-        )
+        await service_remove_containers(app, scheduler_data.node_uuid, sidecars_client)
 
         # only try to save the status if :
         # - it is requested to save the state
@@ -284,9 +282,7 @@ async def attempt_pod_removal_and_data_saving(
             logger.info("Calling into dynamic-sidecar to save: state and output ports")
             try:
                 tasks = [
-                    service_push_outputs(
-                        app, scheduler_data.node_uuid, dynamic_sidecar_client
-                    )
+                    service_push_outputs(app, scheduler_data.node_uuid, sidecars_client)
                 ]
 
                 # When enabled no longer uploads state via nodeports
@@ -294,7 +290,7 @@ async def attempt_pod_removal_and_data_saving(
                 if not app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
                     tasks.append(
                         service_save_state(
-                            app, scheduler_data.node_uuid, dynamic_sidecar_client
+                            app, scheduler_data.node_uuid, sidecars_client
                         )
                     )
 
@@ -345,7 +341,7 @@ async def attempt_pod_removal_and_data_saving(
     )
 
     # remove sidecar's api client
-    remove_dynamic_sidecar_client(app, scheduler_data.node_uuid)
+    remove_sidecars_client(app, scheduler_data.node_uuid)
 
     # instrumentation
     message = InstrumentationRabbitMessage(
@@ -366,7 +362,7 @@ async def attempt_pod_removal_and_data_saving(
 async def attach_project_networks(app: FastAPI, scheduler_data: SchedulerData) -> None:
     logger.debug("Attaching project networks for %s", scheduler_data.service_name)
 
-    dynamic_sidecar_client = get_dynamic_sidecar_client(app, scheduler_data.node_uuid)
+    sidecars_client = get_sidecars_client(app, scheduler_data.node_uuid)
     dynamic_sidecar_endpoint = scheduler_data.endpoint
 
     projects_networks_repository: ProjectsNetworksRepository = get_repository(
@@ -384,7 +380,7 @@ async def attach_project_networks(app: FastAPI, scheduler_data: SchedulerData) -
     ) in projects_networks.networks_with_aliases.items():
         network_alias = container_aliases.get(NodeIDStr(scheduler_data.node_uuid))
         if network_alias is not None:
-            await dynamic_sidecar_client.attach_service_containers_to_project_network(
+            await sidecars_client.attach_service_containers_to_project_network(
                 dynamic_sidecar_endpoint=dynamic_sidecar_endpoint,
                 dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
                 project_network=network_name,
@@ -420,7 +416,7 @@ async def prepare_services_environment(
     app: FastAPI, scheduler_data: SchedulerData
 ) -> None:
     app_settings: AppSettings = app.state.settings
-    dynamic_sidecar_client = get_dynamic_sidecar_client(app, scheduler_data.node_uuid)
+    sidecars_client = get_sidecars_client(app, scheduler_data.node_uuid)
     dynamic_sidecar_endpoint = scheduler_data.endpoint
 
     # Before starting, update the volume states. It is not always
@@ -433,12 +429,12 @@ async def prepare_services_environment(
     )
     await logged_gather(
         *(
-            dynamic_sidecar_client.update_volume_state(
+            sidecars_client.update_volume_state(
                 scheduler_data.endpoint,
                 volume_category=VolumeCategory.STATES,
                 volume_status=volume_status,
             ),
-            dynamic_sidecar_client.update_volume_state(
+            sidecars_client.update_volume_state(
                 scheduler_data.endpoint,
                 volume_category=VolumeCategory.OUTPUTS,
                 volume_status=volume_status,
@@ -447,14 +443,12 @@ async def prepare_services_environment(
     )
 
     async def _pull_outputs_and_state():
-        tasks = [
-            dynamic_sidecar_client.pull_service_output_ports(dynamic_sidecar_endpoint)
-        ]
+        tasks = [sidecars_client.pull_service_output_ports(dynamic_sidecar_endpoint)]
         # When enabled no longer downloads state via nodeports
         # S3 is used to store state paths
         if not app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
             tasks.append(
-                dynamic_sidecar_client.restore_service_state(dynamic_sidecar_endpoint)
+                sidecars_client.restore_service_state(dynamic_sidecar_endpoint)
             )
 
         await logged_gather(*tasks, max_concurrency=2)
@@ -475,7 +469,7 @@ async def prepare_services_environment(
             "Creating dirs from service outputs labels: %s",
             service_outputs_labels,
         )
-        await dynamic_sidecar_client.service_outputs_create_dirs(
+        await sidecars_client.service_outputs_create_dirs(
             dynamic_sidecar_endpoint, service_outputs_labels
         )
 

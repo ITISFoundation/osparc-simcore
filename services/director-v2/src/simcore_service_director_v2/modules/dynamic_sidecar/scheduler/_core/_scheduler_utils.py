@@ -12,7 +12,7 @@ from .....models.schemas.dynamic_services import (
     SchedulerData,
     ServiceState,
 )
-from ...api_client import DynamicSidecarClient, get_dynamic_sidecar_client
+from ...api_client import SidecarsClient, get_sidecars_client
 from ...docker_api import get_dynamic_sidecar_state, get_dynamic_sidecars_to_observe
 from ...docker_states import extract_containers_minimum_statuses
 from ...errors import DockerServiceNotFoundError
@@ -30,13 +30,11 @@ async def push_service_outputs(
     node_uuid: NodeID,
     progress_callback: ProgressCallback | None = None,
 ) -> None:
-    dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-        app, node_uuid
-    )
+    sidecars_client: SidecarsClient = get_sidecars_client(app, node_uuid)
     await service_push_outputs(
         app=app,
         node_uuid=node_uuid,
-        dynamic_sidecar_client=dynamic_sidecar_client,
+        sidecars_client=sidecars_client,
         progress_callback=progress_callback,
     )
 

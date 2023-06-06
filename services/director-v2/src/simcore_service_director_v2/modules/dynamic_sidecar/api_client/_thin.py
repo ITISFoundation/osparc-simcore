@@ -14,7 +14,7 @@ from ._base import BaseThinClient, expect_status, retry_on_errors
 logger = logging.getLogger(__name__)
 
 
-class ThinDynamicSidecarClient(BaseThinClient):
+class ThinSidecarsClient(BaseThinClient):
     """
     NOTE: all calls can raise the following errors.
     - `UnexpectedStatusError`
@@ -238,3 +238,11 @@ class ThinDynamicSidecarClient(BaseThinClient):
         url = self._get_url(dynamic_sidecar_endpoint, f"/volumes/{volume_category}")
 
         return await self.client.put(url, json={"status": volume_status})
+
+    @retry_on_errors
+    @expect_status(status.HTTP_200_OK)
+    async def proxy_config_load(
+        self, proxy_endpoint: AnyHttpUrl, proxy_configuration: dict[str, Any]
+    ) -> Response:
+        url = self._get_url(proxy_endpoint, "/load", no_api_version=True)
+        return await self.client.post(url, json=proxy_configuration)
