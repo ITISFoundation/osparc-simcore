@@ -2,13 +2,12 @@
 #   filename:  https://raw.githubusercontent.com/compose-spec/compose-spec/master/schema/compose-spec.json
 #   timestamp: 2021-11-19T10:40:07+00:00
 
-# type: ignore
-
+# type:ignore
 
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Extra, Field, conint, constr
+from pydantic import BaseModel, ConstrainedInt, Extra, Field, conint, constr
 
 #  MODIFICATIONS -------------------------------------------------------------------------
 #
@@ -19,7 +18,11 @@ from pydantic import BaseModel, Extra, Field, conint, constr
 # UserWarning: format of 'duration' not understood for 'string' - using default
 # UserWarning: format of 'subnet_ip_address' not understood for 'string' - using default
 
-PortInt = conint(gt=0, lt=65535)
+# port number range
+class PortInt(ConstrainedInt):
+    gt = 0
+    lt = 65535
+
 
 # ----------------------------------------------------------------------------------------
 

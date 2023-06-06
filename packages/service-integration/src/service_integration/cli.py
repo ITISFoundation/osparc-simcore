@@ -1,6 +1,5 @@
 # Allows entrypoint via python -m as well
 
-from typing import Optional
 
 import rich
 import typer
@@ -21,18 +20,21 @@ def version_callback(value: bool):
 @app.callback()
 def main(
     ctx: typer.Context,
-    version: Optional[bool] = typer.Option(
+    version: bool
+    | None = typer.Option(
         None,
         "--version",
         callback=version_callback,
         is_eager=True,
     ),
-    registry_name: Optional[str] = typer.Option(
+    registry_name: str
+    | None = typer.Option(
         None,
         "--REGISTRY_NAME",
         help="image registry name. Full url or prefix used as prefix in an image name",
     ),
-    compose_version: Optional[str] = typer.Option(
+    compose_version: str
+    | None = typer.Option(
         None,
         "--COMPOSE_VERSION",
         help="version used for docker compose specification",
@@ -48,7 +50,8 @@ def main(
     if compose_version:
         overrides["COMPOSE_VERSION"] = compose_version
 
-    ctx.settings = AppSettings(**overrides)
+    # save state
+    ctx.obj[AppSettings.__name__] = AppSettings.parse_obj(overrides)
 
 
 # new
