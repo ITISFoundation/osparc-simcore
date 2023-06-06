@@ -1054,34 +1054,31 @@ qx.Class.define("osparc.data.Resources", {
         return new Promise(resolve => {
           resolve([{
             "studyName": "Prj_1",
-            "status": "FINISHED",
-            "numberOfCores": 8,
-            "jobType": "SIMULATION_RUN",
+            "jobType": "MESH",
             "start": "2023-06-05T09:35:29.026Z",
             "end": "2023-06-05T09:40:29.026Z",
-            "duration": 1429861,
-            "computingTime": 11520000,
-            "progress": 1.0
-          }, {
-            "studyName": "Prj_2",
-            "status": "FINISHED",
-            "numberOfCores": 4,
-            "jobType": "MESH_OPERATION",
-            "start": "2023-06-06T09:35:29.026Z",
-            "end": "2023-06-06T09:40:29.026Z",
             "duration": 277233,
             "computingTime": 1200000,
-            "progress": 1.0
+            "numberOfCores": 4,
+            "status": "FINISHED"
           }, {
-            "studyName": "Prj_3",
-            "status": "CANCELED",
+            "studyName": "Prj_1",
+            "jobType": "SIMULATION",
+            "start": "2023-06-06T09:35:29.026Z",
+            "end": "2023-06-06T09:40:29.026Z",
+            "duration": 1429861,
+            "computingTime": 11520000,
             "numberOfCores": 8,
-            "jobType": "SIMULATION_RUN",
+            "status": "FINISHED"
+          }, {
+            "studyName": "Prj_2",
+            "jobType": "SIMULATION",
             "start": "2023-06-07T09:35:29.026Z",
             "end": "2023-06-07T09:40:29.026Z",
             "duration": 1182460,
             "computingTime": 9600000,
-            "progress": 0.546
+            "numberOfCores": 8,
+            "status": "CANCELED"
           }]);
         });
       }

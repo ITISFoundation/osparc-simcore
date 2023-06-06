@@ -115,6 +115,7 @@ qx.Class.define("osparc.component.usage.Overview", {
       const detailedBtn = new qx.ui.form.Button().set({
         label: this.tr("Detailed view")
       });
+      detailedBtn.addListener("execute", () => osparc.component.usage.Detailed.popUpInWindow());
       buttonsLayout.add(detailedBtn, {
         flex: 1
       });
