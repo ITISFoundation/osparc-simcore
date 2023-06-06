@@ -185,7 +185,7 @@ def main(
     compose_spec_dict = {}
 
     assert ctx.parent  # nosec
-    settings: AppSettings = ctx.parent.obj[AppSettings.__name__]
+    settings: AppSettings = ctx.parent.settings
 
     for n, config_name in enumerate(configs_kwargs_map):
         nth_compose_spec = create_docker_compose_image_spec(
