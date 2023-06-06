@@ -26,7 +26,7 @@ test() {
 
 typecheck() {
   pushd packages/service-integration
-  make mypy
+  make mypy pylint
   popd
 }
 

@@ -26,7 +26,7 @@ test() {
 
 typecheck() {
   pushd services/dynamic-sidecar
-  make mypy
+  make mypy pylint
   popd
 }
 

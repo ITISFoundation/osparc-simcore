@@ -26,7 +26,7 @@ test() {
 
 typecheck() {
   pushd packages/models-library
-  make mypy
+  make mypy pylint
   popd
 }
 

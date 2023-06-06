@@ -28,7 +28,7 @@ test_all() {
 
 typecheck() {
   pushd packages/service-library
-  make mypy
+  make mypy pylint
   popd
 }
 

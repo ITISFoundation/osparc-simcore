@@ -29,7 +29,7 @@ test() {
 
 typecheck() {
   pushd services/director-v2
-  make mypy
+  make mypy pylint
   popd
 }
 
