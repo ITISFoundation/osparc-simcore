@@ -1,6 +1,6 @@
 from fastapi import Depends, FastAPI, Request
-from simcore_service_director_v2.core.settings import ComputationalBackendSettings
 
+from ...core.settings import ComputationalBackendSettings
 from ...modules.comp_scheduler.base_scheduler import BaseCompScheduler
 from . import get_app
 

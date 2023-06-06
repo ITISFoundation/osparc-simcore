@@ -1,10 +1,10 @@
 import datetime
 from collections import deque
 from pathlib import Path
+from typing import Iterable
 
 import magic
 from pydantic import BaseModel, Field, StrictStr, validator
-from pyparsing import Iterable
 
 from .core.styling_components import TB, Backgrounds, Borders, T
 from .core.xlsx_base import BaseXLSXCellData, BaseXLSXDocument, BaseXLSXSheet

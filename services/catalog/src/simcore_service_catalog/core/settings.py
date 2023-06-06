@@ -9,9 +9,8 @@ from settings_library.base import BaseCustomSettings
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.utils_logging import MixinLoggingSettings
-from simcore_service_catalog.models.schemas.services_specifications import (
-    ServiceSpecifications,
-)
+
+from ..models.schemas.services_specifications import ServiceSpecifications
 
 logger = logging.getLogger(__name__)
 

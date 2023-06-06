@@ -12,9 +12,9 @@ from models_library.users import UserID
 from pydantic import BaseModel, Extra, Field, NonNegativeInt, PositiveInt
 from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
-from simcore_service_webserver.rest_schemas_base import OutputSchema
 
 from ..catalog.client import get_services_for_user_in_product
+from ..rest_schemas_base import OutputSchema
 from . import projects_api
 from ._permalink import update_or_pop_permalink_in_project
 from ._rest_schemas import ProjectListItem
