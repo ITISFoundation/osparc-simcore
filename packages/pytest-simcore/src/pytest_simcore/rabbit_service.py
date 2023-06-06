@@ -4,13 +4,11 @@
 
 import asyncio
 import logging
-from typing import AsyncIterator, Callable, Iterator, cast
+from typing import AsyncIterator, Callable
 
 import aio_pika
-import docker
 import pytest
 import tenacity
-from docker.models.containers import Container as DockerContainer
 from servicelib.rabbitmq import RabbitMQClient
 from settings_library.basic_types import PortInt
 from settings_library.rabbit import RabbitSettings
@@ -21,32 +19,6 @@ from tenacity.wait import wait_fixed
 from .helpers.utils_docker import get_localhost_ip, get_service_published_port
 
 _logger = logging.getLogger(__name__)
-
-
-@pytest.fixture
-def assert_rabbitmq_has_no_errors(
-    docker_client: docker.client.DockerClient,
-) -> Iterator[None]:
-    yield
-    print("--> checking for errors/warnings in rabbitmq logs...")
-    containers = docker_client.containers.list(filters={"name": "rabbit"})
-    assert len(containers) == 1, "missing rabbit container!"
-    rabbit_container: DockerContainer = cast(DockerContainer, containers[0])
-    rabbit_logs: bytes = rabbit_container.logs()
-    converted_logs = rabbit_logs.decode().splitlines()
-    warning_logs = [log for log in converted_logs if "warning" in log]
-    error_logs = [log for log in converted_logs if "error" in log]
-    RABBIT_SKIPPED_WARNINGS = [
-        "rebuilding indices from scratch",
-    ]
-    filtered_warning_logs = [
-        log
-        for log in warning_logs
-        if all(w not in log for w in RABBIT_SKIPPED_WARNINGS)
-    ]
-    assert not filtered_warning_logs
-    assert not error_logs
-    print("<-- no error founds in rabbitmq server logs, that's great. good job!")
 
 
 @tenacity.retry(
