@@ -19,7 +19,7 @@ error_console = Console(stderr=True)
 
 def _run_git(*args) -> str:
     """:raises CalledProcessError"""
-    return subprocess.run(
+    return subprocess.run(  # nosec
         [
             "git",
         ]
