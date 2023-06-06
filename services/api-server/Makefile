@@ -97,7 +97,7 @@ openapi.json: .env
 	# validates OAS file: $@
 	@set -o allexport; \
 	source .env; \
-	@cd $(CURDIR); \
+	cd $(CURDIR); \
 	$(SCRIPTS_DIR)/openapi-generator-cli.bash validate --input-spec /local/$@
 
 
