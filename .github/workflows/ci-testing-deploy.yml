@@ -554,9 +554,15 @@ jobs:
         run: ./ci/github/unit-testing/api-server.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/api-server.bash typecheck
+      - name: mypy
+        if: always()
+        run: pushd services/api-server; make mypy; popd
       - name: pylint
         if: always()
         run: pushd services/api-server; make pylint; popd
+      - name: pylint2
+        if: always()
+        run: make --directory=services/api-server pylint
       - name: test
         if: always()
         run: ./ci/github/unit-testing/api-server.bash test
