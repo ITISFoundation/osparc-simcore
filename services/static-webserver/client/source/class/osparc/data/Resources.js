@@ -1033,6 +1033,60 @@ qx.Class.define("osparc.data.Resources", {
       return this.getInstance().get(resource, params, useCache);
     },
 
+    dummy: {
+      getUsageOverview: function() {
+        return new Promise(resolve => {
+          resolve({
+            simulations: {
+              total: 10,
+              used:   1
+            },
+            computing: {
+              total: 3600000000,
+              used:    22320000,
+              unit: "ms"
+            }
+          });
+        });
+      },
+
+      getUsageDetailed: function() {
+        return new Promise(resolve => {
+          resolve([{
+            "studyName": "Prj_1",
+            "status": "FINISHED",
+            "numberOfCores": 8,
+            "jobType": "SIMULATION_RUN",
+            "start": "2023-06-05T09:35:29.026Z",
+            "end": "2023-06-05T09:40:29.026Z",
+            "duration": 1429861,
+            "computingTime": 11520000,
+            "progress": 1.0
+          }, {
+            "studyName": "Prj_2",
+            "status": "FINISHED",
+            "numberOfCores": 4,
+            "jobType": "MESH_OPERATION",
+            "start": "2023-06-06T09:35:29.026Z",
+            "end": "2023-06-06T09:40:29.026Z",
+            "duration": 277233,
+            "computingTime": 1200000,
+            "progress": 1.0
+          }, {
+            "studyName": "Prj_3",
+            "status": "CANCELED",
+            "numberOfCores": 8,
+            "jobType": "SIMULATION_RUN",
+            "start": "2023-06-07T09:35:29.026Z",
+            "end": "2023-06-07T09:40:29.026Z",
+            "duration": 1182460,
+            "computingTime": 9600000,
+            "progress": 0.546
+          }]);
+        });
+      }
+    },
+
     getServiceUrl: function(key, version) {
       return {
         "key": encodeURIComponent(key),
