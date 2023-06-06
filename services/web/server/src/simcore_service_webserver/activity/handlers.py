@@ -58,7 +58,7 @@ async def get_status(request: aiohttp.web.Request):
     mem_usage = get_prometheus_result_or_default(results[1], [])
     metric = get_prometheus_result_or_default(results[2], [])
 
-    res = defaultdict(dict)
+    res: dict = defaultdict(dict)
     for node in cpu_usage:
         node_id = node["metric"]["container_label_node_id"]
         usage = float(node["value"][1])
