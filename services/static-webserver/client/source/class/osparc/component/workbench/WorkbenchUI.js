@@ -1829,7 +1829,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         type,
         attributes: osparc.wrapper.Svg.getRectAttributes(annotation)
       };
-      if (type === "rect") {
+      if (type === "note") {
+        this.__addAnnotation(serializeData);
+      } else if (type === "rect") {
         this.__addAnnotation(serializeData);
       } else if (type === "text") {
         const title = this.tr("Add Text");

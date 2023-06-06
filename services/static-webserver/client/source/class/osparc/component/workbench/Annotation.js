@@ -52,7 +52,7 @@ qx.Class.define("osparc.component.workbench.Annotation", {
     },
 
     type: {
-      check: ["rect", "text"],
+      check: ["note", "rect", "text"],
       nullable: false
     },
 
@@ -91,6 +91,9 @@ qx.Class.define("osparc.component.workbench.Annotation", {
 
       let representation = null;
       switch (this.getType()) {
+        case "note":
+          representation = this.__svgLayer.drawAnnotationRect(attrs.width, attrs.height, attrs.x, attrs.y, "yellow");
+          break;
         case "rect":
           representation = this.__svgLayer.drawAnnotationRect(attrs.width, attrs.height, attrs.x, attrs.y, this.getColor());
           break;
@@ -115,6 +118,7 @@ qx.Class.define("osparc.component.workbench.Annotation", {
       const representation = this.getRepresentation();
       if (representation) {
         switch (this.getType()) {
+          case "note":
           case "rect":
             osparc.wrapper.Svg.updateItemColor(representation, color);
             break;
@@ -180,6 +184,7 @@ qx.Class.define("osparc.component.workbench.Annotation", {
       if (representation) {
         const selectedColor = qx.theme.manager.Color.getInstance().resolve("busy-orange");
         switch (this.getType()) {
+          case "note":
           case "rect":
             osparc.wrapper.Svg.updateItemColor(representation, selected ? selectedColor : this.getColor());
             break;
