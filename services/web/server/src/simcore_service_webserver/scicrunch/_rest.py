@@ -15,7 +15,7 @@
 """
 
 import logging
-from typing import Any, Dict, List, Union
+from typing import Any
 
 from aiohttp import ClientSession
 from pydantic import BaseModel, Field
@@ -37,18 +37,18 @@ logger = logging.getLogger(__name__)
 class FieldItem(BaseModel):
     field_name: str = Field(..., alias="field")
     required: bool
-    value: Union[str, None, List[Any]] = None
+    value: str | None | list[Any] = None
 
 
 class ResourceView(BaseModel):
-    resource_fields: List[FieldItem] = Field([], alias="fields")
+    resource_fields: list[FieldItem] = Field([], alias="fields")
     version: int
     curation_status: str
     last_curated_version: int
     scicrunch_id: str
 
     @classmethod
-    def from_response_payload(cls, payload: Dict):
+    def from_response_payload(cls, payload: dict):
         assert payload["success"] == True  # nosec
         return cls(**payload["data"])
 
@@ -73,7 +73,7 @@ class ResourceView(BaseModel):
 
 
 class ListOfResourceHits(BaseModel):
-    __root__: List[ResourceHit]
+    __root__: list[ResourceHit]
 
 
 # REQUESTS
@@ -81,14 +81,15 @@ class ListOfResourceHits(BaseModel):
 
 async def get_all_versions(
     unprefixed_rrid: str, client: ClientSession, settings: SciCrunchSettings
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     async with client.get(
         f"{settings.SCICRUNCH_API_BASE_URL}/resource/versions/all/{unprefixed_rrid}",
         params={"key": settings.SCICRUNCH_API_KEY.get_secret_value()},
         raise_for_status=True,
     ) as resp:
         body = await resp.json()
-        return body.get("data") if body.get("success") else []
+        output: list[dict[str, Any]] = body.get("data") if body.get("success") else []
+        return output
 
 
 async def get_resource_fields(

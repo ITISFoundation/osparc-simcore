@@ -6,7 +6,7 @@
 import logging
 import urllib.parse
 import warnings
-from typing import Any, Optional
+from typing import Any
 
 from aiohttp import ClientSession, web
 from servicelib.aiohttp.client_session import get_client_session
@@ -35,8 +35,8 @@ def _get_director_client(app: web.Application) -> tuple[ClientSession, URL]:
 
 async def get_running_interactive_services(
     app: web.Application,
-    user_id: Optional[str] = None,
-    project_id: Optional[str] = None,
+    user_id: str | None = None,
+    project_id: str | None = None,
 ) -> list[dict[str, Any]]:
     session, api_endpoint = _get_director_client(app)
 
@@ -49,8 +49,9 @@ async def get_running_interactive_services(
     url = (api_endpoint / "running_interactive_services").with_query(params)
     async with session.get(url) as resp:
         if resp.status < 400:
-            payload = await resp.json()
-            return payload["data"]
+            payload: dict[str, Any] = await resp.json()
+            payload_data: list[dict[str, Any]] = payload["data"]
+            return payload_data
         return []
 
 
@@ -65,7 +66,7 @@ async def start_service(
     request_dns: str,
     request_scheme: str,
     request_simcore_user_agent: str,
-) -> Optional[dict]:
+) -> dict | None:
     session, api_endpoint = _get_director_client(app)
 
     params = {
@@ -85,12 +86,13 @@ async def start_service(
 
     url = (api_endpoint / "running_interactive_services").with_query(params)
     async with session.post(url, ssl=False, headers=headers) as resp:
-        payload = await resp.json()
-        return payload["data"]
+        payload: dict[str, Any] = await resp.json()
+        payload_data: dict | None = payload["data"]
+        return payload_data
 
 
 async def stop_service(
-    app: web.Application, service_uuid: str, save_state: Optional[bool] = True
+    app: web.Application, service_uuid: str, save_state: bool | None = True
 ) -> None:
     session, api_endpoint = _get_director_client(app)
     # stopping a service can take a lot of time
@@ -109,15 +111,15 @@ async def stop_service(
         if resp.status == 404:
             raise director_exceptions.ServiceNotFoundError(service_uuid)
         if resp.status != 204:
-            payload = await resp.json()
+            payload: dict[str, Any] = await resp.json()
             raise director_exceptions.DirectorException(payload)
 
 
 async def stop_services(
     app: web.Application,
-    user_id: Optional[str] = None,
-    project_id: Optional[str] = None,
-    save_state: Optional[bool] = True,
+    user_id: str | None = None,
+    project_id: str | None = None,
+    save_state: bool | None = True,
 ) -> None:
     if not user_id and not project_id:
         raise ValueError("Expected either user or project")
@@ -133,7 +135,7 @@ async def stop_services(
 
 async def get_service_by_key_version(
     app: web.Application, service_key: str, service_version: str
-) -> Optional[dict]:
+) -> dict | None:
     session, api_endpoint = _get_director_client(app)
 
     url = (
@@ -144,17 +146,17 @@ async def get_service_by_key_version(
     )
     async with session.get(url) as resp:
         if resp.status != 200:
-            return
-        payload = await resp.json()
-        services = payload["data"]
+            return None
+        payload: dict[str, Any] = await resp.json()
+        services: list[dict] | None = payload["data"]
         if not services:
-            return
+            return None
         return services[0]
 
 
 async def get_services_extras(
     app: web.Application, service_key: str, service_version: str
-) -> Optional[dict]:
+) -> dict | None:
     session, api_endpoint = _get_director_client(app)
 
     url = (
@@ -166,10 +168,10 @@ async def get_services_extras(
     async with session.get(url) as resp:
         if resp.status != 200:
             log.warning("Status not 200 %s", resp)
-            return
-        payload = await resp.json()
-        service_extras = payload["data"]
+            return None
+        payload: dict[str, Any] = await resp.json()
+        service_extras: dict | None = payload["data"]
         if not service_extras:
             log.warning("Service extras is missing %s", resp)
-            return
+            return None
         return service_extras
