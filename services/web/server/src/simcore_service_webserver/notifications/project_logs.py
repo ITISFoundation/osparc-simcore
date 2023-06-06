@@ -13,7 +13,7 @@ from ._constants import APP_RABBITMQ_CONSUMERS_KEY
 
 def _get_queue_name_from_exchange_name(app: web.Application, exchange_name: str) -> str:
     exchange_to_queues = app[APP_RABBITMQ_CONSUMERS_KEY]
-    queue_name = exchange_to_queues[exchange_name]
+    queue_name: str = exchange_to_queues[exchange_name]
     return queue_name
 
 

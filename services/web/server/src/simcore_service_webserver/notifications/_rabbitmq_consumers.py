@@ -1,6 +1,6 @@
 import functools
 import logging
-from typing import Any, AsyncIterator, Callable, Coroutine, Final, Union
+from typing import Any, AsyncIterator, Callable, Coroutine, Final
 
 from aiohttp import web
 from models_library.rabbitmq_messages import (
@@ -95,8 +95,8 @@ def _convert_to_node_progress_event(
 
 
 async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
-    rabbit_message = parse_raw_as(
-        Union[ProgressRabbitMessageNode, ProgressRabbitMessageProject], data
+    rabbit_message: ProgressRabbitMessageNode | ProgressRabbitMessageProject = (
+        parse_raw_as(ProgressRabbitMessageNode | ProgressRabbitMessageProject, data)
     )
     socket_message: SocketMessageDict | None = None
     if isinstance(rabbit_message, ProgressRabbitMessageProject):
@@ -207,7 +207,6 @@ async def setup_rabbitmq_consumers(app: web.Application) -> AsyncIterator[None]:
 
     # cleanup
     with log_context(_logger, logging.INFO, msg="Unsubscribing from rabbitmq channels"):
-        rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
         await logged_gather(
             *(
                 rabbit_client.unsubscribe(queue_name)
