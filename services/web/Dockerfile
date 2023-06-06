@@ -140,10 +140,10 @@ RUN chmod +x services/web/server/docker/*.sh
 # healthcheck.
 # NOTE: do not forget to update variable
 ENV SC_HEALTHCHECK_TIMEOUT=120s
-HEALTHCHECK --interval=30s \
-  --timeout=120s \
-  --start-period=30s \
-  --retries=3 \
+HEALTHCHECK --interval=10s \
+  --timeout=5s \
+  --start-period=10s \
+  --retries=5 \
   CMD ["python3", "/home/scu/services/web/server/docker/healthcheck.py", "http://localhost:8080/v0/health"]
 
 
