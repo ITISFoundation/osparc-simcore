@@ -22,7 +22,7 @@ class DirectorSettings(BaseCustomSettings):
 
     @cached_property
     def base_url(self) -> str:
-        return f"http://{self.DIRECTOR_HOST}:{self.DIRECTOR_PORT}/{self.DIRECTOR_VTAG}"  # NOSONAR
+        return f"http://{self.DIRECTOR_HOST}:{self.DIRECTOR_PORT}/{self.DIRECTOR_VTAG}"
 
 
 _DEFAULT_RESOURCES: Final[ResourcesDict] = parse_obj_as(
