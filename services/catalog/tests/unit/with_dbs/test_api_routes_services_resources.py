@@ -251,7 +251,7 @@ def create_mock_director_service_labels(
             {
                 "jupyter-math": {
                     "simcore.service.settings": "[]",
-                    "simcore.service.compose-spec": '{"version": "2.3", "services": {"jupyter-math":{"image": "${SIMCORE_REGISTRY}/simcore/services/dynamic/jupyter-math:${SERVICE_VERSION}"}, "busybox": {"image": "busybox:latest"}}}',
+                    "simcore.service.compose-spec": '{"version": "2.3", "services": {"jupyter-math":{"image": "${SIMCORE_REGISTRY}/simcore/services/dynamic/jupyter-math:${SERVICE_VERSION}"}, "busybox": {"image": "busybox:1.2.3"}}}',
                 },
                 "busybox": {"simcore.service.settings": "[]"},
             },

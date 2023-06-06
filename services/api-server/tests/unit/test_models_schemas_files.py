@@ -53,8 +53,8 @@ async def test_create_filemetadata_from_starlette_uploadfile(
     # WARNING: upload is a wrapper around a file handler that can actually be in memory as well
 
     # in file
-    with open(mock_filepath, "rb") as file:
-        upload = UploadFile(mock_filepath.name, file)
+    with open(mock_filepath, "rb") as fh:
+        upload = UploadFile(filename=mock_filepath.name, file=fh)
 
         assert upload.file.tell() == 0
         file_meta = await File.create_from_uploaded(upload)
@@ -64,7 +64,7 @@ async def test_create_filemetadata_from_starlette_uploadfile(
 
     # in memory
     # UploadFile constructor: by not passing file, it enforces a tempfile.SpooledTemporaryFile
-    upload_in_memory = UploadFile(mock_filepath.name)
+    upload_in_memory = UploadFile(filename=mock_filepath.name, file=None)
 
     assert isinstance(upload_in_memory.file, tempfile.SpooledTemporaryFile)
     await upload_in_memory.write(FILE_CONTENT.encode())
