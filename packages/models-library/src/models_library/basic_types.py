@@ -24,10 +24,12 @@ class VersionStr(ConstrainedStr):
 
 
 # checksums
+# sha1sum path/to/file
 class SHA1Str(ConstrainedStr):
     regex = re.compile(r"^[a-fA-F0-9]{40}$")
 
 
+# md5sum path/to/file
 class MD5Str(ConstrainedStr):
     regex = re.compile(r"^[a-fA-F0-9]{32}$")
 

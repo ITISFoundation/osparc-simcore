@@ -1,7 +1,7 @@
 from typing import NamedTuple
 
 import pytest
-from models_library.basic_types import EnvVarKey, UUIDStr
+from models_library.basic_types import EnvVarKey, MD5Str, SHA1Str, UUIDStr, VersionTag
 from pydantic import ConstrainedStr, ValidationError
 from pydantic.tools import parse_obj_as
 
@@ -13,6 +13,17 @@ class _Example(NamedTuple):
 
 
 _EXAMPLES = [
+    _Example(constr=VersionTag, good="v5", bad="v5.2"),
+    _Example(
+        constr=SHA1Str,
+        good="74e56e8a00c1ac4797eb15ada9affea692d48b25",
+        bad="d2cbbd98-d0f8-4de1-864e-b390713194eb",
+    ),  # sha1sum .pylintrc
+    _Example(
+        constr=MD5Str,
+        good="3461a73124b5e63a1a0d912bc239cc94",
+        bad="d2cbbd98-d0f8-4de1-864e-b390713194eb",
+    ),  # md5sum .pylintrc
     _Example(constr=EnvVarKey, good="env_VAR", bad="12envar"),
     _Example(
         constr=UUIDStr,
