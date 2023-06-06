@@ -554,6 +554,9 @@ jobs:
         run: ./ci/github/unit-testing/api-server.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/api-server.bash typecheck
+      - name: pylint
+        if: always()
+        run: pushd services/api-server; make pylint; popd
       - name: test
         if: always()
         run: ./ci/github/unit-testing/api-server.bash test
