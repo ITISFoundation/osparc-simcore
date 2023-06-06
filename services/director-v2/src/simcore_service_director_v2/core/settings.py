@@ -3,6 +3,7 @@
 
 
 import logging
+import random
 import re
 from enum import Enum, auto
 from functools import cached_property
@@ -159,8 +160,12 @@ class DirectorV0Settings(BaseCustomSettings):
 
 class DynamicSidecarProxySettings(BaseCustomSettings):
     DYNAMIC_SIDECAR_CADDY_VERSION: str = Field(
-        "2.4.5-alpine",
+        "2.6.4-alpine",
         description="current version of the Caddy image to be pulled and used from dockerhub",
+    )
+    DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT: PortInt = Field(
+        default_factory=lambda: random.randint(1025, 65535),
+        description="port where to expose the proxy's admin API",
     )
 
 

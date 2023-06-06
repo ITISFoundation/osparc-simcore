@@ -45,7 +45,7 @@ from .....models.schemas.dynamic_services import (
     SchedulerData,
     ServiceName,
 )
-from ...api_client import DynamicSidecarClient, get_dynamic_sidecar_client
+from ...api_client import SidecarsClient, get_sidecars_client
 from ...docker_api import update_scheduler_data_label
 from ...errors import DynamicSidecarError, DynamicSidecarNotFoundError
 from .._abc import SchedulerPublicInterface
@@ -184,13 +184,11 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes
     async def remove_service_containers(
         self, node_uuid: NodeID, progress_callback: ProgressCallback | None = None
     ) -> None:
-        dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-            self.app, node_uuid
-        )
+        sidecars_client: SidecarsClient = get_sidecars_client(self.app, node_uuid)
         await service_remove_containers(
             app=self.app,
             node_uuid=node_uuid,
-            dynamic_sidecar_client=dynamic_sidecar_client,
+            sidecars_client=sidecars_client,
             progress_callback=progress_callback,
         )
 
@@ -210,13 +208,11 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes
     async def save_service_state(
         self, node_uuid: NodeID, progress_callback: ProgressCallback | None = None
     ) -> None:
-        dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-            self.app, node_uuid
-        )
+        sidecars_client: SidecarsClient = get_sidecars_client(self.app, node_uuid)
         await service_save_state(
             app=self.app,
             node_uuid=node_uuid,
-            dynamic_sidecar_client=dynamic_sidecar_client,
+            sidecars_client=sidecars_client,
             progress_callback=progress_callback,
         )
 
@@ -418,17 +414,15 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes
         service_name = self._inverse_search_mapping[node_uuid]
         scheduler_data: SchedulerData = self._to_observe[service_name]
         dynamic_sidecar_endpoint: AnyHttpUrl = scheduler_data.endpoint
-        dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-            self.app, node_uuid
-        )
+        sidecars_client: SidecarsClient = get_sidecars_client(self.app, node_uuid)
 
-        transferred_bytes = await dynamic_sidecar_client.pull_service_input_ports(
+        transferred_bytes = await sidecars_client.pull_service_input_ports(
             dynamic_sidecar_endpoint, port_keys
         )
 
         if scheduler_data.restart_policy == RestartPolicy.ON_INPUTS_DOWNLOADED:
             logger.info("Will restart containers")
-            await dynamic_sidecar_client.restart_containers(dynamic_sidecar_endpoint)
+            await sidecars_client.restart_containers(dynamic_sidecar_endpoint)
 
         return RetrieveDataOutEnveloped.from_transferred_bytes(transferred_bytes)
 
@@ -441,11 +435,9 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes
         service_name = self._inverse_search_mapping[node_id]
         scheduler_data = self._to_observe[service_name]
 
-        dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-            self.app, node_id
-        )
+        sidecars_client: SidecarsClient = get_sidecars_client(self.app, node_id)
 
-        await dynamic_sidecar_client.attach_service_containers_to_project_network(
+        await sidecars_client.attach_service_containers_to_project_network(
             dynamic_sidecar_endpoint=scheduler_data.endpoint,
             dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
             project_network=project_network,
@@ -462,11 +454,9 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes
         service_name = self._inverse_search_mapping[node_id]
         scheduler_data = self._to_observe[service_name]
 
-        dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-            self.app, node_id
-        )
+        sidecars_client: SidecarsClient = get_sidecars_client(self.app, node_id)
 
-        await dynamic_sidecar_client.detach_service_containers_from_project_network(
+        await sidecars_client.detach_service_containers_from_project_network(
             dynamic_sidecar_endpoint=scheduler_data.endpoint,
             project_network=project_network,
             project_id=scheduler_data.project_id,
@@ -480,11 +470,9 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes
         service_name: ServiceName = self._inverse_search_mapping[node_uuid]
         scheduler_data: SchedulerData = self._to_observe[service_name]
 
-        dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-            self.app, node_uuid
-        )
+        sidecars_client: SidecarsClient = get_sidecars_client(self.app, node_uuid)
 
-        await dynamic_sidecar_client.restart_containers(scheduler_data.endpoint)
+        await sidecars_client.restart_containers(scheduler_data.endpoint)
 
     def _enqueue_observation_from_service_name(self, service_name: str) -> None:
         self._trigger_observation_queue.put_nowait(service_name)
