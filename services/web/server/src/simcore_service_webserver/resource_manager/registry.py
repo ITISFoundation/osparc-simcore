@@ -23,7 +23,7 @@ from models_library.basic_types import UUIDStr
 from ..redis import get_redis_resources_client
 from ._constants import APP_CLIENT_SOCKET_REGISTRY_KEY
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 ALIVE_SUFFIX = "alive"
 RESOURCE_SUFFIX = "resources"
