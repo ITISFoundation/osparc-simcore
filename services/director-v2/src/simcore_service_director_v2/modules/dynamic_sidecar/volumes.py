@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from typing import Any
 
@@ -6,7 +5,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import RunID
 from models_library.users import UserID
-from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
+from servicelib.sidecar_volumes import VolumeUtils
 from settings_library.r_clone import S3Provider
 
 from ...core.settings import RCloneSettings
@@ -74,37 +73,17 @@ def _get_s3_volume_driver_config(
 
 
 class DynamicSidecarVolumesPathsResolver:
-    BASE_PATH: Path = Path("/dy-volumes")
+    _BASE_PATH: Path = Path("/dy-volumes")
 
     @classmethod
     def target(cls, path: Path) -> str:
         """Returns a folder path within `/dy-volumes` folder"""
-        target_path = cls.BASE_PATH / path.relative_to("/")
+        target_path = cls._BASE_PATH / path.relative_to("/")
         return f"{target_path}"
 
     @classmethod
-    def _volume_name(cls, path: Path) -> str:
-        return f"{path}".replace(os.sep, "_")
-
-    @classmethod
     def source(cls, path: Path, node_uuid: NodeID, run_id: RunID) -> str:
-        """Returns a valid and unique volume name that is composed out of identifiers, namely
-            - relative target path
-            - node_uuid
-            - run_id
-
-        Guarantees that the volume name is unique between runs while also
-        taking into consideration the limit for the volume name's length
-        (255 characters).
-
-        SEE examples in `tests/unit/test_modules_dynamic_sidecar_volumes_resolver.py`
-        """
-        # NOTE: issues can occur when the paths of the mounted outputs, inputs
-        # and state folders are very long and share the same subdirectory path.
-        # Reversing volume name to prevent these issues from happening.
-        reversed_volume_name = cls._volume_name(path)[::-1]
-        unique_name = f"{PREFIX_DYNAMIC_SIDECAR_VOLUMES}_{run_id}_{node_uuid}_{reversed_volume_name}"
-        return unique_name[:255]
+        return VolumeUtils.get_source(path, node_uuid, run_id)
 
     @classmethod
     def mount_entry(
@@ -189,7 +168,7 @@ class DynamicSidecarVolumesPathsResolver:
                     r_clone_settings=r_clone_settings,
                     project_id=project_id,
                     node_uuid=node_uuid,
-                    storage_directory_name=cls._volume_name(path).strip("_"),
+                    storage_directory_name=VolumeUtils.get_name(path).strip("_"),
                 ),
             },
         }
