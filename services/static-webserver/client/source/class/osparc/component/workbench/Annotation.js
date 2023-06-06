@@ -118,10 +118,10 @@ qx.Class.define("osparc.component.workbench.Annotation", {
       const representation = this.getRepresentation();
       if (representation) {
         switch (this.getType()) {
-          case "note":
           case "rect":
             osparc.wrapper.Svg.updateItemColor(representation, color);
             break;
+          case "note":
           case "text":
             osparc.wrapper.Svg.updateTextColor(representation, color);
             break;
@@ -184,10 +184,10 @@ qx.Class.define("osparc.component.workbench.Annotation", {
       if (representation) {
         const selectedColor = qx.theme.manager.Color.getInstance().resolve("busy-orange");
         switch (this.getType()) {
-          case "note":
           case "rect":
             osparc.wrapper.Svg.updateItemColor(representation, selected ? selectedColor : this.getColor());
             break;
+          case "note":
           case "text":
             osparc.wrapper.Svg.updateTextColor(representation, selected ? selectedColor : this.getColor());
             break;
