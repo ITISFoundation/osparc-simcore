@@ -1830,7 +1830,16 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         attributes: osparc.wrapper.Svg.getRectAttributes(annotation)
       };
       if (type === "note") {
-        this.__addAnnotation(serializeData);
+        const title = this.tr("Add Note");
+        const titleEditor = new osparc.component.widget.Renamer(null, null, title);
+        titleEditor.addListener("labelChanged", e => {
+          titleEditor.close();
+          serializeData.attributes.destinatary = "maiz@itis.swiss";
+          serializeData.attributes.text = e.getData()["newLabel"];
+          this.__addAnnotation(serializeData);
+        }, this);
+        titleEditor.center();
+        titleEditor.open();
       } else if (type === "rect") {
         this.__addAnnotation(serializeData);
       } else if (type === "text") {

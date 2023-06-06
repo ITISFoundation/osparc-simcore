@@ -42,7 +42,7 @@ qx.Class.define("osparc.component.workbench.Annotation", {
   },
 
   statics: {
-    DEFAULT_COLOR: "#007fd4" // Visual Studio blue
+    DEFAULT_COLOR: "#FFFF00"
   },
 
   properties: {
@@ -59,7 +59,7 @@ qx.Class.define("osparc.component.workbench.Annotation", {
     color: {
       check: "Color",
       event: "changeColor",
-      init: "#007fd4",
+      init: "#FFFF00",
       apply: "__applyColor"
     },
 
@@ -92,7 +92,7 @@ qx.Class.define("osparc.component.workbench.Annotation", {
       let representation = null;
       switch (this.getType()) {
         case "note":
-          representation = this.__svgLayer.drawAnnotationRect(attrs.width, attrs.height, attrs.x, attrs.y, "yellow");
+          representation = this.__svgLayer.drawAnnotationNote(attrs.x, attrs.y, attrs.destinatary, attrs.text);
           break;
         case "rect":
           representation = this.__svgLayer.drawAnnotationRect(attrs.width, attrs.height, attrs.x, attrs.y, this.getColor());
