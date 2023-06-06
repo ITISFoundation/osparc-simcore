@@ -143,7 +143,8 @@ class RabbitMQClient:
     async def ping(self) -> bool:
         with log_catch(_logger, reraise=False):
             async with await aio_pika.connect(self.settings.dsn, timeout=1):
-                return True
+                ...
+            return True
         return False
 
     async def subscribe(

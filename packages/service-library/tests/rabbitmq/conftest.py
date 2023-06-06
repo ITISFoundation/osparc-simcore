@@ -4,19 +4,17 @@ from typing import AsyncIterator, Coroutine, cast
 
 import aiodocker
 import pytest
-from aiodocker.containers import DockerContainer
-from docker.models.containers import Container as DockerContainer
 
 
 @pytest.fixture
 async def cleanup_check_rabbitmq_server_has_no_errors() -> AsyncIterator[None]:
-    now = datetime.datetime.utcnow()
+    now = datetime.datetime.now()
     yield
     print("--> checking for errors/warnings in rabbitmq logs...")
     async with aiodocker.Docker() as docker_client:
         containers = await docker_client.containers.list(filters=({"name": ["rabbit"]}))
         assert len(containers) == 1, "missing rabbit container!"
-        rabbit_container: DockerContainer = containers[0]
+        rabbit_container = containers[0]
 
         all_logs = await cast(
             Coroutine,
