@@ -4,14 +4,16 @@
 #
 #    pip-compile --output-file=requirements/_base.txt --resolver=backtracking --strip-extras requirements/_base.in
 #
-aio-pika==9.0.7
+aio-pika==9.1.2
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiobotocore==2.5.0
     # via s3fs
 aiodebug==2.3.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiodocker==0.21.0
-    # via -r requirements/_base.in
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/_base.in
 aiofiles==23.1.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in

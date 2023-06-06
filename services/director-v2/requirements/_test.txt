@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --resolver=backtracking --strip-extras requirements/_test.in
 #
-aio-pika==8.2.4
+aio-pika==9.1.2
     # via -r requirements/_test.in
 aioboto3==11.2.0
     # via -r requirements/_test.in
@@ -18,7 +18,7 @@ aiohttp==3.8.3
     #   pytest-aiohttp
 aioitertools==0.11.0
     # via aiobotocore
-aiormq==6.4.2
+aiormq==6.7.6
     # via
     #   -c requirements/_base.txt
     #   aio-pika
@@ -344,7 +344,7 @@ wrapt==1.15.0
     # via
     #   aiobotocore
     #   astroid
-yarl==1.7.2
+yarl==1.9.2
     # via
     #   -c requirements/_base.txt
     #   aio-pika

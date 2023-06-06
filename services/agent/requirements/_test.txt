@@ -275,7 +275,7 @@ wrapt==1.15.0
     #   aws-xray-sdk
 xmltodict==0.13.0
     # via moto
-yarl==1.8.1
+yarl==1.9.2
     # via
     #   -c requirements/_base.txt
     #   aiohttp
