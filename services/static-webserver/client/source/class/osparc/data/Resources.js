@@ -1073,8 +1073,8 @@ qx.Class.define("osparc.data.Resources", {
           }, {
             "studyName": "Prj_2",
             "jobType": "SIMULATION",
-            "start": "2023-06-07T09:35:29.026Z",
-            "end": "2023-06-07T09:40:29.026Z",
+            "start": "2023-06-06T10:37:29.026Z",
+            "end": "2023-06-06T10:42:29.026Z",
             "duration": 1182460,
             "computingTime": 9600000,
             "numberOfCores": 8,

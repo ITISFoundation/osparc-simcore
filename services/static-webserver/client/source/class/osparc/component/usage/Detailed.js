@@ -49,7 +49,8 @@ qx.Class.define("osparc.component.usage.Detailed", {
         jobData.push(job.jobType);
         const startDate = osparc.utils.Utils.formatDateAndTime(new Date(job.start));
         jobData.push(startDate);
-        jobData.push(job.duration);
+        const duration = (job.duration/(60*60*1000)).toFixed(2);
+        jobData.push(duration);
         jobData.push(job.numberOfCores);
         jobData.push(job.status);
         data.push(jobData);
