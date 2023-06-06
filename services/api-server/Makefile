@@ -95,6 +95,8 @@ openapi.json: .env
 	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
 
 	# validates OAS file: $@
+	@set -o allexport; \
+	source .env; \
 	@cd $(CURDIR); \
 	$(SCRIPTS_DIR)/openapi-generator-cli.bash validate --input-spec /local/$@
 
@@ -142,6 +144,8 @@ python-client: client openapi.json ## runs python client generator
 	# copies latest version of the openapi
 	@cp openapi.json client/api/
 	# generates
+	@set -o allexport; \
+	source .env; \
 	cd $(CURDIR); \
 	$(SCRIPTS_DIR)/openapi-generator-cli.bash generate \
 		--generator-name=$(GENERATOR_NAME) \

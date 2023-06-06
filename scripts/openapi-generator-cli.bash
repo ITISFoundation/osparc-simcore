@@ -36,11 +36,17 @@ if [ -v DOCKER_MOUNT ]; then
   docker_mount="-v ${DOCKER_MOUNT}"
 fi
 
+if [ -z "${OPENAPI_GENERATOR_VERSION}" ]; then
+    echo "The OPENAPI_GENERATOR_VERSION environment variable must be defined in order to specify the version of the generator to be used"
+    exit 1
+fi
+version="${OPENAPI_GENERATOR_VERSION}"
+
 exec docker run --rm \
     ${docker_mount} \
     --user "$USERID:$GROUPID" \
     --volume "$PWD:/local" \
-    openapitools/openapi-generator-cli:v4.2.3 "$@"
+    openapitools/openapi-generator-cli:${version} "$@"
 
 # Example
 #   openapi-generator-cli generate -i /local/api/specs/webserver/openapi.yaml -g python -o /local/out/sdk/webserver
