@@ -53,7 +53,7 @@ ignore=CVS,
 
 # Add files or directories matching the regex patterns to the ignore-list. The
 # regex matches against paths and can be in Posix or Windows format.
-ignore-paths=^.*\\generated_models\\.*$|^.*/generated_models/.*$|^.*/director/.*$
+ignore-paths=^.*\\generated_models\\.*$|^.*/generated_models/.*$
 
 # Files or directories matching the regex patterns are skipped. The regex
 # matches against base names, not paths. The default value ignores Emacs file
