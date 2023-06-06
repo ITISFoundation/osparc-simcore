@@ -112,16 +112,6 @@ COPY --chown=scu:scu services/web/server /build/services/web/server
 
 WORKDIR /build/services/web/server
 
-# libmagic is requried by the exporter
-RUN --mount=type=cache,id=webprodcache,target=/var/cache/apt,mode=0755,sharing=locked \
-  --mount=type=cache,id=webprodapt,target=/var/lib/apt,mode=0755,sharing=locked \
-  set -eux \
-  && apt-get update \
-  && apt-get install -y --no-install-recommends \
-  libmagic1 \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
-
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
   pip --no-cache-dir install \
   --requirement requirements/prod.txt \
@@ -148,6 +138,16 @@ RUN chown -R scu /home/scu
 # bring installed package without build tools
 COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
+# libmagic is requried by the exporter
+RUN --mount=type=cache,id=webprodcache,target=/var/cache/apt,mode=0755,sharing=locked \
+  --mount=type=cache,id=webprodapt,target=/var/lib/apt,mode=0755,sharing=locked \
+  set -eux \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends \
+  libmagic1 \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
 # copy docker entrypoint and boot scripts
 COPY --chown=scu:scu services/web/server/docker services/web/server/docker
 RUN chmod +x services/web/server/docker/*.sh
@@ -162,7 +162,7 @@ HEALTHCHECK --interval=10s \
   --retries=5 \
   CMD ["python3", "/home/scu/services/web/server/docker/healthcheck.py", "http://localhost:8080/v0/health"]
 
-
+# no need to rebuild everything if just these changed
 ARG BUILD_DATE
 ARG VCS_URL
 ARG VCS_REF
