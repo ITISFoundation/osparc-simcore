@@ -245,11 +245,7 @@ class RabbitMQClient:
 
         async with self._channel_pool.acquire() as channel:
             channel: aio_pika.RobustChannel
-            exchange = await channel.declare_exchange(
-                exchange_name,
-                aio_pika.ExchangeType.TOPIC,
-                durable=True,
-            )
+            exchange = await channel.get_exchange(exchange_name)
             queue = await declare_queue(
                 channel, self.client_name, exchange_name, exclusive_queue=True
             )
