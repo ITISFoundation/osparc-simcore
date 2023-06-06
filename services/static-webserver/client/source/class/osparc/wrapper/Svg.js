@@ -145,7 +145,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       const text = draw.text(label)
         .font({
           fill: color,
-          size: (fontSize ? fontSize : 12) + "px",
+          size: (fontSize ? fontSize : 13) + "px",
           family: "Roboto"
         })
         .style({
@@ -161,7 +161,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       const text = draw.text(label)
         .font({
           fill: "#FFFF00",
-          size: "12px",
+          size: "13px",
           family: "Roboto"
         })
         .style({
