@@ -5,6 +5,7 @@
 --constraint ./constraints.txt
 
 aiodebug
+aiodocker
 aiofiles
 aio-pika
 arrow # date/time
