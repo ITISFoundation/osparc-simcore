@@ -32,14 +32,25 @@ qx.Class.define("osparc.component.usage.Detailed", {
   },
 
   statics: {
-    COLS: [
-      qx.locale.Manager.tr("Study Name"),
-      qx.locale.Manager.tr("Type"),
-      qx.locale.Manager.tr("Start time"),
-      qx.locale.Manager.tr("Duration"),
-      qx.locale.Manager.tr("Cores"),
-      qx.locale.Manager.tr("Status")
-    ],
+    COLS: [{
+      title: qx.locale.Manager.tr("Study Name"),
+      type: () => new qx.ui.table.cellrenderer.String()
+    }, {
+      title: qx.locale.Manager.tr("Type"),
+      type: () => new qx.ui.table.cellrenderer.String()
+    }, {
+      title: qx.locale.Manager.tr("Start time"),
+      type: () => new qx.ui.table.cellrenderer.Date()
+    }, {
+      title: qx.locale.Manager.tr("Duration"),
+      type: () => new qx.ui.table.cellrenderer.Number()
+    }, {
+      title: qx.locale.Manager.tr("Cores"),
+      type: () => new qx.ui.table.cellrenderer.Number()
+    }, {
+      title: qx.locale.Manager.tr("Status"),
+      type: () => new qx.ui.table.cellrenderer.String()
+    }],
 
     detailedToData: function(detailed) {
       const data = [];
@@ -102,8 +113,7 @@ qx.Class.define("osparc.component.usage.Detailed", {
 
     __addDetailedTable: function(detailed) {
       const model = new qx.ui.table.model.Simple();
-      model.setColumns(this.self().COLS);
-      model.setData(this.self().detailedToData(detailed));
+      model.setColumns(this.self().COLS.map(col => col.title));
 
       const table = this.__loggerTable = new qx.ui.table.Table(model, {
         tableColumnModel: obj => new qx.ui.table.columnmodel.Resize(obj)
@@ -115,8 +125,13 @@ qx.Class.define("osparc.component.usage.Detailed", {
         forceLineHeight: false
       });
       const columnModel = table.getTableColumnModel();
-      columnModel.getBehavior().setMinWidth(1, 80);
-      columnModel.getBehavior().setMinWidth(2, 80);
+      columnModel.getBehavior().setMinWidth(0, 60);
+      columnModel.getBehavior().setMinWidth(1, 60);
+      columnModel.getBehavior().setMinWidth(2, 60);
+      columnModel.getBehavior().setMinWidth(5, 60);
+      this.self().COLS.forEach((col, idx) => columnModel.setDataCellRenderer(idx, col.type.call(this)));
+
+      model.setData(this.self().detailedToData(detailed));
 
       this._add(table);
     }
