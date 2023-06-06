@@ -131,7 +131,7 @@ def test_fastapi_route_name_parsing(client: TestClient, faker: Faker):
         resp = client.post(
             f"/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}:{action}"
         )
-        assert resp.url.endswith(expected_path)
+        assert resp.url.path == expected_path
         assert resp.status_code == status.HTTP_200_OK
         assert resp.json()["action"] == f"{action}_job"
 
