@@ -16,7 +16,7 @@ _logger = logging.getLogger(__name__)
 
 async def _on_healthcheck_async_adapter(app: web.Application) -> None:
     rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
-    if rabbit_client.bad_state:
+    if not rabbit_client.healthy:
         raise HealthCheckFailed(
             "RabbitMQ client is in a bad state! TIP: check if network was cut between server and clients?"
         )

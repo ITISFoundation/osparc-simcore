@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import os
 import re
@@ -6,7 +5,6 @@ import socket
 from typing import Any, Callable, Final, Pattern
 
 import aio_pika
-import aiormq
 from pydantic import ConstrainedStr, parse_obj_as
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
@@ -61,7 +59,7 @@ class RPCNamespacedMethodName(ConstrainedStr):
 class RabbitMQRetryPolicyUponInitialization:
     """Retry policy upon service initialization"""
 
-    def __init__(self, logger: logging.Logger | None = None):
+    def __init__(self, logger: logging.Logger | None = None) -> None:
         logger = logger or _logger
 
         self.kwargs = {
@@ -78,9 +76,8 @@ async def wait_till_rabbitmq_responsive(url: str) -> bool:
     with log_context(
         _logger, logging.INFO, msg=f"checking RabbitMQ connection at {url=}"
     ):
-        connection = await aio_pika.connect(url)
-        await connection.close()
-        _logger.info("rabbitmq connection established")
+        async with await aio_pika.connect(url):
+            _logger.info("rabbitmq connection established")
         return True
 
 
@@ -103,46 +100,8 @@ async def rpc_register_entries(
     )
 
 
-def connection_close_callback(
-    sender: Any,  # pylint: disable=unused-argument
-    exc: BaseException | None,
-    client: "RabbitMQClient",  # type: ignore
-) -> None:
-    if exc:
-        if isinstance(exc, asyncio.CancelledError):
-            _logger.info("Rabbit connection cancelled")
-        elif isinstance(exc, aiormq.exceptions.ConnectionClosed):
-            _logger.info("Rabbit connection closed: %s", exc)
-        else:
-            _logger.error(
-                "Rabbit connection closed with exception from %s:%s",
-                type(exc),
-                exc,
-            )
-            client._bad_state = True  # pylint: disable=protected-access
-
-
 def get_rabbitmq_client_unique_name(base_name: str) -> str:
     return f"{base_name}_{socket.gethostname()}_{os.getpid()}"
-
-
-def channel_close_callback(
-    sender: Any,  # pylint: disable=unused-argument
-    exc: BaseException | None,
-    client: "RabbitMQClient",  # type: ignore
-) -> None:
-    if exc:
-        if isinstance(exc, asyncio.CancelledError):
-            _logger.info("Rabbit channel cancelled")
-        elif isinstance(exc, aiormq.exceptions.ChannelClosed):
-            _logger.info("Rabbit channel closed")
-        else:
-            _logger.error(
-                "Rabbit channel closed with exception from %s:%s",
-                type(exc),
-                exc,
-            )
-            client._bad_state = True  # pylint: disable=protected-access
 
 
 async def declare_queue(

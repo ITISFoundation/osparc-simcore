@@ -1,10 +1,10 @@
 import asyncio
-import functools
 import logging
 from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable, Final, Protocol
 
 import aio_pika
+import aiormq
 from aio_pika.patterns import RPC
 from pydantic import PositiveInt
 from servicelib.logging_utils import log_catch, log_context
@@ -15,8 +15,6 @@ from .rabbitmq_utils import (
     RPCMethodName,
     RPCNamespace,
     RPCNamespacedMethodName,
-    channel_close_callback,
-    connection_close_callback,
     declare_queue,
     get_rabbitmq_client_unique_name,
 )
@@ -48,7 +46,7 @@ class RabbitMQClient:
     _rpc_channel: aio_pika.abc.AbstractChannel | None = None
     _rpc: RPC | None = None
 
-    _bad_state: bool = False
+    _healthy_state: bool = True
 
     def __post_init__(self) -> None:
         # recommendations are 1 connection per process
@@ -57,6 +55,42 @@ class RabbitMQClient:
         )
         # channels are not thread safe, what about python?
         self._channel_pool = aio_pika.pool.Pool(self._get_channel, max_size=10)
+
+    def _connection_close_callback(
+        self,
+        sender: Any,  # pylint: disable=unused-argument
+        exc: BaseException | None,
+    ) -> None:
+        if exc:
+            if isinstance(exc, asyncio.CancelledError):
+                _logger.info("Rabbit connection cancelled")
+            elif isinstance(exc, aiormq.exceptions.ConnectionClosed):
+                _logger.info("Rabbit connection closed: %s", exc)
+            else:
+                _logger.error(
+                    "Rabbit connection closed with exception from %s:%s",
+                    type(exc),
+                    exc,
+                )
+                self._healthy_state = True
+
+    def _channel_close_callback(
+        self,
+        sender: Any,  # pylint: disable=unused-argument
+        exc: BaseException | None,
+    ) -> None:
+        if exc:
+            if isinstance(exc, asyncio.CancelledError):
+                _logger.info("Rabbit channel cancelled")
+            elif isinstance(exc, aiormq.exceptions.ChannelClosed):
+                _logger.info("Rabbit channel closed")
+            else:
+                _logger.error(
+                    "Rabbit channel closed with exception from %s:%s",
+                    type(exc),
+                    exc,
+                )
+                self._healthy_state = True
 
     async def _get_connection(
         self, rabbit_broker: str, connection_name: str
@@ -69,18 +103,12 @@ class RabbitMQClient:
             url,
             client_properties={"connection_name": connection_name},
         )
-        connection.close_callbacks.add(
-            functools.partial(connection_close_callback, client=self)
-        )
+        connection.close_callbacks.add(self._connection_close_callback)
         return connection
 
     @property
-    def bad_state(self) -> bool:
-        return self._bad_state
-
-    async def reset(self):
-        await self.close()
-        self.__post_init__()
+    def healthy(self) -> bool:
+        return self._healthy_state
 
     async def rpc_initialize(self) -> None:
         self._rpc_connection = await aio_pika.connect_robust(
@@ -118,9 +146,7 @@ class RabbitMQClient:
         async with self._connection_pool.acquire() as connection:
             connection: aio_pika.RobustConnection
             channel = await connection.channel()
-            channel.close_callbacks.add(
-                functools.partial(channel_close_callback, client=self)
-            )
+            channel.close_callbacks.add(self._channel_close_callback)
             return channel
 
     async def ping(self) -> bool:
