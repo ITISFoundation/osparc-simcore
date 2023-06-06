@@ -78,7 +78,7 @@ qx.Class.define("osparc.component.usage.Detailed", {
   members: {
     __buildLayout: function(overview, detailed) {
       this.__addComputing(overview.computing);
-      this.__addDetailedTable(detailed);
+      this.__addTable(detailed);
     },
 
     __addComputing: function(computing) {
@@ -111,17 +111,17 @@ qx.Class.define("osparc.component.usage.Detailed", {
       this._add(compLayout);
     },
 
-    __addDetailedTable: function(detailed) {
+    __addTable: function(detailed) {
       const model = new qx.ui.table.model.Simple();
       model.setColumns(this.self().COLS.map(col => col.title));
 
       const table = this.__loggerTable = new qx.ui.table.Table(model, {
         tableColumnModel: obj => new qx.ui.table.columnmodel.Resize(obj)
       }).set({
+        rowHeight: 20,
         selectable: true,
         statusBarVisible: false,
         showCellFocusIndicator: false,
-        rowHeight: 25,
         forceLineHeight: false
       });
       const columnModel = table.getTableColumnModel();
@@ -133,7 +133,9 @@ qx.Class.define("osparc.component.usage.Detailed", {
 
       model.setData(this.self().detailedToData(detailed));
 
-      this._add(table);
+      this._add(table, {
+        flex: 1
+      });
     }
   }
 });
