@@ -31,8 +31,8 @@ _logger = logging.getLogger(__name__)
 SOCKET_ID_KEY = "socket_id"
 PROJECT_ID_KEY = "project_id"
 
-assert SOCKET_ID_KEY in ResourcesValueDict.__optional_keys__  # nosec
-assert PROJECT_ID_KEY in ResourcesValueDict.__optional_keys__  # nosec
+assert SOCKET_ID_KEY in ResourcesValueDict.__annotations__.keys()  # nosec
+assert PROJECT_ID_KEY in ResourcesValueDict.__annotations__.keys()  # nosec
 
 
 def get_service_deletion_timeout(app: web.Application) -> int:
