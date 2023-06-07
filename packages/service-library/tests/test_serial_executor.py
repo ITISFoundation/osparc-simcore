@@ -1,15 +1,19 @@
 import asyncio
 from contextlib import asynccontextmanager
-from typing import AsyncIterable
+from copy import copy
+from typing import AsyncIterator, Final
 
 import pytest
+from pydantic import NonNegativeInt
 from servicelib.serial_executor import BaseSerialExecutor
+
+SHARED_CONTEXT_KEY: Final[str] = "share"
 
 
 @asynccontextmanager
 async def executor_lifecycle(
     base_serial_executor: BaseSerialExecutor,
-) -> AsyncIterable[BaseSerialExecutor]:
+) -> AsyncIterator[BaseSerialExecutor]:
     await base_serial_executor.start()
     yield base_serial_executor
     await base_serial_executor.stop()
@@ -26,13 +30,23 @@ async def test_base_serial_executor():
             return type(positional_arg + f"{hello}") == str
 
     async with executor_lifecycle(TestSerialExecutor()) as executor:
-        result = await executor.wait_for_result("some_str", hello=23, timeout=3)
+        result = await executor.wait_for_result(
+            "some_str", hello=23, timeout=3, context_key=SHARED_CONTEXT_KEY
+        )
         assert result is True
 
         assert (
-            await executor.wait_for_result("some_str", hello="23", timeout=3) is False
+            await executor.wait_for_result(
+                "some_str", hello="23", timeout=3, context_key=SHARED_CONTEXT_KEY
+            )
+            is False
         )
-        assert await executor.wait_for_result(44, hello=23, timeout=3) is False
+        assert (
+            await executor.wait_for_result(
+                44, hello=23, timeout=3, context_key=SHARED_CONTEXT_KEY
+            )
+            is False
+        )
 
 
 async def test_base_serial_executor_times_out():
@@ -43,7 +57,7 @@ async def test_base_serial_executor_times_out():
 
     async with executor_lifecycle(TestSerialExecutor()) as executor:
         with pytest.raises(asyncio.TimeoutError):
-            await executor.wait_for_result(timeout=0.1)
+            await executor.wait_for_result(timeout=0.1, context_key=SHARED_CONTEXT_KEY)
 
 
 async def test_base_serial_executor_raises_original_error():
@@ -55,4 +69,41 @@ async def test_base_serial_executor_raises_original_error():
     error_reason = "this is the expected error"
     async with executor_lifecycle(TestSerialExecutor()) as executor:
         with pytest.raises(RuntimeError, match=error_reason):
-            await executor.wait_for_result(error_reason=error_reason, timeout=1)
+            await executor.wait_for_result(
+                error_reason=error_reason, timeout=1, context_key=SHARED_CONTEXT_KEY
+            )
+
+
+async def test_base_serial_executor_same_context_key_parallel():
+    shared_counter: int = 0
+    counter_values: list[int] = []
+
+    ITERATIONS: NonNegativeInt = 100
+
+    class TestSerialExecutor(BaseSerialExecutor):
+        # pylint: disable=arguments-differ
+        async def run(self) -> None:
+            nonlocal shared_counter
+            shared_counter += 1
+
+            await asyncio.sleep(0)
+            counter_values.append(copy(shared_counter))
+            await asyncio.sleep(0)
+
+            shared_counter -= 1
+
+    async with executor_lifecycle(
+        TestSerialExecutor(polling_interval=0.001)
+    ) as executor:
+        # run in parallel
+        await asyncio.gather(
+            *[
+                executor.wait_for_result(timeout=10, context_key=SHARED_CONTEXT_KEY)
+                for x in range(ITERATIONS)
+            ]
+        )
+
+        assert counter_values == [1] * ITERATIONS
+
+        await executor.wait_for_result(timeout=0.1, context_key=SHARED_CONTEXT_KEY)
+        await executor.wait_for_result(timeout=0.1, context_key=SHARED_CONTEXT_KEY)
