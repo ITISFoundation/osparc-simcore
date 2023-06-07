@@ -88,7 +88,6 @@ OPENAPI_GENERATOR_VERSION := v4.2.3
 define create_and_validate_openapi
 	# generating openapi specs file under $< (NOTE: Skips DEV FEATURES since this OAS is the 'offically released'!)
 	@source .env; \
-	export OPENAPI_GENERATOR_VERSION=$(OPENAPI_GENERATOR_VERSION); \
 	export API_SERVER_DEV_FEATURES_ENABLED=$1; \
 	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
 
@@ -96,6 +95,7 @@ define create_and_validate_openapi
 	@set -o allexport; \
 	source .env; \
 	cd $(CURDIR); \
+	export OPENAPI_GENERATOR_VERSION=$(OPENAPI_GENERATOR_VERSION); \
 	$(SCRIPTS_DIR)/openapi-generator-cli.bash validate --input-spec /local/$@
 endef
 
