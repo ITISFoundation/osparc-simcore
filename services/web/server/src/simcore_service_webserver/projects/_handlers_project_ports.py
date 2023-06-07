@@ -85,14 +85,14 @@ async def _get_validated_workbench_model(
 routes = web.RouteTableDef()
 
 
-class _InputSchemaConfig:
+class _InputSchemaConfig(BaseModel):
     class Config:
         allow_population_by_field_name = False
         extra = Extra.forbid
         allow_mutations = False
 
 
-class _OutputSchemaConfig:
+class _OutputSchemaConfig(BaseModel):
     class Config:
         allow_population_by_field_name = True
         extra = Extra.ignore  # Used to prune extra fields from internal data

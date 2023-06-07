@@ -1,7 +1,7 @@
 import logging
 import re
 from copy import deepcopy
-from typing import Any, AnyStr, Match, TypedDict
+from typing import Any, Match, TypedDict, cast
 from uuid import UUID, uuid1, uuid5
 
 from models_library.projects_nodes_io import NodeIDStr
@@ -67,8 +67,11 @@ def clone_project_document(
         if isinstance(node, str):
             # NOTE: for datasets we get something like project_uuid/node_uuid/file_id
             if "/" in node:
-                parts = node.split("/")
-                node = "/".join(_replace_uuids(part) for part in parts)
+                parts: list[str] = node.split("/")
+                parts_replaced: list[str] = [
+                    cast(str, _replace_uuids(part)) for part in parts
+                ]
+                node = "/".join(parts_replaced)
             else:
                 node = project_map.get(node, nodes_map.get(NodeIDStr(node), node))
         elif isinstance(node, list):
@@ -124,7 +127,7 @@ def substitute_parameterized_inputs(
         except ValueError:
             return s
 
-    def _get_param_input_match(name, value, access) -> Match[AnyStr] | None:
+    def _get_param_input_match(name, value, access) -> Match[str] | None:
         if (
             isinstance(value, str)
             and access.get(name, "ReadAndWrite") == "ReadAndWrite"
