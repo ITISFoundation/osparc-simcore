@@ -1,11 +1,9 @@
-from typing import Any, Callable, cast
+from servicelib.fastapi.dependencies import get_app, get_reverse_url_mapper
 
-from fastapi import Request
+assert get_reverse_url_mapper  # nosec
+assert get_app  # nosec
 
-
-def get_reverse_url_mapper(request: Request) -> Callable[..., str]:
-    def reverse_url_mapper(name: str, **path_params: Any) -> str:
-        # NOTE: the cast appears to be needed by mypy
-        return cast(str, request.url_for(name, **path_params))
-
-    return reverse_url_mapper
+__all__: tuple[str, ...] = (
+    "get_reverse_url_mapper",
+    "get_app",
+)
