@@ -117,8 +117,7 @@ fetch-openapi-templates: ## fetches open api generator templates and overwrites 
 	$(eval TMPDIR := $(shell mktemp -d))
 
 	@echo "Fetching openapi generator templates from github..."
-	@set -o allexport; \
-	source .env; \
+	@source .env; \
 	wget -O $(TMPDIR)/openapi_zip.zip "https://github.com/OpenAPITools/openapi-generator/archive/refs/tags/$${OPENAPI_GENERATOR_VERSION}.zip"; \
 	unzip -q $(TMPDIR)/openapi_zip.zip -d $(TMPDIR); \
 
