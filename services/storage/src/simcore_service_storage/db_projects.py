@@ -17,7 +17,7 @@ async def list_valid_projects_in(
     NOTE that it lists ONLY validated projects in 'project_uuids'
     """
     async for row in conn.execute(
-        sa.select([projects]).where(
+        sa.select(projects).where(
             projects.c.uuid.in_(f"{pid}" for pid in include_uuids)
         )
     ):
