@@ -13,7 +13,7 @@ WORKDIR="$(pwd)"
 
 Build()
 {
-  docker build \
+  docker buildx build \
     --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
     --build-arg HOME_DIR="/home/$USER" \
     --tag "$IMAGE_NAME" \

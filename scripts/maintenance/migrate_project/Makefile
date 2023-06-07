@@ -22,7 +22,7 @@ endif
 
 .PHONY: build
 build: ## Builds docker container for the migration. Run this first.
-	docker build --tag ${IMAGE_NAME} --file $(PWD)/Dockerfile $(REPO_DIR)
+	docker buildx build --tag ${IMAGE_NAME} --file $(PWD)/Dockerfile $(REPO_DIR)
 
 .PHONY: debug-shell
 debug-shell: ## Runs a bash inside the container that performs the migrate. For manual interventions and debuging.

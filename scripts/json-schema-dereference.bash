@@ -9,7 +9,7 @@ image_name="$(basename $0):latest"
 
 # derefernce json-schemas for easy comparison
 # SEE https://github.com/davidkelley/json-dereference-cli
-docker build --tag "$image_name" - <<EOF
+docker buildx build --tag "$image_name" - <<EOF
 FROM node:12.18.2
 RUN npm install -g json-dereference-cli@0.1.2
 ENTRYPOINT ["json-dereference"]

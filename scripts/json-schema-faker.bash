@@ -40,7 +40,7 @@ RUN npm install \
 ENTRYPOINT ["node", "/app/generate.js"]
 EOF
 
-docker build --tag "$image_name" $tmp_dir
+docker buildx build --tag "$image_name" $tmp_dir
 
 schema="$(basename $1)"
 output="$(basename $2)"
