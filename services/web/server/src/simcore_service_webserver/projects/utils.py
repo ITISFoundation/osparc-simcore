@@ -1,7 +1,7 @@
 import logging
 import re
 from copy import deepcopy
-from typing import Any, Match, TypedDict, cast
+from typing import Any, Match, TypedDict
 from uuid import UUID, uuid1, uuid5
 
 from models_library.projects_nodes_io import NodeIDStr
@@ -69,7 +69,7 @@ def clone_project_document(
             if "/" in node:
                 parts: list[str] = node.split("/")
                 parts_replaced: list[str] = [
-                    cast(str, _replace_uuids(part)) for part in parts
+                    f"{_replace_uuids(part)}" for part in parts
                 ]
                 node = "/".join(parts_replaced)
             else:
