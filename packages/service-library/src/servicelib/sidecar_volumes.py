@@ -14,6 +14,8 @@ REGULAR_SOURCE_PORTION_LEN: Final[PositiveInt] = (
     len(PREFIX_DYNAMIC_SIDECAR_VOLUMES) + 2 * _UUID_LEN + 3 * _UNDER_SCORE_LEN
 )
 
+STORE_FILE_NAME: Final[str] = "data.json"
+
 
 @dataclass
 class VolumeInfo:

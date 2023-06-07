@@ -1,17 +1,16 @@
 from asyncio import Lock
 from pathlib import Path
-from typing import Final, TypeAlias
+from typing import TypeAlias
 
 import aiofiles
 from fastapi import FastAPI
 from models_library.sidecar_volumes import VolumeCategory, VolumeState, VolumeStatus
 from pydantic import BaseModel, Field, PrivateAttr
+from servicelib.sidecar_volumes import STORE_FILE_NAME, VolumeUtils
 
 from ..core.settings import ApplicationSettings
 
 ContainerNameStr: TypeAlias = str
-
-STORE_FILE_NAME: Final[str] = "data.json"
 
 
 class _StoreMixin(BaseModel):
@@ -63,24 +62,69 @@ class SharedStore(_StoreMixin):
         default_factory=dict, description="persist the state of each volume"
     )
 
-    async def _setup_initial_volume_states(self) -> None:
+    async def _setup_initial_volume_states(self, settings: ApplicationSettings) -> None:
+        initial_volumes_data: list[tuple[VolumeCategory, VolumeStatus, list[str]]] = [
+            (
+                VolumeCategory.INPUTS,
+                VolumeStatus.CONTENT_NO_SAVE_REQUIRED,
+                [
+                    VolumeUtils.get_source(
+                        path=settings.DY_SIDECAR_PATH_INPUTS,
+                        node_uuid=settings.DY_SIDECAR_NODE_ID,
+                        run_id=settings.DY_SIDECAR_RUN_ID,
+                    )
+                ],
+            ),
+            (
+                VolumeCategory.SHARED_STORE,
+                VolumeStatus.CONTENT_NO_SAVE_REQUIRED,
+                [
+                    VolumeUtils.get_source(
+                        path=settings.DYNAMIC_SIDECAR_SHARED_STORE_DIR,
+                        node_uuid=settings.DY_SIDECAR_NODE_ID,
+                        run_id=settings.DY_SIDECAR_RUN_ID,
+                    )
+                ],
+            ),
+            (
+                VolumeCategory.OUTPUTS,
+                VolumeStatus.CONTENT_NEEDS_TO_BE_SAVED,
+                [
+                    VolumeUtils.get_source(
+                        path=settings.DY_SIDECAR_PATH_OUTPUTS,
+                        node_uuid=settings.DY_SIDECAR_NODE_ID,
+                        run_id=settings.DY_SIDECAR_RUN_ID,
+                    )
+                ],
+            ),
+            (
+                VolumeCategory.STATES,
+                VolumeStatus.CONTENT_NEEDS_TO_BE_SAVED,
+                [
+                    VolumeUtils.get_source(
+                        path=p,
+                        node_uuid=settings.DY_SIDECAR_NODE_ID,
+                        run_id=settings.DY_SIDECAR_RUN_ID,
+                    )
+                    for p in settings.DY_SIDECAR_STATE_PATHS
+                ],
+            ),
+        ]
         async with self:
-            for category, status in [
-                (VolumeCategory.INPUTS, VolumeStatus.CONTENT_NO_SAVE_REQUIRED),
-                (VolumeCategory.SHARED_STORE, VolumeStatus.CONTENT_NO_SAVE_REQUIRED),
-                (VolumeCategory.OUTPUTS, VolumeStatus.CONTENT_NEEDS_TO_BE_SAVED),
-                (VolumeCategory.STATES, VolumeStatus.CONTENT_NEEDS_TO_BE_SAVED),
-            ]:
-                self.volume_states[category] = VolumeState(status=status)
+            for category, status, volume_names in initial_volumes_data:
+                self.volume_states[category] = VolumeState(
+                    status=status, volume_names=volume_names
+                )
 
     @classmethod
-    async def init_from_disk(cls, shared_store_dir: Path) -> "SharedStore":
+    async def init_from_disk(cls, settings: ApplicationSettings) -> "SharedStore":
+        shared_store_dir: Path = settings.DYNAMIC_SIDECAR_SHARED_STORE_DIR
         data_file_path = shared_store_dir / STORE_FILE_NAME
 
         if not data_file_path.exists():
             obj = cls()
             obj.post_init(shared_store_dir)
-            await obj._setup_initial_volume_states()
+            await obj._setup_initial_volume_states(settings)
             return obj
 
         # if the sidecar is started for a second time (usually the container dies)
@@ -96,9 +140,6 @@ class SharedStore(_StoreMixin):
 def setup_shared_store(app: FastAPI) -> None:
     async def on_startup() -> None:
         settings: ApplicationSettings = app.state.settings
-
-        app.state.shared_store = await SharedStore.init_from_disk(
-            settings.DYNAMIC_SIDECAR_SHARED_STORE_DIR
-        )
+        app.state.shared_store = await SharedStore.init_from_disk(settings)
 
     app.add_event_handler("startup", on_startup)

@@ -47,6 +47,10 @@ class VolumeStatus(StrAutoEnum):
 
 class VolumeState(BaseModel):
     status: VolumeStatus
+    volume_names: list[str] = Field(
+        ...,
+        description="agent uses the volume's name to search it's status",
+    )
     last_changed: datetime = Field(default_factory=lambda: arrow.utcnow().datetime)
 
     def __eq__(self, other: object) -> bool:
