@@ -2,6 +2,7 @@ from collections import deque
 from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator
 
+import aiodocker
 from aiodocker import Docker
 from aiodocker.utils import clean_filters
 from aiodocker.volumes import DockerVolume
@@ -29,6 +30,16 @@ async def get_dyv_volumes(docker: Docker, target_swarm_stack_name: str) -> list[
 
 async def delete_volume(docker: Docker, volume_name: str) -> None:
     await DockerVolume(docker, volume_name).delete()
+
+
+async def is_volume_present(docker: Docker, volume_name: str) -> bool:
+    try:
+        await DockerVolume(docker, volume_name).show()
+    except aiodocker.DockerError as e:
+        if e.status == 404:
+            return False
+        raise e
+    return True
 
 
 async def is_volume_used(docker: Docker, volume_name: str) -> bool:
