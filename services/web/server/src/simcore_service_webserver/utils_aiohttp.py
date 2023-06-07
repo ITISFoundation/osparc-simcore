@@ -85,7 +85,7 @@ def envelope_json_response(
 PageStr: TypeAlias = Literal["view", "error"]
 
 
-def create_redirect_response(
+def create_redirect_to_page_response(
     app: web.Application, page: PageStr, **parameters
 ) -> web.HTTPFound:
     """
@@ -126,11 +126,7 @@ class NextPage(GenericModel, Generic[PageParameters]):
     using a path+query in the fragment of the URL
     """
 
-    name: PageStr = Field(..., description="Code name to the front-end page")
+    name: str = Field(
+        ..., description="Code name to the front-end page. Ideally a PageStr"
+    )
     parameters: PageParameters | None = None
-
-    def as_redirect_response(self, app: web.Application) -> web.HTTPFound:
-        parameters: dict[str, Any] = {}
-        if self.parameters:
-            parameters = self.parameters.dict()
-        return create_redirect_response(app=app, page=self.name, **parameters)
