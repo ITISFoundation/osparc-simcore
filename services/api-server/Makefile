@@ -113,7 +113,7 @@ openapi-dev.json: .env
 # FETCH OPENAPI GENERATOR TEMPLATES ##################################################################
 .PHONY: fetch-openapi-templates
 
-fetch-openapi-templates: # fetches open api generator templates and overwrites the ones in $(CURDIR)/openapi/python-templates
+fetch-openapi-templates: ## fetches open api generator templates and overwrites the ones in $(CURDIR)/openapi/python-templates
 	$(eval TMPDIR := $(shell mktemp -d))
 
 	@echo "Fetching openapi generator templates from github..."
