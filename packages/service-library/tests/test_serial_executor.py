@@ -99,11 +99,42 @@ async def test_base_serial_executor_same_context_key_parallel():
         await asyncio.gather(
             *[
                 executor.wait_for_result(timeout=10, context_key=SHARED_CONTEXT_KEY)
+                for _ in range(ITERATIONS)
+            ]
+        )
+
+        # race condition is avoided amd produces the expected results
+        assert counter_values == [1] * ITERATIONS
+
+
+async def test_base_serial_executor_different_context_key_parallel():
+    shared_counter: int = 0
+    counter_values: list[int] = []
+
+    ITERATIONS: NonNegativeInt = 1000
+
+    class TestSerialExecutor(BaseSerialExecutor):
+        # pylint: disable=arguments-differ
+        async def run(self) -> None:
+            nonlocal shared_counter
+            shared_counter += 1
+
+            await asyncio.sleep(0)
+            counter_values.append(copy(shared_counter))
+            await asyncio.sleep(0)
+
+            shared_counter -= 1
+
+    async with executor_lifecycle(
+        TestSerialExecutor(polling_interval=0.001)
+    ) as executor:
+        # run in parallel
+        await asyncio.gather(
+            *[
+                executor.wait_for_result(timeout=10, context_key=f"key_{x}")
                 for x in range(ITERATIONS)
             ]
         )
 
-        assert counter_values == [1] * ITERATIONS
-
-        await executor.wait_for_result(timeout=0.1, context_key=SHARED_CONTEXT_KEY)
-        await executor.wait_for_result(timeout=0.1, context_key=SHARED_CONTEXT_KEY)
+        # here the race condition is not avoided
+        assert counter_values != [1] * ITERATIONS
