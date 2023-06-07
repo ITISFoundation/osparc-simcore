@@ -104,31 +104,25 @@ openapi.json: .env
 # FETCH OPENAPI GENERATOR TEMPLATES ##################################################################
 .PHONY: fetch-openapi-templates
 
-fetch-openapi-templates:
+fetch-openapi-templates: # fetches open api generator templates and overwrites the ones in $(CURDIR)/openapi/python-templates
 	$(eval TMPDIR := $(shell mktemp -d))
 
-
-	set -o allexport; \
+	@echo "Fetching openapi generator templates from github..."
+	@set -o allexport; \
 	source .env; \
-	cd $(CURDIR)/openapi/python_templates; \
-	mkdir $(CURDIR)/openapi/python_templates; \
-	echo "TMPDIR: $(TMPDIR)"; \
-	echo "CURDIR: $(CURDIR)"; \
-	echo "OPENAPI_GENERATOR_VERSION: $${OPENAPI_GENERATOR_VERSION}"; \
-	echo "https://github.com/OpenAPITools/openapi-generator/archive/refs/tags/$${OPENAPI_GENERATOR_VERSION}.zip"; \
 	wget -O $(TMPDIR)/openapi_zip.zip "https://github.com/OpenAPITools/openapi-generator/archive/refs/tags/$${OPENAPI_GENERATOR_VERSION}.zip"; \
 	unzip -q $(TMPDIR)/openapi_zip.zip -d $(TMPDIR); \
 
+	@echo "Overwriting templates in this repo..."
+	@rm -r $(CURDIR)/openapi/python_templates; \
+	mkdir $(CURDIR)/openapi/python_templates; \
 	cd $(TMPDIR); \
-	OPENAPIDIR=$$(ls . | grep openapi-generator); \
-	echo "OPENAPIDIR: $(OPENAPIDIR)"
+	openapi_dir=$$(ls . | grep openapi-generator); \
+	cd $${openapi_dir}; \
+	cp -r ./modules/openapi-generator/src/main/resources/python/* $(CURDIR)/openapi/python_templates
 
-	cd $(TMPDIR); \
-	openapi_dir=$(ls . | grep openapi-generator); \
-	echo "openapi_dir: $(openapi_dir)"; \
-	cp -r $(TMPDIR)/
-
-#rm -r "${TMPDIR}"
+	@rm -r $(TMPDIR)
+	@echo "Done!"
 
 
 
