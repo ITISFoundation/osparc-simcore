@@ -197,6 +197,15 @@ qx.Class.define("osparc.wrapper.Svg", {
       trian.back();
       gNote.add(trian);
 
+      const line = draw.line(0, 0, width-8, 0)
+        .stroke({
+          width: 2,
+          color: "#FFA500"
+        })
+        .move(x+4, y+24);
+      line.back();
+      gNote.add(line);
+
       const offsetX = 6;
       const offsetY = 4;
       const title = draw.text(destinatary)
@@ -215,7 +224,7 @@ qx.Class.define("osparc.wrapper.Svg", {
           size: "13px",
           family: "Roboto"
         })
-        .move(x+offsetX, y+offsetY+20);
+        .move(x+offsetX, y+offsetY+24);
       text.back();
       gNote.add(text);
 
