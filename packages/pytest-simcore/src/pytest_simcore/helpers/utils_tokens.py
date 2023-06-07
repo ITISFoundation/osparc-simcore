@@ -49,7 +49,7 @@ async def get_token_from_db(
             token_service=token_service,
             token_data=token_data,
         )
-        stmt = sa.select([tokens]).where(expr)
+        stmt = sa.select(tokens).where(expr)
         result = await conn.execute(stmt)
         row = await result.first()
         return dict(row) if row else None
