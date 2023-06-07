@@ -35,10 +35,14 @@ class RabbitMessage(Protocol):
         ...
 
 
+_DEFAULT_RABBITMQ_SERVER_HEARTBEAT_S = 60
+
+
 @dataclass
 class RabbitMQClient:
     client_name: str
     settings: RabbitSettings
+    heartbeat: int = _DEFAULT_RABBITMQ_SERVER_HEARTBEAT_S
     _connection_pool: aio_pika.pool.Pool | None = field(init=False, default=None)
     _channel_pool: aio_pika.pool.Pool | None = field(init=False, default=None)
 
@@ -98,7 +102,7 @@ class RabbitMQClient:
         # NOTE: to show the connection name in the rabbitMQ UI see there
         # https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url
         #
-        url = f"{rabbit_broker}?name={get_rabbitmq_client_unique_name(connection_name)}"
+        url = f"{rabbit_broker}?name={get_rabbitmq_client_unique_name(connection_name)}&heartbeat={self.heartbeat}"
         connection = await aio_pika.connect_robust(
             url,
             client_properties={"connection_name": connection_name},
