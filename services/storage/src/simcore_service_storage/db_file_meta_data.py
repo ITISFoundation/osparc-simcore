@@ -19,7 +19,7 @@ from .models import FileMetaData, FileMetaDataAtDB
 async def exists(conn: SAConnection, file_id: SimcoreS3FileID) -> bool:
     return bool(
         await conn.scalar(
-            sa.select([sa.func.count()])
+            sa.select(sa.func.count())
             .select_from(file_meta_data)
             .where(file_meta_data.c.file_id == file_id)
         )
@@ -118,7 +118,7 @@ async def list_fmds(
 async def total(conn: SAConnection) -> int:
     """returns the number of uploaded file entries"""
     return (
-        await conn.scalar(sa.select([sa.func.count()]).select_from(file_meta_data)) or 0
+        await conn.scalar(sa.select(sa.func.count()).select_from(file_meta_data)) or 0
     )
 
 

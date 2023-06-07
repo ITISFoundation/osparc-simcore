@@ -31,7 +31,7 @@ async def project_exists(
 ) -> bool:
     return bool(
         await conn.scalar(
-            sa.select([sa.func.count()])
+            sa.select(sa.func.count())
             .select_from(projects)
             .where(projects.c.uuid == f"{project_uuid}")
         )
