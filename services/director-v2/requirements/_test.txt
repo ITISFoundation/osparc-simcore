@@ -255,6 +255,7 @@ pyyaml==5.4.1
     #   distributed
 requests==2.31.0
     # via
+    #   -c requirements/_base.txt
     #   async-asgi-testclient
     #   docker
 respx==0.20.1
