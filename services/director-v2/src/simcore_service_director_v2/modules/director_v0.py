@@ -79,6 +79,7 @@ class DirectorV0Client:
 
     async def forward(self, request: Request, response: Response) -> Response:
         assert self.client.base_url.path.startswith("/v0")  # nosec
+        assert self.client.base_url.host != request.base_url.hostname  # nosec
         url_tail = URL(
             path=request.url.path.replace("/v0", ""),
             fragment=request.url.fragment,
