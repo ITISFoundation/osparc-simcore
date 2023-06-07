@@ -42,7 +42,7 @@ qx.Class.define("osparc.component.workbench.Annotation", {
   },
 
   statics: {
-    DEFAULT_COLOR: "#FFFF00"
+    DEFAULT_COLOR: "#FFFF01"
   },
 
   properties: {
@@ -59,7 +59,7 @@ qx.Class.define("osparc.component.workbench.Annotation", {
     color: {
       check: "Color",
       event: "changeColor",
-      init: "#FFFF00",
+      init: "#FFFF01",
       apply: "__applyColor"
     },
 

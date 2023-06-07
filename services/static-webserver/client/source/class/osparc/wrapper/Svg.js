@@ -166,7 +166,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       const trianSize = 25;
 
       const rect1 = draw.rect(width-trianSize, height)
-        .fill("#FFFF00")
+        .fill("#FFFF01")
         .style({
           cursor: "pointer"
         })
@@ -175,7 +175,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       gNote.add(rect1);
 
       const rect2 = draw.rect(trianSize, height-trianSize)
-        .fill("#FFFF00")
+        .fill("#FFFF01")
         .style({
           cursor: "pointer"
         })
