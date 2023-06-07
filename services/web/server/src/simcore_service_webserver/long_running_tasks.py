@@ -17,8 +17,8 @@ from .login.decorators import login_required
 
 
 class _RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type:ignore
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type:ignore
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
+    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
 
 
 def _webserver_request_context_decorator(handler: Handler):

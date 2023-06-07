@@ -71,7 +71,7 @@ class RedisResourceRegistry:
             if hash_key.endswith(f":{RESOURCE_SUFFIX}")
             else hash_key[: -len(f":{ALIVE_SUFFIX}")]
         )
-        key = dict(part.split("=") for part in tmp_key.split(":"))
+        key = dict(x.split("=") for x in tmp_key.split(":"))
         return RegistryKeyPrefixDict(**key)  # type: ignore
 
     @property

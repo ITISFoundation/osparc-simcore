@@ -44,7 +44,7 @@ from .statics.settings import FrontEndAppSettings, StaticWebserverModuleSettings
 from .storage.settings import StorageSettings
 from .studies_dispatcher.settings import StudiesDispatcherSettings
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
@@ -254,7 +254,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         if values["WEBSERVER_DEV_FEATURES_ENABLED"]:
             return v
         if v:
-            log.warning("%s still under development and will be disabled.", field.name)
+            _logger.warning(
+                "%s still under development and will be disabled.", field.name
+            )
         return None if field.allow_none else False
 
     @cached_property
@@ -378,7 +380,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 def setup_settings(app: web.Application) -> ApplicationSettings:
     settings: ApplicationSettings = ApplicationSettings.create_from_envs()
     app[APP_SETTINGS_KEY] = settings
-    log.debug(
+    _logger.debug(
         "Captured app settings:\n%s",
         app[APP_SETTINGS_KEY].json(indent=1, sort_keys=True),
     )
