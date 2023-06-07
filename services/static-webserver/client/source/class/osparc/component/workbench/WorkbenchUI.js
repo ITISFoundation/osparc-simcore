@@ -1778,10 +1778,12 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           const nodePos = nodeUI.getNode().getPosition();
           const nodePosX = nodePos.x + nodeBounds.width/2;
           const nodePosY = nodePos.y + nodeBounds.height/2;
-          if (nodePosX > x &&
+          if (
+            nodePosX > x &&
             nodePosX < x+width &&
             nodePosY > y &&
-            nodePosY < y+height) {
+            nodePosY < y+height
+          ) {
             nodeUIs.push(nodeUI);
           }
         }
@@ -1795,10 +1797,12 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const attrs = annotation.getAttributes();
         const annotationPosX = parseInt(attrs.x) + parseInt(attrs.width/2);
         const annotationPosY = parseInt(attrs.y) + parseInt(attrs.height/2);
-        if (annotationPosX > x &&
+        if (
+          annotationPosX > x &&
           annotationPosX < x+width &&
           annotationPosY > y &&
-          annotationPosY < y+height) {
+          annotationPosY < y+height
+        ) {
           annotations.push(annotation);
         }
       });
