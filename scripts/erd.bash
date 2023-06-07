@@ -23,6 +23,7 @@ echo ${IMAGE_DIR}
 build() {
   echo Building image "${IMAGE_NAME}" at "${IMAGE_DIR}"
   docker buildx build \
+    --load \
     --quiet \
     --tag "$IMAGE_NAME" \
     "$IMAGE_DIR"

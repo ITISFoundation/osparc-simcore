@@ -17,6 +17,7 @@ build() {
   echo Building image "$IMAGE_NAME"
   #
   docker buildx build \
+    --load \
     --quiet \
     --tag "$IMAGE_NAME" \
     "$SCRIPT_DIR/mypy"

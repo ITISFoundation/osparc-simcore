@@ -7,7 +7,7 @@ IFS=$'\n\t'
 
 image_name="$(basename $0):latest"
 
-docker buildx build --tag "$image_name" - <<EOF
+docker buildx build --load --tag "$image_name" - <<EOF
 FROM node:12.18.2
 RUN npm install -g json-schema-diff@0.15.0
 ENTRYPOINT ["json-schema-diff"]

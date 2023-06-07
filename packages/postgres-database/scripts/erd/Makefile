@@ -21,6 +21,7 @@ IMAGE_NAME:=local/postgres-database-scripts-erd:${PYTHON_VERSION}
 .PHONY: build
 build build-nc: ## builds tooling image ${IMAGE_NAME}
 	docker buildx build $(if $(findstring -nc,$@),--no-cache,) \
+		--load \
 		--build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
 		--tag ${IMAGE_NAME} .
 

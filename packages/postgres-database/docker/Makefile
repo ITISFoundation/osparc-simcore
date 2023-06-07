@@ -24,6 +24,7 @@ SIMCORE_NETWORK ?= $(SWARM_STACK_NAME)_default
 build: ## build postgres migration image
 	# use GIT_REPOSITORY='$(GIT_REPOSITORY)' GIT_BRANCH='$(GIT_BRANCH)'
 	@docker buildx build --file Dockerfile \
+					--load \
 				  --tag $(MIGRATER_TAG_NAME) \
 				  --build-arg GIT_REPOSITORY=$(GIT_REPOSITORY) \
 				  --build-arg GIT_BRANCH=$(GIT_BRANCH) \
