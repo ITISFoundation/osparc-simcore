@@ -164,24 +164,17 @@ qx.Class.define("osparc.wrapper.Svg", {
       const width = 150;
       const height = 150;
       const trianSize = 25;
+      const yellow = "#FFFF01";
+      const orange = "#FFA500";
 
-      const rect1 = draw.rect(width-trianSize, height)
-        .fill("#FFFF01")
+      const rect = draw.rect(width, height)
+        .fill(yellow)
         .style({
           cursor: "pointer"
         })
         .move(x, y);
-      rect1.back();
-      gNote.add(rect1);
-
-      const rect2 = draw.rect(trianSize, height-trianSize)
-        .fill("#FFFF01")
-        .style({
-          cursor: "pointer"
-        })
-        .move(x+width-trianSize, y);
-      rect2.back();
-      gNote.add(rect2);
+      rect.back();
+      gNote.add(rect);
 
       const trainCtrls = [
         [width-trianSize, height-trianSize],
@@ -189,7 +182,7 @@ qx.Class.define("osparc.wrapper.Svg", {
         [width, height-trianSize]
       ];
       const trian = draw.polygon(trainCtrls.join())
-        .fill("#FFA500")
+        .fill(orange)
         .style({
           cursor: "pointer"
         })
@@ -200,7 +193,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       const line = draw.line(0, 0, width-8, 0)
         .stroke({
           width: 2,
-          color: "#FFA500"
+          color: orange
         })
         .move(x+4, y+24);
       line.back();
@@ -313,7 +306,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       if (representation.type === "text") {
         representation.text(label);
       } else if (representation.type === "g") {
-        representation.node.children[4].text(label);
+        // representation.node.children[4].textContent = label;
       }
     },
 
