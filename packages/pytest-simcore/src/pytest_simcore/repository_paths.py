@@ -5,7 +5,9 @@ from pathlib import Path
 import pytest
 from pytest import FixtureRequest
 
-CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+_CURRENT_DIR = (
+    Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+)
 _WILDCARD = "packages/pytest-simcore/src/pytest_simcore/__init__.py"
 _ROOT = Path("/")
 
@@ -15,8 +17,8 @@ def osparc_simcore_root_dir(request: FixtureRequest) -> Path:
     """osparc-simcore repo root dir"""
     test_dir = Path(request.session.fspath)  # expected test dir in simcore
 
-    root_dir = CURRENT_DIR
-    for start_dir in (CURRENT_DIR, test_dir):
+    root_dir = _CURRENT_DIR
+    for start_dir in (_CURRENT_DIR, test_dir):
         root_dir = start_dir
         while not any(root_dir.glob(_WILDCARD)) and root_dir != _ROOT:
             root_dir = root_dir.parent
