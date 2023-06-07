@@ -12,12 +12,6 @@ from psycopg2.errors import ForeignKeyViolation
 from pydantic import ValidationError
 from simcore_postgres_database.models.groups import GroupType
 from simcore_postgres_database.utils_services import create_select_latest_services_query
-from simcore_service_catalog.models.domain.service_specifications import (
-    ServiceSpecificationsAtDB,
-)
-from simcore_service_catalog.models.schemas.services_specifications import (
-    ServiceSpecifications,
-)
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import and_, or_
@@ -25,6 +19,8 @@ from sqlalchemy.sql.expression import tuple_
 from sqlalchemy.sql.selectable import Select
 
 from ...models.domain.group import GroupAtDB
+from ...models.domain.service_specifications import ServiceSpecificationsAtDB
+from ...models.schemas.services_specifications import ServiceSpecifications
 from ..tables import services_access_rights, services_meta_data, services_specifications
 from ._base import BaseRepository
 

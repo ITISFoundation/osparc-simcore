@@ -6,21 +6,33 @@ For twilio SMS services:
 """
 
 
-from pydantic import Field, constr
+import re
+from typing import Pattern
+
+from pydantic import ConstrainedStr, Field, parse_obj_as
 
 from .base import BaseCustomSettings
 
-# Based on https://countrycode.org/
-CountryCodeStr = constr(strip_whitespace=True, regex=r"^\d{1,4}")
+
+class CountryCodeStr(ConstrainedStr):
+    # Based on https://countrycode.org/
+    strip_whitespace: bool = True
+    regex: Pattern[str] | None = re.compile(r"^\d{1,4}")
+
+    class Config:
+        frozen = True
 
 
 class TwilioSettings(BaseCustomSettings):
     TWILIO_ACCOUNT_SID: str = Field(..., description="Twilio account String Identifier")
     TWILIO_AUTH_TOKEN: str = Field(..., description="API tokens")
     TWILIO_COUNTRY_CODES_W_ALPHANUMERIC_SID_SUPPORT: list[CountryCodeStr] = Field(
-        [
-            "41",
-        ],
+        default=parse_obj_as(
+            list[CountryCodeStr],
+            [
+                "41",
+            ],
+        ),
         description="list of country-codes supporting/registered for alphanumeric sender ID"
         "See https://support.twilio.com/hc/en-us/articles/223133767-International-support-for-Alphanumeric-Sender-ID",
     )

@@ -1,4 +1,6 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
@@ -6,12 +8,14 @@ import hashlib
 import tempfile
 from pathlib import Path
 from pprint import pformat
+from typing import Any
 from uuid import uuid4
 
 import pytest
 from fastapi import UploadFile
 from models_library.api_schemas_storage import FileMetaDataGet as StorageFileMetaData
-from pydantic import ValidationError
+from models_library.basic_types import MD5Str
+from pydantic import ValidationError, parse_obj_as
 from simcore_service_api_server.models.schemas.files import File
 from simcore_service_api_server.plugins.storage import to_file_api_model
 
@@ -19,36 +23,38 @@ FILE_CONTENT = "This is a test"
 
 
 @pytest.fixture
-def mock_filepath(tmpdir) -> Path:
-    path = Path(tmpdir) / "mock_filepath.txt"
+def mock_filepath(tmp_path: Path) -> Path:
+    path = tmp_path / "mock_filepath.txt"
     path.write_text(FILE_CONTENT)
     return path
 
 
 @pytest.fixture
-def expected_md5sum():
+def expected_md5sum() -> MD5Str:
     #
     # $ echo -n "This is a test" | md5sum -
     # ce114e4501d2f4e2dcea3e17b546f339  -
     #
-    expected_md5sum = "ce114e4501d2f4e2dcea3e17b546f339"
-    assert hashlib.md5(FILE_CONTENT.encode()).hexdigest() == expected_md5sum
-    return expected_md5sum
+    _md5sum: MD5Str = parse_obj_as(MD5Str, "ce114e4501d2f4e2dcea3e17b546f339")
+    assert hashlib.md5(FILE_CONTENT.encode()).hexdigest() == _md5sum
+    return _md5sum
 
 
-async def test_create_filemetadata_from_path(mock_filepath, expected_md5sum):
+async def test_create_filemetadata_from_path(
+    mock_filepath: Path, expected_md5sum: MD5Str
+):
     file_meta = await File.create_from_path(mock_filepath)
     assert file_meta.checksum == expected_md5sum
 
 
 async def test_create_filemetadata_from_starlette_uploadfile(
-    mock_filepath, expected_md5sum
+    mock_filepath: Path, expected_md5sum: MD5Str
 ):
     # WARNING: upload is a wrapper around a file handler that can actually be in memory as well
 
     # in file
-    with open(mock_filepath, "rb") as file:
-        upload = UploadFile(mock_filepath.name, file)
+    with open(mock_filepath, "rb") as fh:
+        upload = UploadFile(filename=mock_filepath.name, file=fh)
 
         assert upload.file.tell() == 0
         file_meta = await File.create_from_uploaded(upload)
@@ -58,7 +64,7 @@ async def test_create_filemetadata_from_starlette_uploadfile(
 
     # in memory
     # UploadFile constructor: by not passing file, it enforces a tempfile.SpooledTemporaryFile
-    upload_in_memory = UploadFile(mock_filepath.name)
+    upload_in_memory = UploadFile(filename=mock_filepath.name, file=None)
 
     assert isinstance(upload_in_memory.file, tempfile.SpooledTemporaryFile)
     await upload_in_memory.write(FILE_CONTENT.encode())
@@ -93,7 +99,7 @@ def test_convert_between_file_models():
 
 
 @pytest.mark.parametrize("model_cls", (File,))
-def test_file_model_examples(model_cls, model_cls_examples):
+def test_file_model_examples(model_cls: type, model_cls_examples: dict[str, Any]):
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))
 

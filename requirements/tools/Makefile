@@ -77,7 +77,7 @@ reqs-all: guard-UPGRADE_OPTION ## updates a give package repository-wise (e.g. m
 reqs-ci: ## upgrades requirements for pylint recipe in CI
 	cd $(REPODIR)/ci/helpers \
 	&& rm requirements.txt \
-	&& pip-compile --output-file=requirements.txt requirements.in
+	&& pip-compile --resolver=backtracking --strip-extras requirements.in
 
 IMAGE_NAME:=local/python-devkit:${PYTHON_VERSION}
 

@@ -20,7 +20,7 @@ attrs==21.4.0
     #   jschema-to-python
     #   jsonschema
     #   sarif-om
-aws-sam-translator==1.66.0
+aws-sam-translator==1.68.0
     # via cfn-lint
 aws-xray-sdk==2.12.0
     # via moto
@@ -46,7 +46,7 @@ certifi==2022.12.7
     #   requests
 cffi==1.15.1
     # via cryptography
-cfn-lint==0.77.5
+cfn-lint==0.77.6
     # via moto
 charset-normalizer==3.0.1
     # via
@@ -56,11 +56,11 @@ click==8.1.3
     # via
     #   -c requirements/_base.txt
     #   flask
-coverage==7.2.5
+coverage==7.2.7
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-cryptography==40.0.2
+cryptography==41.0.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   moto
@@ -68,7 +68,7 @@ cryptography==40.0.2
     #   sshpubkeys
 deepdiff==6.3.0
     # via -r requirements/_test.in
-docker==6.1.2
+docker==6.1.3
     # via
     #   -r requirements/_test.in
     #   moto
@@ -79,9 +79,9 @@ ecdsa==0.18.0
     #   sshpubkeys
 exceptiongroup==1.1.1
     # via pytest
-faker==18.7.0
+faker==18.10.1
     # via -r requirements/_test.in
-fakeredis==2.12.1
+fakeredis==2.14.0
     # via -r requirements/_test.in
 flask==2.3.2
     # via
@@ -144,11 +144,11 @@ junit-xml==1.9
     # via cfn-lint
 lupa==1.14.1
     # via fakeredis
-markupsafe==2.1.2
+markupsafe==2.1.3
     # via
     #   jinja2
     #   werkzeug
-moto==4.1.9
+moto==4.1.11
     # via -r requirements/_test.in
 mpmath==1.3.0
     # via sympy
@@ -173,7 +173,7 @@ pluggy==1.0.0
     # via pytest
 psutil==5.9.5
     # via -r requirements/_test.in
-py-partiql-parser==0.3.0
+py-partiql-parser==0.3.3
     # via moto
 pyasn1==0.5.0
     # via
@@ -199,7 +199,7 @@ pytest==7.3.1
     #   pytest-mock
 pytest-asyncio==0.21.0
     # via -r requirements/_test.in
-pytest-cov==4.0.0
+pytest-cov==4.1.0
     # via -r requirements/_test.in
 pytest-mock==3.10.0
     # via -r requirements/_test.in
@@ -226,7 +226,7 @@ redis==4.5.4
     # via
     #   -c requirements/_base.txt
     #   fakeredis
-regex==2023.5.5
+regex==2023.6.3
     # via cfn-lint
 requests==2.31.0
     # via
@@ -272,7 +272,7 @@ tomli==2.0.1
     # via
     #   coverage
     #   pytest
-types-pyyaml==6.0.12.9
+types-pyyaml==6.0.12.10
     # via responses
 typing-extensions==4.5.0
     # via
@@ -286,7 +286,7 @@ urllib3==1.26.14
     #   docker
     #   requests
     #   responses
-websocket-client==1.5.1
+websocket-client==1.5.2
     # via docker
 werkzeug==2.3.4
     # via
