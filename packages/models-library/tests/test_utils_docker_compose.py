@@ -1,4 +1,8 @@
 # pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
+
 
 import pytest
 import yaml
@@ -10,7 +14,7 @@ from models_library.utils.docker_compose import (
 
 
 @pytest.fixture()
-def service_spec() -> "ComposeSpecLabel":
+def docker_compose_spec() -> "ComposeSpecLabelDict":
     return {
         "version": "2.3",
         "services": {
@@ -32,25 +36,27 @@ def service_spec() -> "ComposeSpecLabel":
 
 @pytest.fixture()
 def simcore_registry() -> str:
-    return "mock_reg"
+    return "mock_docker_registry_base_name"
 
 
 @pytest.fixture()
 def service_version() -> str:
-    return "mock_reg"
+    return "1.2.3"
 
 
 def test_replace_env_vars_in_compose_spec(
-    service_spec: "ComposeSpecLabel", simcore_registry: str, service_version: str
+    docker_compose_spec: "ComposeSpecLabelDict",
+    simcore_registry: str,
+    service_version: str,
 ) -> None:
     stringified_service_spec: str = replace_env_vars_in_compose_spec(
-        service_spec,
+        docker_compose_spec,
         replace_simcore_registry=simcore_registry,
         replace_service_version=service_version,
     )
 
     test_replaced_spec = (
-        yaml.safe_dump(service_spec)
+        yaml.safe_dump(docker_compose_spec)
         .replace(MATCH_SERVICE_VERSION, service_version)
         .replace(MATCH_SIMCORE_REGISTRY, simcore_registry)
     )

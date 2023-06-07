@@ -57,6 +57,10 @@ services:
     ports:
       - "8008:8000"
 
+  resource-usage-tracker:
+    ports:
+      - "8000"
+
   storage:
     environment:
       - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
@@ -79,6 +83,15 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_local.rule=hostregexp(`{host:.+}`) && PathPrefix(`/dev/`)
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_local.priority=3
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_local.middlewares=${SWARM_STACK_NAME}_gzip@docker, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@docker, ${SWARM_STACK_NAME}_webserver_retry
+
+  wb-db-event-listener:
+    environment:
+      SC_BOOT_MODE: ${SC_BOOT_MODE:-default}
+      WEBSERVER_LOGLEVEL: ${LOG_LEVEL:-INFO}
+      REST_SWAGGER_API_DOC_ENABLED: 1
+    ports:
+      - "8080"
+      - "3013:3000"
 
   wb-garbage-collector:
     environment:

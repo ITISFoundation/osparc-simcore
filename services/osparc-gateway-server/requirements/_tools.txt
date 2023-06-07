@@ -41,7 +41,7 @@ mypy-extensions==1.0.0
     #   black
 nodeenv==1.8.0
     # via pre-commit
-packaging==23.0
+packaging==23.1
     # via
     #   -c requirements/_test.txt
     #   black
@@ -55,7 +55,7 @@ platformdirs==3.5.1
     #   black
     #   pylint
     #   virtualenv
-pre-commit==3.3.1
+pre-commit==3.3.2
     # via -r requirements/../../../requirements/devenv.txt
 pylint==2.17.4
     # via -r requirements/../../../requirements/devenv.txt
@@ -75,7 +75,7 @@ tomli==2.0.1
     #   pyproject-hooks
 tomlkit==0.11.8
     # via pylint
-typing-extensions==4.5.0
+typing-extensions==4.6.0
     # via
     #   -c requirements/_test.txt
     #   astroid

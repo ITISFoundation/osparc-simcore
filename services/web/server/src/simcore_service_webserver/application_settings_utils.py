@@ -136,9 +136,8 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
         },
         "activity": {
             "enabled": app_settings.WEBSERVER_ACTIVITY is not None,
-            "prometheus_host": getattr(app_settings.WEBSERVER_ACTIVITY, "origin", None),
-            "prometheus_port": getattr(
-                app_settings.WEBSERVER_ACTIVITY, "PROMETHEUS_PORT", None
+            "prometheus_url": getattr(
+                app_settings.WEBSERVER_ACTIVITY, "PROMETHEUS_URL", None
             ),
             "prometheus_api_version": getattr(
                 app_settings.WEBSERVER_ACTIVITY, "PROMETHEUS_VTAG", None
@@ -216,6 +215,12 @@ def convert_to_environ_vars(cfg: dict[str, Any]) -> dict[str, Any]:
 
         _set_if_disabled("WEBSERVER_DB", db)
 
+    if section := cfg.get("rabbitmq"):
+        envs["RABBIT_HOST"] = section.get("host")
+        envs["RABBIT_PORT"] = section.get("port")
+        envs["RABBIT_USER"] = section.get("user")
+        envs["RABBIT_PASSWORD"] = section.get("password")
+
     if section := cfg.get("resource_manager"):
         _set_if_disabled("WEBSERVER_RESOURCE_MANAGER", section)
 
@@ -269,8 +274,9 @@ def convert_to_environ_vars(cfg: dict[str, Any]) -> dict[str, Any]:
 
     if section := cfg.get("activity"):
         _set_if_disabled("WEBSERVER_ACTIVITY", section)
-
-        envs["PROMETHEUS_PORT"] = section.get("prometheus_port")
+        envs["PROMETHEUS_URL"] = section.get("prometheus_url")
+        envs["PROMETHEUS_USERNAME"] = section.get("prometheus_username")
+        envs["PROMETHEUS_PASSWORD"] = section.get("prometheus_password")
         envs["PROMETHEUS_VTAG"] = section.get("prometheus_api_version")
 
     if section := cfg.get("computation"):

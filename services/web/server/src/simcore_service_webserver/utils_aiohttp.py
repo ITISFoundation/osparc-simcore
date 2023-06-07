@@ -1,6 +1,6 @@
 import io
 import logging
-from typing import Any, Callable, Generic, Literal, Optional, TypeVar
+from typing import Any, Callable, Generic, Literal, TypeVar
 
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPError, HTTPException
@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 
 def rename_routes_as_handler_function(routes: RouteTableDef, *, prefix: str):
     route: RouteDef
-    for route in routes:  # type: ignore
+    for route in routes:
         route.kwargs["name"] = f"{prefix}.{route.handler.__name__}"
 
 
@@ -125,7 +125,7 @@ class NextPage(GenericModel, Generic[PageParameters]):
     """
 
     name: str = Field(..., description="Code name to the front-end page")
-    parameters: Optional[PageParameters] = None
+    parameters: PageParameters | None = None
 
     def as_redirect_response(self, app: web.Application) -> web.HTTPFound:
         return create_redirect_response(

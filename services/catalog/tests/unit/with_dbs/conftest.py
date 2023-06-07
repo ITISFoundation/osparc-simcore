@@ -143,7 +143,7 @@ def user_db(postgres_db: sa.engine.Engine, user_id: UserID) -> Iterator[dict]:
             .returning(sa.literal_column("*"))
         )
         # this is needed to get the primary_gid correctly
-        result = con.execute(sa.select([users]).where(users.c.id == user_id))
+        result = con.execute(sa.select(users).where(users.c.id == user_id))
         user = result.first()
         assert user
         yield dict(user)
@@ -166,7 +166,7 @@ async def user_groups_ids(
             "STANDARD",
             "http://mib.org",
             {"email": "@(foo|testers|mib)+.(org|com)$"},
-        ),
+        )
     ]
     # pylint: disable=no-value-for-parameter
     async with sqlalchemy_async_engine.begin() as conn:

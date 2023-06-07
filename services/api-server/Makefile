@@ -84,14 +84,12 @@ run-fake-devel: # starts a fake server in a dev-container
 
 # BUILD ###########################################################################
 
-.PHONY: openapi-specs openapi.json
-openapi-specs: openapi.json
-openapi.json: .env
+define create_and_validate_openapi
 	# generating openapi specs file under $< (NOTE: Skips DEV FEATURES since this OAS is the 'offically released'!)
 	@set -o allexport; \
 	source .env; \
 	set +o allexport; \
-	export API_SERVER_DEV_FEATURES_ENABLED=0; \
+	export API_SERVER_DEV_FEATURES_ENABLED=$1; \
 	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
 
 	# validates OAS file: $@
@@ -99,7 +97,18 @@ openapi.json: .env
 	source .env; \
 	cd $(CURDIR); \
 	$(SCRIPTS_DIR)/openapi-generator-cli.bash validate --input-spec /local/$@
+endef
 
+
+.PHONY: openapi-specs openapi.json openapi-dev.json
+
+openapi-specs: openapi.json
+
+openapi.json: .env
+	@$(call create_and_validate_openapi,0)
+
+openapi-dev.json: .env
+	@$(call create_and_validate_openapi,1)
 
 # FETCH OPENAPI GENERATOR TEMPLATES ##################################################################
 .PHONY: fetch-openapi-templates

@@ -1,3 +1,4 @@
+# nopycln: file
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
@@ -19,7 +20,6 @@ from simcore_postgres_database.models.base import metadata
 
 @pytest.mark.parametrize("table_cls", metadata.tables.values(), ids=lambda t: t.name)
 def test_table_to_pydantic_models(table_cls):
-
     PydanticOrm = create_pydantic_model_from_sa_table(
         table=table_cls, include_server_defaults=True
     )

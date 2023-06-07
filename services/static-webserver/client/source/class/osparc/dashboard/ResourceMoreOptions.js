@@ -187,12 +187,9 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
       tabPage.getButton().set({
         minWidth: 35,
-        toolTipText: title,
-        alignY: "middle"
+        toolTipText: title
       });
-      tabPage.getButton().getChildControl("icon").set({
-        alignX: "center"
-      });
+      osparc.utils.Utils.centerTabIcon(tabPage);
 
       // Page title
       tabPage.add(new qx.ui.basic.Label(title).set({

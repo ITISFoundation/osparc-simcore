@@ -23,7 +23,7 @@ from servicelib.aiohttp.long_running_tasks.server import TaskGet, TaskProgress
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.application_settings import get_settings
-from simcore_service_webserver.projects.project_models import ProjectDict
+from simcore_service_webserver.projects.models import ProjectDict
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -37,9 +37,7 @@ def app_environment(
 ) -> EnvVarsDict:
     envs_plugins = setenvs_from_dict(
         monkeypatch,
-        {
-            "WEBSERVER_RABBITMQ": "null",
-        },
+        {},
     )
     return app_environment | envs_plugins
 
@@ -64,9 +62,9 @@ async def slow_storage_subsystem_mock(
     return storage_subsystem_mock
 
 
-def _standard_user_role_response() -> tuple[
-    str, list[tuple[UserRole, ExpectedResponse]]
-]:
+def _standard_user_role_response() -> (
+    tuple[str, list[tuple[UserRole, ExpectedResponse]]]
+):
     all_roles = standard_role_response()
     return (
         all_roles[0],

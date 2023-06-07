@@ -68,11 +68,8 @@ qx.Class.define("osparc.utils.Study", {
                 filtered.push(srv);
               }
             });
-            const updatable = filtered.some(srv => {
-              const latestCompatibleMetadata = osparc.utils.Services.getLatestCompatible(allServices, srv["key"], srv["version"]);
-              return latestCompatibleMetadata && srv["version"] !== latestCompatibleMetadata["version"];
-            });
-            resolve(updatable);
+            const isUpdatable = filtered.some(srv => osparc.utils.Services.isUpdatable(srv));
+            resolve(isUpdatable);
           });
       });
     },

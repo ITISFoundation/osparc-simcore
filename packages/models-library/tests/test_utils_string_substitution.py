@@ -3,16 +3,19 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+import json
 import sys
 from pathlib import Path
+from textwrap import dedent
 
 import pytest
 from models_library.utils.string_substitution import (
     SubstitutionsDict,
-    TemplateText,
+    TextTemplate,
     substitute_all_legacy_identifiers,
     upgrade_identifier,
 )
+from pytest_simcore.helpers.utils_envs import load_dotenv
 
 
 @pytest.mark.parametrize(
@@ -37,7 +40,6 @@ def test_upgrade_identifiers(legacy: str, expected: str):
 
 
 def test_substitution_with_new_and_legacy_identifiers():
-
     stringified_config = """
     compose_spec:
         service-one:
@@ -48,7 +50,7 @@ def test_substitution_with_new_and_legacy_identifiers():
                 - SYM_SERVER_HOSTNAME=%%container_name.sym-server%%
                 - APP_HOSTNAME=%%container_name.dsistudio-app%%
                 - APP_HOSTNAME=some-prefix_%service_uuid%
-                - MY_LICENSE_FILE=${OSPARC_ENVIRONMENT_VENDOR_LICENSE_FILE}
+                - MY_LICENSE_FILE=${OSPARC_ENVIRONMENT_VENDOR_SECRET_LICENSE_FILE}
                 - MY_PRODUCT=$OSPARC_ENVIRONMENT_CURRENT_PRODUCT
                 - MY_EMAIL=$OSPARC_ENVIRONMENT_USER_EMAIL
                 - AS_VOILA=1
@@ -56,18 +58,18 @@ def test_substitution_with_new_and_legacy_identifiers():
                 - DISPLAY2=${KEEP_SINCE_IT_WAS_EXCLUDED_FROM_SUBSTITUTIONS}
     containers-allowed-outgoing-permit-list:
         s4l-core:
-            - hostname: $OSPARC_ENVIRONMENT_VENDOR_LICENSE_SERVER_HOST
-              tcp_ports: [$OSPARC_ENVIRONMENT_VENDOR_LICENSE_SERVER_PRIMARY_PORT, $OSPARC_ENVIRONMENT_VENDOR_LICENSE_SERVER_SECONDARY_PORT]
+            - hostname: $OSPARC_ENVIRONMENT_VENDOR_SECRET_LICENSE_SERVER_HOST
+              tcp_ports: [$OSPARC_ENVIRONMENT_VENDOR_SECRET_LICENSE_SERVER_PRIMARY_PORT, $OSPARC_ENVIRONMENT_VENDOR_SECRET_LICENSE_SERVER_SECONDARY_PORT]
               dns_resolver:
-                  address: $OSPARC_ENVIRONMENT_VENDOR_LICENSE_DNS_RESOLVER_IP
-                  port: $OSPARC_ENVIRONMENT_VENDOR_LICENSE_DNS_RESOLVER_PORT
+                  address: $OSPARC_ENVIRONMENT_VENDOR_SECRET_LICENSE_DNS_RESOLVER_IP
+                  port: $OSPARC_ENVIRONMENT_VENDOR_SECRET_LICENSE_DNS_RESOLVER_PORT
     containers-allowed-outgoing-internet:
         - s4l-core-stream
     """
 
     stringified_config = substitute_all_legacy_identifiers(stringified_config)
 
-    template = TemplateText(stringified_config)
+    template = TextTemplate(stringified_config)
 
     assert template.is_valid()
     identifiers = template.get_identifiers()
@@ -79,15 +81,15 @@ def test_substitution_with_new_and_legacy_identifiers():
         "OSPARC_ENVIRONMENT_CONTAINER_NAME_DSISTUDIO_APP",
         "OSPARC_ENVIRONMENT_SERVICE_UUID",
         # -----
-        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_FILE",
+        "OSPARC_ENVIRONMENT_VENDOR_SECRET_LICENSE_FILE",
         "OSPARC_ENVIRONMENT_CURRENT_PRODUCT",
         "OSPARC_ENVIRONMENT_USER_EMAIL",
         "KEEP_SINCE_IT_WAS_EXCLUDED_FROM_SUBSTITUTIONS",
-        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_SERVER_HOST",
-        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_SERVER_PRIMARY_PORT",
-        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_SERVER_SECONDARY_PORT",
-        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_DNS_RESOLVER_IP",
-        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_DNS_RESOLVER_PORT",
+        "OSPARC_ENVIRONMENT_VENDOR_SECRET_LICENSE_SERVER_HOST",
+        "OSPARC_ENVIRONMENT_VENDOR_SECRET_LICENSE_SERVER_PRIMARY_PORT",
+        "OSPARC_ENVIRONMENT_VENDOR_SECRET_LICENSE_SERVER_SECONDARY_PORT",
+        "OSPARC_ENVIRONMENT_VENDOR_SECRET_LICENSE_DNS_RESOLVER_IP",
+        "OSPARC_ENVIRONMENT_VENDOR_SECRET_LICENSE_DNS_RESOLVER_PORT",
     ]
 
     # prepare substitutions map {id: value, ...}
@@ -162,11 +164,10 @@ KNOWN_IDENTIFIERS = {
     ids=lambda p: f"{p.parent.name}/{p.name}",
 )
 def test_substitution_against_service_metadata_configs(metadata_path: Path):
-
     meta_str = metadata_path.read_text()
     meta_str = substitute_all_legacy_identifiers(meta_str)
 
-    template = TemplateText(meta_str)
+    template = TextTemplate(meta_str)
     assert template.is_valid()
 
     found = template.get_identifiers()
@@ -174,3 +175,76 @@ def test_substitution_against_service_metadata_configs(metadata_path: Path):
         assert all(
             identifier in KNOWN_IDENTIFIERS for identifier in found
         ), f"some identifiers in {found} are new and therefore potentially unsupported"
+
+
+def test_template_substitution_on_envfiles():
+    envfile_template = dedent(
+        """
+    x=$VALUE1
+    y=$VALUE2
+    """
+    )
+    template = TextTemplate(envfile_template)
+    assert set(template.get_identifiers()) == {"VALUE1", "VALUE2"}
+
+    # NOTE how it casts string to to int
+    assert template.substitute({"VALUE1": "3", "VALUE2": 3}) == dedent(
+        """
+    x=3
+    y=3
+    """
+    )
+
+    # NOTE does not cast if it is in a container
+    assert template.substitute({"VALUE1": ["3", "4"], "VALUE2": [3, 4]}) == dedent(
+        """
+    x=['3', '4']
+    y=[3, 4]
+    """
+    )
+
+    # deserialized AFTER substitution in envfile template
+    deserialize = load_dotenv(template.substitute({"VALUE1": "3", "VALUE2": 3}))
+    assert deserialize == {
+        "x": "3",
+        "y": "3",
+    }
+
+    deserialize = load_dotenv(
+        template.substitute({"VALUE1": ["3", "4"], "VALUE2": [3, 4]})
+    )
+    assert deserialize == {
+        "x": "['3', '4']",
+        "y": "[3, 4]",
+    }
+
+
+def test_template_substitution_on_jsondumps():
+    # NOTE: compare with test_template_substitution_on_envfiles
+
+    json_template = {"x": "$VALUE1", "y": "$VALUE2"}
+    json_dumps_template = json.dumps(json_template)  # LIKE image labels!
+
+    # NOTE: that here we are enforcing the values to be strings!
+    assert '{"x": "$VALUE1", "y": "$VALUE2"}' == json_dumps_template
+
+    template = TextTemplate(json_dumps_template)
+    assert set(template.get_identifiers()) == {"VALUE1", "VALUE2"}
+
+    # NOTE how it casts string to str
+    deserialized = json.loads(template.substitute({"VALUE1": "3", "VALUE2": 3}))
+
+    assert deserialized == {
+        "x": "3",
+        "y": "3",  # <--- NOTE cast to str!
+    }
+
+    # NOTE does not cast if it is in a container
+    deserialized = json.loads(
+        template.substitute({"VALUE1": ["3", "4"], "VALUE2": [3, 4]})
+    )
+
+    assert deserialized == {
+        "x": "['3', '4']",
+        "y": "[3, 4]",
+    }

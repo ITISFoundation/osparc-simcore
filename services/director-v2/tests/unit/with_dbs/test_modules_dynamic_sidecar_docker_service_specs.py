@@ -15,6 +15,7 @@ from models_library.service_settings_labels import (
     SimcoreServiceSettingsLabel,
 )
 from models_library.services import RunID, ServiceKeyVersion
+from pydantic import BaseModel
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
@@ -189,7 +190,7 @@ def expected_dynamic_sidecar_spec(
                     "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": "False",
                     "FORWARD_ENV_DISPLAY": ":0",
                     "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
-                    "DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED": "False",
+                    "DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED": "True",
                     "POSTGRES_DB": "test",
                     "POSTGRES_HOST": "localhost",
                     "POSTGRES_PORT": "5432",
@@ -351,9 +352,15 @@ def test_get_dynamic_proxy_spec(
 ) -> None:
     dynamic_sidecar_spec_accumulated = None
 
-    assert (
-        dynamic_sidecar_settings.dict()
-        == minimal_app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.dict()
+    def _dict(model: BaseModel) -> dict[str, Any]:
+        dict_data = model.dict()
+        proxy_settings: dict[str, Any] = dict_data["DYNAMIC_SIDECAR_PROXY_SETTINGS"]
+        # remove key which always changes
+        del proxy_settings["DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT"]
+        return dict_data
+
+    assert _dict(dynamic_sidecar_settings) == _dict(
+        minimal_app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
     )
     expected_dynamic_sidecar_spec_model = AioDockerServiceSpec.parse_obj(
         expected_dynamic_sidecar_spec

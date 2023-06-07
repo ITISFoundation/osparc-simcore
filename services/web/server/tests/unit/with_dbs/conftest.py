@@ -25,6 +25,8 @@ import redis
 import redis.asyncio as aioredis
 import simcore_postgres_database.cli as pg_cli
 import simcore_service_webserver.db_models as orm
+import simcore_service_webserver.email
+import simcore_service_webserver.email._core
 import simcore_service_webserver.utils
 import sqlalchemy as sa
 from aiohttp import web
@@ -40,7 +42,7 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSub
 from redis import Redis
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.aiohttp.long_running_tasks.client import LRTask
-from servicelib.aiohttp.long_running_tasks.server import TaskProgress
+from servicelib.aiohttp.long_running_tasks.server import ProgressPercent, TaskProgress
 from servicelib.common_aiopg_utils import DSN
 from settings_library.email import SMTPSettings
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -52,7 +54,8 @@ from simcore_service_webserver.groups.api import (
     delete_user_group,
     list_user_groups,
 )
-from simcore_service_webserver.projects.project_models import ProjectDict
+from simcore_service_webserver.projects.models import ProjectDict
+from sqlalchemy import exc as sql_exceptions
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -225,8 +228,8 @@ def catalog_subsystem_mock(
         return services_in_project
 
     for namespace in (
-        "simcore_service_webserver.projects._read_utils.get_services_for_user_in_product",
-        "simcore_service_webserver.projects.projects_handlers_crud.get_services_for_user_in_product",
+        "simcore_service_webserver.projects._crud_read_utils.get_services_for_user_in_product",
+        "simcore_service_webserver.projects._handlers_crud.get_services_for_user_in_product",
     ):
         mock = mocker.patch(
             namespace,
@@ -300,19 +303,21 @@ async def storage_subsystem_mock(mocker: MockerFixture) -> MockedStorageSubsyste
             return None
 
         yield LRTask(
-            TaskProgress(message="pytest mocked fct, finished", percent=1.0),
+            TaskProgress(
+                message="pytest mocked fct, finished", percent=ProgressPercent(1.0)
+            ),
             _result=_mock_result(),
         )
 
     mock = mocker.patch(
-        "simcore_service_webserver.projects._create_utils.copy_data_folders_from_project",
+        "simcore_service_webserver.projects._crud_create_utils.copy_data_folders_from_project",
         autospec=True,
         side_effect=_mock_copy_data_from_project,
     )
 
     async_mock = mocker.AsyncMock(return_value="")
     mock1 = mocker.patch(
-        "simcore_service_webserver.projects._delete_utils.delete_data_folders_of_project",
+        "simcore_service_webserver.projects._crud_delete_utils.delete_data_folders_of_project",
         autospec=True,
         side_effect=async_mock,
     )
@@ -324,7 +329,7 @@ async def storage_subsystem_mock(mocker: MockerFixture) -> MockedStorageSubsyste
     )
 
     mock3 = mocker.patch(
-        "simcore_service_webserver.projects._create_utils.get_project_total_size_simcore_s3",
+        "simcore_service_webserver.projects._crud_create_utils.get_project_total_size_simcore_s3",
         autospec=True,
         return_value=parse_obj_as(ByteSize, "1Gib"),
     )
@@ -384,12 +389,6 @@ def create_dynamic_service_mock(
         SERVICE_KEY = "simcore/services/dynamic/3d-viewer"
         SERVICE_VERSION = "1.4.2"
         assert client.app
-        url = client.app.router["create_node"].url_for(project_id=project_id)
-        create_node_data = {
-            "service_key": SERVICE_KEY,
-            "service_version": SERVICE_VERSION,
-            "service_uuid": SERVICE_UUID,
-        }
 
         running_service_dict = {
             "published_port": "23423",
@@ -414,16 +413,13 @@ def create_dynamic_service_mock(
     return _create
 
 
-# POSTGRES CORE SERVICE ---------------------------------------------------
-
-
 def _is_postgres_responsive(url):
     """Check if something responds to url"""
     try:
         engine = sa.create_engine(url)
         conn = engine.connect()
         conn.close()
-    except sa.exc.OperationalError:
+    except sql_exceptions.OperationalError:
         return False
     return True
 
@@ -478,11 +474,9 @@ def postgres_db(
 
 
 # REDIS CORE SERVICE ------------------------------------------------------
-
-
 def _is_redis_responsive(host: str, port: int) -> bool:
     r = redis.Redis(host=host, port=port)
-    return r.ping() == True
+    return r.ping() is True
 
 
 @pytest.fixture(scope="session")

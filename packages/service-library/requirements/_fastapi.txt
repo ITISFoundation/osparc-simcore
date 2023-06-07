@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_fastapi.txt --resolver=backtracking --strip-extras requirements/_fastapi.in
 #
-anyio==3.6.2
+anyio==3.7.0
     # via
     #   httpcore
     #   starlette
@@ -14,21 +14,23 @@ certifi==2023.5.7
     #   httpx
 click==8.1.3
     # via uvicorn
-fastapi==0.95.1
+exceptiongroup==1.1.1
+    # via anyio
+fastapi==0.96.0
     # via -r requirements/_fastapi.in
 h11==0.14.0
     # via
     #   httpcore
     #   uvicorn
-httpcore==0.17.0
+httpcore==0.17.2
     # via httpx
-httpx==0.24.0
+httpx==0.24.1
     # via -r requirements/_fastapi.in
 idna==3.4
     # via
     #   anyio
     #   httpx
-pydantic==1.10.7
+pydantic==1.10.8
     # via
     #   -c requirements/./_base.in
     #   fastapi
@@ -37,9 +39,9 @@ sniffio==1.3.0
     #   anyio
     #   httpcore
     #   httpx
-starlette==0.26.1
+starlette==0.27.0
     # via fastapi
-typing-extensions==4.5.0
+typing-extensions==4.6.3
     # via pydantic
 uvicorn==0.22.0
     # via -r requirements/_fastapi.in

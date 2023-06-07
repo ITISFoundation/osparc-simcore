@@ -4,6 +4,7 @@ from typing import Any
 
 from fastapi import FastAPI, status
 from httpx import Response, Timeout
+from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 
@@ -13,7 +14,7 @@ from ._base import BaseThinClient, expect_status, retry_on_errors
 logger = logging.getLogger(__name__)
 
 
-class ThinDynamicSidecarClient(BaseThinClient):
+class ThinSidecarsClient(BaseThinClient):
     """
     NOTE: all calls can raise the following errors.
     - `UnexpectedStatusError`
@@ -225,3 +226,23 @@ class ThinDynamicSidecarClient(BaseThinClient):
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "/containers:restart")
         return await self.client.post(url)
+
+    @retry_on_errors
+    @expect_status(status.HTTP_204_NO_CONTENT)
+    async def put_volumes(
+        self,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
+        volume_category: VolumeCategory,
+        volume_status: VolumeStatus,
+    ) -> Response:
+        url = self._get_url(dynamic_sidecar_endpoint, f"/volumes/{volume_category}")
+
+        return await self.client.put(url, json={"status": volume_status})
+
+    @retry_on_errors
+    @expect_status(status.HTTP_200_OK)
+    async def proxy_config_load(
+        self, proxy_endpoint: AnyHttpUrl, proxy_configuration: dict[str, Any]
+    ) -> Response:
+        url = self._get_url(proxy_endpoint, "/load", no_api_version=True)
+        return await self.client.post(url, json=proxy_configuration)

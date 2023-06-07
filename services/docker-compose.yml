@@ -180,6 +180,16 @@ services:
       - INVITATIONS_PASSWORD=${INVITATIONS_PASSWORD}
       - LOG_FORMAT_LOCAL_DEV_ENABLED=${LOG_FORMAT_LOCAL_DEV_ENABLED}
 
+  resource-usage-tracker:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/resource-usage-tracker:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    networks:
+      - default
+    environment:
+      - RESOURCE_USAGE_TRACKER_LOGLEVEL=${LOG_LEVEL:-INFO}
+      - LOG_FORMAT_LOCAL_DEV_ENABLED=${LOG_FORMAT_LOCAL_DEV_ENABLED}
+
   static-webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
@@ -253,6 +263,7 @@ services:
       STORAGE_HOST: ${STORAGE_HOST:-storage}
       STORAGE_PORT: ${STORAGE_PORT:-8080}
       SWARM_STACK_NAME: ${SWARM_STACK_NAME:-simcore}
+      WEBSERVER_DB_LISTENER: 0
       WEBSERVER_GARBAGE_COLLECTOR: "null"
       WEBSERVER_LOGLEVEL: ${LOG_LEVEL:-WARNING}
     env_file:
@@ -287,6 +298,27 @@ services:
     networks:
       - default
       - interactive_services_subnet
+  wb-db-event-listener:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    environment:
+      <<: *webserver-environment
+      WEBSERVER_DB_LISTENER: 1
+      WEBSERVER_SOCKETIO: 1
+    env_file:
+      - ../.env
+      - ../.env-wb-db-event-listener
+    deploy:
+      # NOTE: https://github.com/ITISFoundation/osparc-simcore/pull/4286
+      # NOTE: this MUSTN'T change, or weird things might happen
+      # this will stay until all legacy dynamic services are gone.
+      replicas: 1
+      placement:
+        constraints:
+          - node.platform.os == linux
+    networks:
+      - default
 
   wb-garbage-collector:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
@@ -375,6 +407,7 @@ services:
       - storage_subnet
     environment:
       - TRACING_THRIFT_COMPACT_ENDPOINT=${TRACING_THRIFT_COMPACT_ENDPOINT}
+      - DATCORE_ADAPTER_LOG_FORMAT_LOCAL_DEV_ENABLED=${LOG_FORMAT_LOCAL_DEV_ENABLED}
 
   storage:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
@@ -414,6 +447,8 @@ services:
     environment:
       - RABBITMQ_DEFAULT_USER=${RABBIT_USER}
       - RABBITMQ_DEFAULT_PASS=${RABBIT_PASSWORD}
+    volumes:
+      - rabbit_data:/var/lib/rabbitmq
     networks:
       - default
       - interactive_services_subnet
@@ -593,6 +628,8 @@ volumes:
     name: ${SWARM_STACK_NAME}_computational_shared_data
   redis-data:
     name: ${SWARM_STACK_NAME}_redis-data
+  rabbit_data:
+    name: ${SWARM_STACK_NAME}_rabbit_data
 
 networks:
   default:

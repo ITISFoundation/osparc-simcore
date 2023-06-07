@@ -4,13 +4,15 @@
 #
 #    pip-compile --output-file=requirements/_base.txt --resolver=backtracking --strip-extras requirements/_base.in
 #
-aio-pika==8.2.5
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.in
-    #   -r requirements/../../../packages/service-library/requirements/_base.in
+aio-pika==9.1.2
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiocache==0.11.1
     # via -r requirements/_base.in
 aiodebug==2.3.0
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+aiodocker==0.21.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -18,10 +20,16 @@ aiofiles==0.8.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
+aiohttp==3.8.4
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
+    #   aiodocker
 aioredis==2.0.1
     # via aiocache
-aiormq==6.4.2
+aiormq==6.7.6
     # via aio-pika
+aiosignal==1.3.1
+    # via aiohttp
 alembic==1.8.1
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
 anyio==3.6.2
@@ -30,11 +38,14 @@ anyio==3.6.2
     #   starlette
     #   watchgod
 arrow==1.2.3
-    # via -r requirements/../../../packages/models-library/requirements/_base.in
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
 asgiref==3.5.2
     # via uvicorn
 async-timeout==4.0.2
     # via
+    #   aiohttp
     #   aioredis
     #   redis
 asyncpg==0.27.0
@@ -42,6 +53,7 @@ asyncpg==0.27.0
 attrs==21.4.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
+    #   aiohttp
     #   jsonschema
 certifi==2022.12.7
     # via
@@ -49,7 +61,9 @@ certifi==2022.12.7
     #   httpx
     #   requests
 charset-normalizer==2.0.12
-    # via requests
+    # via
+    #   aiohttp
+    #   requests
 click==8.1.3
     # via
     #   typer
@@ -64,6 +78,10 @@ fastapi==0.85.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
+frozenlist==1.3.3
+    # via
+    #   aiohttp
+    #   aiosignal
 greenlet==2.0.2
     # via sqlalchemy
 h11==0.12.0
@@ -106,10 +124,12 @@ markupsafe==2.1.1
 msgpack==1.0.3
     # via aiocache
 multidict==6.0.2
-    # via yarl
+    # via
+    #   aiohttp
+    #   yarl
 orjson==3.7.2
     # via fastapi
-packaging==21.3
+packaging==23.1
     # via -r requirements/_base.in
 pamqp==3.2.1
     # via aiormq
@@ -124,8 +144,6 @@ pyinstrument==4.1.1
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-pyparsing==3.0.9
-    # via packaging
 pyrsistent==0.18.1
     # via jsonschema
 python-dateutil==2.8.2
@@ -146,7 +164,7 @@ redis==4.5.4
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-requests==2.27.1
+requests==2.31.0
     # via fastapi
 six==1.15.0
     # via
@@ -178,6 +196,7 @@ typer==0.4.1
 typing-extensions==4.3.0
     # via
     #   aiodebug
+    #   aiodocker
     #   aioredis
     #   pydantic
 ujson==5.5.0
@@ -198,10 +217,11 @@ watchgod==0.8.2
     # via uvicorn
 websockets==10.1
     # via uvicorn
-yarl==1.7.2
+yarl==1.9.2
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   aio-pika
+    #   aiohttp
     #   aiormq
 
 # The following packages are considered to be unsafe in a requirements file:

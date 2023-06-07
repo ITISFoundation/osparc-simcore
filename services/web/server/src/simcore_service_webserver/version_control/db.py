@@ -24,7 +24,7 @@ from simcore_postgres_database.utils_aiopg_orm import BaseOrm
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from ..db_base_repository import BaseRepository
-from ..projects.project_models import ProjectProxy
+from ..projects.models import ProjectProxy
 from .errors import (
     CleanRequiredError,
     InvalidParameterError,

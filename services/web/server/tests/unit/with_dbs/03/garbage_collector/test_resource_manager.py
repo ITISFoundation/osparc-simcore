@@ -37,12 +37,12 @@ from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.director_v2.plugin import setup_director_v2
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.products.plugin import setup_products
+from simcore_service_webserver.projects.exceptions import ProjectNotFoundError
 from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.projects.projects_api import (
     remove_project_dynamic_services,
     submit_delete_project_task,
 )
-from simcore_service_webserver.projects.projects_exceptions import ProjectNotFoundError
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.resource_manager.registry import (
     RedisResourceRegistry,
@@ -51,7 +51,7 @@ from simcore_service_webserver.resource_manager.registry import (
 )
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security.plugin import setup_security
-from simcore_service_webserver.session import setup_session
+from simcore_service_webserver.session.plugin import setup_session
 from simcore_service_webserver.socketio.messages import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.socketio.plugin import setup_socketio
 from simcore_service_webserver.users.api import delete_user_without_projects
@@ -155,7 +155,7 @@ def client(
 @pytest.fixture
 def mock_storage_delete_data_folders(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
-        "simcore_service_webserver.projects._delete_utils.delete_data_folders_of_project",
+        "simcore_service_webserver.projects._crud_delete_utils.delete_data_folders_of_project",
         return_value=None,
     )
 
@@ -283,7 +283,7 @@ async def test_websocket_resource_management(
         with attempt:
             # now the entries should be removed
             assert not await socket_registry.find_keys(("socket_id", sio.get_sid()))
-            assert not sid in await socket_registry.find_resources(
+            assert sid not in await socket_registry.find_resources(
                 resource_key, "socket_id"
             )
             assert not await socket_registry.find_resources(resource_key, "socket_id")
@@ -340,7 +340,7 @@ async def test_websocket_multiple_connections(
 
         assert not sio.sid
         assert not await socket_registry.find_keys(("socket_id", sio.get_sid()))
-        assert not sid in await socket_registry.find_resources(
+        assert sid not in await socket_registry.find_resources(
             resource_key, "socket_id"
         )
 
@@ -374,6 +374,7 @@ async def test_asyncio_task_pending_on_close(
     socketio_client_factory: Callable,
 ):
     sio = await socketio_client_factory()
+    assert sio
     # this test generates warnings on its own
 
 
@@ -397,6 +398,7 @@ async def test_websocket_disconnected_after_logout(
     assert client.app
     app = client.app
     socket_registry = get_registry(app)
+    assert socket_registry
 
     # connect first socket
     cur_client_session_id1 = client_session_id_factory()
@@ -475,6 +477,7 @@ async def test_interactive_services_removed_after_logout(
     # create websocket
     client_session_id1 = client_session_id_factory()
     sio = await socketio_client_factory(client_session_id1)
+    assert sio
     # open project in client 1
     await open_project(client, empty_user_project["uuid"], client_session_id1)
     # logout
@@ -778,10 +781,12 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(
     # open project in tab1
     client_session_id1 = client_session_id_factory()
     sio1 = await socketio_client_factory(client_session_id1)
+    assert sio1
     await open_project(client, empty_user_project["uuid"], client_session_id1)
     # open project in tab2
     client_session_id2 = client_session_id_factory()
     sio2 = await socketio_client_factory(client_session_id2)
+    assert sio2
     await open_project(client, empty_user_project["uuid"], client_session_id2)
     # close project in tab1
     await close_project(client, empty_user_project["uuid"], client_session_id1)
@@ -833,6 +838,7 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
     # create websocket
     client_session_id1 = client_session_id_factory()
     sio: socketio.AsyncClient = await socketio_client_factory(client_session_id1)
+    assert sio
     # open project in client 1
     await open_project(client, empty_user_project["uuid"], client_session_id1)
     # logout

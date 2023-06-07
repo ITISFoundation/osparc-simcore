@@ -9,9 +9,8 @@ from settings_library.base import BaseCustomSettings
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.utils_logging import MixinLoggingSettings
-from simcore_service_catalog.models.schemas.services_specifications import (
-    ServiceSpecifications,
-)
+
+from ..models.schemas.services_specifications import ServiceSpecifications
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +22,7 @@ class DirectorSettings(BaseCustomSettings):
 
     @cached_property
     def base_url(self) -> str:
-        return f"http://{self.DIRECTOR_HOST}:{self.DIRECTOR_PORT}/{self.DIRECTOR_VTAG}"  # NOSONAR
+        return f"http://{self.DIRECTOR_HOST}:{self.DIRECTOR_PORT}/{self.DIRECTOR_VTAG}"
 
 
 _DEFAULT_RESOURCES: Final[ResourcesDict] = parse_obj_as(

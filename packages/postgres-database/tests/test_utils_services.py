@@ -235,7 +235,7 @@ def test_select_latest_services(
 
     lts = create_select_latest_services_query().alias("lts")
 
-    stmt = sa.select([lts.c.key, lts.c.latest, services_meta_data.c.name]).select_from(
+    stmt = sa.select(lts.c.key, lts.c.latest, services_meta_data.c.name).select_from(
         lts.join(
             services_meta_data,
             (services_meta_data.c.key == lts.c.key)

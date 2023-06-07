@@ -1,5 +1,5 @@
 from aiohttp import web
-from pydantic import Field, HttpUrl, SecretStr
+from pydantic import Field, HttpUrl, SecretStr, parse_obj_as
 from settings_library.base import BaseCustomSettings
 
 from .._constants import APP_SETTINGS_KEY
@@ -11,7 +11,7 @@ SCICRUNCH_DEFAULT_URL = "https://scicrunch.org"
 class SciCrunchSettings(BaseCustomSettings):
 
     SCICRUNCH_API_BASE_URL: HttpUrl = Field(
-        f"{SCICRUNCH_DEFAULT_URL}/api/1",
+        default=parse_obj_as(HttpUrl, f"{SCICRUNCH_DEFAULT_URL}/api/1"),
         description="Base url to scicrunch API's entrypoint",
     )
 
@@ -20,7 +20,7 @@ class SciCrunchSettings(BaseCustomSettings):
     SCICRUNCH_API_KEY: SecretStr
 
     SCICRUNCH_RESOLVER_BASE_URL: HttpUrl = Field(
-        f"{SCICRUNCH_DEFAULT_URL}/resolver",
+        default=parse_obj_as(HttpUrl, f"{SCICRUNCH_DEFAULT_URL}/resolver"),
         description="Base url to scicrunch resolver entrypoint",
     )
 

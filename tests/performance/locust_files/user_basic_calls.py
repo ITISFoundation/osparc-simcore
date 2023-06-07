@@ -46,19 +46,19 @@ class WebApiUser(FastHttpUser):
     def get_studies(self):
         route = "v0/projects?type=user&offset=0&limit=20"
         resource_label = "studies"
-        response = self.timed_get_request(route, resource_label)
+        self.timed_get_request(route, resource_label)
 
     @task
     def get_templates(self):
         route = "v0/projects?type=template&offset=0&limit=20"
         resource_label = "templates"
-        response = self.timed_get_request(route, resource_label)
+        self.timed_get_request(route, resource_label)
 
     @task
     def get_services(self):
         route = "v0/catalog/services"
         resource_label = "services"
-        response = self.timed_get_request(route, resource_label)
+        self.timed_get_request(route, resource_label)
 
     def register(self, username, password):
         print("Register User ", username)

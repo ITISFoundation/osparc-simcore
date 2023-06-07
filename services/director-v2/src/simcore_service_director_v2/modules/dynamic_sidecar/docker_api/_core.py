@@ -12,9 +12,6 @@ from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
-from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
-    NetworkId,
-)
 from tenacity import TryAgain, retry
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -32,6 +29,7 @@ from ....models.schemas.dynamic_services import (
     ServiceState,
     ServiceType,
 )
+from ....models.schemas.dynamic_services.scheduler import NetworkId
 from ....utils.dict_utils import get_leaf_key_paths, nested_update
 from ..docker_states import TASK_STATES_RUNNING, extract_task_state
 from ..errors import DockerServiceNotFoundError, DynamicSidecarError, GenericDockerError

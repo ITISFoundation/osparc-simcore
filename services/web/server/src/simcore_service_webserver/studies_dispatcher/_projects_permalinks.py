@@ -5,14 +5,10 @@ import sqlalchemy as sa
 from aiohttp import web
 from models_library.projects import ProjectID, ProjectIDStr
 from simcore_postgres_database.models.projects import ProjectType, projects
-from simcore_service_webserver.projects.projects_exceptions import (
-    PermalinkNotAllowedError,
-    ProjectNotFoundError,
-)
-from yarl import URL
 
 from ..db import get_database_engine
 from ..projects.api import ProjectPermalink, register_permalink_factory
+from ..projects.exceptions import PermalinkNotAllowedError, ProjectNotFoundError
 from ..utils_aiohttp import create_url_for_function
 from .settings import StudiesDispatcherSettings
 
@@ -49,7 +45,10 @@ def create_permalink_for_study(
             f"Got {project_uuid=} with {project_type=}"
         )
 
-    if not project_access_rights.get("1", {}).get("read", False):
+    project_access_rights_group_1_or_empty: _GroupAccessRightsDict | dict = (
+        project_access_rights.get("1", {})
+    )
+    if not project_access_rights_group_1_or_empty.get("read", False):
         raise PermalinkNotAllowedError(
             "Cannot create permalink if not shared with everyone. "
             f"Got {project_uuid=} with {project_access_rights=}"
@@ -63,7 +62,7 @@ def create_permalink_for_study(
     )
 
     return ProjectPermalink(
-        url=f"{URL(permalink)}",
+        url=permalink,
         is_public=project_is_public,
     )
 

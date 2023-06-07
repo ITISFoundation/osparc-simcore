@@ -6,16 +6,13 @@
 import json
 import uuid as uuidlib
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from simcore_service_webserver.projects.project_models import ProjectDict
-from simcore_service_webserver.projects.projects_db import (
-    APP_PROJECT_DBAPI,
-    ProjectDBAPI,
-)
-from simcore_service_webserver.projects.projects_db_utils import DB_EXCLUSIVE_COLUMNS
+from simcore_service_webserver.projects._db_utils import DB_EXCLUSIVE_COLUMNS
+from simcore_service_webserver.projects.db import APP_PROJECT_DBAPI, ProjectDBAPI
+from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.utils import now_str
 
 from .utils_assert import assert_status
@@ -36,11 +33,11 @@ def empty_project_data():
 
 async def create_project(
     app: web.Application,
-    params_override: Optional[dict[str, Any]] = None,
-    user_id: Optional[int] = None,
+    params_override: dict[str, Any] | None = None,
+    user_id: int | None = None,
     *,
     product_name: str,
-    default_project_json: Optional[Path] = None,
+    default_project_json: Path | None = None,
     force_uuid: bool = False,
     as_template: bool = False,
 ) -> ProjectDict:
@@ -98,10 +95,10 @@ async def delete_all_projects(app: web.Application):
 class NewProject:
     def __init__(
         self,
-        params_override: Optional[dict] = None,
-        app: Optional[web.Application] = None,
+        params_override: dict | None = None,
+        app: web.Application | None = None,
         clear_all: bool = True,
-        user_id: Optional[int] = None,
+        user_id: int | None = None,
         *,
         product_name: str,
         tests_data_dir: Path,

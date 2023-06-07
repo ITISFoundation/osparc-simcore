@@ -87,7 +87,6 @@ def test_service_models_examples(model_cls, model_cls_examples):
         assert model_instance, f"Failed with {name}"
 
 
-@pytest.mark.testit
 @pytest.mark.parametrize("pattern", (SERVICE_KEY_RE, SERVICE_ENCODED_KEY_RE))
 @pytest.mark.parametrize(
     "service_key",
@@ -198,6 +197,7 @@ def test_same_regex_patterns_in_jsonschema_and_python(
 ):
     # read file in
     json_schema_config = json_schema_dict(json_schema_file_name)
+
     # go to keys
     def _find_pattern_entry(obj: dict[str, Any], key: str) -> Any:
         if key in obj:

@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --resolver=backtracking --strip-extras requirements/_test.in
 #
-coverage==7.2.5
+coverage==7.2.7
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -25,7 +25,7 @@ pytest==7.3.1
     #   pytest-instafail
     #   pytest-mock
     #   pytest-sugar
-pytest-cov==4.0.0
+pytest-cov==4.1.0
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
     # via -r requirements/_test.in

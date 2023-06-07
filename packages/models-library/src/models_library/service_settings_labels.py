@@ -1,6 +1,7 @@
 # pylint: disable=unsubscriptable-object
 
 import json
+import re
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
@@ -9,6 +10,7 @@ from typing import Any, Final, Iterator, Literal, TypeAlias
 from pydantic import (
     BaseModel,
     ByteSize,
+    ConstrainedStr,
     Extra,
     Field,
     Json,
@@ -22,10 +24,18 @@ from pydantic import (
 from .basic_types import PortInt
 from .generics import ListModel
 from .services_resources import DEFAULT_SINGLE_SERVICE_NAME
+from .utils.string_substitution import OSPARC_IDENTIFIER_PREFIX
 
 # Cloudflare DNS server address
 DEFAULT_DNS_SERVER_ADDRESS: Final[str] = "1.1.1.1"  # NOSONAR
-DEFAULT_DNS_SERVER_PORT: Final[PortInt] = 53
+DEFAULT_DNS_SERVER_PORT: Final[PortInt] = parse_obj_as(PortInt, 53)
+
+
+# NOTE: To allow parametrized value, set the type to Union[OEnvSubstitutionStr, ...]
+
+
+class OEnvSubstitutionStr(ConstrainedStr):
+    regex = re.compile(rf"^\${OSPARC_IDENTIFIER_PREFIX}\w+$")
 
 
 class _BaseConfig:
@@ -57,7 +67,9 @@ class ContainerSpec(BaseModel):
 
 
 class SimcoreServiceSettingLabelEntry(BaseModel):
-    """These values are used to build the request body of https://docs.docker.com/engine/api/v1.41/#operation/ServiceCreate
+    """Content of "simcore.service.settings" label
+
+    These values are used to build the request body of https://docs.docker.com/engine/api/v1.41/#operation/ServiceCreate
     Specifically the section under ``TaskTemplate``
     """
 
@@ -151,6 +163,8 @@ SimcoreServiceSettingsLabel = ListModel[SimcoreServiceSettingLabelEntry]
 
 
 class PathMappingsLabel(BaseModel):
+    """Content of "simcore.service.paths-mapping" label"""
+
     inputs_path: Path = Field(
         ..., description="folder path where the service expects all the inputs"
     )
@@ -240,10 +254,12 @@ class PathMappingsLabel(BaseModel):
         }
 
 
-ComposeSpecLabel: TypeAlias = dict[str, Any]
+ComposeSpecLabelDict: TypeAlias = dict[str, Any]
 
 
 class RestartPolicy(str, Enum):
+    """Content of "simcore.service.restart-policy" label"""
+
     NO_RESTART = "no-restart"
     ON_INPUTS_DOWNLOADED = "on-inputs-downloaded"
 
@@ -281,6 +297,8 @@ class DNSResolver(BaseModel):
 
 
 class NATRule(BaseModel):
+    """Content of "simcore.service.containers-allowed-outgoing-permit-list" label"""
+
     hostname: str
     tcp_ports: list[_PortRange | PortInt]
     dns_resolver: DNSResolver = Field(
@@ -299,6 +317,8 @@ class NATRule(BaseModel):
 
 
 class DynamicSidecarServiceLabels(BaseModel):
+    """All "simcore.service.*" labels including keys"""
+
     paths_mapping: Json[PathMappingsLabel] | None = Field(
         None,
         alias="simcore.service.paths-mapping",
@@ -308,7 +328,7 @@ class DynamicSidecarServiceLabels(BaseModel):
         ),
     )
 
-    compose_spec: Json[ComposeSpecLabel] | None = Field(
+    compose_spec: Json[ComposeSpecLabelDict] | None = Field(
         None,
         alias="simcore.service.compose-spec",
         description=(
