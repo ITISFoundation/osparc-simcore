@@ -72,7 +72,7 @@ class RabbitMQClient:
                     type(exc),
                     exc,
                 )
-                self._healthy_state = True
+                self._healthy_state = False
 
     def _channel_close_callback(
         self,
@@ -90,7 +90,7 @@ class RabbitMQClient:
                     type(exc),
                     exc,
                 )
-                self._healthy_state = True
+                self._healthy_state = False
 
     async def _get_connection(
         self, rabbit_broker: str, connection_name: str
