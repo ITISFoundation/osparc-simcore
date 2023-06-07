@@ -164,7 +164,6 @@ space := $(null) #
 comma := ,
 
 CONTAINER_TEMPL_DIR := /tmp/openapi_templates
-export DOCKER_MOUNT := $(REPO_BASE_DIR)/services/api-server/openapi/python_templates:$(CONTAINER_TEMPL_DIR)
 
 client:
 	# cloning $(GIT_USER_ID)/$(GIT_REPO_ID) -> $@
@@ -178,7 +177,9 @@ python-client: client openapi.json ## runs python client generator
 	# generates
 	@set -o allexport; \
 	source .env; \
+	set +o allexport; \
 	cd $(CURDIR); \
+	export DOCKER_MOUNT=$(REPO_BASE_DIR)/services/api-server/openapi/python_templates:$(CONTAINER_TEMPL_DIR); \
 	$(SCRIPTS_DIR)/openapi-generator-cli.bash generate \
 		--generator-name=$(GENERATOR_NAME) \
 		--git-user-id=$(GIT_USER_ID)\
