@@ -158,25 +158,54 @@ qx.Class.define("osparc.wrapper.Svg", {
 
     drawAnnotationNote: function(draw, x, y, destinatary, note) {
       const gNote = draw.group();
+      x = parseInt(x);
+      y = parseInt(y);
 
-      const rect = draw.rect(150, 150)
+      const width = 150;
+      const height = 150;
+      const trianSize = 25;
+
+      const rect1 = draw.rect(width-trianSize, height)
         .fill("#FFFF00")
         .style({
           cursor: "pointer"
         })
         .move(x, y);
-      rect.back();
-      gNote.add(rect);
+      rect1.back();
+      gNote.add(rect1);
+
+      const rect2 = draw.rect(trianSize, height-trianSize)
+        .fill("#FFFF00")
+        .style({
+          cursor: "pointer"
+        })
+        .move(x+width-trianSize, y);
+      rect2.back();
+      gNote.add(rect2);
+
+      const trainCtrls = [
+        [width-trianSize, height-trianSize],
+        [width-trianSize, width],
+        [width, height-trianSize]
+      ];
+      const trian = draw.polygon(trainCtrls.join())
+        .fill("#FFA500")
+        .style({
+          cursor: "pointer"
+        })
+        .move(x+width-trianSize, y+height-trianSize);
+      trian.back();
+      gNote.add(trian);
 
       const offsetX = 6;
-      const offsetY = 3;
+      const offsetY = 4;
       const title = draw.text(destinatary)
         .font({
           fill: "#000000",
           size: "14px",
           family: "Roboto"
         })
-        .move(parseInt(x)+offsetX, parseInt(y)+offsetY);
+        .move(x+offsetX, y+offsetY);
       title.back();
       gNote.add(title);
 
@@ -186,7 +215,7 @@ qx.Class.define("osparc.wrapper.Svg", {
           size: "13px",
           family: "Roboto"
         })
-        .move(parseInt(x)+offsetX, parseInt(y)+offsetY+20);
+        .move(x+offsetX, y+offsetY+20);
       text.back();
       gNote.add(text);
 
