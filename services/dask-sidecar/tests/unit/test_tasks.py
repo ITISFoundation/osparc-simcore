@@ -600,7 +600,6 @@ async def test_run_computational_sidecar_dask(
     mocked_get_integration_version.assert_called()
 
 
-@pytest.mark.skip(reason="flaky")
 @pytest.mark.parametrize(
     "integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True
 )
@@ -649,7 +648,9 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
     assert worker_progresses[-1] == 1, "missing/incorrect final progress value"
 
     worker_logs = [TaskLogEvent.parse_raw(msg).log for msg in log_sub.buffer]
-    assert len(worker_logs) == NUMBER_OF_LOGS + 15
+    # check all the awaited logs are in there
+    filtered_worker_logs = filter(lambda log: "This is iteration" in log, worker_logs)
+    assert len(list(filtered_worker_logs)) == NUMBER_OF_LOGS
     mocked_get_integration_version.assert_called()
 
 
