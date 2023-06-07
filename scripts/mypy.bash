@@ -16,7 +16,8 @@ MYPY_CONFIG=$(realpath "${2:-${DEFAULT_MYPY_CONFIG}}")
 build() {
   echo Building image "$IMAGE_NAME"
   #
-  docker build \
+  docker buildx build \
+    --load \
     --quiet \
     --tag "$IMAGE_NAME" \
     "$SCRIPT_DIR/mypy"

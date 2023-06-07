@@ -14,7 +14,7 @@ DOCKER_IMAGE_NAME=dind-act-runner
 ACT_RUNNER=ubuntu-20.04=catthehacker/ubuntu:act-20.04
 ACT_VERSION_TAG=v0.2.20 # from https://github.com/nektos/act/releases
 
-docker build -t $DOCKER_IMAGE_NAME - <<EOF
+docker buildx build --load -t $DOCKER_IMAGE_NAME - <<EOF
 FROM docker:dind
 
 RUN apk add curl bash
