@@ -300,8 +300,12 @@ qx.Class.define("osparc.wrapper.Svg", {
       item.remove();
     },
 
-    updateText: function(text, label) {
-      text.text(label);
+    updateText: function(representation, label) {
+      if (representation.type === "text") {
+        representation.text(label);
+      } else if (representation.type === "g") {
+        representation.node.children[4].text(label);
+      }
     },
 
     updateTextColor: function(text, color) {
