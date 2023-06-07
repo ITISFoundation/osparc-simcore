@@ -132,7 +132,7 @@ qx.Class.define("osparc.wrapper.Svg", {
     },
 
     getRectAttributes: function(rect) {
-      const attrs = rect.node.attributes;
+      const attrs = (rect.type === "g") ? rect.node.children[0].attributes : rect.node.attributes;
       return {
         x: attrs.x.value,
         y: attrs.y.value,
