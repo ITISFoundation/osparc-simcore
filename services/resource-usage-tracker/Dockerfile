@@ -72,8 +72,8 @@ RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=lock
 # packages may be moved to production image easily by copying the venv
 RUN python -m venv "${VIRTUAL_ENV}"
 
-RUN --mount=type=cache,id=pipbasecache,mode=0777,target=/root/.cache/pip \
-  pip --no-cache-dir install --upgrade  \
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install --upgrade  \
   pip~=23.1  \
   wheel \
   setuptools
@@ -83,8 +83,8 @@ WORKDIR /build
 # install base 3rd party dependencies
 # NOTE: copies to /build to avoid overwriting later which would invalidate this layer
 COPY  --chown=scu:scu services/resource-usage-tracker/requirements/_base.txt .
-RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
-  pip --no-cache-dir install \
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install \
   --requirement _base.txt
 
 
@@ -103,10 +103,10 @@ COPY --chown=scu:scu services/resource-usage-tracker /build/services/resource-us
 
 WORKDIR /build/services/resource-usage-tracker
 
-RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
-  pip --no-cache-dir install \
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install \
   --requirement requirements/prod.txt \
-  && pip --no-cache-dir list -v
+  && pip list -v
 
 
 # --------------------------Production stage -------------------

@@ -85,8 +85,8 @@ RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=lock
 RUN python -m venv "${VIRTUAL_ENV}" \
   && mkdir -p "${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}"
 
-RUN --mount=type=cache,id=pipbasecache,mode=0777,target=/root/.cache/pip \
-  pip --no-cache-dir install --upgrade  \
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install --upgrade  \
   pip~=23.1  \
   wheel \
   setuptools
@@ -96,7 +96,8 @@ WORKDIR /build
 # install base 3rd party dependencies
 # NOTE: copies to /build to avoid overwriting later which would invalidate this layer
 COPY --chown=scu:scu services/dynamic-sidecar/requirements/_base.txt .
-RUN pip --no-cache-dir install -r _base.txt
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install -r _base.txt
 
 # copy utility devops scripts
 COPY --chown=scu:scu services/dynamic-sidecar/scripts/Makefile /home/scu
@@ -117,10 +118,10 @@ COPY --chown=scu:scu services/dynamic-sidecar /build/services/dynamic-sidecar
 
 WORKDIR /build/services/dynamic-sidecar
 
-RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
-  pip --no-cache-dir install \
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install \
   --requirement requirements/prod.txt \
-  && pip --no-cache-dir list -v
+  && pip list -v
 
 # --------------------------Production stage -------------------
 # Final cleanup up to reduce image size and startup setup

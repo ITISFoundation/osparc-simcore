@@ -82,8 +82,8 @@ RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=lock
 # packages may be moved to production image easily by copying the venv
 RUN python -m venv "${VIRTUAL_ENV}"
 
-RUN --mount=type=cache,id=pipbasecache,mode=0777,target=/root/.cache/pip \
-  pip --no-cache-dir install --upgrade  \
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install --upgrade  \
   pip~=23.1  \
   wheel \
   setuptools
@@ -92,8 +92,8 @@ WORKDIR /build
 
 # install only base 3rd party dependencies
 COPY  --chown=scu:scu services/web/server/requirements/_base.txt requirements_base.txt
-RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
-  pip --no-cache-dir install \
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install \
   --requirement requirements_base.txt
 
 # --------------------------Prod-depends-only stage -------------------
@@ -112,10 +112,10 @@ COPY --chown=scu:scu services/web/server /build/services/web/server
 
 WORKDIR /build/services/web/server
 
-RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
-  pip --no-cache-dir install \
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install \
   --requirement requirements/prod.txt \
-  && pip --no-cache-dir list -v
+  && pip list -v
 
 # --------------------------Production stage -------------------
 # Final cleanup up to reduce image size and startup setup

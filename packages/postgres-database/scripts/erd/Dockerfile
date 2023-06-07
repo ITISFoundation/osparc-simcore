@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 ARG PYTHON_VERSION="3.10.10"
 FROM python:${PYTHON_VERSION}-slim-buster as base
 
@@ -14,14 +15,16 @@ RUN apt-get update \
   && apt-get clean
 
 
-RUN pip --no-cache-dir install --upgrade \
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install --upgrade \
   pip~=23.1  \
   wheel \
   setuptools
 
 
 # devenv
-RUN pip install --no-cache-dir \
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install \
   pyparsing \
   pydot \
   sqlalchemy_schemadisplay

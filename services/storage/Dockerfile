@@ -80,8 +80,8 @@ RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=lock
 # packages may be moved to production image easily by copying the venv
 RUN python -m venv "${VIRTUAL_ENV}"
 
-RUN --mount=type=cache,id=pipbasecache,mode=0777,target=/root/.cache/pip \
-  pip --no-cache-dir install --upgrade  \
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install --upgrade  \
   pip~=23.1  \
   wheel \
   setuptools
@@ -90,8 +90,8 @@ WORKDIR /build
 
 # install only base 3rd party dependencies
 COPY  --chown=scu:scu services/storage/requirements/_base.txt requirements_base.txt
-RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
-  pip --no-cache-dir install \
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install \
   --requirement requirements_base.txt
 # -------------------------- -------------------------------
 
@@ -114,10 +114,10 @@ COPY --chown=scu:scu services/storage /build/services/storage
 
 WORKDIR /build/services/storage
 
-RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
-  pip --no-cache-dir install \
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install \
   --requirement requirements/prod.txt \
-  && pip --no-cache-dir list -v
+  && pip list -v
 # -------------------------- -------------------------------
 
 
