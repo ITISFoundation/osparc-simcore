@@ -80,7 +80,7 @@ class DirectorV0Client:
     async def forward(self, request: Request, response: Response) -> Response:
         assert self.client.base_url.path.startswith("/v0")  # nosec
         url_tail = URL(
-            path=request.url.path.removeprefix("/v0"),
+            path=request.url.path.replace("/v0", ""),
             fragment=request.url.fragment,
         )
         body: bytes = await request.body()
