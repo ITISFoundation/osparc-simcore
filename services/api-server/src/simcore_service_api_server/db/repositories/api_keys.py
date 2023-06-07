@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 import sqlalchemy as sa
 from pydantic.types import PositiveInt
@@ -16,8 +15,8 @@ logger = logging.getLogger(__name__)
 
 
 class ApiKeysRepository(BaseRepository):
-    async def get_user_id(self, api_key: str, api_secret: str) -> Optional[PositiveInt]:
-        stmt = sa.select([tbl.api_keys.c.user_id,]).where(
+    async def get_user_id(self, api_key: str, api_secret: str) -> PositiveInt | None:
+        stmt = sa.select(tbl.api_keys.c.user_id,).where(
             sa.and_(
                 tbl.api_keys.c.api_key == api_key,
                 tbl.api_keys.c.api_secret == api_secret,
@@ -26,7 +25,7 @@ class ApiKeysRepository(BaseRepository):
 
         try:
             async with self.db_engine.acquire() as conn:
-                user_id: Optional[PositiveInt] = await conn.scalar(stmt)
+                user_id: PositiveInt | None = await conn.scalar(stmt)
 
         except DatabaseError as err:
             logger.debug("Failed to get user id: %s", err)
