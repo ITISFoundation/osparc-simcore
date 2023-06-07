@@ -83,12 +83,12 @@ run-fake-devel: # starts a fake server in a dev-container
 
 
 # BUILD ###########################################################################
+OPENAPI_GENERATOR_VERSION := v4.2.3
 
 define create_and_validate_openapi
 	# generating openapi specs file under $< (NOTE: Skips DEV FEATURES since this OAS is the 'offically released'!)
-	@set -o allexport; \
-	source .env; \
-	set +o allexport; \
+	@source .env; \
+	export OPENAPI_GENERATOR_VERSION=$(OPENAPI_GENERATOR_VERSION); \
 	export API_SERVER_DEV_FEATURES_ENABLED=$1; \
 	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
 
@@ -110,32 +110,8 @@ openapi.json: .env
 openapi-dev.json: .env
 	@$(call create_and_validate_openapi,1)
 
-# FETCH OPENAPI GENERATOR TEMPLATES ##################################################################
-.PHONY: fetch-openapi-templates
-
-fetch-openapi-templates: ## fetches open api generator templates and overwrites the ones in $(CURDIR)/openapi/python-templates
-	$(eval TMPDIR := $(shell mktemp -d))
-
-	@echo "Fetching openapi generator templates from github..."
-	@source .env; \
-	wget -O $(TMPDIR)/openapi_zip.zip "https://github.com/OpenAPITools/openapi-generator/archive/refs/tags/$${OPENAPI_GENERATOR_VERSION}.zip"; \
-	unzip -q $(TMPDIR)/openapi_zip.zip -d $(TMPDIR); \
-
-	@echo "Overwriting templates in this repo..."
-	@rm -r $(CURDIR)/openapi/python_templates; \
-	mkdir $(CURDIR)/openapi/python_templates; \
-	cd $(TMPDIR); \
-	openapi_dir=$$(ls . | grep openapi-generator); \
-	cd $${openapi_dir}; \
-	cp -r ./modules/openapi-generator/src/main/resources/python/* $(CURDIR)/openapi/python_templates
-
-	@rm -r $(TMPDIR)
-	@echo "Done!"
-
-
-
 # GENERATION python client ###########################################################################
-.PHONY: python-client generator-help
+.PHONY: python-client generator-help fetch-openapi-templates
 
 # SEE https://openapi-generator.tech/docs/usage#generate
 # SEE https://openapi-generator.tech/docs/generators/python
@@ -165,6 +141,7 @@ comma := ,
 
 CONTAINER_TEMPL_DIR := /tmp/openapi_templates
 
+
 client:
 	# cloning $(GIT_USER_ID)/$(GIT_REPO_ID) -> $@
 	git clone git@github.com:$(GIT_USER_ID)/$(GIT_REPO_ID).git $@
@@ -175,10 +152,9 @@ python-client: client openapi.json ## runs python client generator
 	# copies latest version of the openapi
 	@cp openapi.json client/api/
 	# generates
-	@set -o allexport; \
-	source .env; \
-	set +o allexport; \
+	@source .env; \
 	cd $(CURDIR); \
+	export OPENAPI_GENERATOR_VERSION=$(OPENAPI_GENERATOR_VERSION); \
 	export DOCKER_MOUNT=$(REPO_BASE_DIR)/services/api-server/openapi/python_templates:$(CONTAINER_TEMPL_DIR); \
 	$(SCRIPTS_DIR)/openapi-generator-cli.bash generate \
 		--generator-name=$(GENERATOR_NAME) \
@@ -198,3 +174,22 @@ generator-help: ## help on client-api generator
 	@$(SCRIPTS_DIR)/openapi-generator-cli.bash help generate
 	# generator config help
 	@$(SCRIPTS_DIR)/openapi-generator-cli.bash config-help -g $(GENERATOR_NAME)
+
+
+fetch-openapi-templates: ## fetches open api generator templates and overwrites the ones in $(CURDIR)/openapi/python-templates
+	$(eval TMPDIR := $(shell mktemp -d))
+
+	@echo "Fetching openapi generator templates from github..."
+	@wget -O $(TMPDIR)/openapi_zip.zip "https://github.com/OpenAPITools/openapi-generator/archive/refs/tags/$(OPENAPI_GENERATOR_VERSION).zip"; \
+	unzip -q $(TMPDIR)/openapi_zip.zip -d $(TMPDIR); \
+
+	@echo "Overwriting templates in this repo..."
+	@rm -r $(CURDIR)/openapi/python_templates; \
+	mkdir $(CURDIR)/openapi/python_templates; \
+	cd $(TMPDIR); \
+	openapi_dir=$$(ls . | grep openapi-generator); \
+	cd $${openapi_dir}; \
+	cp -r ./modules/openapi-generator/src/main/resources/python/* $(CURDIR)/openapi/python_templates
+
+	@rm -r $(TMPDIR)
+	@echo "Done!"
