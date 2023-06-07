@@ -4,7 +4,7 @@
 import logging
 from pathlib import Path
 from typing import AsyncIterator, Iterable, Iterator
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import aiodocker
 import pytest
@@ -15,6 +15,7 @@ from models_library.basic_types import BootModeEnum
 from moto.server import ThreadedMotoServer
 from pydantic import HttpUrl, parse_obj_as
 from pytest import LogCaptureFixture, MonkeyPatch
+from servicelib.sidecar_volumes import VolumeUtils
 from settings_library.r_clone import S3Provider
 from simcore_service_agent.core.settings import ApplicationSettings
 
@@ -82,11 +83,6 @@ def unused_volume_path(tmp_path: Path) -> Path:
     return tmp_path / "unused_volume"
 
 
-def _get_source(run_id: str, node_uuid: str, volume_path: Path) -> str:
-    reversed_path = f"{volume_path}"[::-1].replace("/", "_")
-    return f"dyv_{run_id}_{node_uuid}_{reversed_path}"
-
-
 @pytest.fixture
 async def unused_volume(
     swarm_stack_name: str,
@@ -96,7 +92,9 @@ async def unused_volume(
     unused_volume_path: Path,
 ) -> AsyncIterator[DockerVolume]:
     async with aiodocker.Docker() as docker_client:
-        source = _get_source(run_id, node_uuid, unused_volume_path)
+        source = VolumeUtils.get_source(
+            unused_volume_path, UUID(node_uuid), UUID(run_id)
+        )
         volume = await docker_client.volumes.create(
             {
                 "Name": source,
@@ -130,7 +128,7 @@ async def used_volume(
     used_volume_path: Path,
 ) -> AsyncIterator[DockerVolume]:
     async with aiodocker.Docker() as docker_client:
-        source = _get_source(run_id, node_uuid, used_volume_path)
+        source = VolumeUtils.get_source(used_volume_path, UUID(node_uuid), UUID(run_id))
         volume = await docker_client.volumes.create(
             {
                 "Name": source,
