@@ -54,7 +54,7 @@ async def test_create_filemetadata_from_starlette_uploadfile(
 
     # in file
     with open(mock_filepath, "rb") as fh:
-        upload = UploadFile(filename=mock_filepath.name, file=fh)
+        upload = UploadFile(file=fh, filename=mock_filepath.name)
 
         assert upload.file.tell() == 0
         file_meta = await File.create_from_uploaded(upload)
@@ -63,17 +63,19 @@ async def test_create_filemetadata_from_starlette_uploadfile(
         assert file_meta.checksum == expected_md5sum
 
     # in memory
-    # UploadFile constructor: by not passing file, it enforces a tempfile.SpooledTemporaryFile
-    upload_in_memory = UploadFile(filename=mock_filepath.name, file=None)
+    with tempfile.SpooledTemporaryFile() as spooled_tmpfile:
+        upload_in_memory = UploadFile(file=spooled_tmpfile, filename=mock_filepath.name)
 
-    assert isinstance(upload_in_memory.file, tempfile.SpooledTemporaryFile)
-    await upload_in_memory.write(FILE_CONTENT.encode())
+        assert isinstance(upload_in_memory.file, tempfile.SpooledTemporaryFile)
+        await upload_in_memory.write(FILE_CONTENT.encode())
 
-    await upload_in_memory.seek(0)
-    assert upload_in_memory.file.tell() == 0
+        await upload_in_memory.seek(0)
+        assert upload_in_memory.file.tell() == 0
 
-    file_meta = await File.create_from_uploaded(upload_in_memory)
-    assert upload_in_memory.file.tell() > 0, "modifies current position is at the end"
+        file_meta = await File.create_from_uploaded(upload_in_memory)
+        assert (
+            upload_in_memory.file.tell() > 0
+        ), "modifies current position is at the end"
 
 
 def test_convert_between_file_models():

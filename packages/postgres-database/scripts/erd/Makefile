@@ -20,7 +20,8 @@ IMAGE_NAME:=local/postgres-database-scripts-erd:${PYTHON_VERSION}
 # SEE https://medium.com/faun/set-current-host-user-for-docker-container-4e521cef9ffc
 .PHONY: build
 build build-nc: ## builds tooling image ${IMAGE_NAME}
-	docker build $(if $(findstring -nc,$@),--no-cache,) \
+	docker buildx build $(if $(findstring -nc,$@),--no-cache,) \
+		--load \
 		--build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
 		--tag ${IMAGE_NAME} .
 

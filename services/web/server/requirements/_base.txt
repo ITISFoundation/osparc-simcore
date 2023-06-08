@@ -5,7 +5,9 @@
 #    pip-compile --output-file=requirements/_base.txt --resolver=backtracking --strip-extras requirements/_base.in
 #
 aio-pika==9.1.2
-    # via -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    # via
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/_base.in
 aiocache==0.11.1
     # via -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
 aiodebug==2.3.0
@@ -154,7 +156,9 @@ openpyxl==3.0.9
 orjson==3.7.2
     # via -r requirements/_base.in
 packaging==23.1
-    # via -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
+    # via
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
+    #   -r requirements/_base.in
 pamqp==3.2.1
     # via aiormq
 passlib==1.7.4

@@ -12,7 +12,7 @@ from pydantic.types import SecretStr
 
 from .application_settings import ApplicationSettings
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:

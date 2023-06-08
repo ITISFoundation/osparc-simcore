@@ -80,8 +80,10 @@ async def rabbitmq_client(
 ) -> AsyncIterator[Callable[[str], RabbitMQClient]]:
     created_clients = []
 
-    def _creator(client_name: str) -> RabbitMQClient:
-        client = RabbitMQClient(f"pytest_{client_name}", rabbit_service)
+    def _creator(client_name: str, *, heartbeat: int = 60) -> RabbitMQClient:
+        client = RabbitMQClient(
+            f"pytest_{client_name}", rabbit_service, heartbeat=heartbeat
+        )
         assert client
         assert client._connection_pool  # pylint: disable=protected-access
         assert not client._connection_pool.is_closed  # pylint: disable=protected-access
