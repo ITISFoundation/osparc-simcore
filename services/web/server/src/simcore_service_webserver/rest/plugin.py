@@ -20,8 +20,8 @@ from .._constants import APP_OPENAPI_SPECS_KEY, APP_SETTINGS_KEY
 from .._meta import API_VTAG, api_version_prefix
 from ..security.plugin import setup_security
 from . import _handlers
+from ._utils import get_openapi_specs_path, load_openapi_specs
 from .healthcheck import HealthCheck
-from .rest_utils import get_openapi_specs_path, load_openapi_specs
 from .settings import RestSettings, get_plugin_settings
 
 log = logging.getLogger(__name__)
