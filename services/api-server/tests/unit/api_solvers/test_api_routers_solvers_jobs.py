@@ -384,7 +384,6 @@ async def test_run_solver_job(
     job_status = JobStatus.parse_obj(resp.json())
 
 
-@pytest.mark.xfail(reason="Still not implemented")
 @pytest.mark.acceptance_test(
     "For https://github.com/ITISFoundation/osparc-simcore/issues/4111"
 )
