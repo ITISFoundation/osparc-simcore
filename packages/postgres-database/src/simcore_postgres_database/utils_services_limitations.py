@@ -1,45 +1,57 @@
 import datetime
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 
 import aiopg.sa
+import psycopg2
+import psycopg2.errors
 from sqlalchemy import literal_column
 
 from .models.services_limitations import services_limitations
 
 
+#
+# Errors
+#
+class BaseServicesLimitationsError(Exception):
+    ...
+
+
+class ServiceLimitationsOperationNotAllowed(BaseServicesLimitationsError):
+    ...
+
+
 @dataclass(frozen=True, slots=True, kw_only=True)
-class ServiceLimitation:
+class ServiceLimitationsCreate:
     gid: int
     cluster_id: int | None
     ram: int | None
     cpu: float | None
     vram: int | None
     gpu: float | None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ServiceLimitations(ServiceLimitationsCreate):
     created: datetime.datetime
     modified: datetime.datetime
 
 
 class ServicesLimitationsRepo:
     async def create(
-        self,
-        conn: aiopg.sa.SAConnection,
-        *,
-        gid: int,
-        cluster_id: int | None,
-        ram: int | None,
-        cpu: float | None,
-        vram: int | None,
-        gpu: int | None
-    ) -> ServiceLimitation:
-        async with conn.begin():
-            insert_stmt = (
-                services_limitations.insert()
-                .values(
-                    gid=gid, cluster_id=cluster_id, ram=ram, cpu=cpu, vram=vram, gpu=gpu
+        self, conn: aiopg.sa.SAConnection, *, new_limits: ServiceLimitationsCreate
+    ) -> ServiceLimitations:
+        try:
+            async with conn.begin():
+                insert_stmt = (
+                    services_limitations.insert()
+                    .values(**asdict(new_limits))
+                    .returning(literal_column("*"))
                 )
-                .returning(literal_column("*"))
-            )
-            result = await conn.execute(insert_stmt)
-            created_entry = await result.first()
-            assert created_entry  # nosec
-        return ServiceLimitation(**dict(created_entry.items()))
+                result = await conn.execute(insert_stmt)
+                created_entry = await result.first()
+                assert created_entry  # nosec
+            return ServiceLimitations(**dict(created_entry.items()))
+        except psycopg2.errors.UniqueViolation as exc:
+            raise ServiceLimitationsOperationNotAllowed(
+                f"Service limitations for that combination of ({new_limits.gid=}, {new_limits.cluster_id=})"
+            ) from exc
