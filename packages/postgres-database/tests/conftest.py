@@ -74,7 +74,7 @@ def is_postgres_responsive(dsn) -> bool:
         engine = sa.create_engine(dsn)
         conn = engine.connect()
         conn.close()
-    except sa.exc.OperationalError:
+    except sa.exc.OperationalError:  # type: ignore
         return False
     return True
 
