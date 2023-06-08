@@ -22,6 +22,7 @@
  * @asset(svg/svg.js)
  * @asset(svg/svg.path.js)
  * @asset(svg/svg.draggable.js)
+ * @asset(svg/svg.foreignobject.js)
  * @ignore(SVG)
  */
 
@@ -157,9 +158,13 @@ qx.Class.define("osparc.wrapper.Svg", {
     },
 
     drawAnnotationNote: function(draw, x, y, destinatary, note) {
-      const width = 150;
-      const lines = note.split("\n").length;
-      const height = Math.max(120, lines*20);
+      const lines = note.split("\n");
+      const width = 200;
+      const minHeight = 120;
+      const titleHeight = 24;
+      const padding = 5;
+      const nLines = lines.length;
+      const height = Math.max(minHeight, titleHeight + nLines*18);
       const trianSize = 25;
       const yellow = "#FFFF01"; // do not make it pure yellow, svg will change the hex value to a "yellow" string
       const orange = "#FFA500";
@@ -208,37 +213,44 @@ qx.Class.define("osparc.wrapper.Svg", {
       }, this);
       gNote.add(trianTransparent);
 
-      const separator = gNote.line(0, 0, width-8, 0)
+      const separator = gNote.line(0, 0, width-2*padding, 0)
         .stroke({
           width: 2,
           color: orange
         })
-        .move(4, 24);
+        .move(padding, titleHeight);
       separator.back();
       gNote.add(separator);
 
-      const offsetX = 6;
-      const offsetY = 4;
       const title = gNote.text(destinatary)
         .font({
           fill: "#000000",
           size: "14px",
           family: "Roboto"
         })
-        .move(offsetX, offsetY);
+        .move(padding, padding);
       title.back();
       gNote.add(title);
 
-      const text = gNote.text(note)
-        .font({
-          fill: "#000000",
-          size: "13px",
-          family: "Roboto"
+      const fobj = gNote.foreignObject(100, 100).attr({id: "fobj"});
+      fobj.appendChild("div", {
+        id: "mydiv",
+        innerText: note
+      });
+      fobj
+        .attr({
+          width: width-2*padding,
+          height: height-titleHeight
         })
-        .move(offsetX, offsetY+24);
-      text.back();
-      gNote.text = text;
-      gNote.add(text);
+        .move(padding, padding+titleHeight);
+      const n = fobj.getChild(0);
+      n.style.overflow = "hidden";
+      n.style.overflowWrap = "anywhere";
+      n.style.fontFamily = "Roboto";
+      n.style.fontSize = "13px";
+      // fobj.back();
+      gNote.text = fobj;
+      gNote.add(fobj);
 
       return gNote;
     },
@@ -425,17 +437,15 @@ qx.Class.define("osparc.wrapper.Svg", {
         }
 
         // initialize the script loading
-        const svgPath = "svg/svg.js";
-        const svgDraggablePath = "svg/svg.draggable.js";
-        const svgPathPath = "svg/svg.path.js";
-        const dynLoader = new qx.util.DynamicScriptLoader([
-          svgPath,
-          svgDraggablePath,
-          svgPathPath
-        ]);
-
+        const svgAndPlugins = [
+          "svg/svg.js",
+          "svg/svg.draggable.js",
+          "svg/svg.path.js",
+          "svg/svg.foreignobject.js"
+        ];
+        const dynLoader = new qx.util.DynamicScriptLoader(svgAndPlugins);
         dynLoader.addListenerOnce("ready", () => {
-          console.log(svgPath + " loaded");
+          console.log("svgAndPlugins loaded");
           this.setLibReady(true);
           resolve();
         }, this);
