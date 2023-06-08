@@ -23,22 +23,23 @@ from simcore_postgres_database.webserver_models import (
 
 # TODO: roles table that maps every role with allowed tasks e.g. read/write,...??
 
-__all__ = (
-    "UserStatus",
-    "UserRole",
+__all__: tuple[str, ...] = (
+    "api_keys",
     "ConfirmationAction",
-    "users",
+    "confirmations",
+    "group_classifiers",
     "groups",
     "GroupType",
-    "user_to_groups",
-    "confirmations",
-    "tokens",
     "metadata",
-    "tags",
-    "study_tags",
-    "api_keys",
-    "projects",
-    "group_classifiers",
     "products",
+    "projects",
     "scicrunch_resources",
+    "study_tags",
+    "tags",
+    "tokens",
+    "user_to_groups",
+    "UserRole",
+    "users",
+    "UserStatus",
 )
+# nopycln: file

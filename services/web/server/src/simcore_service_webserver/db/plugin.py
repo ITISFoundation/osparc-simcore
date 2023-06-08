@@ -23,13 +23,13 @@ from tenacity import retry
 
 from .settings import PostgresSettings, get_plugin_settings
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
-@retry(**PostgresRetryPolicyUponInitialization(log).kwargs)
+@retry(**PostgresRetryPolicyUponInitialization(_logger).kwargs)
 async def _ensure_pg_ready(settings: PostgresSettings) -> Engine:
 
-    log.info("Connecting to postgres with %s", f"{settings=}")
+    _logger.info("Connecting to postgres with %s", f"{settings=}")
     engine = await create_engine(
         settings.dsn,
         application_name=settings.POSTGRES_CLIENT_NAME,
@@ -43,7 +43,7 @@ async def _ensure_pg_ready(settings: PostgresSettings) -> Engine:
         await close_engine(engine)
         raise
 
-    log.info("Connection to postgres with %s succeeded", f"{settings=}")
+    _logger.info("Connection to postgres with %s succeeded", f"{settings=}")
     return engine  # tenacity rules guarantee exit with exc
 
 
@@ -53,16 +53,16 @@ async def postgres_cleanup_ctx(app: web.Application) -> AsyncIterator[None]:
     aiopg_engine = await _ensure_pg_ready(settings)
     app[APP_DB_ENGINE_KEY] = aiopg_engine
 
-    log.info("pg engine created %s", json_dumps(get_engine_state(app), indent=1))
+    _logger.info("pg engine created %s", json_dumps(get_engine_state(app), indent=1))
 
     yield  # -------------------
 
     if aiopg_engine is not app.get(APP_DB_ENGINE_KEY):
-        log.critical("app does not hold right db engine. Somebody has changed it??")
+        _logger.critical("app does not hold right db engine. Somebody has changed it??")
 
     await close_engine(aiopg_engine)
 
-    log.debug(
+    _logger.debug(
         "pg engine created after shutdown %s (closed=%s): %s",
         aiopg_engine.dsn,
         aiopg_engine.closed,
@@ -95,7 +95,7 @@ def get_database_engine(app: web.Application) -> Engine:
 
 
 @app_module_setup(
-    __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_DB", logger=log
+    __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_DB", logger=_logger
 )
 def setup_db(app: web.Application):
 
