@@ -177,7 +177,7 @@ generator-help: ## help on client-api generator
 
 
 fetch-openapi-templates: ## fetches open api generator templates and overwrites the ones in $(CURDIR)/openapi/python-templates
-	cd $(CURDIR); \
+	@cd $(CURDIR); \
 	export RUN_FCN=FETCH_TEMPLATES; \
 	export DOCKER_MOUNT=$(REPO_BASE_DIR)/services/api-server/openapi/python_templates:$(CONTAINER_TEMPL_DIR); \
 	$(SCRIPTS_DIR)/openapi-generator.bash $(CURDIR)/openapi/python_templates
