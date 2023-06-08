@@ -164,7 +164,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       const width = 150;
       const height = 150;
       const trianSize = 25;
-      const yellow = "#FFFF01";
+      const yellow = "#FFFF01"; // do not make it pure yellow, svg will change the hex value to string
       const orange = "#FFA500";
 
       const rect = draw.rect(width, height)
@@ -176,19 +176,38 @@ qx.Class.define("osparc.wrapper.Svg", {
       rect.back();
       gNote.add(rect);
 
-      const trainCtrls = [
+      const trianOrangeCtrls = [
         [width-trianSize, height-trianSize],
         [width-trianSize, width],
         [width, height-trianSize]
       ];
-      const trian = draw.polygon(trainCtrls.join())
+      const trianOrange = draw.polygon(trianOrangeCtrls.join())
         .fill(orange)
         .style({
           cursor: "pointer"
         })
         .move(x+width-trianSize, y+height-trianSize);
-      trian.back();
-      gNote.add(trian);
+      trianOrange.back();
+      gNote.add(trianOrange);
+
+      const trianTransparentCtrls = [
+        [width-trianSize, width],
+        [width, height],
+        [width, height-trianSize]
+      ];
+      const colorManager = qx.theme.manager.Color.getInstance();
+      const trianTransparent = draw.polygon(trianTransparentCtrls.join())
+        .fill(colorManager.resolve("background-main"))
+        .style({
+          cursor: "pointer"
+        })
+        .move(x+width-trianSize, y+height-trianSize);
+      trianTransparent.back();
+      colorManager.addListener("changeTheme", () => {
+        const bgColor = colorManager.resolve("background-main");
+        trianTransparent.fill(bgColor);
+      }, this);
+      gNote.add(trianTransparent);
 
       const line = draw.line(0, 0, width-8, 0)
         .stroke({
