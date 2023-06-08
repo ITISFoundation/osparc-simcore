@@ -16,7 +16,7 @@ from ..redis import get_redis_scheduled_maintenance_client
 from ..utils_aiohttp import envelope_json_response
 from .healthcheck import HealthCheck, HealthCheckFailed
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 routes = web.RouteTableDef()
 
@@ -36,7 +36,7 @@ async def healthcheck_liveness_probe(request: web.Request):
         # if slots append get too delayed, just timeout
         health_report = await healthcheck.run(request.app)
     except HealthCheckFailed as err:
-        log.warning("%s", err)
+        _logger.warning("%s", err)
         raise web.HTTPServiceUnavailable(reason="unhealthy")
 
     return web.json_response(data={"data": health_report})

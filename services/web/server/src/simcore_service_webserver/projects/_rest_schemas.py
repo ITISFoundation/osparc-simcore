@@ -17,7 +17,7 @@ from models_library.utils.common_validators import empty_str_to_none, none_to_em
 from pydantic import BaseModel, Extra, Field, validator
 from servicelib.aiohttp.long_running_tasks.server import TaskGet
 
-from ..rest.rest_schemas_base import InputSchema, OutputSchema
+from ..rest.schemas_base import InputSchema, OutputSchema
 from ._permalink import ProjectPermalink
 
 NOT_REQUIRED = Field(default=None)
