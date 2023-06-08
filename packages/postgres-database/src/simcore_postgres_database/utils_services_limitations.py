@@ -136,11 +136,9 @@ class ServicesLimitationsRepo:
         )
         group_to_limits: dict[tuple[int, GroupType], ServiceLimitations] = {
             (
-                row[services_limitations.c.gid],  # type: ignore
-                row[groups.c.type],  # type: ignore
-            ): ServiceLimitations(
-                **{k: v for k, v in row.items() if k != "type"}  # type: ignore
-            )
+                row[services_limitations.c.gid],
+                row[groups.c.type],
+            ): ServiceLimitations(**{k: v for k, v in row.items() if k != "type"})
             async for row in conn.execute(select_stmt)
         }
 
