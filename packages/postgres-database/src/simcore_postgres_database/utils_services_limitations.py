@@ -51,15 +51,14 @@ class ServicesLimitationsRepo:
         conn: aiopg.sa.SAConnection, *, new_limits: ServiceLimitationsCreate
     ) -> ServiceLimitations:
         try:
-            async with conn.begin():
-                insert_stmt = (
-                    services_limitations.insert()
-                    .values(**asdict(new_limits))
-                    .returning(literal_column("*"))
-                )
-                result = await conn.execute(insert_stmt)
-                created_entry = await result.first()
-                assert created_entry  # nosec
+            insert_stmt = (
+                services_limitations.insert()
+                .values(**asdict(new_limits))
+                .returning(literal_column("*"))
+            )
+            result = await conn.execute(insert_stmt)
+            created_entry = await result.first()
+            assert created_entry  # nosec
             return ServiceLimitations(**dict(created_entry.items()))
         except psycopg2.errors.UniqueViolation as exc:
             raise ServiceLimitationsOperationNotAllowed(
@@ -70,55 +69,52 @@ class ServicesLimitationsRepo:
     async def get(
         conn: aiopg.sa.SAConnection, *, gid: int, cluster_id: int | None
     ) -> ServiceLimitations:
-        async with conn.begin():
-            result = await conn.execute(
-                sa.select(services_limitations).where(
-                    (services_limitations.c.gid == gid)
-                    & (services_limitations.c.cluster_id == cluster_id)
-                )
+        result = await conn.execute(
+            sa.select(services_limitations).where(
+                (services_limitations.c.gid == gid)
+                & (services_limitations.c.cluster_id == cluster_id)
             )
-            receive_entry = await result.first()
-            if not receive_entry:
-                raise ServiceLimitationsOperationNotFound(
-                    f"Service limitations for ({gid=}, {cluster_id=}) do not exist"
-                )
-            assert receive_entry  # nosec
+        )
+        receive_entry = await result.first()
+        if not receive_entry:
+            raise ServiceLimitationsOperationNotFound(
+                f"Service limitations for ({gid=}, {cluster_id=}) do not exist"
+            )
+        assert receive_entry  # nosec
         return ServiceLimitations(**dict(receive_entry.items()))
 
     @staticmethod
     async def update(
         conn: aiopg.sa.SAConnection, *, gid: int, cluster_id: int | None, **values
     ) -> ServiceLimitations:
-        async with conn.begin():
-            update_stmt = (
-                services_limitations.update()
-                .values(**values)
-                .where(
-                    (services_limitations.c.gid == gid)
-                    & (services_limitations.c.cluster_id == cluster_id)
-                )
-                .returning(literal_column("*"))
+        update_stmt = (
+            services_limitations.update()
+            .values(**values)
+            .where(
+                (services_limitations.c.gid == gid)
+                & (services_limitations.c.cluster_id == cluster_id)
             )
-            result = await conn.execute(update_stmt)
-            updated_entry = await result.first()
-            if not updated_entry:
-                raise ServiceLimitationsOperationNotFound(
-                    f"Service limitations for ({gid=}, {cluster_id=}) do not exist"
-                )
-            assert updated_entry  # nosec
+            .returning(literal_column("*"))
+        )
+        result = await conn.execute(update_stmt)
+        updated_entry = await result.first()
+        if not updated_entry:
+            raise ServiceLimitationsOperationNotFound(
+                f"Service limitations for ({gid=}, {cluster_id=}) do not exist"
+            )
+        assert updated_entry  # nosec
         return ServiceLimitations(**dict(updated_entry.items()))
 
     @staticmethod
     async def delete(
         conn: aiopg.sa.SAConnection, *, gid: int, cluster_id: int | None
     ) -> None:
-        async with conn.begin():
-            await conn.execute(
-                sa.delete(services_limitations).where(
-                    (services_limitations.c.gid == gid)
-                    & (services_limitations.c.cluster_id == cluster_id)
-                )
+        await conn.execute(
+            sa.delete(services_limitations).where(
+                (services_limitations.c.gid == gid)
+                & (services_limitations.c.cluster_id == cluster_id)
             )
+        )
 
     def _join_user_groups_service_limitations(
         self,
@@ -135,11 +131,12 @@ class ServicesLimitationsRepo:
     async def list_for_user(
         self, conn: aiopg.sa.SAConnection, *, cluster_id: int | None
     ) -> list[ServiceLimitations]:
-        limits = []
-        async with conn.begin():
-            select_stmt = sa.select(services_limitations).select_from(
-                self._join_user_groups_service_limitations(cluster_id)
-            )
-            async for row in conn.execute(select_stmt):
-                limits.append(ServiceLimitations(**dict(row.items())))  # type: ignore
+        select_stmt = sa.select(services_limitations).select_from(
+            self._join_user_groups_service_limitations(cluster_id)
+        )
+        limits = [
+            ServiceLimitations(**dict(row.items()))  # type: ignore
+            async for row in conn.execute(select_stmt)
+        ]
+
         return limits

@@ -197,7 +197,7 @@ async def test_list_service_limitations_for_user(
     assert len(list_limits) == 1
     assert list_limits[0] == everyone_limit
 
-    # add a limit on the group
+    # add a limit on the group of the user
     group_limit = await ServicesLimitationsRepo.create(
         connection, new_limits=random_service_limitations(group.gid, None)
     )
