@@ -80,32 +80,38 @@ qx.Class.define("osparc.component.editor.AnnotationEditor", {
         row++;
       }
 
-      if (["text", "note"].includes(annotation.getType())) {
-        const attrs = annotation.getAttributes();
-        this._add(new qx.ui.basic.Label(annotation.getType() === "note" ? this.tr("Note") : this.tr("Text")), {
+      const attrs = annotation.getAttributes();
+      if (annotation.getType() === "text") {
+        this._add(new qx.ui.basic.Label(this.tr("Text")), {
           row,
           column: 0
         });
-        let textField = null;
-        if (annotation.getType() === "note") {
-          textField = new qx.ui.form.TextArea(attrs.text).set({
-            autoSize: true,
-            minHeight: 70,
-            maxHeight: 140
-          });
-        } else {
-          textField = new qx.ui.form.TextField(attrs.text);
-        }
+        const textField = new qx.ui.form.TextField(attrs.text);
         textField.addListener("changeValue", e => annotation.setText(e.getData()));
         this._add(textField, {
           row,
           column: 1
         });
         row++;
+      } else if (annotation.getType() === "note") {
+        this._add(new qx.ui.basic.Label(this.tr("Note")), {
+          row,
+          column: 0
+        });
+        const textArea = new qx.ui.form.TextArea(attrs.text).set({
+          autoSize: true,
+          minHeight: 70,
+          maxHeight: 140
+        });
+        textArea.addListener("changeValue", e => annotation.setText(e.getData()));
+        this._add(textArea, {
+          row,
+          column: 1
+        });
+        row++;
       }
 
-      if (["text"].includes(annotation.getType())) {
-        const attrs = annotation.getAttributes();
+      if (annotation.getType() === "text") {
         this._add(new qx.ui.basic.Label(this.tr("Size")), {
           row,
           column: 0
