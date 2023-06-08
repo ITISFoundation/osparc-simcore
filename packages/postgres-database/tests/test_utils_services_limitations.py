@@ -102,8 +102,24 @@ async def test_multiple_same_group_limitations_on_same_cluster_different_groups_
 
 async def test_modified_timestamp_auto_updates_with_changes(
     connection: SAConnection,
+    random_service_limitations: Callable[[int, int | None], ServiceLimitationsCreate],
 ):
-    ...
+    # NOTE: these test works because the everyone group (gid=1) exists
+    repo = ServicesLimitationsRepo()
+    created_limit = await repo.create(
+        connection, new_limits=random_service_limitations(1, None)
+    )
+    assert created_limit
+    assert created_limit.ram is not None
+    # modify the limit
+    updated_limit = await repo.update(
+        connection, gid=1, cluster_id=None, ram=created_limit.ram + 25
+    )
+    assert updated_limit
+    assert updated_limit.ram is not None
+    assert created_limit.ram == (updated_limit.ram - 25)
+    assert updated_limit.modified > created_limit.modified
+    assert updated_limit.created == created_limit.created
 
 
 async def test_get_group_services_limitations_correctly_merges():

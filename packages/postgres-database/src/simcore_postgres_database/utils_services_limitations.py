@@ -55,3 +55,21 @@ class ServicesLimitationsRepo:
             raise ServiceLimitationsOperationNotAllowed(
                 f"Service limitations for that combination of ({new_limits.gid=}, {new_limits.cluster_id=})"
             ) from exc
+
+    async def update(
+        self, conn: aiopg.sa.SAConnection, *, gid: int, cluster_id: int | None, **values
+    ) -> ServiceLimitations:
+        async with conn.begin():
+            update_stmt = (
+                services_limitations.update()
+                .values(**values)
+                .where(
+                    (services_limitations.c.gid == gid)
+                    & (services_limitations.c.cluster_id == cluster_id)
+                )
+                .returning(literal_column("*"))
+            )
+            result = await conn.execute(update_stmt)
+            updated_entry = await result.first()
+            assert updated_entry  # nosec
+        return ServiceLimitations(**dict(updated_entry.items()))
