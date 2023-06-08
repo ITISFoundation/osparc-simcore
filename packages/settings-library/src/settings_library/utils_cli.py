@@ -2,7 +2,7 @@ import logging
 import os
 from functools import partial
 from pprint import pformat
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
 import rich
 import typer
@@ -168,8 +168,7 @@ def create_version_callback(application_version: str) -> Callable:
 
     def version(
         ctx: typer.Context,
-        version: bool
-        | None = (
+        version: Optional[bool] = (
             typer.Option(
                 None,
                 "--version",
