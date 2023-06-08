@@ -95,8 +95,8 @@ define create_and_validate_openapi
 	@set -o allexport; \
 	source .env; \
 	cd $(CURDIR); \
-	export OPENAPI_GENERATOR_VERSION=$(OPENAPI_GENERATOR_VERSION); \
-	$(SCRIPTS_DIR)/openapi-generator-cli.bash validate --input-spec /local/$@
+	export RUN_FCN=OPENAPI_GENERATOR_CLI; \
+	$(SCRIPTS_DIR)/openapi-generator.bash validate --input-spec /local/$@
 endef
 
 
@@ -154,17 +154,17 @@ python-client: client openapi.json ## runs python client generator
 	# generates
 	@source .env; \
 	cd $(CURDIR); \
-	export OPENAPI_GENERATOR_VERSION=$(OPENAPI_GENERATOR_VERSION); \
+	export RUN_FCN=OPENAPI_GENERATOR_CLI; \
 	export DOCKER_MOUNT=$(REPO_BASE_DIR)/services/api-server/openapi/python_templates:$(CONTAINER_TEMPL_DIR); \
-	$(SCRIPTS_DIR)/openapi-generator-cli.bash generate \
+	$(SCRIPTS_DIR)/openapi-generator.bash generate \
 		--generator-name=$(GENERATOR_NAME) \
-		--git-user-id=$(GIT_USER_ID)\
-		--git-repo-id=$(GIT_REPO_ID)\
-		--http-user-agent="osparc-api/$(APP_VERSION)/python"\
+		--git-user-id=$(GIT_USER_ID) \
+		--git-repo-id=$(GIT_REPO_ID) \
+		--http-user-agent="osparc-api/$(APP_VERSION)/python" \
 		--input-spec=/local/openapi.json \
 		--output=/local/client \
-		--additional-properties=$(subst $(space),$(comma),$(strip $(ADDITIONAL_PROPS)))\
-		--package-name=osparc\
+		--additional-properties=$(subst $(space),$(comma),$(strip $(ADDITIONAL_PROPS))) \
+		--package-name=osparc \
 		--release-note="Updated to $(APP_VERSION)" \
 		--template-dir=$(CONTAINER_TEMPL_DIR)
 
@@ -177,19 +177,7 @@ generator-help: ## help on client-api generator
 
 
 fetch-openapi-templates: ## fetches open api generator templates and overwrites the ones in $(CURDIR)/openapi/python-templates
-	$(eval TMPDIR := $(shell mktemp -d))
-
-	@echo "Fetching openapi generator templates from github..."
-	@wget -O $(TMPDIR)/openapi_zip.zip "https://github.com/OpenAPITools/openapi-generator/archive/refs/tags/$(OPENAPI_GENERATOR_VERSION).zip"; \
-	unzip -q $(TMPDIR)/openapi_zip.zip -d $(TMPDIR); \
-
-	@echo "Overwriting templates in this repo..."
-	@rm -r $(CURDIR)/openapi/python_templates; \
-	mkdir $(CURDIR)/openapi/python_templates; \
-	cd $(TMPDIR); \
-	openapi_dir=$$(ls . | grep openapi-generator); \
-	cd $${openapi_dir}; \
-	cp -r ./modules/openapi-generator/src/main/resources/python/* $(CURDIR)/openapi/python_templates
-
-	@rm -r $(TMPDIR)
-	@echo "Done!"
+	cd $(CURDIR); \
+	export RUN_FCN=FETCH_TEMPLATES; \
+	export DOCKER_MOUNT=$(REPO_BASE_DIR)/services/api-server/openapi/python_templates:$(CONTAINER_TEMPL_DIR); \
+	$(SCRIPTS_DIR)/openapi-generator.bash $(CURDIR)/openapi/python_templates
