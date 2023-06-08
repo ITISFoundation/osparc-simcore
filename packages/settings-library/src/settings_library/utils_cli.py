@@ -4,6 +4,7 @@ from functools import partial
 from pprint import pformat
 from typing import Any, Callable
 
+import rich
 import typer
 from packaging.version import Version
 from pydantic import BaseModel, SecretStr, ValidationError
@@ -164,5 +165,30 @@ def create_version_command(app_version: Version) -> Callable:
     def version():
         """Prints the application's version"""
         print(app_version)
+
+    return version
+
+
+def create_version_callback(application_version: str) -> Callable:
+    def _version_callback(value: bool):
+        if value:
+            rich.print(application_version)
+            raise typer.Exit()
+
+    def version(
+        ctx: typer.Context,
+        version: bool
+        | None = (
+            typer.Option(
+                None,
+                "--version",
+                callback=_version_callback,
+                is_eager=True,
+            )
+        ),
+    ):
+        """current version"""
+        assert ctx  # nosec
+        assert version or not version  # nosec
 
     return version

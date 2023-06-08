@@ -16,7 +16,7 @@ from settings_library.base import BaseCustomSettings
 from settings_library.utils_cli import (
     create_json_encoder_wo_secrets,
     create_settings_command,
-    create_version_command,
+    create_version_callback,
 )
 from typer.testing import CliRunner
 
@@ -55,7 +55,7 @@ def cli(
     # adds settings command
     settings_cmd = create_settings_command(fake_settings_class, log)
     main.command()(settings_cmd)
-    main.command()(create_version_command(fake_version))
+    main.callback()(create_version_callback(fake_version))
 
     return main
 
@@ -99,7 +99,7 @@ def test_compose_commands(cli: typer.Typer, cli_runner: CliRunner):
     print(result.stdout)
     assert result.exit_code == 0, result
 
-    result = cli_runner.invoke(cli, ["version"], catch_exceptions=False)
+    result = cli_runner.invoke(cli, ["--version"], catch_exceptions=False)
     print(result.stdout)
     assert result.exit_code == 0, result
 
@@ -123,24 +123,20 @@ def test_compose_commands(cli: typer.Typer, cli_runner: CliRunner):
 
 
 HELP = """
-Usage: app settings [OPTIONS]
+ Usage: app settings [OPTIONS]
 
-  Resolves settings and prints envfile
+ Resolves settings and prints envfile
 
-Options:
-  --as-json / --no-as-json        [default: no-as-json]
-  --as-json-schema / --no-as-json-schema
-                                  [default: no-as-json-schema]
-  --compact / --no-compact        Print compact form  [default: no-compact]
-  --verbose / --no-verbose        [default: no-verbose]
-  --show-secrets / --no-show-secrets
-                                  [default: no-show-secrets]
-  --exclude-unset / --no-exclude-unset
-                                  displays settings that were explicitly setThis
-                                  represents current config (i.e. required+
-                                  defaults overriden).  [default: no-exclude-
-                                  unset]
-  --help                          Show this message and exit.
+╭─ Options ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ --as-json           --no-as-json             [default: no-as-json]                                                                                                                                                                                                                                                         │
+│ --as-json-schema    --no-as-json-schema      [default: no-as-json-schema]                                                                                                                                                                                                                                                  │
+│ --compact           --no-compact             Print compact form [default: no-compact]                                                                                                                                                                                                                                      │
+│ --verbose           --no-verbose             [default: no-verbose]                                                                                                                                                                                                                                                         │
+│ --show-secrets      --no-show-secrets        [default: no-show-secrets]                                                                                                                                                                                                                                                    │
+│ --exclude-unset     --no-exclude-unset       displays settings that were explicitly setThis represents current config (i.e. required+ defaults overriden). [default: no-exclude-unset]                                                                                                                                     │
+│ --help                                       Show this message and exit.                                                                                                                                                                                                                                                   │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
 """
 
 
