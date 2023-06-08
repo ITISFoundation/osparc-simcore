@@ -185,14 +185,13 @@ qx.Class.define("osparc.wrapper.Svg", {
 
     drawAnnotationNote: function(draw, x, y, destinatary, note) {
       const gNote = draw.group();
-      x = parseInt(x);
-      y = parseInt(y);
-
       const width = 150;
       const height = 150;
       const trianSize = 25;
-      const yellow = "#FFFF01"; // do not make it pure yellow, svg will change the hex value to string
+      const yellow = "#FFFF01"; // do not make it pure yellow, svg will change the hex value to a "yellow" string
       const orange = "#FFA500";
+      x = parseInt(x);
+      y = parseInt(y);
 
       const rect = draw.rect(width, height)
         .fill(yellow)
