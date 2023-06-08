@@ -21,8 +21,6 @@ from simcore_postgres_database.webserver_models import (
     users,
 )
 
-# TODO: roles table that maps every role with allowed tasks e.g. read/write,...??
-
 __all__: tuple[str, ...] = (
     "api_keys",
     "ConfirmationAction",
