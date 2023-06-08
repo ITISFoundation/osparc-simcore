@@ -25,7 +25,7 @@ from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_service_webserver._meta import api_version_prefix
-from simcore_service_webserver.db.db_models import UserRole
+from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects import _crud_delete_utils
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.projects_api import lock_with_notification

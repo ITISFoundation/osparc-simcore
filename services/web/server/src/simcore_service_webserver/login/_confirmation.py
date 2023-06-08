@@ -11,7 +11,7 @@ from datetime import datetime
 from aiohttp import web
 from yarl import URL
 
-from ..db.db_models import ConfirmationAction
+from ..db.models import ConfirmationAction
 from .settings import LoginOptions
 from .storage import AsyncpgStorage, ConfirmationTokenDict
 

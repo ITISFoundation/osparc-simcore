@@ -7,7 +7,7 @@ from aiopg.sa.result import ResultProxy, RowProxy
 from simcore_postgres_database.models.products import jinja2_templates
 
 from ..db.base_repository import BaseRepository
-from ..db.db_models import products
+from ..db.models import products
 from ._model import Product
 
 log = logging.getLogger(__name__)

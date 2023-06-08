@@ -8,7 +8,7 @@ from aiopg.sa.result import RowProxy
 from models_library.users import UserID
 from sqlalchemy import and_, literal_column
 
-from ..db.db_models import tokens
+from ..db.models import tokens
 from ..db.plugin import get_database_engine
 from .exceptions import TokenNotFoundError
 

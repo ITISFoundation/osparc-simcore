@@ -18,7 +18,7 @@ from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import NewInvitation, NewUser, parse_link
 from servicelib.aiohttp.rest_responses import unwrap_envelope
 from simcore_postgres_database.models.users import users
-from simcore_service_webserver.db.db_models import ConfirmationAction, UserStatus
+from simcore_service_webserver.db.models import ConfirmationAction, UserStatus
 from simcore_service_webserver.login._confirmation import _url_for_confirmation
 from simcore_service_webserver.login._constants import (
     MSG_EMAIL_EXISTS,

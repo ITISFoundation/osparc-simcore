@@ -15,7 +15,7 @@ from models_library.projects_nodes import Node, NodeID
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
-from simcore_service_webserver.db.db_models import UserRole
+from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
 from yarl import URL
 

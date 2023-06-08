@@ -6,7 +6,7 @@ from functools import reduce
 
 import sqlalchemy as sa
 from servicelib.common_aiopg_utils import DSN
-from simcore_service_webserver.db.db_models import metadata, tokens, users
+from simcore_service_webserver.db.models import metadata, tokens, users
 from simcore_service_webserver.login.utils import get_random_string
 from sqlalchemy import JSON, String, cast
 from sqlalchemy.sql import and_  # , or_, not_
