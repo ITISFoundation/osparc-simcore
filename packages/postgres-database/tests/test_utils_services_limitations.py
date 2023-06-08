@@ -12,6 +12,7 @@ from faker import Faker
 from simcore_postgres_database.utils_services_limitations import (
     ServiceLimitationsCreate,
     ServiceLimitationsOperationNotAllowed,
+    ServiceLimitationsOperationNotFound,
     ServicesLimitationsRepo,
 )
 
@@ -122,5 +123,35 @@ async def test_modified_timestamp_auto_updates_with_changes(
     assert updated_limit.created == created_limit.created
 
 
-async def test_get_group_services_limitations_correctly_merges():
-    ...
+async def test_update_services_limitations_raises_if_not_found(
+    connection: SAConnection,
+):
+    # NOTE: these test works because the everyone group (gid=1) exists
+    repo = ServicesLimitationsRepo()
+    with pytest.raises(ServiceLimitationsOperationNotFound):
+        await repo.update(connection, gid=1, cluster_id=None, ram=25)
+
+
+async def test_get_group_services_limitations(
+    connection: SAConnection,
+    random_service_limitations: Callable[[int, int | None], ServiceLimitationsCreate],
+):
+    # NOTE: these test works because the everyone group (gid=1) exists
+    repo = ServicesLimitationsRepo()
+    created_limit = await repo.create(
+        connection, new_limits=random_service_limitations(1, None)
+    )
+    assert created_limit
+
+    received_limit = await repo.get(connection, gid=1, cluster_id=None)
+    assert received_limit == created_limit
+
+
+async def test_get_group_services_limitations_raises_if_not_found(
+    connection: SAConnection,
+    random_service_limitations: Callable[[int, int | None], ServiceLimitationsCreate],
+):
+    # NOTE: these test works because the everyone group (gid=1) exists
+    repo = ServicesLimitationsRepo()
+    with pytest.raises(ServiceLimitationsOperationNotFound):
+        await repo.get(connection, gid=1, cluster_id=None)

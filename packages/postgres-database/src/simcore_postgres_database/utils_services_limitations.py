@@ -4,6 +4,7 @@ from dataclasses import asdict, dataclass
 import aiopg.sa
 import psycopg2
 import psycopg2.errors
+import sqlalchemy as sa
 from sqlalchemy import literal_column
 
 from .models.services_limitations import services_limitations
@@ -17,6 +18,10 @@ class BaseServicesLimitationsError(Exception):
 
 
 class ServiceLimitationsOperationNotAllowed(BaseServicesLimitationsError):
+    ...
+
+
+class ServiceLimitationsOperationNotFound(BaseServicesLimitationsError):
     ...
 
 
@@ -53,8 +58,26 @@ class ServicesLimitationsRepo:
             return ServiceLimitations(**dict(created_entry.items()))
         except psycopg2.errors.UniqueViolation as exc:
             raise ServiceLimitationsOperationNotAllowed(
-                f"Service limitations for that combination of ({new_limits.gid=}, {new_limits.cluster_id=})"
+                f"Service limitations for ({new_limits.gid=}, {new_limits.cluster_id=}) already exist"
             ) from exc
+
+    async def get(
+        self, conn: aiopg.sa.SAConnection, *, gid: int, cluster_id: int | None
+    ) -> ServiceLimitations:
+        async with conn.begin():
+            result = await conn.execute(
+                sa.select(services_limitations).where(
+                    (services_limitations.c.gid == gid)
+                    & (services_limitations.c.cluster_id == cluster_id)
+                )
+            )
+            receive_entry = await result.first()
+            if not receive_entry:
+                raise ServiceLimitationsOperationNotFound(
+                    f"Service limitations for ({gid=}, {cluster_id=}) do not exist"
+                )
+            assert receive_entry  # nosec
+        return ServiceLimitations(**dict(receive_entry.items()))
 
     async def update(
         self, conn: aiopg.sa.SAConnection, *, gid: int, cluster_id: int | None, **values
@@ -71,5 +94,9 @@ class ServicesLimitationsRepo:
             )
             result = await conn.execute(update_stmt)
             updated_entry = await result.first()
+            if not updated_entry:
+                raise ServiceLimitationsOperationNotFound(
+                    f"Service limitations for ({gid=}, {cluster_id=}) do not exist"
+                )
             assert updated_entry  # nosec
         return ServiceLimitations(**dict(updated_entry.items()))
