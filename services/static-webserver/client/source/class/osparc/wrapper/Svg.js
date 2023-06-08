@@ -265,6 +265,7 @@ qx.Class.define("osparc.wrapper.Svg", {
         })
         .move(x+offsetX, y+offsetY+24);
       text.back();
+      gNote.text = text;
       gNote.add(text);
 
       return gNote;
@@ -352,8 +353,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       if (representation.type === "text") {
         representation.text(label);
       } else if (representation.type === "g") {
-        // const idx = this.NOTE_GROUP.NOTE.IDX;
-        // representation.node.children[idx].textContent = label;
+        representation["text"].text(label);
       }
     },
 
