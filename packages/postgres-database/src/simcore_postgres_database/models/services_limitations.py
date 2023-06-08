@@ -12,6 +12,8 @@ from sqlalchemy import event
 
 from ._common import column_created_datetime, column_modified_datetime
 from .base import metadata
+from .clusters import clusters
+from .groups import groups
 
 _TABLE_NAME = "services_limitations"
 
@@ -22,7 +24,7 @@ services_limitations = sa.Table(
         "gid",
         sa.BigInteger,
         sa.ForeignKey(
-            "groups.gid",
+            groups.c.gid,
             onupdate="CASCADE",
             ondelete="CASCADE",
             name=f"fk_{_TABLE_NAME}_to_groups_gid",
@@ -34,7 +36,7 @@ services_limitations = sa.Table(
         "cluster_id",
         sa.BigInteger(),
         sa.ForeignKey(
-            "clusters.id",
+            clusters.c.id,
             name=f"fk_{_TABLE_NAME}_to_clusters_id",
             onupdate="CASCADE",
             ondelete="CASCADE",
