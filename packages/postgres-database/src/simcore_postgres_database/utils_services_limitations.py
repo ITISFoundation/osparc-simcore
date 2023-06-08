@@ -100,3 +100,14 @@ class ServicesLimitationsRepo:
                 )
             assert updated_entry  # nosec
         return ServiceLimitations(**dict(updated_entry.items()))
+
+    async def delete(
+        self, conn: aiopg.sa.SAConnection, *, gid: int, cluster_id: int | None
+    ) -> None:
+        async with conn.begin():
+            await conn.execute(
+                sa.delete(services_limitations).where(
+                    (services_limitations.c.gid == gid)
+                    & (services_limitations.c.cluster_id == cluster_id)
+                )
+            )

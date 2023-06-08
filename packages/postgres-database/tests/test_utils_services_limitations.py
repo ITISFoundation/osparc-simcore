@@ -132,7 +132,7 @@ async def test_update_services_limitations_raises_if_not_found(
         await repo.update(connection, gid=1, cluster_id=None, ram=25)
 
 
-async def test_get_group_services_limitations(
+async def test_get_services_limitations(
     connection: SAConnection,
     random_service_limitations: Callable[[int, int | None], ServiceLimitationsCreate],
 ):
@@ -147,11 +147,28 @@ async def test_get_group_services_limitations(
     assert received_limit == created_limit
 
 
-async def test_get_group_services_limitations_raises_if_not_found(
+async def test_get_services_limitations_raises_if_not_found(
+    connection: SAConnection,
+):
+    # NOTE: these test works because the everyone group (gid=1) exists
+    repo = ServicesLimitationsRepo()
+    with pytest.raises(ServiceLimitationsOperationNotFound):
+        await repo.get(connection, gid=1, cluster_id=None)
+
+
+async def test_delete_services_limitations(
     connection: SAConnection,
     random_service_limitations: Callable[[int, int | None], ServiceLimitationsCreate],
 ):
     # NOTE: these test works because the everyone group (gid=1) exists
     repo = ServicesLimitationsRepo()
+    created_limit = await repo.create(
+        connection, new_limits=random_service_limitations(1, None)
+    )
+    assert created_limit
+    received_limit = await repo.get(connection, gid=1, cluster_id=None)
+    assert received_limit == created_limit
+    # now delete and verify
+    await repo.delete(connection, gid=1, cluster_id=None)
     with pytest.raises(ServiceLimitationsOperationNotFound):
         await repo.get(connection, gid=1, cluster_id=None)
