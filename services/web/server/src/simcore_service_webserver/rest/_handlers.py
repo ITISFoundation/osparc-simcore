@@ -14,7 +14,7 @@ from ..login.decorators import login_required
 from ..products.plugin import get_product_name
 from ..redis import get_redis_scheduled_maintenance_client
 from ..utils_aiohttp import envelope_json_response
-from .rest_healthcheck import HealthCheck, HealthCheckFailed
+from .healthcheck import HealthCheck, HealthCheckFailed
 
 log = logging.getLogger(__name__)
 

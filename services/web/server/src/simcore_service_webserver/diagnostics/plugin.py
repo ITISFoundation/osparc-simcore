@@ -6,8 +6,8 @@ from aiohttp import web
 from servicelib.aiohttp import monitor_slow_callbacks
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
+from ..rest.healthcheck import HealthCheck
 from ..rest.plugin import setup_rest
-from ..rest.rest_healthcheck import HealthCheck
 from . import _handlers
 from ._healthcheck import (
     IncidentsRegistry,
