@@ -121,7 +121,6 @@ qx.Class.define("osparc.component.workbench.Annotation", {
           case "rect":
             osparc.wrapper.Svg.updateItemColor(representation, color);
             break;
-          case "note":
           case "text":
             osparc.wrapper.Svg.updateTextColor(representation, color);
             break;

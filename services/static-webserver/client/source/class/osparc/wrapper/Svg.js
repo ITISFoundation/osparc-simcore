@@ -47,27 +47,6 @@ qx.Class.define("osparc.wrapper.Svg", {
     VERSION: "2.7.1",
     URL: "https://github.com/svgdotjs/svg.js",
 
-    NOTE_GROUP: {
-      RECT: {
-        IDX: 0
-      },
-      TRIAN_1: {
-        IDX: 1
-      },
-      TRIAN_2: {
-        IDX: 2
-      },
-      SEPARATOR: {
-        IDX: 3
-      },
-      DETINATARY: {
-        IDX: 4
-      },
-      NOTE: {
-        IDX: 5
-      }
-    },
-
     curateCurveControls: function(controls) {
       [
         controls[0],
@@ -178,7 +157,6 @@ qx.Class.define("osparc.wrapper.Svg", {
     },
 
     drawAnnotationNote: function(draw, x, y, destinatary, note) {
-      const gNote = draw.nested();
       const width = 150;
       const lines = note.split("\n").length;
       const height = Math.max(120, lines*20);
@@ -188,12 +166,12 @@ qx.Class.define("osparc.wrapper.Svg", {
       x = parseInt(x);
       y = parseInt(y);
 
+      const gNote = draw.nested().move(x, y);
       const rect = gNote.rect(width, height)
         .fill(yellow)
         .style({
           cursor: "pointer"
-        })
-        .move(x, y);
+        });
       rect.back();
       gNote.add(rect);
 
@@ -207,7 +185,7 @@ qx.Class.define("osparc.wrapper.Svg", {
         .style({
           cursor: "pointer"
         })
-        .move(x+width-trianSize, y+height-trianSize);
+        .move(width-trianSize, height-trianSize);
       trianOrange.back();
       gNote.add(trianOrange);
 
@@ -222,7 +200,7 @@ qx.Class.define("osparc.wrapper.Svg", {
         .style({
           cursor: "pointer"
         })
-        .move(x+width-trianSize, y+height-trianSize);
+        .move(width-trianSize, height-trianSize);
       trianTransparent.back();
       colorManager.addListener("changeTheme", () => {
         const bgColor = colorManager.resolve("background-main");
@@ -230,14 +208,14 @@ qx.Class.define("osparc.wrapper.Svg", {
       }, this);
       gNote.add(trianTransparent);
 
-      const line = gNote.line(0, 0, width-8, 0)
+      const separator = gNote.line(0, 0, width-8, 0)
         .stroke({
           width: 2,
           color: orange
         })
-        .move(x+4, y+24);
-      line.back();
-      gNote.add(line);
+        .move(4, 24);
+      separator.back();
+      gNote.add(separator);
 
       const offsetX = 6;
       const offsetY = 4;
@@ -247,7 +225,7 @@ qx.Class.define("osparc.wrapper.Svg", {
           size: "14px",
           family: "Roboto"
         })
-        .move(x+offsetX, y+offsetY);
+        .move(offsetX, offsetY);
       title.back();
       gNote.add(title);
 
@@ -257,7 +235,7 @@ qx.Class.define("osparc.wrapper.Svg", {
           size: "13px",
           family: "Roboto"
         })
-        .move(x+offsetX, y+offsetY+24);
+        .move(offsetX, offsetY+24);
       text.back();
       gNote.text = text;
       gNote.add(text);
