@@ -29,6 +29,6 @@ def test_process_cli_options(env: None, cli_runner: CliRunner):
     print(result.stdout)
     assert result.exit_code == 0, _format_cli_error(result)
 
-    result = cli_runner.invoke(main, ["version"])
+    result = cli_runner.invoke(main, ["--version"])
     print(result.stdout)
     assert result.exit_code == 0, _format_cli_error(result)
