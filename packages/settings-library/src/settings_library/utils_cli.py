@@ -2,7 +2,7 @@ import logging
 import os
 from functools import partial
 from pprint import pformat
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 import typer
 from pydantic import BaseModel, SecretStr, ValidationError
@@ -80,7 +80,7 @@ def create_json_encoder_wo_secrets(model_cls: type[BaseModel]):
 
 
 def create_settings_command(
-    settings_cls: type[BaseCustomSettings], logger: Optional[logging.Logger] = None
+    settings_cls: type[BaseCustomSettings], logger: logging.Logger | None = None
 ) -> Callable:
     """Creates typer command function for settings"""
 
@@ -109,7 +109,6 @@ def create_settings_command(
             return
 
         try:
-
             settings_obj = settings_cls.create_from_envs()
 
         except ValidationError as err:
@@ -158,3 +157,11 @@ def create_settings_command(
             )
 
     return settings
+
+
+def create_version_command(app_version: str) -> Callable:
+    def version():
+        """Prints the application's version"""
+        print(app_version)
+
+    return version

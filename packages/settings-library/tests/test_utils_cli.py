@@ -16,6 +16,7 @@ from settings_library.base import BaseCustomSettings
 from settings_library.utils_cli import (
     create_json_encoder_wo_secrets,
     create_settings_command,
+    create_version_command,
 )
 from typer.testing import CliRunner
 
@@ -34,7 +35,14 @@ def envs_to_kwargs(envs: EnvVarsDict) -> dict[str, Any]:
 
 
 @pytest.fixture
-def cli(fake_settings_class: type[BaseCustomSettings]) -> typer.Typer:
+def fake_version() -> str:
+    return "0.0.1-alpha"
+
+
+@pytest.fixture
+def cli(
+    fake_settings_class: type[BaseCustomSettings], fake_version: str
+) -> typer.Typer:
     main = typer.Typer(name="app")
 
     @main.command()
@@ -47,6 +55,7 @@ def cli(fake_settings_class: type[BaseCustomSettings]) -> typer.Typer:
     # adds settings command
     settings_cmd = create_settings_command(fake_settings_class, log)
     main.command()(settings_cmd)
+    main.command()(create_version_command(fake_version))
 
     return main
 
@@ -85,7 +94,12 @@ def test_compose_commands(cli: typer.Typer, cli_runner: CliRunner):
     # NOTE: this tests is mostly here to raise awareness about what options
     # are exposed in the CLI so we can add tests if there is any update
     #
+
     result = cli_runner.invoke(cli, ["--help"], catch_exceptions=False)
+    print(result.stdout)
+    assert result.exit_code == 0, result
+
+    result = cli_runner.invoke(cli, ["version"], catch_exceptions=False)
     print(result.stdout)
     assert result.exit_code == 0, result
 
@@ -136,7 +150,6 @@ def test_settings_as_json(
     mock_environment,
     cli_runner: CliRunner,
 ):
-
     result = cli_runner.invoke(
         cli, ["settings", "--as-json", "--show-secrets"], catch_exceptions=False
     )
@@ -153,7 +166,6 @@ def test_settings_as_json_schema(
     mock_environment,
     cli_runner: CliRunner,
 ):
-
     result = cli_runner.invoke(
         cli, ["settings", "--as-json-schema"], catch_exceptions=False
     )
@@ -219,7 +231,6 @@ def test_cli_compact_settings_envs(
     cli_runner: CliRunner,
     monkeypatch: pytest.MonkeyPatch,
 ):
-
     with monkeypatch.context() as patch:
         mocked_envs_1: EnvVarsDict = setenvs_from_envfile(
             patch, fake_granular_env_file_content
