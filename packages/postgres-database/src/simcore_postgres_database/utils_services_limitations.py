@@ -7,6 +7,7 @@ import psycopg2.errors
 import sqlalchemy as sa
 from sqlalchemy import literal_column
 
+from .models.groups import user_to_groups
 from .models.services_limitations import services_limitations
 
 
@@ -41,7 +42,10 @@ class ServiceLimitations(ServiceLimitationsCreate):
     modified: datetime.datetime
 
 
+@dataclass(frozen=True, slots=True, kw_only=True)
 class ServicesLimitationsRepo:
+    user_id: int
+
     @staticmethod
     async def create(
         conn: aiopg.sa.SAConnection, *, new_limits: ServiceLimitationsCreate
@@ -115,3 +119,27 @@ class ServicesLimitationsRepo:
                     & (services_limitations.c.cluster_id == cluster_id)
                 )
             )
+
+    def _join_user_groups_service_limitations(
+        self,
+        cluster_id: int | None,
+    ):
+        j = user_to_groups.join(
+            services_limitations,
+            (user_to_groups.c.uid == self.user_id)
+            & (user_to_groups.c.gid == services_limitations.c.gid)
+            & (services_limitations.c.cluster_id == cluster_id),
+        )
+        return j
+
+    async def list_for_user(
+        self, conn: aiopg.sa.SAConnection, *, cluster_id: int | None
+    ) -> list[ServiceLimitations]:
+        limits = []
+        async with conn.begin():
+            select_stmt = sa.select(services_limitations).select_from(
+                self._join_user_groups_service_limitations(cluster_id)
+            )
+            async for row in conn.execute(select_stmt):
+                limits.append(ServiceLimitations(**dict(row.items())))  # type: ignore
+        return limits
