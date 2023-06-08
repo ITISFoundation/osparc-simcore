@@ -186,7 +186,8 @@ qx.Class.define("osparc.wrapper.Svg", {
     drawAnnotationNote: function(draw, x, y, destinatary, note) {
       const gNote = draw.group();
       const width = 150;
-      const height = 150;
+      const lines = note.split("\n").length;
+      const height = Math.max(150, lines*20);
       const trianSize = 25;
       const yellow = "#FFFF01"; // do not make it pure yellow, svg will change the hex value to a "yellow" string
       const orange = "#FFA500";
@@ -204,7 +205,7 @@ qx.Class.define("osparc.wrapper.Svg", {
 
       const trianOrangeCtrls = [
         [width-trianSize, height-trianSize],
-        [width-trianSize, width],
+        [width-trianSize, height],
         [width, height-trianSize]
       ];
       const trianOrange = draw.polygon(trianOrangeCtrls.join())
@@ -217,7 +218,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       gNote.add(trianOrange);
 
       const trianTransparentCtrls = [
-        [width-trianSize, width],
+        [width-trianSize, height],
         [width, height],
         [width, height-trianSize]
       ];
