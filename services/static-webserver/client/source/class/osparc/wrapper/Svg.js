@@ -47,6 +47,27 @@ qx.Class.define("osparc.wrapper.Svg", {
     VERSION: "2.7.1",
     URL: "https://github.com/svgdotjs/svg.js",
 
+    NOTE_GROUP: {
+      RECT: {
+        IDX: 0
+      },
+      TRIAN_1: {
+        IDX: 1
+      },
+      TRIAN_2: {
+        IDX: 2
+      },
+      SEPARATOR: {
+        IDX: 3
+      },
+      DETINATARY: {
+        IDX: 4
+      },
+      NOTE: {
+        IDX: 5
+      }
+    },
+
     curateCurveControls: function(controls) {
       [
         controls[0],
@@ -325,7 +346,8 @@ qx.Class.define("osparc.wrapper.Svg", {
       if (representation.type === "text") {
         representation.text(label);
       } else if (representation.type === "g") {
-        // representation.node.children[4].textContent = label;
+        // const idx = this.NOTE_GROUP.NOTE.IDX;
+        // representation.node.children[idx].textContent = label;
       }
     },
 
