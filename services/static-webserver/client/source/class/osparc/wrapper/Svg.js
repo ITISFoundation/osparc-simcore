@@ -232,6 +232,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       title.back();
       gNote.add(title);
 
+      // size and id are not relevant
       const fobj = gNote.foreignObject(100, 100).attr({id: "fobj"});
       fobj.appendChild("div", {
         id: "mydiv",
@@ -243,13 +244,12 @@ qx.Class.define("osparc.wrapper.Svg", {
           height: height-titleHeight
         })
         .move(padding, padding+titleHeight);
-      const n = fobj.getChild(0);
-      n.style.overflow = "hidden";
-      n.style.overflowWrap = "anywhere";
-      n.style.fontFamily = "Roboto";
-      n.style.fontSize = "13px";
-      // fobj.back();
-      gNote.text = fobj;
+      const textChild = fobj.getChild(0);
+      textChild.style.overflow = "hidden";
+      textChild.style.overflowWrap = "anywhere";
+      textChild.style.fontFamily = "Roboto";
+      textChild.style.fontSize = "13px";
+      gNote.textChild = textChild;
       gNote.add(fobj);
 
       return gNote;
@@ -338,7 +338,7 @@ qx.Class.define("osparc.wrapper.Svg", {
         representation.text(label);
       } else if (representation.type === "svg") {
         // nested
-        representation["text"].text(label);
+        representation["textChild"].innerText = label;
       }
     },
 
