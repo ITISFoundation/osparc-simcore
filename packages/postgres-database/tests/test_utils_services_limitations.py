@@ -9,6 +9,7 @@ import pytest
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from faker import Faker
+from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.utils_services_limitations import (
     ServiceLimitationsCreate,
     ServiceLimitationsOperationNotAllowed,
@@ -179,8 +180,8 @@ async def test_list_service_limitations_for_user(
     create_fake_group: Callable[..., Awaitable[RowProxy]],
     random_service_limitations: Callable[[int, int | None], ServiceLimitationsCreate],
 ):
-    group = await create_fake_group(connection)
-    user = await create_fake_user(connection, group)
+    group1 = await create_fake_group(connection)
+    user = await create_fake_user(connection, group1)
     repo = ServicesLimitationsRepo(user_id=user.id)
     list_limits = await repo.list_for_user(connection, cluster_id=None)
     assert list_limits is not None
@@ -199,13 +200,33 @@ async def test_list_service_limitations_for_user(
 
     # add a limit on the group of the user
     group_limit = await ServicesLimitationsRepo.create(
-        connection, new_limits=random_service_limitations(group.gid, None)
+        connection, new_limits=random_service_limitations(group1.gid, None)
     )
     assert group_limit
     list_limits = await repo.list_for_user(connection, cluster_id=None)
     assert list_limits is not None
+    assert len(list_limits) == 1
+    assert all(limit in list_limits for limit in [group_limit])
+
+    # create a second group, but do not add the user to it yet
+    group2 = await create_fake_group(connection)
+    group2_limit = await ServicesLimitationsRepo.create(
+        connection, new_limits=random_service_limitations(group2.gid, None)
+    )
+    assert group2_limit
+    list_limits = await repo.list_for_user(connection, cluster_id=None)
+    assert list_limits is not None
+    assert len(list_limits) == 1
+    assert all(limit in list_limits for limit in [group_limit])
+
+    # now add the user to it, we should now see 2 groups in the listing
+    await connection.execute(
+        user_to_groups.insert().values(uid=user.id, gid=group2.gid)
+    )
+    list_limits = await repo.list_for_user(connection, cluster_id=None)
+    assert list_limits is not None
     assert len(list_limits) == 2
-    assert all(limit in list_limits for limit in [everyone_limit, group_limit])
+    assert all(limit in list_limits for limit in [group_limit, group2_limit])
 
     # add a limit on the primary group
     user_limit = await ServicesLimitationsRepo.create(
@@ -214,7 +235,5 @@ async def test_list_service_limitations_for_user(
     assert user_limit
     list_limits = await repo.list_for_user(connection, cluster_id=None)
     assert list_limits is not None
-    assert len(list_limits) == 3
-    assert all(
-        limit in list_limits for limit in [everyone_limit, group_limit, user_limit]
-    )
+    assert len(list_limits) == 1
+    assert all(limit in list_limits for limit in [user_limit])

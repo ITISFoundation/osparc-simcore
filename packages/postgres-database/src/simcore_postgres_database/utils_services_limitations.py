@@ -7,7 +7,7 @@ import psycopg2.errors
 import sqlalchemy as sa
 from sqlalchemy import literal_column
 
-from .models.groups import user_to_groups
+from .models.groups import GroupType, groups, user_to_groups
 from .models.services_limitations import services_limitations
 
 
@@ -125,18 +125,33 @@ class ServicesLimitationsRepo:
             (user_to_groups.c.uid == self.user_id)
             & (user_to_groups.c.gid == services_limitations.c.gid)
             & (services_limitations.c.cluster_id == cluster_id),
-        )
+        ).join(groups)
         return j
 
     async def list_for_user(
         self, conn: aiopg.sa.SAConnection, *, cluster_id: int | None
     ) -> list[ServiceLimitations]:
-        select_stmt = sa.select(services_limitations).select_from(
+        select_stmt = sa.select(services_limitations, groups.c.type).select_from(
             self._join_user_groups_service_limitations(cluster_id)
         )
-        limits = [
-            ServiceLimitations(**dict(row.items()))  # type: ignore
+        group_to_limits: dict[tuple[int, GroupType], ServiceLimitations] = {
+            (
+                row[services_limitations.c.gid],  # type: ignore
+                row[groups.c.type],  # type: ignore
+            ): ServiceLimitations(
+                **{k: v for k, v in row.items() if k != "type"}  # type: ignore
+            )
             async for row in conn.execute(select_stmt)
-        ]
+        }
 
-        return limits
+        possibly_everyone_limit = []
+        standard_limits = []
+        for (_, group_type), limit in group_to_limits.items():
+            match group_type:
+                case GroupType.STANDARD:
+                    standard_limits.append(limit)
+                case GroupType.EVERYONE:
+                    possibly_everyone_limit.append(limit)
+                case GroupType.PRIMARY:
+                    return [limit]
+        return standard_limits or possibly_everyone_limit
