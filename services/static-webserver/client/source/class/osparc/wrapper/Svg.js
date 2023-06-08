@@ -153,19 +153,13 @@ qx.Class.define("osparc.wrapper.Svg", {
     },
 
     getRectAttributes: function(rect) {
-      const idx = this.NOTE_GROUP.RECT.IDX;
-      const rectAttrs = (rect.type === "g") ? rect.node.children[idx].attributes : rect.node.attributes;
-      const attrs = {
+      const rectAttrs = rect.node.attributes;
+      return {
         x: rectAttrs.x.value,
         y: rectAttrs.y.value,
         width: rectAttrs.width ? rectAttrs.width.value : null,
         height: rectAttrs.height ? rectAttrs.height.value : null
       };
-      if (rect.type === "g") {
-        attrs.x = parseInt(attrs.x) + parseInt(rect.transform().x);
-        attrs.y = parseInt(attrs.y) + parseInt(rect.transform().y);
-      }
-      return attrs;
     },
 
     drawAnnotationText: function(draw, x, y, label, color, fontSize) {
@@ -184,7 +178,7 @@ qx.Class.define("osparc.wrapper.Svg", {
     },
 
     drawAnnotationNote: function(draw, x, y, destinatary, note) {
-      const gNote = draw.group();
+      const gNote = draw.nested();
       const width = 150;
       const lines = note.split("\n").length;
       const height = Math.max(150, lines*20);
@@ -194,7 +188,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       x = parseInt(x);
       y = parseInt(y);
 
-      const rect = draw.rect(width, height)
+      const rect = gNote.rect(width, height)
         .fill(yellow)
         .style({
           cursor: "pointer"
@@ -208,7 +202,7 @@ qx.Class.define("osparc.wrapper.Svg", {
         [width-trianSize, height],
         [width, height-trianSize]
       ];
-      const trianOrange = draw.polygon(trianOrangeCtrls.join())
+      const trianOrange = gNote.polygon(trianOrangeCtrls.join())
         .fill(orange)
         .style({
           cursor: "pointer"
@@ -223,7 +217,7 @@ qx.Class.define("osparc.wrapper.Svg", {
         [width, height-trianSize]
       ];
       const colorManager = qx.theme.manager.Color.getInstance();
-      const trianTransparent = draw.polygon(trianTransparentCtrls.join())
+      const trianTransparent = gNote.polygon(trianTransparentCtrls.join())
         .fill(colorManager.resolve("background-main"))
         .style({
           cursor: "pointer"
@@ -236,7 +230,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       }, this);
       gNote.add(trianTransparent);
 
-      const line = draw.line(0, 0, width-8, 0)
+      const line = gNote.line(0, 0, width-8, 0)
         .stroke({
           width: 2,
           color: orange
@@ -247,7 +241,7 @@ qx.Class.define("osparc.wrapper.Svg", {
 
       const offsetX = 6;
       const offsetY = 4;
-      const title = draw.text(destinatary)
+      const title = gNote.text(destinatary)
         .font({
           fill: "#000000",
           size: "14px",
@@ -257,7 +251,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       title.back();
       gNote.add(title);
 
-      const text = draw.text(note)
+      const text = gNote.text(note)
         .font({
           fill: "#000000",
           size: "13px",
