@@ -28,7 +28,7 @@ log = logging.getLogger(__name__)
 
 
 @app_module_setup(
-    __name__,
+    "simcore_service_webserver.rest",
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_REST",
     logger=log,
