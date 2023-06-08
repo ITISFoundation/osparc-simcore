@@ -7,14 +7,14 @@ from typing import Any
 
 from aiohttp import web
 
-from ._constants import APP_PUBLIC_CONFIG_PER_PRODUCT
-from ._meta import API_VTAG
-from .application_settings import APP_SETTINGS_KEY
-from .login.decorators import login_required
-from .products.plugin import get_product_name
-from .redis import get_redis_scheduled_maintenance_client
+from .._constants import APP_PUBLIC_CONFIG_PER_PRODUCT
+from .._meta import API_VTAG
+from ..application_settings import APP_SETTINGS_KEY
+from ..login.decorators import login_required
+from ..products.plugin import get_product_name
+from ..redis import get_redis_scheduled_maintenance_client
+from ..utils_aiohttp import envelope_json_response
 from .rest_healthcheck import HealthCheck, HealthCheckFailed
-from .utils_aiohttp import envelope_json_response
 
 log = logging.getLogger(__name__)
 

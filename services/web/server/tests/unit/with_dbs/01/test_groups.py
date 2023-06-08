@@ -39,7 +39,7 @@ from simcore_service_webserver.groups.api import (
 )
 from simcore_service_webserver.groups.plugin import setup_groups
 from simcore_service_webserver.login.plugin import setup_login
-from simcore_service_webserver.rest import setup_rest
+from simcore_service_webserver.rest.rest_plugin import setup_rest
 from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session.plugin import setup_session
 from simcore_service_webserver.users.plugin import setup_users

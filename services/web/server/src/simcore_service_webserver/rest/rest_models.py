@@ -2,7 +2,6 @@
 
 """
 
-import typing
 
 import attr
 
@@ -46,8 +45,8 @@ class ErrorItemType:
 
 @attr.s(auto_attribs=True)
 class ErrorType:
-    logs: typing.List[LogMessageType] = attr.Factory(list)
-    errors: typing.List[ErrorItemType] = attr.Factory(list)
+    logs: list[LogMessageType] = attr.Factory(list)
+    errors: list[ErrorItemType] = attr.Factory(list)
     status: int = 400
 
 
@@ -55,7 +54,7 @@ class ErrorType:
 class FakeType:
     path_value: str
     query_value: str
-    body_value: typing.Dict[str, str]
+    body_value: dict[str, str]
 
 
 @attr.s(auto_attribs=True)

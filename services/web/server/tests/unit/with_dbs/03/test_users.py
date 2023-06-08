@@ -43,7 +43,7 @@ from simcore_service_webserver.redis import (
     get_redis_user_notifications_client,
     setup_redis,
 )
-from simcore_service_webserver.rest import setup_rest
+from simcore_service_webserver.rest.rest_plugin import setup_rest
 from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session.plugin import setup_session
 from simcore_service_webserver.users._handlers import _get_user_notifications

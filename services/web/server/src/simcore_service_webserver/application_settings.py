@@ -37,7 +37,7 @@ from .invitations.settings import InvitationsSettings
 from .login.settings import LoginSettings
 from .projects.settings import ProjectsSettings
 from .resource_manager.settings import ResourceManagerSettings
-from .rest_settings import RestSettings
+from .rest.rest_settings import RestSettings
 from .scicrunch.settings import SciCrunchSettings
 from .session.settings import SessionSettings
 from .statics.settings import FrontEndAppSettings, StaticWebserverModuleSettings

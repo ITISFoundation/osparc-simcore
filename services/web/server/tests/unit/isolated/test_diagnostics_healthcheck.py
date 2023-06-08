@@ -23,7 +23,7 @@ from simcore_service_webserver.diagnostics._healthcheck import (
 )
 from simcore_service_webserver.diagnostics.plugin import setup_diagnostics
 from simcore_service_webserver.diagnostics.settings import DiagnosticsSettings
-from simcore_service_webserver.rest import setup_rest
+from simcore_service_webserver.rest.rest_plugin import setup_rest
 from simcore_service_webserver.security.plugin import setup_security
 from tenacity import before_log, retry, stop_after_attempt, wait_fixed
 from yarl import URL

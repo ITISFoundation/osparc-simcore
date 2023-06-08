@@ -14,7 +14,7 @@ from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
 from ..catalog.client import get_services_for_user_in_product
-from ..rest_schemas_base import OutputSchema
+from ..rest.rest_schemas_base import OutputSchema
 from . import projects_api
 from ._permalink import update_or_pop_permalink_in_project
 from ._rest_schemas import ProjectListItem

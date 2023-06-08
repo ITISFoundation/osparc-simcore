@@ -34,7 +34,7 @@ from .rabbitmq import setup_rabbitmq
 from .redis import setup_redis
 from .remote_debug import setup_remote_debugging
 from .resource_manager.plugin import setup_resource_manager
-from .rest import setup_rest
+from .rest.rest_plugin import setup_rest
 from .scicrunch.plugin import setup_scicrunch
 from .security.plugin import setup_security
 from .session.plugin import setup_session
