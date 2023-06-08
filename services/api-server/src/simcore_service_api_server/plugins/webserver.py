@@ -1,14 +1,13 @@
 import json
 import logging
 from collections import deque
-from contextlib import suppress
 from dataclasses import dataclass
 from typing import Any, cast
 from uuid import UUID
 
 from cryptography import fernet
 from fastapi import FastAPI, HTTPException
-from httpx import AsyncClient, Response
+from httpx import Response
 from models_library.projects import ProjectID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ValidationError
@@ -28,6 +27,10 @@ from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 _logger = logging.getLogger(__name__)
 
 
+class WebserverApi(BaseServiceClientApi):
+    """Access to web-server API"""
+
+
 @dataclass
 class AuthSession:
     """
@@ -40,14 +43,17 @@ class AuthSession:
     SEE services/api-server/src/simcore_service_api_server/api/dependencies/webserver.py
     """
 
-    client: AsyncClient  # Its lifetime is attached to app
+    _api: WebserverApi
     vtag: str
     session_cookies: dict | None = None
 
     @classmethod
     def create(cls, app: FastAPI, session_cookies: dict) -> "AuthSession":
+        api = WebserverApi.get_instance(app)
+        assert api  # nosec
+        assert isinstance(api, WebserverApi)  # nosec
         return cls(
-            client=app.state.webserver_client,
+            _api=api,
             vtag=app.state.settings.API_SERVER_WEBSERVER.WEBSERVER_VTAG,
             session_cookies=session_cookies,
         )
@@ -85,6 +91,10 @@ class AuthSession:
         return data
 
     # OPERATIONS
+
+    @property
+    def client(self):
+        return self._api.client
 
     async def get(self, path: str) -> JSON | None:
         url = path.lstrip("/")
@@ -175,6 +185,8 @@ class AuthSession:
             f"/projects/{project_id}", cookies=self.session_cookies
         )
         self._postprocess(resp)
+        # TODO: webserver NotFound error has "project" message and error json.
+        # Transform this in an API error
 
     async def get_project_metadata_ports(
         self, project_id: ProjectID
@@ -193,10 +205,6 @@ class AuthSession:
         return data
 
 
-class WebserverApi(BaseServiceClientApi):
-    """Access to web-server API"""
-
-
 # MODULES APP SETUP -------------------------------------------------------------
 
 
@@ -210,23 +218,13 @@ def setup(app: FastAPI, settings: WebServerSettings | None = None) -> None:
         app, WebserverApi, api_baseurl=settings.api_base_url, service_name="webserver"
     )
 
-    def on_startup() -> None:
+    def _on_startup() -> None:
         # normalize & encrypt
         secret_key = settings.WEBSERVER_SESSION_SECRET_KEY.get_secret_value()
         app.state.webserver_fernet = fernet.Fernet(secret_key)
 
-        # init client
-        _logger.debug("Setup webserver at %s...", settings.api_base_url)
-
-        client = AsyncClient(base_url=settings.api_base_url)
-        app.state.webserver_client = client
-
-    async def on_shutdown() -> None:
-        with suppress(AttributeError):
-            client: AsyncClient = app.state.webserver_client
-            await client.aclose()
-            del app.state.webserver_client
+    async def _on_shutdown() -> None:
         _logger.debug("Webserver closed successfully")
 
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app.add_event_handler("startup", _on_startup)
+    app.add_event_handler("shutdown", _on_shutdown)
