@@ -153,13 +153,19 @@ qx.Class.define("osparc.wrapper.Svg", {
     },
 
     getRectAttributes: function(rect) {
-      const attrs = (rect.type === "g") ? rect.node.children[0].attributes : rect.node.attributes;
-      return {
-        x: attrs.x.value,
-        y: attrs.y.value,
-        width: attrs.width ? attrs.width.value : null,
-        height: attrs.height ? attrs.height.value : null
+      const idx = this.NOTE_GROUP.RECT.IDX;
+      const rectAttrs = (rect.type === "g") ? rect.node.children[idx].attributes : rect.node.attributes;
+      const attrs = {
+        x: rectAttrs.x.value,
+        y: rectAttrs.y.value,
+        width: rectAttrs.width ? rectAttrs.width.value : null,
+        height: rectAttrs.height ? rectAttrs.height.value : null
       };
+      if (rect.type === "g") {
+        attrs.x = parseInt(attrs.x) + parseInt(rect.transform().x);
+        attrs.y = parseInt(attrs.y) + parseInt(rect.transform().y);
+      }
+      return attrs;
     },
 
     drawAnnotationText: function(draw, x, y, label, color, fontSize) {
