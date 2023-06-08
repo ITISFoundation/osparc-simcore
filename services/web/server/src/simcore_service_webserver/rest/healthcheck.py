@@ -46,7 +46,7 @@ Taken from https://docs.docker.com/engine/reference/builder/#healthcheck
 
 import asyncio
 import inspect
-from typing import TYPE_CHECKING, Any, Awaitable, Callable
+from typing import Any, Awaitable, Callable, TypeAlias
 
 from aiohttp import web
 from aiosignal import Signal
@@ -55,11 +55,7 @@ from .._constants import APP_SETTINGS_KEY
 
 _HealthCheckSlot = Callable[[web.Application], Awaitable[None]]
 
-if TYPE_CHECKING:
-    _HealthCheckSignal = Signal[_HealthCheckSlot]
-
-else:
-    _HealthCheckSignal = Signal
+_HealthCheckSignal: TypeAlias = Signal[_HealthCheckSlot]
 
 
 class HealthCheckFailed(RuntimeError):
@@ -71,7 +67,7 @@ class HealthCheckFailed(RuntimeError):
 
 class HealthCheck:
     def __init__(self, app: web.Application):
-        self._on_healthcheck = Signal(owner=self)  # type: _HealthCheckSignal
+        self._on_healthcheck: _HealthCheckSignal = Signal(owner=self)
 
         # The docker engine healthcheck: If a single run of the check takes longer than *timeout* seconds
         # then the check is considered to have failed. Therefore there is no need to continue run

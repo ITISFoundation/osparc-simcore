@@ -7,9 +7,8 @@ from typing import Any
 
 from aiohttp import web
 
-from .._constants import APP_PUBLIC_CONFIG_PER_PRODUCT
+from .._constants import APP_PUBLIC_CONFIG_PER_PRODUCT, APP_SETTINGS_KEY
 from .._meta import API_VTAG
-from ..application_settings import APP_SETTINGS_KEY
 from ..login.decorators import login_required
 from ..products.plugin import get_product_name
 from ..redis import get_redis_scheduled_maintenance_client
@@ -28,7 +27,7 @@ async def healthcheck_liveness_probe(request: web.Request):
     This is checked by the containers orchestrator (docker swarm). When the service
     is unhealthy, it will restart it so it can recover a working state.
 
-    SEE doc in rest_healthcheck.py
+    SEE doc in healthcheck.py
     """
     healthcheck: HealthCheck = request.app[HealthCheck.__name__]
 
@@ -50,7 +49,7 @@ async def healthcheck_readiness_probe(request: web.Request):
     services and load balancers (e.g. traefik) typically cut traffic from targets
     in one way or another.
 
-    SEE doc in rest_healthcheck.py
+    SEE doc in healthcheck.py
     """
 
     healthcheck: HealthCheck = request.app[HealthCheck.__name__]
