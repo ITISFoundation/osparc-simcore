@@ -6,7 +6,6 @@ from typing import Any, Callable
 
 import rich
 import typer
-from packaging.version import Version
 from pydantic import BaseModel, SecretStr, ValidationError
 from pydantic.env_settings import BaseSettings
 from pydantic.json import custom_pydantic_encoder
@@ -159,14 +158,6 @@ def create_settings_command(
             )
 
     return settings
-
-
-def create_version_command(app_version: Version) -> Callable:
-    def version():
-        """Prints the application's version"""
-        print(app_version)
-
-    return version
 
 
 def create_version_callback(application_version: str) -> Callable:
