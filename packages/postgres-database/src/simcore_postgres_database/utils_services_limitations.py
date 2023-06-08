@@ -42,8 +42,9 @@ class ServiceLimitations(ServiceLimitationsCreate):
 
 
 class ServicesLimitationsRepo:
+    @staticmethod
     async def create(
-        self, conn: aiopg.sa.SAConnection, *, new_limits: ServiceLimitationsCreate
+        conn: aiopg.sa.SAConnection, *, new_limits: ServiceLimitationsCreate
     ) -> ServiceLimitations:
         try:
             async with conn.begin():
@@ -61,8 +62,9 @@ class ServicesLimitationsRepo:
                 f"Service limitations for ({new_limits.gid=}, {new_limits.cluster_id=}) already exist"
             ) from exc
 
+    @staticmethod
     async def get(
-        self, conn: aiopg.sa.SAConnection, *, gid: int, cluster_id: int | None
+        conn: aiopg.sa.SAConnection, *, gid: int, cluster_id: int | None
     ) -> ServiceLimitations:
         async with conn.begin():
             result = await conn.execute(
@@ -79,8 +81,9 @@ class ServicesLimitationsRepo:
             assert receive_entry  # nosec
         return ServiceLimitations(**dict(receive_entry.items()))
 
+    @staticmethod
     async def update(
-        self, conn: aiopg.sa.SAConnection, *, gid: int, cluster_id: int | None, **values
+        conn: aiopg.sa.SAConnection, *, gid: int, cluster_id: int | None, **values
     ) -> ServiceLimitations:
         async with conn.begin():
             update_stmt = (
@@ -101,8 +104,9 @@ class ServicesLimitationsRepo:
             assert updated_entry  # nosec
         return ServiceLimitations(**dict(updated_entry.items()))
 
+    @staticmethod
     async def delete(
-        self, conn: aiopg.sa.SAConnection, *, gid: int, cluster_id: int | None
+        conn: aiopg.sa.SAConnection, *, gid: int, cluster_id: int | None
     ) -> None:
         async with conn.begin():
             await conn.execute(
