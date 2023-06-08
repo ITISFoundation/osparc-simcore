@@ -181,7 +181,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       const gNote = draw.nested();
       const width = 150;
       const lines = note.split("\n").length;
-      const height = Math.max(150, lines*20);
+      const height = Math.max(120, lines*20);
       const trianSize = 25;
       const yellow = "#FFFF01"; // do not make it pure yellow, svg will change the hex value to a "yellow" string
       const orange = "#FFA500";
