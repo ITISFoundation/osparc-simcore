@@ -142,7 +142,7 @@ async def connection(pg_engine: Engine) -> AsyncIterator[SAConnection]:
 
 @pytest.fixture
 def create_fake_group(
-    make_engine: Callable[[bool], Awaitable[Engine] | sa.engine.base.Engine]
+    make_engine: Callable[..., Awaitable[Engine] | sa.engine.base.Engine]
 ) -> Iterator[Callable]:
     """factory to create standard group"""
     created_ids = []
@@ -161,13 +161,14 @@ def create_fake_group(
     yield _create_group
 
     sync_engine = make_engine(is_async=False)
+    assert isinstance(sync_engine, sa.engine.Engine)
     with sync_engine.begin() as conn:
         conn.execute(sa.delete(groups).where(groups.c.gid.in_(created_ids)))
 
 
 @pytest.fixture
 def create_fake_user(
-    make_engine: Callable[[bool], Awaitable[Engine] | sa.engine.base.Engine]
+    make_engine: Callable[..., Awaitable[Engine] | sa.engine.base.Engine]
 ) -> Iterator[Callable]:
     """factory to create a user w/ or w/o a standard group"""
 
@@ -202,7 +203,9 @@ def create_fake_user(
     yield _create_user
 
     sync_engine = make_engine(is_async=False)
-    sync_engine.execute(users.delete().where(users.c.id.in_(created_ids)))
+    assert isinstance(sync_engine, sa.engine.Engine)
+    with sync_engine.begin() as conn:
+        conn.execute(users.delete().where(users.c.id.in_(created_ids)))
 
 
 @pytest.fixture
