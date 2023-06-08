@@ -21,7 +21,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import select
 from sqlalchemy.sql.selectable import Select
 
-from ..db_models import GroupType, groups, study_tags, user_to_groups, users
+from ..db.db_models import GroupType, groups, study_tags, user_to_groups, users
 from ..users.exceptions import UserNotFoundError
 from ..utils import format_datetime
 from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError

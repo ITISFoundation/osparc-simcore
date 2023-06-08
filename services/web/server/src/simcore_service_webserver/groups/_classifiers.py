@@ -26,7 +26,7 @@ from pydantic import (
 )
 from simcore_postgres_database.models.classifiers import group_classifiers
 
-from ..db import get_database_engine
+from ..db.plugin import get_database_engine
 from ..scicrunch.db import ResearchResourceRepository
 from ..scicrunch.service_client import SciCrunch
 

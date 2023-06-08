@@ -13,7 +13,7 @@ from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserRole
 
-from ..db_models import ConfirmationAction, UserRole, UserStatus
+from ..db.db_models import ConfirmationAction, UserRole, UserStatus
 from ._constants import MSG_ACTIVATION_REQUIRED, MSG_USER_BANNED, MSG_USER_EXPIRED
 
 log = logging.getLogger(__name__)

@@ -21,7 +21,7 @@ from simcore_postgres_database.utils_aiopg import (
 )
 from tenacity import retry
 
-from .db_settings import PostgresSettings, get_plugin_settings
+from .settings import PostgresSettings, get_plugin_settings
 
 log = logging.getLogger(__name__)
 

@@ -24,7 +24,7 @@ import pytest
 import redis
 import redis.asyncio as aioredis
 import simcore_postgres_database.cli as pg_cli
-import simcore_service_webserver.db_models as orm
+import simcore_service_webserver.db.db_models as orm
 import simcore_service_webserver.email
 import simcore_service_webserver.email._core
 import simcore_service_webserver.utils

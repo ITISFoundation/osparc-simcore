@@ -5,7 +5,7 @@ from models_library.users import GroupID, UserID
 from simcore_postgres_database.models.users import UserStatus, users
 from sqlalchemy.sql import func
 
-from ..db_models import user_to_groups
+from ..db.db_models import user_to_groups
 
 
 async def do_update_expired_users(conn: SAConnection) -> list[UserID]:

@@ -31,7 +31,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import and_, select
 from tenacity import AsyncRetrying, TryAgain, retry_if_exception_type
 
-from ..db_models import study_tags
+from ..db.db_models import study_tags
 from ..utils import now_str
 from ._db_utils import (
     ANY_USER_ID_SENTINEL,
