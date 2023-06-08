@@ -76,16 +76,15 @@ class ProjectDBAPI(BaseProjectDB):
 
     @classmethod
     def get_from_app_context(cls, app: web.Application) -> "ProjectDBAPI":
-        app_project_dbapi: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-        return app_project_dbapi
+        db: "ProjectDBAPI" = app[APP_PROJECT_DBAPI]
+        return db
 
     @classmethod
     def set_once_in_app_context(cls, app: web.Application) -> "ProjectDBAPI":
         if app.get(APP_PROJECT_DBAPI) is None:
-            db = ProjectDBAPI(app)
-            app[APP_PROJECT_DBAPI] = db
-        app_project_dbapi: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-        return app_project_dbapi
+            app[APP_PROJECT_DBAPI] = ProjectDBAPI(app)
+        db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+        return db
 
     @property
     def engine(self) -> Engine:
@@ -494,7 +493,7 @@ class ProjectDBAPI(BaseProjectDB):
             updated_values = convert_to_db_names(project_data)
             if hidden is not None:
                 updated_values["hidden"] = hidden
-            result = await conn.execute(
+            result: ResultProxy = await conn.execute(
                 # pylint: disable=no-value-for-parameter
                 projects.update()
                 .values(**updated_values)
