@@ -346,7 +346,8 @@ qx.Class.define("osparc.wrapper.Svg", {
     updateText: function(representation, label) {
       if (representation.type === "text") {
         representation.text(label);
-      } else if (representation.type === "g") {
+      } else if (representation.type === "svg") {
+        // nested
         representation["text"].text(label);
       }
     },
