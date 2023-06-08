@@ -95,7 +95,10 @@ def get_database_engine(app: web.Application) -> Engine:
 
 
 @app_module_setup(
-    __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_DB", logger=_logger
+    "simcore_service_webserver.db",
+    ModuleCategory.ADDON,
+    settings_name="WEBSERVER_DB",
+    logger=_logger,
 )
 def setup_db(app: web.Application):
 
