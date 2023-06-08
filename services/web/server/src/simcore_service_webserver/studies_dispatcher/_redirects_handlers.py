@@ -17,7 +17,7 @@ from servicelib.error_codes import create_error_code
 
 from ..products.plugin import get_product_name
 from ..utils import compose_support_error_msg
-from ..utils_aiohttp import create_redirect_response
+from ..utils_aiohttp import create_redirect_to_page_response
 from ._catalog import ValidService, validate_requested_service
 from ._constants import MSG_UNEXPECTED_ERROR
 from ._core import validate_requested_file, validate_requested_viewer
@@ -46,7 +46,7 @@ def _create_redirect_response_to_view_page(
     file_size: int | str | None,
 ) -> web.HTTPFound:
     # NOTE: these are 'view' page params and need to be interpreted by front-end correctly!
-    return create_redirect_response(
+    return create_redirect_to_page_response(
         app,
         page="view",
         project_id=f"{project_id}",
@@ -60,7 +60,7 @@ def _create_redirect_response_to_error_page(
     app: web.Application, message: str, status_code: int
 ) -> web.HTTPFound:
     # NOTE: these are 'error' page params and need to be interpreted by front-end correctly!
-    return create_redirect_response(
+    return create_redirect_to_page_response(
         app,
         page="error",
         message=message,

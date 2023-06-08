@@ -1,7 +1,7 @@
-# FIXME: move to settings-library or refactor
-
 import logging
+import os
 import re
+import socket
 from typing import Any, Callable, Final, Pattern
 
 import aio_pika
@@ -13,12 +13,13 @@ from tenacity.wait import wait_fixed
 
 from .logging_utils import log_context
 
-log = logging.getLogger(__file__)
+_logger = logging.getLogger(__file__)
 
 
 _MINUTE: Final[int] = 60
 
 REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS: Final[str] = r"^[\w\-\.]*$"
+_RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_S: Final[int] = 15 * _MINUTE
 
 
 class RPCMethodName(ConstrainedStr):
@@ -58,8 +59,8 @@ class RPCNamespacedMethodName(ConstrainedStr):
 class RabbitMQRetryPolicyUponInitialization:
     """Retry policy upon service initialization"""
 
-    def __init__(self, logger: logging.Logger | None = None):
-        logger = logger or log
+    def __init__(self, logger: logging.Logger | None = None) -> None:
+        logger = logger or _logger
 
         self.kwargs = {
             "wait": wait_fixed(2),
@@ -72,10 +73,11 @@ class RabbitMQRetryPolicyUponInitialization:
 @retry(**RabbitMQRetryPolicyUponInitialization().kwargs)
 async def wait_till_rabbitmq_responsive(url: str) -> bool:
     """Check if something responds to ``url``"""
-    with log_context(log, logging.INFO, msg=f"checking RabbitMQ connection at {url=}"):
-        connection = await aio_pika.connect(url)
-        await connection.close()
-        log.info("rabbitmq connection established")
+    with log_context(
+        _logger, logging.INFO, msg=f"checking RabbitMQ connection at {url=}"
+    ):
+        async with await aio_pika.connect(url):
+            _logger.info("rabbitmq connection established")
         return True
 
 
@@ -96,3 +98,27 @@ async def rpc_register_entries(
         method_name=handler.__name__,
         handler=handler,
     )
+
+
+def get_rabbitmq_client_unique_name(base_name: str) -> str:
+    return f"{base_name}_{socket.gethostname()}_{os.getpid()}"
+
+
+async def declare_queue(
+    channel: aio_pika.RobustChannel,
+    client_name: str,
+    exchange_name: str,
+    *,
+    exclusive_queue: bool,
+) -> aio_pika.abc.AbstractRobustQueue:
+    queue_parameters = {
+        "durable": True,
+        "exclusive": exclusive_queue,
+        "arguments": {"x-message-ttl": _RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_S},
+        "name": f"{get_rabbitmq_client_unique_name(client_name)}_{exchange_name}_exclusive",
+    }
+    if not exclusive_queue:
+        # NOTE: setting a name will ensure multiple instance will take their data here
+        queue_parameters |= {"name": exchange_name}
+    queue = await channel.declare_queue(**queue_parameters)
+    return queue

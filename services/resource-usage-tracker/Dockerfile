@@ -14,13 +14,11 @@ LABEL maintainer=sanderegg
 
 RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=locked \
   --mount=type=cache,id=baseapt,target=/var/lib/apt,mode=0755,sharing=locked \
-  set -eux; \
-  apt-get update; \
+  set -eux && \
+  apt-get update && \
   apt-get install -y --no-install-recommends \
   gosu \
-  && apt-get autoclean -y\
-  && apt-get autoremove -y\
-  && rm -rf /var/lib/apt/lists/* \
+  && apt-get clean -y \
   # verify that the binary works
   && gosu nobody true
 
@@ -67,17 +65,15 @@ RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=lock
   set -eux \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
-  build-essential \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
+  build-essential
 
 
 # NOTE: python virtualenv is used here such that installed
 # packages may be moved to production image easily by copying the venv
 RUN python -m venv "${VIRTUAL_ENV}"
 
-RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
-  pip --no-cache-dir install --upgrade  \
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install --upgrade  \
   pip~=23.1  \
   wheel \
   setuptools
@@ -87,8 +83,8 @@ WORKDIR /build
 # install base 3rd party dependencies
 # NOTE: copies to /build to avoid overwriting later which would invalidate this layer
 COPY  --chown=scu:scu services/resource-usage-tracker/requirements/_base.txt .
-RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
-  pip --no-cache-dir install \
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install \
   --requirement _base.txt
 
 
@@ -107,10 +103,10 @@ COPY --chown=scu:scu services/resource-usage-tracker /build/services/resource-us
 
 WORKDIR /build/services/resource-usage-tracker
 
-RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
-  pip --no-cache-dir install \
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install \
   --requirement requirements/prod.txt \
-  && pip --no-cache-dir list -v
+  && pip list -v
 
 
 # --------------------------Production stage -------------------
@@ -129,13 +125,14 @@ ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/scu
 
+# ensure home folder is read/writable for user scu
+RUN chown -R scu /home/scu
 # Starting from clean base image, copies pre-installed virtualenv from prod-only-deps
 COPY --chown=scu:scu --from=prod-only-deps  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 # Copies booting scripts
 COPY --chown=scu:scu services/resource-usage-tracker/docker services/resource-usage-tracker/docker
 RUN chmod +x services/resource-usage-tracker/docker/*.sh
-
 
 HEALTHCHECK --interval=10s \
   --timeout=5s \
