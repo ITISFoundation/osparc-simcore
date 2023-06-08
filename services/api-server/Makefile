@@ -83,18 +83,20 @@ run-fake-devel: # starts a fake server in a dev-container
 
 
 # BUILD ###########################################################################
+OPENAPI_GENERATOR_VERSION := v4.2.3
 
 define create_and_validate_openapi
 	# generating openapi specs file under $< (NOTE: Skips DEV FEATURES since this OAS is the 'offically released'!)
-	@set -o allexport; \
-	source .env; \
-	set +o allexport; \
+	@source .env; \
 	export API_SERVER_DEV_FEATURES_ENABLED=$1; \
 	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
 
 	# validates OAS file: $@
-	@cd $(CURDIR); \
-	$(SCRIPTS_DIR)/openapi-generator-cli.bash validate --input-spec /local/$@
+	@set -o allexport; \
+	source .env; \
+	cd $(CURDIR); \
+	export RUN_FCN=OPENAPI_GENERATOR_CLI; \
+	$(SCRIPTS_DIR)/openapi-generator.bash validate --input-spec /local/$@
 endef
 
 
@@ -108,9 +110,8 @@ openapi.json: .env
 openapi-dev.json: .env
 	@$(call create_and_validate_openapi,1)
 
-
 # GENERATION python client ###########################################################################
-.PHONY: python-client generator-help
+.PHONY: python-client generator-help fetch-openapi-templates
 
 # SEE https://openapi-generator.tech/docs/usage#generate
 # SEE https://openapi-generator.tech/docs/generators/python
@@ -138,29 +139,34 @@ null  :=
 space := $(null) #
 comma := ,
 
+CONTAINER_TEMPL_DIR := /tmp/openapi_templates
+
+
 client:
 	# cloning $(GIT_USER_ID)/$(GIT_REPO_ID) -> $@
 	git clone git@github.com:$(GIT_USER_ID)/$(GIT_REPO_ID).git $@
 	# TODO: if fails, add -b
-	cd client; git checkout "upgrade-${APP_VERSION}"
-
+	cd client; git checkout -b "upgrade-${APP_VERSION}"
 
 python-client: client openapi.json ## runs python client generator
 	# copies latest version of the openapi
 	@cp openapi.json client/api/
 	# generates
+	@source .env; \
 	cd $(CURDIR); \
-	$(SCRIPTS_DIR)/openapi-generator-cli.bash generate \
+	export RUN_FCN=OPENAPI_GENERATOR_CLI; \
+	export DOCKER_MOUNT=$(REPO_BASE_DIR)/services/api-server/openapi/python_templates:$(CONTAINER_TEMPL_DIR); \
+	$(SCRIPTS_DIR)/openapi-generator.bash generate \
 		--generator-name=$(GENERATOR_NAME) \
-		--git-user-id=$(GIT_USER_ID)\
-		--git-repo-id=$(GIT_REPO_ID)\
-		--http-user-agent="osparc-api/$(APP_VERSION)/python"\
+		--git-user-id=$(GIT_USER_ID) \
+		--git-repo-id=$(GIT_REPO_ID) \
+		--http-user-agent="osparc-api/$(APP_VERSION)/python" \
 		--input-spec=/local/openapi.json \
 		--output=/local/client \
-		--additional-properties=$(subst $(space),$(comma),$(strip $(ADDITIONAL_PROPS)))\
-		--package-name=osparc\
-		--release-note="Updated to $(APP_VERSION)"
-
+		--additional-properties=$(subst $(space),$(comma),$(strip $(ADDITIONAL_PROPS))) \
+		--package-name=osparc \
+		--release-note="Updated to $(APP_VERSION)" \
+		--template-dir=$(CONTAINER_TEMPL_DIR)
 
 
 generator-help: ## help on client-api generator
@@ -168,3 +174,10 @@ generator-help: ## help on client-api generator
 	@$(SCRIPTS_DIR)/openapi-generator-cli.bash help generate
 	# generator config help
 	@$(SCRIPTS_DIR)/openapi-generator-cli.bash config-help -g $(GENERATOR_NAME)
+
+
+fetch-openapi-templates: ## fetches open api generator templates and overwrites the ones in $(CURDIR)/openapi/python-templates
+	@cd $(CURDIR); \
+	export RUN_FCN=FETCH_TEMPLATES; \
+	export DOCKER_MOUNT=$(REPO_BASE_DIR)/services/api-server/openapi/python_templates:$(CONTAINER_TEMPL_DIR); \
+	$(SCRIPTS_DIR)/openapi-generator.bash $(CURDIR)/openapi/python_templates
