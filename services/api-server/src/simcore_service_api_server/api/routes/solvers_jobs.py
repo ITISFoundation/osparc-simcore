@@ -155,9 +155,9 @@ async def get_job(
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
     """Gets job of a given solver"""
-
-    job_name = _compose_job_resource_name(solver_key, version, job_id)
-    _logger.debug("Getting Job '%s'", job_name)
+    _logger.debug(
+        "Getting Job '%s'", _compose_job_resource_name(solver_key, version, job_id)
+    )
 
     project: Project = await webserver_api.get_project(project_id=job_id)
 
@@ -171,10 +171,17 @@ async def get_job(
     status_code=status.HTTP_204_NO_CONTENT,
     include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
 )
-async def delete_job(solver_key: SolverKeyId, version: VersionStr, job_id: UUID):
-    raise NotImplementedError(
-        f"delete job {solver_key=} {version=} {job_id=}.  SEE https://github.com/ITISFoundation/osparc-simcore/issues/4111"
+async def delete_job(
+    solver_key: SolverKeyId,
+    version: VersionStr,
+    job_id: UUID,
+    webserver_api: AuthSession = Depends(get_webserver_session),
+):
+    _logger.debug(
+        "Getting Job '%s'", _compose_job_resource_name(solver_key, version, job_id)
     )
+
+    await webserver_api.delete_project(project_id=job_id)
 
 
 @router.post(

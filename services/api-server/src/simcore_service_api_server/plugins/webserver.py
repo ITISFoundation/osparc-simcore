@@ -170,6 +170,12 @@ class AuthSession:
 
         return list(projects)
 
+    async def delete_project(self, project_id: ProjectID) -> None:
+        resp = await self.client.delete(
+            f"/projects/{project_id}", cookies=self.session_cookies
+        )
+        self._postprocess(resp)
+
     async def get_project_metadata_ports(
         self, project_id: ProjectID
     ) -> list[dict[str, Any]]:
