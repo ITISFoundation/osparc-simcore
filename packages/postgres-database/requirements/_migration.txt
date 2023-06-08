@@ -37,9 +37,7 @@ requests==2.31.0
 six==1.16.0
     # via websocket-client
 sqlalchemy==1.4.48
-    # via
-    #   -c requirements/_base.txt
-    #   alembic
+    # via alembic
 tenacity==8.2.2
     # via -r requirements/_migration.in
 typing-extensions==4.6.3
