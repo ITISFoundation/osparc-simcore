@@ -35,7 +35,7 @@ class HttpApiCallCaptureModel(BaseModel):
             request_payload=json.loads(request.content.decode())
             if request.content
             else None,
-            response_body=response.json(),
+            response_body=response.json() if response.content else None,
             status_code=response.status_code,
         )
 
