@@ -28,8 +28,19 @@ services_limitations = sa.Table(
             name=f"fk_{_TABLE_NAME}_to_groups_gid",
         ),
         nullable=False,
-        primary_key=True,
         doc="Group unique ID",
+    ),
+    sa.Column(
+        "cluster_id",
+        sa.BigInteger(),
+        sa.ForeignKey(
+            "clusters.id",
+            name=f"fk_{_TABLE_NAME}_to_clusters_id",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
+        ),
+        nullable=True,
+        doc="The cluster id with which these limitations are associated, if NULL or 0 uses the default",
     ),
     sa.Column(
         "ram",
@@ -62,6 +73,18 @@ services_limitations = sa.Table(
     # TIME STAMPS ----
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
+    sa.UniqueConstraint(
+        "gid",
+        "cluster_id",
+        name="gid_cluster_id_uniqueness",
+    ),
+    # prevents having multiple entries with NULL cluster (postgres < 15 treats NULL as always different)
+    sa.Index(
+        "idx_unique_gid_cluster_id_null",
+        "gid",
+        unique=True,
+        postgresql_where=sa.text("cluster_id IS NULL"),
+    ),
 )
 
 
