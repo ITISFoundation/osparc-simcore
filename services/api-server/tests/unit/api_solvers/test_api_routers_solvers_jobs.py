@@ -14,13 +14,15 @@ import pytest
 import respx
 from faker import Faker
 from fastapi import FastAPI
+from models_library.basic_regex import UUID_RE_BASE
 from models_library.services import ServiceDockerData
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import AnyUrl, HttpUrl, parse_obj_as
+from pydantic import AnyUrl, HttpUrl, parse_file_as, parse_obj_as
 from respx import MockRouter
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.models.schemas.jobs import Job, JobInputs, JobStatus
 from simcore_service_api_server.plugins.director_v2 import ComputationTaskGet
+from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
 from starlette import status
 
 
@@ -208,12 +210,12 @@ async def test_solver_logs(
 
 @pytest.fixture
 def solver_key() -> str:
-    return "simcore/services/comp/itis/isolve"
+    return "services/simcore/services/comp/itis/sleeper"
 
 
 @pytest.fixture
 def solver_version() -> str:
-    return "1.2.3"
+    return "2.0.0"
 
 
 @pytest.mark.acceptance_test(
@@ -393,7 +395,17 @@ async def test_delete_solver_job(
     solver_key: str,
     solver_version: str,
     faker: Faker,
+    mocked_webserver_service_api: MockRouter,
+    mocked_catalog_service_api: MockRouter,
+    project_tests_dir: Path,
 ):
+    capture = HttpApiCallCaptureModel.parse_file(
+        project_tests_dir / "mocks" / "delete_project_not_found.json"
+    )
+    mocked_webserver_service_api.delete(
+        path__regex=rf"/projects/(?P<project_uuid>{UUID_RE_BASE})$",
+        name="delete_project",
+    ).respond(capture.status_code, json=capture.response_body)
 
     # Cannot delete if it does not exists
     resp = await client.delete(
@@ -401,6 +413,23 @@ async def test_delete_solver_job(
         auth=auth,
     )
     assert resp.status_code == status.HTTP_404_NOT_FOUND
+
+    # fixture
+    captures = parse_file_as(
+        list[HttpApiCallCaptureModel],
+        project_tests_dir / "mocks" / "delete_project_not_found.json",
+    )
+    mocked_catalog_service_api.request(
+        method=captures[0].method,  # GET service
+    )
+
+    for capture in captures[1:]:
+        mocked_webserver_service_api.request(
+            method=capture.method,  # CREATE project, GET task..., DELETE project
+        ).respond(
+            status_code=capture.status_code,
+            json=capture.response_body,
+        )
 
     # Create Job
     resp = await client.post(
