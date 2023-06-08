@@ -65,7 +65,7 @@ services_limitations = sa.Table(
     ),
     sa.Column(
         "gpu",
-        sa.Numeric,
+        sa.Integer,
         nullable=True,
         doc="defines this group maximum allowable CPUs used per service "
         "(None means use defaults, <0 means no limits)",

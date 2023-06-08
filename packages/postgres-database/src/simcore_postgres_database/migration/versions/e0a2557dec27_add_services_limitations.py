@@ -55,7 +55,7 @@ def upgrade():
         sa.Column("ram", sa.BigInteger(), nullable=True),
         sa.Column("cpu", sa.Numeric(), nullable=True),
         sa.Column("vram", sa.BigInteger(), nullable=True),
-        sa.Column("gpu", sa.Numeric(), nullable=True),
+        sa.Column("gpu", sa.Integer(), nullable=True),
         sa.Column(
             "created",
             sa.DateTime(timezone=True),
