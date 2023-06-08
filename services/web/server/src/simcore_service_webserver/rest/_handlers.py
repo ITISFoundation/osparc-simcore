@@ -7,16 +7,15 @@ from typing import Any
 
 from aiohttp import web
 
-from ._constants import APP_PUBLIC_CONFIG_PER_PRODUCT
-from ._meta import API_VTAG
-from .application_settings import APP_SETTINGS_KEY
-from .login.decorators import login_required
-from .products.plugin import get_product_name
-from .redis import get_redis_scheduled_maintenance_client
-from .rest_healthcheck import HealthCheck, HealthCheckFailed
-from .utils_aiohttp import envelope_json_response
+from .._constants import APP_PUBLIC_CONFIG_PER_PRODUCT, APP_SETTINGS_KEY
+from .._meta import API_VTAG
+from ..login.decorators import login_required
+from ..products.plugin import get_product_name
+from ..redis import get_redis_scheduled_maintenance_client
+from ..utils_aiohttp import envelope_json_response
+from .healthcheck import HealthCheck, HealthCheckFailed
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 routes = web.RouteTableDef()
 
@@ -28,7 +27,7 @@ async def healthcheck_liveness_probe(request: web.Request):
     This is checked by the containers orchestrator (docker swarm). When the service
     is unhealthy, it will restart it so it can recover a working state.
 
-    SEE doc in rest_healthcheck.py
+    SEE doc in healthcheck.py
     """
     healthcheck: HealthCheck = request.app[HealthCheck.__name__]
 
@@ -36,7 +35,7 @@ async def healthcheck_liveness_probe(request: web.Request):
         # if slots append get too delayed, just timeout
         health_report = await healthcheck.run(request.app)
     except HealthCheckFailed as err:
-        log.warning("%s", err)
+        _logger.warning("%s", err)
         raise web.HTTPServiceUnavailable(reason="unhealthy")
 
     return web.json_response(data={"data": health_report})
@@ -50,7 +49,7 @@ async def healthcheck_readiness_probe(request: web.Request):
     services and load balancers (e.g. traefik) typically cut traffic from targets
     in one way or another.
 
-    SEE doc in rest_healthcheck.py
+    SEE doc in healthcheck.py
     """
 
     healthcheck: HealthCheck = request.app[HealthCheck.__name__]
