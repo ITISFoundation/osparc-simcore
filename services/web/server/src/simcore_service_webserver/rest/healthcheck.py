@@ -110,8 +110,6 @@ class HealthCheck:
         try:
             heath_report: dict[str, Any] = self.get_app_info(app)
 
-            # TODO: every signal could return some info on the health on each part
-            # that is appended on heath_report
             await asyncio.wait_for(
                 self._on_healthcheck.send(app), timeout=self._timeout
             )
