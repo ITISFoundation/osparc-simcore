@@ -14,6 +14,7 @@ WORKDIR="$(pwd)"
 
 Build() {
   docker buildx build \
+    --load \
     --build-arg HOME_DIR="/home/$USER" \
     --tag "$IMAGE_NAME" \
     - <<EOF

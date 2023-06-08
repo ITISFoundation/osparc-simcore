@@ -22,13 +22,17 @@ from typing import Iterator
 from aiohttp import web
 from servicelib.logging_utils import get_log_record_extra, log_context
 
-from .registry import get_registry
+from .registry import RegistryKeyPrefixDict, ResourcesValueDict, get_registry
 from .settings import ResourceManagerSettings, get_plugin_settings
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
+
 
 SOCKET_ID_KEY = "socket_id"
 PROJECT_ID_KEY = "project_id"
+
+assert SOCKET_ID_KEY in ResourcesValueDict.__annotations__.keys()  # nosec
+assert PROJECT_ID_KEY in ResourcesValueDict.__annotations__.keys()  # nosec
 
 
 def get_service_deletion_timeout(app: web.Application) -> int:
@@ -59,16 +63,14 @@ class WebsocketRegistry:
     client_session_id: str | None
     app: web.Application
 
-    def _resource_key(self) -> dict[str, str]:
-        return {
-            "user_id": f"{self.user_id}",
-            "client_session_id": self.client_session_id
-            if self.client_session_id
-            else "*",
-        }
+    def _resource_key(self) -> RegistryKeyPrefixDict:
+        return RegistryKeyPrefixDict(
+            user_id=f"{self.user_id}",
+            client_session_id=self.client_session_id or "*",
+        )
 
     async def set_socket_id(self, socket_id: str) -> None:
-        log.debug(
+        _logger.debug(
             "user %s/tab %s adding socket %s in registry...",
             self.user_id,
             self.client_session_id,
@@ -83,14 +85,15 @@ class WebsocketRegistry:
         await registry.set_key_alive(self._resource_key(), timeout)
 
     async def get_socket_id(self) -> str | None:
-        log.debug(
+        _logger.debug(
             "user %s/tab %s getting socket from registry...",
             self.user_id,
             self.client_session_id,
         )
         registry = get_registry(self.app)
         resources = await registry.get_resources(self._resource_key())
-        return resources.get(SOCKET_ID_KEY, None)
+        key: str | None = resources.get("socket_id", None)
+        return key
 
     async def user_pressed_disconnect(self) -> None:
         """When the user disconnects expire as soon as possible the alive key
@@ -99,7 +102,7 @@ class WebsocketRegistry:
         await registry.set_key_alive(self._resource_key(), 1)
 
     async def remove_socket_id(self) -> None:
-        log.debug(
+        _logger.debug(
             "user %s/tab %s removing socket from registry...",
             self.user_id,
             self.client_session_id,
@@ -119,7 +122,7 @@ class WebsocketRegistry:
         )
 
     async def find_socket_ids(self) -> list[str]:
-        log.debug(
+        _logger.debug(
             "user %s/tab %s finding %s from registry...",
             self.user_id,
             self.client_session_id,
@@ -134,7 +137,7 @@ class WebsocketRegistry:
 
     async def find_all_resources_of_user(self, key: str) -> list[str]:
         with log_context(
-            log,
+            _logger,
             logging.DEBUG,
             msg=f"{self.user_id=} finding all {key} from registry",
             extra=get_log_record_extra(user_id=self.user_id),
@@ -145,7 +148,7 @@ class WebsocketRegistry:
             return resources
 
     async def find(self, key: str) -> list[str]:
-        log.debug(
+        _logger.debug(
             "user %s/tab %s finding %s from registry...",
             self.user_id,
             self.client_session_id,
@@ -157,7 +160,7 @@ class WebsocketRegistry:
         return user_resources
 
     async def add(self, key: str, value: str) -> None:
-        log.debug(
+        _logger.debug(
             "user %s/tab %s adding %s:%s in registry...",
             self.user_id,
             self.client_session_id,
@@ -169,7 +172,7 @@ class WebsocketRegistry:
         await registry.set_resource(self._resource_key(), (key, value))
 
     async def remove(self, key: str) -> None:
-        log.debug(
+        _logger.debug(
             "user %s/tab %s removing %s from registry...",
             self.user_id,
             self.client_session_id,
@@ -180,7 +183,7 @@ class WebsocketRegistry:
         await registry.remove_resource(self._resource_key(), key)
 
     async def find_users_of_resource(self, key: str, value: str) -> list[UserSessionID]:
-        log.debug(
+        _logger.debug(
             "user %s/tab %s finding %s:%s in registry...",
             self.user_id,
             self.client_session_id,
@@ -205,7 +208,7 @@ def managed_resource(
         registry = WebsocketRegistry(int(user_id), client_session_id, app)
         yield registry
     except Exception:
-        log.exception(
+        _logger.exception(
             "Error in web-socket for user:%s, session:%s",
             user_id,
             client_session_id,

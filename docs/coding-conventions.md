@@ -72,7 +72,18 @@ In short we use the following naming convention ( roughly  [PEP8](https://peps.p
 We should avoid merging PRs with ``TODO:`` and ``FIXME:`` into master. One of our bots detects those and flag them as code-smells. If we still want to keep this idea/fix noted in the code, those can be rewritten as ``NOTE:`` and should be extended with a link to a github issue with more details. For a context, see [discussion here](https://github.com/ITISFoundation/osparc-simcore/pull/3380#discussion_r979893502).
 
 
+### CC2: No commented code
 
+Avoid commented code, but if you *really* want to keep it then add an explanatory `NOTE:`
+```python
+import os
+# import bar
+# x = "not very useful"
+
+# NOTE: I need to keep this becase ...
+# import foo
+# x = "ok"
+```
 
 
 

@@ -17,7 +17,7 @@ from ..products.plugin import Product, get_current_product
 from ..security.api import encrypt_password
 from ..session.access_policies import session_access_required
 from ..utils import MINUTE
-from ..utils_aiohttp import create_redirect_response
+from ..utils_aiohttp import create_redirect_to_page_response
 from ..utils_rate_limiting import global_rate_limit_route
 from ._2fa import delete_2fa_code, get_2fa_code
 from ._confirmation import validate_confirmation_code
@@ -123,7 +123,7 @@ async def validate_confirmation_and_redirect(request: web.Request):
                 f"{error_code}",
                 extra={"error_code": error_code},
             )
-            raise create_redirect_response(
+            raise create_redirect_to_page_response(
                 request.app,
                 page="error",
                 message=f"Sorry, we cannot confirm your {action}."

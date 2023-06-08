@@ -18,6 +18,10 @@ aiosignal==1.2.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
+anyio==3.6.2
+    # via
+    #   -c requirements/_base.txt
+    #   httpcore
 async-timeout==4.0.2
     # via
     #   -c requirements/_base.txt
@@ -49,7 +53,10 @@ botocore==1.24.21
     #   moto
     #   s3transfer
 certifi==2023.5.7
-    # via requests
+    # via
+    #   httpcore
+    #   httpx
+    #   requests
 cffi==1.15.1
     # via cryptography
 cfn-lint==0.77.6
@@ -97,9 +104,19 @@ frozenlist==1.3.1
     #   aiosignal
 graphql-core==3.2.3
     # via moto
+h11==0.14.0
+    # via
+    #   -c requirements/_base.txt
+    #   httpcore
+httpcore==0.17.2
+    # via httpx
+httpx==0.24.1
+    # via -r requirements/_test.in
 idna==3.4
     # via
     #   -c requirements/_base.txt
+    #   anyio
+    #   httpx
     #   requests
     #   yarl
 iniconfig==2.0.0
@@ -238,6 +255,12 @@ six==1.16.0
     #   jsonschema
     #   junit-xml
     #   python-dateutil
+sniffio==1.3.0
+    # via
+    #   -c requirements/_base.txt
+    #   anyio
+    #   httpcore
+    #   httpx
 sshpubkeys==3.3.1
     # via moto
 sympy==1.12
