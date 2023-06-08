@@ -127,15 +127,20 @@ HELP = """
 
  Resolves settings and prints envfile
 
-╭─ Options ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ --as-json           --no-as-json             [default: no-as-json]                                                                                                                                                                                                                                                         │
-│ --as-json-schema    --no-as-json-schema      [default: no-as-json-schema]                                                                                                                                                                                                                                                  │
-│ --compact           --no-compact             Print compact form [default: no-compact]                                                                                                                                                                                                                                      │
-│ --verbose           --no-verbose             [default: no-verbose]                                                                                                                                                                                                                                                         │
-│ --show-secrets      --no-show-secrets        [default: no-show-secrets]                                                                                                                                                                                                                                                    │
-│ --exclude-unset     --no-exclude-unset       displays settings that were explicitly setThis represents current config (i.e. required+ defaults overriden). [default: no-exclude-unset]                                                                                                                                     │
-│ --help                                       Show this message and exit.                                                                                                                                                                                                                                                   │
-╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --as-json           --no-as-json             [default: no-as-json]           │
+│ --as-json-schema    --no-as-json-schema      [default: no-as-json-schema]    │
+│ --compact           --no-compact             Print compact form              │
+│                                              [default: no-compact]           │
+│ --verbose           --no-verbose             [default: no-verbose]           │
+│ --show-secrets      --no-show-secrets        [default: no-show-secrets]      │
+│ --exclude-unset     --no-exclude-unset       displays settings that were     │
+│                                              explicitly setThis represents   │
+│                                              current config (i.e. required+  │
+│                                              defaults overriden).            │
+│                                              [default: no-exclude-unset]     │
+│ --help                                       Show this message and exit.     │
+╰──────────────────────────────────────────────────────────────────────────────╯
 
 """
 
