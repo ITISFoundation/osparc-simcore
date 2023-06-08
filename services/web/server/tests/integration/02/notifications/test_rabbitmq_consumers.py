@@ -51,7 +51,7 @@ from simcore_service_webserver.notifications.plugin import setup_notifications
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
-from simcore_service_webserver.rest.rest_plugin import setup_rest
+from simcore_service_webserver.rest.plugin import setup_rest
 from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session.plugin import setup_session
 from simcore_service_webserver.socketio.messages import (

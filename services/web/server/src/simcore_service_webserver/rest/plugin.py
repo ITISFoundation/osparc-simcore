@@ -19,7 +19,7 @@ from servicelib.aiohttp.rest_middlewares import (
 from .._constants import APP_OPENAPI_SPECS_KEY, APP_SETTINGS_KEY
 from .._meta import API_VTAG, api_version_prefix
 from ..security.plugin import setup_security
-from . import rest_handlers
+from . import _handlers
 from .rest_healthcheck import HealthCheck
 from .rest_settings import RestSettings, get_plugin_settings
 from .rest_utils import get_openapi_specs_path, load_openapi_specs
@@ -65,7 +65,7 @@ def setup_rest(app: web.Application):
     log.debug("Setup %s", f"{app[HealthCheck.__name__]=}")
 
     # basic routes
-    app.add_routes(rest_handlers.routes)
+    app.add_routes(_handlers.routes)
 
     # middlewares
     # NOTE: using safe get here since some tests use incomplete configs

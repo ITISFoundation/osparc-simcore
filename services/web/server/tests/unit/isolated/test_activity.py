@@ -15,7 +15,7 @@ from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver.activity import handlers
 from simcore_service_webserver.activity.plugin import setup_activity
 from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.rest.rest_plugin import setup_rest
+from simcore_service_webserver.rest.plugin import setup_rest
 from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session.plugin import setup_session
 
