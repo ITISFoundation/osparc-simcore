@@ -22,7 +22,7 @@ from ..email.settings import get_plugin_settings as get_email_plugin_settings
 from ..invitations.plugin import setup_invitations
 from ..products.plugin import ProductName, list_products, setup_products
 from ..redis import setup_redis
-from ..rest import setup_rest
+from ..rest.plugin import setup_rest
 from ._constants import APP_LOGIN_SETTINGS_PER_PRODUCT_KEY
 from .routes import create_routes
 from .settings import (
