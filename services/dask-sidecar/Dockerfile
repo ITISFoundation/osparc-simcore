@@ -88,8 +88,9 @@ RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
 WORKDIR /build
 
 # install base 3rd party dependencies (NOTE: this speeds up devel mode)
-COPY  --chown=scu:scu services/dask-sidecar/requirements/_base.txt .
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+RUN \
+  --mount=type=bind,source=services/dask-sidecar/requirements/_base.txt,target=_base.txt \
+  --mount=type=cache,mode=0755,target=/root/.cache/pip \
   pip install \
   --requirement _base.txt
 
@@ -103,12 +104,12 @@ FROM build as prod-only-deps
 
 ENV SC_BUILD_TARGET=prod-only-deps
 
-COPY --chown=scu:scu packages /build/packages
-COPY --chown=scu:scu services/dask-sidecar /build/services/dask-sidecar
-
 WORKDIR /build/services/dask-sidecar
 
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+RUN \
+  --mount=type=bind,source=packages,target=/build/packages,rw \
+  --mount=type=bind,source=services/dask-sidecar,target=/build/services/dask-sidecar,rw \
+  --mount=type=cache,mode=0755,target=/root/.cache/pip \
   pip install \
   --requirement requirements/prod.txt \
   && pip list -v
@@ -133,7 +134,6 @@ WORKDIR /home/scu
 RUN chown -R scu /home/scu
 # bring installed package without build tools
 COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
-# copy docker entrypoint and boot scripts
 COPY --chown=scu:scu services/dask-sidecar/docker services/dask-sidecar/docker
 RUN chmod +x services/dask-sidecar/docker/*.sh
 

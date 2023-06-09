@@ -89,10 +89,12 @@ RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
 WORKDIR /build
 
 # install only base 3rd party dependencies
-COPY  --chown=scu:scu services/storage/requirements/_base.txt requirements_base.txt
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+RUN \
+  --mount=type=bind,source=services/storage/requirements/_base.txt,target=_base.txt \
+  --mount=type=cache,mode=0755,target=/root/.cache/pip \
   pip install \
-  --requirement requirements_base.txt
+  --requirement _base.txt
+
 # -------------------------- -------------------------------
 
 
@@ -109,12 +111,12 @@ FROM build as prod-only-deps
 ENV SC_BUILD_TARGET prod-only-deps
 
 # 2nd party packages
-COPY --chown=scu:scu packages /build/packages
-COPY --chown=scu:scu services/storage /build/services/storage
-
 WORKDIR /build/services/storage
 
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+RUN \
+  --mount=type=bind,source=packages,target=/build/packages,rw \
+  --mount=type=bind,source=services/storage,target=/build/services/storage,rw \
+  --mount=type=cache,mode=0755,target=/root/.cache/pip \
   pip install \
   --requirement requirements/prod.txt \
   && pip list -v

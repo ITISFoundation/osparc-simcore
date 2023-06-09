@@ -91,10 +91,11 @@ RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
 WORKDIR /build
 
 # install only base 3rd party dependencies
-COPY  --chown=scu:scu services/web/server/requirements/_base.txt requirements_base.txt
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+RUN \
+  --mount=type=bind,source=services/web/server/requirements/_base.txt,target=_base.txt \
+  --mount=type=cache,mode=0755,target=/root/.cache/pip \
   pip install \
-  --requirement requirements_base.txt
+  --requirement _base.txt
 
 # --------------------------Prod-depends-only stage -------------------
 # This stage is for production only dependencies that get partially wiped out afterwards (final docker image concerns)
@@ -107,12 +108,12 @@ FROM build as prod-only-deps
 ENV SC_BUILD_TARGET prod-only-deps
 
 # 2nd party packages
-COPY --chown=scu:scu packages /build/packages
-COPY --chown=scu:scu services/web/server /build/services/web/server
-
 WORKDIR /build/services/web/server
 
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+RUN \
+  --mount=type=bind,source=packages,target=/build/packages,rw \
+  --mount=type=bind,source=services/web/server,target=/build/services/web/server,rw \
+  --mount=type=cache,mode=0755,target=/root/.cache/pip \
   pip install \
   --requirement requirements/prod.txt \
   && pip list -v
