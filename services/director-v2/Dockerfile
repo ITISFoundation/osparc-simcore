@@ -82,8 +82,9 @@ WORKDIR /build
 
 # install base 3rd party dependencies
 # NOTE: copies to /build to avoid overwriting later which would invalidate this layer
-COPY  --chown=scu:scu services/director-v2/requirements/_base.txt .
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+RUN \
+  --mount=type=bind,source=services/director-v2/requirements/_base.txt,target=_base.txt \
+  --mount=type=cache,mode=0755,target=/root/.cache/pip \
   pip install \
   --requirement _base.txt
 
@@ -98,12 +99,12 @@ FROM build as prod-only-deps
 
 ENV SC_BUILD_TARGET prod-only-deps
 
-COPY --chown=scu:scu packages /build/packages
-COPY --chown=scu:scu services/director-v2 /build/services/director-v2
-
 WORKDIR /build/services/director-v2
 
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+RUN \
+  --mount=type=bind,source=packages,target=/build/packages,rw \
+  --mount=type=bind,source=services/director-v2,target=/build/services/director-v2,rw \
+  --mount=type=cache,mode=0755,target=/root/.cache/pip \
   pip install \
   --requirement requirements/prod.txt \
   && pip list -v

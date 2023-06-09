@@ -50,15 +50,15 @@ RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
   wheel \
   setuptools
 
-WORKDIR /build
+WORKDIR /build/packages/postgres-database
 
 # install only base 3rd party dependencies
-COPY  --chown=scu:scu packages/postgres-database/ .
-RUN pip --quiet \
-  install \
-  -r requirements/prod.txt \
-  && pip freeze
-
+RUN \
+  --mount=type=bind,source=packages/postgres-database,target=/build/packages/postgres-database,rw \
+  --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install \
+  --requirement requirements/prod.txt \
+  && pip list -v
 
 
 # --------------------------------------------

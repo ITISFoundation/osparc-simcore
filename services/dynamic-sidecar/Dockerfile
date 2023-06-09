@@ -11,8 +11,9 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 
 LABEL maintainer="Andrei Neagu <neagu@itis.swiss>"
 
-COPY  --chown=scu:scu scripts/install_rclone.bash .
-RUN  --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=locked \
+RUN \
+  --mount=type=bind,source=scripts/install_rclone.bash,target=install_rclone.bash \
+  --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=locked \
   --mount=type=cache,id=baseapt,target=/var/lib/apt,mode=0755,sharing=locked \
   set -eux && \
   apt-get update && \
@@ -95,8 +96,9 @@ WORKDIR /build
 
 # install base 3rd party dependencies
 # NOTE: copies to /build to avoid overwriting later which would invalidate this layer
-COPY --chown=scu:scu services/dynamic-sidecar/requirements/_base.txt .
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+RUN \
+  --mount=type=bind,source=services/dynamic-sidecar/requirements/_base.txt,target=_base.txt \
+  --mount=type=cache,mode=0755,target=/root/.cache/pip \
   pip install -r _base.txt
 
 # copy utility devops scripts
@@ -113,12 +115,12 @@ FROM build as prod-only-deps
 
 ENV SC_BUILD_TARGET prod-only-deps
 
-COPY --chown=scu:scu packages /build/packages
-COPY --chown=scu:scu services/dynamic-sidecar /build/services/dynamic-sidecar
-
 WORKDIR /build/services/dynamic-sidecar
 
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+RUN \
+  --mount=type=bind,source=packages,target=/build/packages,rw \
+  --mount=type=bind,source=services/dynamic-sidecar,target=/build/services/dynamic-sidecar,rw \
+  --mount=type=cache,mode=0755,target=/root/.cache/pip \
   pip install \
   --requirement requirements/prod.txt \
   && pip list -v
