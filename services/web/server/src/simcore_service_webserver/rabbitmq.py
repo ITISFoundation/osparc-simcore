@@ -9,7 +9,7 @@ from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq_utils import wait_till_rabbitmq_responsive
 
 from .rabbitmq_settings import RabbitSettings, get_plugin_settings
-from .rest_healthcheck import HealthCheck, HealthCheckFailed
+from .rest.healthcheck import HealthCheck, HealthCheckFailed
 
 _logger = logging.getLogger(__name__)
 
