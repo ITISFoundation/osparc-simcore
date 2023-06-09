@@ -65,14 +65,21 @@ qx.Class.define("osparc.component.editor.AnnotationNoteEditor", {
       let control;
       switch (id) {
         case "destinatary": {
-          control = new qx.ui.form.TextField().set({
-            font: "text-14",
-            backgroundColor: "background-main",
-            placeholder: this.tr("Destinatary"),
-            height: 35
+          control = new qx.ui.form.Button(this.tr("Notify Collaborator")).set({
+            appearance: "strong-button",
+            allowGrowX: false
           });
-          this.bind("destinatary", control, "value");
-          control.bind("value", this, "destinatary");
+          control.addListener("execute", () => {
+            const collaboratorsManager = new osparc.component.share.NewCollaboratorsManager();
+            collaboratorsManager.addListener("addCollaborators", e => {
+              const collabs = e.getData();
+              if (collabs) {
+                console.log("addCollaborators", collabs);
+                this.bind("destinatary", control, "value");
+                control.bind("value", this, "destinatary");
+              }
+            }, this);
+          }, this);
           this._add(control);
           break;
         }
