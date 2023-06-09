@@ -32,8 +32,8 @@ ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 # --------------------------------------------
 FROM base as build
 
-RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=locked \
-  --mount=type=cache,id=baseapt,target=/var/lib/apt,mode=0755,sharing=locked \
+RUN --mount=type=cache,id=buildbasecache,target=/var/cache/apt,mode=0755,sharing=locked \
+  --mount=type=cache,id=buildbaseapt,target=/var/lib/apt,mode=0755,sharing=locked \
   set -eux \
   && apt-get update \
   && apt-get install -y --no-install-recommends \

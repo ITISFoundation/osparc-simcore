@@ -18,6 +18,7 @@ RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=lock
   set -eux && \
   apt-get update && \
   apt-get install -y --no-install-recommends \
+  libmagic1 \
   gosu \
   && apt-get clean -y \
   # verify that the binary works
@@ -69,13 +70,13 @@ FROM base as build
 
 ENV SC_BUILD_TARGET build
 
-RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=locked \
-  --mount=type=cache,id=baseapt,target=/var/lib/apt,mode=0755,sharing=locked \
+RUN --mount=type=cache,id=buildbasecache,target=/var/cache/apt,mode=0755,sharing=locked \
+  --mount=type=cache,id=buildbaseapt,target=/var/lib/apt,mode=0755,sharing=locked \
   set -eux \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
-  build-essential \
-  libmagic1
+  build-essential
+
 
 
 # NOTE: python virtualenv is used here such that installed
@@ -138,16 +139,6 @@ WORKDIR /home/scu
 RUN chown -R scu /home/scu
 # bring installed package without build tools
 COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
-
-# libmagic is requried by the exporter
-RUN --mount=type=cache,id=webprodcache,target=/var/cache/apt,mode=0755,sharing=locked \
-  --mount=type=cache,id=webprodapt,target=/var/lib/apt,mode=0755,sharing=locked \
-  set -eux \
-  && apt-get update \
-  && apt-get install -y --no-install-recommends \
-  libmagic1 \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
 
 # copy docker entrypoint and boot scripts
 COPY --chown=scu:scu services/web/server/docker services/web/server/docker
