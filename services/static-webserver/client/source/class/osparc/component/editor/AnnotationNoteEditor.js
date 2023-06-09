@@ -24,7 +24,7 @@ qx.Class.define("osparc.component.editor.AnnotationNoteEditor", {
     this._setLayout(new qx.ui.layout.VBox(10));
 
     this.getChildControl("instructions");
-    this.getChildControl("destinatary");
+    this.getChildControl("select-destinatary");
     this.getChildControl("note");
     newNote ? this.getChildControl("add") : this.getChildControl("save");
   },
@@ -74,7 +74,15 @@ qx.Class.define("osparc.component.editor.AnnotationNoteEditor", {
           });
           this._add(control);
           break;
-        case "destinatary": {
+        case "destinatary-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+            alignX: "right"
+          })).set({
+            padding: 2
+          });
+          this._add(control);
+          break;
+        case "select-destinatary": {
           control = new qx.ui.form.Button(this.tr("Select destinatary")).set({
             allowGrowX: false
           });
@@ -85,15 +93,23 @@ qx.Class.define("osparc.component.editor.AnnotationNoteEditor", {
             collaboratorsManager.addListener("addCollaborators", e => {
               const collabs = e.getData();
               if (collabs) {
+                collaboratorsManager.close();
                 console.log("addCollaborators", collabs);
-                this.bind("destinatary", control, "value");
-                control.bind("value", this, "destinatary");
+                this.__setDestinatary(collabs[0]);
               }
             }, this);
           }, this);
-          this._add(control);
+          this.getChildControl("destinatary-layout").add(control);
           break;
         }
+        case "selected-destinatary":
+          control = new qx.ui.basic.Label().set({
+            font: "text-14"
+          });
+          this.getChildControl("destinatary-layout").add(control, {
+            flex: 1
+          });
+          break;
         case "note": {
           control = new qx.ui.form.TextArea().set({
             font: "text-14",
@@ -134,6 +150,10 @@ qx.Class.define("osparc.component.editor.AnnotationNoteEditor", {
       }
 
       return control || this.base(arguments, id);
+    },
+
+    __setDestinatary: function(collab) {
+      this.getChildControl("selected-destinatary").setValue(collab.toString());
     }
   }
 });
