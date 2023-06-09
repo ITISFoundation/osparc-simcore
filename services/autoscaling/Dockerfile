@@ -35,9 +35,7 @@ RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=lock
   curl \
   gnupg \
   lsb-release \
-  && apt-get autoclean -y\
-  && apt-get autoremove -y\
-  && rm -rf /var/lib/apt/lists/* \
+  && apt-get clean -y\
   # verify that the binary works
   && gosu nobody true
 

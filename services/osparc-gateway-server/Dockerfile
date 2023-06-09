@@ -16,6 +16,7 @@ RUN  --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=loc
   gosu \
   libffi-dev \
   libffi7 \
+  && apt-get clean -y \
   # verify that the binary works
   && gosu nobody true
 
