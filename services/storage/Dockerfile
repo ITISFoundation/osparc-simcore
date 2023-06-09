@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 ARG PYTHON_VERSION="3.10.10"
-FROM python:${PYTHON_VERSION}-slim-buster as base
+FROM itisfoundation/osparc-base-python:${PYTHON_VERSION} as base
 #
 #  USAGE:
 #     cd sercices/storage
@@ -9,45 +9,7 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 #
 #  REQUIRED: context expected at ``osparc-simcore/`` folder because we need access to osparc-simcore/packages
 
-LABEL maintainer=mguidon
-
-RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
-  --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
-  set -eux && \
-  apt-get update && \
-  apt-get install -y --no-install-recommends \
-  gosu \
-  && apt-get clean -y \
-  # verify that the binary works
-  && gosu nobody true
-
-
-# simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
-ENV SC_USER_ID=8004 \
-  SC_USER_NAME=scu \
-  SC_BUILD_TARGET=base \
-  SC_BOOT_MODE=default
-
-RUN adduser \
-  --uid ${SC_USER_ID} \
-  --disabled-password \
-  --gecos "" \
-  --shell /bin/sh \
-  --home /home/${SC_USER_NAME} \
-  ${SC_USER_NAME}
-
-
-# Sets utf-8 encoding for Python et al
-ENV LANG=C.UTF-8
-
-# Turns off writing .pyc files; superfluous on an ephemeral container.
-ENV PYTHONDONTWRITEBYTECODE=1 \
-  VIRTUAL_ENV=/home/scu/.venv
-
-# Ensures that the python and pip executables used
-# in the image will be those from our virtualenv.
-ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
-
+LABEL maintainer=mguidon,sanderegg
 
 ENV SC_BUILD_TARGET base
 ENV SC_BOOT_MODE default
@@ -62,31 +24,7 @@ EXPOSE 8080
 #
 # + /build             WORKDIR
 #
-
-FROM base as build
-
-ENV SC_BUILD_TARGET build
-
-RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
-  --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
-  set -eux \
-  && apt-get update \
-  && apt-get install -y --no-install-recommends \
-  build-essential \
-  git
-
-
-# NOTE: python virtualenv is used here such that installed
-# packages may be moved to production image easily by copying the venv
-RUN python -m venv "${VIRTUAL_ENV}"
-
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
-  pip install --upgrade  \
-  pip~=23.1  \
-  wheel \
-  setuptools
-
-WORKDIR /build
+FROM itisfoundation/osparc-builder:${PYTHON_VERSION} as build
 
 # install only base 3rd party dependencies
 RUN \
@@ -94,11 +32,6 @@ RUN \
   --mount=type=cache,mode=0755,target=/root/.cache/pip \
   pip install \
   --requirement _base.txt
-
-# -------------------------- -------------------------------
-
-
-
 
 # --------------------------Prod-depends-only stage -------------------
 # This stage is for production only dependencies that get partially wiped out afterwards (final docker image concerns)
@@ -120,9 +53,6 @@ RUN \
   pip install \
   --requirement requirements/prod.txt \
   && pip list -v
-# -------------------------- -------------------------------
-
-
 
 # --------------------------Production stage -------------------
 # Final cleanup up to reduce image size and startup setup
@@ -133,8 +63,6 @@ ENV SC_BUILD_TARGET=production \
   SC_BOOT_MODE=production \
   SC_HEALTHCHECK_INTERVAL=30 \
   SC_HEALTHCHECK_RETRY=3
-
-ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/scu
 
