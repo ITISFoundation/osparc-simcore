@@ -38,7 +38,7 @@ endif
 
 build: ## Builds base docker images used in osparc-simcore stack
 	# Building services
-	@docker compose --file=docker-compose.yml build
+	@docker buildx bake --file=docker-compose.yml --load
 	# List images
 	@docker images --filter="reference=local/osparc-*"
 
