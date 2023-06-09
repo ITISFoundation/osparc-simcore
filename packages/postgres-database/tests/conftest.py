@@ -3,7 +3,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import AsyncIterator, Awaitable, Callable, Iterator, Optional, Union
+from typing import AsyncIterator, Awaitable, Callable, Iterator
 
 import aiopg.sa
 import aiopg.sa.exc
@@ -13,14 +13,16 @@ import yaml
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
+from faker import Faker
 from pytest_simcore.helpers.rawdata_fakers import random_group, random_user
+from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
+from simcore_postgres_database.models.clusters import ClusterType, clusters
 from simcore_postgres_database.webserver_models import (
     GroupType,
     groups,
     user_to_groups,
     users,
 )
-from sqlalchemy import literal_column
 
 pytest_plugins = [
     "pytest_simcore.repository_paths",
@@ -56,10 +58,10 @@ def postgres_service(docker_services, docker_ip, docker_compose_file) -> str:
 @pytest.fixture
 def make_engine(
     postgres_service: str,
-) -> Callable[[bool], Union[Awaitable[Engine], sa.engine.base.Engine]]:
+) -> Callable[[bool], Awaitable[Engine] | sa.engine.base.Engine]:
     dsn = postgres_service
 
-    def _make(is_async=True) -> Union[Awaitable[Engine], sa.engine.base.Engine]:
+    def _make(is_async=True) -> Awaitable[Engine] | sa.engine.base.Engine:
         engine = aiopg.sa.create_engine(dsn) if is_async else sa.create_engine(dsn)
         return engine
 
@@ -72,7 +74,7 @@ def is_postgres_responsive(dsn) -> bool:
         engine = sa.create_engine(dsn)
         conn = engine.connect()
         conn.close()
-    except sa.exc.OperationalError:
+    except sa.exc.OperationalError:  # type: ignore
         return False
     return True
 
@@ -140,7 +142,7 @@ async def connection(pg_engine: Engine) -> AsyncIterator[SAConnection]:
 
 @pytest.fixture
 def create_fake_group(
-    make_engine: Callable[[bool], Union[Awaitable[Engine], sa.engine.base.Engine]]
+    make_engine: Callable[..., Awaitable[Engine] | sa.engine.base.Engine]
 ) -> Iterator[Callable]:
     """factory to create standard group"""
     created_ids = []
@@ -149,7 +151,7 @@ def create_fake_group(
         result: ResultProxy = await conn.execute(
             groups.insert()
             .values(**random_group(type=GroupType.STANDARD, **overrides))
-            .returning(literal_column("*"))
+            .returning(sa.literal_column("*"))
         )
         group = await result.fetchone()
         assert group
@@ -159,19 +161,21 @@ def create_fake_group(
     yield _create_group
 
     sync_engine = make_engine(is_async=False)
-    sync_engine.execute(groups.delete().where(groups.c.gid.in_(created_ids)))
+    assert isinstance(sync_engine, sa.engine.Engine)
+    with sync_engine.begin() as conn:
+        conn.execute(sa.delete(groups).where(groups.c.gid.in_(created_ids)))
 
 
 @pytest.fixture
 def create_fake_user(
-    make_engine: Callable[[bool], Union[Awaitable[Engine], sa.engine.base.Engine]]
+    make_engine: Callable[..., Awaitable[Engine] | sa.engine.base.Engine]
 ) -> Iterator[Callable]:
     """factory to create a user w/ or w/o a standard group"""
 
     created_ids = []
 
     async def _create_user(
-        conn, group: Optional[RowProxy] = None, **overrides
+        conn, group: RowProxy | None = None, **overrides
     ) -> RowProxy:
         user_id = await conn.scalar(
             users.insert().values(**random_user(**overrides)).returning(users.c.id)
@@ -199,4 +203,37 @@ def create_fake_user(
     yield _create_user
 
     sync_engine = make_engine(is_async=False)
-    sync_engine.execute(users.delete().where(users.c.id.in_(created_ids)))
+    assert isinstance(sync_engine, sa.engine.Engine)
+    with sync_engine.begin() as conn:
+        conn.execute(users.delete().where(users.c.id.in_(created_ids)))
+
+
+@pytest.fixture
+async def create_fake_cluster(
+    pg_engine: Engine, faker: Faker
+) -> AsyncIterator[Callable[..., Awaitable[int]]]:
+    cluster_ids = []
+    assert cluster_to_groups is not None
+
+    async def creator(**overrides) -> int:
+        insert_values = {
+            "name": "default cluster name",
+            "type": ClusterType.ON_PREMISE,
+            "description": None,
+            "endpoint": faker.domain_name(),
+            "authentication": faker.pydict(value_types=[str]),
+        }
+        insert_values.update(overrides)
+        async with pg_engine.acquire() as conn:
+            cluster_id = await conn.scalar(
+                clusters.insert().values(**insert_values).returning(clusters.c.id)
+            )
+        cluster_ids.append(cluster_id)
+        assert cluster_id
+        return cluster_id
+
+    yield creator
+
+    # cleanup
+    async with pg_engine.acquire() as conn:
+        await conn.execute(clusters.delete().where(clusters.c.id.in_(cluster_ids)))
