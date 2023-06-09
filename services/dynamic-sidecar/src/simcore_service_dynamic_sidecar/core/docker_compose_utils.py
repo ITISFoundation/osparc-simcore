@@ -13,12 +13,9 @@ from models_library.rabbitmq_messages import ProgressType
 from servicelib.async_utils import run_sequentially_in_context
 from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from settings_library.basic_types import LogLevel
-from simcore_service_dynamic_sidecar.core.rabbitmq import (
-    post_progress_message,
-    post_sidecar_log_message,
-)
 
 from .docker_utils import get_docker_service_images, pull_images
+from .rabbitmq import post_progress_message, post_sidecar_log_message
 from .settings import ApplicationSettings
 from .utils import CommandResult, async_command, write_to_tmp_file
 

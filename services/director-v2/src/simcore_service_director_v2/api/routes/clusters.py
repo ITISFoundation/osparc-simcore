@@ -6,10 +6,6 @@ from aiocache import cached
 from fastapi import APIRouter, Depends, HTTPException
 from models_library.clusters import DEFAULT_CLUSTER_ID, Cluster, ClusterID
 from models_library.users import UserID
-from simcore_service_director_v2.api.dependencies.scheduler import (
-    get_scheduler_settings,
-)
-from simcore_service_director_v2.utils.dask_client_utils import test_scheduler_endpoint
 from starlette import status
 
 from ...core.errors import (
@@ -28,8 +24,10 @@ from ...models.schemas.clusters import (
 )
 from ...modules.dask_clients_pool import DaskClientsPool
 from ...modules.db.repositories.clusters import ClustersRepository
+from ...utils.dask_client_utils import test_scheduler_endpoint
 from ..dependencies.dask import get_dask_clients_pool
 from ..dependencies.database import get_repository
+from ..dependencies.scheduler import get_scheduler_settings
 
 router = APIRouter()
 log = logging.getLogger(__name__)

@@ -23,6 +23,7 @@ from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_projects import NewProject
 from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
 from redis.asyncio import Redis
@@ -36,6 +37,7 @@ from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.director_v2.plugin import setup_director_v2
 from simcore_service_webserver.login.plugin import setup_login
+from simcore_service_webserver.notifications.plugin import setup_notifications
 from simcore_service_webserver.products.plugin import setup_products
 from simcore_service_webserver.projects.exceptions import ProjectNotFoundError
 from simcore_service_webserver.projects.plugin import setup_projects
@@ -43,13 +45,14 @@ from simcore_service_webserver.projects.projects_api import (
     remove_project_dynamic_services,
     submit_delete_project_task,
 )
+from simcore_service_webserver.rabbitmq import setup_rabbitmq
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.resource_manager.registry import (
     RedisResourceRegistry,
     RegistryKeyPrefixDict,
     get_registry,
 )
-from simcore_service_webserver.rest import setup_rest
+from simcore_service_webserver.rest.plugin import setup_rest
 from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session.plugin import setup_session
 from simcore_service_webserver.socketio.messages import SOCKET_IO_PROJECT_UPDATED_EVENT
@@ -97,6 +100,20 @@ async def open_project() -> AsyncIterator[Callable[..., Awaitable[None]]]:
 
 
 @pytest.fixture
+def app_environment(
+    app_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch
+) -> dict[str, str]:
+    overrides = setenvs_from_dict(
+        monkeypatch,
+        {
+            "WEBSERVER_COMPUTATION": "1",
+            "WEBSERVER_NOTIFICATIONS": "1",
+        },
+    )
+    return app_environment | overrides
+
+
+@pytest.fixture
 def client(
     event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
@@ -136,6 +153,8 @@ def client(
     setup_projects(app)
     setup_director_v2(app)
     assert setup_resource_manager(app)
+    setup_rabbitmq(app)
+    setup_notifications(app)
     setup_products(app)
 
     assert is_setup_completed("simcore_service_webserver.resource_manager", app)

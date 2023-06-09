@@ -140,7 +140,7 @@ class LabelSchemaAnnotations(BaseModel):
         for field_name in cls.__fields__:
             if value := os.environ.get(field_name.upper()):
                 data[field_name] = value
-        return cls(**data)
+        return cls.parse_obj(data)
 
     def to_oci_data(self) -> dict[str, Any]:
         """Collects data that be converted to OCI labels.

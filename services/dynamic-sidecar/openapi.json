@@ -72,7 +72,10 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "title": "Response Containers Docker Inspect V1 Containers Get",
+                  "type": "object"
+                }
               }
             }
           },
@@ -192,7 +195,13 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "title": "Response Get Container Logs V1 Containers  Id  Logs Get",
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
               }
             }
           },
@@ -241,7 +250,17 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "title": "Response Get Containers Name V1 Containers Name Get",
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "object"
+                    }
+                  ]
+                }
               }
             }
           },
@@ -278,7 +297,10 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "title": "Response Inspect Container V1 Containers  Id  Get",
+                  "type": "object"
+                }
               }
             }
           },

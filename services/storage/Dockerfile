@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 ARG PYTHON_VERSION="3.10.10"
 FROM python:${PYTHON_VERSION}-slim-buster as base
 #
@@ -10,12 +11,15 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 
 LABEL maintainer=mguidon
 
-RUN set -eux && \
+RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=locked \
+  --mount=type=cache,id=baseapt,target=/var/lib/apt,mode=0755,sharing=locked \
+  set -eux && \
   apt-get update && \
-  apt-get install -y gosu && \
-  rm -rf /var/lib/apt/lists/* && \
+  apt-get install -y --no-install-recommends \
+  gosu \
+  && apt-get clean -y \
   # verify that the binary works
-  gosu nobody true
+  && gosu nobody true
 
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
@@ -63,19 +67,21 @@ FROM base as build
 
 ENV SC_BUILD_TARGET build
 
-RUN apt-get update \
+RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=locked \
+  --mount=type=cache,id=baseapt,target=/var/lib/apt,mode=0755,sharing=locked \
+  set -eux \
+  && apt-get update \
   && apt-get install -y --no-install-recommends \
   build-essential \
-  git \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
+  git
 
 
 # NOTE: python virtualenv is used here such that installed
 # packages may be moved to production image easily by copying the venv
 RUN python -m venv "${VIRTUAL_ENV}"
 
-RUN pip --no-cache-dir install --upgrade \
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install --upgrade  \
   pip~=23.1  \
   wheel \
   setuptools
@@ -84,7 +90,9 @@ WORKDIR /build
 
 # install only base 3rd party dependencies
 COPY  --chown=scu:scu services/storage/requirements/_base.txt requirements_base.txt
-RUN pip --no-cache-dir --quiet install -r requirements_base.txt
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install \
+  --requirement requirements_base.txt
 # -------------------------- -------------------------------
 
 
@@ -106,7 +114,10 @@ COPY --chown=scu:scu services/storage /build/services/storage
 
 WORKDIR /build/services/storage
 
-RUN pip --no-cache-dir --quiet install -r requirements/prod.txt
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install \
+  --requirement requirements/prod.txt \
+  && pip list -v
 # -------------------------- -------------------------------
 
 
@@ -125,13 +136,16 @@ ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/scu
 
+# ensure home folder is read/writable for user scu
+RUN chown -R scu /home/scu
 # bring installed package without build tools
 COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 # copy docker entrypoint and boot scripts
 COPY --chown=scu:scu services/storage/docker services/storage/docker
 RUN chmod +x services/storage/docker/*.sh
-
+# ensure home folder is read/writable for user scu
+RUN chown -R scu /home/scu
 HEALTHCHECK --interval=10s \
   --timeout=15s \
   --start-period=5s \

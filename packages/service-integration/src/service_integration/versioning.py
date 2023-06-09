@@ -1,12 +1,14 @@
+import re
 from datetime import datetime
+from typing import Pattern
 
 from models_library.basic_regex import SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS
 from packaging.version import Version
-from pydantic import BaseModel
-from pydantic.fields import Field
-from pydantic.types import constr
+from pydantic import BaseModel, ConstrainedStr, Field
 
-SemanticVersionStr = constr(regex=SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS)
+
+class SemanticVersionStr(ConstrainedStr):
+    regex: Pattern[str] | None = re.compile(SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS)
 
 
 def bump_version_string(current_version: str, bump: str) -> str:

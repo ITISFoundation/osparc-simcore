@@ -4,14 +4,12 @@ from typing import TypedDict
 import sqlalchemy as sa
 from aiohttp import web
 from models_library.projects import ProjectID, ProjectIDStr
+from pydantic import HttpUrl, parse_obj_as
 from simcore_postgres_database.models.projects import ProjectType, projects
-from simcore_service_webserver.projects.exceptions import (
-    PermalinkNotAllowedError,
-    ProjectNotFoundError,
-)
 
 from ..db import get_database_engine
 from ..projects.api import ProjectPermalink, register_permalink_factory
+from ..projects.exceptions import PermalinkNotAllowedError, ProjectNotFoundError
 from ..utils_aiohttp import create_url_for_function
 from .settings import StudiesDispatcherSettings
 
@@ -59,9 +57,9 @@ def create_permalink_for_study(
 
     # create
     url_for = create_url_for_function(request)
-
-    permalink: str = url_for(
-        route_name="get_redirection_to_study_page", id=f"{project_uuid}"
+    permalink = parse_obj_as(
+        HttpUrl,
+        url_for(route_name="get_redirection_to_study_page", id=f"{project_uuid}"),
     )
 
     return ProjectPermalink(

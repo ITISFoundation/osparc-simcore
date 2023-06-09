@@ -6,7 +6,6 @@ import logging
 
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
-from simcore_service_webserver.diagnostics.plugin import setup_diagnostics
 
 from ..diagnostics.plugin import setup_diagnostics
 from ..rabbitmq import setup_rabbitmq

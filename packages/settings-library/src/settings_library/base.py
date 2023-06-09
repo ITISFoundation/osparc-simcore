@@ -44,7 +44,7 @@ def create_settings_from_env(field: ModelField):
                 return [_prepend_field_name(e) for e in ee]
 
             raise DefaultFromEnvFactoryError(
-                errors=_prepend_field_name(err.raw_errors),  # type: ignore
+                errors=_prepend_field_name(err.raw_errors),
                 model=err.model,
                 # FIXME: model = shall be the parent settings?? but I dont find how retrieve it from the field
             ) from err

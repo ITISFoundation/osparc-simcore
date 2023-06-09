@@ -4,9 +4,12 @@
     - ONLY external apps allowed is postgress (see unit/with_postgres)
 """
 
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
-# pylint: disable=bare-except
-# pylint:disable=redefined-outer-name
+# pylint: disable=unused-variable
+
 
 import json
 import logging
@@ -20,7 +23,7 @@ from models_library.projects import Project
 from openapi_core.schema.specs.models import Spec as OpenApiSpecs
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_projects import empty_project_data
-from simcore_service_webserver.rest_utils import (
+from simcore_service_webserver.rest._utils import (
     get_openapi_specs_path,
     load_openapi_specs,
 )

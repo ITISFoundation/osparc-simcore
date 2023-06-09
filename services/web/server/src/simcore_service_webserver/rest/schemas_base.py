@@ -10,7 +10,7 @@ from pydantic import BaseModel, Extra
 
 
 class InputSchema(BaseModel):
-    class Config:
+    class Config:  # type: ignore[pydantic-alias]
         allow_population_by_field_name = False
         extra = Extra.ignore  # Non-strict inputs policy: Used to prune extra field
         allow_mutations = False

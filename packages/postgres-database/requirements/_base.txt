@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_base.txt --resolver=backtracking --strip-extras requirements/_base.in
 #
-alembic==1.10.4
+alembic==1.11.1
     # via -r requirements/_base.in
 greenlet==2.0.2
     # via sqlalchemy
@@ -14,7 +14,7 @@ mako==1.2.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   alembic
-markupsafe==2.1.2
+markupsafe==2.1.3
     # via mako
 multidict==6.0.4
     # via yarl
@@ -24,7 +24,7 @@ sqlalchemy==1.4.48
     # via
     #   -r requirements/_base.in
     #   alembic
-typing-extensions==4.5.0
+typing-extensions==4.6.3
     # via alembic
 yarl==1.9.2
     # via -r requirements/_base.in
