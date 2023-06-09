@@ -7,6 +7,7 @@
 
 qx.Class.define("osparc.component.share.NewCollaboratorsManager", {
   extend: osparc.ui.window.SingletonWindow,
+
   construct: function(resourceData) {
     this.base(arguments, "collaboratorsManager", this.tr("Share with"));
     this.set({
@@ -25,6 +26,7 @@ qx.Class.define("osparc.component.share.NewCollaboratorsManager", {
     this.__resourceData = resourceData;
     this.__selectedCollaborators = new qx.data.Array();
     this.__renderLayout();
+
     this.__visibleCollaborators = {};
     this.__reloadCollaborators();
 
