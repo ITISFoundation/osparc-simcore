@@ -34,11 +34,11 @@ else
 	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "%-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 endif
 
-.PHONY: build
+.PHONY: build build-push
 
-build: ## Builds base docker images used in osparc-simcore stack
+build build-push: ## Builds base docker images used in osparc-simcore stack
 	# Building services
-	@docker buildx bake --file=docker-compose.yml --load
+	@docker buildx bake --file=docker-compose.yml $($(findstring -push,$@),--push, --load)
 	# List images
 	@docker images --filter="reference=local/osparc-*"
 

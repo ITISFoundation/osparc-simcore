@@ -1,6 +1,6 @@
 services:
   osparc-base-python-3.10.10:
-    image: local/osparc-base-python:3.10.10
+    image: ${DOCKER_HUB_ORGANISATION:-local}/osparc-base-python:3.10.10
     build:
       context: .
       dockerfile: Dockerfile.base
@@ -12,7 +12,7 @@ services:
         org.opencontainers.image.revision: "${VCS_REF}"
 
   osparc-base-python-3.6.10:
-    image: local/osparc-base-python:3.6.10
+    image: ${DOCKER_HUB_ORGANISATION:-local}/osparc-base-python:3.6.10
     build:
       context: .
       dockerfile: Dockerfile.base
@@ -24,7 +24,7 @@ services:
         org.opencontainers.image.revision: "${VCS_REF}"
 
   osparc-builder-python-3.10.10:
-    image: local/osparc-builder-python:3.10.10
+    image: ${DOCKER_HUB_ORGANISATION:-local}/osparc-builder-python:3.10.10
     build:
       context: .
       dockerfile: Dockerfile.builder
@@ -36,7 +36,7 @@ services:
         org.opencontainers.image.revision: "${VCS_REF}"
 
   osparc-builder-python-3.6.10:
-    image: local/osparc-builder-python:3.6.10
+    image: ${DOCKER_HUB_ORGANISATION:-local}/osparc-builder-python:3.6.10
     build:
       context: .
       dockerfile: Dockerfile.builder
