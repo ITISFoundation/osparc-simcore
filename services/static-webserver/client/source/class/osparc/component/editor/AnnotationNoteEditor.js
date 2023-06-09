@@ -23,6 +23,7 @@ qx.Class.define("osparc.component.editor.AnnotationNoteEditor", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
+    this.getChildControl("instructions");
     this.getChildControl("destinatary");
     this.getChildControl("note");
     newNote ? this.getChildControl("add") : this.getChildControl("save");
@@ -64,9 +65,17 @@ qx.Class.define("osparc.component.editor.AnnotationNoteEditor", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "instructions":
+          control = new qx.ui.basic.Label().set({
+            value: this.tr("Add a destinary and a notification will be sent"),
+            font: "text-14",
+            rich: true,
+            wrap: true
+          });
+          this._add(control);
+          break;
         case "destinatary": {
-          control = new qx.ui.form.Button(this.tr("Notify Collaborator")).set({
-            appearance: "strong-button",
+          control = new qx.ui.form.Button(this.tr("Select destinatary")).set({
             allowGrowX: false
           });
           control.addListener("execute", () => {
