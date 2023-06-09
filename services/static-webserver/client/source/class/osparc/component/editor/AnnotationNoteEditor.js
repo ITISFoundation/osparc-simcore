@@ -54,7 +54,7 @@ qx.Class.define("osparc.component.editor.AnnotationNoteEditor", {
   statics: {
     popUpInWindow: function(noteEditor, newNote = true) {
       const title = newNote ? qx.locale.Manager.tr("Add Note") : qx.locale.Manager.tr("Edit Note");
-      const win = osparc.ui.window.Window.popUpInWindow(noteEditor, title, 300, 210);
+      const win = osparc.ui.window.Window.popUpInWindow(noteEditor, title, 325, 220);
       win.center();
       win.open();
       return win;
@@ -79,7 +79,9 @@ qx.Class.define("osparc.component.editor.AnnotationNoteEditor", {
             allowGrowX: false
           });
           control.addListener("execute", () => {
-            const collaboratorsManager = new osparc.component.share.NewCollaboratorsManager();
+            const collaboratorsManager = new osparc.component.share.NewCollaboratorsManager(null, false);
+            collaboratorsManager.setCaption("Destinatary");
+            collaboratorsManager.getActionButton().setLabel(this.tr("Add"));
             collaboratorsManager.addListener("addCollaborators", e => {
               const collabs = e.getData();
               if (collabs) {
