@@ -12,7 +12,6 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 LABEL maintainer="Andrei Neagu <neagu@itis.swiss>"
 
 RUN \
-  --mount=type=bind,source=scripts/install_rclone.bash,target=install_rclone.bash \
   --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=locked \
   --mount=type=cache,id=baseapt,target=/var/lib/apt,mode=0755,sharing=locked \
   set -eux && \
@@ -24,14 +23,14 @@ RUN \
   ca-certificates \
   # required by python-magic
   libmagic1 \
-  && ./install_rclone.bash \
-  && apt-get remove -y\
-  curl \
-  && apt-get autoclean -y\
-  && apt-get autoremove -y\
-  && rm -rf /var/lib/apt/lists/* \
+  && apt-get clean -y\
   # verify that the binary works
   && gosu nobody true
+
+# install RClone, we do it in a separate layer such that the cache is not locked forever, as this seems to take a long time
+RUN \
+  --mount=type=bind,source=scripts/install_rclone.bash,target=install_rclone.bash \
+  ./install_rclone.bash
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 ENV SC_USER_ID=8004 \
