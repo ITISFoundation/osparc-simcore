@@ -150,9 +150,12 @@ qx.Class.define("osparc.component.editor.AnnotationNoteEditor", {
       return control || this.base(arguments, id);
     },
 
-    __setDestinatary: function(uid) {
-      this.setDestinatary(uid);
-      this.getChildControl("selected-destinatary").setValue(uid.toString());
+    __setDestinatary: function(gid) {
+      this.setDestinatary(gid);
+      osparc.store.Store.getInstance().getGroup(gid)
+        .then(user => {
+          this.getChildControl("selected-destinatary").setValue(user.label);
+        });
     }
   }
 });
