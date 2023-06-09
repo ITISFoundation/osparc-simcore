@@ -18,7 +18,6 @@ RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=locked \
   set -eux && \
   apt-get update && \
   apt-get install -y --no-install-recommends \
-  libmagic1 \
   gosu \
   && apt-get clean -y \
   # verify that the binary works
