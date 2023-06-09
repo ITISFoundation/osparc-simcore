@@ -16,6 +16,8 @@ from .clusters import clusters
 from .groups import groups
 
 _TABLE_NAME = "services_limitations"
+USE_DEFAULTS: Final = None
+UNLIMITED: Final[int] = -999
 
 services_limitations = sa.Table(
     _TABLE_NAME,
