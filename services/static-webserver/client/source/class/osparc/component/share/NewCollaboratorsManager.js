@@ -72,7 +72,7 @@ qx.Class.define("osparc.component.share.NewCollaboratorsManager", {
 
     __reloadCollaborators: function() {
       let includeEveryone = false;
-      if (this.__resourceData["resourceType"] === "service") {
+      if (this.__resourceData && this.__resourceData["resourceType"] === "service") {
         includeEveryone = true;
       } else {
         includeEveryone = osparc.data.Permissions.getInstance().canDo("study.everyone.share");
@@ -116,13 +116,16 @@ qx.Class.define("osparc.component.share.NewCollaboratorsManager", {
       });
 
       let existingCollabs = [];
-      if (this.__resourceData["accessRights"]) {
-        // study/template
-        existingCollabs = Object.keys(this.__resourceData["accessRights"]);
-      } else if (this.__resourceData["access_rights"]) {
-        // service
-        existingCollabs = Object.keys(this.__resourceData["access_rights"]);
+      if (this.__resourceData) {
+        if (this.__resourceData["accessRights"]) {
+          // study/template
+          existingCollabs = Object.keys(this.__resourceData["accessRights"]);
+        } else if (this.__resourceData["access_rights"]) {
+          // service
+          existingCollabs = Object.keys(this.__resourceData["access_rights"]);
+        }
       }
+
       const existingCollaborators = existingCollabs.map(c => parseInt(c));
       visibleCollaborators.forEach(visibleCollaborator => {
         // do not list the visibleCollaborators that are already collaborators
