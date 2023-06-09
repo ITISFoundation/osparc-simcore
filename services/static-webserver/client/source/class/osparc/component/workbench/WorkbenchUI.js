@@ -1833,7 +1833,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const noteEditor = new osparc.component.editor.AnnotationNoteEditor(true);
         const win = osparc.component.editor.AnnotationNoteEditor.popUpInWindow(noteEditor, true);
         noteEditor.addListener("addNote", () => {
-          serializeData.attributes.destinatary = noteEditor.getDestinatary();
+          serializeData.attributes.destinatary = noteEditor.getDestinatary().toString();
           serializeData.attributes.text = noteEditor.getNote();
           win.close();
           this.__addAnnotation(serializeData);

@@ -31,9 +31,9 @@ qx.Class.define("osparc.component.editor.AnnotationNoteEditor", {
 
   properties: {
     destinatary: {
-      check: "String",
-      init: "",
-      nullable: false,
+      check: "Integer",
+      init: null,
+      nullable: true,
       event: "changeDestinatary"
     },
 
@@ -75,9 +75,7 @@ qx.Class.define("osparc.component.editor.AnnotationNoteEditor", {
           this._add(control);
           break;
         case "destinatary-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
-            alignX: "right"
-          })).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
             padding: 2
           });
           this._add(control);
@@ -153,6 +151,7 @@ qx.Class.define("osparc.component.editor.AnnotationNoteEditor", {
     },
 
     __setDestinatary: function(collab) {
+      this.setDestinatary(collab);
       this.getChildControl("selected-destinatary").setValue(collab.toString());
     }
   }
