@@ -20,6 +20,7 @@ class NotificationCategory(StrAutoEnum):
     NEW_ORGANIZATION = auto()
     STUDY_SHARED = auto()
     TEMPLATE_SHARED = auto()
+    ANNOTATION_NOTE = auto()
 
 
 class UserNotification(BaseModel):

@@ -127,6 +127,9 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
             case "TEMPLATE_SHARED":
               source = "@FontAwesome5Solid/copy/14";
               break;
+            case "ANNOTATION_NOTE":
+              source = "@FontAwesome5Solid/note-sticky/14";
+              break;
           }
           return source;
         }
@@ -188,7 +191,8 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
           break;
         }
         case "TEMPLATE_SHARED":
-        case "STUDY_SHARED": {
+        case "STUDY_SHARED":
+        case "ANNOTATION_NOTE": {
           const items = actionablePath.split("/");
           const studyId = items.pop();
           const params = {

@@ -1830,13 +1830,18 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         attributes: osparc.wrapper.Svg.getRectAttributes(annotation)
       };
       if (type === "note") {
-        const noteEditor = new osparc.component.editor.AnnotationNoteEditor(true);
+        const noteEditor = new osparc.component.editor.AnnotationNoteEditor();
         const win = osparc.component.editor.AnnotationNoteEditor.popUpInWindow(noteEditor, true);
         noteEditor.addListener("addNote", () => {
-          serializeData.attributes.destinatary = noteEditor.getDestinatary().toString();
-          serializeData.attributes.text = noteEditor.getNote();
-          win.close();
-          this.__addAnnotation(serializeData);
+          const gid = noteEditor.getDestinatary();
+          osparc.store.Store.getInstance().getGroup(gid)
+            .then(user => {
+              serializeData.attributes.destinatary = user.label;
+              serializeData.attributes.text = noteEditor.getNote();
+              osparc.component.notification.Notifications.postNewAnnotationNote(user.id, this.getStudy().getUuid());
+              this.__addAnnotation(serializeData);
+            })
+            .finally(() => win.close());
         }, this);
       } else if (type === "rect") {
         this.__addAnnotation(serializeData);

@@ -58,6 +58,17 @@ qx.Class.define("osparc.component.notification.Notifications", {
       };
     },
 
+    __newAnnotationNoteObj: function(userId, studyId) {
+      return {
+        "user_id": userId.toString(),
+        "category": "ANNOTATION_NOTE",
+        "actionable_path": "study/"+studyId,
+        "title": "Template shared",
+        "text": "A Note was added for you",
+        "date": new Date().toISOString()
+      };
+    },
+
     postNewOrganization: function(userId, orgId) {
       const params = {
         data: this.__newOrganizationObj(userId, orgId)
@@ -75,6 +86,13 @@ qx.Class.define("osparc.component.notification.Notifications", {
     postNewTemplate: function(userId, templateId) {
       const params = {
         data: this.__newTemplateObj(userId, templateId)
+      };
+      return osparc.data.Resources.fetch("notifications", "post", params);
+    },
+
+    postNewAnnotationNote: function(userId, studyId) {
+      const params = {
+        data: this.__newAnnotationNoteObj(userId, studyId)
       };
       return osparc.data.Resources.fetch("notifications", "post", params);
     }

@@ -18,7 +18,7 @@
 qx.Class.define("osparc.component.editor.AnnotationNoteEditor", {
   extend: qx.ui.core.Widget,
 
-  construct: function(newNote = true) {
+  construct: function() {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(10));
@@ -26,7 +26,7 @@ qx.Class.define("osparc.component.editor.AnnotationNoteEditor", {
     this.getChildControl("instructions");
     this.getChildControl("select-destinatary");
     this.getChildControl("note");
-    newNote ? this.getChildControl("add") : this.getChildControl("save");
+    this.getChildControl("add");
   },
 
   properties: {
@@ -54,7 +54,7 @@ qx.Class.define("osparc.component.editor.AnnotationNoteEditor", {
   statics: {
     popUpInWindow: function(noteEditor, newNote = true) {
       const title = newNote ? qx.locale.Manager.tr("Add Note") : qx.locale.Manager.tr("Edit Note");
-      const win = osparc.ui.window.Window.popUpInWindow(noteEditor, title, 325, 225);
+      const win = osparc.ui.window.Window.popUpInWindow(noteEditor, title, 325, 230);
       win.center();
       win.open();
       return win;
@@ -150,9 +150,9 @@ qx.Class.define("osparc.component.editor.AnnotationNoteEditor", {
       return control || this.base(arguments, id);
     },
 
-    __setDestinatary: function(collab) {
-      this.setDestinatary(collab);
-      this.getChildControl("selected-destinatary").setValue(collab.toString());
+    __setDestinatary: function(uid) {
+      this.setDestinatary(uid);
+      this.getChildControl("selected-destinatary").setValue(uid.toString());
     }
   }
 });
