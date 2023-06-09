@@ -10,12 +10,50 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from faker import Faker
 from simcore_postgres_database.models.groups import user_to_groups
+from simcore_postgres_database.models.services_limitations import (
+    UNLIMITED,
+    USE_DEFAULTS,
+)
 from simcore_postgres_database.utils_services_limitations import (
     ServiceLimitationsCreate,
     ServiceLimitationsOperationNotAllowed,
     ServiceLimitationsOperationNotFound,
     ServicesLimitationsRepo,
 )
+
+
+@pytest.fixture
+def default_service_limitations() -> (
+    Callable[[int, int | None], ServiceLimitationsCreate]
+):
+    def _creator(gid: int, cluster_id: int | None) -> ServiceLimitationsCreate:
+        return ServiceLimitationsCreate(
+            gid=gid,
+            cluster_id=cluster_id,
+            ram=USE_DEFAULTS,
+            cpu=USE_DEFAULTS,
+            vram=USE_DEFAULTS,
+            gpu=USE_DEFAULTS,
+        )
+
+    return _creator
+
+
+@pytest.fixture
+def unlimited_service_limitations() -> (
+    Callable[[int, int | None], ServiceLimitationsCreate]
+):
+    def _creator(gid: int, cluster_id: int | None) -> ServiceLimitationsCreate:
+        return ServiceLimitationsCreate(
+            gid=gid,
+            cluster_id=cluster_id,
+            ram=UNLIMITED,
+            cpu=UNLIMITED,
+            vram=UNLIMITED,
+            gpu=UNLIMITED,
+        )
+
+    return _creator
 
 
 @pytest.fixture
@@ -35,12 +73,34 @@ def random_service_limitations(
     return _creator
 
 
+@pytest.fixture(
+    params=(
+        "default_service_limitations",
+        "unlimited_service_limitations",
+        "random_service_limitations",
+    )
+)
+def service_limitations(
+    request: pytest.FixtureRequest,
+    default_service_limitations: Callable[[int, int | None], ServiceLimitationsCreate],
+    unlimited_service_limitations: Callable[
+        [int, int | None], ServiceLimitationsCreate
+    ],
+    random_service_limitations: Callable[[int, int | None], ServiceLimitationsCreate],
+) -> Callable[[int, int | None], ServiceLimitationsCreate]:
+    return {
+        "default_service_limitations": default_service_limitations,
+        "unlimited_service_limitations": unlimited_service_limitations,
+        "random_service_limitations": random_service_limitations,
+    }[request.param]
+
+
 async def test_create_service_limitation(
     connection: SAConnection,
-    random_service_limitations: Callable[[int, int | None], ServiceLimitationsCreate],
+    service_limitations: Callable[[int, int | None], ServiceLimitationsCreate],
 ):
     # NOTE: these test works because the everyone group (gid=1) exists
-    input_limit = random_service_limitations(1, None)
+    input_limit = service_limitations(1, None)
     created_limit = await ServicesLimitationsRepo.create(
         connection, new_limits=input_limit
     )
