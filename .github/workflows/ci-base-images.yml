@@ -5,9 +5,16 @@ on:
       - "*"
     tags-ignore:
       - "*"
+    paths:
+      - "docker-base/**"
+      - ".github/workflows/ci-base-images.yml"
   pull_request:
     branches:
       - "*"
+    paths:
+      - "docker-base/**"
+      - ".github/workflows/ci-base-images.yml"
+
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
