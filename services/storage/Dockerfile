@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 ARG PYTHON_VERSION="3.10.10"
-FROM local/osparc-base-python:${PYTHON_VERSION} as base
+FROM itisfoundation/osparc-base-python:${PYTHON_VERSION} as base
 #
 #  USAGE:
 #     cd sercices/storage
@@ -24,7 +24,7 @@ EXPOSE 8080
 #
 # + /build             WORKDIR
 #
-FROM local/osparc-builder:${PYTHON_VERSION} as build
+FROM itisfoundation/osparc-builder:${PYTHON_VERSION} as build
 
 # install only base 3rd party dependencies
 RUN \
