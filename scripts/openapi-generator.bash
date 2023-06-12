@@ -30,7 +30,7 @@ fetch_openapi_generator_templates(){
   TMPDIR=$1
   cd ${TMPDIR}
 
-	echo "Cloning openapi-generator into ${TMPDIR} to get templates..."
+  echo "Cloning openapi-generator into ${TMPDIR} to get templates..."
   git clone git@github.com:ITISFoundation/openapi-generator.git
   cd openapi-generator
   git checkout openapi-generator-${OPENAPI_GENERATOR_VERSION}
