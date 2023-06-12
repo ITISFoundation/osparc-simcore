@@ -16,7 +16,6 @@ MAKE_C := $(MAKE) --no-print-directory --directory
 # version control
 export VCS_URL          := $(shell git config --get remote.origin.url)
 export VCS_REF          := $(shell git rev-parse HEAD)
-export VCS_REF_CLIENT   := $(shell git log --pretty=tformat:"%h" -n1 services/static-webserver/client)
 export VCS_STATUS_CLIENT:= $(if $(shell git status -s),'modified/untracked','clean')
 export BUILD_DATE       := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
@@ -38,11 +37,6 @@ endif
 
 build build-push: ## Builds base docker images used in osparc-simcore stack
 	# Building base images
-	@docker buildx bake --file=docker-compose.base.yml $($(findstring -push,$@),--push, --load)
+	@docker buildx bake --file=docker-compose.base.yml $(if $(findstring -push,$@),--push, --load)
 	# Building builder images
-	@docker buildx bake --file=docker-compose.builder.yml $($(findstring -push,$@),--push, --load)
-	# List images
-	@docker images --filter="reference=local/osparc-*"
-
-info: ## Shows info about the built docker images
-	@docker images --filter="reference=local/osparc-*"
+	@docker buildx bake --file=docker-compose.builder.yml $(if $(findstring -push,$@),--push, --load)
