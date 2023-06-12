@@ -7,6 +7,7 @@ import itertools
 import random
 from copy import deepcopy
 from datetime import datetime
+from pathlib import Path
 from random import randint
 from typing import Any, AsyncIterator, Awaitable, Callable, Iterable, Iterator
 
@@ -19,6 +20,8 @@ from models_library.services import ServiceDockerData
 from models_library.users import UserID
 from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import load_dotenv, setenvs_from_envfile
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
 from simcore_service_catalog.core.application import init_app
@@ -62,17 +65,53 @@ async def products_names(
         await conn.execute(products.delete())
 
 
+@pytest.fixture(scope="session")
+def service_env_file(project_slug_dir: Path) -> Path:
+    env_devel_path = project_slug_dir / ".env-devel"
+    assert env_devel_path.exists()
+    return env_devel_path
+
+
+@pytest.fixture(scope="session")
+def testing_environ_vars(
+    testing_environ_vars: EnvVarsDict, service_env_file: Path
+) -> EnvVarsDict:
+    # Extends packages/pytest-simcore/src/pytest_simcore/docker_compose.py::testing_environ_vars
+    # Environ seen by docker-compose (i.e. postgres_db)
+    app_envs = load_dotenv(service_env_file, verbose=True)
+    return {**testing_environ_vars, **app_envs}
+
+
+@pytest.fixture
+def service_test_environ(
+    service_env_file: Path, monkeypatch: MonkeyPatch
+) -> EnvVarsDict:
+    # environs seen by app are defined by the service env-file!
+    app_envs = setenvs_from_envfile(monkeypatch, service_env_file, verbose=True)
+    return app_envs
+
+
 @pytest.fixture
 def app(
     monkeypatch: MonkeyPatch,
     mocker: MockerFixture,
-    service_test_environ: None,
+    service_test_environ: EnvVarsDict,
     postgres_db: sa.engine.Engine,
     postgres_host_config: dict[str, str],
     products_names: list[str],
 ) -> Iterable[FastAPI]:
     print("database started:", postgres_host_config)
     print("database w/products in table:", products_names)
+
+    # Ensures both postgres service and app environs are the same!
+    assert (
+        service_test_environ["POSTGRES_USER"] == postgres_host_config["POSTGRES_USER"]
+    )
+    assert service_test_environ["POSTGRES_DB"] == postgres_host_config["POSTGRES_DB"]
+    assert (
+        service_test_environ["POSTGRES_PASSWORD"]
+        == postgres_host_config["POSTGRES_PASSWORD"]
+    )
 
     monkeypatch.setenv("SC_BOOT_MODE", "local-development")
     monkeypatch.setenv("POSTGRES_CLIENT_NAME", "pytest_client")
