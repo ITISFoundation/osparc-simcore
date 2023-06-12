@@ -24,7 +24,7 @@ EXPOSE 8080
 #
 # + /build             WORKDIR
 #
-FROM itisfoundation/osparc-builder:${PYTHON_VERSION} as build
+FROM itisfoundation/osparc-builder-python:${PYTHON_VERSION} as build
 
 # install only base 3rd party dependencies
 RUN \
