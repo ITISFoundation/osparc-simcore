@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 ARG PYTHON_VERSION="3.10.10"
-FROM python:${PYTHON_VERSION}-slim-buster as base
+FROM itisfoundation/osparc-base-python:${PYTHON_VERSION} as base
 #
 #  USAGE:
 #     cd sercices/dynamic-sidecar
@@ -9,8 +9,9 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 #
 #  REQUIRED: context expected at ``osparc-simcore/`` folder because we need access to osparc-simcore/packages
 
-LABEL maintainer="Andrei Neagu <neagu@itis.swiss>"
+LABEL maintainer=GitHK
 
+# install docker and libmagic??? TODO: GitHK is this needed?
 RUN \
   --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
   --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
@@ -18,7 +19,6 @@ RUN \
   apt-get update && \
   apt-get install -y --no-install-recommends\
   curl \
-  gosu \
   libcap2-bin \
   ca-certificates \
   # required by python-magic
@@ -32,28 +32,6 @@ RUN \
   --mount=type=bind,source=scripts/install_rclone.bash,target=install_rclone.bash \
   ./install_rclone.bash
 
-# simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
-ENV SC_USER_ID=8004 \
-  SC_USER_NAME=scu \
-  SC_BUILD_TARGET=base \
-  SC_BOOT_MODE=default
-
-RUN adduser \
-  --uid ${SC_USER_ID} \
-  --disabled-password \
-  --gecos "" \
-  --shell /bin/sh \
-  --home /home/${SC_USER_NAME} \
-  ${SC_USER_NAME}
-
-# Sets utf-8 encoding for Python et al
-ENV LANG=C.UTF-8
-# Turns off writing .pyc files; superfluous on an ephemeral container.
-ENV PYTHONDONTWRITEBYTECODE=1 \
-  VIRTUAL_ENV=/home/scu/.venv
-# Ensures that the python and pip executables used
-# in the image will be those from our virtualenv.
-ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 # directory where dynamic-sidecar stores creates and shares
 # volumes between itself and the spawned containers
 ENV DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR="/dy-volumes"
@@ -69,29 +47,10 @@ RUN mkdir -p "${DYNAMIC_SIDECAR_SHARED_STORE_DIR}" && \
 #
 # + /build             WORKDIR
 #
-FROM base as build
+FROM itisfoundation/osparc-builder-python:${PYTHON_VERSION} as build
 
-ENV SC_BUILD_TARGET=build
-
-RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
-  --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
-  set -eux \
-  && apt-get update \
-  && apt-get install -y --no-install-recommends \
-  build-essential
-
-# NOTE: python virtualenv is used here such that installed
-# packages may be moved to production image easily by copying the venv
-RUN python -m venv "${VIRTUAL_ENV}" \
-  && mkdir -p "${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}"
-
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
-  pip install --upgrade  \
-  pip~=23.1  \
-  wheel \
-  setuptools
-
-WORKDIR /build
+# ??? TODO: GitHK what is this for?
+RUN mkdir -p "${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}"
 
 # install base 3rd party dependencies
 # NOTE: copies to /build to avoid overwriting later which would invalidate this layer
