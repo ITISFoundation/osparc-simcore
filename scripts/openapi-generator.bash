@@ -36,7 +36,7 @@ fetch_openapi_generator_templates(){
   git checkout openapi-generator-${OPENAPI_GENERATOR_VERSION}
   git status
   git pull
-	echo "Done fetching templates..."
+  echo "Done fetching templates..."
 
   cd ${CURDIR}
 }
