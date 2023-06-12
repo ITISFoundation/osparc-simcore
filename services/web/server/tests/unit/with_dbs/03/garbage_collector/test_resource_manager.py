@@ -34,7 +34,7 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver import garbage_collector_core
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.db import setup_db
+from simcore_service_webserver.db.plugin import setup_db
 from simcore_service_webserver.director_v2.plugin import setup_director_v2
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.notifications.plugin import setup_notifications

@@ -10,7 +10,7 @@ from aiohttp.test_utils import TestClient, TestServer
 from pytest import CaptureFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import NewUser, parse_link, parse_test_marks
-from simcore_service_webserver.db_models import ConfirmationAction, UserStatus
+from simcore_service_webserver.db.models import ConfirmationAction, UserStatus
 from simcore_service_webserver.login._constants import (
     MSG_ACTIVATION_REQUIRED,
     MSG_EMAIL_SENT,
