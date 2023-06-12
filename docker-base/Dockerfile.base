@@ -1,6 +1,9 @@
 # syntax=docker/dockerfile:1
 ARG PYTHON_VERSION="3.10.10"
-FROM python:${PYTHON_VERSION}-slim-buster
+FROM --platform=${TARGETPLATFORM} python:${PYTHON_VERSION}-slim-buster
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
+RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM" > /log
 #
 #  USAGE:
 #     cd sercices/web
