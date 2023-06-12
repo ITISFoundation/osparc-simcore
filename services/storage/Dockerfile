@@ -10,8 +10,6 @@ FROM itisfoundation/osparc-base-python:${PYTHON_VERSION} as base
 #  REQUIRED: context expected at ``osparc-simcore/`` folder because we need access to osparc-simcore/packages
 
 LABEL maintainer=mguidon,sanderegg
-
-
 EXPOSE 8080
 # -------------------------- -------------------------------
 
