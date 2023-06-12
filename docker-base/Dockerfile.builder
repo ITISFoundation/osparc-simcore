@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 ARG PYTHON_VERSION="3.10.10"
-FROM itisfoundation/base-image-python:${PYTHON_VERSION}
+FROM itisfoundation/osparc-base-python:${PYTHON_VERSION}
 
 ENV SC_BUILD_TARGET build
 
