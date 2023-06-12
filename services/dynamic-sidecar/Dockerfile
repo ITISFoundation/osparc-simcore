@@ -100,7 +100,6 @@ WORKDIR /home/scu
 
 # Starting from clean base image, copies pre-installed virtualenv from prod-only-deps
 COPY --chown=scu:scu --from=prod-only-deps  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
-COPY --chown=scu:scu --from=prod-only-deps  ${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR} ${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}
 
 # Copies booting scripts
 COPY --chown=scu:scu services/dynamic-sidecar/docker services/dynamic-sidecar/docker
