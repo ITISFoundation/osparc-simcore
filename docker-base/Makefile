@@ -38,9 +38,9 @@ endif
 
 build build-push: ## Builds base docker images used in osparc-simcore stack
 	# Building base images
-	@docker buildx bake --file=docker-compose.yml $($(findstring -push,$@),--push, --load)
+	@docker buildx bake --file=docker-compose.base.yml $($(findstring -push,$@),--push, --load)
 	# Building builder images
-	@docker buildx bake --file=docker-compose.yml $($(findstring -push,$@),--push, --load)
+	@docker buildx bake --file=docker-compose.builder.yml $($(findstring -push,$@),--push, --load)
 	# List images
 	@docker images --filter="reference=local/osparc-*"
 
