@@ -68,10 +68,7 @@ def clone_project_document(
             # NOTE: for datasets we get something like project_uuid/node_uuid/file_id
             if "/" in node:
                 parts: list[str] = node.split("/")
-                parts_replaced: list[str] = [
-                    f"{_replace_uuids(part)}" for part in parts
-                ]
-                node = "/".join(parts_replaced)
+                node = "/".join([f"{_replace_uuids(part)}" for part in parts])
             else:
                 node = project_map.get(node, nodes_map.get(NodeIDStr(node), node))
         elif isinstance(node, list):
