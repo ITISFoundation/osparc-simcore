@@ -64,8 +64,6 @@ ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/scu
 
-# ensure home folder is read/writable for user scu
-RUN chown -R scu /home/scu
 # Starting from clean base image, copies pre-installed virtualenv from prod-only-deps
 COPY --chown=scu:scu --from=prod-only-deps  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 

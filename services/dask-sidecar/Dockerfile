@@ -77,8 +77,6 @@ ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/scu
 
-# ensure home folder is read/writable for user scu
-RUN chown -R scu /home/scu
 # bring installed package without build tools
 COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY --chown=scu:scu services/dask-sidecar/docker services/dask-sidecar/docker

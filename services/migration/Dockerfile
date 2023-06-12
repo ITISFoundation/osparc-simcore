@@ -38,8 +38,6 @@ WORKDIR /home/scu
 
 USER ${SC_USER_NAME}
 
-# ensure home folder is read/writable for user scu
-RUN chown -R scu /home/scu
 # bring installed package without build tools
 COPY --chown=scu:scu --from=build ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY --chown=scu:scu services/migration/docker services/migration/docker
