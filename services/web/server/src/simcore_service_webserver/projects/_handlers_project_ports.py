@@ -126,7 +126,7 @@ class ProjectInputGet(_OutputSchemaConfig, _ProjectIOBase):
 class ProjectOutputGet(_ProjectIOBase):
     label: str
 
-    class _OutputSchemaConfig:
+    class Config(_OutputSchemaConfig):
         ...
 
 
