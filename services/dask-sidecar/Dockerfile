@@ -1,9 +1,6 @@
 # syntax=docker/dockerfile:1
 ARG PYTHON_VERSION="3.10.10"
-FROM --platform=${TARGETPLATFORM} python:${PYTHON_VERSION}-slim-buster as base
-ARG TARGETPLATFORM
-ARG BUILDPLATFORM
-RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM" > /log
+FROM itisfoundation/osparc-base-python:${PYTHON_VERSION} as base
 #
 #  USAGE:
 #     cd sercices/dask-sidecar
@@ -13,6 +10,9 @@ RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM" > /log
 #  REQUIRED: context expected at ``osparc-simcore/`` folder because we need access to osparc-simcore/packages
 
 LABEL maintainer=sanderegg
+EXPOSE 8080
+EXPOSE 8786
+EXPOSE 8787
 
 RUN  --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
   --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
@@ -21,40 +21,10 @@ RUN  --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
   && apt-get install -y --no-install-recommends \
   iputils-ping \
   curl \
-  gosu \
-  && apt-get clean -y \
-  # verify that the binary works
-  && gosu nobody true
-
-
-# simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
-ENV SC_USER_ID=8004 \
-  SC_USER_NAME=scu \
-  SC_BUILD_TARGET=base \
-  SC_BOOT_MODE=default
-
-RUN adduser \
-  --uid ${SC_USER_ID} \
-  --disabled-password \
-  --gecos "" \
-  --shell /bin/sh \
-  --home /home/${SC_USER_NAME} \
-  ${SC_USER_NAME}
-
-
-ENV LANG=C.UTF-8 \
-  PYTHONDONTWRITEBYTECODE=1 \
-  VIRTUAL_ENV=/home/scu/.venv
-
-ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
+  && apt-get clean -y
 
 # for ARM architecture this helps a lot VS building packages
 ENV PIP_EXTRA_INDEX_URL=https://www.piwheels.org/simple
-
-
-EXPOSE 8080
-EXPOSE 8786
-EXPOSE 8787
 
 
 # -------------------------- Build stage -------------------
@@ -62,28 +32,7 @@ EXPOSE 8787
 #
 # + /build             WORKDIR
 #
-FROM base as build
-
-ENV SC_BUILD_TARGET=build
-
-RUN  --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
-  --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
-  set -eux \
-  && apt-get update \
-  && apt-get install -y --no-install-recommends \
-  build-essential
-
-
-# NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
-RUN python -m venv "${VIRTUAL_ENV}"
-
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
-  pip install --upgrade  \
-  pip~=23.1  \
-  wheel \
-  setuptools
-
-WORKDIR /build
+FROM itisfoundation/osparc-builder-python:${PYTHON_VERSION} as build
 
 # install base 3rd party dependencies (NOTE: this speeds up devel mode)
 RUN \
