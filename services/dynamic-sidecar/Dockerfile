@@ -42,15 +42,16 @@ ENV DYNAMIC_SIDECAR_SHARED_STORE_DIR="${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}/sh
 RUN mkdir -p "${DYNAMIC_SIDECAR_SHARED_STORE_DIR}" && \
   chown -R scu:scu "${DYNAMIC_SIDECAR_SHARED_STORE_DIR}"
 
+# copy utility devops scripts
+COPY --chown=scu:scu services/dynamic-sidecar/scripts/Makefile /home/scu
+COPY --chown=root:root services/dynamic-sidecar/scripts/Makefile /root
+
 # -------------------------- Build stage -------------------
 # Installs build/package management tools and third party dependencies
 #
 # + /build             WORKDIR
 #
 FROM itisfoundation/osparc-builder-python:${PYTHON_VERSION} as build
-
-# ??? TODO: GitHK what is this for?
-RUN mkdir -p "${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}"
 
 # install base 3rd party dependencies
 # NOTE: copies to /build to avoid overwriting later which would invalidate this layer
@@ -59,9 +60,7 @@ RUN \
   --mount=type=cache,mode=0755,target=/root/.cache/pip \
   pip install -r _base.txt
 
-# copy utility devops scripts
-COPY --chown=scu:scu services/dynamic-sidecar/scripts/Makefile /home/scu
-COPY --chown=root:root services/dynamic-sidecar/scripts/Makefile /root
+
 
 # --------------------------Prod-depends-only stage -------------------
 # This stage is for production only dependencies that get partially wiped out afterwards (final docker image concerns)
