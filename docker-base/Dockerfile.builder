@@ -4,8 +4,8 @@ FROM itisfoundation/base-image-python:${PYTHON_VERSION}
 
 ENV SC_BUILD_TARGET build
 
-RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
-  --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
+RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=locked \
+  --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=locked \
   set -eux \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
