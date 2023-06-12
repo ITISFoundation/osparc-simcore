@@ -720,12 +720,12 @@ clean: .check-clean ## cleans all unversioned files in project and temp files cr
 	@$(MAKE_C) services/static-webserver/client clean-files
 
 clean-more: ## cleans containers and unused volumes
-	# stops and deletes running containers
-	@$(if $(_running_containers), docker rm --force $(_running_containers),)
 	# pruning unused volumes
 	-@docker volume prune --force
 	# pruning buildx cache
 	-@docker buildx prune --force
+	# stops and deletes running containers
+	@$(if $(_running_containers), docker rm --force $(_running_containers),)
 
 clean-images: ## removes all created images
 	# Cleaning all service images
