@@ -13,7 +13,7 @@ from models_library.projects_nodes import Node, NodeID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.utils.services_io import JsonSchemaDict
-from pydantic import BaseModel, Extra, Field, parse_obj_as
+from pydantic import BaseConfig, BaseModel, Extra, Field, parse_obj_as
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -85,14 +85,14 @@ async def _get_validated_workbench_model(
 routes = web.RouteTableDef()
 
 
-class _InputSchemaConfig(BaseModel):
+class _InputSchemaConfig(BaseConfig):
     class Config:
         allow_population_by_field_name = False
         extra = Extra.forbid
         allow_mutations = False
 
 
-class _OutputSchemaConfig(BaseModel):
+class _OutputSchemaConfig(BaseConfig):
     class Config:
         allow_population_by_field_name = True
         extra = Extra.ignore  # Used to prune extra fields from internal data
@@ -111,16 +111,23 @@ class _ProjectIOBase(BaseModel):
     value: Any = Field(..., description="Value assigned to this i/o port")
 
 
-class ProjectInputUpdate(_InputSchemaConfig, _ProjectIOBase):
-    ...
+class ProjectInputUpdate(_ProjectIOBase):
+    class Config(_InputSchemaConfig):
+        ...
 
 
 class ProjectInputGet(_OutputSchemaConfig, _ProjectIOBase):
     label: str
 
+    class Config(_InputSchemaConfig):
+        ...
 
-class ProjectOutputGet(_OutputSchemaConfig, _ProjectIOBase):
+
+class ProjectOutputGet(_ProjectIOBase):
     label: str
+
+    class _OutputSchemaConfig:
+        ...
 
 
 @routes.get(f"/{VTAG}/projects/{{project_id}}/inputs", name="get_project_inputs")
