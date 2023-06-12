@@ -1,0 +1,63 @@
+# syntax=docker/dockerfile:1
+ARG PYTHON_VERSION="3.10.10"
+FROM --platform=${TARGETPLATFORM} python:${PYTHON_VERSION}-slim-buster
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
+RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM" > /log
+#
+#  USAGE:
+#     cd sercices/web
+#     docker build -f Dockerfile -t web:prod --target production ../../
+#     docker run web:ci
+#
+#  REQUIRED: context expected at ``osparc-simcore/`` folder because we need access to osparc-simcore/packages
+#  REQUIRED: client_qx:build image ready
+
+
+LABEL maintainer=pcrespov
+
+# for docker apt caching to work this needs to be added: [https://vsupalov.com/buildkit-cache-mount-dockerfile/]
+RUN rm -f /etc/apt/apt.conf.d/docker-clean && \
+  echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
+RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=locked \
+  --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=locked \
+  set -eux && \
+  apt-get update && \
+  apt-get install -y --no-install-recommends \
+  gosu \
+  && apt-get clean -y \
+  # verify that the binary works
+  && gosu nobody true
+
+# adds user
+# simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
+ENV SC_USER_ID=8004 \
+  SC_USER_NAME=scu \
+  SC_BUILD_TARGET=base \
+  SC_BOOT_MODE=default
+
+# Important also ensure the home folder is owned by the user
+RUN adduser \
+  --uid ${SC_USER_ID} \
+  --disabled-password \
+  --gecos "" \
+  --shell /bin/sh \
+  --home /home/${SC_USER_NAME} \
+  ${SC_USER_NAME} \
+  && chown -R scu /home/scu
+
+
+
+# Sets utf-8 encoding for Python et al
+ENV LANG=C.UTF-8
+# Turns off writing .pyc files; superfluous on an ephemeral container.
+ENV PYTHONDONTWRITEBYTECODE=1 \
+  PYTHONUNBUFFERED=1 \
+  VIRTUAL_ENV=/home/scu/.venv \
+  PYTHONOPTIMIZE=TRUE
+# Ensures that the python and pip executables used
+# in the image will be those from our virtualenv.
+ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
+# Base ENVs
+ENV SC_BUILD_TARGET base
+ENV SC_BOOT_MODE default

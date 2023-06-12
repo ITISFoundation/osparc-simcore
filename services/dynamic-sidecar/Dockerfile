@@ -11,6 +11,7 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 
 LABEL maintainer="Andrei Neagu <neagu@itis.swiss>"
 
+# for docker apt caching to work this needs to be added: [https://vsupalov.com/buildkit-cache-mount-dockerfile/]
 RUN rm -f /etc/apt/apt.conf.d/docker-clean && \
   echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
 RUN \
