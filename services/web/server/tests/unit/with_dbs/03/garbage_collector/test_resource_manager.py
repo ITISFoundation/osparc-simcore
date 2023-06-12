@@ -52,7 +52,7 @@ from simcore_service_webserver.resource_manager.registry import (
     RegistryKeyPrefixDict,
     get_registry,
 )
-from simcore_service_webserver.rest import setup_rest
+from simcore_service_webserver.rest.plugin import setup_rest
 from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session.plugin import setup_session
 from simcore_service_webserver.socketio.messages import SOCKET_IO_PROJECT_UPDATED_EVENT
