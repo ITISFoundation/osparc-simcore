@@ -4,6 +4,8 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 
 LABEL maintainer=sanderegg
 
+RUN rm -f /etc/apt/apt.conf.d/docker-clean && \
+  echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 ENV SC_USER_ID=8004 \
   SC_USER_NAME=scu \

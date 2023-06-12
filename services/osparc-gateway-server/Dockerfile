@@ -7,6 +7,8 @@ RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM"
 
 LABEL maintainer=mguidon,sanderegg
 
+RUN rm -f /etc/apt/apt.conf.d/docker-clean && \
+  echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
 # libffi-dev is needed for ARM architectures
 RUN  --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
   --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \

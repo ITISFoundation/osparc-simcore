@@ -14,6 +14,8 @@ RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM" > /log
 
 LABEL maintainer=sanderegg
 
+RUN rm -f /etc/apt/apt.conf.d/docker-clean && \
+  echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
 RUN  --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
   --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
   set -eux \

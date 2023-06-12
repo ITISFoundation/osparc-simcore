@@ -11,6 +11,8 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 
 LABEL maintainer=sanderegg
 
+RUN rm -f /etc/apt/apt.conf.d/docker-clean && \
+  echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
 RUN --mount=type=cache,id=basecache36,target=/var/cache/apt,mode=0755,sharing=locked \
   --mount=type=cache,id=baseapt36,target=/var/lib/apt,mode=0755,sharing=locked \
   set -eux && \

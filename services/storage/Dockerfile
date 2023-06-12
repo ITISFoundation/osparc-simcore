@@ -11,6 +11,8 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 
 LABEL maintainer=mguidon
 
+RUN rm -f /etc/apt/apt.conf.d/docker-clean && \
+  echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
 RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
   --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
   set -eux && \
@@ -146,8 +148,7 @@ COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 # copy docker entrypoint and boot scripts
 COPY --chown=scu:scu services/storage/docker services/storage/docker
 RUN chmod +x services/storage/docker/*.sh
-# ensure home folder is read/writable for user scu
-RUN chown -R scu /home/scu
+
 HEALTHCHECK --interval=10s \
   --timeout=15s \
   --start-period=5s \
