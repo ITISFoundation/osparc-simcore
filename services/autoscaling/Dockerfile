@@ -1,7 +1,6 @@
 # syntax=docker/dockerfile:1
 ARG PYTHON_VERSION="3.10.10"
-FROM python:${PYTHON_VERSION}-slim-buster as base
-
+FROM itisfoundation/osparc-base-python:${PYTHON_VERSION} as base
 #
 #  USAGE:
 #     cd sercices/autoscaling
@@ -12,12 +11,12 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 
 LABEL maintainer=sanderegg
 
-RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
-  --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
+# install docker
+RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=locked \
+  --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=locked \
   set -eux; \
   apt-get update; \
   apt-get install -y --no-install-recommends \
-  gosu \
   ca-certificates \
   curl \
   gnupg \
@@ -35,35 +34,8 @@ RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
   curl \
   gnupg \
   lsb-release \
-  && apt-get clean -y\
-  # verify that the binary works
-  && gosu nobody true
+  && apt-get clean -y
 
-# simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
-ENV SC_USER_ID=8004 \
-  SC_USER_NAME=scu \
-  SC_BUILD_TARGET=base \
-  SC_BOOT_MODE=default
-
-RUN adduser \
-  --uid ${SC_USER_ID} \
-  --disabled-password \
-  --gecos "" \
-  --shell /bin/sh \
-  --home /home/${SC_USER_NAME} \
-  ${SC_USER_NAME}
-
-
-# Sets utf-8 encoding for Python et al
-ENV LANG=C.UTF-8
-
-# Turns off writing .pyc files; superfluous on an ephemeral container.
-ENV PYTHONDONTWRITEBYTECODE=1 \
-  VIRTUAL_ENV=/home/scu/.venv
-
-# Ensures that the python and pip executables used in the image will be
-# those from our virtualenv.
-ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 
 EXPOSE 8000
 EXPOSE 3000
@@ -73,29 +45,7 @@ EXPOSE 3000
 #
 # + /build             WORKDIR
 #
-FROM base as build
-
-ENV SC_BUILD_TARGET=build
-
-RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
-  --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
-  set -eux \
-  && apt-get update \
-  && apt-get install -y --no-install-recommends \
-  build-essential
-
-
-# NOTE: python virtualenv is used here such that installed
-# packages may be moved to production image easily by copying the venv
-RUN python -m venv "${VIRTUAL_ENV}"
-
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
-  pip install --upgrade  \
-  pip~=23.1  \
-  wheel \
-  setuptools
-
-WORKDIR /build
+FROM itisfoundation/osparc-builder-python:${PYTHON_VERSION} as build
 
 # install base 3rd party dependencies
 # NOTE: copies to /build to avoid overwriting later which would invalidate this layer

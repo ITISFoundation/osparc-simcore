@@ -11,8 +11,6 @@ FROM itisfoundation/osparc-base-python:${PYTHON_VERSION} as base
 
 LABEL maintainer=mguidon,sanderegg
 
-ENV SC_BUILD_TARGET base
-ENV SC_BOOT_MODE default
 
 EXPOSE 8080
 # -------------------------- -------------------------------

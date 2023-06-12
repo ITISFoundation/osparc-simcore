@@ -48,3 +48,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Ensures that the python and pip executables used
 # in the image will be those from our virtualenv.
 ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
+# Base ENVs
+ENV SC_BUILD_TARGET base
+ENV SC_BOOT_MODE default
