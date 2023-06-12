@@ -1,7 +1,5 @@
 #!/bin/bash
-# Script for calling OpenAPI Generato (generate clients, servers, and documentation from OpenAPI 2.0/3.x documents) or
-# fetch the associated templates for Python client generation. Which function is called is determined by the 'RUN_FCN' environment variable.
-# Setting 'RUN_FCN'="OPENAPI_GENERATOR_CLI" calls the generator and setting 'RUN_FCN'="FETCH_TEMPLATES" fetches the python client templates
+# Script for calling OpenAPI Generator (generate clients, servers, and documentation from OpenAPI 2.0/3.x documents).
 
 # OpenAPI Generator: generate clients, servers, and documentation from OpenAPI 2.0/3.x documents
 #
@@ -24,52 +22,69 @@
 #   https://hub.docker.com/r/openapitools/openapi-generator-cli
 #
 
-# fetch_openapi_generator_templates
-# usage: fetch_openapi_generator_templates <dir to place the templates in>
-
 OPENAPI_GENERATOR_VERSION=v4.2.3
+
+
+fetch_openapi_generator_templates(){
+  CURDIR=$(pwd)
+  TMPDIR=$1
+  cd ${TMPDIR}
+
+	echo "Cloning openapi-generator into ${TMPDIR} to get templates..."
+  git clone git@github.com:ITISFoundation/openapi-generator.git
+  cd openapi-generator
+  git checkout openapi-generator-${OPENAPI_GENERATOR_VERSION}
+  git status
+  git pull
+	echo "Done fetching templates..."
+
+  cd ${CURDIR}
+}
+
+
+openapi_generator_cli_generate(){
+  TMPDIR=$(mktemp -d)
+  USERID=$(stat --format=%u "$PWD")
+  GROUPID=$(stat --format=%g "$PWD")
+  HOST_TEMPL_DIR=${TMPDIR}/openapi-generator/modules/openapi-generator/src/main/resources/python
+  CONTAINER_TEMPL_DIR=/tmp/openapi_templates
+
+  fetch_openapi_generator_templates "${TMPDIR}"
+  if [ ! -d "${HOST_TEMPL_DIR}" ]; then
+    echo "Templates could not be correctly fetched from Github"
+    exit 1
+  fi
+
+  (
+    exec docker run --rm \
+        -v ${HOST_TEMPL_DIR}:${CONTAINER_TEMPL_DIR} \
+        --user "$USERID:$GROUPID" \
+        --volume "$PWD:/local" \
+        openapitools/openapi-generator-cli:${OPENAPI_GENERATOR_VERSION} "$@" \
+        --template-dir=${CONTAINER_TEMPL_DIR}
+  )
+
+  rm -fr "${TMPDIR}"
+}
 
 openapi_generator_cli(){
   USERID=$(stat --format=%u "$PWD")
   GROUPID=$(stat --format=%g "$PWD")
 
-  # to mount a directory (e.g. to find custom templates, define the DOCKER_MOUNT environment variable)
-  docker_mount=""
-  if [ -v DOCKER_MOUNT ]; then
-    docker_mount="-v ${DOCKER_MOUNT}"
-  fi
-
   exec docker run --rm \
-      ${docker_mount} \
       --user "$USERID:$GROUPID" \
       --volume "$PWD:/local" \
       openapitools/openapi-generator-cli:${OPENAPI_GENERATOR_VERSION} "$@"
 }
 
-fetch_openapi_generator_templates(){
-	TEMPLATE_DIR=$1
-  TMPDIR=$(mktemp -d)
+generate=false
+if [[ $1 == "generate" ]]; then
+  echo "Found generate input. Will fetch templates from git@github.com:ITISFoundation/openapi-generator.git"
+  generate=true
+fi
 
-	echo "Fetching openapi generator templates from github..."
-	wget -O ${TMPDIR}/openapi_zip.zip "https://github.com/OpenAPITools/openapi-generator/archive/refs/tags/${OPENAPI_GENERATOR_VERSION}.zip"
-	unzip -q ${TMPDIR}/openapi_zip.zip -d ${TMPDIR}
-
-	echo "Overwriting templates in this repo..."
-	rm -r ${TEMPLATE_DIR}
-	mkdir ${TEMPLATE_DIR}
-	cd ${TMPDIR}
-	openapi_dir=$(ls . | grep openapi-generator)
-	cd ${openapi_dir}
-	cp -r ./modules/openapi-generator/src/main/resources/python/* ${TEMPLATE_DIR}
-
-	rm -r ${TMPDIR}
-	echo "Done!"
-}
-
-if [[ "${RUN_FCN}" == "OPENAPI_GENERATOR_CLI" ]]; then
-    openapi_generator_cli "$@"
-elif [[ "${RUN_FCN}" == "FETCH_TEMPLATES" ]]; then
-    fetch_openapi_generator_templates "$@"
+if ${generate}; then
+  openapi_generator_cli_generate "$@"
 else
-    echo "The environment variable 'RUN_FCN' must be defined when calling this bash script"
+  openapi_generator_cli "$@"
 fi
