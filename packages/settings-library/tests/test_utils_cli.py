@@ -43,7 +43,7 @@ def fake_version() -> str:
 def cli(
     fake_settings_class: type[BaseCustomSettings], fake_version: str
 ) -> typer.Typer:
-    main = typer.Typer(name="app")
+    main = typer.Typer(name="app", pretty_exceptions_enable=False)
 
     @main.command()
     def run():
@@ -94,7 +94,6 @@ def test_compose_commands(cli: typer.Typer, cli_runner: CliRunner):
     # NOTE: this tests is mostly here to raise awareness about what options
     # are exposed in the CLI so we can add tests if there is any update
     #
-
     result = cli_runner.invoke(cli, ["--help"], catch_exceptions=False)
     print(result.stdout)
     assert result.exit_code == 0, result
