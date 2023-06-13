@@ -71,6 +71,7 @@ email-validator==1.3.0
 fastapi==0.96.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
+    #   -r requirements/_base.in
     #   fastapi-pagination
 fastapi-pagination==0.10.0
     # via -r requirements/_base.in

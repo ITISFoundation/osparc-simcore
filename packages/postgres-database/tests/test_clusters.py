@@ -34,7 +34,7 @@ async def user_id(pg_engine: Engine) -> AsyncIterable[int]:
 async def user_group_id(pg_engine: Engine, user_id: int) -> int:
     async with pg_engine.acquire() as conn:
         primary_gid = await conn.scalar(
-            sa.select([users.c.primary_gid]).where(users.c.id == user_id)
+            sa.select(users.c.primary_gid).where(users.c.id == user_id)
         )
     assert primary_gid is not None
     return primary_gid

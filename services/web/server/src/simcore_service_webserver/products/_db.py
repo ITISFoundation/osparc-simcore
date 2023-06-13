@@ -45,7 +45,7 @@ class ProductRepository(BaseRepository):
     ) -> str | None:
         async with self.engine.acquire() as conn:
             template_content: str | None = await conn.scalar(
-                sa.select([jinja2_templates.c.content]).where(
+                sa.select(jinja2_templates.c.content).where(
                     jinja2_templates.c.name == template_name
                 )
             )
@@ -64,7 +64,7 @@ class ProductRepository(BaseRepository):
                 isouter=True,
             )
             content = await conn.scalar(
-                sa.select([jinja2_templates.c.content])
+                sa.select(jinja2_templates.c.content)
                 .select_from(oj)
                 .where(products.c.name == product_name)
             )

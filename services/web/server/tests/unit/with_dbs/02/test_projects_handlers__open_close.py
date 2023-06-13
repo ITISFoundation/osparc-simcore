@@ -663,7 +663,7 @@ def one_max_open_studies_per_user(
 ) -> Iterator[None]:
     with postgres_db.connect() as conn:
         old_value = conn.scalar(
-            sa.select([products.c.max_open_studies_per_user]).where(
+            sa.select(products.c.max_open_studies_per_user).where(
                 products.c.name == osparc_product_name
             )
         )

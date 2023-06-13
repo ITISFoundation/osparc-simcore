@@ -134,12 +134,19 @@ body:
       label: Releasing 🚀
       value: |
         - [ ] Maintenance page up.
+        ```cmd
+        cd /deployment/production/osparc-ops-environments
+        make up-maintenance
+        make down-maintenance
+        ```
+        - [ ] Check hanging sidecars. Helper command to run in director-v2 CLI `simcore-service-director-v2 close-and-save-service <uuid>`
         - [ ] Release by publishing [draft](https://github.com/ITISFoundation/osparc-simcore/releases)
         - [ ] Check release CI
         - [ ] Check deployed
           - [ ] aws deploy
           - [ ] dalco deploy
           - [ ] tip deploy
+        - [ ] Check testing endpoint ex. `https://testing.osparc.speag.com/`
         - [ ] Delete announcement
         - [ ] Check e2e runs
         - [ ] Announce

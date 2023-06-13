@@ -4,7 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
-from typing import AsyncIterator, Awaitable, Callable, Optional, Union
+from typing import AsyncIterator, Awaitable, Callable
 
 import aiopg.sa.exc
 import pytest
@@ -26,7 +26,7 @@ from sqlalchemy import func, literal_column, select
 
 @pytest.fixture
 async def connection(
-    make_engine: Callable[[bool], Union[Awaitable[Engine], sa.engine.base.Engine]]
+    make_engine: Callable[[bool], Awaitable[Engine] | sa.engine.base.Engine]
 ) -> AsyncIterator[SAConnection]:
     engine = await make_engine()
     sync_engine = make_engine(is_async=False)
@@ -44,7 +44,6 @@ async def test_user_group_uniqueness(
     create_fake_group: Callable,
     create_fake_user: Callable,
 ):
-
     rory_group = await create_fake_group(
         connection, name="Rory Storm and the Hurricanes"
     )
@@ -60,7 +59,7 @@ async def test_user_group_uniqueness(
         groups.select().where(groups.c.gid == rory_group.gid)
     )
 
-    the_one: Optional[RowProxy] = await res.first()
+    the_one: RowProxy | None = await res.first()
     assert the_one.type == the_one["type"]
 
     with pytest.raises(aiopg.sa.exc.ResourceClosedError):
@@ -71,7 +70,7 @@ async def test_all_group(
     connection: SAConnection,
 ):
     # now check the only available group is the all group
-    groups_count = await connection.scalar(select([func.count()]).select_from(groups))
+    groups_count = await connection.scalar(select(func.count()).select_from(groups))
     assert groups_count == 1
 
     result = await connection.execute(
@@ -102,11 +101,11 @@ async def test_all_group(
 
     # remove the user now
     await connection.execute(users.delete().where(users.c.id == user.id))
-    users_count = await connection.scalar(select([func.count()]).select_from(users))
+    users_count = await connection.scalar(select(func.count()).select_from(users))
     assert users_count == 0
 
     # check the all group still exists
-    groups_count = await connection.scalar(select([func.count()]).select_from(groups))
+    groups_count = await connection.scalar(select(func.count()).select_from(groups))
     assert groups_count == 1
     result = await connection.execute(
         groups.select().where(groups.c.type == GroupType.EVERYONE)
@@ -137,12 +136,12 @@ async def test_own_group(
     assert primary_group.gid == user.primary_gid
 
     groups_count = await connection.scalar(
-        select([func.count(groups.c.gid)]).where(groups.c.gid == user.primary_gid)
+        select(func.count(groups.c.gid)).where(groups.c.gid == user.primary_gid)
     )
     assert groups_count == 1
 
     relations_count = await connection.scalar(
-        select([func.count()]).select_from(user_to_groups)
+        select(func.count()).select_from(user_to_groups)
     )
     assert relations_count == 2  # own group + all group
 
@@ -154,12 +153,12 @@ async def test_own_group(
 
     # now remove the users should remove the primary group
     await connection.execute(users.delete().where(users.c.id == user.id))
-    users_count = await connection.scalar(select([func.count()]).select_from(users))
+    users_count = await connection.scalar(select(func.count()).select_from(users))
     assert users_count == 0
-    groups_count = await connection.scalar(select([func.count()]).select_from(groups))
+    groups_count = await connection.scalar(select(func.count()).select_from(groups))
     assert groups_count == 1  # the all group is still around
     relations_count = await connection.scalar(
-        select([func.count()]).select_from(user_to_groups)
+        select(func.count()).select_from(user_to_groups)
     )
     assert relations_count == (users_count + users_count)
 
@@ -181,14 +180,14 @@ async def test_group(
 
     # rationale: following linux user/group system, each user has its own group (primary group) + whatever other group (secondary groups)
     # check DB contents
-    users_count = await connection.scalar(select([func.count()]).select_from(users))
+    users_count = await connection.scalar(select(func.count()).select_from(users))
     assert users_count == 5
-    groups_count = await connection.scalar(select([func.count()]).select_from(groups))
+    groups_count = await connection.scalar(select(func.count()).select_from(groups))
     assert groups_count == (
         users_count + 2 + 1
     )  # user primary groups, other groups, all group
     relations_count = await connection.scalar(
-        select([func.count()]).select_from(user_to_groups)
+        select(func.count()).select_from(user_to_groups)
     )
     assert relations_count == (users_count + users_count + users_count)
 
@@ -206,12 +205,12 @@ async def test_group(
     await connection.execute(users.delete().where(users.c.id == pete.id))
 
     # check DB contents
-    users_count = await connection.scalar(select([func.count()]).select_from(users))
+    users_count = await connection.scalar(select(func.count()).select_from(users))
     assert users_count == 4
-    groups_count = await connection.scalar(select([func.count()]).select_from(groups))
+    groups_count = await connection.scalar(select(func.count()).select_from(groups))
     assert groups_count == (users_count + 2 + 1)
     relations_count = await connection.scalar(
-        select([func.count()]).select_from(user_to_groups)
+        select(func.count()).select_from(user_to_groups)
     )
     assert relations_count == (users_count + users_count + users_count)
 
@@ -221,12 +220,12 @@ async def test_group(
     )
 
     # check DB contents
-    users_count = await connection.scalar(select([func.count()]).select_from(users))
+    users_count = await connection.scalar(select(func.count()).select_from(users))
     assert users_count == 4
-    groups_count = await connection.scalar(select([func.count()]).select_from(groups))
+    groups_count = await connection.scalar(select(func.count()).select_from(groups))
     assert groups_count == (users_count + 2 + 1)
     relations_count = await connection.scalar(
-        select([func.count()]).select_from(user_to_groups)
+        select(func.count()).select_from(user_to_groups)
     )
     assert relations_count == (users_count + users_count + 1 + users_count)
 
@@ -234,12 +233,12 @@ async def test_group(
     await connection.execute(groups.delete().where(groups.c.gid == rory_group.gid))
 
     # check DB contents
-    users_count = await connection.scalar(select([func.count()]).select_from(users))
+    users_count = await connection.scalar(select(func.count()).select_from(users))
     assert users_count == 4
-    groups_count = await connection.scalar(select([func.count()]).select_from(groups))
+    groups_count = await connection.scalar(select(func.count()).select_from(groups))
     assert groups_count == (users_count + 1 + 1)
     relations_count = await connection.scalar(
-        select([func.count()]).select_from(user_to_groups)
+        select(func.count()).select_from(user_to_groups)
     )
     assert relations_count == (users_count + users_count + users_count)
 
@@ -247,11 +246,11 @@ async def test_group(
     await connection.execute(groups.delete().where(groups.c.gid == beatles_group.gid))
 
     # check DB contents
-    users_count = await connection.scalar(select([func.count()]).select_from(users))
+    users_count = await connection.scalar(select(func.count()).select_from(users))
     assert users_count == 4
-    groups_count = await connection.scalar(select([func.count()]).select_from(groups))
+    groups_count = await connection.scalar(select(func.count()).select_from(groups))
     assert groups_count == (users_count + 0 + 1)
     relations_count = await connection.scalar(
-        select([func.count()]).select_from(user_to_groups)
+        select(func.count()).select_from(user_to_groups)
     )
     assert relations_count == (users_count + users_count)
