@@ -134,7 +134,7 @@ def test_template_capture(project_tests_dir: Path, faker: Faker):
     # parse request and search parameters
     url_path = f"/v0/projects/{faker.uuid4()}"
     pattern = re.compile(rf"/projects/(?P<project_id>{UUID_RE_BASE})$")
-    found = re.search(pattern, url_path)
+    found = pattern.search(url_path)
     assert found
     context = found.groupdict()
 
