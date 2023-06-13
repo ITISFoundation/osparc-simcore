@@ -241,11 +241,11 @@ qx.Class.define("osparc.wrapper.Svg", {
       fobj
         .attr({
           width: width-2*padding,
-          height: height-titleHeight
+          height: height-titleHeight-4
         })
         .move(padding, padding+titleHeight);
       const textChild = fobj.getChild(0);
-      textChild.style.overflow = "hidden";
+      textChild.style.overflow = "auto";
       textChild.style.overflowWrap = "anywhere";
       textChild.style.fontFamily = "Roboto";
       textChild.style.fontSize = "13px";
