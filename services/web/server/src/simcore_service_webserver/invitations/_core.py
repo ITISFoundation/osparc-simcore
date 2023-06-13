@@ -7,7 +7,7 @@ from pydantic import AnyHttpUrl, ValidationError, parse_obj_as
 from servicelib.error_codes import create_error_code
 from simcore_postgres_database.models.users import users
 
-from ..db import get_database_engine
+from ..db.plugin import get_database_engine
 from ._client import (
     InvitationContent,
     InvitationsServiceApi,

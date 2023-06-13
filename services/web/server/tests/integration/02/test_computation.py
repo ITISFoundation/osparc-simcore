@@ -31,7 +31,7 @@ from simcore_postgres_database.webserver_models import (
 )
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.db import setup_db
+from simcore_service_webserver.db.plugin import setup_db
 from simcore_service_webserver.db_listener._utils import DB_TO_RUNNING_STATE
 from simcore_service_webserver.db_listener.plugin import setup_db_listener
 from simcore_service_webserver.diagnostics.plugin import setup_diagnostics

@@ -26,8 +26,8 @@ from pytest_simcore.helpers.utils_projects import assert_get_same_project
 from pytest_simcore.helpers.utils_tags import create_tag, delete_tag
 from simcore_postgres_database.models.tags import tags
 from simcore_service_webserver._meta import api_version_prefix
-from simcore_service_webserver.db import get_database_engine
-from simcore_service_webserver.db_models import UserRole
+from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.db.plugin import get_database_engine
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.tags import _handlers
 

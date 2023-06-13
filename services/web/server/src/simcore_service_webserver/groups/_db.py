@@ -9,7 +9,7 @@ from simcore_postgres_database.utils_products import get_or_create_product_group
 from sqlalchemy import and_, literal_column
 from sqlalchemy.dialects.postgresql import insert
 
-from ..db_models import GroupType, groups, user_to_groups, users
+from ..db.models import GroupType, groups, user_to_groups, users
 from ..users.exceptions import UserNotFoundError
 from ._users import convert_user_in_group_to_schema
 from ._utils import (

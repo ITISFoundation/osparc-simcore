@@ -20,7 +20,7 @@ from simcore_postgres_database.models.services_consume_filetypes import (
 )
 from simcore_postgres_database.utils_services import create_select_latest_services_query
 
-from ..db import get_database_engine
+from ..db.plugin import get_database_engine
 from ._errors import ServiceNotFound
 from .settings import StudiesDispatcherSettings, get_plugin_settings
 
