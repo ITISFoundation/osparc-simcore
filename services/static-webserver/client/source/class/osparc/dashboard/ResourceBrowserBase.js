@@ -315,13 +315,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       osparc.utils.Utils.setIdToWidget(moreOptsButton, "moreInfoBtn");
       moreOptsButton.addListener("execute", () => {
         const moreOpts = new osparc.dashboard.ResourceMoreOptions(resourceData);
-        const title = this.tr("Options");
-        const win = osparc.ui.window.Window.popUpInWindow(
-          moreOpts,
-          title,
-          osparc.dashboard.ResourceMoreOptions.WIDTH,
-          osparc.dashboard.ResourceMoreOptions.HEIGHT
-        );
+        const win = osparc.dashboard.ResourceMoreOptions.popUpInWindow(moreOpts);
         moreOpts.addListener("updateStudy", e => this._updateStudyData(e.getData()));
         moreOpts.addListener("updateTemplate", e => this._updateTemplateData(e.getData()));
         moreOpts.addListener("updateService", e => this._updateServiceData(e.getData()));

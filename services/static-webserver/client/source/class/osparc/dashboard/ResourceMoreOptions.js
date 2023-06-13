@@ -45,7 +45,12 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
   statics: {
     WIDTH: 700,
-    HEIGHT: 660
+    HEIGHT: 660,
+
+    popUpInWindow: function(moreOpts) {
+      const title = qx.locale.Manager.tr("Details");
+      return osparc.ui.window.Window.popUpInWindow(moreOpts, title, this.WIDTH, this.HEIGHT);
+    }
   },
 
   properties: {
