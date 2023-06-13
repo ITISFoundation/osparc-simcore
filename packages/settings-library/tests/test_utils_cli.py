@@ -2,12 +2,11 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import sys
-sys.modules.pop("rich")
-
 import json
 import logging
 import re
+import sys
+from importlib import reload
 from io import StringIO
 from typing import Any, Callable
 
@@ -23,6 +22,11 @@ from settings_library.utils_cli import (
     create_version_callback,
 )
 from typer.testing import CliRunner
+
+# unload rich for these tests
+sys.modules.pop("rich")
+reload(typer)
+
 
 log = logging.getLogger(__name__)
 
@@ -47,7 +51,7 @@ def fake_version() -> str:
 def cli(
     fake_settings_class: type[BaseCustomSettings], fake_version: str
 ) -> typer.Typer:
-    main = typer.Typer(name="app", rich_markup_mode="markdown")
+    main = typer.Typer(name="app")
 
     @main.command()
     def run():
