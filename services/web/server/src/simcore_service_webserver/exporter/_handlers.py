@@ -5,9 +5,10 @@ from typing import Any, Callable, Coroutine
 from aiofiles.tempfile import TemporaryDirectory as AioTemporaryDirectory
 from aiohttp import web
 from models_library.projects_state import ProjectStatus
+from servicelib.request_keys import RQT_USERID_KEY
 
 from .._constants import RQ_PRODUCT_KEY
-from ..login.decorators import RQT_USERID_KEY, login_required
+from ..login.decorators import login_required
 from ..projects.lock import lock_project
 from ..projects.projects_api import retrieve_and_notify_project_locked_state
 from ..security.decorators import permission_required

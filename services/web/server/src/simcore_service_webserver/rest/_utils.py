@@ -1,24 +1,24 @@
 from functools import lru_cache
 from pathlib import Path
-from typing import Optional
 
 import openapi_core
 import yaml
 from openapi_core.schema.specs.models import Spec as OpenApiSpecs
 
-from ._meta import api_version_prefix
-from ._resources import resources
+from .._meta import api_version_prefix
+from .._resources import resources
 
 
-def get_openapi_specs_path(api_version_dir: Optional[str] = None) -> Path:
+def get_openapi_specs_path(api_version_dir: str | None = None) -> Path:
     if api_version_dir is None:
         api_version_dir = api_version_prefix
 
-    return resources.get_path(f"api/{api_version_dir}/openapi.yaml")
+    oas_path: Path = resources.get_path(f"api/{api_version_dir}/openapi.yaml")
+    return oas_path
 
 
 @lru_cache  # required to boost tests speed, gains 3.5s per test
-def load_openapi_specs(spec_path: Optional[Path] = None) -> OpenApiSpecs:
+def load_openapi_specs(spec_path: Path | None = None) -> OpenApiSpecs:
     if spec_path is None:
         spec_path = get_openapi_specs_path()
 

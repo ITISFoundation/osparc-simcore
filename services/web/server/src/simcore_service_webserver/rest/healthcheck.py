@@ -46,20 +46,16 @@ Taken from https://docs.docker.com/engine/reference/builder/#healthcheck
 
 import asyncio
 import inspect
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, Dict, Optional
+from typing import Any, Awaitable, Callable, TypeAlias
 
 from aiohttp import web
 from aiosignal import Signal
 
-from ._constants import APP_SETTINGS_KEY
+from .._constants import APP_SETTINGS_KEY
 
 _HealthCheckSlot = Callable[[web.Application], Awaitable[None]]
 
-if TYPE_CHECKING:
-    _HealthCheckSignal = Signal[_HealthCheckSlot]
-
-else:
-    _HealthCheckSignal = Signal
+_HealthCheckSignal: TypeAlias = Signal[_HealthCheckSlot]
 
 
 class HealthCheckFailed(RuntimeError):
@@ -71,11 +67,11 @@ class HealthCheckFailed(RuntimeError):
 
 class HealthCheck:
     def __init__(self, app: web.Application):
-        self._on_healthcheck = Signal(owner=self)  # type: _HealthCheckSignal
+        self._on_healthcheck: _HealthCheckSignal = Signal(owner=self)
 
         # The docker engine healthcheck: If a single run of the check takes longer than *timeout* seconds
         # then the check is considered to have failed. Therefore there is no need to continue run
-        self._timeout: Optional[int] = app[APP_SETTINGS_KEY].SC_HEALTHCHECK_TIMEOUT
+        self._timeout: int | None = app[APP_SETTINGS_KEY].SC_HEALTHCHECK_TIMEOUT
 
     def __repr__(self):
         return "<HealthCheck timeout={}, #on_healthcheck-slots={}>".format(
@@ -99,7 +95,7 @@ class HealthCheck:
             "api_version": settings.API_VERSION,
         }
 
-    async def run(self, app: web.Application) -> Dict[str, Any]:
+    async def run(self, app: web.Application) -> dict[str, Any]:
         """Runs all registered checks to determine the service health.
 
         can raise HealthCheckFailed
@@ -112,10 +108,8 @@ class HealthCheck:
         ), "All Slot functions that append to on_healthcheck must be coroutines. SEE _HealthCheckSlot"
 
         try:
-            heath_report: Dict[str, Any] = self.get_app_info(app)
+            heath_report: dict[str, Any] = self.get_app_info(app)
 
-            # TODO: every signal could return some info on the health on each part
-            # that is appended on heath_report
             await asyncio.wait_for(
                 self._on_healthcheck.send(app), timeout=self._timeout
             )

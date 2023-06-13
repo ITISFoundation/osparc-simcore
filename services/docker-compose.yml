@@ -336,6 +336,7 @@ services:
     environment:
       <<: *webserver-environment
       WEBSERVER_GARBAGE_COLLECTOR: '{"GARBAGE_COLLECTOR_INTERVAL_S": 30}'
+      WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS: 60
     env_file:
       - ../.env
       - ../.env-wb-garbage-collector
