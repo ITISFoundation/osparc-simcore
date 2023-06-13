@@ -40,7 +40,9 @@ sniffio==1.3.0
     #   httpcore
     #   httpx
 starlette==0.27.0
-    # via fastapi
+    # via
+    #   -c requirements/./../../../requirements/constraints.txt
+    #   fastapi
 typing-extensions==4.6.3
     # via pydantic
 uvicorn==0.22.0

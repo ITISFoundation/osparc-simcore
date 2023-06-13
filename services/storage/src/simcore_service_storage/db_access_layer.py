@@ -39,7 +39,6 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Optional
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -89,7 +88,7 @@ class InvalidFileIdentifier(AccessLayerError):
 
 
 async def _get_user_groups_ids(conn: SAConnection, user_id: UserID) -> list[GroupID]:
-    stmt = sa.select([user_to_groups.c.gid]).where(user_to_groups.c.uid == user_id)
+    stmt = sa.select(user_to_groups.c.gid).where(user_to_groups.c.uid == user_id)
     rows = await (await conn.execute(stmt)).fetchall()
     user_group_ids = [g.gid for g in rows]
     return user_group_ids
@@ -182,7 +181,7 @@ async def get_project_access_rights(
     )
 
     result: ResultProxy = await conn.execute(stmt)
-    row: Optional[RowProxy] = await result.first()
+    row: RowProxy | None = await result.first()
 
     if not row:
         # Either project does not exists OR user_id has NO access
@@ -215,7 +214,7 @@ async def get_file_access_rights(
         file_meta_data.c.file_id == f"{file_id}"
     )
     result: ResultProxy = await conn.execute(stmt)
-    row: Optional[RowProxy] = await result.first()
+    row: RowProxy | None = await result.first()
 
     if row:
         if int(row.user_id) == user_id:

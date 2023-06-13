@@ -46,7 +46,7 @@ typing-extensions==4.6.3
     # via
     #   -c requirements/_base.txt
     #   alembic
-urllib3==2.0.2
+urllib3==2.0.3
     # via
     #   -r requirements/_migration.in
     #   docker
