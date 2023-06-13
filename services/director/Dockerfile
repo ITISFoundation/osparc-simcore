@@ -11,6 +11,9 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 
 LABEL maintainer=sanderegg
 
+# for docker apt caching to work this needs to be added: [https://vsupalov.com/buildkit-cache-mount-dockerfile/]
+RUN rm -f /etc/apt/apt.conf.d/docker-clean && \
+  echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
 RUN --mount=type=cache,id=basecache36,target=/var/cache/apt,mode=0755,sharing=locked \
   --mount=type=cache,id=baseapt36,target=/var/lib/apt,mode=0755,sharing=locked \
   set -eux && \
@@ -68,8 +71,8 @@ FROM base as build
 
 ENV SC_BUILD_TARGET=build
 
-RUN --mount=type=cache,id=basecache36,target=/var/cache/apt,mode=0755,sharing=locked \
-  --mount=type=cache,id=baseapt36,target=/var/lib/apt,mode=0755,sharing=locked \
+RUN --mount=type=cache,id=buildbasecache36,target=/var/cache/apt,mode=0755,sharing=locked \
+  --mount=type=cache,id=buildbaseapt36,target=/var/lib/apt,mode=0755,sharing=locked \
   set -eux \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
@@ -86,13 +89,13 @@ RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
   wheel \
   setuptools
 
-# copy director and dependencies
-COPY  --chown=scu:scu packages /build/packages
-COPY  --chown=scu:scu services/director /build/services/director
-
 # install base 3rd party dependencies (NOTE: this speeds up devel mode)
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
-  pip install -r /build/services/director/requirements/_base.txt
+RUN \
+  --mount=type=bind,source=packages,target=/build/packages,rw \
+  --mount=type=bind,source=services/director,target=/build/services/director,rw \
+  --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install \
+  -r /build/services/director/requirements/_base.txt
 
 # FIXME:
 # necessary to prevent duplicated files.
@@ -110,7 +113,10 @@ FROM build as prod-only-deps
 
 WORKDIR /build/services/director
 ENV SC_BUILD_TARGET=prod-only-deps
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+RUN \
+  --mount=type=bind,source=packages,target=/build/packages,rw \
+  --mount=type=bind,source=services/director,target=/build/services/director,rw \
+  --mount=type=cache,mode=0755,target=/root/.cache/pip \
   pip install -r requirements/prod.txt
 
 # --------------------------Production stage -------------------
@@ -132,8 +138,6 @@ WORKDIR /home/scu
 RUN chown -R scu /home/scu
 # bring installed package without build tools
 COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
-
-# copy docker entrypoint and boot scripts
 COPY --chown=scu:scu services/director/docker services/director/docker
 RUN chmod +x services/director/docker/*.sh
 
