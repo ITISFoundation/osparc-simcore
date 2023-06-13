@@ -30,11 +30,13 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
   },
 
   events: {
+    "openStudy": "qx.event.type.Data",
+    "openTemplate": "qx.event.type.Data",
+    "openService": "qx.event.type.Data",
     "updateStudy": "qx.event.type.Data",
     "updateTemplate": "qx.event.type.Data",
     "updateService": "qx.event.type.Data",
-    "publishTemplate": "qx.event.type.Data",
-    "openService": "qx.event.type.Data"
+    "publishTemplate": "qx.event.type.Data"
   },
 
   statics: {
@@ -107,24 +109,32 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         flex: 1
       });
 
-      if (osparc.utils.Resources.isService(resourceData)) {
-        const openButton = new qx.ui.form.Button(this.tr("Open")).set({
-          appearance: "strong-button",
-          font: "text-14",
-          alignX: "right",
-          height: 24
-        });
-        this.bind("showOpenButton", openButton, "visibility", {
-          converter: show => show ? "visible" : "excluded"
-        });
-        openButton.addListener("execute", () => {
-          this.fireDataEvent("openService", {
-            key: this.__resourceData["key"],
-            version: this.__resourceData["version"]
-          });
-        });
-        toolbar.add(openButton);
-      }
+      const openButton = new qx.ui.form.Button(this.tr("Open")).set({
+        appearance: "strong-button",
+        font: "text-14",
+        alignX: "right",
+        height: 35,
+        width: 70,
+        center: true
+      });
+      osparc.utils.Utils.setIdToWidget(openButton, "openResource");
+      this.bind("showOpenButton", openButton, "visibility", {
+        converter: show => show ? "visible" : "excluded"
+      });
+      openButton.addListener("execute", () => {
+        switch (this.__resourceData["resourceType"]) {
+          case "study":
+            this.fireDataEvent("openStudy", this.__resourceData);
+            break;
+          case "template":
+            this.fireDataEvent("openTemplate", this.__resourceData);
+            break;
+          case "service":
+            this.fireDataEvent("openService", this.__resourceData);
+            break;
+        }
+      });
+      toolbar.add(openButton);
 
       this._add(toolbar);
     },

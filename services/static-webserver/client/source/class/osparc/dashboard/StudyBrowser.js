@@ -114,7 +114,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           // set by the url or active study
           const loadStudyId = osparc.store.Store.getInstance().getCurrentStudyId();
           if (loadStudyId) {
-            this.__startStudyById(loadStudyId);
+            this._startStudyById(loadStudyId);
           } else {
             this.reloadResources();
           }
@@ -328,11 +328,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       if (!item.isMultiSelectionMode()) {
         const studyData = this.__getStudyData(item.getUuid(), false);
-        this.__startStudyById(studyData["uuid"]);
+        this._startStudyById(studyData["uuid"]);
       }
     },
 
-    __startStudyById: function(studyId) {
+    _startStudyById: function(studyId) {
       if (!this._checkLoggedIn()) {
         return;
       }
@@ -733,7 +733,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.utils.Study.createStudyFromTemplate(templateCopyData, this._loadingPage)
         .then(studyId => {
           this._hideLoadingPage();
-          this.__startStudyById(studyId);
+          this._startStudyById(studyId);
         })
         .catch(err => {
           this._hideLoadingPage();
@@ -748,7 +748,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.utils.Study.createStudyFromService(key, version, this._resourcesList, newStudyLabel)
         .then(studyId => {
           this._hideLoadingPage();
-          this.__startStudyById(studyId);
+          this._startStudyById(studyId);
         })
         .catch(err => {
           this._hideLoadingPage();
@@ -766,7 +766,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.utils.Study.createStudyAndPoll(params)
         .then(studyData => {
           this._hideLoadingPage();
-          this.__startStudyById(studyData["uuid"]);
+          this._startStudyById(studyData["uuid"]);
         })
         .catch(err => {
           this._hideLoadingPage();

@@ -125,12 +125,12 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       if (!card.isLocked()) {
         card.setValue(false);
         const templateData = this.__getTemplateData(card.getUuid());
-        this.__createStudyFromTemplate(templateData);
+        this._createStudyFromTemplate(templateData);
       }
       this.resetSelection();
     },
 
-    __createStudyFromTemplate: function(templateData) {
+    _createStudyFromTemplate: function(templateData) {
       if (!this._checkLoggedIn()) {
         return;
       }

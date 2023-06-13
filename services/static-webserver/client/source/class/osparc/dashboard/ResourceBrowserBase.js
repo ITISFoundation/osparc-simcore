@@ -302,6 +302,14 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
+    _startStudyById: function() {
+      throw new Error("Abstract method called!");
+    },
+
+    _createStudyFromTemplate: function() {
+      throw new Error("Abstract method called!");
+    },
+
     _createStudyFromService: function() {
       throw new Error("Abstract method called!");
     },
@@ -322,6 +330,16 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         moreOpts.addListener("publishTemplate", e => {
           win.close();
           this.fireDataEvent("publishTemplate", e.getData());
+        });
+        moreOpts.addListener("openStudy", e => {
+          win.close();
+          const openStudyData = e.getData();
+          this._startStudyById(openStudyData["uuid"]);
+        });
+        moreOpts.addListener("openTemplate", e => {
+          win.close();
+          const templateData = e.getData();
+          this._createStudyFromTemplate(templateData);
         });
         moreOpts.addListener("openService", e => {
           win.close();
