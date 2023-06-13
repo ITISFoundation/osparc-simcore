@@ -3,7 +3,7 @@
 """
 
 import logging
-from typing import Any, AsyncIterator, Optional
+from typing import Any, AsyncIterator
 
 from aiohttp import web
 from aiopg.sa import Engine, create_engine
@@ -21,15 +21,15 @@ from simcore_postgres_database.utils_aiopg import (
 )
 from tenacity import retry
 
-from .db_settings import PostgresSettings, get_plugin_settings
+from .settings import PostgresSettings, get_plugin_settings
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
-@retry(**PostgresRetryPolicyUponInitialization(log).kwargs)
+@retry(**PostgresRetryPolicyUponInitialization(_logger).kwargs)
 async def _ensure_pg_ready(settings: PostgresSettings) -> Engine:
 
-    log.info("Connecting to postgres with %s", f"{settings=}")
+    _logger.info("Connecting to postgres with %s", f"{settings=}")
     engine = await create_engine(
         settings.dsn,
         application_name=settings.POSTGRES_CLIENT_NAME,
@@ -43,8 +43,8 @@ async def _ensure_pg_ready(settings: PostgresSettings) -> Engine:
         await close_engine(engine)
         raise
 
-    log.info("Connection to postgres with %s succeeded", f"{settings=}")
-    return engine  # type: ignore # tenacity rules guarantee exit with exc
+    _logger.info("Connection to postgres with %s succeeded", f"{settings=}")
+    return engine  # tenacity rules guarantee exit with exc
 
 
 async def postgres_cleanup_ctx(app: web.Application) -> AsyncIterator[None]:
@@ -53,16 +53,16 @@ async def postgres_cleanup_ctx(app: web.Application) -> AsyncIterator[None]:
     aiopg_engine = await _ensure_pg_ready(settings)
     app[APP_DB_ENGINE_KEY] = aiopg_engine
 
-    log.info("pg engine created %s", json_dumps(get_engine_state(app), indent=1))
+    _logger.info("pg engine created %s", json_dumps(get_engine_state(app), indent=1))
 
     yield  # -------------------
 
     if aiopg_engine is not app.get(APP_DB_ENGINE_KEY):
-        log.critical("app does not hold right db engine. Somebody has changed it??")
+        _logger.critical("app does not hold right db engine. Somebody has changed it??")
 
     await close_engine(aiopg_engine)
 
-    log.debug(
+    _logger.debug(
         "pg engine created after shutdown %s (closed=%s): %s",
         aiopg_engine.dsn,
         aiopg_engine.closed,
@@ -83,9 +83,10 @@ async def is_service_responsive(app: web.Application):
 
 
 def get_engine_state(app: web.Application) -> dict[str, Any]:
-    engine: Optional[Engine] = app.get(APP_DB_ENGINE_KEY)
+    engine: Engine | None = app.get(APP_DB_ENGINE_KEY)
     if engine:
-        return get_pg_engine_stateinfo(engine)
+        pg_engine_stateinfo: dict[str, Any] = get_pg_engine_stateinfo(engine)
+        return pg_engine_stateinfo
     return {}
 
 
@@ -94,7 +95,10 @@ def get_database_engine(app: web.Application) -> Engine:
 
 
 @app_module_setup(
-    __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_DB", logger=log
+    "simcore_service_webserver.db",
+    ModuleCategory.ADDON,
+    settings_name="WEBSERVER_DB",
+    logger=_logger,
 )
 def setup_db(app: web.Application):
 

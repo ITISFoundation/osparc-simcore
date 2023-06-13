@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from functools import wraps
 from math import ceil
-from typing import NamedTuple
+from typing import Callable, NamedTuple
 
 from aiohttp.web_exceptions import HTTPTooManyRequests
 
@@ -26,7 +26,7 @@ def global_rate_limit_route(number_of_requests: int, interval_seconds: float):
     """
 
     # compute the amount of requests per
-    def decorator(decorated_function):
+    def _decorator(decorated_function: Callable):
         @dataclass
         class _Context:
             max_allowed: int  # maximum allowed requests per interval
@@ -40,7 +40,7 @@ def global_rate_limit_route(number_of_requests: int, interval_seconds: float):
         )
 
         @wraps(decorated_function)
-        async def wrapper(*args, **kwargs):
+        async def _wrapper(*args, **kwargs):
             utc_now = datetime.utcnow()
             utc_now_timestamp = datetime.timestamp(utc_now)
 
@@ -75,7 +75,7 @@ def global_rate_limit_route(number_of_requests: int, interval_seconds: float):
             context.remaining -= 1
             return await decorated_function(*args, **kwargs)
 
-        wrapper.rate_limit_setup = RateLimitSetup(number_of_requests, interval_seconds)
-        return wrapper
+        _wrapper.rate_limit_setup = RateLimitSetup(number_of_requests, interval_seconds)  # type: ignore
+        return _wrapper
 
-    return decorator
+    return _decorator

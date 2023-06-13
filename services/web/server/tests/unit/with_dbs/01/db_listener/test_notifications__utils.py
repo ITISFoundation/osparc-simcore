@@ -6,7 +6,7 @@
 import pytest
 from models_library.projects_state import RunningState
 from simcore_postgres_database.models.comp_pipeline import StateType
-from simcore_service_webserver.notifications._utils import convert_state_from_db
+from simcore_service_webserver.db_listener._utils import convert_state_from_db
 
 
 @pytest.mark.parametrize(

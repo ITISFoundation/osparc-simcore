@@ -6,7 +6,6 @@ from models_library.services_resources import (
     MEMORY_50MB,
     MEMORY_250MB,
 )
-from pydantic.types import PositiveInt
 
 from ....core.settings import DynamicSidecarProxySettings, DynamicSidecarSettings
 from ....models.schemas.dynamic_services import SchedulerData, ServiceType
@@ -19,8 +18,6 @@ def get_dynamic_proxy_spec(
     dynamic_sidecar_network_id: str,
     swarm_network_id: str,
     swarm_network_name: str,
-    entrypoint_container_name: str,
-    service_port: PositiveInt,
 ) -> dict[str, Any]:
     """
     The Traefik proxy is the entrypoint which forwards
@@ -41,14 +38,26 @@ def get_dynamic_proxy_spec(
     proxy_settings: DynamicSidecarProxySettings = (
         dynamic_sidecar_settings.DYNAMIC_SIDECAR_PROXY_SETTINGS
     )
+    caddy_file = (
+        f"{{\n admin 0.0.0.0:{proxy_settings.DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT} \n}}"
+    )
 
     # expose this service on an empty port
-    endpint_spec = {}
+
+    ports = []
+    if dynamic_sidecar_settings.DYNAMIC_SIDECAR_EXPOSE_PORT:
+        ports.append(
+            # server port
+            {
+                "Protocol": "tcp",
+                "TargetPort": proxy_settings.DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT,
+            }
+        )
     if dynamic_sidecar_settings.PROXY_EXPOSE_PORT:
-        endpint_spec["Ports"] = [{"Protocol": "tcp", "TargetPort": 80}]
+        ports.append({"Protocol": "tcp", "TargetPort": 80})
 
     return {
-        "endpoint_spec": endpint_spec,
+        "endpoint_spec": {"Ports": ports} if ports else {},
         "labels": {
             # TODO: let's use a pydantic model with descriptions
             "io.simcore.zone": f"{dynamic_sidecar_settings.TRAEFIK_SIMCORE_ZONE}",
@@ -91,12 +100,11 @@ def get_dynamic_proxy_spec(
                     "uuid": f"{scheduler_data.node_uuid}",
                 },
                 "Command": [
-                    "caddy",
-                    "reverse-proxy",
-                    "--from",
-                    ":80",
-                    "--to",
-                    f"{entrypoint_container_name}:{service_port}",
+                    "sh",
+                    "-c",
+                    f"echo -e '{caddy_file}' > /etc/caddy/Caddyfile && "
+                    "cat /etc/caddy/Caddyfile && "
+                    "caddy run --adapter caddyfile --config /etc/caddy/Caddyfile",
                 ],
                 "Mounts": mounts,
             },

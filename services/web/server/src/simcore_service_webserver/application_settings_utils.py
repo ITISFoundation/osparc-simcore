@@ -12,7 +12,7 @@ from pydantic.types import SecretStr
 
 from .application_settings import ApplicationSettings
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
@@ -214,6 +214,12 @@ def convert_to_environ_vars(cfg: dict[str, Any]) -> dict[str, Any]:
             envs["POSTGRES_USER"] = section.get("user")
 
         _set_if_disabled("WEBSERVER_DB", db)
+
+    if section := cfg.get("rabbitmq"):
+        envs["RABBIT_HOST"] = section.get("host")
+        envs["RABBIT_PORT"] = section.get("port")
+        envs["RABBIT_USER"] = section.get("user")
+        envs["RABBIT_PASSWORD"] = section.get("password")
 
     if section := cfg.get("resource_manager"):
         _set_if_disabled("WEBSERVER_RESOURCE_MANAGER", section)

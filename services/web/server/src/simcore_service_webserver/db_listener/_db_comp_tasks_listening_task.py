@@ -30,7 +30,7 @@ _logger = logging.getLogger(__name__)
 
 async def _get_project_owner(conn: SAConnection, project_uuid: str) -> PositiveInt:
     the_project_owner: PositiveInt | None = await conn.scalar(
-        select([projects.c.prj_owner]).where(projects.c.uuid == project_uuid)
+        select(projects.c.prj_owner).where(projects.c.uuid == project_uuid)
     )
     if not the_project_owner:
         raise exceptions.ProjectOwnerNotFoundError(project_uuid)
@@ -100,7 +100,7 @@ async def _handle_db_notification(
             )
 
         if "state" in task_changes:
-            new_state = convert_state_from_db(task_data["state"]).value
+            new_state = convert_state_from_db(task_data["state"])
             await _update_project_state(
                 app,
                 the_project_owner,

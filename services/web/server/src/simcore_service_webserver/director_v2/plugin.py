@@ -13,7 +13,7 @@ from servicelib.aiohttp.rest_routing import (
 )
 
 from .._constants import APP_OPENAPI_SPECS_KEY
-from ..rest import setup_rest
+from ..rest.plugin import setup_rest
 from . import _handlers as director_v2_handlers
 from ._abc import set_project_run_policy
 from ._core_computations import ComputationsApi, set_client

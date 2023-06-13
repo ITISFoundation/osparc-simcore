@@ -10,7 +10,7 @@ from servicelib.aiohttp.application_setup import APP_SETUP_COMPLETED_KEY
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.diagnostics import _handlers
 from simcore_service_webserver.diagnostics.plugin import setup_diagnostics
-from simcore_service_webserver.rest import api_version_prefix, setup_rest
+from simcore_service_webserver.rest.plugin import api_version_prefix, setup_rest
 
 
 class MockApp(dict):

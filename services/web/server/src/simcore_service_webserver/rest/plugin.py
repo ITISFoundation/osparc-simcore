@@ -16,19 +16,19 @@ from servicelib.aiohttp.rest_middlewares import (
     error_middleware_factory,
 )
 
-from . import rest_handlers
-from ._constants import APP_OPENAPI_SPECS_KEY, APP_SETTINGS_KEY
-from ._meta import API_VTAG, api_version_prefix
-from .rest_healthcheck import HealthCheck
-from .rest_settings import RestSettings, get_plugin_settings
-from .rest_utils import get_openapi_specs_path, load_openapi_specs
-from .security.plugin import setup_security
+from .._constants import APP_OPENAPI_SPECS_KEY, APP_SETTINGS_KEY
+from .._meta import API_VTAG, api_version_prefix
+from ..security.plugin import setup_security
+from . import _handlers
+from ._utils import get_openapi_specs_path, load_openapi_specs
+from .healthcheck import HealthCheck
+from .settings import RestSettings, get_plugin_settings
 
 log = logging.getLogger(__name__)
 
 
 @app_module_setup(
-    __name__,
+    "simcore_service_webserver.rest",
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_REST",
     logger=log,
@@ -65,7 +65,7 @@ def setup_rest(app: web.Application):
     log.debug("Setup %s", f"{app[HealthCheck.__name__]=}")
 
     # basic routes
-    app.add_routes(rest_handlers.routes)
+    app.add_routes(_handlers.routes)
 
     # middlewares
     # NOTE: using safe get here since some tests use incomplete configs

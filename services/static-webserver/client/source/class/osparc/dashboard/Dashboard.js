@@ -110,7 +110,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         buildLayout: this.__createStudyBrowser
       }];
       if (permissions.canDo("dashboard.templates.read")) {
-        const templatesTab = {
+        tabs.push({
           id: "templatesTabBtn",
           label: osparc.product.Utils.getTemplateAlias({
             plural: true,
@@ -118,8 +118,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           }),
           icon: "@FontAwesome5Solid/copy/"+tabIconSize,
           buildLayout: this.__createTemplateBrowser
-        };
-        tabs.push(templatesTab);
+        });
       }
       if (permissions.canDo("dashboard.services.read")) {
         tabs.push({
@@ -134,8 +133,8 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           id: "dataTabBtn",
           label: this.tr("DATA"),
           icon: "@FontAwesome5Solid/folder/"+tabIconSize,
-          buildLayout: this.__createDataBrowser}
-        );
+          buildLayout: this.__createDataBrowser
+        });
       }
       tabs.forEach(({id, label, icon, buildLayout}) => {
         const tabPage = new qx.ui.tabview.Page(label, icon).set({
