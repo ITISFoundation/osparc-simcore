@@ -43,7 +43,7 @@ def fake_version() -> str:
 def cli(
     fake_settings_class: type[BaseCustomSettings], fake_version: str
 ) -> typer.Typer:
-    main = typer.Typer(name="app", pretty_exceptions_enable=False)
+    main = typer.Typer(name="app", rich_markup_mode="markdown")
 
     @main.command()
     def run():
