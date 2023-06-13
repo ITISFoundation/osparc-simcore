@@ -2,6 +2,9 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import sys
+sys.modules.pop("rich")
+
 import json
 import logging
 import re
@@ -125,10 +128,27 @@ def test_compose_commands(cli: typer.Typer, cli_runner: CliRunner):
     assert extract_lines(HELP) == extract_lines(result.stdout)
 
 
-HELP = bytes(
-    "\x1b[1m                                                                                \x1b[0m\n\x1b[1m \x1b[0m\x1b[1;33mUsage: \x1b[0m\x1b[1mapp settings [OPTIONS]\x1b[0m\x1b[1m                                                 \x1b[0m\x1b[1m \x1b[0m\n\x1b[1m                                                                                \x1b[0m\n Resolves settings and prints envfile                                           \n                                                                                \n\x1b[2m╭─\x1b[0m\x1b[2m Options \x1b[0m\x1b[2m───────────────────────────────────────────────────────────────────\x1b[0m\x1b[2m─╮\x1b[0m\n\x1b[2m│\x1b[0m \x1b[1;36m-\x1b[0m\x1b[1;36m-as\x1b[0m\x1b[1;36m-json\x1b[0m           \x1b[1;35m-\x1b[0m\x1b[1;35m-no\x1b[0m\x1b[1;35m-as-json\x1b[0m             \x1b[2m[default: no-as-json]\x1b[0m           \x1b[2m│\x1b[0m\n\x1b[2m│\x1b[0m \x1b[1;36m-\x1b[0m\x1b[1;36m-as\x1b[0m\x1b[1;36m-json-schema\x1b[0m    \x1b[1;35m-\x1b[0m\x1b[1;35m-no\x1b[0m\x1b[1;35m-as-json-schema\x1b[0m      \x1b[2m[default: no-as-json-schema]\x1b[0m    \x1b[2m│\x1b[0m\n\x1b[2m│\x1b[0m \x1b[1;36m-\x1b[0m\x1b[1;36m-compact\x1b[0m           \x1b[1;35m-\x1b[0m\x1b[1;3... \x1b[2m[default: no-verbose]\x1b[0m           \x1b[2m│\x1b[0m\n\x1b[2m│\x1b[0m \x1b[1;36m-\x1b[0m\x1b[1;36m-show\x1b[0m\x1b[1;36m-secrets\x1b[0m      \x1b[1;35m-\x1b[0m\x1b[1;35m-no\x1b[0m\x1b[1;35m-show-secrets\x1b[0m        \x1b[2m[default: no-show-secrets]\x1b[0m      \x1b[2m│\x1b[0m\n\x1b[2m│\x1b[0m \x1b[1;36m-\x1b[0m\x1b[1;36m-exclude\x1b[0m\x1b[1;36m-unset\x1b[0m     \x1b[1;35m-\x1b[0m\x1b[1;35m-no\x1b[0m\x1b[1;35m-exclude-unset\x1b[0m       displays settings that were     \x1b[2m│\x1b[0m\n\x1b[2m│\x1b[0m                                              explicitly setThis represents   \x1b[2m│\x1b[0m\n\x1b[2m│\x1b[0m                                              current config (i.e. required+  \x1b[2m│\x1b[0m\n\x1b[2m│\x1b[0m                                              defaults overriden).            \x1b[2m│\x1b[0m\n\x1b[2m│\x1b[0m                                              \x1b[2m[default: no-exclude-unset]    \x1b[0m \x1b[2m│\x1b[0m\n\x1b[2m│\x1b[0m \x1b[1;36m-\x1b[0m\x1b[1;36m-help\x1b[0m                                       Show this message and exit.     \x1b[2m│\x1b[0m\n\x1b[2m╰──────────────────────────────────────────────────────────────────────────────╯\x1b[0m\n\n",
-    "utf-8",
-).decode("utf-8")
+HELP = """
+ Usage: app settings [OPTIONS]
+
+ Resolves settings and prints envfile
+
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --as-json           --no-as-json             [default: no-as-json]           │
+│ --as-json-schema    --no-as-json-schema      [default: no-as-json-schema]    │
+│ --compact           --no-compact             Print compact form              │
+│                                              [default: no-compact]           │
+│ --verbose           --no-verbose             [default: no-verbose]           │
+│ --show-secrets      --no-show-secrets        [default: no-show-secrets]      │
+│ --exclude-unset     --no-exclude-unset       displays settings that were     │
+│                                              explicitly setThis represents   │
+│                                              current config (i.e. required+  │
+│                                              defaults overriden).            │
+│                                              [default: no-exclude-unset]     │
+│ --help                                       Show this message and exit.     │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+"""
 
 
 def test_settings_as_json(
