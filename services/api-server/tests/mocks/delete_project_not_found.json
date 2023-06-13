@@ -1,8 +1,8 @@
 {
-  "name": "DELETE /projects/cc24a8f6-05f7-11ee-b6b9-02420a000024",
-  "description": "<Request('DELETE', 'http://webserver:8080/v0/projects/cc24a8f6-05f7-11ee-b6b9-02420a000024')>",
+  "name": "DELETE /projects/{{ project_id }}",
+  "description": "<Request('DELETE', 'http://webserver:8080/v0/projects/{{ project_id }}')>",
   "method": "DELETE",
-  "path": "/v0/projects/cc24a8f6-05f7-11ee-b6b9-02420a000024",
+  "path": "/v0/projects/{{ project_id }}",
   "query": null,
   "request_payload": null,
   "response_body": {
@@ -10,7 +10,7 @@
    "error": {
     "logs": [
      {
-      "message": "Project cc24a8f6-05f7-11ee-b6b9-02420a000024 not found",
+      "message": "Project {{ project_id }} not found",
       "level": "ERROR",
       "logger": "user"
      }
@@ -18,13 +18,13 @@
     "errors": [
      {
       "code": "HTTPNotFound",
-      "message": "Project cc24a8f6-05f7-11ee-b6b9-02420a000024 not found",
+      "message": "Project {{ project_id }} not found",
       "resource": null,
       "field": null
      }
     ],
     "status": 404,
-    "message": "Project cc24a8f6-05f7-11ee-b6b9-02420a000024 not found"
+    "message": "Project {{ project_id }} not found"
    }
   },
   "status_code": 404
