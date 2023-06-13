@@ -128,7 +128,8 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
               source = "@FontAwesome5Solid/copy/14";
               break;
             case "ANNOTATION_NOTE":
-              source = "@FontAwesome5Solid/note-sticky/14";
+              // source = "@FontAwesome5Solid/note-sticky/14";
+              source = "@FontAwesome5Solid/file/14";
               break;
           }
           return source;
