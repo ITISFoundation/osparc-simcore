@@ -10,6 +10,7 @@ from zipfile import ZipFile
 import arrow
 import boto3
 import httpx
+import jinja2
 import pytest
 import respx
 from faker import Faker
@@ -210,7 +211,7 @@ async def test_solver_logs(
 
 @pytest.fixture
 def solver_key() -> str:
-    return "services/simcore/services/comp/itis/sleeper"
+    return "simcore/services/comp/itis/sleeper"
 
 
 @pytest.fixture
@@ -389,7 +390,7 @@ async def test_run_solver_job(
 @pytest.mark.acceptance_test(
     "For https://github.com/ITISFoundation/osparc-simcore/issues/4111"
 )
-async def test_delete_solver_job(
+async def test_delete_solver_job_1(
     auth: httpx.BasicAuth,
     client: httpx.AsyncClient,
     solver_key: str,
@@ -399,13 +400,26 @@ async def test_delete_solver_job(
     mocked_catalog_service_api: MockRouter,
     project_tests_dir: Path,
 ):
-    capture = HttpApiCallCaptureModel.parse_file(
-        project_tests_dir / "mocks" / "delete_project_not_found.json"
+
+    mock_name = "delete_project_not_found.json"
+
+    environment = jinja2.Environment(
+        loader=jinja2.FileSystemLoader(project_tests_dir / "mocks")
     )
+    template = environment.get_template(mock_name)
+
+    def _response(request: httpx.Request, project_id: str):
+        capture = HttpApiCallCaptureModel.parse_raw(
+            template.render(project_id=project_id)
+        )
+        return httpx.Response(
+            status_code=capture.status_code, json=capture.response_body
+        )
+
     mocked_webserver_service_api.delete(
-        path__regex=rf"/projects/(?P<project_uuid>{UUID_RE_BASE})$",
+        path__regex=rf"/projects/(?P<project_id>{UUID_RE_BASE})$",
         name="delete_project",
-    ).respond(capture.status_code, json=capture.response_body)
+    ).mock(side_effect=_response)
 
     # Cannot delete if it does not exists
     resp = await client.delete(
@@ -414,10 +428,31 @@ async def test_delete_solver_job(
     )
     assert resp.status_code == status.HTTP_404_NOT_FOUND
 
+
+@pytest.mark.testit
+@pytest.mark.acceptance_test(
+    "For https://github.com/ITISFoundation/osparc-simcore/issues/4111"
+)
+async def test_delete_solver_job_2(
+    auth: httpx.BasicAuth,
+    client: httpx.AsyncClient,
+    solver_key: str,
+    solver_version: str,
+    faker: Faker,
+    mocked_webserver_service_api: MockRouter,
+    mocked_catalog_service_api: MockRouter,
+    project_tests_dir: Path,
+):
+    mock_name = "on_create_job.json"
+    environment = jinja2.Environment(
+        loader=jinja2.FileSystemLoader(project_tests_dir / "mocks")
+    )
+    template = environment.get_template(mock_name)
+
     # fixture
     captures = parse_file_as(
         list[HttpApiCallCaptureModel],
-        project_tests_dir / "mocks" / "delete_project_not_found.json",
+        project_tests_dir / "mocks" / mock_name,
     )
     mocked_catalog_service_api.request(
         method=captures[0].method,  # GET service
