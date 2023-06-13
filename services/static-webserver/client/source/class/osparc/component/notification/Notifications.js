@@ -37,23 +37,29 @@ qx.Class.define("osparc.component.notification.Notifications", {
     },
 
     __newStudyObj: function(userId, studyId) {
+      const study = osparc.product.Utils.getStudyAlias({
+        firstUpperCase: true
+      });
       return {
         "user_id": userId.toString(),
         "category": "STUDY_SHARED",
         "actionable_path": "study/"+studyId,
-        "title": "Study shared",
-        "text": "A study was shared with you",
+        "title": `${study} shared`,
+        "text": `A ${study} was shared with you`,
         "date": new Date().toISOString()
       };
     },
 
     __newTemplateObj: function(userId, templateId) {
+      const template = osparc.product.Utils.getTemplateAlias({
+        firstUpperCase: true
+      });
       return {
         "user_id": userId.toString(),
         "category": "TEMPLATE_SHARED",
         "actionable_path": "template/"+templateId,
-        "title": "Template shared",
-        "text": "A template was shared with you",
+        "title": `${template} shared`,
+        "text": `A ${template} was shared with you`,
         "date": new Date().toISOString()
       };
     },
@@ -64,7 +70,7 @@ qx.Class.define("osparc.component.notification.Notifications", {
         "category": "ANNOTATION_NOTE",
         "actionable_path": "study/"+studyId,
         "title": "Note created",
-        "text": "A Note was added for you",
+        "text": "A Note was created for you",
         "date": new Date().toISOString()
       };
     },
