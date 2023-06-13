@@ -13,7 +13,7 @@ from .activity.plugin import setup_activity
 from .application_settings import setup_settings
 from .catalog.plugin import setup_catalog
 from .clusters.plugin import setup_clusters
-from .db import setup_db
+from .db.plugin import setup_db
 from .db_listener.plugin import setup_db_listener
 from .diagnostics.plugin import setup_diagnostics
 from .director.plugin import setup_director

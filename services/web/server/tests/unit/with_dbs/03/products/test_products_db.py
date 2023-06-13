@@ -22,7 +22,7 @@ from simcore_postgres_database.models.products import (
     WebFeedback,
     products,
 )
-from simcore_service_webserver.db import APP_DB_ENGINE_KEY
+from simcore_service_webserver.db.plugin import APP_DB_ENGINE_KEY
 from simcore_service_webserver.products._db import ProductRepository
 from simcore_service_webserver.products._middlewares import (
     _get_app_default_product_name,
