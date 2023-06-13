@@ -676,7 +676,7 @@ class ProjectDBAPI(BaseProjectDB):
         result = set()
         async with self.engine.acquire() as conn:
             async for row in conn.execute(
-                sa.select([sa.func.json_object_keys(projects.c.workbench)])
+                sa.select(sa.func.json_object_keys(projects.c.workbench))
                 .select_from(projects)
                 .where(projects.c.uuid == f"{project_uuid}")
             ):

@@ -3,7 +3,6 @@
 """
 
 import logging
-from typing import List, Optional
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -29,7 +28,7 @@ class ResearchResourceRepository:
     def __init__(self, app: web.Application):
         self._engine = app[APP_DB_ENGINE_KEY]
 
-    async def list_resources(self) -> List[ResearchResource]:
+    async def list_resources(self) -> list[ResearchResource]:
         async with self._engine.acquire() as conn:
             stmt = sa.select(
                 [
@@ -39,20 +38,20 @@ class ResearchResourceRepository:
                 ]
             )
             res: ResultProxy = await conn.execute(stmt)
-            rows: List[RowProxy] = await res.fetchall()
+            rows: list[RowProxy] = await res.fetchall()
             return [ResearchResource.from_orm(row) for row in rows] if rows else []
 
-    async def get(self, rrid: str) -> Optional[ResearchResourceAtdB]:
+    async def get(self, rrid: str) -> ResearchResourceAtdB | None:
         async with self._engine.acquire() as conn:
-            stmt = sa.select([scicrunch_resources]).where(
+            stmt = sa.select(scicrunch_resources).where(
                 scicrunch_resources.c.rrid == rrid
             )
             rows = await conn.execute(stmt)
             row = await rows.fetchone()
             return ResearchResourceAtdB(**row) if row else None
 
-    async def get_resource(self, rrid: str) -> Optional[ResearchResource]:
-        resource: Optional[ResearchResourceAtdB] = await self.get(rrid)
+    async def get_resource(self, rrid: str) -> ResearchResource | None:
+        resource: ResearchResourceAtdB | None = await self.get(rrid)
         if resource:
             return ResearchResource(**resource.dict())
         return resource

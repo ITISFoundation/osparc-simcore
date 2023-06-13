@@ -194,7 +194,7 @@ async def test_create_node(
         create_node_id = data["node_id"]
         with postgres_db.connect() as conn:
             result = conn.execute(
-                sa.select([projects_db_model.c.workbench]).where(
+                sa.select(projects_db_model.c.workbench).where(
                     projects_db_model.c.uuid == user_project["uuid"]
                 )
             )
@@ -272,7 +272,7 @@ async def test_create_and_delete_many_nodes_in_parallel(
     # check that we do have NUM_DY_SERVICES nodes in the project
     with postgres_db.connect() as conn:
         result = conn.execute(
-            sa.select([projects_db_model.c.workbench]).where(
+            sa.select(projects_db_model.c.workbench).where(
                 projects_db_model.c.uuid == user_project["uuid"]
             )
         )
@@ -391,7 +391,7 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
     # check that we do have NUM_DY_SERVICES nodes in the project
     with postgres_db.connect() as conn:
         result = conn.execute(
-            sa.select([projects_db_model.c.workbench]).where(
+            sa.select(projects_db_model.c.workbench).where(
                 projects_db_model.c.uuid == project["uuid"]
             )
         )
@@ -524,7 +524,7 @@ async def test_delete_node(
         # ensure the node is gone
         with postgres_db.connect() as conn:
             result = conn.execute(
-                sa.select([projects_db_model.c.workbench]).where(
+                sa.select(projects_db_model.c.workbench).where(
                     projects_db_model.c.uuid == user_project["uuid"]
                 )
             )

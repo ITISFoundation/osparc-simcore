@@ -6,6 +6,8 @@
 #
 alembic==1.11.1
     # via -r requirements/_base.in
+asyncpg==0.27.0
+    # via sqlalchemy
 greenlet==2.0.2
     # via sqlalchemy
 idna==3.4
