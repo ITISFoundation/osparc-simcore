@@ -46,7 +46,7 @@ def testing_environ_vars(env_devel_file: Path) -> EnvVarsDict:
     env_devel = dotenv_values(
         env_devel_file,
         verbose=True,
-        interpolate=True,  # note that VAR=$ENVVAR
+        interpolate=True,  # NOTE: This resolves expressions as VAR=$ENVVAR
     )
 
     # These are overrides to .env-devel or an extension to them
