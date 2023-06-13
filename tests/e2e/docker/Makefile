@@ -14,7 +14,7 @@ help: ## help on rule's targets
 
 .PHONY: build
 build: ## builds a node image able to run puppeteer
-	docker buildx build --build-arg BUILD_DATE=$(BUILD_DATE) --build-arg VCS_URL=$(VCS_URL) --build-arg VCS_REF=$(VCS_REF) --tag $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) .;
+	docker buildx build --load --build-arg BUILD_DATE=$(BUILD_DATE) --build-arg VCS_URL=$(VCS_URL) --build-arg VCS_REF=$(VCS_REF) --tag $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) .;
 
 .PHONY: shell
 shell:  guard-URL guard-USER guard-PASSWORD ## runs bash in the image to allow manual testing

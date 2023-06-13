@@ -5,7 +5,9 @@
 #    pip-compile --output-file=requirements/_base.txt --resolver=backtracking --strip-extras requirements/_base.in
 #
 aio-pika==9.1.2
-    # via -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    # via
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/_base.in
 aiocache==0.11.1
     # via -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
 aiodebug==2.3.0
@@ -64,7 +66,9 @@ async-timeout==4.0.2
     #   aiopg
     #   redis
 asyncpg==0.27.0
-    # via -r requirements/_base.in
+    # via
+    #   -r requirements/_base.in
+    #   sqlalchemy
 attrs==21.4.0
     # via
     #   -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
@@ -153,7 +157,7 @@ openpyxl==3.0.9
     # via -r requirements/_base.in
 orjson==3.7.2
     # via -r requirements/_base.in
-packaging==21.3
+packaging==23.1
     # via
     #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in
@@ -185,8 +189,6 @@ pyinstrument-cext==0.2.4
     # via pyinstrument
 pyjwt==2.4.0
     # via twilio
-pyparsing==3.0.9
-    # via packaging
 pyrsistent==0.18.1
     # via jsonschema
 python-dateutil==2.8.2

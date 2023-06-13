@@ -13,9 +13,10 @@ Example of usage in pydantic:
 """
 # Partially taken from  https://github.com/autoferrit/python-change-case/blob/master/change_case/change_case.py#L131
 import re
+from typing import Final
 
-_underscorer1 = re.compile(r"(.)([A-Z][a-z]+)")
-_underscorer2 = re.compile(r"([a-z0-9])([A-Z])")
+_UNDERSCORER1: Final = re.compile(r"(.)([A-Z][a-z]+)")
+_UNDERSCORER2: Final = re.compile(r"([a-z0-9])([A-Z])")
 
 
 def snake_to_camel(subject: str) -> str:
@@ -39,5 +40,5 @@ def snake_to_upper_camel(subject: str) -> str:
 
 
 def camel_to_snake(subject: str) -> str:
-    subbed = _underscorer1.sub(r"\1_\2", subject)
-    return _underscorer2.sub(r"\1_\2", subbed).lower()
+    subbed = _UNDERSCORER1.sub(r"\1_\2", subject)
+    return _UNDERSCORER2.sub(r"\1_\2", subbed).lower()

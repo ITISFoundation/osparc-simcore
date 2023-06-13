@@ -5,7 +5,9 @@
 #    pip-compile --output-file=requirements/_base.txt --resolver=backtracking --strip-extras requirements/_base.in
 #
 aio-pika==9.1.2
-    # via -r requirements/../../../packages/service-library/requirements/_base.in
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
 aioboto3==9.6.0
     # via -r requirements/_base.in
 aiobotocore==2.3.0
@@ -57,6 +59,8 @@ async-timeout==4.0.2
     #   aiohttp
     #   aiopg
     #   redis
+asyncpg==0.27.0
+    # via sqlalchemy
 attrs==21.4.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_aiohttp.in

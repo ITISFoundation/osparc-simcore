@@ -362,9 +362,7 @@ async def test_rabbit_pub_sub_bind_and_unbind_topics(
     await _assert_message_received(mocked_message_parser, 0)
 
     # we are interested in warnings and critical
-    await consumer.add_topics(
-        exchange_name, queue_name, topics=["*.warning", "*.critical"]
-    )
+    await consumer.add_topics(exchange_name, topics=["*.warning", "*.critical"])
     await asyncio.gather(
         *(publisher.publish(exchange_name, m) for m in messages.values())
     )
@@ -372,7 +370,7 @@ async def test_rabbit_pub_sub_bind_and_unbind_topics(
     await _assert_message_received(mocked_message_parser, 2, messages["warning"])
     mocked_message_parser.reset_mock()
     # adding again the same topics makes no difference, we should still have 2 messages
-    await consumer.add_topics(exchange_name, queue_name, topics=["*.warning"])
+    await consumer.add_topics(exchange_name, topics=["*.warning"])
     await asyncio.gather(
         *(publisher.publish(exchange_name, m) for m in messages.values())
     )
@@ -381,7 +379,7 @@ async def test_rabbit_pub_sub_bind_and_unbind_topics(
     mocked_message_parser.reset_mock()
 
     # after unsubscribing, we do not receive warnings anymore
-    await consumer.remove_topics(exchange_name, queue_name, topics=["*.warning"])
+    await consumer.remove_topics(exchange_name, topics=["*.warning"])
     await asyncio.gather(
         *(publisher.publish(exchange_name, m) for m in messages.values())
     )
@@ -389,7 +387,7 @@ async def test_rabbit_pub_sub_bind_and_unbind_topics(
     mocked_message_parser.reset_mock()
 
     # after unsubscribing something that does not exist, we still receive the same things
-    await consumer.remove_topics(exchange_name, queue_name, topics=[])
+    await consumer.remove_topics(exchange_name, topics=[])
     await asyncio.gather(
         *(publisher.publish(exchange_name, m) for m in messages.values())
     )
@@ -420,12 +418,12 @@ async def test_rabbit_adding_topics_to_a_fanout_exchange(
     await _assert_message_received(mocked_message_parser, 1, message)
     mocked_message_parser.reset_mock()
     # this changes nothing on a FANOUT exchange
-    await consumer.add_topics(exchange_name, queue_name, topics=["some_topics"])
+    await consumer.add_topics(exchange_name, topics=["some_topics"])
     await publisher.publish(exchange_name, message)
     await _assert_message_received(mocked_message_parser, 1, message)
     mocked_message_parser.reset_mock()
     # this changes nothing on a FANOUT exchange
-    await consumer.remove_topics(exchange_name, queue_name, topics=["some_topics"])
+    await consumer.remove_topics(exchange_name, topics=["some_topics"])
     await publisher.publish(exchange_name, message)
     await _assert_message_received(mocked_message_parser, 1, message)
     mocked_message_parser.reset_mock()

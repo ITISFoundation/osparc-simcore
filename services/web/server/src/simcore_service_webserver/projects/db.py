@@ -31,7 +31,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import and_, select
 from tenacity import AsyncRetrying, TryAgain, retry_if_exception_type
 
-from ..db_models import study_tags
+from ..db.models import study_tags
 from ..utils import now_str
 from ._db_utils import (
     ANY_USER_ID_SENTINEL,
@@ -76,14 +76,15 @@ class ProjectDBAPI(BaseProjectDB):
 
     @classmethod
     def get_from_app_context(cls, app: web.Application) -> "ProjectDBAPI":
-        return app[APP_PROJECT_DBAPI]
+        db: "ProjectDBAPI" = app[APP_PROJECT_DBAPI]
+        return db
 
     @classmethod
     def set_once_in_app_context(cls, app: web.Application) -> "ProjectDBAPI":
         if app.get(APP_PROJECT_DBAPI) is None:
-            db = ProjectDBAPI(app)
-            app[APP_PROJECT_DBAPI] = db
-        return app[APP_PROJECT_DBAPI]
+            app[APP_PROJECT_DBAPI] = ProjectDBAPI(app)
+        db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+        return db
 
     @property
     def engine(self) -> Engine:
@@ -340,7 +341,7 @@ class ProjectDBAPI(BaseProjectDB):
             )
 
     async def list_projects_uuids(self, user_id: int) -> list[str]:
-        result = deque()
+        result: deque = deque()
         async with self.engine.acquire() as conn:
             async for row in conn.execute(
                 sa.select(projects.c.uuid).where(projects.c.prj_owner == user_id)
@@ -492,13 +493,14 @@ class ProjectDBAPI(BaseProjectDB):
             updated_values = convert_to_db_names(project_data)
             if hidden is not None:
                 updated_values["hidden"] = hidden
-            result = await conn.execute(
+            result: ResultProxy = await conn.execute(
                 # pylint: disable=no-value-for-parameter
                 projects.update()
                 .values(**updated_values)
                 .where(projects.c.uuid == project_uuid)
             )
-            return result.rowcount == 1
+            result_row_count: int = result.rowcount
+            return result_row_count == 1
 
     async def update_project_last_change_timestamp(self, project_uuid: ProjectIDStr):
         async with self.engine.acquire() as conn:
@@ -674,7 +676,7 @@ class ProjectDBAPI(BaseProjectDB):
         result = set()
         async with self.engine.acquire() as conn:
             async for row in conn.execute(
-                sa.select([sa.func.json_object_keys(projects.c.workbench)])
+                sa.select(sa.func.json_object_keys(projects.c.workbench))
                 .select_from(projects)
                 .where(projects.c.uuid == f"{project_uuid}")
             ):

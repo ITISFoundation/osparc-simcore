@@ -113,7 +113,7 @@ async def test_jinja2_templates_table(
 
         assert (
             await conn.scalar(
-                sa.select([jinja2_templates.c.content])
+                sa.select(jinja2_templates.c.content)
                 .select_from(j)
                 .where(products.c.name == "s4l")
             )
@@ -122,7 +122,7 @@ async def test_jinja2_templates_table(
 
         assert (
             await conn.scalar(
-                sa.select([jinja2_templates.c.content])
+                sa.select(jinja2_templates.c.content)
                 .select_from(j)
                 .where(products.c.name == "tis")
             )

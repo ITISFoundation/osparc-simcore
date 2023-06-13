@@ -5,7 +5,9 @@
 #    pip-compile --output-file=requirements/_base.txt --resolver=backtracking --strip-extras requirements/_base.in
 #
 aio-pika==9.1.2
-    # via -r requirements/../../../packages/service-library/requirements/_base.in
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/_base.in
 aiocache==0.11.1
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 aiodebug==2.3.0
@@ -51,6 +53,8 @@ async-timeout==4.0.2
     #   aiohttp
     #   aiopg
     #   redis
+asyncpg==0.27.0
+    # via sqlalchemy
 attrs==21.4.0
     # via
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/./constraints.txt
@@ -94,7 +98,7 @@ docopt==0.6.2
     # via docker-compose
 email-validator==1.2.1
     # via pydantic
-fastapi==0.85.0
+fastapi==0.96.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
@@ -136,7 +140,7 @@ multidict==6.0.2
     # via
     #   aiohttp
     #   yarl
-packaging==21.3
+packaging==23.1
     # via
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   docker
@@ -167,8 +171,6 @@ pyinstrument==4.1.1
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 pynacl==1.4.0
     # via paramiko
-pyparsing==3.0.9
-    # via packaging
 pyrsistent==0.18.1
     # via jsonschema
 python-dateutil==2.8.2
@@ -210,8 +212,10 @@ sqlalchemy==1.4.47
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiopg
     #   alembic
-starlette==0.20.4
-    # via fastapi
+starlette==0.27.0
+    # via
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   fastapi
 tenacity==8.0.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in

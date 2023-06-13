@@ -13,7 +13,7 @@ from .activity.plugin import setup_activity
 from .application_settings import setup_settings
 from .catalog.plugin import setup_catalog
 from .clusters.plugin import setup_clusters
-from .db import setup_db
+from .db.plugin import setup_db
 from .db_listener.plugin import setup_db_listener
 from .diagnostics.plugin import setup_diagnostics
 from .director.plugin import setup_director
@@ -34,7 +34,7 @@ from .rabbitmq import setup_rabbitmq
 from .redis import setup_redis
 from .remote_debug import setup_remote_debugging
 from .resource_manager.plugin import setup_resource_manager
-from .rest import setup_rest
+from .rest.plugin import setup_rest
 from .scicrunch.plugin import setup_scicrunch
 from .security.plugin import setup_security
 from .session.plugin import setup_session

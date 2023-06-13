@@ -44,32 +44,39 @@ def create_osparc_specs(
 
         for service_name in compose_spec.services:
             try:
-                labels = compose_spec.services[service_name].build.labels
-                if labels:
-                    if isinstance(labels, list):
-                        labels: dict[str, str] = dict(
-                            item.strip().split("=") for item in labels
+                labels: dict[str, str] = {}
+
+                if build_labels := compose_spec.services[
+                    service_name
+                ].build.labels:  # AttributeError if build is str
+                    if isinstance(build_labels, list):
+                        labels = dict(item.strip().split("=") for item in build_labels)
+                    elif isinstance(build_labels, dict):
+                        labels = build_labels
+                    elif labels__root__ := getattr(build_labels, "__root__"):
+                        assert isinstance(labels__root__, dict)  # nosec
+                        labels = labels__root__
+                    else:
+                        raise ValueError(f"Invalid build labels {build_labels}")
+
+                    meta_cfg = MetaConfig.from_labels_annotations(labels)
+                    _save(service_name, metadata_path, meta_cfg)
+
+                    docker_compose_overwrite_cfg = (
+                        DockerComposeOverwriteCfg.create_default(
+                            service_name=meta_cfg.service_name()
                         )
-                    # TODO: there must be a better way for this ...
-                    assert isinstance(labels.__root__, dict)  # nosec
-                    labels = labels.__root__
+                    )
+                    _save(
+                        service_name,
+                        docker_compose_overwrite_path,
+                        docker_compose_overwrite_cfg,
+                    )
 
-                meta_cfg = MetaConfig.from_labels_annotations(labels)
-                _save(service_name, metadata_path, meta_cfg)
+                    runtime_cfg = RuntimeConfig.from_labels_annotations(labels)
+                    _save(service_name, service_specs_path, runtime_cfg)
 
-                docker_compose_overwrite_cfg = DockerComposeOverwriteCfg.create_default(
-                    service_name=meta_cfg.service_name()
-                )
-                _save(
-                    service_name,
-                    docker_compose_overwrite_path,
-                    docker_compose_overwrite_cfg,
-                )
-
-                runtime_cfg = RuntimeConfig.from_labels_annotations(labels)
-                _save(service_name, service_specs_path, runtime_cfg)
-
-            except (AttributeError, ValidationError, TypeError) as err:
+            except (AttributeError, ValidationError, TypeError, ValueError) as err:
                 rich.print(
                     f"WARNING: failure producing specs for {service_name}: {err}"
                 )

@@ -23,7 +23,7 @@ from simcore_postgres_database.models.projects_version_control import (
 from simcore_postgres_database.utils_aiopg_orm import BaseOrm
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
-from ..db_base_repository import BaseRepository
+from ..db.base_repository import BaseRepository
 from ..projects.models import ProjectProxy
 from .errors import (
     CleanRequiredError,

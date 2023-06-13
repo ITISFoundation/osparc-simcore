@@ -7,7 +7,7 @@ from pydantic import AnyHttpUrl, ValidationError, parse_obj_as
 from servicelib.error_codes import create_error_code
 from simcore_postgres_database.models.users import users
 
-from ..db import get_database_engine
+from ..db.plugin import get_database_engine
 from ._client import (
     InvitationContent,
     InvitationsServiceApi,
@@ -28,16 +28,13 @@ async def _is_user_registered(app: web.Application, email: str) -> bool:
     pg_engine = get_database_engine(app=app)
 
     async with pg_engine.acquire() as conn:
-        user_id = await conn.scalar(
-            sa.select([users.c.id]).where(users.c.email == email)
-        )
+        user_id = await conn.scalar(sa.select(users.c.id).where(users.c.email == email))
         return user_id is not None
 
 
 @contextmanager
 def _handle_exceptions_as_invitations_errors():
     try:
-
         yield  # API function calls happen
 
     except ClientResponseError as err:
@@ -88,7 +85,6 @@ async def validate_invitation_url(
     invitations_service: InvitationsServiceApi = get_invitations_service_api(app=app)
 
     with _handle_exceptions_as_invitations_errors():
-
         try:
             valid_url = parse_obj_as(AnyHttpUrl, invitation_url)
         except ValidationError as err:
@@ -121,7 +117,6 @@ async def extract_invitation(
     invitations_service: InvitationsServiceApi = get_invitations_service_api(app=app)
 
     with _handle_exceptions_as_invitations_errors():
-
         try:
             valid_url = parse_obj_as(AnyHttpUrl, invitation_url)
         except ValidationError as err:

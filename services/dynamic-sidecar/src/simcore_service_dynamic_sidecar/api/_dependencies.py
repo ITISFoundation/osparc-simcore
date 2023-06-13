@@ -5,15 +5,12 @@ from asyncio import Lock
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.datastructures import State
-from simcore_service_dynamic_sidecar.modules.outputs import (
-    OutputsContext,
-    OutputsManager,
-)
 
 from ..core.settings import ApplicationSettings
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore
 from ..modules.mounted_fs import MountedVolumes
+from ..modules.outputs import OutputsContext, OutputsManager
 
 
 def get_application(request: Request) -> FastAPI:

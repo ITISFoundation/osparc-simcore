@@ -6,11 +6,11 @@ This module defines how this config is serialized/deserialized to/from docker la
 
 import json
 from json.decoder import JSONDecodeError
-from typing import Any
+from typing import Any, TypeAlias
 
 from pydantic.json import pydantic_encoder
 
-LabelsAnnotationsDict = dict[str, str]
+LabelsAnnotationsDict: TypeAlias = dict[str, str]
 
 
 def _json_dumps(obj: Any, **kwargs) -> str:

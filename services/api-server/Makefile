@@ -83,18 +83,17 @@ run-fake-devel: # starts a fake server in a dev-container
 
 
 # BUILD ###########################################################################
-
 define create_and_validate_openapi
 	# generating openapi specs file under $< (NOTE: Skips DEV FEATURES since this OAS is the 'offically released'!)
-	@set -o allexport; \
-	source .env; \
-	set +o allexport; \
+	@source .env; \
 	export API_SERVER_DEV_FEATURES_ENABLED=$1; \
 	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
 
 	# validates OAS file: $@
-	@cd $(CURDIR); \
-	$(SCRIPTS_DIR)/openapi-generator-cli.bash validate --input-spec /local/$@
+	@set -o allexport; \
+	source .env; \
+	cd $(CURDIR); \
+	$(SCRIPTS_DIR)/openapi-generator.bash validate --input-spec /local/$@
 endef
 
 
@@ -108,9 +107,8 @@ openapi.json: .env
 openapi-dev.json: .env
 	@$(call create_and_validate_openapi,1)
 
-
 # GENERATION python client ###########################################################################
-.PHONY: python-client generator-help
+.PHONY: python-client generator-help fetch-openapi-templates
 
 # SEE https://openapi-generator.tech/docs/usage#generate
 # SEE https://openapi-generator.tech/docs/generators/python
@@ -138,30 +136,31 @@ null  :=
 space := $(null) #
 comma := ,
 
+CONTAINER_TEMPL_DIR := /tmp/openapi_templates
+
+
 client:
 	# cloning $(GIT_USER_ID)/$(GIT_REPO_ID) -> $@
 	git clone git@github.com:$(GIT_USER_ID)/$(GIT_REPO_ID).git $@
 	# TODO: if fails, add -b
-	cd client; git checkout "upgrade-${APP_VERSION}"
-
+	cd client; git checkout -b "upgrade-${APP_VERSION}"
 
 python-client: client openapi.json ## runs python client generator
 	# copies latest version of the openapi
 	@cp openapi.json client/api/
 	# generates
+	@source .env; \
 	cd $(CURDIR); \
-	$(SCRIPTS_DIR)/openapi-generator-cli.bash generate \
+	$(SCRIPTS_DIR)/openapi-generator.bash generate \
 		--generator-name=$(GENERATOR_NAME) \
-		--git-user-id=$(GIT_USER_ID)\
-		--git-repo-id=$(GIT_REPO_ID)\
-		--http-user-agent="osparc-api/$(APP_VERSION)/python"\
+		--git-user-id=$(GIT_USER_ID) \
+		--git-repo-id=$(GIT_REPO_ID) \
+		--http-user-agent="osparc-api/$(APP_VERSION)/python" \
 		--input-spec=/local/openapi.json \
 		--output=/local/client \
-		--additional-properties=$(subst $(space),$(comma),$(strip $(ADDITIONAL_PROPS)))\
-		--package-name=osparc\
+		--additional-properties=$(subst $(space),$(comma),$(strip $(ADDITIONAL_PROPS))) \
+		--package-name=osparc \
 		--release-note="Updated to $(APP_VERSION)"
-
-
 
 generator-help: ## help on client-api generator
 	# generate help

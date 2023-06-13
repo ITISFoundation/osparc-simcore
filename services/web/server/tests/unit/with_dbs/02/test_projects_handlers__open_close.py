@@ -43,7 +43,7 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (
 from servicelib.aiohttp.web_exceptions_extension import HTTPLocked
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.products import products
-from simcore_service_webserver.db_models import UserRole
+from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.socketio.messages import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.utils import to_datetime
@@ -663,7 +663,7 @@ def one_max_open_studies_per_user(
 ) -> Iterator[None]:
     with postgres_db.connect() as conn:
         old_value = conn.scalar(
-            sa.select([products.c.max_open_studies_per_user]).where(
+            sa.select(products.c.max_open_studies_per_user).where(
                 products.c.name == osparc_product_name
             )
         )

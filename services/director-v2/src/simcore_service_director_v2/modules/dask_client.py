@@ -38,7 +38,6 @@ from pydantic.networks import AnyUrl
 from servicelib.logging_utils import log_catch
 from settings_library.s3 import S3Settings
 from simcore_sdk.node_ports_v2 import FileLinkType
-from simcore_service_director_v2.modules.storage import StorageClient
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_attempt
@@ -52,6 +51,7 @@ from ..core.errors import (
 from ..core.settings import AppSettings, ComputationalBackendSettings
 from ..models.domains.comp_tasks import Image
 from ..models.schemas.clusters import ClusterDetails, Scheduler
+from ..modules.storage import StorageClient
 from ..utils.dask import (
     check_communication_with_scheduler_is_open,
     check_if_cluster_is_able_to_run_pipeline,

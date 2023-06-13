@@ -9,26 +9,39 @@ from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq_utils import wait_till_rabbitmq_responsive
 
 from .rabbitmq_settings import RabbitSettings, get_plugin_settings
+from .rest.healthcheck import HealthCheck, HealthCheckFailed
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
+
+
+async def _on_healthcheck_async_adapter(app: web.Application) -> None:
+    rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
+    if not rabbit_client.healthy:
+        raise HealthCheckFailed(
+            "RabbitMQ client is in a bad state! TIP: check if network was cut between server and clients?"
+        )
 
 
 async def _rabbitmq_client_cleanup_ctx(app: web.Application) -> AsyncIterator[None]:
     settings: RabbitSettings = get_plugin_settings(app)
     with log_context(
-        log, logging.INFO, msg=f"Check RabbitMQ backend is ready on {settings.dsn}"
+        _logger, logging.INFO, msg=f"Check RabbitMQ backend is ready on {settings.dsn}"
     ):
         await wait_till_rabbitmq_responsive(f"{settings.dsn}")
 
     with log_context(
-        log, logging.INFO, msg=f"Connect RabbitMQ client to {settings.dsn}"
+        _logger, logging.INFO, msg=f"Connect RabbitMQ client to {settings.dsn}"
     ):
         app[APP_RABBITMQ_CLIENT_KEY] = RabbitMQClient("webserver", settings)
+
+    # injects healthcheck
+    healthcheck: HealthCheck = app[HealthCheck.__name__]
+    healthcheck.on_healthcheck.append(_on_healthcheck_async_adapter)
 
     yield
 
     # cleanup
-    with log_context(log, logging.INFO, msg="Closing RabbitMQ client"):
+    with log_context(_logger, logging.INFO, msg="Close RabbitMQ client"):
         await app[APP_RABBITMQ_CLIENT_KEY].close()
 
 
@@ -36,7 +49,7 @@ async def _rabbitmq_client_cleanup_ctx(app: web.Application) -> AsyncIterator[No
     __name__,
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_RABBITMQ",
-    logger=log,
+    logger=_logger,
     depends=[],
 )
 def setup_rabbitmq(app: web.Application) -> None:

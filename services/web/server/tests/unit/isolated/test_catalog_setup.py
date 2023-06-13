@@ -15,7 +15,10 @@ from simcore_service_webserver.catalog.client import (
     to_backend_service,
 )
 from simcore_service_webserver.catalog.plugin import setup_catalog
-from simcore_service_webserver.rest import APP_OPENAPI_SPECS_KEY, load_openapi_specs
+from simcore_service_webserver.rest.plugin import (
+    APP_OPENAPI_SPECS_KEY,
+    load_openapi_specs,
+)
 from yarl import URL
 
 

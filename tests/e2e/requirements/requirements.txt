@@ -8,7 +8,7 @@ certifi==2023.5.7
     # via requests
 charset-normalizer==3.1.0
     # via requests
-docker==6.1.2
+docker==6.1.3
     # via -r requirements/requirements.in
 idna==3.4
     # via requests
@@ -25,5 +25,5 @@ urllib3==2.0.2
     #   -c requirements/../../../requirements/constraints.txt
     #   docker
     #   requests
-websocket-client==1.5.1
+websocket-client==1.5.2
     # via docker

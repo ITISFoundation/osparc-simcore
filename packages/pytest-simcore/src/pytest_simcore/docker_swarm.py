@@ -146,13 +146,14 @@ def docker_client() -> Iterator[docker.client.DockerClient]:
 
 
 @pytest.fixture(scope="session")
-def keep_docker_up(request) -> bool:
-    return request.config.getoption("--keep-docker-up")
+def keep_docker_up(request: pytest.FixtureRequest) -> bool:
+    flag: bool = request.config.getoption(name="--keep-docker-up", default=False)
+    return flag
 
 
 @pytest.fixture(scope="module")
 def docker_swarm(
-    docker_client: docker.client.DockerClient, keep_docker_up: Iterator[bool]
+    docker_client: docker.client.DockerClient, keep_docker_up: bool
 ) -> Iterator[None]:
     """inits docker swarm"""
 
@@ -279,7 +280,6 @@ def docker_stack(
     # make up-version
     stacks_deployed: dict[str, dict] = {}
     for key, stack_name, compose_file in stacks:
-
         _deploy_stack(compose_file, stack_name)
 
         stacks_deployed[key] = {

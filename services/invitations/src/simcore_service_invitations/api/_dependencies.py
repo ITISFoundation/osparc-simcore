@@ -1,10 +1,9 @@
 import logging
 import secrets
-from typing import Any, Callable, Optional
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from starlette.datastructures import URL
+from servicelib.fastapi.dependencies import get_app, get_reverse_url_mapper
 
 from ..core.settings import ApplicationSettings
 
@@ -14,14 +13,6 @@ logger = logging.getLogger(__name__)
 #
 # DEPENDENCIES
 #
-
-
-def get_reverse_url_mapper(request: Request) -> Callable:
-    def _reverse_url_mapper(name: str, **path_params: Any) -> str:
-        url: URL = request.url_for(name, **path_params)
-        return f"{url}"
-
-    return _reverse_url_mapper
 
 
 def get_settings(request: Request) -> ApplicationSettings:
@@ -34,7 +25,7 @@ _get_basic_credentials = HTTPBasic()
 
 
 def get_validated_credentials(
-    credentials: Optional[HTTPBasicCredentials] = Depends(_get_basic_credentials),
+    credentials: HTTPBasicCredentials | None = Depends(_get_basic_credentials),
     settings: ApplicationSettings = Depends(get_settings),
 ) -> HTTPBasicCredentials:
     def _is_valid(current: str, expected: str) -> bool:
@@ -57,3 +48,13 @@ def get_validated_credentials(
         )
 
     return credentials
+
+
+assert get_reverse_url_mapper  # nosec
+assert get_app  # nosec
+
+
+__all__: tuple[str, ...] = (
+    "get_reverse_url_mapper",
+    "get_app",
+)
