@@ -4,6 +4,7 @@
 
 import json
 import logging
+import re
 from io import StringIO
 from typing import Any, Callable
 
@@ -115,6 +116,9 @@ def test_compose_commands(cli: typer.Typer, cli_runner: CliRunner):
     assert result.exit_code == 0, result
 
     def extract_lines(text):
+        # remove typer boxes
+        text = re.sub("[─╭╮╯╰|│]", "", text)
+
         lines = [line.strip() for line in text.split("\n") if line.strip()]
         return lines
 
