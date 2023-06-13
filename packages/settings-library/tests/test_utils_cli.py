@@ -116,10 +116,14 @@ def test_compose_commands(cli: typer.Typer, cli_runner: CliRunner):
     assert result.exit_code == 0, result
 
     # settings command
-    result = cli_runner.invoke(cli, ["settings", "--help"], catch_exceptions=False)
+    result = cli_runner.invoke(
+        cli, ["settings", "--help"], catch_exceptions=False, color=False
+    )
     print(result.stdout)
 
-    assert "--compact" in result.stdout
+    assert ("--compact" in result.stdout) or (
+        "\x1b[1;36m-\x1b[0m\x1b[1;36m-compact" in result.stdout
+    )
     assert result.exit_code == 0, result
 
     def extract_lines(text):
