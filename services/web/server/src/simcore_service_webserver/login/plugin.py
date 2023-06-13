@@ -15,8 +15,8 @@ from .._constants import (
     APP_SETTINGS_KEY,
     INDEX_RESOURCE_NAME,
 )
-from ..db import setup_db
-from ..db_settings import get_plugin_settings as get_db_plugin_settings
+from ..db.plugin import setup_db
+from ..db.settings import get_plugin_settings as get_db_plugin_settings
 from ..email.plugin import setup_email
 from ..email.settings import get_plugin_settings as get_email_plugin_settings
 from ..invitations.plugin import setup_invitations
