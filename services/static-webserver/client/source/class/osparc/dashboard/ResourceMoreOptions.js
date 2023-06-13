@@ -39,7 +39,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
   statics: {
     WIDTH: 700,
-    HEIGHT: 660,
+    HEIGHT: 700,
 
     popUpInWindow: function(moreOpts) {
       const title = qx.locale.Manager.tr("Details");
@@ -110,9 +110,9 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       if (osparc.utils.Resources.isService(resourceData)) {
         const openButton = new qx.ui.form.Button(this.tr("Open")).set({
           appearance: "strong-button",
-          allowGrowX: false,
+          font: "text-14",
           alignX: "right",
-          height: 23
+          height: 24
         });
         this.bind("showOpenButton", openButton, "visibility", {
           converter: show => show ? "visible" : "excluded"
