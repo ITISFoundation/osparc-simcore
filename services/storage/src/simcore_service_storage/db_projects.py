@@ -17,7 +17,7 @@ async def list_valid_projects_in(
     NOTE that it lists ONLY validated projects in 'project_uuids'
     """
     async for row in conn.execute(
-        sa.select([projects]).where(
+        sa.select(projects).where(
             projects.c.uuid.in_(f"{pid}" for pid in include_uuids)
         )
     ):
@@ -31,7 +31,7 @@ async def project_exists(
 ) -> bool:
     return bool(
         await conn.scalar(
-            sa.select([sa.func.count()])
+            sa.select(sa.func.count())
             .select_from(projects)
             .where(projects.c.uuid == f"{project_uuid}")
         )

@@ -84,7 +84,7 @@ class BaseOrm(Generic[RowUId]):
                 ]
             )
         else:
-            query = sa.select([self._table.c[name] for name in column_names])
+            query = sa.select(*[self._table.c[name] for name in column_names])
 
         return query
 

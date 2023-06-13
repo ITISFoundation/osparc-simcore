@@ -43,12 +43,11 @@ def testing_environ_vars(env_devel_file: Path) -> EnvVarsDict:
     Loads and extends .env-devel returning
     all environment variables key=value
     """
-    env_devel_unresolved = dotenv_values(env_devel_file, verbose=True, interpolate=True)
-
-    # get from environ if applicable
-    env_devel: EnvVarsDict = {
-        key: os.environ.get(key, value) for key, value in env_devel_unresolved.items()
-    }
+    env_devel = dotenv_values(
+        env_devel_file,
+        verbose=True,
+        interpolate=True,  # NOTE: This resolves expressions as VAR=$ENVVAR
+    )
 
     # These are overrides to .env-devel or an extension to them
     env_devel["LOG_LEVEL"] = "DEBUG"
@@ -60,7 +59,6 @@ def testing_environ_vars(env_devel_file: Path) -> EnvVarsDict:
     env_devel["REGISTRY_PW"] = ""
     env_devel["REGISTRY_AUTH"] = "False"
 
-    # CAREFUL! FIXME: monkeypatch autouse ??
     env_devel["SWARM_STACK_NAME"] = "pytest-simcore"
     env_devel.setdefault(
         "SWARM_STACK_NAME_NO_HYPHEN", env_devel["SWARM_STACK_NAME"].replace("-", "_")
@@ -86,7 +84,7 @@ def testing_environ_vars(env_devel_file: Path) -> EnvVarsDict:
     if not "DOCKER_IMAGE_TAG" in os.environ:
         env_devel["DOCKER_IMAGE_TAG"] = "production"
 
-    return env_devel
+    return {key: value for key, value in env_devel.items() if value is not None}
 
 
 @pytest.fixture(scope="module")
