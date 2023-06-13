@@ -116,9 +116,7 @@ def test_compose_commands(cli: typer.Typer, cli_runner: CliRunner):
     assert result.exit_code == 0, result
 
     # settings command
-    result = cli_runner.invoke(
-        cli, ["settings", "--help"], catch_exceptions=False, color=False
-    )
+    result = cli_runner.invoke(cli, ["settings", "--help"], catch_exceptions=False)
     print(result.stdout)
 
     assert ("--compact" in result.stdout) or (
