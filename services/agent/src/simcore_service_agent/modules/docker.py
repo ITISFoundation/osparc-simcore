@@ -8,6 +8,8 @@ from aiodocker.utils import clean_filters
 from aiodocker.volumes import DockerVolume
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
 
+from .volumes_cleanup.models import VolumeDict
+
 
 @asynccontextmanager
 async def docker_client() -> AsyncIterator[Docker]:
@@ -15,7 +17,9 @@ async def docker_client() -> AsyncIterator[Docker]:
         yield docker
 
 
-async def get_dyv_volumes(docker: Docker, target_swarm_stack_name: str) -> list[dict]:
+async def get_dyv_volumes(
+    docker: Docker, target_swarm_stack_name: str
+) -> list[VolumeDict]:
     dyv_volumes: deque[dict] = deque()
     volumes = await docker.volumes.list()
     for volume in volumes["Volumes"]:
