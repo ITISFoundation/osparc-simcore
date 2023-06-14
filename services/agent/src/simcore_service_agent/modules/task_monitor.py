@@ -10,8 +10,6 @@ from pydantic import PositiveFloat, PositiveInt
 from servicelib.logging_utils import log_context
 
 from ..core.errors import AgentRuntimeError
-from ..core.settings import ApplicationSettings
-from .task_volumes_cleanup import task_cleanup_volumes
 
 _logger = logging.getLogger(__name__)
 
@@ -162,25 +160,13 @@ class TaskMonitor:
 
 def setup(app: FastAPI) -> None:
     async def _on_startup() -> None:
-        settings: ApplicationSettings = app.state.settings
         task_monitor = app.state.task_monitor = TaskMonitor()
-
-        task_monitor.register_job(
-            task_cleanup_volumes,
-            app,
-            repeat_interval_s=settings.AGENT_VOLUMES_CLEANUP_INTERVAL_S,
-        )
-        if task_monitor.start_job(task_cleanup_volumes.__name__):
-            _logger.debug("Enabled '%s' job.", task_cleanup_volumes.__name__)
 
         await task_monitor.start()
         _logger.info("Started 🔍 task_monitor")
 
     async def _on_shutdown() -> None:
         task_monitor: TaskMonitor = app.state.task_monitor
-
-        await task_monitor.unregister_job(task_cleanup_volumes)
-        _logger.debug("Disabled '%s' job.", task_cleanup_volumes.__name__)
 
         await task_monitor.shutdown()
         _logger.info("Stopped 🔍 task_monitor")

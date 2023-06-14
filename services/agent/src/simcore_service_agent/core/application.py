@@ -15,7 +15,7 @@ from .._meta import (
     SUMMARY,
     VERSION,
 )
-from ..modules import rabbitmq, task_monitor, volumes_cleanup
+from ..modules import rabbitmq, register_tasks, task_monitor, volumes_cleanup
 from ._routes import router
 from .settings import ApplicationSettings
 
@@ -53,6 +53,7 @@ def create_app() -> FastAPI:
     # SUBMODULES
     volumes_cleanup.setup(app)
     task_monitor.setup(app)
+    register_tasks.setup(app)
     rabbitmq.setup(app)
 
     async def _on_startup() -> None:
