@@ -55,6 +55,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         description: "Start multiple TI plan",
         newStudyLabel: "mTI Planning Tool",
         idToWidget: "newMTIPlanButton"
+      },
+      "pmTI": {
+        templateLabel: "pmTI Planning Tool",
+        title: "New pmTI Plan",
+        description: "Start phase modulated TI plan",
+        newStudyLabel: "pmTI Planning Tool",
+        idToWidget: "newPMTIPlanButton"
       }
     },
     EXPECTED_S4L_SERVICE_KEYS: {
