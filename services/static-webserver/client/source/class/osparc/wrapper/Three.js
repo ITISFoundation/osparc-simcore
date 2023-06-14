@@ -276,8 +276,8 @@ qx.Class.define("osparc.wrapper.Three", {
       return entityMesh;
     },
 
-    __addCameraLight: function(camera) {
-      const pointLight = new THREE.PointLight(0xffffff);
+    __addCameraLight: function() {
+      const pointLight = new THREE.PointLight(0xFFFFFF);
       pointLight.position.set(1, 1, 2);
       this.__camera.add(pointLight);
     },
@@ -285,8 +285,8 @@ qx.Class.define("osparc.wrapper.Three", {
     __addGridHelper: function() {
       const gridSize = 20;
       const gridDivisions = 20;
-      const centerLineColor = new THREE.Color(0x666666);
-      const gridColor = new THREE.Color(0x555555);
+      const centerLineColor = new THREE.Color(0xFFFFFF);
+      const gridColor = new THREE.Color(0xEEEEEE);
       let gridHelper = new THREE.GridHelper(gridSize, gridDivisions, centerLineColor, gridColor);
       // Z up:
       // https://stackoverflow.com/questions/44630265/how-can-i-set-z-up-coordinate-system-in-three-js

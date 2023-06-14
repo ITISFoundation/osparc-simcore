@@ -18,7 +18,7 @@
 qx.Class.define("osparc.component.widget.Three", {
   extend: qx.ui.core.Widget,
 
-  construct : function(backgroundColor) {
+  construct : function() {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.Canvas());
@@ -49,6 +49,7 @@ qx.Class.define("osparc.component.widget.Three", {
 
       // this.__threeWrapper.SetCameraPosition(18, 0, 25);
       this.__threeWrapper.setCameraPosition(21, 21, 9); // Z up
+      this.__threeWrapper.setBackgroundColor("#484f54");
       this.__resized();
 
       this.addListener("resize", () => this.__resized(), this);
@@ -57,8 +58,8 @@ qx.Class.define("osparc.component.widget.Three", {
     },
 
     __resized: function() {
-      const width = Math.min(100, this.getBounds().width);
-      const height = Math.min(100, this.getBounds().height);
+      const width = Math.min(500, this.getBounds().width);
+      const height = Math.min(500, this.getBounds().height);
       this.__threeWrapper.setSize(width, height);
     },
 
