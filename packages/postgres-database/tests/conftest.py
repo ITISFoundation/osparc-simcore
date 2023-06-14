@@ -262,6 +262,6 @@ async def create_fake_project(pg_engine: Engine) -> Iterator[Callable]:
     yield _creator
 
     async with pg_engine.acquire() as conn:
-        conn.execute(
+        await conn.execute(
             projects.delete().where(projects.c.uuid.in_(created_project_uuids))
         )

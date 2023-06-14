@@ -49,7 +49,6 @@ class ProjectsNodesRepo:
             created_node = await result.first()
             assert created_node  # nosec
             created_node = ProjectsNode(**dict(created_node.items()))
-
             try:
                 result = await connection.execute(
                     projects_to_projects_nodes.insert().values(
@@ -57,8 +56,7 @@ class ProjectsNodesRepo:
                         node_id=f"{created_node.node_id}",
                     )
                 )
-                created_mapping = await result.one()
-                assert created_mapping  # nosec
+                assert result.rowcount == 1  # nosec
                 return created_node
             except psycopg2.errors.ForeignKeyViolation as exc:
                 raise ProjectsNodesProjectNotFound(
