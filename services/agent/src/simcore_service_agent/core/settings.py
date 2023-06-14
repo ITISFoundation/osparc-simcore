@@ -1,7 +1,7 @@
 from typing import Final
 
 from models_library.basic_types import BootModeEnum, LogLevel
-from pydantic import Field, NonNegativeInt, validator
+from pydantic import Field, NonNegativeFloat, NonNegativeInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.r_clone import S3Provider
 from settings_library.rabbit import RabbitSettings
@@ -16,14 +16,15 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
     SC_BOOT_MODE: BootModeEnum | None
 
-    AGENT_VOLUMES_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
+    AGENT_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         False,
         env=[
-            "AGENT_VOLUMES_LOG_FORMAT_LOCAL_DEV_ENABLED",
+            "AGENT_LOG_FORMAT_LOCAL_DEV_ENABLED",
             "LOG_FORMAT_LOCAL_DEV_ENABLED",
         ],
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
+
     AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME: str = Field(
         ..., description="Exactly the same as director-v2's `SWARM_STACK_NAME` env var"
     )
@@ -46,6 +47,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
     AGENT_VOLUMES_CLEANUP_INTERVAL_S: NonNegativeInt = Field(
         60 * _MINUTE, description="interval at which to repeat volumes cleanup"
+    )
+    AGENT_VOLUME_REMOVAL_TIMEOUT_S: NonNegativeFloat = Field(
+        60 * _MINUTE,
+        description="period of of time after the volume removal operation is timed out",
     )
 
     AGENT_DOCKER_NODE_ID: str = Field(..., description="used by the rabbitmq module")
