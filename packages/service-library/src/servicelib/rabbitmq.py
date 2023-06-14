@@ -7,7 +7,6 @@ import aio_pika
 import aiormq
 from aio_pika.exceptions import AMQPConnectionError, ChannelInvalidStateError
 from aio_pika.patterns import RPC
-from packaging.version import Version
 from pydantic import PositiveFloat
 from servicelib.logging_utils import log_catch, log_context
 from settings_library.rabbit import RabbitSettings
@@ -129,14 +128,7 @@ class RabbitMQClient:
             },
         )
         self._rpc_channel = await self._rpc_connection.channel()
-
-        if Version(aio_pika.__version__) >= Version("9.0.4"):
-            _logger.warning(
-                "When all libraries have `aio_pika>=9.0.4` use:"
-                "`self._rpc = RPC(self._rpc_channel, host_exceptions=True)`"
-                "on the line below"
-            )
-        self._rpc = RPC(self._rpc_channel)
+        self._rpc = RPC(self._rpc_channel, host_exceptions=True)
         await self._rpc.initialize()
 
     async def close(self) -> None:
