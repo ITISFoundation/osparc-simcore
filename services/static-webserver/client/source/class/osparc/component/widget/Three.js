@@ -58,8 +58,11 @@ qx.Class.define("osparc.component.widget.Three", {
     },
 
     __resized: function() {
-      const width = Math.min(500, this.getBounds().width);
-      const height = Math.min(500, this.getBounds().height);
+      const minWidth = 400;
+      const minHeight = 400;
+      const bounds = this.getBounds();
+      const width = Math.max(minWidth, bounds.width);
+      const height = Math.max(minHeight, bounds.height);
       this.__threeWrapper.setSize(width, height);
     },
 
