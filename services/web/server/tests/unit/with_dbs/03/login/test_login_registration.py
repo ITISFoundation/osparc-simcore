@@ -413,6 +413,95 @@ async def test_registration_with_invitation(
             assert not await db.get_confirmation(confirmation)
 
 
+async def test_registration_with_weak_password_fails(
+    client: TestClient,
+    mocker: MockerFixture,
+    _clean_user_table: None,
+    fake_user_email: str,
+    fake_weak_password: str,
+):
+    assert client.app
+    url = client.app.router["auth_register"].url_for()
+    response = await client.post(
+        f"{url}",
+        json={
+            "email": fake_user_email,
+            "password": fake_weak_password,
+            "confirm": fake_weak_password,
+        },
+    )
+    await assert_error(
+        response,
+        web.HTTPUnauthorized,
+        MSG_WEAK_PASSWORD.format(
+            LOGIN_PASSWORD_MIN_LENGTH=LoginSettingsForProduct.LOGIN_PASSWORD_MIN_LENGTH
+        ),
+    )
+
+
+async def test_registration_invitation_stays_valid_if_triad_with_weak_password(
+    client: TestClient,
+    login_options: LoginOptions,
+    db: AsyncpgStorage,
+    mocker: MockerFixture,
+    fake_user_email: str,
+    fake_user_password: str,
+    fake_weak_password: str,
+    _clean_user_table: None,
+):
+    assert client.app
+    mocker.patch(
+        "simcore_service_webserver.login.handlers_registration.get_plugin_settings",
+        autospec=True,
+        return_value=LoginSettingsForProduct(
+            LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=False,
+            LOGIN_REGISTRATION_INVITATION_REQUIRED=True,
+            LOGIN_TWILIO=None,
+        ),
+    )
+
+    #
+    # User gets an email with a link as
+    #   https:/some-web-address.io/#/registration/?invitation={code}
+    #
+    # Front end then creates the following request
+    #
+    async with NewInvitation(client) as f:
+        confirmation = f.confirmation
+        assert confirmation
+
+        print(get_confirmation_info(login_options, confirmation))
+
+        url = client.app.router["auth_register"].url_for()
+
+        response = await client.post(
+            f"{url}",
+            json={
+                "email": fake_user_email,
+                "password": fake_user_password,
+                "confirm": fake_weak_password,
+                "invitation": confirmation["code"],
+            },
+        )
+        await assert_error(
+            response,
+            web.HTTPUnauthorized,
+            MSG_WEAK_PASSWORD.format(
+                LOGIN_PASSWORD_MIN_LENGTH=LoginSettingsForProduct.LOGIN_PASSWORD_MIN_LENGTH
+            ),
+        )
+        response = await client.post(
+            f"{url}",
+            json={
+                "email": fake_user_email,
+                "password": fake_user_password,
+                "confirm": fake_user_password,
+                "invitation": confirmation["code"],
+            },
+        )
+        assert not await db.get_confirmation(confirmation)
+
+
 async def test_registraton_with_invitation_for_trial_account(
     client: TestClient,
     login_options: LoginOptions,
