@@ -23,13 +23,15 @@ from pytest_mock import MockerFixture
 from servicelib.sidecar_volumes import STORE_FILE_NAME, VolumeUtils
 from simcore_service_agent.core.settings import ApplicationSettings
 from simcore_service_agent.modules.volumes_cleanup._core import (
-    SHARED_STORE_PATH,
-    SidecarVolumes,
     _get_volumes_status,
     backup_and_remove_sidecar_volumes,
     get_sidecar_volumes_list,
 )
-from simcore_service_agent.modules.volumes_cleanup.models import VolumeDict
+from simcore_service_agent.modules.volumes_cleanup.models import (
+    SHARED_STORE_PATH,
+    SidecarVolumes,
+    VolumeDict,
+)
 
 _VOLUMES_TO_GENERATE: Final[NonNegativeInt] = 10
 
