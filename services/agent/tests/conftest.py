@@ -49,6 +49,15 @@ def installed_package_dir() -> Path:
 
 
 @pytest.fixture
+def legacy_shared_store_only_volume_states(project_slug_dir: Path) -> Path:
+    data_dir = project_slug_dir / "tests" / "data"
+    assert data_dir.exists()
+    path = data_dir / "legacy_shared_store_only_volume_states.json"
+    assert path.exists()
+    return path
+
+
+@pytest.fixture
 def swarm_stack_name() -> str:
     return "test-simcore"
 
