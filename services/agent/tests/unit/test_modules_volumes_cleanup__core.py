@@ -3,8 +3,6 @@
 
 import itertools
 import tarfile
-
-# TODO: test backup_and_remove_sidecar_volumes
 from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
