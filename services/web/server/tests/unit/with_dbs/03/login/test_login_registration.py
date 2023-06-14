@@ -191,7 +191,7 @@ def product_name() -> str:
     return "osparc"
 
 
-async def test_registration_invitation_stays_valid_if_triad_with_weak_password(
+async def test_registration_invitation_stays_valid_if_once_tried_with_weak_password(
     client: TestClient,
     login_options: LoginOptions,
     db: AsyncpgStorage,
