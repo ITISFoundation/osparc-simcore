@@ -76,11 +76,15 @@ class ProjectsNodesRepo:
                 ) from exc
 
     async def list(self, connection: DBConnection) -> list[ProjectsNode]:
-        list_stmt = sqlalchemy.select(projects_nodes).select_from(
-            projects_to_projects_nodes.join(
-                projects_nodes,
-                projects_to_projects_nodes.c.project_uuid == f"{self.project_uuid}",
+        list_stmt = (
+            sqlalchemy.select(projects_nodes)
+            .select_from(
+                projects_to_projects_nodes.join(
+                    projects_nodes,
+                    projects_to_projects_nodes.c.node_id == projects_nodes.c.node_id,
+                )
             )
+            .where(projects_to_projects_nodes.c.project_uuid == f"{self.project_uuid}")
         )
         nodes = [
             ProjectsNode(**dict(row.items()))
