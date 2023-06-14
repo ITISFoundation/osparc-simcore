@@ -232,7 +232,7 @@ async def test_registration_invitation_stays_valid_if_triad_with_weak_password(
             f"{url}",
             json={
                 "email": fake_user_email,
-                "password": fake_user_password,
+                "password": fake_weak_password,
                 "confirm": fake_weak_password,
                 "invitation": confirmation["code"],
             },
