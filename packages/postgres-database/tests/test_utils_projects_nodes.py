@@ -11,6 +11,7 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from faker import Faker
 from simcore_postgres_database.models.projects import projects
+from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.utils_projects_nodes import (
     ProjectsNodeCreate,
     ProjectsNodesNodeNotFound,
@@ -213,3 +214,12 @@ async def test_delete_project_delete_all_nodes(
 
     with pytest.raises(ProjectsNodesNodeNotFound):
         await projects_node_repo.get(connection, node_id=new_node.node_id)
+
+    result = await connection.execute(
+        sqlalchemy.select(projects_nodes).where(
+            projects_nodes.c.node_id == f"{new_node.node_id}"
+        )
+    )
+    assert result
+    row = await result.first()
+    assert row is None
