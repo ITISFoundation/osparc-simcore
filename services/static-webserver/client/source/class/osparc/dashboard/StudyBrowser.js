@@ -894,7 +894,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getExportMenuButton: function(studyData) {
-      const exportButton = new qx.ui.menu.Button(this.tr("Export"));
+      const exportButton = new qx.ui.menu.Button(this.tr("Export cMIS"));
       exportButton.exclude();
       osparc.utils.DisabledPlugins.isExportDisabled()
         .then(isDisabled => {
