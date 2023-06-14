@@ -18,7 +18,7 @@ from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
 from faker import Faker
 from models_library.sidecar_volumes import VolumeCategory, VolumeState, VolumeStatus
-from pydantic import BaseModel, PositiveInt
+from pydantic import BaseModel, NonNegativeInt
 from pytest_mock import MockerFixture
 from servicelib.sidecar_volumes import STORE_FILE_NAME, VolumeUtils
 from simcore_service_agent.core.settings import ApplicationSettings
@@ -31,7 +31,7 @@ from simcore_service_agent.modules.volumes_cleanup._core import (
 )
 from simcore_service_agent.modules.volumes_cleanup.models import VolumeDict
 
-_VOLUMES_TO_GENERATE: Final[PositiveInt] = 10
+_VOLUMES_TO_GENERATE: Final[NonNegativeInt] = 10
 
 
 def _get_minimal_volume_dict(node_uuid: str, run_id: str, path: Path) -> VolumeDict:
@@ -191,7 +191,7 @@ async def sidecar_volumes(faker: Faker) -> SidecarVolumes:
     )
     remaining_volumes: list[VolumeDict] = [
         _get_minimal_volume_dict(node_uuid, run_id, Path(f"/tmp/other-volumes-{x}"))
-        for x in range(10)
+        for x in range(_VOLUMES_TO_GENERATE)
     ]
 
     return SidecarVolumes(
@@ -328,3 +328,5 @@ async def test_backup_and_remove_sidecar_volumes(
             ]
 
     mock_store_to_s3.assert_has_calls(expected_calls, any_order=True)
+    # out of the _VOLUMES_TO_GENERATE one is used for inputs and does not require backup
+    assert len(expected_calls) == _VOLUMES_TO_GENERATE - 1
