@@ -12,11 +12,8 @@ from settings_library.rabbit import RabbitSettings
 
 from ..core.errors import ConfigurationError
 from ..core.settings import ApplicationSettings
-from .volumes_cleanup import (
-    SidecarVolumes,
-    get_sidecar_volumes_list,
-    remove_sidecar_volumes,
-)
+from .volumes_cleanup import get_sidecar_volumes_list, remove_sidecar_volumes
+from .volumes_cleanup.models import SidecarVolumes
 
 logger = logging.getLogger(__name__)
 
