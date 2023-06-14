@@ -117,9 +117,13 @@ class ProjectsNodesRepo:
         ...
 
     async def delete(self, connection: DBConnection, *, node_id: uuid.UUID) -> None:
-        ...
+        delete_stmt = sqlalchemy.delete(projects_nodes).where(
+            projects_nodes.c.node_id == f"{node_id}"
+        )
+        await connection.execute(delete_stmt)
 
-    def _join_projects_to_projects_nodes(self):
+    @staticmethod
+    def _join_projects_to_projects_nodes():
         return projects_to_projects_nodes.join(
             projects_nodes,
             projects_to_projects_nodes.c.node_id == projects_nodes.c.node_id,

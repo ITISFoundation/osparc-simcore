@@ -152,7 +152,6 @@ async def test_get_project_node_of_empty_project_raises(
 async def test_get_project_node(
     connection: SAConnection,
     projects_node_repo: ProjectsNodesRepo,
-    faker: Faker,
     create_fake_projects_node: ProjectsNodeCreate,
 ):
     new_node = await projects_node_repo.create(
@@ -162,3 +161,30 @@ async def test_get_project_node(
     received_node = await projects_node_repo.get(connection, node_id=new_node.node_id)
 
     assert received_node == new_node
+
+
+async def test_delete_invalid_node_does_nothing(
+    connection: SAConnection,
+    projects_node_repo_of_invalid_project: ProjectsNodesRepo,
+    faker: Faker,
+):
+    await projects_node_repo_of_invalid_project.delete(
+        connection, node_id=faker.uuid4(cast_to=None)
+    )
+
+
+async def test_delete_node(
+    connection: SAConnection,
+    projects_node_repo: ProjectsNodesRepo,
+    create_fake_projects_node: ProjectsNodeCreate,
+):
+    new_node = await projects_node_repo.create(
+        connection, node=create_fake_projects_node()
+    )
+
+    received_node = await projects_node_repo.get(connection, node_id=new_node.node_id)
+    assert received_node == new_node
+    await projects_node_repo.delete(connection, node_id=new_node.node_id)
+
+    with pytest.raises(ProjectsNodesNodeNotFound):
+        await projects_node_repo.get(connection, node_id=new_node.node_id)
